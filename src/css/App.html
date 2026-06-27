@@ -6,6 +6,16 @@
   --app-surface: #ffffff;
   --app-muted: #607d8b;
 }
+body.app-locked { min-height: 100vh; background: #eef3f8; }
+body.app-locked .app-shell { display: none; }
+body.app-authenticated .login-gate { display: none; }
+.login-gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #e8f0fe 0%, #f7fbff 48%, #e0f2f1 100%); }
+.login-panel { width: 100%; max-width: 420px; background: #fff; border-radius: 8px; padding: 28px; }
+.login-brand { display: flex; gap: 14px; align-items: center; margin-bottom: 22px; }
+.login-logo-mark { width: 48px; height: 48px; border-radius: 8px; background: var(--app-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.login-brand h1 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 700; color: #1f2933; }
+.login-brand p { margin: 4px 0 0; color: var(--app-muted); }
+.login-message { min-height: 22px; margin-top: 12px; color: var(--app-danger); font-weight: 600; }
 .content-wrapper { background: #f4f6f9; }
 .brand-link { min-height: 57px; }
 .card { border-radius: 8px; }
@@ -54,6 +64,9 @@
 .table small { color: var(--app-muted); word-break: break-all; }
 textarea.form-control { resize: vertical; }
 @media (max-width: 768px) {
+  .login-gate { padding: 16px; align-items: stretch; }
+  .login-panel { margin: auto 0; padding: 22px; }
+  .login-brand h1 { font-size: 20px; }
   .form-grid { grid-template-columns: 1fr; }
   .module-toolbar, .dashboard-filter, .report-filter { align-items: stretch; }
   .module-toolbar .filters, .module-toolbar .actions, .dashboard-filter .filters, .report-filter .filters, .report-filter .actions { width: 100%; }
