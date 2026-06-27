@@ -52,8 +52,7 @@ Application.ImportService = function(importRepository, householdRepository, pers
   var householdAliases = {
     householdCode: ['Mã hộ','Ma ho','Household Code','householdCode','Ma ho gia dinh'],
     headCitizenId: ['Mã chủ hộ','Ma chu ho','Chu ho','headCitizenId'],
-    address: ['Địa chỉ','Dia chi','Address'],
-    hamlet: ['Thôn','Thon','Hamlet'],
+    address: ['Địa chỉ','Dia chi','Thôn','Thon','Hamlet','Address'],
     phone: ['Điện thoại','Dien thoai','Số điện thoại','So dien thoai','Phone'],
     areaCode: ['Mã khu vực','Ma khu vuc','Khu vực','Khu vuc','Area Code'],
     note: ['Ghi chú','Ghi chu','Note'],
@@ -125,7 +124,6 @@ Application.ImportService = function(importRepository, householdRepository, pers
         householdCode: upper(field(row, householdAliases.householdCode)),
         headCitizenId: text(field(row, householdAliases.headCitizenId)),
         address: text(field(row, householdAliases.address)),
-        hamlet: text(field(row, householdAliases.hamlet)),
         phone: text(field(row, householdAliases.phone)),
         areaCode: upper(field(row, householdAliases.areaCode)),
         memberCount: 0,
@@ -134,8 +132,7 @@ Application.ImportService = function(importRepository, householdRepository, pers
       };
       var rowErrors = [];
       if (!record.householdCode) rowErrors.push('Thieu Ma ho');
-      if (!record.address) rowErrors.push('Thieu Dia chi');
-      if (!record.hamlet) rowErrors.push('Thieu Thon');
+      if (!record.address) rowErrors.push('Thieu Dia chi/Thon');
       if (record.status && [Domain.Status.ACTIVE, Domain.Status.INACTIVE, Domain.Status.DELETED].indexOf(record.status) < 0) rowErrors.push('Trang thai ho khong hop le');
       var key = normalize(record.householdCode);
       if (key && seen[key]) rowErrors.push('Ma ho bi trung trong file import');
