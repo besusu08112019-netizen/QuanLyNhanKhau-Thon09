@@ -28,6 +28,15 @@
     { name: 'permanentAddress', label: 'Thường trú', full: true },
     { name: 'currentAddress', label: 'Nơi ở hiện nay', full: true }
   ];
+  var detailFields = [
+    ['citizenCode','Mã nhân khẩu'], ['fullName','Họ và tên'], ['gender','Giới tính'], ['dateOfBirth','Ngày sinh'],
+    ['identityNumber','CCCD/CMND'], ['identityIssueDate','Ngày cấp CCCD/CMND'], ['identityIssuePlace','Nơi cấp CCCD/CMND'],
+    ['householdCode','Mã hộ'], ['householdId','ID hộ'], ['householdHeadName','Chủ hộ'], ['householdAddress','Địa chỉ hộ'],
+    ['relationship','Quan hệ với chủ hộ'], ['ethnicity','Dân tộc'], ['religion','Tôn giáo'], ['occupation','Nghề nghiệp'],
+    ['phone','Điện thoại'], ['educationLevel','Học vấn'], ['maritalStatus','Hôn nhân'],
+    ['permanentAddress','Thường trú'], ['currentAddress','Nơi ở hiện nay'], ['status','Trạng thái'],
+    ['createdAt','Ngày tạo'], ['createdBy','Người tạo'], ['updatedAt','Ngày cập nhật'], ['updatedBy','Người cập nhật'], ['deletedAt','Ngày xóa'], ['deletedBy','Người xóa']
+  ];
 
   function el(id) { return document.getElementById(id); }
   function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s]); }); }
@@ -94,13 +103,14 @@
       '</div></div>';
   }
   function actions(row) {
-    if (row.status === 'DELETED') return '<button class="btn btn-outline-success btn-xs" title="Khôi phục" data-person-restore="' + html(row.id) + '"><i class="fas fa-rotate-left"></i></button>';
-    return '<button class="btn btn-outline-primary btn-xs" title="Sửa" data-person-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-danger btn-xs" title="Xóa" data-person-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>';
+    var view = '<button class="btn btn-outline-info btn-xs" title="Xem chi tiết" data-person-view="' + html(row.id) + '"><i class="fas fa-eye"></i></button>';
+    if (row.status === 'DELETED') return view + ' <button class="btn btn-outline-success btn-xs" title="Khôi phục" data-person-restore="' + html(row.id) + '"><i class="fas fa-rotate-left"></i></button>';
+    return view + ' <button class="btn btn-outline-primary btn-xs" title="Sửa" data-person-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-danger btn-xs" title="Xóa" data-person-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>';
   }
   function renderTable(result) {
     var rows = result.items || [];
     var body = rows.length ? rows.map(function(row) {
-      return '<tr><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(row.householdCode || row.householdId) + '</td><td>' + html(row.gender) + '</td><td>' + html(row.dateOfBirth) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + status(row.status) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
+      return '<tr class="person-row" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(row.householdCode || row.householdId) + '</td><td>' + html(row.gender) + '</td><td>' + html(row.dateOfBirth) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + status(row.status) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
     }).join('') : '<tr><td colspan="10" class="text-center text-muted p-4">Không có dữ liệu nhân khẩu</td></tr>';
     return '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Hộ dân</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
   }
@@ -130,6 +140,25 @@
       onSubmit(payload);
     });
   }
+  function detailValue(row, key) {
+    if (key === 'status') return status(row.status);
+    return html(row[key] || '');
+  }
+  function showDetail(row) {
+    var rows = detailFields.map(function(item) {
+      return '<tr><th style="width:32%">' + html(item[1]) + '</th><td>' + detailValue(row, item[0]) + '</td></tr>';
+    }).join('');
+    var markup = '<div class="modal fade" id="personDetailModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Thông tin nhân khẩu: ' + html(row.fullName || row.citizenCode || '') + '</h5><button type="button" class="close" data-dismiss="modal" aria-label="Đóng">&times;</button></div><div class="modal-body"><div class="table-responsive"><table class="table table-sm table-bordered mb-0"><tbody>' + rows + '</tbody></table></div></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary btn-sm" data-dismiss="modal">Đóng</button><button type="button" class="btn btn-primary btn-sm" id="btnDetailEdit"><i class="fas fa-pen"></i> Sửa</button></div></div></div></div>';
+    document.body.insertAdjacentHTML('beforeend', markup);
+    $('#personDetailModal').modal('show').on('hidden.bs.modal', function() { this.remove(); });
+    el('btnDetailEdit').onclick = function() {
+      $('#personDetailModal').modal('hide');
+      modalForm('Cập nhật nhân khẩu', row, function(payload) {
+        payload.id = row.id;
+        api('person.update', payload).then(function() { $('#personModal').modal('hide'); toast('Đã cập nhật nhân khẩu', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); });
+      });
+    };
+  }
   function validate(payload) {
     if (!payload.citizenCode || !/^[A-Za-z0-9._-]{2,30}$/.test(payload.citizenCode)) throw new Error('Mã nhân khẩu không hợp lệ');
     if (!payload.householdId) throw new Error('Cần nhập Mã hộ hoặc ID hộ');
@@ -154,10 +183,28 @@
       toast(error.message, 'danger');
     });
   }
+  function findRow(result, id) {
+    return (result.items || []).filter(function(item) { return item.id === id; })[0] || null;
+  }
   function bindRows(result) {
+    document.querySelectorAll('[data-person-row]').forEach(function(rowNode) {
+      rowNode.onclick = function(event) {
+        if (event.target.closest('button')) return;
+        var row = findRow(result, rowNode.getAttribute('data-person-row'));
+        if (row) showDetail(row);
+      };
+    });
+    document.querySelectorAll('[data-person-view]').forEach(function(btn) {
+      btn.onclick = function(event) {
+        event.preventDefault(); event.stopPropagation();
+        var row = findRow(result, btn.getAttribute('data-person-view'));
+        if (row) showDetail(row);
+      };
+    });
     document.querySelectorAll('[data-person-edit]').forEach(function(btn) {
-      btn.onclick = function() {
-        var row = result.items.filter(function(item) { return item.id === btn.dataset.personEdit; })[0];
+      btn.onclick = function(event) {
+        event.preventDefault(); event.stopPropagation();
+        var row = findRow(result, btn.getAttribute('data-person-edit'));
         modalForm('Cập nhật nhân khẩu', row, function(payload) {
           payload.id = row.id;
           api('person.update', payload).then(function() { $('#personModal').modal('hide'); toast('Đã cập nhật nhân khẩu', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); });
@@ -165,13 +212,14 @@
       };
     });
     document.querySelectorAll('[data-person-delete]').forEach(function(btn) {
-      btn.onclick = function() {
+      btn.onclick = function(event) {
+        event.preventDefault(); event.stopPropagation();
         if (!confirm('Xác nhận xóa mềm nhân khẩu này?')) return;
         api('person.delete', { id: btn.dataset.personDelete }).then(function() { toast('Đã xóa nhân khẩu', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); });
       };
     });
     document.querySelectorAll('[data-person-restore]').forEach(function(btn) {
-      btn.onclick = function() { api('person.restore', { id: btn.dataset.personRestore }).then(function() { state.status = ''; toast('Đã khôi phục nhân khẩu', 'success'); render(); }).catch(function(error) { toast(error.message, 'danger'); }); };
+      btn.onclick = function(event) { event.preventDefault(); event.stopPropagation(); api('person.restore', { id: btn.dataset.personRestore }).then(function() { state.status = ''; toast('Đã khôi phục nhân khẩu', 'success'); render(); }).catch(function(error) { toast(error.message, 'danger'); }); };
     });
     if (el('personPrev')) el('personPrev').onclick = function() { if (state.page > 1) { state.page -= 1; refresh(); } };
     if (el('personNext')) el('personNext').onclick = function() { if (state.page < result.totalPages) { state.page += 1; refresh(); } };
