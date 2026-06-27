@@ -15,6 +15,11 @@ Domain.Status = Object.freeze({
   DELETED: 'DELETED'
 });
 
+Domain.PresenceStatus = Object.freeze({
+  AT_HOME: 'AT_HOME',
+  AWAY: 'AWAY'
+});
+
 Domain.Roles = Object.freeze({
   SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
@@ -59,7 +64,7 @@ Domain.Tables = Object.freeze({
 
 Domain.Schema = Object.freeze({
   households: ['id','householdCode','headCitizenId','address','phone','areaCode','memberCount','note','status','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy','headCitizenName','meritoriousFamily','poorHousehold','nearPoorHousehold','disabledHousehold'],
-  citizens: ['id','citizenCode','householdId','fullName','gender','dateOfBirth','identityNumber','identityIssueDate','identityIssuePlace','relationship','ethnicity','religion','occupation','phone','permanentAddress','currentAddress','educationLevel','maritalStatus','status','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
+  citizens: ['id','citizenCode','householdId','fullName','gender','dateOfBirth','identityNumber','identityIssueDate','identityIssuePlace','relationship','ethnicity','religion','occupation','phone','permanentAddress','currentAddress','educationLevel','maritalStatus','status','presenceStatus','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
   movements: ['id','citizenId','householdId','type','fromAddress','toAddress','reason','effectiveDate','documentNumber','note','status','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
   users: ['id','email','displayName','role','status','lastLoginAt','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
   permissions: ['id','role','module','action','allowed','createdAt','createdBy','updatedAt','updatedBy'],
