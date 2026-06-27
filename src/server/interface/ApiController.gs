@@ -57,25 +57,31 @@ Interface.ApiController = function(container) {
     payload = payload || {};
     var page = Math.max(parseInt(payload.page || 1, 10), 1);
     var pageSize = Math.min(Math.max(parseInt(payload.pageSize || 20, 10), 5), 100);
-    var keyword = normalizeText(payload.keyword || payload.fullName);
-    var householdFilter = normalizeText(payload.householdId);
+    var keyword = normalizeText(payload.keyword || payload.search || payload.q || payload.fullName || payload.identityNumber || payload.phone || payload.citizenCode);
+    var householdFilter = normalizeText(payload.householdId || payload.householdCode);
     var includeDeleted = payload.includeDeleted === true || payload.includeDeleted === 'true' || payload.status === Domain.Status.DELETED;
     var households = householdMap();
     var rows = container.db.readAll(Domain.Tables.CITIZENS, { includeDeleted: includeDeleted }).map(function(person) {
       var record = Object.assign({}, person || {});
-      var household = households[String(record.householdId)] || households[normalizeText(record.householdId)];
+      var originalHouseholdRef = record.householdId;
+      var household = households[String(record.householdId)] || households[normalizeText(record.householdId)] || households[normalizeText(record.householdCode)];
       if (household) {
-        record.householdCode = household.householdCode || '';
+        record.householdInternalId = household.id || '';
+        record.householdCode = household.householdCode || record.householdCode || '';
+        record.householdId = record.householdCode;
         record.householdAddress = household.address || '';
         record.householdHeadName = household.headCitizenName || '';
+      } else {
+        record.householdCode = record.householdCode || originalHouseholdRef || '';
+        record.householdId = record.householdCode;
       }
       record.status = record.status || Domain.Status.ACTIVE;
       return record;
     }).filter(function(person) {
       if (payload.status && person.status !== payload.status) return false;
-      if (householdFilter && normalizeText(person.householdId) !== householdFilter && normalizeText(person.householdCode) !== householdFilter) return false;
+      if (householdFilter && normalizeText(person.householdId) !== householdFilter && normalizeText(person.householdCode) !== householdFilter && normalizeText(person.householdInternalId) !== householdFilter) return false;
       if (!keyword) return true;
-      return [person.citizenCode, person.fullName, person.identityNumber, person.phone, person.relationship, person.currentAddress, person.permanentAddress, person.occupation, person.householdCode, person.householdAddress, person.householdHeadName].some(function(value) {
+      return [person.id, person.citizenCode, person.fullName, person.identityNumber, person.phone, person.gender, person.dateOfBirth, person.relationship, person.currentAddress, person.permanentAddress, person.occupation, person.ethnicity, person.religion, person.educationLevel, person.maritalStatus, person.householdId, person.householdCode, person.householdAddress, person.householdHeadName, person.status].some(function(value) {
         return normalizeText(value).indexOf(keyword) >= 0;
       });
     });
