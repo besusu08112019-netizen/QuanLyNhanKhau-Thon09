@@ -5,6 +5,24 @@ Infrastructure.PersonRepository = function(db) {
     return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
+  function serializeValue(value) {
+    if (value === undefined || value === null) return '';
+    if (Object.prototype.toString.call(value) === '[object Date]') {
+      return Utilities.formatDate(value, Domain.App.TIMEZONE, 'yyyy-MM-dd');
+    }
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
+  function serializePerson(person) {
+    var record = {};
+    Object.keys(person || {}).forEach(function(key) {
+      record[key] = serializeValue(person[key]);
+    });
+    record.status = record.status || Domain.Status.ACTIVE;
+    return record;
+  }
+
   function read(options) {
     return db.readAll(Domain.Tables.CITIZENS, options || {});
   }
@@ -71,7 +89,7 @@ Infrastructure.PersonRepository = function(db) {
     if (page > totalPages) page = totalPages;
     var start = (page - 1) * pageSize;
     return {
-      items: rows.slice(start, start + pageSize),
+      items: rows.slice(start, start + pageSize).map(serializePerson),
       page: page,
       pageSize: pageSize,
       total: total,
@@ -80,28 +98,30 @@ Infrastructure.PersonRepository = function(db) {
   }
 
   function findById(id, options) {
-    return db.findById(Domain.Tables.CITIZENS, id, options || {});
+    var person = db.findById(Domain.Tables.CITIZENS, id, options || {});
+    return person ? serializePerson(person) : null;
   }
 
   function findByIdentityNumber(identityNumber, options) {
     var normalized = normalize(identityNumber);
     if (!normalized) return null;
-    return read(options || {}).filter(function(person) {
+    var person = read(options || {}).filter(function(person) {
       return normalize(person.identityNumber) === normalized;
     })[0] || null;
+    return person ? serializePerson(person) : null;
   }
 
   function findByHouseholdId(householdId, options) {
     return read(options || {}).filter(function(person) {
       return person.householdId === householdId;
-    });
+    }).map(serializePerson);
   }
 
   function searchByFullName(fullName, options) {
     var keyword = normalize(fullName);
     return read(options || {}).filter(function(person) {
       return normalize(person.fullName).indexOf(keyword) >= 0;
-    });
+    }).map(serializePerson);
   }
 
   function create(record) {
