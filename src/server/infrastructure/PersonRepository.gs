@@ -82,6 +82,10 @@ Infrastructure.PersonRepository = function(db) {
     return db.append(Domain.Tables.CITIZENS, record);
   }
 
+  function createMany(records) {
+    return db.appendMany(Domain.Tables.CITIZENS, records || []);
+  }
+
   function update(id, record) {
     return db.replace(Domain.Tables.CITIZENS, id, record);
   }
@@ -93,6 +97,7 @@ Infrastructure.PersonRepository = function(db) {
     findByHouseholdId: findByHouseholdId,
     searchByFullName: searchByFullName,
     create: create,
+    createMany: createMany,
     update: update
   };
 };
