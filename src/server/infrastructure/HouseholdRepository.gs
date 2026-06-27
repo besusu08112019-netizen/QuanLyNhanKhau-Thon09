@@ -5,16 +5,51 @@ Infrastructure.HouseholdRepository = function(db) {
     return String(value || '').trim().toLowerCase();
   }
 
+  function makeCitizenIndex() {
+    return db.readAll(Domain.Tables.CITIZENS, { includeDeleted: true }).reduce(function(acc, citizen) {
+      [citizen.id, citizen.citizenCode, citizen.identityNumber].forEach(function(key) {
+        key = normalizeKeyword(key);
+        if (key) acc[key] = citizen;
+      });
+      return acc;
+    }, {});
+  }
+
+  function resolveHeadName(household, citizenIndex) {
+    if (String(household.headCitizenName || '').trim()) return String(household.headCitizenName).trim();
+    var key = normalizeKeyword(household.headCitizenId);
+    var citizen = key ? citizenIndex[key] : null;
+    return citizen ? citizen.fullName : '';
+  }
+
+  function enrichHousehold(household, citizenIndex) {
+    var record = Object.assign({}, household);
+    record.headCitizenName = resolveHeadName(record, citizenIndex || {});
+    return record;
+  }
+
+  function policyText(household) {
+    return [
+      household.meritoriousFamily === 'Có' ? 'Gia đình có công' : '',
+      household.poorHousehold === 'Có' ? 'Hộ nghèo' : '',
+      household.nearPoorHousehold === 'Có' ? 'Cận nghèo' : '',
+      household.disabledHousehold === 'Có' ? 'Tàn tật' : ''
+    ].filter(Boolean).join(' ');
+  }
+
   function matchesKeyword(household, keyword) {
     if (!keyword) return true;
     return [
       household.householdCode,
+      household.headCitizenId,
+      household.headCitizenName,
       household.address,
       household.phone,
       household.areaCode,
+      policyText(household),
       household.note
     ].some(function(value) {
-      return String(value || '').toLowerCase().indexOf(keyword) >= 0;
+      return normalizeKeyword(value).indexOf(keyword) >= 0;
     });
   }
 
@@ -23,7 +58,10 @@ Infrastructure.HouseholdRepository = function(db) {
     var keyword = normalizeKeyword(query.keyword);
     var page = Math.max(parseInt(query.page || 1, 10), 1);
     var pageSize = Math.min(Math.max(parseInt(query.pageSize || 20, 10), 5), 100);
-    var rows = db.readAll(Domain.Tables.HOUSEHOLDS).filter(function(household) {
+    var citizenIndex = makeCitizenIndex();
+    var rows = db.readAll(Domain.Tables.HOUSEHOLDS).map(function(household) {
+      return enrichHousehold(household, citizenIndex);
+    }).filter(function(household) {
       if (query.status && household.status !== query.status) return false;
       return matchesKeyword(household, keyword);
     });
@@ -48,9 +86,9 @@ Infrastructure.HouseholdRepository = function(db) {
   }
 
   function findByCode(code, options) {
-    var normalized = String(code || '').trim().toLowerCase();
+    var normalized = normalizeKeyword(code);
     return db.readAll(Domain.Tables.HOUSEHOLDS, options).filter(function(household) {
-      return String(household.householdCode || '').trim().toLowerCase() === normalized;
+      return normalizeKeyword(household.householdCode) === normalized;
     })[0] || null;
   }
 
