@@ -39,9 +39,25 @@ Interface.ApiController = function(container) {
     return String(value || '').trim().toUpperCase();
   }
 
+  function presenceStatus(value) {
+    var text = normalizeText(value);
+    if (!text || text === 'at_home' || text === 'at home' || text === 'home' || text === 'o nha' || text === 'co mat') return 'AT_HOME';
+    if (text === 'away' || text === 'di vang' || text === 'vang' || text === 'tam vang') return 'AWAY';
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function presenceLabel(value) {
+    return presenceStatus(value) === 'AWAY' ? 'Đi vắng' : 'Ở nhà';
+  }
+
   function personStatusMatches(actual, expected) {
     if (!expected) return true;
     return personStatus(actual) === personStatus(expected);
+  }
+
+  function presenceStatusMatches(actual, expected) {
+    if (!expected) return true;
+    return presenceStatus(actual) === presenceStatus(expected);
   }
 
   function safeValue(value) {
@@ -55,6 +71,7 @@ Interface.ApiController = function(container) {
     var output = {};
     Object.keys(record || {}).forEach(function(key) { output[key] = safeValue(record[key]); });
     output.status = output.status || 'ALIVE';
+    output.presenceStatus = presenceStatus(output.presenceStatus || output.currentStatus || output.residencyStatus);
     return output;
   }
 
@@ -73,6 +90,7 @@ Interface.ApiController = function(container) {
     var keyword = normalizeText(payload.keyword || payload.search || payload.q || payload.fullName || payload.identityNumber || payload.phone || payload.citizenCode);
     var householdFilter = normalizeText(payload.householdId || payload.householdCode);
     var expectedStatus = payload.status ? personStatus(payload.status) : '';
+    var expectedPresence = payload.presenceStatus ? presenceStatus(payload.presenceStatus) : '';
     var includeDeleted = payload.includeDeleted === true || payload.includeDeleted === 'true' || expectedStatus === Domain.Status.DELETED;
     var households = householdMap();
     var rows = container.db.readAll(Domain.Tables.CITIZENS, { includeDeleted: includeDeleted }).map(function(person) {
@@ -90,12 +108,14 @@ Interface.ApiController = function(container) {
         record.householdId = record.householdCode;
       }
       record.status = record.status || 'ALIVE';
+      record.presenceStatus = presenceStatus(record.presenceStatus || record.currentStatus || record.residencyStatus);
       return record;
     }).filter(function(person) {
       if (expectedStatus && !personStatusMatches(person.status, expectedStatus)) return false;
+      if (expectedPresence && !presenceStatusMatches(person.presenceStatus, expectedPresence)) return false;
       if (householdFilter && normalizeText(person.householdId) !== householdFilter && normalizeText(person.householdCode) !== householdFilter && normalizeText(person.householdInternalId) !== householdFilter) return false;
       if (!keyword) return true;
-      return [person.id, person.citizenCode, person.fullName, person.identityNumber, person.phone, person.gender, person.dateOfBirth, person.relationship, person.currentAddress, person.permanentAddress, person.occupation, person.ethnicity, person.religion, person.educationLevel, person.maritalStatus, person.householdId, person.householdCode, person.householdAddress, person.householdHeadName, person.status, personStatus(person.status) === 'DECEASED' ? 'Đã chết' : 'Còn sống'].some(function(value) {
+      return [person.id, person.citizenCode, person.fullName, person.identityNumber, person.phone, person.gender, person.dateOfBirth, person.relationship, person.currentAddress, person.permanentAddress, person.occupation, person.ethnicity, person.religion, person.educationLevel, person.maritalStatus, person.householdId, person.householdCode, person.householdAddress, person.householdHeadName, person.status, person.presenceStatus, personStatus(person.status) === 'DECEASED' ? 'Đã chết' : 'Còn sống', presenceLabel(person.presenceStatus)].some(function(value) {
         return normalizeText(value).indexOf(keyword) >= 0;
       });
     });
