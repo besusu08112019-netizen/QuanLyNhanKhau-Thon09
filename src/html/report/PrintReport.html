@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <style>
+    @page { size: A4; margin: 16mm; }
+    body { font-family: Arial, sans-serif; color: #1f2933; font-size: 12px; }
+    .header { text-align: center; border-bottom: 2px solid #1f2933; padding-bottom: 10px; margin-bottom: 16px; }
+    .org { font-size: 12px; text-transform: uppercase; }
+    .title { font-size: 18px; font-weight: 700; text-transform: uppercase; margin-top: 6px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; color: #52606d; }
+    .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 16px; }
+    .summary div { border: 1px solid #cbd2d9; padding: 8px; background: #f8fafc; }
+    .summary strong { display: block; font-size: 16px; color: #102a43; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    th, td { border: 1px solid #cbd2d9; padding: 6px; vertical-align: top; }
+    th { background: #eef3f8; text-align: left; }
+    .footer { display: flex; justify-content: space-between; margin-top: 28px; }
+    .signature { width: 220px; text-align: center; }
+    @media print { .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="org">He thong Quan ly Nhan khau Thon 09</div>
+    <div class="title"><?= report.title ?></div>
+  </div>
+  <div class="meta">
+    <div>Ma bao cao: <?= report.id ?></div>
+    <div>Ngay xuat: <?= report.generatedAt ?></div>
+    <div>Nguoi xuat: <?= report.generatedBy ?></div>
+  </div>
+  <div class="summary">
+    <div>Tong ho<strong><?= report.summary.households || 0 ?></strong></div>
+    <div>Tong nhan khau<strong><?= report.summary.citizens || 0 ?></strong></div>
+    <div>Nam / Nu<strong><?= report.summary.male || 0 ?> / <?= report.summary.female || 0 ?></strong></div>
+    <div>Tam tru / Tam vang<strong><?= report.summary.temporaryResidence || 0 ?> / <?= report.summary.temporaryAbsence || 0 ?></strong></div>
+  </div>
+  <table>
+    <thead>
+      <tr><? for (var i = 0; i < report.columns.length; i++) { ?><th><?= report.columns[i] ?></th><? } ?></tr>
+    </thead>
+    <tbody>
+      <? if (!report.rows.length) { ?>
+        <tr><td colspan="<?= report.columns.length ?>">Khong co du lieu</td></tr>
+      <? } ?>
+      <? for (var r = 0; r < report.rows.length; r++) { ?>
+        <tr><? for (var c = 0; c < report.columns.length; c++) { ?><td><?= report.rows[r][c] || '' ?></td><? } ?></tr>
+      <? } ?>
+    </tbody>
+  </table>
+  <div class="footer">
+    <div></div>
+    <div class="signature">Nguoi lap bieu<br><br><br>________________</div>
+  </div>
+</body>
+</html>
