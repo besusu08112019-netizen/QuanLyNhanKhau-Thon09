@@ -9,11 +9,29 @@ function include(path) {
   return HtmlService.createHtmlOutputFromFile(path).getContent();
 }
 
+function sanitizeApiValue(value) {
+  if (value === undefined || value === null) return value === undefined ? null : value;
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return Utilities.formatDate(value, Domain.App.TIMEZONE, 'yyyy-MM-dd');
+  }
+  if (Array.isArray(value)) {
+    return value.map(function(item) { return sanitizeApiValue(item); });
+  }
+  if (typeof value === 'object') {
+    var output = {};
+    Object.keys(value).forEach(function(key) {
+      output[key] = sanitizeApiValue(value[key]);
+    });
+    return output;
+  }
+  return value;
+}
+
 function api(action, payload) {
   var container = Interface.Container();
   try {
     var result = Interface.ApiController(container).handle(action, payload || {});
-    return Entity.ok(result);
+    return Entity.ok(sanitizeApiValue(result));
   } catch (err) {
     try {
       container.logger.error('api', action, '', err.message, { stack: err.stack });
