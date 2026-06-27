@@ -13,23 +13,31 @@
 <body class="hold-transition sidebar-mini layout-fixed text-sm app-locked">
 <div id="loginView" class="login-gate">
   <div class="login-panel elevation-3">
-    <div class="login-brand">
-      <div class="login-logo-mark"><i class="fas fa-shield-halved"></i></div>
-      <div>
-        <h1>Quản Lý Nhân Khẩu Thôn 09 xã Hồng Phong</h1>
-        <p>Đăng nhập để vào hệ thống</p>
-      </div>
+    <div class="login-header">
+      <div class="login-emblem"><i class="fas fa-landmark"></i></div>
+      <div class="login-agency">ỦY BAN NHÂN DÂN XÃ HỒNG PHONG</div>
+      <h1>Quản Lý Nhân Khẩu Thôn 09</h1>
+      <p>Hệ thống thông tin phục vụ công tác quản lý hành chính cơ sở</p>
     </div>
-    <form id="loginForm" class="login-form">
+    <form id="loginForm" class="login-form" autocomplete="on">
       <div class="form-group">
-        <label>Tài khoản Google</label>
+        <label for="loginUsername">Tài khoản</label>
         <div class="input-group">
-          <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
-          <input class="form-control" value="Tài khoản đang mở WebApp" readonly>
+          <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user-tie"></i></span></div>
+          <input id="loginUsername" name="username" class="form-control" type="text" inputmode="email" autocomplete="username" placeholder="Nhập email hoặc tài khoản được cấp" required>
         </div>
       </div>
-      <button id="btnLogin" class="btn btn-primary btn-block btn-material" type="submit"><i class="fas fa-right-to-bracket mr-1"></i> Đăng nhập</button>
-      <div id="loginMessage" class="login-message"></div>
+      <div class="form-group">
+        <label for="loginPassword">Mật khẩu</label>
+        <div class="input-group">
+          <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-lock"></i></span></div>
+          <input id="loginPassword" name="password" class="form-control" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required>
+          <div class="input-group-append"><button id="btnTogglePassword" class="btn btn-outline-secondary" type="button" title="Hiện/ẩn mật khẩu"><i class="fas fa-eye"></i></button></div>
+        </div>
+      </div>
+      <button id="btnLogin" class="btn btn-primary btn-block btn-material" type="submit"><i class="fas fa-right-to-bracket mr-1"></i> Đăng nhập hệ thống</button>
+      <div id="loginMessage" class="login-message" role="alert"></div>
+      <div class="login-note">Tài khoản do quản trị viên hệ thống cấp. Không chia sẻ mật khẩu cho người khác.</div>
     </form>
   </div>
 </div>
@@ -102,46 +110,115 @@
   }, true);
 })();
 (function() {
+  var TOKEN_KEY = 'thon09AuthToken';
+  var USER_KEY = 'thon09AuthUser';
+
+  window.Thon09Auth = {
+    token: function() { return sessionStorage.getItem(TOKEN_KEY) || ''; },
+    user: function() {
+      try { return JSON.parse(sessionStorage.getItem(USER_KEY) || 'null'); } catch (err) { return null; }
+    },
+    attach: function(payload) {
+      payload = Object.assign({}, payload || {});
+      var token = this.token();
+      if (token) payload._authToken = token;
+      return payload;
+    },
+    save: function(data) {
+      sessionStorage.setItem(TOKEN_KEY, data.token || '');
+      sessionStorage.setItem(USER_KEY, JSON.stringify(data.user || {}));
+    },
+    clear: function() {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USER_KEY);
+      sessionStorage.removeItem('thon09Authenticated');
+    }
+  };
+
+  window.Thon09AttachAuth = function(payload) {
+    return window.Thon09Auth.attach(payload);
+  };
+
+  function setCurrentUser(user) {
+    var current = document.getElementById('currentUser');
+    if (!current) return;
+    current.textContent = user ? ((user.displayName || user.email) + ' | ' + (user.roleLabel || user.role || '')) : '';
+  }
+
   function showLogin(message) {
     document.body.classList.add('app-locked');
     document.body.classList.remove('app-authenticated');
-    sessionStorage.removeItem('thon09Authenticated');
+    window.Thon09Auth.clear();
+    setCurrentUser(null);
     var box = document.getElementById('loginMessage');
     if (box) box.textContent = message || '';
   }
-  function showApp() {
+
+  function showApp(user) {
     document.body.classList.remove('app-locked');
     document.body.classList.add('app-authenticated');
     sessionStorage.setItem('thon09Authenticated', '1');
+    setCurrentUser(user || window.Thon09Auth.user());
     if (window.Thon09App && typeof window.Thon09App.start === 'function') window.Thon09App.start();
   }
+
+  function api(action, payload, success, failure) {
+    google.script.run.withSuccessHandler(function(response) {
+      if (!response || !response.ok) {
+        failure(response && response.error ? response.error.message : 'Không nhận được phản hồi từ hệ thống');
+        return;
+      }
+      success(response.data);
+    }).withFailureHandler(function(error) {
+      failure(error && error.message ? error.message : 'Không thể kết nối hệ thống');
+    }).api(action, window.Thon09AttachAuth(payload || {}));
+  }
+
   function login() {
     var button = document.getElementById('btnLogin');
     var message = document.getElementById('loginMessage');
+    var username = document.getElementById('loginUsername').value.trim();
+    var password = document.getElementById('loginPassword').value;
     if (button) button.disabled = true;
-    if (message) message.textContent = 'Đang kiểm tra tài khoản...';
-    google.script.run.withSuccessHandler(function(response) {
+    if (message) message.textContent = 'Đang xác thực tài khoản...';
+    api('auth.login', { username: username, password: password }, function(data) {
       if (button) button.disabled = false;
-      if (!response || !response.ok) {
-        showLogin(response && response.error ? response.error.message : 'Không thể đăng nhập');
-        return;
-      }
+      window.Thon09Auth.save(data || {});
       if (message) message.textContent = '';
-      showApp();
-    }).withFailureHandler(function(error) {
+      document.getElementById('loginPassword').value = '';
+      showApp(data.user);
+    }, function(errorMessage) {
       if (button) button.disabled = false;
-      showLogin(error && error.message ? error.message : 'Không thể đăng nhập');
-    }).api('user.me', {});
+      if (message) message.textContent = errorMessage || 'Không thể đăng nhập';
+    });
   }
+
+  function restoreSession() {
+    var token = window.Thon09Auth.token();
+    if (!token) return;
+    api('user.me', {}, function(user) {
+      showApp(user);
+    }, function() {
+      showLogin('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    });
+  }
+
   document.getElementById('loginForm').addEventListener('submit', function(event) {
     event.preventDefault();
     login();
   });
+  document.getElementById('btnTogglePassword').addEventListener('click', function() {
+    var input = document.getElementById('loginPassword');
+    var icon = this.querySelector('i');
+    var visible = input.type === 'text';
+    input.type = visible ? 'password' : 'text';
+    icon.className = visible ? 'fas fa-eye' : 'fas fa-eye-slash';
+  });
   document.getElementById('btnLogout').addEventListener('click', function(event) {
     event.preventDefault();
-    showLogin('Đã đăng xuất khỏi giao diện.');
+    api('auth.logout', {}, function() { showLogin('Đã đăng xuất khỏi hệ thống.'); }, function() { showLogin('Đã đăng xuất khỏi hệ thống.'); });
   });
-  if (sessionStorage.getItem('thon09Authenticated') === '1') login();
+  restoreSession();
 })();
 </script>
 </body>
