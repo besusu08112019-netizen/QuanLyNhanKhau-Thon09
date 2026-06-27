@@ -10,7 +10,6 @@ Infrastructure.HouseholdRepository = function(db) {
     return [
       household.householdCode,
       household.address,
-      household.hamlet,
       household.phone,
       household.areaCode,
       household.note
