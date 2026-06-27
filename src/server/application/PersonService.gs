@@ -1,6 +1,9 @@
 var Application = Application || {};
 
 Application.PersonService = function(personRepository, householdRepository, logger) {
+  var PERSON_STATUS_ALIVE = 'ALIVE';
+  var PERSON_STATUS_DECEASED = 'DECEASED';
+
   function normalizeText(value) {
     return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
@@ -11,6 +14,14 @@ Application.PersonService = function(personRepository, householdRepository, logg
     if (normalized === 'nu' || normalized === 'female') return 'Nữ';
     if (normalized === 'khac' || normalized === 'other') return 'Khác';
     return String(value || '').trim();
+  }
+
+  function normalizeStatus(value) {
+    var normalized = normalizeText(value);
+    if (!normalized || normalized === 'active' || normalized === 'alive' || normalized === 'con song') return PERSON_STATUS_ALIVE;
+    if (normalized === 'inactive' || normalized === 'deceased' || normalized === 'dead' || normalized === 'da chet' || normalized === 'mat') return PERSON_STATUS_DECEASED;
+    if (normalized === 'deleted') return Domain.Status.DELETED;
+    return String(value || '').trim().toUpperCase();
   }
 
   function clean(data) {
@@ -34,7 +45,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       currentAddress: String(data.currentAddress || '').trim(),
       educationLevel: String(data.educationLevel || '').trim(),
       maritalStatus: String(data.maritalStatus || '').trim(),
-      status: data.status || Domain.Status.ACTIVE
+      status: normalizeStatus(data.status)
     };
   }
 
@@ -62,7 +73,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
     if (data.phone && !/^[0-9+() .-]{8,20}$/.test(data.phone)) {
       throw new Error('Số điện thoại không hợp lệ');
     }
-    if ([Domain.Status.ACTIVE, Domain.Status.INACTIVE, Domain.Status.DELETED].indexOf(data.status) === -1) {
+    if ([PERSON_STATUS_ALIVE, PERSON_STATUS_DECEASED, Domain.Status.DELETED].indexOf(data.status) === -1) {
       throw new Error('Trạng thái nhân khẩu không hợp lệ');
     }
     var household = resolveHousehold(data.householdId);
@@ -80,6 +91,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
 
   function listPage(query) {
     query = Object.assign({}, query || {});
+    if (query.status) query.status = normalizeStatus(query.status);
     if (query.householdId || query.householdCode) {
       var household = resolveHousehold(query.householdId || query.householdCode);
       query.householdId = household ? household.householdCode : '__HOUSEHOLD_NOT_FOUND__';
@@ -137,7 +149,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       if (!id) throw new Error('Thiếu ID nhân khẩu');
       var existing = personRepository.findById(id, { includeDeleted: true });
       if (!existing) throw new Error('Không tìm thấy nhân khẩu: ' + id);
-      var payload = clean(Object.assign({}, existing, { status: Domain.Status.ACTIVE, deletedAt: '', deletedBy: '' }));
+      var payload = clean(Object.assign({}, existing, { status: PERSON_STATUS_ALIVE, deletedAt: '', deletedBy: '' }));
       validate(payload, id);
       var record = Entity.withUpdateAudit(existing, payload);
       record.deletedAt = '';
