@@ -26,16 +26,40 @@ Infrastructure.Database = function() {
     return spreadsheet;
   }
 
+  function currentHeaders(sheet) {
+    var lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) return [];
+    return sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function(header) { return String(header || '').trim(); });
+  }
+
+  function syncHeaders(sheet, tableName, headers) {
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(headers);
+      sheet.setFrozenRows(1);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#e8f0fe');
+      return;
+    }
+    var existing = currentHeaders(sheet);
+    if (tableName === Domain.Tables.HOUSEHOLDS) {
+      for (var i = existing.length - 1; i >= 0; i--) {
+        if (existing[i] === 'hamlet') sheet.deleteColumn(i + 1);
+      }
+      existing = currentHeaders(sheet);
+    }
+    var same = existing.length === headers.length && headers.every(function(header, index) { return existing[index] === header; });
+    if (!same) {
+      if (sheet.getLastColumn() < headers.length) sheet.insertColumnsAfter(sheet.getLastColumn(), headers.length - sheet.getLastColumn());
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold').setBackground('#e8f0fe');
+    }
+    sheet.setFrozenRows(1);
+  }
+
   function getSheet(tableName) {
     var spreadsheet = getSpreadsheet();
     var sheet = spreadsheet.getSheetByName(tableName) || spreadsheet.insertSheet(tableName);
     var headers = Domain.Schema[tableName];
     if (!headers) throw new Error('Bang khong hop le: ' + tableName);
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(headers);
-      sheet.setFrozenRows(1);
-      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#e8f0fe');
-    }
+    syncHeaders(sheet, tableName, headers);
     return sheet;
   }
 
