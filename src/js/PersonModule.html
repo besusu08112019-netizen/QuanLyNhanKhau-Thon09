@@ -1,0 +1,232 @@
+<script>
+(function() {
+  var state = { page: 1, pageSize: 20, keyword: '', householdId: '', status: '' };
+  var statusLabels = { ACTIVE: 'Đang hoạt động', INACTIVE: 'Tạm ngưng', DELETED: 'Đã xóa' };
+  var genderOptions = ['Nam', 'Nữ', 'Khác'];
+  var relationshipOptions = ['Chủ hộ','Vợ','Chồng','Con','Cha','Mẹ','Ông','Bà','Anh','Chị','Em','Cháu','Dâu','Rể','Người thân khác','Người thuê trọ','Tạm trú','Khác'];
+  var educationOptions = ['Chưa đi học','Mầm non','Tiểu học','THCS','THPT','Trung cấp','Cao đẳng','Đại học','Sau đại học','Không rõ'];
+  var maritalOptions = ['Chưa kết hôn','Đã kết hôn','Ly hôn','Ly thân','Góa','Không rõ'];
+  var ethnicityOptions = ['Kinh','Tày','Thái','Mường','Khmer','Hoa','Nùng','Hmong','Dao','Gia Rai','Ê Đê','Ba Na','Sán Chay','Chăm','Cơ Ho','Xơ Đăng','Sán Dìu','Hrê','Ra Glai','Mnông','Thổ','Xtiêng','Kháng','Khơ Mú','Bru-Vân Kiều','Cơ Tu','Giáy','Tà Ôi','Mạ','Giẻ Triêng','Co','Chơ Ro','Xinh Mun','Hà Nhì','Chu Ru','Lào','La Chí','La Ha','Phù Lá','La Hủ','Lự','Lô Lô','Chứt','Mảng','Pà Thẻn','Cơ Lao','Cống','Bố Y','Si La','Pu Péo','Brâu','Rơ Măm','Ơ Đu','Ngái'];
+  var religionOptions = ['Không','Phật giáo','Công giáo','Tin Lành','Cao Đài','Phật giáo Hòa Hảo','Hồi giáo','Bà La Môn','Baha\'i','Bửu Sơn Kỳ Hương','Tịnh độ Cư sĩ Phật hội','Minh Sư Đạo','Minh Lý Đạo','Khác'];
+  var occupationOptions = ['Chưa có việc làm','Học sinh/Sinh viên','Cán bộ/Công chức/Viên chức','Công nhân','Nông dân','Kinh doanh/Buôn bán','Lao động tự do','Giáo viên','Nhân viên văn phòng','Y tế','Kỹ sư/Kỹ thuật','Dịch vụ','Tài xế/Vận tải','Công an/Quân đội','Nội trợ','Hưu trí','Khác'];
+  var personFields = [
+    { name: 'citizenCode', label: 'Mã nhân khẩu', required: true },
+    { name: 'householdId', label: 'Mã hộ/ID hộ', required: true },
+    { name: 'fullName', label: 'Họ và tên', required: true },
+    { name: 'gender', label: 'Giới tính', required: true, options: genderOptions },
+    { name: 'dateOfBirth', label: 'Ngày sinh', required: true, type: 'date' },
+    { name: 'identityNumber', label: 'CCCD/CMND' },
+    { name: 'identityIssueDate', label: 'Ngày cấp', type: 'date' },
+    { name: 'identityIssuePlace', label: 'Nơi cấp' },
+    { name: 'relationship', label: 'Quan hệ với chủ hộ', required: true, options: relationshipOptions },
+    { name: 'phone', label: 'Điện thoại' },
+    { name: 'ethnicity', label: 'Dân tộc', options: ethnicityOptions },
+    { name: 'religion', label: 'Tôn giáo', options: religionOptions },
+    { name: 'occupation', label: 'Nghề nghiệp', options: occupationOptions },
+    { name: 'educationLevel', label: 'Học vấn', options: educationOptions },
+    { name: 'maritalStatus', label: 'Hôn nhân', options: maritalOptions },
+    { name: 'permanentAddress', label: 'Thường trú', full: true },
+    { name: 'currentAddress', label: 'Nơi ở hiện nay', full: true }
+  ];
+
+  function el(id) { return document.getElementById(id); }
+  function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s]); }); }
+  function debounce(fn, delay) { var timer; return function() { var args = arguments; clearTimeout(timer); timer = setTimeout(function() { fn.apply(null, args); }, delay || 250); }; }
+  function status(value) { return '<span class="status-pill status-' + html(value || 'ACTIVE') + '">' + html(statusLabels[value] || value || 'Đang hoạt động') + '</span>'; }
+  function setLoading(active) {
+    var layer = el('loadingLayer');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'loadingLayer';
+      layer.className = 'loading-layer';
+      layer.innerHTML = '<div class="spinner-border text-primary"></div>';
+      document.body.appendChild(layer);
+    }
+    layer.classList.toggle('active', !!active);
+  }
+  function toast(message, kind) {
+    var host = document.querySelector('.toast-host') || document.body.appendChild(document.createElement('div'));
+    host.className = 'toast-host';
+    var node = document.createElement('div');
+    node.className = 'alert alert-' + (kind || 'info') + ' shadow-sm';
+    node.textContent = message;
+    host.appendChild(node);
+    setTimeout(function() { node.remove(); }, 3500);
+  }
+  function api(action, payload) {
+    setLoading(true);
+    return new Promise(function(resolve, reject) {
+      google.script.run.withSuccessHandler(function(response) {
+        setLoading(false);
+        if (!response || !response.ok) {
+          reject(new Error(response && response.error ? response.error.message : 'Không nhận được phản hồi từ hệ thống'));
+          return;
+        }
+        resolve(response.data);
+      }).withFailureHandler(function(error) {
+        setLoading(false);
+        reject(new Error(error && error.message ? error.message : 'Không gọi được máy chủ'));
+      }).api(action, payload || {});
+    });
+  }
+  function activate() {
+    document.querySelectorAll('[data-route]').forEach(function(item) { item.classList.toggle('active', item.getAttribute('data-route') === 'citizen'); });
+    if (el('pageTitle')) el('pageTitle').textContent = 'Quản lý nhân khẩu';
+  }
+  function normalizePage(result) {
+    result = result || {};
+    if (Array.isArray(result)) result = { items: result, total: result.length, page: 1, pageSize: result.length || state.pageSize, totalPages: 1 };
+    result.items = result.items || [];
+    result.page = Number(result.page || state.page || 1);
+    result.pageSize = Number(result.pageSize || state.pageSize || 20);
+    result.total = Number(result.total || result.items.length || 0);
+    result.totalPages = Math.max(Number(result.totalPages || Math.ceil(result.total / result.pageSize) || 1), 1);
+    return result;
+  }
+  function pager(meta) {
+    return '<div class="pagination-bar"><div class="text-muted">Tổng ' + html(meta.total) + ' nhân khẩu</div><div class="btn-group btn-group-sm">' +
+      '<button class="btn btn-outline-secondary" id="personPrev" title="Trang trước" ' + (meta.page <= 1 ? 'disabled' : '') + '><i class="fas fa-chevron-left"></i></button>' +
+      '<button class="btn btn-outline-secondary" disabled>Trang ' + html(meta.page) + '/' + html(meta.totalPages) + '</button>' +
+      '<button class="btn btn-outline-secondary" id="personNext" title="Trang sau" ' + (meta.page >= meta.totalPages ? 'disabled' : '') + '><i class="fas fa-chevron-right"></i></button>' +
+      '</div></div>';
+  }
+  function renderTable(result) {
+    var rows = result.items || [];
+    var body = rows.length ? rows.map(function(row) {
+      return '<tr>' +
+        '<td>' + html(row.citizenCode) + '</td>' +
+        '<td>' + html(row.fullName) + '</td>' +
+        '<td>' + html(row.identityNumber) + '</td>' +
+        '<td>' + html(row.householdCode || row.householdId) + '</td>' +
+        '<td>' + html(row.gender) + '</td>' +
+        '<td>' + html(row.dateOfBirth) + '</td>' +
+        '<td>' + html(row.relationship) + '</td>' +
+        '<td>' + html(row.phone) + '</td>' +
+        '<td>' + status(row.status) + '</td>' +
+        '<td class="action-cell">' + actions(row) + '</td>' +
+      '</tr>';
+    }).join('') : '<tr><td colspan="10" class="text-center text-muted p-4">Không có dữ liệu nhân khẩu</td></tr>';
+    return '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Hộ dân</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
+  }
+  function actions(row) {
+    if (row.status === 'DELETED') return '<button class="btn btn-outline-success btn-xs" title="Khôi phục" data-person-restore="' + html(row.id) + '"><i class="fas fa-rotate-left"></i></button>';
+    return '<button class="btn btn-outline-primary btn-xs" title="Sửa" data-person-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-danger btn-xs" title="Xóa" data-person-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>';
+  }
+  function optionValue(option) { return typeof option === 'object' ? option.value : option; }
+  function optionLabel(option) { return typeof option === 'object' ? option.label : option; }
+  function control(field, values) {
+    var value = String((values || {})[field.name] || '');
+    if (field.options) {
+      var hasCurrent = !value || field.options.some(function(option) { return String(optionValue(option)) === value; });
+      return '<select class="form-control" name="' + html(field.name) + '" ' + (field.required ? 'required' : '') + '><option value="">-- Chọn --</option>' +
+        (hasCurrent ? '' : '<option value="' + html(value) + '" selected>' + html(value) + '</option>') +
+        field.options.map(function(option) {
+          var optValue = String(optionValue(option));
+          return '<option value="' + html(optValue) + '" ' + (optValue === value ? 'selected' : '') + '>' + html(optionLabel(option)) + '</option>';
+        }).join('') + '</select>';
+    }
+    return '<input type="' + html(field.type || 'text') + '" class="form-control" name="' + html(field.name) + '" value="' + html(value) + '" ' + (field.required ? 'required' : '') + '>';
+  }
+  function modalForm(title, values, onSubmit) {
+    var markup = '<div class="modal fade" id="personModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">' + html(title) + '</h5><button type="button" class="close" data-dismiss="modal" aria-label="Đóng">&times;</button></div><div class="modal-body"><form id="personForm"><div class="form-grid">' + personFields.map(function(field) {
+      return '<div class="form-group' + (field.full ? ' full' : '') + '"><label>' + html(field.label) + '</label>' + control(field, values) + '</div>';
+    }).join('') + '</div><button class="btn btn-primary btn-material" type="submit"><i class="fas fa-save"></i> Lưu</button></form></div></div></div></div>';
+    document.body.insertAdjacentHTML('beforeend', markup);
+    $('#personModal').modal('show').on('hidden.bs.modal', function() { this.remove(); });
+    el('personForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var payload = Array.from(event.target.elements).reduce(function(acc, input) {
+        if (input.name) acc[input.name] = input.value;
+        return acc;
+      }, {});
+      try { validate(payload); } catch (err) { toast(err.message, 'warning'); return; }
+      onSubmit(payload);
+    });
+  }
+  function validate(payload) {
+    if (!payload.citizenCode || !/^[A-Za-z0-9._-]{2,30}$/.test(payload.citizenCode)) throw new Error('Mã nhân khẩu không hợp lệ');
+    if (!payload.householdId) throw new Error('Cần nhập Mã hộ hoặc ID hộ');
+    if (!payload.fullName || payload.fullName.trim().length < 2) throw new Error('Họ tên phải có ít nhất 2 ký tự');
+    if (!payload.gender) throw new Error('Cần chọn giới tính');
+    if (!payload.dateOfBirth) throw new Error('Cần nhập ngày sinh');
+    if (!payload.relationship) throw new Error('Cần chọn quan hệ với chủ hộ');
+    if (payload.identityNumber && !/^\d{9}$|^\d{12}$/.test(payload.identityNumber)) throw new Error('CCCD/CMND phải gồm 9 hoặc 12 chữ số');
+    if (payload.phone && !/^[0-9+() .-]{8,20}$/.test(payload.phone)) throw new Error('Số điện thoại không hợp lệ');
+  }
+  function refresh() {
+    state.includeDeleted = state.status === 'DELETED';
+    api('person.page', state).then(function(result) {
+      result = normalizePage(result);
+      var grid = el('grid');
+      if (!grid) return;
+      grid.innerHTML = renderTable(result);
+      bindRows(result);
+    }).catch(function(error) {
+      var grid = el('grid');
+      if (grid) grid.innerHTML = '<div class="alert alert-danger">Không tải được danh sách nhân khẩu: ' + html(error.message) + '</div>';
+      toast(error.message, 'danger');
+    });
+  }
+  function bindRows(result) {
+    document.querySelectorAll('[data-person-edit]').forEach(function(btn) {
+      btn.onclick = function() {
+        var row = result.items.filter(function(item) { return item.id === btn.dataset.personEdit; })[0];
+        modalForm('Cập nhật nhân khẩu', row, function(payload) {
+          payload.id = row.id;
+          api('person.update', payload).then(function() { $('#personModal').modal('hide'); toast('Đã cập nhật nhân khẩu', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); });
+        });
+      };
+    });
+    document.querySelectorAll('[data-person-delete]').forEach(function(btn) {
+      btn.onclick = function() {
+        if (!confirm('Xác nhận xóa mềm nhân khẩu này?')) return;
+        api('person.delete', { id: btn.dataset.personDelete }).then(function() { toast('Đã xóa nhân khẩu', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); });
+      };
+    });
+    document.querySelectorAll('[data-person-restore]').forEach(function(btn) {
+      btn.onclick = function() {
+        api('person.restore', { id: btn.dataset.personRestore }).then(function() { state.status = ''; toast('Đã khôi phục nhân khẩu', 'success'); render(); }).catch(function(error) { toast(error.message, 'danger'); });
+      };
+    });
+    if (el('personPrev')) el('personPrev').onclick = function() { if (state.page > 1) { state.page -= 1; refresh(); } };
+    if (el('personNext')) el('personNext').onclick = function() { if (state.page < result.totalPages) { state.page += 1; refresh(); } };
+  }
+  function render() {
+    activate();
+    var app = el('app');
+    if (!app) return;
+    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ hoặc ID hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option><option value="DELETED">Đã xóa</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
+    el('personKeyword').value = state.keyword;
+    el('personHousehold').value = state.householdId;
+    el('personStatus').value = state.status;
+    el('personPageSize').value = state.pageSize;
+    el('btnCreatePerson').onclick = function() {
+      modalForm('Thêm nhân khẩu', {}, function(payload) {
+        api('person.create', payload).then(function() {
+          $('#personModal').modal('hide');
+          state.keyword = '';
+          state.householdId = '';
+          state.status = '';
+          state.page = 1;
+          toast('Đã thêm nhân khẩu', 'success');
+          render();
+        }).catch(function(error) { toast(error.message, 'danger'); });
+      });
+    };
+    el('personKeyword').oninput = debounce(function() { state.keyword = this.value; state.page = 1; refresh(); }, 300);
+    el('personHousehold').oninput = debounce(function() { state.householdId = this.value; state.page = 1; refresh(); }, 300);
+    el('personStatus').onchange = function() { state.status = this.value; state.page = 1; refresh(); };
+    el('personPageSize').onchange = function() { state.pageSize = parseInt(this.value, 10); state.page = 1; refresh(); };
+    refresh();
+  }
+
+  document.addEventListener('click', function(event) {
+    var link = event.target.closest('[data-route="citizen"]');
+    if (!link) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    render();
+  }, true);
+  window.Thon09PersonModule = { render: render, refresh: refresh };
+})();
+</script>
