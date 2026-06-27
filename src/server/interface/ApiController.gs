@@ -5,11 +5,13 @@ Interface.Container = function() {
   var logger = Application.LogService(db);
   var security = Application.SecurityService(db);
   var householdRepository = Infrastructure.HouseholdRepository(db);
+  var personRepository = Infrastructure.PersonRepository(db);
   return {
     db: db,
     logger: logger,
     security: security,
     household: Application.HouseholdService(householdRepository, logger),
+    person: Application.PersonService(personRepository, householdRepository, logger),
     registry: Application.RegistryService(db, logger),
     reports: Application.ReportService(db),
     backup: Application.BackupService(db, logger),
@@ -26,10 +28,16 @@ Interface.ApiController = function(container) {
     'household.create': [Domain.Modules.HOUSEHOLD, Domain.Actions.CREATE, function(payload) { return container.household.create(payload); }],
     'household.update': [Domain.Modules.HOUSEHOLD, Domain.Actions.UPDATE, function(payload) { return container.household.update(payload.id, payload); }],
     'household.delete': [Domain.Modules.HOUSEHOLD, Domain.Actions.DELETE, function(payload) { return container.household.remove(payload.id); }],
-    'citizen.list': [Domain.Modules.CITIZEN, Domain.Actions.READ, function(payload) { return container.registry.listCitizens(payload); }],
-    'citizen.create': [Domain.Modules.CITIZEN, Domain.Actions.CREATE, function(payload) { return container.registry.createCitizen(payload); }],
-    'citizen.update': [Domain.Modules.CITIZEN, Domain.Actions.UPDATE, function(payload) { return container.registry.updateCitizen(payload.id, payload); }],
-    'citizen.delete': [Domain.Modules.CITIZEN, Domain.Actions.DELETE, function(payload) { return container.registry.deleteCitizen(payload.id); }],
+    'person.page': [Domain.Modules.CITIZEN, Domain.Actions.READ, function(payload) { return container.person.listPage(payload); }],
+    'person.get': [Domain.Modules.CITIZEN, Domain.Actions.READ, function(payload) { return container.person.get(payload.id); }],
+    'person.create': [Domain.Modules.CITIZEN, Domain.Actions.CREATE, function(payload) { return container.person.create(payload); }],
+    'person.update': [Domain.Modules.CITIZEN, Domain.Actions.UPDATE, function(payload) { return container.person.update(payload.id, payload); }],
+    'person.delete': [Domain.Modules.CITIZEN, Domain.Actions.DELETE, function(payload) { return container.person.remove(payload.id); }],
+    'person.restore': [Domain.Modules.CITIZEN, Domain.Actions.UPDATE, function(payload) { return container.person.restore(payload.id); }],
+    'citizen.list': [Domain.Modules.CITIZEN, Domain.Actions.READ, function(payload) { return container.person.listPage(Object.assign({ page: 1, pageSize: 100 }, payload || {})).items; }],
+    'citizen.create': [Domain.Modules.CITIZEN, Domain.Actions.CREATE, function(payload) { return container.person.create(payload); }],
+    'citizen.update': [Domain.Modules.CITIZEN, Domain.Actions.UPDATE, function(payload) { return container.person.update(payload.id, payload); }],
+    'citizen.delete': [Domain.Modules.CITIZEN, Domain.Actions.DELETE, function(payload) { return container.person.remove(payload.id); }],
     'movement.list': [Domain.Modules.MOVEMENT, Domain.Actions.READ, function(payload) { return container.registry.listMovements(payload); }],
     'movement.create': [Domain.Modules.MOVEMENT, Domain.Actions.CREATE, function(payload) { return container.registry.createMovement(payload); }],
     'movement.update': [Domain.Modules.MOVEMENT, Domain.Actions.UPDATE, function(payload) { return container.registry.updateMovement(payload.id, payload); }],
