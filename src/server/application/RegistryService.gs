@@ -1,6 +1,19 @@
 var Application = Application || {};
 
 Application.RegistryService = function(db, logger) {
+  function normalize(value) {
+    return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function resolveHouseholdCode(value) {
+    var key = normalize(value);
+    if (!key) return '';
+    var household = db.readAll(Domain.Tables.HOUSEHOLDS, { includeDeleted: true }).filter(function(item) {
+      return normalize(item.householdCode) === key || normalize(item.id) === key;
+    })[0] || null;
+    return household ? household.householdCode : String(value || '').trim().toUpperCase();
+  }
+
   function list(tableName, filters) {
     var rows = db.readAll(tableName);
     filters = filters || {};
@@ -47,7 +60,9 @@ Application.RegistryService = function(db, logger) {
 
   function createMovement(data) {
     return Infrastructure.withLock(function() {
-      var movement = Entity.withCreateAudit(Domain.Tables.MOVEMENTS, data || {});
+      var payload = Object.assign({}, data || {});
+      if (payload.householdId) payload.householdId = resolveHouseholdCode(payload.householdId);
+      var movement = Entity.withCreateAudit(Domain.Tables.MOVEMENTS, payload);
       db.append(Domain.Tables.MOVEMENTS, movement);
       if (movement.citizenId) {
         var citizen = db.findById(Domain.Tables.CITIZENS, movement.citizenId, { includeDeleted: true });
