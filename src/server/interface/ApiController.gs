@@ -71,7 +71,7 @@ Interface.ApiController = function(container) {
     'user.changePassword': [Domain.Modules.USER, Domain.Actions.UPDATE, function(payload) { return container.admin.changePassword(payload.id, payload.password); }],
     'permission.list': [Domain.Modules.PERMISSION, Domain.Actions.READ, function() { return container.db.readAll(Domain.Tables.PERMISSIONS); }],
     'permission.update': [Domain.Modules.PERMISSION, Domain.Actions.UPDATE, function(payload) { return container.admin.updatePermission(payload.id, payload); }],
-    'logs.list': [Domain.Modules.LOGS, Domain.Actions.READ, function(payload) { return container.logger.search(Object.assign({ page: 1, pageSize: 500 }, payload || {})); }],
+    'logs.list': [Domain.Modules.LOGS, Domain.Actions.READ, function(payload) { return container.logger.search(Object.assign({ page: 1, pageSize: 500 }, payload || {})).items; }],
     'logs.search': [Domain.Modules.LOGS, Domain.Actions.READ, function(payload) { return container.logger.search(payload); }],
     'settings.get': [Domain.Modules.SETTINGS, Domain.Actions.READ, function() { return container.system.getSettings(); }],
     'settings.list': [Domain.Modules.SETTINGS, Domain.Actions.READ, function() { return container.system.listSettings(); }],
