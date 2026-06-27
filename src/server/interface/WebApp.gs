@@ -28,7 +28,15 @@ function setup() {
     db.sheet(tableName);
   });
   Application.seedDefaultPermissions(db);
-  var security = Application.SecurityService(db);
+  var logger = Application.LogService(db);
+  var security = Application.SecurityService(db, logger);
   var user = security.currentUser();
+  Application.SystemService(db, logger).saveSettings({ systemName: Domain.App.NAME, hamletName: 'Thon 09' });
   return Entity.ok({ spreadsheetId: db.spreadsheet().getId(), admin: user.email });
+}
+
+function dailyBackup() {
+  var db = Infrastructure.Database();
+  var logger = Application.LogService(db);
+  return Application.BackupService(db, logger).dailyBackup();
 }
