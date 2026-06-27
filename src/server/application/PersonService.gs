@@ -30,6 +30,12 @@ Application.PersonService = function(personRepository, householdRepository, logg
     return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
+  function resolveHousehold(value) {
+    var key = String(value || '').trim();
+    if (!key) return null;
+    return householdRepository.findById(key) || householdRepository.findByCode(key);
+  }
+
   function validate(data, existingId) {
     Entity.assertRequired(Domain.Tables.CITIZENS, data);
     if (!/^[A-Z0-9._-]{2,30}$/.test(data.citizenCode)) {
@@ -51,10 +57,11 @@ Application.PersonService = function(personRepository, householdRepository, logg
     if ([Domain.Status.ACTIVE, Domain.Status.INACTIVE, Domain.Status.DELETED].indexOf(data.status) === -1) {
       throw new Error('Trang thai nhan khau khong hop le');
     }
-    var household = householdRepository.findById(data.householdId);
+    var household = resolveHousehold(data.householdId);
     if (!household) {
       throw new Error('Ho dan khong ton tai hoac da bi xoa');
     }
+    data.householdId = household.id;
     if (data.identityNumber) {
       var duplicate = personRepository.findByIdentityNumber(data.identityNumber, { includeDeleted: true });
       if (duplicate && duplicate.id !== existingId && duplicate.status !== Domain.Status.DELETED) {
@@ -64,7 +71,12 @@ Application.PersonService = function(personRepository, householdRepository, logg
   }
 
   function listPage(query) {
-    return personRepository.listPage(query || {});
+    query = Object.assign({}, query || {});
+    if (query.householdId) {
+      var household = resolveHousehold(query.householdId);
+      query.householdId = household ? household.id : '__HOUSEHOLD_NOT_FOUND__';
+    }
+    return personRepository.listPage(query);
   }
 
   function get(id) {
