@@ -75,18 +75,35 @@
       handler(payload);
     });
   }
+  function optionValue(option) { return typeof option === 'object' ? option.value : option; }
+  function optionLabel(option) { return typeof option === 'object' ? option.label : option; }
+  function control(field, values) {
+    var value = String((values || {})[field.name] || '');
+    if (field.options) {
+      return '<select class="form-control" name="' + html(field.name) + '" ' + (field.required ? 'required' : '') + '><option value="">-- Chon --</option>' + field.options.map(function(option) {
+        var optValue = String(optionValue(option));
+        return '<option value="' + html(optValue) + '" ' + (optValue === value ? 'selected' : '') + '>' + html(optionLabel(option)) + '</option>';
+      }).join('') + '</select>';
+    }
+    var type = field.type || 'text';
+    return '<input type="' + html(type) + '" class="form-control" name="' + html(field.name) + '" value="' + html(value) + '" ' + (field.required ? 'required' : '') + '>';
+  }
   function modalForm(title, fields, values, onSubmit) {
     var id = 'modalForm';
     var body = '<form id="entityForm"><div class="form-grid">' + fields.map(function(field) {
       var cls = field.full ? ' full' : '';
-      var type = field.type || 'text';
-      return '<div class="form-group' + cls + '"><label>' + html(field.label) + '</label><input type="' + html(type) + '" class="form-control" name="' + html(field.name) + '" value="' + html((values || {})[field.name] || '') + '" ' + (field.required ? 'required' : '') + '></div>';
+      return '<div class="form-group' + cls + '"><label>' + html(field.label) + '</label>' + control(field, values) + '</div>';
     }).join('') + '</div><button class="btn btn-primary btn-material" type="submit">Luu</button></form>';
     var markup = '<div class="modal fade" id="' + id + '" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">' + html(title) + '</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div><div class="modal-body">' + body + '</div></div></div></div>';
     document.body.insertAdjacentHTML('beforeend', markup);
     $('#' + id).modal('show').on('hidden.bs.modal', function() { this.remove(); });
     bindSubmit('entityForm', function(payload) { onSubmit(payload); });
   }
+
+  var genderOptions = ['Nam', 'Nu', 'Khac'];
+  var ethnicityOptions = ['Kinh','Tay','Thai','Muong','Khmer','Hoa','Nung','Hmong','Dao','Gia Rai','E De','Ba Na','San Chay','Cham','Co Ho','Xo Dang','San Diu','Hre','Ra Glai','Mnong','Tho','Stieng','Khang','Kho Mu','Bru-Van Kieu','Co Tu','Giay','Ta Oi','Ma','Gie Trieng','Co','Cho Ro','Xinh Mun','Ha Nhi','Chu Ru','Lao','La Chi','La Ha','Phu La','La Hu','Lu','Lo Lo','Chut','Mang','Pa Then','Co Lao','Cong','Bo Y','Si La','Pu Peo','Brau','Ro Mam','O Du','Ngai'];
+  var religionOptions = ['Khong','Phat giao','Cong giao','Tin Lanh','Cao Dai','Phat giao Hoa Hao','Hoi giao','Ba La Mon','Baha\'i','Buu Son Ky Huong','Tinh do Cu si Phat hoi','Minh Su Dao','Minh Ly Dao','Khac'];
+  var occupationOptions = ['Chua co viec lam','Hoc sinh/Sinh vien','Can bo/Cong chuc/Vien chuc','Cong nhan','Nong dan','Kinh doanh/Buon ban','Lao dong tu do','Giao vien','Nhan vien van phong','Y te','Ky su/Ky thuat','Dich vu','Tai xe/Van tai','Cong an/Quan doi','Noi tro','Huu tri','Khac'];
 
   var fields = {
     household: [
@@ -96,12 +113,12 @@
     ],
     citizen: [
       {name:'citizenCode',label:'Ma nhan khau',required:true}, {name:'householdId',label:'ID ho',required:true},
-      {name:'fullName',label:'Ho ten',required:true}, {name:'gender',label:'Gioi tinh',required:true},
+      {name:'fullName',label:'Ho ten',required:true}, {name:'gender',label:'Gioi tinh',required:true,options:genderOptions},
       {name:'dateOfBirth',label:'Ngay sinh',required:true,type:'date'}, {name:'identityNumber',label:'CCCD/CMND'},
       {name:'identityIssueDate',label:'Ngay cap',type:'date'}, {name:'identityIssuePlace',label:'Noi cap'},
       {name:'relationship',label:'Quan he',required:true}, {name:'phone',label:'Dien thoai'},
-      {name:'ethnicity',label:'Dan toc'}, {name:'religion',label:'Ton giao'},
-      {name:'occupation',label:'Nghe nghiep'}, {name:'educationLevel',label:'Hoc van'},
+      {name:'ethnicity',label:'Dan toc',options:ethnicityOptions}, {name:'religion',label:'Ton giao',options:religionOptions},
+      {name:'occupation',label:'Nghe nghiep',options:occupationOptions}, {name:'educationLevel',label:'Hoc van'},
       {name:'maritalStatus',label:'Hon nhan'}, {name:'permanentAddress',label:'Thuong tru',full:true},
       {name:'currentAddress',label:'Noi o hien nay',full:true}
     ],
