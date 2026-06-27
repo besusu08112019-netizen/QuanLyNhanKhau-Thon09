@@ -51,12 +51,19 @@ Application.DashboardService = function(db) {
   }
 
   function bucketAge(age) {
-    if (age === null) return 'Khong ro';
+    if (age === null) return 'Không rõ';
     if (age <= 5) return '0-5';
     if (age <= 17) return '6-17';
     if (age <= 35) return '18-35';
     if (age <= 59) return '36-59';
     return '60+';
+  }
+
+  function statusLabel(value) {
+    if (value === Domain.Status.ACTIVE) return 'Đang hoạt động';
+    if (value === Domain.Status.INACTIVE) return 'Tạm ngưng';
+    if (value === Domain.Status.DELETED) return 'Đã xóa';
+    return value || 'Không rõ';
   }
 
   function load(filters) {
@@ -83,8 +90,8 @@ Application.DashboardService = function(db) {
     }, { male: 0, female: 0, other: 0 });
     return [
       { label: 'Nam', value: counts.male },
-      { label: 'Nu', value: counts.female },
-      { label: 'Khac', value: counts.other }
+      { label: 'Nữ', value: counts.female },
+      { label: 'Khác', value: counts.other }
     ];
   }
 
@@ -95,12 +102,12 @@ Application.DashboardService = function(db) {
       return acc;
     }, {});
     return Object.keys(counts).sort().map(function(key) {
-      return { label: key, value: counts[key] };
+      return { label: statusLabel(key), value: counts[key] };
     });
   }
 
   function ageChartFrom(citizens) {
-    var order = ['0-5', '6-17', '18-35', '36-59', '60+', 'Khong ro'];
+    var order = ['0-5', '6-17', '18-35', '36-59', '60+', 'Không rõ'];
     var counts = order.reduce(function(acc, key) {
       acc[key] = 0;
       return acc;
@@ -131,7 +138,7 @@ Application.DashboardService = function(db) {
         households: households.length,
         citizens: citizens.length,
         male: gender.Nam || 0,
-        female: gender.Nu || 0,
+        female: gender['Nữ'] || 0,
         activeCitizens: activeCitizens.length,
         temporaryResidence: residency.temporaryResidence,
         temporaryAbsence: residency.temporaryAbsence
