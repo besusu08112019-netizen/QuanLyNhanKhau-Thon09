@@ -121,9 +121,11 @@ Infrastructure.HouseholdRepository = function(db) {
     return db.replace(Domain.Tables.HOUSEHOLDS, id, record);
   }
 
-  function countActiveMembers(householdId) {
+  function countActiveMembers(householdIdOrCode) {
+    var household = findById(householdIdOrCode, { includeDeleted: true }) || findByCode(householdIdOrCode, { includeDeleted: true }) || {};
+    var keys = [householdIdOrCode, household.id, household.householdCode].map(normalizeKeyword).filter(Boolean);
     return db.readAll(Domain.Tables.CITIZENS).filter(function(citizen) {
-      return citizen.householdId === householdId && citizen.status === Domain.Status.ACTIVE;
+      return citizen.status === Domain.Status.ACTIVE && keys.indexOf(normalizeKeyword(citizen.householdId)) >= 0;
     }).length;
   }
 
