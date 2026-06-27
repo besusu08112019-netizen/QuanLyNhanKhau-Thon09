@@ -1,8 +1,15 @@
 var Application = Application || {};
 
 Application.SecurityService = function(db, logger) {
+  var AUTH_CACHE_PREFIX = 'AUTH_SESSION_';
+  var AUTH_TTL_SECONDS = 21600;
+
   function normalizeEmail(email) {
     return String(email || '').trim().toLowerCase();
+  }
+
+  function activeGoogleEmail() {
+    return normalizeEmail(Entity.currentEmail());
   }
 
   function roleLabel(role) {
@@ -12,6 +19,57 @@ Application.SecurityService = function(db, logger) {
       OFFICER: 'Cán bộ',
       VIEWER: 'Chỉ xem'
     }[role] || role;
+  }
+
+  function passwordProperty(userId) {
+    return 'USER_PASSWORD_HASH_' + userId;
+  }
+
+  function hashPassword(userId, password) {
+    var text = String(password || '');
+    if (text.length < 8) throw new Error('Mật khẩu phải có ít nhất 8 ký tự');
+    var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, userId + ':' + text, Utilities.Charset.UTF_8);
+    return raw.map(function(byte) {
+      var value = byte < 0 ? byte + 256 : byte;
+      return ('0' + value.toString(16)).slice(-2);
+    }).join('');
+  }
+
+  function storedPasswordHash(userId) {
+    return PropertiesService.getScriptProperties().getProperty(passwordProperty(userId));
+  }
+
+  function setPasswordHash(userId, password) {
+    var hash = hashPassword(userId, password);
+    PropertiesService.getScriptProperties().setProperty(passwordProperty(userId), hash);
+    return hash;
+  }
+
+  function tokenPayload(user) {
+    return JSON.stringify({ userId: user.id, email: user.email, issuedAt: Entity.now() });
+  }
+
+  function createSession(user) {
+    var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+    CacheService.getScriptCache().put(AUTH_CACHE_PREFIX + token, tokenPayload(user), AUTH_TTL_SECONDS);
+    return token;
+  }
+
+  function userFromToken(authToken) {
+    var token = String(authToken || '').trim();
+    if (!token) return null;
+    var raw = CacheService.getScriptCache().get(AUTH_CACHE_PREFIX + token);
+    if (!raw) return null;
+    var parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      return null;
+    }
+    if (!parsed || !parsed.userId) return null;
+    var user = db.findById(Domain.Tables.USERS, parsed.userId, { includeDeleted: true });
+    if (!user || normalizeEmail(user.email) !== normalizeEmail(parsed.email)) return null;
+    return user;
   }
 
   function touchLogin(user) {
@@ -27,23 +85,73 @@ Application.SecurityService = function(db, logger) {
     return user;
   }
 
-  function currentUser() {
-    var email = normalizeEmail(Entity.currentEmail());
-    if (!email) throw new Error('Không xác định được email người dùng');
+  function findUserByEmail(email) {
+    var target = normalizeEmail(email);
+    return db.readAll(Domain.Tables.USERS, { includeDeleted: true }).filter(function(item) {
+      return normalizeEmail(item.email) === target;
+    })[0] || null;
+  }
+
+  function ensureGoogleUser() {
+    var email = activeGoogleEmail();
+    if (!email) throw new Error('Không xác định được email Google đang mở WebApp');
     var users = db.readAll(Domain.Tables.USERS, { includeDeleted: true });
     var user = users.filter(function(item) { return normalizeEmail(item.email) === email; })[0];
     if (!user) {
-      var count = users.length;
       user = Entity.withCreateAudit(Domain.Tables.USERS, {
         email: email,
         displayName: email,
-        role: count === 0 ? Domain.Roles.SUPER_ADMIN : Domain.Roles.VIEWER,
+        role: users.length === 0 ? Domain.Roles.SUPER_ADMIN : Domain.Roles.VIEWER,
         status: Domain.Status.ACTIVE,
         lastLoginAt: Entity.now()
       });
       db.append(Domain.Tables.USERS, user);
       if (logger) logger.info(Domain.Modules.USER, Domain.Actions.CREATE, user.id, 'Tự động tạo người dùng đăng nhập', { email: email, role: user.role });
     }
+    return user;
+  }
+
+  function publicUser(user) {
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName || user.email,
+      role: user.role,
+      roleLabel: roleLabel(user.role),
+      status: user.status,
+      lastLoginAt: user.lastLoginAt || ''
+    };
+  }
+
+  function login(credentials) {
+    credentials = credentials || {};
+    var email = normalizeEmail(credentials.username || credentials.email || credentials.account);
+    var password = String(credentials.password || '');
+    if (!email) throw new Error('Vui lòng nhập tài khoản');
+    if (!password) throw new Error('Vui lòng nhập mật khẩu');
+    var user = findUserByEmail(email);
+    if (!user) {
+      if (email !== activeGoogleEmail()) throw new Error('Tài khoản không tồn tại trong hệ thống');
+      user = ensureGoogleUser();
+    }
+    if (user.status !== Domain.Status.ACTIVE) throw new Error('Tài khoản đang bị khóa');
+    var hash = storedPasswordHash(user.id);
+    if (!hash) {
+      if (normalizeEmail(user.email) !== activeGoogleEmail()) throw new Error('Tài khoản chưa được cấp mật khẩu. Vui lòng liên hệ quản trị viên.');
+      setPasswordHash(user.id, password);
+      if (logger) logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, user.id, 'Thiết lập mật khẩu ứng dụng lần đầu', { email: user.email });
+    } else if (hashPassword(user.id, password) !== hash) {
+      if (logger) logger.warn(Domain.Modules.USER, Domain.Actions.READ, user.id, 'Đăng nhập thất bại', { email: user.email });
+      throw new Error('Tài khoản hoặc mật khẩu không đúng');
+    }
+    user = touchLogin(user);
+    var token = createSession(user);
+    return { token: token, expiresIn: AUTH_TTL_SECONDS, user: publicUser(user) };
+  }
+
+  function currentUser(authToken) {
+    var user = userFromToken(authToken);
+    if (!user) user = ensureGoogleUser();
     if (user.status !== Domain.Status.ACTIVE) throw new Error('Tài khoản đang bị khóa');
     return touchLogin(user);
   }
@@ -75,21 +183,23 @@ Application.SecurityService = function(db, logger) {
     return String(permissions[0].allowed) === 'true';
   }
 
-  function requirePermission(moduleName, actionName) {
-    var user = currentUser();
+  function requirePermission(moduleName, actionName, authToken) {
+    var user = currentUser(authToken);
     if (!hasPermission(user, moduleName, actionName)) {
       throw new Error('Không có quyền ' + actionName + ' module ' + moduleName);
     }
     return user;
   }
 
-  function logout() {
-    var user = currentUser();
+  function logout(authToken) {
+    var user = userFromToken(authToken) || currentUser(authToken);
+    if (authToken) CacheService.getScriptCache().remove(AUTH_CACHE_PREFIX + authToken);
     if (logger) logger.info(Domain.Modules.USER, Domain.Actions.READ, user.id, 'Đăng xuất hệ thống', { email: user.email });
     return { email: user.email, loggedOutAt: Entity.now() };
   }
 
   return {
+    login: login,
     currentUser: currentUser,
     hasPermission: hasPermission,
     requirePermission: requirePermission,
