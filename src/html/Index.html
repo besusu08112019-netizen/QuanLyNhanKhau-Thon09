@@ -10,8 +10,31 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@material/button@14.0.0/dist/mdc.button.min.css">
   <?!= include('src/css/App'); ?>
 </head>
-<body class="hold-transition sidebar-mini layout-fixed text-sm">
-<div class="wrapper">
+<body class="hold-transition sidebar-mini layout-fixed text-sm app-locked">
+<div id="loginView" class="login-gate">
+  <div class="login-panel elevation-3">
+    <div class="login-brand">
+      <div class="login-logo-mark"><i class="fas fa-shield-halved"></i></div>
+      <div>
+        <h1>Quản lý Nhân khẩu Thôn 09</h1>
+        <p>Đăng nhập để vào hệ thống</p>
+      </div>
+    </div>
+    <form id="loginForm" class="login-form">
+      <div class="form-group">
+        <label>Tài khoản Google</label>
+        <div class="input-group">
+          <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+          <input class="form-control" value="Tài khoản đang mở WebApp" readonly>
+        </div>
+      </div>
+      <button id="btnLogin" class="btn btn-primary btn-block btn-material" type="submit"><i class="fas fa-right-to-bracket mr-1"></i> Đăng nhập</button>
+      <div id="loginMessage" class="login-message"></div>
+    </form>
+  </div>
+</div>
+
+<div id="mainAppShell" class="wrapper app-shell">
   <nav class="main-header navbar navbar-expand navbar-white navbar-light">
     <ul class="navbar-nav">
       <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#" title="Thu gọn/mở rộng menu"><i class="fas fa-bars"></i></a></li>
@@ -19,6 +42,7 @@
     </ul>
     <ul class="navbar-nav ml-auto">
       <li class="nav-item"><span id="currentUser" class="nav-link"></span></li>
+      <li class="nav-item"><a id="btnLogout" class="nav-link" href="#" title="Đăng xuất"><i class="fas fa-right-from-bracket"></i></a></li>
     </ul>
   </nav>
 
@@ -58,5 +82,48 @@
 <?!= include('src/js/ReportModule'); ?>
 <?!= include('src/js/AdminModule'); ?>
 <?!= include('src/js/ImportModule'); ?>
+<script>
+(function() {
+  function showLogin(message) {
+    document.body.classList.add('app-locked');
+    document.body.classList.remove('app-authenticated');
+    sessionStorage.removeItem('thon09Authenticated');
+    var box = document.getElementById('loginMessage');
+    if (box) box.textContent = message || '';
+  }
+  function showApp() {
+    document.body.classList.remove('app-locked');
+    document.body.classList.add('app-authenticated');
+    sessionStorage.setItem('thon09Authenticated', '1');
+  }
+  function login() {
+    var button = document.getElementById('btnLogin');
+    var message = document.getElementById('loginMessage');
+    if (button) button.disabled = true;
+    if (message) message.textContent = 'Đang kiểm tra tài khoản...';
+    google.script.run.withSuccessHandler(function(response) {
+      if (button) button.disabled = false;
+      if (!response || !response.ok) {
+        showLogin(response && response.error ? response.error.message : 'Không thể đăng nhập');
+        return;
+      }
+      if (message) message.textContent = '';
+      showApp();
+    }).withFailureHandler(function(error) {
+      if (button) button.disabled = false;
+      showLogin(error && error.message ? error.message : 'Không thể đăng nhập');
+    }).api('user.me', {});
+  }
+  document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    login();
+  });
+  document.getElementById('btnLogout').addEventListener('click', function(event) {
+    event.preventDefault();
+    showLogin('Đã đăng xuất khỏi giao diện.');
+  });
+  if (sessionStorage.getItem('thon09Authenticated') === '1') login();
+})();
+</script>
 </body>
 </html>
