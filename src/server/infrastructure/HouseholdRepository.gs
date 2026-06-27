@@ -37,7 +37,7 @@ Infrastructure.HouseholdRepository = function(db) {
     return [
       isYes(household.meritoriousFamily || household.isPolicyFamily) ? 'Gia đình có công' : '',
       isYes(household.poorHousehold || household.isPoorHousehold) ? 'Hộ nghèo' : '',
-      isYes(household.nearPoorHousehold || household.isNearPoorHousehold) ? 'Hộ cận nghèo Cận nghèo' : '',
+      isYes(household.nearPoorHousehold || household.isNearPoorHousehold) ? 'Hộ cận nghèo' : '',
       isYes(household.disabledHousehold || household.hasDisabledMember) ? 'Tàn tật Khuyết tật' : ''
     ].filter(Boolean).join(' ');
   }
