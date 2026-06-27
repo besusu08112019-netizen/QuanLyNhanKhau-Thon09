@@ -17,35 +17,16 @@
   ];
 
   function el(id) { return document.getElementById(id); }
-  function html(value) {
-    return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s];
-    });
-  }
-  function pick(row, keys) {
-    for (var i = 0; i < keys.length; i += 1) {
-      if (row && row[keys[i]] !== undefined && row[keys[i]] !== null && row[keys[i]] !== '') return row[keys[i]];
-    }
-    return '';
-  }
-  function debounce(fn, wait) {
-    var timer;
-    return function() {
-      var self = this;
-      var args = arguments;
-      clearTimeout(timer);
-      timer = setTimeout(function() { fn.apply(self, args); }, wait);
-    };
-  }
+  function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s]; }); }
+  function pick(row, keys) { for (var i = 0; i < keys.length; i += 1) { if (row && row[keys[i]] !== undefined && row[keys[i]] !== null && row[keys[i]] !== '') return row[keys[i]]; } return ''; }
+  function debounce(fn, wait) { var timer; return function() { var self = this; var args = arguments; clearTimeout(timer); timer = setTimeout(function() { fn.apply(self, args); }, wait); }; }
   function call(action, payload) {
     return new Promise(function(resolve, reject) {
       google.script.run.withSuccessHandler(function(response) {
         if (!response) return reject(new Error('Không nhận được phản hồi từ hệ thống'));
         if (response.ok === false) return reject(new Error(response.error && response.error.message ? response.error.message : 'Thao tác không thành công'));
         resolve(response.data !== undefined ? response.data : response);
-      }).withFailureHandler(function(error) {
-        reject(new Error(error && error.message ? error.message : 'Lỗi hệ thống'));
-      }).api(action, payload || {});
+      }).withFailureHandler(function(error) { reject(new Error(error && error.message ? error.message : 'Lỗi hệ thống')); }).api(action, payload || {});
     });
   }
   function toast(message, type) {
@@ -61,13 +42,7 @@
     var items = Array.isArray(result.items) ? result.items : [];
     var pageSize = Number(result.pageSize || state.pageSize || 20);
     var total = Number(result.total || items.length || 0);
-    return {
-      items: items,
-      page: Number(result.page || state.page || 1),
-      pageSize: pageSize,
-      total: total,
-      totalPages: Number(result.totalPages || Math.max(1, Math.ceil(total / pageSize)))
-    };
+    return { items: items, page: Number(result.page || state.page || 1), pageSize: pageSize, total: total, totalPages: Number(result.totalPages || Math.max(1, Math.ceil(total / pageSize))) };
   }
   function readFilters() {
     if (el('householdKeyword2')) state.keyword = el('householdKeyword2').value.trim();
@@ -75,27 +50,14 @@
     if (el('householdPageSize2')) state.pageSize = parseInt(el('householdPageSize2').value, 10) || 20;
     return Object.assign({}, state, { search: state.keyword, q: state.keyword });
   }
-  function runSearch() {
-    readFilters();
-    state.page = 1;
-    refresh();
-  }
+  function runSearch() { readFilters(); state.page = 1; refresh(); }
   function activeMenu() {
-    document.querySelectorAll('[data-route]').forEach(function(item) {
-      item.classList.toggle('active', item.getAttribute('data-route') === 'household');
-    });
+    document.querySelectorAll('[data-route]').forEach(function(item) { item.classList.toggle('active', item.getAttribute('data-route') === 'household'); });
     if (el('pageTitle')) el('pageTitle').textContent = 'Hộ dân';
   }
-  function normalizeText(value) {
-    return String(value === undefined || value === null ? '' : value).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  }
-  function isYes(value) {
-    var normalized = normalizeText(value);
-    return value === true || value === 1 || normalized === 'co' || normalized === 'yes' || normalized === 'true' || normalized === '1' || normalized === 'x';
-  }
-  function policyValue(row, canonicalName, legacyName) {
-    return pick(row, [canonicalName, legacyName]);
-  }
+  function normalizeText(value) { return String(value === undefined || value === null ? '' : value).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function isYes(value) { var normalized = normalizeText(value); return value === true || value === 1 || normalized === 'co' || normalized === 'yes' || normalized === 'true' || normalized === '1' || normalized === 'x'; }
+  function policyValue(row, canonicalName, legacyName) { return pick(row, [canonicalName, legacyName]); }
   function policyLabels(row) {
     var labels = [];
     if (isYes(policyValue(row, 'meritoriousFamily', 'isPolicyFamily'))) labels.push('Gia đình có công');
@@ -104,18 +66,27 @@
     if (isYes(policyValue(row, 'disabledHousehold', 'hasDisabledMember'))) labels.push('Tàn tật');
     return labels.length ? labels.map(function(label) { return '<span class="badge badge-info mr-1">' + html(label) + '</span>'; }).join('') : '<span class="text-muted">Không</span>';
   }
-  function statusBadge(value) {
-    return value === 'INACTIVE' ? '<span class="badge badge-secondary">Tạm ngưng</span>' : '<span class="badge badge-success">Đang hoạt động</span>';
+  function statusBadge(value) { return value === 'INACTIVE' ? '<span class="badge badge-secondary">Tạm ngưng</span>' : '<span class="badge badge-success">Đang hoạt động</span>'; }
+  function canonicalPresence(value) {
+    var text = normalizeText(value);
+    if (!text || text === 'at_home' || text === 'at home' || text === 'home' || text === 'o nha' || text === 'co mat') return 'AT_HOME';
+    if (text === 'away' || text === 'di vang' || text === 'vang' || text === 'tam vang') return 'AWAY';
+    return value || 'AT_HOME';
   }
-  function yearOf(value) {
-    var match = String(value || '').match(/(19|20)\d{2}/);
-    return match ? match[0] : '';
+  function presenceBadge(value) { return canonicalPresence(value) === 'AWAY' ? '<span class="badge badge-warning">Đi vắng</span>' : '<span class="badge badge-success">Ở nhà</span>'; }
+  function presenceSummary(row) {
+    var atHome = Number(row.atHomeCount || 0);
+    var away = Number(row.awayCount || 0);
+    if (!atHome && !away && row.presenceSummary) return html(row.presenceSummary);
+    return '<span class="badge badge-success mr-1">Ở nhà: ' + html(atHome) + '</span><span class="badge badge-warning">Đi vắng: ' + html(away) + '</span>';
   }
+  function yearOf(value) { var match = String(value || '').match(/(19|20)\d{2}/); return match ? match[0] : ''; }
+
   function render() {
     activeMenu();
     closeMemberModal(true);
     el('app').innerHTML = '<div class="module-toolbar"><div class="filters">'
-      + '<input id="householdKeyword2" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ/thôn, diện hộ">'
+      + '<input id="householdKeyword2" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ/thôn, diện hộ, ở nhà, đi vắng">'
       + '<select id="householdStatus2" class="form-control"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option></select>'
       + '<select id="householdPageSize2" class="form-control"><option>10</option><option selected>20</option><option>50</option><option>100</option></select>'
       + '<button class="btn btn-outline-primary" id="householdSearch" title="Tìm kiếm"><i class="fas fa-search"></i></button>'
@@ -139,26 +110,20 @@
     grid.innerHTML = '<div class="text-muted p-3">Đang tải danh sách hộ dân...</div>';
     call('household.page', readFilters()).then(function(result) {
       var page = pageData(result);
-      if (!page.items.length) {
-        grid.innerHTML = '<div class="alert alert-info">Chưa có hộ dân phù hợp.</div>' + pager(page);
-        bindPager(page);
-        return;
-      }
+      if (!page.items.length) { grid.innerHTML = '<div class="alert alert-info">Chưa có hộ dân phù hợp.</div>' + pager(page); bindPager(page); return; }
       grid.innerHTML = '<div class="table-responsive"><table class="table table-hover table-striped bg-white"><thead><tr>'
-        + '<th>Mã hộ</th><th>Chủ hộ</th><th>Địa chỉ/Thôn</th><th>Điện thoại</th><th>Khu vực</th><th>Nhân khẩu</th><th>Diện hộ</th><th>Trạng thái</th><th class="text-right">Thao tác</th>'
+        + '<th>Mã hộ</th><th>Chủ hộ</th><th>Địa chỉ/Thôn</th><th>Điện thoại</th><th>Khu vực</th><th>Nhân khẩu</th><th>Hiện tại</th><th>Diện hộ</th><th>Trạng thái</th><th class="text-right">Thao tác</th>'
         + '</tr></thead><tbody>' + page.items.map(function(row, index) {
           return '<tr data-household-row="' + index + '" style="cursor:pointer">'
             + '<td><strong>' + html(row.householdCode) + '</strong></td><td>' + html(row.headCitizenName) + '</td><td>' + html(row.address) + '</td><td>' + html(row.phone) + '</td>'
-            + '<td>' + html(row.areaCode) + '</td><td>' + html(row.memberCount || 0) + '</td><td>' + policyLabels(row) + '</td><td>' + statusBadge(row.status) + '</td>'
+            + '<td>' + html(row.areaCode) + '</td><td>' + html(row.memberCount || 0) + '</td><td>' + presenceSummary(row) + '</td><td>' + policyLabels(row) + '</td><td>' + statusBadge(row.status) + '</td>'
             + '<td class="text-right text-nowrap"><button class="btn btn-outline-info btn-xs mr-1" title="Xem thành viên" data-view-household="' + index + '"><i class="fas fa-eye"></i></button>'
             + '<button class="btn btn-outline-primary btn-xs mr-1" title="Sửa" data-edit-household="' + index + '"><i class="fas fa-pen"></i></button>'
             + '<button class="btn btn-outline-danger btn-xs" title="Xóa" data-delete-household="' + index + '"><i class="fas fa-trash"></i></button></td></tr>';
         }).join('') + '</tbody></table></div>' + pager(page);
       bindRows(page.items);
       bindPager(page);
-    }).catch(function(error) {
-      grid.innerHTML = '<div class="alert alert-danger">Không tải được danh sách hộ dân: ' + html(error.message) + '</div>';
-    });
+    }).catch(function(error) { grid.innerHTML = '<div class="alert alert-danger">Không tải được danh sách hộ dân: ' + html(error.message) + '</div>'; });
   }
   function pager(page) {
     return '<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap"><div class="text-muted">Tổng cộng ' + html(page.total) + ' hộ dân</div><div class="btn-group btn-group-sm">'
@@ -171,22 +136,10 @@
     if (el('householdNext')) el('householdNext').onclick = function() { if (state.page < page.totalPages) { state.page += 1; refresh(); } };
   }
   function bindRows(items) {
-    document.querySelectorAll('[data-household-row]').forEach(function(row) {
-      row.onclick = function(event) {
-        if (event.target.closest('button')) return;
-        showMembers(items[Number(row.getAttribute('data-household-row'))]);
-      };
-    });
+    document.querySelectorAll('[data-household-row]').forEach(function(row) { row.onclick = function(event) { if (event.target.closest('button')) return; showMembers(items[Number(row.getAttribute('data-household-row'))]); }; });
     document.querySelectorAll('[data-view-household]').forEach(function(btn) { btn.onclick = function(event) { event.stopPropagation(); showMembers(items[Number(btn.dataset.viewHousehold)]); }; });
     document.querySelectorAll('[data-edit-household]').forEach(function(btn) { btn.onclick = function(event) { event.stopPropagation(); openForm('Cập nhật hộ dân', items[Number(btn.dataset.editHousehold)], updateRow); }; });
-    document.querySelectorAll('[data-delete-household]').forEach(function(btn) {
-      btn.onclick = function(event) {
-        event.stopPropagation();
-        var row = items[Number(btn.dataset.deleteHousehold)];
-        if (!confirm('Xác nhận xóa mềm hộ dân này?')) return;
-        call('household.delete', { id: row.id }).then(function() { toast('Đã xóa hộ dân', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); });
-      };
-    });
+    document.querySelectorAll('[data-delete-household]').forEach(function(btn) { btn.onclick = function(event) { event.stopPropagation(); var row = items[Number(btn.dataset.deleteHousehold)]; if (!confirm('Xác nhận xóa mềm hộ dân này?')) return; call('household.delete', { id: row.id }).then(function() { toast('Đã xóa hộ dân', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); }); }; });
   }
   function showMembers(household) {
     var code = pick(household, ['householdCode', 'id']);
@@ -198,41 +151,26 @@
       if (!members.length) {
         body += '<div class="alert alert-info">Chưa có nhân khẩu nào trùng mã hộ này.</div>';
       } else {
-        body += '<div class="table-responsive"><table class="table table-sm table-striped table-hover"><thead><tr><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ tên</th><th>Năm sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Số điện thoại</th></tr></thead><tbody>'
+        body += '<div class="table-responsive"><table class="table table-sm table-striped table-hover"><thead><tr><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ tên</th><th>Năm sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Số điện thoại</th><th>Hiện tại</th></tr></thead><tbody>'
           + members.map(function(person) {
-            return '<tr><td>' + html(pick(person, ['householdCode', 'householdId']) || code) + '</td><td>' + html(pick(person, ['citizenCode', 'personCode', 'id'])) + '</td><td>' + html(pick(person, ['fullName', 'name'])) + '</td><td>' + html(yearOf(pick(person, ['dateOfBirth', 'birthDate', 'birthYear']))) + '</td><td>' + html(pick(person, ['identityNumber', 'cccd', 'nationalId'])) + '</td><td>' + html(pick(person, ['currentAddress', 'permanentAddress', 'address']) || household.address) + '</td><td>' + html(pick(person, ['phone', 'phoneNumber', 'mobile'])) + '</td></tr>';
+            return '<tr><td>' + html(pick(person, ['householdCode', 'householdId']) || code) + '</td><td>' + html(pick(person, ['citizenCode', 'personCode', 'id'])) + '</td><td>' + html(pick(person, ['fullName', 'name'])) + '</td><td>' + html(yearOf(pick(person, ['dateOfBirth', 'birthDate', 'birthYear']))) + '</td><td>' + html(pick(person, ['identityNumber', 'cccd', 'nationalId'])) + '</td><td>' + html(pick(person, ['currentAddress', 'permanentAddress', 'address']) || household.address) + '</td><td>' + html(pick(person, ['phone', 'phoneNumber', 'mobile'])) + '</td><td>' + presenceBadge(pick(person, ['presenceStatus', 'currentStatus', 'residencyStatus'])) + '</td></tr>';
           }).join('') + '</tbody></table></div>';
       }
       memberModal(household, body);
-    }).catch(function(error) {
-      memberModal(household, '<div class="alert alert-danger">Không tải được thành viên hộ: ' + html(error.message) + '</div>');
-    });
+    }).catch(function(error) { memberModal(household, '<div class="alert alert-danger">Không tải được thành viên hộ: ' + html(error.message) + '</div>'); });
   }
   function cleanupMemberModal() {
     var modal = el('householdMemberModal');
     if (modal) modal.remove();
-    if (window.jQuery) {
-      $('.modal-backdrop').remove();
-      if (!$('.modal.show').length) $('body').removeClass('modal-open').css('padding-right', '');
-    }
+    if (window.jQuery) { $('.modal-backdrop').remove(); if (!$('.modal.show').length) $('body').removeClass('modal-open').css('padding-right', ''); }
   }
   function closeMemberModal(force) {
     var modal = el('householdMemberModal');
     if (!modal) return;
-    if (window.jQuery && !force) {
-      $('#householdMemberModal').modal('hide');
-      return;
-    }
+    if (window.jQuery && !force) { $('#householdMemberModal').modal('hide'); return; }
     cleanupMemberModal();
   }
-  function bindMemberModalClose() {
-    document.querySelectorAll('[data-household-member-close]').forEach(function(btn) {
-      btn.onclick = function(event) {
-        event.preventDefault();
-        closeMemberModal(false);
-      };
-    });
-  }
+  function bindMemberModalClose() { document.querySelectorAll('[data-household-member-close]').forEach(function(btn) { btn.onclick = function(event) { event.preventDefault(); closeMemberModal(false); }; }); }
   function memberModal(household, body) {
     var code = pick(household, ['householdCode', 'id']);
     var modal = el('householdMemberModal');
@@ -247,9 +185,7 @@
     }
     document.body.insertAdjacentHTML('beforeend', '<div class="modal fade" id="householdMemberModal" tabindex="-1" role="dialog" aria-modal="true"><div class="modal-dialog modal-xl" role="document"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Thành viên hộ ' + html(code) + '</h5><button type="button" class="close" data-household-member-close aria-label="Đóng"><span>&times;</span></button></div><div class="modal-body">' + body + '</div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-household-member-close>Đóng</button></div></div></div></div>');
     bindMemberModalClose();
-    if (window.jQuery) {
-      $('#householdMemberModal').on('hidden.bs.modal', cleanupMemberModal).modal({ backdrop: true, keyboard: true, show: true });
-    }
+    if (window.jQuery) $('#householdMemberModal').on('hidden.bs.modal', cleanupMemberModal).modal({ backdrop: true, keyboard: true, show: true });
   }
   function control(field, data) {
     var value = data[field.name];
@@ -259,26 +195,13 @@
     if ((value === undefined || value === null || value === '') && field.name === 'disabledHousehold') value = data.hasDisabledMember;
     if (value === undefined || value === null || value === '') value = field.name === 'status' ? 'ACTIVE' : '';
     if (field.type === 'textarea') return '<textarea class="form-control" name="' + field.name + '" rows="3">' + html(value) + '</textarea>';
-    if (field.type === 'select') return '<select class="form-control" name="' + field.name + '">' + field.options.map(function(option) {
-      var optionValue = typeof option === 'object' ? option.value : option;
-      var optionLabel = typeof option === 'object' ? option.label : option;
-      return '<option value="' + html(optionValue) + '" ' + (String(optionValue) === String(value) ? 'selected' : '') + '>' + html(optionLabel) + '</option>';
-    }).join('') + '</select>';
+    if (field.type === 'select') return '<select class="form-control" name="' + field.name + '">' + field.options.map(function(option) { var optionValue = typeof option === 'object' ? option.value : option; var optionLabel = typeof option === 'object' ? option.label : option; return '<option value="' + html(optionValue) + '" ' + (String(optionValue) === String(value) ? 'selected' : '') + '>' + html(optionLabel) + '</option>'; }).join('') + '</select>';
     return '<input class="form-control" type="' + html(field.type || 'text') + '" name="' + field.name + '" value="' + html(value) + '">';
   }
   function openForm(title, data, submitter) {
     if (el('householdFormModal')) el('householdFormModal').remove();
-    document.body.insertAdjacentHTML('beforeend', '<div class="modal fade" id="householdFormModal" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><form class="modal-content" id="householdForm"><div class="modal-header"><h5 class="modal-title">' + html(title) + '</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div><div class="modal-body"><div class="form-grid">' + fields.map(function(field) {
-      return '<div class="form-group ' + (field.type === 'textarea' ? 'full' : '') + '"><label>' + html(field.label) + (field.required ? ' <span class="text-danger">*</span>' : '') + '</label>' + control(field, data || {}) + '</div>';
-    }).join('') + '</div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary">Lưu</button></div></form></div></div>');
-    el('householdForm').onsubmit = function(event) {
-      event.preventDefault();
-      var payload = {};
-      fields.forEach(function(field) { payload[field.name] = el('householdForm').elements[field.name].value; });
-      if (data && data.id) payload.id = data.id;
-      try { validate(payload); } catch (error) { toast(error.message, 'warning'); return; }
-      submitter(payload);
-    };
+    document.body.insertAdjacentHTML('beforeend', '<div class="modal fade" id="householdFormModal" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><form class="modal-content" id="householdForm"><div class="modal-header"><h5 class="modal-title">' + html(title) + '</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div><div class="modal-body"><div class="form-grid">' + fields.map(function(field) { return '<div class="form-group ' + (field.type === 'textarea' ? 'full' : '') + '"><label>' + html(field.label) + (field.required ? ' <span class="text-danger">*</span>' : '') + '</label>' + control(field, data || {}) + '</div>'; }).join('') + '</div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary">Lưu</button></div></form></div></div>');
+    el('householdForm').onsubmit = function(event) { event.preventDefault(); var payload = {}; fields.forEach(function(field) { payload[field.name] = el('householdForm').elements[field.name].value; }); if (data && data.id) payload.id = data.id; try { validate(payload); } catch (error) { toast(error.message, 'warning'); return; } submitter(payload); };
     $('#householdFormModal').modal('show');
   }
   function validate(payload) {
@@ -286,19 +209,9 @@
     if (!String(payload.headCitizenName || '').trim()) throw new Error('Vui lòng nhập Tên chủ hộ');
     if (!String(payload.address || '').trim()) throw new Error('Vui lòng nhập Địa chỉ/Thôn');
   }
-  function createRow(payload) {
-    call('household.create', payload).then(function() { $('#householdFormModal').modal('hide'); state.page = 1; toast('Đã thêm hộ dân', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); });
-  }
-  function updateRow(payload) {
-    call('household.update', payload).then(function() { $('#householdFormModal').modal('hide'); toast('Đã cập nhật hộ dân', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); });
-  }
-  document.addEventListener('click', function(event) {
-    var link = event.target.closest('[data-route="household"]');
-    if (!link) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    render();
-  }, true);
+  function createRow(payload) { call('household.create', payload).then(function() { $('#householdFormModal').modal('hide'); state.page = 1; toast('Đã thêm hộ dân', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); }); }
+  function updateRow(payload) { call('household.update', payload).then(function() { $('#householdFormModal').modal('hide'); toast('Đã cập nhật hộ dân', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); }); }
+  document.addEventListener('click', function(event) { var link = event.target.closest('[data-route="household"]'); if (!link) return; event.preventDefault(); event.stopImmediatePropagation(); render(); }, true);
   window.Thon09HouseholdModule = { render: render, refresh: refresh };
 })();
 </script>
