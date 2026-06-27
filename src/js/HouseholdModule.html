@@ -8,10 +8,10 @@
     { name: 'phone', label: 'Số điện thoại' },
     { name: 'areaCode', label: 'Khu vực' },
     { name: 'memberCount', label: 'Số nhân khẩu', type: 'number' },
-    { name: 'isPolicyFamily', label: 'Gia đình có công', type: 'select', options: ['Không', 'Có'] },
-    { name: 'isPoorHousehold', label: 'Hộ nghèo', type: 'select', options: ['Không', 'Có'] },
-    { name: 'isNearPoorHousehold', label: 'Hộ cận nghèo', type: 'select', options: ['Không', 'Có'] },
-    { name: 'hasDisabledMember', label: 'Có người tàn tật', type: 'select', options: ['Không', 'Có'] },
+    { name: 'meritoriousFamily', label: 'Gia đình có công', type: 'select', options: ['Không', 'Có'] },
+    { name: 'poorHousehold', label: 'Hộ nghèo', type: 'select', options: ['Không', 'Có'] },
+    { name: 'nearPoorHousehold', label: 'Hộ cận nghèo', type: 'select', options: ['Không', 'Có'] },
+    { name: 'disabledHousehold', label: 'Hộ có người tàn tật', type: 'select', options: ['Không', 'Có'] },
     { name: 'status', label: 'Trạng thái', type: 'select', options: [{ value: 'ACTIVE', label: 'Đang hoạt động' }, { value: 'INACTIVE', label: 'Tạm ngưng' }] },
     { name: 'note', label: 'Ghi chú', type: 'textarea' }
   ];
@@ -75,16 +75,23 @@
     });
     if (el('pageTitle')) el('pageTitle').textContent = 'Hộ dân';
   }
+  function normalizeText(value) {
+    return String(value === undefined || value === null ? '' : value).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
   function isYes(value) {
-    return value === true || value === 'Có' || value === 'YES' || value === 'TRUE' || value === 1 || value === '1';
+    var normalized = normalizeText(value);
+    return value === true || value === 1 || normalized === 'co' || normalized === 'yes' || normalized === 'true' || normalized === '1' || normalized === 'x';
+  }
+  function policyValue(row, canonicalName, legacyName) {
+    return pick(row, [canonicalName, legacyName]);
   }
   function policyLabels(row) {
     var labels = [];
-    if (isYes(row.isPolicyFamily)) labels.push('Gia đình có công');
-    if (isYes(row.isPoorHousehold)) labels.push('Hộ nghèo');
-    if (isYes(row.isNearPoorHousehold)) labels.push('Hộ cận nghèo');
-    if (isYes(row.hasDisabledMember)) labels.push('Tàn tật');
-    return labels.length ? labels.map(function(label) { return '<span class="badge badge-info mr-1">' + html(label) + '</span>'; }).join('') : '<span class="text-muted">-</span>';
+    if (isYes(policyValue(row, 'meritoriousFamily', 'isPolicyFamily'))) labels.push('Gia đình có công');
+    if (isYes(policyValue(row, 'poorHousehold', 'isPoorHousehold'))) labels.push('Hộ nghèo');
+    if (isYes(policyValue(row, 'nearPoorHousehold', 'isNearPoorHousehold'))) labels.push('Hộ cận nghèo');
+    if (isYes(policyValue(row, 'disabledHousehold', 'hasDisabledMember'))) labels.push('Tàn tật');
+    return labels.length ? labels.map(function(label) { return '<span class="badge badge-info mr-1">' + html(label) + '</span>'; }).join('') : '<span class="text-muted">Không</span>';
   }
   function statusBadge(value) {
     return value === 'INACTIVE' ? '<span class="badge badge-secondary">Tạm ngưng</span>' : '<span class="badge badge-success">Đang hoạt động</span>';
@@ -230,6 +237,10 @@
   }
   function control(field, data) {
     var value = data[field.name];
+    if ((value === undefined || value === null || value === '') && field.name === 'meritoriousFamily') value = data.isPolicyFamily;
+    if ((value === undefined || value === null || value === '') && field.name === 'poorHousehold') value = data.isPoorHousehold;
+    if ((value === undefined || value === null || value === '') && field.name === 'nearPoorHousehold') value = data.isNearPoorHousehold;
+    if ((value === undefined || value === null || value === '') && field.name === 'disabledHousehold') value = data.hasDisabledMember;
     if (value === undefined || value === null || value === '') value = field.name === 'status' ? 'ACTIVE' : '';
     if (field.type === 'textarea') return '<textarea class="form-control" name="' + field.name + '" rows="3">' + html(value) + '</textarea>';
     if (field.type === 'select') return '<select class="form-control" name="' + field.name + '">' + field.options.map(function(option) {
