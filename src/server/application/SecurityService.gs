@@ -2,6 +2,7 @@ var Application = Application || {};
 
 Application.SecurityService = function(db, logger) {
   var AUTH_CACHE_PREFIX = 'AUTH_SESSION_';
+  var AUTH_GOOGLE_PREFIX = 'AUTH_GOOGLE_';
   var AUTH_TTL_SECONDS = 21600;
 
   function normalizeEmail(email) {
@@ -51,14 +52,14 @@ Application.SecurityService = function(db, logger) {
 
   function createSession(user) {
     var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-    CacheService.getScriptCache().put(AUTH_CACHE_PREFIX + token, tokenPayload(user), AUTH_TTL_SECONDS);
+    var cache = CacheService.getScriptCache();
+    cache.put(AUTH_CACHE_PREFIX + token, tokenPayload(user), AUTH_TTL_SECONDS);
+    var googleEmail = activeGoogleEmail();
+    if (googleEmail) cache.put(AUTH_GOOGLE_PREFIX + googleEmail, tokenPayload(user), AUTH_TTL_SECONDS);
     return token;
   }
 
-  function userFromToken(authToken) {
-    var token = String(authToken || '').trim();
-    if (!token) return null;
-    var raw = CacheService.getScriptCache().get(AUTH_CACHE_PREFIX + token);
+  function userFromPayload(raw) {
     if (!raw) return null;
     var parsed;
     try {
@@ -70,6 +71,23 @@ Application.SecurityService = function(db, logger) {
     var user = db.findById(Domain.Tables.USERS, parsed.userId, { includeDeleted: true });
     if (!user || normalizeEmail(user.email) !== normalizeEmail(parsed.email)) return null;
     return user;
+  }
+
+  function userFromToken(authToken) {
+    var token = String(authToken || '').trim();
+    if (!token) return null;
+    return userFromPayload(CacheService.getScriptCache().get(AUTH_CACHE_PREFIX + token));
+  }
+
+  function userFromGoogleSession() {
+    var email = activeGoogleEmail();
+    if (!email) return null;
+    return userFromPayload(CacheService.getScriptCache().get(AUTH_GOOGLE_PREFIX + email));
+  }
+
+  function clearGoogleSession() {
+    var email = activeGoogleEmail();
+    if (email) CacheService.getScriptCache().remove(AUTH_GOOGLE_PREFIX + email);
   }
 
   function touchLogin(user) {
@@ -150,7 +168,7 @@ Application.SecurityService = function(db, logger) {
   }
 
   function currentUser(authToken) {
-    var user = userFromToken(authToken);
+    var user = userFromToken(authToken) || userFromGoogleSession();
     if (!user) user = ensureGoogleUser();
     if (user.status !== Domain.Status.ACTIVE) throw new Error('Tài khoản đang bị khóa');
     return touchLogin(user);
@@ -192,8 +210,9 @@ Application.SecurityService = function(db, logger) {
   }
 
   function logout(authToken) {
-    var user = userFromToken(authToken) || currentUser(authToken);
+    var user = userFromToken(authToken) || userFromGoogleSession() || currentUser(authToken);
     if (authToken) CacheService.getScriptCache().remove(AUTH_CACHE_PREFIX + authToken);
+    clearGoogleSession();
     if (logger) logger.info(Domain.Modules.USER, Domain.Actions.READ, user.id, 'Đăng xuất hệ thống', { email: user.email });
     return { email: user.email, loggedOutAt: Entity.now() };
   }
