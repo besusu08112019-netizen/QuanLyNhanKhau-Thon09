@@ -48,17 +48,30 @@ Application.SecurityService = function(db, logger) {
     return touchLogin(user);
   }
 
-  function hasPermission(user, moduleName, actionName) {
+  function roleAllows(user, moduleName, actionName) {
     if (!user || user.status !== Domain.Status.ACTIVE) return false;
-    if (user.role === Domain.Roles.SUPER_ADMIN) return true;
+    if (user.role === Domain.Roles.SUPER_ADMIN || user.role === Domain.Roles.ADMIN) return true;
+    if ([Domain.Modules.USER, Domain.Modules.PERMISSION, Domain.Modules.SETTINGS, Domain.Modules.BACKUP, Domain.Modules.LOGS].indexOf(moduleName) >= 0) return false;
+    if (user.role === Domain.Roles.OFFICER) {
+      if (moduleName === Domain.Modules.HOUSEHOLD || moduleName === Domain.Modules.CITIZEN) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE, Domain.Actions.DELETE].indexOf(actionName) >= 0;
+      if (moduleName === Domain.Modules.REPORT || moduleName === Domain.Modules.DASHBOARD || moduleName === Domain.Modules.PDF) return [Domain.Actions.READ, Domain.Actions.EXPORT].indexOf(actionName) >= 0;
+      if (moduleName === Domain.Modules.MOVEMENT) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE].indexOf(actionName) >= 0;
+      return false;
+    }
+    if (user.role === Domain.Roles.VIEWER) {
+      return [Domain.Modules.DASHBOARD, Domain.Modules.HOUSEHOLD, Domain.Modules.CITIZEN, Domain.Modules.REPORT].indexOf(moduleName) >= 0 && actionName === Domain.Actions.READ;
+    }
+    return false;
+  }
+
+  function hasPermission(user, moduleName, actionName) {
+    if (!roleAllows(user, moduleName, actionName)) return false;
+    if (user.role === Domain.Roles.SUPER_ADMIN || user.role === Domain.Roles.ADMIN) return true;
     var permissions = db.readAll(Domain.Tables.PERMISSIONS, { includeDeleted: true }).filter(function(permission) {
       return permission.role === user.role && permission.module === moduleName && permission.action === actionName;
     });
-    if (permissions.length) return String(permissions[0].allowed) === 'true';
-    if (user.role === Domain.Roles.ADMIN) return true;
-    if (user.role === Domain.Roles.OFFICER) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE, Domain.Actions.EXPORT].indexOf(actionName) >= 0 && moduleName !== Domain.Modules.PERMISSION && moduleName !== Domain.Modules.USER && moduleName !== Domain.Modules.SETTINGS;
-    if (user.role === Domain.Roles.VIEWER) return [Domain.Actions.READ, Domain.Actions.EXPORT].indexOf(actionName) >= 0 && moduleName !== Domain.Modules.PERMISSION && moduleName !== Domain.Modules.USER && moduleName !== Domain.Modules.SETTINGS;
-    return false;
+    if (!permissions.length) return true;
+    return String(permissions[0].allowed) === 'true';
   }
 
   function requirePermission(moduleName, actionName) {
@@ -69,11 +82,18 @@ Application.SecurityService = function(db, logger) {
     return user;
   }
 
+  function logout() {
+    var user = currentUser();
+    if (logger) logger.info(Domain.Modules.USER, Domain.Actions.READ, user.id, 'Dang xuat he thong', { email: user.email });
+    return { email: user.email, loggedOutAt: Entity.now() };
+  }
+
   return {
     currentUser: currentUser,
     hasPermission: hasPermission,
     requirePermission: requirePermission,
-    roleLabel: roleLabel
+    roleLabel: roleLabel,
+    logout: logout
   };
 };
 
@@ -81,17 +101,19 @@ Application.seedDefaultPermissions = function(db) {
   var roles = [Domain.Roles.ADMIN, Domain.Roles.OFFICER, Domain.Roles.VIEWER];
   var modules = Object.keys(Domain.Modules).map(function(key) { return Domain.Modules[key]; });
   var existing = db.readAll(Domain.Tables.PERMISSIONS, { includeDeleted: true });
+  function allowedByPolicy(role, moduleName, actionName) {
+    return Application.SecurityService(db).hasPermission({ role: role, status: Domain.Status.ACTIVE }, moduleName, actionName);
+  }
   roles.forEach(function(role) {
     modules.forEach(function(moduleName) {
       Object.keys(Domain.Actions).forEach(function(actionKey) {
         var actionName = Domain.Actions[actionKey];
-        var exists = existing.some(function(item) {
-          return item.role === role && item.module === moduleName && item.action === actionName;
-        });
-        if (exists) return;
-        var allowed = role === Domain.Roles.ADMIN ||
-          (role === Domain.Roles.OFFICER && ['read','create','update','export'].indexOf(actionName) >= 0 && moduleName !== Domain.Modules.PERMISSION && moduleName !== Domain.Modules.USER && moduleName !== Domain.Modules.SETTINGS) ||
-          (role === Domain.Roles.VIEWER && ['read','export'].indexOf(actionName) >= 0 && moduleName !== Domain.Modules.PERMISSION && moduleName !== Domain.Modules.USER && moduleName !== Domain.Modules.SETTINGS);
+        var allowed = allowedByPolicy(role, moduleName, actionName);
+        var found = existing.filter(function(item) { return item.role === role && item.module === moduleName && item.action === actionName; })[0];
+        if (found) {
+          if (String(found.allowed) !== String(allowed)) db.replace(Domain.Tables.PERMISSIONS, found.id, Entity.withUpdateAudit(found, { allowed: String(allowed) }));
+          return;
+        }
         db.append(Domain.Tables.PERMISSIONS, Entity.withCreateAudit(Domain.Tables.PERMISSIONS, {
           role: role,
           module: moduleName,
