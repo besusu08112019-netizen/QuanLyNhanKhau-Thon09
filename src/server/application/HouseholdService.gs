@@ -9,8 +9,19 @@ Application.HouseholdService = function(repository, logger) {
     return raw || 'Không';
   }
 
+  function pick() {
+    for (var i = 0; i < arguments.length; i += 1) {
+      if (arguments[i] !== undefined && arguments[i] !== null && arguments[i] !== '') return arguments[i];
+    }
+    return '';
+  }
+
   function clean(data) {
     data = data || {};
+    var meritoriousFamily = normalizeYesNo(pick(data.meritoriousFamily, data.isPolicyFamily));
+    var poorHousehold = normalizeYesNo(pick(data.poorHousehold, data.isPoorHousehold));
+    var nearPoorHousehold = normalizeYesNo(pick(data.nearPoorHousehold, data.isNearPoorHousehold));
+    var disabledHousehold = normalizeYesNo(pick(data.disabledHousehold, data.hasDisabledMember));
     return {
       id: data.id || '',
       householdCode: String(data.householdCode || '').trim().toUpperCase(),
@@ -22,10 +33,14 @@ Application.HouseholdService = function(repository, logger) {
       note: String(data.note || '').trim(),
       status: data.status || Domain.Status.ACTIVE,
       headCitizenName: String(data.headCitizenName || '').trim().replace(/\s+/g, ' '),
-      meritoriousFamily: normalizeYesNo(data.meritoriousFamily),
-      poorHousehold: normalizeYesNo(data.poorHousehold),
-      nearPoorHousehold: normalizeYesNo(data.nearPoorHousehold),
-      disabledHousehold: normalizeYesNo(data.disabledHousehold)
+      meritoriousFamily: meritoriousFamily,
+      poorHousehold: poorHousehold,
+      nearPoorHousehold: nearPoorHousehold,
+      disabledHousehold: disabledHousehold,
+      isPolicyFamily: meritoriousFamily,
+      isPoorHousehold: poorHousehold,
+      isNearPoorHousehold: nearPoorHousehold,
+      hasDisabledMember: disabledHousehold
     };
   }
 
