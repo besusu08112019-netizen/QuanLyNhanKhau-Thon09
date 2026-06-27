@@ -95,6 +95,7 @@
   }
   function render() {
     activeMenu();
+    closeMemberModal(true);
     el('app').innerHTML = '<div class="module-toolbar"><div class="filters">'
       + '<input id="householdKeyword2" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ/thôn, diện hộ">'
       + '<select id="householdStatus2" class="form-control"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option></select>'
@@ -184,11 +185,48 @@
       memberModal(household, '<div class="alert alert-danger">Không tải được thành viên hộ: ' + html(error.message) + '</div>');
     });
   }
+  function cleanupMemberModal() {
+    var modal = el('householdMemberModal');
+    if (modal) modal.remove();
+    if (window.jQuery) {
+      $('.modal-backdrop').remove();
+      if (!$('.modal.show').length) $('body').removeClass('modal-open').css('padding-right', '');
+    }
+  }
+  function closeMemberModal(force) {
+    var modal = el('householdMemberModal');
+    if (!modal) return;
+    if (window.jQuery && !force) {
+      $('#householdMemberModal').modal('hide');
+      return;
+    }
+    cleanupMemberModal();
+  }
+  function bindMemberModalClose() {
+    document.querySelectorAll('[data-household-member-close]').forEach(function(btn) {
+      btn.onclick = function(event) {
+        event.preventDefault();
+        closeMemberModal(false);
+      };
+    });
+  }
   function memberModal(household, body) {
     var code = pick(household, ['householdCode', 'id']);
-    if (el('householdMemberModal')) el('householdMemberModal').remove();
-    document.body.insertAdjacentHTML('beforeend', '<div class="modal fade" id="householdMemberModal" tabindex="-1" role="dialog"><div class="modal-dialog modal-xl" role="document"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Thành viên hộ ' + html(code) + '</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div><div class="modal-body">' + body + '</div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button></div></div></div></div>');
-    $('#householdMemberModal').modal('show');
+    var modal = el('householdMemberModal');
+    if (modal) {
+      var title = modal.querySelector('.modal-title');
+      var modalBody = modal.querySelector('.modal-body');
+      if (title) title.innerHTML = 'Thành viên hộ ' + html(code);
+      if (modalBody) modalBody.innerHTML = body;
+      bindMemberModalClose();
+      if (window.jQuery && !modal.classList.contains('show')) $('#householdMemberModal').modal('show');
+      return;
+    }
+    document.body.insertAdjacentHTML('beforeend', '<div class="modal fade" id="householdMemberModal" tabindex="-1" role="dialog" aria-modal="true"><div class="modal-dialog modal-xl" role="document"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Thành viên hộ ' + html(code) + '</h5><button type="button" class="close" data-household-member-close aria-label="Đóng"><span>&times;</span></button></div><div class="modal-body">' + body + '</div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-household-member-close>Đóng</button></div></div></div></div>');
+    bindMemberModalClose();
+    if (window.jQuery) {
+      $('#householdMemberModal').on('hidden.bs.modal', cleanupMemberModal).modal({ backdrop: true, keyboard: true, show: true });
+    }
   }
   function control(field, data) {
     var value = data[field.name];
