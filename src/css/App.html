@@ -6,16 +6,21 @@
   --app-surface: #ffffff;
   --app-muted: #607d8b;
 }
-body.app-locked { min-height: 100vh; background: #eef3f8; }
+body.app-locked { min-height: 100vh; background: #edf2f7; }
 body.app-locked .app-shell { display: none; }
 body.app-authenticated .login-gate { display: none; }
-.login-gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #e8f0fe 0%, #f7fbff 48%, #e0f2f1 100%); }
-.login-panel { width: 100%; max-width: 420px; background: #fff; border-radius: 8px; padding: 28px; }
-.login-brand { display: flex; gap: 14px; align-items: center; margin-bottom: 22px; }
-.login-logo-mark { width: 48px; height: 48px; border-radius: 8px; background: var(--app-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-.login-brand h1 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 700; color: #1f2933; }
-.login-brand p { margin: 4px 0 0; color: var(--app-muted); }
+.login-gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: #edf2f7; }
+.login-panel { width: 100%; max-width: 440px; background: #fff; border-radius: 6px; border-top: 4px solid #0d47a1; padding: 30px; }
+.login-header { text-align: center; margin-bottom: 24px; }
+.login-emblem { width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: #0d47a1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.login-agency { color: #374151; font-size: 13px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.login-header h1 { margin: 8px 0 6px; font-size: 24px; line-height: 1.25; font-weight: 700; color: #102a43; }
+.login-header p { margin: 0; color: var(--app-muted); font-size: 14px; }
+.login-form label { font-weight: 700; color: #25313f; }
+.login-form .input-group-text { min-width: 42px; justify-content: center; background: #f3f6f9; color: #415466; }
+.login-form .form-control { min-height: 42px; }
 .login-message { min-height: 22px; margin-top: 12px; color: var(--app-danger); font-weight: 600; }
+.login-note { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; color: #607d8b; font-size: 12px; line-height: 1.45; }
 .content-wrapper { background: #f4f6f9; }
 .brand-link { min-height: 57px; }
 .card { border-radius: 8px; }
@@ -66,7 +71,7 @@ textarea.form-control { resize: vertical; }
 @media (max-width: 768px) {
   .login-gate { padding: 16px; align-items: stretch; }
   .login-panel { margin: auto 0; padding: 22px; }
-  .login-brand h1 { font-size: 20px; }
+  .login-header h1 { font-size: 21px; }
   .form-grid { grid-template-columns: 1fr; }
   .module-toolbar, .dashboard-filter, .report-filter { align-items: stretch; }
   .module-toolbar .filters, .module-toolbar .actions, .dashboard-filter .filters, .report-filter .filters, .report-filter .actions { width: 100%; }
