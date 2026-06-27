@@ -2,6 +2,21 @@ var Infrastructure = Infrastructure || {};
 
 Infrastructure.Database = function() {
   var properties = PropertiesService.getScriptProperties();
+  var memoryCache = {};
+
+  function cacheKey(tableName, includeDeleted) {
+    return tableName + ':' + (includeDeleted ? 'all' : 'active');
+  }
+
+  function cloneRows(rows) {
+    return rows.map(function(row) { return Object.assign({}, row); });
+  }
+
+  function clearTableCache(tableName) {
+    Object.keys(memoryCache).forEach(function(key) {
+      if (key.indexOf(tableName + ':') === 0) delete memoryCache[key];
+    });
+  }
 
   function getSpreadsheet() {
     var spreadsheetId = properties.getProperty(Domain.App.SPREADSHEET_ID_PROPERTY);
@@ -24,17 +39,24 @@ Infrastructure.Database = function() {
     return sheet;
   }
 
-  function readAll(tableName, options) {
+  function readAllRaw(tableName) {
     var sheet = getSheet(tableName);
     var headers = Domain.Schema[tableName];
     var lastRow = sheet.getLastRow();
     if (lastRow < 2) return [];
     var values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
-    var rows = values.map(function(row) { return Entity.fromRow(headers, row); });
-    if (!options || options.includeDeleted !== true) {
-      rows = rows.filter(function(row) { return row.status !== Domain.Status.DELETED; });
+    return values.map(function(row) { return Entity.fromRow(headers, row); });
+  }
+
+  function readAll(tableName, options) {
+    var includeDeleted = !!(options && options.includeDeleted === true);
+    var key = cacheKey(tableName, includeDeleted);
+    if (!memoryCache[key]) {
+      var rows = readAllRaw(tableName);
+      if (!includeDeleted) rows = rows.filter(function(row) { return row.status !== Domain.Status.DELETED; });
+      memoryCache[key] = rows;
     }
-    return rows;
+    return cloneRows(memoryCache[key]);
   }
 
   function findById(tableName, id, options) {
@@ -44,6 +66,7 @@ Infrastructure.Database = function() {
   function append(tableName, record) {
     var sheet = getSheet(tableName);
     sheet.appendRow(Entity.toRow(tableName, record));
+    clearTableCache(tableName);
     return record;
   }
 
@@ -56,6 +79,7 @@ Infrastructure.Database = function() {
     for (var i = 0; i < ids.length; i++) {
       if (ids[i][0] === id) {
         sheet.getRange(i + 2, 1, 1, headers.length).setValues([Entity.toRow(tableName, record)]);
+        clearTableCache(tableName);
         return record;
       }
     }
