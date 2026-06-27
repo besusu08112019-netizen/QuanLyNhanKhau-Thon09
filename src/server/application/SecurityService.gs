@@ -7,10 +7,10 @@ Application.SecurityService = function(db, logger) {
 
   function roleLabel(role) {
     return {
-      SUPER_ADMIN: 'Quan tri he thong',
-      ADMIN: 'Admin',
-      OFFICER: 'Can bo',
-      VIEWER: 'Chi xem'
+      SUPER_ADMIN: 'Quản trị hệ thống',
+      ADMIN: 'Quản trị viên',
+      OFFICER: 'Cán bộ',
+      VIEWER: 'Chỉ xem'
     }[role] || role;
   }
 
@@ -21,7 +21,7 @@ Application.SecurityService = function(db, logger) {
     if (!previous || current - previous > 30 * 60 * 1000) {
       var record = Entity.withUpdateAudit(user, { lastLoginAt: now });
       db.replace(Domain.Tables.USERS, user.id, record);
-      if (logger) logger.info(Domain.Modules.USER, Domain.Actions.READ, user.id, 'Dang nhap he thong', { email: user.email, role: user.role });
+      if (logger) logger.info(Domain.Modules.USER, Domain.Actions.READ, user.id, 'Đăng nhập hệ thống', { email: user.email, role: user.role });
       return record;
     }
     return user;
@@ -29,7 +29,7 @@ Application.SecurityService = function(db, logger) {
 
   function currentUser() {
     var email = normalizeEmail(Entity.currentEmail());
-    if (!email) throw new Error('Khong xac dinh duoc email nguoi dung');
+    if (!email) throw new Error('Không xác định được email người dùng');
     var users = db.readAll(Domain.Tables.USERS, { includeDeleted: true });
     var user = users.filter(function(item) { return normalizeEmail(item.email) === email; })[0];
     if (!user) {
@@ -42,9 +42,9 @@ Application.SecurityService = function(db, logger) {
         lastLoginAt: Entity.now()
       });
       db.append(Domain.Tables.USERS, user);
-      if (logger) logger.info(Domain.Modules.USER, Domain.Actions.CREATE, user.id, 'Tu dong tao nguoi dung dang nhap', { email: email, role: user.role });
+      if (logger) logger.info(Domain.Modules.USER, Domain.Actions.CREATE, user.id, 'Tự động tạo người dùng đăng nhập', { email: email, role: user.role });
     }
-    if (user.status !== Domain.Status.ACTIVE) throw new Error('Tai khoan dang bi khoa');
+    if (user.status !== Domain.Status.ACTIVE) throw new Error('Tài khoản đang bị khóa');
     return touchLogin(user);
   }
 
@@ -78,14 +78,14 @@ Application.SecurityService = function(db, logger) {
   function requirePermission(moduleName, actionName) {
     var user = currentUser();
     if (!hasPermission(user, moduleName, actionName)) {
-      throw new Error('Khong co quyen ' + actionName + ' module ' + moduleName);
+      throw new Error('Không có quyền ' + actionName + ' module ' + moduleName);
     }
     return user;
   }
 
   function logout() {
     var user = currentUser();
-    if (logger) logger.info(Domain.Modules.USER, Domain.Actions.READ, user.id, 'Dang xuat he thong', { email: user.email });
+    if (logger) logger.info(Domain.Modules.USER, Domain.Actions.READ, user.id, 'Đăng xuất hệ thống', { email: user.email });
     return { email: user.email, loggedOutAt: Entity.now() };
   }
 
