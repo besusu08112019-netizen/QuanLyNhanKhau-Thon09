@@ -32,6 +32,24 @@ Infrastructure.Database = function() {
     return sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function(header) { return String(header || '').trim(); });
   }
 
+  function mergeLegacyHouseholdHamlet(sheet, existing) {
+    var addressIndex = existing.indexOf('address');
+    var hamletIndex = existing.indexOf('hamlet');
+    var lastRow = sheet.getLastRow();
+    if (addressIndex === -1 || hamletIndex === -1 || lastRow < 2) return;
+    var rowCount = lastRow - 1;
+    var addresses = sheet.getRange(2, addressIndex + 1, rowCount, 1).getValues();
+    var hamlets = sheet.getRange(2, hamletIndex + 1, rowCount, 1).getValues();
+    var changed = false;
+    for (var i = 0; i < rowCount; i++) {
+      if (!String(addresses[i][0] || '').trim() && String(hamlets[i][0] || '').trim()) {
+        addresses[i][0] = hamlets[i][0];
+        changed = true;
+      }
+    }
+    if (changed) sheet.getRange(2, addressIndex + 1, rowCount, 1).setValues(addresses);
+  }
+
   function syncHeaders(sheet, tableName, headers) {
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(headers);
@@ -41,6 +59,7 @@ Infrastructure.Database = function() {
     }
     var existing = currentHeaders(sheet);
     if (tableName === Domain.Tables.HOUSEHOLDS) {
+      mergeLegacyHouseholdHamlet(sheet, existing);
       for (var i = existing.length - 1; i >= 0; i--) {
         if (existing[i] === 'hamlet') sheet.deleteColumn(i + 1);
       }
