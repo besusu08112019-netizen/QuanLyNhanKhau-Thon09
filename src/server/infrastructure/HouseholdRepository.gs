@@ -59,6 +59,10 @@ Infrastructure.HouseholdRepository = function(db) {
     return db.append(Domain.Tables.HOUSEHOLDS, record);
   }
 
+  function createMany(records) {
+    return db.appendMany(Domain.Tables.HOUSEHOLDS, records || []);
+  }
+
   function update(id, record) {
     return db.replace(Domain.Tables.HOUSEHOLDS, id, record);
   }
@@ -74,6 +78,7 @@ Infrastructure.HouseholdRepository = function(db) {
     findById: findById,
     findByCode: findByCode,
     create: create,
+    createMany: createMany,
     update: update,
     countActiveMembers: countActiveMembers
   };
