@@ -50,12 +50,15 @@ Application.SecurityService = function(db, logger) {
     return JSON.stringify({ userId: user.id, email: user.email, issuedAt: Entity.now() });
   }
 
+  function bindGoogleSession(user) {
+    var googleEmail = activeGoogleEmail();
+    if (googleEmail) CacheService.getScriptCache().put(AUTH_GOOGLE_PREFIX + googleEmail, tokenPayload(user), AUTH_TTL_SECONDS);
+  }
+
   function createSession(user) {
     var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-    var cache = CacheService.getScriptCache();
-    cache.put(AUTH_CACHE_PREFIX + token, tokenPayload(user), AUTH_TTL_SECONDS);
-    var googleEmail = activeGoogleEmail();
-    if (googleEmail) cache.put(AUTH_GOOGLE_PREFIX + googleEmail, tokenPayload(user), AUTH_TTL_SECONDS);
+    CacheService.getScriptCache().put(AUTH_CACHE_PREFIX + token, tokenPayload(user), AUTH_TTL_SECONDS);
+    bindGoogleSession(user);
     return token;
   }
 
@@ -168,7 +171,9 @@ Application.SecurityService = function(db, logger) {
   }
 
   function currentUser(authToken) {
-    var user = userFromToken(authToken) || userFromGoogleSession();
+    var user = userFromToken(authToken);
+    if (user) bindGoogleSession(user);
+    if (!user) user = userFromGoogleSession();
     if (!user) user = ensureGoogleUser();
     if (user.status !== Domain.Status.ACTIVE) throw new Error('Tài khoản đang bị khóa');
     return touchLogin(user);
