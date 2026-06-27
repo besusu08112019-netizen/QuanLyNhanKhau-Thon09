@@ -16,24 +16,24 @@
 </head>
 <body>
   <div class="header">
-    <div class="title">Phieu thong tin nhan khau</div>
-    <div class="subtitle">He thong Quan ly Nhan khau Thon 09</div>
+    <div class="title">Phiếu thông tin nhân khẩu</div>
+    <div class="subtitle">Hệ thống Quản lý Nhân khẩu Thôn 09</div>
   </div>
   <table>
-    <tr><td>Ma nhan khau</td><td><?= citizen.citizenCode ?></td></tr>
-    <tr><td>Ho va ten</td><td><?= citizen.fullName ?></td></tr>
-    <tr><td>Gioi tinh</td><td><?= citizen.gender ?></td></tr>
-    <tr><td>Ngay sinh</td><td><?= citizen.dateOfBirth ?></td></tr>
-    <tr><td>CCCD</td><td><?= citizen.identityNumber ?></td></tr>
-    <tr><td>Quan he voi chu ho</td><td><?= citizen.relationship ?></td></tr>
-    <tr><td>Nghe nghiep</td><td><?= citizen.occupation ?></td></tr>
-    <tr><td>Dia chi thuong tru</td><td><?= citizen.permanentAddress ?></td></tr>
-    <tr><td>Noi o hien nay</td><td><?= citizen.currentAddress ?></td></tr>
-    <tr><td>Trang thai</td><td><?= citizen.status ?></td></tr>
+    <tr><td>Mã nhân khẩu</td><td><?= citizen.citizenCode ?></td></tr>
+    <tr><td>Họ và tên</td><td><?= citizen.fullName ?></td></tr>
+    <tr><td>Giới tính</td><td><?= citizen.gender ?></td></tr>
+    <tr><td>Ngày sinh</td><td><?= citizen.dateOfBirth ?></td></tr>
+    <tr><td>CCCD/CMND</td><td><?= citizen.identityNumber ?></td></tr>
+    <tr><td>Quan hệ với chủ hộ</td><td><?= citizen.relationship ?></td></tr>
+    <tr><td>Nghề nghiệp</td><td><?= citizen.occupation ?></td></tr>
+    <tr><td>Địa chỉ thường trú</td><td><?= citizen.permanentAddress ?></td></tr>
+    <tr><td>Nơi ở hiện nay</td><td><?= citizen.currentAddress ?></td></tr>
+    <tr><td>Trạng thái</td><td><?= citizen.status ?></td></tr>
   </table>
   <div class="footer">
-    <div>Ngay xuat: <?= new Date().toLocaleDateString('vi-VN') ?></div>
-    <div class="signature">Nguoi lap<br><br><br>________________</div>
+    <div>Ngày xuất: <?= new Date().toLocaleDateString('vi-VN') ?></div>
+    <div class="signature">Người lập<br><br><br>________________</div>
   </div>
 </body>
 </html>
