@@ -3,7 +3,7 @@ var Interface = Interface || {};
 Interface.Container = function() {
   var db = Infrastructure.Database();
   var logger = Application.LogService(db);
-  var security = Application.SecurityService(db);
+  var security = Application.SecurityService(db, logger);
   var householdRepository = Infrastructure.HouseholdRepository(db);
   var personRepository = Infrastructure.PersonRepository(db);
   return {
@@ -17,7 +17,8 @@ Interface.Container = function() {
     reports: Application.ReportService(db, logger),
     backup: Application.BackupService(db, logger),
     pdf: Application.PdfService(db, logger),
-    admin: Application.AdminService(db, logger)
+    admin: Application.AdminService(db, logger),
+    system: Application.SystemService(db, logger)
   };
 };
 
@@ -50,20 +51,31 @@ Interface.ApiController = function(container) {
     'report.population': [Domain.Modules.REPORT, Domain.Actions.READ, function(payload) { return container.reports.population(payload); }],
     'report.household': [Domain.Modules.REPORT, Domain.Actions.READ, function(payload) { return container.reports.household(payload); }],
     'report.households': [Domain.Modules.REPORT, Domain.Actions.READ, function(payload) { return container.reports.households(payload); }],
+    'report.preview': [Domain.Modules.REPORT, Domain.Actions.READ, function(payload) { return container.reports.print(Object.assign({}, payload || {}, { noLog: true })); }],
     'report.exportPdf': [Domain.Modules.REPORT, Domain.Actions.EXPORT, function(payload) { return container.reports.exportPdf(payload); }],
     'report.exportExcel': [Domain.Modules.REPORT, Domain.Actions.EXPORT, function(payload) { return container.reports.exportExcel(payload); }],
     'report.print': [Domain.Modules.REPORT, Domain.Actions.EXPORT, function(payload) { return container.reports.print(payload); }],
     'pdf.citizen': [Domain.Modules.PDF, Domain.Actions.EXPORT, function(payload) { return container.pdf.renderCitizenCard(payload.citizenId); }],
     'backup.create': [Domain.Modules.BACKUP, Domain.Actions.CREATE, function(payload) { return container.backup.createBackup(payload && payload.note); }],
     'backup.list': [Domain.Modules.BACKUP, Domain.Actions.READ, function() { return container.backup.listBackups(); }],
+    'backup.restore': [Domain.Modules.BACKUP, Domain.Actions.UPDATE, function(payload) { return container.backup.restoreBackup(payload.fileId); }],
+    'backup.daily': [Domain.Modules.BACKUP, Domain.Actions.CREATE, function() { return container.backup.dailyBackup(); }],
+    'backup.setupDaily': [Domain.Modules.BACKUP, Domain.Actions.UPDATE, function() { return container.backup.setupDailyBackup(); }],
     'user.me': [Domain.Modules.USER, Domain.Actions.READ, function() { return container.security.currentUser(); }],
-    'user.list': [Domain.Modules.USER, Domain.Actions.READ, function() { return container.db.readAll(Domain.Tables.USERS); }],
+    'user.list': [Domain.Modules.USER, Domain.Actions.READ, function(payload) { return container.admin.listUsers(payload); }],
     'user.create': [Domain.Modules.USER, Domain.Actions.CREATE, function(payload) { return container.admin.createUser(payload); }],
     'user.update': [Domain.Modules.USER, Domain.Actions.UPDATE, function(payload) { return container.admin.updateUser(payload.id, payload); }],
     'user.delete': [Domain.Modules.USER, Domain.Actions.DELETE, function(payload) { return container.admin.deleteUser(payload.id); }],
+    'user.lock': [Domain.Modules.USER, Domain.Actions.DELETE, function(payload) { return container.admin.lockUser(payload.id); }],
+    'user.unlock': [Domain.Modules.USER, Domain.Actions.UPDATE, function(payload) { return container.admin.unlockUser(payload.id); }],
+    'user.changePassword': [Domain.Modules.USER, Domain.Actions.UPDATE, function(payload) { return container.admin.changePassword(payload.id, payload.password); }],
     'permission.list': [Domain.Modules.PERMISSION, Domain.Actions.READ, function() { return container.db.readAll(Domain.Tables.PERMISSIONS); }],
     'permission.update': [Domain.Modules.PERMISSION, Domain.Actions.UPDATE, function(payload) { return container.admin.updatePermission(payload.id, payload); }],
-    'logs.list': [Domain.Modules.LOGS, Domain.Actions.READ, function() { return container.db.readAll(Domain.Tables.LOGS).slice(-500).reverse(); }]
+    'logs.list': [Domain.Modules.LOGS, Domain.Actions.READ, function(payload) { return container.logger.search(Object.assign({ page: 1, pageSize: 500 }, payload || {})); }],
+    'logs.search': [Domain.Modules.LOGS, Domain.Actions.READ, function(payload) { return container.logger.search(payload); }],
+    'settings.get': [Domain.Modules.SETTINGS, Domain.Actions.READ, function() { return container.system.getSettings(); }],
+    'settings.list': [Domain.Modules.SETTINGS, Domain.Actions.READ, function() { return container.system.listSettings(); }],
+    'settings.save': [Domain.Modules.SETTINGS, Domain.Actions.UPDATE, function(payload) { return container.system.saveSettings(payload); }]
   };
 
   function handle(action, payload) {
