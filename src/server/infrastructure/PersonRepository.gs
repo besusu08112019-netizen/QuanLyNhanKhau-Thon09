@@ -13,9 +13,25 @@ Infrastructure.PersonRepository = function(db) {
     return String(value || '').trim().toUpperCase();
   }
 
+  function presenceStatus(value) {
+    var text = normalize(value);
+    if (!text || text === 'at_home' || text === 'at home' || text === 'home' || text === 'o nha' || text === 'co mat') return 'AT_HOME';
+    if (text === 'away' || text === 'di vang' || text === 'vang' || text === 'tam vang') return 'AWAY';
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function presenceLabel(value) {
+    return presenceStatus(value) === 'AWAY' ? 'Đi vắng' : 'Ở nhà';
+  }
+
   function statusMatches(actual, expected) {
     if (!expected) return true;
     return personStatus(actual) === personStatus(expected);
+  }
+
+  function presenceMatches(actual, expected) {
+    if (!expected) return true;
+    return presenceStatus(actual) === presenceStatus(expected);
   }
 
   function serializeValue(value) {
@@ -33,6 +49,7 @@ Infrastructure.PersonRepository = function(db) {
       record[key] = serializeValue(person[key]);
     });
     record.status = record.status || 'ALIVE';
+    record.presenceStatus = presenceStatus(record.presenceStatus || record.currentStatus || record.residencyStatus);
     return record;
   }
 
@@ -63,6 +80,7 @@ Infrastructure.PersonRepository = function(db) {
       record.householdId = record.householdCode;
     }
     record.status = record.status || 'ALIVE';
+    record.presenceStatus = presenceStatus(record.presenceStatus || record.currentStatus || record.residencyStatus);
     return record;
   }
 
@@ -89,7 +107,9 @@ Infrastructure.PersonRepository = function(db) {
       person.householdAddress,
       person.householdHeadName,
       person.status,
-      personStatus(person.status) === 'DECEASED' ? 'Đã chết' : 'Còn sống'
+      person.presenceStatus,
+      personStatus(person.status) === 'DECEASED' ? 'Đã chết' : 'Còn sống',
+      presenceLabel(person.presenceStatus)
     ].some(function(value) {
       return normalize(value).indexOf(keyword) >= 0;
     });
@@ -107,6 +127,7 @@ Infrastructure.PersonRepository = function(db) {
       return enrich(person, households);
     }).filter(function(person) {
       if (query.status && !statusMatches(person.status, query.status)) return false;
+      if (query.presenceStatus && !presenceMatches(person.presenceStatus, query.presenceStatus)) return false;
       if (householdFilter && normalize(person.householdId) !== householdFilter && normalize(person.householdCode) !== householdFilter && normalize(person.householdInternalId) !== householdFilter) return false;
       if (query.identityNumber && !keyword && normalize(person.identityNumber) !== normalize(query.identityNumber)) return false;
       return matchesKeyword(person, keyword);
