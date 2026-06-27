@@ -32,9 +32,21 @@ Infrastructure.Database = function() {
     return sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function(header) { return String(header || '').trim(); });
   }
 
+  function normalizeHeader(header) {
+    return String(header || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function legacyHamletIndex(headers) {
+    for (var i = 0; i < headers.length; i++) {
+      var value = normalizeHeader(headers[i]);
+      if (value === 'hamlet' || value === 'thon') return i;
+    }
+    return -1;
+  }
+
   function mergeLegacyHouseholdHamlet(sheet, existing) {
     var addressIndex = existing.indexOf('address');
-    var hamletIndex = existing.indexOf('hamlet');
+    var hamletIndex = legacyHamletIndex(existing);
     var lastRow = sheet.getLastRow();
     if (addressIndex === -1 || hamletIndex === -1 || lastRow < 2) return;
     var rowCount = lastRow - 1;
@@ -58,10 +70,10 @@ Infrastructure.Database = function() {
       return;
     }
     var existing = currentHeaders(sheet);
-    if (tableName === Domain.Tables.HOUSEHOLDS) {
+    if (tableName === Domain.Tables.HOUSEHOLDS && existing.indexOf('address') !== -1) {
       mergeLegacyHouseholdHamlet(sheet, existing);
       for (var i = existing.length - 1; i >= 0; i--) {
-        if (existing[i] === 'hamlet') sheet.deleteColumn(i + 1);
+        if (i !== existing.indexOf('address') && legacyHamletIndex([existing[i]]) === 0) sheet.deleteColumn(i + 1);
       }
       existing = currentHeaders(sheet);
     }
