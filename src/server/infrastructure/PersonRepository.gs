@@ -2,11 +2,31 @@ var Infrastructure = Infrastructure || {};
 
 Infrastructure.PersonRepository = function(db) {
   function normalize(value) {
-    return String(value || '').trim().toLowerCase();
+    return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
   function read(options) {
     return db.readAll(Domain.Tables.CITIZENS, options || {});
+  }
+
+  function householdIndex() {
+    return db.readAll(Domain.Tables.HOUSEHOLDS, { includeDeleted: true }).reduce(function(acc, household) {
+      if (household.id) acc[String(household.id)] = household;
+      if (household.householdCode) acc[normalize(household.householdCode)] = household;
+      return acc;
+    }, {});
+  }
+
+  function enrich(person, households) {
+    var record = Object.assign({}, person || {});
+    var household = households[String(record.householdId)] || households[normalize(record.householdId)];
+    if (household) {
+      record.householdCode = household.householdCode || '';
+      record.householdAddress = household.address || '';
+      record.householdHeadName = household.headCitizenName || '';
+    }
+    record.status = record.status || Domain.Status.ACTIVE;
+    return record;
   }
 
   function matchesKeyword(person, keyword) {
@@ -19,7 +39,10 @@ Infrastructure.PersonRepository = function(db) {
       person.relationship,
       person.currentAddress,
       person.permanentAddress,
-      person.occupation
+      person.occupation,
+      person.householdCode,
+      person.householdAddress,
+      person.householdHeadName
     ].some(function(value) {
       return normalize(value).indexOf(keyword) >= 0;
     });
@@ -31,9 +54,12 @@ Infrastructure.PersonRepository = function(db) {
     var page = Math.max(parseInt(query.page || 1, 10), 1);
     var pageSize = Math.min(Math.max(parseInt(query.pageSize || 20, 10), 5), 100);
     var includeDeleted = query.includeDeleted === true || query.includeDeleted === 'true';
-    var rows = read({ includeDeleted: includeDeleted }).filter(function(person) {
+    var households = householdIndex();
+    var rows = read({ includeDeleted: includeDeleted }).map(function(person) {
+      return enrich(person, households);
+    }).filter(function(person) {
       if (query.status && person.status !== query.status) return false;
-      if (query.householdId && person.householdId !== query.householdId) return false;
+      if (query.householdId && person.householdId !== query.householdId && normalize(person.householdCode) !== normalize(query.householdId)) return false;
       if (query.identityNumber && normalize(person.identityNumber) !== normalize(query.identityNumber)) return false;
       return matchesKeyword(person, keyword);
     });
