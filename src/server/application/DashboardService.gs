@@ -33,8 +33,21 @@ Application.DashboardService = function(db) {
     return 'other';
   }
 
+  function personStatus(value) {
+    var text = normalizeText(value);
+    if (!text || text === 'active' || text === 'alive' || text === 'con song') return 'ALIVE';
+    if (text === 'inactive' || text === 'deceased' || text === 'dead' || text === 'da chet') return 'DECEASED';
+    if (text === 'deleted') return Domain.Status.DELETED;
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function personStatusMatches(actual, expected) {
+    if (!expected) return true;
+    return personStatus(actual) === personStatus(expected);
+  }
+
   function residencyKey(person) {
-    var values = [person.residencyStatus, person.movementType, person.status, person.note, person.relationship].map(normalizeText).join(' ');
+    var values = [person.residencyStatus, person.movementType, person.note, person.relationship].map(normalizeText).join(' ');
     if (values.indexOf('tam tru') >= 0 || values.indexOf('temporary residence') >= 0) return 'temporaryResidence';
     if (values.indexOf('tam vang') >= 0 || values.indexOf('temporary absence') >= 0) return 'temporaryAbsence';
     return 'regular';
@@ -59,7 +72,7 @@ Application.DashboardService = function(db) {
     return '60+';
   }
 
-  function statusLabel(value) {
+  function householdStatusLabel(value) {
     if (value === Domain.Status.ACTIVE) return 'Đang hoạt động';
     if (value === Domain.Status.INACTIVE) return 'Tạm ngưng';
     if (value === Domain.Status.DELETED) return 'Đã xóa';
@@ -73,7 +86,7 @@ Application.DashboardService = function(db) {
       return inDateRange(household, filters);
     });
     var citizens = db.readAll(Domain.Tables.CITIZENS).filter(function(person) {
-      if (filters.personStatus && person.status !== filters.personStatus) return false;
+      if (filters.personStatus && !personStatusMatches(person.status, filters.personStatus)) return false;
       if (filters.residencyStatus && residencyKey(person) !== filters.residencyStatus) return false;
       return inDateRange(person, filters);
     });
@@ -102,7 +115,7 @@ Application.DashboardService = function(db) {
       return acc;
     }, {});
     return Object.keys(counts).sort().map(function(key) {
-      return { label: statusLabel(key), value: counts[key] };
+      return { label: householdStatusLabel(key), value: counts[key] };
     });
   }
 
@@ -124,7 +137,7 @@ Application.DashboardService = function(db) {
     var dataset = load(filters);
     var citizens = dataset.citizens;
     var households = dataset.households;
-    var activeCitizens = citizens.filter(function(person) { return person.status === Domain.Status.ACTIVE; });
+    var livingCitizens = citizens.filter(function(person) { return personStatus(person.status) === 'ALIVE'; });
     var residency = citizens.reduce(function(acc, person) {
       acc[residencyKey(person)] += 1;
       return acc;
@@ -139,7 +152,7 @@ Application.DashboardService = function(db) {
         citizens: citizens.length,
         male: gender.Nam || 0,
         female: gender['Nữ'] || 0,
-        activeCitizens: activeCitizens.length,
+        activeCitizens: livingCitizens.length,
         temporaryResidence: residency.temporaryResidence,
         temporaryAbsence: residency.temporaryAbsence
       },
