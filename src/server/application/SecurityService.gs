@@ -97,18 +97,28 @@ Application.SecurityService = function(db, logger) {
   };
 };
 
+Application.rolePolicyAllows = function(role, moduleName, actionName) {
+  if (role === Domain.Roles.ADMIN) return true;
+  if ([Domain.Modules.USER, Domain.Modules.PERMISSION, Domain.Modules.SETTINGS, Domain.Modules.BACKUP, Domain.Modules.LOGS].indexOf(moduleName) >= 0) return false;
+  if (role === Domain.Roles.OFFICER) {
+    if (moduleName === Domain.Modules.HOUSEHOLD || moduleName === Domain.Modules.CITIZEN) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE, Domain.Actions.DELETE].indexOf(actionName) >= 0;
+    if (moduleName === Domain.Modules.REPORT || moduleName === Domain.Modules.DASHBOARD || moduleName === Domain.Modules.PDF) return [Domain.Actions.READ, Domain.Actions.EXPORT].indexOf(actionName) >= 0;
+    if (moduleName === Domain.Modules.MOVEMENT) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE].indexOf(actionName) >= 0;
+    return false;
+  }
+  if (role === Domain.Roles.VIEWER) return [Domain.Modules.DASHBOARD, Domain.Modules.HOUSEHOLD, Domain.Modules.CITIZEN, Domain.Modules.REPORT].indexOf(moduleName) >= 0 && actionName === Domain.Actions.READ;
+  return false;
+};
+
 Application.seedDefaultPermissions = function(db) {
   var roles = [Domain.Roles.ADMIN, Domain.Roles.OFFICER, Domain.Roles.VIEWER];
   var modules = Object.keys(Domain.Modules).map(function(key) { return Domain.Modules[key]; });
   var existing = db.readAll(Domain.Tables.PERMISSIONS, { includeDeleted: true });
-  function allowedByPolicy(role, moduleName, actionName) {
-    return Application.SecurityService(db).hasPermission({ role: role, status: Domain.Status.ACTIVE }, moduleName, actionName);
-  }
   roles.forEach(function(role) {
     modules.forEach(function(moduleName) {
       Object.keys(Domain.Actions).forEach(function(actionKey) {
         var actionName = Domain.Actions[actionKey];
-        var allowed = allowedByPolicy(role, moduleName, actionName);
+        var allowed = Application.rolePolicyAllows(role, moduleName, actionName);
         var found = existing.filter(function(item) { return item.role === role && item.module === moduleName && item.action === actionName; })[0];
         if (found) {
           if (String(found.allowed) !== String(allowed)) db.replace(Domain.Tables.PERMISSIONS, found.id, Entity.withUpdateAudit(found, { allowed: String(allowed) }));
