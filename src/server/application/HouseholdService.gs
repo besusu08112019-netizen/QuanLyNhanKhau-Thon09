@@ -7,8 +7,7 @@ Application.HouseholdService = function(repository, logger) {
       id: data.id || '',
       householdCode: String(data.householdCode || '').trim().toUpperCase(),
       headCitizenId: String(data.headCitizenId || '').trim(),
-      address: String(data.address || '').trim(),
-      hamlet: String(data.hamlet || '').trim(),
+      address: String(data.address || data.hamlet || '').trim(),
       phone: String(data.phone || '').trim(),
       areaCode: String(data.areaCode || '').trim().toUpperCase(),
       memberCount: data.memberCount || '',
@@ -21,6 +20,9 @@ Application.HouseholdService = function(repository, logger) {
     Entity.assertRequired(Domain.Tables.HOUSEHOLDS, data);
     if (!/^[A-Z0-9._-]{2,30}$/.test(data.householdCode)) {
       throw new Error('Ma ho chi duoc gom chu cai, so, dau cham, gach ngang hoac gach duoi; do dai 2-30 ky tu');
+    }
+    if (data.address.length < 2) {
+      throw new Error('Dia chi/thon phai co it nhat 2 ky tu');
     }
     if (data.phone && !/^[0-9+() .-]{8,20}$/.test(data.phone)) {
       throw new Error('So dien thoai khong hop le');
