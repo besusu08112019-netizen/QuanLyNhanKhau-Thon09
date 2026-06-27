@@ -4,11 +4,11 @@ Google Sheets database gom cac sheet sau.
 
 ## households
 
-`id`, `householdCode`, `headCitizenId`, `address`, `hamlet`, `phone`, `areaCode`, `memberCount`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`
+`id`, `householdCode`, `headCitizenId`, `address`, `phone`, `areaCode`, `memberCount`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`, `headCitizenName`, `meritoriousFamily`, `poorHousehold`, `nearPoorHousehold`, `disabledHousehold`
 
 ## citizens
 
-`id`, `citizenCode`, `householdId`, `fullName`, `gender`, `dateOfBirth`, `identityNumber`, `identityIssueDate`, `identityIssuePlace`, `relationship`, `ethnicity`, `religion`, `occupation`, `phone`, `permanentAddress`, `currentAddress`, `educationLevel`, `maritalStatus`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`
+`id`, `citizenCode`, `householdId`, `fullName`, `gender`, `dateOfBirth`, `identityNumber`, `identityIssueDate`, `identityIssuePlace`, `relationship`, `ethnicity`, `religion`, `occupation`, `phone`, `permanentAddress`, `currentAddress`, `educationLevel`, `maritalStatus`, `status`, `presenceStatus`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`
 
 ## movements
 
