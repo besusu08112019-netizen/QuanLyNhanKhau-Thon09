@@ -33,8 +33,8 @@ Application.ImportService = function(importRepository, householdRepository, pers
   function normalizeGender(value) {
     var raw = normalize(value);
     if (raw === 'nam' || raw === 'male') return 'Nam';
-    if (raw === 'nu' || raw === 'female') return 'Nu';
-    if (raw === 'khac' || raw === 'other') return 'Khac';
+    if (raw === 'nu' || raw === 'female') return 'Nữ';
+    if (raw === 'khac' || raw === 'other') return 'Khác';
     return text(value);
   }
 
@@ -186,7 +186,7 @@ Application.ImportService = function(importRepository, householdRepository, pers
         identityNumber: identityNumber,
         identityIssueDate: parseDate(field(row, personAliases.identityIssueDate)),
         identityIssuePlace: text(field(row, personAliases.identityIssuePlace)),
-        relationship: text(field(row, personAliases.relationship)) || 'Khac',
+        relationship: text(field(row, personAliases.relationship)) || 'Khác',
         ethnicity: text(field(row, personAliases.ethnicity)),
         religion: text(field(row, personAliases.religion)),
         occupation: text(field(row, personAliases.occupation)),
@@ -206,7 +206,7 @@ Application.ImportService = function(importRepository, householdRepository, pers
       if (record.identityNumber && identities[normalize(record.identityNumber)]) rowErrors.push('CCCD da ton tai');
       if (record.identityNumber && seenIdentity[normalize(record.identityNumber)]) rowErrors.push('CCCD bi trung trong file import');
       if (!record.dateOfBirth) rowErrors.push('Ngay sinh khong hop le');
-      if (['Nam','Nu','Khac'].indexOf(record.gender) < 0) rowErrors.push('Gioi tinh khong hop le');
+      if (['Nam','Nữ','Khác'].indexOf(record.gender) < 0) rowErrors.push('Gioi tinh khong hop le');
       if (record.status && [Domain.Status.ACTIVE, Domain.Status.INACTIVE, Domain.Status.DELETED].indexOf(record.status) < 0) rowErrors.push('Trang thai nhan khau khong hop le');
       if (rowErrors.length) errors.push({ rowNumber: row.rowNumber, message: rowErrors.join('; ') });
       else {
