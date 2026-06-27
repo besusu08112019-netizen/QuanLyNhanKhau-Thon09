@@ -85,6 +85,27 @@
     value = value || 'ACTIVE';
     return '<span class="status-pill status-' + html(value) + '">' + html(statusLabels[value] || value) + '</span>';
   }
+  function readFilters() {
+    if (el('personKeyword')) state.keyword = el('personKeyword').value.trim();
+    if (el('personHousehold')) state.householdId = el('personHousehold').value.trim();
+    if (el('personStatus')) state.status = el('personStatus').value;
+    if (el('personPageSize')) state.pageSize = parseInt(el('personPageSize').value, 10) || 20;
+    state.includeDeleted = state.status === 'DELETED';
+    return Object.assign({}, state, {
+      search: state.keyword,
+      q: state.keyword,
+      fullName: state.keyword,
+      citizenCode: state.keyword,
+      identityNumber: state.keyword,
+      phone: state.keyword,
+      householdCode: state.householdId
+    });
+  }
+  function runSearch() {
+    readFilters();
+    state.page = 1;
+    refresh();
+  }
   function normalizePage(result) {
     result = result || {};
     if (Array.isArray(result)) result = { items: result, total: result.length, page: 1, pageSize: result.length || state.pageSize, totalPages: 1 };
@@ -170,8 +191,7 @@
     if (payload.phone && !/^[0-9+() .-]{8,20}$/.test(payload.phone)) throw new Error('Số điện thoại không hợp lệ');
   }
   function refresh() {
-    state.includeDeleted = state.status === 'DELETED';
-    api('person.safePage', state).then(function(result) {
+    api('person.safePage', readFilters()).then(function(result) {
       result = normalizePage(result);
       var grid = el('grid');
       if (!grid) return;
@@ -228,16 +248,20 @@
     activate();
     var app = el('app');
     if (!app) return;
-    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option><option value="DELETED">Đã xóa</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
+    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option><option value="DELETED">Đã xóa</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select><button class="btn btn-outline-primary btn-sm" id="personSearch" title="Tìm kiếm"><i class="fas fa-search"></i></button><button class="btn btn-outline-secondary btn-sm" id="personClearSearch" title="Xóa tìm kiếm"><i class="fas fa-times"></i></button></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
     el('personKeyword').value = state.keyword;
     el('personHousehold').value = state.householdId;
     el('personStatus').value = state.status;
     el('personPageSize').value = state.pageSize;
     el('btnCreatePerson').onclick = function() { modalForm('Thêm nhân khẩu', {}, function(payload) { api('person.create', payload).then(function() { $('#personModal').modal('hide'); state.keyword = ''; state.householdId = ''; state.status = ''; state.page = 1; toast('Đã thêm nhân khẩu', 'success'); render(); }).catch(function(error) { toast(error.message, 'danger'); }); }); };
-    el('personKeyword').oninput = debounce(function() { state.keyword = this.value; state.page = 1; refresh(); }, 300);
-    el('personHousehold').oninput = debounce(function() { state.householdId = this.value; state.page = 1; refresh(); }, 300);
-    el('personStatus').onchange = function() { state.status = this.value; state.page = 1; refresh(); };
-    el('personPageSize').onchange = function() { state.pageSize = parseInt(this.value, 10); state.page = 1; refresh(); };
+    el('personSearch').onclick = runSearch;
+    el('personClearSearch').onclick = function() { el('personKeyword').value = ''; el('personHousehold').value = ''; runSearch(); };
+    el('personKeyword').oninput = debounce(runSearch, 350);
+    el('personHousehold').oninput = debounce(runSearch, 350);
+    el('personKeyword').onkeydown = function(event) { if (event.key === 'Enter') { event.preventDefault(); runSearch(); } };
+    el('personHousehold').onkeydown = function(event) { if (event.key === 'Enter') { event.preventDefault(); runSearch(); } };
+    el('personStatus').onchange = runSearch;
+    el('personPageSize').onchange = runSearch;
     refresh();
   }
   document.addEventListener('click', function(event) {
