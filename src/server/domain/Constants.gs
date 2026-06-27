@@ -58,7 +58,7 @@ Domain.Tables = Object.freeze({
 });
 
 Domain.Schema = Object.freeze({
-  households: ['id','householdCode','headCitizenId','address','hamlet','phone','areaCode','memberCount','note','status','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
+  households: ['id','householdCode','headCitizenId','address','phone','areaCode','memberCount','note','status','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
   citizens: ['id','citizenCode','householdId','fullName','gender','dateOfBirth','identityNumber','identityIssueDate','identityIssuePlace','relationship','ethnicity','religion','occupation','phone','permanentAddress','currentAddress','educationLevel','maritalStatus','status','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
   movements: ['id','citizenId','householdId','type','fromAddress','toAddress','reason','effectiveDate','documentNumber','note','status','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
   users: ['id','email','displayName','role','status','lastLoginAt','createdAt','createdBy','updatedAt','updatedBy','deletedAt','deletedBy'],
