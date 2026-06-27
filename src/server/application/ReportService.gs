@@ -140,7 +140,7 @@ Application.ReportService = function(db, logger) {
       if (household) {
         var members = data.citizens.filter(function(person) { return person.householdId === household.id; });
         report.rows = [
-          ['Ma ho', household.householdCode], ['Dia chi', household.address], ['Thon', household.hamlet], ['Dien thoai', household.phone], ['Khu vuc', household.areaCode], ['Trang thai', household.status], ['So nhan khau', members.length]
+          ['Ma ho', household.householdCode], ['Dia chi/Thon', household.address], ['Dien thoai', household.phone], ['Khu vuc', household.areaCode], ['Trang thai', household.status], ['So nhan khau', members.length]
         ];
         members.forEach(function(person) { report.rows.push(['Thanh vien', person.fullName + ' - ' + person.relationship + ' - ' + person.status]); });
       }
@@ -159,8 +159,8 @@ Application.ReportService = function(db, logger) {
     }
     if (type === 'household') {
       report.title = 'Bao cao danh sach ho dan';
-      report.columns = ['Ma ho', 'Dia chi', 'Thon', 'Dien thoai', 'Khu vuc', 'Trang thai'];
-      report.rows = data.households.map(function(item) { return [item.householdCode, item.address, item.hamlet, item.phone, item.areaCode, item.status]; });
+      report.columns = ['Ma ho', 'Dia chi/Thon', 'Dien thoai', 'Khu vuc', 'Trang thai'];
+      report.rows = data.households.map(function(item) { return [item.householdCode, item.address, item.phone, item.areaCode, item.status]; });
       return report;
     }
     if (type === 'population') {
@@ -205,7 +205,7 @@ Application.ReportService = function(db, logger) {
   function dashboard(filters) { return Application.DashboardService(db).summary(filters || {}); }
   function summary(filters) { return makeReport('summary', filters || {}); }
   function population(filters) { return makeReport('population', filters || {}); }
-  function households(filters) { return makeReport('household', filters || {}).rows.map(function(row) { return { householdCode: row[0], address: row[1], hamlet: row[2], phone: row[3], areaCode: row[4], status: row[5] }; }); }
+  function households(filters) { return makeReport('household', filters || {}).rows.map(function(row) { return { householdCode: row[0], address: row[1], phone: row[2], areaCode: row[3], status: row[4] }; }); }
   function household(filters) { return makeReport('household', filters || {}); }
 
   function renderHtml(payload) {
