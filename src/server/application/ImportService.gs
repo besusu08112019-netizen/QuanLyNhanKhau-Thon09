@@ -179,7 +179,7 @@ Application.ImportService = function(importRepository, householdRepository, pers
       var household = households[normalize(householdCode)];
       var record = {
         citizenCode: upper(field(row, personAliases.citizenCode)) || ('NK-' + String(row.rowNumber)),
-        householdId: household ? household.id : '',
+        householdId: household ? household.householdCode : '',
         fullName: fullName,
         gender: gender,
         dateOfBirth: dateOfBirth,
