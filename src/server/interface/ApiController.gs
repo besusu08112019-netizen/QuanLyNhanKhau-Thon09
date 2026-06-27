@@ -11,7 +11,8 @@ Interface.Container = function() {
     registry: Application.RegistryService(db, logger),
     reports: Application.ReportService(db),
     backup: Application.BackupService(db, logger),
-    pdf: Application.PdfService(db, logger)
+    pdf: Application.PdfService(db, logger),
+    admin: Application.AdminService(db, logger)
   };
 };
 
@@ -37,7 +38,11 @@ Interface.ApiController = function(container) {
     'backup.list': [Domain.Modules.BACKUP, Domain.Actions.READ, function() { return container.backup.listBackups(); }],
     'user.me': [Domain.Modules.USER, Domain.Actions.READ, function() { return container.security.currentUser(); }],
     'user.list': [Domain.Modules.USER, Domain.Actions.READ, function() { return container.db.readAll(Domain.Tables.USERS); }],
+    'user.create': [Domain.Modules.USER, Domain.Actions.CREATE, function(payload) { return container.admin.createUser(payload); }],
+    'user.update': [Domain.Modules.USER, Domain.Actions.UPDATE, function(payload) { return container.admin.updateUser(payload.id, payload); }],
+    'user.delete': [Domain.Modules.USER, Domain.Actions.DELETE, function(payload) { return container.admin.deleteUser(payload.id); }],
     'permission.list': [Domain.Modules.PERMISSION, Domain.Actions.READ, function() { return container.db.readAll(Domain.Tables.PERMISSIONS); }],
+    'permission.update': [Domain.Modules.PERMISSION, Domain.Actions.UPDATE, function(payload) { return container.admin.updatePermission(payload.id, payload); }],
     'logs.list': [Domain.Modules.LOGS, Domain.Actions.READ, function() { return container.db.readAll(Domain.Tables.LOGS).slice(-500).reverse(); }]
   };
 
