@@ -1,0 +1,168 @@
+<script>
+(function() {
+  var state = { route: '', users: [], permissions: [], backups: [], logs: { page: 1, pageSize: 50 } };
+
+  function el(id) { return document.getElementById(id); }
+  function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]); }); }
+  function toast(message, kind) {
+    var host = document.querySelector('.toast-host') || document.body.appendChild(document.createElement('div'));
+    host.className = 'toast-host';
+    var node = document.createElement('div');
+    node.className = 'alert alert-' + (kind || 'info') + ' shadow-sm';
+    node.textContent = message;
+    host.appendChild(node);
+    setTimeout(function() { node.remove(); }, 3500);
+  }
+  function setLoading(active) {
+    var layer = el('loadingLayer');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'loadingLayer';
+      layer.className = 'loading-layer';
+      layer.innerHTML = '<div class="spinner-border text-primary"></div>';
+      document.body.appendChild(layer);
+    }
+    layer.classList.toggle('active', !!active);
+  }
+  function call(action, payload) {
+    setLoading(true);
+    return new Promise(function(resolve, reject) {
+      google.script.run.withSuccessHandler(function(response) {
+        setLoading(false);
+        if (!response || !response.ok) reject(new Error(response && response.error ? response.error.message : 'Loi he thong'));
+        else resolve(response.data);
+      }).withFailureHandler(function(error) {
+        setLoading(false);
+        reject(error);
+      }).api(action, payload || {});
+    });
+  }
+  function activate(route, title) {
+    state.route = route;
+    document.querySelectorAll('[data-route]').forEach(function(item) { item.classList.toggle('active', item.getAttribute('data-route') === route); });
+    if (el('pageTitle')) el('pageTitle').textContent = title;
+  }
+  function pill(status) { return '<span class="status-pill status-' + html(status || '') + '">' + html(status || '') + '</span>'; }
+  function options(items, selected) { return items.map(function(item) { return '<option value="' + html(item) + '"' + (item === selected ? ' selected' : '') + '>' + html(item) + '</option>'; }).join(''); }
+
+  function renderUser() {
+    activate('user', 'User');
+    el('app').innerHTML = '<div class="admin-shell"><div class="module-toolbar"><div class="filters"><input id="userKeyword" class="form-control form-control-sm" placeholder="Tim email, ten, vai tro"><select id="userRole" class="form-control form-control-sm"><option value="">Tat ca vai tro</option><option value="ADMIN">Admin</option><option value="OFFICER">Can bo</option><option value="VIEWER">Chi xem</option></select><select id="userStatus" class="form-control form-control-sm"><option value="">Tat ca trang thai</option><option value="ACTIVE">Hoat dong</option><option value="INACTIVE">Bi khoa</option><option value="DELETED">Da xoa</option></select></div><div class="actions"><button id="btnUserSearch" class="btn btn-outline-secondary btn-sm"><i class="fas fa-search"></i></button><button id="btnUserCreate" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i></button></div></div><div id="userFormHost"></div><div class="card"><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr><th>Email</th><th>Ten</th><th>Vai tro</th><th>Trang thai</th><th>Dang nhap gan nhat</th><th></th></tr></thead><tbody id="userRows"></tbody></table></div></div></div>';
+    el('btnUserSearch').onclick = loadUsers;
+    el('btnUserCreate').onclick = function() { showUserForm(); };
+    loadUsers();
+  }
+  function loadUsers() {
+    call('user.list', { keyword: el('userKeyword').value, role: el('userRole').value, status: el('userStatus').value }).then(function(users) {
+      state.users = users || [];
+      el('userRows').innerHTML = state.users.length ? state.users.map(function(user) {
+        return '<tr><td>' + html(user.email) + '</td><td>' + html(user.displayName) + '</td><td>' + html(user.role) + '</td><td>' + pill(user.status) + '</td><td>' + html(user.lastLoginAt) + '</td><td class="action-cell"><button class="btn btn-outline-primary btn-xs" data-user-edit="' + html(user.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-warning btn-xs" data-user-password="' + html(user.id) + '"><i class="fas fa-key"></i></button> ' + (user.status === 'ACTIVE' ? '<button class="btn btn-outline-danger btn-xs" data-user-lock="' + html(user.id) + '"><i class="fas fa-lock"></i></button>' : '<button class="btn btn-outline-success btn-xs" data-user-unlock="' + html(user.id) + '"><i class="fas fa-lock-open"></i></button>') + '</td></tr>';
+      }).join('') : '<tr><td colspan="6" class="text-center text-muted p-4">Khong co nguoi dung</td></tr>';
+      bindUserRows();
+    }).catch(function(error) { toast(error.message, 'danger'); });
+  }
+  function bindUserRows() {
+    document.querySelectorAll('[data-user-edit]').forEach(function(button) { button.onclick = function() { showUserForm(state.users.filter(function(item) { return item.id === button.getAttribute('data-user-edit'); })[0]); }; });
+    document.querySelectorAll('[data-user-lock]').forEach(function(button) { button.onclick = function() { call('user.lock', { id: button.getAttribute('data-user-lock') }).then(function() { toast('Da khoa nguoi dung', 'success'); loadUsers(); }).catch(function(error) { toast(error.message, 'danger'); }); }; });
+    document.querySelectorAll('[data-user-unlock]').forEach(function(button) { button.onclick = function() { call('user.unlock', { id: button.getAttribute('data-user-unlock') }).then(function() { toast('Da mo khoa nguoi dung', 'success'); loadUsers(); }).catch(function(error) { toast(error.message, 'danger'); }); }; });
+    document.querySelectorAll('[data-user-password]').forEach(function(button) { button.onclick = function() { showPasswordForm(button.getAttribute('data-user-password')); }; });
+  }
+  function showUserForm(user) {
+    user = user || { email: '', displayName: '', role: 'VIEWER', status: 'ACTIVE' };
+    el('userFormHost').innerHTML = '<div class="card admin-editor"><div class="card-header"><strong>' + (user.id ? 'Sua nguoi dung' : 'Them nguoi dung') + '</strong></div><div class="card-body"><div class="form-grid"><input id="formUserEmail" class="form-control" placeholder="Email" value="' + html(user.email) + '"><input id="formUserName" class="form-control" placeholder="Ten hien thi" value="' + html(user.displayName) + '"><select id="formUserRole" class="form-control">' + options(['ADMIN','OFFICER','VIEWER'], user.role) + '</select><select id="formUserStatus" class="form-control">' + options(['ACTIVE','INACTIVE'], user.status) + '</select><input id="formUserPassword" class="form-control" type="password" placeholder="Mat khau ung dung moi"></div></div><div class="card-footer text-right"><button id="btnUserCancel" class="btn btn-outline-secondary btn-sm">Huy</button> <button id="btnUserSave" class="btn btn-primary btn-sm">Luu</button></div></div>';
+    el('btnUserCancel').onclick = function() { el('userFormHost').innerHTML = ''; };
+    el('btnUserSave').onclick = function() {
+      var payload = { id: user.id, email: el('formUserEmail').value, displayName: el('formUserName').value, role: el('formUserRole').value, status: el('formUserStatus').value };
+      if (el('formUserPassword').value) payload.password = el('formUserPassword').value;
+      call(user.id ? 'user.update' : 'user.create', payload).then(function() { toast('Da luu nguoi dung', 'success'); el('userFormHost').innerHTML = ''; loadUsers(); }).catch(function(error) { toast(error.message, 'danger'); });
+    };
+  }
+  function showPasswordForm(id) {
+    el('userFormHost').innerHTML = '<div class="card admin-editor"><div class="card-header"><strong>Doi mat khau ung dung</strong></div><div class="card-body"><input id="changePasswordValue" class="form-control" type="password" placeholder="Mat khau moi toi thieu 8 ky tu"></div><div class="card-footer text-right"><button id="btnPasswordCancel" class="btn btn-outline-secondary btn-sm">Huy</button> <button id="btnPasswordSave" class="btn btn-primary btn-sm">Luu</button></div></div>';
+    el('btnPasswordCancel').onclick = function() { el('userFormHost').innerHTML = ''; };
+    el('btnPasswordSave').onclick = function() { call('user.changePassword', { id: id, password: el('changePasswordValue').value }).then(function() { toast('Da doi mat khau', 'success'); el('userFormHost').innerHTML = ''; }).catch(function(error) { toast(error.message, 'danger'); }); };
+  }
+
+  function renderPermission() {
+    activate('permission', 'Permission');
+    el('app').innerHTML = '<div class="module-toolbar"><div class="filters"><select id="permRole" class="form-control form-control-sm"><option value="">Tat ca vai tro</option><option value="ADMIN">Admin</option><option value="OFFICER">Can bo</option><option value="VIEWER">Chi xem</option></select><input id="permKeyword" class="form-control form-control-sm" placeholder="Module/action"></div><button id="btnPermSearch" class="btn btn-outline-secondary btn-sm"><i class="fas fa-search"></i></button></div><div class="card"><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr><th>Vai tro</th><th>Module</th><th>Action</th><th>Cho phep</th><th></th></tr></thead><tbody id="permRows"></tbody></table></div></div>';
+    el('btnPermSearch').onclick = loadPermissions;
+    loadPermissions();
+  }
+  function loadPermissions() {
+    call('permission.list').then(function(rows) {
+      var role = el('permRole').value;
+      var keyword = String(el('permKeyword').value || '').toLowerCase();
+      state.permissions = (rows || []).filter(function(item) { return (!role || item.role === role) && (!keyword || [item.module, item.action].join(' ').toLowerCase().indexOf(keyword) >= 0); });
+      el('permRows').innerHTML = state.permissions.map(function(item) {
+        return '<tr><td>' + html(item.role) + '</td><td>' + html(item.module) + '</td><td>' + html(item.action) + '</td><td><select class="form-control form-control-sm" data-perm-value="' + html(item.id) + '">' + options(['true','false'], String(item.allowed)) + '</select></td><td class="action-cell"><button class="btn btn-outline-primary btn-xs" data-perm-save="' + html(item.id) + '"><i class="fas fa-save"></i></button></td></tr>';
+      }).join('') || '<tr><td colspan="5" class="text-center text-muted p-4">Khong co quyen</td></tr>';
+      document.querySelectorAll('[data-perm-save]').forEach(function(button) { button.onclick = function() { var id = button.getAttribute('data-perm-save'); call('permission.update', { id: id, allowed: document.querySelector('[data-perm-value="' + id + '"]').value }).then(function() { toast('Da cap nhat quyen', 'success'); }).catch(function(error) { toast(error.message, 'danger'); }); }; });
+    }).catch(function(error) { toast(error.message, 'danger'); });
+  }
+
+  function renderLogs() {
+    activate('logs', 'Logs');
+    el('app').innerHTML = '<div class="module-toolbar"><div class="filters"><input id="logKeyword" class="form-control form-control-sm" placeholder="Tim nhat ky"><input id="logActor" class="form-control form-control-sm" placeholder="Email"><select id="logLevel" class="form-control form-control-sm"><option value="">Tat ca level</option><option value="INFO">INFO</option><option value="WARN">WARN</option><option value="ERROR">ERROR</option></select><input id="logModule" class="form-control form-control-sm" placeholder="Module"><input id="logAction" class="form-control form-control-sm" placeholder="Action"><input id="logFrom" type="date" class="form-control form-control-sm"><input id="logTo" type="date" class="form-control form-control-sm"></div><button id="btnLogSearch" class="btn btn-outline-secondary btn-sm"><i class="fas fa-search"></i></button></div><div class="card"><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr><th>Thoi gian</th><th>Email</th><th>Module</th><th>Action</th><th>Level</th><th>Noi dung</th></tr></thead><tbody id="logRows"></tbody></table></div><div id="logPager" class="pagination-bar"></div></div>';
+    el('btnLogSearch').onclick = function() { state.logs.page = 1; loadLogs(); };
+    loadLogs();
+  }
+  function loadLogs() {
+    call('logs.search', { page: state.logs.page, pageSize: state.logs.pageSize, keyword: el('logKeyword').value, actorEmail: el('logActor').value, level: el('logLevel').value, module: el('logModule').value, action: el('logAction').value, fromDate: el('logFrom').value, toDate: el('logTo').value }).then(function(result) {
+      el('logRows').innerHTML = result.items.length ? result.items.map(function(row) { return '<tr><td>' + html(row.timestamp) + '</td><td>' + html(row.actorEmail) + '</td><td>' + html(row.module) + '</td><td>' + html(row.action) + '</td><td>' + html(row.level) + '</td><td>' + html(row.message) + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="text-center text-muted p-4">Khong co nhat ky</td></tr>';
+      el('logPager').innerHTML = '<span>Trang ' + result.page + '/' + result.totalPages + ' - ' + result.total + ' dong</span><div><button id="btnLogPrev" class="btn btn-outline-secondary btn-sm"><i class="fas fa-chevron-left"></i></button> <button id="btnLogNext" class="btn btn-outline-secondary btn-sm"><i class="fas fa-chevron-right"></i></button></div>';
+      el('btnLogPrev').disabled = result.page <= 1;
+      el('btnLogNext').disabled = result.page >= result.totalPages;
+      el('btnLogPrev').onclick = function() { state.logs.page -= 1; loadLogs(); };
+      el('btnLogNext').onclick = function() { state.logs.page += 1; loadLogs(); };
+    }).catch(function(error) { toast(error.message, 'danger'); });
+  }
+
+  function renderBackup() {
+    activate('backup', 'Backup');
+    el('app').innerHTML = '<div class="module-toolbar"><div class="filters"><input id="backupNote" class="form-control form-control-sm" placeholder="Ghi chu backup"><input id="restoreFileId" class="form-control form-control-sm" placeholder="File ID can khoi phuc"></div><div class="actions"><button id="btnBackupCreate" class="btn btn-primary btn-sm"><i class="fas fa-database"></i></button><button id="btnBackupDaily" class="btn btn-outline-primary btn-sm"><i class="fas fa-calendar-check"></i></button><button id="btnBackupRestore" class="btn btn-outline-danger btn-sm"><i class="fas fa-rotate-left"></i></button></div></div><div class="card"><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr><th>Thoi gian</th><th>File</th><th>Nguoi tao</th><th>Ghi chu</th><th></th></tr></thead><tbody id="backupRows"></tbody></table></div></div>';
+    el('btnBackupCreate').onclick = function() { call('backup.create', { note: el('backupNote').value }).then(function() { toast('Da tao backup', 'success'); loadBackups(); }).catch(function(error) { toast(error.message, 'danger'); }); };
+    el('btnBackupDaily').onclick = function() { call('backup.setupDaily').then(function() { toast('Da cau hinh backup hang ngay', 'success'); }).catch(function(error) { toast(error.message, 'danger'); }); };
+    el('btnBackupRestore').onclick = function() { restoreBackup(el('restoreFileId').value); };
+    loadBackups();
+  }
+  function loadBackups() {
+    call('backup.list').then(function(rows) {
+      el('backupRows').innerHTML = rows.length ? rows.map(function(row) { return '<tr><td>' + html(row.timestamp) + '</td><td>' + html(row.fileName) + '<br><small>' + html(row.fileId) + '</small></td><td>' + html(row.createdBy) + '</td><td>' + html(row.note) + '</td><td class="action-cell"><button class="btn btn-outline-danger btn-xs" data-restore="' + html(row.fileId) + '"><i class="fas fa-rotate-left"></i></button></td></tr>'; }).join('') : '<tr><td colspan="5" class="text-center text-muted p-4">Chua co backup</td></tr>';
+      document.querySelectorAll('[data-restore]').forEach(function(button) { button.onclick = function() { restoreBackup(button.getAttribute('data-restore')); }; });
+    }).catch(function(error) { toast(error.message, 'danger'); });
+  }
+  function restoreBackup(fileId) {
+    if (!fileId) { toast('Can nhap File ID backup', 'warning'); return; }
+    call('backup.restore', { fileId: fileId }).then(function() { toast('Da khoi phuc backup. Tai lai WebApp de dung database moi.', 'success'); loadBackups(); }).catch(function(error) { toast(error.message, 'danger'); });
+  }
+
+  function renderSettings() {
+    activate('settings', 'Settings');
+    el('app').innerHTML = '<div class="card admin-editor"><div class="card-header"><strong>Cau hinh he thong</strong></div><div class="card-body"><div class="form-grid"><input id="setUnitName" class="form-control" placeholder="Thong tin don vi"><input id="setHamletName" class="form-control" placeholder="Ten thon"><input id="setSystemName" class="form-control" placeholder="Ten he thong"><select id="setBackupSchedule" class="form-control"><option value="DAILY">Backup hang ngay</option><option value="MANUAL">Backup thu cong</option></select><input id="setReportSigner" class="form-control" placeholder="Nguoi ky bao cao"><input id="setSupportEmail" class="form-control" placeholder="Email ho tro"><textarea id="setMaintenanceMessage" class="form-control full" rows="3" placeholder="Thong bao he thong"></textarea></div></div><div class="card-footer text-right"><button id="btnSettingsSave" class="btn btn-primary btn-sm"><i class="fas fa-save"></i></button></div></div>';
+    call('settings.get').then(function(settings) {
+      el('setUnitName').value = settings.unitName || '';
+      el('setHamletName').value = settings.hamletName || '';
+      el('setSystemName').value = settings.systemName || '';
+      el('setBackupSchedule').value = settings.backupSchedule || 'DAILY';
+      el('setReportSigner').value = settings.reportSigner || '';
+      el('setSupportEmail').value = settings.supportEmail || '';
+      el('setMaintenanceMessage').value = settings.maintenanceMessage || '';
+    }).catch(function(error) { toast(error.message, 'danger'); });
+    el('btnSettingsSave').onclick = function() {
+      call('settings.save', { unitName: el('setUnitName').value, hamletName: el('setHamletName').value, systemName: el('setSystemName').value, backupSchedule: el('setBackupSchedule').value, reportSigner: el('setReportSigner').value, supportEmail: el('setSupportEmail').value, maintenanceMessage: el('setMaintenanceMessage').value }).then(function() { toast('Da luu cau hinh', 'success'); }).catch(function(error) { toast(error.message, 'danger'); });
+    };
+  }
+
+  var handlers = { user: renderUser, permission: renderPermission, logs: renderLogs, backup: renderBackup, settings: renderSettings };
+  document.addEventListener('click', function(event) {
+    var link = event.target.closest('[data-route]');
+    if (!link) return;
+    var route = link.getAttribute('data-route');
+    if (!handlers[route]) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    handlers[route]();
+  }, true);
+})();
+</script>
