@@ -16,7 +16,7 @@ Du an duoc to chuc theo Clean Architecture:
 
 - `src/server/domain`: schema, enum, validation, chuan hoa entity.
 - `src/server/application`: use case nghiep vu.
-- `src/server/infrastructure`: Google Sheets, Drive, Session, LockService.
+- `src/server/infrastructure`: Google Sheets, Drive, Session, LockService va Repository.
 - `src/server/interface`: WebApp entrypoint va API controller.
 - `src/html`, `src/css`, `src/js`: giao dien nguoi dung.
 
@@ -44,11 +44,11 @@ Du an duoc to chuc theo Clean Architecture:
 He thong dung tai khoan Google dang truy cap WebApp va bang `users` de xac dinh vai tro:
 
 - `SUPER_ADMIN`: tai khoan quan tri dau tien, co toan quyen.
-- `ADMIN`: quan tri van hanh, duoc cap quyen theo bang `permissions`.
-- `OFFICER`: can bo cap nhat nghiep vu theo quyen duoc cau hinh.
-- `VIEWER`: chi xem va xuat cac du lieu duoc phep.
+- `ADMIN`: toan quyen quan tri va van hanh he thong.
+- `OFFICER`: quan ly Ho dan, Nhan khau, Bien dong; xem Dashboard, Report va xuat bieu mau duoc phep.
+- `VIEWER`: chi doc Dashboard, Ho dan, Nhan khau va Report.
 
-Tat ca API deu di qua `SecurityService.requirePermission` truoc khi thuc thi nghiep vu.
+Tat ca API deu di qua `SecurityService.requirePermission` truoc khi thuc thi nghiep vu. Module User, Permission, Settings, Backup va Logs chi cho Admin/SUPER_ADMIN.
 
 ## Trien khai
 
@@ -57,13 +57,14 @@ Tat ca API deu di qua `SecurityService.requirePermission` truoc khi thuc thi ngh
 3. Trong Apps Script Editor, chay `setup()` mot lan de tao database sheets, seed quyen mac dinh, tao tai khoan quan tri dau tien va cau hinh he thong ban dau.
 4. Deploy WebApp theo chinh sach truy cap cua don vi.
 5. Vao module Backup de tao backup dau tien va kich hoat backup hang ngay neu can.
+6. Theo doi `docs/PRODUCTION_CHECKLIST.md` de kiem thu truoc khi ban giao.
 
 ## Van hanh
 
 - Tat ca thao tac ghi du lieu di qua API server va duoc ghi nhat ky.
 - Xoa du lieu la xoa mem de bao toan lich su.
-- User co the bi khoa/mo khoa trong module User.
-- Permission duoc cau hinh theo vai tro, module va action.
+- User co the bi khoa/mo khoa, doi vai tro va doi mat khau ung dung trong module User.
+- Permission duoc cau hinh theo vai tro, module va action, nhung khong vuot qua chinh sach role production.
 - Audit Log ho tro tim kiem, loc theo ngay, module, action, level va email.
 - Backup tao ban sao Spreadsheet va ghi lai metadata trong bang `backups`.
 - Restore tao ban sao tu file backup va chuyen `DATABASE_SPREADSHEET_ID` sang ban da khoi phuc.
@@ -73,5 +74,6 @@ Tat ca API deu di qua `SecurityService.requirePermission` truoc khi thuc thi ngh
 ## Hieu nang
 
 - Repository doc Google Sheets theo lo trong mot lan goi API va cache noi bo theo request.
+- Danh sach lon dung phan trang server-side.
 - Dashboard va Report tai su dung Repository/Service san co, han che doc trung du lieu.
-- Cac danh sach nghiep vu co tim kiem va phan trang de van hanh on dinh voi khoang 3.000 nhan khau.
+- Cac module UI hien loading, thong bao thanh cong/loi va xu ly loi than thien.
