@@ -12,6 +12,13 @@ Application.ReportService = function(db, logger) {
     return isNaN(date.getTime()) ? null : date;
   }
 
+  function statusLabel(value) {
+    if (value === Domain.Status.ACTIVE) return 'Đang hoạt động';
+    if (value === Domain.Status.INACTIVE) return 'Tạm ngưng';
+    if (value === Domain.Status.DELETED) return 'Đã xóa';
+    return value || '';
+  }
+
   function inRange(record, filters) {
     if (!filters || (!filters.fromDate && !filters.toDate)) return true;
     var date = parseDate(record.effectiveDate || record.updatedAt || record.createdAt || record.dateOfBirth);
@@ -29,15 +36,15 @@ Application.ReportService = function(db, logger) {
   function genderLabel(value) {
     var text = normalizeText(value);
     if (text === 'nam' || text === 'male') return 'Nam';
-    if (text === 'nu' || text === 'female') return 'Nu';
-    return 'Khac';
+    if (text === 'nu' || text === 'female') return 'Nữ';
+    return 'Khác';
   }
 
   function residencyLabel(person) {
     var values = [person.residencyStatus, person.movementType, person.note, person.relationship].map(normalizeText).join(' ');
-    if (values.indexOf('tam tru') >= 0 || values.indexOf('temporary residence') >= 0) return 'Tam tru';
-    if (values.indexOf('tam vang') >= 0 || values.indexOf('temporary absence') >= 0) return 'Tam vang';
-    return 'Thuong tru';
+    if (values.indexOf('tam tru') >= 0 || values.indexOf('temporary residence') >= 0) return 'Tạm trú';
+    if (values.indexOf('tam vang') >= 0 || values.indexOf('temporary absence') >= 0) return 'Tạm vắng';
+    return 'Thường trú';
   }
 
   function ageOf(person) {
@@ -52,7 +59,7 @@ Application.ReportService = function(db, logger) {
 
   function ageBucket(person) {
     var age = ageOf(person);
-    if (age === null) return 'Khong ro';
+    if (age === null) return 'Không rõ';
     if (age <= 5) return '0-5';
     if (age <= 17) return '6-17';
     if (age <= 35) return '18-35';
@@ -63,10 +70,10 @@ Application.ReportService = function(db, logger) {
   function movementLabel(value) {
     var text = normalizeText(value);
     if (text.indexOf('sinh') >= 0 || text.indexOf('birth') >= 0) return 'Sinh';
-    if (text.indexOf('tu') >= 0 || text.indexOf('death') >= 0) return 'Tu';
-    if (text.indexOf('den') >= 0 || text.indexOf('in') >= 0) return 'Chuyen den';
-    if (text.indexOf('di') >= 0 || text.indexOf('out') >= 0) return 'Chuyen di';
-    return value || 'Khac';
+    if (text.indexOf('tu') >= 0 || text.indexOf('death') >= 0) return 'Tử';
+    if (text.indexOf('den') >= 0 || text.indexOf('in') >= 0) return 'Chuyển đến';
+    if (text.indexOf('di') >= 0 || text.indexOf('out') >= 0) return 'Chuyển đi';
+    return value || 'Khác';
   }
 
   function loadData(filters) {
@@ -134,70 +141,70 @@ Application.ReportService = function(db, logger) {
       charts: dashboard.charts
     };
     if (type === 'householdForm') {
-      report.title = 'Phieu thong tin ho gia dinh';
-      report.columns = ['Thong tin', 'Gia tri'];
+      report.title = 'Phiếu thông tin hộ gia đình';
+      report.columns = ['Thông tin', 'Giá trị'];
       var household = findHousehold(data, filters.recordId);
       if (household) {
         var members = data.citizens.filter(function(person) { return person.householdId === household.id; });
         report.rows = [
-          ['Ma ho', household.householdCode], ['Dia chi/Thon', household.address], ['Dien thoai', household.phone], ['Khu vuc', household.areaCode], ['Trang thai', household.status], ['So nhan khau', members.length]
+          ['Mã hộ', household.householdCode], ['Địa chỉ/Thôn', household.address], ['Điện thoại', household.phone], ['Khu vực', household.areaCode], ['Trạng thái', statusLabel(household.status)], ['Số nhân khẩu', members.length]
         ];
-        members.forEach(function(person) { report.rows.push(['Thanh vien', person.fullName + ' - ' + person.relationship + ' - ' + person.status]); });
+        members.forEach(function(person) { report.rows.push(['Thành viên', person.fullName + ' - ' + person.relationship + ' - ' + statusLabel(person.status)]); });
       }
       return report;
     }
     if (type === 'personForm') {
-      report.title = 'Phieu thong tin nhan khau';
-      report.columns = ['Thong tin', 'Gia tri'];
+      report.title = 'Phiếu thông tin nhân khẩu';
+      report.columns = ['Thông tin', 'Giá trị'];
       var person = findPerson(data, filters.recordId);
       if (person) {
         report.rows = [
-          ['Ma nhan khau', person.citizenCode], ['Ho ten', person.fullName], ['Gioi tinh', person.gender], ['Ngay sinh', person.dateOfBirth], ['CCCD/CMND', person.identityNumber], ['ID ho', person.householdId], ['Quan he', person.relationship], ['Dien thoai', person.phone], ['Thuong tru', person.permanentAddress], ['Noi o hien nay', person.currentAddress], ['Trang thai', person.status]
+          ['Mã nhân khẩu', person.citizenCode], ['Họ tên', person.fullName], ['Giới tính', genderLabel(person.gender)], ['Ngày sinh', person.dateOfBirth], ['CCCD/CMND', person.identityNumber], ['ID hộ', person.householdId], ['Quan hệ', person.relationship], ['Điện thoại', person.phone], ['Thường trú', person.permanentAddress], ['Nơi ở hiện nay', person.currentAddress], ['Trạng thái', statusLabel(person.status)]
         ];
       }
       return report;
     }
     if (type === 'household') {
-      report.title = 'Bao cao danh sach ho dan';
-      report.columns = ['Ma ho', 'Dia chi/Thon', 'Dien thoai', 'Khu vuc', 'Trang thai'];
-      report.rows = data.households.map(function(item) { return [item.householdCode, item.address, item.phone, item.areaCode, item.status]; });
+      report.title = 'Báo cáo danh sách hộ dân';
+      report.columns = ['Mã hộ', 'Địa chỉ/Thôn', 'Điện thoại', 'Khu vực', 'Trạng thái'];
+      report.rows = data.households.map(function(item) { return [item.householdCode, item.address, item.phone, item.areaCode, statusLabel(item.status)]; });
       return report;
     }
     if (type === 'population') {
-      report.title = 'Bao cao danh sach nhan khau';
-      report.columns = ['Ma nhan khau', 'Ho ten', 'Gioi tinh', 'Ngay sinh', 'CCCD/CMND', 'ID ho', 'Quan he', 'Trang thai'];
-      report.rows = data.citizens.map(function(item) { return [item.citizenCode, item.fullName, item.gender, item.dateOfBirth, item.identityNumber, item.householdId, item.relationship, item.status]; });
+      report.title = 'Báo cáo danh sách nhân khẩu';
+      report.columns = ['Mã nhân khẩu', 'Họ tên', 'Giới tính', 'Ngày sinh', 'CCCD/CMND', 'ID hộ', 'Quan hệ', 'Trạng thái'];
+      report.rows = data.citizens.map(function(item) { return [item.citizenCode, item.fullName, genderLabel(item.gender), item.dateOfBirth, item.identityNumber, item.householdId, item.relationship, statusLabel(item.status)]; });
       return report;
     }
     if (type === 'gender') {
-      report.title = 'Bao cao nhan khau theo gioi tinh';
-      report.columns = ['Gioi tinh', 'So luong'];
-      report.rows = countBy(data.citizens, function(item) { return genderLabel(item.gender); }, ['Nam', 'Nu', 'Khac']).map(function(item) { return [item.label, item.value]; });
+      report.title = 'Báo cáo nhân khẩu theo giới tính';
+      report.columns = ['Giới tính', 'Số lượng'];
+      report.rows = countBy(data.citizens, function(item) { return genderLabel(item.gender); }, ['Nam', 'Nữ', 'Khác']).map(function(item) { return [item.label, item.value]; });
       return report;
     }
     if (type === 'age') {
-      report.title = 'Bao cao nhan khau theo do tuoi';
-      report.columns = ['Nhom tuoi', 'So luong'];
-      report.rows = countBy(data.citizens, ageBucket, ['0-5', '6-17', '18-35', '36-59', '60+', 'Khong ro']).map(function(item) { return [item.label, item.value]; });
+      report.title = 'Báo cáo nhân khẩu theo độ tuổi';
+      report.columns = ['Nhóm tuổi', 'Số lượng'];
+      report.rows = countBy(data.citizens, ageBucket, ['0-5', '6-17', '18-35', '36-59', '60+', 'Không rõ']).map(function(item) { return [item.label, item.value]; });
       return report;
     }
     if (type === 'residency') {
-      report.title = 'Bao cao tinh trang cu tru';
-      report.columns = ['Tinh trang cu tru', 'So luong'];
-      report.rows = countBy(data.citizens, residencyLabel, ['Thuong tru', 'Tam tru', 'Tam vang']).map(function(item) { return [item.label, item.value]; });
+      report.title = 'Báo cáo tình trạng cư trú';
+      report.columns = ['Tình trạng cư trú', 'Số lượng'];
+      report.rows = countBy(data.citizens, residencyLabel, ['Thường trú', 'Tạm trú', 'Tạm vắng']).map(function(item) { return [item.label, item.value]; });
       return report;
     }
     if (type === 'movement') {
-      report.title = 'Bao cao bien dong dan cu';
-      report.columns = ['Loai bien dong', 'Nhan khau', 'Ho', 'Ngay hieu luc', 'Ly do', 'Trang thai'];
-      report.rows = data.movements.map(function(item) { return [movementLabel(item.type), item.citizenId, item.householdId, item.effectiveDate, item.reason, item.status]; });
-      report.summary.movements = countBy(data.movements, function(item) { return movementLabel(item.type); }, ['Sinh', 'Tu', 'Chuyen den', 'Chuyen di', 'Khac']);
+      report.title = 'Báo cáo biến động dân cư';
+      report.columns = ['Loại biến động', 'Nhân khẩu', 'Hộ', 'Ngày hiệu lực', 'Lý do', 'Trạng thái'];
+      report.rows = data.movements.map(function(item) { return [movementLabel(item.type), item.citizenId, item.householdId, item.effectiveDate, item.reason, statusLabel(item.status)]; });
+      report.summary.movements = countBy(data.movements, function(item) { return movementLabel(item.type); }, ['Sinh', 'Tử', 'Chuyển đến', 'Chuyển đi', 'Khác']);
       return report;
     }
-    report.title = 'Bao cao thong ke tong hop';
-    report.columns = ['Chi so', 'Gia tri'];
+    report.title = 'Báo cáo thống kê tổng hợp';
+    report.columns = ['Chỉ số', 'Giá trị'];
     report.rows = [
-      ['Tong so ho', dashboard.metrics.households], ['Tong so nhan khau', dashboard.metrics.citizens], ['Nam', dashboard.metrics.male], ['Nu', dashboard.metrics.female], ['Nhan khau hoat dong', dashboard.metrics.activeCitizens], ['Tam tru', dashboard.metrics.temporaryResidence], ['Tam vang', dashboard.metrics.temporaryAbsence]
+      ['Tổng số hộ', dashboard.metrics.households], ['Tổng số nhân khẩu', dashboard.metrics.citizens], ['Nam', dashboard.metrics.male], ['Nữ', dashboard.metrics.female], ['Nhân khẩu đang hoạt động', dashboard.metrics.activeCitizens], ['Tạm trú', dashboard.metrics.temporaryResidence], ['Tạm vắng', dashboard.metrics.temporaryAbsence]
     ];
     return report;
   }
@@ -233,15 +240,15 @@ Application.ReportService = function(db, logger) {
     var rendered = renderHtml(payload || {});
     var blob = Utilities.newBlob(rendered.html, 'text/html', rendered.report.id + '.html').getAs('application/pdf');
     var file = ensureFolder().createFile(blob).setName(fileName(rendered.report, 'pdf'));
-    if (logger) logger.info(Domain.Modules.REPORT, Domain.Actions.EXPORT, rendered.report.id, 'Xuat PDF bao cao', { fileId: file.getId(), type: rendered.report.type });
+    if (logger) logger.info(Domain.Modules.REPORT, Domain.Actions.EXPORT, rendered.report.id, 'Xuất PDF báo cáo', { fileId: file.getId(), type: rendered.report.type });
     return { fileId: file.getId(), url: file.getUrl(), name: file.getName(), report: rendered.report };
   }
 
   function exportExcel(payload) {
     var report = makeReport(payload && payload.type, payload && payload.filters || payload || {});
     var spreadsheet = SpreadsheetApp.create(fileName(report, 'xlsx').replace(/\.xlsx$/, ''));
-    var sheet = spreadsheet.getSheets()[0].setName('Report');
-    var rows = [['Tieu de', report.title], ['Ngay xuat', report.generatedAt], ['Nguoi xuat', report.generatedBy], [], report.columns].concat(report.rows);
+    var sheet = spreadsheet.getSheets()[0].setName('Báo cáo');
+    var rows = [['Tiêu đề', report.title], ['Ngày xuất', report.generatedAt], ['Người xuất', report.generatedBy], [], report.columns].concat(report.rows);
     var width = Math.max(report.columns.length, 2);
     sheet.getRange(1, 1, rows.length, width).setValues(rows.map(function(row) { var copy = row.slice(); while (copy.length < width) copy.push(''); return copy; }));
     sheet.autoResizeColumns(1, width);
@@ -249,13 +256,13 @@ Application.ReportService = function(db, logger) {
     var response = UrlFetchApp.fetch(exportUrl, { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } });
     var file = ensureFolder().createFile(response.getBlob().setName(fileName(report, 'xlsx')));
     DriveApp.getFileById(spreadsheet.getId()).setTrashed(true);
-    if (logger) logger.info(Domain.Modules.REPORT, Domain.Actions.EXPORT, report.id, 'Xuat Excel bao cao', { fileId: file.getId(), type: report.type });
+    if (logger) logger.info(Domain.Modules.REPORT, Domain.Actions.EXPORT, report.id, 'Xuất Excel báo cáo', { fileId: file.getId(), type: report.type });
     return { fileId: file.getId(), url: file.getUrl(), name: file.getName(), report: report };
   }
 
   function print(payload) {
     var rendered = renderHtml(payload || {});
-    if (logger && !(payload && payload.noLog)) logger.info(Domain.Modules.REPORT, Domain.Actions.EXPORT, rendered.report.id, 'In bao cao', { type: rendered.report.type });
+    if (logger && !(payload && payload.noLog)) logger.info(Domain.Modules.REPORT, Domain.Actions.EXPORT, rendered.report.id, 'In báo cáo', { type: rendered.report.type });
     return rendered;
   }
 
@@ -277,14 +284,14 @@ Application.BackupService = function(db, logger) {
     var file = DriveApp.getFileById(spreadsheet.getId()).makeCopy(Domain.App.NAME + ' Backup ' + Entity.now(), folder);
     var record = { id: Entity.uuid('BAK'), timestamp: Entity.now(), fileId: file.getId(), fileName: file.getName(), spreadsheetId: spreadsheet.getId(), createdBy: Entity.currentEmail(), status: Domain.Status.ACTIVE, note: note || '' };
     db.append(Domain.Tables.BACKUPS, record);
-    if (logger) logger.info(Domain.Modules.BACKUP, Domain.Actions.CREATE, record.id, 'Tao backup', record);
+    if (logger) logger.info(Domain.Modules.BACKUP, Domain.Actions.CREATE, record.id, 'Tạo bản sao lưu', record);
     return record;
   }
   function listBackups() {
     return db.readAll(Domain.Tables.BACKUPS).sort(function(a, b) { return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
   }
   function restoreBackup(fileId) {
-    if (!fileId) throw new Error('File backup la bat buoc');
+    if (!fileId) throw new Error('File sao lưu là bắt buộc');
     return Infrastructure.withLock(function() {
       var folder = ensureFolder(Domain.App.BACKUP_FOLDER_ID_PROPERTY, Domain.App.NAME + ' Backups');
       var source = DriveApp.getFileById(fileId);
@@ -293,7 +300,7 @@ Application.BackupService = function(db, logger) {
       var record = { id: Entity.uuid('BAK'), timestamp: Entity.now(), fileId: restored.getId(), fileName: restored.getName(), spreadsheetId: restored.getId(), createdBy: Entity.currentEmail(), status: Domain.Status.ACTIVE, note: 'RESTORE_FROM:' + fileId };
       var restoredDb = Infrastructure.Database();
       restoredDb.append(Domain.Tables.BACKUPS, record);
-      if (logger) logger.warn(Domain.Modules.BACKUP, Domain.Actions.UPDATE, record.id, 'Khoi phuc backup', { sourceFileId: fileId, restoredSpreadsheetId: restored.getId() });
+      if (logger) logger.warn(Domain.Modules.BACKUP, Domain.Actions.UPDATE, record.id, 'Khôi phục bản sao lưu', { sourceFileId: fileId, restoredSpreadsheetId: restored.getId() });
       return record;
     });
   }
@@ -303,7 +310,7 @@ Application.BackupService = function(db, logger) {
   function setupDailyBackup() {
     var triggers = ScriptApp.getProjectTriggers().filter(function(trigger) { return trigger.getHandlerFunction() === 'dailyBackup'; });
     if (!triggers.length) ScriptApp.newTrigger('dailyBackup').timeBased().everyDays(1).atHour(2).create();
-    if (logger) logger.info(Domain.Modules.BACKUP, Domain.Actions.UPDATE, 'dailyBackup', 'Cau hinh backup hang ngay', {});
+    if (logger) logger.info(Domain.Modules.BACKUP, Domain.Actions.UPDATE, 'dailyBackup', 'Cấu hình sao lưu hằng ngày', {});
     return { enabled: true, hour: 2 };
   }
   return { createBackup: createBackup, listBackups: listBackups, restoreBackup: restoreBackup, dailyBackup: dailyBackup, setupDailyBackup: setupDailyBackup };
@@ -312,7 +319,7 @@ Application.BackupService = function(db, logger) {
 Application.PdfService = function(db, logger) {
   function renderCitizenCard(citizenId) {
     var citizen = db.findById(Domain.Tables.CITIZENS, citizenId);
-    if (!citizen) throw new Error('Khong tim thay nhan khau');
+    if (!citizen) throw new Error('Không tìm thấy nhân khẩu');
     var template = HtmlService.createTemplateFromFile('src/html/pdf/CitizenCard');
     template.citizen = citizen;
     var html = template.evaluate().getContent();
@@ -321,8 +328,8 @@ Application.PdfService = function(db, logger) {
     var folderId = properties.getProperty(Domain.App.PDF_FOLDER_ID_PROPERTY);
     var folder = folderId ? DriveApp.getFolderById(folderId) : DriveApp.createFolder(Domain.App.NAME + ' PDFs');
     properties.setProperty(Domain.App.PDF_FOLDER_ID_PROPERTY, folder.getId());
-    var file = folder.createFile(blob).setName('Nhan khau ' + citizen.citizenCode + '.pdf');
-    if (logger) logger.info(Domain.Modules.PDF, Domain.Actions.EXPORT, citizen.id, 'Xuat PDF nhan khau', { fileId: file.getId() });
+    var file = folder.createFile(blob).setName('Nhân khẩu ' + citizen.citizenCode + '.pdf');
+    if (logger) logger.info(Domain.Modules.PDF, Domain.Actions.EXPORT, citizen.id, 'Xuất PDF nhân khẩu', { fileId: file.getId() });
     return { fileId: file.getId(), url: file.getUrl(), name: file.getName() };
   }
   return { renderCitizenCard: renderCitizenCard };
