@@ -226,7 +226,7 @@
     el('btnCreate').onclick = function() { modalForm('Them nhan khau', fields.citizen, {}, function(payload) { try { validatePerson(payload); } catch (err) { toast(err.message, 'warning'); return; } call('person.create', payload).then(function(){ $('#modalForm').modal('hide'); state.person.page = 1; toast('Da them nhan khau','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }); };
     el('personKeyword').oninput = debounce(function() { state.person.keyword = this.value; state.person.page = 1; refresh(); }, 300);
     el('personHousehold').oninput = debounce(function() { state.person.householdId = this.value; state.person.page = 1; refresh(); }, 300);
-    el('personStatus').onchange = function() { state.person.status = this.value; };
+    el('personStatus').onchange = function() { state.person.status = this.value; state.person.page = 1; refresh(); };
     el('personPageSize').onchange = function() { state.person.pageSize = parseInt(this.value, 10); state.person.page = 1; refresh(); };
     refresh();
   }
