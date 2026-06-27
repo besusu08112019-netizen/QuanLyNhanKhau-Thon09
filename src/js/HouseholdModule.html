@@ -69,6 +69,17 @@
       totalPages: Number(result.totalPages || Math.max(1, Math.ceil(total / pageSize)))
     };
   }
+  function readFilters() {
+    if (el('householdKeyword2')) state.keyword = el('householdKeyword2').value.trim();
+    if (el('householdStatus2')) state.status = el('householdStatus2').value;
+    if (el('householdPageSize2')) state.pageSize = parseInt(el('householdPageSize2').value, 10) || 20;
+    return Object.assign({}, state, { search: state.keyword, q: state.keyword });
+  }
+  function runSearch() {
+    readFilters();
+    state.page = 1;
+    refresh();
+  }
   function activeMenu() {
     document.querySelectorAll('[data-route]').forEach(function(item) {
       item.classList.toggle('active', item.getAttribute('data-route') === 'household');
@@ -107,21 +118,26 @@
       + '<input id="householdKeyword2" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ/thôn, diện hộ">'
       + '<select id="householdStatus2" class="form-control"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option></select>'
       + '<select id="householdPageSize2" class="form-control"><option>10</option><option selected>20</option><option>50</option><option>100</option></select>'
+      + '<button class="btn btn-outline-primary" id="householdSearch" title="Tìm kiếm"><i class="fas fa-search"></i></button>'
+      + '<button class="btn btn-outline-secondary" id="householdClearSearch" title="Xóa tìm kiếm"><i class="fas fa-times"></i></button>'
       + '</div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="householdCreate"><i class="fas fa-plus"></i> Thêm hộ</button></div></div><div id="householdGrid"></div>';
     el('householdKeyword2').value = state.keyword;
     el('householdStatus2').value = state.status;
     el('householdPageSize2').value = state.pageSize;
     el('householdCreate').onclick = function() { openForm('Thêm hộ dân', {}, createRow); };
-    el('householdKeyword2').oninput = debounce(function() { state.keyword = this.value; state.page = 1; refresh(); }, 300);
-    el('householdStatus2').onchange = function() { state.status = this.value; state.page = 1; refresh(); };
-    el('householdPageSize2').onchange = function() { state.pageSize = parseInt(this.value, 10) || 20; state.page = 1; refresh(); };
+    el('householdSearch').onclick = runSearch;
+    el('householdClearSearch').onclick = function() { el('householdKeyword2').value = ''; runSearch(); };
+    el('householdKeyword2').oninput = debounce(runSearch, 350);
+    el('householdKeyword2').onkeydown = function(event) { if (event.key === 'Enter') { event.preventDefault(); runSearch(); } };
+    el('householdStatus2').onchange = runSearch;
+    el('householdPageSize2').onchange = runSearch;
     refresh();
   }
   function refresh() {
     var grid = el('householdGrid');
     if (!grid) return;
     grid.innerHTML = '<div class="text-muted p-3">Đang tải danh sách hộ dân...</div>';
-    call('household.page', state).then(function(result) {
+    call('household.page', readFilters()).then(function(result) {
       var page = pageData(result);
       if (!page.items.length) {
         grid.innerHTML = '<div class="alert alert-info">Chưa có hộ dân phù hợp.</div>' + pager(page);
