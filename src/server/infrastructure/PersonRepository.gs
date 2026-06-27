@@ -37,9 +37,9 @@ Infrastructure.PersonRepository = function(db) {
 
   function enrich(person, households) {
     var record = Object.assign({}, person || {});
-    var household = households[String(record.householdId)] || households[normalize(record.householdId)];
+    var household = households[String(record.householdId)] || households[normalize(record.householdId)] || households[normalize(record.householdCode)];
     if (household) {
-      record.householdCode = household.householdCode || '';
+      record.householdCode = household.householdCode || record.householdCode || '';
       record.householdAddress = household.address || '';
       record.householdHeadName = household.headCitizenName || '';
     }
@@ -50,17 +50,26 @@ Infrastructure.PersonRepository = function(db) {
   function matchesKeyword(person, keyword) {
     if (!keyword) return true;
     return [
+      person.id,
       person.citizenCode,
       person.fullName,
       person.identityNumber,
       person.phone,
+      person.gender,
+      person.dateOfBirth,
       person.relationship,
       person.currentAddress,
       person.permanentAddress,
       person.occupation,
+      person.ethnicity,
+      person.religion,
+      person.educationLevel,
+      person.maritalStatus,
+      person.householdId,
       person.householdCode,
       person.householdAddress,
-      person.householdHeadName
+      person.householdHeadName,
+      person.status
     ].some(function(value) {
       return normalize(value).indexOf(keyword) >= 0;
     });
@@ -68,17 +77,18 @@ Infrastructure.PersonRepository = function(db) {
 
   function listPage(query) {
     query = query || {};
-    var keyword = normalize(query.keyword || query.fullName);
+    var keyword = normalize(query.keyword || query.search || query.q || query.fullName || query.identityNumber || query.phone || query.citizenCode);
     var page = Math.max(parseInt(query.page || 1, 10), 1);
     var pageSize = Math.min(Math.max(parseInt(query.pageSize || 20, 10), 5), 100);
     var includeDeleted = query.includeDeleted === true || query.includeDeleted === 'true';
+    var householdFilter = normalize(query.householdId || query.householdCode);
     var households = householdIndex();
     var rows = read({ includeDeleted: includeDeleted }).map(function(person) {
       return enrich(person, households);
     }).filter(function(person) {
       if (query.status && person.status !== query.status) return false;
-      if (query.householdId && person.householdId !== query.householdId && normalize(person.householdCode) !== normalize(query.householdId)) return false;
-      if (query.identityNumber && normalize(person.identityNumber) !== normalize(query.identityNumber)) return false;
+      if (householdFilter && normalize(person.householdId) !== householdFilter && normalize(person.householdCode) !== householdFilter) return false;
+      if (query.identityNumber && !keyword && normalize(person.identityNumber) !== normalize(query.identityNumber)) return false;
       return matchesKeyword(person, keyword);
     });
     rows.sort(function(a, b) {
@@ -112,8 +122,12 @@ Infrastructure.PersonRepository = function(db) {
   }
 
   function findByHouseholdId(householdId, options) {
-    return read(options || {}).filter(function(person) {
-      return person.householdId === householdId;
+    var normalized = normalize(householdId);
+    var households = householdIndex();
+    return read(options || {}).map(function(person) {
+      return enrich(person, households);
+    }).filter(function(person) {
+      return normalize(person.householdId) === normalized || normalize(person.householdCode) === normalized;
     }).map(serializePerson);
   }
 
