@@ -62,14 +62,13 @@
       '</tbody></table></div></div>';
   }
   function preview() {
-    call('report.print', filters()).then(function(result) {
+    call('report.preview', filters()).then(function(result) {
       lastRendered = result;
       el('reportPreview').innerHTML = reportTable(result.report);
     }).catch(function(error) { toast(error.message, 'danger'); });
   }
   function printReport() {
-    var run = lastRendered ? Promise.resolve(lastRendered) : call('report.print', filters());
-    run.then(function(result) {
+    call('report.print', filters()).then(function(result) {
       lastRendered = result;
       var win = window.open('', '_blank');
       if (!win) { toast('Trinh duyet dang chan cua so in', 'warning'); return; }
