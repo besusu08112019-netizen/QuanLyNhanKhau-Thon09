@@ -121,15 +121,19 @@
   }
 
   var genderOptions = ['Nam', 'Nữ', 'Khác'];
+  var yesNoOptions = ['Không', 'Có'];
   var ethnicityOptions = ['Kinh','Tày','Thái','Mường','Khmer','Hoa','Nùng','Hmong','Dao','Gia Rai','Ê Đê','Ba Na','Sán Chay','Chăm','Cơ Ho','Xơ Đăng','Sán Dìu','Hrê','Ra Glai','Mnông','Thổ','Xtiêng','Kháng','Khơ Mú','Bru-Vân Kiều','Cơ Tu','Giáy','Tà Ôi','Mạ','Giẻ Triêng','Co','Chơ Ro','Xinh Mun','Hà Nhì','Chu Ru','Lào','La Chí','La Ha','Phù Lá','La Hủ','Lự','Lô Lô','Chứt','Mảng','Pà Thẻn','Cơ Lao','Cống','Bố Y','Si La','Pu Péo','Brâu','Rơ Măm','Ơ Đu','Ngái'];
   var religionOptions = ['Không','Phật giáo','Công giáo','Tin Lành','Cao Đài','Phật giáo Hòa Hảo','Hồi giáo','Bà La Môn','Baha\'i','Bửu Sơn Kỳ Hương','Tịnh độ Cư sĩ Phật hội','Minh Sư Đạo','Minh Lý Đạo','Khác'];
   var occupationOptions = ['Chưa có việc làm','Học sinh/Sinh viên','Cán bộ/Công chức/Viên chức','Công nhân','Nông dân','Kinh doanh/Buôn bán','Lao động tự do','Giáo viên','Nhân viên văn phòng','Y tế','Kỹ sư/Kỹ thuật','Dịch vụ','Tài xế/Vận tải','Công an/Quân đội','Nội trợ','Hưu trí','Khác'];
 
   var fields = {
     household: [
-      {name:'householdCode',label:'Mã hộ',required:true}, {name:'address',label:'Địa chỉ/Thôn',required:true},
+      {name:'householdCode',label:'Mã hộ',required:true}, {name:'headCitizenName',label:'Tên chủ hộ'},
+      {name:'headCitizenId',label:'ID/Mã nhân khẩu chủ hộ'}, {name:'address',label:'Địa chỉ/Thôn',required:true},
       {name:'phone',label:'Điện thoại'}, {name:'areaCode',label:'Khu vực'},
-      {name:'headCitizenId',label:'ID chủ hộ'}, {name:'note',label:'Ghi chú',full:true}
+      {name:'meritoriousFamily',label:'Gia đình có công',options:yesNoOptions}, {name:'poorHousehold',label:'Hộ nghèo',options:yesNoOptions},
+      {name:'nearPoorHousehold',label:'Cận nghèo',options:yesNoOptions}, {name:'disabledHousehold',label:'Tàn tật',options:yesNoOptions},
+      {name:'note',label:'Ghi chú',full:true}
     ],
     citizen: [
       {name:'citizenCode',label:'Mã nhân khẩu',required:true}, {name:'householdId',label:'ID hộ',required:true},
@@ -187,6 +191,14 @@
   function metric(labelText, value, subtitle, icon, tone) {
     return '<div class="col-lg-3 col-md-6 col-12"><div class="dashboard-metric ' + html(tone || '') + '"><div><div class="metric-label">' + html(labelText) + '</div><div class="metric-value">' + html(value) + '</div><div class="metric-subtitle">' + html(subtitle || '') + '</div></div><i class="fas ' + html(icon || 'fa-chart-simple') + '"></i></div></div>';
   }
+  function renderHouseholdPolicies(row) {
+    var items = [];
+    if (row.meritoriousFamily === 'Có') items.push('Có công');
+    if (row.poorHousehold === 'Có') items.push('Hộ nghèo');
+    if (row.nearPoorHousehold === 'Có') items.push('Cận nghèo');
+    if (row.disabledHousehold === 'Có') items.push('Tàn tật');
+    return items.length ? items.map(function(item) { return '<span class="badge badge-info mr-1">' + html(item) + '</span>'; }).join('') : '<span class="text-muted">Không</span>';
+  }
 
   function dashboardRoute() {
     mount('<div class="dashboard-filter"><div class="filters"><input type="date" id="dashFrom" class="form-control form-control-sm"><input type="date" id="dashTo" class="form-control form-control-sm"><select id="dashHouseholdStatus" class="form-control form-control-sm"><option value="">Tất cả hộ</option><option value="ACTIVE">Hộ đang hoạt động</option><option value="INACTIVE">Hộ tạm ngưng</option></select><select id="dashPersonStatus" class="form-control form-control-sm"><option value="">Tất cả nhân khẩu</option><option value="ACTIVE">Nhân khẩu đang hoạt động</option><option value="INACTIVE">Nhân khẩu tạm ngưng</option></select><select id="dashResidency" class="form-control form-control-sm"><option value="">Tất cả cư trú</option><option value="regular">Thường trú</option><option value="temporaryResidence">Tạm trú</option><option value="temporaryAbsence">Tạm vắng</option></select></div><button class="btn btn-outline-secondary btn-sm" id="dashRefresh" title="Làm mới"><i class="fas fa-rotate"></i></button></div><div id="dashboardMetrics" class="row"></div><div class="row"><div class="col-lg-4 col-12"><div class="card chart-card"><div class="card-header"><h3 class="card-title">Cơ cấu giới tính</h3></div><div class="card-body"><canvas id="genderChart"></canvas></div></div></div><div class="col-lg-4 col-12"><div class="card chart-card"><div class="card-header"><h3 class="card-title">Cơ cấu độ tuổi</h3></div><div class="card-body"><canvas id="ageChart"></canvas></div></div></div><div class="col-lg-4 col-12"><div class="card chart-card"><div class="card-header"><h3 class="card-title">Tình trạng hộ</h3></div><div class="card-body"><canvas id="householdChart"></canvas></div></div></div></div><div class="card"><div class="card-header"><h3 class="card-title">Biến động gần đây</h3><div class="card-tools"><span id="dashGeneratedAt" class="text-muted"></span></div></div><div class="card-body" id="recentMovementBox"></div></div>');
@@ -221,11 +233,11 @@
   }
 
   function householdRoute() {
-    mount('<div class="module-toolbar"><div class="filters"><input id="householdKeyword" class="form-control form-control-sm" placeholder="Tìm mã hộ, địa chỉ/thôn, điện thoại"><select id="householdStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option></select><select id="householdPageSize" class="form-control form-control-sm"><option>10</option><option selected>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreate"><i class="fas fa-plus"></i> Thêm hộ</button></div></div><div id="grid"></div>');
+    mount('<div class="module-toolbar"><div class="filters"><input id="householdKeyword" class="form-control form-control-sm" placeholder="Tìm mã hộ, chủ hộ, địa chỉ/thôn, diện hộ"><select id="householdStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option></select><select id="householdPageSize" class="form-control form-control-sm"><option>10</option><option selected>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreate"><i class="fas fa-plus"></i> Thêm hộ</button></div></div><div id="grid"></div>');
     el('householdKeyword').value = state.household.keyword; el('householdStatus').value = state.household.status; el('householdPageSize').value = state.household.pageSize;
     function refresh() {
       call('household.page', state.household).then(function(result) {
-        var columns = [{key:'householdCode',label:'Mã hộ'}, {key:'address',label:'Địa chỉ/Thôn'}, {key:'phone',label:'Điện thoại'}, {key:'areaCode',label:'Khu vực'}, {key:'memberCount',label:'Nhân khẩu'}, {key:'status',label:'Trạng thái',render:function(r){return status(r.status);}}];
+        var columns = [{key:'householdCode',label:'Mã hộ'}, {key:'headCitizenName',label:'Chủ hộ'}, {key:'address',label:'Địa chỉ/Thôn'}, {key:'phone',label:'Điện thoại'}, {key:'areaCode',label:'Khu vực'}, {key:'memberCount',label:'Nhân khẩu'}, {key:'policy',label:'Diện hộ',render:renderHouseholdPolicies}, {key:'status',label:'Trạng thái',render:function(r){return status(r.status);}}];
         el('grid').innerHTML = table(columns, result.items, function(row) { return '<button class="btn btn-outline-primary btn-xs" title="Sửa" data-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-danger btn-xs" title="Xóa" data-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>'; }) + renderPager(result, 'hộ dân');
         document.querySelectorAll('[data-edit]').forEach(function(btn) { btn.onclick = function() { var row = result.items.filter(function(item) { return item.id === btn.dataset.edit; })[0]; modalForm('Cập nhật hộ dân', fields.household, row, function(payload) { try { validateHousehold(payload); } catch (err) { toast(err.message, 'warning'); return; } payload.id = row.id; call('household.update', payload).then(function(){ $('#modalForm').modal('hide'); toast('Đã cập nhật hộ dân','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }); }; });
         document.querySelectorAll('[data-delete]').forEach(function(btn) { btn.onclick = function() { if (!confirm('Xác nhận xóa mềm hộ dân này?')) return; call('household.delete', { id: btn.dataset.delete }).then(function(){ toast('Đã xóa hộ dân','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }; });
