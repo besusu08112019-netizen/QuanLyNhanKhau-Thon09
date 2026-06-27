@@ -84,6 +84,22 @@
 <?!= include('src/js/ImportModule'); ?>
 <script>
 (function() {
+  function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]); }); }
+  function activate(route, title) {
+    document.querySelectorAll('[data-route]').forEach(function(item) { item.classList.toggle('active', item.getAttribute('data-route') === route); });
+    var pageTitle = document.getElementById('pageTitle');
+    if (pageTitle) pageTitle.textContent = title;
+  }
+  document.addEventListener('click', function(event) {
+    var link = event.target.closest('[data-route="settings"]');
+    if (!link) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    activate('settings', 'Cấu hình');
+    document.getElementById('app').innerHTML = '<div class="card"><div class="card-header"><h3 class="card-title">Cấu hình hệ thống</h3></div><div class="card-body"><div class="form-grid"><div class="form-group"><label>Đơn vị quản lý</label><input class="form-control" value="' + html('xã Hồng Phong') + '" readonly></div><div class="form-group"><label>Tên thôn</label><input class="form-control" value="Thôn 09" readonly></div><div class="form-group full"><label>Tên hệ thống</label><input class="form-control" value="' + html('Quản Lý Nhân Khẩu Thôn 09 xã Hồng Phong') + '" readonly></div></div></div></div>';
+  }, true);
+})();
+(function() {
   function showLogin(message) {
     document.body.classList.add('app-locked');
     document.body.classList.remove('app-authenticated');
@@ -95,6 +111,7 @@
     document.body.classList.remove('app-locked');
     document.body.classList.add('app-authenticated');
     sessionStorage.setItem('thon09Authenticated', '1');
+    if (window.Thon09App && typeof window.Thon09App.start === 'function') window.Thon09App.start();
   }
   function login() {
     var button = document.getElementById('btnLogin');
