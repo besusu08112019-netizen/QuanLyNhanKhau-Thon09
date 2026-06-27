@@ -1,0 +1,35 @@
+<style>
+:root {
+  --app-primary: #1565c0;
+  --app-accent: #00897b;
+  --app-danger: #c62828;
+  --app-surface: #ffffff;
+  --app-muted: #607d8b;
+}
+.content-wrapper { background: #f4f6f9; }
+.brand-link { min-height: 57px; }
+.card { border-radius: 8px; }
+.small-box { border-radius: 8px; }
+.table thead th { white-space: nowrap; background: #eef3f8; border-bottom: 0; }
+.table td { vertical-align: middle; }
+.module-toolbar { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; }
+.module-toolbar .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 12px; }
+.form-grid .full { grid-column: 1 / -1; }
+.btn-material { border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,.16); }
+.status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+.status-ACTIVE { background: #e0f2f1; color: #00695c; }
+.status-INACTIVE { background: #eceff1; color: #455a64; }
+.status-DELETED { background: #ffebee; color: #b71c1c; }
+.loading-layer { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; background: rgba(255,255,255,.58); }
+.loading-layer.active { display: flex; }
+.metric-subtitle { color: var(--app-muted); font-size: 13px; }
+.action-cell { white-space: nowrap; width: 1%; }
+.toast-host { position: fixed; top: 72px; right: 16px; z-index: 10000; min-width: 280px; }
+@media (max-width: 768px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .module-toolbar { align-items: stretch; }
+  .module-toolbar .filters, .module-toolbar .actions { width: 100%; }
+  .module-toolbar .filters input { flex: 1; }
+}
+</style>
