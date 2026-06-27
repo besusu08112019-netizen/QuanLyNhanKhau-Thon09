@@ -53,6 +53,7 @@ Application.SecurityService = function(db, logger) {
     if (user.role === Domain.Roles.SUPER_ADMIN || user.role === Domain.Roles.ADMIN) return true;
     if ([Domain.Modules.USER, Domain.Modules.PERMISSION, Domain.Modules.SETTINGS, Domain.Modules.BACKUP, Domain.Modules.LOGS].indexOf(moduleName) >= 0) return false;
     if (user.role === Domain.Roles.OFFICER) {
+      if (moduleName === Domain.Modules.IMPORT) return [Domain.Actions.READ, Domain.Actions.CREATE].indexOf(actionName) >= 0;
       if (moduleName === Domain.Modules.HOUSEHOLD || moduleName === Domain.Modules.CITIZEN) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE, Domain.Actions.DELETE].indexOf(actionName) >= 0;
       if (moduleName === Domain.Modules.REPORT || moduleName === Domain.Modules.DASHBOARD || moduleName === Domain.Modules.PDF) return [Domain.Actions.READ, Domain.Actions.EXPORT].indexOf(actionName) >= 0;
       if (moduleName === Domain.Modules.MOVEMENT) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE].indexOf(actionName) >= 0;
@@ -101,6 +102,7 @@ Application.rolePolicyAllows = function(role, moduleName, actionName) {
   if (role === Domain.Roles.ADMIN) return true;
   if ([Domain.Modules.USER, Domain.Modules.PERMISSION, Domain.Modules.SETTINGS, Domain.Modules.BACKUP, Domain.Modules.LOGS].indexOf(moduleName) >= 0) return false;
   if (role === Domain.Roles.OFFICER) {
+    if (moduleName === Domain.Modules.IMPORT) return [Domain.Actions.READ, Domain.Actions.CREATE].indexOf(actionName) >= 0;
     if (moduleName === Domain.Modules.HOUSEHOLD || moduleName === Domain.Modules.CITIZEN) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE, Domain.Actions.DELETE].indexOf(actionName) >= 0;
     if (moduleName === Domain.Modules.REPORT || moduleName === Domain.Modules.DASHBOARD || moduleName === Domain.Modules.PDF) return [Domain.Actions.READ, Domain.Actions.EXPORT].indexOf(actionName) >= 0;
     if (moduleName === Domain.Modules.MOVEMENT) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE].indexOf(actionName) >= 0;
