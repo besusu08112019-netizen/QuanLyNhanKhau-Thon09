@@ -5,6 +5,19 @@ Infrastructure.PersonRepository = function(db) {
     return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
+  function personStatus(value) {
+    var text = normalize(value);
+    if (!text || text === 'active' || text === 'alive' || text === 'con song') return 'ALIVE';
+    if (text === 'inactive' || text === 'deceased' || text === 'dead' || text === 'da chet') return 'DECEASED';
+    if (text === 'deleted') return Domain.Status.DELETED;
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function statusMatches(actual, expected) {
+    if (!expected) return true;
+    return personStatus(actual) === personStatus(expected);
+  }
+
   function serializeValue(value) {
     if (value === undefined || value === null) return '';
     if (Object.prototype.toString.call(value) === '[object Date]') {
@@ -19,7 +32,7 @@ Infrastructure.PersonRepository = function(db) {
     Object.keys(person || {}).forEach(function(key) {
       record[key] = serializeValue(person[key]);
     });
-    record.status = record.status || Domain.Status.ACTIVE;
+    record.status = record.status || 'ALIVE';
     return record;
   }
 
@@ -49,7 +62,7 @@ Infrastructure.PersonRepository = function(db) {
       record.householdCode = record.householdCode || originalHouseholdRef || '';
       record.householdId = record.householdCode;
     }
-    record.status = record.status || Domain.Status.ACTIVE;
+    record.status = record.status || 'ALIVE';
     return record;
   }
 
@@ -75,7 +88,8 @@ Infrastructure.PersonRepository = function(db) {
       person.householdCode,
       person.householdAddress,
       person.householdHeadName,
-      person.status
+      person.status,
+      personStatus(person.status) === 'DECEASED' ? 'Đã chết' : 'Còn sống'
     ].some(function(value) {
       return normalize(value).indexOf(keyword) >= 0;
     });
@@ -86,13 +100,13 @@ Infrastructure.PersonRepository = function(db) {
     var keyword = normalize(query.keyword || query.search || query.q || query.fullName || query.identityNumber || query.phone || query.citizenCode);
     var page = Math.max(parseInt(query.page || 1, 10), 1);
     var pageSize = Math.min(Math.max(parseInt(query.pageSize || 20, 10), 5), 100);
-    var includeDeleted = query.includeDeleted === true || query.includeDeleted === 'true';
+    var includeDeleted = query.includeDeleted === true || query.includeDeleted === 'true' || personStatus(query.status) === Domain.Status.DELETED;
     var householdFilter = normalize(query.householdId || query.householdCode);
     var households = householdIndex();
     var rows = read({ includeDeleted: includeDeleted }).map(function(person) {
       return enrich(person, households);
     }).filter(function(person) {
-      if (query.status && person.status !== query.status) return false;
+      if (query.status && !statusMatches(person.status, query.status)) return false;
       if (householdFilter && normalize(person.householdId) !== householdFilter && normalize(person.householdCode) !== householdFilter && normalize(person.householdInternalId) !== householdFilter) return false;
       if (query.identityNumber && !keyword && normalize(person.identityNumber) !== normalize(query.identityNumber)) return false;
       return matchesKeyword(person, keyword);
