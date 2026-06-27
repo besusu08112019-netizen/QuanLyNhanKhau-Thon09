@@ -99,7 +99,7 @@ Application.SecurityService = function(db, logger) {
 };
 
 Application.rolePolicyAllows = function(role, moduleName, actionName) {
-  if (role === Domain.Roles.ADMIN) return true;
+  if (role === Domain.Roles.SUPER_ADMIN || role === Domain.Roles.ADMIN) return true;
   if ([Domain.Modules.USER, Domain.Modules.PERMISSION, Domain.Modules.SETTINGS, Domain.Modules.BACKUP, Domain.Modules.LOGS].indexOf(moduleName) >= 0) return false;
   if (role === Domain.Roles.OFFICER) {
     if (moduleName === Domain.Modules.IMPORT) return [Domain.Actions.READ, Domain.Actions.CREATE].indexOf(actionName) >= 0;
