@@ -9,9 +9,10 @@ Application.UserService = function(userRepository, logger, db) {
 
   function roleList() {
     return [
-      { code: Domain.Roles.ADMIN, name: 'Admin', description: 'Toan quyen quan tri va van hanh he thong' },
-      { code: Domain.Roles.OFFICER, name: 'Can bo', description: 'Quan ly ho, nhan khau va xem bao cao' },
-      { code: Domain.Roles.VIEWER, name: 'Chi xem', description: 'Chi xem du lieu va dashboard' }
+      { code: Domain.Roles.SUPER_ADMIN, name: 'Quản trị hệ thống', description: 'Tài khoản quản trị đầu tiên, có toàn quyền hệ thống' },
+      { code: Domain.Roles.ADMIN, name: 'Quản trị viên', description: 'Toàn quyền quản trị và vận hành hệ thống' },
+      { code: Domain.Roles.OFFICER, name: 'Cán bộ', description: 'Quản lý hộ dân, nhân khẩu và xem báo cáo' },
+      { code: Domain.Roles.VIEWER, name: 'Chỉ xem', description: 'Chỉ xem dữ liệu và dashboard' }
     ];
   }
 
@@ -23,12 +24,12 @@ Application.UserService = function(userRepository, logger, db) {
   function validateUser(data, id, existing) {
     data = data || {};
     var email = normalizeEmail(data.email);
-    if (!email) throw new Error('Email nguoi dung la bat buoc');
-    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Email nguoi dung khong hop le');
-    if (!String(data.displayName || '').trim()) throw new Error('Ten hien thi la bat buoc');
-    if (!validRole(data.role, existing)) throw new Error('Vai tro nguoi dung khong hop le');
+    if (!email) throw new Error('Email người dùng là bắt buộc');
+    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Email người dùng không hợp lệ');
+    if (!String(data.displayName || '').trim()) throw new Error('Tên hiển thị là bắt buộc');
+    if (!validRole(data.role, existing)) throw new Error('Vai trò người dùng không hợp lệ');
     var duplicate = userRepository.findByEmail(email);
-    if (duplicate && duplicate.id !== id && duplicate.status !== Domain.Status.DELETED) throw new Error('Email nguoi dung da ton tai');
+    if (duplicate && duplicate.id !== id && duplicate.status !== Domain.Status.DELETED) throw new Error('Email người dùng đã tồn tại');
     return {
       email: email,
       displayName: String(data.displayName || '').trim(),
@@ -40,7 +41,7 @@ Application.UserService = function(userRepository, logger, db) {
 
   function hashPassword(userId, password) {
     var text = String(password || '');
-    if (text.length < 8) throw new Error('Mat khau phai co it nhat 8 ky tu');
+    if (text.length < 8) throw new Error('Mật khẩu phải có ít nhất 8 ký tự');
     var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, userId + ':' + text, Utilities.Charset.UTF_8);
     return raw.map(function(byte) {
       var value = byte < 0 ? byte + 256 : byte;
@@ -64,7 +65,7 @@ Application.UserService = function(userRepository, logger, db) {
 
   function getUser(id) {
     var user = userRepository.findById(id);
-    if (!user) throw new Error('Khong tim thay nguoi dung: ' + id);
+    if (!user) throw new Error('Không tìm thấy người dùng: ' + id);
     return user;
   }
 
@@ -75,7 +76,7 @@ Application.UserService = function(userRepository, logger, db) {
       var record = Entity.withCreateAudit(Domain.Tables.USERS, valid);
       userRepository.create(record);
       if (password) storePasswordHash(record.id, password);
-      logger.info(Domain.Modules.USER, Domain.Actions.CREATE, record.id, 'Tao nguoi dung', { email: record.email, role: record.role });
+      logger.info(Domain.Modules.USER, Domain.Actions.CREATE, record.id, 'Tạo người dùng', { email: record.email, role: record.role });
       return record;
     });
   }
@@ -83,12 +84,12 @@ Application.UserService = function(userRepository, logger, db) {
   function updateUser(id, data) {
     return Infrastructure.withLock(function() {
       var existing = getUser(id);
-      if (existing.role === Domain.Roles.SUPER_ADMIN && data && data.role && data.role !== Domain.Roles.SUPER_ADMIN) throw new Error('Khong the doi vai tro quan tri he thong');
+      if (existing.role === Domain.Roles.SUPER_ADMIN && data && data.role && data.role !== Domain.Roles.SUPER_ADMIN) throw new Error('Không thể đổi vai trò quản trị hệ thống');
       var merged = Object.assign({}, existing, data || {});
       var valid = validateUser(merged, id, existing);
       var record = Entity.withUpdateAudit(existing, valid);
       userRepository.update(id, record);
-      logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Cap nhat nguoi dung', { email: record.email, role: record.role, status: record.status });
+      logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Cập nhật người dùng', { email: record.email, role: record.role, status: record.status });
       return record;
     });
   }
@@ -96,11 +97,11 @@ Application.UserService = function(userRepository, logger, db) {
   function changeRole(id, role) {
     return Infrastructure.withLock(function() {
       var existing = getUser(id);
-      if (existing.role === Domain.Roles.SUPER_ADMIN) throw new Error('Khong the doi vai tro quan tri he thong');
-      if (publicRoles.indexOf(role) < 0) throw new Error('Vai tro nguoi dung khong hop le');
+      if (existing.role === Domain.Roles.SUPER_ADMIN) throw new Error('Không thể đổi vai trò quản trị hệ thống');
+      if (publicRoles.indexOf(role) < 0) throw new Error('Vai trò người dùng không hợp lệ');
       var record = Entity.withUpdateAudit(existing, { role: role });
       userRepository.update(id, record);
-      logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Doi vai tro nguoi dung', { email: record.email, role: role });
+      logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Đổi vai trò người dùng', { email: record.email, role: role });
       return record;
     });
   }
@@ -108,7 +109,7 @@ Application.UserService = function(userRepository, logger, db) {
   function setStatus(id, status, message) {
     return Infrastructure.withLock(function() {
       var existing = getUser(id);
-      if (existing.role === Domain.Roles.SUPER_ADMIN && status !== Domain.Status.ACTIVE) throw new Error('Khong the khoa tai khoan quan tri he thong');
+      if (existing.role === Domain.Roles.SUPER_ADMIN && status !== Domain.Status.ACTIVE) throw new Error('Không thể khóa tài khoản quản trị hệ thống');
       var record = Entity.withUpdateAudit(existing, { status: status });
       if (status === Domain.Status.ACTIVE) {
         record.deletedAt = '';
@@ -123,15 +124,15 @@ Application.UserService = function(userRepository, logger, db) {
   }
 
   function deleteUser(id) {
-    return setStatus(id, Domain.Status.DELETED, 'Xoa nguoi dung');
+    return setStatus(id, Domain.Status.DELETED, 'Xóa người dùng');
   }
 
   function lockUser(id) {
-    return setStatus(id, Domain.Status.INACTIVE, 'Khoa nguoi dung');
+    return setStatus(id, Domain.Status.INACTIVE, 'Khóa người dùng');
   }
 
   function unlockUser(id) {
-    return setStatus(id, Domain.Status.ACTIVE, 'Mo khoa nguoi dung');
+    return setStatus(id, Domain.Status.ACTIVE, 'Mở khóa người dùng');
   }
 
   function changePassword(id, password) {
@@ -140,7 +141,7 @@ Application.UserService = function(userRepository, logger, db) {
       storePasswordHash(id, password);
       var record = Entity.withUpdateAudit(existing, {});
       userRepository.update(id, record);
-      logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Doi mat khau ung dung', { email: existing.email });
+      logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Đổi mật khẩu ứng dụng', { email: existing.email });
       return { id: id, updatedAt: record.updatedAt };
     });
   }
@@ -148,10 +149,10 @@ Application.UserService = function(userRepository, logger, db) {
   function updatePermission(id, data) {
     return Infrastructure.withLock(function() {
       var existing = db.findById(Domain.Tables.PERMISSIONS, id, { includeDeleted: true });
-      if (!existing) throw new Error('Khong tim thay quyen: ' + id);
+      if (!existing) throw new Error('Không tìm thấy quyền: ' + id);
       var record = Entity.withUpdateAudit(existing, data || {});
       db.replace(Domain.Tables.PERMISSIONS, id, record);
-      logger.info(Domain.Modules.PERMISSION, Domain.Actions.UPDATE, id, 'Cap nhat quyen', data);
+      logger.info(Domain.Modules.PERMISSION, Domain.Actions.UPDATE, id, 'Cập nhật quyền', data);
       return record;
     });
   }
