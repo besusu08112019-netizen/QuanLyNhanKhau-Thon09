@@ -18,7 +18,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
     return {
       id: data.id || '',
       citizenCode: String(data.citizenCode || '').trim().toUpperCase(),
-      householdId: String(data.householdId || '').trim(),
+      householdId: String(data.householdId || data.householdCode || '').trim().toUpperCase(),
       fullName: String(data.fullName || '').trim().replace(/\s+/g, ' '),
       gender: normalizeGender(data.gender),
       dateOfBirth: String(data.dateOfBirth || '').trim(),
@@ -41,7 +41,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
   function resolveHousehold(value) {
     var key = String(value || '').trim();
     if (!key) return null;
-    return householdRepository.findById(key) || householdRepository.findByCode(key);
+    return householdRepository.findByCode(key) || householdRepository.findById(key);
   }
 
   function validate(data, existingId) {
@@ -67,9 +67,9 @@ Application.PersonService = function(personRepository, householdRepository, logg
     }
     var household = resolveHousehold(data.householdId);
     if (!household) {
-      throw new Error('Hộ dân không tồn tại hoặc đã bị xóa');
+      throw new Error('Không tìm thấy Mã hộ: ' + data.householdId);
     }
-    data.householdId = household.id;
+    data.householdId = String(household.householdCode || data.householdId).trim().toUpperCase();
     if (data.identityNumber) {
       var duplicate = personRepository.findByIdentityNumber(data.identityNumber, { includeDeleted: true });
       if (duplicate && duplicate.id !== existingId && duplicate.status !== Domain.Status.DELETED) {
@@ -80,9 +80,10 @@ Application.PersonService = function(personRepository, householdRepository, logg
 
   function listPage(query) {
     query = Object.assign({}, query || {});
-    if (query.householdId) {
-      var household = resolveHousehold(query.householdId);
-      query.householdId = household ? household.id : '__HOUSEHOLD_NOT_FOUND__';
+    if (query.householdId || query.householdCode) {
+      var household = resolveHousehold(query.householdId || query.householdCode);
+      query.householdId = household ? household.householdCode : '__HOUSEHOLD_NOT_FOUND__';
+      query.householdCode = query.householdId;
     }
     return personRepository.listPage(query);
   }
@@ -100,7 +101,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       validate(payload, '');
       var record = Entity.withCreateAudit(Domain.Tables.CITIZENS, payload);
       personRepository.create(record);
-      logger.info(Domain.Modules.CITIZEN, Domain.Actions.CREATE, record.id, 'Tạo nhân khẩu', { citizenCode: record.citizenCode, householdId: record.householdId });
+      logger.info(Domain.Modules.CITIZEN, Domain.Actions.CREATE, record.id, 'Tạo nhân khẩu', { citizenCode: record.citizenCode, householdCode: record.householdId });
       return record;
     });
   }
@@ -114,7 +115,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       validate(payload, id);
       var record = Entity.withUpdateAudit(existing, payload);
       personRepository.update(id, record);
-      logger.info(Domain.Modules.CITIZEN, Domain.Actions.UPDATE, id, 'Cập nhật nhân khẩu', { citizenCode: record.citizenCode, householdId: record.householdId });
+      logger.info(Domain.Modules.CITIZEN, Domain.Actions.UPDATE, id, 'Cập nhật nhân khẩu', { citizenCode: record.citizenCode, householdCode: record.householdId });
       return record;
     });
   }
@@ -126,7 +127,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       if (!existing) throw new Error('Không tìm thấy nhân khẩu: ' + id);
       var record = Entity.withDeleteAudit(existing);
       personRepository.update(id, record);
-      logger.warn(Domain.Modules.CITIZEN, Domain.Actions.DELETE, id, 'Xóa mềm nhân khẩu', { citizenCode: existing.citizenCode, householdId: existing.householdId });
+      logger.warn(Domain.Modules.CITIZEN, Domain.Actions.DELETE, id, 'Xóa mềm nhân khẩu', { citizenCode: existing.citizenCode, householdCode: existing.householdId });
       return record;
     });
   }
@@ -142,7 +143,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       record.deletedAt = '';
       record.deletedBy = '';
       personRepository.update(id, record);
-      logger.info(Domain.Modules.CITIZEN, Domain.Actions.UPDATE, id, 'Khôi phục nhân khẩu', { citizenCode: record.citizenCode, householdId: record.householdId });
+      logger.info(Domain.Modules.CITIZEN, Domain.Actions.UPDATE, id, 'Khôi phục nhân khẩu', { citizenCode: record.citizenCode, householdCode: record.householdId });
       return record;
     });
   }
