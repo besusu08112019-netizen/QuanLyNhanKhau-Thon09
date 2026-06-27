@@ -56,8 +56,8 @@ Application.SecurityService = function(db, logger) {
     });
     if (permissions.length) return String(permissions[0].allowed) === 'true';
     if (user.role === Domain.Roles.ADMIN) return true;
-    if (user.role === Domain.Roles.OFFICER) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE, Domain.Actions.EXPORT].indexOf(actionName) >= 0 && moduleName !== Domain.Modules.PERMISSION && moduleName !== Domain.Modules.USER;
-    if (user.role === Domain.Roles.VIEWER) return [Domain.Actions.READ, Domain.Actions.EXPORT].indexOf(actionName) >= 0;
+    if (user.role === Domain.Roles.OFFICER) return [Domain.Actions.READ, Domain.Actions.CREATE, Domain.Actions.UPDATE, Domain.Actions.EXPORT].indexOf(actionName) >= 0 && moduleName !== Domain.Modules.PERMISSION && moduleName !== Domain.Modules.USER && moduleName !== Domain.Modules.SETTINGS;
+    if (user.role === Domain.Roles.VIEWER) return [Domain.Actions.READ, Domain.Actions.EXPORT].indexOf(actionName) >= 0 && moduleName !== Domain.Modules.PERMISSION && moduleName !== Domain.Modules.USER && moduleName !== Domain.Modules.SETTINGS;
     return false;
   }
 
