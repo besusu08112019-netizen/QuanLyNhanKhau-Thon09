@@ -5,12 +5,44 @@ Infrastructure.HouseholdRepository = function(db) {
     return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
-  function makeCitizenIndex() {
-    return db.readAll(Domain.Tables.CITIZENS, { includeDeleted: true }).reduce(function(acc, citizen) {
+  function personStatus(value) {
+    var text = normalizeKeyword(value);
+    if (!text || text === 'active' || text === 'alive' || text === 'con song') return 'ALIVE';
+    if (text === 'inactive' || text === 'deceased' || text === 'dead' || text === 'da chet') return 'DECEASED';
+    if (text === 'deleted') return Domain.Status.DELETED;
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function presenceStatus(value) {
+    var text = normalizeKeyword(value);
+    if (!text || text === 'at_home' || text === 'at home' || text === 'home' || text === 'o nha' || text === 'co mat') return 'AT_HOME';
+    if (text === 'away' || text === 'di vang' || text === 'vang' || text === 'tam vang') return 'AWAY';
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function readCitizens() {
+    return db.readAll(Domain.Tables.CITIZENS, { includeDeleted: true });
+  }
+
+  function makeCitizenIndex(citizens) {
+    return (citizens || readCitizens()).reduce(function(acc, citizen) {
       [citizen.id, citizen.citizenCode, citizen.identityNumber].forEach(function(key) {
         key = normalizeKeyword(key);
         if (key) acc[key] = citizen;
       });
+      return acc;
+    }, {});
+  }
+
+  function makePresenceSummary(citizens) {
+    return (citizens || readCitizens()).reduce(function(acc, citizen) {
+      if (personStatus(citizen.status) === Domain.Status.DELETED) return acc;
+      var key = normalizeKeyword(citizen.householdId || citizen.householdCode);
+      if (!key) return acc;
+      if (!acc[key]) acc[key] = { atHome: 0, away: 0, total: 0 };
+      if (presenceStatus(citizen.presenceStatus || citizen.currentStatus || citizen.residencyStatus) === 'AWAY') acc[key].away += 1;
+      else acc[key].atHome += 1;
+      acc[key].total += 1;
       return acc;
     }, {});
   }
@@ -22,9 +54,13 @@ Infrastructure.HouseholdRepository = function(db) {
     return citizen ? citizen.fullName : '';
   }
 
-  function enrichHousehold(household, citizenIndex) {
+  function enrichHousehold(household, citizenIndex, presenceSummary) {
     var record = Object.assign({}, household);
+    var summary = presenceSummary[normalizeKeyword(record.householdCode)] || presenceSummary[normalizeKeyword(record.id)] || { atHome: 0, away: 0, total: 0 };
     record.headCitizenName = resolveHeadName(record, citizenIndex || {});
+    record.atHomeCount = summary.atHome;
+    record.awayCount = summary.away;
+    record.presenceSummary = 'Ở nhà: ' + summary.atHome + ' / Đi vắng: ' + summary.away;
     return record;
   }
 
@@ -54,6 +90,7 @@ Infrastructure.HouseholdRepository = function(db) {
       household.phone,
       household.areaCode,
       household.memberCount,
+      household.presenceSummary,
       household.meritoriousFamily,
       household.poorHousehold,
       household.nearPoorHousehold,
@@ -75,9 +112,11 @@ Infrastructure.HouseholdRepository = function(db) {
     var keyword = normalizeKeyword(query.keyword || query.search || query.q);
     var page = Math.max(parseInt(query.page || 1, 10), 1);
     var pageSize = Math.min(Math.max(parseInt(query.pageSize || 20, 10), 5), 100);
-    var citizenIndex = makeCitizenIndex();
+    var citizens = readCitizens();
+    var citizenIndex = makeCitizenIndex(citizens);
+    var presenceSummary = makePresenceSummary(citizens);
     var rows = db.readAll(Domain.Tables.HOUSEHOLDS).map(function(household) {
-      return enrichHousehold(household, citizenIndex);
+      return enrichHousehold(household, citizenIndex, presenceSummary);
     }).filter(function(household) {
       if (query.status && household.status !== query.status) return false;
       return matchesKeyword(household, keyword);
@@ -125,7 +164,7 @@ Infrastructure.HouseholdRepository = function(db) {
     var household = findById(householdIdOrCode, { includeDeleted: true }) || findByCode(householdIdOrCode, { includeDeleted: true }) || {};
     var keys = [householdIdOrCode, household.id, household.householdCode].map(normalizeKeyword).filter(Boolean);
     return db.readAll(Domain.Tables.CITIZENS).filter(function(citizen) {
-      return citizen.status === Domain.Status.ACTIVE && keys.indexOf(normalizeKeyword(citizen.householdId)) >= 0;
+      return personStatus(citizen.status) !== Domain.Status.DELETED && keys.indexOf(normalizeKeyword(citizen.householdId)) >= 0;
     }).length;
   }
 
