@@ -120,6 +120,20 @@ Application.ReportService = function(db, logger) {
     })[0] || null;
   }
 
+  function householdKeys(household) {
+    return [household && household.id, household && household.householdCode].map(normalizeText).filter(Boolean);
+  }
+
+  function personInHousehold(person, household) {
+    var keys = householdKeys(household);
+    return keys.indexOf(normalizeText(person.householdId)) >= 0 || keys.indexOf(normalizeText(person.householdCode)) >= 0;
+  }
+
+  function personHouseholdCode(data, person) {
+    var household = findHousehold(data, person.householdId || person.householdCode);
+    return household ? household.householdCode : (person.householdCode || person.householdId || '');
+  }
+
   function findPerson(data, key) {
     key = normalizeText(key);
     return data.citizens.filter(function(item) {
@@ -164,7 +178,7 @@ Application.ReportService = function(db, logger) {
       report.columns = ['Thông tin', 'Giá trị'];
       var household = findHousehold(data, filters.recordId);
       if (household) {
-        var members = data.citizens.filter(function(person) { return person.householdId === household.id; });
+        var members = data.citizens.filter(function(person) { return personInHousehold(person, household); });
         report.rows = [
           ['Mã hộ', household.householdCode], ['Chủ hộ', householdHeadName(household, data.citizens)], ['Địa chỉ/Thôn', household.address], ['Điện thoại', household.phone], ['Khu vực', household.areaCode], ['Diện hộ', policySummary(household)], ['Trạng thái', statusLabel(household.status)], ['Số nhân khẩu', members.length]
         ];
@@ -178,7 +192,7 @@ Application.ReportService = function(db, logger) {
       var person = findPerson(data, filters.recordId);
       if (person) {
         report.rows = [
-          ['Mã nhân khẩu', person.citizenCode], ['Họ tên', person.fullName], ['Giới tính', genderLabel(person.gender)], ['Ngày sinh', person.dateOfBirth], ['CCCD/CMND', person.identityNumber], ['ID hộ', person.householdId], ['Quan hệ', person.relationship], ['Điện thoại', person.phone], ['Thường trú', person.permanentAddress], ['Nơi ở hiện nay', person.currentAddress], ['Trạng thái', statusLabel(person.status)]
+          ['Mã nhân khẩu', person.citizenCode], ['Họ tên', person.fullName], ['Giới tính', genderLabel(person.gender)], ['Ngày sinh', person.dateOfBirth], ['CCCD/CMND', person.identityNumber], ['Mã hộ', personHouseholdCode(data, person)], ['Quan hệ', person.relationship], ['Điện thoại', person.phone], ['Thường trú', person.permanentAddress], ['Nơi ở hiện nay', person.currentAddress], ['Trạng thái', statusLabel(person.status)]
         ];
       }
       return report;
@@ -191,8 +205,8 @@ Application.ReportService = function(db, logger) {
     }
     if (type === 'population') {
       report.title = 'Báo cáo danh sách nhân khẩu';
-      report.columns = ['Mã nhân khẩu', 'Họ tên', 'Giới tính', 'Ngày sinh', 'CCCD/CMND', 'ID hộ', 'Quan hệ', 'Trạng thái'];
-      report.rows = data.citizens.map(function(item) { return [item.citizenCode, item.fullName, genderLabel(item.gender), item.dateOfBirth, item.identityNumber, item.householdId, item.relationship, statusLabel(item.status)]; });
+      report.columns = ['Mã nhân khẩu', 'Họ tên', 'Giới tính', 'Ngày sinh', 'CCCD/CMND', 'Mã hộ', 'Quan hệ', 'Trạng thái'];
+      report.rows = data.citizens.map(function(item) { return [item.citizenCode, item.fullName, genderLabel(item.gender), item.dateOfBirth, item.identityNumber, personHouseholdCode(data, item), item.relationship, statusLabel(item.status)]; });
       return report;
     }
     if (type === 'gender') {
@@ -215,7 +229,7 @@ Application.ReportService = function(db, logger) {
     }
     if (type === 'movement') {
       report.title = 'Báo cáo biến động dân cư';
-      report.columns = ['Loại biến động', 'Nhân khẩu', 'Hộ', 'Ngày hiệu lực', 'Lý do', 'Trạng thái'];
+      report.columns = ['Loại biến động', 'Nhân khẩu', 'Mã hộ', 'Ngày hiệu lực', 'Lý do', 'Trạng thái'];
       report.rows = data.movements.map(function(item) { return [movementLabel(item.type), item.citizenId, item.householdId, item.effectiveDate, item.reason, statusLabel(item.status)]; });
       report.summary.movements = countBy(data.movements, function(item) { return movementLabel(item.type); }, ['Sinh', 'Tử', 'Chuyển đến', 'Chuyển đi', 'Khác']);
       return report;
