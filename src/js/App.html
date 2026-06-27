@@ -2,9 +2,12 @@
 (function() {
   var state = {
     route: 'dashboard',
+    dashboard: { fromDate: '', toDate: '', householdStatus: '', personStatus: '', residencyStatus: '' },
     household: { page: 1, pageSize: 20, keyword: '', status: '' },
     person: { page: 1, pageSize: 20, keyword: '', householdId: '', status: '', includeDeleted: false }
   };
+  var charts = {};
+  var dashboardTimer = null;
   var titles = {
     dashboard: 'Dashboard', household: 'Household', citizen: 'Citizen', movement: 'Movement', report: 'Report',
     pdf: 'PDF', backup: 'Backup', permission: 'Permission', user: 'User', logs: 'Logs'
@@ -44,6 +47,9 @@
   }
   function mount(content) { el('app').innerHTML = content; }
   function setRoute(route) {
+    if (dashboardTimer) { clearInterval(dashboardTimer); dashboardTimer = null; }
+    Object.keys(charts).forEach(function(key) { charts[key].destroy(); });
+    charts = {};
     state.route = route;
     el('pageTitle').textContent = titles[route] || route;
     document.querySelectorAll('[data-route]').forEach(function(item) { item.classList.toggle('active', item.getAttribute('data-route') === route); });
@@ -118,7 +124,6 @@
     if (payload.identityNumber && !/^\d{9}$|^\d{12}$/.test(payload.identityNumber)) throw new Error('CCCD/CMND phai gom 9 hoac 12 chu so');
     if (payload.phone && !/^[0-9+() .-]{8,20}$/.test(payload.phone)) throw new Error('So dien thoai khong hop le');
   }
-
   function renderPager(meta, totalLabel) {
     var disabledPrev = meta.page <= 1 ? ' disabled' : '';
     var disabledNext = meta.page >= meta.totalPages ? ' disabled' : '';
@@ -129,17 +134,63 @@
       '</div></div>';
   }
 
+  function chartData(items) {
+    return { labels: items.map(function(item) { return item.label; }), values: items.map(function(item) { return item.value; }) };
+  }
+  function renderChart(id, type, items, colors) {
+    var canvas = el(id);
+    if (!canvas || !window.Chart) return;
+    if (charts[id]) charts[id].destroy();
+    var data = chartData(items || []);
+    charts[id] = new Chart(canvas, {
+      type: type,
+      data: { labels: data.labels, datasets: [{ data: data.values, backgroundColor: colors, borderColor: '#ffffff', borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: type === 'bar' ? { y: { beginAtZero: true, ticks: { precision: 0 } } } : {} }
+    });
+  }
+  function metric(label, value, subtitle, icon, tone) {
+    return '<div class="col-lg-3 col-md-6 col-12"><div class="dashboard-metric ' + html(tone || '') + '"><div><div class="metric-label">' + html(label) + '</div><div class="metric-value">' + html(value) + '</div><div class="metric-subtitle">' + html(subtitle || '') + '</div></div><i class="fas ' + html(icon || 'fa-chart-simple') + '"></i></div></div>';
+  }
+
+  function dashboardRoute() {
+    mount('<div class="dashboard-filter"><div class="filters"><input type="date" id="dashFrom" class="form-control form-control-sm"><input type="date" id="dashTo" class="form-control form-control-sm"><select id="dashHouseholdStatus" class="form-control form-control-sm"><option value="">Tat ca ho</option><option value="ACTIVE">Ho dang hoat dong</option><option value="INACTIVE">Ho tam dung</option></select><select id="dashPersonStatus" class="form-control form-control-sm"><option value="">Tat ca nhan khau</option><option value="ACTIVE">Nhan khau hoat dong</option><option value="INACTIVE">Nhan khau khong hoat dong</option></select><select id="dashResidency" class="form-control form-control-sm"><option value="">Tat ca cu tru</option><option value="regular">Thuong tru</option><option value="temporaryResidence">Tam tru</option><option value="temporaryAbsence">Tam vang</option></select></div><button class="btn btn-outline-secondary btn-sm" id="dashRefresh"><i class="fas fa-rotate"></i></button></div><div id="dashboardMetrics" class="row"></div><div class="row"><div class="col-lg-4 col-12"><div class="card chart-card"><div class="card-header"><h3 class="card-title">Co cau gioi tinh</h3></div><div class="card-body"><canvas id="genderChart"></canvas></div></div></div><div class="col-lg-4 col-12"><div class="card chart-card"><div class="card-header"><h3 class="card-title">Co cau do tuoi</h3></div><div class="card-body"><canvas id="ageChart"></canvas></div></div></div><div class="col-lg-4 col-12"><div class="card chart-card"><div class="card-header"><h3 class="card-title">Tinh trang ho</h3></div><div class="card-body"><canvas id="householdChart"></canvas></div></div></div></div><div class="card"><div class="card-header"><h3 class="card-title">Bien dong gan day</h3><div class="card-tools"><span id="dashGeneratedAt" class="text-muted"></span></div></div><div class="card-body" id="recentMovementBox"></div></div>');
+    el('dashFrom').value = state.dashboard.fromDate;
+    el('dashTo').value = state.dashboard.toDate;
+    el('dashHouseholdStatus').value = state.dashboard.householdStatus;
+    el('dashPersonStatus').value = state.dashboard.personStatus;
+    el('dashResidency').value = state.dashboard.residencyStatus;
+    function readFilters() {
+      state.dashboard.fromDate = el('dashFrom').value;
+      state.dashboard.toDate = el('dashTo').value;
+      state.dashboard.householdStatus = el('dashHouseholdStatus').value;
+      state.dashboard.personStatus = el('dashPersonStatus').value;
+      state.dashboard.residencyStatus = el('dashResidency').value;
+      return Object.assign({}, state.dashboard);
+    }
+    function refresh() {
+      call('dashboard.summary', readFilters()).then(function(data) {
+        var metrics = data.metrics || {};
+        el('dashboardMetrics').innerHTML = metric('Tong so ho', metrics.households || 0, 'Suc chua ' + data.capacity.households, 'fa-house-user', 'tone-blue') + metric('Tong nhan khau', metrics.citizens || 0, 'Dang hoat dong ' + (metrics.activeCitizens || 0), 'fa-users', 'tone-teal') + metric('Nam', metrics.male || 0, 'Tam tru ' + (metrics.temporaryResidence || 0), 'fa-mars', 'tone-indigo') + metric('Nu', metrics.female || 0, 'Tam vang ' + (metrics.temporaryAbsence || 0), 'fa-venus', 'tone-rose');
+        renderChart('genderChart', 'doughnut', data.charts.population, ['#1565c0', '#c2185b', '#607d8b']);
+        renderChart('ageChart', 'bar', data.charts.ages, ['#00897b', '#26a69a', '#4db6ac', '#80cbc4', '#b2dfdb', '#90a4ae']);
+        renderChart('householdChart', 'doughnut', data.charts.households, ['#2e7d32', '#f9a825', '#c62828', '#78909c']);
+        el('recentMovementBox').innerHTML = table([{key:'type',label:'Loai'},{key:'effectiveDate',label:'Ngay'},{key:'reason',label:'Ly do'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], data.recentMovements || []);
+        el('dashGeneratedAt').textContent = data.generatedAt || '';
+      }).catch(function(e) { toast(e.message, 'danger'); });
+    }
+    ['dashFrom','dashTo','dashHouseholdStatus','dashPersonStatus','dashResidency'].forEach(function(id) { el(id).onchange = refresh; });
+    el('dashRefresh').onclick = refresh;
+    refresh();
+    dashboardTimer = setInterval(function() { if (state.route === 'dashboard') refresh(); }, 60000);
+  }
+
   function householdRoute() {
     mount('<div class="module-toolbar"><div class="filters"><input id="householdKeyword" class="form-control form-control-sm" placeholder="Tim ma ho, dia chi, thon, dien thoai"><select id="householdStatus" class="form-control form-control-sm"><option value="">Tat ca trang thai</option><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select><select id="householdPageSize" class="form-control form-control-sm"><option>10</option><option selected>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreate"><i class="fas fa-plus"></i> Them ho</button></div></div><div id="grid"></div>');
-    el('householdKeyword').value = state.household.keyword;
-    el('householdStatus').value = state.household.status;
-    el('householdPageSize').value = state.household.pageSize;
+    el('householdKeyword').value = state.household.keyword; el('householdStatus').value = state.household.status; el('householdPageSize').value = state.household.pageSize;
     function refresh() {
       call('household.page', state.household).then(function(result) {
         var columns = [{key:'householdCode',label:'Ma ho'}, {key:'address',label:'Dia chi'}, {key:'hamlet',label:'Thon'}, {key:'phone',label:'Dien thoai'}, {key:'areaCode',label:'Khu vuc'}, {key:'memberCount',label:'Nhan khau'}, {key:'status',label:'Trang thai',render:function(r){return status(r.status);}}];
-        el('grid').innerHTML = table(columns, result.items, function(row) {
-          return '<button class="btn btn-outline-primary btn-xs" title="Sua" data-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-danger btn-xs" title="Xoa" data-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>';
-        }) + renderPager(result, 'ho dan');
+        el('grid').innerHTML = table(columns, result.items, function(row) { return '<button class="btn btn-outline-primary btn-xs" title="Sua" data-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-danger btn-xs" title="Xoa" data-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>'; }) + renderPager(result, 'ho dan');
         document.querySelectorAll('[data-edit]').forEach(function(btn) { btn.onclick = function() { var row = result.items.filter(function(item) { return item.id === btn.dataset.edit; })[0]; modalForm('Cap nhat ho dan', fields.household, row, function(payload) { try { validateHousehold(payload); } catch (err) { toast(err.message, 'warning'); return; } payload.id = row.id; call('household.update', payload).then(function(){ $('#modalForm').modal('hide'); toast('Da cap nhat ho dan','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }); }; });
         document.querySelectorAll('[data-delete]').forEach(function(btn) { btn.onclick = function() { if (!confirm('Xac nhan xoa mem ho dan nay?')) return; call('household.delete', { id: btn.dataset.delete }).then(function(){ toast('Da xoa ho dan','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }; });
         if (el('pagePrev')) el('pagePrev').onclick = function() { if (state.household.page > 1) { state.household.page -= 1; refresh(); } };
@@ -155,18 +206,11 @@
 
   function personRoute() {
     mount('<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tim ho ten, ma, CCCD, dien thoai"><input id="personHousehold" class="form-control form-control-sm" placeholder="ID ho"><select id="personStatus" class="form-control form-control-sm"><option value="">Tat ca trang thai</option><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option><option value="DELETED">DELETED</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option selected>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreate"><i class="fas fa-plus"></i> Them nhan khau</button></div></div><div id="grid"></div>');
-    el('personKeyword').value = state.person.keyword;
-    el('personHousehold').value = state.person.householdId;
-    el('personStatus').value = state.person.status;
-    el('personPageSize').value = state.person.pageSize;
+    el('personKeyword').value = state.person.keyword; el('personHousehold').value = state.person.householdId; el('personStatus').value = state.person.status; el('personPageSize').value = state.person.pageSize;
     function refresh() {
       state.person.includeDeleted = state.person.status === 'DELETED';
       call('person.page', state.person).then(function(result) {
-        var columns = [
-          {key:'citizenCode',label:'Ma'}, {key:'fullName',label:'Ho ten'}, {key:'identityNumber',label:'CCCD/CMND'},
-          {key:'householdId',label:'ID ho'}, {key:'gender',label:'Gioi tinh'}, {key:'dateOfBirth',label:'Ngay sinh'},
-          {key:'relationship',label:'Quan he'}, {key:'phone',label:'Dien thoai'}, {key:'status',label:'Trang thai',render:function(r){return status(r.status);}}
-        ];
+        var columns = [{key:'citizenCode',label:'Ma'}, {key:'fullName',label:'Ho ten'}, {key:'identityNumber',label:'CCCD/CMND'}, {key:'householdId',label:'ID ho'}, {key:'gender',label:'Gioi tinh'}, {key:'dateOfBirth',label:'Ngay sinh'}, {key:'relationship',label:'Quan he'}, {key:'phone',label:'Dien thoai'}, {key:'status',label:'Trang thai',render:function(r){return status(r.status);}}];
         el('grid').innerHTML = table(columns, result.items, function(row) {
           var edit = '<button class="btn btn-outline-primary btn-xs" title="Sua" data-person-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button>';
           var del = '<button class="btn btn-outline-danger btn-xs" title="Xoa" data-person-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>';
@@ -203,7 +247,7 @@
   }
 
   var routes = {
-    dashboard: function() { call('dashboard.summary').then(function(data) { mount('<div class="row">' + metric('Ho', data.households, data.capacity.households) + metric('Nhan khau', data.citizens, data.capacity.citizens) + metric('Bien dong', data.movements, '') + metric('Nguoi dung', data.activeUsers, '') + '</div><div class="card"><div class="card-header"><h3 class="card-title">Bien dong gan day</h3></div><div class="card-body">' + table([{key:'type',label:'Loai'},{key:'effectiveDate',label:'Ngay'},{key:'reason',label:'Ly do'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], data.recentMovements || []) + '</div></div>'); }).catch(function(e){ toast(e.message,'danger'); }); },
+    dashboard: dashboardRoute,
     household: householdRoute,
     citizen: personRoute,
     movement: function() { loadCrud('movement.list','movement.create','movement.update','movement.delete',[{key:'type',label:'Loai'},{key:'citizenId',label:'Nhan khau'},{key:'effectiveDate',label:'Ngay'},{key:'reason',label:'Ly do'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], fields.movement); },
@@ -214,7 +258,6 @@
     user: function() { call('user.list').then(function(rows){ mount(table([{key:'email',label:'Email'},{key:'displayName',label:'Ten'},{key:'role',label:'Vai tro'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], rows)); }); },
     logs: function() { call('logs.list').then(function(rows){ mount(table([{key:'timestamp',label:'Thoi gian'},{key:'actorEmail',label:'Nguoi dung'},{key:'module',label:'Module'},{key:'action',label:'Hanh dong'},{key:'level',label:'Muc'},{key:'message',label:'Thong diep'}], rows)); }); }
   };
-  function metric(label, value, capacity) { return '<div class="col-lg-3 col-6"><div class="small-box bg-white"><div class="inner"><h3>' + html(value) + '</h3><p>' + html(label) + '</p><div class="metric-subtitle">' + (capacity ? ('Suc chua ' + html(capacity)) : '&nbsp;') + '</div></div><div class="icon"><i class="fas fa-chart-simple"></i></div></div></div>'; }
 
   document.addEventListener('click', function(event) { var link = event.target.closest('[data-route]'); if (link) { event.preventDefault(); setRoute(link.getAttribute('data-route')); } });
   call('user.me').then(function(user) { el('currentUser').textContent = user.email + ' | ' + user.role; }).catch(function() {});
