@@ -19,12 +19,28 @@ Application.ReportService = function(db, logger) {
     return value || '';
   }
 
+  function isYes(value) {
+    var text = normalizeText(value);
+    return value === true || value === 1 || text === 'co' || text === 'yes' || text === 'true' || text === '1' || text === 'x';
+  }
+
+  function pick() {
+    for (var i = 0; i < arguments.length; i += 1) {
+      if (arguments[i] !== undefined && arguments[i] !== null && arguments[i] !== '') return arguments[i];
+    }
+    return '';
+  }
+
+  function policyValue(household, canonicalName, legacyName) {
+    return pick(household && household[canonicalName], household && household[legacyName]);
+  }
+
   function policySummary(household) {
     var items = [];
-    if (household.meritoriousFamily === 'Có') items.push('Gia đình có công');
-    if (household.poorHousehold === 'Có') items.push('Hộ nghèo');
-    if (household.nearPoorHousehold === 'Có') items.push('Cận nghèo');
-    if (household.disabledHousehold === 'Có') items.push('Tàn tật');
+    if (isYes(policyValue(household, 'meritoriousFamily', 'isPolicyFamily'))) items.push('Gia đình có công');
+    if (isYes(policyValue(household, 'poorHousehold', 'isPoorHousehold'))) items.push('Hộ nghèo');
+    if (isYes(policyValue(household, 'nearPoorHousehold', 'isNearPoorHousehold'))) items.push('Hộ cận nghèo');
+    if (isYes(policyValue(household, 'disabledHousehold', 'hasDisabledMember'))) items.push('Tàn tật');
     return items.join(', ') || 'Không';
   }
 
@@ -151,6 +167,16 @@ Application.ReportService = function(db, logger) {
     return person ? person.fullName : '';
   }
 
+  function householdMemberCount(data, household) {
+    return data.citizens.filter(function(person) { return personInHousehold(person, household); }).length;
+  }
+
+  function householdPolicyRows(data, matcher) {
+    return data.households.filter(matcher).map(function(item) {
+      return [item.householdCode, householdHeadName(item, data.citizens), item.address, item.phone, item.areaCode, householdMemberCount(data, item), policySummary(item), statusLabel(item.status)];
+    });
+  }
+
   function makeReport(type, filters) {
     filters = filters || {};
     type = type || 'summary';
@@ -201,6 +227,19 @@ Application.ReportService = function(db, logger) {
       report.title = 'Báo cáo danh sách hộ dân';
       report.columns = ['Mã hộ', 'Chủ hộ', 'Địa chỉ/Thôn', 'Điện thoại', 'Khu vực', 'Diện hộ', 'Trạng thái'];
       report.rows = data.households.map(function(item) { return [item.householdCode, householdHeadName(item, data.citizens), item.address, item.phone, item.areaCode, policySummary(item), statusLabel(item.status)]; });
+      return report;
+    }
+    if (type === 'policyMeritorious' || type === 'policyPoor' || type === 'policyNearPoor' || type === 'policyDisabled') {
+      var config = {
+        policyMeritorious: { title: 'Danh sách gia đình/người có công', canonical: 'meritoriousFamily', legacy: 'isPolicyFamily' },
+        policyPoor: { title: 'Danh sách hộ nghèo', canonical: 'poorHousehold', legacy: 'isPoorHousehold' },
+        policyNearPoor: { title: 'Danh sách hộ cận nghèo', canonical: 'nearPoorHousehold', legacy: 'isNearPoorHousehold' },
+        policyDisabled: { title: 'Danh sách hộ có người tàn tật', canonical: 'disabledHousehold', legacy: 'hasDisabledMember' }
+      }[type];
+      report.title = config.title;
+      report.columns = ['Mã hộ', 'Chủ hộ', 'Địa chỉ/Thôn', 'Điện thoại', 'Khu vực', 'Số nhân khẩu', 'Diện hộ', 'Trạng thái'];
+      report.rows = householdPolicyRows(data, function(item) { return isYes(policyValue(item, config.canonical, config.legacy)); });
+      report.summary.policyCount = report.rows.length;
       return report;
     }
     if (type === 'population') {
