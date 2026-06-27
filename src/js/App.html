@@ -122,6 +122,9 @@
 
   var genderOptions = ['Nam', 'Nữ', 'Khác'];
   var yesNoOptions = ['Không', 'Có'];
+  var relationshipOptions = ['Chủ hộ','Vợ','Chồng','Con','Cha','Mẹ','Ông','Bà','Anh','Chị','Em','Cháu','Dâu','Rể','Người thân khác','Người thuê trọ','Tạm trú','Khác'];
+  var educationOptions = ['Chưa đi học','Mầm non','Tiểu học','THCS','THPT','Trung cấp','Cao đẳng','Đại học','Sau đại học','Không rõ'];
+  var maritalOptions = ['Chưa kết hôn','Đã kết hôn','Ly hôn','Ly thân','Góa','Không rõ'];
   var ethnicityOptions = ['Kinh','Tày','Thái','Mường','Khmer','Hoa','Nùng','Hmong','Dao','Gia Rai','Ê Đê','Ba Na','Sán Chay','Chăm','Cơ Ho','Xơ Đăng','Sán Dìu','Hrê','Ra Glai','Mnông','Thổ','Xtiêng','Kháng','Khơ Mú','Bru-Vân Kiều','Cơ Tu','Giáy','Tà Ôi','Mạ','Giẻ Triêng','Co','Chơ Ro','Xinh Mun','Hà Nhì','Chu Ru','Lào','La Chí','La Ha','Phù Lá','La Hủ','Lự','Lô Lô','Chứt','Mảng','Pà Thẻn','Cơ Lao','Cống','Bố Y','Si La','Pu Péo','Brâu','Rơ Măm','Ơ Đu','Ngái'];
   var religionOptions = ['Không','Phật giáo','Công giáo','Tin Lành','Cao Đài','Phật giáo Hòa Hảo','Hồi giáo','Bà La Môn','Baha\'i','Bửu Sơn Kỳ Hương','Tịnh độ Cư sĩ Phật hội','Minh Sư Đạo','Minh Lý Đạo','Khác'];
   var occupationOptions = ['Chưa có việc làm','Học sinh/Sinh viên','Cán bộ/Công chức/Viên chức','Công nhân','Nông dân','Kinh doanh/Buôn bán','Lao động tự do','Giáo viên','Nhân viên văn phòng','Y tế','Kỹ sư/Kỹ thuật','Dịch vụ','Tài xế/Vận tải','Công an/Quân đội','Nội trợ','Hưu trí','Khác'];
@@ -140,10 +143,10 @@
       {name:'fullName',label:'Họ tên',required:true}, {name:'gender',label:'Giới tính',required:true,options:genderOptions},
       {name:'dateOfBirth',label:'Ngày sinh',required:true,type:'date'}, {name:'identityNumber',label:'CCCD/CMND'},
       {name:'identityIssueDate',label:'Ngày cấp',type:'date'}, {name:'identityIssuePlace',label:'Nơi cấp'},
-      {name:'relationship',label:'Quan hệ với chủ hộ',required:true}, {name:'phone',label:'Điện thoại'},
+      {name:'relationship',label:'Quan hệ với chủ hộ',required:true,options:relationshipOptions}, {name:'phone',label:'Điện thoại'},
       {name:'ethnicity',label:'Dân tộc',options:ethnicityOptions}, {name:'religion',label:'Tôn giáo',options:religionOptions},
-      {name:'occupation',label:'Nghề nghiệp',options:occupationOptions}, {name:'educationLevel',label:'Học vấn'},
-      {name:'maritalStatus',label:'Hôn nhân'}, {name:'permanentAddress',label:'Thường trú',full:true},
+      {name:'occupation',label:'Nghề nghiệp',options:occupationOptions}, {name:'educationLevel',label:'Học vấn',options:educationOptions},
+      {name:'maritalStatus',label:'Hôn nhân',options:maritalOptions}, {name:'permanentAddress',label:'Thường trú',full:true},
       {name:'currentAddress',label:'Nơi ở hiện nay',full:true}
     ],
     movement: [{name:'citizenId',label:'ID nhân khẩu',required:true},{name:'householdId',label:'ID hộ'},{name:'type',label:'Loại biến động',required:true},{name:'fromAddress',label:'Từ địa chỉ'},{name:'toAddress',label:'Đến địa chỉ'},{name:'effectiveDate',label:'Ngày hiệu lực',required:true,type:'date'},{name:'reason',label:'Lý do',full:true}]
