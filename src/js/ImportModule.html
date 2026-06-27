@@ -29,7 +29,7 @@
     return new Promise(function(resolve, reject) {
       google.script.run.withSuccessHandler(function(response) {
         setLoading(false);
-        if (!response || !response.ok) reject(new Error(response && response.error ? response.error.message : 'Loi he thong'));
+        if (!response || !response.ok) reject(new Error(response && response.error ? response.error.message : 'Lỗi hệ thống'));
         else resolve(response.data);
       }).withFailureHandler(function(error) {
         setLoading(false);
@@ -37,9 +37,10 @@
       }).api(action, payload || {});
     });
   }
+  function typeLabel(type) { return type === 'household' ? 'Hộ gia đình' : 'Nhân khẩu'; }
   function activateNav() {
     document.querySelectorAll('[data-route]').forEach(function(item) { item.classList.toggle('active', item.getAttribute('data-route') === 'import'); });
-    if (el('pageTitle')) el('pageTitle').textContent = 'Import du lieu';
+    if (el('pageTitle')) el('pageTitle').textContent = 'Import dữ liệu';
   }
   function payload() {
     return {
@@ -50,22 +51,22 @@
     };
   }
   function resultCards(result) {
-    return '<div class="report-summary-grid import-summary"><div>Tong dong<strong>' + html(result.totalRows || 0) + '</strong></div><div>Hop le<strong>' + html(result.validRows || 0) + '</strong></div><div>Loi<strong>' + html(result.errorRows || result.failed || 0) + '</strong></div><div>Thanh cong<strong>' + html(result.success === undefined ? '-' : result.success) + '</strong></div></div>';
+    return '<div class="report-summary-grid import-summary"><div>Tổng dòng<strong>' + html(result.totalRows || 0) + '</strong></div><div>Hợp lệ<strong>' + html(result.validRows || 0) + '</strong></div><div>Lỗi<strong>' + html(result.errorRows || result.failed || 0) + '</strong></div><div>Thành công<strong>' + html(result.success === undefined ? '-' : result.success) + '</strong></div></div>';
   }
   function errorTable(errors) {
     errors = errors || [];
-    return '<div class="card"><div class="card-header"><strong>Chi tiet loi</strong></div><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr><th>Dong</th><th>Noi dung loi</th></tr></thead><tbody>' +
-      (errors.length ? errors.map(function(error) { return '<tr><td>' + html(error.rowNumber) + '</td><td>' + html(error.message) + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="text-center text-muted p-4">Khong co loi</td></tr>') +
+    return '<div class="card"><div class="card-header"><strong>Chi tiết lỗi</strong></div><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr><th>Dòng</th><th>Nội dung lỗi</th></tr></thead><tbody>' +
+      (errors.length ? errors.map(function(error) { return '<tr><td>' + html(error.rowNumber) + '</td><td>' + html(error.message) + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="text-center text-muted p-4">Không có lỗi</td></tr>') +
       '</tbody></table></div></div>';
   }
   function renderResult(result) {
     lastPreview = result;
-    el('importResult').innerHTML = resultCards(result) + '<div class="card"><div class="card-body"><div><strong>Spreadsheet:</strong> ' + html(result.spreadsheetId) + '</div><div><strong>Sheet:</strong> ' + html(result.sheetName) + '</div><div><strong>Loai:</strong> ' + html(result.type) + '</div><div><strong>Header:</strong> ' + html((result.headers || []).filter(Boolean).join(', ')) + '</div>' + (result.created !== undefined ? '<div><strong>Tao moi:</strong> ' + html(result.created) + ' | <strong>Cap nhat:</strong> ' + html(result.updated || 0) + ' | <strong>Bo qua:</strong> ' + html(result.skipped || 0) + '</div>' : '') + '</div></div>' + errorTable(result.errors);
+    el('importResult').innerHTML = resultCards(result) + '<div class="card"><div class="card-body"><div><strong>Spreadsheet:</strong> ' + html(result.spreadsheetId) + '</div><div><strong>Sheet:</strong> ' + html(result.sheetName) + '</div><div><strong>Loại dữ liệu:</strong> ' + html(typeLabel(result.type)) + '</div><div><strong>Tiêu đề cột:</strong> ' + html((result.headers || []).filter(Boolean).join(', ')) + '</div>' + (result.created !== undefined ? '<div><strong>Tạo mới:</strong> ' + html(result.created) + ' | <strong>Cập nhật:</strong> ' + html(result.updated || 0) + ' | <strong>Bỏ qua:</strong> ' + html(result.skipped || 0) + '</div>' : '') + '</div></div>' + errorTable(result.errors);
   }
   function preview() {
     call('import.preview', payload()).then(function(result) {
       renderResult(result);
-      toast('Da kiem tra du lieu import', result.errorRows ? 'warning' : 'success');
+      toast('Đã kiểm tra dữ liệu import', result.errorRows ? 'warning' : 'success');
     }).catch(function(error) { toast(error.message, 'danger'); });
   }
   function runImport() {
@@ -73,14 +74,15 @@
     var action = data.type === 'household' ? 'import.household' : 'import.person';
     call(action, data).then(function(result) {
       renderResult(result);
-      toast('Import hoan tat: ' + result.success + ' thanh cong, ' + result.failed + ' loi', result.failed ? 'warning' : 'success');
+      toast('Import hoàn tất: ' + result.success + ' thành công, ' + result.failed + ' lỗi', result.failed ? 'warning' : 'success');
     }).catch(function(error) { toast(error.message, 'danger'); });
   }
   function render() {
     activateNav();
     lastPreview = null;
-    el('app').innerHTML = '<div class="import-workspace"><div class="card admin-editor"><div class="card-header"><strong>Nguon du lieu</strong></div><div class="card-body"><div class="form-grid"><input id="importSpreadsheetId" class="form-control" placeholder="Google Spreadsheet ID"><input id="importSheetName" class="form-control" placeholder="Ten Sheet"><select id="importType" class="form-control"><option value="household">Ho gia dinh</option><option value="person">Nhan khau</option></select><select id="importDuplicateMode" class="form-control"><option value="skip">Bo qua Ma ho da ton tai</option><option value="update">Cap nhat Ma ho da ton tai</option></select></div></div><div class="card-footer text-right"><button id="btnImportPreview" class="btn btn-outline-secondary btn-sm"><i class="fas fa-magnifying-glass"></i> Kiem tra du lieu</button> <button id="btnImportRun" class="btn btn-primary btn-sm"><i class="fas fa-file-import"></i> Bat dau Import</button></div></div><div id="importResult"></div></div>';
+    el('app').innerHTML = '<div class="import-workspace"><div class="card admin-editor"><div class="card-header"><strong>Nguồn dữ liệu</strong></div><div class="card-body"><div class="form-grid"><input id="importSpreadsheetId" class="form-control" placeholder="Google Spreadsheet ID"><input id="importSheetName" class="form-control" placeholder="Tên Sheet"><select id="importType" class="form-control"><option value="household">Hộ gia đình</option><option value="person">Nhân khẩu</option></select><select id="importDuplicateMode" class="form-control"><option value="skip">Bỏ qua mã hộ đã tồn tại</option><option value="update">Cập nhật mã hộ đã tồn tại</option></select></div></div><div class="card-footer text-right"><button id="btnImportPreview" class="btn btn-outline-secondary btn-sm"><i class="fas fa-magnifying-glass"></i> Kiểm tra dữ liệu</button> <button id="btnImportRun" class="btn btn-primary btn-sm"><i class="fas fa-file-import"></i> Bắt đầu Import</button></div></div><div id="importResult"></div></div>';
     el('importType').onchange = function() { el('importDuplicateMode').disabled = el('importType').value !== 'household'; };
+    el('importType').onchange();
     el('btnImportPreview').onclick = preview;
     el('btnImportRun').onclick = runImport;
   }
