@@ -69,7 +69,7 @@ Domain.Schema = Object.freeze({
 });
 
 Domain.RequiredFields = Object.freeze({
-  households: ['householdCode','address','hamlet'],
+  households: ['householdCode','address'],
   citizens: ['citizenCode','householdId','fullName','gender','dateOfBirth','relationship'],
   movements: ['citizenId','type','effectiveDate'],
   users: ['email','displayName','role'],
