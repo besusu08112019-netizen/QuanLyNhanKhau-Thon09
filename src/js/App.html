@@ -1,6 +1,6 @@
 <script>
 (function() {
-  var state = { route: 'dashboard', data: {} };
+  var state = { route: 'dashboard', household: { page: 1, pageSize: 20, keyword: '', status: '' } };
   var titles = {
     dashboard: 'Dashboard', household: 'Household', citizen: 'Citizen', movement: 'Movement', report: 'Report',
     pdf: 'PDF', backup: 'Backup', permission: 'Permission', user: 'User', logs: 'Logs'
@@ -8,6 +8,7 @@
 
   function el(id) { return document.getElementById(id); }
   function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]); }); }
+  function debounce(fn, delay) { var timer; return function() { var args = arguments; clearTimeout(timer); timer = setTimeout(function() { fn.apply(null, args); }, delay || 250); }; }
   function setLoading(active) {
     var layer = el('loadingLayer');
     if (!layer) {
@@ -51,7 +52,7 @@
       (rows.length ? rows.map(function(row) { return '<tr>' + columns.map(function(c) { return '<td>' + (c.render ? c.render(row) : html(row[c.key])) + '</td>'; }).join('') + (actions ? '<td class="action-cell">' + actions(row) + '</td>' : '') + '</tr>'; }).join('') : '<tr><td colspan="' + (columns.length + (actions ? 1 : 0)) + '" class="text-center text-muted p-4">Khong co du lieu</td></tr>') +
       '</tbody></table></div></div>';
   }
-  function toolbar(moduleName, searchPlaceholder) {
+  function toolbar(searchPlaceholder) {
     return '<div class="module-toolbar"><div class="filters"><input id="keyword" class="form-control form-control-sm" placeholder="' + html(searchPlaceholder || 'Tim kiem') + '"></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreate"><i class="fas fa-plus"></i> Tao moi</button></div></div>';
   }
   function bindSubmit(formId, handler) {
@@ -68,44 +69,114 @@
     var id = 'modalForm';
     var body = '<form id="entityForm"><div class="form-grid">' + fields.map(function(field) {
       var cls = field.full ? ' full' : '';
-      return '<div class="form-group' + cls + '"><label>' + html(field.label) + '</label><input class="form-control" name="' + html(field.name) + '" value="' + html((values || {})[field.name] || '') + '" ' + (field.required ? 'required' : '') + '></div>';
+      var type = field.type || 'text';
+      return '<div class="form-group' + cls + '"><label>' + html(field.label) + '</label><input type="' + html(type) + '" class="form-control" name="' + html(field.name) + '" value="' + html((values || {})[field.name] || '') + '" ' + (field.required ? 'required' : '') + '></div>';
     }).join('') + '</div><button class="btn btn-primary btn-material" type="submit">Luu</button></form>';
     var markup = '<div class="modal fade" id="' + id + '" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">' + html(title) + '</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div><div class="modal-body">' + body + '</div></div></div></div>';
     document.body.insertAdjacentHTML('beforeend', markup);
     $('#' + id).modal('show').on('hidden.bs.modal', function() { this.remove(); });
-    bindSubmit('entityForm', function(payload) { onSubmit(payload); $('#' + id).modal('hide'); });
+    bindSubmit('entityForm', function(payload) { onSubmit(payload); });
   }
 
   var fields = {
-    household: [{name:'householdCode',label:'Ma ho',required:true},{name:'address',label:'Dia chi',required:true},{name:'hamlet',label:'Thon',required:true},{name:'phone',label:'Dien thoai'},{name:'areaCode',label:'Khu vuc'},{name:'note',label:'Ghi chu',full:true}],
-    citizen: [{name:'citizenCode',label:'Ma nhan khau',required:true},{name:'householdId',label:'ID ho',required:true},{name:'fullName',label:'Ho ten',required:true},{name:'gender',label:'Gioi tinh',required:true},{name:'dateOfBirth',label:'Ngay sinh',required:true},{name:'identityNumber',label:'CCCD'},{name:'relationship',label:'Quan he',required:true},{name:'phone',label:'Dien thoai'},{name:'currentAddress',label:'Noi o hien nay',full:true}],
-    movement: [{name:'citizenId',label:'ID nhan khau',required:true},{name:'householdId',label:'ID ho'},{name:'type',label:'Loai bien dong',required:true},{name:'fromAddress',label:'Tu dia chi'},{name:'toAddress',label:'Den dia chi'},{name:'effectiveDate',label:'Ngay hieu luc',required:true},{name:'reason',label:'Ly do',full:true}]
+    household: [
+      {name:'householdCode',label:'Ma ho',required:true}, {name:'address',label:'Dia chi',required:true},
+      {name:'hamlet',label:'Thon',required:true}, {name:'phone',label:'Dien thoai'},
+      {name:'areaCode',label:'Khu vuc'}, {name:'headCitizenId',label:'ID chu ho'}, {name:'note',label:'Ghi chu',full:true}
+    ],
+    citizen: [{name:'citizenCode',label:'Ma nhan khau',required:true},{name:'householdId',label:'ID ho',required:true},{name:'fullName',label:'Ho ten',required:true},{name:'gender',label:'Gioi tinh',required:true},{name:'dateOfBirth',label:'Ngay sinh',required:true,type:'date'},{name:'identityNumber',label:'CCCD'},{name:'relationship',label:'Quan he',required:true},{name:'phone',label:'Dien thoai'},{name:'currentAddress',label:'Noi o hien nay',full:true}],
+    movement: [{name:'citizenId',label:'ID nhan khau',required:true},{name:'householdId',label:'ID ho'},{name:'type',label:'Loai bien dong',required:true},{name:'fromAddress',label:'Tu dia chi'},{name:'toAddress',label:'Den dia chi'},{name:'effectiveDate',label:'Ngay hieu luc',required:true,type:'date'},{name:'reason',label:'Ly do',full:true}]
   };
 
-  function loadCrud(route, listAction, createAction, updateAction, deleteAction, columns, formFields) {
-    mount(toolbar(route) + '<div id="grid"></div>');
+  function validateHousehold(payload) {
+    if (!payload.householdCode || !/^[A-Za-z0-9._-]{2,30}$/.test(payload.householdCode)) throw new Error('Ma ho khong hop le');
+    if (!payload.address || payload.address.trim().length < 3) throw new Error('Dia chi phai co it nhat 3 ky tu');
+    if (!payload.hamlet || payload.hamlet.trim().length < 2) throw new Error('Thon phai co it nhat 2 ky tu');
+    if (payload.phone && !/^[0-9+() .-]{8,20}$/.test(payload.phone)) throw new Error('So dien thoai khong hop le');
+  }
+
+  function renderPager(meta) {
+    var disabledPrev = meta.page <= 1 ? ' disabled' : '';
+    var disabledNext = meta.page >= meta.totalPages ? ' disabled' : '';
+    return '<div class="pagination-bar"><div class="text-muted">Tong ' + html(meta.total) + ' ho dan</div><div class="btn-group btn-group-sm">' +
+      '<button class="btn btn-outline-secondary" id="pagePrev"' + disabledPrev + '><i class="fas fa-chevron-left"></i></button>' +
+      '<button class="btn btn-outline-secondary" disabled>Trang ' + html(meta.page) + '/' + html(meta.totalPages) + '</button>' +
+      '<button class="btn btn-outline-secondary" id="pageNext"' + disabledNext + '><i class="fas fa-chevron-right"></i></button>' +
+      '</div></div>';
+  }
+
+  function householdRoute() {
+    mount('<div class="module-toolbar"><div class="filters"><input id="householdKeyword" class="form-control form-control-sm" placeholder="Tim ma ho, dia chi, thon, dien thoai"><select id="householdStatus" class="form-control form-control-sm"><option value="">Tat ca trang thai</option><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select><select id="householdPageSize" class="form-control form-control-sm"><option>10</option><option selected>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreate"><i class="fas fa-plus"></i> Them ho</button></div></div><div id="grid"></div>');
+    el('householdKeyword').value = state.household.keyword;
+    el('householdStatus').value = state.household.status;
+    el('householdPageSize').value = state.household.pageSize;
+
+    function refresh() {
+      call('household.page', state.household).then(function(result) {
+        var columns = [
+          {key:'householdCode',label:'Ma ho'}, {key:'address',label:'Dia chi'}, {key:'hamlet',label:'Thon'},
+          {key:'phone',label:'Dien thoai'}, {key:'areaCode',label:'Khu vuc'}, {key:'memberCount',label:'Nhan khau'},
+          {key:'status',label:'Trang thai',render:function(r){return status(r.status);}}
+        ];
+        el('grid').innerHTML = table(columns, result.items, function(row) {
+          return '<button class="btn btn-outline-primary btn-xs" title="Sua" data-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> ' +
+            '<button class="btn btn-outline-danger btn-xs" title="Xoa" data-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>';
+        }) + renderPager(result);
+        document.querySelectorAll('[data-edit]').forEach(function(btn) {
+          btn.onclick = function() {
+            var row = result.items.filter(function(item) { return item.id === btn.dataset.edit; })[0];
+            modalForm('Cap nhat ho dan', fields.household, row, function(payload) {
+              try { validateHousehold(payload); } catch (err) { toast(err.message, 'warning'); return; }
+              payload.id = row.id;
+              call('household.update', payload).then(function(){ $('#modalForm').modal('hide'); toast('Da cap nhat ho dan','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); });
+            });
+          };
+        });
+        document.querySelectorAll('[data-delete]').forEach(function(btn) {
+          btn.onclick = function() {
+            if (!confirm('Xac nhan xoa mem ho dan nay?')) return;
+            call('household.delete', { id: btn.dataset.delete }).then(function(){ toast('Da xoa ho dan','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); });
+          };
+        });
+        if (el('pagePrev')) el('pagePrev').onclick = function() { if (state.household.page > 1) { state.household.page -= 1; refresh(); } };
+        if (el('pageNext')) el('pageNext').onclick = function() { if (state.household.page < result.totalPages) { state.household.page += 1; refresh(); } };
+      }).catch(function(e) { toast(e.message, 'danger'); });
+    }
+
+    el('btnCreate').onclick = function() {
+      modalForm('Them ho dan', fields.household, {}, function(payload) {
+        try { validateHousehold(payload); } catch (err) { toast(err.message, 'warning'); return; }
+        call('household.create', payload).then(function(){ $('#modalForm').modal('hide'); state.household.page = 1; toast('Da them ho dan','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); });
+      });
+    };
+    el('householdKeyword').oninput = debounce(function() { state.household.keyword = this.value; state.household.page = 1; refresh(); }, 300);
+    el('householdStatus').onchange = function() { state.household.status = this.value; state.household.page = 1; refresh(); };
+    el('householdPageSize').onchange = function() { state.household.pageSize = parseInt(this.value, 10); state.household.page = 1; refresh(); };
+    refresh();
+  }
+
+  function loadCrud(listAction, createAction, updateAction, deleteAction, columns, formFields) {
+    mount(toolbar() + '<div id="grid"></div>');
     function refresh(filters) {
       call(listAction, filters || {}).then(function(rows) {
         el('grid').innerHTML = table(columns, rows, function(row) {
           return '<button class="btn btn-outline-primary btn-xs" data-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> ' +
             '<button class="btn btn-outline-danger btn-xs" data-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>';
         });
-        document.querySelectorAll('[data-edit]').forEach(function(btn) { btn.onclick = function() { var row = rows.filter(function(item) { return item.id === btn.dataset.edit; })[0]; modalForm('Cap nhat', formFields, row, function(payload) { payload.id = row.id; call(updateAction, payload).then(function(){ toast('Da cap nhat','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }); }; });
+        document.querySelectorAll('[data-edit]').forEach(function(btn) { btn.onclick = function() { var row = rows.filter(function(item) { return item.id === btn.dataset.edit; })[0]; modalForm('Cap nhat', formFields, row, function(payload) { payload.id = row.id; call(updateAction, payload).then(function(){ $('#modalForm').modal('hide'); toast('Da cap nhat','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }); }; });
         document.querySelectorAll('[data-delete]').forEach(function(btn) { btn.onclick = function() { if (confirm('Xac nhan xoa mem ban ghi?')) call(deleteAction, { id: btn.dataset.delete }).then(function(){ toast('Da xoa','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }; });
       }).catch(function(e) { toast(e.message, 'danger'); });
     }
-    el('btnCreate').onclick = function() { modalForm('Tao moi', formFields, {}, function(payload) { call(createAction, payload).then(function(){ toast('Da tao moi','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }); };
-    el('keyword').oninput = function() { refresh({ fullName: this.value, householdCode: this.value, citizenCode: this.value }); };
+    el('btnCreate').onclick = function() { modalForm('Tao moi', formFields, {}, function(payload) { call(createAction, payload).then(function(){ $('#modalForm').modal('hide'); toast('Da tao moi','success'); refresh(); }).catch(function(e){ toast(e.message,'danger'); }); }); };
+    el('keyword').oninput = debounce(function() { refresh({ fullName: this.value, citizenCode: this.value }); }, 300);
     refresh();
   }
 
   var routes = {
-    dashboard: function() { call('dashboard.summary').then(function(data) { mount('<div class="row">' +
-      metric('Ho', data.households, data.capacity.households) + metric('Nhan khau', data.citizens, data.capacity.citizens) + metric('Bien dong', data.movements, '') + metric('Nguoi dung', data.activeUsers, '') + '</div>' +
-      '<div class="card"><div class="card-header"><h3 class="card-title">Bien dong gan day</h3></div><div class="card-body">' + table([{key:'type',label:'Loai'},{key:'effectiveDate',label:'Ngay'},{key:'reason',label:'Ly do'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], data.recentMovements || []) + '</div></div>'); }).catch(function(e){ toast(e.message,'danger'); }); },
-    household: function() { loadCrud('household','household.list','household.create','household.update','household.delete',[{key:'householdCode',label:'Ma ho'},{key:'address',label:'Dia chi'},{key:'hamlet',label:'Thon'},{key:'phone',label:'Dien thoai'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], fields.household); },
-    citizen: function() { loadCrud('citizen','citizen.list','citizen.create','citizen.update','citizen.delete',[{key:'citizenCode',label:'Ma'},{key:'fullName',label:'Ho ten'},{key:'gender',label:'Gioi tinh'},{key:'dateOfBirth',label:'Ngay sinh'},{key:'relationship',label:'Quan he'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], fields.citizen); },
-    movement: function() { loadCrud('movement','movement.list','movement.create','movement.update','movement.delete',[{key:'type',label:'Loai'},{key:'citizenId',label:'Nhan khau'},{key:'effectiveDate',label:'Ngay'},{key:'reason',label:'Ly do'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], fields.movement); },
+    dashboard: function() { call('dashboard.summary').then(function(data) { mount('<div class="row">' + metric('Ho', data.households, data.capacity.households) + metric('Nhan khau', data.citizens, data.capacity.citizens) + metric('Bien dong', data.movements, '') + metric('Nguoi dung', data.activeUsers, '') + '</div><div class="card"><div class="card-header"><h3 class="card-title">Bien dong gan day</h3></div><div class="card-body">' + table([{key:'type',label:'Loai'},{key:'effectiveDate',label:'Ngay'},{key:'reason',label:'Ly do'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], data.recentMovements || []) + '</div></div>'); }).catch(function(e){ toast(e.message,'danger'); }); },
+    household: householdRoute,
+    citizen: function() { loadCrud('citizen.list','citizen.create','citizen.update','citizen.delete',[{key:'citizenCode',label:'Ma'},{key:'fullName',label:'Ho ten'},{key:'gender',label:'Gioi tinh'},{key:'dateOfBirth',label:'Ngay sinh'},{key:'relationship',label:'Quan he'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], fields.citizen); },
+    movement: function() { loadCrud('movement.list','movement.create','movement.update','movement.delete',[{key:'type',label:'Loai'},{key:'citizenId',label:'Nhan khau'},{key:'effectiveDate',label:'Ngay'},{key:'reason',label:'Ly do'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], fields.movement); },
     report: function() { call('report.households').then(function(rows){ mount(table([{key:'householdCode',label:'Ma ho'},{key:'address',label:'Dia chi'},{key:'memberCount',label:'So thanh vien'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], rows)); }).catch(function(e){ toast(e.message,'danger'); }); },
     pdf: function() { mount('<div class="card"><div class="card-body"><form id="pdfForm" class="form-inline"><input class="form-control mr-2" name="citizenId" placeholder="ID nhan khau" required><button class="btn btn-danger btn-material"><i class="fas fa-file-pdf"></i> Xuat PDF</button></form><div id="pdfResult" class="mt-3"></div></div></div>'); bindSubmit('pdfForm', function(p){ call('pdf.citizen', p).then(function(file){ el('pdfResult').innerHTML = '<a target="_blank" href="' + html(file.url) + '">' + html(file.name) + '</a>'; }).catch(function(e){ toast(e.message,'danger'); }); }); },
     backup: function() { mount('<div class="module-toolbar"><button id="btnBackup" class="btn btn-primary btn-material"><i class="fas fa-database"></i> Tao backup</button></div><div id="grid"></div>'); el('btnBackup').onclick = function(){ call('backup.create', {}).then(function(){ toast('Da tao backup','success'); routes.backup(); }).catch(function(e){ toast(e.message,'danger'); }); }; call('backup.list').then(function(rows){ el('grid').innerHTML = table([{key:'timestamp',label:'Thoi gian'},{key:'fileName',label:'Ten file'},{key:'createdBy',label:'Nguoi tao'},{key:'status',label:'Trang thai',render:function(r){return status(r.status);}}], rows); }); },
