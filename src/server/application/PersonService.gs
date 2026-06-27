@@ -3,6 +3,8 @@ var Application = Application || {};
 Application.PersonService = function(personRepository, householdRepository, logger) {
   var PERSON_STATUS_ALIVE = 'ALIVE';
   var PERSON_STATUS_DECEASED = 'DECEASED';
+  var PRESENCE_AT_HOME = 'AT_HOME';
+  var PRESENCE_AWAY = 'AWAY';
 
   function normalizeText(value) {
     return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -21,6 +23,13 @@ Application.PersonService = function(personRepository, householdRepository, logg
     if (!normalized || normalized === 'active' || normalized === 'alive' || normalized === 'con song') return PERSON_STATUS_ALIVE;
     if (normalized === 'inactive' || normalized === 'deceased' || normalized === 'dead' || normalized === 'da chet' || normalized === 'mat') return PERSON_STATUS_DECEASED;
     if (normalized === 'deleted') return Domain.Status.DELETED;
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function normalizePresenceStatus(value) {
+    var normalized = normalizeText(value);
+    if (!normalized || normalized === 'at_home' || normalized === 'at home' || normalized === 'home' || normalized === 'o nha' || normalized === 'co mat') return PRESENCE_AT_HOME;
+    if (normalized === 'away' || normalized === 'di vang' || normalized === 'vang' || normalized === 'tam vang') return PRESENCE_AWAY;
     return String(value || '').trim().toUpperCase();
   }
 
@@ -45,7 +54,8 @@ Application.PersonService = function(personRepository, householdRepository, logg
       currentAddress: String(data.currentAddress || '').trim(),
       educationLevel: String(data.educationLevel || '').trim(),
       maritalStatus: String(data.maritalStatus || '').trim(),
-      status: normalizeStatus(data.status)
+      status: normalizeStatus(data.status),
+      presenceStatus: normalizePresenceStatus(data.presenceStatus || data.currentStatus || data.residencyStatus)
     };
   }
 
@@ -76,6 +86,9 @@ Application.PersonService = function(personRepository, householdRepository, logg
     if ([PERSON_STATUS_ALIVE, PERSON_STATUS_DECEASED, Domain.Status.DELETED].indexOf(data.status) === -1) {
       throw new Error('Trạng thái nhân khẩu không hợp lệ');
     }
+    if ([PRESENCE_AT_HOME, PRESENCE_AWAY].indexOf(data.presenceStatus) === -1) {
+      throw new Error('Hiện tại chỉ được chọn Ở nhà hoặc Đi vắng');
+    }
     var household = resolveHousehold(data.householdId);
     if (!household) {
       throw new Error('Không tìm thấy Mã hộ: ' + data.householdId);
@@ -92,6 +105,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
   function listPage(query) {
     query = Object.assign({}, query || {});
     if (query.status) query.status = normalizeStatus(query.status);
+    if (query.presenceStatus) query.presenceStatus = normalizePresenceStatus(query.presenceStatus);
     if (query.householdId || query.householdCode) {
       var household = resolveHousehold(query.householdId || query.householdCode);
       query.householdId = household ? household.householdCode : '__HOUSEHOLD_NOT_FOUND__';
