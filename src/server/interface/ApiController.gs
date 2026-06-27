@@ -31,6 +31,19 @@ Interface.ApiController = function(container) {
     return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
+  function personStatus(value) {
+    var text = normalizeText(value);
+    if (!text || text === 'active' || text === 'alive' || text === 'con song') return 'ALIVE';
+    if (text === 'inactive' || text === 'deceased' || text === 'dead' || text === 'da chet') return 'DECEASED';
+    if (text === 'deleted') return Domain.Status.DELETED;
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function personStatusMatches(actual, expected) {
+    if (!expected) return true;
+    return personStatus(actual) === personStatus(expected);
+  }
+
   function safeValue(value) {
     if (value === undefined || value === null) return '';
     if (Object.prototype.toString.call(value) === '[object Date]') return Utilities.formatDate(value, Domain.App.TIMEZONE, 'yyyy-MM-dd');
@@ -41,7 +54,7 @@ Interface.ApiController = function(container) {
   function safeRecord(record) {
     var output = {};
     Object.keys(record || {}).forEach(function(key) { output[key] = safeValue(record[key]); });
-    output.status = output.status || Domain.Status.ACTIVE;
+    output.status = output.status || 'ALIVE';
     return output;
   }
 
@@ -59,7 +72,8 @@ Interface.ApiController = function(container) {
     var pageSize = Math.min(Math.max(parseInt(payload.pageSize || 20, 10), 5), 100);
     var keyword = normalizeText(payload.keyword || payload.search || payload.q || payload.fullName || payload.identityNumber || payload.phone || payload.citizenCode);
     var householdFilter = normalizeText(payload.householdId || payload.householdCode);
-    var includeDeleted = payload.includeDeleted === true || payload.includeDeleted === 'true' || payload.status === Domain.Status.DELETED;
+    var expectedStatus = payload.status ? personStatus(payload.status) : '';
+    var includeDeleted = payload.includeDeleted === true || payload.includeDeleted === 'true' || expectedStatus === Domain.Status.DELETED;
     var households = householdMap();
     var rows = container.db.readAll(Domain.Tables.CITIZENS, { includeDeleted: includeDeleted }).map(function(person) {
       var record = Object.assign({}, person || {});
@@ -75,13 +89,13 @@ Interface.ApiController = function(container) {
         record.householdCode = record.householdCode || originalHouseholdRef || '';
         record.householdId = record.householdCode;
       }
-      record.status = record.status || Domain.Status.ACTIVE;
+      record.status = record.status || 'ALIVE';
       return record;
     }).filter(function(person) {
-      if (payload.status && person.status !== payload.status) return false;
+      if (expectedStatus && !personStatusMatches(person.status, expectedStatus)) return false;
       if (householdFilter && normalizeText(person.householdId) !== householdFilter && normalizeText(person.householdCode) !== householdFilter && normalizeText(person.householdInternalId) !== householdFilter) return false;
       if (!keyword) return true;
-      return [person.id, person.citizenCode, person.fullName, person.identityNumber, person.phone, person.gender, person.dateOfBirth, person.relationship, person.currentAddress, person.permanentAddress, person.occupation, person.ethnicity, person.religion, person.educationLevel, person.maritalStatus, person.householdId, person.householdCode, person.householdAddress, person.householdHeadName, person.status].some(function(value) {
+      return [person.id, person.citizenCode, person.fullName, person.identityNumber, person.phone, person.gender, person.dateOfBirth, person.relationship, person.currentAddress, person.permanentAddress, person.occupation, person.ethnicity, person.religion, person.educationLevel, person.maritalStatus, person.householdId, person.householdCode, person.householdAddress, person.householdHeadName, person.status, personStatus(person.status) === 'DECEASED' ? 'Đã chết' : 'Còn sống'].some(function(value) {
         return normalizeText(value).indexOf(keyword) >= 0;
       });
     });
