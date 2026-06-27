@@ -12,6 +12,7 @@ Interface.Container = function() {
     security: security,
     household: Application.HouseholdService(householdRepository, logger),
     person: Application.PersonService(personRepository, householdRepository, logger),
+    dashboard: Application.DashboardService(db),
     registry: Application.RegistryService(db, logger),
     reports: Application.ReportService(db),
     backup: Application.BackupService(db, logger),
@@ -22,7 +23,10 @@ Interface.Container = function() {
 
 Interface.ApiController = function(container) {
   var routes = {
-    'dashboard.summary': [Domain.Modules.DASHBOARD, Domain.Actions.READ, function(payload) { return container.reports.dashboard(payload); }],
+    'dashboard.summary': [Domain.Modules.DASHBOARD, Domain.Actions.READ, function(payload) { return container.dashboard.summary(payload); }],
+    'dashboard.populationChart': [Domain.Modules.DASHBOARD, Domain.Actions.READ, function(payload) { return container.dashboard.populationChart(payload); }],
+    'dashboard.householdChart': [Domain.Modules.DASHBOARD, Domain.Actions.READ, function(payload) { return container.dashboard.householdChart(payload); }],
+    'dashboard.ageChart': [Domain.Modules.DASHBOARD, Domain.Actions.READ, function(payload) { return container.dashboard.ageChart(payload); }],
     'household.page': [Domain.Modules.HOUSEHOLD, Domain.Actions.READ, function(payload) { return container.household.listPage(payload); }],
     'household.list': [Domain.Modules.HOUSEHOLD, Domain.Actions.READ, function(payload) { return container.household.listPage(Object.assign({ page: 1, pageSize: 100 }, payload || {})).items; }],
     'household.create': [Domain.Modules.HOUSEHOLD, Domain.Actions.CREATE, function(payload) { return container.household.create(payload); }],
