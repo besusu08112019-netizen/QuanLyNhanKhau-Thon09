@@ -27,6 +27,74 @@ Interface.Container = function() {
 };
 
 Interface.ApiController = function(container) {
+  function normalizeText(value) {
+    return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function safeValue(value) {
+    if (value === undefined || value === null) return '';
+    if (Object.prototype.toString.call(value) === '[object Date]') return Utilities.formatDate(value, Domain.App.TIMEZONE, 'yyyy-MM-dd');
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
+  function safeRecord(record) {
+    var output = {};
+    Object.keys(record || {}).forEach(function(key) { output[key] = safeValue(record[key]); });
+    output.status = output.status || Domain.Status.ACTIVE;
+    return output;
+  }
+
+  function householdMap() {
+    return container.db.readAll(Domain.Tables.HOUSEHOLDS, { includeDeleted: true }).reduce(function(acc, household) {
+      if (household.id) acc[String(household.id)] = household;
+      if (household.householdCode) acc[normalizeText(household.householdCode)] = household;
+      return acc;
+    }, {});
+  }
+
+  function safePersonPage(payload) {
+    payload = payload || {};
+    var page = Math.max(parseInt(payload.page || 1, 10), 1);
+    var pageSize = Math.min(Math.max(parseInt(payload.pageSize || 20, 10), 5), 100);
+    var keyword = normalizeText(payload.keyword || payload.fullName);
+    var householdFilter = normalizeText(payload.householdId);
+    var includeDeleted = payload.includeDeleted === true || payload.includeDeleted === 'true' || payload.status === Domain.Status.DELETED;
+    var households = householdMap();
+    var rows = container.db.readAll(Domain.Tables.CITIZENS, { includeDeleted: includeDeleted }).map(function(person) {
+      var record = Object.assign({}, person || {});
+      var household = households[String(record.householdId)] || households[normalizeText(record.householdId)];
+      if (household) {
+        record.householdCode = household.householdCode || '';
+        record.householdAddress = household.address || '';
+        record.householdHeadName = household.headCitizenName || '';
+      }
+      record.status = record.status || Domain.Status.ACTIVE;
+      return record;
+    }).filter(function(person) {
+      if (payload.status && person.status !== payload.status) return false;
+      if (householdFilter && normalizeText(person.householdId) !== householdFilter && normalizeText(person.householdCode) !== householdFilter) return false;
+      if (!keyword) return true;
+      return [person.citizenCode, person.fullName, person.identityNumber, person.phone, person.relationship, person.currentAddress, person.permanentAddress, person.occupation, person.householdCode, person.householdAddress, person.householdHeadName].some(function(value) {
+        return normalizeText(value).indexOf(keyword) >= 0;
+      });
+    });
+    rows.sort(function(a, b) {
+      return normalizeText(a.fullName).localeCompare(normalizeText(b.fullName)) || normalizeText(a.citizenCode).localeCompare(normalizeText(b.citizenCode));
+    });
+    var total = rows.length;
+    var totalPages = Math.max(Math.ceil(total / pageSize), 1);
+    if (page > totalPages) page = totalPages;
+    var start = (page - 1) * pageSize;
+    return {
+      items: rows.slice(start, start + pageSize).map(safeRecord),
+      page: page,
+      pageSize: pageSize,
+      total: total,
+      totalPages: totalPages
+    };
+  }
+
   var routes = {
     'dashboard.summary': [Domain.Modules.DASHBOARD, Domain.Actions.READ, function(payload) { return container.dashboard.summary(payload); }],
     'dashboard.populationChart': [Domain.Modules.DASHBOARD, Domain.Actions.READ, function(payload) { return container.dashboard.populationChart(payload); }],
@@ -37,6 +105,7 @@ Interface.ApiController = function(container) {
     'household.create': [Domain.Modules.HOUSEHOLD, Domain.Actions.CREATE, function(payload) { return container.household.create(payload); }],
     'household.update': [Domain.Modules.HOUSEHOLD, Domain.Actions.UPDATE, function(payload) { return container.household.update(payload.id, payload); }],
     'household.delete': [Domain.Modules.HOUSEHOLD, Domain.Actions.DELETE, function(payload) { return container.household.remove(payload.id); }],
+    'person.safePage': [Domain.Modules.CITIZEN, Domain.Actions.READ, function(payload) { return safePersonPage(payload); }],
     'person.page': [Domain.Modules.CITIZEN, Domain.Actions.READ, function(payload) { return container.person.listPage(payload); }],
     'person.get': [Domain.Modules.CITIZEN, Domain.Actions.READ, function(payload) { return container.person.get(payload.id); }],
     'person.create': [Domain.Modules.CITIZEN, Domain.Actions.CREATE, function(payload) { return container.person.create(payload); }],
@@ -92,7 +161,7 @@ Interface.ApiController = function(container) {
 
   function handle(action, payload) {
     var route = routes[action];
-    if (!route) throw new Error('API khong hop le: ' + action);
+    if (!route) throw new Error('API không hợp lệ: ' + action);
     container.security.requirePermission(route[0], route[1]);
     return route[2](payload || {});
   }
