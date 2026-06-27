@@ -38,6 +38,13 @@ Application.ImportService = function(importRepository, householdRepository, pers
     return text(value);
   }
 
+  function normalizeYesNo(value) {
+    var raw = normalize(value);
+    if (['co','yes','true','1','x'].indexOf(raw) >= 0) return 'Có';
+    if (['khong','no','false','0'].indexOf(raw) >= 0) return 'Không';
+    return text(value) || 'Không';
+  }
+
   function field(row, aliases) {
     var data = row.data || {};
     var normalized = {};
@@ -51,10 +58,15 @@ Application.ImportService = function(importRepository, householdRepository, pers
 
   var householdAliases = {
     householdCode: ['Mã hộ','Ma ho','Household Code','householdCode','Ma ho gia dinh'],
-    headCitizenId: ['Mã chủ hộ','Ma chu ho','Chu ho','headCitizenId'],
+    headCitizenId: ['Mã chủ hộ','Ma chu ho','ID chủ hộ','ID chu ho','Chu ho','headCitizenId'],
+    headCitizenName: ['Tên chủ hộ','Ten chu ho','Họ tên chủ hộ','Ho ten chu ho','Head Name','headCitizenName'],
     address: ['Địa chỉ','Dia chi','Thôn','Thon','Hamlet','Address'],
     phone: ['Điện thoại','Dien thoai','Số điện thoại','So dien thoai','Phone'],
     areaCode: ['Mã khu vực','Ma khu vuc','Khu vực','Khu vuc','Area Code'],
+    meritoriousFamily: ['Gia đình có công','Gia dinh co cong','Có công','Co cong','meritoriousFamily'],
+    poorHousehold: ['Hộ nghèo','Ho ngheo','Nghèo','Ngheo','poorHousehold'],
+    nearPoorHousehold: ['Cận nghèo','Can ngheo','Hộ cận nghèo','Ho can ngheo','nearPoorHousehold'],
+    disabledHousehold: ['Tàn tật','Tan tat','Khuyết tật','Khuyet tat','disabledHousehold'],
     note: ['Ghi chú','Ghi chu','Note'],
     status: ['Trạng thái','Trang thai','Status']
   };
@@ -128,7 +140,12 @@ Application.ImportService = function(importRepository, householdRepository, pers
         areaCode: upper(field(row, householdAliases.areaCode)),
         memberCount: 0,
         note: text(field(row, householdAliases.note)),
-        status: upper(field(row, householdAliases.status)) || Domain.Status.ACTIVE
+        status: upper(field(row, householdAliases.status)) || Domain.Status.ACTIVE,
+        headCitizenName: text(field(row, householdAliases.headCitizenName)).replace(/\s+/g, ' '),
+        meritoriousFamily: normalizeYesNo(field(row, householdAliases.meritoriousFamily)),
+        poorHousehold: normalizeYesNo(field(row, householdAliases.poorHousehold)),
+        nearPoorHousehold: normalizeYesNo(field(row, householdAliases.nearPoorHousehold)),
+        disabledHousehold: normalizeYesNo(field(row, householdAliases.disabledHousehold))
       };
       var rowErrors = [];
       if (!record.householdCode) rowErrors.push('Thieu Ma ho');
