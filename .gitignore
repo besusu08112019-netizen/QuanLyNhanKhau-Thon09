@@ -1,0 +1,12 @@
+.DS_Store
+Thumbs.db
+node_modules/
+.env
+.env.*
+.clasp.json.local
+dist/
+build/
+coverage/
+*.log
+work/
+outputs/
