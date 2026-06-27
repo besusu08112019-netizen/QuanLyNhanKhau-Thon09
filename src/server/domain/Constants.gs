@@ -32,7 +32,8 @@ Domain.Modules = Object.freeze({
   BACKUP: 'backup',
   PERMISSION: 'permission',
   USER: 'user',
-  LOGS: 'logs'
+  LOGS: 'logs',
+  SETTINGS: 'settings'
 });
 
 Domain.Actions = Object.freeze({
