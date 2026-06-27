@@ -97,6 +97,20 @@ Application.ReportService = function(db, logger) {
     return keys.map(function(key) { return { label: key, value: counts[key] || 0 }; });
   }
 
+  function findHousehold(data, key) {
+    key = normalizeText(key);
+    return data.households.filter(function(item) {
+      return normalizeText(item.id) === key || normalizeText(item.householdCode) === key;
+    })[0] || null;
+  }
+
+  function findPerson(data, key) {
+    key = normalizeText(key);
+    return data.citizens.filter(function(item) {
+      return normalizeText(item.id) === key || normalizeText(item.citizenCode) === key || normalizeText(item.identityNumber) === key;
+    })[0] || null;
+  }
+
   function makeReport(type, filters) {
     filters = filters || {};
     type = type || 'summary';
@@ -119,6 +133,30 @@ Application.ReportService = function(db, logger) {
       summary: dashboard.metrics,
       charts: dashboard.charts
     };
+    if (type === 'householdForm') {
+      report.title = 'Phieu thong tin ho gia dinh';
+      report.columns = ['Thong tin', 'Gia tri'];
+      var household = findHousehold(data, filters.recordId);
+      if (household) {
+        var members = data.citizens.filter(function(person) { return person.householdId === household.id; });
+        report.rows = [
+          ['Ma ho', household.householdCode], ['Dia chi', household.address], ['Thon', household.hamlet], ['Dien thoai', household.phone], ['Khu vuc', household.areaCode], ['Trang thai', household.status], ['So nhan khau', members.length]
+        ];
+        members.forEach(function(person) { report.rows.push(['Thanh vien', person.fullName + ' - ' + person.relationship + ' - ' + person.status]); });
+      }
+      return report;
+    }
+    if (type === 'personForm') {
+      report.title = 'Phieu thong tin nhan khau';
+      report.columns = ['Thong tin', 'Gia tri'];
+      var person = findPerson(data, filters.recordId);
+      if (person) {
+        report.rows = [
+          ['Ma nhan khau', person.citizenCode], ['Ho ten', person.fullName], ['Gioi tinh', person.gender], ['Ngay sinh', person.dateOfBirth], ['CCCD/CMND', person.identityNumber], ['ID ho', person.householdId], ['Quan he', person.relationship], ['Dien thoai', person.phone], ['Thuong tru', person.permanentAddress], ['Noi o hien nay', person.currentAddress], ['Trang thai', person.status]
+        ];
+      }
+      return report;
+    }
     if (type === 'household') {
       report.title = 'Bao cao danh sach ho dan';
       report.columns = ['Ma ho', 'Dia chi', 'Thon', 'Dien thoai', 'Khu vuc', 'Trang thai'];
@@ -159,38 +197,16 @@ Application.ReportService = function(db, logger) {
     report.title = 'Bao cao thong ke tong hop';
     report.columns = ['Chi so', 'Gia tri'];
     report.rows = [
-      ['Tong so ho', dashboard.metrics.households],
-      ['Tong so nhan khau', dashboard.metrics.citizens],
-      ['Nam', dashboard.metrics.male],
-      ['Nu', dashboard.metrics.female],
-      ['Nhan khau hoat dong', dashboard.metrics.activeCitizens],
-      ['Tam tru', dashboard.metrics.temporaryResidence],
-      ['Tam vang', dashboard.metrics.temporaryAbsence]
+      ['Tong so ho', dashboard.metrics.households], ['Tong so nhan khau', dashboard.metrics.citizens], ['Nam', dashboard.metrics.male], ['Nu', dashboard.metrics.female], ['Nhan khau hoat dong', dashboard.metrics.activeCitizens], ['Tam tru', dashboard.metrics.temporaryResidence], ['Tam vang', dashboard.metrics.temporaryAbsence]
     ];
     return report;
   }
 
-  function dashboard(filters) {
-    return Application.DashboardService(db).summary(filters || {});
-  }
-
-  function summary(filters) {
-    return makeReport('summary', filters || {});
-  }
-
-  function population(filters) {
-    return makeReport('population', filters || {});
-  }
-
-  function households(filters) {
-    return makeReport('household', filters || {}).rows.map(function(row) {
-      return { householdCode: row[0], address: row[1], hamlet: row[2], phone: row[3], areaCode: row[4], status: row[5] };
-    });
-  }
-
-  function household(filters) {
-    return makeReport('household', filters || {});
-  }
+  function dashboard(filters) { return Application.DashboardService(db).summary(filters || {}); }
+  function summary(filters) { return makeReport('summary', filters || {}); }
+  function population(filters) { return makeReport('population', filters || {}); }
+  function households(filters) { return makeReport('household', filters || {}).rows.map(function(row) { return { householdCode: row[0], address: row[1], hamlet: row[2], phone: row[3], areaCode: row[4], status: row[5] }; }); }
+  function household(filters) { return makeReport('household', filters || {}); }
 
   function renderHtml(payload) {
     var report = makeReport(payload && payload.type, payload && payload.filters || payload || {});
@@ -226,12 +242,9 @@ Application.ReportService = function(db, logger) {
     var spreadsheet = SpreadsheetApp.create(fileName(report, 'xlsx').replace(/\.xlsx$/, ''));
     var sheet = spreadsheet.getSheets()[0].setName('Report');
     var rows = [['Tieu de', report.title], ['Ngay xuat', report.generatedAt], ['Nguoi xuat', report.generatedBy], [], report.columns].concat(report.rows);
-    sheet.getRange(1, 1, rows.length, Math.max(report.columns.length, 2)).setValues(rows.map(function(row) {
-      var copy = row.slice();
-      while (copy.length < Math.max(report.columns.length, 2)) copy.push('');
-      return copy;
-    }));
-    sheet.autoResizeColumns(1, Math.max(report.columns.length, 2));
+    var width = Math.max(report.columns.length, 2);
+    sheet.getRange(1, 1, rows.length, width).setValues(rows.map(function(row) { var copy = row.slice(); while (copy.length < width) copy.push(''); return copy; }));
+    sheet.autoResizeColumns(1, width);
     var exportUrl = 'https://docs.google.com/spreadsheets/d/' + spreadsheet.getId() + '/export?format=xlsx';
     var response = UrlFetchApp.fetch(exportUrl, { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } });
     var file = ensureFolder().createFile(response.getBlob().setName(fileName(report, 'xlsx')));
@@ -246,17 +259,7 @@ Application.ReportService = function(db, logger) {
     return rendered;
   }
 
-  return {
-    dashboard: dashboard,
-    summary: summary,
-    population: population,
-    households: households,
-    household: household,
-    makeReport: makeReport,
-    exportPdf: exportPdf,
-    exportExcel: exportExcel,
-    print: print
-  };
+  return { dashboard: dashboard, summary: summary, population: population, households: households, household: household, makeReport: makeReport, exportPdf: exportPdf, exportExcel: exportExcel, print: print };
 };
 
 Application.BackupService = function(db, logger) {
@@ -268,26 +271,15 @@ Application.BackupService = function(db, logger) {
     properties.setProperty(propertyName, folder.getId());
     return folder;
   }
-
   function createBackup(note) {
     var spreadsheet = db.spreadsheet();
     var folder = ensureFolder(Domain.App.BACKUP_FOLDER_ID_PROPERTY, Domain.App.NAME + ' Backups');
     var file = DriveApp.getFileById(spreadsheet.getId()).makeCopy(Domain.App.NAME + ' Backup ' + Entity.now(), folder);
-    var record = {
-      id: Entity.uuid('BAK'),
-      timestamp: Entity.now(),
-      fileId: file.getId(),
-      fileName: file.getName(),
-      spreadsheetId: spreadsheet.getId(),
-      createdBy: Entity.currentEmail(),
-      status: Domain.Status.ACTIVE,
-      note: note || ''
-    };
+    var record = { id: Entity.uuid('BAK'), timestamp: Entity.now(), fileId: file.getId(), fileName: file.getName(), spreadsheetId: spreadsheet.getId(), createdBy: Entity.currentEmail(), status: Domain.Status.ACTIVE, note: note || '' };
     db.append(Domain.Tables.BACKUPS, record);
     logger.info(Domain.Modules.BACKUP, Domain.Actions.CREATE, record.id, 'Tao backup', record);
     return record;
   }
-
   return { createBackup: createBackup, listBackups: function() { return db.readAll(Domain.Tables.BACKUPS); } };
 };
 
@@ -307,6 +299,5 @@ Application.PdfService = function(db, logger) {
     logger.info(Domain.Modules.PDF, Domain.Actions.EXPORT, citizen.id, 'Xuat PDF nhan khau', { fileId: file.getId() });
     return { fileId: file.getId(), url: file.getUrl(), name: file.getName() };
   }
-
   return { renderCitizenCard: renderCitizenCard };
 };
