@@ -1,24 +1,8 @@
 var Application = Application || {};
 
 Application.ReportService = function(db) {
-  function dashboard() {
-    var households = db.readAll(Domain.Tables.HOUSEHOLDS);
-    var citizens = db.readAll(Domain.Tables.CITIZENS);
-    var movements = db.readAll(Domain.Tables.MOVEMENTS);
-    var byGender = citizens.reduce(function(acc, item) {
-      var key = item.gender || 'UNKNOWN';
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
-    return {
-      households: households.length,
-      citizens: citizens.length,
-      movements: movements.length,
-      activeUsers: db.readAll(Domain.Tables.USERS).length,
-      byGender: byGender,
-      recentMovements: movements.slice(-10).reverse(),
-      capacity: { households: 1000, citizens: 3000 }
-    };
+  function dashboard(filters) {
+    return Application.DashboardService(db).summary(filters || {});
   }
 
   function population(filters) {
