@@ -255,7 +255,7 @@ Application.ReportService = function(db, logger) {
 
   function print(payload) {
     var rendered = renderHtml(payload || {});
-    if (logger) logger.info(Domain.Modules.REPORT, Domain.Actions.EXPORT, rendered.report.id, 'In bao cao', { type: rendered.report.type });
+    if (logger && !(payload && payload.noLog)) logger.info(Domain.Modules.REPORT, Domain.Actions.EXPORT, rendered.report.id, 'In bao cao', { type: rendered.report.type });
     return rendered;
   }
 
@@ -277,10 +277,36 @@ Application.BackupService = function(db, logger) {
     var file = DriveApp.getFileById(spreadsheet.getId()).makeCopy(Domain.App.NAME + ' Backup ' + Entity.now(), folder);
     var record = { id: Entity.uuid('BAK'), timestamp: Entity.now(), fileId: file.getId(), fileName: file.getName(), spreadsheetId: spreadsheet.getId(), createdBy: Entity.currentEmail(), status: Domain.Status.ACTIVE, note: note || '' };
     db.append(Domain.Tables.BACKUPS, record);
-    logger.info(Domain.Modules.BACKUP, Domain.Actions.CREATE, record.id, 'Tao backup', record);
+    if (logger) logger.info(Domain.Modules.BACKUP, Domain.Actions.CREATE, record.id, 'Tao backup', record);
     return record;
   }
-  return { createBackup: createBackup, listBackups: function() { return db.readAll(Domain.Tables.BACKUPS); } };
+  function listBackups() {
+    return db.readAll(Domain.Tables.BACKUPS).sort(function(a, b) { return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
+  }
+  function restoreBackup(fileId) {
+    if (!fileId) throw new Error('File backup la bat buoc');
+    return Infrastructure.withLock(function() {
+      var folder = ensureFolder(Domain.App.BACKUP_FOLDER_ID_PROPERTY, Domain.App.NAME + ' Backups');
+      var source = DriveApp.getFileById(fileId);
+      var restored = source.makeCopy(Domain.App.NAME + ' Restored ' + Entity.now(), folder);
+      PropertiesService.getScriptProperties().setProperty(Domain.App.SPREADSHEET_ID_PROPERTY, restored.getId());
+      var record = { id: Entity.uuid('BAK'), timestamp: Entity.now(), fileId: restored.getId(), fileName: restored.getName(), spreadsheetId: restored.getId(), createdBy: Entity.currentEmail(), status: Domain.Status.ACTIVE, note: 'RESTORE_FROM:' + fileId };
+      var restoredDb = Infrastructure.Database();
+      restoredDb.append(Domain.Tables.BACKUPS, record);
+      if (logger) logger.warn(Domain.Modules.BACKUP, Domain.Actions.UPDATE, record.id, 'Khoi phuc backup', { sourceFileId: fileId, restoredSpreadsheetId: restored.getId() });
+      return record;
+    });
+  }
+  function dailyBackup() {
+    return createBackup('AUTO_DAILY');
+  }
+  function setupDailyBackup() {
+    var triggers = ScriptApp.getProjectTriggers().filter(function(trigger) { return trigger.getHandlerFunction() === 'dailyBackup'; });
+    if (!triggers.length) ScriptApp.newTrigger('dailyBackup').timeBased().everyDays(1).atHour(2).create();
+    if (logger) logger.info(Domain.Modules.BACKUP, Domain.Actions.UPDATE, 'dailyBackup', 'Cau hinh backup hang ngay', {});
+    return { enabled: true, hour: 2 };
+  }
+  return { createBackup: createBackup, listBackups: listBackups, restoreBackup: restoreBackup, dailyBackup: dailyBackup, setupDailyBackup: setupDailyBackup };
 };
 
 Application.PdfService = function(db, logger) {
@@ -296,7 +322,7 @@ Application.PdfService = function(db, logger) {
     var folder = folderId ? DriveApp.getFolderById(folderId) : DriveApp.createFolder(Domain.App.NAME + ' PDFs');
     properties.setProperty(Domain.App.PDF_FOLDER_ID_PROPERTY, folder.getId());
     var file = folder.createFile(blob).setName('Nhan khau ' + citizen.citizenCode + '.pdf');
-    logger.info(Domain.Modules.PDF, Domain.Actions.EXPORT, citizen.id, 'Xuat PDF nhan khau', { fileId: file.getId() });
+    if (logger) logger.info(Domain.Modules.PDF, Domain.Actions.EXPORT, citizen.id, 'Xuat PDF nhan khau', { fileId: file.getId() });
     return { fileId: file.getId(), url: file.getUrl(), name: file.getName() };
   }
   return { renderCitizenCard: renderCitizenCard };
