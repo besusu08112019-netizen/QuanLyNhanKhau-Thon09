@@ -70,6 +70,16 @@ Infrastructure.Database = function() {
     return record;
   }
 
+  function appendMany(tableName, records) {
+    records = records || [];
+    if (!records.length) return [];
+    var sheet = getSheet(tableName);
+    var rows = records.map(function(record) { return Entity.toRow(tableName, record); });
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, Domain.Schema[tableName].length).setValues(rows);
+    clearTableCache(tableName);
+    return records;
+  }
+
   function replace(tableName, id, record) {
     var sheet = getSheet(tableName);
     var headers = Domain.Schema[tableName];
@@ -96,6 +106,7 @@ Infrastructure.Database = function() {
     readAll: readAll,
     findById: findById,
     append: append,
+    appendMany: appendMany,
     replace: replace,
     count: count
   };
