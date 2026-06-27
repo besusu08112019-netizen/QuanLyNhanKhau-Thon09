@@ -23,19 +23,19 @@
 </head>
 <body>
   <div class="header">
-    <div class="org">He thong Quan ly Nhan khau Thon 09</div>
+    <div class="org">Hệ thống Quản lý Nhân khẩu Thôn 09</div>
     <div class="title"><?= report.title ?></div>
   </div>
   <div class="meta">
-    <div>Ma bao cao: <?= report.id ?></div>
-    <div>Ngay xuat: <?= report.generatedAt ?></div>
-    <div>Nguoi xuat: <?= report.generatedBy ?></div>
+    <div>Mã báo cáo: <?= report.id ?></div>
+    <div>Ngày xuất: <?= report.generatedAt ?></div>
+    <div>Người xuất: <?= report.generatedBy ?></div>
   </div>
   <div class="summary">
-    <div>Tong ho<strong><?= report.summary.households || 0 ?></strong></div>
-    <div>Tong nhan khau<strong><?= report.summary.citizens || 0 ?></strong></div>
-    <div>Nam / Nu<strong><?= report.summary.male || 0 ?> / <?= report.summary.female || 0 ?></strong></div>
-    <div>Tam tru / Tam vang<strong><?= report.summary.temporaryResidence || 0 ?> / <?= report.summary.temporaryAbsence || 0 ?></strong></div>
+    <div>Tổng hộ<strong><?= report.summary.households || 0 ?></strong></div>
+    <div>Tổng nhân khẩu<strong><?= report.summary.citizens || 0 ?></strong></div>
+    <div>Nam / Nữ<strong><?= report.summary.male || 0 ?> / <?= report.summary.female || 0 ?></strong></div>
+    <div>Tạm trú / Tạm vắng<strong><?= report.summary.temporaryResidence || 0 ?> / <?= report.summary.temporaryAbsence || 0 ?></strong></div>
   </div>
   <table>
     <thead>
@@ -43,7 +43,7 @@
     </thead>
     <tbody>
       <? if (!report.rows.length) { ?>
-        <tr><td colspan="<?= report.columns.length ?>">Khong co du lieu</td></tr>
+        <tr><td colspan="<?= report.columns.length ?>">Không có dữ liệu</td></tr>
       <? } ?>
       <? for (var r = 0; r < report.rows.length; r++) { ?>
         <tr><? for (var c = 0; c < report.columns.length; c++) { ?><td><?= report.rows[r][c] || '' ?></td><? } ?></tr>
@@ -52,7 +52,7 @@
   </table>
   <div class="footer">
     <div></div>
-    <div class="signature">Nguoi lap bieu<br><br><br>________________</div>
+    <div class="signature">Người lập biểu<br><br><br>________________</div>
   </div>
 </body>
 </html>
