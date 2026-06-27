@@ -1,7 +1,8 @@
 <script>
 (function() {
   var state = { page: 1, pageSize: 20, keyword: '', householdId: '', status: '' };
-  var statusLabels = { ACTIVE: 'Đang hoạt động', INACTIVE: 'Tạm ngưng', DELETED: 'Đã xóa' };
+  var statusLabels = { ALIVE: 'Còn sống', DECEASED: 'Đã chết', ACTIVE: 'Còn sống', INACTIVE: 'Đã chết', DELETED: 'Đã xóa' };
+  var statusOptions = [{ value: 'ALIVE', label: 'Còn sống' }, { value: 'DECEASED', label: 'Đã chết' }];
   var genderOptions = ['Nam', 'Nữ', 'Khác'];
   var relationshipOptions = ['Chủ hộ','Vợ','Chồng','Con','Cha','Mẹ','Ông','Bà','Anh','Chị','Em','Cháu','Dâu','Rể','Người thân khác','Người thuê trọ','Tạm trú','Khác'];
   var educationOptions = ['Chưa đi học','Mầm non','Tiểu học','THCS','THPT','Trung cấp','Cao đẳng','Đại học','Sau đại học','Không rõ'];
@@ -25,6 +26,7 @@
     { name: 'occupation', label: 'Nghề nghiệp', options: occupationOptions },
     { name: 'educationLevel', label: 'Học vấn', options: educationOptions },
     { name: 'maritalStatus', label: 'Hôn nhân', options: maritalOptions },
+    { name: 'status', label: 'Trạng thái', required: true, options: statusOptions },
     { name: 'permanentAddress', label: 'Thường trú', full: true },
     { name: 'currentAddress', label: 'Nơi ở hiện nay', full: true }
   ];
@@ -81,8 +83,13 @@
     document.querySelectorAll('[data-route]').forEach(function(item) { item.classList.toggle('active', item.getAttribute('data-route') === 'citizen'); });
     if (el('pageTitle')) el('pageTitle').textContent = 'Quản lý nhân khẩu';
   }
+  function canonicalStatus(value) {
+    if (value === 'ACTIVE') return 'ALIVE';
+    if (value === 'INACTIVE') return 'DECEASED';
+    return value || 'ALIVE';
+  }
   function status(value) {
-    value = value || 'ACTIVE';
+    value = canonicalStatus(value);
     return '<span class="status-pill status-' + html(value) + '">' + html(statusLabels[value] || value) + '</span>';
   }
   function readFilters() {
@@ -139,9 +146,10 @@
   function optionLabel(option) { return typeof option === 'object' ? option.label : option; }
   function control(field, values) {
     var value = String((values || {})[field.name] || '');
+    if (field.name === 'status') value = canonicalStatus(value || 'ALIVE');
     if (field.options) {
       var hasCurrent = !value || field.options.some(function(option) { return String(optionValue(option)) === value; });
-      return '<select class="form-control" name="' + html(field.name) + '" ' + (field.required ? 'required' : '') + '><option value="">-- Chọn --</option>' + (hasCurrent ? '' : '<option value="' + html(value) + '" selected>' + html(value) + '</option>') + field.options.map(function(option) {
+      return '<select class="form-control" name="' + html(field.name) + '" ' + (field.required ? 'required' : '') + '><option value="">-- Chọn --</option>' + (hasCurrent ? '' : '<option value="' + html(value) + '" selected>' + html(statusLabels[value] || value) + '</option>') + field.options.map(function(option) {
         var optValue = String(optionValue(option));
         return '<option value="' + html(optValue) + '" ' + (optValue === value ? 'selected' : '') + '>' + html(optionLabel(option)) + '</option>';
       }).join('') + '</select>';
@@ -187,6 +195,7 @@
     if (!payload.gender) throw new Error('Cần chọn giới tính');
     if (!payload.dateOfBirth) throw new Error('Cần nhập ngày sinh');
     if (!payload.relationship) throw new Error('Cần chọn quan hệ với chủ hộ');
+    if (!payload.status) throw new Error('Cần chọn trạng thái');
     if (payload.identityNumber && !/^\d{9}$|^\d{12}$/.test(payload.identityNumber)) throw new Error('CCCD/CMND phải gồm 9 hoặc 12 chữ số');
     if (payload.phone && !/^[0-9+() .-]{8,20}$/.test(payload.phone)) throw new Error('Số điện thoại không hợp lệ');
   }
@@ -248,7 +257,7 @@
     activate();
     var app = el('app');
     if (!app) return;
-    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option><option value="DELETED">Đã xóa</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select><button class="btn btn-outline-primary btn-sm" id="personSearch" title="Tìm kiếm"><i class="fas fa-search"></i></button><button class="btn btn-outline-secondary btn-sm" id="personClearSearch" title="Xóa tìm kiếm"><i class="fas fa-times"></i></button></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
+    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ALIVE">Còn sống</option><option value="DECEASED">Đã chết</option><option value="DELETED">Đã xóa</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select><button class="btn btn-outline-primary btn-sm" id="personSearch" title="Tìm kiếm"><i class="fas fa-search"></i></button><button class="btn btn-outline-secondary btn-sm" id="personClearSearch" title="Xóa tìm kiếm"><i class="fas fa-times"></i></button></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
     el('personKeyword').value = state.keyword;
     el('personHousehold').value = state.householdId;
     el('personStatus').value = state.status;
