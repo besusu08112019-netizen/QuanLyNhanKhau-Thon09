@@ -21,7 +21,8 @@ Interface.Container = function() {
     pdf: Application.PdfService(db, logger),
     admin: userService,
     user: userService,
-    system: Application.SystemService(db, logger)
+    system: Application.SystemService(db, logger),
+    importer: Application.ImportService(Infrastructure.ImportRepository(), householdRepository, personRepository, logger, db)
   };
 };
 
@@ -64,6 +65,9 @@ Interface.ApiController = function(container) {
     'backup.restore': [Domain.Modules.BACKUP, Domain.Actions.UPDATE, function(payload) { return container.backup.restoreBackup(payload.fileId); }],
     'backup.daily': [Domain.Modules.BACKUP, Domain.Actions.CREATE, function() { return container.backup.dailyBackup(); }],
     'backup.setupDaily': [Domain.Modules.BACKUP, Domain.Actions.UPDATE, function() { return container.backup.setupDailyBackup(); }],
+    'import.preview': [Domain.Modules.IMPORT, Domain.Actions.READ, function(payload) { return container.importer.preview(payload); }],
+    'import.household': [Domain.Modules.IMPORT, Domain.Actions.CREATE, function(payload) { return container.importer.importHousehold(payload); }],
+    'import.person': [Domain.Modules.IMPORT, Domain.Actions.CREATE, function(payload) { return container.importer.importPerson(payload); }],
     'user.me': [Domain.Modules.USER, Domain.Actions.READ, function() { return container.security.currentUser(); }],
     'user.page': [Domain.Modules.USER, Domain.Actions.READ, function(payload) { return container.user.pageUsers(payload); }],
     'user.get': [Domain.Modules.USER, Domain.Actions.READ, function(payload) { return container.user.getUser(payload.id); }],
