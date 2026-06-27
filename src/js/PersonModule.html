@@ -11,7 +11,7 @@
   var occupationOptions = ['Chưa có việc làm','Học sinh/Sinh viên','Cán bộ/Công chức/Viên chức','Công nhân','Nông dân','Kinh doanh/Buôn bán','Lao động tự do','Giáo viên','Nhân viên văn phòng','Y tế','Kỹ sư/Kỹ thuật','Dịch vụ','Tài xế/Vận tải','Công an/Quân đội','Nội trợ','Hưu trí','Khác'];
   var personFields = [
     { name: 'citizenCode', label: 'Mã nhân khẩu', required: true },
-    { name: 'householdId', label: 'Mã hộ/ID hộ', required: true },
+    { name: 'householdId', label: 'Mã hộ', required: true },
     { name: 'fullName', label: 'Họ và tên', required: true },
     { name: 'gender', label: 'Giới tính', required: true, options: genderOptions },
     { name: 'dateOfBirth', label: 'Ngày sinh', required: true, type: 'date' },
@@ -31,7 +31,7 @@
   var detailFields = [
     ['citizenCode','Mã nhân khẩu'], ['fullName','Họ và tên'], ['gender','Giới tính'], ['dateOfBirth','Ngày sinh'],
     ['identityNumber','CCCD/CMND'], ['identityIssueDate','Ngày cấp CCCD/CMND'], ['identityIssuePlace','Nơi cấp CCCD/CMND'],
-    ['householdCode','Mã hộ'], ['householdId','ID hộ'], ['householdHeadName','Chủ hộ'], ['householdAddress','Địa chỉ hộ'],
+    ['householdId','Mã hộ'], ['householdHeadName','Chủ hộ'], ['householdAddress','Địa chỉ hộ'],
     ['relationship','Quan hệ với chủ hộ'], ['ethnicity','Dân tộc'], ['religion','Tôn giáo'], ['occupation','Nghề nghiệp'],
     ['phone','Điện thoại'], ['educationLevel','Học vấn'], ['maritalStatus','Hôn nhân'],
     ['permanentAddress','Thường trú'], ['currentAddress','Nơi ở hiện nay'], ['status','Trạng thái'],
@@ -110,9 +110,9 @@
   function renderTable(result) {
     var rows = result.items || [];
     var body = rows.length ? rows.map(function(row) {
-      return '<tr class="person-row" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(row.householdCode || row.householdId) + '</td><td>' + html(row.gender) + '</td><td>' + html(row.dateOfBirth) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + status(row.status) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
+      return '<tr class="person-row" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(row.householdId || row.householdCode) + '</td><td>' + html(row.gender) + '</td><td>' + html(row.dateOfBirth) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + status(row.status) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
     }).join('') : '<tr><td colspan="10" class="text-center text-muted p-4">Không có dữ liệu nhân khẩu</td></tr>';
-    return '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Hộ dân</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
+    return '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Mã hộ</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
   }
   function optionValue(option) { return typeof option === 'object' ? option.value : option; }
   function optionLabel(option) { return typeof option === 'object' ? option.label : option; }
@@ -161,7 +161,7 @@
   }
   function validate(payload) {
     if (!payload.citizenCode || !/^[A-Za-z0-9._-]{2,30}$/.test(payload.citizenCode)) throw new Error('Mã nhân khẩu không hợp lệ');
-    if (!payload.householdId) throw new Error('Cần nhập Mã hộ hoặc ID hộ');
+    if (!payload.householdId) throw new Error('Cần nhập Mã hộ');
     if (!payload.fullName || payload.fullName.trim().length < 2) throw new Error('Họ tên phải có ít nhất 2 ký tự');
     if (!payload.gender) throw new Error('Cần chọn giới tính');
     if (!payload.dateOfBirth) throw new Error('Cần nhập ngày sinh');
@@ -228,7 +228,7 @@
     activate();
     var app = el('app');
     if (!app) return;
-    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ hoặc ID hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option><option value="DELETED">Đã xóa</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
+    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Tạm ngưng</option><option value="DELETED">Đã xóa</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
     el('personKeyword').value = state.keyword;
     el('personHousehold').value = state.householdId;
     el('personStatus').value = state.status;
