@@ -28,26 +28,43 @@ Infrastructure.HouseholdRepository = function(db) {
     return record;
   }
 
+  function isYes(value) {
+    var normalized = normalizeKeyword(value);
+    return value === true || value === 1 || normalized === 'co' || normalized === 'yes' || normalized === 'true' || normalized === '1' || normalized === 'x';
+  }
+
   function policyText(household) {
     return [
-      household.meritoriousFamily === 'Có' ? 'Gia đình có công' : '',
-      household.poorHousehold === 'Có' ? 'Hộ nghèo' : '',
-      household.nearPoorHousehold === 'Có' ? 'Cận nghèo' : '',
-      household.disabledHousehold === 'Có' ? 'Tàn tật' : ''
+      isYes(household.meritoriousFamily || household.isPolicyFamily) ? 'Gia đình có công' : '',
+      isYes(household.poorHousehold || household.isPoorHousehold) ? 'Hộ nghèo' : '',
+      isYes(household.nearPoorHousehold || household.isNearPoorHousehold) ? 'Hộ cận nghèo Cận nghèo' : '',
+      isYes(household.disabledHousehold || household.hasDisabledMember) ? 'Tàn tật Khuyết tật' : ''
     ].filter(Boolean).join(' ');
   }
 
   function matchesKeyword(household, keyword) {
     if (!keyword) return true;
     return [
+      household.id,
       household.householdCode,
       household.headCitizenId,
       household.headCitizenName,
       household.address,
+      household.hamlet,
       household.phone,
       household.areaCode,
+      household.memberCount,
+      household.meritoriousFamily,
+      household.poorHousehold,
+      household.nearPoorHousehold,
+      household.disabledHousehold,
+      household.isPolicyFamily,
+      household.isPoorHousehold,
+      household.isNearPoorHousehold,
+      household.hasDisabledMember,
       policyText(household),
-      household.note
+      household.note,
+      household.status
     ].some(function(value) {
       return normalizeKeyword(value).indexOf(keyword) >= 0;
     });
@@ -55,7 +72,7 @@ Infrastructure.HouseholdRepository = function(db) {
 
   function listPage(query) {
     query = query || {};
-    var keyword = normalizeKeyword(query.keyword);
+    var keyword = normalizeKeyword(query.keyword || query.search || query.q);
     var page = Math.max(parseInt(query.page || 1, 10), 1);
     var pageSize = Math.min(Math.max(parseInt(query.pageSize || 20, 10), 5), 100);
     var citizenIndex = makeCitizenIndex();
