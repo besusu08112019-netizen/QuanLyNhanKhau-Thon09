@@ -40,7 +40,7 @@
 
   function el(id) { return document.getElementById(id); }
   function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s]); }); }
-  function debounce(fn, delay) { var timer; return function() { var args = arguments; clearTimeout(timer); timer = setTimeout(function() { fn.apply(null, args); }, delay || 250); }; }
+  function debounce(fn, delay) { var timer; return function() { var self = this; var args = arguments; clearTimeout(timer); timer = setTimeout(function() { fn.apply(self, args); }, delay || 250); }; }
   function setLoading(active) {
     var layer = el('loadingLayer');
     if (!layer) {
