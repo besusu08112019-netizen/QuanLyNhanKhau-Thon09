@@ -37,11 +37,17 @@ Infrastructure.PersonRepository = function(db) {
 
   function enrich(person, households) {
     var record = Object.assign({}, person || {});
+    var originalHouseholdRef = record.householdId;
     var household = households[String(record.householdId)] || households[normalize(record.householdId)] || households[normalize(record.householdCode)];
     if (household) {
+      record.householdInternalId = household.id || '';
       record.householdCode = household.householdCode || record.householdCode || '';
+      record.householdId = record.householdCode;
       record.householdAddress = household.address || '';
       record.householdHeadName = household.headCitizenName || '';
+    } else {
+      record.householdCode = record.householdCode || originalHouseholdRef || '';
+      record.householdId = record.householdCode;
     }
     record.status = record.status || Domain.Status.ACTIVE;
     return record;
@@ -87,7 +93,7 @@ Infrastructure.PersonRepository = function(db) {
       return enrich(person, households);
     }).filter(function(person) {
       if (query.status && person.status !== query.status) return false;
-      if (householdFilter && normalize(person.householdId) !== householdFilter && normalize(person.householdCode) !== householdFilter) return false;
+      if (householdFilter && normalize(person.householdId) !== householdFilter && normalize(person.householdCode) !== householdFilter && normalize(person.householdInternalId) !== householdFilter) return false;
       if (query.identityNumber && !keyword && normalize(person.identityNumber) !== normalize(query.identityNumber)) return false;
       return matchesKeyword(person, keyword);
     });
@@ -108,17 +114,19 @@ Infrastructure.PersonRepository = function(db) {
   }
 
   function findById(id, options) {
+    var households = householdIndex();
     var person = db.findById(Domain.Tables.CITIZENS, id, options || {});
-    return person ? serializePerson(person) : null;
+    return person ? serializePerson(enrich(person, households)) : null;
   }
 
   function findByIdentityNumber(identityNumber, options) {
     var normalized = normalize(identityNumber);
     if (!normalized) return null;
+    var households = householdIndex();
     var person = read(options || {}).filter(function(person) {
       return normalize(person.identityNumber) === normalized;
     })[0] || null;
-    return person ? serializePerson(person) : null;
+    return person ? serializePerson(enrich(person, households)) : null;
   }
 
   function findByHouseholdId(householdId, options) {
@@ -127,13 +135,16 @@ Infrastructure.PersonRepository = function(db) {
     return read(options || {}).map(function(person) {
       return enrich(person, households);
     }).filter(function(person) {
-      return normalize(person.householdId) === normalized || normalize(person.householdCode) === normalized;
+      return normalize(person.householdId) === normalized || normalize(person.householdCode) === normalized || normalize(person.householdInternalId) === normalized;
     }).map(serializePerson);
   }
 
   function searchByFullName(fullName, options) {
     var keyword = normalize(fullName);
-    return read(options || {}).filter(function(person) {
+    var households = householdIndex();
+    return read(options || {}).map(function(person) {
+      return enrich(person, households);
+    }).filter(function(person) {
       return normalize(person.fullName).indexOf(keyword) >= 0;
     }).map(serializePerson);
   }
