@@ -143,7 +143,7 @@ Interface.ApiController = function(container) {
     'import.preview': [Domain.Modules.IMPORT, Domain.Actions.READ, function(payload) { return container.importer.preview(payload); }],
     'import.household': [Domain.Modules.IMPORT, Domain.Actions.CREATE, function(payload) { return container.importer.importHousehold(payload); }],
     'import.person': [Domain.Modules.IMPORT, Domain.Actions.CREATE, function(payload) { return container.importer.importPerson(payload); }],
-    'user.me': [Domain.Modules.USER, Domain.Actions.READ, function() { return container.security.currentUser(); }],
+    'user.me': [Domain.Modules.USER, Domain.Actions.READ, function(payload) { return container.security.currentUser(payload && payload._authToken); }],
     'user.page': [Domain.Modules.USER, Domain.Actions.READ, function(payload) { return container.user.pageUsers(payload); }],
     'user.get': [Domain.Modules.USER, Domain.Actions.READ, function(payload) { return container.user.getUser(payload.id); }],
     'user.list': [Domain.Modules.USER, Domain.Actions.READ, function(payload) { return container.user.listUsers(payload); }],
@@ -154,7 +154,7 @@ Interface.ApiController = function(container) {
     'user.unlock': [Domain.Modules.USER, Domain.Actions.UPDATE, function(payload) { return container.user.unlockUser(payload.id); }],
     'user.changeRole': [Domain.Modules.USER, Domain.Actions.UPDATE, function(payload) { return container.user.changeRole(payload.id, payload.role); }],
     'user.changePassword': [Domain.Modules.USER, Domain.Actions.UPDATE, function(payload) { return container.user.changePassword(payload.id, payload.password); }],
-    'user.logout': [Domain.Modules.USER, Domain.Actions.READ, function() { return container.security.logout(); }],
+    'user.logout': [Domain.Modules.USER, Domain.Actions.READ, function(payload) { return container.security.logout(payload && payload._authToken); }],
     'role.list': [Domain.Modules.USER, Domain.Actions.READ, function() { return container.user.roleList(); }],
     'permission.list': [Domain.Modules.PERMISSION, Domain.Actions.READ, function() { return container.db.readAll(Domain.Tables.PERMISSIONS); }],
     'permission.update': [Domain.Modules.PERMISSION, Domain.Actions.UPDATE, function(payload) { return container.user.updatePermission(payload.id, payload); }],
@@ -166,10 +166,14 @@ Interface.ApiController = function(container) {
   };
 
   function handle(action, payload) {
+    payload = payload || {};
+    if (action === 'auth.login') return container.security.login(payload);
+    if (action === 'auth.logout') return container.security.logout(payload._authToken);
+    if (action === 'user.me') return container.security.currentUser(payload._authToken);
     var route = routes[action];
     if (!route) throw new Error('API không hợp lệ: ' + action);
-    container.security.requirePermission(route[0], route[1]);
-    return route[2](payload || {});
+    container.security.requirePermission(route[0], route[1], payload._authToken);
+    return route[2](payload);
   }
 
   return { handle: handle };
