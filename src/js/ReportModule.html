@@ -1,0 +1,126 @@
+<script>
+(function() {
+  var state = { type: 'summary', fromDate: '', toDate: '', householdStatus: '', personStatus: '', residencyStatus: '', movementType: '' };
+  var lastRendered = null;
+
+  function el(id) { return document.getElementById(id); }
+  function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]); }); }
+  function toast(message, kind) {
+    var host = document.querySelector('.toast-host') || document.body.appendChild(document.createElement('div'));
+    host.className = 'toast-host';
+    var node = document.createElement('div');
+    node.className = 'alert alert-' + (kind || 'info') + ' shadow-sm';
+    node.textContent = message;
+    host.appendChild(node);
+    setTimeout(function() { node.remove(); }, 3500);
+  }
+  function setLoading(active) {
+    var layer = el('loadingLayer');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'loadingLayer';
+      layer.className = 'loading-layer';
+      layer.innerHTML = '<div class="spinner-border text-primary"></div>';
+      document.body.appendChild(layer);
+    }
+    layer.classList.toggle('active', !!active);
+  }
+  function call(action, payload) {
+    setLoading(true);
+    return new Promise(function(resolve, reject) {
+      google.script.run.withSuccessHandler(function(response) {
+        setLoading(false);
+        if (!response || !response.ok) reject(new Error(response && response.error ? response.error.message : 'Loi he thong'));
+        else resolve(response.data);
+      }).withFailureHandler(function(error) {
+        setLoading(false);
+        reject(error);
+      }).api(action, payload || {});
+    });
+  }
+  function activateNav() {
+    document.querySelectorAll('[data-route]').forEach(function(item) { item.classList.toggle('active', item.getAttribute('data-route') === 'report'); });
+    var title = el('pageTitle');
+    if (title) title.textContent = 'Report';
+  }
+  function filters() {
+    state.type = el('reportType').value;
+    state.fromDate = el('reportFrom').value;
+    state.toDate = el('reportTo').value;
+    state.householdStatus = el('reportHouseholdStatus').value;
+    state.personStatus = el('reportPersonStatus').value;
+    state.residencyStatus = el('reportResidency').value;
+    state.movementType = el('reportMovementType').value;
+    return {
+      type: state.type,
+      filters: {
+        fromDate: state.fromDate,
+        toDate: state.toDate,
+        householdStatus: state.householdStatus,
+        personStatus: state.personStatus,
+        residencyStatus: state.residencyStatus,
+        movementType: state.movementType
+      }
+    };
+  }
+  function reportTable(report) {
+    return '<div class="report-preview-header"><div><h3>' + html(report.title) + '</h3><p>Ngay xuat: ' + html(report.generatedAt) + '</p></div><div class="text-muted">' + html(report.generatedBy) + '</div></div>' +
+      '<div class="report-summary-grid"><div>Tong ho<strong>' + html(report.summary.households || 0) + '</strong></div><div>Tong nhan khau<strong>' + html(report.summary.citizens || 0) + '</strong></div><div>Nam / Nu<strong>' + html(report.summary.male || 0) + ' / ' + html(report.summary.female || 0) + '</strong></div><div>Tam tru / Tam vang<strong>' + html(report.summary.temporaryResidence || 0) + ' / ' + html(report.summary.temporaryAbsence || 0) + '</strong></div></div>' +
+      '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr>' + report.columns.map(function(column) { return '<th>' + html(column) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      (report.rows.length ? report.rows.map(function(row) { return '<tr>' + report.columns.map(function(_, index) { return '<td>' + html(row[index]) + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + report.columns.length + '" class="text-center text-muted p-4">Khong co du lieu</td></tr>') +
+      '</tbody></table></div></div>';
+  }
+  function preview() {
+    call('report.print', filters()).then(function(result) {
+      lastRendered = result;
+      el('reportPreview').innerHTML = reportTable(result.report);
+    }).catch(function(error) { toast(error.message, 'danger'); });
+  }
+  function printReport() {
+    var run = lastRendered ? Promise.resolve(lastRendered) : call('report.print', filters());
+    run.then(function(result) {
+      lastRendered = result;
+      var win = window.open('', '_blank');
+      if (!win) { toast('Trinh duyet dang chan cua so in', 'warning'); return; }
+      win.document.open();
+      win.document.write(result.html);
+      win.document.close();
+      win.focus();
+      setTimeout(function() { win.print(); }, 300);
+    }).catch(function(error) { toast(error.message, 'danger'); });
+  }
+  function exportFile(action) {
+    call(action, filters()).then(function(file) {
+      toast('Da xuat ' + file.name, 'success');
+      el('reportExportResult').innerHTML = '<a target="_blank" href="' + html(file.url) + '">' + html(file.name) + '</a>';
+    }).catch(function(error) { toast(error.message, 'danger'); });
+  }
+  function render() {
+    activateNav();
+    lastRendered = null;
+    el('app').innerHTML = '<div class="report-workspace"><div class="report-filter"><div class="filters"><select id="reportType" class="form-control form-control-sm"><option value="summary">Bao cao thong ke</option><option value="household">Danh sach ho</option><option value="population">Danh sach nhan khau</option><option value="gender">Theo gioi tinh</option><option value="age">Theo do tuoi</option><option value="residency">Theo tinh trang cu tru</option><option value="movement">Bien dong dan cu</option></select><input type="date" id="reportFrom" class="form-control form-control-sm"><input type="date" id="reportTo" class="form-control form-control-sm"><select id="reportHouseholdStatus" class="form-control form-control-sm"><option value="">Tat ca ho</option><option value="ACTIVE">Ho dang hoat dong</option><option value="INACTIVE">Ho tam dung</option></select><select id="reportPersonStatus" class="form-control form-control-sm"><option value="">Tat ca nhan khau</option><option value="ACTIVE">Dang hoat dong</option><option value="INACTIVE">Khong hoat dong</option><option value="DELETED">Da xoa</option></select><select id="reportResidency" class="form-control form-control-sm"><option value="">Tat ca cu tru</option><option value="Thuong tru">Thuong tru</option><option value="Tam tru">Tam tru</option><option value="Tam vang">Tam vang</option></select><select id="reportMovementType" class="form-control form-control-sm"><option value="">Tat ca bien dong</option><option value="Sinh">Sinh</option><option value="Tu">Tu</option><option value="Chuyen den">Chuyen den</option><option value="Chuyen di">Chuyen di</option></select></div><div class="actions"><button class="btn btn-outline-secondary btn-sm" id="btnReportPreview"><i class="fas fa-eye"></i></button><button class="btn btn-outline-primary btn-sm" id="btnReportPrint"><i class="fas fa-print"></i></button><button class="btn btn-outline-danger btn-sm" id="btnReportPdf"><i class="fas fa-file-pdf"></i></button><button class="btn btn-outline-success btn-sm" id="btnReportExcel"><i class="fas fa-file-excel"></i></button></div></div><div id="reportExportResult" class="mb-2"></div><div id="reportPreview"></div></div>';
+    el('reportType').value = state.type;
+    el('reportFrom').value = state.fromDate;
+    el('reportTo').value = state.toDate;
+    el('reportHouseholdStatus').value = state.householdStatus;
+    el('reportPersonStatus').value = state.personStatus;
+    el('reportResidency').value = state.residencyStatus;
+    el('reportMovementType').value = state.movementType;
+    ['reportType','reportFrom','reportTo','reportHouseholdStatus','reportPersonStatus','reportResidency','reportMovementType'].forEach(function(id) {
+      el(id).onchange = function() { lastRendered = null; preview(); };
+    });
+    el('btnReportPreview').onclick = preview;
+    el('btnReportPrint').onclick = printReport;
+    el('btnReportPdf').onclick = function() { exportFile('report.exportPdf'); };
+    el('btnReportExcel').onclick = function() { exportFile('report.exportExcel'); };
+    preview();
+  }
+  document.addEventListener('click', function(event) {
+    var link = event.target.closest('[data-route="report"]');
+    if (!link) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    render();
+  }, true);
+})();
+</script>
