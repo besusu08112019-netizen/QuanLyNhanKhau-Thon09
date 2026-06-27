@@ -1,6 +1,6 @@
 <script>
 (function() {
-  var state = { route: '', users: [], permissions: [], backups: [], logs: { page: 1, pageSize: 50 } };
+  var state = { route: '', users: [], roles: [], permissions: [], logs: { page: 1, pageSize: 50 }, user: { page: 1, pageSize: 10, totalPages: 1 } };
 
   function el(id) { return document.getElementById(id); }
   function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]); }); }
@@ -43,33 +43,50 @@
     if (el('pageTitle')) el('pageTitle').textContent = title;
   }
   function pill(status) { return '<span class="status-pill status-' + html(status || '') + '">' + html(status || '') + '</span>'; }
-  function options(items, selected) { return items.map(function(item) { return '<option value="' + html(item) + '"' + (item === selected ? ' selected' : '') + '>' + html(item) + '</option>'; }).join(''); }
+  function options(items, selected) { return items.map(function(item) { var value = item.code || item; var label = item.name || item; return '<option value="' + html(value) + '"' + (value === selected ? ' selected' : '') + '>' + html(label) + '</option>'; }).join(''); }
 
+  function userFilters() {
+    return { page: state.user.page, pageSize: state.user.pageSize, keyword: el('userKeyword').value, role: el('userRole').value, status: el('userStatus').value };
+  }
   function renderUser() {
     activate('user', 'User');
-    el('app').innerHTML = '<div class="admin-shell"><div class="module-toolbar"><div class="filters"><input id="userKeyword" class="form-control form-control-sm" placeholder="Tim email, ten, vai tro"><select id="userRole" class="form-control form-control-sm"><option value="">Tat ca vai tro</option><option value="ADMIN">Admin</option><option value="OFFICER">Can bo</option><option value="VIEWER">Chi xem</option></select><select id="userStatus" class="form-control form-control-sm"><option value="">Tat ca trang thai</option><option value="ACTIVE">Hoat dong</option><option value="INACTIVE">Bi khoa</option><option value="DELETED">Da xoa</option></select></div><div class="actions"><button id="btnUserSearch" class="btn btn-outline-secondary btn-sm"><i class="fas fa-search"></i></button><button id="btnUserCreate" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i></button></div></div><div id="userFormHost"></div><div class="card"><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr><th>Email</th><th>Ten</th><th>Vai tro</th><th>Trang thai</th><th>Dang nhap gan nhat</th><th></th></tr></thead><tbody id="userRows"></tbody></table></div></div></div>';
-    el('btnUserSearch').onclick = loadUsers;
-    el('btnUserCreate').onclick = function() { showUserForm(); };
-    loadUsers();
+    el('app').innerHTML = '<div class="admin-shell"><div class="module-toolbar"><div class="filters"><input id="userKeyword" class="form-control form-control-sm" placeholder="Tim email, ten, vai tro"><select id="userRole" class="form-control form-control-sm"><option value="">Tat ca vai tro</option></select><select id="userStatus" class="form-control form-control-sm"><option value="">Tat ca trang thai</option><option value="ACTIVE">Hoat dong</option><option value="INACTIVE">Bi khoa</option><option value="DELETED">Da xoa</option></select></div><div class="actions"><button id="btnUserSearch" class="btn btn-outline-secondary btn-sm"><i class="fas fa-search"></i></button><button id="btnUserCreate" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i></button></div></div><div id="userFormHost"></div><div class="card"><div class="card-body table-responsive p-0"><table class="table table-sm table-hover mb-0"><thead><tr><th>Email</th><th>Ten</th><th>Vai tro</th><th>Trang thai</th><th>Dang nhap gan nhat</th><th></th></tr></thead><tbody id="userRows"></tbody></table></div><div id="userPager" class="pagination-bar"></div></div></div>';
+    call('role.list').then(function(roles) {
+      state.roles = roles || [];
+      el('userRole').innerHTML = '<option value="">Tat ca vai tro</option>' + options(state.roles, '');
+      el('btnUserSearch').onclick = function() { state.user.page = 1; loadUsers(); };
+      el('btnUserCreate').onclick = function() { showUserForm(); };
+      loadUsers();
+    }).catch(function(error) { toast(error.message, 'danger'); });
   }
   function loadUsers() {
-    call('user.list', { keyword: el('userKeyword').value, role: el('userRole').value, status: el('userStatus').value }).then(function(users) {
-      state.users = users || [];
+    call('user.page', userFilters()).then(function(result) {
+      state.users = result.items || [];
+      state.user.page = result.page;
+      state.user.totalPages = result.totalPages;
       el('userRows').innerHTML = state.users.length ? state.users.map(function(user) {
-        return '<tr><td>' + html(user.email) + '</td><td>' + html(user.displayName) + '</td><td>' + html(user.role) + '</td><td>' + pill(user.status) + '</td><td>' + html(user.lastLoginAt) + '</td><td class="action-cell"><button class="btn btn-outline-primary btn-xs" data-user-edit="' + html(user.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-warning btn-xs" data-user-password="' + html(user.id) + '"><i class="fas fa-key"></i></button> ' + (user.status === 'ACTIVE' ? '<button class="btn btn-outline-danger btn-xs" data-user-lock="' + html(user.id) + '"><i class="fas fa-lock"></i></button>' : '<button class="btn btn-outline-success btn-xs" data-user-unlock="' + html(user.id) + '"><i class="fas fa-lock-open"></i></button>') + '</td></tr>';
+        var locked = user.status !== 'ACTIVE';
+        return '<tr><td>' + html(user.email) + '</td><td>' + html(user.displayName) + '</td><td>' + html(user.role) + '</td><td>' + pill(user.status) + '</td><td>' + html(user.lastLoginAt) + '</td><td class="action-cell"><button class="btn btn-outline-primary btn-xs" data-user-edit="' + html(user.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-warning btn-xs" data-user-password="' + html(user.id) + '"><i class="fas fa-key"></i></button> ' + (locked ? '<button class="btn btn-outline-success btn-xs" data-user-unlock="' + html(user.id) + '"><i class="fas fa-lock-open"></i></button>' : '<button class="btn btn-outline-danger btn-xs" data-user-lock="' + html(user.id) + '"><i class="fas fa-lock"></i></button>') + ' <button class="btn btn-outline-danger btn-xs" data-user-delete="' + html(user.id) + '"><i class="fas fa-trash"></i></button></td></tr>';
       }).join('') : '<tr><td colspan="6" class="text-center text-muted p-4">Khong co nguoi dung</td></tr>';
+      el('userPager').innerHTML = '<span>Trang ' + result.page + '/' + result.totalPages + ' - ' + result.total + ' nguoi dung</span><div><button id="btnUserPrev" class="btn btn-outline-secondary btn-sm"><i class="fas fa-chevron-left"></i></button> <button id="btnUserNext" class="btn btn-outline-secondary btn-sm"><i class="fas fa-chevron-right"></i></button></div>';
+      el('btnUserPrev').disabled = result.page <= 1;
+      el('btnUserNext').disabled = result.page >= result.totalPages;
+      el('btnUserPrev').onclick = function() { state.user.page -= 1; loadUsers(); };
+      el('btnUserNext').onclick = function() { state.user.page += 1; loadUsers(); };
       bindUserRows();
     }).catch(function(error) { toast(error.message, 'danger'); });
   }
   function bindUserRows() {
-    document.querySelectorAll('[data-user-edit]').forEach(function(button) { button.onclick = function() { showUserForm(state.users.filter(function(item) { return item.id === button.getAttribute('data-user-edit'); })[0]); }; });
+    document.querySelectorAll('[data-user-edit]').forEach(function(button) { button.onclick = function() { call('user.get', { id: button.getAttribute('data-user-edit') }).then(showUserForm).catch(function(error) { toast(error.message, 'danger'); }); }; });
     document.querySelectorAll('[data-user-lock]').forEach(function(button) { button.onclick = function() { call('user.lock', { id: button.getAttribute('data-user-lock') }).then(function() { toast('Da khoa nguoi dung', 'success'); loadUsers(); }).catch(function(error) { toast(error.message, 'danger'); }); }; });
     document.querySelectorAll('[data-user-unlock]').forEach(function(button) { button.onclick = function() { call('user.unlock', { id: button.getAttribute('data-user-unlock') }).then(function() { toast('Da mo khoa nguoi dung', 'success'); loadUsers(); }).catch(function(error) { toast(error.message, 'danger'); }); }; });
+    document.querySelectorAll('[data-user-delete]').forEach(function(button) { button.onclick = function() { call('user.delete', { id: button.getAttribute('data-user-delete') }).then(function() { toast('Da xoa nguoi dung', 'success'); loadUsers(); }).catch(function(error) { toast(error.message, 'danger'); }); }; });
     document.querySelectorAll('[data-user-password]').forEach(function(button) { button.onclick = function() { showPasswordForm(button.getAttribute('data-user-password')); }; });
   }
   function showUserForm(user) {
     user = user || { email: '', displayName: '', role: 'VIEWER', status: 'ACTIVE' };
-    el('userFormHost').innerHTML = '<div class="card admin-editor"><div class="card-header"><strong>' + (user.id ? 'Sua nguoi dung' : 'Them nguoi dung') + '</strong></div><div class="card-body"><div class="form-grid"><input id="formUserEmail" class="form-control" placeholder="Email" value="' + html(user.email) + '"><input id="formUserName" class="form-control" placeholder="Ten hien thi" value="' + html(user.displayName) + '"><select id="formUserRole" class="form-control">' + options(['ADMIN','OFFICER','VIEWER'], user.role) + '</select><select id="formUserStatus" class="form-control">' + options(['ACTIVE','INACTIVE'], user.status) + '</select><input id="formUserPassword" class="form-control" type="password" placeholder="Mat khau ung dung moi"></div></div><div class="card-footer text-right"><button id="btnUserCancel" class="btn btn-outline-secondary btn-sm">Huy</button> <button id="btnUserSave" class="btn btn-primary btn-sm">Luu</button></div></div>';
+    el('userFormHost').innerHTML = '<div class="card admin-editor"><div class="card-header"><strong>' + (user.id ? 'Sua nguoi dung' : 'Them nguoi dung') + '</strong></div><div class="card-body"><div class="form-grid"><input id="formUserEmail" class="form-control" placeholder="Email" value="' + html(user.email) + '"><input id="formUserName" class="form-control" placeholder="Ten hien thi" value="' + html(user.displayName) + '"><select id="formUserRole" class="form-control">' + options(state.roles, user.role) + '</select><select id="formUserStatus" class="form-control"><option value="ACTIVE">Hoat dong</option><option value="INACTIVE">Bi khoa</option></select><input id="formUserPassword" class="form-control" type="password" placeholder="Mat khau ung dung moi"></div></div><div class="card-footer text-right"><button id="btnUserCancel" class="btn btn-outline-secondary btn-sm">Huy</button> <button id="btnUserSave" class="btn btn-primary btn-sm">Luu</button></div></div>';
+    el('formUserStatus').value = user.status === 'DELETED' ? 'INACTIVE' : user.status;
     el('btnUserCancel').onclick = function() { el('userFormHost').innerHTML = ''; };
     el('btnUserSave').onclick = function() {
       var payload = { id: user.id, email: el('formUserEmail').value, displayName: el('formUserName').value, role: el('formUserRole').value, status: el('formUserStatus').value };
@@ -94,9 +111,7 @@
       var role = el('permRole').value;
       var keyword = String(el('permKeyword').value || '').toLowerCase();
       state.permissions = (rows || []).filter(function(item) { return (!role || item.role === role) && (!keyword || [item.module, item.action].join(' ').toLowerCase().indexOf(keyword) >= 0); });
-      el('permRows').innerHTML = state.permissions.map(function(item) {
-        return '<tr><td>' + html(item.role) + '</td><td>' + html(item.module) + '</td><td>' + html(item.action) + '</td><td><select class="form-control form-control-sm" data-perm-value="' + html(item.id) + '">' + options(['true','false'], String(item.allowed)) + '</select></td><td class="action-cell"><button class="btn btn-outline-primary btn-xs" data-perm-save="' + html(item.id) + '"><i class="fas fa-save"></i></button></td></tr>';
-      }).join('') || '<tr><td colspan="5" class="text-center text-muted p-4">Khong co quyen</td></tr>';
+      el('permRows').innerHTML = state.permissions.map(function(item) { return '<tr><td>' + html(item.role) + '</td><td>' + html(item.module) + '</td><td>' + html(item.action) + '</td><td><select class="form-control form-control-sm" data-perm-value="' + html(item.id) + '">' + options(['true','false'], String(item.allowed)) + '</select></td><td class="action-cell"><button class="btn btn-outline-primary btn-xs" data-perm-save="' + html(item.id) + '"><i class="fas fa-save"></i></button></td></tr>'; }).join('') || '<tr><td colspan="5" class="text-center text-muted p-4">Khong co quyen</td></tr>';
       document.querySelectorAll('[data-perm-save]').forEach(function(button) { button.onclick = function() { var id = button.getAttribute('data-perm-save'); call('permission.update', { id: id, allowed: document.querySelector('[data-perm-value="' + id + '"]').value }).then(function() { toast('Da cap nhat quyen', 'success'); }).catch(function(error) { toast(error.message, 'danger'); }); }; });
     }).catch(function(error) { toast(error.message, 'danger'); });
   }
@@ -149,9 +164,7 @@
       el('setSupportEmail').value = settings.supportEmail || '';
       el('setMaintenanceMessage').value = settings.maintenanceMessage || '';
     }).catch(function(error) { toast(error.message, 'danger'); });
-    el('btnSettingsSave').onclick = function() {
-      call('settings.save', { unitName: el('setUnitName').value, hamletName: el('setHamletName').value, systemName: el('setSystemName').value, backupSchedule: el('setBackupSchedule').value, reportSigner: el('setReportSigner').value, supportEmail: el('setSupportEmail').value, maintenanceMessage: el('setMaintenanceMessage').value }).then(function() { toast('Da luu cau hinh', 'success'); }).catch(function(error) { toast(error.message, 'danger'); });
-    };
+    el('btnSettingsSave').onclick = function() { call('settings.save', { unitName: el('setUnitName').value, hamletName: el('setHamletName').value, systemName: el('setSystemName').value, backupSchedule: el('setBackupSchedule').value, reportSigner: el('setReportSigner').value, supportEmail: el('setSupportEmail').value, maintenanceMessage: el('setMaintenanceMessage').value }).then(function() { toast('Da luu cau hinh', 'success'); }).catch(function(error) { toast(error.message, 'danger'); }); };
   }
 
   var handlers = { user: renderUser, permission: renderPermission, logs: renderLogs, backup: renderBackup, settings: renderSettings };
