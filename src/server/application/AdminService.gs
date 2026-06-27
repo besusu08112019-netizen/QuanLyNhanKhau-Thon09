@@ -1,29 +1,41 @@
 var Application = Application || {};
 
-Application.AdminService = function(db, logger) {
+Application.UserService = function(userRepository, logger, db) {
+  var publicRoles = [Domain.Roles.ADMIN, Domain.Roles.OFFICER, Domain.Roles.VIEWER];
+
   function normalizeEmail(email) {
     return String(email || '').trim().toLowerCase();
   }
 
-  function validRole(role) {
-    return [Domain.Roles.ADMIN, Domain.Roles.OFFICER, Domain.Roles.VIEWER, Domain.Roles.SUPER_ADMIN].indexOf(role) >= 0;
+  function roleList() {
+    return [
+      { code: Domain.Roles.ADMIN, name: 'Admin', description: 'Toan quyen quan tri va van hanh he thong' },
+      { code: Domain.Roles.OFFICER, name: 'Can bo', description: 'Quan ly ho, nhan khau va xem bao cao' },
+      { code: Domain.Roles.VIEWER, name: 'Chi xem', description: 'Chi xem du lieu va dashboard' }
+    ];
   }
 
-  function validateUser(data, id) {
+  function validRole(role, existing) {
+    if (existing && existing.role === Domain.Roles.SUPER_ADMIN && role === Domain.Roles.SUPER_ADMIN) return true;
+    return publicRoles.indexOf(role) >= 0;
+  }
+
+  function validateUser(data, id, existing) {
     data = data || {};
     var email = normalizeEmail(data.email);
     if (!email) throw new Error('Email nguoi dung la bat buoc');
     if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Email nguoi dung khong hop le');
     if (!String(data.displayName || '').trim()) throw new Error('Ten hien thi la bat buoc');
-    if (!validRole(data.role)) throw new Error('Vai tro nguoi dung khong hop le');
-    var duplicate = db.readAll(Domain.Tables.USERS, { includeDeleted: true }).some(function(user) {
-      return user.id !== id && normalizeEmail(user.email) === email && user.status !== Domain.Status.DELETED;
-    });
-    if (duplicate) throw new Error('Email nguoi dung da ton tai');
-    data.email = email;
-    data.displayName = String(data.displayName || '').trim();
-    data.status = data.status || Domain.Status.ACTIVE;
-    return data;
+    if (!validRole(data.role, existing)) throw new Error('Vai tro nguoi dung khong hop le');
+    var duplicate = userRepository.findByEmail(email);
+    if (duplicate && duplicate.id !== id && duplicate.status !== Domain.Status.DELETED) throw new Error('Email nguoi dung da ton tai');
+    return {
+      email: email,
+      displayName: String(data.displayName || '').trim(),
+      role: data.role,
+      status: data.status || Domain.Status.ACTIVE,
+      lastLoginAt: data.lastLoginAt || ''
+    };
   }
 
   function hashPassword(userId, password) {
@@ -43,27 +55,25 @@ Application.AdminService = function(db, logger) {
   }
 
   function listUsers(filters) {
-    filters = filters || {};
-    var keyword = String(filters.keyword || '').trim().toLowerCase();
-    var users = db.readAll(Domain.Tables.USERS, { includeDeleted: true }).filter(function(user) {
-      if (filters.role && user.role !== filters.role) return false;
-      if (filters.status && user.status !== filters.status) return false;
-      if (keyword) {
-        var haystack = [user.email, user.displayName, user.role, user.status].join(' ').toLowerCase();
-        if (haystack.indexOf(keyword) < 0) return false;
-      }
-      return true;
-    }).sort(function(a, b) { return String(a.email).localeCompare(String(b.email)); });
-    return users;
+    return userRepository.list(filters || {});
+  }
+
+  function pageUsers(filters) {
+    return userRepository.page(filters || {});
+  }
+
+  function getUser(id) {
+    var user = userRepository.findById(id);
+    if (!user) throw new Error('Khong tim thay nguoi dung: ' + id);
+    return user;
   }
 
   function createUser(data) {
     return Infrastructure.withLock(function() {
       var valid = validateUser(data || {});
-      var password = valid.password;
-      delete valid.password;
+      var password = data && data.password;
       var record = Entity.withCreateAudit(Domain.Tables.USERS, valid);
-      db.append(Domain.Tables.USERS, record);
+      userRepository.create(record);
       if (password) storePasswordHash(record.id, password);
       logger.info(Domain.Modules.USER, Domain.Actions.CREATE, record.id, 'Tao nguoi dung', { email: record.email, role: record.role });
       return record;
@@ -72,36 +82,48 @@ Application.AdminService = function(db, logger) {
 
   function updateUser(id, data) {
     return Infrastructure.withLock(function() {
-      var existing = db.findById(Domain.Tables.USERS, id, { includeDeleted: true });
-      if (!existing) throw new Error('Khong tim thay nguoi dung: ' + id);
+      var existing = getUser(id);
+      if (existing.role === Domain.Roles.SUPER_ADMIN && data && data.role && data.role !== Domain.Roles.SUPER_ADMIN) throw new Error('Khong the doi vai tro quan tri he thong');
       var merged = Object.assign({}, existing, data || {});
-      var valid = validateUser(merged, id);
-      delete valid.password;
+      var valid = validateUser(merged, id, existing);
       var record = Entity.withUpdateAudit(existing, valid);
-      db.replace(Domain.Tables.USERS, id, record);
+      userRepository.update(id, record);
       logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Cap nhat nguoi dung', { email: record.email, role: record.role, status: record.status });
+      return record;
+    });
+  }
+
+  function changeRole(id, role) {
+    return Infrastructure.withLock(function() {
+      var existing = getUser(id);
+      if (existing.role === Domain.Roles.SUPER_ADMIN) throw new Error('Khong the doi vai tro quan tri he thong');
+      if (publicRoles.indexOf(role) < 0) throw new Error('Vai tro nguoi dung khong hop le');
+      var record = Entity.withUpdateAudit(existing, { role: role });
+      userRepository.update(id, record);
+      logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Doi vai tro nguoi dung', { email: record.email, role: role });
       return record;
     });
   }
 
   function setStatus(id, status, message) {
     return Infrastructure.withLock(function() {
-      var existing = db.findById(Domain.Tables.USERS, id, { includeDeleted: true });
-      if (!existing) throw new Error('Khong tim thay nguoi dung: ' + id);
+      var existing = getUser(id);
       if (existing.role === Domain.Roles.SUPER_ADMIN && status !== Domain.Status.ACTIVE) throw new Error('Khong the khoa tai khoan quan tri he thong');
       var record = Entity.withUpdateAudit(existing, { status: status });
       if (status === Domain.Status.ACTIVE) {
         record.deletedAt = '';
         record.deletedBy = '';
+        userRepository.unlock(id, record);
+      } else {
+        userRepository.lock(id, record);
       }
-      db.replace(Domain.Tables.USERS, id, record);
       logger.warn(Domain.Modules.USER, status === Domain.Status.ACTIVE ? Domain.Actions.UPDATE : Domain.Actions.DELETE, id, message, { email: record.email, status: status });
       return record;
     });
   }
 
   function deleteUser(id) {
-    return setStatus(id, Domain.Status.INACTIVE, 'Khoa nguoi dung');
+    return setStatus(id, Domain.Status.DELETED, 'Xoa nguoi dung');
   }
 
   function lockUser(id) {
@@ -114,11 +136,10 @@ Application.AdminService = function(db, logger) {
 
   function changePassword(id, password) {
     return Infrastructure.withLock(function() {
-      var existing = db.findById(Domain.Tables.USERS, id, { includeDeleted: true });
-      if (!existing) throw new Error('Khong tim thay nguoi dung: ' + id);
+      var existing = getUser(id);
       storePasswordHash(id, password);
-      var record = Entity.withUpdateAudit(existing, { updatedAt: Entity.now(), updatedBy: Entity.currentEmail() });
-      db.replace(Domain.Tables.USERS, id, record);
+      var record = Entity.withUpdateAudit(existing, {});
+      userRepository.update(id, record);
       logger.info(Domain.Modules.USER, Domain.Actions.UPDATE, id, 'Doi mat khau ung dung', { email: existing.email });
       return { id: id, updatedAt: record.updatedAt };
     });
@@ -136,13 +157,21 @@ Application.AdminService = function(db, logger) {
   }
 
   return {
+    roleList: roleList,
     listUsers: listUsers,
+    pageUsers: pageUsers,
+    getUser: getUser,
     createUser: createUser,
     updateUser: updateUser,
     deleteUser: deleteUser,
+    changeRole: changeRole,
     lockUser: lockUser,
     unlockUser: unlockUser,
     changePassword: changePassword,
     updatePermission: updatePermission
   };
+};
+
+Application.AdminService = function(db, logger) {
+  return Application.UserService(Infrastructure.UserRepository(db), logger, db);
 };
