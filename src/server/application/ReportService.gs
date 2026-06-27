@@ -19,6 +19,27 @@ Application.ReportService = function(db, logger) {
     return value || '';
   }
 
+  function personStatus(value) {
+    var text = normalizeText(value);
+    if (!text || text === 'active' || text === 'alive' || text === 'con song') return 'ALIVE';
+    if (text === 'inactive' || text === 'deceased' || text === 'dead' || text === 'da chet') return 'DECEASED';
+    if (text === 'deleted') return Domain.Status.DELETED;
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function personStatusMatches(actual, expected) {
+    if (!expected) return true;
+    return personStatus(actual) === personStatus(expected);
+  }
+
+  function personStatusLabel(value) {
+    var status = personStatus(value);
+    if (status === 'ALIVE') return 'Còn sống';
+    if (status === 'DECEASED') return 'Đã chết';
+    if (status === Domain.Status.DELETED) return 'Đã xóa';
+    return value || '';
+  }
+
   function isYes(value) {
     var text = normalizeText(value);
     return value === true || value === 1 || text === 'co' || text === 'yes' || text === 'true' || text === '1' || text === 'x';
@@ -108,7 +129,7 @@ Application.ReportService = function(db, logger) {
       return inRange(item, filters);
     });
     var citizens = db.readAll(Domain.Tables.CITIZENS).filter(function(item) {
-      if (filters.personStatus && item.status !== filters.personStatus) return false;
+      if (filters.personStatus && !personStatusMatches(item.status, filters.personStatus)) return false;
       if (filters.residencyStatus && residencyLabel(item) !== filters.residencyStatus) return false;
       return inRange(item, filters);
     });
@@ -208,7 +229,7 @@ Application.ReportService = function(db, logger) {
         report.rows = [
           ['Mã hộ', household.householdCode], ['Chủ hộ', householdHeadName(household, data.citizens)], ['Địa chỉ/Thôn', household.address], ['Điện thoại', household.phone], ['Khu vực', household.areaCode], ['Diện hộ', policySummary(household)], ['Trạng thái', statusLabel(household.status)], ['Số nhân khẩu', members.length]
         ];
-        members.forEach(function(person) { report.rows.push(['Thành viên', person.fullName + ' - ' + person.relationship + ' - ' + statusLabel(person.status)]); });
+        members.forEach(function(person) { report.rows.push(['Thành viên', person.fullName + ' - ' + person.relationship + ' - ' + personStatusLabel(person.status)]); });
       }
       return report;
     }
@@ -218,7 +239,7 @@ Application.ReportService = function(db, logger) {
       var person = findPerson(data, filters.recordId);
       if (person) {
         report.rows = [
-          ['Mã nhân khẩu', person.citizenCode], ['Họ tên', person.fullName], ['Giới tính', genderLabel(person.gender)], ['Ngày sinh', person.dateOfBirth], ['CCCD/CMND', person.identityNumber], ['Mã hộ', personHouseholdCode(data, person)], ['Quan hệ', person.relationship], ['Điện thoại', person.phone], ['Thường trú', person.permanentAddress], ['Nơi ở hiện nay', person.currentAddress], ['Trạng thái', statusLabel(person.status)]
+          ['Mã nhân khẩu', person.citizenCode], ['Họ tên', person.fullName], ['Giới tính', genderLabel(person.gender)], ['Ngày sinh', person.dateOfBirth], ['CCCD/CMND', person.identityNumber], ['Mã hộ', personHouseholdCode(data, person)], ['Quan hệ', person.relationship], ['Điện thoại', person.phone], ['Thường trú', person.permanentAddress], ['Nơi ở hiện nay', person.currentAddress], ['Trạng thái', personStatusLabel(person.status)]
         ];
       }
       return report;
@@ -245,7 +266,7 @@ Application.ReportService = function(db, logger) {
     if (type === 'population') {
       report.title = 'Báo cáo danh sách nhân khẩu';
       report.columns = ['Mã nhân khẩu', 'Họ tên', 'Giới tính', 'Ngày sinh', 'CCCD/CMND', 'Mã hộ', 'Quan hệ', 'Trạng thái'];
-      report.rows = data.citizens.map(function(item) { return [item.citizenCode, item.fullName, genderLabel(item.gender), item.dateOfBirth, item.identityNumber, personHouseholdCode(data, item), item.relationship, statusLabel(item.status)]; });
+      report.rows = data.citizens.map(function(item) { return [item.citizenCode, item.fullName, genderLabel(item.gender), item.dateOfBirth, item.identityNumber, personHouseholdCode(data, item), item.relationship, personStatusLabel(item.status)]; });
       return report;
     }
     if (type === 'gender') {
@@ -276,7 +297,7 @@ Application.ReportService = function(db, logger) {
     report.title = 'Báo cáo thống kê tổng hợp';
     report.columns = ['Chỉ số', 'Giá trị'];
     report.rows = [
-      ['Tổng số hộ', dashboard.metrics.households], ['Tổng số nhân khẩu', dashboard.metrics.citizens], ['Nam', dashboard.metrics.male], ['Nữ', dashboard.metrics.female], ['Nhân khẩu đang hoạt động', dashboard.metrics.activeCitizens], ['Tạm trú', dashboard.metrics.temporaryResidence], ['Tạm vắng', dashboard.metrics.temporaryAbsence]
+      ['Tổng số hộ', dashboard.metrics.households], ['Tổng số nhân khẩu', dashboard.metrics.citizens], ['Nam', dashboard.metrics.male], ['Nữ', dashboard.metrics.female], ['Nhân khẩu còn sống', dashboard.metrics.activeCitizens], ['Tạm trú', dashboard.metrics.temporaryResidence], ['Tạm vắng', dashboard.metrics.temporaryAbsence]
     ];
     return report;
   }
