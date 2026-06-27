@@ -4,10 +4,12 @@ Interface.Container = function() {
   var db = Infrastructure.Database();
   var logger = Application.LogService(db);
   var security = Application.SecurityService(db);
+  var householdRepository = Infrastructure.HouseholdRepository(db);
   return {
     db: db,
     logger: logger,
     security: security,
+    household: Application.HouseholdService(householdRepository, logger),
     registry: Application.RegistryService(db, logger),
     reports: Application.ReportService(db),
     backup: Application.BackupService(db, logger),
@@ -19,10 +21,11 @@ Interface.Container = function() {
 Interface.ApiController = function(container) {
   var routes = {
     'dashboard.summary': [Domain.Modules.DASHBOARD, Domain.Actions.READ, function(payload) { return container.reports.dashboard(payload); }],
-    'household.list': [Domain.Modules.HOUSEHOLD, Domain.Actions.READ, function(payload) { return container.registry.listHouseholds(payload); }],
-    'household.create': [Domain.Modules.HOUSEHOLD, Domain.Actions.CREATE, function(payload) { return container.registry.createHousehold(payload); }],
-    'household.update': [Domain.Modules.HOUSEHOLD, Domain.Actions.UPDATE, function(payload) { return container.registry.updateHousehold(payload.id, payload); }],
-    'household.delete': [Domain.Modules.HOUSEHOLD, Domain.Actions.DELETE, function(payload) { return container.registry.deleteHousehold(payload.id); }],
+    'household.page': [Domain.Modules.HOUSEHOLD, Domain.Actions.READ, function(payload) { return container.household.listPage(payload); }],
+    'household.list': [Domain.Modules.HOUSEHOLD, Domain.Actions.READ, function(payload) { return container.household.listPage(Object.assign({ page: 1, pageSize: 100 }, payload || {})).items; }],
+    'household.create': [Domain.Modules.HOUSEHOLD, Domain.Actions.CREATE, function(payload) { return container.household.create(payload); }],
+    'household.update': [Domain.Modules.HOUSEHOLD, Domain.Actions.UPDATE, function(payload) { return container.household.update(payload.id, payload); }],
+    'household.delete': [Domain.Modules.HOUSEHOLD, Domain.Actions.DELETE, function(payload) { return container.household.remove(payload.id); }],
     'citizen.list': [Domain.Modules.CITIZEN, Domain.Actions.READ, function(payload) { return container.registry.listCitizens(payload); }],
     'citizen.create': [Domain.Modules.CITIZEN, Domain.Actions.CREATE, function(payload) { return container.registry.createCitizen(payload); }],
     'citizen.update': [Domain.Modules.CITIZEN, Domain.Actions.UPDATE, function(payload) { return container.registry.updateCitizen(payload.id, payload); }],
