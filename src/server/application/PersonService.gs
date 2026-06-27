@@ -26,6 +26,10 @@ Application.PersonService = function(personRepository, householdRepository, logg
     };
   }
 
+  function normalizeText(value) {
+    return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
   function validate(data, existingId) {
     Entity.assertRequired(Domain.Tables.CITIZENS, data);
     if (!/^[A-Z0-9._-]{2,30}$/.test(data.citizenCode)) {
@@ -34,7 +38,8 @@ Application.PersonService = function(personRepository, householdRepository, logg
     if (data.fullName.length < 2 || data.fullName.length > 120) {
       throw new Error('Ho ten phai co do dai 2-120 ky tu');
     }
-    if (['Nam', 'Nu', 'Khac', 'NAM', 'NU', 'KHAC', 'male', 'female', 'other'].indexOf(data.gender) === -1) {
+    var normalizedGender = normalizeText(data.gender);
+    if (['nam', 'nu', 'khac', 'male', 'female', 'other'].indexOf(normalizedGender) === -1) {
       throw new Error('Gioi tinh khong hop le');
     }
     if (data.identityNumber && !/^\d{9}$|^\d{12}$/.test(data.identityNumber)) {
