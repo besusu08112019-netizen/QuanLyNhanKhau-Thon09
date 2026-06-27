@@ -1,6 +1,6 @@
 # He thong Quan ly Nhan khau Thon 09
 
-Google Apps Script WebApp dung Google Sheets lam co so du lieu van hanh cho Thon 09. Ung dung phuc vu quan ly ho khau, nhan khau, bien dong cu tru, bao cao, PDF, sao luu, phan quyen, nguoi dung va nhat ky he thong.
+Google Apps Script WebApp dung Google Sheets lam co so du lieu van hanh cho Thon 09. Ung dung phuc vu quan ly ho khau, nhan khau, import du lieu ban dau, bien dong cu tru, bao cao, PDF, sao luu, phan quyen, nguoi dung va nhat ky he thong.
 
 ## Nen tang
 
@@ -26,13 +26,14 @@ Du an duoc to chuc theo Clean Architecture:
 2. Household
 3. Citizen
 4. Movement
-5. Report
-6. PDF
-7. Backup
-8. Permission
-9. User
-10. Logs
-11. Settings
+5. Import
+6. Report
+7. PDF
+8. Backup
+9. Permission
+10. User
+11. Logs
+12. Settings
 
 ## Dung luong thiet ke
 
@@ -45,10 +46,18 @@ He thong dung tai khoan Google dang truy cap WebApp va bang `users` de xac dinh 
 
 - `SUPER_ADMIN`: tai khoan quan tri dau tien, co toan quyen.
 - `ADMIN`: toan quyen quan tri va van hanh he thong.
-- `OFFICER`: quan ly Ho dan, Nhan khau, Bien dong; xem Dashboard, Report va xuat bieu mau duoc phep.
+- `OFFICER`: quan ly Ho dan, Nhan khau, Import, Bien dong; xem Dashboard, Report va xuat bieu mau duoc phep.
 - `VIEWER`: chi doc Dashboard, Ho dan, Nhan khau va Report.
 
 Tat ca API deu di qua `SecurityService.requirePermission` truoc khi thuc thi nghiep vu. Module User, Permission, Settings, Backup va Logs chi cho Admin/SUPER_ADMIN.
+
+## Import du lieu ban dau
+
+- Ho tro import Ho gia dinh va Nhan khau tu Google Spreadsheet ID va ten Sheet.
+- Mapping theo ten cot, khong phu thuoc thu tu cot.
+- Co buoc preview de kiem tra tong dong, dong hop le va chi tiet loi.
+- Import ghi batch cho ban ghi moi va ghi audit log voi spreadsheet, sheet, tong dong, thanh cong, that bai.
+- Ho gia dinh co tuy chon bo qua hoac cap nhat khi Ma ho da ton tai.
 
 ## Trien khai
 
@@ -74,6 +83,7 @@ Tat ca API deu di qua `SecurityService.requirePermission` truoc khi thuc thi ngh
 ## Hieu nang
 
 - Repository doc Google Sheets theo lo trong mot lan goi API va cache noi bo theo request.
+- Import doc source spreadsheet mot lan, validate bang map bo nho va ghi batch cho ban ghi moi.
 - Danh sach lon dung phan trang server-side.
 - Dashboard va Report tai su dung Repository/Service san co, han che doc trung du lieu.
 - Cac module UI hien loading, thong bao thanh cong/loi va xu ly loi than thien.
