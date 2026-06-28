@@ -5,6 +5,14 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     loadSprint8Script();
+    enforceSuperAdminMenu();
+    const previousShowApp = window.showApp;
+    if (typeof previousShowApp === 'function') {
+      window.showApp = function bridgeShowApp() {
+        previousShowApp();
+        enforceSuperAdminMenu();
+      };
+    }
     const nav = document.querySelector('.sidebar .nav');
     if (!nav) return;
     nav.addEventListener('click', event => {
@@ -30,6 +38,16 @@
     script.src = 'assets/js/sprint8.js?v=20260628-sprint8';
     script.defer = true;
     document.body.appendChild(script);
+  }
+
+  function enforceSuperAdminMenu() {
+    setTimeout(() => {
+      const role = App.user?.role || '';
+      const adminOnly = ['users','permissions','logs','settings','backups','restore'];
+      document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
+        btn.classList.toggle('d-none', adminOnly.includes(btn.dataset.screen) && role !== 'SUPER_ADMIN');
+      });
+    }, 0);
   }
 
   function ensureRoleOptions() {
