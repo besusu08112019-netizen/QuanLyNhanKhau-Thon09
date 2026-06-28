@@ -1,23 +1,14 @@
 (() => {
-  document.addEventListener('DOMContentLoaded', () => {
-    injectAdminScreens();
-    bindAdminNavigation();
-  });
+  const start = () => { injectAdminScreens(); bindAdminNavigation(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 
   function injectAdminScreens() {
     const nav = document.querySelector('.sidebar .nav');
     const main = document.querySelector('.main-area');
     if (!nav || !main || document.querySelector('[data-screen="users"]')) return;
     nav.insertAdjacentHTML('beforeend', '<button class="nav-link" data-screen="users">Người dùng</button><button class="nav-link" data-screen="logs">Nhật ký</button><button class="nav-link" data-screen="backups">Sao lưu</button>');
-    main.insertAdjacentHTML('beforeend', `
-      <section id="usersScreen" class="screen"><div class="toolbar"><input id="userSearch" class="form-control" placeholder="Tìm email, tên người dùng"><button id="userAddBtn" class="btn btn-primary">Thêm người dùng</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th><th>Đăng nhập cuối</th><th></th></tr></thead><tbody id="userRows"></tbody></table></div><div id="userPager" class="pager"></div></section>
-      <section id="logsScreen" class="screen"><div class="toolbar"><input id="logSearch" class="form-control" placeholder="Tìm người thực hiện, nội dung, mã dữ liệu"><select id="logPageSize" class="form-select w-auto"><option>50</option><option>100</option></select></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Module</th><th>Thao tác</th><th>Nội dung</th></tr></thead><tbody id="logRows"></tbody></table></div><div id="logPager" class="pager"></div></section>
-      <section id="backupsScreen" class="screen"><div class="toolbar"><button id="backupCreateBtn" class="btn btn-primary">Tạo và tải bản sao lưu SQL</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Thời gian</th><th>Tên file</th><th>Dung lượng</th><th>Trạng thái</th><th>Người tạo</th></tr></thead><tbody id="backupRows"></tbody></table></div><div id="backupPager" class="pager"></div></section>
-      <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><form class="modal-content" id="userForm"><div class="modal-header"><h5 class="modal-title">Người dùng</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="mb-3"><label class="form-label">Email</label><input name="email" type="email" class="form-control" required></div><div class="mb-3"><label class="form-label">Họ tên</label><input name="displayName" class="form-control" required></div><div class="mb-3"><label class="form-label">Vai trò</label><select name="role" class="form-select"><option value="ADMIN">Quản trị</option><option value="OFFICER">Cán bộ</option><option value="VIEWER">Chỉ xem</option></select></div><div class="mb-3"><label class="form-label">Mật khẩu</label><input name="password" type="password" class="form-control" minlength="8"><div class="form-text">Bắt buộc khi tạo mới, để trống nếu không đổi.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>
-    `);
-    App.users = { page: 1, pageSize: 20, search: '' };
-    App.logs = { page: 1, pageSize: 50, search: '' };
-    App.backups = { page: 1, pageSize: 20 };
+    main.insertAdjacentHTML('beforeend', `<section id="usersScreen" class="screen"><div class="toolbar"><input id="userSearch" class="form-control" placeholder="Tìm email, tên người dùng"><button id="userAddBtn" class="btn btn-primary">Thêm người dùng</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th><th>Đăng nhập cuối</th><th></th></tr></thead><tbody id="userRows"></tbody></table></div><div id="userPager" class="pager"></div></section><section id="logsScreen" class="screen"><div class="toolbar"><input id="logSearch" class="form-control" placeholder="Tìm người thực hiện, nội dung, mã dữ liệu"><select id="logPageSize" class="form-select w-auto"><option>50</option><option>100</option></select></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Module</th><th>Thao tác</th><th>Nội dung</th></tr></thead><tbody id="logRows"></tbody></table></div><div id="logPager" class="pager"></div></section><section id="backupsScreen" class="screen"><div class="toolbar"><button id="backupCreateBtn" class="btn btn-primary">Tạo và tải bản sao lưu SQL</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Thời gian</th><th>Tên file</th><th>Dung lượng</th><th>Trạng thái</th><th>Người tạo</th></tr></thead><tbody id="backupRows"></tbody></table></div><div id="backupPager" class="pager"></div></section><div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><form class="modal-content" id="userForm"><div class="modal-header"><h5 class="modal-title">Người dùng</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="mb-3"><label class="form-label">Email</label><input name="email" type="email" class="form-control" required></div><div class="mb-3"><label class="form-label">Họ tên</label><input name="displayName" class="form-control" required></div><div class="mb-3"><label class="form-label">Vai trò</label><select name="role" class="form-select"><option value="ADMIN">Quản trị</option><option value="OFFICER">Cán bộ</option><option value="VIEWER">Chỉ xem</option></select></div><div class="mb-3"><label class="form-label">Mật khẩu</label><input name="password" type="password" class="form-control" minlength="8"><div class="form-text">Bắt buộc khi tạo mới, để trống nếu không đổi.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>`);
+    App.users = { page: 1, pageSize: 20, search: '' }; App.logs = { page: 1, pageSize: 50, search: '' }; App.backups = { page: 1, pageSize: 20 };
     App.modals.user = new bootstrap.Modal(document.querySelector('#userModal'));
     document.querySelector('#userSearch').addEventListener('input', debounce(() => { App.users.search = document.querySelector('#userSearch').value.trim(); App.users.page = 1; loadUsers(); }, 350));
     document.querySelector('#logSearch').addEventListener('input', debounce(() => { App.logs.search = document.querySelector('#logSearch').value.trim(); App.logs.page = 1; loadLogs(); }, 350));
@@ -27,80 +18,16 @@
     document.querySelector('#backupCreateBtn').addEventListener('click', createBackup);
   }
 
-  function bindAdminNavigation() {
-    document.querySelectorAll('[data-screen="users"],[data-screen="logs"],[data-screen="backups"]').forEach(button => {
-      button.addEventListener('click', () => {
-        switchScreen(button.dataset.screen);
-        document.querySelector('#screenTitle').textContent = { users: 'Người dùng', logs: 'Nhật ký', backups: 'Sao lưu' }[button.dataset.screen];
-        if (button.dataset.screen === 'users') loadUsers();
-        if (button.dataset.screen === 'logs') loadLogs();
-        if (button.dataset.screen === 'backups') loadBackups();
-      });
-    });
-  }
+  function bindAdminNavigation() { document.querySelectorAll('[data-screen="users"],[data-screen="logs"],[data-screen="backups"]').forEach(button => { button.addEventListener('click', () => { switchScreen(button.dataset.screen); document.querySelector('#screenTitle').textContent = { users: 'Người dùng', logs: 'Nhật ký', backups: 'Sao lưu' }[button.dataset.screen]; if (button.dataset.screen === 'users') loadUsers(); if (button.dataset.screen === 'logs') loadLogs(); if (button.dataset.screen === 'backups') loadBackups(); }); }); }
 
-  async function loadUsers() {
-    try {
-      const data = await api('/api/users?' + new URLSearchParams(App.users).toString());
-      document.querySelector('#userRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.email)}</td><td>${escapeHtml(row.display_name)}</td><td>${roleLabel(row.role)}</td><td>${statusLabel(row.status)}</td><td>${escapeHtml(row.last_login_at || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openUserForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-warning" onclick="toggleUser(${row.id}, '${row.status === 'ACTIVE' ? 'lock' : 'unlock'}')">${row.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${row.id})">Xóa</button></td></tr>`).join('') || emptyRow(6, 'Chưa có người dùng');
-      renderPager('#userPager', data, page => { App.users.page = page; loadUsers(); });
-    } catch (error) { showToast(error.message, 'danger'); }
-  }
+  async function loadUsers() { try { const data = await api('/api/users?' + new URLSearchParams(App.users).toString()); document.querySelector('#userRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.email)}</td><td>${escapeHtml(row.display_name)}</td><td>${roleLabel(row.role)}</td><td>${statusLabel(row.status)}</td><td>${escapeHtml(row.last_login_at || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openUserForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-warning" onclick="toggleUser(${row.id}, '${row.status === 'ACTIVE' ? 'lock' : 'unlock'}')">${row.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${row.id})">Xóa</button></td></tr>`).join('') || emptyRow(6, 'Chưa có người dùng'); renderPager('#userPager', data, page => { App.users.page = page; loadUsers(); }); } catch (error) { showToast(error.message, 'danger'); } }
 
-  window.openUserForm = async function openUserForm(id = null) {
-    const form = document.querySelector('#userForm');
-    form.reset(); form.elements.id.value = ''; form.elements.email.disabled = false;
-    if (id) {
-      const row = await api('/api/users/' + id);
-      form.elements.id.value = row.id; form.elements.email.value = row.email; form.elements.email.disabled = true; form.elements.displayName.value = row.displayName; form.elements.role.value = row.role === 'SUPER_ADMIN' ? 'ADMIN' : row.role;
-    }
-    App.modals.user.show();
-  };
-
-  async function saveUser(event) {
-    event.preventDefault();
-    const data = formData(event.currentTarget);
-    const id = data.id; delete data.id;
-    try {
-      await api(id ? '/api/users/' + id : '/api/users', { method: id ? 'PUT' : 'POST', body: data });
-      App.modals.user.hide(); showToast('Đã lưu người dùng'); loadUsers();
-    } catch (error) { showToast(error.message, 'danger'); }
-  }
-
-  window.toggleUser = async function toggleUser(id, action) {
-    try { await api(`/api/users/${id}/${action}`, { method: 'POST' }); showToast(action === 'lock' ? 'Đã khóa người dùng' : 'Đã mở khóa người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); }
-  };
-  window.deleteUser = async function deleteUser(id) {
-    if (!confirm('Xóa người dùng này?')) return;
-    try { await api('/api/users/' + id, { method: 'DELETE' }); showToast('Đã xóa người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); }
-  };
-
-  async function loadLogs() {
-    try {
-      const data = await api('/api/logs?' + new URLSearchParams(App.logs).toString());
-      document.querySelector('#logRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.created_at)}</td><td>${escapeHtml(row.actor_email || '')}</td><td>${escapeHtml(row.module)}</td><td>${escapeHtml(row.action)}</td><td>${escapeHtml(row.message)}</td></tr>`).join('') || emptyRow(5, 'Chưa có nhật ký');
-      renderPager('#logPager', data, page => { App.logs.page = page; loadLogs(); });
-    } catch (error) { showToast(error.message, 'danger'); }
-  }
-
-  async function loadBackups() {
-    try {
-      const data = await api('/api/backups?' + new URLSearchParams(App.backups).toString());
-      document.querySelector('#backupRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.created_at)}</td><td>${escapeHtml(row.file_name)}</td><td>${number(row.file_size || 0)} byte</td><td>${escapeHtml(row.status)}</td><td>${escapeHtml(row.created_by_email || '')}</td></tr>`).join('') || emptyRow(5, 'Chưa có bản sao lưu');
-      renderPager('#backupPager', data, page => { App.backups.page = page; loadBackups(); });
-    } catch (error) { showToast(error.message, 'danger'); }
-  }
-
-  async function createBackup() {
-    try {
-      const response = await fetch('/api/backups', { method: 'POST', headers: { Authorization: `Bearer ${App.token}` } });
-      if (!response.ok) { const payload = await response.json().catch(() => null); throw new Error(payload?.error?.message || 'Không tạo được bản sao lưu'); }
-      const blob = await response.blob();
-      const name = /filename="?([^";]+)"?/i.exec(response.headers.get('Content-Disposition') || '')?.[1] || `backup_thon09_${Date.now()}.sql`;
-      const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
-      showToast('Đã tạo bản sao lưu'); loadBackups();
-    } catch (error) { showToast(error.message, 'danger'); }
-  }
-
+  window.openUserForm = async function openUserForm(id = null) { const form = document.querySelector('#userForm'); form.reset(); form.elements.id.value = ''; form.elements.email.disabled = false; if (id) { const row = await api('/api/users/' + id); form.elements.id.value = row.id; form.elements.email.value = row.email; form.elements.email.disabled = true; form.elements.displayName.value = row.displayName; form.elements.role.value = row.role === 'SUPER_ADMIN' ? 'ADMIN' : row.role; } App.modals.user.show(); };
+  async function saveUser(event) { event.preventDefault(); const data = formData(event.currentTarget); const id = data.id; delete data.id; try { await api(id ? '/api/users/' + id : '/api/users', { method: id ? 'PUT' : 'POST', body: data }); App.modals.user.hide(); showToast('Đã lưu người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); } }
+  window.toggleUser = async function toggleUser(id, action) { try { await api(`/api/users/${id}/${action}`, { method: 'POST' }); showToast(action === 'lock' ? 'Đã khóa người dùng' : 'Đã mở khóa người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); } };
+  window.deleteUser = async function deleteUser(id) { if (!confirm('Xóa người dùng này?')) return; try { await api('/api/users/' + id, { method: 'DELETE' }); showToast('Đã xóa người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); } };
+  async function loadLogs() { try { const data = await api('/api/logs?' + new URLSearchParams(App.logs).toString()); document.querySelector('#logRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.created_at)}</td><td>${escapeHtml(row.actor_email || '')}</td><td>${escapeHtml(row.module)}</td><td>${escapeHtml(row.action)}</td><td>${escapeHtml(row.message)}</td></tr>`).join('') || emptyRow(5, 'Chưa có nhật ký'); renderPager('#logPager', data, page => { App.logs.page = page; loadLogs(); }); } catch (error) { showToast(error.message, 'danger'); } }
+  async function loadBackups() { try { const data = await api('/api/backups?' + new URLSearchParams(App.backups).toString()); document.querySelector('#backupRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.created_at)}</td><td>${escapeHtml(row.file_name)}</td><td>${number(row.file_size || 0)} byte</td><td>${escapeHtml(row.status)}</td><td>${escapeHtml(row.created_by_email || '')}</td></tr>`).join('') || emptyRow(5, 'Chưa có bản sao lưu'); renderPager('#backupPager', data, page => { App.backups.page = page; loadBackups(); }); } catch (error) { showToast(error.message, 'danger'); } }
+  async function createBackup() { try { const response = await fetch('/api/backups', { method: 'POST', headers: { Authorization: `Bearer ${App.token}` } }); if (!response.ok) { const payload = await response.json().catch(() => null); throw new Error(payload?.error?.message || 'Không tạo được bản sao lưu'); } const blob = await response.blob(); const name = /filename="?([^";]+)"?/i.exec(response.headers.get('Content-Disposition') || '')?.[1] || `backup_thon09_${Date.now()}.sql`; const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url); showToast('Đã tạo bản sao lưu'); loadBackups(); } catch (error) { showToast(error.message, 'danger'); } }
   function statusLabel(status) { return status === 'ACTIVE' ? 'Hoạt động' : status === 'INACTIVE' ? 'Đã khóa' : status; }
 })();
