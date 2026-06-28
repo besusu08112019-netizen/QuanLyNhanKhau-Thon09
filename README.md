@@ -17,6 +17,8 @@
 - `assets/js`: xử lý màn hình và gọi REST API.
 - `views`: giao diện Web.
 - `database/database.sql`: cấu trúc cơ sở dữ liệu MySQL/MariaDB.
+- `database/migrations/2026_06_28_sprint8.sql`: migration nâng cấp tài khoản, vai trò và phân quyền Sprint 8.
+- `sample-data/import_template_thon09.xls`: file Excel mẫu cho màn hình Import.
 - `config/database.php`: cấu hình kết nối cơ sở dữ liệu.
 - `docs`: tài liệu phân tích, triển khai và checklist.
 - `uploads`: thư mục phục vụ file phát sinh khi triển khai.
@@ -29,9 +31,13 @@
 - Dashboard tổng quan, thống kê và biểu đồ.
 - Quản lý hộ dân.
 - Quản lý nhân khẩu.
+- Popup xem thành viên trong hộ theo cùng Mã hộ, có tìm kiếm và phân trang.
+- Popup xem đầy đủ thông tin nhân khẩu, có sửa, in và đóng.
 - Tìm kiếm, phân trang, thêm, sửa, xóa mềm, xóa nhiều.
 - Đồng bộ chủ hộ và số thành viên theo mã hộ.
+- Cảnh báo khi một hộ đã có Chủ hộ và không cho tạo trùng Chủ hộ.
 - Import dữ liệu hộ dân và nhân khẩu từ CSV/XLSX theo tên cột.
+- Tải file Excel mẫu ngay tại màn hình Import.
 - Báo cáo thống kê, báo cáo người có công, hộ nghèo, hộ cận nghèo, tàn tật.
 - Xuất Excel, xuất PDF và in phiếu.
 - Quản lý người dùng, vai trò và phân quyền.
@@ -40,12 +46,18 @@
 
 ## Phân quyền
 
-- `SUPER_ADMIN`: quản trị tối cao.
-- `ADMIN`: toàn quyền quản trị và vận hành.
-- `OFFICER`: quản lý hộ dân, nhân khẩu, báo cáo và import/export theo nghiệp vụ.
+- `SUPER_ADMIN`: toàn quyền hệ thống.
+- `ADMIN`: quản lý hộ, nhân khẩu, import, export và dashboard.
+- `OFFICER`: thêm, sửa, xem; không được xóa dữ liệu hoặc quản lý tài khoản.
 - `VIEWER`: chỉ xem dashboard, hộ dân, nhân khẩu và báo cáo.
 
 Mọi API nghiệp vụ đều kiểm tra token đăng nhập và quyền trước khi xử lý.
+
+## Sprint 8
+
+Nếu nâng cấp từ bản đã triển khai trước đó, hãy chạy `database/migrations/2026_06_28_sprint8.sql` hoặc thực hiện các thay đổi tương đương trong phpMyAdmin để bổ sung `username`, `phone`, `position` cho bảng `users` và chuẩn hóa role về `SUPER_ADMIN`, `ADMIN`, `OFFICER`, `VIEWER`.
+
+Màn hình Import có nút tải file mẫu `sample-data/import_template_thon09.xls`. Không đổi tên Sheet, không đổi tiêu đề cột, ngày sinh dùng định dạng `dd/MM/yyyy`, CCCD để dạng Text và không nhập trùng Mã nhân khẩu.
 
 ## Triển khai nhanh
 
