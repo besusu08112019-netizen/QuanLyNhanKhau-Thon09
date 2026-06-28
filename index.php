@@ -11,10 +11,13 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Router;
 use App\Controllers\AuthController;
+use App\Controllers\BackupController;
 use App\Controllers\DashboardController;
 use App\Controllers\HouseholdController;
+use App\Controllers\LogController;
 use App\Controllers\PersonController;
 use App\Controllers\ReportController;
+use App\Controllers\UserController;
 
 Autoloader::register();
 
@@ -43,6 +46,18 @@ $router->get('/api/reports/household', [ReportController::class, 'household']);
 $router->get('/api/reports/export-excel', [ReportController::class, 'exportExcel']);
 $router->get('/api/reports/export-pdf', [ReportController::class, 'exportPdf']);
 $router->get('/api/reports/print', [ReportController::class, 'print']);
+
+$router->get('/api/users', [UserController::class, 'index']);
+$router->post('/api/users', [UserController::class, 'store']);
+$router->get('/api/users/{id}', [UserController::class, 'show']);
+$router->put('/api/users/{id}', [UserController::class, 'update']);
+$router->delete('/api/users/{id}', [UserController::class, 'destroy']);
+$router->post('/api/users/{id}/lock', [UserController::class, 'lock']);
+$router->post('/api/users/{id}/unlock', [UserController::class, 'unlock']);
+$router->get('/api/roles', [UserController::class, 'roles']);
+$router->get('/api/logs', [LogController::class, 'index']);
+$router->get('/api/backups', [BackupController::class, 'index']);
+$router->post('/api/backups', [BackupController::class, 'create']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
