@@ -31,6 +31,7 @@ Không đặt riêng các file trong `app`, `config`, `database`, `docs` làm pu
 1. Tạo database mới trong hosting panel.
 2. Chọn charset/collation `utf8mb4_unicode_ci` nếu hosting cho phép.
 3. Import file `database/database.sql` bằng phpMyAdmin hoặc công cụ import của hosting.
+4. Import tiếp file `database/migrations/2026_06_28_admin_panel.sql` để bổ sung Admin Panel, vai trò mở rộng và bảng file đính kèm.
 
 File SQL không tạo mật khẩu mặc định. Tài khoản quản trị đầu tiên được tạo sau khi import database.
 
@@ -86,13 +87,17 @@ Sau khi tạo thành công, mở website và đăng nhập bằng email/mật kh
 
 Kiểm tra lần lượt:
 
-- Dashboard tải số liệu.
-- Hộ dân: thêm, sửa, tìm kiếm, xóa mềm.
-- Nhân khẩu: thêm, sửa, tìm kiếm, xóa mềm, đồng bộ chủ hộ.
+- Dashboard tải số liệu và biểu đồ Chart.js.
+- Hộ dân: thêm, sửa, tìm kiếm, xóa mềm, upload ảnh qua API.
+- Nhân khẩu: thêm, sửa, tìm kiếm, xóa mềm, đồng bộ chủ hộ, upload ảnh/giấy tờ qua API.
+- Tạm trú, Tạm vắng và Biến động nhân khẩu tải dữ liệu đúng.
 - Báo cáo: xem trước, xuất Excel, xuất PDF, in.
-- Người dùng: tạo cán bộ và tài khoản chỉ xem.
+- Người dùng: tạo cán bộ, cộng tác viên, chỉ xem, chỉ nhập liệu, không được xóa, không được xuất dữ liệu.
+- Phân quyền: xem và lưu ma trận quyền.
+- Cấu hình hệ thống: lưu tên hệ thống, logo, ảnh nền, thông tin thôn/xã, số điện thoại, email.
 - Nhật ký: có ghi thao tác đăng nhập và thao tác dữ liệu.
 - Sao lưu: tạo và tải file SQL.
+- Khôi phục: chỉ Admin thao tác sau khi đã có backup an toàn.
 
 ## 8. Nginx rewrite tương đương
 
