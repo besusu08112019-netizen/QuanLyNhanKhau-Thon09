@@ -48,7 +48,7 @@
     setImportStatus('Đang xử lý...');
     setLoading(true);
     try {
-      const response = await fetch(endpoint, { method: 'POST', headers: { Authorization: `Bearer ${App.token}` }, body: formData });
+      const response = await fetch(endpoint, { method: 'POST', headers: { Authorization: `Bearer ${App.token}`, 'X-CSRF-Token': App.csrfToken || '' }, body: formData });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'Không import được dữ liệu');
       renderImportResult(payload.data, refreshAfter);
