@@ -78,13 +78,16 @@ Application.PersonService = function(personRepository, householdRepository, logg
   function isSameHeadReference(household, person) {
     var currentHeadId = normalizeText(household && household.headCitizenId);
     var currentHeadName = normalizeText(household && household.headCitizenName);
-    return currentHeadId && (currentHeadId === normalizeText(person.id) || currentHeadId === normalizeText(person.citizenCode)) ||
-      (!currentHeadId && currentHeadName && currentHeadName === normalizeText(person.fullName));
+    var personId = normalizeText(person && person.id);
+    var citizenCode = normalizeText(person && person.citizenCode);
+    var fullName = normalizeText(person && person.fullName);
+    if (currentHeadId) return currentHeadId === personId || currentHeadId === citizenCode;
+    return !!(currentHeadName && currentHeadName === fullName);
   }
 
   function clearPreviousHouseholdHead(previous, current) {
     if (!previous || !isHouseholdHead(previous.relationship)) return;
-    if (current && isHouseholdHead(current.relationship) && normalizeText(previous.householdId) === normalizeText(current.householdId)) return;
+    if (current && current.status !== Domain.Status.DELETED && isHouseholdHead(current.relationship) && normalizeText(previous.householdId) === normalizeText(current.householdId)) return;
     var household = findHouseholdForSync(previous.householdId);
     if (!household || household.status === Domain.Status.DELETED || !isSameHeadReference(household, previous)) return;
     var record = Entity.withUpdateAudit(household, { headCitizenId: '', headCitizenName: '' });
