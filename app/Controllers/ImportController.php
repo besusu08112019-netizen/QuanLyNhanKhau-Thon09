@@ -127,12 +127,16 @@ final class ImportController extends BaseController
         }
         if (!$matrix) return [];
         ksort($matrix);
-        $headers = array_values($matrix[array_key_first($matrix)] ?? []);
+        $headerLine = array_key_first($matrix);
+        $headerCells = $matrix[$headerLine] ?? [];
+        $lastColumn = $headerCells ? max(array_keys($headerCells)) : -1;
+        $headers = [];
+        for ($index = 0; $index <= $lastColumn; $index++) $headers[] = $headerCells[$index] ?? '';
         $rows = [];
-        foreach ($matrix as $line => $values) {
-            if ($line === array_key_first($matrix)) continue;
-            ksort($values);
-            $values = array_values($values);
+        foreach ($matrix as $line => $cells) {
+            if ($line === $headerLine) continue;
+            $values = [];
+            for ($index = 0; $index < count($headers); $index++) $values[] = $cells[$index] ?? '';
             if (!array_filter($values, fn($value) => trim((string) $value) !== '')) continue;
             $rows[] = ['row' => $line, 'data' => $this->mapRow($headers, $values)];
         }
