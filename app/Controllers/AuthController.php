@@ -29,6 +29,7 @@ final class AuthController extends BaseController
     public function logout(): void
     {
         $user = $this->user();
+        $this->verifyCsrfToken();
         $token = $this->request->bearerToken();
         if ($token) $this->users->revoke($token);
         $this->audit($user, 'user', 'read', 'Đăng xuất hệ thống', $user['id']);
