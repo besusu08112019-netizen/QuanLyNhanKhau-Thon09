@@ -27,17 +27,7 @@ final class Report extends BaseModel
         $citizens = $this->fetchOne("SELECT COUNT(*) AS total, SUM(gender='Nam') AS male, SUM(gender='Nữ') AS female, SUM(residency_status='TEMPORARY') AS temporary, SUM(presence_status='AWAY') AS away, SUM(life_status='DECEASED') AS deceased FROM citizens c INNER JOIN households h ON h.id=c.household_id $citizenWhere", $citizenParams) ?: [];
         $households = $this->fetchOne("SELECT COUNT(*) AS total, SUM(meritorious_family=1) AS meritorious, SUM(poor_household=1) AS poor, SUM(near_poor_household=1) AS near_poor, SUM(disabled_household=1) AS disabled FROM households h $householdWhere", $householdParams) ?: [];
         return $this->table('Báo cáo tổng hợp', ['Chỉ tiêu', 'Số lượng'], [
-            ['Tổng số hộ', (int) ($households['total'] ?? 0)],
-            ['Tổng số nhân khẩu', (int) ($citizens['total'] ?? 0)],
-            ['Nam', (int) ($citizens['male'] ?? 0)],
-            ['Nữ', (int) ($citizens['female'] ?? 0)],
-            ['Tạm trú', (int) ($citizens['temporary'] ?? 0)],
-            ['Tạm vắng', (int) ($citizens['away'] ?? 0)],
-            ['Đã chết', (int) ($citizens['deceased'] ?? 0)],
-            ['Gia đình có công', (int) ($households['meritorious'] ?? 0)],
-            ['Hộ nghèo', (int) ($households['poor'] ?? 0)],
-            ['Hộ cận nghèo', (int) ($households['near_poor'] ?? 0)],
-            ['Hộ có người tàn tật', (int) ($households['disabled'] ?? 0)],
+            ['Tổng số hộ', (int) ($households['total'] ?? 0)], ['Tổng số nhân khẩu', (int) ($citizens['total'] ?? 0)], ['Nam', (int) ($citizens['male'] ?? 0)], ['Nữ', (int) ($citizens['female'] ?? 0)], ['Tạm trú', (int) ($citizens['temporary'] ?? 0)], ['Tạm vắng', (int) ($citizens['away'] ?? 0)], ['Đã chết', (int) ($citizens['deceased'] ?? 0)], ['Gia đình có công', (int) ($households['meritorious'] ?? 0)], ['Hộ nghèo', (int) ($households['poor'] ?? 0)], ['Hộ cận nghèo', (int) ($households['near_poor'] ?? 0)], ['Hộ có người tàn tật', (int) ($households['disabled'] ?? 0)],
         ], $filters);
     }
 
@@ -80,21 +70,20 @@ final class Report extends BaseModel
 
     public function movementReport(array $filters = []): array
     {
-        $where = ['1=1'];
+        $where = ['m.status <> "DELETED"'];
         $params = [];
         $dateFrom = trim((string) ($filters['dateFrom'] ?? ''));
         $dateTo = trim((string) ($filters['dateTo'] ?? ''));
-        if ($dateFrom) { $where[] = 'DATE(m.movement_date) >= :date_from'; $params['date_from'] = $dateFrom; }
-        if ($dateTo) { $where[] = 'DATE(m.movement_date) <= :date_to'; $params['date_to'] = $dateTo; }
+        if ($dateFrom) { $where[] = 'DATE(m.effective_date) >= :date_from'; $params['date_from'] = $dateFrom; }
+        if ($dateTo) { $where[] = 'DATE(m.effective_date) <= :date_to'; $params['date_to'] = $dateTo; }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
-        $rows = $this->fetchAll("SELECT m.movement_type, COUNT(*) AS total FROM movements m $sqlWhere GROUP BY m.movement_type ORDER BY m.movement_type", $params);
-        return $this->table('Báo cáo biến động dân cư', ['Loại biến động', 'Số lượng'], array_map(fn($r) => [$this->movement($r['movement_type']), (int) $r['total']], $rows), $filters);
+        $rows = $this->fetchAll("SELECT m.type, COUNT(*) AS total FROM movements m $sqlWhere GROUP BY m.type ORDER BY m.type", $params);
+        return $this->table('Báo cáo biến động dân cư', ['Loại biến động', 'Số lượng'], array_map(fn($r) => [$this->movement($r['type']), (int) $r['total']], $rows), $filters);
     }
 
     private function householdWhere(array $filters): array
     {
-        $where = ['h.status <> "DELETED"'];
-        $params = [];
+        $where = ['h.status <> "DELETED"']; $params = [];
         if (!empty($filters['dateFrom'])) { $where[] = 'DATE(h.created_at) >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'DATE(h.created_at) <= :date_to'; $params['date_to'] = $filters['dateTo']; }
         if (!empty($filters['householdStatus'])) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
@@ -103,8 +92,7 @@ final class Report extends BaseModel
 
     private function citizenWhere(array $filters): array
     {
-        $where = ['c.status <> "DELETED"', 'h.status <> "DELETED"'];
-        $params = [];
+        $where = ['c.status <> "DELETED"', 'h.status <> "DELETED"']; $params = [];
         if (!empty($filters['dateFrom'])) { $where[] = 'DATE(c.created_at) >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'DATE(c.created_at) <= :date_to'; $params['date_to'] = $filters['dateTo']; }
         if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
@@ -113,24 +101,11 @@ final class Report extends BaseModel
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
-    private function table(string $title, array $headers, array $rows, array $filters): array
-    {
-        return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')];
-    }
-
-    private function householdCategories(array $row): string
-    {
-        $items = [];
-        if ((int) ($row['meritorious_family'] ?? 0) === 1) $items[] = 'Gia đình có công';
-        if ((int) ($row['poor_household'] ?? 0) === 1) $items[] = 'Hộ nghèo';
-        if ((int) ($row['near_poor_household'] ?? 0) === 1) $items[] = 'Hộ cận nghèo';
-        if ((int) ($row['disabled_household'] ?? 0) === 1) $items[] = 'Tàn tật';
-        return $items ? implode(', ', $items) : 'Không';
-    }
-
+    private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }
+    private function householdCategories(array $row): string { $items = []; if ((int) ($row['meritorious_family'] ?? 0) === 1) $items[] = 'Gia đình có công'; if ((int) ($row['poor_household'] ?? 0) === 1) $items[] = 'Hộ nghèo'; if ((int) ($row['near_poor_household'] ?? 0) === 1) $items[] = 'Hộ cận nghèo'; if ((int) ($row['disabled_household'] ?? 0) === 1) $items[] = 'Tàn tật'; return $items ? implode(', ', $items) : 'Không'; }
     private function date(?string $value): string { if (!$value) return ''; [$y, $m, $d] = explode('-', substr($value, 0, 10)); return "$d/$m/$y"; }
     private function residency(?string $value): string { return $value === 'TEMPORARY' ? 'Tạm trú' : 'Thường trú'; }
     private function presence(?string $value): string { return $value === 'AWAY' ? 'Đi vắng' : 'Ở nhà'; }
     private function life(?string $value): string { return $value === 'DECEASED' ? 'Đã chết' : 'Còn sống'; }
-    private function movement(?string $value): string { return ['BIRTH' => 'Sinh', 'DEATH' => 'Tử', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi'][$value] ?? (string) $value; }
+    private function movement(?string $value): string { return ['BIRTH' => 'Sinh', 'DEATH' => 'Tử', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi', 'TEMPORARY_RESIDENCE' => 'Tạm trú', 'TEMPORARY_ABSENCE' => 'Tạm vắng', 'OTHER' => 'Khác'][$value] ?? (string) $value; }
 }
