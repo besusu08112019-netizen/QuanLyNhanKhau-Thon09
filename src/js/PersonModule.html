@@ -87,6 +87,9 @@
     if (el('pageTitle')) el('pageTitle').textContent = 'Quản lý nhân khẩu';
   }
   function canonicalStatus(value) { if (value === 'ACTIVE') return 'ALIVE'; if (value === 'INACTIVE') return 'DECEASED'; return value || 'ALIVE'; }
+  function isHouseholdHead(value) { return normalizeText(value) === 'chu ho'; }
+  function householdCodeOf(row) { return String(row.householdId || row.householdCode || row.householdInternalId || '').trim(); }
+  function householdGroupRow(code) { return '<tr class="person-household-group"><td colspan="11"><span>Mã hộ: ' + html(code || 'Chưa có mã hộ') + '</span></td></tr>'; }
   function canonicalPresence(value) {
     var text = normalizeText(value);
     if (!text || text === 'at_home' || text === 'at home' || text === 'home' || text === 'o nha' || text === 'co mat') return 'AT_HOME';
@@ -127,12 +130,22 @@
     if (row.status === 'DELETED') return view + ' <button class="btn btn-outline-success btn-xs" title="Khôi phục" data-person-restore="' + html(row.id) + '"><i class="fas fa-rotate-left"></i></button>';
     return view + ' <button class="btn btn-outline-primary btn-xs" title="Sửa" data-person-edit="' + html(row.id) + '"><i class="fas fa-pen"></i></button> <button class="btn btn-outline-danger btn-xs" title="Xóa" data-person-delete="' + html(row.id) + '"><i class="fas fa-trash"></i></button>';
   }
+  function renderPersonRow(row) {
+    var headMark = isHouseholdHead(row.relationship) ? ' <span class="badge badge-primary ml-1">Chủ hộ</span>' : '';
+    return '<tr class="person-row' + (isHouseholdHead(row.relationship) ? ' person-head-row' : '') + '" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + headMark + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(householdCodeOf(row)) + '</td><td>' + html(row.gender) + '</td><td>' + html(formatDate(row.dateOfBirth)) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + statusBadge(row.status) + '</td><td>' + presenceBadge(row.presenceStatus) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
+  }
   function renderTable(result) {
     var rows = result.items || [];
+    var lastHousehold = null;
     var body = rows.length ? rows.map(function(row) {
-      return '<tr class="person-row" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(row.householdId || row.householdCode) + '</td><td>' + html(row.gender) + '</td><td>' + html(formatDate(row.dateOfBirth)) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + statusBadge(row.status) + '</td><td>' + presenceBadge(row.presenceStatus) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
+      var code = householdCodeOf(row);
+      var group = normalizeText(code);
+      var prefix = group !== lastHousehold ? householdGroupRow(code) : '';
+      lastHousehold = group;
+      return prefix + renderPersonRow(row);
     }).join('') : '<tr><td colspan="11" class="text-center text-muted p-4">Không có dữ liệu nhân khẩu</td></tr>';
-    return '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Mã hộ</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Hiện tại</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
+    var styles = '<style>.person-household-group td{background:#f3f6f9;color:#5f6b7a;font-weight:600;border-top:12px solid #fff;border-bottom:1px solid #dfe6ee}.person-household-group span{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;background:#e8eef5}.person-head-row td{background:#fbfdff;font-weight:600}</style>';
+    return styles + '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Mã hộ</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Hiện tại</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
   }
   function optionValue(option) { return typeof option === 'object' ? option.value : option; }
   function optionLabel(option) { return typeof option === 'object' ? option.label : option; }
