@@ -33,6 +33,10 @@ Application.PersonService = function(personRepository, householdRepository, logg
     return String(value || '').trim().toUpperCase();
   }
 
+  function isHouseholdHead(value) {
+    return normalizeText(value) === 'chu ho';
+  }
+
   function clean(data) {
     data = data || {};
     return {
@@ -63,6 +67,42 @@ Application.PersonService = function(personRepository, householdRepository, logg
     var key = String(value || '').trim();
     if (!key) return null;
     return householdRepository.findByCode(key) || householdRepository.findById(key);
+  }
+
+  function findHouseholdForSync(value) {
+    var key = String(value || '').trim();
+    if (!key) return null;
+    return householdRepository.findByCode(key, { includeDeleted: true }) || householdRepository.findById(key, { includeDeleted: true });
+  }
+
+  function isSameHeadReference(household, person) {
+    var currentHeadId = normalizeText(household && household.headCitizenId);
+    var currentHeadName = normalizeText(household && household.headCitizenName);
+    return currentHeadId && (currentHeadId === normalizeText(person.id) || currentHeadId === normalizeText(person.citizenCode)) ||
+      (!currentHeadId && currentHeadName && currentHeadName === normalizeText(person.fullName));
+  }
+
+  function clearPreviousHouseholdHead(previous, current) {
+    if (!previous || !isHouseholdHead(previous.relationship)) return;
+    if (current && isHouseholdHead(current.relationship) && normalizeText(previous.householdId) === normalizeText(current.householdId)) return;
+    var household = findHouseholdForSync(previous.householdId);
+    if (!household || household.status === Domain.Status.DELETED || !isSameHeadReference(household, previous)) return;
+    var record = Entity.withUpdateAudit(household, { headCitizenId: '', headCitizenName: '' });
+    householdRepository.update(household.id, record);
+    logger.info(Domain.Modules.HOUSEHOLD, Domain.Actions.UPDATE, household.id, 'Xóa liên kết chủ hộ cũ từ nhân khẩu', { householdCode: household.householdCode, citizenCode: previous.citizenCode });
+  }
+
+  function syncHouseholdHead(record, previous) {
+    clearPreviousHouseholdHead(previous, record);
+    if (!record || record.status === Domain.Status.DELETED || !isHouseholdHead(record.relationship)) return;
+    var household = findHouseholdForSync(record.householdId);
+    if (!household || household.status === Domain.Status.DELETED) return;
+    var headCitizenId = record.citizenCode || record.id || '';
+    var headCitizenName = record.fullName || '';
+    if (household.headCitizenId === headCitizenId && household.headCitizenName === headCitizenName) return;
+    var updated = Entity.withUpdateAudit(household, { headCitizenId: headCitizenId, headCitizenName: headCitizenName });
+    householdRepository.update(household.id, updated);
+    logger.info(Domain.Modules.HOUSEHOLD, Domain.Actions.UPDATE, household.id, 'Đồng bộ chủ hộ từ nhân khẩu', { householdCode: household.householdCode, citizenCode: record.citizenCode, headCitizenName: headCitizenName });
   }
 
   function validate(data, existingId) {
@@ -127,6 +167,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       validate(payload, '');
       var record = Entity.withCreateAudit(Domain.Tables.CITIZENS, payload);
       personRepository.create(record);
+      syncHouseholdHead(record, null);
       logger.info(Domain.Modules.CITIZEN, Domain.Actions.CREATE, record.id, 'Tạo nhân khẩu', { citizenCode: record.citizenCode, householdCode: record.householdId });
       return record;
     });
@@ -141,6 +182,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       validate(payload, id);
       var record = Entity.withUpdateAudit(existing, payload);
       personRepository.update(id, record);
+      syncHouseholdHead(record, existing);
       logger.info(Domain.Modules.CITIZEN, Domain.Actions.UPDATE, id, 'Cập nhật nhân khẩu', { citizenCode: record.citizenCode, householdCode: record.householdId });
       return record;
     });
@@ -153,6 +195,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       if (!existing) throw new Error('Không tìm thấy nhân khẩu: ' + id);
       var record = Entity.withDeleteAudit(existing);
       personRepository.update(id, record);
+      clearPreviousHouseholdHead(existing, record);
       logger.warn(Domain.Modules.CITIZEN, Domain.Actions.DELETE, id, 'Xóa mềm nhân khẩu', { citizenCode: existing.citizenCode, householdCode: existing.householdId });
       return record;
     });
@@ -169,6 +212,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
       record.deletedAt = '';
       record.deletedBy = '';
       personRepository.update(id, record);
+      syncHouseholdHead(record, existing);
       logger.info(Domain.Modules.CITIZEN, Domain.Actions.UPDATE, id, 'Khôi phục nhân khẩu', { citizenCode: record.citizenCode, householdCode: record.householdId });
       return record;
     });
