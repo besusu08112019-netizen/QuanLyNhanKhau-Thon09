@@ -68,6 +68,7 @@ final class UserController extends BaseController
     private function requireAdmin(): array
     {
         $user = $this->user();
+        $this->verifyCsrfToken();
         if (!in_array($user['role'], ['SUPER_ADMIN', 'ADMIN'], true)) $this->fail('Chỉ quản trị viên được thao tác quản trị người dùng', 403);
         return $user;
     }
