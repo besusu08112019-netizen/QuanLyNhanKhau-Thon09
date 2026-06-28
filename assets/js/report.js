@@ -8,9 +8,8 @@
     document.querySelector('#reportPrintBtn').addEventListener('click', printReport);
   });
 
-  const adminScript = document.createElement('script');
-  adminScript.src = 'assets/js/admin.js';
-  document.body.appendChild(adminScript);
+  loadScript('assets/js/admin.js');
+  loadScript('assets/js/import.js');
 
   window.loadReport = async function loadReport() {
     try {
@@ -87,5 +86,12 @@
     const now = new Date();
     const pad = value => String(value).padStart(2, '0');
     return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  }
+
+  function loadScript(src) {
+    if (document.querySelector(`script[src="${src}"]`)) return;
+    const script = document.createElement('script');
+    script.src = src;
+    document.body.appendChild(script);
   }
 })();
