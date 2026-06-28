@@ -31,6 +31,30 @@ final class Backup extends BaseModel
         return ['fileName' => $fileName, 'content' => $sql, 'size' => strlen($sql), 'checksum' => $checksum];
     }
 
+    public function restoreSql(string $sql, int $userId): array
+    {
+        $sql = trim($sql);
+        if ($sql === '') throw new \RuntimeException('Nội dung phục hồi rỗng');
+        $statements = array_filter(array_map('trim', preg_split('/;\s*\n/', $sql)));
+        $count = 0;
+        $this->db->beginTransaction();
+        try {
+            foreach ($statements as $statement) {
+                if ($statement === '' || str_starts_with($statement, '--')) continue;
+                $this->db->exec($statement);
+                $count++;
+            }
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+        $fileName = 'restore_' . date('Ymd_His') . '.sql';
+        $checksum = hash('sha256', $sql);
+        $this->insert('INSERT INTO backups (file_name, file_path, file_size, checksum, status, created_by, restored_at, restored_by) VALUES (:file_name,:file_path,:file_size,:checksum,"RESTORED",:user,NOW(),:user)', ['file_name' => $fileName, 'file_path' => 'restore://inline', 'file_size' => strlen($sql), 'checksum' => $checksum, 'user' => $userId]);
+        return ['statements' => $count, 'checksum' => $checksum];
+    }
+
     public function page(array $filters = []): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
