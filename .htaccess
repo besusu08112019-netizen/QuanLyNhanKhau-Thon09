@@ -1,5 +1,10 @@
 Options -Indexes
 RewriteEngine On
+
+RewriteRule ^(app|config|database|docs|uploads|vendor|controllers|models)(/|$) - [F,L]
+RewriteRule ^(README|composer|package|appsscript|\.clasp|\.gitignore) - [F,L]
+RewriteRule \.(sql|log|bak|env|ini|md)$ - [F,L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
@@ -8,4 +13,5 @@ RewriteRule ^ index.php [QSA,L]
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "same-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 </IfModule>
