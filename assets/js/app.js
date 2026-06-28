@@ -18,6 +18,8 @@ const App = {
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+document.addEventListener('DOMContentLoaded', init);
+
 function init() {
   App.modals.household = new bootstrap.Modal($('#householdModal'));
   App.modals.person = new bootstrap.Modal($('#personModal'));
@@ -27,14 +29,11 @@ function init() {
   App.token ? showApp() : showLogin();
 }
 
-document.addEventListener('DOMContentLoaded', init);
-
 function bindEvents() {
   $('#loginForm').addEventListener('submit', login);
   $('#logoutBtn').addEventListener('click', logout);
   $('#sidebarToggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
   $$('.sidebar .nav-link').forEach(btn => btn.addEventListener('click', () => switchScreen(btn.dataset.screen)));
-
   $('#householdAddBtn').addEventListener('click', () => openHouseholdForm());
   $('#personAddBtn').addEventListener('click', () => openPersonForm());
   $('#householdForm').addEventListener('submit', saveHousehold);
@@ -61,10 +60,11 @@ async function login(event) {
   event.preventDefault();
   const form = event.currentTarget;
   if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
-  const payload = Object.fromEntries(new FormData(form).entries());
   try {
+    const payload = Object.fromEntries(new FormData(form).entries());
     const res = await api('/api/auth/login', { method: 'POST', body: payload, public: true });
-    App.token = res.token; App.user = res.user;
+    App.token = res.token;
+    App.user = res.user;
     localStorage.setItem('thon09_token', App.token);
     localStorage.setItem('thon09_user', JSON.stringify(App.user));
     showToast('Đăng nhập thành công');
@@ -74,14 +74,17 @@ async function login(event) {
 
 async function logout() {
   try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) {}
-  App.token = ''; App.user = null;
-  localStorage.removeItem('thon09_token'); localStorage.removeItem('thon09_user');
+  App.token = '';
+  App.user = null;
+  localStorage.removeItem('thon09_token');
+  localStorage.removeItem('thon09_user');
   showLogin();
 }
 
 function showLogin() { $('#loginView').classList.remove('d-none'); $('#appView').classList.add('d-none'); }
 function showApp() {
-  $('#loginView').classList.add('d-none'); $('#appView').classList.remove('d-none');
+  $('#loginView').classList.add('d-none');
+  $('#appView').classList.remove('d-none');
   $('#currentUser').textContent = App.user ? `${App.user.email} | ${roleLabel(App.user.role)}` : '';
   switchScreen(App.screen);
 }
@@ -102,14 +105,7 @@ async function loadDashboard() {
   try {
     const data = await api('/api/dashboard/summary');
     const metrics = data.metrics || {};
-    const cards = [
-      ['Tổng số hộ', metrics.total_households || 0],
-      ['Tổng số nhân khẩu', metrics.total_citizens || 0],
-      ['Nam', metrics.male_count || 0],
-      ['Nữ', metrics.female_count || 0],
-      ['Tạm trú', metrics.temporary_count || 0],
-      ['Tạm vắng', metrics.away_count || 0]
-    ];
+    const cards = [['Tổng số hộ', metrics.total_households || 0], ['Tổng số nhân khẩu', metrics.total_citizens || 0], ['Nam', metrics.male_count || 0], ['Nữ', metrics.female_count || 0], ['Tạm trú', metrics.temporary_count || 0], ['Tạm vắng', metrics.away_count || 0]];
     $('#dashboardCards').innerHTML = cards.map(([label, value]) => `<div class="col-sm-6 col-xl-2"><div class="metric-card"><div class="metric-label">${label}</div><div class="metric-value">${number(value)}</div></div></div>`).join('');
     renderChart('#genderChart', data.charts?.population || []);
     renderChart('#ageChart', data.charts?.ages || []);
@@ -119,8 +115,7 @@ async function loadDashboard() {
 
 async function loadHouseholds() {
   try {
-    const query = new URLSearchParams(App.households).toString();
-    const data = await api('/api/households?' + query);
+    const data = await api('/api/households?' + new URLSearchParams(App.households).toString());
     $('#householdRows').innerHTML = data.items.map(row => `<tr>
       <td><input type="checkbox" class="household-check" value="${row.id}"></td>
       <td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(${row.id})">${escapeHtml(row.household_code)}</button></td>
@@ -137,8 +132,7 @@ async function loadHouseholds() {
 
 async function loadPersons() {
   try {
-    const query = new URLSearchParams(App.persons).toString();
-    const data = await api('/api/persons?' + query);
+    const data = await api('/api/persons?' + new URLSearchParams(App.persons).toString());
     let lastHousehold = '';
     const rows = [];
     data.items.forEach(row => {
@@ -146,45 +140,43 @@ async function loadPersons() {
         lastHousehold = row.household_code;
         rows.push(`<tr class="group-row"><td colspan="9">Mã hộ: ${escapeHtml(lastHousehold)}</td></tr>`);
       }
-      rows.push(`<tr>
-        <td><input type="checkbox" class="person-check" value="${row.id}"></td>
-        <td>${escapeHtml(row.household_code || '')}</td>
-        <td>${escapeHtml(row.citizen_code || '')}</td>
-        <td><button class="btn btn-link p-0 fw-semibold" onclick="showPerson(${row.id})">${escapeHtml(row.full_name || '')}</button></td>
-        <td>${formatDate(row.date_of_birth)}</td>
-        <td>${escapeHtml(row.identity_number || '')}</td>
-        <td>${residencyLabel(row.residency_status)}</td>
-        <td>${presenceLabel(row.presence_status)}</td>
-        <td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openPersonForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(${row.id})">Xóa</button></td>
-      </tr>`);
+      rows.push(personRow(row));
     });
     $('#personRows').innerHTML = rows.join('') || emptyRow(9, 'Chưa có nhân khẩu');
     renderPager('#personPager', data, page => { App.persons.page = page; loadPersons(); });
   } catch (error) { showToast('Không tải được danh sách nhân khẩu: ' + error.message, 'danger'); }
 }
 
+function personRow(row) {
+  return `<tr>
+    <td><input type="checkbox" class="person-check" value="${row.id}"></td>
+    <td>${escapeHtml(row.household_code || '')}</td>
+    <td>${escapeHtml(row.citizen_code || '')}</td>
+    <td><button class="btn btn-link p-0 fw-semibold" onclick="showPerson(${row.id})">${escapeHtml(row.full_name || '')}</button></td>
+    <td>${formatDate(row.date_of_birth)}</td>
+    <td>${escapeHtml(row.identity_number || '')}</td>
+    <td>${residencyLabel(row.residency_status)}</td>
+    <td>${presenceLabel(row.presence_status)}</td>
+    <td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openPersonForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(${row.id})">Xóa</button></td>
+  </tr>`;
+}
+
 async function openHouseholdForm(id = null) {
-  const form = $('#householdForm'); form.reset(); form.classList.remove('was-validated'); form.id.value = '';
+  const form = $('#householdForm');
+  form.reset(); form.classList.remove('was-validated'); form.elements.id.value = '';
   if (id) {
     const row = await api(`/api/households/${id}`);
-    setForm(form, {
-      id: row.id, householdCode: row.household_code, headCitizenName: row.head_citizen_name, phone: row.phone, address: row.address, note: row.note,
-      meritoriousFamily: !!Number(row.meritorious_family), poorHousehold: !!Number(row.poor_household), nearPoorHousehold: !!Number(row.near_poor_household), disabledHousehold: !!Number(row.disabled_household)
-    });
+    setForm(form, { id: row.id, householdCode: row.household_code, headCitizenName: row.head_citizen_name, phone: row.phone, address: row.address, note: row.note, meritoriousFamily: !!Number(row.meritorious_family), poorHousehold: !!Number(row.poor_household), nearPoorHousehold: !!Number(row.near_poor_household), disabledHousehold: !!Number(row.disabled_household) });
   }
   App.modals.household.show();
 }
 
 async function openPersonForm(id = null) {
-  const form = $('#personForm'); form.reset(); form.classList.remove('was-validated'); form.id.value = '';
+  const form = $('#personForm');
+  form.reset(); form.classList.remove('was-validated'); form.elements.id.value = '';
   if (id) {
     const row = await api(`/api/persons/${id}`);
-    setForm(form, {
-      id: row.id, householdCode: row.household_code, citizenCode: row.citizen_code, fullName: row.full_name, gender: row.gender, dateOfBirth: row.date_of_birth,
-      identityNumber: row.identity_number, phone: row.phone, relationship: row.relationship, ethnicity: row.ethnicity, religion: row.religion,
-      occupation: row.occupation, educationLevel: row.education_level, maritalStatus: row.marital_status, residency_status: row.residency_status,
-      presenceStatus: row.presence_status, status: row.life_status, currentAddress: row.current_address
-    });
+    setForm(form, { id: row.id, householdCode: row.household_code, citizenCode: row.citizen_code, fullName: row.full_name, gender: row.gender, dateOfBirth: row.date_of_birth, identityNumber: row.identity_number, phone: row.phone, relationship: row.relationship, ethnicity: row.ethnicity, religion: row.religion, occupation: row.occupation, educationLevel: row.education_level, maritalStatus: row.marital_status, residency_status: row.residency_status, presenceStatus: row.presence_status, status: row.life_status, currentAddress: row.current_address });
   }
   App.modals.person.show();
 }
@@ -214,39 +206,45 @@ async function savePerson(event) {
 }
 
 async function showHousehold(id) {
-  const row = await api(`/api/households/${id}`);
-  $('#detailTitle').textContent = 'Chi tiết hộ dân';
-  $('#detailBody').innerHTML = details([
-    ['Mã hộ', row.household_code], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ', row.address], ['Số điện thoại', row.phone],
-    ['Ở nhà', row.at_home_count || 0], ['Đi vắng', row.away_count || 0], ['Diện hộ', stripTags(householdBadges(row))], ['Ghi chú', row.note]
-  ]);
-  App.modals.detail.show();
+  try {
+    const row = await api(`/api/households/${id}`);
+    const members = await api('/api/persons?' + new URLSearchParams({ householdId: row.household_code, pageSize: 100 }).toString());
+    $('#detailTitle').textContent = 'Chi tiết hộ dân';
+    $('#detailBody').innerHTML = details([['Mã hộ', row.household_code], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ', row.address], ['Số điện thoại', row.phone], ['Ở nhà', row.at_home_count || 0], ['Đi vắng', row.away_count || 0], ['Diện hộ', stripTags(householdBadges(row))], ['Ghi chú', row.note]]) + memberTable(members.items || []);
+    App.modals.detail.show();
+  } catch (error) { showToast(error.message, 'danger'); }
 }
 
 async function showPerson(id) {
-  const row = await api(`/api/persons/${id}`);
-  $('#detailTitle').textContent = 'Chi tiết nhân khẩu';
-  $('#detailBody').innerHTML = details([
-    ['Mã hộ', row.household_code], ['Mã nhân khẩu', row.citizen_code], ['Họ tên', row.full_name], ['Giới tính', row.gender], ['Ngày sinh', formatDate(row.date_of_birth)],
-    ['CCCD', row.identity_number], ['Số điện thoại', row.phone], ['Quan hệ', row.relationship], ['Dân tộc', row.ethnicity], ['Tôn giáo', row.religion],
-    ['Nghề nghiệp', row.occupation], ['Học vấn', row.education_level], ['Hôn nhân', row.marital_status], ['Thường trú', residencyLabel(row.residency_status)],
-    ['Hiện tại', presenceLabel(row.presence_status)], ['Trạng thái', lifeLabel(row.life_status)], ['Địa chỉ hiện tại', row.current_address]
-  ]);
-  App.modals.detail.show();
+  try {
+    const row = await api(`/api/persons/${id}`);
+    $('#detailTitle').textContent = 'Chi tiết nhân khẩu';
+    $('#detailBody').innerHTML = details([['Mã hộ', row.household_code], ['Mã nhân khẩu', row.citizen_code], ['Họ tên', row.full_name], ['Giới tính', row.gender], ['Ngày sinh', formatDate(row.date_of_birth)], ['CCCD', row.identity_number], ['Số điện thoại', row.phone], ['Quan hệ', row.relationship], ['Dân tộc', row.ethnicity], ['Tôn giáo', row.religion], ['Nghề nghiệp', row.occupation], ['Học vấn', row.education_level], ['Hôn nhân', row.marital_status], ['Thường trú', residencyLabel(row.residency_status)], ['Hiện tại', presenceLabel(row.presence_status)], ['Trạng thái', lifeLabel(row.life_status)], ['Địa chỉ hiện tại', row.current_address]]);
+    App.modals.detail.show();
+  } catch (error) { showToast(error.message, 'danger'); }
 }
 
-async function deleteHousehold(id) { if (!confirm('Xóa hộ dân này?')) return; await api(`/api/households/${id}`, { method: 'DELETE' }); showToast('Đã xóa hộ dân'); loadHouseholds(); loadDashboard(); }
-async function deletePerson(id) { if (!confirm('Xóa nhân khẩu này?')) return; await api(`/api/persons/${id}`, { method: 'DELETE' }); showToast('Đã xóa nhân khẩu'); loadPersons(); loadHouseholds(); loadDashboard(); }
-
+async function deleteHousehold(id) {
+  if (!confirm('Xóa hộ dân này?')) return;
+  try { await api(`/api/households/${id}`, { method: 'DELETE' }); showToast('Đã xóa hộ dân'); loadHouseholds(); loadDashboard(); }
+  catch (error) { showToast(error.message, 'danger'); }
+}
+async function deletePerson(id) {
+  if (!confirm('Xóa nhân khẩu này?')) return;
+  try { await api(`/api/persons/${id}`, { method: 'DELETE' }); showToast('Đã xóa nhân khẩu'); loadPersons(); loadHouseholds(); loadDashboard(); }
+  catch (error) { showToast(error.message, 'danger'); }
+}
 async function bulkDeleteHouseholds() { await bulkDelete('.household-check:checked', '/api/households/bulk-delete', loadHouseholds, 'hộ dân'); }
 async function bulkDeletePersons() { await bulkDelete('.person-check:checked', '/api/persons/bulk-delete', loadPersons, 'nhân khẩu'); }
 async function bulkDelete(selector, url, reload, label) {
   const ids = $$(selector).map(c => Number(c.value));
   if (!ids.length) return showToast('Chưa chọn dữ liệu cần xóa', 'warning');
   if (!confirm(`Xóa ${ids.length} ${label} đã chọn?`)) return;
-  const result = await api(url, { method: 'POST', body: { ids } });
-  showToast(`Đã xóa ${result.success || 0} ${label}` + (result.errors?.length ? `, lỗi ${result.errors.length}` : ''));
-  reload(); loadDashboard();
+  try {
+    const result = await api(url, { method: 'POST', body: { ids } });
+    showToast(`Đã xóa ${result.success || 0} ${label}` + (result.errors?.length ? `, lỗi ${result.errors.length}` : ''));
+    reload(); loadDashboard();
+  } catch (error) { showToast(error.message, 'danger'); }
 }
 
 async function api(url, options = {}) {
@@ -257,6 +255,7 @@ async function api(url, options = {}) {
     if (App.token && !options.public) headers.Authorization = `Bearer ${App.token}`;
     const response = await fetch(url, { method: options.method || 'GET', headers, body: options.body ? JSON.stringify(options.body) : undefined });
     const payload = await response.json().catch(() => null);
+    if (response.status === 401 && !options.public) logout();
     if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'Không nhận được phản hồi từ hệ thống');
     return payload.data;
   } finally { setLoading(false); }
@@ -281,6 +280,10 @@ function householdBadges(row) {
   if (Number(row.disabled_household)) badges.push('Tàn tật');
   return badges.length ? badges.map(b => `<span class="badge-soft">${b}</span>`).join('') : '<span class="text-muted">Không</span>';
 }
+function memberTable(items) {
+  const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.citizen_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.household_address || '')}</td><td>${escapeHtml(row.phone || '')}</td></tr>`).join('') || `<tr><td colspan="7" class="text-center text-muted py-3">Chưa có thành viên</td></tr>`;
+  return `<h6 class="mt-4 mb-2">Thành viên trong hộ</h6><div class="table-responsive"><table class="table table-sm table-bordered align-middle"><thead><tr><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Số điện thoại</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
 function formData(form) {
   const data = Object.fromEntries(new FormData(form).entries());
   $$('input[type="checkbox"]', form).forEach(input => data[input.name] = input.checked ? 1 : 0);
@@ -295,9 +298,7 @@ function setForm(form, values) {
 }
 function renderPager(selector, data, go) {
   const page = Number(data.page || 1), totalPages = Number(data.totalPages || 1);
-  $(selector).innerHTML = `<span class="text-muted small">Trang ${page}/${totalPages} - ${number(data.total)} dòng</span>
-    <button class="btn btn-outline-secondary btn-sm" ${page <= 1 ? 'disabled' : ''} data-page="${page - 1}">Trước</button>
-    <button class="btn btn-outline-secondary btn-sm" ${page >= totalPages ? 'disabled' : ''} data-page="${page + 1}">Sau</button>`;
+  $(selector).innerHTML = `<span class="text-muted small">Trang ${page}/${totalPages} - ${number(data.total)} dòng</span><button class="btn btn-outline-secondary btn-sm" ${page <= 1 ? 'disabled' : ''} data-page="${page - 1}">Trước</button><button class="btn btn-outline-secondary btn-sm" ${page >= totalPages ? 'disabled' : ''} data-page="${page + 1}">Sau</button>`;
   $$(`${selector} button`).forEach(btn => btn.addEventListener('click', () => go(Number(btn.dataset.page))));
 }
 function renderChart(selector, items) {
@@ -309,4 +310,12 @@ function renderChart(selector, items) {
 }
 function details(rows) {
   return `<div class="detail-grid">${rows.map(([label, value]) => `<div class="detail-item"><div class="detail-label">${escapeHtml(label)}</div><div class="detail-value">${escapeHtml(value ?? '')}</div></div>`).join('')}</div>`;
+}
+function showToast(message, type = 'success') {
+  const id = 'toast-' + Date.now();
+  $('#toastHost').insertAdjacentHTML('beforeend', `<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert"><div class="d-flex"><div class="toast-body">${escapeHtml(message)}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Đóng"></button></div></div>`);
+  const el = $('#' + id);
+  const toast = new bootstrap.Toast(el, { delay: 3500 });
+  toast.show();
+  el.addEventListener('hidden.bs.toast', () => el.remove());
 }
