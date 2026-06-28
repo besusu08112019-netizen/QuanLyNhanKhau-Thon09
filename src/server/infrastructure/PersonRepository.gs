@@ -24,6 +24,14 @@ Infrastructure.PersonRepository = function(db) {
     return presenceStatus(value) === 'AWAY' ? 'Đi vắng' : 'Ở nhà';
   }
 
+  function isHouseholdHead(value) {
+    return normalize(value) === 'chu ho';
+  }
+
+  function householdSortKey(person) {
+    return normalize(person.householdId || person.householdCode || person.householdInternalId);
+  }
+
   function statusMatches(actual, expected) {
     if (!expected) return true;
     return personStatus(actual) === personStatus(expected);
@@ -133,6 +141,10 @@ Infrastructure.PersonRepository = function(db) {
       return matchesKeyword(person, keyword);
     });
     rows.sort(function(a, b) {
+      var householdCompare = householdSortKey(a).localeCompare(householdSortKey(b));
+      if (householdCompare) return householdCompare;
+      var headCompare = (isHouseholdHead(b.relationship) ? 1 : 0) - (isHouseholdHead(a.relationship) ? 1 : 0);
+      if (headCompare) return headCompare;
       return normalize(a.fullName).localeCompare(normalize(b.fullName)) || normalize(a.citizenCode).localeCompare(normalize(b.citizenCode));
     });
     var total = rows.length;
