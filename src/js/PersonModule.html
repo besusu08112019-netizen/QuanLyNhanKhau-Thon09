@@ -47,6 +47,17 @@
   function html(value) { return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s]); }); }
   function debounce(fn, delay) { var timer; return function() { var self = this; var args = arguments; clearTimeout(timer); timer = setTimeout(function() { fn.apply(self, args); }, delay || 250); }; }
   function normalizeText(value) { return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function formatDate(value) {
+    var raw = String(value || '').trim();
+    if (!raw) return '';
+    var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return iso[3] + '/' + iso[2] + '/' + iso[1];
+    var vn = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+    if (vn) return ('0' + vn[1]).slice(-2) + '/' + ('0' + vn[2]).slice(-2) + '/' + vn[3];
+    var parsed = new Date(raw);
+    if (!isNaN(parsed.getTime())) return ('0' + parsed.getDate()).slice(-2) + '/' + ('0' + (parsed.getMonth() + 1)).slice(-2) + '/' + parsed.getFullYear();
+    return raw;
+  }
   function setLoading(active) {
     var layer = el('loadingLayer');
     if (!layer) { layer = document.createElement('div'); layer.id = 'loadingLayer'; layer.className = 'loading-layer'; layer.innerHTML = '<div class="spinner-border text-primary"></div>'; document.body.appendChild(layer); }
@@ -119,7 +130,7 @@
   function renderTable(result) {
     var rows = result.items || [];
     var body = rows.length ? rows.map(function(row) {
-      return '<tr class="person-row" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(row.householdId || row.householdCode) + '</td><td>' + html(row.gender) + '</td><td>' + html(row.dateOfBirth) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + statusBadge(row.status) + '</td><td>' + presenceBadge(row.presenceStatus) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
+      return '<tr class="person-row" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(row.householdId || row.householdCode) + '</td><td>' + html(row.gender) + '</td><td>' + html(formatDate(row.dateOfBirth)) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + statusBadge(row.status) + '</td><td>' + presenceBadge(row.presenceStatus) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
     }).join('') : '<tr><td colspan="11" class="text-center text-muted p-4">Không có dữ liệu nhân khẩu</td></tr>';
     return '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Mã hộ</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Hiện tại</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
   }
@@ -154,6 +165,7 @@
   function detailValue(row, key) {
     if (key === 'status') return statusBadge(row.status);
     if (key === 'presenceStatus') return presenceBadge(row.presenceStatus);
+    if (key === 'dateOfBirth' || key === 'identityIssueDate') return html(formatDate(row[key]));
     return html(row[key] || '');
   }
   function showDetail(row) {
