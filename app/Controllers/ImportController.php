@@ -61,7 +61,7 @@ final class ImportController extends BaseController
         }
 
         $payload = ['type' => $type, 'total' => count($rows), 'success' => $success, 'skipped' => $skipped, 'failed' => count($errors), 'errors' => $errors];
-        $this->audit($user, 'import', 'create', 'Import dữ liệu', null, $payload, count($errors) ? 'WARNING' : 'INFO');
+        $this->audit($user, 'import', 'create', 'Import dữ liệu', null, $payload, count($errors) ? 'WARN' : 'INFO');
         $this->ok($payload);
     }
 
