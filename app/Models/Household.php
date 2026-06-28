@@ -12,10 +12,7 @@ final class Household extends BaseModel
         $where = ['h.status <> "DELETED"'];
         $params = [];
         if (!empty($filters['status'])) { $where[] = 'h.status = :status'; $params['status'] = $filters['status']; }
-        if (!empty($filters['search'])) {
-            $where[] = '(h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q OR h.phone LIKE :q OR h.area_code LIKE :q)';
-            $params['q'] = '%' . $filters['search'] . '%';
-        }
+        if (!empty($filters['search'])) { $where[] = '(h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q OR h.phone LIKE :q OR h.area_code LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM households h $sqlWhere", $params)['total'];
         $items = $this->fetchAll("SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere ORDER BY h.household_code LIMIT $pageSize OFFSET $offset", $params);
@@ -31,13 +28,17 @@ final class Household extends BaseModel
 
     public function create(array $data, int $userId): array
     {
-        $id = $this->insert('INSERT INTO households (household_code, head_citizen_name, address, phone, area_code, meritorious_family, poor_household, near_poor_household, disabled_household, note, status, created_by) VALUES (:code,:head,:address,:phone,:area,:meritorious,:poor,:near_poor,:disabled,:note,:status,:user)', $this->params($data, $userId));
+        $params = $this->params($data, $userId);
+        $this->ensureUniqueCode($params['code']);
+        $id = $this->insert('INSERT INTO households (household_code, head_citizen_name, address, phone, area_code, meritorious_family, poor_household, near_poor_household, disabled_household, note, status, created_by) VALUES (:code,:head,:address,:phone,:area,:meritorious,:poor,:near_poor,:disabled,:note,:status,:user)', $params);
         return $this->find($id);
     }
 
     public function update(int $id, array $data, int $userId): array
     {
+        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy hộ dân');
         $params = $this->params($data, $userId); $params['id'] = $id;
+        $this->ensureUniqueCode($params['code'], $id);
         $this->execute('UPDATE households SET household_code=:code, head_citizen_name=:head, address=:address, phone=:phone, area_code=:area, meritorious_family=:meritorious, poor_household=:poor, near_poor_household=:near_poor, disabled_household=:disabled, note=:note, status=:status, updated_by=:user WHERE id=:id', $params);
         return $this->find($id);
     }
@@ -51,10 +52,14 @@ final class Household extends BaseModel
 
     private function params(array $data, int $userId): array
     {
+        $code = strtoupper(trim((string) ($data['householdCode'] ?? $data['household_code'] ?? '')));
+        $address = trim((string) ($data['address'] ?? ''));
+        if ($code === '') throw new \RuntimeException('Mã hộ là bắt buộc');
+        if ($address === '') throw new \RuntimeException('Địa chỉ là bắt buộc');
         return [
-            'code' => strtoupper(trim((string) ($data['householdCode'] ?? $data['household_code'] ?? ''))),
-            'head' => trim((string) ($data['headCitizenName'] ?? $data['head_citizen_name'] ?? '')),
-            'address' => trim((string) ($data['address'] ?? '')),
+            'code' => $code,
+            'head' => trim((string) ($data['headCitizenName'] ?? $data['head_citizen_name'] ?? '')) ?: null,
+            'address' => $address,
             'phone' => trim((string) ($data['phone'] ?? '')) ?: null,
             'area' => trim((string) ($data['areaCode'] ?? $data['area_code'] ?? '')) ?: null,
             'meritorious' => $this->bool($data['meritoriousFamily'] ?? $data['meritorious_family'] ?? 0),
@@ -65,6 +70,14 @@ final class Household extends BaseModel
             'status' => $data['status'] ?? 'ACTIVE',
             'user' => $userId,
         ];
+    }
+
+    private function ensureUniqueCode(string $code, ?int $ignoreId = null): void
+    {
+        $params = ['code' => $code];
+        $sql = 'SELECT id FROM households WHERE household_code=:code AND status <> "DELETED"';
+        if ($ignoreId) { $sql .= ' AND id <> :id'; $params['id'] = $ignoreId; }
+        if ($this->fetchOne($sql, $params)) throw new \RuntimeException('Mã hộ đã tồn tại');
     }
 
     private function bool(mixed $value): int
