@@ -32,19 +32,28 @@ Infrastructure.HouseholdRepository = function(db) {
     return normalizeKeyword(value) === 'chu ho';
   }
 
+  function uniqueKeys(values) {
+    var seen = {};
+    return (values || []).map(normalizeKeyword).filter(function(key) {
+      if (!key || seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
   function householdKeys(householdIdOrCode, household) {
-    return [
+    return uniqueKeys([
       householdIdOrCode,
       household && household.id,
       household && household.householdCode
-    ].map(normalizeKeyword).filter(Boolean);
+    ]);
   }
 
   function citizenHouseholdKeys(citizen) {
-    return [
+    return uniqueKeys([
       citizen && citizen.householdId,
       citizen && citizen.householdCode
-    ].map(normalizeKeyword).filter(Boolean);
+    ]);
   }
 
   function readCitizens() {
@@ -61,6 +70,17 @@ Infrastructure.HouseholdRepository = function(db) {
     }, {});
   }
 
+  function makeHouseholdKeyIndex(households) {
+    return (households || []).reduce(function(acc, household) {
+      var primaryKey = normalizeKeyword(household.id || household.householdCode);
+      if (!primaryKey) return acc;
+      householdKeys('', household).forEach(function(key) {
+        acc[key] = primaryKey;
+      });
+      return acc;
+    }, {});
+  }
+
   function makeHeadByHousehold(citizens) {
     return (citizens || readCitizens()).reduce(function(acc, citizen) {
       if (isDeletedCitizen(citizen) || !isHouseholdHead(citizen.relationship)) return acc;
@@ -72,18 +92,43 @@ Infrastructure.HouseholdRepository = function(db) {
     }, {});
   }
 
-  function makePresenceSummary(citizens) {
+  function emptyPresenceSummary() {
+    return { atHome: 0, away: 0, total: 0 };
+  }
+
+  function makePresenceSummary(citizens, households) {
+    var householdKeyIndex = makeHouseholdKeyIndex(households || []);
     return (citizens || readCitizens()).reduce(function(acc, citizen) {
       if (!isLivingCitizen(citizen)) return acc;
-      citizenHouseholdKeys(citizen).forEach(function(key) {
+      var matchedHouseholds = uniqueKeys(citizenHouseholdKeys(citizen).map(function(key) {
+        return householdKeyIndex[key] || key;
+      }));
+      matchedHouseholds.forEach(function(key) {
         if (!key) return;
-        if (!acc[key]) acc[key] = { atHome: 0, away: 0, total: 0 };
+        if (!acc[key]) acc[key] = emptyPresenceSummary();
         if (presenceStatus(citizen.presenceStatus || citizen.currentStatus || citizen.residencyStatus) === 'AWAY') acc[key].away += 1;
         else acc[key].atHome += 1;
         acc[key].total += 1;
       });
       return acc;
     }, {});
+  }
+
+  function resolvePresenceSummary(household, presenceSummary) {
+    var summary = emptyPresenceSummary();
+    householdKeys('', household).forEach(function(key) {
+      var canonicalKey = normalizeKeyword(household.id || household.householdCode);
+      var item = presenceSummary[canonicalKey] || presenceSummary[key];
+      if (!item || item.__used) return;
+      summary.atHome += item.atHome || 0;
+      summary.away += item.away || 0;
+      summary.total += item.total || 0;
+      item.__used = true;
+    });
+    Object.keys(presenceSummary || {}).forEach(function(key) {
+      if (presenceSummary[key]) delete presenceSummary[key].__used;
+    });
+    return summary;
   }
 
   function findHeadCitizen(household, headByHousehold) {
@@ -111,7 +156,7 @@ Infrastructure.HouseholdRepository = function(db) {
 
   function enrichHousehold(household, citizenIndex, presenceSummary, headByHousehold) {
     var record = Object.assign({}, household);
-    var summary = presenceSummary[normalizeKeyword(record.householdCode)] || presenceSummary[normalizeKeyword(record.id)] || { atHome: 0, away: 0, total: 0 };
+    var summary = resolvePresenceSummary(record, presenceSummary || {});
     record.headCitizenId = resolveHeadCitizenId(record, headByHousehold || {});
     record.headCitizenName = resolveHeadName(record, citizenIndex || {}, headByHousehold || {});
     record.atHomeCount = summary.atHome;
@@ -169,10 +214,11 @@ Infrastructure.HouseholdRepository = function(db) {
     var page = Math.max(parseInt(query.page || 1, 10), 1);
     var pageSize = Math.min(Math.max(parseInt(query.pageSize || 20, 10), 5), 100);
     var citizens = readCitizens();
+    var households = db.readAll(Domain.Tables.HOUSEHOLDS);
     var citizenIndex = makeCitizenIndex(citizens);
     var headByHousehold = makeHeadByHousehold(citizens);
-    var presenceSummary = makePresenceSummary(citizens);
-    var rows = db.readAll(Domain.Tables.HOUSEHOLDS).map(function(household) {
+    var presenceSummary = makePresenceSummary(citizens, households);
+    var rows = households.map(function(household) {
       return enrichHousehold(household, citizenIndex, presenceSummary, headByHousehold);
     }).filter(function(household) {
       if (query.status && household.status !== query.status) return false;
