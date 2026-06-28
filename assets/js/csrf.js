@@ -29,8 +29,9 @@
         App.csrfToken = payload.data.csrfToken;
         localStorage.setItem('thon09_csrf', App.csrfToken);
       }
-      if (response.status === 401 && !options.public) {
-        await logout();
+      if (response.status === 401 && !options.public && !String(url).includes('/api/auth/logout')) {
+        clearClientSession();
+        showLogin();
       }
       if (!response.ok || !payload?.ok) {
         throw new Error(payload?.error?.message || 'Không nhận được phản hồi từ hệ thống');
@@ -46,8 +47,16 @@
     try {
       return await originalLogout();
     } finally {
-      App.csrfToken = '';
-      localStorage.removeItem('thon09_csrf');
+      clearClientSession();
     }
   };
+
+  function clearClientSession() {
+    App.token = '';
+    App.user = null;
+    App.csrfToken = '';
+    localStorage.removeItem('thon09_token');
+    localStorage.removeItem('thon09_user');
+    localStorage.removeItem('thon09_csrf');
+  }
 })();
