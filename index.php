@@ -32,6 +32,9 @@ $router->post('/api/auth/logout', [AuthController::class, 'logout']);
 $router->get('/api/auth/me', [AuthController::class, 'me']);
 
 $router->get('/api/dashboard/summary', [DashboardController::class, 'summary']);
+$router->get('/api/dashboard/population-chart', [DashboardController::class, 'populationChart']);
+$router->get('/api/dashboard/household-chart', [DashboardController::class, 'householdChart']);
+$router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
