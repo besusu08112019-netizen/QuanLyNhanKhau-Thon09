@@ -14,6 +14,7 @@ use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\HouseholdController;
 use App\Controllers\PersonController;
+use App\Controllers\ReportController;
 
 Autoloader::register();
 
@@ -35,6 +36,13 @@ $router->get('/api/dashboard/summary', [DashboardController::class, 'summary']);
 $router->get('/api/dashboard/population-chart', [DashboardController::class, 'populationChart']);
 $router->get('/api/dashboard/household-chart', [DashboardController::class, 'householdChart']);
 $router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart']);
+
+$router->get('/api/reports/summary', [ReportController::class, 'summary']);
+$router->get('/api/reports/population', [ReportController::class, 'population']);
+$router->get('/api/reports/household', [ReportController::class, 'household']);
+$router->get('/api/reports/export-excel', [ReportController::class, 'exportExcel']);
+$router->get('/api/reports/export-pdf', [ReportController::class, 'exportPdf']);
+$router->get('/api/reports/print', [ReportController::class, 'print']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
