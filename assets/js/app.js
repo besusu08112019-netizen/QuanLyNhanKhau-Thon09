@@ -34,6 +34,8 @@ function bindEvents() {
   $('#logoutBtn').addEventListener('click', logout);
   $('#sidebarToggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
   $$('.sidebar .nav-link').forEach(btn => btn.addEventListener('click', () => switchScreen(btn.dataset.screen)));
+  $('#dashboardFilters').addEventListener('submit', event => { event.preventDefault(); loadDashboard(); });
+  $('#dashboardResetBtn').addEventListener('click', () => { $('#dashboardFilters').reset(); loadDashboard(); });
   $('#householdAddBtn').addEventListener('click', () => openHouseholdForm());
   $('#personAddBtn').addEventListener('click', () => openPersonForm());
   $('#householdForm').addEventListener('submit', saveHousehold);
@@ -103,13 +105,23 @@ function switchScreen(screen) {
 
 async function loadDashboard() {
   try {
-    const data = await api('/api/dashboard/summary');
+    const query = new URLSearchParams(formData($('#dashboardFilters'))).toString();
+    const data = await api('/api/dashboard/summary' + (query ? '?' + query : ''));
     const metrics = data.metrics || {};
-    const cards = [['Tổng số hộ', metrics.total_households || 0], ['Tổng số nhân khẩu', metrics.total_citizens || 0], ['Nam', metrics.male_count || 0], ['Nữ', metrics.female_count || 0], ['Tạm trú', metrics.temporary_count || 0], ['Tạm vắng', metrics.away_count || 0]];
-    $('#dashboardCards').innerHTML = cards.map(([label, value]) => `<div class="col-sm-6 col-xl-2"><div class="metric-card"><div class="metric-label">${label}</div><div class="metric-value">${number(value)}</div></div></div>`).join('');
+    const cards = [
+      ['Tổng số hộ', metrics.total_households || 0],
+      ['Tổng số nhân khẩu', metrics.total_citizens || 0],
+      ['Nam', metrics.male_count || 0],
+      ['Nữ', metrics.female_count || 0],
+      ['Đang hoạt động', metrics.active_citizens || 0],
+      ['Tạm trú', metrics.temporary_count || 0],
+      ['Tạm vắng', metrics.away_count || 0]
+    ];
+    $('#dashboardCards').innerHTML = cards.map(([label, value]) => `<div class="col-sm-6 col-xl-3 col-xxl"><div class="metric-card"><div class="metric-label">${label}</div><div class="metric-value">${number(value)}</div></div></div>`).join('');
     renderChart('#genderChart', data.charts?.population || []);
     renderChart('#ageChart', data.charts?.ages || []);
     renderChart('#householdChart', data.charts?.households || []);
+    renderChart('#residencyChart', data.charts?.residency || []);
   } catch (error) { showToast('Không tải được tổng quan: ' + error.message, 'danger'); }
 }
 
@@ -148,17 +160,7 @@ async function loadPersons() {
 }
 
 function personRow(row) {
-  return `<tr>
-    <td><input type="checkbox" class="person-check" value="${row.id}"></td>
-    <td>${escapeHtml(row.household_code || '')}</td>
-    <td>${escapeHtml(row.citizen_code || '')}</td>
-    <td><button class="btn btn-link p-0 fw-semibold" onclick="showPerson(${row.id})">${escapeHtml(row.full_name || '')}</button></td>
-    <td>${formatDate(row.date_of_birth)}</td>
-    <td>${escapeHtml(row.identity_number || '')}</td>
-    <td>${residencyLabel(row.residency_status)}</td>
-    <td>${presenceLabel(row.presence_status)}</td>
-    <td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openPersonForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(${row.id})">Xóa</button></td>
-  </tr>`;
+  return `<tr><td><input type="checkbox" class="person-check" value="${row.id}"></td><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.citizen_code || '')}</td><td><button class="btn btn-link p-0 fw-semibold" onclick="showPerson(${row.id})">${escapeHtml(row.full_name || '')}</button></td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${residencyLabel(row.residency_status)}</td><td>${presenceLabel(row.presence_status)}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openPersonForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(${row.id})">Xóa</button></td></tr>`;
 }
 
 async function openHouseholdForm(id = null) {
@@ -304,7 +306,7 @@ function renderPager(selector, data, go) {
 function renderChart(selector, items) {
   const total = items.reduce((sum, item) => sum + Number(item.value || 0), 0) || 1;
   $(selector).innerHTML = items.map(item => {
-    const percent = Math.round(Number(item.value || 0) * 100 / total);
+    const percent = Math.max(4, Math.round(Number(item.value || 0) * 100 / total));
     return `<div class="chart-line"><span>${escapeHtml(item.label || 'Khác')}</span><div class="chart-track"><div class="chart-bar" style="width:${percent}%"></div></div><strong>${number(item.value)}</strong></div>`;
   }).join('') || '<p class="text-muted mb-0">Chưa có dữ liệu</p>';
 }
