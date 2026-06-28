@@ -41,7 +41,7 @@ final class FileController extends BaseController
         $this->ok($row);
     }
 
-    public function list(string $module, string $entityId): void
+    public function index(string $module, string $entityId): void
     {
         $this->requirePermission($module === 'citizen' ? 'citizen' : 'household', 'read');
         $this->ok($this->files->byEntity($module, (int) $entityId));
