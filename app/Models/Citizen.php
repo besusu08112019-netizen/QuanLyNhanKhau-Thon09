@@ -6,7 +6,7 @@ use App\Core\BaseModel;
 
 final class Citizen extends BaseModel
 {
-    public function page(array $filters): array
+    public function paginate(array $filters): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         $where = ['c.status <> "DELETED"']; $params = [];
@@ -16,13 +16,13 @@ final class Citizen extends BaseModel
         if (!empty($filters['search'])) { $where[] = '(c.citizen_code LIKE :q OR c.full_name LIKE :q OR c.identity_number LIKE :q OR c.phone LIKE :q OR h.household_code LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere", $params)['total'];
-        $items = $this->fetchAll("SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name LIMIT $pageSize OFFSET $offset", $params);
+        $items = $this->fetchAll("SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name LIMIT $pageSize OFFSET $offset", $params);
         return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
 
     public function find(int $id): ?array
     {
-        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
+        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
     }
 
     public function create(array $data, int $userId): array
@@ -30,6 +30,7 @@ final class Citizen extends BaseModel
         $params = $this->params($data, $userId);
         if ($params['code'] === '') $params['code'] = $this->nextCode((int) $params['household_id']);
         $this->ensureUniqueIdentity($params['identity']);
+        $this->ensureSingleHead((int) $params['household_id'], null, $params['relationship']);
         $id = $this->insert('INSERT INTO citizens (citizen_code, household_id, full_name, gender, date_of_birth, identity_number, identity_issue_date, identity_issue_place, relationship, ethnicity, religion, occupation, phone, residency_status, current_address, education_level, marital_status, life_status, presence_status, status, created_by) VALUES (:code,:household_id,:full_name,:gender,:dob,:identity,:issue_date,:issue_place,:relationship,:ethnicity,:religion,:occupation,:phone,:residency,:current_address,:education,:marital,:life,:presence,"ACTIVE",:user)', $params);
         $this->syncHouseholdHead((int) $params['household_id']);
         return $this->find($id);
@@ -42,6 +43,7 @@ final class Citizen extends BaseModel
         $params = $this->params($data, $userId, $before); $params['id'] = $id;
         if ($params['code'] === '') $params['code'] = (string) $before['citizen_code'];
         $this->ensureUniqueIdentity($params['identity'], $id);
+        $this->ensureSingleHead((int) $params['household_id'], $id, $params['relationship']);
         $this->execute('UPDATE citizens SET citizen_code=:code, household_id=:household_id, full_name=:full_name, gender=:gender, date_of_birth=:dob, identity_number=:identity, identity_issue_date=:issue_date, identity_issue_place=:issue_place, relationship=:relationship, ethnicity=:ethnicity, religion=:religion, occupation=:occupation, phone=:phone, residency_status=:residency, current_address=:current_address, education_level=:education, marital_status=:marital, life_status=:life, presence_status=:presence, updated_by=:user WHERE id=:id', $params);
         $this->syncHouseholdHead((int) $before['household_id']);
         $this->syncHouseholdHead((int) $params['household_id']);
@@ -83,7 +85,7 @@ final class Citizen extends BaseModel
             'identity' => trim((string) ($data['identityNumber'] ?? $data['identity_number'] ?? $fallback['identity_number'] ?? '')) ?: null,
             'issue_date' => $data['identityIssueDate'] ?? $data['identity_issue_date'] ?? $fallback['identity_issue_date'] ?? null,
             'issue_place' => trim((string) ($data['identityIssuePlace'] ?? $data['identity_issue_place'] ?? $fallback['identity_issue_place'] ?? '')) ?: null,
-            'relationship' => trim((string) ($data['relationship'] ?? $fallback['relationship'] ?? 'Khác')),
+            'relationship' => $this->relationship($data['relationship'] ?? $data['memberType'] ?? $data['member_type'] ?? $fallback['relationship'] ?? 'Khác'),
             'ethnicity' => trim((string) ($data['ethnicity'] ?? $fallback['ethnicity'] ?? '')) ?: null,
             'religion' => trim((string) ($data['religion'] ?? $fallback['religion'] ?? '')) ?: null,
             'occupation' => trim((string) ($data['occupation'] ?? $fallback['occupation'] ?? '')) ?: null,
@@ -96,6 +98,16 @@ final class Citizen extends BaseModel
             'presence' => $this->presence($data['presenceStatus'] ?? $data['presence_status'] ?? $fallback['presence_status'] ?? 'AT_HOME'),
             'user' => $userId,
         ];
+    }
+
+    private function ensureSingleHead(int $householdId, ?int $ignoreId, string $relationship): void
+    {
+        if ($relationship !== 'Chủ hộ') return;
+        $params = ['household_id' => $householdId];
+        $sql = 'SELECT id, full_name FROM citizens WHERE household_id=:household_id AND relationship="Chủ hộ" AND status <> "DELETED"';
+        if ($ignoreId) { $sql .= ' AND id <> :id'; $params['id'] = $ignoreId; }
+        $head = $this->fetchOne($sql, $params);
+        if ($head) throw new \RuntimeException('Hộ này đã có Chủ hộ: ' . $head['full_name']);
     }
 
     private function ensureUniqueIdentity(?string $identity, ?int $ignoreId = null): void
@@ -123,6 +135,7 @@ final class Citizen extends BaseModel
         $this->execute('UPDATE households SET head_citizen_id=:head_id, head_citizen_name=:head_name WHERE id=:household_id', ['household_id' => $householdId, 'head_id' => $head['id'] ?? null, 'head_name' => $head['full_name'] ?? null]);
     }
 
+    private function relationship(mixed $value): string { $text = trim((string) $value); return $text === 'Chủ hộ' ? 'Chủ hộ' : ($text ?: 'Khác'); }
     private function residency(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['temporary','temporary_residence','tạm trú','tam tru'], true) ? 'TEMPORARY' : 'PERMANENT'; }
     private function presence(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['away','đi vắng','di vang','tam vang','tạm vắng'], true) ? 'AWAY' : 'AT_HOME'; }
     private function life(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['deceased','dead','đã chết','da chet'], true) ? 'DECEASED' : 'ALIVE'; }
