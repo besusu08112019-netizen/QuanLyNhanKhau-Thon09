@@ -1,0 +1,167 @@
+<script>
+(function() {
+  function html(value) {
+    return String(value === undefined || value === null ? '' : value).replace(/[&<>"]/g, function(s) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s]);
+    });
+  }
+
+  function normalizeText(value) {
+    return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function attachAuth(payload) {
+    return window.Thon09AttachAuth ? window.Thon09AttachAuth(payload || {}) : (payload || {});
+  }
+
+  function setLoading(active) {
+    var layer = document.getElementById('loadingLayer');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'loadingLayer';
+      layer.className = 'loading-layer';
+      layer.innerHTML = '<div class="spinner-border text-primary"></div>';
+      document.body.appendChild(layer);
+    }
+    layer.classList.toggle('active', !!active);
+  }
+
+  function toast(message, kind) {
+    var host = document.querySelector('.toast-host') || document.body.appendChild(document.createElement('div'));
+    host.className = 'toast-host';
+    var node = document.createElement('div');
+    node.className = 'alert alert-' + (kind || 'info') + ' shadow-sm';
+    node.textContent = message;
+    host.appendChild(node);
+    setTimeout(function() { node.remove(); }, 3500);
+  }
+
+  function api(action, payload) {
+    setLoading(true);
+    return new Promise(function(resolve, reject) {
+      google.script.run.withSuccessHandler(function(response) {
+        setLoading(false);
+        if (!response || !response.ok) {
+          reject(new Error(response && response.error ? response.error.message : 'Không nhận được phản hồi từ hệ thống'));
+          return;
+        }
+        resolve(response.data);
+      }).withFailureHandler(function(error) {
+        setLoading(false);
+        reject(new Error(error && error.message ? error.message : 'Không gọi được máy chủ'));
+      }).api(action, attachAuth(payload || {}));
+    });
+  }
+
+  function formatDate(value) {
+    var raw = String(value || '').trim();
+    if (!raw) return '';
+    var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return iso[3] + '/' + iso[2] + '/' + iso[1];
+    var vn = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+    if (vn) return ('0' + vn[1]).slice(-2) + '/' + ('0' + vn[2]).slice(-2) + '/' + vn[3];
+    var parsed = new Date(raw);
+    if (!isNaN(parsed.getTime())) return ('0' + parsed.getDate()).slice(-2) + '/' + ('0' + (parsed.getMonth() + 1)).slice(-2) + '/' + parsed.getFullYear();
+    return raw;
+  }
+
+  function statusLabel(value) {
+    var key = String(value || '').toUpperCase();
+    if (key === 'ALIVE' || key === 'ACTIVE') return 'Còn sống';
+    if (key === 'DECEASED' || key === 'INACTIVE') return 'Đã chết';
+    if (key === 'DELETED') return 'Đã xóa';
+    return value || 'Không rõ';
+  }
+
+  function presenceLabel(value) {
+    var key = String(value || '').toUpperCase();
+    if (key === 'AWAY') return 'Đi vắng';
+    return 'Ở nhà';
+  }
+
+  function residencyLabel(value) {
+    var text = normalizeText(value);
+    if (text === 'tam tru' || text === 'temporary residence' || text === 'temporary_residence') return 'Tạm trú';
+    return 'Thường trú';
+  }
+
+  function badge(label, kind) {
+    return '<span class="badge badge-' + kind + ' mr-1">' + html(label) + '</span>';
+  }
+
+  function valueOrDash(value) {
+    value = String(value === undefined || value === null ? '' : value).trim();
+    return value ? html(value) : '<span class="text-muted">-</span>';
+  }
+
+  function item(label, value) {
+    return '<div class="person-detail-item"><span>' + html(label) + '</span><strong>' + value + '</strong></div>';
+  }
+
+  function section(title, items) {
+    return '<section class="person-detail-section"><h6>' + html(title) + '</h6><div class="person-detail-grid">' + items.join('') + '</div></section>';
+  }
+
+  function editCurrentPerson(id) {
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-person-edit]'));
+    var button = buttons.filter(function(item) { return item.getAttribute('data-person-edit') === id; })[0];
+    if (!button) {
+      toast('Không tìm thấy nút sửa trên dòng hiện tại. Vui lòng đóng chi tiết và bấm Sửa từ danh sách.', 'warning');
+      return;
+    }
+    $('#personDetailCompactModal').modal('hide');
+    setTimeout(function() { button.click(); }, 250);
+  }
+
+  function showDetail(row) {
+    if (!row) return;
+    $('#personDetailCompactModal').modal('hide');
+    var statusKind = String(row.status || '').toUpperCase() === 'DECEASED' ? 'secondary' : 'success';
+    var presenceKind = String(row.presenceStatus || '').toUpperCase() === 'AWAY' ? 'warning' : 'primary';
+    var residencyKind = residencyLabel(row.permanentAddress) === 'Tạm trú' ? 'info' : 'light';
+    var header = '<div class="person-detail-profile"><div><div class="person-detail-name">' + html(row.fullName || 'Chưa có họ tên') + '</div><div class="person-detail-code">Mã nhân khẩu: ' + html(row.citizenCode || row.id || '') + '</div></div><div class="person-detail-badges">' + badge(statusLabel(row.status), statusKind) + badge(residencyLabel(row.permanentAddress), residencyKind) + badge(presenceLabel(row.presenceStatus), presenceKind) + '</div></div>';
+    var body = header +
+      section('Thông tin cơ bản', [
+        item('Họ và tên', valueOrDash(row.fullName)),
+        item('Giới tính', valueOrDash(row.gender)),
+        item('Ngày sinh', valueOrDash(formatDate(row.dateOfBirth))),
+        item('Điện thoại', valueOrDash(row.phone))
+      ]) +
+      section('Hộ gia đình', [
+        item('Mã hộ', valueOrDash(row.householdId || row.householdCode)),
+        item('Chủ hộ', valueOrDash(row.householdHeadName)),
+        item('Quan hệ với chủ hộ', valueOrDash(row.relationship)),
+        item('Địa chỉ hộ', valueOrDash(row.householdAddress))
+      ]) +
+      section('CCCD/CMND', [
+        item('Số CCCD/CMND', valueOrDash(row.identityNumber)),
+        item('Ngày cấp', valueOrDash(formatDate(row.identityIssueDate))),
+        item('Nơi cấp', valueOrDash(row.identityIssuePlace))
+      ]) +
+      section('Thông tin khác', [
+        item('Dân tộc', valueOrDash(row.ethnicity)),
+        item('Tôn giáo', valueOrDash(row.religion)),
+        item('Nghề nghiệp', valueOrDash(row.occupation)),
+        item('Học vấn', valueOrDash(row.educationLevel)),
+        item('Hôn nhân', valueOrDash(row.maritalStatus)),
+        item('Nơi ở hiện nay', valueOrDash(row.currentAddress))
+      ]);
+    var styles = '<style>.person-detail-profile{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:14px 16px;border:1px solid #e5e9f0;border-radius:6px;background:#f8fafc;margin-bottom:14px}.person-detail-name{font-size:20px;font-weight:700;color:#1f2937}.person-detail-code{color:#6b7280;margin-top:2px}.person-detail-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.person-detail-section{border:1px solid #e5e9f0;border-radius:6px;margin-bottom:12px;overflow:hidden}.person-detail-section h6{margin:0;padding:9px 12px;background:#f3f6f9;font-weight:700;color:#374151}.person-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}.person-detail-item{padding:10px 12px;border-top:1px solid #eef2f7}.person-detail-item:nth-child(odd){border-right:1px solid #eef2f7}.person-detail-item span{display:block;font-size:12px;color:#6b7280;margin-bottom:2px}.person-detail-item strong{font-size:14px;color:#111827;font-weight:600;word-break:break-word}@media(max-width:768px){.person-detail-profile{display:block}.person-detail-badges{justify-content:flex-start;margin-top:10px}.person-detail-grid{grid-template-columns:1fr}.person-detail-item:nth-child(odd){border-right:0}}</style>';
+    var markup = styles + '<div class="modal fade" id="personDetailCompactModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Thông tin nhân khẩu</h5><button type="button" class="close" data-dismiss="modal" aria-label="Đóng">&times;</button></div><div class="modal-body">' + body + '</div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary btn-sm" data-dismiss="modal">Đóng</button><button type="button" class="btn btn-primary btn-sm" id="btnCompactDetailEdit"><i class="fas fa-pen"></i> Sửa</button></div></div></div></div>';
+    document.body.insertAdjacentHTML('beforeend', markup);
+    $('#personDetailCompactModal').modal('show').on('hidden.bs.modal', function() { this.remove(); });
+    document.getElementById('btnCompactDetailEdit').onclick = function() { editCurrentPerson(row.id); };
+  }
+
+  document.addEventListener('click', function(event) {
+    var trigger = event.target.closest('[data-person-view], [data-person-row]');
+    if (!trigger) return;
+    if (trigger.hasAttribute('data-person-row') && event.target.closest('button')) return;
+    var id = trigger.getAttribute('data-person-view') || trigger.getAttribute('data-person-row');
+    if (!id) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    api('person.get', { id: id }).then(showDetail).catch(function(error) { toast(error.message, 'danger'); });
+  }, true);
+})();
+</script>
