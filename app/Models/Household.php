@@ -22,7 +22,11 @@ final class Household extends BaseModel
         return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
 
-    public function find(int $id): ?array { return $this->fetchOne('SELECT * FROM households WHERE id = :id AND status <> "DELETED"', ['id' => $id]); }
+    public function find(int $id): ?array
+    {
+        return $this->fetchOne('SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id WHERE h.id = :id AND h.status <> "DELETED"', ['id' => $id]);
+    }
+
     public function findByCode(string $code): ?array { return $this->fetchOne('SELECT * FROM households WHERE household_code = :code AND status <> "DELETED"', ['code' => strtoupper(trim($code))]); }
 
     public function create(array $data, int $userId): array
