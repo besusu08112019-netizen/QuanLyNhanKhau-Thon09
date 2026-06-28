@@ -8,7 +8,15 @@ final class Permission extends BaseModel
 {
     public function matrix(): array
     {
-        $roles = ['ADMIN' => 'Quản trị', 'OFFICER' => 'Cán bộ', 'VIEWER' => 'Chỉ xem', 'DATA_ENTRY' => 'Chỉ nhập liệu', 'NO_DELETE' => 'Không được xóa', 'NO_EXPORT' => 'Không được xuất dữ liệu'];
+        $roles = [
+            'ADMIN' => 'Quản trị',
+            'OFFICER' => 'Cán bộ',
+            'COLLABORATOR' => 'Cộng tác viên',
+            'VIEWER' => 'Chỉ xem',
+            'DATA_ENTRY' => 'Chỉ nhập liệu',
+            'NO_DELETE' => 'Không được xóa',
+            'NO_EXPORT' => 'Không được xuất dữ liệu',
+        ];
         $modules = ['dashboard','household','citizen','movement','report','pdf','import','export','print','user','permission','logs','settings','backup'];
         $actions = ['read','create','update','delete','export','print','restore'];
         $rows = $this->fetchAll('SELECT role, module, action, allowed FROM permissions');
