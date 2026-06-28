@@ -10,10 +10,12 @@ Rà soát phiên bản PHP/MySQL của hệ thống Quản lý Nhân khẩu Thô
 
 - Bổ sung CSRF token cho các API thay đổi dữ liệu để giảm rủi ro giả mạo request khi hệ thống chạy public.
 - API dùng `requirePermission()` hiện kiểm tra CSRF trước khi thực hiện thao tác ghi dữ liệu.
+- Controller quản lý người dùng cũng kiểm tra CSRF cho các thao tác Admin vì controller này dùng lớp kiểm tra quyền riêng.
 - Đăng xuất yêu cầu CSRF token hợp lệ trước khi thu hồi session token.
 - Frontend tự lưu CSRF token sau đăng nhập và tự gửi token ở các request `POST`, `PUT`, `PATCH`, `DELETE`.
 - Import Excel/CSV gửi CSRF token khi upload file.
 - Tạo backup SQL gửi CSRF token khi thực hiện thao tác nhạy cảm.
+- Bổ sung xử lý hết phiên phía trình duyệt để không gọi đăng xuất lặp.
 - Bổ sung `APP_KEY` và timezone từ biến môi trường để cấu hình production an toàn hơn.
 - Bổ sung vai trò `COLLABORATOR` vào màn hình ma trận phân quyền để đồng bộ với migration database.
 - Bổ sung `composer.json` để khai báo PHP 8.2 và các extension cần có trên hosting.
@@ -24,6 +26,7 @@ Rà soát phiên bản PHP/MySQL của hệ thống Quản lý Nhân khẩu Thô
 
 - `app/Core/BaseController.php`
 - `app/Controllers/AuthController.php`
+- `app/Controllers/UserController.php`
 - `app/Models/User.php`
 - `app/Models/Permission.php`
 - `config/app.php`
