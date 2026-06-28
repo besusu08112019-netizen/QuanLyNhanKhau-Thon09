@@ -8,6 +8,10 @@
     document.querySelector('#reportPrintBtn').addEventListener('click', printReport);
   });
 
+  const adminScript = document.createElement('script');
+  adminScript.src = 'assets/js/admin.js';
+  document.body.appendChild(adminScript);
+
   window.loadReport = async function loadReport() {
     try {
       const query = reportQuery();
