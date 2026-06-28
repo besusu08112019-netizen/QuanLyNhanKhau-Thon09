@@ -65,5 +65,6 @@
   <script src="assets/js/admin.js"></script>
   <script src="assets/js/import.js"></script>
   <script src="assets/js/admin-panel.js"></script>
+  <script src="assets/js/admin-panel-bridge.js"></script>
 </body>
 </html>
