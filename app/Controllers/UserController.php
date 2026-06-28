@@ -9,7 +9,7 @@ final class UserController extends BaseController
     public function index(): void
     {
         $this->requireAdmin();
-        $this->ok($this->users->page($this->query()));
+        $this->ok($this->users->paginate($this->query()));
     }
 
     public function show(string $id): void
@@ -69,7 +69,7 @@ final class UserController extends BaseController
     {
         $user = $this->user();
         $this->verifyCsrfToken();
-        if (!in_array($user['role'], ['SUPER_ADMIN', 'ADMIN'], true)) $this->fail('Chỉ quản trị viên được thao tác quản trị người dùng', 403);
+        if ($user['role'] !== 'SUPER_ADMIN') $this->fail('Chỉ Super Admin được thao tác quản trị người dùng', 403);
         return $user;
     }
 }
