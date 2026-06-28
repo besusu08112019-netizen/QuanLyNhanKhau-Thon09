@@ -17,11 +17,17 @@
       document.querySelector('#screenTitle').textContent = { users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', backups: 'Sao lưu dữ liệu' }[screen];
       const breadcrumb = document.querySelector('#breadcrumbTrail');
       if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + document.querySelector('#screenTitle').textContent;
-      if (screen === 'users') loadAdminUsers();
+      if (screen === 'users') { ensureRoleOptions(); loadAdminUsers(); }
       if (screen === 'logs') loadAdminLogs();
       if (screen === 'backups') loadAdminBackups();
     }, true);
   });
+
+  function ensureRoleOptions() {
+    const select = document.querySelector('#userForm select[name="role"]');
+    if (!select) return;
+    select.innerHTML = ['ADMIN','OFFICER','COLLABORATOR','VIEWER','DATA_ENTRY','NO_DELETE','NO_EXPORT'].map(role => `<option value="${role}">${roleLabel(role)}</option>`).join('');
+  }
 
   async function loadAdminUsers() {
     if (!document.querySelector('#userRows')) return;
