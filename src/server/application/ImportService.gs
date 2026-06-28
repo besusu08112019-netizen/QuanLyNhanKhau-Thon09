@@ -1,6 +1,11 @@
 var Application = Application || {};
 
 Application.ImportService = function(importRepository, householdRepository, personRepository, logger, db) {
+  var PERSON_STATUS_ALIVE = 'ALIVE';
+  var PERSON_STATUS_DECEASED = 'DECEASED';
+  var PRESENCE_AT_HOME = 'AT_HOME';
+  var PRESENCE_AWAY = 'AWAY';
+
   function normalize(value) {
     return String(value === undefined || value === null ? '' : value).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
@@ -45,6 +50,25 @@ Application.ImportService = function(importRepository, householdRepository, pers
     return text(value) || 'Không';
   }
 
+  function normalizePersonStatus(value) {
+    var raw = normalize(value);
+    if (!raw || raw === 'active' || raw === 'alive' || raw === 'con song') return PERSON_STATUS_ALIVE;
+    if (raw === 'inactive' || raw === 'deceased' || raw === 'dead' || raw === 'da chet' || raw === 'mat') return PERSON_STATUS_DECEASED;
+    if (raw === 'deleted' || raw === 'da xoa') return Domain.Status.DELETED;
+    return upper(value);
+  }
+
+  function normalizePresenceStatus(value) {
+    var raw = normalize(value);
+    if (!raw || raw === 'at_home' || raw === 'at home' || raw === 'home' || raw === 'o nha' || raw === 'co mat') return PRESENCE_AT_HOME;
+    if (raw === 'away' || raw === 'di vang' || raw === 'vang' || raw === 'tam vang') return PRESENCE_AWAY;
+    return upper(value);
+  }
+
+  function isHouseholdHead(value) {
+    return normalize(value) === 'chu ho';
+  }
+
   function field(row, aliases) {
     var data = row.data || {};
     var normalized = {};
@@ -80,16 +104,17 @@ Application.ImportService = function(importRepository, householdRepository, pers
     identityNumber: ['CCCD','CMND','Số CCCD','So CCCD','Số CMND','So CMND','identityNumber'],
     identityIssueDate: ['Ngày cấp CCCD','Ngay cap CCCD','Ngày cấp','Ngay cap','identityIssueDate'],
     identityIssuePlace: ['Nơi cấp CCCD','Noi cap CCCD','Nơi cấp','Noi cap','identityIssuePlace'],
-    relationship: ['Quan hệ','Quan he','Relationship'],
+    relationship: ['Quan hệ','Quan he','Quan hệ với chủ hộ','Quan he voi chu ho','Relationship'],
     ethnicity: ['Dân tộc','Dan toc','Ethnicity'],
     religion: ['Tôn giáo','Ton giao','Religion'],
     occupation: ['Nghề nghiệp','Nghe nghiep','Occupation'],
     phone: ['Điện thoại','Dien thoai','Số điện thoại','So dien thoai','Phone'],
     permanentAddress: ['Thường trú','Thuong tru','Địa chỉ thường trú','Dia chi thuong tru','Permanent Address'],
-    currentAddress: ['Chỗ ở hiện nay','Cho o hien nay','Địa chỉ hiện nay','Dia chi hien nay','Current Address'],
+    currentAddress: ['Chỗ ở hiện nay','Cho o hien nay','Địa chỉ hiện nay','Dia chi hien nay','Nơi ở hiện nay','Noi o hien nay','Current Address'],
     educationLevel: ['Trình độ','Trinh do','Học vấn','Hoc van','Education'],
     maritalStatus: ['Hôn nhân','Hon nhan','Tình trạng hôn nhân','Tinh trang hon nhan','Marital Status'],
-    status: ['Trạng thái','Trang thai','Status']
+    status: ['Trạng thái','Trang thai','Trạng thái sống','Trang thai song','Tình trạng','Tinh trang','Status'],
+    presenceStatus: ['Hiện tại','Hien tai','Ở nhà/Đi vắng','O nha/Di vang','Có mặt','Co mat','presenceStatus','currentStatus']
   };
 
   function source(payload) {
@@ -109,6 +134,19 @@ Application.ImportService = function(importRepository, householdRepository, pers
       if (item.identityNumber) acc[normalize(item.identityNumber)] = item;
       return acc;
     }, {});
+  }
+
+  function syncImportedHouseholdHeads(records) {
+    (records || []).forEach(function(person) {
+      if (!person || person.status === Domain.Status.DELETED || !isHouseholdHead(person.relationship)) return;
+      var household = householdRepository.findByCode(person.householdId, { includeDeleted: true }) || householdRepository.findById(person.householdId, { includeDeleted: true });
+      if (!household || household.status === Domain.Status.DELETED) return;
+      var headCitizenId = person.citizenCode || person.id || '';
+      var headCitizenName = person.fullName || '';
+      if (household.headCitizenId === headCitizenId && household.headCitizenName === headCitizenName) return;
+      householdRepository.update(household.id, Entity.withUpdateAudit(household, { headCitizenId: headCitizenId, headCitizenName: headCitizenName }));
+      if (logger) logger.info(Domain.Modules.HOUSEHOLD, Domain.Actions.UPDATE, household.id, 'Đồng bộ chủ hộ từ import nhân khẩu', { householdCode: household.householdCode, citizenCode: person.citizenCode, headCitizenName: headCitizenName });
+    });
   }
 
   function makeSummary(type, sourceData, rows, errors) {
@@ -195,7 +233,8 @@ Application.ImportService = function(importRepository, householdRepository, pers
         currentAddress: text(field(row, personAliases.currentAddress)),
         educationLevel: text(field(row, personAliases.educationLevel)),
         maritalStatus: text(field(row, personAliases.maritalStatus)),
-        status: upper(field(row, personAliases.status)) || Domain.Status.ACTIVE
+        status: normalizePersonStatus(field(row, personAliases.status)),
+        presenceStatus: normalizePresenceStatus(field(row, personAliases.presenceStatus))
       };
       var rowErrors = [];
       if (!householdCode) rowErrors.push('Thieu Ma ho');
@@ -207,7 +246,8 @@ Application.ImportService = function(importRepository, householdRepository, pers
       if (record.identityNumber && seenIdentity[normalize(record.identityNumber)]) rowErrors.push('CCCD bi trung trong file import');
       if (!record.dateOfBirth) rowErrors.push('Ngay sinh khong hop le');
       if (['Nam','Nữ','Khác'].indexOf(record.gender) < 0) rowErrors.push('Gioi tinh khong hop le');
-      if (record.status && [Domain.Status.ACTIVE, Domain.Status.INACTIVE, Domain.Status.DELETED].indexOf(record.status) < 0) rowErrors.push('Trang thai nhan khau khong hop le');
+      if ([PERSON_STATUS_ALIVE, PERSON_STATUS_DECEASED, Domain.Status.DELETED].indexOf(record.status) < 0) rowErrors.push('Trang thai nhan khau khong hop le');
+      if ([PRESENCE_AT_HOME, PRESENCE_AWAY].indexOf(record.presenceStatus) < 0) rowErrors.push('Hien tai chi duoc chon O nha hoac Di vang');
       if (rowErrors.length) errors.push({ rowNumber: row.rowNumber, message: rowErrors.join('; ') });
       else {
         seenIdentity[normalize(record.identityNumber)] = true;
@@ -269,6 +309,7 @@ Application.ImportService = function(importRepository, householdRepository, pers
       var validation = validatePeople(payload || {});
       var created = validation.rows.map(function(item) { return Entity.withCreateAudit(Domain.Tables.CITIZENS, item.record); });
       personRepository.createMany(created);
+      syncImportedHouseholdHeads(created);
       var result = makeSummary('person', validation.sourceData, validation.rows, validation.errors);
       result.created = created.length;
       result.updated = 0;
