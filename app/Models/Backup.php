@@ -9,17 +9,18 @@ final class Backup extends BaseModel
 {
     public function createSqlDump(int $userId): array
     {
-        $tables = $this->fetchAll('SHOW TABLES');
+        $tables = $this->fetchAll("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
         $sql = "-- Quan Ly Nhan Khau Thon 09 backup\n-- Created at: " . date('c') . "\nSET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n";
         foreach ($tables as $row) {
             $table = array_values($row)[0];
-            $create = $this->fetchOne('SHOW CREATE TABLE `' . str_replace('`', '``', $table) . '`');
-            $sql .= "DROP TABLE IF EXISTS `$table`;\n" . ($create['Create Table'] ?? array_values($create)[1]) . ";\n\n";
-            $records = $this->fetchAll('SELECT * FROM `' . str_replace('`', '``', $table) . '`');
+            $safeTable = str_replace('`', '``', $table);
+            $create = $this->fetchOne('SHOW CREATE TABLE `' . $safeTable . '`');
+            $sql .= "DROP TABLE IF EXISTS `$safeTable`;\n" . ($create['Create Table'] ?? array_values($create)[1]) . ";\n\n";
+            $records = $this->fetchAll('SELECT * FROM `' . $safeTable . '`');
             foreach ($records as $record) {
                 $columns = array_map(fn($col) => '`' . str_replace('`', '``', $col) . '`', array_keys($record));
                 $values = array_map(fn($value) => $value === null ? 'NULL' : $this->db->quote((string) $value, PDO::PARAM_STR), array_values($record));
-                $sql .= 'INSERT INTO `' . $table . '` (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ");\n";
+                $sql .= 'INSERT INTO `' . $safeTable . '` (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ");\n";
             }
             $sql .= "\n";
         }
