@@ -1,0 +1,28 @@
+{
+  "name": "thon09/quan-ly-nhan-khau",
+  "description": "He thong Quan Ly Nhan Khau Thon 09 chay tren PHP 8.2 va MySQL.",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": ">=8.2",
+    "ext-fileinfo": "*",
+    "ext-json": "*",
+    "ext-mbstring": "*",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "ext-simplexml": "*",
+    "ext-zip": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "scripts": {
+    "check:php": "php -l index.php"
+  }
+}
