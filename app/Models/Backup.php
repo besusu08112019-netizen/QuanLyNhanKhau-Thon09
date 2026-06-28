@@ -25,7 +25,7 @@ final class Backup extends BaseModel
             $sql .= "\n";
         }
         $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
-        $fileName = 'backup_thon09_' . date('Ymd_His') . '.sql';
+        $fileName = 'Backup_' . date('Ymd_Hi') . '.sql';
         $checksum = hash('sha256', $sql);
         $this->insert('INSERT INTO backups (file_name, file_path, file_size, checksum, status, created_by) VALUES (:file_name,:file_path,:file_size,:checksum,"SUCCESS",:user)', ['file_name' => $fileName, 'file_path' => 'download://' . $fileName, 'file_size' => strlen($sql), 'checksum' => $checksum, 'user' => $userId]);
         return ['fileName' => $fileName, 'content' => $sql, 'size' => strlen($sql), 'checksum' => $checksum];
@@ -49,13 +49,13 @@ final class Backup extends BaseModel
             $this->db->rollBack();
             throw $e;
         }
-        $fileName = 'restore_' . date('Ymd_His') . '.sql';
+        $fileName = 'Restore_' . date('Ymd_Hi') . '.sql';
         $checksum = hash('sha256', $sql);
         $this->insert('INSERT INTO backups (file_name, file_path, file_size, checksum, status, created_by, restored_at, restored_by) VALUES (:file_name,:file_path,:file_size,:checksum,"RESTORED",:user,NOW(),:user)', ['file_name' => $fileName, 'file_path' => 'restore://inline', 'file_size' => strlen($sql), 'checksum' => $checksum, 'user' => $userId]);
         return ['statements' => $count, 'checksum' => $checksum];
     }
 
-    public function page(array $filters = []): array
+    public function paginate(array $filters = []): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         $total = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM backups')['total'];
