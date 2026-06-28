@@ -58,6 +58,7 @@ $router->get('/api/roles', [UserController::class, 'roles']);
 $router->get('/api/logs', [LogController::class, 'index']);
 $router->get('/api/backups', [BackupController::class, 'index']);
 $router->post('/api/backups', [BackupController::class, 'create']);
+$router->post('/api/backups/restore', [BackupController::class, 'restore']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
