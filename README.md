@@ -1,89 +1,82 @@
-# He thong Quan ly Nhan khau Thon 09
+# Hệ thống Quản lý Nhân khẩu Thôn 09
 
-Google Apps Script WebApp dung Google Sheets lam co so du lieu van hanh cho Thon 09. Ung dung phuc vu quan ly ho khau, nhan khau, import du lieu ban dau, bien dong cu tru, bao cao, PDF, sao luu, phan quyen, nguoi dung va nhat ky he thong.
+Ứng dụng Web quản lý hộ dân và nhân khẩu cho Thôn 09 xã Hồng Phong, đã chuyển sang chạy độc lập trên Linux Hosting bằng PHP/MySQL. Dự án không còn phụ thuộc Google Apps Script, Google Sheets, Google Drive hoặc `google.script.run`.
 
-## Nen tang
+## Nền tảng
 
-- Google Apps Script V8
-- Google Sheets database
-- Google Drive backup va PDF storage
-- HtmlService WebApp
-- Material Design ket hop AdminLTE
+- PHP 8.2 trở lên.
+- MySQL hoặc MariaDB.
+- Apache hoặc Nginx trên Linux Hosting thông thường.
+- HTML5, CSS3, Bootstrap 5, JavaScript ES6 và Fetch API.
+- Backend MVC, REST API, PDO và JSON API.
 
-## Kien truc
+## Cấu trúc chính
 
-Du an duoc to chuc theo Clean Architecture:
+- `app/`: lõi ứng dụng, controller, model, service dùng chung.
+- `assets/css`: giao diện.
+- `assets/js`: xử lý màn hình và gọi REST API.
+- `views`: giao diện Web.
+- `database/database.sql`: cấu trúc cơ sở dữ liệu MySQL/MariaDB.
+- `config/database.php`: cấu hình kết nối cơ sở dữ liệu.
+- `docs`: tài liệu phân tích, triển khai và checklist.
+- `uploads`: thư mục phục vụ file phát sinh khi triển khai.
+- `index.php`: điểm vào ứng dụng.
+- `.htaccess`: điều hướng URL và bảo vệ thư mục nhạy cảm.
 
-- `src/server/domain`: schema, enum, validation, chuan hoa entity.
-- `src/server/application`: use case nghiep vu.
-- `src/server/infrastructure`: Google Sheets, Drive, Session, LockService va Repository.
-- `src/server/interface`: WebApp entrypoint va API controller.
-- `src/html`, `src/css`, `src/js`: giao dien nguoi dung.
+## Chức năng
 
-## Module nghiep vu
+- Đăng nhập bằng tài khoản và mật khẩu.
+- Dashboard tổng quan, thống kê và biểu đồ.
+- Quản lý hộ dân.
+- Quản lý nhân khẩu.
+- Tìm kiếm, phân trang, thêm, sửa, xóa mềm, xóa nhiều.
+- Đồng bộ chủ hộ và số thành viên theo mã hộ.
+- Báo cáo thống kê, báo cáo người có công, hộ nghèo, hộ cận nghèo, tàn tật.
+- Xuất Excel, xuất PDF và in phiếu.
+- Quản lý người dùng, vai trò và phân quyền.
+- Nhật ký hệ thống.
+- Sao lưu và phục hồi dữ liệu SQL.
 
-1. Dashboard
-2. Household
-3. Citizen
-4. Movement
-5. Import
-6. Report
-7. PDF
-8. Backup
-9. Permission
-10. User
-11. Logs
-12. Settings
+## Phân quyền
 
-## Dung luong thiet ke
+- `SUPER_ADMIN`: quản trị tối cao.
+- `ADMIN`: toàn quyền quản trị và vận hành.
+- `OFFICER`: quản lý hộ dân, nhân khẩu, báo cáo và import/export theo nghiệp vụ.
+- `VIEWER`: chỉ xem dashboard, hộ dân, nhân khẩu và báo cáo.
 
-- 1.000 ho
-- 3.000 nhan khau
+Mọi API nghiệp vụ đều kiểm tra token đăng nhập và quyền trước khi xử lý.
 
-## Phan quyen
+## Triển khai nhanh
 
-He thong dung tai khoan Google dang truy cap WebApp va bang `users` de xac dinh vai tro:
+1. Upload toàn bộ source lên hosting.
+2. Trỏ document root của website vào thư mục chứa `index.php`.
+3. Tạo database MySQL/MariaDB rỗng.
+4. Import file `database/database.sql`.
+5. Chỉnh thông tin kết nối tại `config/database.php`, hoặc khai báo biến môi trường `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_CHARSET`.
+6. Mở website và tạo tài khoản quản trị đầu tiên qua API `/api/auth/setup` nếu database chưa có admin.
+7. Đăng nhập, kiểm tra Dashboard, Hộ dân, Nhân khẩu, Báo cáo, Người dùng, Nhật ký và Sao lưu.
 
-- `SUPER_ADMIN`: tai khoan quan tri dau tien, co toan quyen.
-- `ADMIN`: toan quyen quan tri va van hanh he thong.
-- `OFFICER`: quan ly Ho dan, Nhan khau, Import, Bien dong; xem Dashboard, Report va xuat bieu mau duoc phep.
-- `VIEWER`: chi doc Dashboard, Ho dan, Nhan khau va Report.
+Chi tiết xem `docs/DEPLOY_LINUX_HOSTING.md` và `docs/PRODUCTION_CHECKLIST.md`.
 
-Tat ca API deu di qua `SecurityService.requirePermission` truoc khi thuc thi nghiep vu. Module User, Permission, Settings, Backup va Logs chi cho Admin/SUPER_ADMIN.
+## Cấu hình database
 
-## Import du lieu ban dau
+Mặc định file `config/database.php` đọc biến môi trường trước, sau đó dùng giá trị mẫu. Khi đưa lên hosting, nên chỉnh trực tiếp theo thông tin database của hosting nếu không có quyền cấu hình biến môi trường.
 
-- Ho tro import Ho gia dinh va Nhan khau tu Google Spreadsheet ID va ten Sheet.
-- Mapping theo ten cot, khong phu thuoc thu tu cot.
-- Co buoc preview de kiem tra tong dong, dong hop le va chi tiet loi.
-- Import ghi batch cho ban ghi moi va ghi audit log voi spreadsheet, sheet, tong dong, thanh cong, that bai.
-- Ho gia dinh co tuy chon bo qua hoac cap nhat khi Ma ho da ton tai.
+```php
+return [
+    'host' => 'localhost',
+    'port' => '3306',
+    'database' => 'quan_ly_nhan_khau_thon09',
+    'username' => 'ten_user_database',
+    'password' => 'mat_khau_database',
+    'charset' => 'utf8mb4',
+];
+```
 
-## Trien khai
+## Lưu ý vận hành
 
-1. Cai dat clasp va dang nhap tai khoan Google co quyen quan tri Script ID.
-2. Chay `clasp push` de dua ma nguon len Apps Script.
-3. Trong Apps Script Editor, chay `setup()` mot lan de tao database sheets, seed quyen mac dinh, tao tai khoan quan tri dau tien va cau hinh he thong ban dau.
-4. Deploy WebApp theo chinh sach truy cap cua don vi.
-5. Vao module Backup de tao backup dau tien va kich hoat backup hang ngay neu can.
-6. Theo doi `docs/PRODUCTION_CHECKLIST.md` de kiem thu truoc khi ban giao.
-
-## Van hanh
-
-- Tat ca thao tac ghi du lieu di qua API server va duoc ghi nhat ky.
-- Xoa du lieu la xoa mem de bao toan lich su.
-- User co the bi khoa/mo khoa, doi vai tro va doi mat khau ung dung trong module User.
-- Permission duoc cau hinh theo vai tro, module va action, nhung khong vuot qua chinh sach role production.
-- Audit Log ho tro tim kiem, loc theo ngay, module, action, level va email.
-- Backup tao ban sao Spreadsheet va ghi lai metadata trong bang `backups`.
-- Restore tao ban sao tu file backup va chuyen `DATABASE_SPREADSHEET_ID` sang ban da khoi phuc.
-- PDF va Excel duoc tao tu template/server-side va luu vao Drive.
-- Settings luu thong tin don vi, ten thon, cau hinh chung va tham so he thong trong bang `settings`.
-
-## Hieu nang
-
-- Repository doc Google Sheets theo lo trong mot lan goi API va cache noi bo theo request.
-- Import doc source spreadsheet mot lan, validate bang map bo nho va ghi batch cho ban ghi moi.
-- Danh sach lon dung phan trang server-side.
-- Dashboard va Report tai su dung Repository/Service san co, han che doc trung du lieu.
-- Cac module UI hien loading, thong bao thanh cong/loi va xu ly loi than thien.
+- Không seed mật khẩu mặc định trong `database.sql` để tránh rủi ro bảo mật.
+- Sau khi tạo tài khoản quản trị đầu tiên, nên tạo bản sao lưu SQL ngay.
+- Thao tác xóa là xóa mềm để giữ lịch sử dữ liệu.
+- File PDF dùng bộ tạo PDF PHP thuần, phù hợp shared hosting không cần cài thêm dịch vụ.
+- Trước khi bàn giao, chạy theo checklist trong `docs/PRODUCTION_CHECKLIST.md`.
