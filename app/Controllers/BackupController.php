@@ -18,7 +18,7 @@ final class BackupController extends BaseController
     public function index(): void
     {
         $this->requirePermission('backup', 'read');
-        $this->ok($this->backups->page($this->query()));
+        $this->ok($this->backups->paginate($this->query()));
     }
 
     public function create(): void
@@ -35,8 +35,19 @@ final class BackupController extends BaseController
     public function restore(): void
     {
         $user = $this->requirePermission('backup', 'restore');
-        $result = $this->backups->restoreSql((string) $this->input('sql', ''), (int) $user['id']);
+        $result = $this->backups->restoreSql($this->restoreSqlContent(), (int) $user['id']);
         $this->audit($user, 'backup', 'restore', 'Phục hồi dữ liệu từ SQL', null, $result, 'WARN');
         $this->ok($result);
+    }
+
+    private function restoreSqlContent(): string
+    {
+        if (!empty($_FILES['file']) && is_uploaded_file($_FILES['file']['tmp_name'])) {
+            $name = strtolower((string) $_FILES['file']['name']);
+            if (!str_ends_with($name, '.sql')) throw new \RuntimeException('Chỉ hỗ trợ phục hồi file .sql');
+            $content = file_get_contents($_FILES['file']['tmp_name']);
+            return is_string($content) ? $content : '';
+        }
+        return (string) $this->input('sql', '');
     }
 }
