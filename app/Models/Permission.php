@@ -9,13 +9,10 @@ final class Permission extends BaseModel
     public function matrix(): array
     {
         $roles = [
-            'ADMIN' => 'Quản trị',
+            'SUPER_ADMIN' => 'Super Admin',
+            'ADMIN' => 'Admin',
             'OFFICER' => 'Cán bộ',
-            'COLLABORATOR' => 'Cộng tác viên',
-            'VIEWER' => 'Chỉ xem',
-            'DATA_ENTRY' => 'Chỉ nhập liệu',
-            'NO_DELETE' => 'Không được xóa',
-            'NO_EXPORT' => 'Không được xuất dữ liệu',
+            'VIEWER' => 'Khách',
         ];
         $modules = ['dashboard','household','citizen','movement','report','pdf','import','export','print','user','permission','logs','settings','backup'];
         $actions = ['read','create','update','delete','export','print','restore'];
@@ -23,14 +20,15 @@ final class Permission extends BaseModel
         $matrix = [];
         foreach ($roles as $role => $label) {
             $matrix[$role] = ['role' => $role, 'label' => $label, 'permissions' => []];
-            foreach ($modules as $module) foreach ($actions as $action) $matrix[$role]['permissions'][$module][$action] = false;
+            foreach ($modules as $module) foreach ($actions as $action) $matrix[$role]['permissions'][$module][$action] = $this->defaultAllowed($role, $module, $action);
         }
         foreach ($rows as $row) {
             $role = $row['role'];
-            if (!isset($matrix[$role])) continue;
+            if (!isset($matrix[$role]) || in_array($role, ['SUPER_ADMIN','ADMIN'], true)) continue;
             $matrix[$role]['permissions'][$row['module']][$row['action']] = (bool) $row['allowed'];
         }
-        $matrix['ADMIN']['adminNote'] = 'Admin toàn quyền, hệ thống luôn cho phép ở tầng bảo mật.';
+        $matrix['SUPER_ADMIN']['adminNote'] = 'Toàn quyền hệ thống.';
+        $matrix['ADMIN']['adminNote'] = 'Quản lý hộ, nhân khẩu, import/export và dashboard.';
         return ['roles' => array_values($matrix), 'modules' => $modules, 'actions' => $actions];
     }
 
@@ -38,7 +36,7 @@ final class Permission extends BaseModel
     {
         foreach ($items as $item) {
             $role = (string) ($item['role'] ?? '');
-            if ($role === 'SUPER_ADMIN' || $role === 'ADMIN') continue;
+            if (in_array($role, ['SUPER_ADMIN', 'ADMIN'], true)) continue;
             $module = preg_replace('/[^a-z_]/', '', (string) ($item['module'] ?? ''));
             $action = preg_replace('/[^a-z_]/', '', (string) ($item['action'] ?? ''));
             if ($role === '' || $module === '' || $action === '') continue;
@@ -46,5 +44,14 @@ final class Permission extends BaseModel
             $this->execute('INSERT INTO permissions (role, module, action, allowed, updated_by) VALUES (:role,:module,:action,:allowed,:user) ON DUPLICATE KEY UPDATE allowed=VALUES(allowed), updated_by=VALUES(updated_by)', ['role' => $role, 'module' => $module, 'action' => $action, 'allowed' => $allowed, 'user' => $userId]);
         }
         return $this->matrix();
+    }
+
+    private function defaultAllowed(string $role, string $module, string $action): bool
+    {
+        if ($role === 'SUPER_ADMIN') return true;
+        if ($role === 'ADMIN') return in_array($module, ['dashboard','household','citizen','import','export','report','pdf'], true) && in_array($action, ['read','create','update','delete','export','print'], true);
+        if ($role === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','import'], true) && in_array($action, ['read','create','update'], true);
+        if ($role === 'VIEWER') return in_array($module, ['dashboard','household','citizen','report'], true) && $action === 'read';
+        return false;
     }
 }
