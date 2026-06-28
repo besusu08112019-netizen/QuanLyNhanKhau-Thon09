@@ -5,6 +5,8 @@ Application.PersonService = function(personRepository, householdRepository, logg
   var PERSON_STATUS_DECEASED = 'DECEASED';
   var PRESENCE_AT_HOME = 'AT_HOME';
   var PRESENCE_AWAY = 'AWAY';
+  var RESIDENCY_REGULAR = 'Thường trú';
+  var RESIDENCY_TEMPORARY = 'Tạm trú';
 
   function normalizeText(value) {
     return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -33,6 +35,13 @@ Application.PersonService = function(personRepository, householdRepository, logg
     return String(value || '').trim().toUpperCase();
   }
 
+  function normalizeResidencyStatus(value) {
+    var normalized = normalizeText(value);
+    if (!normalized || normalized === 'thuong tru' || normalized === 'permanent residence' || normalized === 'regular') return RESIDENCY_REGULAR;
+    if (normalized === 'tam tru' || normalized === 'temporary residence' || normalized === 'temporary_residence') return RESIDENCY_TEMPORARY;
+    return String(value || '').trim();
+  }
+
   function isHouseholdHead(value) {
     return normalizeText(value) === 'chu ho';
   }
@@ -54,12 +63,12 @@ Application.PersonService = function(personRepository, householdRepository, logg
       religion: String(data.religion || '').trim(),
       occupation: String(data.occupation || '').trim(),
       phone: String(data.phone || '').trim(),
-      permanentAddress: String(data.permanentAddress || '').trim(),
+      permanentAddress: normalizeResidencyStatus(data.permanentAddress || data.residencyStatus),
       currentAddress: String(data.currentAddress || '').trim(),
       educationLevel: String(data.educationLevel || '').trim(),
       maritalStatus: String(data.maritalStatus || '').trim(),
       status: normalizeStatus(data.status),
-      presenceStatus: normalizePresenceStatus(data.presenceStatus || data.currentStatus || data.residencyStatus)
+      presenceStatus: normalizePresenceStatus(data.presenceStatus || data.currentStatus)
     };
   }
 
@@ -132,6 +141,9 @@ Application.PersonService = function(personRepository, householdRepository, logg
     if ([PRESENCE_AT_HOME, PRESENCE_AWAY].indexOf(data.presenceStatus) === -1) {
       throw new Error('Hiện tại chỉ được chọn Ở nhà hoặc Đi vắng');
     }
+    if ([RESIDENCY_REGULAR, RESIDENCY_TEMPORARY].indexOf(data.permanentAddress) === -1) {
+      throw new Error('Cư trú chỉ được chọn Thường trú hoặc Tạm trú');
+    }
     var household = resolveHousehold(data.householdId);
     if (!household) {
       throw new Error('Không tìm thấy Mã hộ: ' + data.householdId);
@@ -149,6 +161,7 @@ Application.PersonService = function(personRepository, householdRepository, logg
     query = Object.assign({}, query || {});
     if (query.status) query.status = normalizeStatus(query.status);
     if (query.presenceStatus) query.presenceStatus = normalizePresenceStatus(query.presenceStatus);
+    if (query.permanentAddress) query.permanentAddress = normalizeResidencyStatus(query.permanentAddress);
     if (query.householdId || query.householdCode) {
       var household = resolveHousehold(query.householdId || query.householdCode);
       query.householdId = household ? household.householdCode : '__HOUSEHOLD_NOT_FOUND__';
