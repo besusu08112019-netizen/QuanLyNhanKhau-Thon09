@@ -20,6 +20,10 @@ Infrastructure.HouseholdRepository = function(db) {
     return String(value || '').trim().toUpperCase();
   }
 
+  function isLivingCitizen(citizen) {
+    return personStatus(citizen && citizen.status) === 'ALIVE';
+  }
+
   function readCitizens() {
     return db.readAll(Domain.Tables.CITIZENS, { includeDeleted: true });
   }
@@ -36,7 +40,7 @@ Infrastructure.HouseholdRepository = function(db) {
 
   function makePresenceSummary(citizens) {
     return (citizens || readCitizens()).reduce(function(acc, citizen) {
-      if (personStatus(citizen.status) === Domain.Status.DELETED) return acc;
+      if (!isLivingCitizen(citizen)) return acc;
       var key = normalizeKeyword(citizen.householdId || citizen.householdCode);
       if (!key) return acc;
       if (!acc[key]) acc[key] = { atHome: 0, away: 0, total: 0 };
@@ -163,8 +167,8 @@ Infrastructure.HouseholdRepository = function(db) {
   function countActiveMembers(householdIdOrCode) {
     var household = findById(householdIdOrCode, { includeDeleted: true }) || findByCode(householdIdOrCode, { includeDeleted: true }) || {};
     var keys = [householdIdOrCode, household.id, household.householdCode].map(normalizeKeyword).filter(Boolean);
-    return db.readAll(Domain.Tables.CITIZENS).filter(function(citizen) {
-      return personStatus(citizen.status) !== Domain.Status.DELETED && keys.indexOf(normalizeKeyword(citizen.householdId)) >= 0;
+    return db.readAll(Domain.Tables.CITIZENS, { includeDeleted: true }).filter(function(citizen) {
+      return isLivingCitizen(citizen) && keys.indexOf(normalizeKeyword(citizen.householdId)) >= 0;
     }).length;
   }
 
