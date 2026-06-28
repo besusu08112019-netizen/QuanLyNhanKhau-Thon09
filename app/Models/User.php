@@ -97,7 +97,14 @@ final class User extends BaseModel
         $expires = (new DateTimeImmutable('now'))->modify('+' . (int) ($config['session_ttl_seconds'] ?? 21600) . ' seconds')->format('Y-m-d H:i:s');
         $this->insert('INSERT INTO user_sessions (user_id, token_hash, ip_address, user_agent, expires_at) VALUES (:user_id, :token_hash, :ip, :agent, :expires_at)', ['user_id' => $user['id'], 'token_hash' => hash('sha256', $token), 'ip' => $_SERVER['REMOTE_ADDR'] ?? null, 'agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255), 'expires_at' => $expires]);
         $user = $this->findById((int) $user['id']);
-        return ['token' => $token, 'expiresIn' => (int) ($config['session_ttl_seconds'] ?? 21600), 'user' => $this->publicUser($user)];
+        return ['token' => $token, 'csrfToken' => $this->csrfToken($token), 'expiresIn' => (int) ($config['session_ttl_seconds'] ?? 21600), 'user' => $this->publicUser($user)];
+    }
+
+    public function csrfToken(string $token): string
+    {
+        $config = require BASE_PATH . '/config/app.php';
+        $key = (string) ($config['app_key'] ?? $config['name'] ?? 'thon09');
+        return hash_hmac('sha256', $token, $key);
     }
 
     public function findByToken(string $token): ?array { return $this->fetchOne('SELECT u.* FROM user_sessions s INNER JOIN users u ON u.id = s.user_id WHERE s.token_hash = :hash AND s.revoked_at IS NULL AND s.expires_at > NOW() AND u.status = "ACTIVE"', ['hash' => hash('sha256', $token)]); }
