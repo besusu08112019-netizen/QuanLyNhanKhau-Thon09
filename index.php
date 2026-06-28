@@ -16,8 +16,11 @@ use App\Controllers\DashboardController;
 use App\Controllers\HouseholdController;
 use App\Controllers\ImportController;
 use App\Controllers\LogController;
+use App\Controllers\MovementController;
+use App\Controllers\PermissionController;
 use App\Controllers\PersonController;
 use App\Controllers\ReportController;
+use App\Controllers\SettingController;
 use App\Controllers\UserController;
 
 Autoloader::register();
@@ -51,6 +54,13 @@ $router->get('/api/reports/print', [ReportController::class, 'print']);
 $router->post('/api/import/preview', [ImportController::class, 'preview']);
 $router->post('/api/import/process', [ImportController::class, 'process']);
 
+$router->get('/api/movements', [MovementController::class, 'index']);
+$router->post('/api/movements', [MovementController::class, 'store']);
+$router->get('/api/movements/types', [MovementController::class, 'types']);
+$router->get('/api/movements/{id}', [MovementController::class, 'show']);
+$router->put('/api/movements/{id}', [MovementController::class, 'update']);
+$router->delete('/api/movements/{id}', [MovementController::class, 'destroy']);
+
 $router->get('/api/users', [UserController::class, 'index']);
 $router->post('/api/users', [UserController::class, 'store']);
 $router->get('/api/users/{id}', [UserController::class, 'show']);
@@ -59,6 +69,10 @@ $router->delete('/api/users/{id}', [UserController::class, 'destroy']);
 $router->post('/api/users/{id}/lock', [UserController::class, 'lock']);
 $router->post('/api/users/{id}/unlock', [UserController::class, 'unlock']);
 $router->get('/api/roles', [UserController::class, 'roles']);
+$router->get('/api/permissions', [PermissionController::class, 'index']);
+$router->post('/api/permissions', [PermissionController::class, 'update']);
+$router->get('/api/settings', [SettingController::class, 'index']);
+$router->post('/api/settings', [SettingController::class, 'update']);
 $router->get('/api/logs', [LogController::class, 'index']);
 $router->get('/api/backups', [BackupController::class, 'index']);
 $router->post('/api/backups', [BackupController::class, 'create']);
