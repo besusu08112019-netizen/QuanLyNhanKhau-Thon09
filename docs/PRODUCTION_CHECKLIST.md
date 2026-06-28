@@ -34,6 +34,11 @@
 - Nhân khẩu: Mã hộ phải tồn tại trước khi thêm.
 - Nhân khẩu: ngày sinh hiển thị dạng ngày/tháng/năm.
 - Nhân khẩu: nếu quan hệ là Chủ hộ thì thông tin chủ hộ bên Hộ dân được cập nhật.
+- Import: tài khoản Admin/Cán bộ thấy menu Import dữ liệu.
+- Import: đọc được file CSV/XLSX theo tên cột, không phụ thuộc thứ tự cột.
+- Import: kiểm tra trước hiển thị tổng dòng, dòng hợp lệ và dòng lỗi.
+- Import: import Hộ dân hỗ trợ bỏ qua hoặc cập nhật khi trùng Mã hộ.
+- Import: import Nhân khẩu kiểm tra Mã hộ, Họ tên, Ngày sinh và CCCD qua model hiện có.
 - Báo cáo: tổng hợp, hộ dân, nhân khẩu, giới tính, độ tuổi, cư trú, biến động và nhóm chính sách.
 - Xuất Excel tải được file và giữ dữ liệu tiếng Việt.
 - Xuất PDF tải được file đúng định dạng cơ bản.
@@ -56,6 +61,7 @@
 - Danh sách Hộ dân và Nhân khẩu dùng phân trang, không tải toàn bộ dữ liệu ra giao diện.
 - Tìm kiếm dùng API server-side.
 - Dashboard đọc dữ liệu tổng hợp qua truy vấn SQL, không lặp xử lý trên giao diện.
+- Import đọc file một lần, map theo tiêu đề cột và ghi qua model nghiệp vụ hiện có.
 - Báo cáo lớn nên lọc theo khoảng thời gian hoặc nhóm dữ liệu trước khi xuất.
 
 ## Bàn giao
