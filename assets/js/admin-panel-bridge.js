@@ -1,4 +1,8 @@
 (() => {
+  window.roleLabel = function roleLabel(role) {
+    return ({ SUPER_ADMIN:'Quản trị tối cao', ADMIN:'Quản trị', OFFICER:'Cán bộ', COLLABORATOR:'Cộng tác viên', VIEWER:'Chỉ xem', DATA_ENTRY:'Chỉ nhập liệu', NO_DELETE:'Không được xóa', NO_EXPORT:'Không được xuất dữ liệu' })[role] || role || '';
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     const nav = document.querySelector('.sidebar .nav');
     if (!nav) return;
