@@ -7,6 +7,8 @@ use DateTimeImmutable;
 
 final class User extends BaseModel
 {
+    private const ROLES = ['ADMIN','OFFICER','COLLABORATOR','VIEWER','DATA_ENTRY','NO_DELETE','NO_EXPORT'];
+
     public function count(): int { return (int) $this->fetchOne('SELECT COUNT(*) AS total FROM users')['total']; }
 
     public function page(array $filters = []): array
@@ -26,7 +28,11 @@ final class User extends BaseModel
         return [
             ['value' => 'ADMIN', 'label' => 'Quản trị'],
             ['value' => 'OFFICER', 'label' => 'Cán bộ'],
+            ['value' => 'COLLABORATOR', 'label' => 'Cộng tác viên'],
             ['value' => 'VIEWER', 'label' => 'Chỉ xem'],
+            ['value' => 'DATA_ENTRY', 'label' => 'Chỉ nhập liệu'],
+            ['value' => 'NO_DELETE', 'label' => 'Không được xóa'],
+            ['value' => 'NO_EXPORT', 'label' => 'Không được xuất dữ liệu'],
         ];
     }
 
@@ -106,9 +112,13 @@ final class User extends BaseModel
     public function can(array $user, string $module, string $action): bool
     {
         if (in_array($user['role'], ['SUPER_ADMIN', 'ADMIN'], true)) return true;
+        if ($user['role'] === 'NO_DELETE' && $action === 'delete') return false;
+        if ($user['role'] === 'NO_EXPORT' && in_array($action, ['export','print'], true)) return false;
         $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $user['role'], 'module' => $module, 'action' => $action]);
         if ($permission) return (bool) $permission['allowed'];
-        if ($user['role'] === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','pdf','import'], true) && in_array($action, ['read','create','update','delete','export'], true);
+        if ($user['role'] === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','pdf','import'], true) && in_array($action, ['read','create','update','delete','export','print'], true);
+        if ($user['role'] === 'COLLABORATOR') return in_array($module, ['dashboard','household','citizen','movement','import'], true) && in_array($action, ['read','create','update'], true);
+        if ($user['role'] === 'DATA_ENTRY') return in_array($module, ['dashboard','household','citizen','movement','import'], true) && in_array($action, ['read','create','update'], true);
         if ($user['role'] === 'VIEWER') return in_array($module, ['dashboard','household','citizen','report'], true) && $action === 'read';
         return false;
     }
@@ -122,6 +132,6 @@ final class User extends BaseModel
 
     private function role(string $role): string
     {
-        return in_array($role, ['ADMIN','OFFICER','VIEWER'], true) ? $role : 'VIEWER';
+        return in_array($role, self::ROLES, true) ? $role : 'VIEWER';
     }
 }
