@@ -31,9 +31,25 @@ abstract class BaseController
         return $user;
     }
 
+    protected function verifyCsrfToken(): void
+    {
+        if (in_array($this->request->method(), ['GET', 'HEAD', 'OPTIONS'], true)) {
+            return;
+        }
+
+        $token = (string) ($this->request->bearerToken() ?? '');
+        $submitted = (string) $this->request->header('x-csrf-token', '');
+        $expected = $token !== '' ? $this->users->csrfToken($token) : '';
+
+        if ($submitted === '' || $expected === '' || !hash_equals($expected, $submitted)) {
+            Response::error('CSRF token không hợp lệ', 419);
+        }
+    }
+
     protected function requirePermission(string $module, string $action): array
     {
         $user = $this->user();
+        $this->verifyCsrfToken();
         if (!$this->users->can($user, $module, $action)) {
             Response::error('Không có quyền ' . $action . ' module ' . $module, 403);
         }
