@@ -1,44 +1,67 @@
-# Production Readiness Checklist
+# Production Checklist - PHP/MySQL Linux Hosting
 
-## Build va Deploy
+## Triển khai
 
-- Chay `setup()` mot lan sau khi `clasp push` de tao sheets, seed quyen, cau hinh ban dau.
-- Kiem tra `appsscript.json` co V8 runtime va cac scope: spreadsheets, drive, scriptapp, external_request, userinfo.email.
-- Deploy Web App voi tai khoan quan tri he thong.
-- Mo Web App bang tai khoan quan tri dau tien de xac nhan user `SUPER_ADMIN` duoc tao.
+- Hosting chạy PHP 8.2 trở lên.
+- Database MySQL/MariaDB đã được tạo với charset `utf8mb4`.
+- Đã import `database/database.sql` thành công.
+- `config/database.php` đã đúng host, database, username, password và charset.
+- Domain hoặc subdomain đã trỏ tới thư mục chứa `index.php`.
+- Apache đã nhận `.htaccess`, hoặc Nginx đã cấu hình rewrite về `index.php`.
+- Truy cập `/api/health` trả về trạng thái `ok`.
+- Tạo tài khoản quản trị đầu tiên qua `/api/auth/setup` nếu database chưa có Admin.
 
-## Phan quyen
+## Bảo mật
 
-- Admin: toan quyen.
-- Can bo: quan ly Ho dan, Nhan khau, Import, Bien dong; xem Dashboard/Report/PDF theo quyen.
-- Chi xem: chi doc Dashboard, Ho dan, Nhan khau, Report.
-- User, Permission, Settings, Backup, Logs chi cho Admin/SUPER_ADMIN.
+- Không dùng mật khẩu quản trị yếu hoặc mật khẩu mẫu.
+- Thư mục `app`, `config`, `database`, `docs`, `uploads`, `vendor`, `controllers`, `models` không truy cập trực tiếp từ trình duyệt.
+- Người dùng không phải Admin không thấy menu Người dùng, Nhật ký và Sao lưu.
+- API quản trị vẫn chặn truy cập trái phép kể cả khi gọi trực tiếp.
+- Tài khoản Cán bộ chỉ thao tác nghiệp vụ được phân quyền.
+- Tài khoản Chỉ xem không thể thêm, sửa, xóa hoặc xuất dữ liệu nếu không có quyền.
 
-## Kiem thu chuc nang
+## Kiểm thử chức năng
 
-- Household: danh sach, tim kiem, phan trang, them, sua, xoa mem, validate ma ho.
-- Person: danh sach, tim kiem, phan trang, them, sua, xoa mem, khoi phuc, validate CCCD va ma ho.
-- Import Household: preview, mapping theo ten cot, validate Ma ho, bo qua/cap nhat ho trung, audit log.
-- Import Person: preview, mapping theo ten cot, validate CCCD, Ma ho, Ho ten, Ngay sinh, Gioi tinh, audit log.
-- Dashboard: cards, bieu do, bo loc, cap nhat sau khi du lieu thay doi.
-- Report: preview, in, xuat PDF, xuat Excel, loc thoi gian/trang thai.
-- User: user.page, user.get, them, sua, xoa, khoa, mo khoa, doi vai tro.
-- Permission: xem va cap nhat quyen theo vai tro/module/action.
-- Logs: tim kiem, loc, phan trang, log dang nhap/dang xuat/thao tac du lieu.
-- Backup: tao backup, danh sach backup, restore, trigger backup hang ngay.
-- Settings: cap nhat thong tin don vi, ten thon, tham so chung.
+- Đăng nhập/đăng xuất hoạt động và có ghi nhật ký.
+- Dashboard hiển thị tổng hộ, tổng nhân khẩu, Nam, Nữ, còn sống, tạm trú, tạm vắng.
+- Bộ lọc Dashboard theo thời gian, trạng thái hộ, thường trú/tạm trú và ở nhà/đi vắng hoạt động.
+- Hộ dân: danh sách, tìm kiếm, phân trang, thêm, sửa, xóa mềm, xóa nhiều.
+- Hộ dân: Mã hộ là định danh thống nhất, không dùng lẫn ID hộ trong giao diện.
+- Hộ dân: hiển thị chủ hộ, diện hộ, số người ở nhà và số người đi vắng đúng theo nhân khẩu cùng mã hộ.
+- Hộ dân: bấm vào một hộ hiển thị thành viên cùng mã hộ.
+- Nhân khẩu: danh sách, tìm kiếm, phân trang, thêm, sửa, xóa mềm, khôi phục, xóa nhiều.
+- Nhân khẩu: không trùng CCCD khi có dữ liệu CCCD.
+- Nhân khẩu: Mã hộ phải tồn tại trước khi thêm.
+- Nhân khẩu: ngày sinh hiển thị dạng ngày/tháng/năm.
+- Nhân khẩu: nếu quan hệ là Chủ hộ thì thông tin chủ hộ bên Hộ dân được cập nhật.
+- Báo cáo: tổng hợp, hộ dân, nhân khẩu, giới tính, độ tuổi, cư trú, biến động và nhóm chính sách.
+- Xuất Excel tải được file và giữ dữ liệu tiếng Việt.
+- Xuất PDF tải được file đúng định dạng cơ bản.
+- In phiếu mở cửa sổ in khổ A4.
+- Người dùng: thêm, sửa, xóa, khóa, mở khóa, đổi vai trò.
+- Nhật ký: tìm kiếm, phân trang và ghi thao tác dữ liệu chính.
+- Sao lưu: tạo và tải file SQL.
+- Phục hồi: chỉ Admin thực hiện sau khi đã có backup an toàn.
 
-## Hieu nang
+## Dữ liệu
 
-- Repository doc Google Sheets theo lo va cache trong tung request API.
-- Import doc source spreadsheet mot lan, validate bang map bo nho va ghi batch cho ban ghi moi.
-- Danh sach lon dung phan trang server-side.
-- Dashboard/Report tai su dung service va doc du lieu theo lo.
-- Han che goi API lap lai tren UI; moi thao tac hien loading va thong bao ket qua.
+- Không sửa tay khóa chính trong database production.
+- Không xóa cứng dữ liệu nếu chưa có backup.
+- Kiểm tra index của `household_code`, `citizen_code`, `identity_number`, `status`, `created_at` đã có sau khi import SQL.
+- Kiểm tra dữ liệu tiếng Việt không bị lỗi font sau khi import.
+- Với dữ liệu thực, tạo backup trước và sau khi import.
 
-## Van hanh
+## Hiệu năng
 
-- Tao backup dau tien truoc khi nhap du lieu that.
-- Sau khi restore, tai lai Web App de su dung spreadsheet moi.
-- Dinh ky kiem tra Logs va Backup.
-- Khong sua truc tiep schema cac sheet production neu khong co ke hoach migrate.
+- Danh sách Hộ dân và Nhân khẩu dùng phân trang, không tải toàn bộ dữ liệu ra giao diện.
+- Tìm kiếm dùng API server-side.
+- Dashboard đọc dữ liệu tổng hợp qua truy vấn SQL, không lặp xử lý trên giao diện.
+- Báo cáo lớn nên lọc theo khoảng thời gian hoặc nhóm dữ liệu trước khi xuất.
+
+## Bàn giao
+
+- Ghi lại domain truy cập.
+- Ghi lại thông tin database ở nơi an toàn của đơn vị.
+- Bàn giao tài khoản Admin đầu tiên và yêu cầu đổi mật khẩu sau khi nhận.
+- Tạo ít nhất một tài khoản Cán bộ và một tài khoản Chỉ xem để kiểm thử phân quyền.
+- Tạo backup SQL cuối cùng trước khi bàn giao.
