@@ -116,17 +116,15 @@ Infrastructure.HouseholdRepository = function(db) {
 
   function resolvePresenceSummary(household, presenceSummary) {
     var summary = emptyPresenceSummary();
+    var canonicalKey = normalizeKeyword(household.id || household.householdCode);
+    var canonicalSummary = canonicalKey ? presenceSummary[canonicalKey] : null;
+    if (canonicalSummary) return canonicalSummary;
     householdKeys('', household).forEach(function(key) {
-      var canonicalKey = normalizeKeyword(household.id || household.householdCode);
-      var item = presenceSummary[canonicalKey] || presenceSummary[key];
-      if (!item || item.__used) return;
+      var item = presenceSummary[key];
+      if (!item) return;
       summary.atHome += item.atHome || 0;
       summary.away += item.away || 0;
       summary.total += item.total || 0;
-      item.__used = true;
-    });
-    Object.keys(presenceSummary || {}).forEach(function(key) {
-      if (presenceSummary[key]) delete presenceSummary[key].__used;
     });
     return summary;
   }
