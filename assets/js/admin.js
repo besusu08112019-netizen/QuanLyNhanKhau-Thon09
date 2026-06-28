@@ -4,6 +4,7 @@
     injectAdminScreens();
     bindAdminNavigation();
   };
+  window.ensureAdminScreens = start;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 
   function isAdminUser() {
