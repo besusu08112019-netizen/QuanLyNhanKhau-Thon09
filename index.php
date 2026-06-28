@@ -27,7 +27,8 @@ use App\Controllers\UserController;
 Autoloader::register();
 
 set_exception_handler(function (Throwable $exception): void {
-    Response::error($exception->getMessage(), 500);
+    $status = $exception instanceof RuntimeException ? 400 : 500;
+    Response::error($exception->getMessage(), $status);
 });
 
 $request = Request::capture();
