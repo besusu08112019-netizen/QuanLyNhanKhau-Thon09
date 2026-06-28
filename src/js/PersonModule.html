@@ -5,6 +5,7 @@
   var presenceLabels = { AT_HOME: 'Ở nhà', AWAY: 'Đi vắng' };
   var statusOptions = [{ value: 'ALIVE', label: 'Còn sống' }, { value: 'DECEASED', label: 'Đã chết' }];
   var presenceOptions = [{ value: 'AT_HOME', label: 'Ở nhà' }, { value: 'AWAY', label: 'Đi vắng' }];
+  var residencyOptions = ['Thường trú', 'Tạm trú'];
   var genderOptions = ['Nam', 'Nữ', 'Khác'];
   var relationshipOptions = ['Chủ hộ','Vợ','Chồng','Con','Cha','Mẹ','Ông','Bà','Anh','Chị','Em','Cháu','Dâu','Rể','Người thân khác','Người thuê trọ','Tạm trú','Khác'];
   var educationOptions = ['Chưa đi học','Mầm non','Tiểu học','THCS','THPT','Trung cấp','Cao đẳng','Đại học','Sau đại học','Không rõ'];
@@ -30,7 +31,7 @@
     { name: 'maritalStatus', label: 'Hôn nhân', options: maritalOptions },
     { name: 'status', label: 'Trạng thái', required: true, options: statusOptions },
     { name: 'presenceStatus', label: 'Hiện tại', required: true, options: presenceOptions },
-    { name: 'permanentAddress', label: 'Thường trú', full: true },
+    { name: 'permanentAddress', label: 'Cư trú', required: true, options: residencyOptions },
     { name: 'currentAddress', label: 'Nơi ở hiện nay', full: true }
   ];
   var detailFields = [
@@ -39,7 +40,7 @@
     ['householdId','Mã hộ'], ['householdHeadName','Chủ hộ'], ['householdAddress','Địa chỉ hộ'],
     ['relationship','Quan hệ với chủ hộ'], ['ethnicity','Dân tộc'], ['religion','Tôn giáo'], ['occupation','Nghề nghiệp'],
     ['phone','Điện thoại'], ['educationLevel','Học vấn'], ['maritalStatus','Hôn nhân'],
-    ['permanentAddress','Thường trú'], ['currentAddress','Nơi ở hiện nay'], ['status','Trạng thái'], ['presenceStatus','Hiện tại'],
+    ['permanentAddress','Cư trú'], ['currentAddress','Nơi ở hiện nay'], ['status','Trạng thái'], ['presenceStatus','Hiện tại'],
     ['createdAt','Ngày tạo'], ['createdBy','Người tạo'], ['updatedAt','Ngày cập nhật'], ['updatedBy','Người cập nhật'], ['deletedAt','Ngày xóa'], ['deletedBy','Người xóa']
   ];
 
@@ -72,6 +73,9 @@
     host.appendChild(node);
     setTimeout(function() { node.remove(); }, 3500);
   }
+  function attachAuth(payload) {
+    return window.Thon09AttachAuth ? window.Thon09AttachAuth(payload || {}) : (payload || {});
+  }
   function api(action, payload) {
     setLoading(true);
     return new Promise(function(resolve, reject) {
@@ -79,7 +83,7 @@
         setLoading(false);
         if (!response || !response.ok) return reject(new Error(response && response.error ? response.error.message : 'Không nhận được phản hồi từ hệ thống khi gọi ' + action));
         resolve(response.data);
-      }).withFailureHandler(function(error) { setLoading(false); reject(new Error(error && error.message ? error.message : 'Không gọi được máy chủ')); }).api(action, payload || {});
+      }).withFailureHandler(function(error) { setLoading(false); reject(new Error(error && error.message ? error.message : 'Không gọi được máy chủ')); }).api(action, attachAuth(payload || {}));
     });
   }
   function activate() {
@@ -87,21 +91,34 @@
     if (el('pageTitle')) el('pageTitle').textContent = 'Quản lý nhân khẩu';
   }
   function canonicalStatus(value) { if (value === 'ACTIVE') return 'ALIVE'; if (value === 'INACTIVE') return 'DECEASED'; return value || 'ALIVE'; }
-  function isHouseholdHead(value) { return normalizeText(value) === 'chu ho'; }
-  function householdCodeOf(row) { return String(row.householdId || row.householdCode || row.householdInternalId || '').trim(); }
-  function householdGroupRow(code) { return '<tr class="person-household-group"><td colspan="11"><span>Mã hộ: ' + html(code || 'Chưa có mã hộ') + '</span></td></tr>'; }
   function canonicalPresence(value) {
     var text = normalizeText(value);
     if (!text || text === 'at_home' || text === 'at home' || text === 'home' || text === 'o nha' || text === 'co mat') return 'AT_HOME';
     if (text === 'away' || text === 'di vang' || text === 'vang' || text === 'tam vang') return 'AWAY';
     return value || 'AT_HOME';
   }
+  function canonicalResidency(value) {
+    var text = normalizeText(value);
+    if (!text || text === 'thuong tru' || text === 'permanent residence' || text === 'regular') return 'Thường trú';
+    if (text === 'tam tru' || text === 'temporary residence' || text === 'temporary_residence') return 'Tạm trú';
+    return value || 'Thường trú';
+  }
+  function isHouseholdHead(value) { return normalizeText(value) === 'chu ho'; }
+  function householdCodeOf(row) { return String(row.householdId || row.householdCode || row.householdInternalId || '').trim(); }
+  function householdGroupRow(code) { return '<tr class="person-household-group"><td colspan="12"><span>Mã hộ: ' + html(code || 'Chưa có mã hộ') + '</span></td></tr>'; }
   function statusBadge(value) { value = canonicalStatus(value); return '<span class="status-pill status-' + html(value) + '">' + html(statusLabels[value] || value) + '</span>'; }
   function presenceBadge(value) {
     value = canonicalPresence(value);
     var cls = value === 'AWAY' ? 'badge-warning' : 'badge-success';
     return '<span class="badge ' + cls + '">' + html(presenceLabels[value] || value) + '</span>';
   }
+  function residencyBadge(value) {
+    value = canonicalResidency(value);
+    var cls = value === 'Tạm trú' ? 'badge-info' : 'badge-light';
+    return '<span class="badge ' + cls + '">' + html(value) + '</span>';
+  }
+  function optionValue(option) { return typeof option === 'object' ? option.value : option; }
+  function optionLabel(option) { return typeof option === 'object' ? option.label : option; }
   function readFilters() {
     if (el('personKeyword')) state.keyword = el('personKeyword').value.trim();
     if (el('personHousehold')) state.householdId = el('personHousehold').value.trim();
@@ -132,7 +149,7 @@
   }
   function renderPersonRow(row) {
     var headMark = isHouseholdHead(row.relationship) ? ' <span class="badge badge-primary ml-1">Chủ hộ</span>' : '';
-    return '<tr class="person-row' + (isHouseholdHead(row.relationship) ? ' person-head-row' : '') + '" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + headMark + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(householdCodeOf(row)) + '</td><td>' + html(row.gender) + '</td><td>' + html(formatDate(row.dateOfBirth)) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + statusBadge(row.status) + '</td><td>' + presenceBadge(row.presenceStatus) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
+    return '<tr class="person-row' + (isHouseholdHead(row.relationship) ? ' person-head-row' : '') + '" data-person-row="' + html(row.id) + '" title="Bấm để xem chi tiết"><td>' + html(row.citizenCode) + '</td><td>' + html(row.fullName) + headMark + '</td><td>' + html(row.identityNumber) + '</td><td>' + html(householdCodeOf(row)) + '</td><td>' + html(row.gender) + '</td><td>' + html(formatDate(row.dateOfBirth)) + '</td><td>' + html(row.relationship) + '</td><td>' + html(row.phone) + '</td><td>' + statusBadge(row.status) + '</td><td>' + residencyBadge(row.permanentAddress) + '</td><td>' + presenceBadge(row.presenceStatus) + '</td><td class="action-cell">' + actions(row) + '</td></tr>';
   }
   function renderTable(result) {
     var rows = result.items || [];
@@ -143,16 +160,15 @@
       var prefix = group !== lastHousehold ? householdGroupRow(code) : '';
       lastHousehold = group;
       return prefix + renderPersonRow(row);
-    }).join('') : '<tr><td colspan="11" class="text-center text-muted p-4">Không có dữ liệu nhân khẩu</td></tr>';
+    }).join('') : '<tr><td colspan="12" class="text-center text-muted p-4">Không có dữ liệu nhân khẩu</td></tr>';
     var styles = '<style>.person-household-group td{background:#f3f6f9;color:#5f6b7a;font-weight:600;border-top:12px solid #fff;border-bottom:1px solid #dfe6ee}.person-household-group span{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;background:#e8eef5}.person-head-row td{background:#fbfdff;font-weight:600}</style>';
-    return styles + '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Mã hộ</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Hiện tại</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
+    return styles + '<div class="card"><div class="card-body table-responsive p-0"><table class="table table-hover table-sm mb-0"><thead><tr><th>Mã</th><th>Họ tên</th><th>CCCD/CMND</th><th>Mã hộ</th><th>Giới tính</th><th>Ngày sinh</th><th>Quan hệ</th><th>Điện thoại</th><th>Trạng thái</th><th>Cư trú</th><th>Hiện tại</th><th>Thao tác</th></tr></thead><tbody>' + body + '</tbody></table></div></div>' + pager(result);
   }
-  function optionValue(option) { return typeof option === 'object' ? option.value : option; }
-  function optionLabel(option) { return typeof option === 'object' ? option.label : option; }
   function control(field, values) {
     var value = String((values || {})[field.name] || '');
     if (field.name === 'status') value = canonicalStatus(value || 'ALIVE');
     if (field.name === 'presenceStatus') value = canonicalPresence(value || 'AT_HOME');
+    if (field.name === 'permanentAddress') value = canonicalResidency(value || 'Thường trú');
     if (field.options) {
       var hasCurrent = !value || field.options.some(function(option) { return String(optionValue(option)) === value; });
       return '<select class="form-control" name="' + html(field.name) + '" ' + (field.required ? 'required' : '') + '><option value="">-- Chọn --</option>' + (hasCurrent ? '' : '<option value="' + html(value) + '" selected>' + html(statusLabels[value] || presenceLabels[value] || value) + '</option>') + field.options.map(function(option) {
@@ -178,6 +194,7 @@
   function detailValue(row, key) {
     if (key === 'status') return statusBadge(row.status);
     if (key === 'presenceStatus') return presenceBadge(row.presenceStatus);
+    if (key === 'permanentAddress') return residencyBadge(row.permanentAddress);
     if (key === 'dateOfBirth' || key === 'identityIssueDate') return html(formatDate(row[key]));
     return html(row[key] || '');
   }
@@ -189,6 +206,7 @@
     el('btnDetailEdit').onclick = function() { $('#personDetailModal').modal('hide'); modalForm('Cập nhật nhân khẩu', row, function(payload) { payload.id = row.id; api('person.update', payload).then(function() { $('#personModal').modal('hide'); toast('Đã cập nhật nhân khẩu', 'success'); refresh(); }).catch(function(error) { toast(error.message, 'danger'); }); }); };
   }
   function validate(payload) {
+    payload.permanentAddress = canonicalResidency(payload.permanentAddress);
     if (!payload.citizenCode || !/^[A-Za-z0-9._-]{2,30}$/.test(payload.citizenCode)) throw new Error('Mã nhân khẩu không hợp lệ');
     if (!payload.householdId) throw new Error('Cần nhập Mã hộ');
     if (!payload.fullName || payload.fullName.trim().length < 2) throw new Error('Họ tên phải có ít nhất 2 ký tự');
@@ -197,6 +215,7 @@
     if (!payload.relationship) throw new Error('Cần chọn quan hệ với chủ hộ');
     if (!payload.status) throw new Error('Cần chọn trạng thái');
     if (!payload.presenceStatus) throw new Error('Cần chọn hiện tại ở nhà hay đi vắng');
+    if (residencyOptions.indexOf(payload.permanentAddress) === -1) throw new Error('Cư trú chỉ được chọn Thường trú hoặc Tạm trú');
     if (payload.identityNumber && !/^\d{9}$|^\d{12}$/.test(payload.identityNumber)) throw new Error('CCCD/CMND phải gồm 9 hoặc 12 chữ số');
     if (payload.phone && !/^[0-9+() .-]{8,20}$/.test(payload.phone)) throw new Error('Số điện thoại không hợp lệ');
   }
@@ -227,7 +246,7 @@
     activate();
     var app = el('app');
     if (!app) return;
-    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại, ở nhà, đi vắng"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ALIVE">Còn sống</option><option value="DECEASED">Đã chết</option><option value="DELETED">Đã xóa</option></select><select id="personPresenceStatus" class="form-control form-control-sm"><option value="">Tất cả hiện tại</option><option value="AT_HOME">Ở nhà</option><option value="AWAY">Đi vắng</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select><button class="btn btn-outline-primary btn-sm" id="personSearch" title="Tìm kiếm"><i class="fas fa-search"></i></button><button class="btn btn-outline-secondary btn-sm" id="personClearSearch" title="Xóa tìm kiếm"><i class="fas fa-times"></i></button></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
+    app.innerHTML = '<div class="module-toolbar"><div class="filters"><input id="personKeyword" class="form-control form-control-sm" placeholder="Tìm họ tên, mã, CCCD, điện thoại, thường trú, tạm trú, ở nhà, đi vắng"><input id="personHousehold" class="form-control form-control-sm" placeholder="Mã hộ"><select id="personStatus" class="form-control form-control-sm"><option value="">Tất cả trạng thái</option><option value="ALIVE">Còn sống</option><option value="DECEASED">Đã chết</option><option value="DELETED">Đã xóa</option></select><select id="personPresenceStatus" class="form-control form-control-sm"><option value="">Tất cả hiện tại</option><option value="AT_HOME">Ở nhà</option><option value="AWAY">Đi vắng</option></select><select id="personPageSize" class="form-control form-control-sm"><option>10</option><option>20</option><option>50</option><option>100</option></select><button class="btn btn-outline-primary btn-sm" id="personSearch" title="Tìm kiếm"><i class="fas fa-search"></i></button><button class="btn btn-outline-secondary btn-sm" id="personClearSearch" title="Xóa tìm kiếm"><i class="fas fa-times"></i></button></div><div class="actions"><button class="btn btn-primary btn-sm btn-material" id="btnCreatePerson"><i class="fas fa-plus"></i> Thêm nhân khẩu</button></div></div><div id="grid"></div>';
     el('personKeyword').value = state.keyword;
     el('personHousehold').value = state.householdId;
     el('personStatus').value = state.status;
