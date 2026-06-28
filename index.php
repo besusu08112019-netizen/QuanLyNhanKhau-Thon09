@@ -14,6 +14,7 @@ use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\DashboardController;
 use App\Controllers\HouseholdController;
+use App\Controllers\ImportController;
 use App\Controllers\LogController;
 use App\Controllers\PersonController;
 use App\Controllers\ReportController;
@@ -46,6 +47,9 @@ $router->get('/api/reports/household', [ReportController::class, 'household']);
 $router->get('/api/reports/export-excel', [ReportController::class, 'exportExcel']);
 $router->get('/api/reports/export-pdf', [ReportController::class, 'exportPdf']);
 $router->get('/api/reports/print', [ReportController::class, 'print']);
+
+$router->post('/api/import/preview', [ImportController::class, 'preview']);
+$router->post('/api/import/process', [ImportController::class, 'process']);
 
 $router->get('/api/users', [UserController::class, 'index']);
 $router->post('/api/users', [UserController::class, 'store']);
