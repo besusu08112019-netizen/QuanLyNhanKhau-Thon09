@@ -1,5 +1,5 @@
 (() => {
-  App.csrfToken = localStorage.getItem('thon09_csrf') || '';
+  App.csrfToken = localStorage.getItem('thon09_csrf') || App.csrfToken || '';
 
   window.api = async function secureApi(url, options = {}) {
     setLoading(true);
@@ -14,13 +14,18 @@
       if (App.token && !options.public) {
         headers.Authorization = `Bearer ${App.token}`;
       }
-      if (!options.public && !['GET', 'HEAD', 'OPTIONS'].includes(method) && App.csrfToken) {
+      if (!options.public && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        App.csrfToken = App.csrfToken || localStorage.getItem('thon09_csrf') || '';
+        if (!App.csrfToken) {
+          throw new Error('Phiên đăng nhập thiếu CSRF token, vui lòng đăng nhập lại');
+        }
         headers['X-CSRF-Token'] = App.csrfToken;
       }
 
       const response = await fetch(url, {
         method,
         headers,
+        credentials: 'same-origin',
         body: options.body ? (isFormData ? options.body : JSON.stringify(options.body)) : undefined,
       });
       const payload = await response.json().catch(() => null);
@@ -42,15 +47,6 @@
     }
   };
 
-  const originalLogout = window.logout;
-  window.logout = async function secureLogout() {
-    try {
-      return await originalLogout();
-    } finally {
-      clearClientSession();
-    }
-  };
-
   function clearClientSession() {
     App.token = '';
     App.user = null;
@@ -59,4 +55,6 @@
     localStorage.removeItem('thon09_user');
     localStorage.removeItem('thon09_csrf');
   }
+
+  window.clearClientSession = clearClientSession;
 })();
