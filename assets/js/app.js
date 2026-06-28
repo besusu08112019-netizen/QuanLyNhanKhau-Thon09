@@ -88,6 +88,7 @@ function showApp() {
   $('#loginView').classList.add('d-none');
   $('#appView').classList.remove('d-none');
   $('#currentUser').textContent = App.user ? `${App.user.email} | ${roleLabel(App.user.role)}` : '';
+  if (typeof window.ensureAdminScreens === 'function') window.ensureAdminScreens();
   switchScreen(App.screen);
 }
 
