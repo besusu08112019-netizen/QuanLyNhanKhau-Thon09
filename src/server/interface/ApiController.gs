@@ -50,6 +50,14 @@ Interface.ApiController = function(container) {
     return presenceStatus(value) === 'AWAY' ? 'Đi vắng' : 'Ở nhà';
   }
 
+  function isHouseholdHead(value) {
+    return normalizeText(value) === 'chu ho';
+  }
+
+  function householdSortKey(person) {
+    return normalizeText(person.householdId || person.householdCode || person.householdInternalId);
+  }
+
   function personStatusMatches(actual, expected) {
     if (!expected) return true;
     return personStatus(actual) === personStatus(expected);
@@ -120,6 +128,10 @@ Interface.ApiController = function(container) {
       });
     });
     rows.sort(function(a, b) {
+      var householdCompare = householdSortKey(a).localeCompare(householdSortKey(b));
+      if (householdCompare) return householdCompare;
+      var headCompare = (isHouseholdHead(b.relationship) ? 1 : 0) - (isHouseholdHead(a.relationship) ? 1 : 0);
+      if (headCompare) return headCompare;
       return normalizeText(a.fullName).localeCompare(normalizeText(b.fullName)) || normalizeText(a.citizenCode).localeCompare(normalizeText(b.citizenCode));
     });
     var total = rows.length;
