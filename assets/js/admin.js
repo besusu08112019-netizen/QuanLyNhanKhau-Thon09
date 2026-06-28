@@ -1,6 +1,15 @@
 (() => {
-  const start = () => { injectAdminScreens(); bindAdminNavigation(); };
+  const start = () => {
+    if (!isAdminUser()) return;
+    injectAdminScreens();
+    bindAdminNavigation();
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+
+  function isAdminUser() {
+    const role = window.App?.user?.role;
+    return role === 'ADMIN' || role === 'SUPER_ADMIN';
+  }
 
   function injectAdminScreens() {
     const nav = document.querySelector('.sidebar .nav');
