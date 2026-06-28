@@ -3,9 +3,9 @@
     const form = document.querySelector('#reportForm');
     if (!form) return;
     form.addEventListener('submit', event => { event.preventDefault(); loadReport(); });
-    document.querySelector('#reportExcelBtn').addEventListener('click', exportReportExcel);
+    document.querySelector('#reportExcelBtn').addEventListener('click', () => downloadReport('/api/reports/export-excel', 'xls', 'Đã xuất Excel'));
+    document.querySelector('#reportPdfBtn').addEventListener('click', () => downloadReport('/api/reports/export-pdf', 'pdf', 'Đã xuất PDF'));
     document.querySelector('#reportPrintBtn').addEventListener('click', printReport);
-    document.querySelector('#reportPdfBtn').addEventListener('click', () => showToast('Xuất PDF sẽ được hoàn thiện trong Sprint 6', 'warning'));
   });
 
   window.loadReport = async function loadReport() {
@@ -18,15 +18,15 @@
     }
   };
 
-  async function exportReportExcel() {
+  async function downloadReport(endpoint, extension, successMessage) {
     try {
-      const response = await fetch('/api/reports/export-excel?' + reportQuery(), { headers: { Authorization: `Bearer ${App.token}` } });
+      const response = await fetch(endpoint + '?' + reportQuery(), { headers: { Authorization: `Bearer ${App.token}` } });
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error?.message || 'Không xuất được Excel');
+        throw new Error(payload?.error?.message || 'Không xuất được dữ liệu');
       }
       const blob = await response.blob();
-      const fileName = fileNameFromHeader(response.headers.get('Content-Disposition')) || `bao_cao_${timestamp()}.xls`;
+      const fileName = fileNameFromHeader(response.headers.get('Content-Disposition')) || `bao_cao_${timestamp()}.${extension}`;
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -35,7 +35,7 @@
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      showToast('Đã xuất Excel');
+      showToast(successMessage);
     } catch (error) {
       showToast(error.message, 'danger');
     }
