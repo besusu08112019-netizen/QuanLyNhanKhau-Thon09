@@ -28,15 +28,14 @@ final class Dashboard extends BaseModel
     {
         [$householdWhere, $householdParams] = $this->householdWhere($filters);
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
-
-        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END) AS poor_households, SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END) AS near_poor_households FROM households h $householdWhere", $householdParams) ?: [];
-        $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END) AS male_count, SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END) AS female_count, SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END) AS active_citizens, SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END) AS temporary_count, SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END) AS away_count, SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END) AS children_count, SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END) AS elderly_count, SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END) AS working_age_count FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
-
+        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor_households, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor_households FROM households h $householdWhere", $householdParams) ?: [];
+        $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female_count, COALESCE(SUM(CASE WHEN c.relationship='Chủ hộ' THEN 1 ELSE 0 END),0) AS household_head_count, COALESCE(SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END),0) AS active_citizens, COALESCE(SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary_count, COALESCE(SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END),0) AS working_age_count FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
         return [
             'total_households' => (int) ($households['total_households'] ?? 0),
             'total_citizens' => (int) ($citizens['total_citizens'] ?? 0),
             'male_count' => (int) ($citizens['male_count'] ?? 0),
             'female_count' => (int) ($citizens['female_count'] ?? 0),
+            'household_head_count' => (int) ($citizens['household_head_count'] ?? 0),
             'active_citizens' => (int) ($citizens['active_citizens'] ?? 0),
             'children_count' => (int) ($citizens['children_count'] ?? 0),
             'elderly_count' => (int) ($citizens['elderly_count'] ?? 0),
@@ -87,12 +86,8 @@ final class Dashboard extends BaseModel
     public function povertyChart(array $filters = []): array
     {
         [$where, $params] = $this->householdWhere($filters);
-        $row = $this->fetchOne("SELECT SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END) AS poor, SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END) AS near_poor, SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 THEN 1 ELSE 0 END) AS normal FROM households h $where", $params) ?: [];
-        return [
-            ['label' => 'Hộ nghèo', 'value' => (int) ($row['poor'] ?? 0)],
-            ['label' => 'Hộ cận nghèo', 'value' => (int) ($row['near_poor'] ?? 0)],
-            ['label' => 'Hộ khác', 'value' => (int) ($row['normal'] ?? 0)],
-        ];
+        $row = $this->fetchOne("SELECT COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 THEN 1 ELSE 0 END),0) AS normal FROM households h $where", $params) ?: [];
+        return [['label' => 'Hộ nghèo', 'value' => (int) ($row['poor'] ?? 0)], ['label' => 'Hộ cận nghèo', 'value' => (int) ($row['near_poor'] ?? 0)], ['label' => 'Hộ khác', 'value' => (int) ($row['normal'] ?? 0)]];
     }
 
     private function normalizeFilters(array $filters): array
