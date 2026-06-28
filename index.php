@@ -55,7 +55,7 @@ $router->get('/api/reports/print', [ReportController::class, 'print']);
 $router->post('/api/import/preview', [ImportController::class, 'preview']);
 $router->post('/api/import/process', [ImportController::class, 'process']);
 $router->post('/api/files/upload', [FileController::class, 'upload']);
-$router->get('/api/files/{module}/{entityId}', [FileController::class, 'list']);
+$router->get('/api/files/{module}/{entityId}', [FileController::class, 'index']);
 
 $router->get('/api/movements', [MovementController::class, 'index']);
 $router->post('/api/movements', [MovementController::class, 'store']);
