@@ -5,12 +5,14 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     loadSprint8Script();
+    loadSprint9Script();
     enforceSuperAdminMenu();
     const previousShowApp = window.showApp;
     if (typeof previousShowApp === 'function') {
       window.showApp = function bridgeShowApp() {
         previousShowApp();
         enforceSuperAdminMenu();
+        loadSprint9Script();
       };
     }
     const nav = document.querySelector('.sidebar .nav');
@@ -36,6 +38,14 @@
     if (document.querySelector('script[src*="sprint8.js"]')) return;
     const script = document.createElement('script');
     script.src = 'assets/js/sprint8.js?v=20260628-sprint8';
+    script.defer = true;
+    document.body.appendChild(script);
+  }
+
+  function loadSprint9Script() {
+    if (document.querySelector('script[src*="sprint9.js"]')) return;
+    const script = document.createElement('script');
+    script.src = 'assets/js/sprint9.js?v=20260629-sprint9';
     script.defer = true;
     document.body.appendChild(script);
   }
