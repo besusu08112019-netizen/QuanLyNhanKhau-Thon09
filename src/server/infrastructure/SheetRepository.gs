@@ -62,6 +62,24 @@ Infrastructure.Database = function() {
     if (changed) sheet.getRange(2, addressIndex + 1, rowCount, 1).setValues(addresses);
   }
 
+  function moveColumnToIndex(sheet, existing, columnName, targetIndex) {
+    var currentIndex = existing.indexOf(columnName);
+    if (currentIndex === -1 || targetIndex === -1 || currentIndex === targetIndex) return existing;
+    var lastRow = Math.max(sheet.getLastRow(), 1);
+    var values = sheet.getRange(1, currentIndex + 1, lastRow, 1).getValues();
+    values[0][0] = columnName;
+    sheet.deleteColumn(currentIndex + 1);
+    if (sheet.getLastColumn() < targetIndex + 1) {
+      sheet.insertColumnsAfter(sheet.getLastColumn(), targetIndex + 1 - sheet.getLastColumn());
+    }
+    sheet.getRange(1, targetIndex + 1, lastRow, 1).setValues(values);
+    return currentHeaders(sheet);
+  }
+
+  function migrateCitizenHeaders(sheet, existing, headers) {
+    return moveColumnToIndex(sheet, existing, 'presenceStatus', headers.indexOf('presenceStatus'));
+  }
+
   function syncHeaders(sheet, tableName, headers) {
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(headers);
@@ -76,6 +94,9 @@ Infrastructure.Database = function() {
         if (i !== existing.indexOf('address') && legacyHamletIndex([existing[i]]) === 0) sheet.deleteColumn(i + 1);
       }
       existing = currentHeaders(sheet);
+    }
+    if (tableName === Domain.Tables.CITIZENS) {
+      existing = migrateCitizenHeaders(sheet, existing, headers);
     }
     var same = existing.length === headers.length && headers.every(function(header, index) { return existing[index] === header; });
     if (!same) {
