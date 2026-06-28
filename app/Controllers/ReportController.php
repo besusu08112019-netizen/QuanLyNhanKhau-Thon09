@@ -3,7 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
-use App\Core\Response;
+use App\Core\SimplePdf;
 use App\Models\Report;
 
 final class ReportController extends BaseController
@@ -54,7 +54,11 @@ final class ReportController extends BaseController
 
     public function exportPdf(): void
     {
-        Response::error('Xuất PDF sẽ được hoàn thiện trong Sprint 6', 501);
+        $user = $this->requirePermission('report', 'export');
+        $type = (string) $this->query('type', 'summary');
+        $report = $this->reports->build($type, $this->filters());
+        $this->audit($user, 'report', 'export', 'Xuất PDF báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
+        $this->downloadPdf($report);
     }
 
     private function filters(): array
@@ -87,6 +91,21 @@ final class ReportController extends BaseController
             echo '</tr>';
         }
         echo '</tbody></table></body></html>';
+        exit;
+    }
+
+    private function downloadPdf(array $report): void
+    {
+        $fileName = $this->slug($report['title']) . '_' . date('Ymd_His') . '.pdf';
+        $pdf = new SimplePdf();
+        $pdf->addTitle($report['title']);
+        $pdf->addMeta('Quan Ly Nhan Khau Thon 09 xa Hong Phong');
+        $pdf->addMeta('Thoi gian xuat: ' . date('d/m/Y H:i:s'));
+        $pdf->addMeta('Tong so dong: ' . (int) $report['totalRows']);
+        $pdf->addTable($report['headers'], $report['rows']);
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        echo $pdf->output();
         exit;
     }
 
