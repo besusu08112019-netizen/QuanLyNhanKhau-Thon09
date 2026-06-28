@@ -47,10 +47,25 @@ Application.DashboardService = function(db) {
   }
 
   function residencyKey(person) {
-    var values = [person.residencyStatus, person.movementType, person.note, person.relationship].map(normalizeText).join(' ');
-    if (values.indexOf('tam tru') >= 0 || values.indexOf('temporary residence') >= 0) return 'temporaryResidence';
-    if (values.indexOf('tam vang') >= 0 || values.indexOf('temporary absence') >= 0) return 'temporaryAbsence';
+    var text = normalizeText(person.permanentAddress || person.residencyStatus);
+    if (text === 'tam tru' || text === 'temporary residence' || text === 'temporary_residence') return 'temporaryResidence';
     return 'regular';
+  }
+
+  function presenceKey(person) {
+    var text = normalizeText(person.presenceStatus || person.currentStatus);
+    if (text === 'away' || text === 'di vang' || text === 'vang' || text === 'tam vang' || text === 'temporary absence' || text === 'temporary_absence') return 'AWAY';
+    return 'AT_HOME';
+  }
+
+  function isTemporaryAbsence(person) {
+    return presenceKey(person) === 'AWAY';
+  }
+
+  function matchesResidencyFilter(person, expected) {
+    if (!expected) return true;
+    if (expected === 'temporaryAbsence') return isTemporaryAbsence(person);
+    return residencyKey(person) === expected;
   }
 
   function ageOf(person) {
@@ -87,7 +102,7 @@ Application.DashboardService = function(db) {
     });
     var citizens = db.readAll(Domain.Tables.CITIZENS).filter(function(person) {
       if (filters.personStatus && !personStatusMatches(person.status, filters.personStatus)) return false;
-      if (filters.residencyStatus && residencyKey(person) !== filters.residencyStatus) return false;
+      if (!matchesResidencyFilter(person, filters.residencyStatus)) return false;
       return inDateRange(person, filters);
     });
     var movements = db.readAll(Domain.Tables.MOVEMENTS).filter(function(movement) {
@@ -140,6 +155,7 @@ Application.DashboardService = function(db) {
     var livingCitizens = citizens.filter(function(person) { return personStatus(person.status) === 'ALIVE'; });
     var residency = citizens.reduce(function(acc, person) {
       acc[residencyKey(person)] += 1;
+      if (isTemporaryAbsence(person)) acc.temporaryAbsence += 1;
       return acc;
     }, { regular: 0, temporaryResidence: 0, temporaryAbsence: 0 });
     var gender = populationChartFrom(citizens).reduce(function(acc, item) {
