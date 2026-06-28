@@ -80,7 +80,17 @@
     if (!atHome && !away && row.presenceSummary) return html(row.presenceSummary);
     return '<span class="badge badge-success mr-1">Ở nhà: ' + html(atHome) + '</span><span class="badge badge-warning">Đi vắng: ' + html(away) + '</span>';
   }
-  function yearOf(value) { var match = String(value || '').match(/(19|20)\d{2}/); return match ? match[0] : ''; }
+  function formatDate(value) {
+    var raw = String(value || '').trim();
+    if (!raw) return '';
+    var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return iso[3] + '/' + iso[2] + '/' + iso[1];
+    var vn = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+    if (vn) return ('0' + vn[1]).slice(-2) + '/' + ('0' + vn[2]).slice(-2) + '/' + vn[3];
+    var parsed = new Date(raw);
+    if (!isNaN(parsed.getTime())) return ('0' + parsed.getDate()).slice(-2) + '/' + ('0' + (parsed.getMonth() + 1)).slice(-2) + '/' + parsed.getFullYear();
+    return raw;
+  }
 
   function render() {
     activeMenu();
@@ -151,9 +161,9 @@
       if (!members.length) {
         body += '<div class="alert alert-info">Chưa có nhân khẩu nào trùng mã hộ này.</div>';
       } else {
-        body += '<div class="table-responsive"><table class="table table-sm table-striped table-hover"><thead><tr><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ tên</th><th>Năm sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Số điện thoại</th><th>Hiện tại</th></tr></thead><tbody>'
+        body += '<div class="table-responsive"><table class="table table-sm table-striped table-hover"><thead><tr><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Số điện thoại</th><th>Hiện tại</th></tr></thead><tbody>'
           + members.map(function(person) {
-            return '<tr><td>' + html(pick(person, ['householdCode', 'householdId']) || code) + '</td><td>' + html(pick(person, ['citizenCode', 'personCode', 'id'])) + '</td><td>' + html(pick(person, ['fullName', 'name'])) + '</td><td>' + html(yearOf(pick(person, ['dateOfBirth', 'birthDate', 'birthYear']))) + '</td><td>' + html(pick(person, ['identityNumber', 'cccd', 'nationalId'])) + '</td><td>' + html(pick(person, ['currentAddress', 'permanentAddress', 'address']) || household.address) + '</td><td>' + html(pick(person, ['phone', 'phoneNumber', 'mobile'])) + '</td><td>' + presenceBadge(pick(person, ['presenceStatus', 'currentStatus', 'residencyStatus'])) + '</td></tr>';
+            return '<tr><td>' + html(pick(person, ['householdCode', 'householdId']) || code) + '</td><td>' + html(pick(person, ['citizenCode', 'personCode', 'id'])) + '</td><td>' + html(pick(person, ['fullName', 'name'])) + '</td><td>' + html(formatDate(pick(person, ['dateOfBirth', 'birthDate', 'birthYear']))) + '</td><td>' + html(pick(person, ['identityNumber', 'cccd', 'nationalId'])) + '</td><td>' + html(pick(person, ['currentAddress', 'permanentAddress', 'address']) || household.address) + '</td><td>' + html(pick(person, ['phone', 'phoneNumber', 'mobile'])) + '</td><td>' + presenceBadge(pick(person, ['presenceStatus', 'currentStatus', 'residencyStatus'])) + '</td></tr>';
           }).join('') + '</tbody></table></div>';
       }
       memberModal(household, body);
