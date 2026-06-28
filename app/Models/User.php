@@ -3,67 +3,68 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
-use DateTimeImmutable;
 
 final class User extends BaseModel
 {
-    private const ROLES = ['ADMIN','OFFICER','COLLABORATOR','VIEWER','DATA_ENTRY','NO_DELETE','NO_EXPORT'];
+    private const ROLES = ['SUPER_ADMIN','ADMIN','OFFICER','VIEWER'];
 
     public function count(): int { return (int) $this->fetchOne('SELECT COUNT(*) AS total FROM users')['total']; }
 
-    public function page(array $filters = []): array
+    public function paginate(array $filters = []): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         $where = ['status <> "DELETED"']; $params = [];
         if (!empty($filters['role'])) { $where[] = 'role = :role'; $params['role'] = $filters['role']; }
-        if (!empty($filters['search'])) { $where[] = '(email LIKE :q OR display_name LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
+        if (!empty($filters['search'])) { $where[] = '(email LIKE :q OR display_name LIKE :q OR username LIKE :q OR phone LIKE :q OR position LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM users $sqlWhere", $params)['total'];
-        $items = $this->fetchAll("SELECT id,email,display_name,role,status,last_login_at,created_at FROM users $sqlWhere ORDER BY role,email LIMIT $pageSize OFFSET $offset", $params);
+        $items = $this->fetchAll("SELECT id,username,email,display_name,phone,position,role,status,last_login_at,created_at FROM users $sqlWhere ORDER BY role,email LIMIT $pageSize OFFSET $offset", $params);
         return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
 
     public function roles(): array
     {
         return [
-            ['value' => 'ADMIN', 'label' => 'Quản trị'],
+            ['value' => 'SUPER_ADMIN', 'label' => 'Super Admin'],
+            ['value' => 'ADMIN', 'label' => 'Admin'],
             ['value' => 'OFFICER', 'label' => 'Cán bộ'],
-            ['value' => 'COLLABORATOR', 'label' => 'Cộng tác viên'],
-            ['value' => 'VIEWER', 'label' => 'Chỉ xem'],
-            ['value' => 'DATA_ENTRY', 'label' => 'Chỉ nhập liệu'],
-            ['value' => 'NO_DELETE', 'label' => 'Không được xóa'],
-            ['value' => 'NO_EXPORT', 'label' => 'Không được xuất dữ liệu'],
+            ['value' => 'VIEWER', 'label' => 'Khách'],
         ];
     }
 
     public function createFirstAdmin(string $email, string $displayName, string $password): array
     {
         if ($this->count() > 0) throw new \RuntimeException('Hệ thống đã có tài khoản quản trị');
-        $id = $this->insert('INSERT INTO users (email, display_name, password_hash, role, status) VALUES (:email, :display_name, :password_hash, "SUPER_ADMIN", "ACTIVE")', ['email' => strtolower(trim($email)), 'display_name' => trim($displayName), 'password_hash' => password_hash($password, PASSWORD_DEFAULT)]);
+        $username = $this->usernameFromEmail($email);
+        $id = $this->insert('INSERT INTO users (username, email, display_name, password_hash, role, status) VALUES (:username, :email, :display_name, :password_hash, "SUPER_ADMIN", "ACTIVE")', ['username' => $username, 'email' => strtolower(trim($email)), 'display_name' => trim($displayName), 'password_hash' => password_hash($password, PASSWORD_DEFAULT)]);
         return $this->findById($id);
     }
 
     public function create(array $data, int $actorId): array
     {
         $email = strtolower(trim((string) ($data['email'] ?? '')));
+        $username = strtolower(trim((string) ($data['username'] ?? $this->usernameFromEmail($email))));
         $name = trim((string) ($data['displayName'] ?? $data['display_name'] ?? ''));
         $password = (string) ($data['password'] ?? '');
         $role = $this->role((string) ($data['role'] ?? 'VIEWER'));
+        if (!preg_match('/^[a-z0-9._-]{3,60}$/', $username)) throw new \RuntimeException('Username không hợp lệ');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new \RuntimeException('Email không hợp lệ');
-        if ($name === '') throw new \RuntimeException('Tên người dùng là bắt buộc');
+        if ($name === '') throw new \RuntimeException('Họ tên là bắt buộc');
         if (strlen($password) < 8) throw new \RuntimeException('Mật khẩu tối thiểu 8 ký tự');
         if ($this->findByEmail($email)) throw new \RuntimeException('Email đã tồn tại');
-        $id = $this->insert('INSERT INTO users (email, display_name, password_hash, role, status, created_by) VALUES (:email,:display_name,:password_hash,:role,"ACTIVE",:actor)', ['email' => $email, 'display_name' => $name, 'password_hash' => password_hash($password, PASSWORD_DEFAULT), 'role' => $role, 'actor' => $actorId]);
+        if ($this->findByUsername($username)) throw new \RuntimeException('Username đã tồn tại');
+        $id = $this->insert('INSERT INTO users (username,email,display_name,phone,position,password_hash,role,status,created_by) VALUES (:username,:email,:display_name,:phone,:position,:password_hash,:role,"ACTIVE",:actor)', ['username' => $username, 'email' => $email, 'display_name' => $name, 'phone' => $this->nullable($data['phone'] ?? null), 'position' => $this->nullable($data['position'] ?? null), 'password_hash' => password_hash($password, PASSWORD_DEFAULT), 'role' => $role, 'actor' => $actorId]);
         return $this->findById($id);
     }
 
     public function updateUser(int $id, array $data, int $actorId): array
     {
         $user = $this->findById($id); if (!$user) throw new \RuntimeException('Không tìm thấy người dùng');
-        if ($user['role'] === 'SUPER_ADMIN') throw new \RuntimeException('Không sửa tài khoản quản trị tối cao');
+        if ($user['role'] === 'SUPER_ADMIN') throw new \RuntimeException('Không sửa tài khoản Super Admin');
         $name = trim((string) ($data['displayName'] ?? $data['display_name'] ?? $user['display_name']));
+        if ($name === '') throw new \RuntimeException('Họ tên là bắt buộc');
         $role = $this->role((string) ($data['role'] ?? $user['role']));
-        $this->execute('UPDATE users SET display_name=:display_name, role=:role, updated_by=:actor WHERE id=:id', ['id' => $id, 'display_name' => $name, 'role' => $role, 'actor' => $actorId]);
+        $this->execute('UPDATE users SET display_name=:display_name, phone=:phone, position=:position, role=:role, updated_by=:actor WHERE id=:id', ['id' => $id, 'display_name' => $name, 'phone' => $this->nullable($data['phone'] ?? $user['phone'] ?? null), 'position' => $this->nullable($data['position'] ?? $user['position'] ?? null), 'role' => $role, 'actor' => $actorId]);
         if (!empty($data['password'])) $this->changePassword($id, (string) $data['password'], $actorId);
         return $this->findById($id);
     }
@@ -71,7 +72,7 @@ final class User extends BaseModel
     public function deleteUser(int $id, int $actorId): void
     {
         $user = $this->findById($id); if (!$user) throw new \RuntimeException('Không tìm thấy người dùng');
-        if ($user['role'] === 'SUPER_ADMIN') throw new \RuntimeException('Không xóa tài khoản quản trị tối cao');
+        if ($user['role'] === 'SUPER_ADMIN') throw new \RuntimeException('Không xóa tài khoản Super Admin');
         $this->execute('UPDATE users SET status="DELETED", deleted_at=NOW(), deleted_by=:actor WHERE id=:id', ['id' => $id, 'actor' => $actorId]);
     }
 
@@ -86,18 +87,20 @@ final class User extends BaseModel
 
     public function findById(int $id): ?array { return $this->fetchOne('SELECT * FROM users WHERE id = :id AND status <> "DELETED"', ['id' => $id]); }
     public function findByEmail(string $email): ?array { return $this->fetchOne('SELECT * FROM users WHERE email = :email AND status <> "DELETED"', ['email' => strtolower(trim($email))]); }
+    public function findByUsername(string $username): ?array { return $this->fetchOne('SELECT * FROM users WHERE username = :username AND status <> "DELETED"', ['username' => strtolower(trim($username))]); }
 
     public function login(string $email, string $password): array
     {
-        $user = $this->findByEmail($email);
+        $login = strtolower(trim($email));
+        $user = filter_var($login, FILTER_VALIDATE_EMAIL) ? $this->findByEmail($login) : $this->findByUsername($login);
         if (!$user || $user['status'] !== 'ACTIVE' || !password_verify($password, (string) $user['password_hash'])) throw new \RuntimeException('Tài khoản hoặc mật khẩu không đúng');
         $this->execute('UPDATE users SET last_login_at = NOW() WHERE id = :id', ['id' => $user['id']]);
         $token = bin2hex(random_bytes(32));
         $config = require BASE_PATH . '/config/app.php';
-        $expires = (new DateTimeImmutable('now'))->modify('+' . (int) ($config['session_ttl_seconds'] ?? 21600) . ' seconds')->format('Y-m-d H:i:s');
-        $this->insert('INSERT INTO user_sessions (user_id, token_hash, ip_address, user_agent, expires_at) VALUES (:user_id, :token_hash, :ip, :agent, :expires_at)', ['user_id' => $user['id'], 'token_hash' => hash('sha256', $token), 'ip' => $_SERVER['REMOTE_ADDR'] ?? null, 'agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255), 'expires_at' => $expires]);
+        $ttl = (int) ($config['session_ttl_seconds'] ?? 21600);
+        $this->insert('INSERT INTO user_sessions (user_id, token_hash, ip_address, user_agent, expires_at) VALUES (:user_id, :token_hash, :ip, :agent, DATE_ADD(NOW(), INTERVAL :ttl SECOND))', ['user_id' => $user['id'], 'token_hash' => hash('sha256', $token), 'ip' => $_SERVER['REMOTE_ADDR'] ?? null, 'agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255), 'ttl' => $ttl]);
         $user = $this->findById((int) $user['id']);
-        return ['token' => $token, 'csrfToken' => $this->csrfToken($token), 'expiresIn' => (int) ($config['session_ttl_seconds'] ?? 21600), 'user' => $this->publicUser($user)];
+        return ['token' => $token, 'csrfToken' => $this->csrfToken($token), 'expiresIn' => $ttl, 'user' => $this->publicUser($user)];
     }
 
     public function csrfToken(string $token): string
@@ -113,19 +116,16 @@ final class User extends BaseModel
     public function publicUser(?array $user): ?array
     {
         if (!$user) return null;
-        return ['id' => (int) $user['id'], 'email' => $user['email'], 'displayName' => $user['display_name'], 'role' => $user['role'], 'status' => $user['status'], 'lastLoginAt' => $user['last_login_at']];
+        return ['id' => (int) $user['id'], 'username' => $user['username'] ?? '', 'email' => $user['email'], 'displayName' => $user['display_name'], 'phone' => $user['phone'] ?? '', 'position' => $user['position'] ?? '', 'role' => $user['role'], 'status' => $user['status'], 'created_at' => $user['created_at'] ?? null, 'lastLoginAt' => $user['last_login_at']];
     }
 
     public function can(array $user, string $module, string $action): bool
     {
-        if (in_array($user['role'], ['SUPER_ADMIN', 'ADMIN'], true)) return true;
-        if ($user['role'] === 'NO_DELETE' && $action === 'delete') return false;
-        if ($user['role'] === 'NO_EXPORT' && in_array($action, ['export','print'], true)) return false;
+        if ($user['role'] === 'SUPER_ADMIN') return true;
+        if ($user['role'] === 'ADMIN') return in_array($module, ['dashboard','household','citizen','import','export','report','pdf'], true) && in_array($action, ['read','create','update','delete','export','print'], true);
         $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $user['role'], 'module' => $module, 'action' => $action]);
         if ($permission) return (bool) $permission['allowed'];
-        if ($user['role'] === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','pdf','import'], true) && in_array($action, ['read','create','update','delete','export','print'], true);
-        if ($user['role'] === 'COLLABORATOR') return in_array($module, ['dashboard','household','citizen','movement','import'], true) && in_array($action, ['read','create','update'], true);
-        if ($user['role'] === 'DATA_ENTRY') return in_array($module, ['dashboard','household','citizen','movement','import'], true) && in_array($action, ['read','create','update'], true);
+        if ($user['role'] === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','import'], true) && in_array($action, ['read','create','update'], true);
         if ($user['role'] === 'VIEWER') return in_array($module, ['dashboard','household','citizen','report'], true) && $action === 'read';
         return false;
     }
@@ -133,12 +133,11 @@ final class User extends BaseModel
     private function setStatus(int $id, string $status, int $actorId): void
     {
         $user = $this->findById($id); if (!$user) throw new \RuntimeException('Không tìm thấy người dùng');
-        if ($user['role'] === 'SUPER_ADMIN') throw new \RuntimeException('Không khóa tài khoản quản trị tối cao');
+        if ($user['role'] === 'SUPER_ADMIN') throw new \RuntimeException('Không khóa tài khoản Super Admin');
         $this->execute('UPDATE users SET status=:status, updated_by=:actor WHERE id=:id', ['id' => $id, 'status' => $status, 'actor' => $actorId]);
     }
 
-    private function role(string $role): string
-    {
-        return in_array($role, self::ROLES, true) ? $role : 'VIEWER';
-    }
+    private function role(string $role): string { return in_array($role, self::ROLES, true) ? $role : 'VIEWER'; }
+    private function nullable(mixed $value): ?string { $text = trim((string) ($value ?? '')); return $text === '' ? null : $text; }
+    private function usernameFromEmail(string $email): string { return preg_replace('/[^a-z0-9._-]/', '', strtolower(strtok($email, '@') ?: 'admin')) ?: 'admin'; }
 }
