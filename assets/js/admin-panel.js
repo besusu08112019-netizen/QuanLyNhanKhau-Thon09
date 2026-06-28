@@ -1,0 +1,253 @@
+(() => {
+  const menu = [
+    ['dashboard','fa-gauge-high','Dashboard'],
+    ['households','fa-house-chimney','Quản lý hộ gia đình'],
+    ['persons','fa-users','Quản lý nhân khẩu'],
+    ['temporaryResidence','fa-location-dot','Tạm trú'],
+    ['temporaryAbsence','fa-person-walking-arrow-right','Tạm vắng'],
+    ['movements','fa-right-left','Biến động nhân khẩu'],
+    ['reports','fa-chart-pie','Báo cáo thống kê'],
+    ['import','fa-file-import','Import Excel'],
+    ['exportExcel','fa-file-export','Export Excel'],
+    ['printForms','fa-print','In biểu mẫu'],
+    ['users','fa-user-shield','Quản lý tài khoản'],
+    ['permissions','fa-key','Phân quyền'],
+    ['logs','fa-clock-rotate-left','Nhật ký hệ thống'],
+    ['settings','fa-gears','Cấu hình hệ thống'],
+    ['backups','fa-database','Sao lưu dữ liệu'],
+    ['restore','fa-rotate-left','Khôi phục dữ liệu'],
+    ['logout','fa-arrow-right-from-bracket','Đăng xuất'],
+  ];
+  const titles = Object.fromEntries(menu.map(([screen,,label]) => [screen, label]));
+  const charts = {};
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.classList.add(localStorage.getItem('thon09_theme') || 'theme-light');
+    enhanceShell();
+    injectScreens();
+    bindAdminPanelMenu();
+    const previousShowApp = window.showApp;
+    window.showApp = function adminShowApp() {
+      previousShowApp();
+      enhanceShell();
+      bindAdminPanelMenu();
+      renderRoleAwareMenu();
+    };
+    renderRoleAwareMenu();
+  });
+
+  function enhanceShell() {
+    const nav = document.querySelector('.sidebar .nav');
+    if (nav && !nav.dataset.adminPanel) {
+      nav.dataset.adminPanel = '1';
+      nav.innerHTML = menu.map(([screen, icon, label]) => `<button class="nav-link" data-screen="${screen}"><i class="fa-solid ${icon}"></i><span>${label}</span></button>`).join('');
+    }
+    const topbar = document.querySelector('.topbar');
+    if (topbar && !document.querySelector('#breadcrumbTrail')) {
+      topbar.querySelector('div:nth-of-type(1)')?.insertAdjacentHTML('beforeend', '<nav id="breadcrumbTrail" class="breadcrumb-trail">Trang chủ / Dashboard</nav>');
+      topbar.querySelector('.ms-auto')?.insertAdjacentHTML('beforebegin', '<button id="themeToggle" class="btn btn-outline-secondary btn-sm ms-auto" type="button"><i class="fa-solid fa-circle-half-stroke"></i></button>');
+      document.querySelector('#themeToggle').addEventListener('click', toggleTheme);
+    }
+  }
+
+  function injectScreens() {
+    const main = document.querySelector('.main-area');
+    if (!main || document.querySelector('#movementsScreen')) return;
+    main.insertAdjacentHTML('beforeend', `
+      <section id="temporaryResidenceScreen" class="screen"><div class="admin-heading"><div><h3>Tạm trú</h3><p>Danh sách nhân khẩu có trạng thái cư trú tạm trú.</p></div></div><div id="temporaryResidenceRows" class="content-card table-responsive"></div></section>
+      <section id="temporaryAbsenceScreen" class="screen"><div class="admin-heading"><div><h3>Tạm vắng</h3><p>Danh sách nhân khẩu đang đi vắng để theo dõi nhanh.</p></div></div><div id="temporaryAbsenceRows" class="content-card table-responsive"></div></section>
+      <section id="movementsScreen" class="screen"><div class="toolbar"><input id="movementSearch" class="form-control" placeholder="Tìm nhân khẩu, CCCD, mã hộ, lý do"><select id="movementType" class="form-select w-auto"><option value="">Tất cả biến động</option><option value="BIRTH">Sinh</option><option value="DEATH">Tử</option><option value="MOVE_IN">Chuyển đến</option><option value="MOVE_OUT">Chuyển đi</option><option value="TEMPORARY_RESIDENCE">Tạm trú</option><option value="TEMPORARY_ABSENCE">Tạm vắng</option></select><button id="movementAddBtn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Thêm biến động</button></div><div class="content-card table-responsive"><table class="table table-hover data-table mb-0"><thead><tr><th>Ngày</th><th>Loại</th><th>Nhân khẩu</th><th>CCCD</th><th>Mã hộ</th><th>Lý do</th><th></th></tr></thead><tbody id="movementRows"></tbody></table></div><div id="movementPager" class="pager"></div></section>
+      <section id="exportExcelScreen" class="screen"><div class="admin-heading"><div><h3>Export Excel</h3><p>Xuất dữ liệu báo cáo, hộ dân và nhân khẩu ra Excel.</p></div></div><div class="content-card action-grid"><button class="btn btn-success" data-export="summary"><i class="fa-solid fa-file-excel"></i> Báo cáo tổng hợp</button><button class="btn btn-success" data-export="household"><i class="fa-solid fa-file-excel"></i> Danh sách hộ dân</button><button class="btn btn-success" data-export="population"><i class="fa-solid fa-file-excel"></i> Danh sách nhân khẩu</button></div></section>
+      <section id="printFormsScreen" class="screen"><div class="admin-heading"><div><h3>In biểu mẫu</h3><p>In nhanh các biểu mẫu hành chính khổ A4.</p></div></div><div class="content-card action-grid"><button class="btn btn-outline-secondary" data-print="summary"><i class="fa-solid fa-print"></i> Báo cáo thống kê</button><button class="btn btn-outline-secondary" data-print="household"><i class="fa-solid fa-print"></i> Danh sách hộ</button><button class="btn btn-outline-secondary" data-print="population"><i class="fa-solid fa-print"></i> Danh sách nhân khẩu</button></div></section>
+      <section id="permissionsScreen" class="screen"><div class="admin-heading"><div><h3>Phân quyền</h3><p>Thiết lập quyền theo vai trò, module và thao tác.</p></div><button id="permissionSaveBtn" class="btn btn-primary">Lưu phân quyền</button></div><div id="permissionMatrix" class="content-card table-responsive"></div></section>
+      <section id="settingsScreen" class="screen"><form id="settingsForm" class="content-card"><div class="row g-3"><div class="col-md-6"><label class="form-label">Tên hệ thống</label><input name="systemName" class="form-control"></div><div class="col-md-6"><label class="form-label">Logo URL</label><input name="logoUrl" class="form-control"></div><div class="col-md-6"><label class="form-label">Ảnh nền URL</label><input name="backgroundUrl" class="form-control"></div><div class="col-md-6"><label class="form-label">Thông tin thôn</label><input name="hamletName" class="form-control"></div><div class="col-md-6"><label class="form-label">Thông tin xã</label><input name="communeName" class="form-control"></div><div class="col-md-6"><label class="form-label">Đơn vị</label><input name="unitName" class="form-control"></div><div class="col-md-4"><label class="form-label">Số điện thoại</label><input name="phone" class="form-control"></div><div class="col-md-4"><label class="form-label">Email</label><input name="email" type="email" class="form-control"></div><div class="col-md-4"><label class="form-label">Người ký báo cáo</label><input name="reportSigner" class="form-control"></div><div class="col-12"><label class="form-label">Địa chỉ</label><input name="address" class="form-control"></div><div class="col-12 text-end"><button class="btn btn-primary" type="submit">Lưu cấu hình</button></div></div></form></section>
+      <section id="restoreScreen" class="screen"><form id="restoreForm" class="content-card"><label class="form-label">Nội dung file SQL cần khôi phục</label><textarea name="sql" class="form-control font-monospace" rows="14" required></textarea><div class="text-end mt-3"><button class="btn btn-danger" type="submit"><i class="fa-solid fa-rotate-left"></i> Khôi phục dữ liệu</button></div></form></section>
+      <div class="modal fade" id="movementModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg"><form id="movementForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Biến động nhân khẩu</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="row g-3"><div class="col-md-4"><label class="form-label">ID nhân khẩu</label><input name="citizenId" type="number" class="form-control" required></div><div class="col-md-4"><label class="form-label">Loại biến động</label><select name="type" class="form-select"><option value="BIRTH">Sinh</option><option value="DEATH">Tử</option><option value="MOVE_IN">Chuyển đến</option><option value="MOVE_OUT">Chuyển đi</option><option value="TEMPORARY_RESIDENCE">Tạm trú</option><option value="TEMPORARY_ABSENCE">Tạm vắng</option><option value="OTHER">Khác</option></select></div><div class="col-md-4"><label class="form-label">Ngày hiệu lực</label><input name="effectiveDate" type="date" class="form-control" required></div><div class="col-md-6"><label class="form-label">Từ địa chỉ</label><input name="fromAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Đến địa chỉ</label><input name="toAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Số giấy tờ</label><input name="documentNumber" class="form-control"></div><div class="col-md-6"><label class="form-label">Lý do</label><input name="reason" class="form-control"></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="2"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>`);
+    App.movements = { page: 1, pageSize: 20, search: '', type: '' };
+    App.modals.movement = new bootstrap.Modal(document.querySelector('#movementModal'));
+    document.querySelector('#movementSearch').addEventListener('input', debounce(() => { App.movements.search = document.querySelector('#movementSearch').value.trim(); App.movements.page = 1; loadMovements(); }, 350));
+    document.querySelector('#movementType').addEventListener('change', () => { App.movements.type = document.querySelector('#movementType').value; App.movements.page = 1; loadMovements(); });
+    document.querySelector('#movementAddBtn').addEventListener('click', () => openMovementForm());
+    document.querySelector('#movementForm').addEventListener('submit', saveMovement);
+    document.querySelector('#settingsForm').addEventListener('submit', saveSettings);
+    document.querySelector('#restoreForm').addEventListener('submit', restoreSql);
+    document.querySelector('#permissionSaveBtn').addEventListener('click', savePermissions);
+    document.querySelectorAll('[data-export]').forEach(btn => btn.addEventListener('click', () => downloadAdminReport(btn.dataset.export, 'excel')));
+    document.querySelectorAll('[data-print]').forEach(btn => btn.addEventListener('click', () => printAdminReport(btn.dataset.print)));
+  }
+
+  function bindAdminPanelMenu() {
+    document.querySelectorAll('.sidebar .nav-link').forEach(button => {
+      button.onclick = () => {
+        const screen = button.dataset.screen;
+        if (screen === 'logout') return logout();
+        if (screen === 'backups' && typeof loadBackups === 'function') loadBackups();
+        openScreen(screen);
+      };
+    });
+  }
+
+  function openScreen(screen) {
+    switchScreen(screen);
+    document.querySelector('#screenTitle').textContent = titles[screen] || 'Quản trị';
+    document.querySelector('#breadcrumbTrail').textContent = `Trang chủ / ${titles[screen] || 'Quản trị'}`;
+    if (screen === 'temporaryResidence') loadPresenceList('TEMPORARY', '#temporaryResidenceRows');
+    if (screen === 'temporaryAbsence') loadPresenceList('AWAY', '#temporaryAbsenceRows');
+    if (screen === 'movements') loadMovements();
+    if (screen === 'permissions') loadPermissions();
+    if (screen === 'settings') loadSettings();
+  }
+
+  window.renderChart = function renderChart(selector, items) {
+    const canvasId = selector.replace('#', '') + 'Canvas';
+    const host = document.querySelector(selector);
+    if (!host) return;
+    host.innerHTML = `<canvas id="${canvasId}" height="180"></canvas>`;
+    if (!window.Chart) return;
+    charts[canvasId]?.destroy();
+    charts[canvasId] = new Chart(document.getElementById(canvasId), {
+      type: selector.includes('gender') || selector.includes('household') || selector.includes('residency') ? 'doughnut' : 'bar',
+      data: { labels: items.map(i => i.label), datasets: [{ data: items.map(i => Number(i.value || 0)), backgroundColor: ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2'] }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: selector.includes('gender') || selector.includes('household') || selector.includes('residency') ? {} : { y: { beginAtZero: true } } }
+    });
+  };
+
+  const oldLoadDashboard = window.loadDashboard;
+  window.loadDashboard = async function adminLoadDashboard() {
+    await oldLoadDashboard();
+    const query = new URLSearchParams(formData(document.querySelector('#dashboardFilters'))).toString();
+    const data = await api('/api/dashboard/summary' + (query ? '?' + query : ''));
+    renderAdminDashboard(data);
+  };
+
+  function renderAdminDashboard(data) {
+    const m = data.metrics || {};
+    const cards = [['Tổng số hộ',m.total_households,'fa-house'],['Tổng số nhân khẩu',m.total_citizens,'fa-users'],['Nam',m.male_count,'fa-mars'],['Nữ',m.female_count,'fa-venus'],['Trẻ em',m.children_count,'fa-child'],['Người cao tuổi',m.elderly_count,'fa-person-cane'],['Độ tuổi lao động',m.working_age_count,'fa-briefcase'],['Tạm trú',m.temporary_count,'fa-location-dot'],['Tạm vắng',m.away_count,'fa-person-walking-arrow-right'],['Hộ nghèo',m.poor_households,'fa-hand-holding-heart'],['Hộ cận nghèo',m.near_poor_households,'fa-scale-balanced']];
+    document.querySelector('#dashboardCards').innerHTML = cards.map(([label,value,icon]) => `<div class="col-sm-6 col-xl-3"><div class="metric-card admin-metric"><i class="fa-solid ${icon}"></i><div><div class="metric-label">${label}</div><div class="metric-value">${number(value)}</div></div></div></div>`).join('');
+    ensureDashboardChart('hamletChart','Dân số theo thôn');
+    ensureDashboardChart('monthlyChart','Tăng giảm dân số theo tháng');
+    ensureDashboardChart('povertyChart','Biểu đồ hộ nghèo');
+    renderChart('#hamletChart', data.charts?.hamlets || []);
+    renderChart('#monthlyChart', data.charts?.monthlyChanges || []);
+    renderChart('#povertyChart', data.charts?.poverty || []);
+  }
+
+  function ensureDashboardChart(id, title) {
+    if (document.querySelector('#' + id)) return;
+    document.querySelector('#dashboardScreen .row.g-3.mt-1').insertAdjacentHTML('beforeend', `<div class="col-lg-4"><div class="content-card"><h3 class="section-title">${title}</h3><div id="${id}" class="chart-list"></div></div></div>`);
+  }
+
+  async function loadPresenceList(value, selector) {
+    const params = value === 'TEMPORARY' ? { residencyStatus: 'TEMPORARY', pageSize: 100 } : { presenceStatus: 'AWAY', pageSize: 100 };
+    const data = await api('/api/persons?' + new URLSearchParams(params));
+    document.querySelector(selector).innerHTML = personMiniTable(data.items || []);
+  }
+
+  function personMiniTable(items) {
+    const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.phone || '')}</td></tr>`).join('') || emptyRow(5, 'Không có dữ liệu');
+    return `<table class="table table-hover data-table mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Số điện thoại</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  async function loadMovements() {
+    const data = await api('/api/movements?' + new URLSearchParams(App.movements));
+    document.querySelector('#movementRows').innerHTML = data.items.map(row => `<tr><td>${formatDate(row.effective_date)}</td><td>${movementLabel(row.type)}</td><td>${escapeHtml(row.full_name)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.reason || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openMovementForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteMovement(${row.id})">Xóa</button></td></tr>`).join('') || emptyRow(7, 'Chưa có biến động');
+    renderPager('#movementPager', data, page => { App.movements.page = page; loadMovements(); });
+  }
+
+  window.openMovementForm = async function openMovementForm(id = null) {
+    const form = document.querySelector('#movementForm');
+    form.reset(); form.elements.id.value = '';
+    if (id) {
+      const row = await api('/api/movements/' + id);
+      setForm(form, { id: row.id, citizenId: row.citizen_id, type: row.type, effectiveDate: row.effective_date, fromAddress: row.from_address, toAddress: row.to_address, documentNumber: row.document_number, reason: row.reason, note: row.note });
+    }
+    App.modals.movement.show();
+  };
+
+  async function saveMovement(event) {
+    event.preventDefault();
+    const data = formData(event.currentTarget); const id = data.id; delete data.id;
+    await api(id ? '/api/movements/' + id : '/api/movements', { method: id ? 'PUT' : 'POST', body: data });
+    App.modals.movement.hide(); showToast('Đã lưu biến động'); loadMovements(); loadDashboard();
+  }
+
+  window.deleteMovement = async function deleteMovement(id) {
+    if (!confirm('Xóa biến động này?')) return;
+    await api('/api/movements/' + id, { method: 'DELETE' });
+    showToast('Đã xóa biến động'); loadMovements(); loadDashboard();
+  };
+
+  async function loadPermissions() {
+    const data = await api('/api/permissions');
+    document.querySelector('#permissionMatrix').innerHTML = permissionTable(data);
+  }
+
+  function permissionTable(data) {
+    const actionLabels = { read:'Xem', create:'Thêm', update:'Sửa', delete:'Xóa', export:'Xuất', print:'In', restore:'Khôi phục' };
+    return `<table class="table table-sm table-bordered align-middle data-table"><thead><tr><th>Vai trò</th><th>Module</th>${data.actions.map(a => `<th>${actionLabels[a] || a}</th>`).join('')}</tr></thead><tbody>${data.roles.map(role => data.modules.map(module => `<tr><td>${escapeHtml(role.label)}</td><td>${escapeHtml(module)}</td>${data.actions.map(action => `<td class="text-center"><input class="form-check-input permission-check" type="checkbox" data-role="${role.role}" data-module="${module}" data-action="${action}" ${role.permissions?.[module]?.[action] ? 'checked' : ''} ${role.role === 'ADMIN' ? 'disabled' : ''}></td>`).join('')}</tr>`).join('')).join('')}</tbody></table>`;
+  }
+
+  async function savePermissions() {
+    const items = Array.from(document.querySelectorAll('.permission-check:not(:disabled)')).map(input => ({ role: input.dataset.role, module: input.dataset.module, action: input.dataset.action, allowed: input.checked ? 1 : 0 }));
+    await api('/api/permissions', { method: 'POST', body: { items } });
+    showToast('Đã lưu phân quyền');
+  }
+
+  async function loadSettings() {
+    const data = await api('/api/settings');
+    setForm(document.querySelector('#settingsForm'), data);
+  }
+
+  async function saveSettings(event) {
+    event.preventDefault();
+    const data = formData(event.currentTarget);
+    const saved = await api('/api/settings', { method: 'POST', body: data });
+    setForm(event.currentTarget, saved);
+    showToast('Đã lưu cấu hình');
+  }
+
+  async function restoreSql(event) {
+    event.preventDefault();
+    if (!confirm('Khôi phục dữ liệu sẽ thay đổi database. Tiếp tục?')) return;
+    await api('/api/backups/restore', { method: 'POST', body: formData(event.currentTarget) });
+    showToast('Đã khôi phục dữ liệu');
+  }
+
+  async function downloadAdminReport(type) {
+    const response = await fetch('/api/reports/export-excel?' + new URLSearchParams({ type }), { headers: { Authorization: `Bearer ${App.token}` } });
+    if (!response.ok) throw new Error('Không xuất được Excel');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = `bao_cao_${type}_${Date.now()}.xls`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+
+  async function printAdminReport(type) {
+    const report = await api('/api/reports/print?' + new URLSearchParams({ type }));
+    const win = window.open('', '_blank', 'width=1024,height=768');
+    win.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(report.title)}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #555;padding:6px;font-size:12px}</style></head><body><h2>${escapeHtml(report.title)}</h2>${reportTableHtml(report)}<script>window.print();<\/script></body></html>`);
+    win.document.close();
+  }
+
+  function reportTableHtml(report) {
+    return `<table><thead><tr>${(report.headers || []).map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${(report.rows || []).map(r => `<tr>${r.map(c => `<td>${escapeHtml(c ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  }
+
+  function renderRoleAwareMenu() {
+    const role = App.user?.role || '';
+    document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
+      const screen = btn.dataset.screen;
+      const adminOnly = ['users','permissions','logs','settings','backups','restore'];
+      btn.classList.toggle('d-none', adminOnly.includes(screen) && !['ADMIN','SUPER_ADMIN'].includes(role));
+    });
+  }
+
+  function toggleTheme() {
+    document.body.classList.toggle('theme-dark');
+    document.body.classList.toggle('theme-light');
+    localStorage.setItem('thon09_theme', document.body.classList.contains('theme-dark') ? 'theme-dark' : 'theme-light');
+  }
+
+  function movementLabel(type) {
+    return ({ BIRTH:'Sinh', DEATH:'Tử', MOVE_IN:'Chuyển đến', MOVE_OUT:'Chuyển đi', TEMPORARY_RESIDENCE:'Tạm trú', TEMPORARY_ABSENCE:'Tạm vắng', OTHER:'Khác' })[type] || type;
+  }
+})();
