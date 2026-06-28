@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Styles>
+    <Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#D9EAF7" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="Text"><NumberFormat ss:Format="@"/></Style>
+  </Styles>
+  <Worksheet ss:Name="HoDan">
+    <Table>
+      <Row>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Mã hộ</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Tên chủ hộ</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Địa chỉ</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Số điện thoại</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Gia đình có công</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Hộ nghèo</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Hộ cận nghèo</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Tàn tật</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Ghi chú</Data></Cell>
+      </Row>
+      <Row>
+        <Cell ss:StyleID="Text"><Data ss:Type="String">H09-001</Data></Cell>
+        <Cell><Data ss:Type="String">Nguyễn Văn A</Data></Cell>
+        <Cell><Data ss:Type="String">Thôn 09, xã Hồng Phong</Data></Cell>
+        <Cell ss:StyleID="Text"><Data ss:Type="String">0912345678</Data></Cell>
+        <Cell><Data ss:Type="String">Không</Data></Cell>
+        <Cell><Data ss:Type="String">Không</Data></Cell>
+        <Cell><Data ss:Type="String">Không</Data></Cell>
+        <Cell><Data ss:Type="String">Không</Data></Cell>
+        <Cell><Data ss:Type="String"></Data></Cell>
+      </Row>
+    </Table>
+  </Worksheet>
+  <Worksheet ss:Name="NhanKhau">
+    <Table>
+      <Row>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Mã nhân khẩu</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Mã hộ</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Họ và tên</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Giới tính</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Ngày sinh</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">CCCD</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Quan hệ với chủ hộ</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Dân tộc</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Tôn giáo</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Nghề nghiệp</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Học vấn</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Hôn nhân</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Thường trú</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Hiện tại</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Trạng thái</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Địa chỉ hiện tại</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Số điện thoại</Data></Cell>
+      </Row>
+      <Row>
+        <Cell ss:StyleID="Text"><Data ss:Type="String">NK-001</Data></Cell>
+        <Cell ss:StyleID="Text"><Data ss:Type="String">H09-001</Data></Cell>
+        <Cell><Data ss:Type="String">Nguyễn Văn A</Data></Cell>
+        <Cell><Data ss:Type="String">Nam</Data></Cell>
+        <Cell ss:StyleID="Text"><Data ss:Type="String">01/01/1980</Data></Cell>
+        <Cell ss:StyleID="Text"><Data ss:Type="String">012345678901</Data></Cell>
+        <Cell><Data ss:Type="String">Chủ hộ</Data></Cell>
+        <Cell><Data ss:Type="String">Kinh</Data></Cell>
+        <Cell><Data ss:Type="String">Không</Data></Cell>
+        <Cell><Data ss:Type="String">Nông nghiệp</Data></Cell>
+        <Cell><Data ss:Type="String">Trung học phổ thông</Data></Cell>
+        <Cell><Data ss:Type="String">Đã kết hôn</Data></Cell>
+        <Cell><Data ss:Type="String">Thường trú</Data></Cell>
+        <Cell><Data ss:Type="String">Ở nhà</Data></Cell>
+        <Cell><Data ss:Type="String">Còn sống</Data></Cell>
+        <Cell><Data ss:Type="String">Thôn 09, xã Hồng Phong</Data></Cell>
+        <Cell ss:StyleID="Text"><Data ss:Type="String">0912345678</Data></Cell>
+      </Row>
+    </Table>
+  </Worksheet>
+</Workbook>
