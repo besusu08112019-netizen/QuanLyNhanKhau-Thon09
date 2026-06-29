@@ -320,7 +320,7 @@
     return text.split(/[\n,]+/).map(item => item.trim()).filter(Boolean);
   }
 
-  async function uploadAppearanceMedia(type) {
+  async function uploadAppearanceMedia(type, shouldSave = true) {
     const input = document.querySelector(type === 'logo' ? '#appearanceLogoFile' : (type === 'intro' ? '#appearanceIntroFile' : '#appearanceBackgroundFiles'));
     if (!input?.files?.length) return showToast('Vui lòng chọn file cần tải lên', 'warning');
     const uploaded = [];
@@ -340,7 +340,8 @@
     }
     input.value = '';
     renderAppearancePreviews();
-    await saveAppearanceSettings();
+    if (shouldSave) await saveAppearanceSettings(null, { skipPendingUploads: true });
+    return uploaded;
   }
 
   async function clearAppearanceField(name, persist) {
@@ -352,10 +353,19 @@
     await saveAppearanceSettings();
   }
 
-  async function saveAppearanceSettings(event) {
+  async function uploadPendingAppearanceFiles() {
+    const jobs = [];
+    if (document.querySelector('#appearanceLogoFile')?.files?.length) jobs.push(uploadAppearanceMedia('logo', false));
+    if (document.querySelector('#appearanceBackgroundFiles')?.files?.length) jobs.push(uploadAppearanceMedia('background', false));
+    if (document.querySelector('#appearanceIntroFile')?.files?.length) jobs.push(uploadAppearanceMedia('intro', false));
+    if (jobs.length) await Promise.all(jobs);
+  }
+
+  async function saveAppearanceSettings(event, options = {}) {
     if (event) event.preventDefault();
     const form = document.querySelector('#appearanceForm');
     if (!form) return;
+    if (!options.skipPendingUploads) await uploadPendingAppearanceFiles();
     syncRichEditors();
     const payload = formData(form);
     const saved = await api('/api/settings', { method: 'POST', body: payload });
