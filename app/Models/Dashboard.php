@@ -18,6 +18,12 @@ final class Dashboard extends BaseModel
                 'hamlets' => $this->hamletChart($filters),
                 'monthlyChanges' => $this->monthlyChangeChart($filters),
                 'poverty' => $this->povertyChart($filters),
+                'partyMembers' => $this->flagChart($filters, 'party_member', 'Đảng viên'),
+                'youthUnion' => $this->flagChart($filters, 'youth_union_member', 'Đoàn viên'),
+                'labor' => $this->laborChart($filters),
+                'occupations' => $this->groupChart($filters, 'occupation', 'Nghề nghiệp'),
+                'ethnicities' => $this->groupChart($filters, 'ethnicity', 'Dân tộc'),
+                'religions' => $this->groupChart($filters, 'religion', 'Tôn giáo'),
             ],
             'filters' => $this->normalizeFilters($filters),
             'generatedAt' => date('c'),
@@ -29,8 +35,10 @@ final class Dashboard extends BaseModel
         [$householdWhere, $householdParams] = $this->householdWhere($filters);
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
         $households = $this->fetchOne("SELECT COUNT(*) AS total_households, COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor_households, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor_households, COALESCE(SUM(CASE WHEN h.meritorious_family=1 THEN 1 ELSE 0 END),0) AS meritorious_households, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy_households, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND h.meritorious_family=0 AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal_households FROM households h $householdWhere", $householdParams) ?: [];
-        $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female_count, COALESCE(SUM(CASE WHEN c.relationship='Chủ hộ' THEN 1 ELSE 0 END),0) AS household_head_count, COALESCE(SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END),0) AS active_citizens, COALESCE(SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary_count, COALESCE(SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END),0) AS working_age_count FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
-        return [
+        $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female_count, COALESCE(SUM(CASE WHEN c.relationship='Chủ hộ' THEN 1 ELSE 0 END),0) AS household_head_count, COALESCE(SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END),0) AS active_citizens, COALESCE(SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary_count, COALESCE(SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END),0) AS working_age_count" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
+        $totalCitizens = max(1, (int) ($citizens['total_citizens'] ?? 0));
+        $totalHouseholds = max(1, (int) ($households['total_households'] ?? 0));
+        $metrics = [
             'total_households' => (int) ($households['total_households'] ?? 0),
             'total_citizens' => (int) ($citizens['total_citizens'] ?? 0),
             'male_count' => (int) ($citizens['male_count'] ?? 0),
@@ -48,6 +56,16 @@ final class Dashboard extends BaseModel
             'meritorious_households' => (int) ($households['meritorious_households'] ?? 0),
             'normal_households' => (int) ($households['normal_households'] ?? 0),
         ];
+        foreach (['party_member','youth_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
+            $metrics[$key . '_count'] = (int) ($citizens[$key] ?? 0);
+            $metrics[$key . '_percent'] = round($metrics[$key . '_count'] * 100 / $totalCitizens, 2);
+        }
+        $metrics['poor_households_percent'] = round($metrics['poor_households'] * 100 / $totalHouseholds, 2);
+        $metrics['near_poor_households_percent'] = round($metrics['near_poor_households'] * 100 / $totalHouseholds, 2);
+        $metrics['children_percent'] = round($metrics['children_count'] * 100 / $totalCitizens, 2);
+        $metrics['elderly_percent'] = round($metrics['elderly_count'] * 100 / $totalCitizens, 2);
+        $metrics['working_age_percent'] = round($metrics['working_age_count'] * 100 / $totalCitizens, 2);
+        return $metrics;
     }
 
     public function populationChart(array $filters = []): array
@@ -97,6 +115,33 @@ final class Dashboard extends BaseModel
             ['label' => 'Hộ bình thường', 'value' => (int) ($row['normal'] ?? 0)],
             ['label' => 'Khác', 'value' => (int) ($row['other'] ?? 0)],
         ];
+    }
+
+    public function flagChart(array $filters, string $column, string $label): array
+    {
+        [$where, $params] = $this->citizenWhere($filters);
+        if (!$this->columnExists('citizens', $column)) return [['label' => $label, 'value' => 0], ['label' => 'Còn lại', 'value' => 0]];
+        $row = $this->fetchOne("SELECT SUM(c.$column=1) AS yes_count, SUM(c.$column=0 OR c.$column IS NULL) AS no_count FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params) ?: [];
+        return [['label' => $label, 'value' => (int) ($row['yes_count'] ?? 0)], ['label' => 'Còn lại', 'value' => (int) ($row['no_count'] ?? 0)]];
+    }
+
+    public function laborChart(array $filters = []): array
+    {
+        [$where, $params] = $this->citizenWhere($filters);
+        $columns = ['employed' => 'Có việc làm', 'unemployed' => 'Thất nghiệp', 'freelance_labor' => 'Lao động tự do', 'out_province_labor' => 'Lao động ngoài tỉnh', 'foreign_labor' => 'Lao động nước ngoài', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu'];
+        $selects = [];
+        foreach ($columns as $column => $label) $selects[] = ($this->columnExists('citizens', $column) ? "SUM(c.$column=1)" : '0') . " AS $column";
+        $row = $this->fetchOne('SELECT ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params) ?: [];
+        $items = [];
+        foreach ($columns as $column => $label) $items[] = ['label' => $label, 'value' => (int) ($row[$column] ?? 0)];
+        return $items;
+    }
+
+    public function groupChart(array $filters, string $column, string $fallbackLabel): array
+    {
+        if (!in_array($column, ['occupation','ethnicity','religion'], true)) return [];
+        [$where, $params] = $this->citizenWhere($filters);
+        return $this->fetchAll("SELECT COALESCE(NULLIF(c.$column,''),'Khác') AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params);
     }
 
     private function normalizeFilters(array $filters): array
@@ -183,4 +228,12 @@ final class Dashboard extends BaseModel
         if ($converted !== false) $value = $converted;
         return trim(preg_replace('/[^a-z0-9]+/', ' ', $value));
     }
+    private function flagSelects(string $alias): string
+    {
+        $columns = ['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'];
+        $parts = [];
+        foreach ($columns as $column) $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
+        return implode('', $parts);
+    }
+
 }
