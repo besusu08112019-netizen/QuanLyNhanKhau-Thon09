@@ -103,8 +103,7 @@
 
   function setupDigitalReports() {
     const select = document.querySelector('#reportForm select[name="type"]');
-    if (!select || select.dataset.digitalReports) return;
-    select.dataset.digitalReports = '1';
+    if (!select) return;
     const options = [['party_member','Báo cáo Đảng viên'],['youth_union_member','Báo cáo Đoàn viên'],['meritorious_person','Báo cáo Người có công'],['poor-households','Báo cáo Hộ nghèo'],['near-poor-households','Báo cáo Hộ cận nghèo'],['labor','Báo cáo Lao động'],['elderly','Báo cáo Người cao tuổi'],['children','Báo cáo Trẻ em'],['disabled_person','Báo cáo Người khuyết tật']];
     options.forEach(([value,label]) => { if (!Array.from(select.options).some(o => o.value === value)) select.insertAdjacentHTML('beforeend', '<option value="' + value + '">' + label + '</option>'); });
   }
@@ -207,6 +206,7 @@
     form.onsubmit = event => { event.preventDefault(); event.stopPropagation(); viewReportFromApi(); return false; };
     const submit = form.querySelector('button[type="submit"]');
     if (submit) submit.onclick = event => { event.preventDefault(); event.stopPropagation(); viewReportFromApi(); return false; };
+    setupDigitalReports();
     const excel = document.querySelector('#reportExcelBtn');
     if (excel) excel.onclick = event => { event.preventDefault(); downloadReport('excel'); return false; };
     const pdf = document.querySelector('#reportPdfBtn');
@@ -275,8 +275,9 @@
   document.addEventListener('click', event => {
     const button = event.target.closest('[data-screen]');
     if (!button) return;
-    if (button.dataset.screen === 'households') setTimeout(setupHouseholdCategoryFilters, 250);
-    if (button.dataset.screen === 'reports') setTimeout(setupReportCategoryFilter, 250);
+    if (button.dataset.screen === 'households') { setTimeout(setupHouseholdCategoryFilters, 250); setTimeout(setupDigitalGovernmentFeatures, 300); }
+    if (button.dataset.screen === 'reports') { setTimeout(setupReportCategoryFilter, 250); setTimeout(setupDigitalGovernmentFeatures, 350); }
+    if (button.dataset.screen === 'persons' || button.dataset.screen === 'dashboard') setTimeout(setupDigitalGovernmentFeatures, 300);
   }, true);
 
   let categorySetupTicks = 0;
