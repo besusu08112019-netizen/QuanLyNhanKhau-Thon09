@@ -27,6 +27,7 @@ function init() {
   App.modals.detail = new bootstrap.Modal($('#detailModal'));
   fillDictionaries();
   bindEvents();
+  initLoginExperience();
   App.token ? showApp() : showLogin();
 }
 
@@ -86,7 +87,7 @@ async function logout() {
   showLogin();
 }
 
-function showLogin() { $('#loginView').classList.remove('d-none'); $('#appView').classList.add('d-none'); }
+function showLogin() { $('#loginView').classList.remove('d-none'); $('#appView').classList.add('d-none'); initLoginExperience(); }
 function showApp() {
   $('#loginView').classList.add('d-none');
   $('#appView').classList.remove('d-none');
@@ -438,3 +439,81 @@ function showToast(message, type = 'success') {
   toast.show();
   el.addEventListener('hidden.bs.toast', () => el.remove());
 }
+
+
+function initLoginExperience() {
+  const loginView = $('#loginView');
+  if (!loginView || loginView.dataset.loginReady === '1') return;
+  loginView.dataset.loginReady = '1';
+
+  const updateClock = () => {
+    const now = new Date();
+    const weekday = $('#loginWeekday');
+    const date = $('#loginDate');
+    const clock = $('#loginClock');
+    if (weekday) weekday.textContent = new Intl.DateTimeFormat('vi-VN', { weekday: 'long' }).format(now);
+    if (date) date.textContent = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(now);
+    if (clock) clock.textContent = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now);
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  const toggle = $('[data-password-toggle]', loginView);
+  const password = $('#loginPassword');
+  if (toggle && password) {
+    toggle.addEventListener('click', () => {
+      const visible = password.type === 'text';
+      password.type = visible ? 'password' : 'text';
+      toggle.setAttribute('aria-label', visible ? 'Hiện mật khẩu' : 'Ẩn mật khẩu');
+      toggle.innerHTML = '<i class="fa-solid ' + (visible ? 'fa-eye' : 'fa-eye-slash') + '" aria-hidden="true"></i>';
+    });
+  }
+
+  hydrateLoginIntro();
+}
+
+async function hydrateLoginIntro() {
+  if (!App.token) return;
+  try {
+    const [summary, settings] = await Promise.all([
+      loginFetchJson('/api/dashboard/summary').catch(() => null),
+      loginFetchJson('/api/settings').catch(() => null)
+    ]);
+    if (summary?.metrics) updateLoginStats(summary.metrics, summary.charts || {});
+    if (settings) updateLoginHistory(settings);
+  } catch (_) {}
+}
+
+async function loginFetchJson(url) {
+  const response = await fetch(url, { headers: { Accept: 'application/json', Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.ok) throw new Error('Không tải được dữ liệu');
+  return payload.data;
+}
+
+function updateLoginStats(metrics, charts = {}) {
+  const data = { ...metrics };
+  const ageZeroFive = (charts.ages || []).find(item => String(item.label || '').includes('0-5'));
+  if (ageZeroFive) data.under_six_count = ageZeroFive.value;
+  $$('[data-stat]', $('#loginStats') || document).forEach(el => animateLoginNumber(el, Number(data[el.dataset.stat] || 0)));
+}
+
+function updateLoginHistory(settings) {
+  const host = $('#loginHistoryText');
+  if (!host) return;
+  const value = settings.hamletHistory || settings.history || settings.aboutHamlet || settings.about || settings.introduction;
+  if (value) host.textContent = value;
+}
+
+function animateLoginNumber(el, target) {
+  const end = Math.max(0, Number(target || 0));
+  const duration = 650;
+  const startTime = performance.now();
+  const step = now => {
+    const progress = Math.min(1, (now - startTime) / duration);
+    el.textContent = number(Math.round(end * progress));
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
