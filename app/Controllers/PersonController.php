@@ -80,6 +80,11 @@ final class PersonController extends BaseController
             'ethnicity' => $this->query('ethnicity', ''),
             'religion' => $this->query('religion', ''),
             'occupation' => $this->query('occupation', ''),
+            'maritalStatus' => $this->query('maritalStatus', $this->query('marital_status', '')),
+            'educationLevel' => $this->query('educationLevel', $this->query('education_level', '')),
+            'workplace' => $this->query('workplace', ''),
+            'nationality' => $this->query('nationality', ''),
+            'bloodType' => $this->query('bloodType', $this->query('blood_type', '')),
         ];
 
         foreach (self::FLAG_FILTERS as $field => $aliases) {
