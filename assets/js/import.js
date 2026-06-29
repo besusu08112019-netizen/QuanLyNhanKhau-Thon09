@@ -23,10 +23,12 @@
   function injectImportScreen() {
     const nav = document.querySelector('.sidebar .nav');
     const main = document.querySelector('.main-area');
-    if (!nav || !main || document.querySelector('[data-screen="import"]')) return;
+    if (!nav || !main || document.querySelector('#importScreen')) return;
     const reportsButton = document.querySelector('[data-screen="reports"]');
     const button = '<button class="nav-link" data-screen="import">Import dữ liệu</button>';
-    reportsButton ? reportsButton.insertAdjacentHTML('beforebegin', button) : nav.insertAdjacentHTML('beforeend', button);
+    if (!document.querySelector('[data-screen="import"]')) {
+      reportsButton ? reportsButton.insertAdjacentHTML('beforebegin', button) : nav.insertAdjacentHTML('beforeend', button);
+    }
     main.insertAdjacentHTML('beforeend', '<section id="importScreen" class="screen">' +
       '<div class="content-card mb-3"><h3 class="section-title">Hướng dẫn Import Excel</h3><ul class="mb-3"><li>Chọn đúng loại dữ liệu trước khi import.</li><li>Không đổi tên Sheet.</li><li>Không đổi tên cột.</li><li>CCCD và số điện thoại để dạng Text.</li><li>Với hộ dân: không trùng Mã hộ; cột Gia đình có công/Hộ nghèo/Hộ cận nghèo/Hộ có người khuyết tật nhập 1 hoặc 0.</li></ul><div class="d-flex flex-wrap gap-2"><a class="btn btn-success" href="sample-data/Mau_Import_NhanKhau.xlsx" download><i class="fa-solid fa-file-excel"></i> Tải mẫu nhân khẩu</a><a class="btn btn-outline-success" href="sample-data/Mau_Import_HoDan.xlsx" download><i class="fa-solid fa-file-excel"></i> Tải mẫu hộ dân</a></div></div>' +
       '<form id="importForm" class="content-card mb-3"><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label">Loại dữ liệu</label><select name="type" class="form-select"><option value="person">Nhân khẩu</option><option value="household">Hộ dân</option></select></div><div class="col-md-3"><label class="form-label">Khi trùng mã hộ</label><select name="mode" class="form-select"><option value="skip">Bỏ qua</option><option value="update">Cập nhật</option></select></div><div class="col-md-4"><label class="form-label">File dữ liệu</label><input name="file" type="file" class="form-control" accept=".csv,.xlsx" required></div><div class="col-md-2 d-grid gap-2"><button id="importPreviewBtn" class="btn btn-outline-primary" type="button">Kiểm tra</button><button id="importRunBtn" class="btn btn-primary" type="button">Bắt đầu Import</button></div></div></form>' +
