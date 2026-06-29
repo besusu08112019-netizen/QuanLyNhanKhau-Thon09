@@ -61,7 +61,7 @@
       <section id="printFormsScreen" class="screen"><div class="admin-heading"><div><h3>In biểu mẫu</h3><p>In nhanh các biểu mẫu hành chính khổ A4.</p></div></div><div class="content-card action-grid"><button class="btn btn-outline-secondary" data-print="summary"><i class="fa-solid fa-print"></i> Báo cáo thống kê</button><button class="btn btn-outline-secondary" data-print="household"><i class="fa-solid fa-print"></i> Danh sách hộ</button><button class="btn btn-outline-secondary" data-print="population"><i class="fa-solid fa-print"></i> Danh sách nhân khẩu</button></div></section>
       <section id="permissionsScreen" class="screen"><div class="admin-heading"><div><h3>Phân quyền</h3><p>Thiết lập quyền theo vai trò, module và thao tác.</p></div><button id="permissionSaveBtn" class="btn btn-primary">Lưu phân quyền</button></div><div id="permissionMatrix" class="content-card table-responsive"></div></section>
       <section id="settingsScreen" class="screen"><form id="settingsForm" class="content-card"><div class="row g-3"><div class="col-md-6"><label class="form-label">Tên hệ thống</label><input name="systemName" class="form-control"></div><div class="col-md-6"><label class="form-label">Logo URL</label><input name="logoUrl" class="form-control"></div><div class="col-md-6"><label class="form-label">Ảnh nền URL</label><input name="backgroundUrl" class="form-control"></div><div class="col-md-6"><label class="form-label">Thông tin thôn</label><input name="hamletName" class="form-control"></div><div class="col-md-6"><label class="form-label">Thông tin xã</label><input name="communeName" class="form-control"></div><div class="col-md-6"><label class="form-label">Đơn vị</label><input name="unitName" class="form-control"></div><div class="col-md-4"><label class="form-label">Số điện thoại</label><input name="phone" class="form-control"></div><div class="col-md-4"><label class="form-label">Email</label><input name="email" type="email" class="form-control"></div><div class="col-md-4"><label class="form-label">Người ký báo cáo</label><input name="reportSigner" class="form-control"></div><div class="col-12"><label class="form-label">Địa chỉ</label><input name="address" class="form-control"></div><div class="col-12 text-end"><button class="btn btn-primary" type="submit">Lưu cấu hình</button></div></div></form></section>
-      <section id="restoreScreen" class="screen"><form id="restoreForm" class="content-card"><label class="form-label">Nội dung file SQL cần khôi phục</label><textarea name="sql" class="form-control font-monospace" rows="14" required></textarea><div class="text-end mt-3"><button class="btn btn-danger" type="submit"><i class="fa-solid fa-rotate-left"></i> Khôi phục dữ liệu</button></div></form></section>
+      <section id="restoreScreen" class="screen"><form id="restoreForm" class="content-card"><label class="form-label">Chọn file SQL cần khôi phục</label><input name="file" type="file" class="form-control mb-3" accept=".sql"><label class="form-label">Hoặc dán nội dung SQL</label><textarea name="sql" class="form-control font-monospace" rows="14"></textarea><div class="text-end mt-3"><button class="btn btn-danger" type="submit"><i class="fa-solid fa-rotate-left"></i> Khôi phục dữ liệu</button></div></form></section>
       <div class="modal fade" id="movementModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg"><form id="movementForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Biến động nhân khẩu</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="row g-3"><div class="col-md-4"><label class="form-label">ID nhân khẩu</label><input name="citizenId" type="number" class="form-control" required></div><div class="col-md-4"><label class="form-label">Loại biến động</label><select name="type" class="form-select"><option value="BIRTH">Sinh</option><option value="DEATH">Tử</option><option value="MOVE_IN">Chuyển đến</option><option value="MOVE_OUT">Chuyển đi</option><option value="TEMPORARY_RESIDENCE">Tạm trú</option><option value="TEMPORARY_ABSENCE">Tạm vắng</option><option value="OTHER">Khác</option></select></div><div class="col-md-4"><label class="form-label">Ngày hiệu lực</label><input name="effectiveDate" type="date" class="form-control" required></div><div class="col-md-6"><label class="form-label">Từ địa chỉ</label><input name="fromAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Đến địa chỉ</label><input name="toAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Số giấy tờ</label><input name="documentNumber" class="form-control"></div><div class="col-md-6"><label class="form-label">Lý do</label><input name="reason" class="form-control"></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="2"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>`);
     App.movements = { page: 1, pageSize: 20, search: '', type: '' };
     App.modals.movement = new bootstrap.Modal(document.querySelector('#movementModal'));
@@ -98,31 +98,92 @@
     if (screen === 'settings') loadSettings();
   }
 
+  function formatChartPercent(value, total) {
+    if (!total) return '0%';
+    return (value * 100 / total).toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+  }
+
+  const percentLabelPlugin = {
+    id: 'percentLabelPlugin',
+    afterDatasetsDraw(chart) {
+      const dataset = chart.data.datasets[0];
+      const values = (dataset?.data || []).map(v => Number(v || 0));
+      const total = values.reduce((sum, value) => sum + value, 0);
+      if (!total) return;
+      const { ctx } = chart;
+      ctx.save();
+      ctx.font = '700 13px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const meta = chart.getDatasetMeta(0);
+      meta.data.forEach((element, index) => {
+        const value = values[index] || 0;
+        if (!value) return;
+        const label = formatChartPercent(value, total);
+        let point;
+        if (chart.config.type === 'doughnut') {
+          point = element.tooltipPosition();
+          ctx.fillStyle = '#fff';
+          ctx.strokeStyle = 'rgba(15,23,42,.45)';
+          ctx.lineWidth = 3;
+          ctx.strokeText(label, point.x, point.y);
+          ctx.fillText(label, point.x, point.y);
+        } else {
+          point = element.tooltipPosition();
+          ctx.fillStyle = '#0f172a';
+          ctx.fillText(label, point.x, Math.max(14, point.y - 12));
+        }
+      });
+      ctx.restore();
+    }
+  };
+
   window.renderChart = function renderChart(selector, items) {
     const canvasId = selector.replace('#', '') + 'Canvas';
     const host = document.querySelector(selector);
     if (!host) return;
-    host.innerHTML = `<canvas id="${canvasId}" height="180"></canvas>`;
+    const normalized = (items || []).map(i => ({ label: i.label || 'Khác', value: Number(i.value || 0) }));
+    host.innerHTML = '<canvas id="' + canvasId + '" height="180"></canvas>';
     if (!window.Chart) return;
     charts[canvasId]?.destroy();
+    const isDoughnut = selector.includes('gender') || selector.includes('household') || selector.includes('residency');
     charts[canvasId] = new Chart(document.getElementById(canvasId), {
-      type: selector.includes('gender') || selector.includes('household') || selector.includes('residency') ? 'doughnut' : 'bar',
-      data: { labels: items.map(i => i.label), datasets: [{ data: items.map(i => Number(i.value || 0)), backgroundColor: ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2'] }] },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: selector.includes('gender') || selector.includes('household') || selector.includes('residency') ? {} : { y: { beginAtZero: true } } }
+      type: isDoughnut ? 'doughnut' : 'bar',
+      data: {
+        labels: normalized.map(i => i.label),
+        datasets: [{
+          data: normalized.map(i => i.value),
+          backgroundColor: ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2']
+        }]
+      },
+      plugins: [percentLabelPlugin],
+      options: {
+        responsive: true,
+        cutout: isDoughnut ? '45%' : undefined,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label(context) {
+                const values = context.dataset.data.map(v => Number(v || 0));
+                const total = values.reduce((sum, value) => sum + value, 0) || 1;
+                const value = Number(context.raw || 0);
+                return context.label + ': ' + value.toLocaleString('vi-VN') + ' (' + Math.round(value * 100 / total) + '%)';
+              }
+            }
+          }
+        },
+        scales: isDoughnut ? {} : { y: { beginAtZero: true } }
+      }
     });
   };
 
   const oldLoadDashboard = window.loadDashboard;
-  window.loadDashboard = async function adminLoadDashboard() {
-    await oldLoadDashboard();
-    const query = new URLSearchParams(formData(document.querySelector('#dashboardFilters'))).toString();
-    const data = await api('/api/dashboard/summary' + (query ? '?' + query : ''));
-    renderAdminDashboard(data);
-  };
+  window.loadDashboard = async function adminLoadDashboard() { return oldLoadDashboard(); };
 
   function renderAdminDashboard(data) {
     const m = data.metrics || {};
-    const cards = [['Tổng số hộ',m.total_households,'fa-house'],['Tổng số nhân khẩu',m.total_citizens,'fa-users'],['Nam',m.male_count,'fa-mars'],['Nữ',m.female_count,'fa-venus'],['Trẻ em',m.children_count,'fa-child'],['Người cao tuổi',m.elderly_count,'fa-person-cane'],['Độ tuổi lao động',m.working_age_count,'fa-briefcase'],['Tạm trú',m.temporary_count,'fa-location-dot'],['Tạm vắng',m.away_count,'fa-person-walking-arrow-right'],['Hộ nghèo',m.poor_households,'fa-hand-holding-heart'],['Hộ cận nghèo',m.near_poor_households,'fa-scale-balanced']];
+    const cards = [['Tổng số hộ',m.total_households,'fa-house'],['Tổng số nhân khẩu',m.total_citizens,'fa-users'],['Nam',m.male_count,'fa-mars'],['Nữ',m.female_count,'fa-venus'],['Chủ hộ',m.household_head_count,'fa-user-check'],['Trẻ em',m.children_count,'fa-child'],['Người cao tuổi',m.elderly_count,'fa-person-cane'],['Độ tuổi lao động',m.working_age_count,'fa-briefcase'],['Tạm trú',m.temporary_count,'fa-location-dot'],['Tạm vắng',m.away_count,'fa-person-walking-arrow-right'],['Hộ nghèo',m.poor_households,'fa-hand-holding-heart'],['Hộ cận nghèo',m.near_poor_households,'fa-scale-balanced']];
     document.querySelector('#dashboardCards').innerHTML = cards.map(([label,value,icon]) => `<div class="col-sm-6 col-xl-3"><div class="metric-card admin-metric"><i class="fa-solid ${icon}"></i><div><div class="metric-label">${label}</div><div class="metric-value">${number(value)}</div></div></div></div>`).join('');
     ensureDashboardChart('hamletChart','Dân số theo thôn');
     ensureDashboardChart('monthlyChart','Tăng giảm dân số theo tháng');
@@ -209,7 +270,17 @@
   async function restoreSql(event) {
     event.preventDefault();
     if (!confirm('Khôi phục dữ liệu sẽ thay đổi database. Tiếp tục?')) return;
-    await api('/api/backups/restore', { method: 'POST', body: formData(event.currentTarget) });
+    const form = event.currentTarget;
+    const file = form.elements.file?.files?.[0];
+    if (file) {
+      const data = new FormData(form);
+      const response = await fetch('/api/backups/restore', { method: 'POST', headers: { Authorization: `Bearer ${App.token}`, 'X-CSRF-Token': App.csrfToken || '' }, body: data });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'Không khôi phục được dữ liệu');
+      showToast('Đã khôi phục dữ liệu');
+      return;
+    }
+    await api('/api/backups/restore', { method: 'POST', body: formData(form) });
     showToast('Đã khôi phục dữ liệu');
   }
 
@@ -237,7 +308,7 @@
     document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
       const screen = btn.dataset.screen;
       const adminOnly = ['users','permissions','logs','settings','backups','restore'];
-      btn.classList.toggle('d-none', adminOnly.includes(screen) && !['ADMIN','SUPER_ADMIN'].includes(role));
+      btn.classList.toggle('d-none', adminOnly.includes(screen) && role !== 'SUPER_ADMIN');
     });
   }
 
