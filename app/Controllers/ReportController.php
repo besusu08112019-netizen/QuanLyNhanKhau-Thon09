@@ -103,6 +103,16 @@ final class ReportController extends BaseController
             'residencyStatus' => trim((string) $this->query('residencyStatus', '')) ?: null,
             'presenceStatus' => trim((string) $this->query('presenceStatus', '')) ?: null,
             'lifeStatus' => trim((string) $this->query('lifeStatus', '')) ?: null,
+            'gender' => trim((string) $this->query('gender', '')) ?: null,
+            'ageFrom' => trim((string) $this->query('ageFrom', '')) ?: null,
+            'ageTo' => trim((string) $this->query('ageTo', '')) ?: null,
+            'ethnicity' => trim((string) $this->query('ethnicity', '')) ?: null,
+            'religion' => trim((string) $this->query('religion', '')) ?: null,
+            'occupation' => trim((string) $this->query('occupation', '')) ?: null,
+            'party_member' => trim((string) $this->query('party_member', $this->query('partyMember', ''))) ?: null,
+            'youth_union_member' => trim((string) $this->query('youth_union_member', $this->query('youthUnionMember', ''))) ?: null,
+            'meritorious_person' => trim((string) $this->query('meritorious_person', $this->query('meritoriousPerson', ''))) ?: null,
+            'disabled_person' => trim((string) $this->query('disabled_person', $this->query('disabledPerson', ''))) ?: null,
         ];
     }
 
