@@ -127,7 +127,7 @@ function switchScreen(screen) {
   $$('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen));
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
-  const screenLabels = { dashboard: 'Tổng quan', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', reports: 'Báo cáo - Thống kê', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', import: 'Import dữ liệu', export: 'Export Excel', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu' };
+  const screenLabels = { dashboard: 'Dashboard', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền' };
   $('#screenTitle').textContent = screenLabels[screen] || 'Tổng quan';
   const breadcrumb = $('#breadcrumbTrail');
   if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + (screenLabels[screen] || 'Tổng quan');
