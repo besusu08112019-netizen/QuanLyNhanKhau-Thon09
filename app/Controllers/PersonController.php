@@ -13,7 +13,7 @@ final class PersonController extends BaseController
     public function index(): void
     {
         $this->requirePermission('citizen', 'read');
-        $this->ok($this->citizens->page($this->personFilters()));
+        $this->ok($this->citizens->paginate($this->personFilters()));
     }
 
     public function temporaryResidence(): void
@@ -21,7 +21,7 @@ final class PersonController extends BaseController
         $this->requirePermission('citizen', 'read');
         $filters = $this->personFilters();
         $filters['residencyStatus'] = 'TEMPORARY';
-        $this->ok($this->citizens->page($filters));
+        $this->ok($this->citizens->paginate($filters));
     }
 
     public function temporaryAbsence(): void
@@ -29,7 +29,7 @@ final class PersonController extends BaseController
         $this->requirePermission('citizen', 'read');
         $filters = $this->personFilters();
         $filters['presenceStatus'] = 'AWAY';
-        $this->ok($this->citizens->page($filters));
+        $this->ok($this->citizens->paginate($filters));
     }
 
     public function show(string $id): void { $this->requirePermission('citizen', 'read'); $row = $this->citizens->find((int) $id); $row ? $this->ok($row) : $this->fail('Không tìm thấy nhân khẩu', 404); }
