@@ -277,6 +277,26 @@ final class ImportController extends BaseController
             'presenceStatus' => $this->presenceValue((string) ($data['presenceStatus'] ?? 'AT_HOME')),
             'status' => $this->lifeValue((string) ($data['status'] ?? 'ALIVE')),
             'currentAddress' => trim((string) ($data['currentAddress'] ?? '')),
+            'partyMember' => $this->yesNo($data['partyMember'] ?? 0),
+            'youthUnionMember' => $this->yesNo($data['youthUnionMember'] ?? 0),
+            'womenUnionMember' => $this->yesNo($data['womenUnionMember'] ?? 0),
+            'farmersUnionMember' => $this->yesNo($data['farmersUnionMember'] ?? 0),
+            'veteransUnionMember' => $this->yesNo($data['veteransUnionMember'] ?? 0),
+            'elderlyUnionMember' => $this->yesNo($data['elderlyUnionMember'] ?? 0),
+            'meritoriousPerson' => $this->yesNo($data['meritoriousPerson'] ?? 0),
+            'martyrRelative' => $this->yesNo($data['martyrRelative'] ?? 0),
+            'woundedSoldier' => $this->yesNo($data['woundedSoldier'] ?? 0),
+            'sickSoldier' => $this->yesNo($data['sickSoldier'] ?? 0),
+            'disabledPerson' => $this->yesNo($data['disabledPerson'] ?? 0),
+            'socialAssistance' => $this->yesNo($data['socialAssistance'] ?? 0),
+            'employed' => $this->yesNo($data['employed'] ?? 0),
+            'unemployed' => $this->yesNo($data['unemployed'] ?? 0),
+            'freelanceLabor' => $this->yesNo($data['freelanceLabor'] ?? 0),
+            'outProvinceLabor' => $this->yesNo($data['outProvinceLabor'] ?? 0),
+            'foreignLabor' => $this->yesNo($data['foreignLabor'] ?? 0),
+            'pupil' => $this->yesNo($data['pupil'] ?? 0),
+            'student' => $this->yesNo($data['student'] ?? 0),
+            'retired' => $this->yesNo($data['retired'] ?? 0),
         ];
     }
 
@@ -307,6 +327,26 @@ final class ImportController extends BaseController
             'presenceStatus' => ['hien tai','o nha di vang','presencestatus'],
             'status' => ['trang thai','con song da chet','status'],
             'currentAddress' => ['dia chi hien tai'],
+            'partyMember' => ['dang vien','la dang vien','party member'],
+            'youthUnionMember' => ['doan vien','doan vien thanh nien','youth union'],
+            'womenUnionMember' => ['hoi vien phu nu','hoi phu nu','phu nu'],
+            'farmersUnionMember' => ['hoi vien nong dan','hoi nong dan','nong dan'],
+            'veteransUnionMember' => ['hoi vien cuu chien binh','cuu chien binh'],
+            'elderlyUnionMember' => ['hoi vien nguoi cao tuoi','hoi nguoi cao tuoi','nguoi cao tuoi'],
+            'meritoriousPerson' => ['nguoi co cong','ca nhan co cong'],
+            'martyrRelative' => ['than nhan liet si','than nhan liet sy'],
+            'woundedSoldier' => ['thuong binh'],
+            'sickSoldier' => ['benh binh'],
+            'disabledPerson' => ['nguoi khuyet tat','khuyet tat'],
+            'socialAssistance' => ['bao tro xa hoi'],
+            'employed' => ['co viec lam','viec lam'],
+            'unemployed' => ['that nghiep'],
+            'freelanceLabor' => ['lao dong tu do'],
+            'outProvinceLabor' => ['lao dong ngoai tinh','ngoai tinh'],
+            'foreignLabor' => ['lao dong nuoc ngoai','nuoc ngoai'],
+            'pupil' => ['hoc sinh'],
+            'student' => ['sinh vien'],
+            'retired' => ['nghi huu'],
         ];
     }
 
@@ -326,6 +366,7 @@ final class ImportController extends BaseController
         return '';
     }
 
+    private function yesNo(mixed $value): int { $text = $this->headerKey((string) $value); return in_array($text, ['1','co','yes','true','x'], true) ? 1 : 0; }
     private function residencyValue(string $value): string { return str_contains($this->headerKey($value), 'tam tru') ? 'TEMPORARY' : 'PERMANENT'; }
     private function presenceValue(string $value): string { return str_contains($this->headerKey($value), 'vang') ? 'AWAY' : 'AT_HOME'; }
     private function lifeValue(string $value): string { return str_contains($this->headerKey($value), 'chet') ? 'DECEASED' : 'ALIVE'; }
