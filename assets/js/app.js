@@ -120,6 +120,17 @@ function showApp() {
   switchScreen(App.screen);
 }
 
+function normalizeAppHeader(screen) {
+  const screenLabels = { dashboard: 'Dashboard', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', exportExcel: 'Export Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền' };
+  const label = screenLabels[screen] || 'Dashboard';
+  const title = $('#screenTitle');
+  const breadcrumb = $('#breadcrumbTrail');
+  if (title) title.textContent = label;
+  if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + label;
+  $('.topbar-title-block small:not(#breadcrumbTrail), .topbar-title-block .text-muted:not(#breadcrumbTrail), .topbar > div:first-of-type small:not(#breadcrumbTrail), .topbar > div:first-of-type .text-muted:not(#breadcrumbTrail)').forEach(el => el.remove());
+  $('.dashboard-hero-row, .module-page-head > div, .person-page-head > div, .report-page-head, .screen > .admin-heading > div').forEach(el => el.remove());
+}
+
 function switchScreen(screen) {
   if (!document.querySelector('#' + screen + 'Screen')) screen = 'dashboard';
   App.screen = screen;
@@ -127,12 +138,10 @@ function switchScreen(screen) {
   $$('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen));
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
-  const screenLabels = { dashboard: 'Dashboard', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền' };
-  $('#screenTitle').textContent = screenLabels[screen] || 'Tổng quan';
-  const breadcrumb = $('#breadcrumbTrail');
-  if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + (screenLabels[screen] || 'Tổng quan');
+  normalizeAppHeader(screen);
   $('.sidebar').classList.remove('open');
-  if (screen === 'dashboard') loadDashboard(); refreshLoginConfig();
+  normalizeAppHeader(screen);
+  if (screen === 'dashboard') { loadDashboard(); refreshLoginConfig(); }
   if (screen === 'households') loadHouseholds();
   if (screen === 'persons') loadPersons();
 }
