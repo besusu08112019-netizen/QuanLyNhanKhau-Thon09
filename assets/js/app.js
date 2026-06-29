@@ -2,7 +2,7 @@ const App = {
   token: localStorage.getItem('thon09_token') || '',
   user: JSON.parse(localStorage.getItem('thon09_user') || 'null'),
   screen: localStorage.getItem('thon09_screen') || 'dashboard',
-  households: { page: 1, pageSize: 20, search: '' },
+  households: { page: 1, pageSize: 20, search: '', category: '', status: '' },
   persons: { page: 1, pageSize: 20, search: '', householdId: '' },
   modals: {},
   dictionaries: {
@@ -61,6 +61,12 @@ function bindEvents() {
   const personHouseholdFilter = $('#personHouseholdFilter');
   if (personHouseholdFilter) personHouseholdFilter.addEventListener('input', debounce(() => { App.persons.householdId = personHouseholdFilter.value.trim(); App.persons.page = 1; loadPersons(); }, 350));
   $('#householdPageSize').addEventListener('change', () => { App.households.pageSize = Number($('#householdPageSize').value); App.households.page = 1; loadHouseholds(); });
+  const householdCategoryFilter = $('#householdCategoryFilter');
+  if (householdCategoryFilter) householdCategoryFilter.addEventListener('change', () => { App.households.category = householdCategoryFilter.value; App.households.household_type = householdCategoryFilter.value; App.households.page = 1; loadHouseholds(); });
+  const householdStatusFilter = $('#householdStatusFilter');
+  if (householdStatusFilter) householdStatusFilter.addEventListener('change', () => { App.households.status = householdStatusFilter.value; App.households.page = 1; loadHouseholds(); });
+  const householdFilterReset = $('#householdFilterReset');
+  if (householdFilterReset) householdFilterReset.addEventListener('click', () => { $('#householdSearch').value = ''; if (householdCategoryFilter) householdCategoryFilter.value = ''; if (householdStatusFilter) householdStatusFilter.value = ''; App.households.search = ''; App.households.category = ''; App.households.household_type = ''; App.households.status = ''; App.households.page = 1; loadHouseholds(); });
   const personPageSize = $('#personPageSize');
   if (personPageSize) personPageSize.addEventListener('change', () => { App.persons.pageSize = Number(personPageSize.value); App.persons.page = 1; loadPersons(); });
   $('#householdCheckAll').addEventListener('change', e => $$('.household-check').forEach(c => c.checked = e.target.checked));
@@ -121,7 +127,10 @@ function switchScreen(screen) {
   $$('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen));
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
-  $('#screenTitle').textContent = { dashboard: 'Tổng quan', households: 'Hộ dân', persons: 'Nhân khẩu', reports: 'Báo cáo' }[screen];
+  const screenLabels = { dashboard: 'Tổng quan', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', reports: 'Báo cáo - Thống kê', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', import: 'Import dữ liệu', export: 'Export Excel', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu' };
+  $('#screenTitle').textContent = screenLabels[screen] || 'Tổng quan';
+  const breadcrumb = $('#breadcrumbTrail');
+  if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + (screenLabels[screen] || 'Tổng quan');
   $('.sidebar').classList.remove('open');
   if (screen === 'dashboard') loadDashboard(); refreshLoginConfig();
   if (screen === 'households') loadHouseholds();
@@ -303,10 +312,16 @@ async function loadHouseholds() {
       const startIndex = (App.households.page - 1) * App.households.pageSize;
       items = filtered.slice(startIndex, startIndex + App.households.pageSize);
     } else {
-      const data = await api('/api/households?' + new URLSearchParams(App.households).toString());
+      const params = new URLSearchParams({ page: App.households.page, pageSize: App.households.pageSize });
+      if (App.households.search) params.set('search', App.households.search);
+      if (App.households.category) { params.set('category', App.households.category); params.set('household_type', App.households.category); }
+      if (App.households.status) params.set('status', App.households.status);
+      const data = await api('/api/households?' + params.toString());
       items = data.items || [];
       total = data.total || 0;
     }
+    const householdTotal = $('#householdTotalCount');
+    if (householdTotal) householdTotal.innerHTML = 'Tổng số: <strong>' + number(total) + '</strong> hộ';
     $('#householdRows').innerHTML = items.map(row => '<tr>' +
       '<td><input type="checkbox" class="household-check" value="' + row.id + '"></td>' +
       '<td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(' + row.id + ')">' + escapeHtml(row.household_code) + '</button></td>' +
@@ -608,6 +623,7 @@ function initLoginExperience() {
   };
   updateClock();
   setInterval(updateClock, 1000);
+  startTopbarClock();
 
   const toggle = $('[data-password-toggle]', loginView);
   const password = $('#loginPassword');
@@ -738,3 +754,18 @@ function animateLoginNumber(el, target) {
 
 
 window.addEventListener('thon09:data-mutated', () => { if (typeof refreshLoginConfig === 'function') refreshLoginConfig(); });
+
+function startTopbarClock() {
+  if (window.__thon09TopbarClockStarted) return;
+  window.__thon09TopbarClockStarted = true;
+  const tick = () => {
+    const el = document.querySelector('#topbarClock');
+    if (!el) return;
+    const now = new Date();
+    const date = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).format(now);
+    const time = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now);
+    el.innerHTML = '<i class="fa-regular fa-calendar"></i> ' + date + ' <i class="fa-regular fa-clock ms-2"></i> ' + time;
+  };
+  tick();
+  setInterval(tick, 1000);
+}
