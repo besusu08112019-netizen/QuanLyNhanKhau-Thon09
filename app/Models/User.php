@@ -130,7 +130,7 @@ final class User extends BaseModel
     public function can(array $user, string $module, string $action): bool
     {
         if ($user['role'] === 'SUPER_ADMIN') return true;
-        if ($user['role'] === 'ADMIN') return in_array($module, ['dashboard','household','citizen','import','export','report','pdf'], true) && in_array($action, ['read','create','update','delete','export','print'], true);
+        if ($user['role'] === 'ADMIN') return in_array($module, ['dashboard','household','citizen','import','export','report','pdf','settings'], true) && in_array($action, ['read','create','update','delete','export','print'], true);
         $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $user['role'], 'module' => $module, 'action' => $action]);
         if ($permission) return (bool) $permission['allowed'];
         if ($user['role'] === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','import'], true) && in_array($action, ['read','create','update'], true);
