@@ -1,4 +1,15 @@
 (() => {
+  const householdCategories = [
+    ['', 'Tất cả'],
+    ['poor', 'Hộ nghèo'],
+    ['near_poor', 'Hộ cận nghèo'],
+    ['escaped_poverty', 'Hộ mới thoát nghèo'],
+    ['policy', 'Hộ chính sách'],
+    ['meritorious', 'Hộ có công'],
+    ['normal', 'Hộ bình thường'],
+    ['other', 'Khác'],
+  ];
+
   window.roleLabel = function roleLabel(role) {
     return ({ SUPER_ADMIN:'Super Admin', ADMIN:'Admin', OFFICER:'Cán bộ', VIEWER:'Khách' })[role] || role || '';
   };
@@ -7,12 +18,17 @@
     loadSprint8Script();
     loadSprint9Script();
     enforceSuperAdminMenu();
+    setupHouseholdCategoryFilters();
+    setTimeout(setupHouseholdCategoryFilters, 800);
+    setTimeout(setupReportCategoryFilter, 1800);
     const previousShowApp = window.showApp;
     if (typeof previousShowApp === 'function') {
       window.showApp = function bridgeShowApp() {
         previousShowApp();
         enforceSuperAdminMenu();
         loadSprint9Script();
+        setupHouseholdCategoryFilters();
+        setTimeout(setupReportCategoryFilter, 500);
       };
     }
     const nav = document.querySelector('.sidebar .nav');
@@ -33,6 +49,106 @@
       if (screen === 'backups') loadAdminBackups();
     }, true);
   });
+
+  function setupHouseholdCategoryFilters() {
+    const toolbar = document.querySelector('#householdsScreen .toolbar');
+    const search = document.querySelector('#householdSearch');
+    if (!toolbar || !search || document.querySelector('#householdCategoryFilter')) return;
+    App.households = App.households || { page: 1, pageSize: 20, search: '' };
+    App.households.category = App.households.category || '';
+    search.insertAdjacentHTML('afterend', `<select id="householdCategoryFilter" class="form-select" style="max-width:220px">${householdCategories.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select>`);
+    document.querySelector('#householdCategoryFilter').addEventListener('change', () => {
+      App.households.category = document.querySelector('#householdCategoryFilter').value;
+      App.households.household_type = App.households.category;
+      App.households.page = 1;
+      window.loadHouseholds();
+    });
+    const originalSearch = search.oninput;
+    search.addEventListener('input', () => {
+      App.households.search = search.value.trim();
+      App.households.page = 1;
+    }, true);
+    window.loadHouseholds = loadHouseholdsWithCategory;
+  }
+
+  async function loadHouseholdsWithCategory() {
+    try {
+      App.households = App.households || { page: 1, pageSize: 20, search: '' };
+      const category = App.households.category || App.households.household_type || '';
+      const params = new URLSearchParams({ page: App.households.page || 1, pageSize: App.households.pageSize || 20 });
+      if (App.households.search) params.set('search', App.households.search);
+      if (category) { params.set('category', category); params.set('household_type', category); }
+      const data = await api('/api/households?' + params.toString());
+      const items = data.items || [];
+      const tbody = document.querySelector('#householdRows');
+      if (!tbody) return;
+      tbody.innerHTML = items.map(row => '<tr>' +
+        '<td><input type="checkbox" class="household-check" value="' + row.id + '"></td>' +
+        '<td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(' + row.id + ')">' + escapeHtml(row.household_code) + '</button></td>' +
+        '<td>' + escapeHtml(row.head_citizen_name || '') + '</td>' +
+        '<td>' + escapeHtml(row.address || '') + '</td>' +
+        '<td>' + number(row.at_home_count || 0) + '</td>' +
+        '<td>' + number(row.away_count || 0) + '</td>' +
+        '<td>' + householdBadges(row) + '</td>' +
+        '<td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button></td>' +
+      '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
+      renderPager('#householdPager', data, page => { App.households.page = page; window.loadHouseholds(); });
+    } catch (error) { showToast('Không tải được danh sách hộ dân: ' + error.message, 'danger'); }
+  }
+
+  function setupReportCategoryFilter() {
+    const form = document.querySelector('#reportForm');
+    if (!form) return;
+    if (!form.querySelector('[name="householdType"]')) {
+      const viewButtonCol = form.querySelector('button[type="submit"]')?.closest('[class*="col-"]');
+      const html = `<div class="col-md-2"><label class="form-label">Diện hộ</label><select name="householdType" class="form-select">${householdCategories.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></div>`;
+      (viewButtonCol || form.querySelector('.row')).insertAdjacentHTML('beforebegin', html);
+    }
+    window.thon09ViewReport = viewReportFromApi;
+    form.onsubmit = event => { event.preventDefault(); event.stopPropagation(); viewReportFromApi(); return false; };
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.onclick = event => { event.preventDefault(); event.stopPropagation(); viewReportFromApi(); return false; };
+    const excel = document.querySelector('#reportExcelBtn');
+    if (excel) excel.onclick = event => { event.preventDefault(); downloadReport('excel'); return false; };
+    const pdf = document.querySelector('#reportPdfBtn');
+    if (pdf) pdf.onclick = event => { event.preventDefault(); downloadReport('pdf'); return false; };
+    const print = document.querySelector('#reportPrintBtn');
+    if (print) print.onclick = event => { event.preventDefault(); viewReportFromApi(true); return false; };
+  }
+
+  async function viewReportFromApi(printAfter = false) {
+    const form = document.querySelector('#reportForm');
+    const preview = document.querySelector('#reportPreview');
+    const titleEl = document.querySelector('#reportTitle');
+    const countEl = document.querySelector('#reportCount');
+    if (!form || !preview) return;
+    try {
+      preview.innerHTML = '<p class="text-muted mb-0">Đang tải dữ liệu...</p>';
+      const params = new URLSearchParams(new FormData(form));
+      const type = params.get('type') || 'summary';
+      const data = await api('/api/reports/summary?' + params.toString());
+      if (titleEl) titleEl.textContent = data.title || 'Báo cáo';
+      if (countEl) countEl.textContent = number(data.totalRows || 0) + ' dòng';
+      preview.innerHTML = reportTable(data.headers || [], data.rows || []);
+      if (printAfter) window.print();
+    } catch (error) {
+      preview.innerHTML = '<div class="alert alert-danger mb-0">' + escapeHtml(error.message) + '</div>';
+    }
+  }
+
+  function downloadReport(format) {
+    const form = document.querySelector('#reportForm');
+    if (!form) return;
+    const params = new URLSearchParams(new FormData(form));
+    const endpoint = format === 'pdf' ? '/api/reports/export-pdf' : '/api/reports/export-excel';
+    window.location.href = endpoint + '?' + params.toString();
+  }
+
+  function reportTable(headers, rows) {
+    const head = headers.map(header => '<th>' + escapeHtml(header) + '</th>').join('');
+    const body = rows.length ? rows.map(row => '<tr>' + row.map(cell => '<td>' + escapeHtml(cell ?? '') + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + Math.max(1, headers.length) + '" class="text-center text-muted py-3">Không có dữ liệu</td></tr>';
+    return '<table class="table table-bordered table-hover align-middle mb-0"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+  }
 
   function loadSprint8Script() {
     if (document.querySelector('script[src*="sprint8.js"]')) return;
