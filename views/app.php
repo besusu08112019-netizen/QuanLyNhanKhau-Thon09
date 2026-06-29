@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260630-header-clean-1">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260630-header-final-2">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -243,13 +243,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260630-header-clean-1"></script>
+  <script src="assets/js/app.js?v=20260630-header-final-2"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/import.js?v=20260629-two-import-buttons-1"></script>
-  <script src="assets/js/admin-panel.js?v=20260629-background-upload-fix-1"></script>
-  <script src="assets/js/admin-panel-bridge.js?v=20260630-header-clean-1"></script>
+  <script src="assets/js/admin-panel.js?v=20260630-header-final-2"></script>
+  <script src="assets/js/admin-panel-bridge.js?v=20260630-header-final-2"></script>
   <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint10.js?v=20260629-report-disable-old-1"></script>
@@ -276,7 +276,31 @@
   async function viewReport(){setActions(false);setTitle('Báo cáo');var count=q('#reportCount');if(count)count.textContent='Đang tải dữ liệu...';showMessage('Đang sinh báo cáo...','info');try{var report=await fetchJson(apiUrl('/api/reports/summary'));currentReport=report;setTitle(report.title||'Báo cáo');setCount(report);var preview=q('#reportPreview');if(preview)preview.innerHTML=table(report);setActions(true);return report;}catch(e){currentReport=null;setTitle('Báo cáo');if(count)count.textContent='Không sinh được báo cáo';showMessage(e.message||'Không sinh được báo cáo.','danger');throw e;}}
   async function ensureReport(){return currentReport||viewReport();}
   function download(kind){var tk=token();if(!tk){showMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.','danger');return;}var url=apiUrl(kind==='excel'?'/api/reports/export-excel':'/api/reports/export-pdf');fetch(url,{headers:{Authorization:'Bearer '+tk},cache:'no-store'}).then(function(res){if(!res.ok)throw new Error('Không xuất được file.');return res.blob().then(function(blob){var name=(currentReport&&currentReport.title?currentReport.title:'bao_cao').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')||'bao_cao';var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+(kind==='excel'?'.xls':'.pdf');document.body.appendChild(a);a.click();URL.revokeObjectURL(a.href);a.remove();});}).catch(function(e){showMessage(e.message||'Không xuất được file.','danger');});}
-  async function printReport(){try{var report=await ensureReport();var printData=await fetchJson(apiUrl('/api/reports/print')).catch(function(){return report;});var w=window.open('','_blank');if(!w){showMessage('Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép popup.','warning');return;}w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(printData.title||report.title||'Báo cáo')+'</title><style>body{font-family:Arial,sans-serif;color:#111827;margin:24px}h1{text-align:center;font-size:20px;margin:0 0 8px}p{text-align:center;margin:0 0 18px;color:#555}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #777;padding:6px;text-align:left;vertical-align:top}th{background:#eef2f7;font-weight:700}.sign{margin-top:36px;display:flex;justify-content:flex-end;text-align:center}</style></head><body><h1>'+esc(printData.title||report.title||'Báo cáo')+'</h1><p>Loại báo cáo: '+esc(reportType())+' - Tổng số: '+Number(printData.totalRows||0).toLocaleString('vi-VN')+' dòng</p>'+table(printData)+'<div class="sign"><div>Người lập báo cáo<br><br><br>........................</div></div><script>window.onload=function(){window.print();};<\\/script></body></html>');w.document.close();}catch(e){showMessage(e.message||'Không in được báo cáo.','danger');}}
+  async function printReport(){try{var report=await ensureReport();var printData=await fetchJson(apiUrl('/api/reports/print')).catch(function(){return report;});var w=window.open('','_blank');if(!w){showMessage('Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép popup.','warning');return;}w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(printData.title||report.title||'Báo cáo')+'</title><style>body{font-family:Arial,sans-serif;color:#111827;margin:24px}h1{text-align:center;font-size:20px;margin:0 0 8px}p{text-align:center;margin:0 0 18px;color:#555}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #777;padding:6px;text-align:left;vertical-align:top}th{background:#eef2f7;font-weight:700}.sign{margin-top:36px;display:flex;justify-content:flex-end;text-align:center}</style></head><body><h1>'+esc(printData.title||report.title||'Báo cáo')+'</h1><p>Loại báo cáo: '+esc(reportType())+' - Tổng số: '+Number(printData.totalRows||0).toLocaleString('vi-VN')+' dòng</p>'+table(printData)+'<div class="sign"><div>Người lập báo cáo<br><br><br>........................</div></div><script>window.onload=function(){window.print();};<\\/script><script id="thon09-header-duplicate-guard">
+(function(){
+  var labels = { dashboard:'Dashboard', households:'Quản lý hộ gia đình', persons:'Quản lý nhân khẩu', temporaryResidence:'Tạm trú', temporaryAbsence:'Tạm vắng', movements:'Biến động nhân khẩu', reports:'Báo cáo thống kê', import:'Import dữ liệu', export:'Export Excel', exportExcel:'Export Excel', printForms:'In biểu mẫu', users:'Quản lý tài khoản', permissions:'Phân quyền', logs:'Nhật ký hệ thống', settings:'Cấu hình hệ thống', appearance:'Cấu hình giao diện', backups:'Sao lưu dữ liệu', restore:'Khôi phục dữ liệu' };
+  function activeScreen(){
+    var active = document.querySelector('.screen.active');
+    if (active && active.id) return active.id.replace(/Screen$/, '');
+    return (window.App && window.App.screen) || localStorage.getItem('thon09_screen') || 'dashboard';
+  }
+  function cleanHeader(){
+    var screen = activeScreen();
+    var label = labels[screen] || 'Dashboard';
+    var title = document.querySelector('#screenTitle');
+    var crumb = document.querySelector('#breadcrumbTrail');
+    if (title) title.textContent = label;
+    if (crumb) crumb.textContent = 'Trang chủ / ' + label;
+    document.querySelectorAll('.topbar-title-block small:not(#breadcrumbTrail), .topbar-title-block .text-muted:not(#breadcrumbTrail), .topbar > div:first-of-type small:not(#breadcrumbTrail), .topbar > div:first-of-type .text-muted:not(#breadcrumbTrail)').forEach(function(el){ el.remove(); });
+    document.querySelectorAll('.dashboard-hero-row, .module-page-head > div, .person-page-head > div, .report-page-head, .screen > .admin-heading > div').forEach(function(el){ el.remove(); });
+  }
+  window.thon09CleanHeader = cleanHeader;
+  document.addEventListener('DOMContentLoaded', cleanHeader);
+  document.addEventListener('click', function(e){ if (e.target.closest('[data-screen]')) setTimeout(cleanHeader, 80); }, true);
+  setTimeout(cleanHeader, 250); setTimeout(cleanHeader, 900); setInterval(cleanHeader, 2500);
+})();
+</script>
+</body></html>');w.document.close();}catch(e){showMessage(e.message||'Không in được báo cáo.','danger');}}
 
   function lockReportTypes(){var select=q('#reportTypeSelect');if(!select)return;var value=select.value||'summary';var html='<option value="summary">Báo cáo tổng hợp</option><option value="population">Báo cáo nhân khẩu</option><option value="household">Báo cáo hộ gia đình</option><option value="temporary_residence">Báo cáo tạm trú</option><option value="temporary_absence">Báo cáo tạm vắng</option><option value="migration">Báo cáo biến động</option><option value="party_member">Báo cáo Đảng viên</option><option value="meritorious_person">Báo cáo người có công</option><option value="disabled_person">Báo cáo người khuyết tật</option><option value="age">Báo cáo theo độ tuổi</option><option value="gender">Báo cáo theo giới tính</option>';if(select.innerHTML.replace(/\s+/g,' ').trim()!==html.replace(/\s+/g,' ').trim())select.innerHTML=html;if(!Array.prototype.some.call(select.options,function(o){return o.value===value;}))value='summary';select.value=value;}
   function updateDateVisibility(){lockReportTypes();var type=reportType();var hide=timeOptionalTypes.has(type);document.querySelectorAll('[data-report-date-field]').forEach(function(el){el.classList.toggle('report-date-muted',hide);});}
