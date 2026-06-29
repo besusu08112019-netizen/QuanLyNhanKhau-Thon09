@@ -29,7 +29,7 @@ final class SystemSetting extends BaseModel
 
     private function defaultValue(string $key): string
     {
-        return match ($key) {
+        $defaults = [
             'systemName' => 'Hệ thống Quản lý Hành chính',
             'hamletName' => 'Thôn 09',
             'communeName' => 'Xã Hồng Phong',
@@ -40,8 +40,8 @@ final class SystemSetting extends BaseModel
             'backgroundInterval' => '6000',
             'website' => 'nhankhauthon09.com',
             'copyright' => '© Thôn 09 - Xã Hồng Phong',
-            default => '',
-        };
+        ];
+        return $defaults[$key] ?? '';
     }
 }
 
