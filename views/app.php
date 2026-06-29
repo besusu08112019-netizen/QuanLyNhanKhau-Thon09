@@ -261,7 +261,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260630-final-nav-inline-1"></script>
+  <script src="assets/js/app.js?v=20260630-final-nav-inline-2"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
@@ -339,5 +339,42 @@
   setTimeout(cleanHeader, 120); setTimeout(cleanHeader, 500);
 })();
 </script>
+
+<script id="thon09-final-navigation-repair">
+(function () {
+  var labels = {
+    dashboard: 'Dashboard', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', reports: 'Báo cáo thống kê',
+    temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', import: 'Import dữ liệu',
+    export: 'Xuất Excel', exportExcel: 'Xuất Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', permissions: 'Phân quyền',
+    logs: 'Nhật ký hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', settings: 'Cấu hình hệ thống', appearance: 'Cấu hình giao diện'
+  };
+  window.switchScreen = function (screen) {
+    var requested = screen;
+    if (screen === 'export') screen = 'exportExcel';
+    var target = document.getElementById(screen + 'Screen');
+    if (!target) { screen = 'dashboard'; target = document.getElementById('dashboardScreen'); }
+    if (!target) return;
+    document.querySelectorAll('.screen').forEach(function (el) { el.classList.remove('active'); });
+    target.classList.add('active');
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.screen === screen || btn.dataset.screen === requested);
+    });
+    var label = labels[screen] || labels[requested] || 'Dashboard';
+    var title = document.getElementById('screenTitle');
+    if (title) title.textContent = label;
+    var breadcrumb = document.getElementById('breadcrumbTrail');
+    if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + label;
+    try { localStorage.setItem('thon09_screen', screen); } catch (error) {}
+  };
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest && event.target.closest('.sidebar .nav-link[data-screen]');
+    if (!button || button.classList.contains('gov-logout')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    window.switchScreen(button.dataset.screen);
+  }, true);
+})();
+</script>
 </body>
 </html>
+
