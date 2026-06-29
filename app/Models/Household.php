@@ -63,7 +63,7 @@ final class Household extends BaseModel
         $params = [];
         if (!empty($filters['status'])) { $where[] = 'h.status = :status'; $params['status'] = $filters['status']; }
 
-        $category = $this->categoryKey($filters['household_type'] ?? $filters['category'] ?? $filters['householdType'] ?? '');
+        $category = $this->filterCategory($filters);
         if ($category) $this->addCategoryWhere($where, $params, $category);
 
         if (!empty($filters['search'])) {
@@ -86,6 +86,15 @@ final class Household extends BaseModel
         }
 
         return ['WHERE ' . implode(' AND ', $where), $params];
+    }
+
+    private function filterCategory(array $filters): string
+    {
+        foreach (['household_type', 'category', 'householdType'] as $key) {
+            $value = trim((string) ($filters[$key] ?? ''));
+            if ($value !== '') return $this->categoryKey($value);
+        }
+        return '';
     }
 
     private function addCategoryWhere(array &$where, array &$params, string $category, string $prefix = 'category'): void
