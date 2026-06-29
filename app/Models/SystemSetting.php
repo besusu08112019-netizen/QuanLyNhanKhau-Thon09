@@ -6,7 +6,7 @@ use App\Core\BaseModel;
 
 final class SystemSetting extends BaseModel
 {
-    private array $allowed = ['systemName','logoUrl','backgroundUrl','backgroundImages','backgroundInterval','unitName','hamletName','communeName','slogan','softwareVersion','introTitle','historyTitle','hamletHistory','introduction','phone','email','address','reportSigner','supportEmail','maintenanceMessage'];
+    private array $allowed = ['systemName','logoUrl','backgroundUrl','backgroundImages','backgroundInterval','introImageUrl','unitName','hamletName','communeName','slogan','softwareVersion','introTitle','historyTitle','hamletHistory','introduction','phone','email','address','website','copyright','reportSigner','supportEmail','maintenanceMessage'];
 
     public function all(): array
     {
@@ -33,11 +33,13 @@ final class SystemSetting extends BaseModel
             'systemName' => 'Hệ thống Quản lý Hành chính',
             'hamletName' => 'Thôn 09',
             'communeName' => 'Xã Hồng Phong',
-            'slogan' => 'Đoàn kết - Dân chủ - Phát triển',
+            'slogan' => 'Vì Nhân dân phục vụ',
             'softwareVersion' => 'v2.0',
             'introTitle' => 'Giới thiệu Thôn 09 - Xã Hồng Phong',
             'historyTitle' => 'Lịch sử hình thành Thôn 09',
             'backgroundInterval' => '6000',
+            'website' => 'nhankhauthon09.com',
+            'copyright' => '© Thôn 09 - Xã Hồng Phong',
             default => '',
         };
     }
