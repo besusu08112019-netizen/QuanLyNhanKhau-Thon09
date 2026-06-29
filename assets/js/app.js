@@ -51,19 +51,24 @@ function bindEvents() {
   const dashboardResetBtn = $('#dashboardResetBtn');
   if (dashboardResetBtn) dashboardResetBtn.addEventListener('click', () => { if (dashboardFilters) dashboardFilters.reset(); loadDashboard(); refreshLoginConfig(); });
   $('#householdAddBtn').addEventListener('click', () => openHouseholdForm());
-  $('#personAddBtn').addEventListener('click', () => openPersonForm());
+  const personAddBtn = $('#personAddBtn');
+  if (personAddBtn) personAddBtn.addEventListener('click', () => openPersonForm());
   $('#householdForm').addEventListener('submit', saveHousehold);
   $('#personForm').addEventListener('submit', savePerson);
   $('#householdSearch').addEventListener('input', debounce(() => { App.households.search = $('#householdSearch').value.trim(); App.households.page = 1; loadHouseholds(); }, 350));
-  $('#personSearch').addEventListener('input', debounce(() => { App.persons.search = $('#personSearch').value.trim(); App.persons.page = 1; loadPersons(); }, 350));
+  const personSearchInput = $('#personSearch');
+  if (personSearchInput) personSearchInput.addEventListener('input', debounce(() => { App.persons.search = personSearchInput.value.trim(); App.persons.page = 1; loadPersons(); }, 350));
   const personHouseholdFilter = $('#personHouseholdFilter');
   if (personHouseholdFilter) personHouseholdFilter.addEventListener('input', debounce(() => { App.persons.householdId = personHouseholdFilter.value.trim(); App.persons.page = 1; loadPersons(); }, 350));
   $('#householdPageSize').addEventListener('change', () => { App.households.pageSize = Number($('#householdPageSize').value); App.households.page = 1; loadHouseholds(); });
-  $('#personPageSize').addEventListener('change', () => { App.persons.pageSize = Number($('#personPageSize').value); App.persons.page = 1; loadPersons(); });
+  const personPageSize = $('#personPageSize');
+  if (personPageSize) personPageSize.addEventListener('change', () => { App.persons.pageSize = Number(personPageSize.value); App.persons.page = 1; loadPersons(); });
   $('#householdCheckAll').addEventListener('change', e => $$('.household-check').forEach(c => c.checked = e.target.checked));
-  $('#personCheckAll').addEventListener('change', e => $$('.person-check').forEach(c => c.checked = e.target.checked));
+  const personCheckAll = $('#personCheckAll');
+  if (personCheckAll) personCheckAll.addEventListener('change', e => $('.person-check').forEach(c => c.checked = e.target.checked));
   $('#householdBulkDeleteBtn').addEventListener('click', bulkDeleteHouseholds);
-  $('#personBulkDeleteBtn').addEventListener('click', bulkDeletePersons);
+  const personBulkDeleteBtn = $('#personBulkDeleteBtn');
+  if (personBulkDeleteBtn) personBulkDeleteBtn.addEventListener('click', bulkDeletePersons);
 }
 
 function fillDictionaries() {
@@ -348,7 +353,20 @@ async function loadPersons() {
 }
 
 function personRow(row) {
-  return `<tr><td><input type="checkbox" class="person-check" value="${row.id}"></td><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.citizen_code || '')}</td><td><button class="btn btn-link p-0 fw-semibold" onclick="showPerson(${row.id})">${escapeHtml(row.full_name || '')}</button></td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${residencyLabel(row.residency_status)}</td><td>${presenceLabel(row.presence_status)}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openPersonForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(${row.id})">Xóa</button></td></tr>`;
+  const party = Number(row.party_member || row.partyMember || 0) === 1;
+  const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
+  const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : residencyLabel(row.residency_status);
+  return '<tr>'
+    + '<td>' + escapeHtml(row.household_code || '') + '</td>'
+    + '<td>' + escapeHtml(row.citizen_code || '') + '</td>'
+    + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + row.id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
+    + '<td>' + formatDate(row.date_of_birth) + '</td>'
+    + '<td>' + escapeHtml(row.gender || '') + '</td>'
+    + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
+    + '<td><span class="person-badge ' + residenceClass + '">' + escapeHtml(residenceText) + '</span></td>'
+    + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
+    + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button></td>'
+    + '</tr>';
 }
 
 async function openHouseholdForm(id = null) {
