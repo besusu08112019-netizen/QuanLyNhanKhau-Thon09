@@ -1,7 +1,7 @@
 const App = {
   token: localStorage.getItem('thon09_token') || '',
   user: JSON.parse(localStorage.getItem('thon09_user') || 'null'),
-  screen: 'dashboard',
+  screen: localStorage.getItem('thon09_screen') || 'dashboard',
   households: { page: 1, pageSize: 20, search: '' },
   persons: { page: 1, pageSize: 20, search: '', householdId: '' },
   modals: {},
@@ -15,6 +15,7 @@ const App = {
   }
 };
 
+window.App = App;
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
@@ -69,6 +70,7 @@ async function login(event) {
     App.user = res.user;
     localStorage.setItem('thon09_token', App.token);
     localStorage.setItem('thon09_user', JSON.stringify(App.user));
+    window.App = App;
     showToast('Đăng nhập thành công');
     showApp();
   } catch (error) { showToast(error.message, 'danger'); }
@@ -80,6 +82,7 @@ async function logout() {
   App.user = null;
   localStorage.removeItem('thon09_token');
   localStorage.removeItem('thon09_user');
+  localStorage.removeItem('thon09_screen');
   showLogin();
 }
 
@@ -93,7 +96,9 @@ function showApp() {
 }
 
 function switchScreen(screen) {
+  if (!document.querySelector('#' + screen + 'Screen')) screen = 'dashboard';
   App.screen = screen;
+  localStorage.setItem('thon09_screen', screen);
   $$('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen));
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
@@ -106,57 +111,105 @@ function switchScreen(screen) {
 
 async function loadDashboard() {
   try {
-    const query = new URLSearchParams(formData($('#dashboardFilters'))).toString();
-    const data = await api('/api/dashboard/summary' + (query ? '?' + query : ''));
-    const metrics = data.metrics || {};
+    const form = $('#dashboardFilters');
+    const params = new URLSearchParams();
+    if (form) {
+      new FormData(form).forEach((value, key) => {
+        if (String(value || '').trim() !== '') params.set(key, value);
+      });
+    }
+    const data = await api('/api/dashboard/summary' + (params.toString() ? '?' + params.toString() : ''));
+    const metrics = data?.metrics || {};
+    const charts = data?.charts || {};
+    const householdData = await api('/api/households?pageSize=1000').catch(() => ({ items: [] }));
+    const personData = await api('/api/persons?pageSize=1000').catch(() => ({ items: [] }));
+    const dashboardHouseholds = householdData?.items || [];
+    const dashboardPersons = personData?.items || [];
+    const dashboardAgeGroups = buildAgeGroups(dashboardPersons);
+    const meritoriousHouseholds = metrics.meritorious_households ?? metrics.meritorious_family_count ?? metrics.meritorious_families ?? dashboardHouseholds.filter(row => Number(row.meritorious_family || row.meritoriousFamily || 0) > 0).length;
     const cards = [
-      ['Tổng số hộ', metrics.total_households || 0],
-      ['Tổng số nhân khẩu', metrics.total_citizens || 0],
-      ['Nam', metrics.male_count || 0],
-      ['Nữ', metrics.female_count || 0],
-      ['Đang hoạt động', metrics.active_citizens || 0],
-      ['Tạm trú', metrics.temporary_count || 0],
-      ['Tạm vắng', metrics.away_count || 0]
+      ['Tổng số hộ', metrics.total_households, 'fa-house'],
+      ['Tổng số nhân khẩu', metrics.total_citizens, 'fa-users'],
+      ['Nam', metrics.male_count, 'fa-mars'],
+      ['Nữ', metrics.female_count, 'fa-venus'],
+      ['Gia đình có công', meritoriousHouseholds, 'fa-medal'],
+      ['Tạm trú', metrics.temporary_count, 'fa-location-dot'],
+      ['Tạm vắng', metrics.away_count, 'fa-person-walking-arrow-right'],
+      ['Trẻ em', metrics.children_count, 'fa-child'],
+      ['Người cao tuổi', metrics.elderly_count, 'fa-person-cane'],
+      ['Độ tuổi lao động', metrics.working_age_count, 'fa-briefcase'],
+      ['Hộ nghèo', metrics.poor_households, 'fa-hand-holding-heart'],
+      ['Hộ cận nghèo', metrics.near_poor_households, 'fa-scale-balanced']
     ];
-    $('#dashboardCards').innerHTML = cards.map(([label, value]) => `<div class="col-sm-6 col-xl-3 col-xxl"><div class="metric-card"><div class="metric-label">${label}</div><div class="metric-value">${number(value)}</div></div></div>`).join('');
-    renderChart('#genderChart', data.charts?.population || []);
-    renderChart('#ageChart', data.charts?.ages || []);
-    renderChart('#householdChart', data.charts?.households || []);
-    renderChart('#residencyChart', data.charts?.residency || []);
-  } catch (error) { showToast('Không tải được tổng quan: ' + error.message, 'danger'); }
+    $('#dashboardCards').innerHTML = cards.map(([label, value, icon]) => '<div class="col-sm-6 col-xl-3"><div class="metric-card admin-metric"><i class="fa-solid ' + icon + '"></i><div><div class="metric-label">' + escapeHtml(label) + '</div><div class="metric-value">' + number(value) + '</div></div></div></div>').join('');
+    renderChart('#genderChart', charts.population || []);
+    renderChart('#ageChart', dashboardAgeGroups || charts.ages || []);
+    renderChart('#householdChart', charts.households || []);
+    renderChart('#residencyChart', charts.residency || []);
+  } catch (error) {
+    if (!String(error.message || '').includes('đăng nhập')) showToast('Không tải được tổng quan: ' + error.message, 'danger');
+  }
 }
-
+window.loadDashboard = loadDashboard;
 async function loadHouseholds() {
   try {
-    const data = await api('/api/households?' + new URLSearchParams(App.households).toString());
-    $('#householdRows').innerHTML = data.items.map(row => `<tr>
-      <td><input type="checkbox" class="household-check" value="${row.id}"></td>
-      <td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(${row.id})">${escapeHtml(row.household_code)}</button></td>
-      <td>${escapeHtml(row.head_citizen_name || '')}</td>
-      <td>${escapeHtml(row.address || '')}</td>
-      <td>${number(row.at_home_count || 0)}</td>
-      <td>${number(row.away_count || 0)}</td>
-      <td>${householdBadges(row)}</td>
-      <td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(${row.id})">Xóa</button></td>
-    </tr>`).join('') || emptyRow(8, 'Chưa có hộ dân');
-    renderPager('#householdPager', data, page => { App.households.page = page; loadHouseholds(); });
+    const searchText = normalizeSearchText(App.households.search || '');
+    let items = [];
+    let total = 0;
+    if (searchText) {
+      const allItems = await fetchAllPaged('/api/households');
+      const filtered = allItems.filter(row => [row.household_code, row.head_citizen_name, row.address, row.phone, row.note]
+        .some(value => normalizeSearchText(value).includes(searchText)));
+      total = filtered.length;
+      const startIndex = (App.households.page - 1) * App.households.pageSize;
+      items = filtered.slice(startIndex, startIndex + App.households.pageSize);
+    } else {
+      const data = await api('/api/households?' + new URLSearchParams(App.households).toString());
+      items = data.items || [];
+      total = data.total || 0;
+    }
+    $('#householdRows').innerHTML = items.map(row => '<tr>' +
+      '<td><input type="checkbox" class="household-check" value="' + row.id + '"></td>' +
+      '<td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(' + row.id + ')">' + escapeHtml(row.household_code) + '</button></td>' +
+      '<td>' + escapeHtml(row.head_citizen_name || '') + '</td>' +
+      '<td>' + escapeHtml(row.address || '') + '</td>' +
+      '<td>' + number(row.at_home_count || 0) + '</td>' +
+      '<td>' + number(row.away_count || 0) + '</td>' +
+      '<td>' + householdBadges(row) + '</td>' +
+      '<td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button></td>' +
+    '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
+    renderPager('#householdPager', { total, page: App.households.page, pageSize: App.households.pageSize }, page => { App.households.page = page; loadHouseholds(); });
   } catch (error) { showToast('Không tải được danh sách hộ dân: ' + error.message, 'danger'); }
 }
 
 async function loadPersons() {
   try {
-    const data = await api('/api/persons?' + new URLSearchParams(App.persons).toString());
-    let lastHousehold = '';
-    const rows = [];
-    data.items.forEach(row => {
-      if (row.household_code !== lastHousehold) {
-        lastHousehold = row.household_code;
-        rows.push(`<tr class="group-row"><td colspan="9">Mã hộ: ${escapeHtml(lastHousehold)}</td></tr>`);
-      }
-      rows.push(personRow(row));
-    });
-    $('#personRows').innerHTML = rows.join('') || emptyRow(9, 'Chưa có nhân khẩu');
-    renderPager('#personPager', data, page => { App.persons.page = page; loadPersons(); });
+    const searchText = normalizeSearchText(App.persons.search || '');
+    const householdText = (App.persons.householdId || '').trim();
+    let items = [];
+    let total = 0;
+    if (searchText) {
+      const extra = householdText ? { householdId: householdText } : {};
+      const allItems = await fetchAllPaged('/api/persons', extra);
+      const filtered = allItems.filter(row => [row.full_name, row.citizen_code, row.identity_number, row.phone, row.household_code, row.current_address, row.household_address]
+        .some(value => normalizeSearchText(value).includes(searchText)));
+      total = filtered.length;
+      const startIndex = (App.persons.page - 1) * App.persons.pageSize;
+      items = filtered.slice(startIndex, startIndex + App.persons.pageSize);
+    } else {
+      const params = new URLSearchParams({ page: App.persons.page, pageSize: App.persons.pageSize });
+      if (householdText) params.set('householdId', householdText);
+      const data = await api('/api/persons?' + params.toString());
+      items = data.items || [];
+      total = data.total || 0;
+    }
+    const grouped = items.reduce((acc, row) => {
+      const code = row.household_code || 'Chưa có hộ';
+      (acc[code] ||= []).push(row);
+      return acc;
+    }, {});
+    $('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="9">Mã hộ: ' + escapeHtml(code) + '</td></tr>' + rows.map(personRow).join('')).join('') || '<tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+    renderPager('#personPager', { total, page: App.persons.page, pageSize: App.persons.pageSize }, page => { App.persons.page = page; loadPersons(); });
   } catch (error) { showToast('Không tải được danh sách nhân khẩu: ' + error.message, 'danger'); }
 }
 
@@ -270,6 +323,50 @@ function number(value) { return new Intl.NumberFormat('vi-VN').format(Number(val
 function formatDate(value) { if (!value) return ''; const [y, m, d] = String(value).split('-'); return y && m && d ? `${d}/${m}/${y}` : value; }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[c])); }
 function stripTags(html) { return String(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
+function normalizeSearchText(value) {
+  return String(value || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd');
+}
+async function fetchAllPaged(basePath, extra = {}) {
+  const pageSize = 100;
+  let page = 1;
+  let all = [];
+  let totalPages = 1;
+  do {
+    const params = new URLSearchParams({ ...extra, page, pageSize });
+    const data = await api(basePath + '?' + params.toString());
+    const items = data.items || [];
+    all = all.concat(items);
+    totalPages = Number(data.totalPages || Math.ceil(Number(data.total || all.length) / pageSize) || 1);
+    if (!items.length) break;
+    page += 1;
+  } while (page <= totalPages && page <= 200);
+  return all;
+}
+function ageFromDate(value) {
+  if (!value) return null;
+  const year = Number(String(value).slice(0, 4));
+  if (!year) return null;
+  return new Date().getFullYear() - year;
+}
+function buildAgeGroups(persons) {
+  const groups = [
+    { label: '0-5 tuổi', value: 0 },
+    { label: '6-14 tuổi', value: 0 },
+    { label: '15-17 tuổi', value: 0 },
+    { label: '18-59 tuổi', value: 0 },
+    { label: 'Trên 60 tuổi', value: 0 }
+  ];
+  (persons || []).forEach(person => {
+    const age = ageFromDate(person.date_of_birth);
+    if (age === null) return;
+    if (age <= 5) groups[0].value += 1;
+    else if (age <= 14) groups[1].value += 1;
+    else if (age <= 17) groups[2].value += 1;
+    else if (age <= 59) groups[3].value += 1;
+    else groups[4].value += 1;
+  });
+  return groups;
+}
 function roleLabel(role) { return ({ SUPER_ADMIN:'Quản trị tối cao', ADMIN:'Quản trị', OFFICER:'Cán bộ', VIEWER:'Chỉ xem' })[role] || role || ''; }
 function residencyLabel(value) { return value === 'TEMPORARY' ? 'Tạm trú' : 'Thường trú'; }
 function presenceLabel(value) { return value === 'AWAY' ? 'Đi vắng' : 'Ở nhà'; }
@@ -305,11 +402,22 @@ function renderPager(selector, data, go) {
   $$(`${selector} button`).forEach(btn => btn.addEventListener('click', () => go(Number(btn.dataset.page))));
 }
 function renderChart(selector, items) {
-  const total = items.reduce((sum, item) => sum + Number(item.value || 0), 0) || 1;
-  $(selector).innerHTML = items.map(item => {
-    const percent = Math.max(4, Math.round(Number(item.value || 0) * 100 / total));
-    return `<div class="chart-line"><span>${escapeHtml(item.label || 'Khác')}</span><div class="chart-track"><div class="chart-bar" style="width:${percent}%"></div></div><strong>${number(item.value)}</strong></div>`;
-  }).join('') || '<p class="text-muted mb-0">Chưa có dữ liệu</p>';
+  const host = $(selector);
+  const normalized = (items || []).map(item => ({ label: item.label || 'Khác', value: Number(item.value || 0) }));
+  const total = normalized.reduce((sum, item) => sum + item.value, 0);
+  if (!host) return;
+  if (!total) {
+    host.innerHTML = '<p class="text-muted mb-0">Chưa có dữ liệu</p>';
+    return;
+  }
+  host.innerHTML = '<div class="percent-chart-list ' + (normalized.length === 1 ? 'single' : '') + '">' + normalized.map(item => {
+    const percent = Math.round(item.value * 100 / total);
+    const sweep = Math.max(2, percent);
+    return '<div class="percent-chart-item">'
+      + '<div class="percent-donut" style="--percent:' + sweep + '"><span>' + percent + '%</span></div>'
+      + '<div class="percent-chart-meta"><strong>' + escapeHtml(item.label || 'Khác') + '</strong><small>' + number(item.value) + '</small></div>'
+      + '</div>';
+  }).join('') + '</div>';
 }
 function details(rows) {
   return `<div class="detail-grid">${rows.map(([label, value]) => `<div class="detail-item"><div class="detail-label">${escapeHtml(label)}</div><div class="detail-value">${escapeHtml(value ?? '')}</div></div>`).join('')}</div>`;
