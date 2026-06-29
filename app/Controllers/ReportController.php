@@ -34,6 +34,36 @@ final class ReportController extends BaseController
         $this->ok($this->reports->householdReport($this->filters()));
     }
 
+    public function temporaryResidence(): void
+    {
+        $this->requirePermission('report', 'read');
+        $this->ok($this->reports->temporaryResidenceReport($this->filters()));
+    }
+
+    public function temporaryAbsence(): void
+    {
+        $this->requirePermission('report', 'read');
+        $this->ok($this->reports->temporaryAbsenceReport($this->filters()));
+    }
+
+    public function births(): void
+    {
+        $this->requirePermission('report', 'read');
+        $this->ok($this->reports->birthReport($this->filters()));
+    }
+
+    public function deaths(): void
+    {
+        $this->requirePermission('report', 'read');
+        $this->ok($this->reports->deathReport($this->filters()));
+    }
+
+    public function migration(): void
+    {
+        $this->requirePermission('report', 'read');
+        $this->ok($this->reports->migrationReport($this->filters()));
+    }
+
     public function exportExcel(): void
     {
         $user = $this->requirePermission('report', 'export');
