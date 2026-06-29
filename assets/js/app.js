@@ -137,7 +137,7 @@ function switchScreen(screen) {
   if (!document.querySelector('#' + screen + 'Screen')) screen = 'dashboard';
   App.screen = screen;
   localStorage.setItem('thon09_screen', screen);
-  $('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen || btn.dataset.screen === requestedScreen));
+  $$('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen || btn.dataset.screen === requestedScreen));
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
   normalizeAppHeader(screen);
