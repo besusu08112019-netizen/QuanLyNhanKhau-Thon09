@@ -112,6 +112,8 @@ final class Citizen extends BaseModel
         if (!empty($filters['presenceStatus'])) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
         if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
         if (!empty($filters['householdId'])) { $where[] = '(h.household_code = :household OR c.household_id = :household_id)'; $params['household'] = $filters['householdId']; $params['household_id'] = (int) $filters['householdId']; }
+        $category = $this->categoryKey($filters['household_type'] ?? $filters['householdType'] ?? $filters['category'] ?? '');
+        if ($category !== '') $this->addCategoryWhere($where, $params, $category);
         foreach ($this->activeExtendedColumns() as $column) {
             $value = $filters[$column] ?? $filters[$this->camel($column)] ?? null;
             if ($value !== null && $value !== '') { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = $this->boolValue($value); }
@@ -191,6 +193,43 @@ final class Citizen extends BaseModel
         $from = ['à','á','ạ','ả','ã','â','ầ','ấ','ậ','ẩ','ẫ','ă','ằ','ắ','ặ','ẳ','ẵ','è','é','ẹ','ẻ','ẽ','ê','ề','ế','ệ','ể','ễ','ì','í','ị','ỉ','ĩ','ò','ó','ọ','ỏ','õ','ô','ồ','ố','ộ','ổ','ỗ','ơ','ờ','ớ','ợ','ở','ỡ','ù','ú','ụ','ủ','ũ','ư','ừ','ứ','ự','ử','ữ','ỳ','ý','ỵ','ỷ','ỹ','đ'];
         $to   = ['a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','e','e','e','e','e','e','e','e','e','e','e','i','i','i','i','i','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','u','u','u','u','u','u','u','u','u','u','u','y','y','y','y','y','d'];
         return trim(preg_replace('/\s+/', ' ', str_replace($from, $to, $value)));
+    }
+
+    private function addCategoryWhere(array &$where, array &$params, string $category): void
+    {
+        match ($category) {
+            'poor' => $where[] = 'h.poor_household = 1',
+            'near_poor' => $where[] = 'h.near_poor_household = 1',
+            'meritorious' => $where[] = 'h.meritorious_family = 1',
+            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND h.meritorious_family = 0 AND h.disabled_household = 0',
+            'other' => $where[] = 'h.disabled_household = 1',
+            'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
+            default => null,
+        };
+    }
+
+    private function addTextCategoryWhere(array &$where, array &$params, string $category): void
+    {
+        $label = ['escaped_poverty' => 'Hộ mới thoát nghèo', 'policy' => 'Hộ chính sách'][$category] ?? $category;
+        $where[] = '(h.note LIKE :household_category_label OR h.note LIKE :household_category_key)';
+        $params['household_category_label'] = '%' . $label . '%';
+        $params['household_category_key'] = '%' . str_replace('_', ' ', $category) . '%';
+    }
+
+    private function categoryKey(mixed $value): string
+    {
+        $text = $this->normalize((string) $value);
+        if ($text === '') return '';
+        return match (true) {
+            str_contains($text, 'can ngheo') || str_contains($text, 'near poor') => 'near_poor',
+            str_contains($text, 'moi thoat ngheo') || str_contains($text, 'thoat ngheo') || str_contains($text, 'escaped poverty') => 'escaped_poverty',
+            str_contains($text, 'chinh sach') || str_contains($text, 'policy') => 'policy',
+            str_contains($text, 'co cong') || str_contains($text, 'gia dinh co cong') || str_contains($text, 'meritorious') => 'meritorious',
+            str_contains($text, 'binh thuong') || str_contains($text, 'normal') || $text === 'khong' => 'normal',
+            str_contains($text, 'khac') || str_contains($text, 'tan tat') || str_contains($text, 'khuyet tat') || str_contains($text, 'other') => 'other',
+            str_contains($text, 'ngheo') || str_contains($text, 'poor') => 'poor',
+            default => '',
+        };
     }
 
     private function ensureSingleHead(int $householdId, ?int $ignoreId, string $relationship): void
