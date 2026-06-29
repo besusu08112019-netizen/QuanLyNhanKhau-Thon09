@@ -59,6 +59,7 @@ $router->get('/api/reports/export-excel', [ReportController::class, 'exportExcel
 $router->get('/api/reports/export-pdf', [ReportController::class, 'exportPdf']);
 $router->get('/api/reports/print', [ReportController::class, 'print']);
 
+$router->get('/api/import/template', [ImportController::class, 'template']);
 $router->post('/api/import/preview', [ImportController::class, 'preview']);
 $router->post('/api/import/process', [ImportController::class, 'process']);
 $router->post('/api/files/upload', [FileController::class, 'upload']);
