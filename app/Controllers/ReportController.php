@@ -93,26 +93,77 @@ final class ReportController extends BaseController
 
     private function filters(): array
     {
+        $filters = [
+            'dateFrom' => $this->nullableQuery('dateFrom'),
+            'dateTo' => $this->nullableQuery('dateTo'),
+            'householdStatus' => $this->nullableQuery('householdStatus'),
+            'householdType' => $this->nullableQueryAny('householdType', ['household_type', 'category']),
+            'household_type' => $this->nullableQueryAny('household_type', ['householdType', 'category']),
+            'category' => $this->nullableQueryAny('category', ['household_type', 'householdType']),
+            'residencyStatus' => $this->nullableQueryAny('residencyStatus', ['residency_status']),
+            'presenceStatus' => $this->nullableQueryAny('presenceStatus', ['presence_status']),
+            'lifeStatus' => $this->nullableQueryAny('lifeStatus', ['life_status']),
+            'gender' => $this->nullableQuery('gender'),
+            'ageFrom' => $this->nullableQueryAny('ageFrom', ['age_from']),
+            'ageTo' => $this->nullableQueryAny('ageTo', ['age_to']),
+            'ethnicity' => $this->nullableQuery('ethnicity'),
+            'religion' => $this->nullableQuery('religion'),
+            'occupation' => $this->nullableQuery('occupation'),
+        ];
+
+        foreach ($this->flagFilterAliases() as $field => $aliases) {
+            $filters[$field] = $this->nullableQueryAny($field, $aliases);
+        }
+
+        return $filters;
+    }
+
+    private function nullableQuery(string $name): ?string
+    {
+        $value = trim((string) $this->query($name, ''));
+        return $value === '' ? null : $value;
+    }
+
+    private function nullableQueryAny(string $primary, array $aliases): ?string
+    {
+        $value = $this->query($primary, null);
+        if ($value !== null) {
+            $value = trim((string) $value);
+            return $value === '' ? null : $value;
+        }
+        foreach ($aliases as $alias) {
+            $value = $this->query($alias, null);
+            if ($value !== null) {
+                $value = trim((string) $value);
+                return $value === '' ? null : $value;
+            }
+        }
+        return null;
+    }
+
+    private function flagFilterAliases(): array
+    {
         return [
-            'dateFrom' => trim((string) $this->query('dateFrom', '')) ?: null,
-            'dateTo' => trim((string) $this->query('dateTo', '')) ?: null,
-            'householdStatus' => trim((string) $this->query('householdStatus', '')) ?: null,
-            'householdType' => trim((string) $this->query('householdType', $this->query('household_type', $this->query('category', '')))) ?: null,
-            'household_type' => trim((string) $this->query('household_type', $this->query('householdType', $this->query('category', '')))) ?: null,
-            'category' => trim((string) $this->query('category', $this->query('household_type', $this->query('householdType', '')))) ?: null,
-            'residencyStatus' => trim((string) $this->query('residencyStatus', '')) ?: null,
-            'presenceStatus' => trim((string) $this->query('presenceStatus', '')) ?: null,
-            'lifeStatus' => trim((string) $this->query('lifeStatus', '')) ?: null,
-            'gender' => trim((string) $this->query('gender', '')) ?: null,
-            'ageFrom' => trim((string) $this->query('ageFrom', '')) ?: null,
-            'ageTo' => trim((string) $this->query('ageTo', '')) ?: null,
-            'ethnicity' => trim((string) $this->query('ethnicity', '')) ?: null,
-            'religion' => trim((string) $this->query('religion', '')) ?: null,
-            'occupation' => trim((string) $this->query('occupation', '')) ?: null,
-            'party_member' => trim((string) $this->query('party_member', $this->query('partyMember', ''))) ?: null,
-            'youth_union_member' => trim((string) $this->query('youth_union_member', $this->query('youthUnionMember', ''))) ?: null,
-            'meritorious_person' => trim((string) $this->query('meritorious_person', $this->query('meritoriousPerson', ''))) ?: null,
-            'disabled_person' => trim((string) $this->query('disabled_person', $this->query('disabledPerson', ''))) ?: null,
+            'party_member' => ['partyMember'],
+            'youth_union_member' => ['youthUnionMember'],
+            'women_union_member' => ['womenUnionMember', 'women_member', 'womenMember'],
+            'farmers_union_member' => ['farmersUnionMember', 'farmer_member', 'farmerMember'],
+            'veterans_union_member' => ['veteransUnionMember', 'veteran_member', 'veteranMember'],
+            'elderly_union_member' => ['elderlyUnionMember', 'elderly_member', 'elderlyMember'],
+            'meritorious_person' => ['meritoriousPerson'],
+            'martyr_relative' => ['martyrRelative'],
+            'wounded_soldier' => ['woundedSoldier'],
+            'sick_soldier' => ['sickSoldier'],
+            'disabled_person' => ['disabledPerson', 'disabled'],
+            'social_assistance' => ['socialAssistance'],
+            'employed' => ['employed'],
+            'unemployed' => ['unemployed'],
+            'freelance_labor' => ['freelanceLabor'],
+            'out_province_labor' => ['outProvinceLabor'],
+            'foreign_labor' => ['foreignLabor'],
+            'pupil' => ['pupil'],
+            'student' => ['student'],
+            'retired' => ['retired'],
         ];
     }
 
