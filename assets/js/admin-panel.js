@@ -14,6 +14,7 @@
     ['permissions','fa-key','Phân quyền'],
     ['logs','fa-clock-rotate-left','Nhật ký hệ thống'],
     ['settings','fa-gears','Cấu hình hệ thống'],
+    ['appearance','fa-palette','Cấu hình giao diện'],
     ['backups','fa-database','Sao lưu dữ liệu'],
     ['restore','fa-rotate-left','Khôi phục dữ liệu'],
     ['logout','fa-arrow-right-from-bracket','Đăng xuất'],
@@ -61,6 +62,8 @@
       <section id="printFormsScreen" class="screen"><div class="admin-heading"><div><h3>In biểu mẫu</h3><p>In nhanh các biểu mẫu hành chính khổ A4.</p></div></div><div class="content-card action-grid"><button class="btn btn-outline-secondary" data-print="summary"><i class="fa-solid fa-print"></i> Báo cáo thống kê</button><button class="btn btn-outline-secondary" data-print="household"><i class="fa-solid fa-print"></i> Danh sách hộ</button><button class="btn btn-outline-secondary" data-print="population"><i class="fa-solid fa-print"></i> Danh sách nhân khẩu</button></div></section>
       <section id="permissionsScreen" class="screen"><div class="admin-heading"><div><h3>Phân quyền</h3><p>Thiết lập quyền theo vai trò, module và thao tác.</p></div><button id="permissionSaveBtn" class="btn btn-primary">Lưu phân quyền</button></div><div id="permissionMatrix" class="content-card table-responsive"></div></section>
       <section id="settingsScreen" class="screen"><form id="settingsForm" class="content-card"><div class="row g-3"><div class="col-md-6"><label class="form-label">Tên hệ thống</label><input name="systemName" class="form-control"></div><div class="col-md-6"><label class="form-label">Logo URL</label><input name="logoUrl" class="form-control"></div><div class="col-md-6"><label class="form-label">Ảnh nền URL</label><input name="backgroundUrl" class="form-control"></div><div class="col-md-6"><label class="form-label">Thông tin thôn</label><input name="hamletName" class="form-control"></div><div class="col-md-6"><label class="form-label">Thông tin xã</label><input name="communeName" class="form-control"></div><div class="col-md-6"><label class="form-label">Đơn vị</label><input name="unitName" class="form-control"></div><div class="col-md-4"><label class="form-label">Số điện thoại</label><input name="phone" class="form-control"></div><div class="col-md-4"><label class="form-label">Email</label><input name="email" type="email" class="form-control"></div><div class="col-md-4"><label class="form-label">Người ký báo cáo</label><input name="reportSigner" class="form-control"></div><div class="col-12"><label class="form-label">Địa chỉ</label><input name="address" class="form-control"></div><div class="col-12 text-end"><button class="btn btn-primary" type="submit">Lưu cấu hình</button></div></div></form></section>
+
+      <section id="appearanceScreen" class="screen"><form id="appearanceForm" class="content-card"><div class="admin-heading"><div><h3>Cấu hình giao diện</h3><p>Quản lý logo, ảnh nền, nội dung giới thiệu và thông tin hiển thị trên trang đăng nhập.</p></div><button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button></div><div class="row g-4"><div class="col-lg-4"><h4 class="section-title">Logo</h4><div id="appearanceLogoPreview" class="appearance-media-preview mb-2"><span class="text-muted">Logo mặc định</span></div><input name="logoUrl" class="form-control mb-2" placeholder="Logo URL"><input id="appearanceLogoFile" type="file" class="form-control mb-2" accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp"><div class="d-flex gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" data-appearance-upload="logo">Tải logo</button><button class="btn btn-outline-danger btn-sm" type="button" data-appearance-clear="logoUrl">Xóa logo</button><button class="btn btn-outline-secondary btn-sm" type="button" data-appearance-default="logoUrl">Mặc định</button></div></div><div class="col-lg-8"><h4 class="section-title">Ảnh nền</h4><div id="appearanceBackgroundPreview" class="appearance-background-list mb-2"></div><textarea name="backgroundImages" class="form-control mb-2" rows="3" placeholder="Danh sách URL ảnh nền, mỗi dòng một ảnh"></textarea><input id="appearanceBackgroundFiles" type="file" class="form-control mb-2" accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp" multiple><div class="row g-2"><div class="col-sm-4"><label class="form-label">Thời gian chuyển ảnh (ms)</label><input name="backgroundInterval" type="number" min="2500" step="500" class="form-control" value="6000"></div><div class="col-sm-8 d-flex align-items-end gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" data-appearance-upload="background">Tải ảnh nền</button><button class="btn btn-outline-danger btn-sm" type="button" data-appearance-clear="backgroundImages">Xóa ảnh nền</button><button class="btn btn-outline-secondary btn-sm" type="button" data-appearance-default="backgroundImages">Dùng mặc định</button></div></div></div><div class="col-12"><h4 class="section-title">Thông tin hệ thống</h4><div class="row g-3"><div class="col-md-4"><label class="form-label">Tên hệ thống</label><input name="systemName" class="form-control"></div><div class="col-md-4"><label class="form-label">Tên thôn</label><input name="hamletName" class="form-control"></div><div class="col-md-4"><label class="form-label">Tên xã</label><input name="communeName" class="form-control"></div><div class="col-md-8"><label class="form-label">Khẩu hiệu</label><input name="slogan" class="form-control"></div><div class="col-md-4"><label class="form-label">Phiên bản phần mềm</label><input name="softwareVersion" class="form-control"></div></div></div><div class="col-12"><h4 class="section-title">Giới thiệu</h4><div class="row g-3"><div class="col-md-6"><label class="form-label">Tiêu đề giới thiệu</label><input name="introTitle" class="form-control"></div><div class="col-md-6"><label class="form-label">Tiêu đề lịch sử</label><input name="historyTitle" class="form-control"></div><div class="col-12"><label class="form-label">Lịch sử hình thành</label><div class="rich-toolbar"><button class="btn btn-light btn-sm" type="button" data-rich-command="bold"><i class="fa-solid fa-bold"></i></button><button class="btn btn-light btn-sm" type="button" data-rich-command="italic"><i class="fa-solid fa-italic"></i></button><button class="btn btn-light btn-sm" type="button" data-rich-command="insertUnorderedList"><i class="fa-solid fa-list-ul"></i></button></div><div id="hamletHistoryEditor" class="rich-editor" contenteditable="true" data-rich-target="hamletHistory"></div><textarea name="hamletHistory" class="d-none"></textarea></div><div class="col-12"><label class="form-label">Nội dung giới thiệu bổ sung</label><div id="introductionEditor" class="rich-editor" contenteditable="true" data-rich-target="introduction"></div><textarea name="introduction" class="d-none"></textarea></div></div></div></div></form></section>
       <section id="restoreScreen" class="screen"><form id="restoreForm" class="content-card"><label class="form-label">Chọn file SQL cần khôi phục</label><input name="file" type="file" class="form-control mb-3" accept=".sql"><label class="form-label">Hoặc dán nội dung SQL</label><textarea name="sql" class="form-control font-monospace" rows="14"></textarea><div class="text-end mt-3"><button class="btn btn-danger" type="submit"><i class="fa-solid fa-rotate-left"></i> Khôi phục dữ liệu</button></div></form></section>
       <div class="modal fade" id="movementModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg"><form id="movementForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Biến động nhân khẩu</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="row g-3"><div class="col-md-4"><label class="form-label">ID nhân khẩu</label><input name="citizenId" type="number" class="form-control" required></div><div class="col-md-4"><label class="form-label">Loại biến động</label><select name="type" class="form-select"><option value="BIRTH">Sinh</option><option value="DEATH">Tử</option><option value="MOVE_IN">Chuyển đến</option><option value="MOVE_OUT">Chuyển đi</option><option value="TEMPORARY_RESIDENCE">Tạm trú</option><option value="TEMPORARY_ABSENCE">Tạm vắng</option><option value="OTHER">Khác</option></select></div><div class="col-md-4"><label class="form-label">Ngày hiệu lực</label><input name="effectiveDate" type="date" class="form-control" required></div><div class="col-md-6"><label class="form-label">Từ địa chỉ</label><input name="fromAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Đến địa chỉ</label><input name="toAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Số giấy tờ</label><input name="documentNumber" class="form-control"></div><div class="col-md-6"><label class="form-label">Lý do</label><input name="reason" class="form-control"></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="2"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>`);
     App.movements = { page: 1, pageSize: 20, search: '', type: '' };
@@ -70,6 +73,8 @@
     document.querySelector('#movementAddBtn').addEventListener('click', () => openMovementForm());
     document.querySelector('#movementForm').addEventListener('submit', saveMovement);
     document.querySelector('#settingsForm').addEventListener('submit', saveSettings);
+    document.querySelector('#appearanceForm').addEventListener('submit', saveAppearanceSettings);
+    bindAppearanceControls();
     document.querySelector('#restoreForm').addEventListener('submit', restoreSql);
     document.querySelector('#permissionSaveBtn').addEventListener('click', savePermissions);
     document.querySelectorAll('[data-export]').forEach(btn => btn.addEventListener('click', () => downloadAdminReport(btn.dataset.export, 'excel')));
@@ -96,6 +101,7 @@
     if (screen === 'movements') loadMovements();
     if (screen === 'permissions') loadPermissions();
     if (screen === 'settings') loadSettings();
+    if (screen === 'appearance') loadAppearanceSettings();
   }
 
   function formatChartPercent(value, total) {
@@ -259,6 +265,105 @@
     setForm(document.querySelector('#settingsForm'), data);
   }
 
+  async function loadAppearanceSettings() {
+    const data = await api('/api/settings');
+    const form = document.querySelector('#appearanceForm');
+    if (!form) return;
+    setForm(form, data);
+    setRichValue('hamletHistory', data.hamletHistory || '');
+    setRichValue('introduction', data.introduction || '');
+    renderAppearancePreviews();
+  }
+
+  function bindAppearanceControls() {
+    document.querySelectorAll('[data-rich-command]').forEach(button => button.addEventListener('click', () => {
+      document.execCommand(button.dataset.richCommand, false, null);
+      syncRichEditors();
+    }));
+    document.querySelectorAll('.rich-editor').forEach(editor => editor.addEventListener('input', syncRichEditors));
+    document.querySelectorAll('[data-appearance-upload]').forEach(button => button.addEventListener('click', () => uploadAppearanceMedia(button.dataset.appearanceUpload)));
+    document.querySelectorAll('[data-appearance-clear]').forEach(button => button.addEventListener('click', () => clearAppearanceField(button.dataset.appearanceClear, true)));
+    document.querySelectorAll('[data-appearance-default]').forEach(button => button.addEventListener('click', () => clearAppearanceField(button.dataset.appearanceDefault, false)));
+    ['logoUrl','backgroundImages'].forEach(name => document.querySelector('#appearanceForm [name="' + name + '"]')?.addEventListener('input', renderAppearancePreviews));
+  }
+
+  function syncRichEditors() {
+    document.querySelectorAll('.rich-editor[data-rich-target]').forEach(editor => {
+      const target = document.querySelector('#appearanceForm [name="' + editor.dataset.richTarget + '"]');
+      if (target) target.value = editor.innerHTML;
+    });
+  }
+
+  function setRichValue(name, value) {
+    const editor = document.querySelector('.rich-editor[data-rich-target="' + name + '"]');
+    const textarea = document.querySelector('#appearanceForm [name="' + name + '"]');
+    if (editor) editor.innerHTML = value || '';
+    if (textarea) textarea.value = value || '';
+  }
+
+  function renderAppearancePreviews() {
+    const form = document.querySelector('#appearanceForm');
+    if (!form) return;
+    const logoUrl = form.elements.logoUrl?.value || '';
+    document.querySelector('#appearanceLogoPreview').innerHTML = logoUrl ? '<img src="' + escapeHtml(logoUrl) + '" alt="Logo xem trước">' : '<span class="text-muted">Logo mặc định</span>';
+    const images = parseAppearanceImages(form.elements.backgroundImages?.value || '');
+    document.querySelector('#appearanceBackgroundPreview').innerHTML = images.length ? images.map(url => '<img src="' + escapeHtml(url) + '" alt="Ảnh nền xem trước">').join('') : '<div class="appearance-media-preview"><span class="text-muted">Ảnh nền mặc định</span></div>';
+  }
+
+  function parseAppearanceImages(value) {
+    const text = String(value || '').trim();
+    if (!text) return [];
+    try { const parsed = JSON.parse(text); if (Array.isArray(parsed)) return parsed.filter(Boolean); } catch (_) {}
+    return text.split(/[
+,]+/).map(item => item.trim()).filter(Boolean);
+  }
+
+  async function uploadAppearanceMedia(type) {
+    const input = document.querySelector(type === 'logo' ? '#appearanceLogoFile' : '#appearanceBackgroundFiles');
+    if (!input?.files?.length) return showToast('Vui lòng chọn file cần tải lên', 'warning');
+    const uploaded = [];
+    for (const file of Array.from(input.files)) {
+      const data = new FormData();
+      data.append('file', file);
+      const result = await api('/api/settings/media', { method: 'POST', body: data });
+      uploaded.push(result.url);
+    }
+    const form = document.querySelector('#appearanceForm');
+    if (type === 'logo') form.elements.logoUrl.value = uploaded[0] || '';
+    else {
+      const current = parseAppearanceImages(form.elements.backgroundImages.value);
+      form.elements.backgroundImages.value = current.concat(uploaded).join('
+');
+    }
+    input.value = '';
+    renderAppearancePreviews();
+    await saveAppearanceSettings();
+  }
+
+  async function clearAppearanceField(name, persist) {
+    const form = document.querySelector('#appearanceForm');
+    if (!form?.elements[name]) return;
+    form.elements[name].value = '';
+    renderAppearancePreviews();
+    if (persist) await api('/api/settings/media/delete', { method: 'POST', body: { key: name } });
+    await saveAppearanceSettings();
+  }
+
+  async function saveAppearanceSettings(event) {
+    if (event) event.preventDefault();
+    const form = document.querySelector('#appearanceForm');
+    if (!form) return;
+    syncRichEditors();
+    const payload = formData(form);
+    const saved = await api('/api/settings', { method: 'POST', body: payload });
+    setForm(form, saved);
+    setRichValue('hamletHistory', saved.hamletHistory || '');
+    setRichValue('introduction', saved.introduction || '');
+    renderAppearancePreviews();
+    if (typeof refreshLoginConfig === 'function') refreshLoginConfig();
+    showToast('Đã lưu cấu hình giao diện');
+  }
+
   async function saveSettings(event) {
     event.preventDefault();
     const data = formData(event.currentTarget);
@@ -307,8 +412,8 @@
     const role = App.user?.role || '';
     document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
       const screen = btn.dataset.screen;
-      const adminOnly = ['users','permissions','logs','settings','backups','restore'];
-      btn.classList.toggle('d-none', adminOnly.includes(screen) && role !== 'SUPER_ADMIN');
+      const adminOnly = ['users','permissions','logs','settings','appearance','backups','restore'];
+      btn.classList.toggle('d-none', adminOnly.includes(screen) && !['SUPER_ADMIN','ADMIN'].includes(role));
     });
   }
 
