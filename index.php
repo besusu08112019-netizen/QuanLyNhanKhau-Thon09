@@ -49,6 +49,12 @@ $router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart'
 $router->get('/api/reports/summary', [ReportController::class, 'summary']);
 $router->get('/api/reports/population', [ReportController::class, 'population']);
 $router->get('/api/reports/household', [ReportController::class, 'household']);
+$router->get('/api/reports/households', [ReportController::class, 'household']);
+$router->get('/api/reports/temporary-residence', [ReportController::class, 'temporaryResidence']);
+$router->get('/api/reports/temporary-absence', [ReportController::class, 'temporaryAbsence']);
+$router->get('/api/reports/births', [ReportController::class, 'births']);
+$router->get('/api/reports/deaths', [ReportController::class, 'deaths']);
+$router->get('/api/reports/migration', [ReportController::class, 'migration']);
 $router->get('/api/reports/export-excel', [ReportController::class, 'exportExcel']);
 $router->get('/api/reports/export-pdf', [ReportController::class, 'exportPdf']);
 $router->get('/api/reports/print', [ReportController::class, 'print']);
@@ -82,6 +88,8 @@ $router->get('/api/backups', [BackupController::class, 'index']);
 $router->post('/api/backups', [BackupController::class, 'create']);
 $router->post('/api/backups/restore', [BackupController::class, 'restore']);
 
+$router->get('/api/temporary-residence', [PersonController::class, 'temporaryResidence']);
+$router->get('/api/temporary-absence', [PersonController::class, 'temporaryAbsence']);
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
 $router->post('/api/households/bulk-delete', [HouseholdController::class, 'bulkDelete']);
