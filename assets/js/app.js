@@ -507,13 +507,12 @@ function updateLoginStats(metrics) {
 }
 
 function applyLoginSettings(settings) {
-  setText('#loginSystemName', settings.systemName || 'Quản lý hành chính');
+  setText('#loginSystemName', settings.systemName || 'Hệ thống Quản lý Hành chính');
   setText('#loginHamletName', settings.hamletName || 'Thôn 09');
   setText('#loginCommuneName', settings.communeName || 'Xã Hồng Phong');
+  setText('#loginSlogan', settings.slogan || 'Vì Nhân dân phục vụ');
   setText('#loginVersion', 'Phiên bản ' + (settings.softwareVersion || 'v2.0'));
-  setText('#loginSlogan', settings.slogan || ('© ' + (settings.hamletName || 'Thôn 09') + ' - ' + (settings.communeName || 'Xã Hồng Phong')));
-  setText('#loginIntroTitle', settings.introTitle || ('Giới thiệu ' + (settings.hamletName || 'Thôn 09') + ' - ' + (settings.communeName || 'Xã Hồng Phong')));
-  setText('#loginHistoryTitle', settings.historyTitle || 'Lịch sử hình thành Thôn 09');
+  setText('#loginCopyright', settings.copyright || ('© ' + (settings.hamletName || 'Thôn 09') + ' - ' + (settings.communeName || 'Xã Hồng Phong')));
   updateLoginHistory(settings);
   updateLoginLogo(settings.logoUrl || '');
   updateLoginBackground(settings);
@@ -547,7 +546,7 @@ function updateLoginLogo(url) {
   if (!logo.dataset.defaultHtml) logo.dataset.defaultHtml = logo.innerHTML;
   if (url) {
     logo.classList.add('login-logo-image');
-    logo.innerHTML = '<img src="' + escapeHtml(url) + '" alt="Logo Thôn 09">';
+    logo.innerHTML = '<img src="' + escapeHtml(url) + '" alt="Logo Thôn 09" decoding="async">';
   } else {
     logo.classList.remove('login-logo-image');
     logo.innerHTML = logo.dataset.defaultHtml;
@@ -555,7 +554,7 @@ function updateLoginLogo(url) {
 }
 
 function updateLoginBackground(settings) {
-  const intro = $('.login-column-intro');
+  const intro = $('#loginView');
   if (!intro) return;
   const images = parseBackgroundImages(settings);
   if (!images.length) { intro.style.removeProperty('--login-bg'); return; }
