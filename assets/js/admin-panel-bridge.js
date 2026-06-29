@@ -280,6 +280,8 @@
     if (button.dataset.screen === 'persons' || button.dataset.screen === 'dashboard') setTimeout(setupDigitalGovernmentFeatures, 300);
   }, true);
 
+  setInterval(() => { if (document.querySelector('#reportForm')) setupDigitalReports(); }, 1000);
+
   let categorySetupTicks = 0;
   const categorySetupTimer = setInterval(() => {
     categorySetupTicks += 1;
