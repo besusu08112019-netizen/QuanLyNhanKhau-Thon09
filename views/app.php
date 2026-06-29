@@ -9,66 +9,41 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260629-appearance-config-1">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260629-login-landing-1">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
 
   <main id="loginView" class="login-view">
-    <section class="login-shell" aria-label="Đăng nhập hệ thống quản lý hành chính Thôn 09">
-      <div class="login-column login-column-form">
-        <section class="login-panel">
-          <div class="login-brand" aria-label="Thôn 09 xã Hồng Phong">
-            <div id="loginLogo" class="login-logo login-logo-emblem" aria-hidden="true">
-              <span class="logo-flag"><i class="fa-solid fa-star"></i></span>
-              <span class="logo-landmark"><i class="fa-solid fa-landmark"></i></span>
-              <span class="logo-village"><i class="fa-solid fa-house-chimney"></i></span>
-              <span class="logo-name">Thôn</span>
-              <strong>09</strong>
-            </div>
-            <div class="login-title-block">
-              <p id="loginSystemPrefix">Hệ thống</p>
-              <h1><span id="loginSystemName">Quản lý hành chính</span><strong id="loginHamletName">Thôn 09</strong><span id="loginCommuneName">Xã Hồng Phong</span></h1>
-            </div>
+    <section class="login-landing" aria-label="Đăng nhập hệ thống quản lý hành chính Thôn 09">
+      <section class="login-panel" aria-labelledby="loginSystemName">
+        <div class="login-brand" aria-label="Thôn 09 xã Hồng Phong">
+          <div id="loginLogo" class="login-logo login-logo-emblem" aria-hidden="true">
+            <span class="logo-flag"><i class="fa-solid fa-star"></i></span>
+            <span class="logo-landmark"><i class="fa-solid fa-landmark"></i></span>
+            <span class="logo-village"><i class="fa-solid fa-house-chimney"></i></span>
+            <span class="logo-name">Thôn</span>
+            <strong>09</strong>
           </div>
-          <form id="loginForm" class="login-form" novalidate>
-            <div class="login-field">
-              <label class="form-label" for="loginEmail">Tên đăng nhập</label>
-              <div class="login-input-wrap"><i class="fa-solid fa-user" aria-hidden="true"></i><input id="loginEmail" name="email" type="text" class="form-control" placeholder="Tên đăng nhập" autocomplete="username" inputmode="email" required></div>
-            </div>
-            <div class="login-field">
-              <label class="form-label" for="loginPassword">Mật khẩu</label>
-              <div class="login-input-wrap"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="loginPassword" name="password" type="password" class="form-control" placeholder="Mật khẩu" autocomplete="current-password" required minlength="8"><button class="password-toggle" type="button" aria-label="Hiện mật khẩu" data-password-toggle><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div>
-            </div>
-            <button class="btn login-submit" type="submit"><i class="fa-solid fa-lock" aria-hidden="true"></i><span>Đăng nhập</span></button>
-          </form>
-          <footer class="login-footer"><span id="loginVersion">Phiên bản v2.0</span><span id="loginSlogan">© Thôn 09 - Xã Hồng Phong</span></footer>
-        </section>
-      </div>
-      <aside class="login-column login-column-intro" aria-label="Giới thiệu Thôn 09">
-        <div class="login-top-meta">
-          <span><i class="fa-regular fa-calendar"></i><strong id="loginWeekday">Thứ Hai</strong>, <span id="loginDate">29/06/2026</span></span>
-          <span><i class="fa-regular fa-clock"></i><strong id="loginClock">00:00:00</strong></span>
+          <div class="login-title-block">
+            <p id="loginSystemName">Hệ thống Quản lý Hành chính</p>
+            <h1><span id="loginHamletName">Thôn 09</span> - <span id="loginCommuneName">Xã Hồng Phong</span></h1>
+            <div id="loginSlogan" class="login-slogan">Vì Nhân dân phục vụ</div>
+          </div>
         </div>
-        <div class="intro-content">
-          <article class="history-card">
-            <h2 id="loginIntroTitle">Giới thiệu Thôn 09 - Xã Hồng Phong</h2>
-            <div class="history-heading"><span class="history-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span><h3 id="loginHistoryTitle">Lịch sử hình thành Thôn 09</h3></div>
-            <div id="loginHistoryText" class="history-text" data-setting-key="hamletHistory">Nội dung giới thiệu lịch sử Thôn 09 sẽ được hiển thị từ cấu hình hệ thống khi quản trị viên cập nhật dữ liệu.</div>
-          </article>
-          <section class="login-info-card" aria-label="Thông tin cơ bản">
-            <div class="info-heading"><span><i class="fa-solid fa-chart-simple"></i></span><h3>Thông tin cơ bản</h3></div>
-            <div class="login-stats" id="loginStats" aria-live="polite">
-              <div class="public-stat stat-house"><i class="fa-solid fa-house"></i><span>Tổng số hộ</span><strong data-stat="total_households">0</strong><small>hộ</small></div>
-              <div class="public-stat stat-pop"><i class="fa-solid fa-users"></i><span>Tổng nhân khẩu</span><strong data-stat="total_citizens">0</strong><small>người</small></div>
-              <div class="public-stat stat-party"><i class="fa-solid fa-landmark-flag"></i><span>Đảng viên</span><strong data-stat="party_member_count">0</strong><small>người</small></div>
-              <div class="public-stat stat-male"><i class="fa-solid fa-person"></i><span>Nam</span><strong data-stat="male_count">0</strong><small>người</small></div>
-              <div class="public-stat stat-female"><i class="fa-solid fa-person-dress"></i><span>Nữ</span><strong data-stat="female_count">0</strong><small>người</small></div>
-              <div class="public-stat stat-away"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Tạm vắng</span><strong data-stat="away_count">0</strong><small>người</small></div>
-            </div>
-          </section>
-        </div>
-      </aside>
+        <form id="loginForm" class="login-form" novalidate>
+          <div class="login-field">
+            <label class="form-label" for="loginEmail">Tên đăng nhập</label>
+            <div class="login-input-wrap"><i class="fa-solid fa-user" aria-hidden="true"></i><input id="loginEmail" name="email" type="text" class="form-control" placeholder="Nhập tên đăng nhập" autocomplete="username" inputmode="email" required></div>
+          </div>
+          <div class="login-field">
+            <label class="form-label" for="loginPassword">Mật khẩu</label>
+            <div class="login-input-wrap"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="loginPassword" name="password" type="password" class="form-control" placeholder="Nhập mật khẩu" autocomplete="current-password" required minlength="8"><button class="password-toggle" type="button" aria-label="Hiện mật khẩu" data-password-toggle><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div>
+          </div>
+          <button class="btn login-submit" type="submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i><span>Đăng nhập</span></button>
+        </form>
+        <footer class="login-footer"><span id="loginVersion">Phiên bản v2.0</span><span id="loginCopyright">© Thôn 09 - Xã Hồng Phong</span></footer>
+      </section>
     </section>
   </main>
 
@@ -118,12 +93,12 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260629-appearance-config-1"></script>
+  <script src="assets/js/app.js?v=20260629-login-landing-1"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/import.js?v=20260629-two-import-buttons-1"></script>
-  <script src="assets/js/admin-panel.js?v=20260629-appearance-config-1"></script>
+  <script src="assets/js/admin-panel.js?v=20260629-login-landing-1"></script>
   <script src="assets/js/admin-panel-bridge.js?v=20260629-appearance-config-1"></script>
   <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
