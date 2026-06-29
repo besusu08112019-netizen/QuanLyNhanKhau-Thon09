@@ -15,7 +15,15 @@ final class User extends BaseModel
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         $where = ['status <> "DELETED"']; $params = [];
         if (!empty($filters['role'])) { $where[] = 'role = :role'; $params['role'] = $filters['role']; }
-        if (!empty($filters['search'])) { $where[] = '(email LIKE :q OR display_name LIKE :q OR username LIKE :q OR phone LIKE :q OR position LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
+        if (!empty($filters['search'])) {
+            $q = '%' . $filters['search'] . '%';
+            $where[] = '(email LIKE :q_email OR display_name LIKE :q_name OR username LIKE :q_username OR phone LIKE :q_phone OR position LIKE :q_position)';
+            $params['q_email'] = $q;
+            $params['q_name'] = $q;
+            $params['q_username'] = $q;
+            $params['q_phone'] = $q;
+            $params['q_position'] = $q;
+        }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM users $sqlWhere", $params)['total'];
         $items = $this->fetchAll("SELECT id,username,email,display_name,phone,position,role,status,last_login_at,created_at FROM users $sqlWhere ORDER BY role,email LIMIT $pageSize OFFSET $offset", $params);
