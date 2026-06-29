@@ -28,7 +28,7 @@ final class Dashboard extends BaseModel
     {
         [$householdWhere, $householdParams] = $this->householdWhere($filters);
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
-        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor_households, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor_households FROM households h $householdWhere", $householdParams) ?: [];
+        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor_households, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor_households, COALESCE(SUM(CASE WHEN h.meritorious_family=1 THEN 1 ELSE 0 END),0) AS meritorious_households, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy_households, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND h.meritorious_family=0 AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal_households FROM households h $householdWhere", $householdParams) ?: [];
         $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female_count, COALESCE(SUM(CASE WHEN c.relationship='Chủ hộ' THEN 1 ELSE 0 END),0) AS household_head_count, COALESCE(SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END),0) AS active_citizens, COALESCE(SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary_count, COALESCE(SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END),0) AS working_age_count FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
         return [
             'total_households' => (int) ($households['total_households'] ?? 0),
@@ -44,6 +44,9 @@ final class Dashboard extends BaseModel
             'away_count' => (int) ($citizens['away_count'] ?? 0),
             'poor_households' => (int) ($households['poor_households'] ?? 0),
             'near_poor_households' => (int) ($households['near_poor_households'] ?? 0),
+            'policy_households' => (int) ($households['policy_households'] ?? 0),
+            'meritorious_households' => (int) ($households['meritorious_households'] ?? 0),
+            'normal_households' => (int) ($households['normal_households'] ?? 0),
         ];
     }
 
@@ -55,8 +58,7 @@ final class Dashboard extends BaseModel
 
     public function householdChart(array $filters = []): array
     {
-        [$where, $params] = $this->householdWhere($filters);
-        return $this->fetchAll("SELECT CASE h.status WHEN 'ACTIVE' THEN 'Đang hoạt động' WHEN 'INACTIVE' THEN 'Ngưng theo dõi' ELSE h.status END AS label, COUNT(*) AS value FROM households h $where GROUP BY h.status ORDER BY h.status", $params);
+        return $this->povertyChart($filters);
     }
 
     public function ageChart(array $filters = []): array
@@ -86,8 +88,15 @@ final class Dashboard extends BaseModel
     public function povertyChart(array $filters = []): array
     {
         [$where, $params] = $this->householdWhere($filters);
-        $row = $this->fetchOne("SELECT COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 THEN 1 ELSE 0 END),0) AS normal FROM households h $where", $params) ?: [];
-        return [['label' => 'Hộ nghèo', 'value' => (int) ($row['poor'] ?? 0)], ['label' => 'Hộ cận nghèo', 'value' => (int) ($row['near_poor'] ?? 0)], ['label' => 'Hộ khác', 'value' => (int) ($row['normal'] ?? 0)]];
+        $row = $this->fetchOne("SELECT COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN h.meritorious_family=1 THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND h.meritorious_family=0 AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal, COALESCE(SUM(CASE WHEN h.disabled_household=1 THEN 1 ELSE 0 END),0) AS other FROM households h $where", $params) ?: [];
+        return [
+            ['label' => 'Hộ nghèo', 'value' => (int) ($row['poor'] ?? 0)],
+            ['label' => 'Hộ cận nghèo', 'value' => (int) ($row['near_poor'] ?? 0)],
+            ['label' => 'Hộ chính sách', 'value' => (int) ($row['policy'] ?? 0)],
+            ['label' => 'Hộ có công', 'value' => (int) ($row['meritorious'] ?? 0)],
+            ['label' => 'Hộ bình thường', 'value' => (int) ($row['normal'] ?? 0)],
+            ['label' => 'Khác', 'value' => (int) ($row['other'] ?? 0)],
+        ];
     }
 
     private function normalizeFilters(array $filters): array
@@ -96,6 +105,7 @@ final class Dashboard extends BaseModel
             'dateFrom' => trim((string) ($filters['dateFrom'] ?? $filters['date_from'] ?? '')) ?: null,
             'dateTo' => trim((string) ($filters['dateTo'] ?? $filters['date_to'] ?? '')) ?: null,
             'householdStatus' => trim((string) ($filters['householdStatus'] ?? $filters['household_status'] ?? '')) ?: null,
+            'householdType' => trim((string) ($filters['householdType'] ?? $filters['household_type'] ?? $filters['category'] ?? '')) ?: null,
             'residencyStatus' => trim((string) ($filters['residencyStatus'] ?? $filters['residency_status'] ?? '')) ?: null,
             'presenceStatus' => trim((string) ($filters['presenceStatus'] ?? $filters['presence_status'] ?? '')) ?: null,
         ];
@@ -109,6 +119,8 @@ final class Dashboard extends BaseModel
         if ($filters['householdStatus']) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
         if ($filters['dateFrom']) { $where[] = 'DATE(h.created_at) >= :household_date_from'; $params['household_date_from'] = $filters['dateFrom']; }
         if ($filters['dateTo']) { $where[] = 'DATE(h.created_at) <= :household_date_to'; $params['household_date_to'] = $filters['dateTo']; }
+        $category = $this->categoryKey($filters['householdType']);
+        if ($category) $this->addCategoryWhere($where, $params, $category);
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
@@ -122,6 +134,53 @@ final class Dashboard extends BaseModel
         if ($filters['presenceStatus']) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
         if ($filters['dateFrom']) { $where[] = 'DATE(c.created_at) >= :citizen_date_from'; $params['citizen_date_from'] = $filters['dateFrom']; }
         if ($filters['dateTo']) { $where[] = 'DATE(c.created_at) <= :citizen_date_to'; $params['citizen_date_to'] = $filters['dateTo']; }
+        $category = $this->categoryKey($filters['householdType']);
+        if ($category) $this->addCategoryWhere($where, $params, $category);
         return ['WHERE ' . implode(' AND ', $where), $params];
+    }
+
+    private function addCategoryWhere(array &$where, array &$params, string $category): void
+    {
+        match ($category) {
+            'poor' => $where[] = 'h.poor_household = 1',
+            'near_poor' => $where[] = 'h.near_poor_household = 1',
+            'meritorious' => $where[] = 'h.meritorious_family = 1',
+            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND h.meritorious_family = 0 AND h.disabled_household = 0',
+            'other' => $where[] = 'h.disabled_household = 1',
+            'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
+            default => null,
+        };
+    }
+
+    private function addTextCategoryWhere(array &$where, array &$params, string $category): void
+    {
+        $label = ['escaped_poverty' => 'Hộ mới thoát nghèo', 'policy' => 'Hộ chính sách'][$category] ?? $category;
+        $where[] = '(h.note LIKE :category_label OR h.note LIKE :category_key)';
+        $params['category_label'] = '%' . $label . '%';
+        $params['category_key'] = '%' . str_replace('_', ' ', $category) . '%';
+    }
+
+    private function categoryKey(mixed $value): string
+    {
+        $text = $this->normalize((string) $value);
+        if ($text === '') return '';
+        return match (true) {
+            str_contains($text, 'can ngheo') || str_contains($text, 'near poor') => 'near_poor',
+            str_contains($text, 'moi thoat ngheo') || str_contains($text, 'thoat ngheo') || str_contains($text, 'escaped poverty') => 'escaped_poverty',
+            str_contains($text, 'chinh sach') || str_contains($text, 'policy') => 'policy',
+            str_contains($text, 'co cong') || str_contains($text, 'gia dinh co cong') || str_contains($text, 'meritorious') => 'meritorious',
+            str_contains($text, 'binh thuong') || str_contains($text, 'normal') || $text === 'khong' => 'normal',
+            str_contains($text, 'khac') || str_contains($text, 'tan tat') || str_contains($text, 'khuyet tat') || str_contains($text, 'other') => 'other',
+            str_contains($text, 'ngheo') || str_contains($text, 'poor') => 'poor',
+            default => '',
+        };
+    }
+
+    private function normalize(string $value): string
+    {
+        $value = mb_strtolower(trim($value));
+        $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        if ($converted !== false) $value = $converted;
+        return trim(preg_replace('/[^a-z0-9]+/', ' ', $value));
     }
 }
