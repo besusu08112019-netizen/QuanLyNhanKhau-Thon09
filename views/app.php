@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260630-report-ui-1">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260630-uiux-sprint-1">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -48,10 +48,45 @@
   </main>
 
   <div id="appView" class="app-shell d-none">
-    <aside class="sidebar"><div class="sidebar-brand"><span class="state-mark small-mark">09</span><div><strong>Thôn 09</strong><small>xã Hồng Phong</small></div></div><nav class="nav flex-column gap-1"><button class="nav-link active" data-screen="dashboard">Tổng quan</button><button class="nav-link" data-screen="households">Hộ dân</button><button class="nav-link" data-screen="persons">Nhân khẩu</button><button class="nav-link" data-screen="reports">Báo cáo</button></nav></aside>
+    
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="state-mark small-mark">09</span>
+        <div>
+          <strong>Hệ thống quản lý hành chính</strong>
+          <small>Thôn 09 - Xã Hồng Phong</small>
+        </div>
+      </div>
+      <nav class="nav flex-column gap-1" aria-label="Điều hướng chính">
+        <button class="nav-link active" data-screen="dashboard"><i class="fa-solid fa-gauge-high"></i><span>Tổng quan</span></button>
+        <button class="nav-link" data-screen="households"><i class="fa-solid fa-house-chimney"></i><span>Quản lý hộ gia đình</span></button>
+        <button class="nav-link" data-screen="persons"><i class="fa-solid fa-users"></i><span>Quản lý nhân khẩu</span></button>
+        <button class="nav-link" data-screen="temporaryResidence"><i class="fa-solid fa-location-dot"></i><span>Tạm trú</span></button>
+        <button class="nav-link" data-screen="temporaryAbsence"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Tạm vắng</span></button>
+        <button class="nav-link" data-screen="reports"><i class="fa-solid fa-chart-pie"></i><span>Báo cáo - Thống kê</span></button>
+        <button class="nav-link" data-screen="import"><i class="fa-solid fa-file-import"></i><span>Import dữ liệu</span></button>
+        <button class="nav-link" data-screen="export"><i class="fa-solid fa-file-export"></i><span>Export Excel</span></button>
+        <button class="nav-link" data-screen="users"><i class="fa-solid fa-user-shield"></i><span>Quản lý tài khoản</span></button>
+        <button class="nav-link" data-screen="logs"><i class="fa-solid fa-clock-rotate-left"></i><span>Nhật ký hệ thống</span></button>
+        <button class="nav-link" data-screen="appearance"><i class="fa-solid fa-palette"></i><span>Cấu hình giao diện</span></button>
+        <button class="nav-link" data-screen="backups"><i class="fa-solid fa-database"></i><span>Sao lưu dữ liệu</span></button>
+        <button class="nav-link" data-screen="restore"><i class="fa-solid fa-rotate-left"></i><span>Khôi phục dữ liệu</span></button>
+      </nav>
+    </aside>
 
     <section class="main-area">
-      <header class="topbar"><button id="sidebarToggle" class="btn btn-outline-secondary btn-sm d-lg-none" type="button">Menu</button><div><h2 id="screenTitle" class="h5 mb-0">Tổng quan</h2><small class="text-muted">Quản Lý Nhân Khẩu Thôn 09 xã Hồng Phong</small></div><div class="ms-auto text-end"><div id="currentUser" class="small text-muted"></div><button id="logoutBtn" class="btn btn-link btn-sm text-decoration-none px-0">Đăng xuất</button></div></header>
+      <header class="topbar">
+        <button id="sidebarToggle" class="btn btn-outline-secondary btn-sm d-lg-none" type="button"><i class="fa-solid fa-bars"></i></button>
+        <div class="topbar-title-block">
+          <h2 id="screenTitle" class="h5 mb-0">Tổng quan</h2>
+          <small id="breadcrumbTrail" class="breadcrumb-trail">Trang chủ / Tổng quan</small>
+        </div>
+        <div class="topbar-meta ms-auto">
+          <span id="topbarClock" class="topbar-clock"><i class="fa-regular fa-calendar"></i> --/--/----</span>
+          <span id="currentUser" class="topbar-user"></span>
+          <button id="logoutBtn" class="btn btn-link btn-sm text-decoration-none px-0">Đăng xuất</button>
+        </div>
+      </header>
       <div id="loadingBar" class="progress rounded-0 d-none" style="height:3px"><div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div></div>
 
       <section id="dashboardScreen" class="screen active dashboard-overview-screen">
@@ -92,7 +127,29 @@
         </section>
       </section>
 
-      <section id="householdsScreen"      <section id="householdsScreen" class="screen"><div class="toolbar"><input id="householdSearch" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ, điện thoại"><select id="householdPageSize" class="form-select w-auto"><option>20</option><option>50</option><option>100</option></select><button id="householdAddBtn" class="btn btn-primary">Thêm hộ dân</button><button id="householdBulkDeleteBtn" class="btn btn-outline-danger">Xóa đã chọn</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th><input type="checkbox" id="householdCheckAll"></th><th>Mã hộ</th><th>Chủ hộ</th><th>Địa chỉ</th><th>Ở nhà</th><th>Đi vắng</th><th>Diện hộ</th><th></th></tr></thead><tbody id="householdRows"></tbody></table></div><div id="householdPager" class="pager"></div></section>
+      <section id="householdsScreen" class="screen household-management-screen">
+        <div class="module-page-head">
+          <div>
+            <h2>Quản lý hộ gia đình</h2>
+            <div class="module-breadcrumb">Trang chủ / Quản lý hộ gia đình</div>
+          </div>
+          <button id="householdAddBtn" class="module-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm hộ dân</button>
+        </div>
+        <div class="content-card module-filter-card household-filter-card">
+          <div class="household-filter-grid">
+            <div class="module-field household-search-field"><label for="householdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="householdSearch" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ..."></div></div>
+            <div class="module-field"><label for="householdCategoryFilter">Diện hộ</label><select id="householdCategoryFilter" class="form-select"><option value="">Tất cả</option><option value="poor">Hộ nghèo</option><option value="near_poor">Hộ cận nghèo</option><option value="escaped_poverty">Hộ mới thoát nghèo</option><option value="policy">Hộ chính sách</option><option value="meritorious">Hộ có công</option><option value="normal">Hộ bình thường</option><option value="other">Khác</option></select></div>
+            <div class="module-field"><label for="householdStatusFilter">Trạng thái</label><select id="householdStatusFilter" class="form-select"><option value="">Tất cả</option><option value="active">Đang quản lý</option><option value="temporary_absence">Có tạm vắng</option><option value="empty_home">Không có người ở nhà</option></select></div>
+            <div class="module-field module-page-size-field"><label for="householdPageSize">Hiển thị</label><select id="householdPageSize" class="form-select"><option>20</option><option>50</option><option>100</option></select></div>
+            <button id="householdFilterReset" class="btn module-reset-btn" type="button"><i class="fa-solid fa-rotate-right"></i> Làm mới</button>
+          </div>
+        </div>
+        <div class="content-card module-list-card">
+          <div class="module-list-head"><div><h3>Danh sách hộ gia đình</h3><span id="householdTotalCount">Tổng số: 0 hộ</span></div><button id="householdBulkDeleteBtn" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i> Xóa đã chọn</button></div>
+          <div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th><input type="checkbox" id="householdCheckAll"></th><th>Mã hộ</th><th>Chủ hộ</th><th>Địa chỉ</th><th>Ở nhà</th><th>Đi vắng</th><th>Diện hộ</th><th class="text-end">Thao tác</th></tr></thead><tbody id="householdRows"></tbody></table></div>
+          <div id="householdPager" class="pager module-pager"></div>
+        </div>
+      </section>
 
       <section id="personsScreen" class="screen person-management-screen">
         <div class="person-page-head">
@@ -109,14 +166,13 @@
               <label for="personSearch">Tìm kiếm nhanh</label>
               <div class="person-search-input-wrap"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="personSearch" class="form-control" placeholder="Họ tên, CCCD, mã nhân khẩu hoặc số định danh cá nhân..."></div>
             </div>
-            <button id="personSearchBtn" class="btn person-search-btn" type="button"><i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm</button>
             <button id="personFilterReset" class="btn person-reset-btn" type="button"><i class="fa-solid fa-rotate-right"></i> Làm mới</button>
           </div>
           <div class="person-quick-filter-grid">
             <div class="person-field"><label>Giới tính</label><select class="form-select" data-person-filter="gender" name="gender"><option value="">Tất cả</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
             <div class="person-field"><label>Cư trú</label><select class="form-select" data-person-filter="residenceCombined" name="residenceCombined"><option value="">Tất cả</option><option value="PERMANENT">Thường trú</option><option value="TEMPORARY">Tạm trú</option><option value="AWAY">Tạm vắng</option></select></div>
             <div class="person-field"><label>Đảng viên</label><select class="form-select" data-person-filter="party_member" name="party_member"><option value="">Tất cả</option><option value="1">Có</option><option value="0">Không</option></select></div>
-            <div class="person-field"><label>Độ tuổi</label><select class="form-select" data-person-filter="ageGroup" name="ageGroup"><option value="">Tất cả</option><option value="under6">Dưới 6 tuổi</option><option value="6_17">6-17 tuổi</option><option value="18_59">18-59 tuổi</option><option value="60_plus">Từ 60 tuổi trở lên</option></select></div>
+            <div class="person-field"><label>Độ tuổi</label><select class="form-select" data-person-filter="ageGroup" name="ageGroup"><option value="">Tất cả</option><option value="0_5">0-5 tuổi</option><option value="6_14">6-14 tuổi</option><option value="15_17">15-17 tuổi</option><option value="18_59">18-59 tuổi</option><option value="60_plus">Từ 60 tuổi trở lên</option></select></div>
             <button id="personAdvancedToggle" class="btn person-advanced-toggle" type="button" aria-expanded="false" aria-controls="personAdvancedFilters"><i class="fa-solid fa-sliders"></i> Bộ lọc nâng cao</button>
           </div>
           <div id="personAdvancedFilters" class="person-advanced-panel d-none">
@@ -211,13 +267,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260630-report-ui-1"></script>
+  <script src="assets/js/app.js?v=20260630-uiux-sprint-1"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/import.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/admin-panel.js?v=20260629-background-upload-fix-1"></script>
-  <script src="assets/js/admin-panel-bridge.js?v=20260630-report-ui-1"></script>
+  <script src="assets/js/admin-panel-bridge.js?v=20260630-uiux-sprint-1"></script>
   <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint10.js?v=20260629-report-disable-old-1"></script>
@@ -258,13 +314,13 @@
   function qs(s,r){return (r||document).querySelector(s);} function qsa(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
   function fillSelects(){qsa('[data-dictionary]').forEach(function(el){var list=(App.dictionaries&&App.dictionaries[el.dataset.dictionary])||[];var current=el.value;el.innerHTML='<option value="">Tất cả</option>'+list.map(function(item){return '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>';}).join('');el.value=current||'';});}
   function applyResidence(p,value){if(value==='PERMANENT'||value==='TEMPORARY')p.set('residencyStatus',value);else if(value==='AWAY')p.set('presenceStatus','AWAY');}
-  function applyAgeGroup(p,value){if(value==='under6'){p.set('ageTo','5');}else if(value==='6_17'){p.set('ageFrom','6');p.set('ageTo','17');}else if(value==='18_59'){p.set('ageFrom','18');p.set('ageTo','59');}else if(value==='60_plus'){p.set('ageFrom','60');}}
+  function applyAgeGroup(p,value){if(value==='0_5'){p.set('ageFrom','0');p.set('ageTo','5');}else if(value==='6_14'){p.set('ageFrom','6');p.set('ageTo','14');}else if(value==='15_17'){p.set('ageFrom','15');p.set('ageTo','17');}else if(value==='18_59'){p.set('ageFrom','18');p.set('ageTo','59');}else if(value==='60_plus'){p.set('ageFrom','60');}}
   function appendFilter(p,key,value){if(!value)return;if(key==='residenceCombined')applyResidence(p,value);else if(key==='ageGroup')applyAgeGroup(p,value);else p.set(key,value);}
   function personParams(includeSearch){var p=new URLSearchParams({page:App.persons.page||1,pageSize:App.persons.pageSize||20});if(includeSearch){var search=(qs('#personSearch')&&qs('#personSearch').value||App.persons.search||'').trim();if(search)p.set('search',search);}qsa('[data-person-filter]').forEach(function(el){var key=el.dataset.personFilter,val=String(el.value||'').trim();App.persons[key]=val;appendFilter(p,key,val);});return p;}
   function activeFilterParams(){var p=personParams(false);p.delete('page');p.delete('pageSize');return Object.fromEntries(p.entries());}
   function matchesQuickSearch(row,searchText){return [row.full_name,row.citizen_code,row.identity_number].some(function(value){return normalizeSearchText(value).includes(searchText);});}
   window.loadPersons=async function loadPersonsAdvanced(){try{var searchText=normalizeSearchText((qs('#personSearch')&&qs('#personSearch').value||App.persons.search||'').trim());App.persons.search=(qs('#personSearch')&&qs('#personSearch').value||'').trim();var items=[],total=0;if(searchText){var allItems=await fetchAllPaged('/api/persons',activeFilterParams());var filtered=allItems.filter(function(row){return matchesQuickSearch(row,searchText);});total=filtered.length;items=filtered.slice((App.persons.page-1)*App.persons.pageSize,(App.persons.page-1)*App.persons.pageSize+App.persons.pageSize);}else{var data=await api('/api/persons?'+personParams(false).toString());items=data.items||[];total=data.total||0;}var grouped=items.reduce(function(acc,row){var code=row.household_code||'Chưa có hộ';(acc[code]||(acc[code]=[])).push(row);return acc;},{});var totalEl=qs('#personTotalCount');if(totalEl)totalEl.innerHTML='Tổng số: <strong>'+number(total)+'</strong> nhân khẩu';qs('#personRows').innerHTML=items.map(personRow).join('')||'<tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';renderPager('#personPager',{total:total,page:App.persons.page,pageSize:App.persons.pageSize},function(page){App.persons.page=page;window.loadPersons();});}catch(error){showToast('Không tải được danh sách nhân khẩu: '+error.message,'danger');}};
-  function bind(){fillSelects();if(window.__thon09PersonAdvancedBound)return;window.__thon09PersonAdvancedBound=true;qsa('[data-person-filter]').forEach(function(el){el.addEventListener('change',function(){App.persons.page=1;window.loadPersons();});el.addEventListener('input',debounce(function(){App.persons.page=1;window.loadPersons();},350));});var search=qs('#personSearch');if(search)search.addEventListener('input',debounce(function(){App.persons.page=1;window.loadPersons();},350));var searchBtn=qs('#personSearchBtn');if(searchBtn)searchBtn.addEventListener('click',function(){App.persons.page=1;window.loadPersons();});var pageSize=qs('#personPageSize');if(pageSize)pageSize.addEventListener('change',function(){App.persons.pageSize=Number(this.value||20);App.persons.page=1;window.loadPersons();});var toggle=qs('#personAdvancedToggle'),panel=qs('#personAdvancedFilters');if(toggle&&panel)toggle.addEventListener('click',function(){var hidden=panel.classList.toggle('d-none');toggle.setAttribute('aria-expanded',hidden?'false':'true');toggle.innerHTML='<i class="fa-solid fa-sliders"></i> '+(hidden?'Bộ lọc nâng cao':'Ẩn bộ lọc nâng cao');});var reset=qs('#personFilterReset');if(reset)reset.addEventListener('click',function(){if(search)search.value='';qsa('[data-person-filter]').forEach(function(el){el.value='';App.persons[el.dataset.personFilter]='';});App.persons.search='';App.persons.page=1;window.loadPersons();});}
+  function bind(){fillSelects();if(window.__thon09PersonAdvancedBound)return;window.__thon09PersonAdvancedBound=true;qsa('[data-person-filter]').forEach(function(el){el.addEventListener('change',function(){App.persons.page=1;window.loadPersons();});el.addEventListener('input',debounce(function(){App.persons.page=1;window.loadPersons();},350));});var search=qs('#personSearch');if(search)search.addEventListener('input',debounce(function(){App.persons.page=1;window.loadPersons();},350));var pageSize=qs('#personPageSize');if(pageSize)pageSize.addEventListener('change',function(){App.persons.pageSize=Number(this.value||20);App.persons.page=1;window.loadPersons();});var toggle=qs('#personAdvancedToggle'),panel=qs('#personAdvancedFilters');if(toggle&&panel)toggle.addEventListener('click',function(){var hidden=panel.classList.toggle('d-none');toggle.setAttribute('aria-expanded',hidden?'false':'true');toggle.innerHTML='<i class="fa-solid fa-sliders"></i> '+(hidden?'Bộ lọc nâng cao':'Ẩn bộ lọc nâng cao');});var reset=qs('#personFilterReset');if(reset)reset.addEventListener('click',function(){if(search)search.value='';qsa('[data-person-filter]').forEach(function(el){el.value='';App.persons[el.dataset.personFilter]='';});App.persons.search='';App.persons.page=1;window.loadPersons();});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
