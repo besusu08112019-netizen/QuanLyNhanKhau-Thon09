@@ -93,13 +93,7 @@
     }
   }
 
-  function setupDigitalPersonFilters() {
-    const search = document.querySelector('#personSearch');
-    if (!search || document.querySelector('#personPartyFilter')) return;
-    search.insertAdjacentHTML('afterend', '<select id="personPartyFilter" class="form-select" style="max-width:170px"><option value="">Đảng viên</option><option value="1">Có</option><option value="0">Không</option></select><select id="personYouthFilter" class="form-select" style="max-width:170px"><option value="">Đoàn viên</option><option value="1">Có</option><option value="0">Không</option></select><select id="personPolicyFilter" class="form-select" style="max-width:190px"><option value="">Chính sách</option><option value="meritorious_person">Người có công</option><option value="disabled_person">Người khuyết tật</option></select>');
-    const reload = () => { App.persons = App.persons || {}; App.persons.party_member = document.querySelector('#personPartyFilter').value; App.persons.youth_union_member = document.querySelector('#personYouthFilter').value; App.persons.meritorious_person = document.querySelector('#personPolicyFilter').value === 'meritorious_person' ? 1 : ''; App.persons.disabled_person = document.querySelector('#personPolicyFilter').value === 'disabled_person' ? 1 : ''; App.persons.page = 1; window.loadPersons(); };
-    ['#personPartyFilter','#personYouthFilter','#personPolicyFilter'].forEach(sel => document.querySelector(sel).addEventListener('change', reload));
-  }
+  function setupDigitalPersonFilters() { return; }
 
   function setupDigitalReports() {
     const select = document.querySelector('#reportForm select[name="type"]');
@@ -108,39 +102,7 @@
     options.forEach(([value,label]) => { if (!Array.from(select.options).some(o => o.value === value)) select.insertAdjacentHTML('beforeend', '<option value="' + value + '">' + label + '</option>'); });
   }
 
-  function setupDigitalDashboard() {
-    if (window.loadDashboard?.__digitalWrapped) return;
-    const originalLoad = window.loadDashboard;
-    if (typeof originalLoad !== 'function') return;
-    window.loadDashboard = async function digitalLoadDashboard() {
-      await originalLoad();
-      try {
-        const data = await api('/api/dashboard/summary');
-        const m = data.metrics || {}, c = data.charts || {};
-        const pct = key => (Number(m[key] || 0)).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%';
-        const cards = [
-          ['Đảng viên', (m.party_member_count || 0) + ' (' + pct('party_member_percent') + ')', 'fa-landmark-flag'],
-          ['Đoàn viên', (m.youth_union_member_count || 0) + ' (' + pct('youth_union_member_percent') + ')', 'fa-people-group'],
-          ['Người có công', (m.meritorious_person_count || 0) + ' (' + pct('meritorious_person_percent') + ')', 'fa-award'],
-          ['Người khuyết tật', (m.disabled_person_count || 0) + ' (' + pct('disabled_person_percent') + ')', 'fa-wheelchair'],
-          ['Có việc làm', (m.employed_count || 0) + ' (' + pct('employed_percent') + ')', 'fa-user-tie'],
-          ['Thất nghiệp', (m.unemployed_count || 0) + ' (' + pct('unemployed_percent') + ')', 'fa-user-clock'],
-          ['LĐ ngoài tỉnh', m.out_province_labor_count || 0, 'fa-route'],
-          ['LĐ nước ngoài', m.foreign_labor_count || 0, 'fa-plane-departure'],
-        ];
-        const host = document.querySelector('#dashboardCards');
-        if (host && !host.querySelector('[data-digital-kpi]')) host.insertAdjacentHTML('beforeend', cards.map(([label,value,icon]) => '<div class="col-sm-6 col-xl-3" data-digital-kpi><div class="metric-card admin-metric"><i class="fa-solid ' + icon + '"></i><div><div class="metric-label">' + label + '</div><div class="metric-value">' + value + '</div></div></div></div>').join(''));
-        ensureDigitalChartHost();
-        renderChart('#partyChart', c.partyMembers || []);
-        renderChart('#youthChart', c.youthUnion || []);
-        renderChart('#laborChart', c.labor || []);
-        renderChart('#occupationChart', c.occupations || []);
-        renderChart('#ethnicityChart', c.ethnicities || []);
-        renderChart('#religionChart', c.religions || []);
-      } catch (_) {}
-    };
-    window.loadDashboard.__digitalWrapped = true;
-  }
+  function setupDigitalDashboard() { return; }
 
   function ensureDigitalChartHost() {
     if (document.querySelector('#partyChart')) return;
@@ -150,23 +112,10 @@
   }
 
   function setupHouseholdCategoryFilters() {
-    const toolbar = document.querySelector('#householdsScreen .toolbar');
-    const search = document.querySelector('#householdSearch');
-    if (!toolbar || !search || document.querySelector('#householdCategoryFilter')) return;
-    App.households = App.households || { page: 1, pageSize: 20, search: '' };
-    App.households.category = App.households.category || '';
-    search.insertAdjacentHTML('afterend', `<select id="householdCategoryFilter" class="form-select" style="max-width:220px">${householdCategories.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select>`);
-    document.querySelector('#householdCategoryFilter').addEventListener('change', () => {
-      App.households.category = document.querySelector('#householdCategoryFilter').value;
-      App.households.household_type = App.households.category;
-      App.households.page = 1;
-      window.loadHouseholds();
-    });
-    search.addEventListener('input', () => {
-      App.households.search = search.value.trim();
-      App.households.page = 1;
-    }, true);
-    window.loadHouseholds = loadHouseholdsWithCategory;
+    const category = document.querySelector('#householdCategoryFilter');
+    const status = document.querySelector('#householdStatusFilter');
+    if (category && !category.dataset.bridgeBound) { category.dataset.bridgeBound = '1'; category.addEventListener('change', () => { App.households.category = category.value; App.households.household_type = category.value; App.households.page = 1; window.loadHouseholds(); }); }
+    if (status && !status.dataset.bridgeBound) { status.dataset.bridgeBound = '1'; status.addEventListener('change', () => { App.households.status = status.value; App.households.page = 1; window.loadHouseholds(); }); }
   }
 
   async function loadHouseholdsWithCategory() {
