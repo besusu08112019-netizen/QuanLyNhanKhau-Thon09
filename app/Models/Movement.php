@@ -6,7 +6,7 @@ use App\Core\BaseModel;
 
 final class Movement extends BaseModel
 {
-    public function page(array $filters = []): array
+    public function paginate(array $filters = []): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         $where = ['m.status <> "DELETED"'];
@@ -14,7 +14,15 @@ final class Movement extends BaseModel
         if (!empty($filters['type'])) { $where[] = 'm.type = :type'; $params['type'] = $filters['type']; }
         if (!empty($filters['dateFrom'])) { $where[] = 'm.effective_date >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'm.effective_date <= :date_to'; $params['date_to'] = $filters['dateTo']; }
-        if (!empty($filters['search'])) { $where[] = '(c.full_name LIKE :q OR c.identity_number LIKE :q OR h.household_code LIKE :q OR m.reason LIKE :q OR m.document_number LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
+        if (!empty($filters['search'])) {
+            $q = '%' . $filters['search'] . '%';
+            $where[] = '(c.full_name LIKE :q_name OR c.identity_number LIKE :q_identity OR h.household_code LIKE :q_household OR m.reason LIKE :q_reason OR m.document_number LIKE :q_document)';
+            $params['q_name'] = $q;
+            $params['q_identity'] = $q;
+            $params['q_household'] = $q;
+            $params['q_reason'] = $q;
+            $params['q_document'] = $q;
+        }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere", $params)['total'];
         $items = $this->fetchAll("SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere ORDER BY m.effective_date DESC, m.id DESC LIMIT $pageSize OFFSET $offset", $params);
