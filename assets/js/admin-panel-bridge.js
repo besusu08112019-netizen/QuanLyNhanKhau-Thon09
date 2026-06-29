@@ -197,6 +197,7 @@
   function setupReportCategoryFilter() {
     const form = document.querySelector('#reportForm');
     if (!form) return;
+    if (form.querySelector('.report-filter-grid')) return;
     if (!form.querySelector('[name="householdType"]')) {
       const viewButtonCol = form.querySelector('button[type="submit"]')?.closest('[class*="col-"]');
       const html = `<div class="col-md-2"><label class="form-label">Diện hộ</label><select name="householdType" class="form-select">${householdCategories.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></div>`;
