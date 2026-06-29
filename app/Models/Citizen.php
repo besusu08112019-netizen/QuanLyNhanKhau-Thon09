@@ -135,8 +135,11 @@ final class Citizen extends BaseModel
                 $where[] = 'c.' . $mapped . ' = 1';
             } else {
                 $q = '%' . $filters['search'] . '%';
-                $where[] = '(c.citizen_code LIKE :q_code OR c.full_name LIKE :q_name OR c.identity_number LIKE :q_identity)';
+                $searchColumns = ['c.citizen_code LIKE :q_code', 'c.full_name LIKE :q_name', 'c.identity_number LIKE :q_identity'];
                 $params['q_code'] = $q; $params['q_name'] = $q; $params['q_identity'] = $q;
+                if ($this->columnExists('citizens', 'personal_id')) { $searchColumns[] = 'c.personal_id LIKE :q_personal_id'; $params['q_personal_id'] = $q; }
+                if ($this->columnExists('citizens', 'national_id')) { $searchColumns[] = 'c.national_id LIKE :q_national_id'; $params['q_national_id'] = $q; }
+                $where[] = '(' . implode(' OR ', $searchColumns) . ')';
             }
         }
         return ['WHERE ' . implode(' AND ', $where), $params];

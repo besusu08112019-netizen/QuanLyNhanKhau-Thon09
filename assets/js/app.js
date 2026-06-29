@@ -37,6 +37,7 @@ function init() {
   App.modals.detail = new bootstrap.Modal($('#detailModal'));
   fillDictionaries();
   bindEvents();
+  initNotificationPopover();
   initLoginExperience();
   App.token ? showApp() : showLogin();
 }
@@ -58,8 +59,6 @@ function bindEvents() {
   $('#householdSearch').addEventListener('input', debounce(() => { App.households.search = $('#householdSearch').value.trim(); App.households.page = 1; loadHouseholds(); }, 350));
   const personSearchInput = $('#personSearch');
   if (personSearchInput) personSearchInput.addEventListener('input', debounce(() => { App.persons.search = personSearchInput.value.trim(); App.persons.page = 1; loadPersons(); }, 350));
-  const personHouseholdFilter = $('#personHouseholdFilter');
-  if (personHouseholdFilter) personHouseholdFilter.addEventListener('input', debounce(() => { App.persons.householdId = personHouseholdFilter.value.trim(); App.persons.page = 1; loadPersons(); }, 350));
   $('#householdPageSize').addEventListener('change', () => { App.households.pageSize = Number($('#householdPageSize').value); App.households.page = 1; loadHouseholds(); });
   const householdCategoryFilter = $('#householdCategoryFilter');
   if (householdCategoryFilter) householdCategoryFilter.addEventListener('change', () => { App.households.category = householdCategoryFilter.value; App.households.household_type = householdCategoryFilter.value; App.households.page = 1; loadHouseholds(); });
@@ -71,7 +70,7 @@ function bindEvents() {
   if (personPageSize) personPageSize.addEventListener('change', () => { App.persons.pageSize = Number(personPageSize.value); App.persons.page = 1; loadPersons(); });
   $('#householdCheckAll').addEventListener('change', e => $$('.household-check').forEach(c => c.checked = e.target.checked));
   const personCheckAll = $('#personCheckAll');
-  if (personCheckAll) personCheckAll.addEventListener('change', e => $('.person-check').forEach(c => c.checked = e.target.checked));
+  if (personCheckAll) personCheckAll.addEventListener('change', e => $$('.person-check').forEach(c => c.checked = e.target.checked));
   $('#householdBulkDeleteBtn').addEventListener('click', bulkDeleteHouseholds);
   const personBulkDeleteBtn = $('#personBulkDeleteBtn');
   if (personBulkDeleteBtn) personBulkDeleteBtn.addEventListener('click', bulkDeletePersons);
@@ -132,10 +131,13 @@ function normalizeAppHeader(screen) {
 }
 
 function switchScreen(screen) {
+  const requestedScreen = screen;
+  const screenAliases = { export: 'exportExcel' };
+  screen = screenAliases[screen] || screen;
   if (!document.querySelector('#' + screen + 'Screen')) screen = 'dashboard';
   App.screen = screen;
   localStorage.setItem('thon09_screen', screen);
-  $$('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen));
+  $('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen || btn.dataset.screen === requestedScreen));
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
   normalizeAppHeader(screen);
@@ -353,7 +355,7 @@ async function loadPersons() {
     if (searchText) {
       const extra = householdText ? { householdId: householdText } : {};
       const allItems = await fetchAllPaged('/api/persons', extra);
-      const filtered = allItems.filter(row => [row.full_name, row.citizen_code, row.identity_number, row.phone, row.household_code, row.current_address, row.household_address]
+      const filtered = allItems.filter(row => [row.full_name, row.citizen_code, row.identity_number, row.personal_id, row.national_id, row.phone, row.household_code, row.current_address, row.household_address]
         .some(value => normalizeSearchText(value).includes(searchText)));
       total = filtered.length;
       const startIndex = (App.persons.page - 1) * App.persons.pageSize;
@@ -614,6 +616,25 @@ function showToast(message, type = 'success') {
   el.addEventListener('hidden.bs.toast', () => el.remove());
 }
 
+
+
+function initNotificationPopover() {
+  const button = $('#notificationBtn');
+  if (!button || button.dataset.bound === '1') return;
+  button.dataset.bound = '1';
+  const panel = document.createElement('div');
+  panel.id = 'notificationPanel';
+  panel.className = 'notification-popover d-none';
+  panel.innerHTML = '<div class="notification-popover-head"><strong>Thông báo</strong><span>Gần đây</span></div><div class="notification-popover-empty">Chưa có thông báo mới.</div>';
+  button.insertAdjacentElement('afterend', panel);
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    panel.classList.toggle('d-none');
+  });
+  document.addEventListener('click', event => {
+    if (!panel.contains(event.target) && !button.contains(event.target)) panel.classList.add('d-none');
+  });
+}
 
 function initLoginExperience() {
   const loginView = $('#loginView');
