@@ -13,13 +13,15 @@ final class HouseholdController extends BaseController
     public function index(): void
     {
         $this->requirePermission('household', 'read');
+        $category = trim((string) $this->query('household_type', $this->query('householdType', $this->query('category', ''))));
+        if ($category === '') $category = trim((string) $this->query('category', ''));
         $this->ok($this->households->paginate([
             'page' => $this->query('page', 1),
             'pageSize' => $this->query('pageSize', 20),
             'search' => $this->query('search', $this->query('q', '')),
             'status' => $this->query('status', ''),
-            'household_type' => $this->query('household_type', $this->query('householdType', '')),
-            'category' => $this->query('category', ''),
+            'household_type' => $category,
+            'category' => $category,
         ]));
     }
     public function show(string $id): void { $this->requirePermission('household', 'read'); $row = $this->households->find((int) $id); $row ? $this->ok($row) : $this->fail('Không tìm thấy hộ dân', 404); }
