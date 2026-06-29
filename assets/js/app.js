@@ -46,7 +46,12 @@ function bindEvents() {
   $('#loginForm').addEventListener('submit', login);
   $('#logoutBtn').addEventListener('click', logout);
   $('#sidebarToggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
-  $$('.sidebar .nav-link').forEach(btn => btn.addEventListener('click', () => switchScreen(btn.dataset.screen)));
+  document.addEventListener('click', event => {
+    const navButton = event.target.closest('.sidebar .nav-link[data-screen]');
+    if (!navButton) return;
+    event.preventDefault();
+    switchScreen(navButton.dataset.screen);
+  });
   const dashboardFilters = $('#dashboardFilters');
   if (dashboardFilters) dashboardFilters.addEventListener('submit', event => { event.preventDefault(); loadDashboard(); refreshLoginConfig(); });
   const dashboardResetBtn = $('#dashboardResetBtn');
