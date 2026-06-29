@@ -49,6 +49,20 @@ final class PersonController extends BaseController
             'presenceStatus' => $this->query('presenceStatus', ''),
             'residencyStatus' => $this->query('residencyStatus', ''),
             'householdId' => $this->query('householdId', $this->query('householdCode', '')),
+            'gender' => $this->query('gender', ''),
+            'ageFrom' => $this->query('ageFrom', ''),
+            'ageTo' => $this->query('ageTo', ''),
+            'ethnicity' => $this->query('ethnicity', ''),
+            'religion' => $this->query('religion', ''),
+            'occupation' => $this->query('occupation', ''),
+            'party_member' => $this->query('party_member', $this->query('partyMember', '')),
+            'youth_union_member' => $this->query('youth_union_member', $this->query('youthUnionMember', '')),
+            'meritorious_person' => $this->query('meritorious_person', $this->query('meritoriousPerson', '')),
+            'disabled_person' => $this->query('disabled_person', $this->query('disabledPerson', '')),
+            'employed' => $this->query('employed', ''),
+            'unemployed' => $this->query('unemployed', ''),
+            'out_province_labor' => $this->query('out_province_labor', $this->query('outProvinceLabor', '')),
+            'foreign_labor' => $this->query('foreign_labor', $this->query('foreignLabor', '')),
         ];
     }
 }
