@@ -98,7 +98,7 @@
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/import.js?v=20260629-two-import-buttons-1"></script>
-  <script src="assets/js/admin-panel.js?v=20260629-login-landing-1"></script>
+  <script src="assets/js/admin-panel.js?v=20260629-background-upload-fix-1"></script>
   <script src="assets/js/admin-panel-bridge.js?v=20260629-appearance-config-1"></script>
   <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
