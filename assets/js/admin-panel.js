@@ -37,6 +37,16 @@
     renderRoleAwareMenu();
   });
 
+  function cleanDuplicateHeaders(screen) {
+    const label = titles[screen || App.screen || 'dashboard'] || 'Dashboard';
+    const title = document.querySelector('#screenTitle');
+    const breadcrumb = document.querySelector('#breadcrumbTrail');
+    if (title) title.textContent = label;
+    if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + label;
+    document.querySelectorAll('.topbar-title-block small:not(#breadcrumbTrail), .topbar-title-block .text-muted:not(#breadcrumbTrail), .topbar > div:first-of-type small:not(#breadcrumbTrail), .topbar > div:first-of-type .text-muted:not(#breadcrumbTrail)').forEach(el => el.remove());
+    document.querySelectorAll('.dashboard-hero-row, .module-page-head > div, .person-page-head > div, .report-page-head, .screen > .admin-heading > div').forEach(el => el.remove());
+  }
+
   function enhanceShell() {
     const nav = document.querySelector('.sidebar .nav');
     if (nav && !nav.dataset.adminPanel) {
@@ -44,6 +54,7 @@
       nav.innerHTML = menu.map(([screen, icon, label]) => `<button class="nav-link" data-screen="${screen}"><i class="fa-solid ${icon}"></i><span>${label}</span></button>`).join('');
     }
     const topbar = document.querySelector('.topbar');
+    cleanDuplicateHeaders(App.screen);
     if (topbar && !document.querySelector('#breadcrumbTrail')) {
       topbar.querySelector('div:nth-of-type(1)')?.insertAdjacentHTML('beforeend', '<nav id="breadcrumbTrail" class="breadcrumb-trail">Trang chủ / Dashboard</nav>');
       topbar.querySelector('.ms-auto')?.insertAdjacentHTML('beforebegin', '<button id="themeToggle" class="btn btn-outline-secondary btn-sm ms-auto" type="button"><i class="fa-solid fa-circle-half-stroke"></i></button>');
@@ -94,8 +105,7 @@
 
   function openScreen(screen) {
     switchScreen(screen);
-    document.querySelector('#screenTitle').textContent = titles[screen] || 'Quản trị';
-    document.querySelector('#breadcrumbTrail').textContent = `Trang chủ / ${titles[screen] || 'Quản trị'}`;
+    cleanDuplicateHeaders(screen);
     if (screen === 'temporaryResidence') loadPresenceList('TEMPORARY', '#temporaryResidenceRows');
     if (screen === 'temporaryAbsence') loadPresenceList('AWAY', '#temporaryAbsenceRows');
     if (screen === 'movements') loadMovements();
