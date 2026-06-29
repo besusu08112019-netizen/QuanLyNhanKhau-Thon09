@@ -114,12 +114,10 @@ final class SettingController extends BaseController
         if (!extension_loaded('gd')) $this->fail('Máy chủ chưa bật GD Library để xử lý logo');
         [$width, $height] = getimagesize($source) ?: [0, 0];
         if ($width < 1 || $height < 1) $this->fail('File ảnh logo không hợp lệ');
-        $image = match ($extension) {
-            'png' => imagecreatefrompng($source),
-            'jpg' => imagecreatefromjpeg($source),
-            'webp' => function_exists('imagecreatefromwebp') ? imagecreatefromwebp($source) : false,
-            default => false,
-        };
+        $image = false;
+        if ($extension === 'png') $image = imagecreatefrompng($source);
+        elseif ($extension === 'jpg') $image = imagecreatefromjpeg($source);
+        elseif ($extension === 'webp' && function_exists('imagecreatefromwebp')) $image = imagecreatefromwebp($source);
         if (!$image) $this->fail('Không xử lý được định dạng logo này');
 
         $size = 256;
@@ -143,7 +141,7 @@ final class SettingController extends BaseController
     private function svgContainsUnsafeContent(string $path): bool
     {
         $content = strtolower((string) file_get_contents($path));
-        return str_contains($content, '<script') || str_contains($content, 'javascript:') || preg_match('/\son[a-z]+\s*=/', $content) === 1;
+        return strpos($content, '<script') !== false || strpos($content, 'javascript:') !== false || preg_match('/\son[a-z]+\s*=/', $content) === 1;
     }
 
     private function versionedUrl(string $relative): string
