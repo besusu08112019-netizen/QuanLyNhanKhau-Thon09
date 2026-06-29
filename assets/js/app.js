@@ -120,6 +120,7 @@ async function loadDashboard() {
       });
     }
     const data = await api('/api/dashboard/summary' + (params.toString() ? '?' + params.toString() : ''));
+    App.dashboardSummary = data;
     const metrics = data?.metrics || {};
     const charts = data?.charts || {};
     const householdData = await api('/api/households?pageSize=1000').catch(() => ({ items: [] }));
@@ -476,7 +477,7 @@ async function hydrateLoginIntro() {
   if (!App.token) return;
   try {
     const [summary, settings] = await Promise.all([
-      loginFetchJson('/api/dashboard/summary').catch(() => null),
+      Promise.resolve(App.dashboardSummary || null).then(cached => cached || loginFetchJson('/api/dashboard/summary')).catch(() => null),
       loginFetchJson('/api/settings').catch(() => null)
     ]);
     if (summary?.metrics) updateLoginStats(summary.metrics, summary.charts || {});
