@@ -41,6 +41,20 @@ abstract class BaseModel
         return (int) $this->db->lastInsertId();
     }
 
+    protected function columnExists(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $cache)) return $cache[$key];
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column', ['table' => $table, 'column' => $column]);
+        return $cache[$key] = ((int) ($row['total'] ?? 0) > 0);
+    }
+
+    protected function existingColumns(string $table, array $columns): array
+    {
+        return array_values(array_filter($columns, fn($column) => $this->columnExists($table, $column)));
+    }
+
     protected function page(int $page, int $pageSize): array
     {
         $page = max($page, 1);
