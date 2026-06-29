@@ -6,30 +6,29 @@ use App\Core\BaseModel;
 
 final class Household extends BaseModel
 {
+    public const CATEGORY_OPTIONS = [
+        'poor' => 'Hộ nghèo',
+        'near_poor' => 'Hộ cận nghèo',
+        'escaped_poverty' => 'Hộ mới thoát nghèo',
+        'policy' => 'Hộ chính sách',
+        'meritorious' => 'Hộ có công',
+        'normal' => 'Hộ bình thường',
+        'other' => 'Khác',
+    ];
+
     public function paginate(array $filters): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
-        $where = ['h.status <> "DELETED"'];
-        $params = [];
-        if (!empty($filters['status'])) { $where[] = 'h.status = :status'; $params['status'] = $filters['status']; }
-        if (!empty($filters['search'])) {
-            $q = '%' . $filters['search'] . '%';
-            $where[] = '(h.household_code LIKE :q_code OR h.head_citizen_name LIKE :q_head OR h.address LIKE :q_address OR h.phone LIKE :q_phone OR h.area_code LIKE :q_area)';
-            $params['q_code'] = $q;
-            $params['q_head'] = $q;
-            $params['q_address'] = $q;
-            $params['q_phone'] = $q;
-            $params['q_area'] = $q;
-        }
-        $sqlWhere = 'WHERE ' . implode(' AND ', $where);
+        [$sqlWhere, $params] = $this->where($filters);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM households h $sqlWhere", $params)['total'];
         $items = $this->fetchAll("SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere ORDER BY h.household_code LIMIT $pageSize OFFSET $offset", $params);
-        return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return ['items' => array_map(fn($row) => $this->withCategory($row), $items), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
 
     public function find(int $id): ?array
     {
-        return $this->fetchOne('SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id WHERE h.id = :id AND h.status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id WHERE h.id = :id AND h.status <> "DELETED"', ['id' => $id]);
+        return $row ? $this->withCategory($row) : null;
     }
 
     public function findByCode(string $code): ?array { return $this->fetchOne('SELECT * FROM households WHERE household_code = :code AND status <> "DELETED"', ['code' => strtoupper(trim($code))]); }
@@ -58,26 +57,114 @@ final class Household extends BaseModel
         $this->execute('UPDATE households SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
     }
 
+    private function where(array $filters): array
+    {
+        $where = ['h.status <> "DELETED"'];
+        $params = [];
+        if (!empty($filters['status'])) { $where[] = 'h.status = :status'; $params['status'] = $filters['status']; }
+
+        $category = $this->categoryKey($filters['household_type'] ?? $filters['category'] ?? $filters['householdType'] ?? '');
+        if ($category) $this->addCategoryWhere($where, $params, $category);
+
+        if (!empty($filters['search'])) {
+            $qRaw = trim((string) $filters['search']);
+            $q = '%' . $qRaw . '%';
+            $categorySearch = $this->categoryKey($qRaw);
+            $searchParts = ['h.household_code LIKE :q_code', 'h.head_citizen_name LIKE :q_head', 'h.address LIKE :q_address', 'h.phone LIKE :q_phone', 'h.area_code LIKE :q_area', 'h.note LIKE :q_note'];
+            $params['q_code'] = $q;
+            $params['q_head'] = $q;
+            $params['q_address'] = $q;
+            $params['q_phone'] = $q;
+            $params['q_area'] = $q;
+            $params['q_note'] = $q;
+            if ($categorySearch) {
+                $categoryParts = [];
+                $this->addCategoryWhere($categoryParts, $params, $categorySearch, 'search_category');
+                if ($categoryParts) $searchParts[] = '(' . implode(' AND ', $categoryParts) . ')';
+            }
+            $where[] = '(' . implode(' OR ', $searchParts) . ')';
+        }
+
+        return ['WHERE ' . implode(' AND ', $where), $params];
+    }
+
+    private function addCategoryWhere(array &$where, array &$params, string $category, string $prefix = 'category'): void
+    {
+        match ($category) {
+            'poor' => $where[] = 'h.poor_household = 1',
+            'near_poor' => $where[] = 'h.near_poor_household = 1',
+            'meritorious' => $where[] = 'h.meritorious_family = 1',
+            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND h.meritorious_family = 0 AND h.disabled_household = 0',
+            'other' => $where[] = 'h.disabled_household = 1',
+            'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category, $prefix),
+            default => null,
+        };
+    }
+
+    private function addTextCategoryWhere(array &$where, array &$params, string $category, string $prefix): void
+    {
+        $label = self::CATEGORY_OPTIONS[$category] ?? $category;
+        $key = $prefix . '_' . preg_replace('/[^a-z_]/', '', $category);
+        $where[] = '(h.note LIKE :' . $key . '_label OR h.note LIKE :' . $key . '_key)';
+        $params[$key . '_label'] = '%' . $label . '%';
+        $params[$key . '_key'] = '%' . str_replace('_', ' ', $category) . '%';
+    }
+
     private function params(array $data, int $userId): array
     {
         $code = strtoupper(trim((string) ($data['householdCode'] ?? $data['household_code'] ?? '')));
         $address = trim((string) ($data['address'] ?? ''));
         if ($code === '') throw new \RuntimeException('Mã hộ là bắt buộc');
         if ($address === '') throw new \RuntimeException('Địa chỉ là bắt buộc');
+        $category = $this->categoryKey($data['householdType'] ?? $data['household_type'] ?? $data['category'] ?? '');
         return [
             'code' => $code,
             'head' => trim((string) ($data['headCitizenName'] ?? $data['head_citizen_name'] ?? '')) ?: null,
             'address' => $address,
             'phone' => trim((string) ($data['phone'] ?? '')) ?: null,
             'area' => trim((string) ($data['areaCode'] ?? $data['area_code'] ?? '')) ?: null,
-            'meritorious' => $this->bool($data['meritoriousFamily'] ?? $data['meritorious_family'] ?? 0),
-            'poor' => $this->bool($data['poorHousehold'] ?? $data['poor_household'] ?? 0),
-            'near_poor' => $this->bool($data['nearPoorHousehold'] ?? $data['near_poor_household'] ?? 0),
-            'disabled' => $this->bool($data['disabledHousehold'] ?? $data['disabled_household'] ?? 0),
+            'meritorious' => $category === 'meritorious' ? 1 : $this->bool($data['meritoriousFamily'] ?? $data['meritorious_family'] ?? 0),
+            'poor' => $category === 'poor' ? 1 : $this->bool($data['poorHousehold'] ?? $data['poor_household'] ?? 0),
+            'near_poor' => $category === 'near_poor' ? 1 : $this->bool($data['nearPoorHousehold'] ?? $data['near_poor_household'] ?? 0),
+            'disabled' => $category === 'other' ? 1 : $this->bool($data['disabledHousehold'] ?? $data['disabled_household'] ?? 0),
             'note' => trim((string) ($data['note'] ?? '')) ?: null,
             'status' => $data['status'] ?? 'ACTIVE',
             'user' => $userId,
         ];
+    }
+
+    private function withCategory(array $row): array
+    {
+        $row['household_type'] = $this->categoryLabel($row);
+        $row['household_type_key'] = $this->categoryKey($row['household_type']);
+        return $row;
+    }
+
+    public function categoryLabel(array $row): string
+    {
+        if ((int) ($row['poor_household'] ?? 0) === 1) return self::CATEGORY_OPTIONS['poor'];
+        if ((int) ($row['near_poor_household'] ?? 0) === 1) return self::CATEGORY_OPTIONS['near_poor'];
+        if ((int) ($row['meritorious_family'] ?? 0) === 1) return self::CATEGORY_OPTIONS['meritorious'];
+        if ((int) ($row['disabled_household'] ?? 0) === 1) return self::CATEGORY_OPTIONS['other'];
+        $noteKey = $this->categoryKey((string) ($row['note'] ?? ''));
+        if ($noteKey && isset(self::CATEGORY_OPTIONS[$noteKey])) return self::CATEGORY_OPTIONS[$noteKey];
+        return self::CATEGORY_OPTIONS['normal'];
+    }
+
+    public function categoryKey(mixed $value): string
+    {
+        $text = $this->normalize((string) $value);
+        if ($text === '') return '';
+        return match (true) {
+            str_contains($text, 'can ngheo') || str_contains($text, 'near poor') => 'near_poor',
+            str_contains($text, 'moi thoat ngheo') || str_contains($text, 'thoat ngheo') || str_contains($text, 'escaped poverty') => 'escaped_poverty',
+            str_contains($text, 'chinh sach') || str_contains($text, 'policy') => 'policy',
+            str_contains($text, 'co cong') || str_contains($text, 'gia dinh co cong') || str_contains($text, 'meritorious') => 'meritorious',
+            str_contains($text, 'binh thuong') || str_contains($text, 'normal') || $text === 'khong' => 'normal',
+            str_contains($text, 'khac') || str_contains($text, 'tan tat') || str_contains($text, 'khuyet tat') || str_contains($text, 'other') => 'other',
+            str_contains($text, 'ngheo') || str_contains($text, 'poor') => 'poor',
+            default => '',
+        };
     }
 
     private function ensureUniqueCode(string $code, ?int $ignoreId = null): void
@@ -92,5 +179,13 @@ final class Household extends BaseModel
     {
         $text = mb_strtolower(trim((string) $value));
         return in_array($text, ['1','true','yes','co','có','x'], true) ? 1 : 0;
+    }
+
+    private function normalize(string $value): string
+    {
+        $value = mb_strtolower(trim($value));
+        $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        if ($converted !== false) $value = $converted;
+        return trim(preg_replace('/[^a-z0-9]+/', ' ', $value));
     }
 }
