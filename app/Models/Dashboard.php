@@ -56,7 +56,7 @@ final class Dashboard extends BaseModel
             'meritorious_households' => (int) ($households['meritorious_households'] ?? 0),
             'normal_households' => (int) ($households['normal_households'] ?? 0),
         ];
-        foreach (['party_member','youth_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
+        foreach (['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
             $metrics[$key . '_count'] = (int) ($citizens[$key] ?? 0);
             $metrics[$key . '_percent'] = round($metrics[$key . '_count'] * 100 / $totalCitizens, 2);
         }
@@ -166,11 +166,16 @@ final class Dashboard extends BaseModel
         if ($filters['dateTo']) { $where[] = 'DATE(h.created_at) <= :household_date_to'; $params['household_date_to'] = $filters['dateTo']; }
         $category = $this->categoryKey($filters['householdType']);
         if ($category) $this->addCategoryWhere($where, $params, $category);
+        foreach (['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $column) {
+            $value = $rawFilters[$column] ?? $rawFilters[$this->camel($column)] ?? null;
+            if ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $value; }
+        }
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
     private function citizenWhere(array $filters): array
     {
+        $rawFilters = $filters;
         $filters = $this->normalizeFilters($filters);
         $where = ['c.status <> "DELETED"', 'h.status <> "DELETED"'];
         $params = [];
@@ -228,6 +233,8 @@ final class Dashboard extends BaseModel
         if ($converted !== false) $value = $converted;
         return trim(preg_replace('/[^a-z0-9]+/', ' ', $value));
     }
+    private function camel(string $column): string { return preg_replace_callback('/_([a-z])/', fn($m) => strtoupper($m[1]), $column); }
+
     private function flagSelects(string $alias): string
     {
         $columns = ['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'];
