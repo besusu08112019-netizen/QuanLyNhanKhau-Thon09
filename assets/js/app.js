@@ -127,8 +127,8 @@ function normalizeAppHeader(screen) {
   const breadcrumb = $('#breadcrumbTrail');
   if (title) title.textContent = label;
   if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + label;
-  $('.topbar-title-block small:not(#breadcrumbTrail), .topbar-title-block .text-muted:not(#breadcrumbTrail), .topbar > div:first-of-type small:not(#breadcrumbTrail), .topbar > div:first-of-type .text-muted:not(#breadcrumbTrail)').forEach(el => el.remove());
-  $('.dashboard-hero-row, .module-page-head > div, .person-page-head > div, .report-page-head, .screen > .admin-heading > div').forEach(el => el.remove());
+  $$('.topbar-title-block small:not(#breadcrumbTrail), .topbar-title-block .text-muted:not(#breadcrumbTrail), .topbar > div:first-of-type small:not(#breadcrumbTrail), .topbar > div:first-of-type .text-muted:not(#breadcrumbTrail)').forEach(el => el.remove());
+  $$('.dashboard-hero-row, .module-page-head > div, .person-page-head > div, .report-page-head, .screen > .admin-heading > div').forEach(el => el.remove());
 }
 
 function switchScreen(screen) {
