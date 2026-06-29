@@ -12,12 +12,28 @@ final class Citizen extends BaseModel
         $where = ['c.status <> "DELETED"']; $params = [];
         if (!empty($filters['status'])) { $where[] = 'c.life_status = :life_status'; $params['life_status'] = $filters['status']; }
         if (!empty($filters['presenceStatus'])) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
+        if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
         if (!empty($filters['householdId'])) { $where[] = '(h.household_code = :household OR c.household_id = :household_id)'; $params['household'] = $filters['householdId']; $params['household_id'] = (int) $filters['householdId']; }
-        if (!empty($filters['search'])) { $where[] = '(c.citizen_code LIKE :q OR c.full_name LIKE :q OR c.identity_number LIKE :q OR c.phone LIKE :q OR h.household_code LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
+        if (!empty($filters['search'])) {
+            $q = '%' . $filters['search'] . '%';
+            $where[] = '(c.citizen_code LIKE :q_code OR c.full_name LIKE :q_name OR c.identity_number LIKE :q_identity OR c.phone LIKE :q_phone OR h.household_code LIKE :q_household)';
+            $params['q_code'] = $q;
+            $params['q_name'] = $q;
+            $params['q_identity'] = $q;
+            $params['q_phone'] = $q;
+            $params['q_household'] = $q;
+        }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere", $params)['total'];
         $items = $this->fetchAll("SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name LIMIT $pageSize OFFSET $offset", $params);
         return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+    }
+
+    public function findByIdentity(string $identity): ?array
+    {
+        $identity = trim($identity);
+        if ($identity === '') return null;
+        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.identity_number=:identity AND c.status <> "DELETED"', ['identity' => $identity]);
     }
 
     public function find(int $id): ?array
