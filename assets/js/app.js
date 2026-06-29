@@ -46,15 +46,18 @@ function bindEvents() {
   $('#logoutBtn').addEventListener('click', logout);
   $('#sidebarToggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
   $$('.sidebar .nav-link').forEach(btn => btn.addEventListener('click', () => switchScreen(btn.dataset.screen)));
-  $('#dashboardFilters').addEventListener('submit', event => { event.preventDefault(); loadDashboard(); refreshLoginConfig(); });
-  $('#dashboardResetBtn').addEventListener('click', () => { $('#dashboardFilters').reset(); loadDashboard(); refreshLoginConfig(); });
+  const dashboardFilters = $('#dashboardFilters');
+  if (dashboardFilters) dashboardFilters.addEventListener('submit', event => { event.preventDefault(); loadDashboard(); refreshLoginConfig(); });
+  const dashboardResetBtn = $('#dashboardResetBtn');
+  if (dashboardResetBtn) dashboardResetBtn.addEventListener('click', () => { if (dashboardFilters) dashboardFilters.reset(); loadDashboard(); refreshLoginConfig(); });
   $('#householdAddBtn').addEventListener('click', () => openHouseholdForm());
   $('#personAddBtn').addEventListener('click', () => openPersonForm());
   $('#householdForm').addEventListener('submit', saveHousehold);
   $('#personForm').addEventListener('submit', savePerson);
   $('#householdSearch').addEventListener('input', debounce(() => { App.households.search = $('#householdSearch').value.trim(); App.households.page = 1; loadHouseholds(); }, 350));
   $('#personSearch').addEventListener('input', debounce(() => { App.persons.search = $('#personSearch').value.trim(); App.persons.page = 1; loadPersons(); }, 350));
-  $('#personHouseholdFilter').addEventListener('input', debounce(() => { App.persons.householdId = $('#personHouseholdFilter').value.trim(); App.persons.page = 1; loadPersons(); }, 350));
+  const personHouseholdFilter = $('#personHouseholdFilter');
+  if (personHouseholdFilter) personHouseholdFilter.addEventListener('input', debounce(() => { App.persons.householdId = personHouseholdFilter.value.trim(); App.persons.page = 1; loadPersons(); }, 350));
   $('#householdPageSize').addEventListener('change', () => { App.households.pageSize = Number($('#householdPageSize').value); App.households.page = 1; loadHouseholds(); });
   $('#personPageSize').addEventListener('change', () => { App.persons.pageSize = Number($('#personPageSize').value); App.persons.page = 1; loadPersons(); });
   $('#householdCheckAll').addEventListener('change', e => $$('.household-check').forEach(c => c.checked = e.target.checked));
@@ -122,38 +125,164 @@ function switchScreen(screen) {
 
 async function loadDashboard() {
   try {
-    const form = $('#dashboardFilters');
-    const params = new URLSearchParams();
-    if (form) {
-      new FormData(form).forEach((value, key) => {
-        if (String(value || '').trim() !== '') params.set(key, value);
-      });
-    }
-    const data = await api('/api/dashboard/summary' + (params.toString() ? '?' + params.toString() : ''));
+    const data = await api('/api/dashboard/summary');
     App.dashboardSummary = data;
     const metrics = data?.metrics || {};
     const charts = data?.charts || {};
-    const householdData = await api('/api/households?pageSize=1000').catch(() => ({ items: [] }));
-    const personData = await api('/api/persons?pageSize=1000').catch(() => ({ items: [] }));
-    const dashboardHouseholds = householdData?.items || [];
-    const dashboardPersons = personData?.items || [];
-    const dashboardAgeGroups = buildAgeGroups(dashboardPersons);
-    const meritoriousHouseholds = metrics.meritorious_households ?? metrics.meritorious_family_count ?? metrics.meritorious_families ?? dashboardHouseholds.filter(row => Number(row.meritorious_family || row.meritoriousFamily || 0) > 0).length;
-    const dashboardMetrics = { ...metrics, under_six_count: metrics.children_count };
-    const cards = DASHBOARD_STAT_CONFIG.map(item => [item.dashboardLabel || item.label, dashboardMetrics[item.key], item.dashboardIcon || item.icon]).concat([
-      ['Gia đình có công', meritoriousHouseholds, 'fa-medal'],
-      ['Độ tuổi lao động', metrics.working_age_count, 'fa-briefcase'],
-      ['Hộ nghèo', metrics.poor_households, 'fa-hand-holding-heart'],
-      ['Hộ cận nghèo', metrics.near_poor_households, 'fa-scale-balanced']
-    ]);
-    $('#dashboardCards').innerHTML = cards.map(([label, value, icon]) => '<div class="col-sm-6 col-xl-3"><div class="metric-card admin-metric"><i class="fa-solid ' + icon + '"></i><div><div class="metric-label">' + escapeHtml(label) + '</div><div class="metric-value">' + number(value) + '</div></div></div></div>').join('');
-    renderChart('#genderChart', charts.population || []);
-    renderChart('#ageChart', dashboardAgeGroups || charts.ages || []);
-    renderChart('#householdChart', charts.households || []);
-    renderChart('#residencyChart', charts.residency || []);
+    renderDashboardKpis(metrics);
+    renderAgeStructureChart(charts.ages || []);
+    renderMonthlyChangeChart(charts.monthlyChanges || [], metrics.total_citizens || 0);
+    renderGenderDashboardChart(charts.population || [], metrics);
+    renderPartyDashboardChart(charts.partyMembers || [], metrics);
+    updateDashboardGeneratedAt(data.generatedAt);
   } catch (error) {
     if (!String(error.message || '').includes('đăng nhập')) showToast('Không tải được tổng quan: ' + error.message, 'danger');
   }
+}
+
+function updateDashboardGeneratedAt(value) {
+  const el = $('#dashboardGeneratedAt');
+  if (!el) return;
+  const date = value ? new Date(value) : new Date();
+  el.textContent = 'Cập nhật lúc ' + new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+}
+
+function renderDashboardKpis(metrics) {
+  const host = $('#dashboardKpis');
+  if (!host) return;
+  const cards = [
+    { key: 'total_households', label: 'Tổng số hộ', unit: 'hộ', icon: 'fa-house-chimney', tone: 'green' },
+    { key: 'total_citizens', label: 'Tổng số nhân khẩu', unit: 'người', icon: 'fa-users', tone: 'blue' },
+    { key: 'party_member_count', label: 'Đảng viên', unit: 'người', icon: 'fa-star', tone: 'orange' },
+    { key: 'male_count', label: 'Nam', unit: 'người', icon: 'fa-person', tone: 'cyan' },
+    { key: 'female_count', label: 'Nữ', unit: 'người', icon: 'fa-person-dress', tone: 'pink' },
+    { key: 'away_count', label: 'Tạm vắng', unit: 'người', icon: 'fa-person-walking-arrow-right', tone: 'purple' }
+  ];
+  host.innerHTML = cards.map(card => {
+    const value = Number(metrics[card.key] || 0);
+    return '<article class="dashboard-kpi dashboard-tone-' + card.tone + '">'
+      + '<div class="dashboard-kpi-head"><span class="dashboard-kpi-icon"><i class="fa-solid ' + card.icon + '"></i></span><span class="dashboard-kpi-label">' + escapeHtml(card.label) + '</span></div>'
+      + '<div class="dashboard-kpi-value"><strong>' + number(value) + '</strong><span>' + escapeHtml(card.unit) + '</span></div>'
+      + '</article>';
+  }).join('');
+}
+
+function normalizeChartItems(items) {
+  return (items || []).map(item => ({ label: item.label || 'Khác', value: Number(item.value || 0) })).filter(item => item.value >= 0);
+}
+
+function totalChartValue(items) {
+  return normalizeChartItems(items).reduce((sum, item) => sum + item.value, 0);
+}
+
+function percent(value, total) {
+  if (!total) return 0;
+  return Math.round((Number(value || 0) * 1000 / total)) / 10;
+}
+
+function formatPercent(value) {
+  return String(value).replace('.', ',') + '%';
+}
+
+function chartEmpty(message = 'Chưa có dữ liệu') {
+  return '<div class="dashboard-empty-chart">' + escapeHtml(message) + '</div>';
+}
+
+function renderAgeStructureChart(items) {
+  const host = $('#ageStructureChart');
+  if (!host) return;
+  const preferred = ['0-5 tuổi','6-14 tuổi','15-17 tuổi','18-59 tuổi','Trên 60 tuổi'];
+  const map = new Map(normalizeChartItems(items).map(item => [item.label, item.value]));
+  const normalized = preferred.map(label => ({ label, value: Number(map.get(label) || 0) }));
+  const total = normalized.reduce((sum, item) => sum + item.value, 0);
+  if (!total) { host.innerHTML = chartEmpty(); return; }
+  host.innerHTML = '<div class="dashboard-age-layout">'
+    + renderDonut(normalized, total, { centerLabel: 'Tổng số', centerValue: number(total), centerUnit: 'người', className: 'dashboard-age-donut' })
+    + '<div class="dashboard-legend">' + normalized.map((item, index) => renderLegendRow(item, total, index)).join('') + '</div>'
+    + '</div>';
+}
+
+function renderMonthlyChangeChart(items, fallbackTotal) {
+  const host = $('#populationMovementChart');
+  if (!host) return;
+  const source = normalizeChartItems(items).slice(-6);
+  const rows = source.length ? source : [{ label: 'Hiện tại', value: Number(fallbackTotal || 0) }];
+  const values = rows.map(item => Number(item.value || 0));
+  if (!values.some(Boolean)) { host.innerHTML = chartEmpty(); return; }
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(1, max - min);
+  const width = 680;
+  const height = 250;
+  const points = values.map((value, index) => {
+    const x = rows.length === 1 ? width / 2 : 32 + index * ((width - 64) / (rows.length - 1));
+    const y = 42 + (max - value) * 150 / range;
+    return { x, y, value };
+  });
+  const line = points.map(point => point.x + ',' + point.y).join(' ');
+  const area = 'M' + points.map(point => point.x + ' ' + point.y).join(' L') + ' L' + points[points.length - 1].x + ' ' + height + ' L' + points[0].x + ' ' + height + ' Z';
+  host.innerHTML = '<div class="dashboard-line-chart">'
+    + '<svg viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">'
+    + '<defs><linearGradient id="dashboardArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#16834c" stop-opacity=".24"/><stop offset="1" stop-color="#16834c" stop-opacity=".02"/></linearGradient></defs>'
+    + '<path d="' + area + '" fill="url(#dashboardArea)"></path>'
+    + '<polyline points="' + line + '" fill="none" stroke="#16834c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline>'
+    + points.map(point => '<circle cx="' + point.x + '" cy="' + point.y + '" r="6" fill="#16834c"></circle><text x="' + (point.x - 20) + '" y="' + (point.y - 14) + '" fill="#0b6b3a" font-size="13" font-weight="700">' + number(point.value) + '</text>').join('')
+    + '</svg><div class="dashboard-line-months">' + rows.map(item => '<span>' + escapeHtml(formatMonthLabel(item.label)) + '</span>').join('') + '</div></div>';
+}
+
+function formatMonthLabel(label) {
+  const text = String(label || '');
+  const match = text.match(/^(\d{4})-(\d{2})$/);
+  return match ? match[2] + '/' + match[1] : text;
+}
+
+function renderGenderDashboardChart(items, metrics) {
+  const host = $('#genderStructureChart');
+  if (!host) return;
+  let normalized = normalizeChartItems(items);
+  if (!normalized.length) normalized = [{ label: 'Nam', value: Number(metrics.male_count || 0) }, { label: 'Nữ', value: Number(metrics.female_count || 0) }];
+  const total = normalized.reduce((sum, item) => sum + item.value, 0);
+  if (!total) { host.innerHTML = chartEmpty(); return; }
+  const male = normalized.find(item => normalizeSearchText(item.label).includes('nam')) || { label: 'Nam', value: Number(metrics.male_count || 0) };
+  const female = normalized.find(item => normalizeSearchText(item.label).includes('nu')) || { label: 'Nữ', value: Number(metrics.female_count || 0) };
+  host.innerHTML = '<div class="dashboard-gender-layout">'
+    + renderSideStat('Nam', male.value, percent(male.value, total), 'blue', 'fa-mars')
+    + renderDonut([male, female], total, { centerLabel: 'Tổng số', centerValue: number(total), centerUnit: 'người', className: 'dashboard-gender-donut' })
+    + renderSideStat('Nữ', female.value, percent(female.value, total), 'pink', 'fa-venus')
+    + '</div>';
+}
+
+function renderPartyDashboardChart(items, metrics) {
+  const host = $('#partyMemberChart');
+  if (!host) return;
+  const total = Number(metrics.total_citizens || 0);
+  const party = Number(metrics.party_member_count || (normalizeChartItems(items)[0]?.value || 0));
+  if (!total) { host.innerHTML = chartEmpty(); return; }
+  const rows = [{ label: 'Đảng viên', value: party }, { label: 'Còn lại', value: Math.max(0, total - party) }];
+  const rate = percent(party, total);
+  host.innerHTML = '<div class="dashboard-party-layout">'
+    + renderDonut(rows, total, { centerLabel: 'Tỷ lệ', centerValue: formatPercent(rate), centerUnit: 'Đảng viên', className: 'dashboard-party-donut' })
+    + '<div class="dashboard-summary-box"><span>Tổng số Đảng viên</span><strong>' + number(party) + ' người</strong><small>Tính trên tổng số ' + number(total) + ' nhân khẩu đang quản lý trong hệ thống.</small></div>'
+    + '</div>';
+}
+
+function renderSideStat(label, value, rate, tone, icon) {
+  return '<div class="dashboard-side-stat dashboard-side-' + tone + '"><span><i class="fa-solid ' + icon + '"></i></span><strong>' + number(value) + '</strong><small>' + escapeHtml(label) + ' - ' + formatPercent(rate) + '</small></div>';
+}
+
+function renderLegendRow(item, total, index) {
+  return '<div class="dashboard-legend-row"><i class="dashboard-dot dashboard-dot-' + (index + 1) + '"></i><span>' + escapeHtml(item.label) + '</span><strong>' + number(item.value) + ' người (' + formatPercent(percent(item.value, total)) + ')</strong></div>';
+}
+
+function renderDonut(items, total, options = {}) {
+  const colors = ['#21a366','#3b82f6','#f59e0b','#a78bfa','#ec4899','#0891b2'];
+  let cursor = 0;
+  const stops = normalizeChartItems(items).map((item, index) => {
+    const start = cursor;
+    cursor += total ? item.value * 100 / total : 0;
+    return colors[index % colors.length] + ' ' + start + '% ' + cursor + '%';
+  }).join(', ');
+  return '<div class="dashboard-donut ' + escapeHtml(options.className || '') + '" style="--donut:' + escapeHtml(stops || '#e5e7eb 0% 100%') + '"><div class="dashboard-donut-center"><span>' + escapeHtml(options.centerLabel || '') + '</span><strong>' + escapeHtml(options.centerValue || '') + '</strong><small>' + escapeHtml(options.centerUnit || '') + '</small></div></div>';
 }
 window.loadDashboard = loadDashboard;
 async function loadHouseholds() {
