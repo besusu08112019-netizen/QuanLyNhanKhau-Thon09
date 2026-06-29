@@ -491,3 +491,24 @@ body { background: var(--surface); font-size: 14px; line-height: 1.55; }
 .module-breadcrumb, .person-breadcrumb, .report-breadcrumb { display: none !important; }
 .module-page-head, .person-page-head, .report-page-head { margin-bottom: 0; }
 @media (max-width: 720px) { .dashboard-status-row, .module-action-row { justify-content: stretch; } .module-action-row > .module-primary-action, .module-action-row > .person-primary-action { width: 100%; justify-content: center; } }
+
+
+/* Header duplicate final cleanup */
+.topbar-title-block > small:not(#breadcrumbTrail),
+.topbar-title-block > .text-muted:not(#breadcrumbTrail),
+.topbar > div:first-of-type > small:not(#breadcrumbTrail),
+.topbar > div:first-of-type > .text-muted:not(#breadcrumbTrail),
+.dashboard-hero-row,
+.module-page-head > div,
+.person-page-head > div,
+.report-page-head,
+.screen > .admin-heading > div {
+  display: none !important;
+}
+.screen > .admin-heading {
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+.topbar-title-block h2 {
+  margin-bottom: 0;
+}
