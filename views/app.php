@@ -6,60 +6,75 @@
   <title>Quản Lý Nhân Khẩu Thôn 09</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260629-login-redesign-2">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260629-login-reference-1">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
 
   <main id="loginView" class="login-view">
-    <section class="login-shell" aria-label="Đăng nhập hệ thống quản lý hành chính Thôn 09">
+    <section class="login-shell login-shell-reference" aria-label="Đăng nhập hệ thống quản lý hành chính Thôn 09">
       <div class="login-column login-column-form">
         <section class="login-panel">
           <div class="login-brand" aria-label="Thôn 09 xã Hồng Phong">
-            <div class="login-logo" aria-hidden="true">09</div>
+            <div class="login-logo login-logo-emblem" aria-hidden="true">
+              <span class="logo-flag"><i class="fa-solid fa-star"></i></span>
+              <span class="logo-landmark"><i class="fa-solid fa-landmark"></i></span>
+              <span class="logo-village"><i class="fa-solid fa-house-chimney"></i></span>
+              <span class="logo-name">Thôn</span>
+              <strong>09</strong>
+              <small>Đoàn kết - Dân chủ - Phát triển</small>
+            </div>
             <div class="login-title-block">
               <p>Hệ thống</p>
               <h1><span>Quản lý hành chính</span><strong>Thôn 09</strong><span>Xã Hồng Phong</span></h1>
+              <div class="title-ornament"><span></span><i class="fa-solid fa-star"></i><span></span></div>
             </div>
           </div>
           <form id="loginForm" class="login-form" novalidate>
             <div class="login-field">
-              <label class="form-label" for="loginEmail">Tên đăng nhập</label>
-              <div class="login-input-wrap"><i class="fa-solid fa-user" aria-hidden="true"></i><input id="loginEmail" name="email" type="text" class="form-control" autocomplete="username" inputmode="email" required></div>
+              <div class="login-input-wrap"><i class="fa-solid fa-user" aria-hidden="true"></i><input id="loginEmail" name="email" type="text" class="form-control" placeholder="Tên đăng nhập" autocomplete="username" inputmode="email" required></div>
             </div>
             <div class="login-field">
-              <label class="form-label" for="loginPassword">Mật khẩu</label>
-              <div class="login-input-wrap"><i class="fa-solid fa-key" aria-hidden="true"></i><input id="loginPassword" name="password" type="password" class="form-control" autocomplete="current-password" required minlength="8"><button class="password-toggle" type="button" aria-label="Hiện mật khẩu" data-password-toggle><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div>
+              <div class="login-input-wrap"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="loginPassword" name="password" type="password" class="form-control" placeholder="Mật khẩu" autocomplete="current-password" required minlength="8"><button class="password-toggle" type="button" aria-label="Hiện mật khẩu" data-password-toggle><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div>
             </div>
             <label class="remember-check"><input id="rememberLogin" type="checkbox" value="1"><span>Ghi nhớ đăng nhập</span></label>
-            <button class="btn login-submit" type="submit"><i class="fa-solid fa-lock" aria-hidden="true"></i><span>Đăng nhập</span></button>
+            <button class="btn login-submit" type="submit"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i><span>Đăng nhập</span></button>
           </form>
-          <footer class="login-footer"><span>Phiên bản v2.0</span><span>© Thôn 09 - Xã Hồng Phong</span></footer>
+          <footer class="login-footer"><span>Phiên bản: v2.0</span><span>© Thôn 09 - Xã Hồng Phong</span></footer>
         </section>
       </div>
       <aside class="login-column login-column-intro" aria-label="Giới thiệu Thôn 09">
-        <div class="login-top-meta"><span id="loginWeekday">Thứ Hai</span><span id="loginDate">29/06/2026</span><strong id="loginClock">00:00:00</strong></div>
-        <div class="intro-content">
-          <p class="intro-kicker">Cổng thông tin quản lý hành chính cấp thôn</p>
-          <h2>Giới thiệu Thôn 09 - Xã Hồng Phong</h2>
-          <article class="history-card">
-            <div class="history-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></div>
-            <div>
-              <h3>Lịch sử hình thành Thôn 09</h3>
-              <div id="loginHistoryText" class="history-text" data-setting-key="hamletHistory">Nội dung giới thiệu lịch sử Thôn 09 sẽ được hiển thị từ cấu hình hệ thống khi quản trị viên cập nhật dữ liệu.</div>
-            </div>
-          </article>
-          <div class="login-stats" id="loginStats" aria-live="polite">
-            <div class="public-stat"><i class="fa-solid fa-house"></i><span>Tổng số hộ</span><strong data-stat="total_households">0</strong><small>hộ</small></div>
-            <div class="public-stat"><i class="fa-solid fa-users"></i><span>Tổng nhân khẩu</span><strong data-stat="total_citizens">0</strong><small>người</small></div>
-            <div class="public-stat"><i class="fa-solid fa-mars"></i><span>Nam</span><strong data-stat="male_count">0</strong><small>người</small></div>
-            <div class="public-stat"><i class="fa-solid fa-venus"></i><span>Nữ</span><strong data-stat="female_count">0</strong><small>người</small></div>
-            <div class="public-stat"><i class="fa-solid fa-location-dot"></i><span>Tạm trú</span><strong data-stat="temporary_count">0</strong><small>người</small></div>
-            <div class="public-stat"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Tạm vắng</span><strong data-stat="away_count">0</strong><small>người</small></div>
-            <div class="public-stat"><i class="fa-solid fa-person-cane"></i><span>Trên 60 tuổi</span><strong data-stat="elderly_count">0</strong><small>người</small></div>
-            <div class="public-stat"><i class="fa-solid fa-child"></i><span>Dưới 6 tuổi</span><strong data-stat="under_six_count">0</strong><small>người</small></div>
-          </div>
+        <div class="login-top-meta">
+          <span><i class="fa-regular fa-calendar"></i><strong id="loginWeekday">Thứ Hai</strong>, <span id="loginDate">29/06/2026</span></span>
+          <span><i class="fa-regular fa-clock"></i><strong id="loginClock">00:00:00</strong></span>
+          <span><i class="fa-solid fa-cloud-sun"></i><strong>28°C</strong> Nhiều mây</span>
         </div>
+        <div class="intro-content">
+          <article class="history-card">
+            <h2>Giới thiệu Thôn 09 - Xã Hồng Phong</h2>
+            <div class="history-divider"><span></span><i class="fa-solid fa-star"></i><span></span></div>
+            <div class="history-heading"><span class="history-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span><h3>Lịch sử hình thành Thôn 09</h3></div>
+            <div id="loginHistoryText" class="history-text" data-setting-key="hamletHistory">Thôn 09 thuộc xã Hồng Phong, được hình thành trong quá trình sắp xếp, kiện toàn đơn vị dân cư nhằm đáp ứng yêu cầu phát triển kinh tế - xã hội, nâng cao hiệu quả quản lý nhà nước và xây dựng đời sống văn hóa tại cơ sở. Trải qua nhiều giai đoạn phát triển, nhân dân Thôn 09 luôn đoàn kết, cần cù lao động, tích cực phát triển kinh tế, xây dựng nếp sống văn minh, giữ gìn và phát huy bản sắc văn hóa truyền thống.</div>
+          </article>
+          <section class="login-info-card" aria-label="Thông tin cơ bản">
+            <div class="info-heading"><span><i class="fa-solid fa-users"></i></span><h3>Thông tin cơ bản</h3></div>
+            <div class="login-stats" id="loginStats" aria-live="polite">
+              <div class="public-stat stat-house"><i class="fa-solid fa-house"></i><span>Tổng số hộ</span><strong data-stat="total_households">0</strong><small>hộ</small></div>
+              <div class="public-stat stat-pop"><i class="fa-solid fa-users"></i><span>Tổng nhân khẩu</span><strong data-stat="total_citizens">0</strong><small>người</small></div>
+              <div class="public-stat stat-male"><i class="fa-solid fa-person"></i><span>Nam</span><strong data-stat="male_count">0</strong><small>người</small></div>
+              <div class="public-stat stat-female"><i class="fa-solid fa-person-dress"></i><span>Nữ</span><strong data-stat="female_count">0</strong><small>người</small></div>
+              <div class="public-stat stat-temp"><i class="fa-solid fa-archway"></i><span>Tạm trú</span><strong data-stat="temporary_count">0</strong><small>người</small></div>
+              <div class="public-stat stat-away"><i class="fa-solid fa-person-walking-luggage"></i><span>Tạm vắng</span><strong data-stat="away_count">0</strong><small>người</small></div>
+              <div class="public-stat stat-old"><i class="fa-solid fa-person-cane"></i><span>Trên 60 tuổi</span><strong data-stat="elderly_count">0</strong><small>người</small></div>
+              <div class="public-stat stat-child"><i class="fa-solid fa-child-reaching"></i><span>Dưới 6 tuổi</span><strong data-stat="under_six_count">0</strong><small>người</small></div>
+            </div>
+          </section>
+          <section class="login-address-card" aria-label="Thông tin địa chỉ">
+            <div class="address-left"><i class="fa-solid fa-location-dot"></i><div><h3>Thông tin địa chỉ</h3><dl><div><dt>Thôn:</dt><dd>Thôn 09</dd></div><div><dt>Xã:</dt><dd>Hồng Phong</dd></div><div><dt>Huyện:</dt><dd>Nho Quan</dd></div><div><dt>Tỉnh:</dt><dd>Ninh Bình</dd></div></dl></div></div>
+            <div class="address-right"><p><i class="fa-solid fa-building-columns"></i><strong>Nhà văn hóa Thôn 09</strong><span>Thôn 09, Xã Hồng Phong, Huyện Nho Quan, Tỉnh Ninh Bình</span></p><p><i class="fa-solid fa-phone"></i><strong>Trưởng thôn:</strong><span>................................</span></p><p><i class="fa-solid fa-phone-volume"></i><strong>Số điện thoại:</strong><span>................................</span></p></div>
+          </section>
+        </div>
+        <div class="login-slogan"><span></span><i class="fa-solid fa-star"></i><strong>Đoàn kết - Dân chủ - Phát triển</strong><i class="fa-solid fa-star"></i><span></span></div>
       </aside>
     </section>
   </main>
@@ -105,7 +120,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260629-login-redesign-2"></script>
+  <script src="assets/js/app.js?v=20260629-login-reference-1"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
