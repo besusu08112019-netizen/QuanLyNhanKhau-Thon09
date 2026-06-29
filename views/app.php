@@ -6,7 +6,7 @@
   <title>Quản Lý Nhân Khẩu Thôn 09</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260629-dashboard-percent-1">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -59,13 +59,48 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js"></script>
-  <script src="assets/js/csrf.js"></script>
-  <script src="assets/js/session.js"></script>
-  <script src="assets/js/report.js"></script>
-  <script src="assets/js/admin.js"></script>
-  <script src="assets/js/import.js"></script>
-  <script src="assets/js/admin-panel.js"></script>
-  <script src="assets/js/admin-panel-bridge.js"></script>
+  <script src="assets/js/app.js?v=20260629-pagination-1"></script>
+  <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
+  <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
+  <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
+  <script src="assets/js/import.js?v=20260629-two-import-buttons-1"></script>
+  <script src="assets/js/admin-panel.js?v=20260629-chart-percent-decimal-1"></script>
+  <script src="assets/js/admin-panel-bridge.js?v=20260629-temporary-filter-3"></script>
+  <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
+  <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
+  <script src="assets/js/sprint10.js?v=20260629-report-disable-old-1"></script>
+<script id="thon09-dashboard-final-force">
+(function(){function run(){try{if(window.App&&localStorage.getItem('thon09_token'))window.App.token=localStorage.getItem('thon09_token');if(typeof window.loadDashboard==='function'&&document.querySelector('#appView')&&!document.querySelector('#appView').classList.contains('d-none'))window.loadDashboard();}catch(e){console.error(e);}}setTimeout(run,500);setTimeout(run,1500);setTimeout(run,3500);})();
+</script>
+
+<script id="thon09-report-inline-stable">
+(function(){
+  function q(s){return document.querySelector(s);}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];});}
+  function token(){return localStorage.getItem('thon09_token')||(window.App&&window.App.token)||'';}
+  function setBox(html){var box=q('#reportPreview'); if(box) box.innerHTML=html;}
+  function setTitle(t){var el=q('#reportTitle'); if(el) el.textContent=t||'Báo cáo';}
+  function setCount(t){var el=q('#reportCount'); if(el) el.textContent=t||'';}
+  function msg(text,kind){setBox('<div class="alert alert-'+(kind||'info')+' mb-0">'+esc(text)+'</div>');}
+  async function api(path){var tk=token();if(!tk)throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');var r=await fetch(path,{headers:{Accept:'application/json',Authorization:'Bearer '+tk},cache:'no-store'});var j=await r.json().catch(function(){return null;});if(!r.ok||!j||!j.ok)throw new Error((j&&j.error&&j.error.message)||'Không tải được dữ liệu từ hệ thống.');return j.data||{};}
+  function dateVN(v){if(!v)return '';var s=String(v);var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+'/'+m[2]+'/'+m[1]:s;}
+  function yes(v){return v===true||v===1||v==='1'||String(v).toLowerCase()==='true';}
+  function isTemp(p){return yes(p.temporary_residence)||yes(p.temporaryResidence)||yes(p.is_temporary_residence)||String(p.residency_status||'').toUpperCase()==='TEMPORARY';}
+  function isAway(p){return String(p.presence_status||'').toUpperCase()==='AWAY';}
+  function ageOf(p){var d=p.date_of_birth;if(!d)return null;var y=Number(String(d).slice(0,4));if(!y)return null;return new Date().getFullYear()-y;}
+  function cell(v){return '<td>'+esc(v)+'</td>';}
+  function table(headers,rows){var h=headers.map(function(x){return '<th>'+esc(x)+'</th>';}).join('');var b=(rows&&rows.length)?rows.map(function(r){return '<tr>'+r.map(cell).join('')+'</tr>';}).join(''):'<tr><td colspan="'+headers.length+'" class="text-center text-muted py-3">Không có dữ liệu</td></tr>';return '<table class="table table-bordered table-hover align-middle mb-0"><thead><tr>'+h+'</tr></thead><tbody>'+b+'</tbody></table>';}
+  function formValues(){var f=q('#reportForm'),o={}; if(f)new FormData(f).forEach(function(v,k){o[k]=v;}); return o;}
+  function fillTypes(){var s=q('#reportForm select[name="type"]'); if(!s)return;var old=s.value||'summary';s.innerHTML='<option value="summary">Báo cáo tổng hợp</option><option value="population">Báo cáo nhân khẩu</option><option value="household">Báo cáo hộ gia đình</option><option value="temporary_residence">Báo cáo tạm trú</option><option value="temporary_absence">Báo cáo tạm vắng</option><option value="gender">Thống kê nam/nữ</option><option value="age">Thống kê độ tuổi</option><option value="births">Khai sinh</option><option value="deaths">Khai tử</option><option value="migration">Biến động dân cư</option>';if([].some.call(s.options,function(o){return o.value===old;}))s.value=old;}
+  function filterPersons(items,f){return (items||[]).filter(function(p){if(f.residencyStatus&&String(p.residency_status||'')!==f.residencyStatus)return false;if(f.presenceStatus&&String(p.presence_status||'')!==f.presenceStatus)return false;var created=String(p.created_at||'').slice(0,10);if(f.dateFrom&&created&&created<f.dateFrom)return false;if(f.dateTo&&created&&created>f.dateTo)return false;return true;});}
+  function filterHouseholds(items,f){return (items||[]).filter(function(h){var created=String(h.created_at||'').slice(0,10);if(f.dateFrom&&created&&created<f.dateFrom)return false;if(f.dateTo&&created&&created>f.dateTo)return false;return true;});}
+  function render(title,headers,rows){window.__thon09Report={title:title,headers:headers,rows:rows||[]};setTitle(title);setCount((rows||[]).length+' dòng');setBox(table(headers,rows||[]));}
+  async function view(){setTitle('Báo cáo');setCount('');msg('Đang tải dữ liệu...','info');try{var f=formValues(),type=f.type||'summary';var all=await Promise.all([api('/api/dashboard/summary'),api('/api/persons?pageSize=1000'),api('/api/households?pageSize=1000')]);var summary=all[0]||{},persons=filterPersons((all[1]&&all[1].items)||[],f),houses=filterHouseholds((all[2]&&all[2].items)||[],f);var m=summary.metrics||{},rows=[],headers=['Nội dung','Số lượng'],title='Báo cáo tổng hợp';if(type==='population'){title='Báo cáo nhân khẩu';headers=['Mã nhân khẩu','Họ tên','Ngày sinh','Giới tính','CCCD','Cư trú','Hiện tại','Mã hộ'];rows=persons.map(function(p){return [p.citizen_code,p.full_name,dateVN(p.date_of_birth),p.gender,p.identity_number,p.residency_status==='TEMPORARY'?'Tạm trú':'Thường trú',p.presence_status==='AWAY'?'Tạm vắng':'Ở nhà',p.household_code];});}else if(type==='household'){title='Báo cáo hộ gia đình';headers=['Mã hộ','Chủ hộ','Địa chỉ','Điện thoại','Số khẩu','Trạng thái'];rows=houses.map(function(h){return [h.household_code,h.head_citizen_name,h.address,h.phone,h.member_count_real||h.member_count||0,h.status];});}else if(type==='temporary_residence'){title='Báo cáo tạm trú';headers=['Mã hộ','Họ tên','Ngày sinh','CCCD','Điện thoại','Địa chỉ hiện tại'];rows=persons.filter(isTemp).map(function(p){return [p.household_code,p.full_name,dateVN(p.date_of_birth),p.identity_number,p.phone,p.current_address||p.household_address||''];});}else if(type==='temporary_absence'){title='Báo cáo tạm vắng';headers=['Mã hộ','Họ tên','Ngày sinh','CCCD','Điện thoại','Địa chỉ'];rows=persons.filter(isAway).map(function(p){return [p.household_code,p.full_name,dateVN(p.date_of_birth),p.identity_number,p.phone,p.current_address||p.household_address||''];});}else if(type==='gender'){title='Thống kê nam/nữ';rows=[['Nam',persons.filter(function(p){return String(p.gender).toLowerCase().indexOf('nam')>=0;}).length],['Nữ',persons.filter(function(p){return String(p.gender).toLowerCase().indexOf('nữ')>=0||String(p.gender).toLowerCase().indexOf('nu')>=0;}).length]];}else if(type==='age'){title='Thống kê độ tuổi';var child=0,work=0,old=0;persons.forEach(function(p){var a=ageOf(p);if(a==null)return;if(a<16)child++;else if(a<=59)work++;else old++;});rows=[['Trẻ em',child],['Độ tuổi lao động',work],['Người cao tuổi',old]];}else if(type==='births'){title='Khai sinh';headers=['Họ tên','Ngày sinh','Giới tính','Mã hộ','Ngày tạo'];rows=persons.filter(function(p){return ageOf(p)!==null&&ageOf(p)<6;}).map(function(p){return [p.full_name,dateVN(p.date_of_birth),p.gender,p.household_code,dateVN(p.created_at)];});}else if(type==='deaths'){title='Khai tử';headers=['Họ tên','Ngày sinh','CCCD','Mã hộ','Trạng thái'];rows=persons.filter(function(p){return String(p.life_status||'').toUpperCase()==='DEAD';}).map(function(p){return [p.full_name,dateVN(p.date_of_birth),p.identity_number,p.household_code,'Đã chết'];});}else if(type==='migration'){title='Biến động dân cư';headers=['Họ tên','Loại biến động','Ngày','Mã hộ','Ghi chú'];rows=persons.filter(function(p){return isTemp(p)||isAway(p);}).map(function(p){return [p.full_name,isTemp(p)?'Tạm trú':'Tạm vắng',dateVN(p.updated_at||p.created_at),p.household_code,p.note||''];});}else{rows=[['Tổng số hộ',m.total_households!==undefined?m.total_households:houses.length],['Tổng số nhân khẩu',m.total_citizens!==undefined?m.total_citizens:persons.length],['Nam',m.male_count!==undefined?m.male_count:persons.filter(function(p){return String(p.gender).toLowerCase().indexOf('nam')>=0;}).length],['Nữ',m.female_count!==undefined?m.female_count:persons.filter(function(p){return String(p.gender).toLowerCase().indexOf('nữ')>=0||String(p.gender).toLowerCase().indexOf('nu')>=0;}).length],['Chủ hộ',m.household_head_count||0],['Tạm trú',persons.filter(isTemp).length],['Tạm vắng',m.away_count!==undefined?m.away_count:persons.filter(isAway).length],['Trẻ em',m.children_count||0],['Người cao tuổi',m.elderly_count||0],['Độ tuổi lao động',m.working_age_count||0],['Hộ nghèo',m.poor_households||0],['Hộ cận nghèo',m.near_poor_households||0]];}render(title,headers,rows);}catch(e){window.__THON09_REPORT_ERROR=e&&e.message;setTitle('Báo cáo');setCount('');msg((e&&e.message)||'Không hiển thị được dữ liệu.','danger');}}
+  function excel(){var r=window.__thon09Report;if(!r){view().then(excel);return;}var csv='\ufeff'+[r.headers].concat(r.rows||[]).map(function(row){return row.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');var blob=new Blob([csv],{type:'application/vnd.ms-excel;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(r.title||'bao_cao')+'.xls';document.body.appendChild(a);a.click();a.remove();}
+  function printR(){var r=window.__thon09Report;if(!r){view().then(printR);return;}var w=window.open('','_blank');w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(r.title)+'</title><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #555;padding:6px;text-align:left}</style></head><body><h2>'+esc(r.title)+'</h2>'+table(r.headers,r.rows)+'<script>window.print()<\\/script></body></html>');w.document.close();}
+  function setup(){if(window.__thon09ReportReady)return;window.__thon09ReportReady=true;fillTypes();var form=q('#reportForm');if(form){form.onsubmit=function(e){if(e){e.preventDefault();e.stopPropagation();}view();return false;};}var submit=q('#reportForm button[type="submit"]');if(submit){submit.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}view();return false;};}var excelBtn=q('#reportExcelBtn');if(excelBtn)excelBtn.onclick=function(e){if(e)e.preventDefault();excel();return false;};var pdfBtn=q('#reportPdfBtn');if(pdfBtn)pdfBtn.onclick=function(e){if(e)e.preventDefault();printR();return false;};var printBtn=q('#reportPrintBtn');if(printBtn)printBtn.onclick=function(e){if(e)e.preventDefault();printR();return false;};document.addEventListener('click',function(e){var id=e.target&&e.target.id;if(id==='reportExcelBtn'){e.preventDefault();e.stopImmediatePropagation();excel();}else if(id==='reportPdfBtn'||id==='reportPrintBtn'){e.preventDefault();e.stopImmediatePropagation();printR();}},true);document.addEventListener('submit',function(e){if(e.target&&e.target.id==='reportForm'){e.preventDefault();e.stopImmediatePropagation();view();}},true);if(q('#reportsScreen.active'))setTimeout(view,100);}
+  window.thon09ViewReport=function(){setup();return view();};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();setInterval(function(){if(q('#reportsScreen.active')&&!window.__thon09Report){setup();view();}},1500);
+})();
+</script>
 </body>
 </html>
