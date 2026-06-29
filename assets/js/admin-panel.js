@@ -314,8 +314,7 @@
     const text = String(value || '').trim();
     if (!text) return [];
     try { const parsed = JSON.parse(text); if (Array.isArray(parsed)) return parsed.filter(Boolean); } catch (_) {}
-    return text.split(/[
-,]+/).map(item => item.trim()).filter(Boolean);
+    return text.split(/[\n,]+/).map(item => item.trim()).filter(Boolean);
   }
 
   async function uploadAppearanceMedia(type) {
@@ -332,8 +331,7 @@
     if (type === 'logo') form.elements.logoUrl.value = uploaded[0] || '';
     else {
       const current = parseAppearanceImages(form.elements.backgroundImages.value);
-      form.elements.backgroundImages.value = current.concat(uploaded).join('
-');
+      form.elements.backgroundImages.value = current.concat(uploaded).join('\n');
     }
     input.value = '';
     renderAppearancePreviews();
