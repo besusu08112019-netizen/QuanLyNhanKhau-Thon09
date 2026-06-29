@@ -140,7 +140,6 @@ function switchScreen(screen) {
   $(`#${screen}Screen`).classList.add('active');
   normalizeAppHeader(screen);
   $('.sidebar').classList.remove('open');
-  normalizeAppHeader(screen);
   if (screen === 'dashboard') { loadDashboard(); refreshLoginConfig(); }
   if (screen === 'households') loadHouseholds();
   if (screen === 'persons') loadPersons();
