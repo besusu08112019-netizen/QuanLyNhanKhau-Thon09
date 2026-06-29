@@ -122,6 +122,11 @@ final class Citizen extends BaseModel
         if (!empty($filters['ethnicity'])) { $where[] = 'c.ethnicity LIKE :ethnicity'; $params['ethnicity'] = '%' . $filters['ethnicity'] . '%'; }
         if (!empty($filters['religion'])) { $where[] = 'c.religion LIKE :religion'; $params['religion'] = '%' . $filters['religion'] . '%'; }
         if (!empty($filters['occupation'])) { $where[] = 'c.occupation LIKE :occupation'; $params['occupation'] = '%' . $filters['occupation'] . '%'; }
+        if (!empty($filters['maritalStatus'])) { $where[] = 'c.marital_status = :marital_status'; $params['marital_status'] = $filters['maritalStatus']; }
+        if (!empty($filters['educationLevel'])) { $where[] = 'c.education_level = :education_level'; $params['education_level'] = $filters['educationLevel']; }
+        if (!empty($filters['workplace']) && $this->columnExists('citizens', 'workplace')) { $where[] = 'c.workplace LIKE :workplace'; $params['workplace'] = '%' . $filters['workplace'] . '%'; }
+        if (!empty($filters['nationality']) && $this->columnExists('citizens', 'nationality')) { $where[] = 'c.nationality LIKE :nationality'; $params['nationality'] = '%' . $filters['nationality'] . '%'; }
+        if (!empty($filters['bloodType']) && $this->columnExists('citizens', 'blood_type')) { $where[] = 'c.blood_type = :blood_type'; $params['blood_type'] = $filters['bloodType']; }
         if (!empty($filters['ageFrom'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= :age_from'; $params['age_from'] = (int) $filters['ageFrom']; }
         if (!empty($filters['ageTo'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= :age_to'; $params['age_to'] = (int) $filters['ageTo']; }
         if (!empty($filters['search'])) {
@@ -130,8 +135,8 @@ final class Citizen extends BaseModel
                 $where[] = 'c.' . $mapped . ' = 1';
             } else {
                 $q = '%' . $filters['search'] . '%';
-                $where[] = '(c.citizen_code LIKE :q_code OR c.full_name LIKE :q_name OR c.identity_number LIKE :q_identity OR c.phone LIKE :q_phone OR h.household_code LIKE :q_household OR h.head_citizen_name LIKE :q_head OR c.occupation LIKE :q_occupation OR c.ethnicity LIKE :q_ethnicity OR c.religion LIKE :q_religion)';
-                $params['q_code'] = $q; $params['q_name'] = $q; $params['q_identity'] = $q; $params['q_phone'] = $q; $params['q_household'] = $q; $params['q_head'] = $q; $params['q_occupation'] = $q; $params['q_ethnicity'] = $q; $params['q_religion'] = $q;
+                $where[] = '(c.citizen_code LIKE :q_code OR c.full_name LIKE :q_name OR c.identity_number LIKE :q_identity)';
+                $params['q_code'] = $q; $params['q_name'] = $q; $params['q_identity'] = $q;
             }
         }
         return ['WHERE ' . implode(' AND ', $where), $params];
