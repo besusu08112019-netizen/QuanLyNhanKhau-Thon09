@@ -49,13 +49,19 @@ final class Report extends BaseModel
             ['Tạm vắng', (int) ($citizens['away'] ?? 0)],
             ['Đảng viên', $this->countPercent($citizens, 'party_member', $total)],
             ['Đoàn viên', $this->countPercent($citizens, 'youth_union_member', $total)],
+            ['Hội viên Hội Phụ nữ', $this->countPercent($citizens, 'women_union_member', $total)],
+            ['Hội viên Hội Nông dân', $this->countPercent($citizens, 'farmers_union_member', $total)],
+            ['Hội viên Hội Cựu chiến binh', $this->countPercent($citizens, 'veterans_union_member', $total)],
+            ['Hội viên Hội Người cao tuổi', $this->countPercent($citizens, 'elderly_union_member', $total)],
             ['Người có công', $this->countPercent($citizens, 'meritorious_person', $total)],
             ['Thương binh', $this->countPercent($citizens, 'wounded_soldier', $total)],
             ['Bệnh binh', $this->countPercent($citizens, 'sick_soldier', $total)],
+            ['Thân nhân liệt sĩ', $this->countPercent($citizens, 'martyr_relative', $total)],
             ['Người khuyết tật', $this->countPercent($citizens, 'disabled_person', $total)],
             ['Bảo trợ xã hội', $this->countPercent($citizens, 'social_assistance', $total)],
             ['Có việc làm', $this->countPercent($citizens, 'employed', $total)],
             ['Thất nghiệp', $this->countPercent($citizens, 'unemployed', $total)],
+            ['Lao động tự do', $this->countPercent($citizens, 'freelance_labor', $total)],
             ['Lao động ngoài tỉnh', $this->countPercent($citizens, 'out_province_labor', $total)],
             ['Lao động nước ngoài', $this->countPercent($citizens, 'foreign_labor', $total)],
             ['Trẻ em', (int) ($citizens['children'] ?? 0) . ' (' . $this->percent((int) ($citizens['children'] ?? 0), $total) . ')'],
@@ -195,8 +201,8 @@ final class Report extends BaseModel
         if (!empty($filters['ethnicity'])) { $where[] = 'c.ethnicity LIKE :ethnicity'; $params['ethnicity'] = '%' . $filters['ethnicity'] . '%'; }
         if (!empty($filters['religion'])) { $where[] = 'c.religion LIKE :religion'; $params['religion'] = '%' . $filters['religion'] . '%'; }
         if (!empty($filters['occupation'])) { $where[] = 'c.occupation LIKE :occupation'; $params['occupation'] = '%' . $filters['occupation'] . '%'; }
-        foreach (['party_member','youth_union_member','meritorious_person','disabled_person','employed','unemployed','out_province_labor','foreign_labor'] as $column) {
-            if (($filters[$column] ?? '') !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $filters[$column]; }
+        foreach (['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $column) {
+            if (($filters[$column] ?? null) !== null && $filters[$column] !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $filters[$column]; }
         }
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
