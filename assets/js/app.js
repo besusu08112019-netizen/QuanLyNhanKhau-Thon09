@@ -397,9 +397,17 @@ function setForm(form, values) {
   });
 }
 function renderPager(selector, data, go) {
-  const page = Number(data.page || 1), totalPages = Number(data.totalPages || 1);
-  $(selector).innerHTML = `<span class="text-muted small">Trang ${page}/${totalPages} - ${number(data.total)} dòng</span><button class="btn btn-outline-secondary btn-sm" ${page <= 1 ? 'disabled' : ''} data-page="${page - 1}">Trước</button><button class="btn btn-outline-secondary btn-sm" ${page >= totalPages ? 'disabled' : ''} data-page="${page + 1}">Sau</button>`;
-  $$(`${selector} button`).forEach(btn => btn.addEventListener('click', () => go(Number(btn.dataset.page))));
+  const page = Math.max(1, Number(data.page || 1));
+  const pageSize = Math.max(1, Number(data.pageSize || App.households?.pageSize || App.persons?.pageSize || 20));
+  const total = Number(data.total || 0);
+  const totalPages = Math.max(1, Number(data.totalPages || Math.ceil(total / pageSize) || 1));
+  const host = $(selector);
+  if (!host) return;
+  host.innerHTML = `<span class="text-muted small">Trang ${page}/${totalPages} - ${number(total)} dòng</span><button class="btn btn-outline-secondary btn-sm" ${page <= 1 ? 'disabled' : ''} data-page="${page - 1}">Trước</button><button class="btn btn-outline-secondary btn-sm" ${page >= totalPages ? 'disabled' : ''} data-page="${page + 1}">Sau</button>`;
+  $$(`${selector} button`).forEach(btn => btn.addEventListener('click', () => {
+    const nextPage = Number(btn.dataset.page || 1);
+    if (nextPage >= 1 && nextPage <= totalPages) go(nextPage);
+  }));
 }
 function renderChart(selector, items) {
   const host = $(selector);
