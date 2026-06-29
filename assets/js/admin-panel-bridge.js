@@ -63,7 +63,6 @@
       App.households.page = 1;
       window.loadHouseholds();
     });
-    const originalSearch = search.oninput;
     search.addEventListener('input', () => {
       App.households.search = search.value.trim();
       App.households.page = 1;
@@ -125,7 +124,6 @@
     try {
       preview.innerHTML = '<p class="text-muted mb-0">Đang tải dữ liệu...</p>';
       const params = new URLSearchParams(new FormData(form));
-      const type = params.get('type') || 'summary';
       const data = await api('/api/reports/summary?' + params.toString());
       if (titleEl) titleEl.textContent = data.title || 'Báo cáo';
       if (countEl) countEl.textContent = number(data.totalRows || 0) + ' dòng';
@@ -165,6 +163,30 @@
     script.defer = true;
     document.body.appendChild(script);
   }
+
+  function scheduleCategoryFilterSetup() {
+    setupHouseholdCategoryFilters();
+    setupReportCategoryFilter();
+    setTimeout(setupHouseholdCategoryFilters, 250);
+    setTimeout(setupHouseholdCategoryFilters, 1000);
+    setTimeout(setupReportCategoryFilter, 1000);
+  }
+
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-screen]');
+    if (!button) return;
+    if (button.dataset.screen === 'households') setTimeout(setupHouseholdCategoryFilters, 250);
+    if (button.dataset.screen === 'reports') setTimeout(setupReportCategoryFilter, 250);
+  }, true);
+
+  let categorySetupTicks = 0;
+  const categorySetupTimer = setInterval(() => {
+    categorySetupTicks += 1;
+    scheduleCategoryFilterSetup();
+    if (categorySetupTicks >= 12 || (document.querySelector('#householdCategoryFilter') && document.querySelector('#reportForm [name="householdType"]'))) {
+      clearInterval(categorySetupTimer);
+    }
+  }, 1000);
 
   function enforceSuperAdminMenu() {
     setTimeout(() => {
