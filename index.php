@@ -83,6 +83,7 @@ $router->get('/api/roles', [UserController::class, 'roles']);
 $router->get('/api/permissions', [PermissionController::class, 'index']);
 $router->post('/api/permissions', [PermissionController::class, 'update']);
 $router->get('/api/public/login-config', [SettingController::class, 'publicLoginConfig']);
+$router->get('/api/media/{folder}/{kind}/{year}/{month}/{file}', [SettingController::class, 'media']);
 $router->get('/api/settings', [SettingController::class, 'index']);
 $router->post('/api/settings', [SettingController::class, 'update']);
 $router->post('/api/settings/media', [SettingController::class, 'uploadMedia']);
