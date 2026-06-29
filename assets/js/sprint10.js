@@ -1,0 +1,223 @@
+(() => {
+  document.addEventListener('DOMContentLoaded', bootSprint10);
+  const previousShowApp = window.showApp;
+  if (typeof previousShowApp === 'function') {
+    window.showApp = function sprint10ShowApp() { previousShowApp(); bootSprint10(); };
+  }
+
+  function bootSprint10() {
+    injectSprint10Screens();
+    bindSprint10Menu();
+    patchSprint10Dashboard();
+    patchSprint10Reports();
+    patchSprint10Import();
+    patchSprint10Users();
+  }
+
+  function injectSprint10Screens() {
+    const main = document.querySelector('.main-area');
+    if (!main) return;
+    if (!document.querySelector('#logsScreen')) main.insertAdjacentHTML('beforeend', '<section id="logsScreen" class="screen"><div class="toolbar"><input id="logSearch" class="form-control" placeholder="Tìm user, hành động, module, chi tiết"><select id="logAction" class="form-select w-auto"><option value="">Tất cả hành động</option><option value="login">Login</option><option value="logout">Logout</option><option value="create">Add</option><option value="update">Edit</option><option value="delete">Delete</option><option value="read">Read</option><option value="export">Export</option><option value="restore">Restore</option><option value="reset_password">Reset password</option></select></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Module</th><th>IP</th><th>Details</th></tr></thead><tbody id="logRows"></tbody></table></div><div id="logPager" class="pager"></div></section>');
+    if (!document.querySelector('#backupsScreen')) main.insertAdjacentHTML('beforeend', '<section id="backupsScreen" class="screen"><div class="toolbar"><button id="backupCreateBtn" class="btn btn-primary">Backup database</button><button id="backupAutoBtn" class="btn btn-outline-secondary">Auto backup: daily</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Time</th><th>File</th><th>Size</th><th>Status</th><th>User</th><th>Download</th></tr></thead><tbody id="backupRows"></tbody></table></div><div id="backupPager" class="pager"></div></section>');
+    if (!document.querySelector('#restoreScreen')) main.insertAdjacentHTML('beforeend', '<section id="restoreScreen" class="screen"><form id="restoreForm" class="content-card"><label class="form-label">Restore backup .sql</label><input name="file" type="file" accept=".sql" class="form-control mb-3"><textarea name="sql" class="form-control font-monospace" rows="12" placeholder="Hoặc dán SQL tại đây"></textarea><div class="text-end mt-3"><button class="btn btn-danger" type="submit">Restore backup</button></div></form></section>');
+    if (!document.querySelector('#usersScreen')) main.insertAdjacentHTML('beforeend', '<section id="usersScreen" class="screen"><div class="toolbar"><input id="userSearch" class="form-control" placeholder="Search username, full name, email, phone"><select id="userPageSize" class="form-select w-auto"><option>20</option><option>50</option></select><button id="userAddBtn" class="btn btn-primary">Create account</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Username</th><th>Full name</th><th>Email</th><th>Phone</th><th>Position</th><th>Role</th><th>Status</th><th>Created date</th><th>Last login</th><th></th></tr></thead><tbody id="userRows"></tbody></table></div><div id="userPager" class="pager"></div></section>');
+    if (!document.querySelector('#userModal')) document.body.insertAdjacentHTML('beforeend', '<div class="modal fade" id="userModal" tabindex="-1"><div class="modal-dialog"><form id="userForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Account</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="row g-3"><div class="col-md-6"><label class="form-label">Username</label><input name="username" class="form-control" required></div><div class="col-md-6"><label class="form-label">Email</label><input name="email" type="email" class="form-control" required></div><div class="col-md-6"><label class="form-label">Full name</label><input name="displayName" class="form-control" required></div><div class="col-md-6"><label class="form-label">Phone</label><input name="phone" class="form-control"></div><div class="col-md-6"><label class="form-label">Position</label><input name="position" class="form-control"></div><div class="col-md-6"><label class="form-label">Role</label><select name="role" class="form-select"><option value="SUPER_ADMIN">Super Admin</option><option value="ADMIN">Admin</option><option value="OFFICER">Staff</option><option value="VIEWER">Viewer</option></select></div><div class="col-12"><label class="form-label">Password</label><input name="password" type="password" minlength="8" class="form-control"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary">Save</button></div></form></div></div>');
+    App.logs ||= { page: 1, pageSize: 50, search: '', action: '' };
+    App.backups ||= { page: 1, pageSize: 20 };
+    App.users ||= { page: 1, pageSize: 20, search: '' };
+    App.modals.user ||= bootstrap.Modal.getOrCreateInstance(document.querySelector('#userModal'));
+  }
+
+  function bindSprint10Menu() {
+    document.querySelectorAll('.sidebar .nav-link').forEach(button => {
+      if (button.dataset.sprint10) return;
+      button.dataset.sprint10 = '1';
+      button.addEventListener('click', () => {
+        setTimeout(() => loadSprint10Screen(button.dataset.screen), 0);
+      });
+    });
+    bindOnce('#logSearch', 'input', debounce(() => { App.logs.search = document.querySelector('#logSearch').value.trim(); App.logs.page = 1; loadLogs10(); }, 300));
+    bindOnce('#logAction', 'change', () => { App.logs.action = document.querySelector('#logAction').value; App.logs.page = 1; loadLogs10(); });
+    bindOnce('#backupCreateBtn', 'click', createBackup10);
+    bindOnce('#restoreForm', 'submit', restoreBackup10);
+    bindOnce('#userSearch', 'input', debounce(() => { App.users.search = document.querySelector('#userSearch').value.trim(); App.users.page = 1; loadUsers10(); }, 300));
+    bindOnce('#userPageSize', 'change', () => { App.users.pageSize = Number(document.querySelector('#userPageSize').value); App.users.page = 1; loadUsers10(); });
+    bindOnce('#userAddBtn', 'click', () => openUserForm10());
+    bindOnce('#userForm', 'submit', saveUser10);
+  }
+
+  function loadSprint10Screen(screen) {
+    if (screen === 'reports' && typeof window.thon09ViewReport === 'function') window.thon09ViewReport();
+    if (screen === 'logs') loadLogs10();
+    if (screen === 'backups') loadBackups10();
+    if (screen === 'restore') {}
+    if (screen === 'users') loadUsers10();
+    if (screen === 'temporaryResidence') loadPresence10('TEMPORARY', '#temporaryResidenceRows');
+    if (screen === 'temporaryAbsence') loadPresence10('AWAY', '#temporaryAbsenceRows');
+  }
+
+
+  function patchSprint10Dashboard() { return;
+  /* disabled duplicate dashboard patch */
+  
+    if (window.loadDashboard?.sprint10Final) return;
+    window.loadDashboard = async function sprint10FinalLoadDashboard() {
+      try {
+        const form = document.querySelector('#dashboardFilters');
+        const params = form ? new URLSearchParams(formData(form)).toString() : '';
+        const response = await fetch('/api/dashboard/summary' + (params ? '?' + params : ''), {
+          headers: { Accept: 'application/json', Authorization: 'Bearer ' + App.token },
+          cache: 'no-store'
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'Không tải được Dashboard');
+        renderDashboard10(payload.data || payload);
+      } catch (error) {
+        showToast('Không tải được Dashboard: ' + error.message, 'danger');
+      }
+    };
+    window.loadDashboard.sprint10Final = true;
+    if (App.token && (App.screen === 'dashboard' || document.querySelector('#dashboardScreen')?.classList.contains('active'))) {
+      setTimeout(() => window.loadDashboard(), 0);
+    }
+  }
+
+  function renderDashboard10(raw) {
+    const data = raw?.data || raw || {};
+    const m = data.metrics || {};
+    const cards = [
+      ['Tổng số hộ', m.total_households, 'fa-house'],
+      ['Tổng số nhân khẩu', m.total_citizens, 'fa-users'],
+      ['Nam', m.male_count, 'fa-mars'],
+      ['Nữ', m.female_count, 'fa-venus'],
+      ['Chủ hộ', m.household_head_count, 'fa-user-check'],
+      ['Tạm trú', m.temporary_count, 'fa-location-dot'],
+      ['Tạm vắng', m.away_count, 'fa-person-walking-arrow-right'],
+      ['Trẻ em', m.children_count, 'fa-child'],
+      ['Người cao tuổi', m.elderly_count, 'fa-person-cane'],
+      ['Độ tuổi lao động', m.working_age_count, 'fa-briefcase'],
+      ['Hộ nghèo', m.poor_households, 'fa-hand-holding-heart'],
+      ['Hộ cận nghèo', m.near_poor_households, 'fa-scale-balanced']
+    ];
+    const host = document.querySelector('#dashboardCards');
+    if (host) host.innerHTML = cards.map(([label, value, icon]) => '<div class="col-sm-6 col-xl-3"><div class="metric-card admin-metric"><i class="fa-solid ' + icon + '"></i><div><div class="metric-label">' + escapeHtml(label) + '</div><div class="metric-value">' + number(Number(value || 0)) + '</div></div></div></div>').join('');
+    ensureChart10('genderChart', 'Dân số theo giới tính'); ensureChart10('ageChart', 'Dân số theo độ tuổi'); ensureChart10('householdChart', 'Tình trạng hộ'); ensureChart10('residencyChart', 'Cư trú'); ensureChart10('hamletChart', 'Dân số theo thôn'); ensureChart10('monthlyChart', 'Tăng giảm dân số theo tháng'); ensureChart10('povertyChart', 'Biểu đồ hộ nghèo');
+    renderChart10('#genderChart', data.charts?.population || []); renderChart10('#ageChart', data.charts?.ages || []); renderChart10('#householdChart', data.charts?.households || []); renderChart10('#residencyChart', data.charts?.residency || []); renderChart10('#hamletChart', data.charts?.hamlets || []); renderChart10('#monthlyChart', data.charts?.monthlyChanges || []); renderChart10('#povertyChart', data.charts?.poverty || []);
+  }
+
+  function ensureChart10(id, title) {
+    if (document.querySelector('#' + id)) return;
+    const row = document.querySelector('#dashboardScreen .row.g-3.mt-1');
+    if (row) row.insertAdjacentHTML('beforeend', '<div class="col-lg-4"><div class="content-card"><h3 class="section-title">' + escapeHtml(title) + '</h3><div id="' + id + '" class="chart-list"></div></div></div>');
+  }
+
+  function renderChart10(selector, items) {
+    const normalized = (items || []).map(item => ({ label: item.label ?? item.name ?? item.type ?? 'Khác', value: Number(item.value ?? item.total ?? item.count ?? 0) }));
+    if (typeof window.renderChart === 'function') { window.renderChart(selector, normalized); return; }
+    const host = document.querySelector(selector); if (!host) return;
+    host.innerHTML = normalized.length ? '<ul class="list-group list-group-flush">' + normalized.map(i => '<li class="list-group-item d-flex justify-content-between"><span>' + escapeHtml(i.label) + '</span><strong>' + number(i.value) + '</strong></li>').join('') + '</ul>' : '<p class="text-muted mb-0">Không có dữ liệu</p>';
+  }
+
+
+  function patchSprint10Reports() { return; }
+
+  async function loadReport10() { if (typeof window.thon09ViewReport === 'function') return window.thon09ViewReport(); }
+
+  async function downloadReport10(kind) { return; }
+  async function printReport10() { return; }
+
+  function patchSprint10Import() {
+    const link = document.querySelector('#importScreen a[download]');
+    if (link) link.href = '/api/import/template';
+    const result = document.querySelector('#importResult');
+    if (result && !result.dataset.sprint10) result.dataset.sprint10 = '1';
+  }
+
+  function patchSprint10Users() { window.openUserForm = openUserForm10; window.resetUserPassword = resetUserPassword10; }
+
+  async function loadUsers10() {
+    const data = await api('/api/users?' + new URLSearchParams(App.users));
+    document.querySelector('#userRows').innerHTML = (data.items || []).map(row => {
+      const action = row.status === 'ACTIVE' ? 'lock' : 'unlock';
+      const actionLabel = action === 'lock' ? 'Lock' : 'Unlock';
+      return '<tr><td>' + escapeHtml(row.username || '') + '</td><td>' + escapeHtml(row.display_name || '') + '</td><td>' + escapeHtml(row.email || '') + '</td><td>' + escapeHtml(row.phone || '') + '</td><td>' + escapeHtml(row.position || '') + '</td><td>' + roleLabel(row.role) + '</td><td>' + escapeHtml(row.status || '') + '</td><td>' + escapeHtml(row.created_at || '') + '</td><td>' + escapeHtml(row.last_login_at || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" data-edit-user="' + row.id + '">Edit</button> <button class="btn btn-sm btn-outline-warning" data-toggle-user="' + row.id + '" data-action="' + action + '">' + actionLabel + '</button> <button class="btn btn-sm btn-outline-secondary" data-reset-user="' + row.id + '">Reset password</button> <button class="btn btn-sm btn-outline-danger" data-delete-user="' + row.id + '">Delete</button></td></tr>';
+    }).join('') || emptyRow(10, 'Không có tài khoản');
+    document.querySelectorAll('[data-edit-user]').forEach(btn => btn.addEventListener('click', () => openUserForm10(Number(btn.dataset.editUser))));
+    document.querySelectorAll('[data-toggle-user]').forEach(btn => btn.addEventListener('click', () => window.toggleUser(Number(btn.dataset.toggleUser), btn.dataset.action)));
+    document.querySelectorAll('[data-reset-user]').forEach(btn => btn.addEventListener('click', () => resetUserPassword10(Number(btn.dataset.resetUser))));
+    document.querySelectorAll('[data-delete-user]').forEach(btn => btn.addEventListener('click', () => window.deleteUser(Number(btn.dataset.deleteUser))));
+    renderPager('#userPager', data, page => { App.users.page = page; loadUsers10(); });
+  }
+
+  window.toggleUser = async function(id, action) { await api('/api/users/' + id + '/' + action, { method: 'POST' }); showToast('Đã cập nhật trạng thái'); loadUsers10(); };
+  window.deleteUser = async function(id) { if (!confirm('Xóa tài khoản này?')) return; await api('/api/users/' + id, { method: 'DELETE' }); showToast('Đã xóa tài khoản'); loadUsers10(); };
+  async function openUserForm10(id = null) {
+    const form = document.querySelector('#userForm'); form.reset(); form.elements.id.value = ''; form.elements.email.disabled = false; form.elements.username.disabled = false;
+    if (id) { const row = await api('/api/users/' + id); setForm(form, { id: row.id, username: row.username, email: row.email, displayName: row.displayName, phone: row.phone, position: row.position, role: row.role }); form.elements.email.disabled = true; form.elements.username.disabled = true; }
+    App.modals.user.show();
+  }
+  async function saveUser10(event) {
+    event.preventDefault(); const data = formData(event.currentTarget); const id = data.id; delete data.id;
+    await api(id ? '/api/users/' + id : '/api/users', { method: id ? 'PUT' : 'POST', body: data });
+    App.modals.user.hide(); showToast('Đã lưu tài khoản'); loadUsers10();
+  }
+  async function resetUserPassword10(id) {
+    const password = prompt('Nhập mật khẩu mới tối thiểu 8 ký tự'); if (!password) return;
+    await api('/api/users/' + id + '/reset-password', { method: 'POST', body: { password } }); showToast('Đã đặt lại mật khẩu');
+  }
+
+  async function loadLogs10() {
+    const data = await api('/api/logs?' + new URLSearchParams(App.logs));
+    document.querySelector('#logRows').innerHTML = (data.items || []).map(row => '<tr><td>' + escapeHtml(row.created_at || '') + '</td><td>' + escapeHtml(row.actor_email || '') + '</td><td>' + escapeHtml(row.action || '') + '</td><td>' + escapeHtml(row.module || '') + '</td><td>' + escapeHtml(row.ip_address || '') + '</td><td>' + escapeHtml(row.message || '') + '</td></tr>').join('') || emptyRow(6, 'Chưa có nhật ký');
+    renderPager('#logPager', data, page => { App.logs.page = page; loadLogs10(); });
+  }
+
+  async function loadBackups10() {
+    const data = await api('/api/backups?' + new URLSearchParams(App.backups));
+    document.querySelector('#backupRows').innerHTML = (data.items || []).map(row => '<tr><td>' + escapeHtml(row.created_at || '') + '</td><td>' + escapeHtml(row.file_name || '') + '</td><td>' + number(row.file_size || 0) + ' byte</td><td>' + escapeHtml(row.status || '') + '</td><td>' + escapeHtml(row.created_by_email || '') + '</td><td><button class="btn btn-sm btn-outline-success" onclick="createBackup10()">Download new</button></td></tr>').join('') || emptyRow(6, 'Chưa có lịch sử backup');
+    renderPager('#backupPager', data, page => { App.backups.page = page; loadBackups10(); });
+  }
+  window.createBackup10 = createBackup10;
+  async function createBackup10() {
+    const response = await fetch('/api/backups', { method: 'POST', headers: { Authorization: 'Bearer ' + App.token, 'X-CSRF-Token': App.csrfToken || '' } });
+    if (!response.ok) throw new Error('Không tạo được backup');
+    const blob = await response.blob(); const name = /filename="?([^";]+)"?/i.exec(response.headers.get('Content-Disposition') || '')?.[1] || 'Backup.sql';
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Đã backup database'); loadBackups10();
+  }
+  async function restoreBackup10(event) {
+    event.preventDefault(); if (!confirm('Restore sẽ thay đổi database. Tiếp tục?')) return;
+    const file = event.currentTarget.elements.file?.files?.[0];
+    if (file) {
+      const body = new FormData(event.currentTarget);
+      const response = await fetch('/api/backups/restore', { method: 'POST', headers: { Authorization: 'Bearer ' + App.token, 'X-CSRF-Token': App.csrfToken || '' }, body });
+      const payload = await response.json().catch(() => null); if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'Restore lỗi');
+    } else await api('/api/backups/restore', { method: 'POST', body: formData(event.currentTarget) });
+    showToast('Đã restore backup');
+  }
+
+  async function loadPresence10(value, selector) {
+    const params = value === 'TEMPORARY' ? { pageSize: 100 } : { presenceStatus: 'AWAY', pageSize: 100 };
+    const data = await api('/api/persons?' + new URLSearchParams(params));
+    let items = data.items || [];
+    if (value === 'TEMPORARY') {
+      items = items.filter(row => {
+        const temporaryFlag = row.temporary_residence ?? row.temporaryResidence ?? row.is_temporary_residence;
+        if (temporaryFlag === true || temporaryFlag === 1 || temporaryFlag === '1' || temporaryFlag === 'true') return true;
+        return String(row.residency_status || row.residencyStatus || '').toUpperCase() === 'TEMPORARY';
+      });
+    }
+    document.querySelector(selector).innerHTML = table10(['Mã hộ','Họ tên','Ngày sinh','CCCD','Điện thoại'], items.map(row => [row.household_code, row.full_name, formatDate(row.date_of_birth), row.identity_number, row.phone]));
+  }
+
+  function bindReportControl10(selector, event, handler) {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    if (el.dataset.reportBound === event) return;
+    el.dataset.reportBound = event;
+    el.addEventListener(event, handler);
+  }
+
+  function table10(headers, rows) { return '<table class="table table-hover table-bordered align-middle mb-0"><thead><tr>' + headers.map(h => '<th>' + escapeHtml(h) + '</th>').join('') + '</tr></thead><tbody>' + (rows.length ? rows.map(r => '<tr>' + r.map(c => '<td>' + escapeHtml(c ?? '') + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + Math.max(1, headers.length) + '" class="text-center text-muted py-3">Không có dữ liệu</td></tr>') + '</tbody></table>'; }
+  function bindOnce(selector, event, handler) { const el = document.querySelector(selector); if (!el || el.dataset['bound' + event]) return; el.dataset['bound' + event] = '1'; el.addEventListener(event, handler); }
+})();
