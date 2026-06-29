@@ -126,6 +126,11 @@ final class Household extends BaseModel
         if ($code === '') throw new \RuntimeException('Mã hộ là bắt buộc');
         if ($address === '') throw new \RuntimeException('Địa chỉ là bắt buộc');
         $category = $this->categoryKey($data['householdType'] ?? $data['household_type'] ?? $data['category'] ?? '');
+        $note = trim((string) ($data['note'] ?? '')) ?: null;
+        if (in_array($category, ['policy','escaped_poverty'], true)) {
+            $label = self::CATEGORY_OPTIONS[$category] ?? '';
+            $note = trim(($note ? $note . '; ' : '') . $label);
+        }
         return [
             'code' => $code,
             'head' => trim((string) ($data['headCitizenName'] ?? $data['head_citizen_name'] ?? '')) ?: null,
@@ -136,7 +141,7 @@ final class Household extends BaseModel
             'poor' => $category === 'poor' ? 1 : $this->bool($data['poorHousehold'] ?? $data['poor_household'] ?? 0),
             'near_poor' => $category === 'near_poor' ? 1 : $this->bool($data['nearPoorHousehold'] ?? $data['near_poor_household'] ?? 0),
             'disabled' => $category === 'other' ? 1 : $this->bool($data['disabledHousehold'] ?? $data['disabled_household'] ?? 0),
-            'note' => trim((string) ($data['note'] ?? '')) ?: null,
+            'note' => $note,
             'status' => $data['status'] ?? 'ACTIVE',
             'user' => $userId,
         ];
