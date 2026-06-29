@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260629-person-advanced-filters-1">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260629-appearance-config-1">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -19,7 +19,7 @@
       <div class="login-column login-column-form">
         <section class="login-panel">
           <div class="login-brand" aria-label="Thôn 09 xã Hồng Phong">
-            <div class="login-logo login-logo-emblem" aria-hidden="true">
+            <div id="loginLogo" class="login-logo login-logo-emblem" aria-hidden="true">
               <span class="logo-flag"><i class="fa-solid fa-star"></i></span>
               <span class="logo-landmark"><i class="fa-solid fa-landmark"></i></span>
               <span class="logo-village"><i class="fa-solid fa-house-chimney"></i></span>
@@ -27,8 +27,8 @@
               <strong>09</strong>
             </div>
             <div class="login-title-block">
-              <p>Hệ thống</p>
-              <h1><span>Quản lý hành chính</span><strong>Thôn 09</strong><span>Xã Hồng Phong</span></h1>
+              <p id="loginSystemPrefix">Hệ thống</p>
+              <h1><span id="loginSystemName">Quản lý hành chính</span><strong id="loginHamletName">Thôn 09</strong><span id="loginCommuneName">Xã Hồng Phong</span></h1>
             </div>
           </div>
           <form id="loginForm" class="login-form" novalidate>
@@ -42,7 +42,7 @@
             </div>
             <button class="btn login-submit" type="submit"><i class="fa-solid fa-lock" aria-hidden="true"></i><span>Đăng nhập</span></button>
           </form>
-          <footer class="login-footer"><span>Phiên bản v2.0</span><span>© Thôn 09 - Xã Hồng Phong</span></footer>
+          <footer class="login-footer"><span id="loginVersion">Phiên bản v2.0</span><span id="loginSlogan">© Thôn 09 - Xã Hồng Phong</span></footer>
         </section>
       </div>
       <aside class="login-column login-column-intro" aria-label="Giới thiệu Thôn 09">
@@ -52,8 +52,8 @@
         </div>
         <div class="intro-content">
           <article class="history-card">
-            <h2>Giới thiệu Thôn 09 - Xã Hồng Phong</h2>
-            <div class="history-heading"><span class="history-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span><h3>Lịch sử hình thành Thôn 09</h3></div>
+            <h2 id="loginIntroTitle">Giới thiệu Thôn 09 - Xã Hồng Phong</h2>
+            <div class="history-heading"><span class="history-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span><h3 id="loginHistoryTitle">Lịch sử hình thành Thôn 09</h3></div>
             <div id="loginHistoryText" class="history-text" data-setting-key="hamletHistory">Nội dung giới thiệu lịch sử Thôn 09 sẽ được hiển thị từ cấu hình hệ thống khi quản trị viên cập nhật dữ liệu.</div>
           </article>
           <section class="login-info-card" aria-label="Thông tin cơ bản">
@@ -61,12 +61,10 @@
             <div class="login-stats" id="loginStats" aria-live="polite">
               <div class="public-stat stat-house"><i class="fa-solid fa-house"></i><span>Tổng số hộ</span><strong data-stat="total_households">0</strong><small>hộ</small></div>
               <div class="public-stat stat-pop"><i class="fa-solid fa-users"></i><span>Tổng nhân khẩu</span><strong data-stat="total_citizens">0</strong><small>người</small></div>
+              <div class="public-stat stat-party"><i class="fa-solid fa-landmark-flag"></i><span>Đảng viên</span><strong data-stat="party_member_count">0</strong><small>người</small></div>
               <div class="public-stat stat-male"><i class="fa-solid fa-person"></i><span>Nam</span><strong data-stat="male_count">0</strong><small>người</small></div>
               <div class="public-stat stat-female"><i class="fa-solid fa-person-dress"></i><span>Nữ</span><strong data-stat="female_count">0</strong><small>người</small></div>
-              <div class="public-stat stat-temp"><i class="fa-solid fa-location-dot"></i><span>Tạm trú</span><strong data-stat="temporary_count">0</strong><small>người</small></div>
               <div class="public-stat stat-away"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Tạm vắng</span><strong data-stat="away_count">0</strong><small>người</small></div>
-              <div class="public-stat stat-old"><i class="fa-solid fa-person-cane"></i><span>Trên 60 tuổi</span><strong data-stat="elderly_count">0</strong><small>người</small></div>
-              <div class="public-stat stat-child"><i class="fa-solid fa-child-reaching"></i><span>Dưới 6 tuổi</span><strong data-stat="under_six_count">0</strong><small>người</small></div>
             </div>
           </section>
         </div>
@@ -120,13 +118,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260629-person-advanced-filters-1"></script>
+  <script src="assets/js/app.js?v=20260629-appearance-config-1"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/import.js?v=20260629-two-import-buttons-1"></script>
-  <script src="assets/js/admin-panel.js?v=20260629-person-advanced-filters-1"></script>
-  <script src="assets/js/admin-panel-bridge.js?v=20260629-digital-government-2"></script>
+  <script src="assets/js/admin-panel.js?v=20260629-appearance-config-1"></script>
+  <script src="assets/js/admin-panel-bridge.js?v=20260629-appearance-config-1"></script>
   <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint10.js?v=20260629-report-disable-old-1"></script>
