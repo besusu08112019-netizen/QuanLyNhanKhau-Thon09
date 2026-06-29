@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260630-uiux-sprint-1">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260630-header-clean-1">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -90,13 +90,7 @@
       <div id="loadingBar" class="progress rounded-0 d-none" style="height:3px"><div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div></div>
 
       <section id="dashboardScreen" class="screen active dashboard-overview-screen">
-        <section class="dashboard-hero-row">
-          <div>
-            <h2>Tổng quan</h2>
-            <p>Theo dõi nhanh các chỉ số trọng tâm về hộ dân và nhân khẩu Thôn 09.</p>
-          </div>
-          <div id="dashboardGeneratedAt" class="dashboard-sync-note">Đang cập nhật dữ liệu</div>
-        </section>
+        <section class="dashboard-status-row"><div id="dashboardGeneratedAt" class="dashboard-sync-note">Đang cập nhật dữ liệu</div></section>
         <section id="dashboardKpis" class="dashboard-kpi-grid" aria-label="Chỉ số tổng quan"></section>
         <section class="dashboard-chart-grid" aria-label="Biểu đồ tổng quan">
           <article class="dashboard-panel dashboard-panel-large">
@@ -128,13 +122,7 @@
       </section>
 
       <section id="householdsScreen" class="screen household-management-screen">
-        <div class="module-page-head">
-          <div>
-            <h2>Quản lý hộ gia đình</h2>
-            <div class="module-breadcrumb">Trang chủ / Quản lý hộ gia đình</div>
-          </div>
-          <button id="householdAddBtn" class="module-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm hộ dân</button>
-        </div>
+        <div class="module-action-row"><button id="householdAddBtn" class="module-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm hộ dân</button></div>
         <div class="content-card module-filter-card household-filter-card">
           <div class="household-filter-grid">
             <div class="module-field household-search-field"><label for="householdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="householdSearch" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ..."></div></div>
@@ -152,13 +140,7 @@
       </section>
 
       <section id="personsScreen" class="screen person-management-screen">
-        <div class="person-page-head">
-          <div>
-            <h2>Quản lý nhân khẩu</h2>
-            <div class="person-breadcrumb">Trang chủ / Quản lý nhân khẩu</div>
-          </div>
-          <button id="personAddBtn" class="person-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm nhân khẩu</button>
-        </div>
+        <div class="module-action-row person-action-row"><button id="personAddBtn" class="person-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm nhân khẩu</button></div>
 
         <div class="content-card person-search-card mb-4">
           <div class="person-search-row">
@@ -202,12 +184,6 @@
       </section>
 
       <section id="reportsScreen" class="screen report-screen">
-        <div class="report-page-head">
-          <div>
-            <h2>Báo cáo - Thống kê</h2>
-            <div class="report-breadcrumb">Trang chủ / Báo cáo - Thống kê</div>
-          </div>
-        </div>
 
         <form id="reportForm" class="content-card report-filter-card">
           <div class="report-filter-grid">
@@ -267,13 +243,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260630-uiux-sprint-1"></script>
+  <script src="assets/js/app.js?v=20260630-header-clean-1"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/import.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/admin-panel.js?v=20260629-background-upload-fix-1"></script>
-  <script src="assets/js/admin-panel-bridge.js?v=20260630-uiux-sprint-1"></script>
+  <script src="assets/js/admin-panel-bridge.js?v=20260630-header-clean-1"></script>
   <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint10.js?v=20260629-report-disable-old-1"></script>
