@@ -575,8 +575,7 @@ function parseBackgroundImages(settings) {
   const text = String(raw || '').trim();
   if (!text) return [];
   try { const parsed = JSON.parse(text); if (Array.isArray(parsed)) return parsed.filter(Boolean); } catch (_) {}
-  return text.split(/[
-,]+/).map(item => item.trim()).filter(Boolean);
+  return text.split(/[\n,]+/).map(item => item.trim()).filter(Boolean);
 }
 
 function animateLoginNumber(el, target) {
