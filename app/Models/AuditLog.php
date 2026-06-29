@@ -6,18 +6,24 @@ use App\Core\BaseModel;
 
 final class AuditLog extends BaseModel
 {
-    public function page(array $filters = []): array
+    public function paginate(array $filters = []): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 50));
         $where = ['1=1']; $params = [];
         if (!empty($filters['module'])) { $where[] = 'module = :module'; $params['module'] = $filters['module']; }
         if (!empty($filters['action'])) { $where[] = 'action = :action'; $params['action'] = $filters['action']; }
-        if (!empty($filters['search'])) { $where[] = '(actor_email LIKE :q OR message LIKE :q OR entity_id LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
+        if (!empty($filters['search'])) {
+            $q = '%' . $filters['search'] . '%';
+            $where[] = '(actor_email LIKE :q_actor OR message LIKE :q_message OR entity_id LIKE :q_entity)';
+            $params['q_actor'] = $q;
+            $params['q_message'] = $q;
+            $params['q_entity'] = $q;
+        }
         if (!empty($filters['dateFrom'])) { $where[] = 'DATE(created_at) >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'DATE(created_at) <= :date_to'; $params['date_to'] = $filters['dateTo']; }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM audit_logs $sqlWhere", $params)['total'];
-        $items = $this->fetchAll("SELECT * FROM audit_logs $sqlWhere ORDER BY created_at DESC, id DESC LIMIT $pageSize OFFSET $offset", $params);
+        $items = $this->fetchAll("SELECT audit_logs.*, actor_email AS user_email, action AS action_name, module AS module_name, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.ip')), '') AS ip_address FROM audit_logs $sqlWhere ORDER BY created_at DESC, id DESC LIMIT $pageSize OFFSET $offset", $params);
         return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
 
