@@ -261,7 +261,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260630-final-nav-inline-2"></script>
+  <script src="assets/js/app.js?v=20260630-final-nav-inline-3"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
@@ -370,7 +370,6 @@
     var button = event.target.closest && event.target.closest('.sidebar .nav-link[data-screen]');
     if (!button || button.classList.contains('gov-logout')) return;
     event.preventDefault();
-    event.stopPropagation();
     window.switchScreen(button.dataset.screen);
   }, true);
 })();
