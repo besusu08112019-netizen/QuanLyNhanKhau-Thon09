@@ -777,3 +777,33 @@ function startTopbarClock() {
   tick();
   setInterval(tick, 1000);
 }
+
+
+// Government Admin Dashboard UI/UX 2.0 interactions
+(function(){
+  function q(s,r){return (r||document).querySelector(s);}
+  function qa(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+  function openScreen(screen){
+    if (typeof switchScreen === 'function') switchScreen(screen);
+    else {
+      qa('.sidebar .nav-link').forEach(function(btn){btn.classList.toggle('active', btn.dataset.screen === screen);});
+      qa('.screen').forEach(function(el){el.classList.toggle('active', el.id === screen + 'Screen');});
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    var collapse = q('#sidebarCollapse');
+    if (collapse) collapse.addEventListener('click', function(){ document.body.classList.toggle('sidebar-collapsed'); });
+    var sidebarLogout = q('#sidebarLogoutBtn');
+    if (sidebarLogout) sidebarLogout.addEventListener('click', function(){ var logout = q('#logoutBtn'); if (logout) logout.click(); });
+    qa('[data-quick-screen]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var screen = btn.dataset.quickScreen;
+        openScreen(screen);
+        setTimeout(function(){
+          if (btn.dataset.quickAction === 'addHousehold' && typeof openHouseholdForm === 'function') openHouseholdForm();
+          if (btn.dataset.quickAction === 'addPerson' && typeof openPersonForm === 'function') openPersonForm();
+        }, 120);
+      });
+    });
+  });
+})();
