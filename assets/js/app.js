@@ -16,6 +16,18 @@ const App = {
 };
 
 window.App = App;
+
+const DASHBOARD_STAT_CONFIG = [
+  { key: 'total_households', label: 'Tổng số hộ', icon: 'fa-house', loginClass: 'stat-house', unit: 'hộ' },
+  { key: 'total_citizens', label: 'Tổng nhân khẩu', icon: 'fa-users', loginClass: 'stat-pop', unit: 'người' },
+  { key: 'male_count', label: 'Nam', icon: 'fa-person', dashboardIcon: 'fa-mars', loginClass: 'stat-male', unit: 'người' },
+  { key: 'female_count', label: 'Nữ', icon: 'fa-person-dress', dashboardIcon: 'fa-venus', loginClass: 'stat-female', unit: 'người' },
+  { key: 'temporary_count', label: 'Tạm trú', icon: 'fa-location-dot', loginClass: 'stat-temp', unit: 'người' },
+  { key: 'away_count', label: 'Tạm vắng', icon: 'fa-person-walking-arrow-right', loginClass: 'stat-away', unit: 'người' },
+  { key: 'elderly_count', label: 'Trên 60 tuổi', dashboardLabel: 'Người cao tuổi', icon: 'fa-person-cane', loginClass: 'stat-old', unit: 'người' },
+  { key: 'under_six_count', label: 'Dưới 6 tuổi', dashboardLabel: 'Trẻ em', icon: 'fa-child-reaching', dashboardIcon: 'fa-child', loginClass: 'stat-child', unit: 'người' }
+];
+
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
@@ -129,20 +141,13 @@ async function loadDashboard() {
     const dashboardPersons = personData?.items || [];
     const dashboardAgeGroups = buildAgeGroups(dashboardPersons);
     const meritoriousHouseholds = metrics.meritorious_households ?? metrics.meritorious_family_count ?? metrics.meritorious_families ?? dashboardHouseholds.filter(row => Number(row.meritorious_family || row.meritoriousFamily || 0) > 0).length;
-    const cards = [
-      ['Tổng số hộ', metrics.total_households, 'fa-house'],
-      ['Tổng số nhân khẩu', metrics.total_citizens, 'fa-users'],
-      ['Nam', metrics.male_count, 'fa-mars'],
-      ['Nữ', metrics.female_count, 'fa-venus'],
+    const dashboardMetrics = { ...metrics, under_six_count: metrics.children_count };
+    const cards = DASHBOARD_STAT_CONFIG.map(item => [item.dashboardLabel || item.label, dashboardMetrics[item.key], item.dashboardIcon || item.icon]).concat([
       ['Gia đình có công', meritoriousHouseholds, 'fa-medal'],
-      ['Tạm trú', metrics.temporary_count, 'fa-location-dot'],
-      ['Tạm vắng', metrics.away_count, 'fa-person-walking-arrow-right'],
-      ['Trẻ em', metrics.children_count, 'fa-child'],
-      ['Người cao tuổi', metrics.elderly_count, 'fa-person-cane'],
       ['Độ tuổi lao động', metrics.working_age_count, 'fa-briefcase'],
       ['Hộ nghèo', metrics.poor_households, 'fa-hand-holding-heart'],
       ['Hộ cận nghèo', metrics.near_poor_households, 'fa-scale-balanced']
-    ];
+    ]);
     $('#dashboardCards').innerHTML = cards.map(([label, value, icon]) => '<div class="col-sm-6 col-xl-3"><div class="metric-card admin-metric"><i class="fa-solid ' + icon + '"></i><div><div class="metric-label">' + escapeHtml(label) + '</div><div class="metric-value">' + number(value) + '</div></div></div></div>').join('');
     renderChart('#genderChart', charts.population || []);
     renderChart('#ageChart', dashboardAgeGroups || charts.ages || []);
@@ -495,8 +500,11 @@ async function loginFetchJson(url) {
 function updateLoginStats(metrics, charts = {}) {
   const data = { ...metrics };
   const ageZeroFive = (charts.ages || []).find(item => String(item.label || '').includes('0-5'));
-  if (ageZeroFive) data.under_six_count = ageZeroFive.value;
-  $$('[data-stat]', $('#loginStats') || document).forEach(el => animateLoginNumber(el, Number(data[el.dataset.stat] || 0)));
+  data.under_six_count = ageZeroFive?.value ?? metrics.under_six_count ?? metrics.children_count ?? 0;
+  DASHBOARD_STAT_CONFIG.forEach(item => {
+    const el = $('[data-stat="' + item.key + '"]', $('#loginStats') || document);
+    if (el) animateLoginNumber(el, Number(data[item.key] || 0));
+  });
 }
 
 function updateLoginHistory(settings) {
