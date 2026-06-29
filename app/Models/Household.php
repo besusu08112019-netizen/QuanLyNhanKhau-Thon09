@@ -6,13 +6,21 @@ use App\Core\BaseModel;
 
 final class Household extends BaseModel
 {
-    public function page(array $filters): array
+    public function paginate(array $filters): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         $where = ['h.status <> "DELETED"'];
         $params = [];
         if (!empty($filters['status'])) { $where[] = 'h.status = :status'; $params['status'] = $filters['status']; }
-        if (!empty($filters['search'])) { $where[] = '(h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q OR h.phone LIKE :q OR h.area_code LIKE :q)'; $params['q'] = '%' . $filters['search'] . '%'; }
+        if (!empty($filters['search'])) {
+            $q = '%' . $filters['search'] . '%';
+            $where[] = '(h.household_code LIKE :q_code OR h.head_citizen_name LIKE :q_head OR h.address LIKE :q_address OR h.phone LIKE :q_phone OR h.area_code LIKE :q_area)';
+            $params['q_code'] = $q;
+            $params['q_head'] = $q;
+            $params['q_address'] = $q;
+            $params['q_phone'] = $q;
+            $params['q_area'] = $q;
+        }
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM households h $sqlWhere", $params)['total'];
         $items = $this->fetchAll("SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere ORDER BY h.household_code LIMIT $pageSize OFFSET $offset", $params);
