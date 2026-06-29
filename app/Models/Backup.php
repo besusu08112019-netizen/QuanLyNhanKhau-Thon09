@@ -51,7 +51,7 @@ final class Backup extends BaseModel
         }
         $fileName = 'Restore_' . date('Ymd_Hi') . '.sql';
         $checksum = hash('sha256', $sql);
-        $this->insert('INSERT INTO backups (file_name, file_path, file_size, checksum, status, created_by, restored_at, restored_by) VALUES (:file_name,:file_path,:file_size,:checksum,"RESTORED",:user,NOW(),:user)', ['file_name' => $fileName, 'file_path' => 'restore://inline', 'file_size' => strlen($sql), 'checksum' => $checksum, 'user' => $userId]);
+        $this->insert('INSERT INTO backups (file_name, file_path, file_size, checksum, status, created_by, restored_at, restored_by) VALUES (:file_name,:file_path,:file_size,:checksum,"RESTORED",:created_by,NOW(),:restored_by)', ['file_name' => $fileName, 'file_path' => 'restore://inline', 'file_size' => strlen($sql), 'checksum' => $checksum, 'created_by' => $userId, 'restored_by' => $userId]);
         return ['statements' => $count, 'checksum' => $checksum];
     }
 
