@@ -29,6 +29,17 @@ const DASHBOARD_STAT_CONFIG = [
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+window.switchScreen = switchScreen;
+if (!window.__thon09NavDelegated) {
+  window.__thon09NavDelegated = true;
+  document.addEventListener('click', event => {
+    const navButton = event.target.closest('.sidebar .nav-link[data-screen]');
+    if (!navButton) return;
+    event.preventDefault();
+    switchScreen(navButton.dataset.screen);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', init);
 
 function init() {
@@ -46,12 +57,6 @@ function bindEvents() {
   $('#loginForm').addEventListener('submit', login);
   $('#logoutBtn').addEventListener('click', logout);
   $('#sidebarToggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
-  document.addEventListener('click', event => {
-    const navButton = event.target.closest('.sidebar .nav-link[data-screen]');
-    if (!navButton) return;
-    event.preventDefault();
-    switchScreen(navButton.dataset.screen);
-  });
   const dashboardFilters = $('#dashboardFilters');
   if (dashboardFilters) dashboardFilters.addEventListener('submit', event => { event.preventDefault(); loadDashboard(); refreshLoginConfig(); });
   const dashboardResetBtn = $('#dashboardResetBtn');
