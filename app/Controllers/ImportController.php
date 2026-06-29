@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
+use App\Core\Database;
 use App\Models\Citizen;
 use App\Models\Household;
 
@@ -16,6 +17,17 @@ final class ImportController extends BaseController
         parent::__construct($request);
         $this->households = new Household();
         $this->citizens = new Citizen();
+    }
+
+    public function template(): void
+    {
+        $this->requirePermission('import', 'read');
+        $path = BASE_PATH . '/sample-data/Mau_Import_NhanKhau.xlsx';
+        if (!is_file($path)) throw new \RuntimeException('Chưa có file mẫu Import Excel');
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="Mau_Import_NhanKhau.xlsx"');
+        readfile($path);
+        exit;
     }
 
     public function preview(): void
@@ -38,29 +50,59 @@ final class ImportController extends BaseController
         $success = 0;
         $skipped = 0;
         $errors = $result['errors'];
+        $rolledBack = false;
 
-        foreach ($result['validRows'] as $item) {
-            try {
-                if ($type === 'household') {
-                    $existing = $this->households->findByCode((string) $item['data']['householdCode']);
-                    if ($existing && $mode === 'update') {
-                        $this->households->update((int) $existing['id'], $item['data'], (int) $user['id']);
-                    } elseif ($existing) {
-                        $skipped++;
-                        continue;
-                    } else {
-                        $this->households->create($item['data'], (int) $user['id']);
-                    }
-                } else {
-                    $this->citizens->create($item['data'], (int) $user['id']);
-                }
-                $success++;
-            } catch (\Throwable $e) {
-                $errors[] = ['row' => $item['row'], 'message' => $e->getMessage()];
-            }
+        if (!empty($errors)) {
+            $payload = ['type' => $type, 'total' => count($rows), 'success' => 0, 'skipped' => 0, 'failed' => count($errors), 'rolledBack' => false, 'errors' => $errors];
+            $this->audit($user, 'import', 'create', 'Import dữ liệu không hợp lệ', null, $payload, 'WARN');
+            $this->ok($payload);
+            return;
         }
 
-        $payload = ['type' => $type, 'total' => count($rows), 'success' => $success, 'skipped' => $skipped, 'failed' => count($errors), 'errors' => $errors];
+        $db = Database::pdo();
+        $db->beginTransaction();
+        try {
+            foreach ($result['validRows'] as $item) {
+                try {
+                    if ($type === 'household') {
+                        $existing = $this->households->findByCode((string) $item['data']['householdCode']);
+                        if ($existing && $mode === 'update') {
+                            $this->households->update((int) $existing['id'], $item['data'], (int) $user['id']);
+                        } elseif ($existing) {
+                            $skipped++;
+                            continue;
+                        } else {
+                            $this->households->create($item['data'], (int) $user['id']);
+                        }
+                    } else {
+                        $existing = !empty($item['data']['identityNumber']) ? $this->citizens->findByIdentity((string) $item['data']['identityNumber']) : null;
+                        if ($existing) {
+                            $this->citizens->update((int) $existing['id'], $item['data'], (int) $user['id']);
+                        } else {
+                            $this->citizens->create($item['data'], (int) $user['id']);
+                        }
+                    }
+                    $success++;
+                } catch (\Throwable $e) {
+                    $errors[] = ['row' => $item['row'], 'message' => $e->getMessage()];
+                }
+            }
+
+            if (!empty($errors)) {
+                $db->rollBack();
+                $rolledBack = true;
+                $success = 0;
+            } else {
+                $db->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            $rolledBack = true;
+            $success = 0;
+            $errors[] = ['row' => null, 'message' => $e->getMessage()];
+        }
+
+        $payload = ['type' => $type, 'total' => count($rows), 'success' => $success, 'skipped' => $skipped, 'failed' => count($errors), 'rolledBack' => $rolledBack, 'errors' => $errors];
         $this->audit($user, 'import', 'create', 'Import dữ liệu', null, $payload, count($errors) ? 'WARN' : 'INFO');
         $this->ok($payload);
     }
@@ -76,6 +118,9 @@ final class ImportController extends BaseController
     {
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
             throw new \RuntimeException('Vui lòng chọn file CSV hoặc XLSX');
+        }
+        if ((int) ($_FILES['file']['size'] ?? 0) > 5 * 1024 * 1024) {
+            throw new \RuntimeException('File import tối đa 5MB');
         }
         $name = strtolower((string) $_FILES['file']['name']);
         if (str_ends_with($name, '.csv')) return $this->readCsv($_FILES['file']['tmp_name']);
@@ -196,7 +241,7 @@ final class ImportController extends BaseController
             }
             $validRows[] = ['row' => $item['row'], 'data' => $data];
         }
-        return ['total' => count($rows), 'valid' => count($validRows), 'failed' => count($errors), 'errors' => $errors, 'validRows' => $validRows];
+        return ['total' => count($rows), 'valid' => count($validRows), 'failed' => count($errors), 'errors' => $errors, 'validRows' => $validRows, 'previewRows' => array_slice($validRows, 0, 20)];
     }
 
     private function normalizeData(string $type, array $data): array
@@ -238,7 +283,7 @@ final class ImportController extends BaseController
     private function aliases(): array
     {
         return [
-            'householdCode' => ['ma ho','ma ho gia dinh','household code','householdcode'],
+            'householdCode' => ['ma ho','ma ho gia dinh','household code','householdcode','householdid'],
             'headCitizenName' => ['chu ho','ten chu ho','ho ten chu ho'],
             'address' => ['dia chi','thon','dia chi thuong tru'],
             'phone' => ['so dien thoai','dien thoai','sdt','phone'],
@@ -247,11 +292,11 @@ final class ImportController extends BaseController
             'nearPoorHousehold' => ['ho can ngheo','can ngheo'],
             'disabledHousehold' => ['tan tat','khuyet tat'],
             'note' => ['ghi chu','note'],
-            'citizenCode' => ['ma nhan khau','ma cong dan','citizen code'],
-            'fullName' => ['ho va ten','ho ten','ten nhan khau','full name'],
+            'citizenCode' => ['ma nhan khau','ma cong dan','citizen code','citizencode'],
+            'fullName' => ['ho va ten','ho ten','ten nhan khau','full name','fullname','displayname'],
             'gender' => ['gioi tinh'],
-            'dateOfBirth' => ['ngay sinh','nam sinh','date of birth'],
-            'identityNumber' => ['cccd','cmnd','so cccd','so cmnd'],
+            'dateOfBirth' => ['ngay sinh','nam sinh','date of birth','dateofbirth','dob'],
+            'identityNumber' => ['cccd','cmnd','so cccd','so cmnd','identitynumber','identity'],
             'relationship' => ['quan he voi chu ho','quan he'],
             'ethnicity' => ['dan toc'],
             'religion' => ['ton giao'],
@@ -259,8 +304,8 @@ final class ImportController extends BaseController
             'educationLevel' => ['hoc van','trinh do hoc van'],
             'maritalStatus' => ['hon nhan','tinh trang hon nhan'],
             'residency_status' => ['thuong tru','cu tru','tam tru'],
-            'presenceStatus' => ['hien tai','o nha di vang'],
-            'status' => ['trang thai','con song da chet'],
+            'presenceStatus' => ['hien tai','o nha di vang','presencestatus'],
+            'status' => ['trang thai','con song da chet','status'],
             'currentAddress' => ['dia chi hien tai'],
         ];
     }
