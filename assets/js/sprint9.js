@@ -7,18 +7,7 @@
 
   function bootSprint9() { patchDashboard(); patchImportScreen(); patchRestoreScreen(); }
 
-  function patchDashboard() {
-    const oldLoad = window.loadDashboard;
-    if (typeof oldLoad !== 'function' || oldLoad.sprint9) return;
-    window.loadDashboard = async function sprint9LoadDashboard() {
-      try {
-        const query = new URLSearchParams(formData(document.querySelector('#dashboardFilters'))).toString();
-        const data = await api('/api/dashboard/summary' + (query ? '?' + query : ''));
-        renderSprint9Dashboard(data);
-      } catch (error) { showToast('Không tải được tổng quan: ' + error.message, 'danger'); }
-    };
-    window.loadDashboard.sprint9 = true;
-  }
+  function patchDashboard() { return; }
 
   function renderSprint9Dashboard(data) {
     const m = data.metrics || {};
@@ -39,7 +28,7 @@
     screen.dataset.sprint9 = '1';
     const oldGuide = screen.querySelector('.content-card.mb-3');
     if (oldGuide) oldGuide.remove();
-    document.querySelector('#importForm')?.insertAdjacentHTML('beforebegin', '<div class="content-card mb-3"><h3 class="section-title">Hướng dẫn Import Excel</h3><ul class="mb-3"><li>Không đổi tên Sheet.</li><li>Không đổi tên cột.</li><li>Ngày sinh định dạng dd/MM/yyyy.</li><li>CCCD để dạng Text.</li><li>Không trùng Mã nhân khẩu.</li><li>Không trùng CCCD.</li></ul><a class="btn btn-success" href="sample-data/Mau_Import_NhanKhau.xlsx" download><i class="fa-solid fa-file-excel"></i> Tải file Excel mẫu</a></div>');
+    document.querySelector('#importForm')?.insertAdjacentHTML('beforebegin', '<div class="content-card mb-3"><h3 class="section-title">Hướng dẫn Import Excel</h3><ul class="mb-3"><li>Chọn đúng loại dữ liệu trước khi import.</li><li>Không đổi tên Sheet.</li><li>Không đổi tên cột.</li><li>CCCD và số điện thoại để dạng Text.</li><li>Với hộ dân: không trùng Mã hộ; các cột diện hộ nhập 1 hoặc 0.</li></ul><div class="d-flex flex-wrap gap-2"><a class="btn btn-success" href="sample-data/Mau_Import_NhanKhau.xlsx" download><i class="fa-solid fa-file-excel"></i> Mẫu nhân khẩu</a><a class="btn btn-outline-success" href="sample-data/Mau_Import_HoDan.xlsx" download><i class="fa-solid fa-file-excel"></i> Mẫu hộ dân</a></div></div>');
   }
 
   function patchRestoreScreen() {
