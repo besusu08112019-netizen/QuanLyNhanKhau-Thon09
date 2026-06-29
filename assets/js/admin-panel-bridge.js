@@ -294,9 +294,9 @@
   function enforceSuperAdminMenu() {
     setTimeout(() => {
       const role = App.user?.role || '';
-      const adminOnly = ['users','permissions','logs','settings','backups','restore'];
+      const adminOnly = ['users','permissions','logs','settings','appearance','backups','restore'];
       document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
-        btn.classList.toggle('d-none', adminOnly.includes(btn.dataset.screen) && role !== 'SUPER_ADMIN');
+        btn.classList.toggle('d-none', adminOnly.includes(btn.dataset.screen) && !['SUPER_ADMIN','ADMIN'].includes(role));
       });
     }, 0);
   }
