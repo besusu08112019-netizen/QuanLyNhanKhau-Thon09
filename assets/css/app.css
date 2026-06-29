@@ -171,6 +171,13 @@ body.theme-dark .table th { background: #111827; color: #cbd5e1; }
 .rich-editor:focus { outline: 3px solid rgba(37,99,235,.18); border-color: var(--brand); }
 
 
+.person-filter-card .form-label { margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.person-filter-card .form-control, .person-filter-card .form-select { min-height: 38px; }
+.person-filter-actions { padding-top: 6px; }
+.advanced-filter-panel { background: #f8fafc; border-radius: 8px; padding: 14px; }
+body.theme-dark .advanced-filter-panel { background: #111827; }
+
+
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); max-width: 100%; }
 .sidebar { background: linear-gradient(180deg, var(--sidebar), var(--sidebar-soft)); color: #e5edf7; padding: 18px 14px; position: sticky; top: 0; height: 100vh; overflow-y: auto; box-shadow: 8px 0 24px rgba(15,23,42,.14); }
 .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; border-bottom: 1px solid rgba(255,255,255,.12); margin-bottom: 16px; }
