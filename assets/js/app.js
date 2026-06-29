@@ -20,12 +20,10 @@ window.App = App;
 const DASHBOARD_STAT_CONFIG = [
   { key: 'total_households', label: 'Tổng số hộ', icon: 'fa-house', loginClass: 'stat-house', unit: 'hộ' },
   { key: 'total_citizens', label: 'Tổng nhân khẩu', icon: 'fa-users', loginClass: 'stat-pop', unit: 'người' },
+  { key: 'party_member_count', label: 'Đảng viên', icon: 'fa-landmark-flag', loginClass: 'stat-party', unit: 'người' },
   { key: 'male_count', label: 'Nam', icon: 'fa-person', dashboardIcon: 'fa-mars', loginClass: 'stat-male', unit: 'người' },
   { key: 'female_count', label: 'Nữ', icon: 'fa-person-dress', dashboardIcon: 'fa-venus', loginClass: 'stat-female', unit: 'người' },
-  { key: 'temporary_count', label: 'Tạm trú', icon: 'fa-location-dot', loginClass: 'stat-temp', unit: 'người' },
-  { key: 'away_count', label: 'Tạm vắng', icon: 'fa-person-walking-arrow-right', loginClass: 'stat-away', unit: 'người' },
-  { key: 'elderly_count', label: 'Trên 60 tuổi', dashboardLabel: 'Người cao tuổi', icon: 'fa-person-cane', loginClass: 'stat-old', unit: 'người' },
-  { key: 'under_six_count', label: 'Dưới 6 tuổi', dashboardLabel: 'Trẻ em', icon: 'fa-child-reaching', dashboardIcon: 'fa-child', loginClass: 'stat-child', unit: 'người' }
+  { key: 'away_count', label: 'Tạm vắng', icon: 'fa-person-walking-arrow-right', loginClass: 'stat-away', unit: 'người' }
 ];
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -48,8 +46,8 @@ function bindEvents() {
   $('#logoutBtn').addEventListener('click', logout);
   $('#sidebarToggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
   $$('.sidebar .nav-link').forEach(btn => btn.addEventListener('click', () => switchScreen(btn.dataset.screen)));
-  $('#dashboardFilters').addEventListener('submit', event => { event.preventDefault(); loadDashboard(); });
-  $('#dashboardResetBtn').addEventListener('click', () => { $('#dashboardFilters').reset(); loadDashboard(); });
+  $('#dashboardFilters').addEventListener('submit', event => { event.preventDefault(); loadDashboard(); refreshLoginConfig(); });
+  $('#dashboardResetBtn').addEventListener('click', () => { $('#dashboardFilters').reset(); loadDashboard(); refreshLoginConfig(); });
   $('#householdAddBtn').addEventListener('click', () => openHouseholdForm());
   $('#personAddBtn').addEventListener('click', () => openPersonForm());
   $('#householdForm').addEventListener('submit', saveHousehold);
@@ -117,7 +115,7 @@ function switchScreen(screen) {
   $(`#${screen}Screen`).classList.add('active');
   $('#screenTitle').textContent = { dashboard: 'Tổng quan', households: 'Hộ dân', persons: 'Nhân khẩu', reports: 'Báo cáo' }[screen];
   $('.sidebar').classList.remove('open');
-  if (screen === 'dashboard') loadDashboard();
+  if (screen === 'dashboard') loadDashboard(); refreshLoginConfig();
   if (screen === 'households') loadHouseholds();
   if (screen === 'persons') loadPersons();
 }
@@ -252,7 +250,7 @@ async function saveHousehold(event) {
   const id = payload.id; delete payload.id;
   try {
     await api(id ? `/api/households/${id}` : '/api/households', { method: id ? 'PUT' : 'POST', body: payload });
-    App.modals.household.hide(); showToast('Đã lưu hộ dân'); loadHouseholds(); loadDashboard();
+    App.modals.household.hide(); showToast('Đã lưu hộ dân'); loadHouseholds(); loadDashboard(); refreshLoginConfig();
   } catch (error) { showToast(error.message, 'danger'); }
 }
 
@@ -264,7 +262,7 @@ async function savePerson(event) {
   const id = payload.id; delete payload.id;
   try {
     await api(id ? `/api/persons/${id}` : '/api/persons', { method: id ? 'PUT' : 'POST', body: payload });
-    App.modals.person.hide(); showToast('Đã lưu nhân khẩu'); loadPersons(); loadHouseholds(); loadDashboard();
+    App.modals.person.hide(); showToast('Đã lưu nhân khẩu'); loadPersons(); loadHouseholds(); loadDashboard(); refreshLoginConfig();
   } catch (error) { showToast(error.message, 'danger'); }
 }
 
@@ -289,12 +287,12 @@ async function showPerson(id) {
 
 async function deleteHousehold(id) {
   if (!confirm('Xóa hộ dân này?')) return;
-  try { await api(`/api/households/${id}`, { method: 'DELETE' }); showToast('Đã xóa hộ dân'); loadHouseholds(); loadDashboard(); }
+  try { await api(`/api/households/${id}`, { method: 'DELETE' }); showToast('Đã xóa hộ dân'); loadHouseholds(); loadDashboard(); refreshLoginConfig(); }
   catch (error) { showToast(error.message, 'danger'); }
 }
 async function deletePerson(id) {
   if (!confirm('Xóa nhân khẩu này?')) return;
-  try { await api(`/api/persons/${id}`, { method: 'DELETE' }); showToast('Đã xóa nhân khẩu'); loadPersons(); loadHouseholds(); loadDashboard(); }
+  try { await api(`/api/persons/${id}`, { method: 'DELETE' }); showToast('Đã xóa nhân khẩu'); loadPersons(); loadHouseholds(); loadDashboard(); refreshLoginConfig(); }
   catch (error) { showToast(error.message, 'danger'); }
 }
 async function bulkDeleteHouseholds() { await bulkDelete('.household-check:checked', '/api/households/bulk-delete', loadHouseholds, 'hộ dân'); }
@@ -306,7 +304,7 @@ async function bulkDelete(selector, url, reload, label) {
   try {
     const result = await api(url, { method: 'POST', body: { ids } });
     showToast(`Đã xóa ${result.success || 0} ${label}` + (result.errors?.length ? `, lỗi ${result.errors.length}` : ''));
-    reload(); loadDashboard();
+    reload(); loadDashboard(); refreshLoginConfig();
   } catch (error) { showToast(error.message, 'danger'); }
 }
 
@@ -479,39 +477,106 @@ function initLoginExperience() {
 }
 
 async function hydrateLoginIntro() {
-  if (!App.token) return;
-  try {
-    const [summary, settings] = await Promise.all([
-      Promise.resolve(App.dashboardSummary || null).then(cached => cached || loginFetchJson('/api/dashboard/summary')).catch(() => null),
-      loginFetchJson('/api/settings').catch(() => null)
-    ]);
-    if (summary?.metrics) updateLoginStats(summary.metrics, summary.charts || {});
-    if (settings) updateLoginHistory(settings);
-  } catch (_) {}
+  await refreshLoginConfig();
 }
 
-async function loginFetchJson(url) {
-  const response = await fetch(url, { headers: { Accept: 'application/json', Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
+async function refreshLoginConfig() {
+  try {
+    const data = await loginFetchJson('/api/public/login-config', true);
+    if (data?.settings) applyLoginSettings(data.settings);
+    if (data?.metrics) updateLoginStats(data.metrics);
+  } catch (_) {}
+}
+window.refreshLoginConfig = refreshLoginConfig;
+
+async function loginFetchJson(url, isPublic = false) {
+  const headers = { Accept: 'application/json' };
+  if (!isPublic && App.token) headers.Authorization = 'Bearer ' + App.token;
+  const response = await fetch(url, { headers, cache: 'no-store' });
   const payload = await response.json().catch(() => null);
   if (!response.ok || !payload?.ok) throw new Error('Không tải được dữ liệu');
   return payload.data;
 }
 
-function updateLoginStats(metrics, charts = {}) {
+function updateLoginStats(metrics) {
   const data = { ...metrics };
-  const ageZeroFive = (charts.ages || []).find(item => String(item.label || '').includes('0-5'));
-  data.under_six_count = ageZeroFive?.value ?? metrics.under_six_count ?? metrics.children_count ?? 0;
   DASHBOARD_STAT_CONFIG.forEach(item => {
     const el = $('[data-stat="' + item.key + '"]', $('#loginStats') || document);
     if (el) animateLoginNumber(el, Number(data[item.key] || 0));
   });
 }
 
+function applyLoginSettings(settings) {
+  setText('#loginSystemName', settings.systemName || 'Quản lý hành chính');
+  setText('#loginHamletName', settings.hamletName || 'Thôn 09');
+  setText('#loginCommuneName', settings.communeName || 'Xã Hồng Phong');
+  setText('#loginVersion', 'Phiên bản ' + (settings.softwareVersion || 'v2.0'));
+  setText('#loginSlogan', settings.slogan || ('© ' + (settings.hamletName || 'Thôn 09') + ' - ' + (settings.communeName || 'Xã Hồng Phong')));
+  setText('#loginIntroTitle', settings.introTitle || ('Giới thiệu ' + (settings.hamletName || 'Thôn 09') + ' - ' + (settings.communeName || 'Xã Hồng Phong')));
+  setText('#loginHistoryTitle', settings.historyTitle || 'Lịch sử hình thành Thôn 09');
+  updateLoginHistory(settings);
+  updateLoginLogo(settings.logoUrl || '');
+  updateLoginBackground(settings);
+}
+
+function setText(selector, value) { const el = $(selector); if (el) el.textContent = value; }
+
 function updateLoginHistory(settings) {
   const host = $('#loginHistoryText');
   if (!host) return;
-  const value = settings.hamletHistory || settings.history || settings.aboutHamlet || settings.about || settings.introduction;
-  if (value) host.textContent = value;
+  const value = settings.hamletHistory || settings.introduction || settings.history || settings.aboutHamlet || settings.about;
+  if (value) host.innerHTML = sanitizeRichHtml(value);
+}
+
+function sanitizeRichHtml(value) {
+  const template = document.createElement('template');
+  template.innerHTML = String(value || '');
+  template.content.querySelectorAll('script,style,iframe,object,embed').forEach(el => el.remove());
+  template.content.querySelectorAll('*').forEach(el => {
+    Array.from(el.attributes).forEach(attr => {
+      const name = attr.name.toLowerCase();
+      if (name.startsWith('on') || (['href','src'].includes(name) && /^javascript:/i.test(attr.value))) el.removeAttribute(attr.name);
+    });
+  });
+  return template.innerHTML;
+}
+
+function updateLoginLogo(url) {
+  const logo = $('#loginLogo');
+  if (!logo) return;
+  if (!logo.dataset.defaultHtml) logo.dataset.defaultHtml = logo.innerHTML;
+  if (url) {
+    logo.classList.add('login-logo-image');
+    logo.innerHTML = '<img src="' + escapeHtml(url) + '" alt="Logo Thôn 09">';
+  } else {
+    logo.classList.remove('login-logo-image');
+    logo.innerHTML = logo.dataset.defaultHtml;
+  }
+}
+
+function updateLoginBackground(settings) {
+  const intro = $('.login-column-intro');
+  if (!intro) return;
+  const images = parseBackgroundImages(settings);
+  if (!images.length) { intro.style.removeProperty('--login-bg'); return; }
+  let index = 0;
+  const apply = () => { intro.style.setProperty('--login-bg', 'url("' + images[index] + '")'); };
+  apply();
+  clearInterval(window.__thon09LoginBgTimer);
+  if (images.length > 1) {
+    const interval = Math.max(2500, Number(settings.backgroundInterval || 6000));
+    window.__thon09LoginBgTimer = setInterval(() => { index = (index + 1) % images.length; apply(); }, interval);
+  }
+}
+
+function parseBackgroundImages(settings) {
+  const raw = settings.backgroundImages || settings.backgroundUrl || '';
+  if (Array.isArray(raw)) return raw.filter(Boolean);
+  const text = String(raw || '').trim();
+  if (!text) return [];
+  try { const parsed = JSON.parse(text); if (Array.isArray(parsed)) return parsed.filter(Boolean); } catch (_) {}
+  return text.split(/[
+,]+/).map(item => item.trim()).filter(Boolean);
 }
 
 function animateLoginNumber(el, target) {
@@ -526,3 +591,5 @@ function animateLoginNumber(el, target) {
   requestAnimationFrame(step);
 }
 
+
+window.addEventListener('thon09:data-mutated', () => { if (typeof refreshLoginConfig === 'function') refreshLoginConfig(); });
