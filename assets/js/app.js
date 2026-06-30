@@ -139,7 +139,10 @@ function applyResponsiveTableLabels(root = document) {
         const label = headers[index] || '';
         if (!cell.hasAttribute('data-label')) cell.setAttribute('data-label', label);
         const normalizedLabel = normalizeSearchText(label);
+        const textValue = cell.textContent.replace(/\s+/g, ' ').trim();
+        const hasControl = !!cell.querySelector('button, .btn, a[href], input, select, textarea');
         cell.dataset.mobileRole = '';
+        cell.toggleAttribute('data-mobile-empty', !textValue && !hasControl);
         if (cell.querySelector('input[type="checkbox"]') && index === 0) {
           cell.dataset.mobileRole = 'select';
           return;
@@ -153,10 +156,14 @@ function applyResponsiveTableLabels(root = document) {
           titleAssigned = true;
           return;
         }
-        if (isMobileCardMetaLabel(normalizedLabel)) cell.dataset.mobileRole = 'meta';
+        if (isMobileCardAddressLabel(normalizedLabel)) cell.dataset.mobileRole = 'address';
+        else if (isMobileCardStatLabel(normalizedLabel)) cell.dataset.mobileRole = 'stat';
+        else if (isMobileCardBadgeLabel(normalizedLabel)) cell.dataset.mobileRole = 'badge';
+        else if (isMobileCardMetaLabel(normalizedLabel)) cell.dataset.mobileRole = 'meta';
       });
     });
   });
+  decorateMobileCardActions(root);
 }
 
 function isMobileCardTitleLabel(label, index) {
@@ -164,7 +171,19 @@ function isMobileCardTitleLabel(label, index) {
 }
 
 function isMobileCardMetaLabel(label) {
-  return ['ma ho', 'ma nhan khau', 'cccd', 'so dinh danh', 'dia chi', 'cu tru', 'trang thai', 'dien ho'].some(key => label.includes(key));
+  return ['ma ho', 'ma nhan khau', 'cccd', 'so dinh danh'].some(key => label.includes(key));
+}
+
+function isMobileCardAddressLabel(label) {
+  return ['dia chi'].some(key => label.includes(key));
+}
+
+function isMobileCardStatLabel(label) {
+  return ['o nha', 'di vang', 'so nhan khau', 'tong so', 'so luong'].some(key => label.includes(key));
+}
+
+function isMobileCardBadgeLabel(label) {
+  return ['dien ho', 'trang thai', 'dang vien', 'cu tru', 'vai tro', 'status'].some(key => label.includes(key));
 }
 
 function startResponsiveTableObserver() {
@@ -179,6 +198,15 @@ function startResponsiveTableObserver() {
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function decorateMobileCardActions(root = document) {
+  root.querySelectorAll?.('td[data-mobile-role="actions"] button, td[data-mobile-role="actions"] .btn').forEach(button => {
+    const text = normalizeSearchText(button.textContent || '');
+    if (text.includes('xem')) button.dataset.mobileAction = 'view';
+    else if (text.includes('sua')) button.dataset.mobileAction = 'edit';
+    else if (text.includes('xoa')) button.dataset.mobileAction = 'delete';
+  });
 }
 
 function ensureMobileSidebarBackdrop() {
