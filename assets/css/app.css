@@ -1122,3 +1122,18 @@ body.sidebar-open {
 
 .person-detail-empty { padding: 18px; border: 1px dashed var(--dashboard-line, #e5eaf0); border-radius: 16px; color: var(--dashboard-muted, #667085); text-align: center; background: #f8faf9; font-weight: 650; }
 .person-detail-dynamic .person-info-section:empty { display: none; }
+
+
+/* Import final layout */
+.import-screen .content-card { border-radius: 16px; }
+.import-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.import-card-head .section-title { margin-bottom: 0; }
+.import-card-head span { color: var(--muted); font-size: 12px; font-weight: 700; background: #f1f5f9; border-radius: 999px; padding: 4px 10px; }
+.import-guide-card ul { margin-bottom: 0; color: #334155; line-height: 1.65; }
+.import-form-card .btn { min-height: 44px; }
+.import-result-card table { min-width: 560px; }
+@media (max-width: 767.98px) {
+  .import-card-head { align-items: flex-start; flex-direction: column; }
+  .import-screen .btn { width: 100%; min-height: 46px; justify-content: center; }
+  .import-result-card .table-responsive { overflow-x: auto; }
+}

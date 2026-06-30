@@ -29,14 +29,15 @@
     if (!document.querySelector('[data-screen="import"]')) {
       reportsButton ? reportsButton.insertAdjacentHTML('beforebegin', button) : nav.insertAdjacentHTML('beforeend', button);
     }
-    main.insertAdjacentHTML('beforeend', '<section id="importScreen" class="screen">' +
-      '<div class="content-card mb-3"><h3 class="section-title">Hướng dẫn Import Excel</h3><ul class="mb-3"><li>Chọn đúng loại dữ liệu trước khi import.</li><li>Không đổi tên Sheet.</li><li>Không đổi tên cột.</li><li>CCCD và số điện thoại để dạng Text.</li><li>Với hộ dân: không trùng Mã hộ; cột Gia đình có công/Hộ nghèo/Hộ cận nghèo/Hộ có người khuyết tật nhập 1 hoặc 0.</li></ul><div class="d-flex flex-wrap gap-2"><a class="btn btn-success" href="/api/import/template?type=person" download="Mau_Import_NhanKhau.xlsx"><i class="fa-solid fa-file-excel"></i> Tải mẫu nhân khẩu</a><a class="btn btn-outline-success" href="/api/import/template?type=household" download="Mau_Import_HoDan.xlsx"><i class="fa-solid fa-file-excel"></i> Tải mẫu hộ dân</a></div></div>' +
-      '<form id="importForm" class="content-card mb-3"><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label">Loại dữ liệu</label><select name="type" class="form-select"><option value="person">Nhân khẩu</option><option value="household">Hộ dân</option></select></div><div class="col-md-3"><label class="form-label">Khi trùng mã hộ</label><select name="mode" class="form-select"><option value="skip">Bỏ qua</option><option value="update">Cập nhật</option></select></div><div class="col-md-4"><label class="form-label">File dữ liệu</label><input name="file" type="file" class="form-control" accept=".csv,.xlsx" required></div><div class="col-md-2 d-grid gap-2"><button id="importPreviewBtn" class="btn btn-outline-primary" type="button">Kiểm tra</button><button id="importRunBtn" class="btn btn-primary" type="button">Bắt đầu Import</button></div></div></form>' +
-      '<div class="row g-3 mb-3"><div class="col-md-3"><div class="metric-card"><div class="metric-label">Tổng số dòng</div><div id="importTotal" class="metric-value">0</div></div></div><div class="col-md-3"><div class="metric-card"><div class="metric-label">Hợp lệ</div><div id="importValid" class="metric-value">0</div></div></div><div class="col-md-3"><div class="metric-card"><div class="metric-label">Thành công</div><div id="importSuccess" class="metric-value">0</div></div></div><div class="col-md-3"><div class="metric-card"><div class="metric-label">Thất bại</div><div id="importFailed" class="metric-value">0</div></div></div></div>' +
-      '<div class="content-card"><div class="d-flex justify-content-between align-items-center mb-3"><h3 class="section-title mb-0">Kết quả Import</h3><span id="importStatus" class="text-muted small"></span></div><div id="importResult" class="table-responsive"><p class="text-muted mb-0">Chọn file CSV/XLSX và bấm Kiểm tra để xem trước dữ liệu.</p></div></div>' +
+    main.insertAdjacentHTML('beforeend', '<section id="importScreen" class="screen import-screen">' +
+      '<div class="content-card import-guide-card mb-3"><div class="import-card-head"><h3 class="section-title">Hướng dẫn Import Excel</h3><span>Card 1</span></div><ul class="mb-3"><li>Chọn đúng loại dữ liệu trước khi import.</li><li>Không đổi tên Sheet và không đổi tên cột trong file mẫu.</li><li>Ngày sinh dùng định dạng dd/MM/yyyy hoặc yyyy-MM-dd.</li><li>CCCD và số điện thoại để dạng Text để không mất số 0 đầu.</li><li>Kiểm tra dữ liệu trước, chỉ bấm Bắt đầu Import khi không còn lỗi.</li></ul><div class="d-flex flex-wrap gap-2"><button class="btn btn-success" type="button" data-import-template="person"><i class="fa-solid fa-file-excel"></i> Mẫu nhân khẩu</button><button class="btn btn-outline-success" type="button" data-import-template="household"><i class="fa-solid fa-file-excel"></i> Mẫu hộ dân</button></div></div>' +
+      '<form id="importForm" class="content-card import-form-card mb-3"><div class="import-card-head"><h3 class="section-title">Thông tin Import</h3><span>Card 2</span></div><div class="row g-3 align-items-end"><div class="col-lg-3 col-md-6"><label class="form-label">Loại dữ liệu</label><select name="type" class="form-select"><option value="person">Nhân khẩu</option><option value="household">Hộ dân</option></select></div><div class="col-lg-3 col-md-6"><label class="form-label">Khi trùng mã hộ</label><select name="mode" class="form-select"><option value="skip">Bỏ qua</option><option value="update">Cập nhật</option></select></div><div class="col-lg-4 col-md-12"><label class="form-label">File dữ liệu</label><input name="file" type="file" class="form-control" accept=".csv,.xlsx" required></div><div class="col-lg-2 col-md-12 d-grid gap-2"><button id="importPreviewBtn" class="btn btn-outline-primary" type="button"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button><button id="importRunBtn" class="btn btn-primary" type="button"><i class="fa-solid fa-file-import"></i> Bắt đầu Import</button></div></div></form>' +
+      '<div class="content-card import-stats-card mb-3"><div class="import-card-head"><h3 class="section-title">Thống kê</h3><span>Card 3</span></div><div class="row g-3"><div class="col-md-3 col-6"><div class="metric-card"><div class="metric-label">Tổng số dòng</div><div id="importTotal" class="metric-value">0</div></div></div><div class="col-md-3 col-6"><div class="metric-card"><div class="metric-label">Hợp lệ</div><div id="importValid" class="metric-value">0</div></div></div><div class="col-md-3 col-6"><div class="metric-card"><div class="metric-label">Thành công</div><div id="importSuccess" class="metric-value">0</div></div></div><div class="col-md-3 col-6"><div class="metric-card"><div class="metric-label">Thất bại</div><div id="importFailed" class="metric-value">0</div></div></div></div></div>' +
+      '<div class="content-card import-result-card"><div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap"><h3 class="section-title mb-0">Kết quả Import</h3><span id="importStatus" class="text-muted small"></span></div><div id="importResult" class="table-responsive"><p class="text-muted mb-0">Chọn file CSV/XLSX và bấm Kiểm tra để xem trước dữ liệu.</p></div></div>' +
     '</section>');
     document.querySelector('#importPreviewBtn').addEventListener('click', () => submitImport('/api/import/preview', false));
     document.querySelector('#importRunBtn').addEventListener('click', () => submitImport('/api/import/process', true));
+    document.querySelectorAll('[data-import-template]').forEach(button => button.addEventListener('click', () => downloadImportTemplate(button.dataset.importTemplate)));
   }
 
   function bindImportNavigation() {
@@ -46,6 +47,35 @@
         document.querySelector('#screenTitle').textContent = 'Import dữ liệu';
       });
     });
+  }
+
+  async function downloadImportTemplate(type) {
+    const fileName = type === 'household' ? 'Mau_Import_HoDan.xlsx' : 'Mau_Import_NhanKhau.xlsx';
+    setImportStatus('Đang tải ' + fileName + '...');
+    try {
+      const response = await fetch('/api/import/template?type=' + encodeURIComponent(type), {
+        headers: { Authorization: 'Bearer ' + (App.token || ''), 'X-CSRF-Token': App.csrfToken || '' },
+        cache: 'no-store'
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error?.message || 'Không tải được file mẫu');
+      }
+      const blob = await response.blob();
+      if (!blob.size) throw new Error('File mẫu rỗng hoặc không tồn tại trên host');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setImportStatus('Đã tải ' + fileName);
+    } catch (error) {
+      setImportStatus('Không tải được file mẫu');
+      showToast(error.message, 'danger');
+    }
   }
 
   async function submitImport(endpoint, refreshAfter) {
@@ -61,9 +91,11 @@
       renderImportResult(payload.data, refreshAfter);
       if (refreshAfter) {
         showToast('Đã xử lý Import');
-        loadDashboard();
-        loadHouseholds();
-        loadPersons();
+        if (typeof loadDashboard === 'function') loadDashboard();
+        if (typeof loadHouseholds === 'function') loadHouseholds();
+        if (typeof loadPersons === 'function') loadPersons();
+        if (typeof refreshLoginConfig === 'function') refreshLoginConfig();
+        window.dispatchEvent(new CustomEvent('thon09:data-mutated', { detail: { module: 'import' } }));
       }
     } catch (error) {
       showToast(error.message, 'danger');

@@ -180,10 +180,7 @@
 
   function patchImportGuide() {
     const screen = document.querySelector('#importScreen');
-    if (!screen || screen.dataset.sprint8) return;
-    if (screen.querySelector('a[href="sample-data/Mau_Import_HoDan.xlsx"]')) { screen.dataset.sprint8 = '1'; return; }
-    screen.dataset.sprint8 = '1';
-    document.querySelector('#importForm')?.insertAdjacentHTML('beforebegin', '<div class="content-card mb-3"><h3 class="section-title">Hướng dẫn Import Excel</h3><ul class="mb-3"><li>Chọn đúng loại dữ liệu trước khi import.</li><li>Không đổi tên Sheet.</li><li>Không đổi tên cột.</li><li>CCCD và số điện thoại để dạng Text.</li><li>Với hộ dân: không trùng Mã hộ; các cột diện hộ nhập 1 hoặc 0.</li></ul><div class="d-flex flex-wrap gap-2"><a class="btn btn-success" href="/api/import/template?type=person" download="Mau_Import_NhanKhau.xlsx"><i class="fa-solid fa-file-excel"></i> Mẫu nhân khẩu</a><a class="btn btn-outline-success" href="/api/import/template?type=household" download="Mau_Import_HoDan.xlsx"><i class="fa-solid fa-file-excel"></i> Mẫu hộ dân</a></div></div>');
+    if (screen) screen.dataset.sprint8 = '1';
   }
 
   function patchUserManagementUi() {
