@@ -140,9 +140,12 @@ function applyResponsiveTableLabels(root = document) {
         if (!cell.hasAttribute('data-label')) cell.setAttribute('data-label', label);
         const normalizedLabel = normalizeSearchText(label);
         const textValue = cell.textContent.replace(/\s+/g, ' ').trim();
+        const normalizedValue = normalizeSearchText(textValue);
         const hasControl = !!cell.querySelector('button, .btn, a[href], input, select, textarea');
+        const hasRealValue = hasControl || !!textValue && !isEmptyMobileCardValue(normalizedValue);
         cell.dataset.mobileRole = '';
-        cell.toggleAttribute('data-mobile-empty', !textValue && !hasControl);
+        cell.toggleAttribute('data-mobile-empty', !hasRealValue);
+        delete cell.dataset.mobileTone;
         if (cell.querySelector('input[type="checkbox"]') && index === 0) {
           cell.dataset.mobileRole = 'select';
           return;
@@ -158,7 +161,11 @@ function applyResponsiveTableLabels(root = document) {
         }
         if (isMobileCardAddressLabel(normalizedLabel)) cell.dataset.mobileRole = 'address';
         else if (isMobileCardStatLabel(normalizedLabel)) cell.dataset.mobileRole = 'stat';
-        else if (isMobileCardBadgeLabel(normalizedLabel)) cell.dataset.mobileRole = 'badge';
+        else if (isMobileCardBadgeLabel(normalizedLabel)) {
+          cell.dataset.mobileRole = 'badge';
+          cell.dataset.mobileTone = getMobileBadgeTone(normalizedLabel, normalizedValue);
+          normalizeMobileBadgeText(cell, normalizedLabel, normalizedValue);
+        }
         else if (isMobileCardMetaLabel(normalizedLabel)) cell.dataset.mobileRole = 'meta';
       });
     });
@@ -184,6 +191,39 @@ function isMobileCardStatLabel(label) {
 
 function isMobileCardBadgeLabel(label) {
   return ['dien ho', 'trang thai', 'dang vien', 'cu tru', 'vai tro', 'status'].some(key => label.includes(key));
+}
+
+function isEmptyMobileCardValue(value) {
+  return ['', '-', '--', '---', 'na', 'n/a', 'null', 'undefined', 'khong co du lieu'].includes(value);
+}
+
+function getMobileBadgeTone(label, value) {
+  if (label.includes('dien ho')) {
+    if (value.includes('ngheo')) return 'danger';
+    if (value.includes('can ngheo') || value.includes('moi thoat')) return 'warning';
+    if (value.includes('chinh sach') || value.includes('co cong')) return 'info';
+    if (value === 'khong' || value.includes('binh thuong') || value.includes('thuong')) return 'neutral';
+  }
+  if (label.includes('trang thai') || label.includes('status')) {
+    if (value.includes('khoa') || value.includes('ngung') || value.includes('xoa')) return 'danger';
+    if (value.includes('hoat dong') || value.includes('active')) return 'success';
+  }
+  if (label.includes('dang vien') || label.includes('vai tro')) {
+    if (value === 'co' || value.includes('admin') || value.includes('dang vien')) return 'success';
+    if (value === 'khong') return 'neutral';
+  }
+  if (label.includes('cu tru')) {
+    if (value.includes('tam vang')) return 'warning';
+    if (value.includes('tam tru')) return 'info';
+    if (value.includes('thuong tru')) return 'success';
+  }
+  return 'neutral';
+}
+
+function normalizeMobileBadgeText(cell, label, value) {
+  if (!label.includes('dien ho') || value !== 'khong') return;
+  const target = cell.querySelector('.badge, .badge-soft, .person-badge, span, a, button') || cell;
+  target.textContent = 'Khong thuoc dien uu tien';
 }
 
 function startResponsiveTableObserver() {
