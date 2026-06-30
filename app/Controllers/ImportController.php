@@ -164,7 +164,7 @@ final class ImportController extends BaseController
         $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
         $zip->close();
         if ($xml === false) throw new \RuntimeException('File XLSX chưa có sheet dữ liệu đầu tiên');
-        $sheet = simplexml_load_string($xml);
+        $sheet = simplexml_load_string($this->stripSpreadsheetNamespaces($xml));
         $matrix = [];
         foreach ($sheet->sheetData->row as $row) {
             $line = (int) $row['r'];
@@ -196,11 +196,18 @@ final class ImportController extends BaseController
         return $rows;
     }
 
+    private function stripSpreadsheetNamespaces(string $xml): string
+    {
+        $xml = preg_replace('/(<\/?)[A-Za-z0-9_\-]+:/', '$1', $xml) ?? $xml;
+        $xml = preg_replace('/\s+xmlns(:[A-Za-z0-9_\-]+)?="[^"]*"/', '', $xml) ?? $xml;
+        return $xml;
+    }
+
     private function sharedStrings(\ZipArchive $zip): array
     {
         $xml = $zip->getFromName('xl/sharedStrings.xml');
         if ($xml === false) return [];
-        $data = simplexml_load_string($xml);
+        $data = simplexml_load_string($this->stripSpreadsheetNamespaces($xml));
         $strings = [];
         foreach ($data->si as $item) {
             if (isset($item->t)) { $strings[] = (string) $item->t; continue; }
