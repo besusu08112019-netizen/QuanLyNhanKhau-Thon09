@@ -144,7 +144,7 @@ function applyResponsiveTableLabels(root = document) {
           cell.dataset.mobileRole = 'select';
           return;
         }
-        if (normalizedLabel.includes('thao tac')) {
+        if (normalizedLabel.includes('thao tac') && cell.querySelector('button, .btn, a[href], input, select')) {
           cell.dataset.mobileRole = 'actions';
           return;
         }
@@ -160,7 +160,7 @@ function applyResponsiveTableLabels(root = document) {
 }
 
 function isMobileCardTitleLabel(label, index) {
-  return ['chu ho', 'ho va ten', 'ho ten', 'ten dang nhap', 'username', 'nguoi dung', 'tieu de', 'ten file'].some(key => label.includes(key)) || index === 1;
+  return ['chu ho', 'ho va ten', 'ho ten', 'ten dang nhap', 'username', 'nguoi dung', 'tieu de', 'ten file', 'file', 'chi tieu'].some(key => label.includes(key));
 }
 
 function isMobileCardMetaLabel(label) {
