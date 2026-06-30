@@ -121,7 +121,12 @@ function markResponsiveTableWrappers(root = document) {
 
 function applyResponsiveTableLabels(root = document) {
   markResponsiveTableWrappers(root);
-  root.querySelectorAll('.table-responsive table').forEach(table => {
+  const tables = new Set();
+  if (root?.matches?.('.table-responsive table')) tables.add(root);
+  const parentTable = root?.closest?.('.table-responsive table');
+  if (parentTable) tables.add(parentTable);
+  root.querySelectorAll?.('.table-responsive table').forEach(table => tables.add(table));
+  tables.forEach(table => {
     const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
     if (!headers.length) return;
     table.querySelectorAll('tbody tr').forEach(row => {
