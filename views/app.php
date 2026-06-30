@@ -261,7 +261,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260630-final-nav-inline-3"></script>
+  <script src="assets/js/app.js?v=20260630-final-data-loader-1"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
@@ -348,14 +348,13 @@
     export: 'Xuất Excel', exportExcel: 'Xuất Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', permissions: 'Phân quyền',
     logs: 'Nhật ký hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', settings: 'Cấu hình hệ thống', appearance: 'Cấu hình giao diện'
   };
-  window.switchScreen = function (screen) {
-    var requested = screen;
-    if (screen === 'export') screen = 'exportExcel';
-    var target = document.getElementById(screen + 'Screen');
-    if (!target) { screen = 'dashboard'; target = document.getElementById('dashboardScreen'); }
+  var originalSwitchScreen = typeof window.switchScreen === 'function' ? window.switchScreen : null;
+  function normalizeScreen(screen) { return screen === 'export' ? 'exportExcel' : (screen || 'dashboard'); }
+  function repairScreenState(screen, requested) {
+    screen = normalizeScreen(screen);
+    var target = document.getElementById(screen + 'Screen') || document.getElementById('dashboardScreen');
     if (!target) return;
-    document.querySelectorAll('.screen').forEach(function (el) { el.classList.remove('active'); });
-    target.classList.add('active');
+    document.querySelectorAll('.screen').forEach(function (el) { el.classList.toggle('active', el === target); });
     document.querySelectorAll('.sidebar .nav-link').forEach(function (btn) {
       btn.classList.toggle('active', btn.dataset.screen === screen || btn.dataset.screen === requested);
     });
@@ -365,6 +364,16 @@
     var breadcrumb = document.getElementById('breadcrumbTrail');
     if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + label;
     try { localStorage.setItem('thon09_screen', screen); } catch (error) {}
+  }
+  window.switchScreen = function (screen) {
+    var requested = screen;
+    var normalized = normalizeScreen(screen);
+    var ranOriginal = false;
+    if (originalSwitchScreen && originalSwitchScreen !== window.switchScreen) {
+      try { originalSwitchScreen(normalized); ranOriginal = true; } catch (error) { console.error('switchScreen original failed', error); }
+    }
+    if (!ranOriginal) repairScreenState(normalized, requested);
+    setTimeout(function () { repairScreenState(normalized, requested); }, 0);
   };
   document.addEventListener('click', function (event) {
     var button = event.target.closest && event.target.closest('.sidebar .nav-link[data-screen]');
