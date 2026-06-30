@@ -113,7 +113,14 @@ function renderTopbarUser() {
   host.append(email, role);
 }
 
+function markResponsiveTableWrappers(root = document) {
+  root.querySelectorAll('.table-responsive').forEach(wrapper => {
+    wrapper.classList.add('module-card-list');
+  });
+}
+
 function applyResponsiveTableLabels(root = document) {
+  markResponsiveTableWrappers(root);
   root.querySelectorAll('.table-responsive table').forEach(table => {
     const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
     if (!headers.length) return;
