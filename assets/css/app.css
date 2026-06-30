@@ -2400,3 +2400,45 @@ body.sidebar-open {
     font-size: 11px !important;
   }
 }
+
+
+/* Mobile design system v4.1 - width reset for true card grid */
+@media (max-width: 1024px) {
+  .table-responsive table,
+  .table-responsive.module-card-list table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .table-responsive tbody,
+  .table-responsive.module-card-list tbody {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .table-responsive tbody tr:not(.group-row),
+  .table-responsive.module-card-list tbody tr:not(.group-row) {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .table-responsive tbody td,
+  .table-responsive.module-card-list tbody td {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .table-responsive tbody td[data-mobile-role="actions"],
+  .table-responsive.module-card-list tbody td[data-mobile-role="actions"],
+  .table-responsive tbody td.text-end:has(button),
+  .table-responsive tbody td.text-end:has(.btn) {
+    width: 100% !important;
+  }
+  .table-responsive tbody td[data-mobile-role="actions"] .btn,
+  .table-responsive tbody td[data-mobile-role="actions"] button,
+  .table-responsive tbody td.text-end .btn,
+  .table-responsive tbody td.text-end button {
+    flex: 1 1 0 !important;
+  }
+}
