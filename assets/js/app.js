@@ -56,7 +56,9 @@ function init() {
 function bindEvents() {
   $('#loginForm').addEventListener('submit', login);
   $('#logoutBtn').addEventListener('click', logout);
-  $('#sidebarToggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
+  $('#sidebarToggle').addEventListener('click', toggleMobileSidebar);
+  ensureMobileSidebarBackdrop();
+  startResponsiveTableObserver();
   const dashboardFilters = $('#dashboardFilters');
   if (dashboardFilters) dashboardFilters.addEventListener('submit', event => { event.preventDefault(); loadDashboard(); refreshLoginConfig(); });
   const dashboardResetBtn = $('#dashboardResetBtn');
@@ -97,6 +99,72 @@ function fillDictionaries() {
   });
 }
 
+function renderTopbarUser() {
+  const host = $('#currentUser');
+  if (!host) return;
+  host.textContent = '';
+  if (!App.user) return;
+  const email = document.createElement('span');
+  email.className = 'topbar-user-email';
+  email.textContent = App.user.email || '';
+  const role = document.createElement('span');
+  role.className = 'topbar-user-role';
+  role.textContent = roleLabel(App.user.role);
+  host.append(email, role);
+}
+
+function applyResponsiveTableLabels(root = document) {
+  root.querySelectorAll('.table-responsive table').forEach(table => {
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+    if (!headers.length) return;
+    table.querySelectorAll('tbody tr').forEach(row => {
+      Array.from(row.children).forEach((cell, index) => {
+        if (!cell.hasAttribute('data-label')) cell.setAttribute('data-label', headers[index] || '');
+      });
+    });
+  });
+}
+
+function startResponsiveTableObserver() {
+  if (window.__thon09ResponsiveTableObserver) return;
+  window.__thon09ResponsiveTableObserver = true;
+  applyResponsiveTableLabels();
+  const observer = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeType === 1) applyResponsiveTableLabels(node);
+      });
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function ensureMobileSidebarBackdrop() {
+  if (document.querySelector('.sidebar-backdrop')) return;
+  const backdrop = document.createElement('div');
+  backdrop.className = 'sidebar-backdrop';
+  backdrop.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(backdrop);
+  backdrop.addEventListener('click', closeMobileSidebar);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeMobileSidebar();
+  });
+}
+
+function toggleMobileSidebar() {
+  const sidebar = $('.sidebar');
+  if (!sidebar) return;
+  const willOpen = !sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', willOpen);
+  document.body.classList.toggle('sidebar-open', willOpen);
+}
+
+function closeMobileSidebar() {
+  const sidebar = $('.sidebar');
+  if (sidebar) sidebar.classList.remove('open');
+  document.body.classList.remove('sidebar-open');
+}
+
 async function login(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -128,7 +196,7 @@ function showLogin() { $('#loginView').classList.remove('d-none'); $('#appView')
 function showApp() {
   $('#loginView').classList.add('d-none');
   $('#appView').classList.remove('d-none');
-  $('#currentUser').textContent = App.user ? `${App.user.email} | ${roleLabel(App.user.role)}` : '';
+  renderTopbarUser();
   if (typeof window.ensureAdminScreens === 'function') window.ensureAdminScreens();
   switchScreen(App.screen);
 }
@@ -155,7 +223,7 @@ function switchScreen(screen) {
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
   normalizeAppHeader(screen);
-  $('.sidebar').classList.remove('open');
+  closeMobileSidebar();
   if (screen === 'dashboard') { loadDashboard(); refreshLoginConfig(); }
   if (screen === 'households') loadHouseholds();
   if (screen === 'persons') loadPersons();
