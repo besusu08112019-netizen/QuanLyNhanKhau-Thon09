@@ -128,13 +128,43 @@ final class Dashboard extends BaseModel
     public function laborChart(array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        $columns = ['employed' => 'Có việc làm', 'unemployed' => 'Thất nghiệp', 'freelance_labor' => 'Lao động tự do', 'out_province_labor' => 'Lao động ngoài tỉnh', 'foreign_labor' => 'Lao động nước ngoài', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu'];
-        $selects = [];
-        foreach ($columns as $column => $label) $selects[] = ($this->columnExists('citizens', $column) ? "SUM(c.$column=1)" : '0') . " AS $column";
-        $row = $this->fetchOne('SELECT ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params) ?: [];
+        $columns = ['employed','unemployed','pupil','student','retired'];
+        $selects = ['c.occupation'];
+        foreach ($columns as $column) {
+            $selects[] = ($this->columnExists('citizens', $column) ? "c.$column" : "0") . " AS $column";
+        }
+
+        $rows = $this->fetchAll('SELECT ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params);
+        $groups = [
+            'Có việc làm' => 0,
+            'Chưa có việc làm' => 0,
+            'Học sinh' => 0,
+            'Sinh viên' => 0,
+            'Nghỉ hưu' => 0,
+            'Khác' => 0,
+        ];
+
+        foreach ($rows as $row) {
+            $groups[$this->laborGroup($row)]++;
+        }
+
         $items = [];
-        foreach ($columns as $column => $label) $items[] = ['label' => $label, 'value' => (int) ($row[$column] ?? 0)];
+        foreach ($groups as $label => $value) {
+            $items[] = ['label' => $label, 'value' => (int) $value];
+        }
         return $items;
+    }
+
+    private function laborGroup(array $row): string
+    {
+        $occupation = $this->normalize((string) ($row['occupation'] ?? ''));
+        if ((int) ($row['pupil'] ?? 0) === 1 || str_contains($occupation, 'hoc sinh')) return 'Học sinh';
+        if ((int) ($row['student'] ?? 0) === 1 || str_contains($occupation, 'sinh vien')) return 'Sinh viên';
+        if ((int) ($row['retired'] ?? 0) === 1 || str_contains($occupation, 'nghi huu') || str_contains($occupation, 'huu tri')) return 'Nghỉ hưu';
+        if ((int) ($row['unemployed'] ?? 0) === 1 || str_contains($occupation, 'that nghiep') || str_contains($occupation, 'chua co viec') || str_contains($occupation, 'khong co viec')) return 'Chưa có việc làm';
+        if ((int) ($row['employed'] ?? 0) === 1) return 'Có việc làm';
+        if ($occupation === '' || str_contains($occupation, 'khac') || str_contains($occupation, 'noi tro')) return 'Khác';
+        return 'Có việc làm';
     }
 
     public function groupChart(array $filters, string $column, string $fallbackLabel): array

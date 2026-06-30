@@ -88,14 +88,6 @@
       <section id="dashboardScreen" class="screen active dashboard-overview-screen">
         <section class="dashboard-status-row"><div id="dashboardGeneratedAt" class="dashboard-sync-note">Đang cập nhật dữ liệu</div></section>
         <section id="dashboardKpis" class="dashboard-kpi-grid" aria-label="Chỉ số tổng quan"></section>
-        <section class="dashboard-shortcuts" aria-label="Thao tác nhanh">
-          <button type="button" data-quick-screen="households" data-quick-action="addHousehold"><i class="fa-solid fa-house-circle-check"></i><span>Thêm hộ</span></button>
-          <button type="button" data-quick-screen="persons" data-quick-action="addPerson"><i class="fa-solid fa-user-plus"></i><span>Thêm nhân khẩu</span></button>
-          <button type="button" data-quick-screen="temporaryResidence"><i class="fa-solid fa-location-dot"></i><span>Thêm tạm trú</span></button>
-          <button type="button" data-quick-screen="temporaryAbsence"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Thêm tạm vắng</span></button>
-          <button type="button" data-quick-screen="movements"><i class="fa-solid fa-right-left"></i><span>Biến động</span></button>
-          <button type="button" data-quick-screen="reports"><i class="fa-solid fa-chart-pie"></i><span>Báo cáo</span></button>
-        </section>
         <section class="dashboard-chart-grid" aria-label="Biểu đồ tổng quan">
           <article class="dashboard-panel dashboard-panel-large">
             <div class="dashboard-panel-head">
@@ -122,14 +114,18 @@
             </div>
             <div id="partyMemberChart" class="dashboard-chart-body"></div>
           </article>
-        </section>
-        <section class="dashboard-activity-card content-card">
-          <div class="dashboard-activity-head"><h3>Hoạt động gần đây</h3><span>Từ nhật ký hệ thống</span></div>
-          <div id="dashboardRecentActivity" class="dashboard-activity-list">
-            <div class="dashboard-activity-item"><i class="fa-solid fa-user-plus"></i><div><strong>Thêm nhân khẩu</strong><span>Cập nhật sau khi nhật ký hệ thống ghi nhận thao tác.</span></div><time>Gần đây</time></div>
-            <div class="dashboard-activity-item"><i class="fa-solid fa-house-chimney"></i><div><strong>Cập nhật hộ</strong><span>Theo dõi nhanh thay đổi dữ liệu hộ gia đình.</span></div><time>Gần đây</time></div>
-            <div class="dashboard-activity-item"><i class="fa-solid fa-file-export"></i><div><strong>Xuất báo cáo</strong><span>Các thao tác xuất/in báo cáo sẽ hiển thị tại đây.</span></div><time>Gần đây</time></div>
-          </div>
+          <article class="dashboard-panel">
+            <div class="dashboard-panel-head">
+              <h3>Cơ cấu diện hộ</h3>
+            </div>
+            <div id="householdTypeChart" class="dashboard-chart-body"></div>
+          </article>
+          <article class="dashboard-panel">
+            <div class="dashboard-panel-head">
+              <h3>Tình trạng lao động</h3>
+            </div>
+            <div id="laborStatusChart" class="dashboard-chart-body"></div>
+          </article>
         </section>
       </section>
 
@@ -261,7 +257,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260630-delete-actions-3"></script>
+  <script src="assets/js/app.js?v=20260630-dashboard-charts-2"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>

@@ -172,6 +172,8 @@ async function loadDashboard() {
     renderMonthlyChangeChart(charts.monthlyChanges || [], metrics.total_citizens || 0);
     renderGenderDashboardChart(charts.population || [], metrics);
     renderPartyDashboardChart(charts.partyMembers || [], metrics);
+    renderHouseholdTypeChart(charts.households || charts.poverty || [], metrics);
+    renderLaborStatusChart(charts.labor || charts.occupations || [], metrics);
     updateDashboardGeneratedAt(data.generatedAt);
   } catch (error) {
     if (!String(error.message || '').includes('đăng nhập')) showToast('Không tải được tổng quan: ' + error.message, 'danger');
@@ -315,12 +317,42 @@ function renderPartyDashboardChart(items, metrics) {
     + '</div>';
 }
 
+function renderHouseholdTypeChart(items, metrics) {
+  const host = $('#householdTypeChart');
+  if (!host) return;
+  const rows = normalizeChartItems(items).filter(item => item.value > 0);
+  const total = rows.reduce((sum, item) => sum + item.value, 0) || Number(metrics.total_households || 0);
+  if (!total || !rows.length) { host.innerHTML = chartEmpty(); return; }
+  host.innerHTML = '<div class="dashboard-household-type-layout">'
+    + renderDonut(rows, total, { centerLabel: 'Tổng số', centerValue: number(total), centerUnit: 'hộ', className: 'dashboard-household-type-donut' })
+    + '<div class="dashboard-legend">' + rows.map((item, index) => renderLegendRow(item, total, index, 'hộ')).join('') + '</div>'
+    + '</div>';
+}
+
+function renderLaborStatusChart(items, metrics) {
+  const host = $('#laborStatusChart');
+  if (!host) return;
+  const rows = normalizeChartItems(items).filter(item => item.value > 0);
+  const total = Number(metrics.total_citizens || rows.reduce((sum, item) => sum + item.value, 0) || 0);
+  if (!total || !rows.length) { host.innerHTML = chartEmpty(); return; }
+  const max = Math.max(...rows.map(item => item.value), 1);
+  host.innerHTML = '<div class="dashboard-bar-chart">' + rows.map((item, index) => {
+    const height = Math.max(8, Math.round(item.value * 100 / max));
+    const rate = percent(item.value, total);
+    return '<div class="dashboard-bar-item" title="' + escapeHtml(item.label + ': ' + number(item.value) + ' nhân khẩu (' + formatPercent(rate) + ')') + '">'
+      + '<strong>' + number(item.value) + '</strong>'
+      + '<div class="dashboard-bar-track"><span class="dashboard-bar-fill dashboard-bar-color-' + ((index % 6) + 1) + '" style="height:' + height + '%"></span></div>'
+      + '<small>' + escapeHtml(item.label) + '<br><b>' + formatPercent(rate) + '</b></small>'
+      + '</div>';
+  }).join('') + '</div>';
+}
+
 function renderSideStat(label, value, rate, tone, icon) {
   return '<div class="dashboard-side-stat dashboard-side-' + tone + '"><span><i class="fa-solid ' + icon + '"></i></span><strong>' + number(value) + '</strong><small>' + escapeHtml(label) + ' - ' + formatPercent(rate) + '</small></div>';
 }
 
-function renderLegendRow(item, total, index) {
-  return '<div class="dashboard-legend-row"><i class="dashboard-dot dashboard-dot-' + (index + 1) + '"></i><span>' + escapeHtml(item.label) + '</span><strong>' + number(item.value) + ' người (' + formatPercent(percent(item.value, total)) + ')</strong></div>';
+function renderLegendRow(item, total, index, unit = 'người') {
+  return '<div class="dashboard-legend-row"><i class="dashboard-dot dashboard-dot-' + (index + 1) + '"></i><span>' + escapeHtml(item.label) + '</span><strong>' + number(item.value) + ' ' + escapeHtml(unit) + ' (' + formatPercent(percent(item.value, total)) + ')</strong></div>';
 }
 
 function renderDonut(items, total, options = {}) {
