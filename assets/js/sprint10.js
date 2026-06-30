@@ -127,8 +127,10 @@
   async function printReport10() { return; }
 
   function patchSprint10Import() {
-    const link = document.querySelector('#importScreen a[download]');
-    if (link) link.href = '/api/import/template';
+    const personLink = document.querySelector('#importScreen a[download*="NhanKhau"], #importScreen a[href*="Mau_Import_NhanKhau"]');
+    const householdLink = document.querySelector('#importScreen a[download*="HoDan"], #importScreen a[href*="Mau_Import_HoDan"]');
+    if (personLink) { personLink.href = '/api/import/template?type=person'; personLink.download = 'Mau_Import_NhanKhau.xlsx'; }
+    if (householdLink) { householdLink.href = '/api/import/template?type=household'; householdLink.download = 'Mau_Import_HoDan.xlsx'; }
     const result = document.querySelector('#importResult');
     if (result && !result.dataset.sprint10) result.dataset.sprint10 = '1';
   }

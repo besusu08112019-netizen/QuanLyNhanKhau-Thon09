@@ -22,10 +22,18 @@ final class ImportController extends BaseController
     public function template(): void
     {
         $this->requirePermission('import', 'read');
-        $path = BASE_PATH . '/sample-data/Mau_Import_NhanKhau.xlsx';
-        if (!is_file($path)) throw new \RuntimeException('Chưa có file mẫu Import Excel');
+        $type = (string) ($_GET['type'] ?? $this->input('type', 'person'));
+        $fileName = match ($type) {
+            'household', 'households', 'ho-dan', 'hodan' => 'Mau_Import_HoDan.xlsx',
+            default => 'Mau_Import_NhanKhau.xlsx',
+        };
+        $path = BASE_PATH . '/sample-data/' . $fileName;
+        if (!is_file($path)) throw new \RuntimeException('Chưa có file mẫu Import Excel: ' . $fileName);
+        while (ob_get_level() > 0) ob_end_clean();
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="Mau_Import_NhanKhau.xlsx"');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Content-Length: ' . filesize($path));
+        header('Cache-Control: no-store, no-cache, must-revalidate');
         readfile($path);
         exit;
     }
@@ -36,7 +44,7 @@ final class ImportController extends BaseController
         $type = $this->type();
         $rows = $this->readRows();
         $result = $this->validateRows($type, $rows);
-        $this->audit($user, 'import', 'read', 'Kiểm tra file import', null, ['type' => $type, 'total' => count($rows), 'errors' => count($result['errors'])]);
+        $this->audit($user, 'import', 'read', 'Kiểm tra file import', null, ['type' => $type, 'total' => count($rows), 'errors' => count($result['errors']), 'warnings' => count($result['warnings'] ?? [])]);
         $this->ok($result + ['type' => $type]);
     }
 
@@ -53,7 +61,7 @@ final class ImportController extends BaseController
         $rolledBack = false;
 
         if (!empty($errors)) {
-            $payload = ['type' => $type, 'total' => count($rows), 'success' => 0, 'skipped' => 0, 'failed' => count($errors), 'rolledBack' => false, 'errors' => $errors];
+            $payload = ['type' => $type, 'total' => count($rows), 'success' => 0, 'skipped' => 0, 'failed' => count($errors), 'rolledBack' => false, 'warnings' => $result['warnings'] ?? [], 'errors' => $errors];
             $this->audit($user, 'import', 'create', 'Import dữ liệu không hợp lệ', null, $payload, 'WARN');
             $this->ok($payload);
             return;
@@ -102,7 +110,7 @@ final class ImportController extends BaseController
             $errors[] = ['row' => null, 'message' => $e->getMessage()];
         }
 
-        $payload = ['type' => $type, 'total' => count($rows), 'success' => $success, 'skipped' => $skipped, 'failed' => count($errors), 'rolledBack' => $rolledBack, 'errors' => $errors];
+        $payload = ['type' => $type, 'total' => count($rows), 'success' => $success, 'skipped' => $skipped, 'failed' => count($errors), 'rolledBack' => $rolledBack, 'warnings' => $result['warnings'] ?? [], 'errors' => $errors];
         $this->audit($user, 'import', 'create', 'Import dữ liệu', null, $payload, count($errors) ? 'WARN' : 'INFO');
         $this->ok($payload);
     }
@@ -224,24 +232,66 @@ final class ImportController extends BaseController
     {
         $validRows = [];
         $errors = [];
+        $warnings = [];
+        $seenHouseholds = [];
+        $seenCitizenCodes = [];
+        $seenIdentities = [];
+
         foreach ($rows as $item) {
-            $data = $this->normalizeData($type, $item['data']);
+            $raw = $item['data'];
+            $data = $this->normalizeData($type, $raw);
             $messages = [];
+
             if ($type === 'household') {
+                foreach (['householdCode' => 'Mã hộ', 'address' => 'Địa chỉ'] as $field => $label) {
+                    if (!array_key_exists($field, $raw)) $messages[] = 'Thiếu cột ' . $label;
+                }
                 if (empty($data['householdCode'])) $messages[] = 'Thiếu Mã hộ';
                 if (empty($data['address'])) $messages[] = 'Thiếu Địa chỉ';
+                if ($data['phone'] !== '' && !$this->validPhone($data['phone'])) $messages[] = 'Số điện thoại không hợp lệ';
+                if ($data['householdCode'] !== '') {
+                    if (isset($seenHouseholds[$data['householdCode']])) $messages[] = 'Trùng Mã hộ trong file';
+                    $seenHouseholds[$data['householdCode']] = true;
+                    if ($this->households->findByCode($data['householdCode'])) $warnings[] = ['row' => $item['row'], 'message' => 'Mã hộ đã tồn tại, hệ thống sẽ bỏ qua hoặc cập nhật theo chế độ đã chọn'];
+                }
             } else {
+                foreach (['householdCode' => 'Mã hộ', 'fullName' => 'Họ tên', 'dateOfBirth' => 'Ngày sinh'] as $field => $label) {
+                    if (!array_key_exists($field, $raw)) $messages[] = 'Thiếu cột ' . $label;
+                }
                 if (empty($data['householdCode'])) $messages[] = 'Thiếu Mã hộ';
                 if (empty($data['fullName'])) $messages[] = 'Thiếu Họ và tên';
                 if (empty($data['dateOfBirth'])) $messages[] = 'Ngày sinh không hợp lệ';
+                if ($data['identityNumber'] !== '' && !$this->validIdentity($data['identityNumber'])) $messages[] = 'CCCD phải gồm 9 hoặc 12 chữ số';
+                if ($data['phone'] !== '' && !$this->validPhone($data['phone'])) $messages[] = 'Số điện thoại không hợp lệ';
+                if ($data['householdCode'] !== '' && !$this->households->findByCode($data['householdCode'])) $messages[] = 'Mã hộ chưa tồn tại trong hệ thống';
+                if ($data['citizenCode'] !== '') {
+                    if (isset($seenCitizenCodes[$data['citizenCode']])) $messages[] = 'Trùng Mã nhân khẩu trong file';
+                    $seenCitizenCodes[$data['citizenCode']] = true;
+                    if ($this->citizenCodeExists($data['citizenCode'])) $warnings[] = ['row' => $item['row'], 'message' => 'Mã nhân khẩu đã tồn tại trong hệ thống'];
+                }
+                if ($data['identityNumber'] !== '') {
+                    if (isset($seenIdentities[$data['identityNumber']])) $messages[] = 'Trùng CCCD trong file';
+                    $seenIdentities[$data['identityNumber']] = true;
+                    if ($this->citizens->findByIdentity($data['identityNumber'])) $warnings[] = ['row' => $item['row'], 'message' => 'CCCD đã tồn tại, hệ thống sẽ cập nhật nhân khẩu tương ứng'];
+                }
             }
+
             if ($messages) {
-                foreach ($messages as $message) $errors[] = ['row' => $item['row'], 'message' => $message];
+                foreach (array_unique($messages) as $message) $errors[] = ['row' => $item['row'], 'message' => $message];
                 continue;
             }
             $validRows[] = ['row' => $item['row'], 'data' => $data];
         }
-        return ['total' => count($rows), 'valid' => count($validRows), 'failed' => count($errors), 'errors' => $errors, 'validRows' => $validRows, 'previewRows' => array_slice($validRows, 0, 20)];
+        return ['total' => count($rows), 'valid' => count($validRows), 'warnings' => $warnings, 'warning' => count($warnings), 'failed' => count($errors), 'errors' => $errors, 'validRows' => $validRows, 'previewRows' => array_slice($validRows, 0, 20)];
+    }
+
+    private function validIdentity(string $value): bool { return (bool) preg_match('/^\d{9}(\d{3})?$/', preg_replace('/\D+/', '', $value)); }
+    private function validPhone(string $value): bool { return (bool) preg_match('/^0\d{9,10}$/', preg_replace('/\D+/', '', $value)); }
+    private function citizenCodeExists(string $code): bool
+    {
+        $row = Database::pdo()->prepare('SELECT COUNT(*) FROM citizens WHERE citizen_code = :code AND status <> "DELETED"');
+        $row->execute(['code' => strtoupper(trim($code))]);
+        return (int) $row->fetchColumn() > 0;
     }
 
     private function normalizeData(string $type, array $data): array
@@ -252,6 +302,7 @@ final class ImportController extends BaseController
                 'headCitizenName' => trim((string) ($data['headCitizenName'] ?? '')),
                 'address' => trim((string) ($data['address'] ?? '')),
                 'phone' => trim((string) ($data['phone'] ?? '')),
+                'householdType' => trim((string) ($data['householdType'] ?? '')),
                 'meritoriousFamily' => $data['meritoriousFamily'] ?? 0,
                 'poorHousehold' => $data['poorHousehold'] ?? 0,
                 'nearPoorHousehold' => $data['nearPoorHousehold'] ?? 0,
@@ -307,6 +358,7 @@ final class ImportController extends BaseController
             'headCitizenName' => ['chu ho','ten chu ho','ho ten chu ho'],
             'address' => ['dia chi','thon','dia chi thuong tru'],
             'phone' => ['so dien thoai','dien thoai','sdt','phone'],
+            'householdType' => ['dien ho','loai ho','household type','category'],
             'meritoriousFamily' => ['gia dinh co cong','co cong'],
             'poorHousehold' => ['ho ngheo'],
             'nearPoorHousehold' => ['ho can ngheo','can ngheo'],
