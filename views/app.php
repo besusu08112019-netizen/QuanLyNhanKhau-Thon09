@@ -270,7 +270,7 @@
   <script src="assets/js/admin-panel-bridge.js?v=20260630-final-bridge-title-1"></script>
   <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
-  <script src="assets/js/sprint10.js?v=20260629-report-disable-old-1"></script>
+  <script src="assets/js/sprint10.js?v=20260630-final-vi-1"></script>
 
 <script id="thon09-report-inline-stable">
 (function(){
