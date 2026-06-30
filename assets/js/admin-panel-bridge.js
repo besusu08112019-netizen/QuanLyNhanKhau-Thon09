@@ -45,9 +45,11 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       switchScreen(screen);
-      document.querySelector('#screenTitle').textContent = { users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', backups: 'Sao lưu dữ liệu' }[screen];
+      const label = { users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', backups: 'Sao lưu dữ liệu' }[screen];
+      const title = document.querySelector('#screenTitle');
+      if (title) title.textContent = label;
       const breadcrumb = document.querySelector('#breadcrumbTrail');
-      if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + document.querySelector('#screenTitle').textContent;
+      if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + label;
       if (screen === 'users') { ensureRoleOptions(); loadAdminUsers(); }
       if (screen === 'logs') loadAdminLogs();
       if (screen === 'backups') loadAdminBackups();
