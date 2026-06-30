@@ -52,9 +52,25 @@ final class Household extends BaseModel
 
     public function softDelete(int $id, int $userId): void
     {
+        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy hộ gia đình');
         $members = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE household_id = :id AND status <> "DELETED"', ['id' => $id])['total'];
-        if ($members > 0) throw new \RuntimeException('Không thể xóa hộ đang có ' . $members . ' nhân khẩu hoạt động');
+        if ($members > 0) throw new \RuntimeException('Hộ gia đình vẫn còn nhân khẩu hoặc dữ liệu liên quan. Vui lòng xử lý các dữ liệu liên kết trước khi xóa.');
         $this->execute('UPDATE households SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+    }
+
+    public function bulkSoftDelete(array $ids, int $userId): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn($id) => $id > 0)));
+        if (!$ids) throw new \RuntimeException('Chưa chọn hộ gia đình cần xóa');
+        $this->db->beginTransaction();
+        try {
+            foreach ($ids as $id) $this->softDelete($id, $userId);
+            $this->db->commit();
+            return count($ids);
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            throw $e;
+        }
     }
 
     private function where(array $filters): array

@@ -80,10 +80,14 @@ function bindEvents() {
   if (personPageSize) personPageSize.addEventListener('change', () => { App.persons.pageSize = Number(personPageSize.value); App.persons.page = 1; loadPersons(); });
   $('#householdCheckAll').addEventListener('change', e => $$('.household-check').forEach(c => c.checked = e.target.checked));
   const personCheckAll = $('#personCheckAll');
-  if (personCheckAll) personCheckAll.addEventListener('change', e => $$('.person-check').forEach(c => c.checked = e.target.checked));
+  if (personCheckAll) personCheckAll.addEventListener('change', e => { $$('.person-check').forEach(c => c.checked = e.target.checked); updateBulkDeleteButtons(); });
+  const householdCheckAll = $('#householdCheckAll');
+  if (householdCheckAll) householdCheckAll.addEventListener('change', () => updateBulkDeleteButtons());
+  document.addEventListener('change', event => { if (event.target.matches('.household-check,.person-check')) updateBulkDeleteButtons(); });
   $('#householdBulkDeleteBtn').addEventListener('click', bulkDeleteHouseholds);
   const personBulkDeleteBtn = $('#personBulkDeleteBtn');
   if (personBulkDeleteBtn) personBulkDeleteBtn.addEventListener('click', bulkDeletePersons);
+  updateBulkDeleteButtons();
 }
 
 function fillDictionaries() {
@@ -393,7 +397,8 @@ async function loadPersons() {
       (acc[code] ||= []).push(row);
       return acc;
     }, {});
-    $('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="9">Mã hộ: ' + escapeHtml(code) + '</td></tr>' + rows.map(personRow).join('')).join('') || '<tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+    $('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="10">Mã hộ: ' + escapeHtml(code) + '</td></tr>' + rows.map(personRow).join('')).join('') || '<tr><td colspan="10" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+    updateBulkDeleteButtons();
     renderPager('#personPager', { total, page: App.persons.page, pageSize: App.persons.pageSize }, page => { App.persons.page = page; loadPersons(); });
   } catch (error) { showToast('Không tải được danh sách nhân khẩu: ' + error.message, 'danger'); }
 }
@@ -403,6 +408,7 @@ function personRow(row) {
   const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
   const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : residencyLabel(row.residency_status);
   return '<tr>'
+    + '<td><input type="checkbox" class="person-check" value="' + row.id + '"></td>'
     + '<td>' + escapeHtml(row.household_code || '') + '</td>'
     + '<td>' + escapeHtml(row.citizen_code || '') + '</td>'
     + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + row.id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
@@ -411,7 +417,7 @@ function personRow(row) {
     + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
     + '<td><span class="person-badge ' + residenceClass + '">' + escapeHtml(residenceText) + '</span></td>'
     + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
-    + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button></td>'
+    + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">Xóa</button></td>'
     + '</tr>';
 }
 
@@ -479,26 +485,51 @@ async function showPerson(id) {
 }
 
 async function deleteHousehold(id) {
-  if (!confirm('Xóa hộ dân này?')) return;
-  try { await api(`/api/households/${id}`, { method: 'DELETE' }); showToast('Đã xóa hộ dân'); loadHouseholds(); loadDashboard(); refreshLoginConfig(); }
-  catch (error) { showToast(error.message, 'danger'); }
+  try {
+    const row = await api('/api/households/' + id);
+    const message = 'Bạn có chắc chắn muốn xóa hộ gia đình này?\n\n'
+      + 'Mã hộ: ' + (row.household_code || '') + '\n'
+      + 'Chủ hộ: ' + (row.head_citizen_name || '') + '\n'
+      + 'Địa chỉ: ' + (row.address || '') + '\n'
+      + 'Số thành viên: ' + number(row.member_count_real || row.total_members || 0);
+    if (!confirm(message)) return;
+    await api('/api/households/' + id, { method: 'DELETE' });
+    showToast('Đã xóa hộ gia đình');
+    loadHouseholds(); loadPersons(); loadDashboard(); refreshLoginConfig();
+  } catch (error) { showToast(error.message, 'danger'); }
 }
 async function deletePerson(id) {
-  if (!confirm('Xóa nhân khẩu này?')) return;
-  try { await api(`/api/persons/${id}`, { method: 'DELETE' }); showToast('Đã xóa nhân khẩu'); loadPersons(); loadHouseholds(); loadDashboard(); refreshLoginConfig(); }
-  catch (error) { showToast(error.message, 'danger'); }
+  try {
+    const row = await api('/api/persons/' + id);
+    const message = 'Bạn có chắc chắn muốn xóa nhân khẩu này?\n\n'
+      + 'Mã nhân khẩu: ' + (row.citizen_code || '') + '\n'
+      + 'Họ và tên: ' + (row.full_name || '') + '\n'
+      + 'CCCD: ' + (row.identity_number || '');
+    if (!confirm(message)) return;
+    await api('/api/persons/' + id, { method: 'DELETE' });
+    showToast('Đã xóa nhân khẩu');
+    loadPersons(); loadHouseholds(); loadDashboard(); refreshLoginConfig();
+  } catch (error) { showToast(error.message, 'danger'); }
 }
-async function bulkDeleteHouseholds() { await bulkDelete('.household-check:checked', '/api/households/bulk-delete', loadHouseholds, 'hộ dân'); }
-async function bulkDeletePersons() { await bulkDelete('.person-check:checked', '/api/persons/bulk-delete', loadPersons, 'nhân khẩu'); }
+async function bulkDeleteHouseholds() { await bulkDelete('.household-check:checked', '/api/households/bulk-delete', () => { loadHouseholds(); loadPersons(); }, 'hộ gia đình'); }
+async function bulkDeletePersons() { await bulkDelete('.person-check:checked', '/api/persons/bulk-delete', () => { loadPersons(); loadHouseholds(); }, 'nhân khẩu'); }
 async function bulkDelete(selector, url, reload, label) {
-  const ids = $$(selector).map(c => Number(c.value));
-  if (!ids.length) return showToast('Chưa chọn dữ liệu cần xóa', 'warning');
-  if (!confirm(`Xóa ${ids.length} ${label} đã chọn?`)) return;
+  const ids = $$(selector).map(c => Number(c.value)).filter(Boolean);
+  if (ids.length < 2) return showToast('Vui lòng chọn từ 2 bản ghi trở lên để xóa hàng loạt', 'warning');
+  if (!confirm('Bạn sắp xóa ' + ids.length + ' bản ghi.\nBạn có chắc chắn muốn tiếp tục?')) return;
   try {
     const result = await api(url, { method: 'POST', body: { ids } });
-    showToast(`Đã xóa ${result.success || 0} ${label}` + (result.errors?.length ? `, lỗi ${result.errors.length}` : ''));
-    reload(); loadDashboard(); refreshLoginConfig();
+    showToast('Đã xóa ' + (result.success || ids.length) + ' ' + label);
+    reload(); loadDashboard(); refreshLoginConfig(); updateBulkDeleteButtons();
   } catch (error) { showToast(error.message, 'danger'); }
+}
+function updateBulkDeleteButtons() {
+  const householdCount = $$('.household-check:checked').length;
+  const personCount = $$('.person-check:checked').length;
+  const householdBtn = $('#householdBulkDeleteBtn');
+  const personBtn = $('#personBulkDeleteBtn');
+  if (householdBtn) householdBtn.classList.toggle('d-none', householdCount < 2);
+  if (personBtn) personBtn.classList.toggle('d-none', personCount < 2);
 }
 
 async function api(url, options = {}) {

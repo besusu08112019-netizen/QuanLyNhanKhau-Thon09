@@ -94,8 +94,26 @@ final class Citizen extends BaseModel
     public function softDelete(int $id, int $userId): void
     {
         $person = $this->find($id);
+        if (!$person) throw new \RuntimeException('Không tìm thấy nhân khẩu');
+        $activeMovements = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM movements WHERE citizen_id = :id AND status <> "DELETED"', ['id' => $id])['total'];
+        if ($activeMovements > 0) throw new \RuntimeException('Nhân khẩu đang có dữ liệu biến động liên quan. Vui lòng xử lý dữ liệu liên kết trước khi xóa.');
         $this->execute('UPDATE citizens SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
-        if ($person) $this->syncHouseholdHead((int) $person['household_id']);
+        $this->syncHouseholdHead((int) $person['household_id']);
+    }
+
+    public function bulkSoftDelete(array $ids, int $userId): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn($id) => $id > 0)));
+        if (!$ids) throw new \RuntimeException('Chưa chọn nhân khẩu cần xóa');
+        $this->db->beginTransaction();
+        try {
+            foreach ($ids as $id) $this->softDelete($id, $userId);
+            $this->db->commit();
+            return count($ids);
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            throw $e;
+        }
     }
 
     public function restore(int $id, int $userId): void
