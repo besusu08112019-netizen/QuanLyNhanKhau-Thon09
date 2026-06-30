@@ -1118,3 +1118,7 @@ body.sidebar-open {
     font-weight: 700;
   }
 }
+
+
+.person-detail-empty { padding: 18px; border: 1px dashed var(--dashboard-line, #e5eaf0); border-radius: 16px; color: var(--dashboard-muted, #667085); text-align: center; background: #f8faf9; font-weight: 650; }
+.person-detail-dynamic .person-info-section:empty { display: none; }

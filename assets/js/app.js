@@ -580,9 +580,141 @@ async function showPerson(id) {
   try {
     const row = await api(`/api/persons/${id}`);
     $('#detailTitle').textContent = 'Chi tiết nhân khẩu';
-    $('#detailBody').innerHTML = details([['Mã hộ', row.household_code], ['Mã nhân khẩu', row.citizen_code], ['Họ tên', row.full_name], ['Giới tính', row.gender], ['Ngày sinh', formatDate(row.date_of_birth)], ['CCCD', row.identity_number], ['Số điện thoại', row.phone], ['Quan hệ', row.relationship], ['Dân tộc', row.ethnicity], ['Tôn giáo', row.religion], ['Nghề nghiệp', row.occupation], ['Học vấn', row.education_level], ['Hôn nhân', row.marital_status], ['Thường trú', residencyLabel(row.residency_status)], ['Hiện tại', presenceLabel(row.presence_status)], ['Trạng thái', lifeLabel(row.life_status)], ['Địa chỉ hiện tại', row.current_address]]);
+    $('#detailBody').innerHTML = renderDynamicPersonDetail(row);
     App.modals.detail.show();
   } catch (error) { showToast(error.message, 'danger'); }
+}
+
+function renderDynamicPersonDetail(row) {
+  const normalized = normalizePersonDetailData(row || {});
+  const groups = buildDynamicPersonGroups(normalized);
+  const sections = groups.map(group => renderPersonDetailSection(group)).filter(Boolean).join('');
+  const heroBadges = buildPersonHeroBadges(normalized).join('');
+  const photo = normalized.personPhoto || normalized.photo || normalized.avatar || normalized.image || '';
+  return '<article class="person-detail-card person-detail-dynamic">'
+    + '<section class="person-detail-hero">'
+    + (hasDisplayValue(photo) ? '<div class="person-detail-photo"><img src="' + escapeHtml(photo) + '" alt="Ảnh nhân khẩu" loading="lazy"></div>' : '')
+    + '<div class="person-detail-identity"><span>Hồ sơ nhân khẩu</span><h3>' + escapeHtml(normalized.fullName || normalized.name || 'Nhân khẩu') + '</h3>'
+    + '<div class="person-detail-codes">' + renderCodeBadge('Mã NK', normalized.citizenCode) + renderCodeBadge('CCCD', normalized.identityNumber) + renderCodeBadge('Mã hộ', normalized.householdCode) + '</div>'
+    + (heroBadges ? '<div class="person-detail-badges">' + heroBadges + '</div>' : '')
+    + '</div></section>'
+    + (sections ? '<div class="person-detail-sections">' + sections + '</div>' : '<div class="person-detail-empty">Chưa có thông tin chi tiết để hiển thị.</div>')
+    + '</article>';
+}
+
+function normalizePersonDetailData(row) {
+  const aliases = {
+    household_code: 'householdCode', citizen_code: 'citizenCode', full_name: 'fullName', date_of_birth: 'dateOfBirth', identity_number: 'identityNumber',
+    phone_number: 'phone', household_address: 'householdAddress', current_address: 'currentAddress', permanent_address: 'permanentAddress', residency_status: 'residencyStatus', presence_status: 'presenceStatus', life_status: 'lifeStatus',
+    education_level: 'educationLevel', marital_status: 'maritalStatus', party_member: 'partyMember', youth_union_member: 'youthUnionMember', women_union_member: 'womenUnionMember', farmers_union_member: 'farmersUnionMember', veterans_union_member: 'veteransUnionMember', elderly_union_member: 'elderlyUnionMember',
+    meritorious_person: 'meritoriousPerson', martyr_relative: 'martyrRelative', wounded_soldier: 'woundedSoldier', sick_soldier: 'sickSoldier', disabled_person: 'disabledPerson', social_assistance: 'socialAssistance',
+    health_insurance: 'healthInsurance', social_insurance: 'socialInsurance', household_type: 'householdType', poor_household: 'poorHousehold', near_poor_household: 'nearPoorHousehold', work_place: 'workPlace', workplace: 'workPlace',
+    person_photo: 'personPhoto', photo_url: 'personPhoto', blood_type: 'bloodType', note: 'note', notes: 'note'
+  };
+  return Object.entries(row || {}).reduce((acc, [key, value]) => {
+    const normalizedKey = aliases[key] || toCamelCase(key);
+    acc[normalizedKey] = value;
+    return acc;
+  }, {});
+}
+
+function buildDynamicPersonGroups(data) {
+  const used = new Set(['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'deletedAt', 'deleted_at', 'personPhoto', 'photo', 'avatar', 'image']);
+  const groupDefs = [
+    { key: 'basic', title: 'Thông tin cơ bản', icon: 'fa-id-card', fields: ['fullName','citizenCode','gender','dateOfBirth','age','identityNumber','phone','email'] },
+    { key: 'residence', title: 'Thông tin cư trú', icon: 'fa-house-user', fields: ['householdCode','householdAddress','permanentAddress','currentAddress','residencyStatus','presenceStatus','relationship','lifeStatus'] },
+    { key: 'personal', title: 'Thông tin cá nhân', icon: 'fa-user', fields: ['occupation','job','workPlace','ethnicity','religion','educationLevel','maritalStatus','nationality','bloodType'] },
+    { key: 'administrative', title: 'Thông tin hành chính', icon: 'fa-landmark', fields: ['partyMember','youthUnionMember','womenUnionMember','farmersUnionMember','veteransUnionMember','elderlyUnionMember','meritoriousPerson','martyrRelative','woundedSoldier','sickSoldier','disabledPerson','socialAssistance','householdType','poorHousehold','nearPoorHousehold','healthInsurance','socialInsurance','note'] }
+  ];
+  const groups = groupDefs.map(def => ({ ...def, items: [] }));
+  const addField = (group, key) => {
+    if (used.has(key) || !Object.prototype.hasOwnProperty.call(data, key) || !hasDisplayValue(data[key])) return;
+    used.add(key);
+    group.items.push({ key, label: personFieldLabel(key), value: formatPersonDetailValue(key, data[key]) });
+  };
+  groups.forEach(group => group.fields.forEach(key => addField(group, key)));
+  Object.keys(data).forEach(key => {
+    if (used.has(key) || !hasDisplayValue(data[key])) return;
+    const group = groups.find(item => item.key === inferPersonGroup(key)) || groups[3];
+    used.add(key);
+    group.items.push({ key, label: personFieldLabel(key), value: formatPersonDetailValue(key, data[key]) });
+  });
+  return groups.filter(group => group.items.length);
+}
+
+function inferPersonGroup(key) {
+  const text = normalizeSearchText(key);
+  if (/house|address|residen|presence|temporary|permanent|relation|ho|diachi|cu tru|tam tru|tam vang/.test(text)) return 'residence';
+  if (/job|work|occupation|ethnic|religion|education|marital|national|blood|nghe|dan toc|ton giao|hoc van|hon nhan|quoc tich/.test(text)) return 'personal';
+  if (/party|union|member|policy|insurance|disabled|soldier|martyr|poor|note|dang|doan|hoi|bao hiem|khuyet tat|co cong|ghi chu/.test(text)) return 'administrative';
+  return 'administrative';
+}
+
+function renderPersonDetailSection(group) {
+  if (!group.items.length) return '';
+  return '<section class="person-info-section"><div class="person-info-section-title"><i class="fa-solid ' + group.icon + '"></i><h4>' + escapeHtml(group.title) + '</h4></div>'
+    + '<div class="person-info-grid">' + group.items.map(item => '<div class="person-info-field"><span>' + escapeHtml(item.label) + '</span><div class="person-info-value ' + (isCodePersonField(item.key) ? 'person-info-value-code' : '') + '">' + escapeHtml(item.value) + '</div></div>').join('') + '</div></section>';
+}
+
+function hasDisplayValue(value) {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.some(hasDisplayValue);
+  if (typeof value === 'object') return Object.values(value).some(hasDisplayValue);
+  const text = String(value).trim();
+  if (!text) return false;
+  return !['null','undefined','n/a','na','--','—','không có dữ liệu','khong co du lieu'].includes(normalizeSearchText(text));
+}
+
+function formatPersonDetailValue(key, value) {
+  if (Array.isArray(value)) return value.filter(hasDisplayValue).map(item => formatPersonDetailValue(key, item)).join(', ');
+  if (typeof value === 'object' && value !== null) return Object.entries(value).filter(([, v]) => hasDisplayValue(v)).map(([k, v]) => personFieldLabel(k) + ': ' + formatPersonDetailValue(k, v)).join('; ');
+  const bool = booleanDisplayValue(value);
+  if (bool !== null) return bool;
+  if (/date|birth|ngay/i.test(key)) return formatDate(value);
+  if (key === 'residencyStatus') return residencyLabel(value);
+  if (key === 'presenceStatus') return presenceLabel(value);
+  if (key === 'lifeStatus' || key === 'status') return lifeLabel(value);
+  return String(value).trim();
+}
+
+function booleanDisplayValue(value) {
+  if (value === true || value === 1 || value === '1') return 'Có';
+  if (value === false || value === 0 || value === '0') return 'Không';
+  return null;
+}
+
+function personFieldLabel(key) {
+  const labels = {
+    householdCode: 'Mã hộ', citizenCode: 'Mã nhân khẩu', fullName: 'Họ tên', gender: 'Giới tính', dateOfBirth: 'Ngày sinh', age: 'Tuổi', identityNumber: 'CCCD/Số định danh', phone: 'Số điện thoại', email: 'Email',
+    householdAddress: 'Địa chỉ hộ', permanentAddress: 'Địa chỉ thường trú', currentAddress: 'Địa chỉ hiện tại', residencyStatus: 'Tình trạng cư trú', presenceStatus: 'Hiện tại', relationship: 'Quan hệ với chủ hộ', lifeStatus: 'Trạng thái',
+    occupation: 'Nghề nghiệp', job: 'Nghề nghiệp', workPlace: 'Nơi làm việc', ethnicity: 'Dân tộc', religion: 'Tôn giáo', educationLevel: 'Trình độ học vấn', maritalStatus: 'Tình trạng hôn nhân', nationality: 'Quốc tịch', bloodType: 'Nhóm máu',
+    partyMember: 'Đảng viên', youthUnionMember: 'Đoàn viên Thanh niên', womenUnionMember: 'Hội viên Hội Phụ nữ', farmersUnionMember: 'Hội viên Hội Nông dân', veteransUnionMember: 'Hội viên Hội Cựu chiến binh', elderlyUnionMember: 'Hội viên Hội Người cao tuổi',
+    meritoriousPerson: 'Người có công', martyrRelative: 'Thân nhân liệt sĩ', woundedSoldier: 'Thương binh', sickSoldier: 'Bệnh binh', disabledPerson: 'Người khuyết tật', socialAssistance: 'Bảo trợ xã hội', householdType: 'Diện hộ', poorHousehold: 'Hộ nghèo', nearPoorHousehold: 'Hộ cận nghèo', healthInsurance: 'Bảo hiểm y tế', socialInsurance: 'Bảo hiểm xã hội', note: 'Ghi chú'
+  };
+  return labels[key] || humanizeFieldName(key);
+}
+
+function humanizeFieldName(key) {
+  return String(key || '').replace(/_/g, ' ').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/\s+/g, ' ').trim().replace(/^./, c => c.toUpperCase());
+}
+
+function toCamelCase(key) {
+  return String(key || '').replace(/[-_\s]+([a-zA-Z0-9])/g, (_, chr) => chr.toUpperCase());
+}
+
+function renderCodeBadge(label, value) {
+  return hasDisplayValue(value) ? '<strong>' + escapeHtml(label) + ': ' + escapeHtml(value) + '</strong>' : '';
+}
+
+function isCodePersonField(key) {
+  return /code|number|cccd|identity|bhxh|bhyt/i.test(key);
+}
+
+function buildPersonHeroBadges(data) {
+  return [
+    ['gender', data.gender, 'neutral'], ['partyMember', data.partyMember, 'green'], ['relationship', data.relationship === 'Chủ hộ' ? 'Chủ hộ' : '', 'gold'],
+    ['residencyStatus', data.residencyStatus, 'blue'], ['presenceStatus', data.presenceStatus, 'purple']
+  ].filter(([, value]) => hasDisplayValue(value)).map(([key, value, tone]) => '<span class="person-detail-badge person-detail-badge-' + tone + '">' + escapeHtml(formatPersonDetailValue(key, value)) + '</span>');
 }
 
 async function deleteHousehold(id) {
