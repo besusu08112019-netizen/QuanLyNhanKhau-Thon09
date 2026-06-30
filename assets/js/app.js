@@ -225,9 +225,21 @@ function chartEmpty(message = 'Chưa có dữ liệu') {
 function renderAgeStructureChart(items) {
   const host = $('#ageStructureChart');
   if (!host) return;
-  const preferred = ['0-5 tuổi','6-14 tuổi','15-17 tuổi','18-59 tuổi','Trên 60 tuổi'];
-  const map = new Map(normalizeChartItems(items).map(item => [item.label, item.value]));
-  const normalized = preferred.map(label => ({ label, value: Number(map.get(label) || 0) }));
+  const buckets = [
+    { key: '0_5', label: '0-5 tuổi', match: text => text.includes('0-5') },
+    { key: '6_14', label: '6-14 tuổi', match: text => text.includes('6-14') },
+    { key: '15_17', label: '15-17 tuổi', match: text => text.includes('15-17') },
+    { key: '18_59', label: '18-59 tuổi', match: text => text.includes('18-59') },
+    { key: '60_plus', label: 'Từ 60 tuổi trở lên', match: text => text.includes('60') && (text.includes('tro len') || text.includes('trở lên') || text.includes('tren') || text.includes('trên') || text.includes('+')) }
+  ];
+  const source = normalizeChartItems(items);
+  const normalized = buckets.map(bucket => {
+    const value = source.reduce((sum, item) => {
+      const text = normalizeSearchText(item.label || '');
+      return sum + (bucket.match(text) ? Number(item.value || 0) : 0);
+    }, 0);
+    return { label: bucket.label, value };
+  });
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
   if (!total) { host.innerHTML = chartEmpty(); return; }
   host.innerHTML = '<div class="dashboard-age-layout">'
@@ -235,7 +247,6 @@ function renderAgeStructureChart(items) {
     + '<div class="dashboard-legend">' + normalized.map((item, index) => renderLegendRow(item, total, index)).join('') + '</div>'
     + '</div>';
 }
-
 function renderMonthlyChangeChart(items, fallbackTotal) {
   const host = $('#populationMovementChart');
   if (!host) return;
