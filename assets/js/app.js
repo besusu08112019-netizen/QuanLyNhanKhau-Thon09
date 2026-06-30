@@ -367,6 +367,7 @@ async function loadHouseholds() {
       '<td>' + householdBadges(row) + '</td>' +
       '<td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button></td>' +
     '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
+    updateBulkDeleteButtons();
     renderPager('#householdPager', { total, page: App.households.page, pageSize: App.households.pageSize }, page => { App.households.page = page; loadHouseholds(); });
   } catch (error) { showToast('Không tải được danh sách hộ dân: ' + error.message, 'danger'); }
 }
