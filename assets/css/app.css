@@ -599,3 +599,36 @@ body.sidebar-collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
 .dashboard-bar-item small b { color: #1f2937; }
 @media (max-width: 900px) { .dashboard-household-type-layout { grid-template-columns: 1fr; } .dashboard-bar-chart { grid-template-columns: repeat(3,minmax(0,1fr)); } }
 @media (max-width: 520px) { .dashboard-bar-chart { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+
+
+/* Person detail information card */
+.person-detail-card { display: grid; gap: 20px; color: #1f2937; }
+.person-detail-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; padding: 18px; border: 1px solid var(--dashboard-line, #e5eaf0); border-radius: 16px; background: linear-gradient(135deg, #f7fbf8, #ffffff); box-shadow: 0 12px 30px rgba(15, 82, 48, .08); }
+.person-detail-photo { width: 96px; height: 120px; border-radius: 14px; overflow: hidden; border: 1px solid #dbe7df; background: #f3f6f4; flex: 0 0 auto; }
+.person-detail-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.person-detail-identity { min-width: 0; }
+.person-detail-identity > span { display: block; color: var(--dashboard-muted, #667085); font-size: 13px; font-weight: 650; margin-bottom: 4px; }
+.person-detail-identity h3 { margin: 0; color: var(--dashboard-green, #0b6b3a); font-size: clamp(22px, 2.4vw, 30px); font-weight: 800; line-height: 1.2; word-break: break-word; }
+.person-detail-codes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.person-detail-codes strong { display: inline-flex; align-items: center; min-height: 30px; padding: 5px 10px; border-radius: 999px; background: #ecfdf3; color: #086335; border: 1px solid #cbe9d5; font-size: 13px; font-weight: 750; }
+.person-detail-badges { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.person-detail-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 750; background: #eef2f7; color: #344054; }
+.person-detail-badge-green { background: #e9f8ef; color: #08733e; }
+.person-detail-badge-blue { background: #eaf3ff; color: #1d4ed8; }
+.person-detail-badge-purple { background: #f1edff; color: #6d28d9; }
+.person-detail-badge-gold { background: #fff7e6; color: #b45309; }
+.person-detail-badge-neutral { background: #f2f4f7; color: #344054; }
+.person-detail-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.person-info-section { min-width: 0; border: 1px solid var(--dashboard-line, #e5eaf0); border-radius: 16px; background: #fff; padding: 16px; box-shadow: 0 10px 24px rgba(31, 41, 55, .05); }
+.person-info-section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #edf2ef; }
+.person-info-section-title i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #e9f6ef; color: var(--dashboard-green, #0b6b3a); }
+.person-info-section-title h4 { margin: 0; color: var(--dashboard-green, #0b6b3a); font-size: 15px; font-weight: 800; }
+.person-info-grid { display: grid; gap: 10px; }
+.person-info-field { display: grid; grid-template-columns: minmax(120px, .46fr) minmax(0, 1fr); gap: 12px; align-items: start; padding: 9px 0; border-bottom: 1px dashed #e7ece9; }
+.person-info-field:last-child { border-bottom: 0; padding-bottom: 0; }
+.person-info-field span { color: var(--dashboard-muted, #667085); font-size: 12px; font-weight: 650; line-height: 1.35; }
+.person-info-value { min-width: 0; color: #1f2937; font-size: 14px; font-weight: 700; line-height: 1.4; word-break: break-word; }
+.person-info-value-strong { color: var(--dashboard-green, #0b6b3a); font-size: 15px; font-weight: 800; }
+.person-info-value-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #0f5132; }
+@media (max-width: 991px) { .person-detail-sections { grid-template-columns: 1fr; } }
+@media (max-width: 576px) { .person-detail-hero { grid-template-columns: 1fr; } .person-detail-photo { width: 84px; height: 104px; } .person-info-field { grid-template-columns: 1fr; gap: 4px; } }

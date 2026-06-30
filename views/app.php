@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260630-phase2-uiux-1">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260630-person-detail-card-1">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -264,7 +264,7 @@
   <script src="assets/js/import.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/admin-panel.js?v=20260630-phase2-uiux-1"></script>
   <script src="assets/js/admin-panel-bridge.js?v=20260630-final-bridge-title-1"></script>
-  <script src="assets/js/sprint8.js?v=20260629-two-import-buttons-1"></script>
+  <script src="assets/js/sprint8.js?v=20260630-person-detail-card-1"></script>
   <script src="assets/js/sprint9.js?v=20260629-two-import-buttons-1"></script>
   <script src="assets/js/sprint10.js?v=20260630-final-vi-1"></script>
 

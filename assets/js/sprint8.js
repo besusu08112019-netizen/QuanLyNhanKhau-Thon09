@@ -64,10 +64,112 @@
   }
 
   function personDetailHtml(row) {
-    const photo = row.photo_url ? '<div class="mb-3"><img src="' + escapeHtml(row.photo_url) + '" alt="Ảnh nhân khẩu" class="img-fluid rounded border" style="max-height:220px"></div>' : '';
-    return photo + details([
-      ['Mã nhân khẩu', row.citizen_code], ['Mã hộ', row.household_code], ['Họ tên', row.full_name], ['Giới tính', row.gender], ['Ngày sinh', formatDate(row.date_of_birth)], ['CCCD', row.identity_number], ['Nơi sinh', row.birth_place], ['Quê quán', row.hometown], ['Dân tộc', row.ethnicity], ['Tôn giáo', row.religion], ['Nghề nghiệp', row.occupation], ['Nơi làm việc', row.workplace], ['Số điện thoại', row.phone], ['Quan hệ với chủ hộ', row.relationship], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ thường trú', row.household_address], ['Địa chỉ hiện tại', row.current_address], ['Trạng thái cư trú', residencyLabel(row.residency_status)], ['Hiện tại', presenceLabel(row.presence_status)], ['Trạng thái', lifeLabel(row.life_status)], ['Ngày đăng ký', formatDateTime(row.created_at)], ['Ghi chú', row.note]
+    const photo = hasValue(row.photo_url) ? '<div class="person-detail-photo"><img src="' + escapeHtml(row.photo_url) + '" alt="Ảnh nhân khẩu"></div>' : '';
+    const fullName = valueText(row.full_name) || 'Nhân khẩu';
+    const citizenCode = valueText(row.citizen_code);
+    const identity = valueText(row.identity_number || row.personal_id || row.national_id);
+    const age = ageText(row.date_of_birth);
+    const statusBadges = [
+      badge(row.gender, 'neutral'),
+      Number(row.party_member) === 1 ? badge('Đảng viên', 'gold') : '',
+      isHouseholdHead(row) ? badge('Chủ hộ', 'green') : '',
+      row.residency_status === 'TEMPORARY' ? badge('Tạm trú', 'blue') : '',
+      row.presence_status === 'AWAY' ? badge('Tạm vắng', 'purple') : ''
+    ].filter(Boolean).join('');
+
+    const basic = detailSection('Thông tin cơ bản', 'fa-id-card', [
+      ['Họ và tên', row.full_name, 'strong'],
+      ['Mã nhân khẩu', row.citizen_code, 'code'],
+      ['Giới tính', row.gender],
+      ['Ngày sinh', formatDate(row.date_of_birth)],
+      ['Tuổi', age],
+      ['CCCD/Số định danh', identity, 'code'],
+      ['Số điện thoại', row.phone]
     ]);
+    const residence = detailSection('Thông tin cư trú', 'fa-house-user', [
+      ['Địa chỉ thường trú', row.household_address],
+      ['Địa chỉ hiện tại', row.current_address],
+      ['Tình trạng cư trú', residencyLabel(row.residency_status)],
+      ['Hiện tại', presenceLabel(row.presence_status)],
+      ['Mã hộ', row.household_code, 'code'],
+      ['Quan hệ với chủ hộ', row.relationship]
+    ]);
+    const personal = detailSection('Thông tin cá nhân', 'fa-user', [
+      ['Nghề nghiệp', row.occupation],
+      ['Nơi làm việc', row.workplace],
+      ['Dân tộc', row.ethnicity],
+      ['Tôn giáo', row.religion],
+      ['Trình độ học vấn', row.education_level],
+      ['Quốc tịch', row.nationality],
+      ['Hôn nhân', row.marital_status],
+      ['Nơi sinh', row.birth_place],
+      ['Quê quán', row.hometown]
+    ]);
+    const administrative = detailSection('Thông tin hành chính', 'fa-landmark', [
+      ['Đảng viên', Number(row.party_member) === 1 ? 'Có' : ''],
+      ['Đoàn viên Thanh niên', Number(row.youth_union_member) === 1 ? 'Có' : ''],
+      ['Hội Phụ nữ', Number(row.women_union_member) === 1 ? 'Có' : ''],
+      ['Hội Nông dân', Number(row.farmers_union_member) === 1 ? 'Có' : ''],
+      ['Hội Cựu chiến binh', Number(row.veterans_union_member) === 1 ? 'Có' : ''],
+      ['Hội Người cao tuổi', Number(row.elderly_union_member) === 1 ? 'Có' : ''],
+      ['Đối tượng chính sách', policyLabels(row).join(', ')],
+      ['Diện hộ', row.household_type],
+      ['Trạng thái', lifeLabel(row.life_status)],
+      ['Ngày đăng ký', formatDateTime(row.created_at)],
+      ['Ghi chú', row.note]
+    ]);
+
+    return '<div class="person-detail-card">'
+      + '<div class="person-detail-hero">' + photo + '<div class="person-detail-identity"><span>Hồ sơ nhân khẩu</span><h3>' + escapeHtml(fullName) + '</h3><div class="person-detail-codes">' + (citizenCode ? '<strong>' + escapeHtml(citizenCode) + '</strong>' : '') + (identity ? '<strong>CCCD: ' + escapeHtml(identity) + '</strong>' : '') + '</div><div class="person-detail-badges">' + statusBadges + '</div></div></div>'
+      + '<div class="person-detail-sections">' + [basic, residence, personal, administrative].filter(Boolean).join('') + '</div>'
+      + '</div>';
+  }
+
+  function hasValue(value) {
+    if (value === null || value === undefined) return false;
+    const text = String(value).trim();
+    return text !== '' && text !== '-' && text !== '—' && text.toLowerCase() !== 'null' && text.toLowerCase() !== 'undefined';
+  }
+
+  function valueText(value) { return hasValue(value) ? String(value).trim() : ''; }
+
+  function detailSection(title, icon, rows) {
+    const items = rows.filter(item => hasValue(item[1]));
+    if (!items.length) return '';
+    return '<section class="person-info-section"><div class="person-info-section-title"><i class="fa-solid ' + icon + '"></i><h4>' + escapeHtml(title) + '</h4></div><div class="person-info-grid">' + items.map(item => detailField(item[0], item[1], item[2])).join('') + '</div></section>';
+  }
+
+  function detailField(label, value, tone) {
+    const className = tone ? ' person-info-value-' + tone : '';
+    return '<div class="person-info-field"><span>' + escapeHtml(label) + '</span><strong class="person-info-value' + className + '">' + escapeHtml(valueText(value)) + '</strong></div>';
+  }
+
+  function badge(text, tone) { return hasValue(text) ? '<span class="person-detail-badge person-detail-badge-' + tone + '">' + escapeHtml(text) + '</span>' : ''; }
+
+  function isHouseholdHead(row) {
+    return String(row.relationship || '').trim().toLowerCase() === 'chủ hộ' || String(row.full_name || '').trim() === String(row.head_citizen_name || '').trim();
+  }
+
+  function ageText(value) {
+    if (!hasValue(value)) return '';
+    const date = new Date(String(value).replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return '';
+    const now = new Date();
+    let age = now.getFullYear() - date.getFullYear();
+    const monthDiff = now.getMonth() - date.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < date.getDate())) age--;
+    return age >= 0 ? age + ' tuổi' : '';
+  }
+
+  function policyLabels(row) {
+    const labels = [];
+    if (Number(row.meritorious_person) === 1) labels.push('Người có công');
+    if (Number(row.martyr_relative) === 1) labels.push('Thân nhân liệt sĩ');
+    if (Number(row.wounded_soldier) === 1) labels.push('Thương binh');
+    if (Number(row.sick_soldier) === 1) labels.push('Bệnh binh');
+    if (Number(row.disabled_person) === 1) labels.push('Người khuyết tật');
+    if (Number(row.social_assistance) === 1) labels.push('Bảo trợ xã hội');
+    return labels;
   }
 
   function printPersonDetail(row) {
