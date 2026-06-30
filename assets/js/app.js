@@ -125,11 +125,41 @@ function applyResponsiveTableLabels(root = document) {
     const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
     if (!headers.length) return;
     table.querySelectorAll('tbody tr').forEach(row => {
+      if (row.classList.contains('group-row')) {
+        row.dataset.mobileRole = 'group';
+        return;
+      }
+      let titleAssigned = false;
       Array.from(row.children).forEach((cell, index) => {
-        if (!cell.hasAttribute('data-label')) cell.setAttribute('data-label', headers[index] || '');
+        const label = headers[index] || '';
+        if (!cell.hasAttribute('data-label')) cell.setAttribute('data-label', label);
+        const normalizedLabel = normalizeSearchText(label);
+        cell.dataset.mobileRole = '';
+        if (cell.querySelector('input[type="checkbox"]') && index === 0) {
+          cell.dataset.mobileRole = 'select';
+          return;
+        }
+        if (normalizedLabel.includes('thao tac')) {
+          cell.dataset.mobileRole = 'actions';
+          return;
+        }
+        if (!titleAssigned && isMobileCardTitleLabel(normalizedLabel, index)) {
+          cell.dataset.mobileRole = 'title';
+          titleAssigned = true;
+          return;
+        }
+        if (isMobileCardMetaLabel(normalizedLabel)) cell.dataset.mobileRole = 'meta';
       });
     });
   });
+}
+
+function isMobileCardTitleLabel(label, index) {
+  return ['chu ho', 'ho va ten', 'ho ten', 'ten dang nhap', 'username', 'nguoi dung', 'tieu de', 'ten file'].some(key => label.includes(key)) || index === 1;
+}
+
+function isMobileCardMetaLabel(label) {
+  return ['ma ho', 'ma nhan khau', 'cccd', 'so dinh danh', 'dia chi', 'cu tru', 'trang thai', 'dien ho'].some(key => label.includes(key));
 }
 
 function startResponsiveTableObserver() {
@@ -472,7 +502,7 @@ async function loadHouseholds() {
       '<td>' + number(row.at_home_count || 0) + '</td>' +
       '<td>' + number(row.away_count || 0) + '</td>' +
       '<td>' + householdBadges(row) + '</td>' +
-      '<td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button></td>' +
+      '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" onclick="showHousehold(' + row.id + ')">Xem</button> <button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button></td>' +
     '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
     updateBulkDeleteButtons();
     renderPager('#householdPager', { total, page: App.households.page, pageSize: App.households.pageSize }, page => { App.households.page = page; loadHouseholds(); });
