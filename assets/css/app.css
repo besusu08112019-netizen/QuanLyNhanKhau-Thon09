@@ -2442,3 +2442,149 @@ body.sidebar-open {
     flex: 1 1 0 !important;
   }
 }
+
+
+/* Mobile design system v4.2 - compact professional cards */
+@media (max-width: 1024px) {
+  .table-responsive tbody,
+  .table-responsive.module-card-list tbody {
+    gap: 12px !important;
+  }
+  .table-responsive tbody tr:not(.group-row),
+  .table-responsive.module-card-list tbody tr:not(.group-row) {
+    gap: 5px 6px !important;
+    padding: 11px 12px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, .055) !important;
+  }
+  .table-responsive tbody td[data-mobile-role="select"] {
+    top: 10px !important;
+    right: 10px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="select"] input {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="title"] {
+    padding: 0 118px 6px 0 !important;
+    min-height: 28px;
+    border-bottom: 1px solid #edf2ee !important;
+    font-size: 14px !important;
+    line-height: 1.22 !important;
+  }
+  .table-responsive tbody td[data-mobile-role="header-meta"] {
+    position: absolute !important;
+    top: 10px !important;
+    right: 36px !important;
+    z-index: 2;
+    display: inline-flex !important;
+    align-items: center;
+    max-width: 92px !important;
+    min-height: 24px;
+    padding: 3px 7px !important;
+    border: 1px solid #cfe4d7 !important;
+    border-radius: 999px !important;
+    background: #eef8f1 !important;
+    color: #075f35 !important;
+    font-size: 10.5px !important;
+    font-weight: 850 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .table-responsive tbody td[data-mobile-role="header-meta"]::before {
+    content: none !important;
+  }
+  .table-responsive tbody td[data-mobile-role="address"] {
+    padding: 6px 8px !important;
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+    line-height: 1.3 !important;
+  }
+  .table-responsive tbody td[data-mobile-role="stat"] {
+    min-height: 40px !important;
+    padding: 5px 6px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="stat"]::before,
+  .table-responsive tbody td::before,
+  .table-responsive tbody td[data-mobile-role="badge"]::before {
+    font-size: 9.5px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="meta"] {
+    min-height: 26px !important;
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="badge"] {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    grid-column: span 3 !important;
+    min-height: 28px;
+  }
+  .table-responsive tbody td[data-mobile-role="badge"]::before {
+    display: inline !important;
+    margin: 0 !important;
+    content: attr(data-label) ':' !important;
+    white-space: nowrap;
+  }
+  .table-responsive tbody td[data-mobile-role="badge"] .badge,
+  .table-responsive tbody td[data-mobile-role="badge"] .badge-soft,
+  .table-responsive tbody td[data-mobile-role="badge"] .person-badge,
+  .table-responsive tbody td[data-mobile-role="badge"] span,
+  .table-responsive tbody td[data-mobile-role="badge"] a,
+  .table-responsive tbody td[data-mobile-role="badge"] button {
+    min-height: 24px !important;
+    padding: 3px 7px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+  .table-responsive tbody td:not([data-mobile-role="title"]):not([data-mobile-role="header-meta"]):not([data-mobile-role="meta"]):not([data-mobile-role="address"]):not([data-mobile-role="stat"]):not([data-mobile-role="badge"]):not([data-mobile-role="actions"]):not([data-mobile-role="select"]) {
+    padding: 1px 0 !important;
+    font-size: 12px !important;
+    gap: 1px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="actions"],
+  .table-responsive tbody td.text-end:has(button),
+  .table-responsive tbody td.text-end:has(.btn) {
+    gap: 6px !important;
+    margin-top: 1px !important;
+    padding-top: 7px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="actions"] .btn,
+  .table-responsive tbody td[data-mobile-role="actions"] button,
+  .table-responsive tbody td.text-end .btn,
+  .table-responsive tbody td.text-end button {
+    min-height: 42px !important;
+    padding: 7px 3px !important;
+    border-radius: 10px !important;
+    font-size: 11.5px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .table-responsive tbody tr:not(.group-row),
+  .table-responsive.module-card-list tbody tr:not(.group-row) {
+    padding: 10px !important;
+    gap: 5px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="title"] {
+    padding-right: 104px !important;
+    font-size: 13.5px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="header-meta"] {
+    right: 34px !important;
+    max-width: 78px !important;
+    font-size: 10px !important;
+  }
+  .table-responsive tbody td[data-mobile-role="actions"] .btn,
+  .table-responsive tbody td[data-mobile-role="actions"] button,
+  .table-responsive tbody td.text-end .btn,
+  .table-responsive tbody td.text-end button {
+    min-height: 42px !important;
+    font-size: 11px !important;
+  }
+}

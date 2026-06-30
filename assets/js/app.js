@@ -135,6 +135,7 @@ function applyResponsiveTableLabels(root = document) {
         return;
       }
       let titleAssigned = false;
+      let headerMetaAssigned = false;
       Array.from(row.children).forEach((cell, index) => {
         const label = headers[index] || '';
         if (!cell.hasAttribute('data-label')) cell.setAttribute('data-label', label);
@@ -166,7 +167,14 @@ function applyResponsiveTableLabels(root = document) {
           cell.dataset.mobileTone = getMobileBadgeTone(normalizedLabel, normalizedValue);
           normalizeMobileBadgeText(cell, normalizedLabel, normalizedValue);
         }
-        else if (isMobileCardMetaLabel(normalizedLabel)) cell.dataset.mobileRole = 'meta';
+        else if (isMobileCardMetaLabel(normalizedLabel)) {
+          if (!headerMetaAssigned && isMobileCardHeaderMetaLabel(normalizedLabel)) {
+            cell.dataset.mobileRole = 'header-meta';
+            headerMetaAssigned = true;
+          } else {
+            cell.dataset.mobileRole = 'meta';
+          }
+        }
       });
     });
   });
@@ -179,6 +187,10 @@ function isMobileCardTitleLabel(label, index) {
 
 function isMobileCardMetaLabel(label) {
   return ['ma ho', 'ma nhan khau', 'cccd', 'so dinh danh'].some(key => label.includes(key));
+}
+
+function isMobileCardHeaderMetaLabel(label) {
+  return ['ma ho', 'ma nhan khau', 'username', 'ten dang nhap'].some(key => label.includes(key));
 }
 
 function isMobileCardAddressLabel(label) {
@@ -223,7 +235,7 @@ function getMobileBadgeTone(label, value) {
 function normalizeMobileBadgeText(cell, label, value) {
   if (!label.includes('dien ho') || value !== 'khong') return;
   const target = cell.querySelector('.badge, .badge-soft, .person-badge, span, a, button') || cell;
-  target.textContent = 'Khong thuoc dien uu tien';
+  target.textContent = 'Khong uu tien';
 }
 
 function startResponsiveTableObserver() {
