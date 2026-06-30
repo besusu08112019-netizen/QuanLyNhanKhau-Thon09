@@ -9,7 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260701-mobile-cards-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260701-gis-2">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -60,7 +62,7 @@
         </div>
       </div>
       <nav class="nav flex-column gov-nav" aria-label="Điều hướng chính">
-        <div class="nav-section"><div class="nav-section-title">Tổng quan</div><button class="nav-link active" data-screen="dashboard" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button></div>
+        <div class="nav-section"><div class="nav-section-title">Tổng quan</div><button class="nav-link active" data-screen="dashboard" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button><button class="nav-link" data-screen="gis" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-map-location-dot"></i><span>Bản đồ địa bàn</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Quản lý dân cư</div><button class="nav-link" data-screen="households" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-house-chimney"></i><span>Quản lý hộ gia đình</span></button><button class="nav-link" data-screen="persons" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-users"></i><span>Quản lý nhân khẩu</span></button><button class="nav-link" data-screen="temporaryResidence" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-location-dot"></i><span>Tạm trú</span></button><button class="nav-link" data-screen="temporaryAbsence" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Tạm vắng</span></button><button class="nav-link" data-screen="movements" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-right-left"></i><span>Biến động nhân khẩu</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Báo cáo</div><button class="nav-link" data-screen="reports" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-chart-pie"></i><span>Báo cáo thống kê</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Dữ liệu</div><button class="nav-link" data-screen="import" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-file-import"></i><span>Import dữ liệu</span></button><button class="nav-link" data-screen="exportExcel" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-file-export"></i><span>Xuất Excel</span></button><button class="nav-link" data-screen="printForms" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-print"></i><span>In biểu mẫu</span></button></div>
@@ -127,6 +129,46 @@
             <div id="laborStatusChart" class="dashboard-chart-body"></div>
           </article>
         </section>
+      </section>
+
+
+      <section id="gisScreen" class="screen gis-screen">
+        <div class="gis-layout">
+          <aside class="gis-panel content-card">
+            <div class="gis-panel-head">
+              <div>
+                <h3>Bản đồ địa bàn</h3>
+                <p>Vẽ ranh giới xóm/tổ/khu dân cư, xem thống kê và lọc hộ theo khu vực.</p>
+              </div>
+              <button id="gisRefreshBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+            <div class="gis-actions">
+              <button id="gisDrawBtn" class="btn btn-success" type="button"><i class="fa-solid fa-draw-polygon"></i> Vẽ ranh giới</button>
+              <button id="gisSaveBtn" class="btn btn-primary" type="button" disabled><i class="fa-solid fa-floppy-disk"></i> Lưu khu vực</button>
+              <button id="gisPdfBtn" class="btn btn-outline-danger" type="button"><i class="fa-solid fa-file-pdf"></i> Xuất PDF</button>
+            </div>
+            <form id="gisAreaForm" class="gis-area-form">
+              <input type="hidden" id="gisAreaId">
+              <label>Tên khu vực</label>
+              <input id="gisAreaName" class="form-control" placeholder="Ví dụ: Xóm 1, Tổ 2...">
+              <label>Mã khu vực / Area code</label>
+              <input id="gisAreaCode" class="form-control" placeholder="Khớp trường area_code của hộ dân">
+              <label>Màu hiển thị</label>
+              <input id="gisAreaColor" class="form-control form-control-color" type="color" value="#0f8a4b">
+              <label>Ghi chú</label>
+              <textarea id="gisAreaNote" class="form-control" rows="2" placeholder="Ghi chú nội bộ"></textarea>
+            </form>
+            <div class="gis-summary-grid" id="gisSummaryCards"></div>
+            <div class="gis-area-list" id="gisAreaList"></div>
+          </aside>
+          <main class="gis-map-card content-card">
+            <div class="gis-map-toolbar">
+              <div class="gis-search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="gisSearch" class="form-control" placeholder="Tìm khu vực, mã khu vực..."></div>
+              <span id="gisMapStatus" class="gis-status-pill">Đang tải bản đồ...</span>
+            </div>
+            <div id="gisMap" class="gis-map" role="application" aria-label="Bản đồ địa bàn"></div>
+          </main>
+        </div>
       </section>
 
       <section id="householdsScreen" class="screen household-management-screen">
@@ -256,8 +298,10 @@
   <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 id="detailTitle" class="modal-title">Chi tiết</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div id="detailBody" class="modal-body"></div></div></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260701-mobile-cards-8"></script>
+  <script src="assets/js/app.js?v=20260701-gis-2"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
@@ -313,7 +357,7 @@
 </script>
 <script id="thon09-header-duplicate-guard">
 (function(){
-  var labels = { dashboard:'Dashboard', households:'Quản lý hộ gia đình', persons:'Quản lý nhân khẩu', temporaryResidence:'Tạm trú', temporaryAbsence:'Tạm vắng', movements:'Biến động nhân khẩu', reports:'Báo cáo thống kê', import:'Import dữ liệu', export:'Export Excel', exportExcel:'Export Excel', printForms:'In biểu mẫu', users:'Quản lý tài khoản', permissions:'Phân quyền', logs:'Nhật ký hệ thống', settings:'Cấu hình hệ thống', appearance:'Cấu hình giao diện', backups:'Sao lưu dữ liệu', restore:'Khôi phục dữ liệu' };
+  var labels = { dashboard:'Dashboard', gis:'Bản đồ địa bàn', households:'Quản lý hộ gia đình', persons:'Quản lý nhân khẩu', temporaryResidence:'Tạm trú', temporaryAbsence:'Tạm vắng', movements:'Biến động nhân khẩu', reports:'Báo cáo thống kê', import:'Import dữ liệu', export:'Export Excel', exportExcel:'Export Excel', printForms:'In biểu mẫu', users:'Quản lý tài khoản', permissions:'Phân quyền', logs:'Nhật ký hệ thống', settings:'Cấu hình hệ thống', appearance:'Cấu hình giao diện', backups:'Sao lưu dữ liệu', restore:'Khôi phục dữ liệu' };
   function activeScreen(){
     var active = document.querySelector('.screen.active');
     if (active && active.id) return active.id.replace(/Screen$/, '');
@@ -339,7 +383,7 @@
 <script id="thon09-final-navigation-repair">
 (function () {
   var labels = {
-    dashboard: 'Dashboard', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', reports: 'Báo cáo thống kê',
+    dashboard: 'Dashboard', gis: 'Bản đồ địa bàn', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', reports: 'Báo cáo thống kê',
     temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', import: 'Import dữ liệu',
     export: 'Xuất Excel', exportExcel: 'Xuất Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', permissions: 'Phân quyền',
     logs: 'Nhật ký hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', settings: 'Cấu hình hệ thống', appearance: 'Cấu hình giao diện'

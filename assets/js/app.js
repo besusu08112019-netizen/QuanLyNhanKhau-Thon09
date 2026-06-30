@@ -3,6 +3,7 @@ const App = {
   user: JSON.parse(localStorage.getItem('thon09_user') || 'null'),
   screen: localStorage.getItem('thon09_screen') || 'dashboard',
   households: { page: 1, pageSize: 20, search: '', category: '', status: '' },
+  gis: { areas: [], map: null, layerGroup: null, drawControl: null, drawnLayer: null, selectedArea: null },
   persons: { page: 1, pageSize: 20, search: '', householdId: '' },
   modals: {},
   dictionaries: {
@@ -324,7 +325,7 @@ function showApp() {
 }
 
 function normalizeAppHeader(screen) {
-  const screenLabels = { dashboard: 'Dashboard', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', exportExcel: 'Export Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền' };
+  const screenLabels = { dashboard: 'Dashboard', gis: 'Bản đồ địa bàn', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', exportExcel: 'Export Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền' };
   const label = screenLabels[screen] || 'Dashboard';
   const title = $('#screenTitle');
   const breadcrumb = $('#breadcrumbTrail');
@@ -347,6 +348,7 @@ function switchScreen(screen) {
   normalizeAppHeader(screen);
   closeMobileSidebar();
   if (screen === 'dashboard') { loadDashboard(); refreshLoginConfig(); }
+  if (screen === 'gis') loadGisMap();
   if (screen === 'households') loadHouseholds();
   if (screen === 'persons') loadPersons();
 }
@@ -1235,3 +1237,188 @@ function startTopbarClock() {
     });
   });
 })();
+
+
+function gisEscape(value) { return escapeHtml(value); }
+function gisNumber(value) { return number(value || 0); }
+function gisCentroid(points) {
+  if (!Array.isArray(points) || !points.length) return [20.2506, 105.9748];
+  const sum = points.reduce((acc, p) => [acc[0] + Number(p.lat || 0), acc[1] + Number(p.lng || 0)], [0, 0]);
+  return [sum[0] / points.length, sum[1] / points.length];
+}
+function gisPolygonLatLngs(area) {
+  return (area.geometry || []).map(p => [Number(p.lat), Number(p.lng)]).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+}
+function gisStatsHtml(stats) {
+  return '<div class="gis-popup-stats">'
+    + '<span><b>' + gisNumber(stats.households) + '</b> hộ</span>'
+    + '<span><b>' + gisNumber(stats.citizens) + '</b> nhân khẩu</span>'
+    + '<span><b>' + gisNumber(stats.temporary) + '</b> tạm trú</span>'
+    + '<span><b>' + gisNumber(stats.away) + '</b> tạm vắng</span>'
+    + '</div>';
+}
+function gisAreaPopup(area) {
+  const stats = area.stats || {};
+  return '<div class="gis-popup"><h4>' + gisEscape(area.name) + '</h4><p>Mã khu vực: <b>' + gisEscape(area.area_code) + '</b></p>'
+    + gisStatsHtml(stats)
+    + '<div class="gis-popup-actions"><button class="btn btn-sm btn-success" onclick="filterHouseholdsByGisArea(\'' + gisEscape(area.area_code) + '\')">Lọc hộ khu vực này</button>'
+    + '<button class="btn btn-sm btn-outline-danger" onclick="deleteGisArea(' + Number(area.id) + ')">Xóa ranh giới</button></div></div>';
+}
+function gisTooltip(area) {
+  const stats = area.stats || {};
+  return '<strong>' + gisEscape(area.name) + '</strong><br>' + gisNumber(stats.households) + ' hộ - ' + gisNumber(stats.citizens) + ' nhân khẩu';
+}
+async function loadGisMap() {
+  try {
+    if (!window.L) {
+      const status = $('#gisMapStatus');
+      if (status) status.textContent = 'Không tải được thư viện bản đồ';
+      showToast('Không tải được Leaflet/OpenStreetMap. Vui lòng kiểm tra kết nối mạng.', 'danger');
+      return;
+    }
+    initGisMap();
+    const data = await api('/api/gis/areas');
+    App.gis.areas = data.areas || [];
+    renderGisAreas(data);
+  } catch (error) {
+    showToast('Không tải được bản đồ địa bàn: ' + error.message, 'danger');
+  }
+}
+function initGisMap() {
+  if (App.gis.map) { setTimeout(() => App.gis.map.invalidateSize(), 80); return; }
+  const map = L.map('gisMap', { zoomControl: true }).setView([20.2506, 105.9748], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; OpenStreetMap' }).addTo(map);
+  App.gis.map = map;
+  App.gis.layerGroup = L.featureGroup().addTo(map);
+  if (L.Control.Draw) {
+    App.gis.drawControl = new L.Control.Draw({
+      draw: { polygon: { allowIntersection: false, showArea: true }, rectangle: false, circle: false, marker: false, circlemarker: false, polyline: false },
+      edit: { featureGroup: App.gis.layerGroup, remove: false }
+    });
+    map.addControl(App.gis.drawControl);
+    map.on(L.Draw.Event.CREATED, event => setGisDrawnLayer(event.layer));
+    map.on(L.Draw.Event.EDITED, event => event.layers.eachLayer(layer => setGisDrawnLayer(layer)));
+  }
+  $('#gisDrawBtn')?.addEventListener('click', () => startGisDraw());
+  $('#gisSaveBtn')?.addEventListener('click', () => saveGisArea());
+  $('#gisRefreshBtn')?.addEventListener('click', () => loadGisMap());
+  $('#gisPdfBtn')?.addEventListener('click', () => exportGisPdf());
+  $('#gisSearch')?.addEventListener('input', debounce(() => renderGisAreaList(App.gis.areas, $('#gisSearch').value), 250));
+  setTimeout(() => map.invalidateSize(), 200);
+}
+function setGisDrawnLayer(layer) {
+  if (App.gis.drawnLayer && App.gis.layerGroup.hasLayer(App.gis.drawnLayer)) App.gis.layerGroup.removeLayer(App.gis.drawnLayer);
+  App.gis.drawnLayer = layer;
+  App.gis.layerGroup.addLayer(layer);
+  const save = $('#gisSaveBtn');
+  if (save) save.disabled = false;
+  const color = $('#gisAreaColor')?.value || '#0f8a4b';
+  if (layer.setStyle) layer.setStyle({ color, fillColor: color, fillOpacity: .18, weight: 2 });
+}
+function startGisDraw() {
+  if (!App.gis.map || !window.L?.Draw?.Polygon) return showToast('Chưa sẵn sàng công cụ vẽ bản đồ', 'warning');
+  new L.Draw.Polygon(App.gis.map, { allowIntersection: false, showArea: true, shapeOptions: { color: $('#gisAreaColor')?.value || '#0f8a4b' } }).enable();
+}
+async function saveGisArea() {
+  const layer = App.gis.drawnLayer;
+  if (!layer) return showToast('Vui lòng vẽ ranh giới trên bản đồ trước khi lưu', 'warning');
+  const latLngs = (layer.getLatLngs()[0] || []).map(p => ({ lat: Number(p.lat.toFixed(7)), lng: Number(p.lng.toFixed(7)) }));
+  const payload = {
+    id: $('#gisAreaId')?.value || undefined,
+    name: $('#gisAreaName')?.value.trim(),
+    area_code: $('#gisAreaCode')?.value.trim(),
+    color: $('#gisAreaColor')?.value || '#0f8a4b',
+    note: $('#gisAreaNote')?.value.trim(),
+    geometry: latLngs
+  };
+  if (!payload.name) return showToast('Vui lòng nhập tên khu vực', 'warning');
+  const saved = await api('/api/gis/areas', { method: 'POST', body: payload });
+  showToast('Đã lưu ranh giới khu vực');
+  clearGisForm();
+  await loadGisMap();
+  focusGisArea(saved.area_code);
+}
+function clearGisForm() {
+  ['gisAreaId','gisAreaName','gisAreaCode','gisAreaNote'].forEach(id => { const el = $('#' + id); if (el) el.value = ''; });
+  const save = $('#gisSaveBtn'); if (save) save.disabled = true;
+  App.gis.drawnLayer = null;
+}
+function renderGisAreas(data) {
+  const map = App.gis.map;
+  const group = App.gis.layerGroup;
+  if (!map || !group) return;
+  group.clearLayers();
+  const bounds = [];
+  (data.areas || []).forEach(area => {
+    const latLngs = gisPolygonLatLngs(area);
+    if (latLngs.length < 3) return;
+    const polygon = L.polygon(latLngs, { color: area.color || '#0f8a4b', fillColor: area.color || '#0f8a4b', fillOpacity: .18, weight: 2 });
+    polygon.bindPopup(gisAreaPopup(area));
+    polygon.bindTooltip(gisTooltip(area), { permanent: true, direction: 'center', className: 'gis-area-tooltip' });
+    polygon.on('click', () => filterHouseholdsByGisArea(area.area_code));
+    polygon.addTo(group);
+    latLngs.forEach(p => bounds.push(p));
+  });
+  if (bounds.length) map.fitBounds(bounds, { padding: [24, 24] });
+  $('#gisMapStatus').textContent = (data.areas || []).length + ' khu vực - ' + gisNumber(data.summary?.households) + ' hộ';
+  renderGisSummary(data);
+  renderGisAreaList(data.areas || [], $('#gisSearch')?.value || '');
+  setTimeout(() => map.invalidateSize(), 120);
+}
+function renderGisSummary(data) {
+  const host = $('#gisSummaryCards');
+  if (!host) return;
+  host.innerHTML = '<div><span>Khu vực</span><b>' + gisNumber(data.areas?.length || 0) + '</b></div>'
+    + '<div><span>Số hộ</span><b>' + gisNumber(data.summary?.households) + '</b></div>'
+    + '<div><span>Nhân khẩu</span><b>' + gisNumber(data.summary?.citizens) + '</b></div>'
+    + '<div><span>Chưa gán</span><b>' + gisNumber(data.unassigned?.households) + '</b></div>';
+}
+function renderGisAreaList(areas, keyword = '') {
+  const host = $('#gisAreaList');
+  if (!host) return;
+  const q = normalizeSearchText(keyword);
+  const filtered = (areas || []).filter(area => !q || [area.name, area.area_code, area.note].some(v => normalizeSearchText(v).includes(q)));
+  host.innerHTML = filtered.map(area => '<button class="gis-area-item" type="button" onclick="focusGisArea(\'' + gisEscape(area.area_code) + '\')"><span><b>' + gisEscape(area.name) + '</b><small>' + gisEscape(area.area_code) + '</small></span><em>' + gisNumber(area.stats?.households) + ' hộ / ' + gisNumber(area.stats?.citizens) + ' NK</em></button>').join('') || '<div class="text-muted small py-2">Chưa có khu vực bản đồ</div>';
+}
+function focusGisArea(areaCode) {
+  const area = (App.gis.areas || []).find(item => String(item.area_code) === String(areaCode));
+  if (!area || !App.gis.map) return;
+  const latLngs = gisPolygonLatLngs(area);
+  if (latLngs.length) App.gis.map.fitBounds(latLngs, { padding: [28, 28], maxZoom: 17 });
+}
+function filterHouseholdsByGisArea(areaCode) {
+  App.households.search = String(areaCode || '');
+  App.households.page = 1;
+  const search = $('#householdSearch');
+  if (search) search.value = App.households.search;
+  switchScreen('households');
+  setTimeout(() => loadHouseholds(), 100);
+}
+async function deleteGisArea(id) {
+  if (!confirm('Xóa ranh giới khu vực này? Dữ liệu hộ dân không bị xóa.')) return;
+  await api('/api/gis/areas/' + id, { method: 'DELETE' });
+  showToast('Đã xóa ranh giới khu vực');
+  loadGisMap();
+}
+function exportGisPdf() {
+  if (!App.token) return showToast('Vui lòng đăng nhập lại để xuất PDF', 'warning');
+  fetch('/api/gis/export-pdf', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' })
+    .then(response => {
+      if (!response.ok) throw new Error('Không xuất được bản đồ');
+      return response.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      if (!win) {
+        const a = document.createElement('a');
+        a.href = url; a.download = 'ban_do_dia_ban.html'; document.body.appendChild(a); a.click(); a.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    })
+    .catch(error => showToast(error.message || 'Không xuất được bản đồ', 'danger'));
+}
+window.loadGisMap = loadGisMap;
+window.filterHouseholdsByGisArea = filterHouseholdsByGisArea;
+window.focusGisArea = focusGisArea;
+window.deleteGisArea = deleteGisArea;

@@ -14,6 +14,7 @@ use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\DashboardController;
 use App\Controllers\FileController;
+use App\Controllers\GisController;
 use App\Controllers\HouseholdController;
 use App\Controllers\ImportController;
 use App\Controllers\LogController;
@@ -45,6 +46,11 @@ $router->get('/api/dashboard/summary', [DashboardController::class, 'summary']);
 $router->get('/api/dashboard/population-chart', [DashboardController::class, 'populationChart']);
 $router->get('/api/dashboard/household-chart', [DashboardController::class, 'householdChart']);
 $router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart']);
+
+$router->get('/api/gis/areas', [GisController::class, 'areas']);
+$router->post('/api/gis/areas', [GisController::class, 'storeArea']);
+$router->delete('/api/gis/areas/{id}', [GisController::class, 'deleteArea']);
+$router->get('/api/gis/export-pdf', [GisController::class, 'exportPdf']);
 
 $router->get('/api/reports/summary', [ReportController::class, 'summary']);
 $router->get('/api/reports/population', [ReportController::class, 'population']);
