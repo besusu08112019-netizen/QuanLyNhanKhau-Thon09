@@ -8,12 +8,11 @@ use App\Models\GisArea;
 
 final class GisController extends BaseController
 {
-    private GisArea $areas;
+    private ?GisArea $areas = null;
 
     public function __construct($request)
     {
         parent::__construct($request);
-        $this->areas = new GisArea();
     }
 
     public function areas(): void
@@ -26,7 +25,7 @@ final class GisController extends BaseController
         }
 
         try {
-            $this->ok($this->areas->all());
+            $this->ok($this->areasModel()->all());
         } catch (\Throwable $e) {
             $this->logApiFailure('GET /api/gis/areas', [], $e);
             $this->ok($this->emptyAreasResponse($e));
@@ -38,7 +37,7 @@ final class GisController extends BaseController
         $input = $this->input();
         try {
             $user = $this->requirePermission('household', 'update');
-            $area = $this->areas->save($input, (int) $user['id']);
+            $area = $this->areasModel()->save($input, (int) $user['id']);
             $this->audit($user, 'gis', 'save_polygon', 'Lưu ranh giới khu vực bản đồ', $area['id'] ?? null, ['area_code' => $area['area_code'] ?? null]);
             $this->ok($area);
         } catch (\Throwable $e) {
@@ -53,7 +52,7 @@ final class GisController extends BaseController
         if (is_array($input)) $input['id'] = (int) $id;
         try {
             $user = $this->requirePermission('household', 'update');
-            $area = $this->areas->save(is_array($input) ? $input : ['id' => (int) $id], (int) $user['id']);
+            $area = $this->areasModel()->save(is_array($input) ? $input : ['id' => (int) $id], (int) $user['id']);
             $this->audit($user, 'gis', 'update_polygon', 'Cập nhật ranh giới khu vực bản đồ', $area['id'] ?? $id, ['area_code' => $area['area_code'] ?? null]);
             $this->ok($area);
         } catch (\Throwable $e) {
@@ -66,7 +65,7 @@ final class GisController extends BaseController
     {
         try {
             $user = $this->requirePermission('household', 'update');
-            $this->areas->delete((int) $id, (int) $user['id']);
+            $this->areasModel()->delete((int) $id, (int) $user['id']);
             $this->audit($user, 'gis', 'delete_polygon', 'Xóa ranh giới khu vực bản đồ', $id);
             $this->ok(['id' => (int) $id]);
         } catch (\Throwable $e) {
@@ -79,7 +78,7 @@ final class GisController extends BaseController
     {
         try {
             $this->requirePermission('household', 'read');
-            $rows = $this->areas->pdfRows();
+            $rows = $this->areasModel()->pdfRows();
             $pdfRows = [];
             foreach ($rows as $index => $row) {
                 $pdfRows[] = [(string) ($index + 1), (string) $row['name'], (string) $row['area_code'], (string) ((int) $row['households']), (string) ((int) $row['citizens']), (string) ((int) $row['temporary']), (string) ((int) $row['away'])];
@@ -96,6 +95,11 @@ final class GisController extends BaseController
             $this->logApiFailure('GET /api/gis/export-pdf', [], $e);
             throw $e;
         }
+    }
+
+    private function areasModel(): GisArea
+    {
+        return $this->areas ??= new GisArea();
     }
 
     private function emptyAreasResponse(\Throwable $e): array
