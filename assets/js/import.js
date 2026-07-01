@@ -35,16 +35,19 @@
       '<div class="content-card import-stats-card mb-3"><div class="import-card-head"><h3 class="section-title">Thống kê</h3><span>Card 3</span></div><div class="row g-3"><div class="col-md-3 col-6"><div class="metric-card"><div class="metric-label">Tổng số dòng</div><div id="importTotal" class="metric-value">0</div></div></div><div class="col-md-3 col-6"><div class="metric-card"><div class="metric-label">Hợp lệ</div><div id="importValid" class="metric-value">0</div></div></div><div class="col-md-3 col-6"><div class="metric-card"><div class="metric-label">Thành công</div><div id="importSuccess" class="metric-value">0</div></div></div><div class="col-md-3 col-6"><div class="metric-card"><div class="metric-label">Thất bại</div><div id="importFailed" class="metric-value">0</div></div></div></div></div>' +
       '<div class="content-card import-result-card"><div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap"><h3 class="section-title mb-0">Kết quả Import</h3><span id="importStatus" class="text-muted small"></span></div><div id="importResult" class="table-responsive"><p class="text-muted mb-0">Chọn file CSV/XLSX và bấm Kiểm tra để xem trước dữ liệu.</p></div></div>' +
     '</section>');
-    document.querySelector('#importPreviewBtn').addEventListener('click', () => submitImport('/api/import/preview', false));
-    document.querySelector('#importRunBtn').addEventListener('click', () => submitImport('/api/import/process', true));
+    document.querySelector('#importPreviewBtn')?.addEventListener('click', () => submitImport('/api/import/preview', false));
+    document.querySelector('#importRunBtn')?.addEventListener('click', () => submitImport('/api/import/process', true));
     document.querySelectorAll('[data-import-template]').forEach(button => button.addEventListener('click', () => downloadImportTemplate(button.dataset.importTemplate)));
   }
 
   function bindImportNavigation() {
+    if (window.__thon09ImportNavigationBound) return;
+    window.__thon09ImportNavigationBound = true;
     document.querySelectorAll('[data-screen="import"]').forEach(button => {
       button.addEventListener('click', () => {
         switchScreen('import');
-        document.querySelector('#screenTitle').textContent = 'Import dữ liệu';
+        const title = document.querySelector('#screenTitle');
+        if (title) title.textContent = 'Import dữ liệu';
       });
     });
   }
@@ -80,7 +83,7 @@
 
   async function submitImport(endpoint, refreshAfter) {
     const form = document.querySelector('#importForm');
-    if (!form.reportValidity()) return;
+    if (!form || !form.reportValidity()) return;
     const formData = new FormData(form);
     setImportStatus('Đang xử lý...');
     setLoading(true);
@@ -106,19 +109,24 @@
   }
 
   function renderImportResult(data, processed) {
-    document.querySelector('#importTotal').textContent = number(data.total || 0);
-    document.querySelector('#importValid').textContent = number(data.valid ?? data.success ?? 0);
+    const totalEl = document.querySelector('#importTotal');
+    const validEl = document.querySelector('#importValid');
+    const successEl = document.querySelector('#importSuccess');
+    const failedEl = document.querySelector('#importFailed');
+    if (totalEl) totalEl.textContent = number(data.total || 0);
+    if (validEl) validEl.textContent = number(data.valid ?? data.success ?? 0);
     const warningEl = document.querySelector('#importWarning');
     if (warningEl) warningEl.textContent = number((data.warnings || []).length || data.warning || 0);
-    document.querySelector('#importSuccess').textContent = number(data.success || 0);
-    document.querySelector('#importFailed').textContent = number(data.failed || 0);
+    if (successEl) successEl.textContent = number(data.success || 0);
+    if (failedEl) failedEl.textContent = number(data.failed || 0);
     const message = processed ? 'Thành công ' + number(data.success || 0) + ', bỏ qua ' + number(data.skipped || 0) + ', cảnh báo ' + number((data.warnings || []).length || data.warning || 0) + ', thất bại ' + number(data.failed || 0) : 'Hợp lệ ' + number(data.valid || 0) + ', cảnh báo ' + number((data.warnings || []).length || data.warning || 0) + ', thất bại ' + number(data.failed || 0);
     setImportStatus(message + (data.rolledBack ? ' - đã rollback' : ''));
     const preview = previewTable(data.previewRows || []);
     const warnings = issueTable(data.warnings || [], 'Cảnh báo', 'warning');
     const errors = issueTable(data.errors || [], 'Danh sách lỗi', 'danger');
     const download = (data.errors || []).length ? '<button id="importErrorDownload" class="btn btn-outline-danger btn-sm mt-3" type="button"><i class="fa-solid fa-download"></i> Tải file lỗi CSV</button>' : '';
-    document.querySelector('#importResult').innerHTML = preview + warnings + errors + download;
+    const resultEl = document.querySelector('#importResult');
+    if (resultEl) resultEl.innerHTML = preview + warnings + errors + download;
     const btn = document.querySelector('#importErrorDownload');
     if (btn) btn.addEventListener('click', () => downloadImportErrors(data.errors || []));
   }
@@ -151,6 +159,7 @@
   }
 
   function setImportStatus(text) {
-    document.querySelector('#importStatus').textContent = text;
+    const status = document.querySelector('#importStatus');
+    if (status) status.textContent = text;
   }
 })();
