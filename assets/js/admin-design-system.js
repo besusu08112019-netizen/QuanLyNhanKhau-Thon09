@@ -57,6 +57,7 @@
   function enhanceAge(root) {
     root.querySelectorAll?.('[data-label], td, .detail-item, .info-item').forEach(el => {
       if (el.dataset.ageEnhanced === '1') return;
+      if (isListContext(el)) return;
       const label = normalize(el.getAttribute('data-label') || el.querySelector('.label, dt, strong')?.textContent || '');
       if (!label.includes('ngay sinh')) return;
       const text = el.textContent.replace(/\s+/g, ' ').trim();
@@ -72,6 +73,7 @@
 
   function enhanceIdentityMask(root) {
     root.querySelectorAll?.('td[data-label], td').forEach(el => {
+      if (el.closest('#personRows')) return;
       if (!isListContext(el) || el.dataset.identityMasked === '1') return;
       if (el.querySelector('.desktop-sensitive, .mobile-sensitive')) return;
       const label = normalize(el.getAttribute('data-label') || '');
