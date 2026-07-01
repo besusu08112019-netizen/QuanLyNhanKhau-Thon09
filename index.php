@@ -32,6 +32,7 @@ set_exception_handler(function (Throwable $exception): void {
     if ($exception instanceof DatabaseException) {
         error_log('[DATABASE_EXCEPTION] ' . $exception->getMessage());
         Response::error($exception->getMessage(), 500);
+        return;
     }
     $status = $exception instanceof RuntimeException ? 400 : 500;
     Response::error($exception->getMessage(), $status);
@@ -41,6 +42,35 @@ $request = Request::capture();
 $router = new Router($request);
 
 $router->get('/api/health', fn() => Response::ok(['status' => 'ok', 'app' => 'Quan Ly Nhan Khau Thon 09']));
+$router->get('/api/public/login-config', fn() => Response::ok([
+    'settings' => [
+        'logoUrl' => null,
+        'backgroundUrl' => null,
+        'backgroundImages' => [],
+        'systemName' => 'Hệ thống Quản lý Hành chính',
+        'hamletName' => 'Thôn 09',
+        'communeName' => 'Xã Hồng Phong',
+        'slogan' => 'Vì Nhân dân phục vụ',
+        'version' => 'v2.0',
+        'copyright' => '© Thôn 09 - Xã Hồng Phong',
+        'introTitle' => 'Giới thiệu Thôn 09 - Xã Hồng Phong',
+        'introContent' => '',
+        'introImageUrl' => null,
+        'contactAddress' => '',
+        'contactPhone' => '',
+        'contactEmail' => '',
+        'contactWebsite' => '',
+    ],
+    'metrics' => [
+        'total_households' => 0,
+        'total_citizens' => 0,
+        'party_member_count' => 0,
+        'male_count' => 0,
+        'female_count' => 0,
+        'away_count' => 0,
+    ],
+    'generatedAt' => date('c'),
+]));
 
 $router->post('/api/auth/setup', [AuthController::class, 'setup']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
@@ -94,7 +124,6 @@ $router->post('/api/users/{id}/unlock', [UserController::class, 'unlock']);
 $router->get('/api/roles', [UserController::class, 'roles']);
 $router->get('/api/permissions', [PermissionController::class, 'index']);
 $router->post('/api/permissions', [PermissionController::class, 'update']);
-$router->get('/api/public/login-config', [SettingController::class, 'publicLoginConfig']);
 $router->get('/api/media/{folder}/{kind}/{year}/{month}/{file}', [SettingController::class, 'media']);
 $router->get('/api/settings', [SettingController::class, 'index']);
 $router->post('/api/settings', [SettingController::class, 'update']);
