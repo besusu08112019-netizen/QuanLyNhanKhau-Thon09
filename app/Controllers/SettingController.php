@@ -8,18 +8,17 @@ use App\Models\SystemSetting;
 
 final class SettingController extends BaseController
 {
-    private SystemSetting $settings;
+    private ?SystemSetting $settings = null;
 
     public function __construct($request)
     {
         parent::__construct($request);
-        $this->settings = new SystemSetting();
     }
 
     public function index(): void
     {
         $this->requirePermission('settings', 'read');
-        $this->ok($this->settings->all());
+        $this->ok($this->settings()->all());
     }
 
     public function publicLoginConfig(): void
@@ -27,7 +26,7 @@ final class SettingController extends BaseController
         try {
             $dashboard = new Dashboard();
             $metrics = $dashboard->metrics();
-            $settings = $this->settings->all();
+            $settings = $this->settings()->all();
         } catch (\Throwable $e) {
             $this->logPublicConfigFailure($e);
             $metrics = [];
@@ -44,7 +43,7 @@ final class SettingController extends BaseController
     public function update(): void
     {
         $user = $this->requirePermission('settings', 'update');
-        $settings = $this->settings->updateMany($this->input(), (int) $user['id']);
+        $settings = $this->settings()->updateMany($this->input(), (int) $user['id']);
         $this->audit($user, 'settings', 'update', 'Cập nhật cấu hình hệ thống');
         $this->ok($settings);
     }
@@ -107,7 +106,7 @@ final class SettingController extends BaseController
         $user = $this->requirePermission('settings', 'update');
         $key = (string) $this->input('key', '');
         if (!in_array($key, ['logoUrl','backgroundUrl','backgroundImages','introImageUrl'], true)) $this->fail('Loại media không hợp lệ');
-        $settings = $this->settings->updateMany([$key => ''], (int) $user['id']);
+        $settings = $this->settings()->updateMany([$key => ''], (int) $user['id']);
         $this->audit($user, 'settings', 'delete', 'Xóa media giao diện', null, ['key' => $key]);
         $this->ok($settings);
     }
@@ -131,6 +130,11 @@ final class SettingController extends BaseController
         header('Content-Length: ' . filesize($real));
         readfile($real);
         exit;
+    }
+
+    private function settings(): SystemSetting
+    {
+        return $this->settings ??= new SystemSetting();
     }
 
     private function defaultPublicSettings(): array
