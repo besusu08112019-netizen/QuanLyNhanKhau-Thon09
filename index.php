@@ -128,4 +128,12 @@ if (str_starts_with($request->path(), '/api/')) {
     exit;
 }
 
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
+ob_start();
 require BASE_PATH . '/views/app.php';
+$html = (string) ob_get_clean();
+$html = str_replace('assets/js/import.js?v=20260630-import-final-1', 'assets/js/import.js?v=20260701-import-nullguard-1', $html);
+echo $html;
