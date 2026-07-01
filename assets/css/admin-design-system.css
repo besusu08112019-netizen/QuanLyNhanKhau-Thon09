@@ -139,8 +139,15 @@ textarea.form-control:focus {
 .modal-title { color: var(--admin-green-700); font-weight: 850; }
 .modal-body { color: var(--admin-gray-900); }
 
-[data-empty-hidden="true"],
+.modal [data-empty-hidden="true"],
+[role="dialog"] [data-empty-hidden="true"],
+.detail-card [data-empty-hidden="true"],
+.person-detail-card [data-empty-hidden="true"],
 .ds-empty-field { display: none !important; }
+
+@media (max-width: 1024px) {
+  [data-empty-hidden="true"] { display: none !important; }
+}
 
 @media (min-width: 768px) and (max-width: 1024px) {
   .content,
