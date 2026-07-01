@@ -10,6 +10,6 @@ final class LogController extends BaseController
     public function index(): void
     {
         $this->requirePermission('logs', 'read');
-        $this->ok((new AuditLog())->page($this->query()));
+        $this->ok((new AuditLog())->paginate($this->query()));
     }
 }
