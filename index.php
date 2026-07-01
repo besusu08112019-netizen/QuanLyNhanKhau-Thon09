@@ -78,6 +78,8 @@ $router->get('/api/import/template', [ImportController::class, 'template']);
 $router->post('/api/import/preview', [ImportController::class, 'preview']);
 $router->post('/api/import/process', [ImportController::class, 'process']);
 $router->post('/api/files/upload', [FileController::class, 'upload']);
+$router->get('/api/files/{id}/download', [FileController::class, 'download']);
+$router->delete('/api/files/{id}', [FileController::class, 'destroy']);
 $router->get('/api/files/{module}/{entityId}', [FileController::class, 'index']);
 
 $router->get('/api/profiles/households/{id}', [ProfileController::class, 'household']);
