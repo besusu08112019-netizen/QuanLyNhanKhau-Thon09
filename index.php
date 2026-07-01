@@ -49,6 +49,7 @@ $router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart'
 
 $router->get('/api/gis/areas', [GisController::class, 'areas']);
 $router->post('/api/gis/areas', [GisController::class, 'storeArea']);
+$router->put('/api/gis/areas/{id}', [GisController::class, 'updateArea']);
 $router->delete('/api/gis/areas/{id}', [GisController::class, 'deleteArea']);
 $router->get('/api/gis/export-pdf', [GisController::class, 'exportPdf']);
 
