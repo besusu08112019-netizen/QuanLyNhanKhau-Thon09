@@ -38,8 +38,8 @@
 
   function maskIdentity(value) {
     const text = String(value || '').replace(/\s+/g, '').trim();
-    if (text.length <= 6) return text;
-    return text.slice(0, 3) + '••••••' + text.slice(-3);
+    if (text.length <= 8) return text;
+    return text.slice(0, 4) + '••••' + text.slice(-4);
   }
 
   function isListContext(node) {
@@ -73,6 +73,7 @@
   function enhanceIdentityMask(root) {
     root.querySelectorAll?.('td[data-label], td').forEach(el => {
       if (!isListContext(el) || el.dataset.identityMasked === '1') return;
+      if (el.querySelector('.desktop-sensitive, .mobile-sensitive')) return;
       const label = normalize(el.getAttribute('data-label') || '');
       if (!(label.includes('cccd') || label.includes('dinh danh'))) return;
       const text = el.textContent.replace(/\s+/g, '').trim();
