@@ -70,6 +70,16 @@ jobs:
 
           version = os.environ['ASSET_VERSION']
 
+          mobile_js_path = Path('assets/js/mobile-design-system.js')
+          if mobile_js_path.exists():
+              mobile_js = mobile_js_path.read_text(encoding='utf-8')
+              mobile_js = re.sub(
+                  r'assets/js/admin-design-system\.js\?v=[^\'"\s]+',
+                  f'assets/js/admin-design-system.js?v={version}',
+                  mobile_js,
+              )
+              mobile_js_path.write_text(mobile_js, encoding='utf-8')
+
           app_path = Path('views/app.php')
           html = app_path.read_text(encoding='utf-8')
           html = re.sub(r'assets/js/csrf\.js\?v=[^"\']+', f'assets/js/csrf.js?v={version}', html)
@@ -96,6 +106,7 @@ jobs:
           app_path.write_text(html, encoding='utf-8')
           print(f'Updated csrf.js asset version to {version}')
           print(f'Ensured mobile population card assets with version {version}')
+          print(f'Updated admin design system reference to {version}')
           PY
 
       - name: Deploy to hosting via FTP
