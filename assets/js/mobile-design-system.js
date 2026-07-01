@@ -3,7 +3,7 @@
 
   const CSS_HREFS = [
     'assets/css/admin-design-system.css?v=20260701-admin-ds-2',
-    'assets/css/person-card-layout.css?v=20260701-person-card-5'
+    'assets/css/person-card-layout.css?v=20260701-person-card-mobile-only-1'
   ];
   const JS_SRC = 'assets/js/admin-design-system.js?v=20260701-admin-ds-1';
 
@@ -98,19 +98,13 @@
     return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
   }
 
-  function maskIdentity(value) {
-    const text = String(value || '').replace(/\s+/g, '').trim();
-    if (text.length <= 8) return text;
-    return text.slice(0, 4) + '••••' + text.slice(-4);
-  }
-
   function residenceInfo(row) {
-    if (row && row.presence_status === 'AWAY') return { text: 'Tạm vắng', cls: 'population-status-away' };
-    if (row && row.residency_status === 'TEMPORARY') return { text: 'Tạm trú', cls: 'population-status-temp' };
-    if (row && (row.residency_status === 'MOVED' || row.life_status === 'MOVED')) return { text: 'Chuyển đi', cls: 'population-status-away' };
-    if (row && (row.life_status === 'DECEASED' || row.life_status === 'DEAD')) return { text: 'Đã mất', cls: 'population-status-muted' };
+    if (row && row.presence_status === 'AWAY') return { text: 'Tạm vắng', cls: 'population-status-away', badgeCls: 'person-badge-away' };
+    if (row && row.residency_status === 'TEMPORARY') return { text: 'Tạm trú', cls: 'population-status-temp', badgeCls: 'person-badge-temp' };
+    if (row && (row.residency_status === 'MOVED' || row.life_status === 'MOVED')) return { text: 'Chuyển đi', cls: 'population-status-away', badgeCls: 'person-badge-away' };
+    if (row && (row.life_status === 'DECEASED' || row.life_status === 'DEAD')) return { text: 'Đã mất', cls: 'population-status-muted', badgeCls: 'person-badge-muted' };
     const text = typeof window.residencyLabel === 'function' ? window.residencyLabel(row && row.residency_status) : 'Thường trú';
-    return { text: text || 'Thường trú', cls: 'population-status-home' };
+    return { text: text || 'Thường trú', cls: 'population-status-home', badgeCls: 'person-badge-home' };
   }
 
   function genderIcon(gender) {
@@ -124,7 +118,21 @@
     return '<div class="population-info-box"><span class="population-card-icon">' + iconHtml + '</span><div><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div></div>';
   }
 
-  function renderPopulationCard(row) {
+  function renderDesktopCells(row, residence, party) {
+    const id = Number(row && row.id) || 0;
+    return '<td class="population-desktop-cell"><input type="checkbox" class="person-check" value="' + id + '"></td>'
+      + '<td class="population-desktop-cell">' + escapeHtml(row.household_code || '') + '</td>'
+      + '<td class="population-desktop-cell">' + escapeHtml(row.citizen_code || '') + '</td>'
+      + '<td class="population-desktop-cell"><button class="btn btn-link person-name-link" onclick="showPerson(' + id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
+      + '<td class="population-desktop-cell">' + formatDateText(row.date_of_birth) + '</td>'
+      + '<td class="population-desktop-cell">' + escapeHtml(row.gender || '') + '</td>'
+      + '<td class="population-desktop-cell">' + escapeHtml(row.identity_number || '') + '</td>'
+      + '<td class="population-desktop-cell"><span class="person-badge ' + residence.badgeCls + '">' + escapeHtml(residence.text) + '</span></td>'
+      + '<td class="population-desktop-cell"><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
+      + '<td class="population-desktop-cell text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + id + ')">Xóa</button></td>';
+  }
+
+  function renderMobileCard(row, residence, party) {
     const id = Number(row && row.id) || 0;
     const householdCode = row.household_code || '';
     const citizenCode = row.citizen_code || '';
@@ -133,11 +141,8 @@
     const birthText = formatDateText(row.date_of_birth || row.birth_date || '');
     const age = ageFromBirthday(row.date_of_birth || row.birth_date || '');
     const gender = row.gender || '';
-    const party = Number(row.party_member || row.partyMember || 0) === 1;
-    const residence = residenceInfo(row || {});
 
-    return '<tr class="population-row">'
-      + '<td data-mobile-role="population-card" colspan="10">'
+    return '<td class="population-mobile-cell" data-mobile-role="population-card" colspan="10">'
       + '<article class="population-card">'
       + '<header class="population-card-head">'
       + '<button type="button" class="population-card-name" onclick="showPerson(' + id + ')">' + escapeHtml(fullName) + '</button>'
@@ -148,7 +153,7 @@
       + '</header>'
       + '<div class="population-code-grid">'
       + '<div class="population-code-box"><span>Mã nhân khẩu</span><strong>' + escapeHtml(citizenCode) + '</strong></div>'
-      + '<div class="population-code-box"><span>CCCD/Số định danh</span><strong>' + escapeHtml(maskIdentity(identity)) + '</strong></div>'
+      + '<div class="population-code-box"><span>CCCD/Số định danh</span><strong>' + escapeHtml(identity) + '</strong></div>'
       + '</div>'
       + '<div class="population-info-grid">'
       + infoBox('<i class="fa-regular fa-calendar-days population-card-icon-date"></i>', 'Ngày sinh', birthText)
@@ -165,8 +170,14 @@
       + '<button type="button" class="population-action population-action-delete" onclick="deletePerson(' + id + ')"><i class="fa-regular fa-trash-can"></i><span>Xóa</span></button>'
       + '</div>'
       + '</article>'
-      + '</td>'
-      + '</tr>';
+      + '</td>';
+  }
+
+  function renderPopulationRow(row) {
+    row = row || {};
+    const party = Number(row.party_member || row.partyMember || 0) === 1;
+    const residence = residenceInfo(row);
+    return '<tr class="population-row">' + renderDesktopCells(row, residence, party) + renderMobileCard(row, residence, party) + '</tr>';
   }
 
   function markActionButtons(root) {
@@ -180,9 +191,9 @@
   }
 
   window.ageFromDate = ageFromBirthday;
-  window.personRow = renderPopulationCard;
+  window.personRow = renderPopulationRow;
   try {
-    if (typeof personRow === 'function') personRow = renderPopulationCard;
+    if (typeof personRow === 'function') personRow = renderPopulationRow;
   } catch (_) {}
 
   function start() {
