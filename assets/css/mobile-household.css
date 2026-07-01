@@ -1,0 +1,314 @@
+/* Mobile-first record card design system
+   Shared naming is intentionally generic so other modules can reuse the same structure. */
+@media (max-width: 1024px) {
+  .mobile-record-grid,
+  #householdRows {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+  }
+
+  .mobile-record-card,
+  #householdRows tr:not(.group-row) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    grid-template-areas:
+      "title code select"
+      "address address address"
+      "home away away"
+      "type type type"
+      "actions actions actions" !important;
+    column-gap: 8px !important;
+    row-gap: 12px !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    border: 1px solid #dfe9e3 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, .075) !important;
+    overflow: hidden !important;
+  }
+
+  #householdRows td {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .mobile-record-title,
+  #householdRows td[data-mobile-role="title"] {
+    grid-area: title !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    border-bottom: 0 !important;
+    color: #064e2e !important;
+    font-size: clamp(14px, 3.5vw, 16px) !important;
+    font-weight: 850 !important;
+    line-height: 1.25 !important;
+    text-transform: uppercase !important;
+  }
+
+  #householdRows td[data-mobile-role="title"]::before { content: none !important; }
+
+  #householdRows td[data-mobile-role="title"] a,
+  #householdRows td[data-mobile-role="title"] button {
+    max-width: 100% !important;
+    color: inherit !important;
+    font: inherit !important;
+    text-align: left !important;
+    text-decoration: none !important;
+    white-space: normal !important;
+  }
+
+  .mobile-record-code,
+  #householdRows td[data-mobile-role="header-meta"],
+  #householdRows td[data-mobile-role="meta"] {
+    position: static !important;
+    grid-area: code !important;
+    justify-self: end !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 28px !important;
+    max-width: min(34vw, 112px) !important;
+    padding: 4px 9px !important;
+    border: 1px solid #cfe4d7 !important;
+    border-radius: 999px !important;
+    background: #eef8f1 !important;
+    color: #075f35 !important;
+    font-size: 11px !important;
+    font-weight: 850 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  #householdRows td[data-mobile-role="header-meta"]::before,
+  #householdRows td[data-mobile-role="meta"]::before { content: none !important; }
+
+  .mobile-record-checkbox,
+  #householdRows td[data-mobile-role="select"] {
+    position: static !important;
+    grid-area: select !important;
+    justify-self: end !important;
+    align-self: center !important;
+    z-index: auto !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+  }
+
+  #householdRows td[data-mobile-role="select"]::before { content: none !important; }
+  #householdRows td[data-mobile-role="select"] input { width: 18px !important; height: 18px !important; margin: 0 !important; }
+
+  .mobile-record-address,
+  #householdRows td[data-mobile-role="address"] {
+    grid-area: address !important;
+    display: grid !important;
+    grid-template-columns: 16px minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: start !important;
+    min-height: 46px !important;
+    padding: 12px 14px !important;
+    border: 1px solid #e5eee8 !important;
+    border-radius: 12px !important;
+    background: #fbfdfc !important;
+    color: #23372e !important;
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+  }
+
+  #householdRows td[data-mobile-role="address"]::before {
+    content: '\1F4CD' !important;
+    display: block !important;
+    margin: 0 !important;
+    color: #0a8f4d !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+  }
+
+  .mobile-record-stat,
+  #householdRows td[data-mobile-role="stat"] {
+    display: grid !important;
+    place-items: center !important;
+    gap: 3px !important;
+    min-height: 60px !important;
+    padding: 9px 10px !important;
+    border: 1px solid #e5eee8 !important;
+    border-radius: 12px !important;
+    background: #f7faf8 !important;
+    color: #0f5132 !important;
+    text-align: center !important;
+    font-size: clamp(19px, 5vw, 24px) !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  #householdRows td[data-mobile-role="stat"]:nth-child(5) { grid-area: home !important; }
+  #householdRows td[data-mobile-role="stat"]:nth-child(6) { grid-area: away !important; }
+
+  #householdRows td[data-mobile-role="stat"]::before {
+    margin: 0 !important;
+    color: #667085 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+  }
+
+  .mobile-record-badges,
+  #householdRows td[data-mobile-role="badge"] {
+    grid-area: type !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+  }
+
+  #householdRows td[data-mobile-role="badge"]::before { content: none !important; }
+
+  .mobile-record-badge,
+  #householdRows td[data-mobile-role="badge"] .badge,
+  #householdRows td[data-mobile-role="badge"] .badge-soft,
+  #householdRows td[data-mobile-role="badge"] .person-badge,
+  #householdRows td[data-mobile-role="badge"] span {
+    display: inline-flex !important;
+    align-items: center !important;
+    width: fit-content !important;
+    min-height: 26px !important;
+    max-width: 100% !important;
+    padding: 4px 9px !important;
+    border-radius: 999px !important;
+    border: 1px solid #e4e7ec !important;
+    background: #f5f7f6 !important;
+    color: #475467 !important;
+    font-size: 11px !important;
+    font-weight: 850 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+  }
+
+  #householdRows td[data-mobile-role="badge"][data-mobile-tone="danger"] .badge,
+  #householdRows td[data-mobile-role="badge"][data-mobile-tone="danger"] span {
+    background: #fff1f2 !important;
+    color: #b42318 !important;
+    border-color: #fecdd3 !important;
+  }
+
+  #householdRows td[data-mobile-role="badge"][data-mobile-tone="warning"] .badge,
+  #householdRows td[data-mobile-role="badge"][data-mobile-tone="warning"] span {
+    background: #fff7e6 !important;
+    color: #a15c00 !important;
+    border-color: #ffd999 !important;
+  }
+
+  #householdRows td[data-mobile-role="badge"][data-mobile-tone="info"] .badge,
+  #householdRows td[data-mobile-role="badge"][data-mobile-tone="info"] span {
+    background: #eaf4ff !important;
+    color: #075985 !important;
+    border-color: #bfdbfe !important;
+  }
+
+  .mobile-record-actions,
+  #householdRows td[data-mobile-role="actions"],
+  #householdRows td.text-end:has(button),
+  #householdRows td.text-end:has(.btn) {
+    grid-area: actions !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    padding-top: 12px !important;
+    border-top: 1px solid #e5eee8 !important;
+  }
+
+  #householdRows td[data-mobile-role="actions"]::before,
+  #householdRows td.text-end:has(button)::before,
+  #householdRows td.text-end:has(.btn)::before { content: none !important; }
+
+  .mobile-record-action,
+  #householdRows td[data-mobile-role="actions"] .btn,
+  #householdRows td[data-mobile-role="actions"] button,
+  #householdRows td.text-end .btn,
+  #householdRows td.text-end button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 43px !important;
+    padding: 8px 4px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    font-weight: 850 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .mobile-record-grid,
+  #householdRows {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .mobile-record-card,
+  #householdRows tr:not(.group-row) {
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-record-card,
+  #householdRows tr:not(.group-row) {
+    padding: 14px !important;
+    row-gap: 11px !important;
+  }
+
+  .mobile-record-code,
+  #householdRows td[data-mobile-role="header-meta"],
+  #householdRows td[data-mobile-role="meta"] {
+    max-width: 96px !important;
+    padding-inline: 8px !important;
+    font-size: 10.5px !important;
+  }
+
+  .mobile-record-address,
+  #householdRows td[data-mobile-role="address"] {
+    min-height: 44px !important;
+    padding: 11px 12px !important;
+  }
+
+  .mobile-record-actions,
+  #householdRows td[data-mobile-role="actions"],
+  #householdRows td.text-end:has(button),
+  #householdRows td.text-end:has(.btn) {
+    gap: 6px !important;
+  }
+
+  .mobile-record-action,
+  #householdRows td[data-mobile-role="actions"] .btn,
+  #householdRows td[data-mobile-role="actions"] button,
+  #householdRows td.text-end .btn,
+  #householdRows td.text-end button {
+    min-height: 42px !important;
+    font-size: 11.5px !important;
+  }
+}
