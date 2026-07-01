@@ -70,8 +70,10 @@ final class HouseholdController extends BaseController
         $before = $this->households->find((int) $id);
         if (!$before) $this->fail('Không tìm thấy hộ dân', 404);
         $this->households->softDelete((int) $id, (int) $user['id']);
-        $after = $this->households->find((int) $id) ?: ($before + ['status' => 'ENDED']);
-        $this->movementService->afterHouseholdUpdated($before, $after, $this->input() + ['reason' => 'Kết thúc hộ'], (int) $user['id']);
+        $after = $this->households->find((int) $id) ?: $before;
+        $movementAfter = $after;
+        $movementAfter['status'] = 'ENDED';
+        $this->movementService->afterHouseholdUpdated($before, $movementAfter, $this->input() + ['reason' => 'Kết thúc hộ'], (int) $user['id']);
         $this->audit($user, 'household', 'delete', 'Kết thúc hộ dân', $id);
         $this->ok(['id' => (int) $id]);
     }
@@ -86,8 +88,10 @@ final class HouseholdController extends BaseController
             $before = $this->households->find($id);
             if (!$before) continue;
             $this->households->softDelete($id, (int) $user['id']);
-            $after = $this->households->find($id) ?: ($before + ['status' => 'ENDED']);
-            $this->movementService->afterHouseholdUpdated($before, $after, ['reason' => 'Kết thúc hộ hàng loạt'], (int) $user['id']);
+            $after = $this->households->find($id) ?: $before;
+            $movementAfter = $after;
+            $movementAfter['status'] = 'ENDED';
+            $this->movementService->afterHouseholdUpdated($before, $movementAfter, ['reason' => 'Kết thúc hộ hàng loạt'], (int) $user['id']);
             $deleted++;
         }
         $this->audit($user, 'household', 'delete', 'Kết thúc hàng loạt hộ gia đình', null, ['ids' => $ids, 'deleted' => $deleted]);
