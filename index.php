@@ -137,7 +137,7 @@ require BASE_PATH . '/views/app.php';
 $html = (string) ob_get_clean();
 $html = str_replace('assets/js/import.js?v=20260630-import-final-1', 'assets/js/import.js?v=20260701-import-nullguard-1', $html);
 $html = str_replace('assets/css/app.css?v=20260701-gis-2', 'assets/css/app.css?v=20260701-sidebar-brand-1', $html);
-$html = str_replace('</head>', '<link rel="stylesheet" href="assets/css/mobile-household.css?v=20260701-mobile-household-2">' . "\n</head>", $html);
+$html = str_replace('</head>', '<link rel="stylesheet" href="assets/css/mobile-household.css?v=20260701-mobile-household-3">' . "\n" . '<link rel="stylesheet" href="assets/css/mobile-household-dienho.css?v=20260701-dienho-badge-1">' . "\n</head>", $html);
 $html = str_replace(
     '<span class="state-mark small-mark">09</span>',
     '<div class="sidebar-official-logo" aria-label="Logo Thôn 09"><span class="sidebar-logo-flag"><i class="fa-solid fa-star"></i></span><span class="sidebar-logo-landmark"><i class="fa-solid fa-landmark"></i></span><span class="sidebar-logo-home"><i class="fa-solid fa-house-chimney"></i></span><span class="sidebar-logo-text">Thôn</span><strong>09</strong></div>',
