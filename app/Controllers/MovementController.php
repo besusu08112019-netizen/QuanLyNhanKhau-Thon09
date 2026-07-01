@@ -18,7 +18,7 @@ final class MovementController extends BaseController
     public function index(): void
     {
         $this->requirePermission('movement', 'read');
-        $this->ok($this->movements->page($this->query()));
+        $this->ok($this->movements->paginate($this->query()));
     }
 
     public function show(string $id): void
