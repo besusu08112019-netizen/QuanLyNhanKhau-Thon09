@@ -59,9 +59,9 @@
   window.clearClientSession = clearClientSession;
 })();
 
-/* GIS stability patch v2 - toolbar, validation and SQL-safe payload */
+/* GIS stability patch v3 - toolbar, validation and guarded loading */
 (() => {
-  const state = { map: null, layerGroup: null, drawLayer: null, activeTool: 'select', undo: [], redo: [], currentPolygon: [] };
+  const state = { map: null, layerGroup: null, drawLayer: null, activeTool: 'select', undo: [], redo: [], currentPolygon: [], loadingAreas: false, areasBlocked: false, lastLoadError: '', autoLoadStarted: false };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const number = value => Number(value || 0).toLocaleString('vi-VN');
@@ -150,12 +150,33 @@
     updateSaveState();
   }
 
-  async function loadAreas() {
-    const data = await api('/api/gis/areas');
-    renderSummary(data.summary || {}, data.unassigned || {});
-    renderAreaList(data.areas || []);
-    renderMapAreas(data.areas || []);
-    return data;
+  async function loadAreas(options = {}) {
+    const force = Boolean(options.force);
+    if (state.loadingAreas) return null;
+    if (state.areasBlocked && !force) throw new Error(state.lastLoadError || 'GIS đang tạm dừng tải lại do lỗi trước đó');
+
+    state.loadingAreas = true;
+    try {
+      const data = await api('/api/gis/areas');
+      state.areasBlocked = false;
+      state.lastLoadError = '';
+      renderSummary(data.summary || {}, data.unassigned || {});
+      renderAreaList(data.areas || []);
+      renderMapAreas(data.areas || []);
+      return data;
+    } catch (error) {
+      state.areasBlocked = true;
+      state.lastLoadError = error.message || 'Không tải được GIS';
+      throw error;
+    } finally {
+      state.loadingAreas = false;
+    }
+  }
+
+  function showGisLoadError(error) {
+    const message = error?.message || state.lastLoadError || 'Không tải được GIS';
+    setMapStatus('Không tải được bản đồ. Kiểm tra cấu hình dữ liệu.');
+    showToast('Không tải được GIS: ' + message, 'danger');
   }
 
   function renderSummary(summary, unassigned) {
@@ -228,7 +249,7 @@
     await api(url, {method, body: payload});
     showToast('Đã lưu khu vực bản đồ', 'success');
     clearForm();
-    await loadAreas();
+    await loadAreas({force: true});
     if (typeof window.loadDashboard === 'function') window.loadDashboard().catch(() => {});
   }
 
@@ -243,21 +264,29 @@
   function bind() {
     installToolbar();
     ['gisAreaName','gisAreaCode','gisAreaColor','gisAreaNote'].forEach(id => document.getElementById(id)?.addEventListener('input', updateSaveState));
-    $('#gisRefreshBtn')?.addEventListener('click', () => loadAreas().catch(error => showToast('Không tải được GIS: ' + error.message, 'danger')));
+    $('#gisRefreshBtn')?.addEventListener('click', () => {
+      state.areasBlocked = false;
+      loadAreas({force: true}).catch(showGisLoadError);
+    });
     const oldDraw = $('#gisDrawBtn');
     if (oldDraw) oldDraw.addEventListener('click', () => { state.activeTool = 'polygon'; setMapStatus(toolLabel('polygon')); });
     const screen = $('#gisScreen');
     if (screen && !screen.dataset.gisObserverReady) {
       screen.dataset.gisObserverReady = '1';
       new MutationObserver(() => {
-        if (screen.classList.contains('active')) setTimeout(() => loadAreas().catch(error => showToast('Không tải được GIS: ' + error.message, 'danger')), 80);
+        if (!screen.classList.contains('active') || state.autoLoadStarted || state.areasBlocked) return;
+        state.autoLoadStarted = true;
+        setTimeout(() => loadAreas().catch(showGisLoadError), 80);
       }).observe(screen, {attributes: true, attributeFilter: ['class']});
     }
-    if (screen?.classList.contains('active')) loadAreas().catch(error => showToast('Không tải được GIS: ' + error.message, 'danger'));
+    if (screen?.classList.contains('active') && !state.autoLoadStarted) {
+      state.autoLoadStarted = true;
+      loadAreas().catch(showGisLoadError);
+    }
     updateSaveState();
   }
 
-  window.loadGisMap = () => loadAreas();
+  window.loadGisMap = () => loadAreas({force: true});
   window.clearGisForm = clearForm;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
 })();
