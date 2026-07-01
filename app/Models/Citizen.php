@@ -125,7 +125,7 @@ final class Citizen extends BaseModel
 
     private function where(array $filters): array
     {
-        $where = ['c.status <> "DELETED"']; $params = [];
+        $where = ['c.status <> "DELETED"', 'COALESCE(c.life_status,"ALIVE") <> "DECEASED"', 'COALESCE(c.residency_status,"PERMANENT") <> "TRANSFERRED_OUT"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")']; $params = [];
         if (!empty($filters['status'])) { $where[] = 'c.life_status = :life_status'; $params['life_status'] = $filters['status']; }
         if (!empty($filters['presenceStatus'])) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
         if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
