@@ -1,6 +1,34 @@
 (function () {
   'use strict';
 
+  const CSS_HREF = 'assets/css/admin-design-system.css?v=20260701-admin-ds-2';
+  const JS_SRC = 'assets/js/admin-design-system.js?v=20260701-admin-ds-1';
+
+  function ensureSharedDesignAssets() {
+    if (!document.querySelector('link[href*="admin-design-system.css"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = CSS_HREF;
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('script[src*="admin-design-system.js"]')) {
+      const script = document.createElement('script');
+      script.src = JS_SRC;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureSharedDesignAssets);
+  } else {
+    ensureSharedDesignAssets();
+  }
+})();
+
+(function () {
+  'use strict';
+
   const EMPTY_VALUES = new Set(['', '-', '--', '---', 'n/a', 'na', 'null', 'undefined', 'khong co du lieu']);
 
   function normalize(value) {
