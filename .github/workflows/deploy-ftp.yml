@@ -68,12 +68,34 @@ jobs:
           import re
           from pathlib import Path
 
-          path = Path('views/app.php')
-          html = path.read_text(encoding='utf-8')
           version = os.environ['ASSET_VERSION']
+
+          app_path = Path('views/app.php')
+          html = app_path.read_text(encoding='utf-8')
           html = re.sub(r'assets/js/csrf\.js\?v=[^"\']+', f'assets/js/csrf.js?v={version}', html)
-          path.write_text(html, encoding='utf-8')
+
+          css_href = f'assets/css/person-card-layout.css?v={version}'
+          js_src = f'assets/js/mobile-design-system.js?v={version}'
+
+          html = re.sub(
+              r'\n\s*<link rel="stylesheet" href="assets/css/person-card-layout\.css\?v=[^"\']+">',
+              '',
+              html,
+          )
+          if 'assets/css/person-card-layout.css' not in html:
+              html = html.replace('</head>', f'  <link rel="stylesheet" href="{css_href}">\n</head>')
+
+          html = re.sub(
+              r'\n\s*<script src="assets/js/mobile-design-system\.js\?v=[^"\']+"></script>',
+              '',
+              html,
+          )
+          if 'assets/js/mobile-design-system.js' not in html:
+              html = html.replace('</body>', f'  <script src="{js_src}"></script>\n</body>')
+
+          app_path.write_text(html, encoding='utf-8')
           print(f'Updated csrf.js asset version to {version}')
+          print(f'Ensured mobile population card assets with version {version}')
           PY
 
       - name: Deploy to hosting via FTP
