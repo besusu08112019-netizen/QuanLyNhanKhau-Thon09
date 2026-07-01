@@ -54,14 +54,15 @@ final class Household extends BaseModel
     {
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy hộ gia đình');
         $members = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE household_id = :id AND status <> "DELETED"', ['id' => $id])['total'];
-        if ($members > 0) throw new \RuntimeException('Hộ gia đình vẫn còn nhân khẩu hoặc dữ liệu liên quan. Vui lòng xử lý các dữ liệu liên kết trước khi xóa.');
-        $this->execute('UPDATE households SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        if ($members > 0) throw new \RuntimeException('Hộ gia đình vẫn còn nhân khẩu hoặc dữ liệu liên quan. Vui lòng xử lý các dữ liệu liên kết trước khi kết thúc hộ.');
+        $status = $this->enumAllows('households', 'status', 'ENDED') ? 'ENDED' : 'INACTIVE';
+        $this->execute('UPDATE households SET status=:status, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId, 'status' => $status]);
     }
 
     public function bulkSoftDelete(array $ids, int $userId): int
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn($id) => $id > 0)));
-        if (!$ids) throw new \RuntimeException('Chưa chọn hộ gia đình cần xóa');
+        if (!$ids) throw new \RuntimeException('Chưa chọn hộ gia đình cần kết thúc');
         $this->db->beginTransaction();
         try {
             foreach ($ids as $id) $this->softDelete($id, $userId);
@@ -203,6 +204,13 @@ final class Household extends BaseModel
         $sql = 'SELECT id FROM households WHERE household_code=:code AND status <> "DELETED"';
         if ($ignoreId) { $sql .= ' AND id <> :id'; $params['id'] = $ignoreId; }
         if ($this->fetchOne($sql, $params)) throw new \RuntimeException('Mã hộ đã tồn tại');
+    }
+
+    private function enumAllows(string $table, string $column, string $value): bool
+    {
+        if (!$this->columnExists($table, $column)) return false;
+        $row = $this->fetchOne('SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column LIMIT 1', ['table' => $table, 'column' => $column]);
+        return str_contains((string) ($row['COLUMN_TYPE'] ?? ''), "'" . $value . "'");
     }
 
     private function bool(mixed $value): int
