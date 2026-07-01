@@ -38,18 +38,14 @@ final class MovementController extends BaseController
 
     public function update(string $id): void
     {
-        $user = $this->requirePermission('movement', 'update');
-        $row = $this->movements->update((int) $id, $this->input(), (int) $user['id']);
-        $this->audit($user, 'movement', 'update', 'Cập nhật biến động nhân khẩu', $id);
-        $this->ok($row);
+        $this->requirePermission('movement', 'update');
+        $this->fail('Biến động dân cư là nhật ký lịch sử, không được sửa trực tiếp.', 409);
     }
 
     public function destroy(string $id): void
     {
-        $user = $this->requirePermission('movement', 'delete');
-        $this->movements->softDelete((int) $id, (int) $user['id']);
-        $this->audit($user, 'movement', 'delete', 'Xóa biến động nhân khẩu', $id);
-        $this->ok(['id' => (int) $id]);
+        $this->requirePermission('movement', 'delete');
+        $this->fail('Biến động dân cư là nhật ký lịch sử, không được xóa.', 409);
     }
 
     public function types(): void
