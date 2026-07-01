@@ -74,6 +74,16 @@ jobs:
           if mobile_js_path.exists():
               mobile_js = mobile_js_path.read_text(encoding='utf-8')
               mobile_js = re.sub(
+                  r'assets/css/person-card-layout\.css\?v=[^\'"\s]+',
+                  f'assets/css/person-card-layout.css?v={version}',
+                  mobile_js,
+              )
+              mobile_js = re.sub(
+                  r'assets/css/admin-design-system\.css\?v=[^\'"\s]+',
+                  f'assets/css/admin-design-system.css?v={version}',
+                  mobile_js,
+              )
+              mobile_js = re.sub(
                   r'assets/js/admin-design-system\.js\?v=[^\'"\s]+',
                   f'assets/js/admin-design-system.js?v={version}',
                   mobile_js,
@@ -83,6 +93,7 @@ jobs:
           app_path = Path('views/app.php')
           html = app_path.read_text(encoding='utf-8')
           html = re.sub(r'assets/js/csrf\.js\?v=[^"\']+', f'assets/js/csrf.js?v={version}', html)
+          html = re.sub(r'assets/js/app\.js\?v=[^"\']+', f'assets/js/app.js?v={version}', html)
 
           css_href = f'assets/css/person-card-layout.css?v={version}'
           js_src = f'assets/js/mobile-design-system.js?v={version}'
@@ -92,21 +103,19 @@ jobs:
               '',
               html,
           )
-          if 'assets/css/person-card-layout.css' not in html:
-              html = html.replace('</head>', f'  <link rel="stylesheet" href="{css_href}">\n</head>')
+          html = html.replace('</head>', f'  <link rel="stylesheet" href="{css_href}">\n</head>')
 
           html = re.sub(
               r'\n\s*<script src="assets/js/mobile-design-system\.js\?v=[^"\']+"></script>',
               '',
               html,
           )
-          if 'assets/js/mobile-design-system.js' not in html:
-              html = html.replace('</body>', f'  <script src="{js_src}"></script>\n</body>')
+          html = html.replace('</body>', f'  <script src="{js_src}"></script>\n</body>')
 
           app_path.write_text(html, encoding='utf-8')
-          print(f'Updated csrf.js asset version to {version}')
-          print(f'Ensured mobile population card assets with version {version}')
-          print(f'Updated admin design system reference to {version}')
+          print(f'Updated csrf.js and app.js asset versions to {version}')
+          print(f'Ensured population card assets with version {version}')
+          print(f'Updated design system references to {version}')
           PY
 
       - name: Deploy to hosting via FTP
