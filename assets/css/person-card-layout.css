@@ -75,11 +75,16 @@
   gap: 12px;
 }
 
+.population-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .population-code-box,
 .population-status-field,
 .population-info-box {
   min-width: 0;
-  min-height: 60px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -90,7 +95,23 @@
 }
 
 .population-code-box {
+  min-height: 60px;
   justify-content: space-between;
+}
+
+.population-info-box {
+  min-height: 78px;
+}
+
+.population-info-box > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.population-status-field {
+  justify-content: space-between;
+  min-height: 58px;
 }
 
 .population-code-box span,
@@ -111,22 +132,6 @@
   word-break: break-word;
 }
 
-.population-info-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.population-info-box {
-  min-height: 78px;
-}
-
-.population-info-box > div {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-
 .population-card-icon {
   width: 28px;
   min-width: 28px;
@@ -140,11 +145,6 @@
 .population-card-icon-male { color: #2563eb; }
 .population-card-icon-age { color: #d97706; }
 .population-card-icon-date { color: #0a8f4d; }
-
-.population-status-field {
-  justify-content: space-between;
-  min-height: 58px;
-}
 
 .population-status-badge {
   display: inline-flex;
@@ -340,8 +340,16 @@
   }
 
   .population-code-grid {
-    grid-template-columns: 1fr;
-    gap: 9px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .population-code-box {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 10px;
   }
 
   .population-info-grid {
@@ -393,5 +401,5 @@
   .population-info-box span,
   .population-code-box span,
   .population-status-field span { font-size: 12px; }
-  .population-status-grid { grid-template-columns: 1fr; }
+  .population-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
