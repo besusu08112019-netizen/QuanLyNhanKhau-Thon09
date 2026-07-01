@@ -67,7 +67,11 @@ final class HouseholdController extends BaseController
     public function destroy(string $id): void
     {
         $user = $this->requirePermission('household', 'delete');
+        $before = $this->households->find((int) $id);
+        if (!$before) $this->fail('Không tìm thấy hộ dân', 404);
         $this->households->softDelete((int) $id, (int) $user['id']);
+        $after = $this->households->find((int) $id) ?: ($before + ['status' => 'ENDED']);
+        $this->movementService->afterHouseholdUpdated($before, $after, $this->input() + ['reason' => 'Kết thúc hộ'], (int) $user['id']);
         $this->audit($user, 'household', 'delete', 'Kết thúc hộ dân', $id);
         $this->ok(['id' => (int) $id]);
     }
@@ -75,9 +79,18 @@ final class HouseholdController extends BaseController
     public function bulkDelete(): void
     {
         $user = $this->requirePermission('household', 'delete');
-        $ids = (array) $this->input('ids', []);
-        $deleted = $this->households->bulkSoftDelete($ids, (int) $user['id']);
-        $this->audit($user, 'household', 'delete', 'Kết thúc hàng loạt hộ gia đình', null, ['ids' => array_values(array_map('intval', $ids)), 'deleted' => $deleted]);
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) $this->input('ids', [])), fn($id) => $id > 0)));
+        if (!$ids) $this->fail('Chưa chọn hộ gia đình cần kết thúc', 400);
+        $deleted = 0;
+        foreach ($ids as $id) {
+            $before = $this->households->find($id);
+            if (!$before) continue;
+            $this->households->softDelete($id, (int) $user['id']);
+            $after = $this->households->find($id) ?: ($before + ['status' => 'ENDED']);
+            $this->movementService->afterHouseholdUpdated($before, $after, ['reason' => 'Kết thúc hộ hàng loạt'], (int) $user['id']);
+            $deleted++;
+        }
+        $this->audit($user, 'household', 'delete', 'Kết thúc hàng loạt hộ gia đình', null, ['ids' => $ids, 'deleted' => $deleted]);
         $this->ok(['success' => $deleted, 'errors' => []]);
     }
 }
