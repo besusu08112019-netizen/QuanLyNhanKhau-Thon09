@@ -1,0 +1,45 @@
+/* Mobile household type label override */
+@media (max-width: 1024px) {
+  #householdRows td[data-mobile-role="badge"] {
+    align-items: center !important;
+    column-gap: 5px !important;
+    row-gap: 5px !important;
+  }
+
+  #householdRows td[data-mobile-role="badge"]::before {
+    content: "\1F3E0  Diện hộ:" !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    width: fit-content !important;
+    min-height: 23px !important;
+    padding: 3px 0 !important;
+    margin: 0 1px 0 0 !important;
+    color: #344054 !important;
+    font-size: 10.5px !important;
+    font-weight: 850 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+
+  #householdRows td[data-mobile-role="badge"] .badge,
+  #householdRows td[data-mobile-role="badge"] .badge-soft,
+  #householdRows td[data-mobile-role="badge"] .person-badge,
+  #householdRows td[data-mobile-role="badge"] span {
+    max-width: calc(100% - 78px) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
+
+@media (max-width: 360px) {
+  #householdRows td[data-mobile-role="badge"]::before {
+    font-size: 10px !important;
+  }
+
+  #householdRows td[data-mobile-role="badge"] .badge,
+  #householdRows td[data-mobile-role="badge"] .badge-soft,
+  #householdRows td[data-mobile-role="badge"] .person-badge,
+  #householdRows td[data-mobile-role="badge"] span {
+    max-width: calc(100% - 72px) !important;
+  }
+}
