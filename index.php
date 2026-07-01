@@ -7,6 +7,7 @@ define('BASE_PATH', __DIR__);
 require BASE_PATH . '/app/Core/Autoloader.php';
 
 use App\Core\Autoloader;
+use App\Core\DatabaseException;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Router;
@@ -28,6 +29,10 @@ use App\Controllers\UserController;
 Autoloader::register();
 
 set_exception_handler(function (Throwable $exception): void {
+    if ($exception instanceof DatabaseException) {
+        error_log('[DATABASE_EXCEPTION] ' . $exception->getMessage());
+        Response::error($exception->getMessage(), 500);
+    }
     $status = $exception instanceof RuntimeException ? 400 : 500;
     Response::error($exception->getMessage(), $status);
 });
