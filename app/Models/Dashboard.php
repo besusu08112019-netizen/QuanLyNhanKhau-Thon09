@@ -189,7 +189,7 @@ final class Dashboard extends BaseModel
     private function householdWhere(array $filters): array
     {
         $filters = $this->normalizeFilters($filters);
-        $where = ['h.status <> "DELETED"'];
+        $where = [$this->activeHouseholdCondition('h')];
         $params = [];
         if ($filters['householdStatus']) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
         if ($filters['dateFrom']) { $where[] = 'DATE(h.created_at) >= :household_date_from'; $params['household_date_from'] = $filters['dateFrom']; }
@@ -203,7 +203,7 @@ final class Dashboard extends BaseModel
     {
         $rawFilters = $filters;
         $filters = $this->normalizeFilters($filters);
-        $where = ['c.status <> "DELETED"', 'h.status <> "DELETED"'];
+        $where = [$this->activeCitizenCondition('c'), $this->activeHouseholdCondition('h')];
         $params = [];
         if ($filters['householdStatus']) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
         if ($filters['residencyStatus']) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
@@ -217,6 +217,16 @@ final class Dashboard extends BaseModel
             if ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $value; }
         }
         return ['WHERE ' . implode(' AND ', $where), $params];
+    }
+
+    private function activeHouseholdCondition(string $alias): string
+    {
+        return $alias . ".status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')";
+    }
+
+    private function activeCitizenCondition(string $alias): string
+    {
+        return $alias . ".status <> 'DELETED' AND COALESCE(" . $alias . ".life_status,'ALIVE') <> 'DECEASED' AND COALESCE(" . $alias . ".residency_status,'PERMANENT') <> 'TRANSFERRED_OUT'";
     }
 
     private function addCategoryWhere(array &$where, array &$params, string $category): void
