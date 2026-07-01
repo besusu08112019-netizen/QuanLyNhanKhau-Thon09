@@ -22,6 +22,7 @@ use App\Controllers\LogController;
 use App\Controllers\MovementController;
 use App\Controllers\PermissionController;
 use App\Controllers\PersonController;
+use App\Controllers\ProfileController;
 use App\Controllers\ReportController;
 use App\Controllers\SettingController;
 use App\Controllers\UserController;
@@ -78,6 +79,10 @@ $router->post('/api/import/preview', [ImportController::class, 'preview']);
 $router->post('/api/import/process', [ImportController::class, 'process']);
 $router->post('/api/files/upload', [FileController::class, 'upload']);
 $router->get('/api/files/{module}/{entityId}', [FileController::class, 'index']);
+
+$router->get('/api/profiles/households/{id}', [ProfileController::class, 'household']);
+$router->get('/api/profiles/persons/{id}', [ProfileController::class, 'citizen']);
+$router->get('/api/profiles/{module}/{id}/timeline', [ProfileController::class, 'timeline']);
 
 $router->get('/api/movements', [MovementController::class, 'index']);
 $router->post('/api/movements', [MovementController::class, 'store']);
