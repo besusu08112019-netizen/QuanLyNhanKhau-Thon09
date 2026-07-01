@@ -42,6 +42,7 @@ jobs:
         env:
           DB_HOST: ${{ secrets.DB_HOST || vars.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT || vars.DB_PORT }}
+          DB_SOCKET: ${{ secrets.DB_SOCKET || vars.DB_SOCKET }}
           DB_DATABASE: ${{ secrets.DB_DATABASE || vars.DB_DATABASE }}
           DB_USERNAME: ${{ secrets.DB_USERNAME || vars.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -50,6 +51,7 @@ jobs:
           {
             echo "DB_HOST=${DB_HOST}"
             echo "DB_PORT=${DB_PORT:-3306}"
+            if [ -n "${DB_SOCKET}" ]; then echo "DB_SOCKET=${DB_SOCKET}"; fi
             echo "DB_DATABASE=${DB_DATABASE}"
             echo "DB_USERNAME=${DB_USERNAME}"
             echo "DB_PASSWORD=${DB_PASSWORD}"
