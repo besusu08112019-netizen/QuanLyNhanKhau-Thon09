@@ -143,3 +143,62 @@
   .table-responsive tbody td[data-mobile-role="meta"],
   .table-responsive tbody td[data-mobile-role="info"] { grid-column: 1 / -1 !important; }
 }
+
+/* Administrative compact radius refinement: keep the modern layout, restore firmer old-style corners. */
+@media (max-width: 1024px) {
+  :root {
+    --ds-card-radius: 14px;
+    --ds-control-radius: 10px;
+    --ds-shadow: 0 4px 12px rgba(15, 23, 42, .045);
+  }
+
+  .table-responsive tbody tr:not(.group-row),
+  .module-card-list tbody tr:not(.group-row) {
+    border-color: #d8e2dc !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .045) !important;
+  }
+
+  .table-responsive tbody td[data-mobile-role="address"],
+  .module-card-list tbody td[data-mobile-role="address"],
+  .table-responsive tbody td[data-mobile-role="stat"],
+  .module-card-list tbody td[data-mobile-role="stat"],
+  .table-responsive tbody td[data-mobile-role="meta"],
+  .table-responsive tbody td[data-mobile-role="info"],
+  .module-card-list tbody td[data-mobile-role="meta"],
+  .module-card-list tbody td[data-mobile-role="info"] {
+    border-radius: 10px !important;
+    border-color: #e1e8e3 !important;
+    padding: 6px 8px !important;
+  }
+
+  .table-responsive tbody td[data-mobile-role="header-meta"],
+  .module-card-list tbody td[data-mobile-role="header-meta"],
+  .table-responsive tbody td[data-mobile-role="badge"] .badge,
+  .table-responsive tbody td[data-mobile-role="badge"] .badge-soft,
+  .table-responsive tbody td[data-mobile-role="badge"] .person-badge,
+  .table-responsive tbody td[data-mobile-role="badge"] span,
+  .table-responsive tbody td[data-mobile-role="badge"] a,
+  .table-responsive tbody td[data-mobile-role="badge"] button,
+  .badge,
+  .badge-soft,
+  .person-badge,
+  .status-badge,
+  .mobile-record-badge {
+    width: fit-content !important;
+    max-width: 100% !important;
+    border-radius: 11px !important;
+    padding: 3px 8px !important;
+    min-height: 23px !important;
+    box-shadow: none !important;
+  }
+
+  .table-responsive tbody td[data-mobile-role="actions"] .btn,
+  .table-responsive tbody td[data-mobile-role="actions"] button,
+  .table-responsive tbody td.text-end .btn,
+  .table-responsive tbody td.text-end button {
+    min-height: 41px !important;
+    border-radius: 11px !important;
+    box-shadow: none !important;
+  }
+}
