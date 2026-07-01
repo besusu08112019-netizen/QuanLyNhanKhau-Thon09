@@ -42,35 +42,7 @@ $request = Request::capture();
 $router = new Router($request);
 
 $router->get('/api/health', fn() => Response::ok(['status' => 'ok', 'app' => 'Quan Ly Nhan Khau Thon 09']));
-$router->get('/api/public/login-config', fn() => Response::ok([
-    'settings' => [
-        'logoUrl' => null,
-        'backgroundUrl' => null,
-        'backgroundImages' => [],
-        'systemName' => 'Hệ thống Quản lý Hành chính',
-        'hamletName' => 'Thôn 09',
-        'communeName' => 'Xã Hồng Phong',
-        'slogan' => 'Vì Nhân dân phục vụ',
-        'version' => 'v2.0',
-        'copyright' => '© Thôn 09 - Xã Hồng Phong',
-        'introTitle' => 'Giới thiệu Thôn 09 - Xã Hồng Phong',
-        'introContent' => '',
-        'introImageUrl' => null,
-        'contactAddress' => '',
-        'contactPhone' => '',
-        'contactEmail' => '',
-        'contactWebsite' => '',
-    ],
-    'metrics' => [
-        'total_households' => 0,
-        'total_citizens' => 0,
-        'party_member_count' => 0,
-        'male_count' => 0,
-        'female_count' => 0,
-        'away_count' => 0,
-    ],
-    'generatedAt' => date('c'),
-]));
+$router->get('/api/public/login-config', [SettingController::class, 'publicLoginConfig']);
 
 $router->post('/api/auth/setup', [AuthController::class, 'setup']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
