@@ -3,7 +3,7 @@
 
   const CSS_HREFS = [
     'assets/css/admin-design-system.css?v=20260701-admin-ds-2',
-    'assets/css/person-card-layout.css?v=20260701-person-card-mobile-only-1'
+    'assets/css/person-card-layout.css?v=20260701-person-card-mobile-only-2'
   ];
   const JS_SRC = 'assets/js/admin-design-system.js?v=20260701-admin-ds-1';
 
@@ -91,8 +91,7 @@
     return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
   }
 
-  function formatDateText(value) {
-    if (typeof window.formatDate === 'function') return window.formatDate(value);
+  function formatDateOnlyText(value) {
     const date = parseDate(value);
     if (!date) return escapeHtml(value || '');
     return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
@@ -124,9 +123,9 @@
       + '<td class="population-desktop-cell">' + escapeHtml(row.household_code || '') + '</td>'
       + '<td class="population-desktop-cell">' + escapeHtml(row.citizen_code || '') + '</td>'
       + '<td class="population-desktop-cell"><button class="btn btn-link person-name-link" onclick="showPerson(' + id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
-      + '<td class="population-desktop-cell">' + formatDateText(row.date_of_birth) + '</td>'
+      + '<td class="population-desktop-cell">' + formatDateOnlyText(row.date_of_birth) + '</td>'
       + '<td class="population-desktop-cell">' + escapeHtml(row.gender || '') + '</td>'
-      + '<td class="population-desktop-cell">' + escapeHtml(row.identity_number || '') + '</td>'
+      + '<td class="population-desktop-cell">' + escapeHtml(row.identity_number || row.personal_id || row.cccd || '') + '</td>'
       + '<td class="population-desktop-cell"><span class="person-badge ' + residence.badgeCls + '">' + escapeHtml(residence.text) + '</span></td>'
       + '<td class="population-desktop-cell"><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
       + '<td class="population-desktop-cell text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + id + ')">Xóa</button></td>';
@@ -138,7 +137,7 @@
     const citizenCode = row.citizen_code || '';
     const fullName = row.full_name || '';
     const identity = row.identity_number || row.personal_id || row.cccd || '';
-    const birthText = formatDateText(row.date_of_birth || row.birth_date || '');
+    const birthText = formatDateOnlyText(row.date_of_birth || row.birth_date || '');
     const age = ageFromBirthday(row.date_of_birth || row.birth_date || '');
     const gender = row.gender || '';
 
