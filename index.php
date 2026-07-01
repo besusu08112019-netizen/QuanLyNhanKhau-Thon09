@@ -18,6 +18,7 @@ use App\Controllers\FileController;
 use App\Controllers\GisController;
 use App\Controllers\HouseholdController;
 use App\Controllers\ImportController;
+use App\Controllers\InsightController;
 use App\Controllers\LogController;
 use App\Controllers\MovementController;
 use App\Controllers\PermissionController;
@@ -44,6 +45,8 @@ $router = new Router($request);
 
 $router->get('/api/health', fn() => Response::ok(['status' => 'ok', 'app' => 'Quan Ly Nhan Khau Thon 09']));
 $router->get('/api/public/login-config', [SettingController::class, 'publicLoginConfig']);
+$router->get('/api/search', [InsightController::class, 'search']);
+$router->get('/api/alerts/smart', [InsightController::class, 'alerts']);
 
 $router->post('/api/auth/setup', [AuthController::class, 'setup']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
