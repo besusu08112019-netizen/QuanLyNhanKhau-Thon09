@@ -14,17 +14,46 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Validate production secrets
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_CHARSET: ${{ secrets.DB_CHARSET }}
+        run: |
+          missing=0
+          for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD DB_HOST DB_DATABASE DB_USERNAME DB_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::GitHub Secret $name is missing. Add it before deploying to hosting."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
       - name: Create production env file
         shell: bash
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_CHARSET: ${{ secrets.DB_CHARSET }}
         run: |
-          cat > .env <<'EOF'
-          DB_HOST=${{ secrets.DB_HOST }}
-          DB_PORT=${{ secrets.DB_PORT }}
-          DB_DATABASE=${{ secrets.DB_DATABASE }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          DB_CHARSET=${{ secrets.DB_CHARSET }}
-          EOF
+          {
+            echo "DB_HOST=${DB_HOST}"
+            echo "DB_PORT=${DB_PORT:-3306}"
+            echo "DB_DATABASE=${DB_DATABASE}"
+            echo "DB_USERNAME=${DB_USERNAME}"
+            echo "DB_PASSWORD=${DB_PASSWORD}"
+            echo "DB_CHARSET=${DB_CHARSET:-utf8mb4}"
+          } > .env
 
       - name: Deploy to hosting via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
