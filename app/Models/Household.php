@@ -53,7 +53,7 @@ final class Household extends BaseModel
     public function softDelete(int $id, int $userId): void
     {
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy hộ gia đình');
-        $members = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE household_id = :id AND status <> "DELETED"', ['id' => $id])['total'];
+        $members = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE household_id = :id AND status <> "DELETED" AND COALESCE(life_status,"ALIVE") <> "DECEASED" AND COALESCE(residency_status,"PERMANENT") <> "TRANSFERRED_OUT"', ['id' => $id])['total'];
         if ($members > 0) throw new \RuntimeException('Hộ gia đình vẫn còn nhân khẩu hoặc dữ liệu liên quan. Vui lòng xử lý các dữ liệu liên kết trước khi kết thúc hộ.');
         $status = $this->enumAllows('households', 'status', 'ENDED') ? 'ENDED' : 'INACTIVE';
         $this->execute('UPDATE households SET status=:status, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId, 'status' => $status]);
@@ -76,9 +76,13 @@ final class Household extends BaseModel
 
     private function where(array $filters): array
     {
-        $where = ['h.status <> "DELETED"'];
         $params = [];
-        if (!empty($filters['status'])) { $where[] = 'h.status = :status'; $params['status'] = $filters['status']; }
+        if (!empty($filters['status'])) {
+            $where = ['h.status = :status', 'h.status <> "DELETED"'];
+            $params['status'] = $filters['status'];
+        } else {
+            $where = [$this->activeHouseholdCondition('h')];
+        }
 
         $category = $this->filterCategory($filters);
         if ($category) $this->addCategoryWhere($where, $params, $category);
@@ -103,6 +107,11 @@ final class Household extends BaseModel
         }
 
         return ['WHERE ' . implode(' AND ', $where), $params];
+    }
+
+    private function activeHouseholdCondition(string $alias): string
+    {
+        return $alias . ".status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')";
     }
 
     private function filterCategory(array $filters): string
