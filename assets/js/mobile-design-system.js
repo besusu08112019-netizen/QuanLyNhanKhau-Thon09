@@ -179,6 +179,115 @@
     return '<tr class="population-row">' + renderDesktopCells(row, residence, party) + renderMobileCard(row, residence, party) + '</tr>';
   }
 
+  function householdCodeOf(row) {
+    const code = row && (row.household_code || row.householdCode || row.household_id || row.householdId);
+    return String(code || 'Chưa có hộ').trim() || 'Chưa có hộ';
+  }
+
+  function isHouseholdHead(row) {
+    const text = normalize(row && (row.relationship || row.relationship_to_head || row.relationshipToHead || row.member_type || row.memberType || ''));
+    return text === 'chu ho' || text.includes('chu ho') || text === 'head';
+  }
+
+  function compareText(a, b) {
+    return String(a || '').localeCompare(String(b || ''), 'vi', { numeric: true, sensitivity: 'base' });
+  }
+
+  function comparePopulationByHousehold(a, b) {
+    return compareText(householdCodeOf(a), householdCodeOf(b))
+      || ((isHouseholdHead(a) ? 0 : 1) - (isHouseholdHead(b) ? 0 : 1))
+      || compareText(a && a.full_name, b && b.full_name)
+      || compareText(a && a.citizen_code, b && b.citizen_code);
+  }
+
+  function sortPopulationItems(items) {
+    return Array.isArray(items) ? items.slice().sort(comparePopulationByHousehold) : [];
+  }
+
+  function groupPopulationItems(items) {
+    return sortPopulationItems(items).reduce((groups, row) => {
+      const code = householdCodeOf(row);
+      let group = groups.find(item => item.code === code);
+      if (!group) {
+        group = { code, rows: [] };
+        groups.push(group);
+      }
+      group.rows.push(row);
+      return groups;
+    }, []);
+  }
+
+  function householdHeadName(rows) {
+    const head = (rows || []).find(isHouseholdHead) || (rows || []).find(row => row && row.head_citizen_name) || (rows || [])[0] || {};
+    return head.head_citizen_name || head.full_name || '';
+  }
+
+  function renderHouseholdGroupHeader(group) {
+    const head = householdHeadName(group.rows);
+    const count = group.rows.length;
+    return '<tr class="group-row person-household-group-row" data-household-code="' + escapeHtml(group.code) + '">'
+      + '<td colspan="11"><div class="person-household-group-card">'
+      + '<div class="person-household-group-main"><span class="person-household-group-icon"><i class="fa-solid fa-house-chimney"></i></span><div><strong>Hộ ' + escapeHtml(group.code) + '</strong>'
+      + (head ? '<small>Chủ hộ: ' + escapeHtml(head) + '</small>' : '')
+      + '</div></div>'
+      + '<span class="person-household-group-count">' + count + ' nhân khẩu</span>'
+      + '</div></td></tr>';
+  }
+
+  function renderGroupedPopulationRows(items) {
+    const groups = groupPopulationItems(items);
+    return groups.map(group => renderHouseholdGroupHeader(group) + group.rows.map(renderPopulationRow).join('')).join('');
+  }
+
+  function groupedEmptyRow() {
+    if (typeof window.emptyRow === 'function') return window.emptyRow(10, 'Không có dữ liệu');
+    return '<tr><td colspan="10" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+  }
+
+  async function loadGroupedPersons() {
+    const app = window.App;
+    if (!app || !app.persons || typeof window.api !== 'function') return;
+    try {
+      const searchText = typeof window.normalizeSearchText === 'function' ? window.normalizeSearchText(app.persons.search || '') : normalize(app.persons.search || '');
+      const householdText = String(app.persons.householdId || '').trim();
+      let items = [];
+      let total = 0;
+      if (searchText) {
+        const extra = householdText ? { householdId: householdText } : {};
+        const allItems = typeof window.fetchAllPaged === 'function'
+          ? await window.fetchAllPaged('/api/persons', extra)
+          : ((await window.api('/api/persons?' + new URLSearchParams({ ...extra, page: 1, pageSize: 10000 }).toString())).items || []);
+        const filtered = allItems.filter(row => [row.full_name, row.citizen_code, row.identity_number, row.personal_id, row.national_id, row.phone, row.household_code, row.current_address, row.household_address]
+          .some(value => normalize(value).includes(searchText)));
+        const sorted = sortPopulationItems(filtered);
+        total = sorted.length;
+        const startIndex = (app.persons.page - 1) * app.persons.pageSize;
+        items = sorted.slice(startIndex, startIndex + app.persons.pageSize);
+      } else {
+        const params = new URLSearchParams({ page: app.persons.page, pageSize: app.persons.pageSize });
+        if (householdText) params.set('householdId', householdText);
+        const data = await window.api('/api/persons?' + params.toString());
+        items = sortPopulationItems(data.items || []);
+        total = data.total || 0;
+      }
+      const totalHost = document.querySelector('#personTotalCount');
+      if (totalHost) totalHost.innerHTML = 'Tổng số: <strong>' + (typeof window.number === 'function' ? window.number(total) : total) + '</strong> nhân khẩu';
+      const rowsHost = document.querySelector('#personRows');
+      if (rowsHost) rowsHost.innerHTML = renderGroupedPopulationRows(items) || groupedEmptyRow();
+      if (typeof window.updateBulkDeleteButtons === 'function') window.updateBulkDeleteButtons();
+      if (typeof window.renderPager === 'function') {
+        window.renderPager('#personPager', { total, page: app.persons.page, pageSize: app.persons.pageSize }, page => { app.persons.page = page; loadGroupedPersons(); });
+      }
+    } catch (error) {
+      if (typeof window.showToast === 'function') window.showToast('Không tải được danh sách nhân khẩu: ' + error.message, 'danger');
+    }
+  }
+
+  function installGroupedPersonLoader() {
+    window.loadPersons = loadGroupedPersons;
+    try { loadPersons = loadGroupedPersons; } catch (_) {}
+  }
+
   function markActionButtons(root) {
     const scope = root && root.querySelectorAll ? root : document;
     scope.querySelectorAll('td[data-mobile-role="actions"] button, td[data-mobile-role="actions"] .btn, td.text-end button, td.text-end .btn').forEach(button => {
@@ -194,8 +303,11 @@
   try {
     if (typeof personRow === 'function') personRow = renderPopulationRow;
   } catch (_) {}
+  window.sortPopulationItemsByHousehold = sortPopulationItems;
+  window.renderGroupedPopulationRows = renderGroupedPopulationRows;
 
   function start() {
+    installGroupedPersonLoader();
     markActionButtons(document);
     if (!window.__thon09PopulationCardRefresh && typeof window.loadPersons === 'function' && window.App && window.App.screen === 'persons') {
       window.__thon09PopulationCardRefresh = true;
