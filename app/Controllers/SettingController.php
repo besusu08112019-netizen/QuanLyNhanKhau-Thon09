@@ -24,11 +24,19 @@ final class SettingController extends BaseController
 
     public function publicLoginConfig(): void
     {
-        $dashboard = new Dashboard();
-        $metrics = $dashboard->metrics();
+        try {
+            $dashboard = new Dashboard();
+            $metrics = $dashboard->metrics();
+            $settings = $this->settings->all();
+        } catch (\Throwable $e) {
+            $this->logPublicConfigFailure($e);
+            $metrics = [];
+            $settings = $this->defaultPublicSettings();
+        }
+
         $this->ok([
-            'settings' => $this->settings->all(),
-            'metrics' => $this->loginMetrics($metrics),
+            'settings' => array_replace($this->defaultPublicSettings(), is_array($settings) ? $settings : []),
+            'metrics' => $this->loginMetrics(is_array($metrics) ? $metrics : []),
             'generatedAt' => date('c'),
         ]);
     }
@@ -123,6 +131,39 @@ final class SettingController extends BaseController
         header('Content-Length: ' . filesize($real));
         readfile($real);
         exit;
+    }
+
+    private function defaultPublicSettings(): array
+    {
+        return [
+            'logoUrl' => null,
+            'backgroundUrl' => null,
+            'backgroundImages' => [],
+            'systemName' => 'Hệ thống Quản lý Hành chính',
+            'hamletName' => 'Thôn 09',
+            'communeName' => 'Xã Hồng Phong',
+            'slogan' => 'Vì Nhân dân phục vụ',
+            'version' => 'v2.0',
+            'copyright' => '© Thôn 09 - Xã Hồng Phong',
+            'introTitle' => 'Giới thiệu Thôn 09 - Xã Hồng Phong',
+            'introContent' => '',
+            'introImageUrl' => null,
+            'contactAddress' => '',
+            'contactPhone' => '',
+            'contactEmail' => '',
+            'contactWebsite' => '',
+        ];
+    }
+
+    private function logPublicConfigFailure(\Throwable $e): void
+    {
+        error_log('[PUBLIC_LOGIN_CONFIG_ERROR] ' . json_encode([
+            'time' => date('c'),
+            'method' => $_SERVER['REQUEST_METHOD'] ?? '',
+            'uri' => $_SERVER['REQUEST_URI'] ?? '',
+            'exception' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     private function ensureUploadDir(string $dir): void
