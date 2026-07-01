@@ -29,14 +29,7 @@ final class Database
             ]);
             return self::$pdo;
         } catch (PDOException $e) {
-            error_log('[DATABASE_CONNECTION_ERROR] ' . json_encode([
-                'time' => date('c'),
-                'host' => $config['host'] ?? null,
-                'port' => $config['port'] ?? null,
-                'database' => $config['database'] ?? null,
-                'username' => $config['username'] ?? null,
-                'exception' => $e->getMessage(),
-            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            self::logConfig('DATABASE_CONNECTION_ERROR', $config, $e->getMessage());
             throw new DatabaseException('Không kết nối được cơ sở dữ liệu. Vui lòng kiểm tra cấu hình DB trên Hosting.', 0, $e);
         }
     }
@@ -48,12 +41,25 @@ final class Database
             if (!isset($config[$key]) || trim((string) $config[$key]) === '') $missing[] = $key;
         }
         if ($missing) {
-            error_log('[DATABASE_CONFIG_ERROR] Missing keys: ' . implode(', ', $missing));
+            self::logConfig('DATABASE_CONFIG_ERROR', $config, 'Missing keys: ' . implode(', ', $missing));
             throw new DatabaseException('Thiếu cấu hình cơ sở dữ liệu: ' . implode(', ', $missing));
         }
         if (($config['username'] ?? '') === 'root' && (string) ($config['password'] ?? '') === '') {
-            error_log('[DATABASE_CONFIG_ERROR] Refusing unsafe root database fallback');
+            self::logConfig('DATABASE_CONFIG_ERROR', $config, 'Refusing unsafe root database fallback');
             throw new DatabaseException('Cấu hình DB không hợp lệ: không được dùng root không mật khẩu trên Hosting.');
         }
+    }
+
+    private static function logConfig(string $type, array $config, string $message): void
+    {
+        error_log('[' . $type . '] ' . json_encode([
+            'time' => date('c'),
+            'host' => $config['host'] ?? null,
+            'port' => $config['port'] ?? null,
+            'database' => $config['database'] ?? null,
+            'username' => $config['username'] ?? null,
+            'config_sources' => $config['config_sources'] ?? [],
+            'message' => $message,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }
