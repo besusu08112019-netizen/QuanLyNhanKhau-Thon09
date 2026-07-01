@@ -9,6 +9,7 @@ on:
 jobs:
   ftp-deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout source
@@ -20,17 +21,17 @@ jobs:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_DATABASE: ${{ secrets.DB_DATABASE }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_HOST: ${{ secrets.DB_HOST || vars.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT || vars.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE || vars.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME || vars.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_CHARSET: ${{ secrets.DB_CHARSET }}
+          DB_CHARSET: ${{ secrets.DB_CHARSET || vars.DB_CHARSET }}
         run: |
           missing=0
           for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD DB_HOST DB_DATABASE DB_USERNAME DB_PASSWORD; do
             if [ -z "${!name}" ]; then
-              echo "::error::GitHub Secret $name is missing. Add it before deploying to hosting."
+              echo "::error::$name is missing. Add it as a GitHub Actions secret, or add non-sensitive DB values as repository/environment variables. DB_PASSWORD must be a secret."
               missing=1
             fi
           done
@@ -39,12 +40,12 @@ jobs:
       - name: Create production env file
         shell: bash
         env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_DATABASE: ${{ secrets.DB_DATABASE }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_HOST: ${{ secrets.DB_HOST || vars.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT || vars.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE || vars.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME || vars.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_CHARSET: ${{ secrets.DB_CHARSET }}
+          DB_CHARSET: ${{ secrets.DB_CHARSET || vars.DB_CHARSET }}
         run: |
           {
             echo "DB_HOST=${DB_HOST}"
