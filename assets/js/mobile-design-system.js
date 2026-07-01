@@ -1,16 +1,21 @@
 (function () {
   'use strict';
 
-  const CSS_HREF = 'assets/css/admin-design-system.css?v=20260701-admin-ds-2';
+  const CSS_HREFS = [
+    'assets/css/admin-design-system.css?v=20260701-admin-ds-2',
+    'assets/css/person-card-layout.css?v=20260701-person-card-1'
+  ];
   const JS_SRC = 'assets/js/admin-design-system.js?v=20260701-admin-ds-1';
 
   function ensureSharedDesignAssets() {
-    if (!document.querySelector('link[href*="admin-design-system.css"]')) {
+    CSS_HREFS.forEach(href => {
+      const fileName = href.split('?')[0].split('/').pop();
+      if (document.querySelector('link[href*="' + fileName + '"]')) return;
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = CSS_HREF;
+      link.href = href;
       document.head.appendChild(link);
-    }
+    });
     if (!document.querySelector('script[src*="admin-design-system.js"]')) {
       const script = document.createElement('script');
       script.src = JS_SRC;
@@ -74,8 +79,8 @@
 
   function maskIdentity(value) {
     const text = String(value || '').replace(/\s+/g, '').trim();
-    if (text.length <= 6) return text;
-    return text.slice(0, 3) + '••••••' + text.slice(-3);
+    if (text.length <= 8) return text;
+    return text.slice(0, 4) + '••••' + text.slice(-4);
   }
 
   function setRole(cell, role, order, label) {
@@ -142,19 +147,21 @@
       if (!cells || cells.length < 10) return;
       setRole(cells[0], 'select', 0, '');
       setRole(cells[3], 'title', 1, 'Họ tên');
+      setRole(cells[1], 'header-meta', 0, 'Mã hộ');
 
-      setRole(cells[7], 'badge', 2, 'Cư trú');
-      cells[7].dataset.mobileTone = toneForResidence(cells[7].textContent);
-      normalizeResidenceText(cells[7]);
+      setRole(cells[2], 'meta', 2, 'Mã nhân khẩu');
+      setRole(cells[6], 'info', 3, 'CCCD');
+      ensureMaskedIdentity(cells[6]);
 
-      setRole(cells[1], 'header-meta', 3, 'Mã hộ');
       setRole(cells[4], 'info', 4, 'Ngày sinh');
       ensureAge(cells[4]);
       setRole(cells[5], 'info', 5, 'Giới tính');
-      setRole(cells[6], 'info', 6, 'CCCD');
-      ensureMaskedIdentity(cells[6]);
-      setRole(cells[2], 'meta', 7, 'Mã nhân khẩu');
-      setRole(cells[8], 'badge', 8, 'Đảng viên');
+
+      setRole(cells[7], 'badge', 6, 'Cư trú');
+      cells[7].dataset.mobileTone = toneForResidence(cells[7].textContent);
+      normalizeResidenceText(cells[7]);
+
+      setRole(cells[8], 'badge', 7, 'Đảng viên');
       cells[8].dataset.mobileTone = normalize(cells[8].textContent).includes('co') ? 'success' : 'neutral';
       setRole(cells[9], 'actions', 20, '');
     });
