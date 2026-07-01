@@ -8,6 +8,74 @@
   display: table-cell;
 }
 
+#personsScreen .person-household-group-row td {
+  padding: 10px 0 8px;
+  border: 0;
+  background: transparent;
+}
+
+.person-household-group-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #cfeedd;
+  border-radius: 10px;
+  background: #edf8f2;
+  color: #0f5132;
+}
+
+.person-household-group-main {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.person-household-group-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #d9f1e4;
+  color: #0a8f4d;
+  flex: 0 0 auto;
+}
+
+.person-household-group-main strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 800;
+  color: #075f35;
+}
+
+.person-household-group-main small {
+  display: block;
+  margin-top: 2px;
+  color: #517062;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.person-household-group-count {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: #075f35;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 @media (max-width: 767px) {
   #personsScreen .person-table-wrap,
   #personsScreen .person-table-wrap table,
@@ -27,9 +95,35 @@
   }
 
   #personsScreen .person-table-wrap thead,
-  #personsScreen .group-row,
   #personRows .population-desktop-cell {
     display: none !important;
+  }
+
+  #personRows .person-household-group-row,
+  #personRows .person-household-group-row td {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  #personRows .person-household-group-row {
+    margin: 16px 0 10px !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  #personRows .person-household-group-row td {
+    padding: 0 !important;
+  }
+
+  #personRows .person-household-group-card {
+    padding: 9px 12px;
+    border-radius: 12px;
+  }
+
+  #personRows .person-household-group-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
   }
 
   #personRows .population-row,
@@ -332,4 +426,6 @@
   .population-info-box span,
   .population-code-box span,
   .population-status-field span { font-size: 12px; }
+  .person-household-group-card { gap: 8px; }
+  .person-household-group-count { padding-inline: 8px; font-size: 11px; }
 }
