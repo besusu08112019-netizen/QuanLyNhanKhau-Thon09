@@ -3,14 +3,19 @@
 
   const CSS_HREFS = [
     'assets/css/admin-design-system.css?v=20260701-admin-ds-2',
-    'assets/css/person-card-layout.css?v=20260701-person-card-1'
+    'assets/css/person-card-layout.css?v=20260701-person-card-5'
   ];
   const JS_SRC = 'assets/js/admin-design-system.js?v=20260701-admin-ds-1';
 
   function ensureSharedDesignAssets() {
     CSS_HREFS.forEach(href => {
       const fileName = href.split('?')[0].split('/').pop();
-      if (document.querySelector('link[href*="' + fileName + '"]')) return;
+      const existing = document.querySelector('link[href*="' + fileName + '"]');
+      if (existing) {
+        const current = existing.getAttribute('href') || '';
+        if (current !== href) existing.setAttribute('href', href);
+        return;
+      }
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
@@ -56,18 +61,22 @@
     let day, month, year;
     let match = text.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
     if (match) {
-      day = Number(match[1]); month = Number(match[2]); year = Number(match[3]);
+      day = Number(match[1]);
+      month = Number(match[2]);
+      year = Number(match[3]);
     } else {
       match = text.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
       if (!match) return null;
-      year = Number(match[1]); month = Number(match[2]); day = Number(match[3]);
+      year = Number(match[1]);
+      month = Number(match[2]);
+      day = Number(match[3]);
     }
     const date = new Date(year, month - 1, day);
     if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
     return date;
   }
 
-  function ageFromDate(value) {
+  function ageFromBirthday(value) {
     const date = parseDate(value);
     if (!date) return null;
     const now = new Date();
@@ -77,106 +86,91 @@
     return age >= 0 && age < 130 ? age : null;
   }
 
+  function escapeHtml(value) {
+    if (typeof window.escapeHtml === 'function') return window.escapeHtml(value);
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+  }
+
+  function formatDateText(value) {
+    if (typeof window.formatDate === 'function') return window.formatDate(value);
+    const date = parseDate(value);
+    if (!date) return escapeHtml(value || '');
+    return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
+  }
+
   function maskIdentity(value) {
     const text = String(value || '').replace(/\s+/g, '').trim();
     if (text.length <= 8) return text;
     return text.slice(0, 4) + '••••' + text.slice(-4);
   }
 
-  function setRole(cell, role, order, label) {
-    if (!cell) return;
-    cell.dataset.mobileRole = role;
-    if (order) cell.dataset.mobilePersonOrder = String(order);
-    if (label) cell.setAttribute('data-label', label);
-    const value = cell.textContent.replace(/\s+/g, ' ').trim();
-    cell.toggleAttribute('data-mobile-empty', isEmpty(value));
+  function residenceInfo(row) {
+    if (row && row.presence_status === 'AWAY') return { text: 'Tạm vắng', cls: 'population-status-away' };
+    if (row && row.residency_status === 'TEMPORARY') return { text: 'Tạm trú', cls: 'population-status-temp' };
+    if (row && (row.residency_status === 'MOVED' || row.life_status === 'MOVED')) return { text: 'Chuyển đi', cls: 'population-status-away' };
+    if (row && (row.life_status === 'DECEASED' || row.life_status === 'DEAD')) return { text: 'Đã mất', cls: 'population-status-muted' };
+    const text = typeof window.residencyLabel === 'function' ? window.residencyLabel(row && row.residency_status) : 'Thường trú';
+    return { text: text || 'Thường trú', cls: 'population-status-home' };
   }
 
-  function toneForResidence(value) {
-    const text = normalize(value);
-    if (text.includes('tam vang') || text.includes('di vang')) return 'warning';
-    if (text.includes('tam tru')) return 'info';
-    if (text.includes('chuyen di') || text.includes('da chuyen')) return 'danger';
-    if (text.includes('da mat') || text.includes('mat') || text.includes('chet')) return 'dark';
-    if (text.includes('thuong tru') || text.includes('o nha')) return 'success';
-    return 'neutral';
+  function genderIcon(gender) {
+    return normalize(gender).includes('nu')
+      ? '<i class="fa-solid fa-venus population-card-icon-female"></i>'
+      : '<i class="fa-solid fa-mars population-card-icon-male"></i>';
   }
 
-  function normalizeResidenceText(cell) {
-    if (!cell) return;
-    const target = cell.querySelector('.badge, .badge-soft, .person-badge, span, a, button') || cell;
-    const text = normalize(target.textContent);
-    if (text.includes('tam vang') || text.includes('di vang')) target.textContent = 'Tạm vắng';
-    else if (text.includes('tam tru')) target.textContent = 'Tạm trú';
-    else if (text.includes('chuyen di') || text.includes('da chuyen')) target.textContent = 'Chuyển đi';
-    else if (text.includes('da mat') || text.includes('mat') || text.includes('chet')) target.textContent = 'Đã mất';
-    else if (text.includes('thuong tru') || text.includes('o nha')) target.textContent = 'Thường trú';
+  function infoBox(iconHtml, label, value) {
+    if (isEmpty(value)) return '';
+    return '<div class="population-info-box"><span class="population-card-icon">' + iconHtml + '</span><div><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div></div>';
   }
 
-  function ensureAge(cell) {
-    if (!cell || cell.dataset.mobileAgeDone === '1') return;
-    const text = cell.textContent.replace(/\s+/g, ' ').trim();
-    const age = ageFromDate(text);
-    if (age === null) return;
-    const span = document.createElement('span');
-    span.className = 'mobile-age-text';
-    span.textContent = ' (' + age + ' tuổi)';
-    cell.appendChild(span);
-    cell.dataset.mobileAgeDone = '1';
+  function renderPopulationCard(row) {
+    const id = Number(row && row.id) || 0;
+    const householdCode = row.household_code || '';
+    const citizenCode = row.citizen_code || '';
+    const fullName = row.full_name || '';
+    const identity = row.identity_number || row.personal_id || row.cccd || '';
+    const birthText = formatDateText(row.date_of_birth || row.birth_date || '');
+    const age = ageFromBirthday(row.date_of_birth || row.birth_date || '');
+    const gender = row.gender || '';
+    const party = Number(row.party_member || row.partyMember || 0) === 1;
+    const residence = residenceInfo(row || {});
+
+    return '<tr class="population-row">'
+      + '<td data-mobile-role="population-card" colspan="10">'
+      + '<article class="population-card">'
+      + '<header class="population-card-head">'
+      + '<button type="button" class="population-card-name" onclick="showPerson(' + id + ')">' + escapeHtml(fullName) + '</button>'
+      + '<div class="population-card-head-actions">'
+      + (householdCode ? '<span class="population-household-badge">' + escapeHtml(householdCode) + '</span>' : '')
+      + '<input type="checkbox" class="person-check population-check" value="' + id + '">'
+      + '</div>'
+      + '</header>'
+      + '<div class="population-code-grid">'
+      + '<div class="population-code-box"><span>Mã nhân khẩu</span><strong>' + escapeHtml(citizenCode) + '</strong></div>'
+      + '<div class="population-code-box"><span>CCCD/Số định danh</span><strong>' + escapeHtml(maskIdentity(identity)) + '</strong></div>'
+      + '</div>'
+      + '<div class="population-info-grid">'
+      + infoBox('<i class="fa-regular fa-calendar-days population-card-icon-date"></i>', 'Ngày sinh', birthText)
+      + infoBox(genderIcon(gender), 'Giới tính', gender)
+      + infoBox('<i class="fa-solid fa-users population-card-icon-age"></i>', 'Tuổi', age === null ? '--' : age + ' tuổi')
+      + '</div>'
+      + '<div class="population-status-grid">'
+      + '<div class="population-status-field"><span>Cư trú</span><em class="population-status-badge ' + residence.cls + '">' + escapeHtml(residence.text) + '</em></div>'
+      + '<div class="population-status-field"><span>Đảng viên</span><em class="population-status-badge ' + (party ? 'population-status-party' : 'population-status-muted') + '">' + (party ? 'Có' : 'Không') + '</em></div>'
+      + '</div>'
+      + '<div class="population-action-grid">'
+      + '<button type="button" class="population-action population-action-view" onclick="showPerson(' + id + ')"><i class="fa-regular fa-eye"></i><span>Xem</span></button>'
+      + '<button type="button" class="population-action population-action-edit" onclick="openPersonForm(' + id + ')"><i class="fa-regular fa-pen-to-square"></i><span>Sửa</span></button>'
+      + '<button type="button" class="population-action population-action-delete" onclick="deletePerson(' + id + ')"><i class="fa-regular fa-trash-can"></i><span>Xóa</span></button>'
+      + '</div>'
+      + '</article>'
+      + '</td>'
+      + '</tr>';
   }
 
-  function ensureMaskedIdentity(cell) {
-    if (!cell || cell.dataset.mobileMaskDone === '1') return;
-    const text = cell.textContent.replace(/\s+/g, '').trim();
-    if (isEmpty(text)) return;
-    cell.textContent = '';
-    const desktop = document.createElement('span');
-    desktop.className = 'desktop-sensitive';
-    desktop.textContent = text;
-    const mobile = document.createElement('span');
-    mobile.className = 'mobile-sensitive';
-    mobile.textContent = maskIdentity(text);
-    cell.append(desktop, mobile);
-    cell.dataset.mobileMaskDone = '1';
-  }
-
-  function enhancePersonRows(root) {
-    const rows = root.querySelectorAll ? root.querySelectorAll('#personRows tr:not(.group-row)') : [];
-    rows.forEach(row => {
-      const cells = row.children;
-      if (!cells || cells.length < 10) return;
-      setRole(cells[0], 'select', 0, '');
-      setRole(cells[3], 'title', 1, 'Họ tên');
-      setRole(cells[1], 'header-meta', 0, 'Mã hộ');
-
-      setRole(cells[2], 'meta', 2, 'Mã nhân khẩu');
-      setRole(cells[6], 'info', 3, 'CCCD');
-      ensureMaskedIdentity(cells[6]);
-
-      setRole(cells[4], 'info', 4, 'Ngày sinh');
-      ensureAge(cells[4]);
-      setRole(cells[5], 'info', 5, 'Giới tính');
-
-      setRole(cells[7], 'badge', 6, 'Cư trú');
-      cells[7].dataset.mobileTone = toneForResidence(cells[7].textContent);
-      normalizeResidenceText(cells[7]);
-
-      setRole(cells[8], 'badge', 7, 'Đảng viên');
-      cells[8].dataset.mobileTone = normalize(cells[8].textContent).includes('co') ? 'success' : 'neutral';
-      setRole(cells[9], 'actions', 20, '');
-    });
-  }
-
-  function enhanceCommonRows(root) {
-    const scope = root.querySelectorAll ? root : document;
-    scope.querySelectorAll('tbody tr:not(.group-row)').forEach(row => {
-      Array.from(row.children).forEach(cell => {
-        const value = cell.textContent.replace(/\s+/g, ' ').trim();
-        if (!cell.querySelector('button, .btn, input, select, textarea') && isEmpty(value)) {
-          cell.setAttribute('data-mobile-empty', 'true');
-        }
-      });
-    });
+  function markActionButtons(root) {
+    const scope = root && root.querySelectorAll ? root : document;
     scope.querySelectorAll('td[data-mobile-role="actions"] button, td[data-mobile-role="actions"] .btn, td.text-end button, td.text-end .btn').forEach(button => {
       const text = normalize(button.textContent);
       if (text.includes('xem')) button.dataset.mobileAction = 'view';
@@ -185,26 +179,24 @@
     });
   }
 
-  function enhance(root) {
-    try {
-      const target = root && root.nodeType === 1 ? root : document;
-      enhanceCommonRows(target);
-      enhancePersonRows(target);
-    } catch (error) {
-      console.warn('Mobile design system enhancer skipped:', error);
-    }
-  }
+  window.ageFromDate = ageFromBirthday;
+  window.personRow = renderPopulationCard;
+  try {
+    if (typeof personRow === 'function') personRow = renderPopulationCard;
+  } catch (_) {}
 
   function start() {
-    enhance(document);
+    markActionButtons(document);
+    if (!window.__thon09PopulationCardRefresh && typeof window.loadPersons === 'function' && window.App && window.App.screen === 'persons') {
+      window.__thon09PopulationCardRefresh = true;
+      setTimeout(() => window.loadPersons(), 0);
+    }
     if (window.__thon09MobileDesignSystemObserver) return;
     window.__thon09MobileDesignSystemObserver = true;
     const observer = new MutationObserver(mutations => {
-      for (const mutation of mutations) {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType === 1) enhance(node);
-        });
-      }
+      mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
+        if (node.nodeType === 1) markActionButtons(node);
+      }));
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
