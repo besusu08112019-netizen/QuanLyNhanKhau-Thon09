@@ -45,9 +45,38 @@
     try {
       const report = await api('/api/reports/print?' + reportQuery());
       const html = reportHtml(report);
-      const win = window.open('', '_blank', 'width=1024,height=768');
-      win.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(report.title)}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#111}h1{text-align:center;font-size:20px;margin:0 0 12px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #555;padding:6px;vertical-align:top}th{background:#f0f3f7}.meta{text-align:right;font-size:12px;margin-bottom:12px}</style></head><body>${html}<script>window.print();<\/script></body></html>`);
-      win.document.close();
+      const popup = window.open('', '_blank', 'width=1024,height=768');
+      if (!popup) {
+        showToast('Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép popup.', 'warning');
+        return;
+      }
+
+      const printHtml = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(report.title || 'Báo cáo')}</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    body { font-family: Arial, sans-serif; color: #111; }
+    h1 { text-align: center; font-size: 20px; margin: 0 0 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border: 1px solid #555; padding: 6px; vertical-align: top; }
+    th { background: #f0f3f7; }
+    .meta { text-align: right; font-size: 12px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  ${html}
+  <script>
+    window.onload = function () { window.print(); };
+  <\/script>
+</body>
+</html>`;
+
+      popup.document.write(printHtml);
+      popup.document.close();
     } catch (error) {
       showToast(error.message, 'danger');
     }
