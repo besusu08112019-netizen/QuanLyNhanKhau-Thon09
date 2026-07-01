@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
+use App\Core\Response;
 use App\Models\FileAttachment;
 
 final class FileController extends BaseController
@@ -24,19 +25,32 @@ final class FileController extends BaseController
         if ($entityId <= 0 && $module !== 'settings') $this->fail('Mã dữ liệu upload không hợp lệ');
         $user = $this->requirePermission($module === 'citizen' ? 'citizen' : ($module === 'household' ? 'household' : 'settings'), 'update');
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) $this->fail('Vui lòng chọn file');
+
         $file = $_FILES['file'];
-        if ((int) $file['size'] > 5 * 1024 * 1024) $this->fail('File tối đa 5MB');
+        if ((int) $file['size'] > 20 * 1024 * 1024) $this->fail('File tối đa 20MB');
         $mime = mime_content_type($file['tmp_name']) ?: 'application/octet-stream';
-        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'application/pdf' => 'pdf'];
-        if (!isset($allowed[$mime])) $this->fail('Chỉ cho phép JPG, PNG hoặc PDF');
-        if (in_array($fileType, ['PHOTO','LOGO','BACKGROUND'], true) && !str_starts_with($mime, 'image/')) $this->fail('Loại file này phải là hình ảnh');
-        $dir = BASE_PATH . '/uploads/' . date('Y/m');
+        $allowed = $this->allowedMimeTypes();
+        if (!isset($allowed[$mime])) $this->fail('Định dạng file chưa được hỗ trợ');
+        if (in_array($fileType, ['PHOTO','LOGO','BACKGROUND','IMAGE'], true) && !str_starts_with($mime, 'image/')) $this->fail('Loại file này phải là hình ảnh');
+
+        $folder = $this->moduleFolder($module) . '/' . date('Y/m');
+        $dir = BASE_PATH . '/uploads/' . $folder;
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) $this->fail('Không tạo được thư mục upload');
         $stored = bin2hex(random_bytes(16)) . '.' . $allowed[$mime];
         $path = $dir . '/' . $stored;
         if (!move_uploaded_file($file['tmp_name'], $path)) $this->fail('Không lưu được file upload');
-        $relative = 'uploads/' . date('Y/m') . '/' . $stored;
-        $row = $this->files->create(['module' => $module, 'entity_id' => $entityId, 'file_type' => $fileType, 'original_name' => basename((string) $file['name']), 'stored_name' => $stored, 'file_path' => $relative, 'mime_type' => $mime, 'file_size' => (int) $file['size']], (int) $user['id']);
+
+        $relative = 'uploads/' . $folder . '/' . $stored;
+        $row = $this->files->create([
+            'module' => $module,
+            'entity_id' => $entityId,
+            'file_type' => $fileType,
+            'original_name' => basename((string) $file['name']),
+            'stored_name' => $stored,
+            'file_path' => $relative,
+            'mime_type' => $mime,
+            'file_size' => (int) $file['size'],
+        ], (int) $user['id']);
         $this->audit($user, $module, 'upload', 'Upload file đính kèm', $entityId, ['file' => $row['id'], 'type' => $fileType]);
         $this->ok($row);
     }
@@ -45,5 +59,56 @@ final class FileController extends BaseController
     {
         $this->requirePermission($module === 'citizen' ? 'citizen' : 'household', 'read');
         $this->ok($this->files->byEntity($module, (int) $entityId));
+    }
+
+    public function download(string $id): void
+    {
+        $file = $this->files->find((int) $id);
+        if (!$file) $this->fail('Không tìm thấy file', 404);
+        $this->requirePermission($file['module'] === 'citizen' ? 'citizen' : ($file['module'] === 'household' ? 'household' : 'settings'), 'read');
+        $path = BASE_PATH . '/' . ltrim((string) $file['file_path'], '/');
+        if (!is_file($path)) $this->fail('File không còn tồn tại trên máy chủ', 404);
+        header('Content-Type: ' . ($file['mime_type'] ?: 'application/octet-stream'));
+        header('Content-Length: ' . filesize($path));
+        header('Content-Disposition: attachment; filename="' . rawurlencode((string) $file['original_name']) . '"');
+        readfile($path);
+        exit;
+    }
+
+    public function destroy(string $id): void
+    {
+        $file = $this->files->find((int) $id);
+        if (!$file) $this->fail('Không tìm thấy file', 404);
+        $user = $this->requirePermission($file['module'] === 'citizen' ? 'citizen' : ($file['module'] === 'household' ? 'household' : 'settings'), 'update');
+        $this->files->softDelete((int) $id, (int) $user['id']);
+        $this->audit($user, (string) $file['module'], 'delete_file', 'Xóa file đính kèm', $file['entity_id'] ?? null, ['file' => (int) $id, 'name' => $file['original_name'] ?? '']);
+        $this->ok(['id' => (int) $id]);
+    }
+
+    private function allowedMimeTypes(): array
+    {
+        return [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/svg+xml' => 'svg',
+            'application/pdf' => 'pdf',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+            'text/csv' => 'csv',
+            'video/mp4' => 'mp4',
+        ];
+    }
+
+    private function moduleFolder(string $module): string
+    {
+        return match ($module) {
+            'household' => 'households',
+            'citizen' => 'citizens',
+            'settings' => 'settings',
+            default => 'other',
+        };
     }
 }
