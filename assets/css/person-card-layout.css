@@ -1,0 +1,114 @@
+/* Citizen list card layout: administrative information order for mobile and tablet. */
+.person-table-wrap .desktop-sensitive { display: none !important; }
+.person-table-wrap .mobile-sensitive { display: inline !important; }
+
+@media (max-width: 1024px) {
+  #personRows tr:not(.group-row) {
+    gap: 5px 8px !important;
+  }
+
+  #personRows td[data-mobile-role="title"] {
+    order: 1 !important;
+    grid-column: 1 / 3 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+    min-width: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  #personRows td[data-mobile-role="header-meta"] {
+    order: 1 !important;
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    align-self: center !important;
+    max-width: 100% !important;
+  }
+
+  #personRows td[data-mobile-role="select"] {
+    order: 1 !important;
+    grid-column: 4 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    align-self: center !important;
+  }
+
+  #personRows td[data-mobile-person-order="2"] {
+    order: 2 !important;
+    grid-column: 1 / 3 !important;
+  }
+
+  #personRows td[data-mobile-person-order="3"] {
+    order: 2 !important;
+    grid-column: 3 / 5 !important;
+  }
+
+  #personRows td[data-mobile-person-order="4"] {
+    order: 3 !important;
+    grid-column: 1 / 3 !important;
+  }
+
+  #personRows td[data-mobile-person-order="5"] {
+    order: 3 !important;
+    grid-column: 3 / 5 !important;
+  }
+
+  #personRows td[data-mobile-person-order="6"] {
+    order: 4 !important;
+    grid-column: 1 / 3 !important;
+  }
+
+  #personRows td[data-mobile-person-order="7"] {
+    order: 4 !important;
+    grid-column: 3 / 5 !important;
+  }
+
+  #personRows td[data-mobile-person-order="8"] {
+    order: 5 !important;
+    grid-column: 1 / 3 !important;
+  }
+
+  #personRows td[data-mobile-role="meta"],
+  #personRows td[data-mobile-role="info"],
+  #personRows td[data-mobile-role="badge"] {
+    min-height: 31px !important;
+    padding: 5px 7px !important;
+  }
+
+  #personRows td[data-mobile-role="badge"] {
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  #personRows td[data-mobile-role="actions"] {
+    order: 20 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  #personRows td[data-mobile-role="title"] {
+    grid-column: 1 / 3 !important;
+    font-size: 13px !important;
+  }
+
+  #personRows td[data-mobile-role="header-meta"] {
+    grid-column: 3 !important;
+  }
+
+  #personRows td[data-mobile-role="select"] {
+    grid-column: 4 !important;
+  }
+
+  #personRows td[data-mobile-person-order="2"],
+  #personRows td[data-mobile-person-order="4"],
+  #personRows td[data-mobile-person-order="6"] {
+    grid-column: 1 / 3 !important;
+  }
+
+  #personRows td[data-mobile-person-order="3"],
+  #personRows td[data-mobile-person-order="5"],
+  #personRows td[data-mobile-person-order="7"] {
+    grid-column: 3 / 5 !important;
+  }
+}
