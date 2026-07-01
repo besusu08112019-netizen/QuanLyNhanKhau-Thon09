@@ -160,4 +160,43 @@ $sidebarCss = <<<'HTML'
 HTML;
 $html = preg_replace('/<\/head>/', $sidebarCss . "\n</head>", $html, 1);
 $html = preg_replace('/<\/body>/', '<script src="assets/js/mobile-design-system.js?v=20260701-mobile-ds-3"></script>' . "\n</body>", $html, 1);
+$safeReportPrint = <<<'JS'
+async function printReport(){
+  try{
+    var report=await ensureReport();
+    var printData=await fetchJson(apiUrl('/api/reports/print')).catch(function(){return report;});
+    var w=window.open('','_blank');
+    if(!w){showMessage('Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép popup.','warning');return;}
+    var title=esc(printData.title||report.title||'Báo cáo');
+    var rows=Number(printData.totalRows||0).toLocaleString('vi-VN');
+    var html=`
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>${title}</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#111827;margin:24px}
+    h1{text-align:center;font-size:20px;margin:0 0 8px}
+    p{text-align:center;margin:0 0 18px;color:#555}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{border:1px solid #777;padding:6px;text-align:left;vertical-align:top}
+    th{background:#eef2f7;font-weight:700}
+    .sign{margin-top:36px;display:flex;justify-content:flex-end;text-align:center}
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  <p>Loại báo cáo: ${esc(reportType())} - Tổng số: ${rows} dòng</p>
+  ${table(printData)}
+  <div class="sign"><div>Người lập báo cáo<br><br><br>........................</div></div>
+  <script>window.onload=function(){window.print();};<\/script>
+</body>
+</html>`;
+    w.document.write(html);
+    w.document.close();
+  }catch(e){showMessage(e.message||'Không in được báo cáo.','danger');}
+}
+JS;
+$html = preg_replace('/async function printReport\(\)\{try\{.*?\n  function lockReportTypes\(\)/s', $safeReportPrint . "\n  function lockReportTypes(", $html, 1);
 echo $html;
