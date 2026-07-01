@@ -198,5 +198,5 @@ async function printReport(){
   }catch(e){showMessage(e.message||'Không in được báo cáo.','danger');}
 }
 JS;
-$html = preg_replace('/async function printReport\(\)\{try\{.*?\n  function lockReportTypes\(\)/s', $safeReportPrint . "\n  function lockReportTypes(", $html, 1);
+$html = preg_replace('/async function printReport\(\)\{try\{.*?\n  function lockReportTypes\(\)/s', $safeReportPrint . "\n  function lockReportTypes()", $html, 1);
 echo $html;
