@@ -7,13 +7,11 @@ use App\Models\User;
 
 abstract class BaseController
 {
-    protected User $users;
-    protected AuditLog $logs;
+    private ?User $usersModel = null;
+    private ?AuditLog $logsModel = null;
 
     public function __construct(protected Request $request)
     {
-        $this->users = new User();
-        $this->logs = new AuditLog();
     }
 
     protected function input(?string $key = null, mixed $default = null): mixed { return $this->request->input($key, $default); }
@@ -21,10 +19,20 @@ abstract class BaseController
     protected function ok(mixed $data = null): void { Response::ok($data); }
     protected function fail(string $message, int $status = 400): void { Response::error($message, $status); }
 
+    protected function users(): User
+    {
+        return $this->usersModel ??= new User();
+    }
+
+    protected function logs(): AuditLog
+    {
+        return $this->logsModel ??= new AuditLog();
+    }
+
     protected function user(): array
     {
         $token = $this->request->bearerToken();
-        $user = $token ? $this->users->findByToken($token) : null;
+        $user = $token ? $this->users()->findByToken($token) : null;
         if (!$user) {
             Response::error('Vui lòng đăng nhập', 401);
         }
@@ -39,7 +47,7 @@ abstract class BaseController
 
         $token = (string) ($this->request->bearerToken() ?? '');
         $submitted = (string) $this->request->header('x-csrf-token', '');
-        $expected = $token !== '' ? $this->users->csrfToken($token) : '';
+        $expected = $token !== '' ? $this->users()->csrfToken($token) : '';
 
         if ($submitted === '' || $expected === '' || !hash_equals($expected, $submitted)) {
             Response::error('CSRF token không hợp lệ', 419);
@@ -50,7 +58,7 @@ abstract class BaseController
     {
         $user = $this->user();
         $this->verifyCsrfToken();
-        if (!$this->users->can($user, $module, $action)) {
+        if (!$this->users()->can($user, $module, $action)) {
             Response::error('Không có quyền ' . $action . ' module ' . $module, 403);
         }
         return $user;
@@ -58,6 +66,6 @@ abstract class BaseController
 
     protected function audit(?array $user, string $module, string $action, string $message, mixed $entityId = null, array $metadata = [], string $level = 'INFO'): void
     {
-        $this->logs->write($user['id'] ?? null, $user['email'] ?? null, $module, $action, $message, $entityId === null ? null : (string) $entityId, $metadata, $level);
+        $this->logs()->write($user['id'] ?? null, $user['email'] ?? null, $module, $action, $message, $entityId === null ? null : (string) $entityId, $metadata, $level);
     }
 }
