@@ -4,10 +4,12 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Models\Citizen;
+use App\Services\PopulationMovementService;
 
 final class PersonController extends BaseController
 {
     private Citizen $citizens;
+    private PopulationMovementService $movementService;
 
     private const FLAG_FILTERS = [
         'party_member' => ['partyMember'],
@@ -32,7 +34,12 @@ final class PersonController extends BaseController
         'retired' => ['retired'],
     ];
 
-    public function __construct($request) { parent::__construct($request); $this->citizens = new Citizen(); }
+    public function __construct($request)
+    {
+        parent::__construct($request);
+        $this->citizens = new Citizen();
+        $this->movementService = new PopulationMovementService();
+    }
 
     public function index(): void
     {
@@ -56,12 +63,61 @@ final class PersonController extends BaseController
         $this->ok($this->citizens->paginate($filters));
     }
 
-    public function show(string $id): void { $this->requirePermission('citizen', 'read'); $row = $this->citizens->find((int) $id); $row ? $this->ok($row) : $this->fail('Không tìm thấy nhân khẩu', 404); }
-    public function store(): void { $user = $this->requirePermission('citizen', 'create'); $row = $this->citizens->create($this->input(), (int) $user['id']); $this->audit($user, 'citizen', 'create', 'Tạo nhân khẩu', $row['id']); $this->ok($row); }
-    public function update(string $id): void { $user = $this->requirePermission('citizen', 'update'); $row = $this->citizens->update((int) $id, $this->input(), (int) $user['id']); $this->audit($user, 'citizen', 'update', 'Cập nhật nhân khẩu', $id); $this->ok($row); }
-    public function destroy(string $id): void { $user = $this->requirePermission('citizen', 'delete'); $this->citizens->softDelete((int) $id, (int) $user['id']); $this->audit($user, 'citizen', 'delete', 'Xóa mềm nhân khẩu', $id); $this->ok(['id' => (int) $id]); }
-    public function restore(string $id): void { $user = $this->requirePermission('citizen', 'update'); $this->citizens->restore((int) $id, (int) $user['id']); $this->audit($user, 'citizen', 'update', 'Khôi phục nhân khẩu', $id); $this->ok(['id' => (int) $id]); }
-    public function bulkDelete(): void { $user = $this->requirePermission('citizen', 'delete'); $ids = (array) $this->input('ids', []); $deleted = $this->citizens->bulkSoftDelete($ids, (int) $user['id']); $this->audit($user, 'citizen', 'delete', 'Xóa hàng loạt nhân khẩu', null, ['ids' => array_values(array_map('intval', $ids)), 'deleted' => $deleted]); $this->ok(['success' => $deleted, 'errors' => []]); }
+    public function show(string $id): void
+    {
+        $this->requirePermission('citizen', 'read');
+        $row = $this->citizens->find((int) $id);
+        $row ? $this->ok($row) : $this->fail('Không tìm thấy nhân khẩu', 404);
+    }
+
+    public function store(): void
+    {
+        $user = $this->requirePermission('citizen', 'create');
+        $input = $this->input();
+        $row = $this->citizens->create($input, (int) $user['id']);
+        $this->movementService->afterCitizenCreated($row, $input, (int) $user['id']);
+        $row = $this->citizens->find((int) $row['id']) ?: $row;
+        $this->audit($user, 'citizen', 'create', 'Tạo nhân khẩu và ghi biến động dân cư', $row['id']);
+        $this->ok($row);
+    }
+
+    public function update(string $id): void
+    {
+        $user = $this->requirePermission('citizen', 'update');
+        $before = $this->citizens->find((int) $id);
+        if (!$before) $this->fail('Không tìm thấy nhân khẩu', 404);
+        $input = $this->input();
+        $row = $this->citizens->update((int) $id, $input, (int) $user['id']);
+        $this->movementService->afterCitizenUpdated($before, $row, $input, (int) $user['id']);
+        $row = $this->citizens->find((int) $id) ?: $row;
+        $this->audit($user, 'citizen', 'update', 'Cập nhật nhân khẩu và ghi biến động dân cư', $id);
+        $this->ok($row);
+    }
+
+    public function destroy(string $id): void
+    {
+        $user = $this->requirePermission('citizen', 'delete');
+        $this->movementService->markCitizenMovedOut((int) $id, $this->input(), (int) $user['id']);
+        $this->audit($user, 'citizen', 'delete', 'Chuyển nhân khẩu khỏi dân cư hiện tại', $id);
+        $this->ok(['id' => (int) $id]);
+    }
+
+    public function restore(string $id): void
+    {
+        $user = $this->requirePermission('citizen', 'update');
+        $this->citizens->restore((int) $id, (int) $user['id']);
+        $this->audit($user, 'citizen', 'update', 'Khôi phục nhân khẩu', $id);
+        $this->ok(['id' => (int) $id]);
+    }
+
+    public function bulkDelete(): void
+    {
+        $user = $this->requirePermission('citizen', 'delete');
+        $ids = (array) $this->input('ids', []);
+        $deleted = $this->movementService->markCitizensMovedOut($ids, $this->input(), (int) $user['id']);
+        $this->audit($user, 'citizen', 'delete', 'Chuyển hàng loạt nhân khẩu khỏi dân cư hiện tại', null, ['ids' => array_values(array_map('intval', $ids)), 'deleted' => $deleted]);
+        $this->ok(['success' => $deleted, 'errors' => []]);
+    }
 
     private function personFilters(): array
     {
