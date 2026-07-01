@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
+use App\Models\User;
 
 final class AuthController extends BaseController
 {
@@ -20,7 +21,8 @@ final class AuthController extends BaseController
     public function login(): void
     {
         try {
-            $result = $this->users()->login((string) $this->input('username', $this->input('email', '')), (string) $this->input('password', ''));
+            $users = new User();
+            $result = $users->login((string) $this->input('username', $this->input('email', '')), (string) $this->input('password', ''));
             $this->audit($result['user'], 'user', 'read', 'Đăng nhập hệ thống', $result['user']['id']);
             $this->ok($result);
         } catch (\Throwable $e) { $this->fail($e->getMessage(), 401); }
