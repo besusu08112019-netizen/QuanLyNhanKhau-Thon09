@@ -20,10 +20,16 @@ final class GisController extends BaseController
     {
         try {
             $this->requirePermission('household', 'read');
+        } catch (\Throwable $e) {
+            $this->logApiFailure('GET /api/gis/areas auth', [], $e);
+            $this->fail('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 401);
+        }
+
+        try {
             $this->ok($this->areas->all());
         } catch (\Throwable $e) {
             $this->logApiFailure('GET /api/gis/areas', [], $e);
-            throw $e;
+            $this->ok($this->emptyAreasResponse($e));
         }
     }
 
@@ -92,6 +98,16 @@ final class GisController extends BaseController
         }
     }
 
+    private function emptyAreasResponse(\Throwable $e): array
+    {
+        return [
+            'areas' => [],
+            'unassigned' => ['households' => 0],
+            'summary' => ['areas' => 0, 'households' => 0, 'citizens' => 0, 'located' => 0, 'unlocated' => 0, 'poor_households' => 0, 'near_poor_households' => 0, 'temporary' => 0, 'away' => 0, 'area_m2' => 0, 'density' => 0],
+            'warning' => 'Không tải được dữ liệu GIS. Chi tiết đã được ghi log.',
+        ];
+    }
+
     private function logApiFailure(string $endpoint, array $request, \Throwable $e): void
     {
         $safeRequest = $request;
@@ -100,7 +116,10 @@ final class GisController extends BaseController
         unset($safeRequest['polygon'], $safeRequest['geometry']);
         $payload = [
             'time' => date('c'),
+            'method' => $_SERVER['REQUEST_METHOD'] ?? '',
+            'uri' => $_SERVER['REQUEST_URI'] ?? '',
             'endpoint' => $endpoint,
+            'headers' => function_exists('getallheaders') ? getallheaders() : [],
             'request' => $safeRequest,
             'exception' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
