@@ -1,5 +1,15 @@
 (() => {
+  const loadPopulationCardDesign = () => {
+    if (!document.querySelector('script[src*="mobile-design-system.js"]')) {
+      const script = document.createElement('script');
+      script.src = 'assets/js/mobile-design-system.js?v=20260701-person-card-5';
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  };
+
   const start = () => {
+    loadPopulationCardDesign();
     if (!isAdminUser()) return;
     injectAdminScreens();
     bindAdminNavigation();
