@@ -271,7 +271,7 @@
       '  #personsScreen #personRows .population-status-field { display: grid !important; grid-template-columns: minmax(74px, .7fr) auto !important; align-items: center !important; justify-content: normal !important; gap: 8px !important; min-height: 54px !important; padding: 8px 10px !important; }',
       '  #personsScreen #personRows .population-status-field span { white-space: nowrap !important; word-break: keep-all !important; overflow-wrap: normal !important; min-width: max-content !important; font-size: 13px !important; }',
       '  #personsScreen #personRows .population-status-badge { justify-self: center !important; min-width: 76px !important; padding: 4px 12px !important; text-align: center !important; white-space: nowrap !important; word-break: keep-all !important; }',
-      '  #personsScreen #personRows .population-action { min-height: 48px !important; border-radius: 12px !important; }',
+      '  #personsScreen #personRows .population-action { height: 48px !important; min-height: 48px !important; padding: 0 6px !important; border-radius: 12px !important; font-size: 14px !important; }',
       '  #personsScreen #personRows .population-action i { font-size: 20px !important; }',
       '}',
       '@media (max-width: 380px) {',
