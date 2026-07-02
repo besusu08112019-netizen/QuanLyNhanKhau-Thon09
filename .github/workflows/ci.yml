@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    name: PHP, JavaScript, and browser smoke checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: fileinfo, json, mbstring, pdo, pdo_mysql, simplexml, zip
+          coverage: none
+
+      - name: Validate Composer metadata
+        run: composer validate --strict
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Lint PHP files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . \
+            -path './vendor' -prune -o \
+            -path './uploads' -prune -o \
+            -path './backups' -prune -o \
+            -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JavaScript test tools
+        run: npm install --no-audit --no-fund
+
+      - name: Check JavaScript syntax
+        run: npm run check:js
+
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        run: npm run test:browser
