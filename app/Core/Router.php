@@ -39,7 +39,36 @@ final class Router
             $handler($this->request, ...array_values($params));
             return;
         }
+
+        if ($this->dispatchGisHouseholdLocationRoute()) {
+            return;
+        }
+
         Response::error('API không tồn tại', 404);
+    }
+
+    private function dispatchGisHouseholdLocationRoute(): bool
+    {
+        $method = $this->request->method();
+        $path = $this->request->path();
+        $controller = null;
+        $action = null;
+        $params = [];
+
+        if ($method === 'GET' && $path === '/api/gis/households') {
+            $action = 'households';
+        } elseif (($method === 'PUT' || $method === 'POST') && preg_match('#^/api/gis/households/(\d+)/location$#', $path, $matches)) {
+            $action = 'saveHouseholdLocation';
+            $params[] = $matches[1];
+        } elseif ($method === 'DELETE' && preg_match('#^/api/gis/households/(\d+)/location$#', $path, $matches)) {
+            $action = 'clearHouseholdLocation';
+            $params[] = $matches[1];
+        }
+
+        if (!$action) return false;
+        $controller = new \App\Controllers\GisController($this->request);
+        $controller->$action(...$params);
+        return true;
     }
 
     private function match(string $route, string $path): ?array
