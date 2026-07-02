@@ -91,6 +91,33 @@
     return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
   }
 
+  function fitPopulationNames() {
+    if (window.innerWidth >= 1200) return;
+    document.querySelectorAll('#personsScreen #personRows .population-card-name').forEach(name => {
+      name.style.removeProperty('font-size');
+      const baseSize = parseFloat(window.getComputedStyle(name).fontSize) || 22;
+      const minSize = window.innerWidth < 360 ? 9 : (window.innerWidth < 480 ? 10 : 12);
+      let size = Math.min(28, baseSize);
+      name.style.setProperty('font-size', size + 'px', 'important');
+      let guard = 0;
+      while (name.scrollWidth > name.clientWidth + 1 && size > minSize && guard < 60) {
+        size -= 0.5;
+        name.style.setProperty('font-size', size + 'px', 'important');
+        guard += 1;
+      }
+    });
+  }
+
+  function bindPopulationNameFit() {
+    const rows = document.querySelector('#personRows');
+    if (!rows || rows.__thon09MobileNameFitObserver) return;
+    rows.__thon09MobileNameFitObserver = new MutationObserver(() => {
+      window.requestAnimationFrame(fitPopulationNames);
+      setTimeout(fitPopulationNames, 80);
+    });
+    rows.__thon09MobileNameFitObserver.observe(rows, { childList: true, subtree: true });
+  }
+
   function formatDateOnlyText(value) {
     const date = parseDate(value);
     if (!date) return escapeHtml(value || '');
@@ -274,6 +301,7 @@
       if (totalHost) totalHost.innerHTML = 'Tổng số: <strong>' + (typeof window.number === 'function' ? window.number(total) : total) + '</strong> nhân khẩu';
       const rowsHost = document.querySelector('#personRows');
       if (rowsHost) rowsHost.innerHTML = renderGroupedPopulationRows(items) || groupedEmptyRow();
+      fitPopulationNames();
       if (typeof window.updateBulkDeleteButtons === 'function') window.updateBulkDeleteButtons();
       if (typeof window.renderPager === 'function') {
         window.renderPager('#personPager', { total, page: app.persons.page, pageSize: app.persons.pageSize }, page => { app.persons.page = page; loadGroupedPersons(); });
@@ -299,6 +327,7 @@
   }
 
   window.ageFromDate = ageFromBirthday;
+  window.thon09FitPopulationNames = fitPopulationNames;
   window.personRow = renderPopulationRow;
   try {
     if (typeof personRow === 'function') personRow = renderPopulationRow;
@@ -309,6 +338,9 @@
   function start() {
     installGroupedPersonLoader();
     markActionButtons(document);
+    bindPopulationNameFit();
+    window.requestAnimationFrame(fitPopulationNames);
+    setTimeout(fitPopulationNames, 100);
     if (!window.__thon09PopulationCardRefresh && typeof window.loadPersons === 'function' && window.App && window.App.screen === 'persons') {
       window.__thon09PopulationCardRefresh = true;
       setTimeout(() => window.loadPersons(), 0);
@@ -319,8 +351,10 @@
       mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
         if (node.nodeType === 1) markActionButtons(node);
       }));
+      window.requestAnimationFrame(fitPopulationNames);
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', () => window.requestAnimationFrame(fitPopulationNames));
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
