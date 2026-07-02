@@ -32,6 +32,7 @@ final class FileController extends BaseController
         $allowed = $this->allowedMimeTypes();
         if (!isset($allowed[$mime])) $this->fail('Định dạng file chưa được hỗ trợ');
         if (in_array($fileType, ['PHOTO','LOGO','BACKGROUND','IMAGE'], true) && !str_starts_with($mime, 'image/')) $this->fail('Loại file này phải là hình ảnh');
+        if ($mime === 'image/svg+xml') $this->validateSafeSvgUpload($file['tmp_name'], $module, $fileType);
 
         $folder = $this->moduleFolder($module) . '/' . date('Y/m');
         $dir = BASE_PATH . '/uploads/' . $folder;
@@ -100,6 +101,46 @@ final class FileController extends BaseController
             'text/csv' => 'csv',
             'video/mp4' => 'mp4',
         ];
+    }
+
+    private function validateSafeSvgUpload(string $path, string $module, string $fileType): void
+    {
+        if ($module !== 'settings' || !in_array($fileType, ['LOGO','IMAGE'], true)) {
+            $this->fail('SVG chỉ được phép dùng cho logo hoặc hình cấu hình giao diện');
+        }
+
+        $content = file_get_contents($path);
+        if ($content === false || trim($content) === '') {
+            $this->fail('File SVG không hợp lệ');
+        }
+
+        $lower = strtolower($content);
+        $blockedPatterns = [
+            '<script',
+            '</script',
+            'javascript:',
+            'data:text/html',
+            'data:application/javascript',
+            ' onload=',
+            ' onerror=',
+            ' onclick=',
+            ' onmouseover=',
+            '<foreignobject',
+            '<iframe',
+            '<object',
+            '<embed',
+        ];
+        foreach ($blockedPatterns as $pattern) {
+            if (str_contains($lower, $pattern)) {
+                $this->fail('SVG có nội dung không an toàn');
+            }
+        }
+
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($content);
+        if (!$xml || strtolower($xml->getName()) !== 'svg') {
+            $this->fail('File SVG không đúng định dạng');
+        }
     }
 
     private function moduleFolder(string $module): string
