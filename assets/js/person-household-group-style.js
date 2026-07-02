@@ -276,7 +276,7 @@
       '}',
       '@media (max-width: 380px) {',
       '  #personsScreen #personRows .population-card { padding: 14px !important; }',
-      '  #personsScreen #personRows .population-household-badge { min-height: 34px !important; font-size: 16px !important; padding-inline: 8px !important; }',
+      '  #personsScreen #personRows .population-household-badge { min-height: 36px !important; height: 36px !important; font-size: 18px !important; padding-inline: 8px !important; }',
       '  #personsScreen #personRows .population-status-field { grid-template-columns: minmax(68px, .66fr) auto !important; gap: 6px !important; }',
       '  #personsScreen #personRows .population-status-badge { min-width: 68px !important; padding-inline: 9px !important; font-size: 13px !important; }',
       '}',
