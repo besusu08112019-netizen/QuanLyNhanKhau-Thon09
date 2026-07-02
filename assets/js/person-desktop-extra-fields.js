@@ -162,28 +162,45 @@
     });
   }
 
+  function createCell(text) {
+    const cell = document.createElement('td');
+    cell.textContent = text || '';
+    return cell;
+  }
+
+  function rebuildOldDesktopRow(row) {
+    const cells = Array.from(row.children);
+    if (cells.length !== 10) return;
+
+    const checkbox = cells[0];
+    const household = cells[1];
+    const citizenCode = cells[2];
+    const fullName = cells[3];
+    const birth = cells[4];
+    const gender = cells[5];
+    const identity = cells[6];
+    const residence = cells[7];
+    const party = cells[8];
+    const actions = cells[9];
+    if (!checkbox || !household || !citizenCode || !fullName || !birth || !gender || !identity || !residence || !party || !actions) return;
+
+    const idInput = checkbox.querySelector('.person-check');
+    const id = idInput ? idInput.value : '';
+    const relationship = createCell('');
+    relationship.dataset.desktopExtraCell = 'relationship';
+    const age = createCell(formatAge(birth.textContent));
+    age.dataset.desktopExtraCell = 'age';
+
+    row.replaceChildren(checkbox, household, relationship, citizenCode, fullName, birth, age, gender, identity, residence, party, actions);
+    row.dataset.desktopPersonColumns = '12';
+    fillRelationshipCell(id, relationship);
+  }
+
   function normalizeRenderedDesktopRows() {
     if (!isDesktop()) return;
     document.querySelectorAll('#personRows tr:not(.group-row)').forEach(function (row) {
       if (row.querySelector('td[colspan]')) return;
-      if (row.children.length === 10) {
-        const checkbox = row.querySelector('.person-check');
-        const id = checkbox ? checkbox.value : '';
-        const householdCell = row.children[1];
-        const birthCell = row.children[4];
-        if (!householdCell || !birthCell) return;
-
-        const relationshipCell = document.createElement('td');
-        relationshipCell.dataset.desktopExtraCell = 'relationship';
-        householdCell.after(relationshipCell);
-
-        const ageCell = document.createElement('td');
-        ageCell.dataset.desktopExtraCell = 'age';
-        ageCell.textContent = formatAge(birthCell.textContent);
-        birthCell.after(ageCell);
-
-        fillRelationshipCell(id, relationshipCell);
-      }
+      if (row.children.length === 10) rebuildOldDesktopRow(row);
     });
   }
 
@@ -265,6 +282,8 @@
     bindPersonRowsObserver();
     syncPersonTable();
     setTimeout(refreshIfNeeded, 100);
+    setTimeout(syncPersonTable, 400);
+    setTimeout(syncPersonTable, 1000);
   }
 
   if (document.readyState === 'loading') {
