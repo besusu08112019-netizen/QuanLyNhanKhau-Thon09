@@ -70,6 +70,39 @@
     if (sourceSelect) sourceSelect.value = 'GPS';
   }
 
+  function prepareHouseholdPhotoInput() {
+    const form = document.getElementById('householdForm');
+    if (!form) return;
+
+    const input = form.querySelector('input[type="file"][name="householdPhoto"]');
+    if (!input) return;
+
+    if (!input.id) input.id = 'householdPhoto';
+    if (!input.accept) input.accept = 'image/*';
+
+    if (input.dataset.thon09PhotoPrepared === '1') return;
+    input.dataset.thon09PhotoPrepared = '1';
+
+    // The photo capture enhancer watches DOM mutations; this tells it to re-scan
+    // after the household photo input receives the stable id it expects.
+    const marker = document.createComment('thon09-household-photo-ready');
+    document.body.appendChild(marker);
+    marker.remove();
+  }
+
+  function observeHouseholdPhotoInput() {
+    prepareHouseholdPhotoInput();
+
+    const observer = new MutationObserver(() => prepareHouseholdPhotoInput());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('shown.bs.modal', (event) => {
+      if (event.target?.id === 'householdModal') {
+        setTimeout(prepareHouseholdPhotoInput, 30);
+      }
+    });
+  }
+
   function requestCurrentPosition(form) {
     if (!window.isSecureContext) {
       toast('GPS chỉ hoạt động trên HTTPS hoặc localhost.', 'warning');
@@ -111,6 +144,12 @@
         maximumAge: 30000,
       }
     );
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', observeHouseholdPhotoInput);
+  } else {
+    observeHouseholdPhotoInput();
   }
 
   document.addEventListener('click', (event) => {
