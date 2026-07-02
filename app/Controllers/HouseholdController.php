@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
+use App\Core\Database;
 use App\Models\Household;
 use App\Services\PopulationMovementService;
 
@@ -67,13 +68,21 @@ final class HouseholdController extends BaseController
     public function destroy(string $id): void
     {
         $user = $this->requirePermission('household', 'delete');
-        $before = $this->households->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy hộ dân', 404);
-        $this->households->softDelete((int) $id, (int) $user['id']);
-        $after = $this->households->find((int) $id) ?: $before;
-        $movementAfter = $after;
-        $movementAfter['status'] = 'ENDED';
-        $this->movementService->afterHouseholdUpdated($before, $movementAfter, $this->input() + ['reason' => 'Kết thúc hộ'], (int) $user['id']);
+        $db = Database::pdo();
+        $db->beginTransaction();
+        try {
+            $before = $this->households->find((int) $id);
+            if (!$before) $this->fail('Không tìm thấy hộ dân', 404);
+            $this->households->softDelete((int) $id, (int) $user['id']);
+            $after = $this->households->find((int) $id) ?: $before;
+            $movementAfter = $after;
+            $movementAfter['status'] = 'ENDED';
+            $this->movementService->afterHouseholdUpdated($before, $movementAfter, $this->input() + ['reason' => 'Kết thúc hộ'], (int) $user['id']);
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e;
+        }
         $this->audit($user, 'household', 'delete', 'Kết thúc hộ dân', $id);
         $this->ok(['id' => (int) $id]);
     }
@@ -83,17 +92,27 @@ final class HouseholdController extends BaseController
         $user = $this->requirePermission('household', 'delete');
         $ids = array_values(array_unique(array_filter(array_map('intval', (array) $this->input('ids', [])), fn($id) => $id > 0)));
         if (!$ids) $this->fail('Chưa chọn hộ gia đình cần kết thúc', 400);
+
+        $db = Database::pdo();
         $deleted = 0;
-        foreach ($ids as $id) {
-            $before = $this->households->find($id);
-            if (!$before) continue;
-            $this->households->softDelete($id, (int) $user['id']);
-            $after = $this->households->find($id) ?: $before;
-            $movementAfter = $after;
-            $movementAfter['status'] = 'ENDED';
-            $this->movementService->afterHouseholdUpdated($before, $movementAfter, ['reason' => 'Kết thúc hộ hàng loạt'], (int) $user['id']);
-            $deleted++;
+        $db->beginTransaction();
+        try {
+            foreach ($ids as $id) {
+                $before = $this->households->find($id);
+                if (!$before) throw new \RuntimeException('Không tìm thấy hộ dân ID ' . $id);
+                $this->households->softDelete($id, (int) $user['id']);
+                $after = $this->households->find($id) ?: $before;
+                $movementAfter = $after;
+                $movementAfter['status'] = 'ENDED';
+                $this->movementService->afterHouseholdUpdated($before, $movementAfter, ['reason' => 'Kết thúc hộ hàng loạt'], (int) $user['id']);
+                $deleted++;
+            }
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e;
         }
+
         $this->audit($user, 'household', 'delete', 'Kết thúc hàng loạt hộ gia đình', null, ['ids' => $ids, 'deleted' => $deleted]);
         $this->ok(['success' => $deleted, 'errors' => []]);
     }
