@@ -44,7 +44,7 @@
     document.querySelectorAll('#personsScreen #personRows .population-card-name').forEach(name => {
       name.style.removeProperty('font-size');
       const baseSize = parseFloat(window.getComputedStyle(name).fontSize) || 22;
-      const minSize = window.innerWidth < 360 ? 9 : (window.innerWidth < 480 ? 10 : 12);
+      const minSize = window.innerWidth < 360 ? 13 : (window.innerWidth < 480 ? 14 : 15);
       let size = Math.min(28, baseSize);
       name.style.setProperty('font-size', size + 'px', 'important');
       let guard = 0;
