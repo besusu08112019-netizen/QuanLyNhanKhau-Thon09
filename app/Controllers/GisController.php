@@ -142,11 +142,11 @@ class GisController extends BaseController
         try {
             $this->requirePermission('household', 'update');
             $item = $this->locationModel()->clearLocation($id, $this->currentUserId());
-            $this->writeLog('DELETE', 'household_location', (string) $id, $item);
-            $this->ok($item);
+            $this->writeLog('DELETE', 'household_location', (string) $id, $item ?? []);
+            $this->ok($item ?? ['id' => $id, 'removed' => true]);
         } catch (Throwable $e) {
             $this->logException('DELETE /api/gis/households/' . $id . '/location', $e);
-            $this->fail('Không xóa được vị trí hộ: ' . $e->getMessage(), 400);
+            $this->fail('Không xóa được vị trí hộ. Vui lòng thử lại hoặc kiểm tra quyền truy cập.', 400);
         }
     }
 
@@ -225,7 +225,7 @@ class GisController extends BaseController
         }
     }
 
-    private function writeLog(string $action, string $module, string $target, array $data = []): void
+    private function writeLog(string $action, string $module, string $target, ?array $data = null): void
     {
         try {
             if (!class_exists(SystemLog::class) && defined('APP_ROOT') && is_file(APP_ROOT . '/app/Models/SystemLog.php')) {
@@ -239,7 +239,7 @@ class GisController extends BaseController
                     'module' => $module,
                     'target_id' => $target,
                     'description' => $module . ' ' . $action,
-                    'metadata' => $data,
+                    'metadata' => $data ?? [],
                 ]);
             }
         } catch (Throwable $ignored) {
