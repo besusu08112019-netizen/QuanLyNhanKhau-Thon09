@@ -1,6 +1,33 @@
 (function () {
   'use strict';
 
+  function fitPopulationNames() {
+    if (window.innerWidth >= 1200) return;
+    document.querySelectorAll('#personsScreen #personRows .population-card-name').forEach(function (name) {
+      name.style.fontSize = '';
+      var baseSize = parseFloat(window.getComputedStyle(name).fontSize) || 22;
+      var minSize = window.innerWidth < 360 ? 10 : (window.innerWidth < 480 ? 11 : 13);
+      var size = Math.min(28, baseSize);
+      name.style.fontSize = size + 'px';
+      var guard = 0;
+      while (name.scrollWidth > name.clientWidth + 1 && size > minSize && guard < 48) {
+        size -= 0.5;
+        name.style.fontSize = size + 'px';
+        guard += 1;
+      }
+    });
+  }
+
+  function bindPopulationNameObserver() {
+    var rows = document.querySelector('#personRows');
+    if (!rows || rows.__thon09NameFitObserver) return;
+    rows.__thon09NameFitObserver = new MutationObserver(function () {
+      window.requestAnimationFrame(fitPopulationNames);
+      setTimeout(fitPopulationNames, 80);
+    });
+    rows.__thon09NameFitObserver.observe(rows, { childList: true, subtree: true });
+  }
+
   function injectFinalResponsiveStyles() {
     var old = document.getElementById('thon09-responsive-final-production');
     if (old) old.remove();
@@ -15,7 +42,7 @@
       '  #personsScreen #personRows .population-card { width: 100% !important; max-width: 100% !important; overflow: hidden !important; gap: clamp(8px, 1.9vw, 12px) !important; padding: clamp(12px, 3vw, 18px) !important; }',
       '  #personsScreen #personRows .population-card-head { display: grid !important; grid-template-columns: minmax(0, 58fr) minmax(0, 42fr) !important; align-items: center !important; gap: clamp(6px, 1.8vw, 10px) !important; }',
       '  #personsScreen #personRows .population-card-title-stack { min-width: 0 !important; width: 100% !important; overflow: hidden !important; }',
-      '  #personsScreen #personRows .population-card-name { display: block !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; word-break: normal !important; overflow-wrap: normal !important; font-size: clamp(18px, 4.8vw, 28px) !important; line-height: 1.18 !important; letter-spacing: 0 !important; }',
+      '  #personsScreen #personRows .population-card-name { display: block !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: clip !important; word-break: normal !important; overflow-wrap: normal !important; font-size: clamp(10px, 3.25vw, 28px) !important; line-height: 1.18 !important; letter-spacing: 0 !important; }',
       '  #personsScreen #personRows .population-card-head-actions { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; align-items: center !important; justify-content: end !important; gap: clamp(6px, 1.6vw, 8px) !important; min-width: 0 !important; overflow: hidden !important; }',
       '  #personsScreen #personRows .population-household-badge { justify-self: end !important; width: auto !important; max-width: 100% !important; min-width: 0 !important; height: clamp(32px, 7vw, 38px) !important; min-height: clamp(32px, 7vw, 38px) !important; padding: 0 clamp(7px, 2vw, 10px) !important; font-size: clamp(14px, 4vw, 18px) !important; line-height: 1 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }',
       '  #personsScreen #personRows .population-check { align-self: center !important; justify-self: end !important; width: clamp(20px, 5vw, 24px) !important; height: clamp(20px, 5vw, 24px) !important; margin: 0 !important; }',
@@ -63,17 +90,23 @@
   }
 
   function markLoaded() {
-    document.documentElement.setAttribute('data-thon09-responsive-final', '1');
+    document.documentElement.setAttribute('data-thon09-responsive-final', '2');
   }
 
-  injectFinalResponsiveStyles();
-  markLoaded();
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      injectFinalResponsiveStyles();
-      markLoaded();
-    });
+  function bootFinalResponsive() {
+    injectFinalResponsiveStyles();
+    bindPopulationNameObserver();
+    window.requestAnimationFrame(fitPopulationNames);
+    setTimeout(fitPopulationNames, 80);
+    markLoaded();
   }
-  setTimeout(injectFinalResponsiveStyles, 800);
-  setTimeout(injectFinalResponsiveStyles, 1800);
+
+  window.thon09FitPopulationNames = fitPopulationNames;
+  bootFinalResponsive();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootFinalResponsive);
+  }
+  window.addEventListener('resize', function () { window.requestAnimationFrame(fitPopulationNames); });
+  setTimeout(bootFinalResponsive, 800);
+  setTimeout(bootFinalResponsive, 1800);
 })();
