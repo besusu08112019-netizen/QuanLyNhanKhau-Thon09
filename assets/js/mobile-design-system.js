@@ -10,6 +10,7 @@
   const GROUP_JS_SRC = 'assets/js/person-household-group-style.js?v=20260702-person-final-ui';
   const GIS_LOCATION_JS_SRC = 'assets/js/gis-household-location.js?v=20260702-sprint15-3';
   const PERSON_DESKTOP_FIELDS_JS_SRC = 'assets/js/person-desktop-extra-fields.js?v=20260702-desktop-person-fields-4';
+  const PERSON_DESKTOP_COLUMN_ALIGNER_JS_SRC = 'assets/js/person-desktop-column-aligner.js?v=20260702-desktop-person-aligner-1';
 
   function ensureScript(src, fileName) {
     const existing = document.querySelector('script[src*="' + fileName + '"]');
@@ -43,6 +44,7 @@
     ensureScript(GROUP_JS_SRC, 'person-household-group-style.js');
     ensureScript(GIS_LOCATION_JS_SRC, 'gis-household-location.js');
     ensureScript(PERSON_DESKTOP_FIELDS_JS_SRC, 'person-desktop-extra-fields.js');
+    ensureScript(PERSON_DESKTOP_COLUMN_ALIGNER_JS_SRC, 'person-desktop-column-aligner.js');
   }
 
   function fitPopulationNames() {
