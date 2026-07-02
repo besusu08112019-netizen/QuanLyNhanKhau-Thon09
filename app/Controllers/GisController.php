@@ -5,10 +5,12 @@ namespace App\Controllers;
 use App\Core\BaseController;
 use App\Core\SimplePdf;
 use App\Models\GisArea;
+use App\Models\GisHouseholdLocation;
 
 final class GisController extends BaseController
 {
     private ?GisArea $areas = null;
+    private ?GisHouseholdLocation $locations = null;
 
     public function __construct($request)
     {
@@ -32,12 +34,24 @@ final class GisController extends BaseController
         }
     }
 
+    public function households(): void
+    {
+        try {
+            $this->requirePermission('household', 'read');
+            $this->ok($this->locationModel()->markers($_GET));
+        } catch (\Throwable $e) {
+            $this->logApiFailure('GET /api/gis/households', $_GET, $e);
+            throw $e;
+        }
+    }
+
     public function storeArea(): void
     {
         $input = $this->input();
         try {
             $user = $this->requirePermission('household', 'update');
             $area = $this->areasModel()->save($input, (int) $user['id']);
+            $this->locationModel()->recalculateAreaCodes();
             $this->audit($user, 'gis', 'save_polygon', 'Lưu ranh giới khu vực bản đồ', $area['id'] ?? null, ['area_code' => $area['area_code'] ?? null]);
             $this->ok($area);
         } catch (\Throwable $e) {
@@ -53,6 +67,7 @@ final class GisController extends BaseController
         try {
             $user = $this->requirePermission('household', 'update');
             $area = $this->areasModel()->save(is_array($input) ? $input : ['id' => (int) $id], (int) $user['id']);
+            $this->locationModel()->recalculateAreaCodes();
             $this->audit($user, 'gis', 'update_polygon', 'Cập nhật ranh giới khu vực bản đồ', $area['id'] ?? $id, ['area_code' => $area['area_code'] ?? null]);
             $this->ok($area);
         } catch (\Throwable $e) {
@@ -66,10 +81,38 @@ final class GisController extends BaseController
         try {
             $user = $this->requirePermission('household', 'update');
             $this->areasModel()->delete((int) $id, (int) $user['id']);
+            $this->locationModel()->recalculateAreaCodes();
             $this->audit($user, 'gis', 'delete_polygon', 'Xóa ranh giới khu vực bản đồ', $id);
             $this->ok(['id' => (int) $id]);
         } catch (\Throwable $e) {
             $this->logApiFailure('DELETE /api/gis/areas/' . $id, ['id' => $id], $e);
+            throw $e;
+        }
+    }
+
+    public function saveHouseholdLocation(string $id): void
+    {
+        $input = $this->input();
+        try {
+            $user = $this->requirePermission('household', 'update');
+            $marker = $this->locationModel()->saveLocation((int) $id, is_array($input) ? $input : [], (int) $user['id']);
+            $this->audit($user, 'gis', 'save_household_location', 'Cập nhật vị trí hộ gia đình trên bản đồ', $id, ['area_code' => $marker['area_code'] ?? null]);
+            $this->ok($marker);
+        } catch (\Throwable $e) {
+            $this->logApiFailure('PUT /api/gis/households/' . $id . '/location', is_array($input) ? $input : [], $e);
+            throw $e;
+        }
+    }
+
+    public function clearHouseholdLocation(string $id): void
+    {
+        try {
+            $user = $this->requirePermission('household', 'update');
+            $this->locationModel()->clearLocation((int) $id, (int) $user['id']);
+            $this->audit($user, 'gis', 'clear_household_location', 'Xóa vị trí hộ gia đình trên bản đồ', $id);
+            $this->ok(['id' => (int) $id]);
+        } catch (\Throwable $e) {
+            $this->logApiFailure('DELETE /api/gis/households/' . $id . '/location', ['id' => $id], $e);
             throw $e;
         }
     }
@@ -100,6 +143,11 @@ final class GisController extends BaseController
     private function areasModel(): GisArea
     {
         return $this->areas ??= new GisArea();
+    }
+
+    private function locationModel(): GisHouseholdLocation
+    {
+        return $this->locations ??= new GisHouseholdLocation();
     }
 
     private function emptyAreasResponse(\Throwable $e): array
