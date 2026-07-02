@@ -135,21 +135,26 @@ final class GisArea extends BaseModel
             INDEX idx_gis_status (status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 
-        $areaColumns = ['polygon' => 'LONGTEXT NULL', 'geometry_json' => 'LONGTEXT NULL'];
-        foreach ($areaColumns as $column => $definition) {
+        foreach (['polygon' => 'LONGTEXT NULL', 'geometry_json' => 'LONGTEXT NULL'] as $column => $definition) {
             if (!$this->columnExists('gis_areas', $column)) $this->execute('ALTER TABLE gis_areas ADD COLUMN ' . $column . ' ' . $definition);
         }
 
         $householdColumns = [
-            'latitude' => 'DECIMAL(10,7) NULL',
-            'longitude' => 'DECIMAL(10,7) NULL',
+            'latitude' => 'DECIMAL(10,8) NULL',
+            'longitude' => 'DECIMAL(11,8) NULL',
+            'location_accuracy' => 'INT NULL',
+            'location_source' => "ENUM('MANUAL','GPS') NOT NULL DEFAULT 'MANUAL'",
             'google_map_url' => 'VARCHAR(255) NULL',
             'location_note' => 'TEXT NULL',
             'location_updated_at' => 'DATETIME NULL',
-            'location_updated_by' => 'INT NULL',
+            'location_updated_by' => 'BIGINT NULL',
         ];
         foreach ($householdColumns as $column => $definition) {
-            if (!$this->columnExists('households', $column)) $this->execute('ALTER TABLE households ADD COLUMN ' . $column . ' ' . $definition);
+            if (!$this->columnExists('households', $column)) {
+                $this->execute('ALTER TABLE households ADD COLUMN ' . $column . ' ' . $definition);
+            } elseif (in_array($column, ['latitude', 'longitude', 'location_updated_by'], true)) {
+                $this->execute('ALTER TABLE households MODIFY COLUMN ' . $column . ' ' . $definition);
+            }
         }
     }
 
