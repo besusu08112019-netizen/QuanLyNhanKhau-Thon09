@@ -2,6 +2,7 @@
   'use strict';
 
   const DESKTOP_QUERY = '(min-width: 1200px)';
+  const relationshipCache = new Map();
 
   function isDesktop() {
     return window.matchMedia ? window.matchMedia(DESKTOP_QUERY).matches : window.innerWidth >= 1200;
@@ -70,6 +71,35 @@
     return textValue(row.relationship || row.relationship_to_head || row.relationshipToHead || row.relation_to_head || row.household_relationship);
   }
 
+  function authHeaders() {
+    const token = window.App && window.App.token ? window.App.token : (localStorage.getItem('thon09_token') || '');
+    return token ? { Authorization: 'Bearer ' + token } : {};
+  }
+
+  async function fillRelationshipCell(id, cell) {
+    if (!id || !cell || cell.dataset.relationshipLoading === '1') return;
+    if (relationshipCache.has(id)) {
+      cell.textContent = relationshipCache.get(id);
+      return;
+    }
+
+    cell.dataset.relationshipLoading = '1';
+    try {
+      const response = await fetch('/api/persons/' + encodeURIComponent(id), {
+        headers: { Accept: 'application/json', ...authHeaders() }
+      });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const row = await response.json();
+      const value = relationshipValue(row && (row.data || row));
+      relationshipCache.set(id, value);
+      cell.textContent = value;
+    } catch (_) {
+      cell.textContent = '';
+    } finally {
+      cell.dataset.relationshipLoading = '0';
+    }
+  }
+
   function desktopPersonRow(row) {
     const party = Number(row.party_member || row.partyMember || 0) === 1;
     const residenceClass = row.presence_status === 'AWAY'
@@ -132,9 +162,44 @@
     });
   }
 
+  function normalizeRenderedDesktopRows() {
+    if (!isDesktop()) return;
+    document.querySelectorAll('#personRows tr:not(.group-row)').forEach(function (row) {
+      if (row.querySelector('td[colspan]')) return;
+      if (row.children.length === 10) {
+        const checkbox = row.querySelector('.person-check');
+        const id = checkbox ? checkbox.value : '';
+        const householdCell = row.children[1];
+        const birthCell = row.children[4];
+        if (!householdCell || !birthCell) return;
+
+        const relationshipCell = document.createElement('td');
+        relationshipCell.dataset.desktopExtraCell = 'relationship';
+        householdCell.after(relationshipCell);
+
+        const ageCell = document.createElement('td');
+        ageCell.dataset.desktopExtraCell = 'age';
+        ageCell.textContent = formatAge(birthCell.textContent);
+        birthCell.after(ageCell);
+
+        fillRelationshipCell(id, relationshipCell);
+      }
+    });
+  }
+
   function syncPersonTable() {
     syncDesktopHeader();
     syncColspans();
+    normalizeRenderedDesktopRows();
+  }
+
+  function bindPersonRowsObserver() {
+    const rows = document.querySelector('#personRows');
+    if (!rows || rows.__thon09DesktopPersonFieldsObserver) return;
+    rows.__thon09DesktopPersonFieldsObserver = new MutationObserver(function () {
+      window.requestAnimationFrame(syncPersonTable);
+    });
+    rows.__thon09DesktopPersonFieldsObserver.observe(rows, { childList: true, subtree: true });
   }
 
   function patchPersonRow() {
@@ -197,6 +262,7 @@
     patchPersonRow();
     patchLoadPersons();
     patchPersonDetailNormalization();
+    bindPersonRowsObserver();
     syncPersonTable();
     setTimeout(refreshIfNeeded, 100);
   }
