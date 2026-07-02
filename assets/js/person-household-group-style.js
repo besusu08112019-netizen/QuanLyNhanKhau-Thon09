@@ -12,6 +12,15 @@
     });
   }
 
+  function firstValue(row, keys) {
+    row = row || {};
+    for (var i = 0; i < keys.length; i += 1) {
+      var value = row[keys[i]];
+      if (value !== null && value !== undefined && String(value).trim() !== '') return String(value).trim();
+    }
+    return '';
+  }
+
   function parseDate(value) {
     var text = String(value || '').trim();
     var match = text.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
@@ -39,15 +48,6 @@
     var age = now.getFullYear() - date.getFullYear();
     if (now.getMonth() < date.getMonth() || (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())) age -= 1;
     return age >= 0 && age < 130 ? age : null;
-  }
-
-  function firstValue(row, keys) {
-    row = row || {};
-    for (var i = 0; i < keys.length; i += 1) {
-      var value = row[keys[i]];
-      if (value !== null && value !== undefined && String(value).trim() !== '') return String(value).trim();
-    }
-    return '';
   }
 
   function householdCodeOf(row) {
@@ -97,9 +97,7 @@
   }
 
   function genderIcon(gender) {
-    return normalize(gender).includes('nu')
-      ? '<i class="fa-solid fa-venus population-card-icon-female"></i>'
-      : '<i class="fa-solid fa-mars population-card-icon-male"></i>';
+    return normalize(gender).includes('nu') ? '<i class="fa-solid fa-venus population-card-icon-female"></i>' : '<i class="fa-solid fa-mars population-card-icon-male"></i>';
   }
 
   function detailBox(iconHtml, label, value, extraHtml, extraClass) {
@@ -123,34 +121,26 @@
 
   function mobileCard(row, residence, party) {
     var id = Number(row && row.id) || 0;
-    var householdCode = row.household_code || '';
-    var relation = relationshipText(row);
     var birthValue = row.date_of_birth || row.birth_date || '';
     var birthText = formatDate(birthValue);
     var age = ageFromBirthday(birthValue);
+    var relation = relationshipText(row);
     var ageHtml = age === null ? '' : '<small class="population-birth-age">' + age + ' tuổi</small>';
     var ethnicity = firstValue(row, ['ethnicity', 'ethnicity_name', 'ethnic_group', 'ethnicGroup', 'nation', 'nation_name']);
     var identity = row.identity_number || row.personal_id || row.cccd || '';
-    var adminDetails = detailBox('<i class="fa-solid fa-users population-card-icon-age"></i>', 'Đảng viên', party ? 'Có' : 'Không', '', party ? 'population-party-yes' : 'population-party-no');
     return '<td class="population-mobile-cell" data-mobile-role="population-card" colspan="10">'
       + '<article class="population-card">'
       + '<header class="population-card-head"><div class="population-card-title-stack">'
       + '<button type="button" class="population-card-name" onclick="showPerson(' + id + ')">' + escapeHtml(row.full_name || '') + '</button>'
       + (relation ? '<span class="population-relation-badge">' + relationshipIcon(relation) + ' ' + escapeHtml(relation) + '</span>' : '')
       + '</div><div class="population-card-head-actions">'
-      + (householdCode ? '<span class="population-household-badge">' + escapeHtml(householdCode) + '</span>' : '')
+      + (row.household_code ? '<span class="population-household-badge">' + escapeHtml(row.household_code) + '</span>' : '')
       + '<input type="checkbox" class="person-check population-check" value="' + id + '">'
       + '</div></header>'
       + '<div class="population-code-grid"><div class="population-code-box"><span>Mã nhân khẩu</span><strong>' + escapeHtml(row.citizen_code || '') + '</strong></div><div class="population-code-box"><span>CCCD/Số định danh</span><strong>' + escapeHtml(identity) + '</strong></div></div>'
-      + '<div class="population-bio-grid">'
-      + detailBox('<i class="fa-regular fa-calendar-days population-card-icon-date"></i>', 'Ngày sinh', birthText, ageHtml, 'population-birth-box')
-      + detailBox(genderIcon(row.gender || ''), 'Giới tính', row.gender || '', '', 'population-gender-box')
-      + '</div>'
-      + '<div class="population-context-grid">'
-      + detailBox('<i class="fa-solid fa-users population-card-icon-age"></i>', 'Dân tộc', ethnicity, '', 'population-ethnicity-box')
-      + detailBox('<i class="fa-solid fa-house-chimney population-card-icon-home"></i>', 'Cư trú', residence.text, '', 'population-residence-box ' + residence.cls)
-      + '</div>'
-      + '<div class="population-admin-grid">' + adminDetails + '</div>'
+      + '<div class="population-bio-grid">' + detailBox('<i class="fa-regular fa-calendar-days population-card-icon-date"></i>', 'Ngày sinh', birthText, ageHtml, 'population-birth-box') + detailBox(genderIcon(row.gender || ''), 'Giới tính', row.gender || '', '', 'population-gender-box') + '</div>'
+      + '<div class="population-context-grid">' + detailBox('<i class="fa-solid fa-users population-card-icon-age"></i>', 'Dân tộc', ethnicity, '', 'population-ethnicity-box') + detailBox('<i class="fa-solid fa-house-chimney population-card-icon-home"></i>', 'Cư trú', residence.text, '', 'population-residence-box ' + residence.cls) + '</div>'
+      + '<div class="population-admin-grid">' + detailBox('<i class="fa-solid fa-users population-card-icon-age"></i>', 'Đảng viên', party ? 'Có' : 'Không', '', party ? 'population-party-yes' : 'population-party-no') + '</div>'
       + '<div class="population-action-grid"><button type="button" class="population-action population-action-view" onclick="showPerson(' + id + ')"><i class="fa-regular fa-eye"></i><span>Xem</span></button><button type="button" class="population-action population-action-edit" onclick="openPersonForm(' + id + ')"><i class="fa-regular fa-pen-to-square"></i><span>Sửa</span></button><button type="button" class="population-action population-action-delete" onclick="deletePerson(' + id + ')"><i class="fa-regular fa-trash-can"></i><span>Xóa</span></button></div>'
       + '</article></td>';
   }
@@ -200,12 +190,9 @@
       var total = 0;
       if (searchText) {
         var extra = householdText ? { householdId: householdText } : {};
-        var allItems = typeof window.fetchAllPaged === 'function'
-          ? await window.fetchAllPaged('/api/persons', extra)
-          : ((await window.api('/api/persons?' + new URLSearchParams(Object.assign({ page: 1, pageSize: 10000 }, extra)).toString())).items || []);
+        var allItems = typeof window.fetchAllPaged === 'function' ? await window.fetchAllPaged('/api/persons', extra) : ((await window.api('/api/persons?' + new URLSearchParams(Object.assign({ page: 1, pageSize: 10000 }, extra)).toString())).items || []);
         var filtered = allItems.filter(function (row) {
-          return [row.full_name, row.citizen_code, row.identity_number, row.personal_id, row.national_id, row.phone, row.household_code, row.current_address, row.household_address]
-            .some(function (value) { return normalize(value).includes(searchText); });
+          return [row.full_name, row.citizen_code, row.identity_number, row.personal_id, row.national_id, row.phone, row.household_code, row.current_address, row.household_address].some(function (value) { return normalize(value).includes(searchText); });
         });
         var sorted = sortItems(filtered);
         total = sorted.length;
@@ -247,7 +234,7 @@
   #personsScreen #personRows .population-admin-grid{display:grid!important;grid-template-columns:1fr!important;gap:clamp(7px,1.8vw,10px)!important;width:100%!important;overflow:hidden!important}#personsScreen #personRows .population-admin-grid .population-detail-box{min-height:clamp(50px,12vw,62px)!important}.population-residence-box.population-status-home,.population-party-yes{background:#eefaf3!important;border-color:#bfead2!important}.population-residence-box.population-status-temp{background:#fff8e8!important;border-color:#fde1a6!important}.population-residence-box.population-status-away{background:#fff4e6!important;border-color:#fed7aa!important}.population-party-no{background:#f8fafc!important;border-color:#e5e7eb!important}
   #personsScreen #personRows .population-action-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(7px,1.8vw,10px)!important;width:100%!important}#personsScreen #personRows .population-action{width:100%!important;min-width:0!important;height:clamp(44px,10vw,48px)!important;min-height:clamp(44px,10vw,48px)!important;padding:0 clamp(5px,1.6vw,8px)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:clamp(5px,1.4vw,8px)!important;overflow:hidden!important;border-radius:12px!important}#personsScreen #personRows .population-action span{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:clamp(12px,3vw,15px)!important}#personsScreen #personRows .population-action i{flex:0 0 auto!important;font-size:clamp(16px,4vw,20px)!important}
 }
-@media (max-width:479px){#personsScreen #personRows .population-card-head{grid-template-columns:minmax(0,60fr) minmax(0,40fr)!important}#personsScreen #personRows .population-code-box{min-height:clamp(48px,13vw,58px)!important}#personsScreen #personRows .population-code-box strong{font-size:clamp(13px,4vw,17px)!important}#personsScreen #personRows .population-detail-box{min-height:clamp(60px,17vw,74px)!important;padding:clamp(7px,2vw,9px)!important;gap:clamp(6px,1.7vw,9px)!important}#personsScreen #personRows .population-detail-label{font-size:clamp(10px,2.9vw,12px)!important}#personsScreen #personRows .population-detail-value{font-size:clamp(12px,3.8vw,16px)!important}#personsScreen #personRows .population-birth-age{font-size:clamp(10px,3vw,12px)!important}.population-card-icon{font-size:clamp(16px,4vw,20px)!important}}
+@media (max-width:479px){#personsScreen #personRows .population-card-head{grid-template-columns:minmax(0,60fr) minmax(0,40fr)!important}#personsScreen #personRows .population-code-box{min-height:clamp(48px,13vw,58px)!important;padding:6px!important}#personsScreen #personRows .population-code-box strong{font-size:clamp(10px,3.25vw,14px)!important;letter-spacing:-.2px!important}#personsScreen #personRows .population-detail-box{grid-template-columns:minmax(0,1fr)!important;min-height:clamp(58px,16vw,72px)!important;padding:clamp(6px,1.7vw,8px)!important;gap:3px!important}.population-card-icon{display:none!important}#personsScreen #personRows .population-detail-label{font-size:clamp(9px,2.7vw,12px)!important}#personsScreen #personRows .population-detail-value{font-size:clamp(10px,3.25vw,14px)!important;letter-spacing:-.15px!important}#personsScreen #personRows .population-birth-age{font-size:clamp(9px,2.8vw,12px)!important}}
 @media (min-width:768px) and (max-width:1199px){#personsScreen #personRows{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))!important;gap:0 16px!important}#personsScreen #personRows .person-household-group-row{grid-column:1/-1!important}#personsScreen #personRows .population-row{min-width:0!important}#personsScreen #personRows .population-card{height:100%!important}}
 @media (min-width:1200px){#personsScreen #personRows .population-mobile-cell{display:none!important}#personsScreen #personRows .population-desktop-cell{display:table-cell!important}}
     `;
