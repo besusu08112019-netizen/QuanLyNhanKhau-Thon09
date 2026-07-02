@@ -85,6 +85,50 @@
     return textValue(row.relationship || row.relationship_to_head || row.relationshipToHead || row.relation_to_head || row.household_relationship || row.member_relationship);
   }
 
+  function applyResidence(params, value) {
+    if (value === 'PERMANENT' || value === 'TEMPORARY') params.set('residencyStatus', value);
+    else if (value === 'AWAY') params.set('presenceStatus', 'AWAY');
+  }
+
+  function applyAgeGroup(params, value) {
+    if (value === '0_5') { params.set('ageFrom', '0'); params.set('ageTo', '5'); }
+    else if (value === '6_14') { params.set('ageFrom', '6'); params.set('ageTo', '14'); }
+    else if (value === '15_17') { params.set('ageFrom', '15'); params.set('ageTo', '17'); }
+    else if (value === '18_59') { params.set('ageFrom', '18'); params.set('ageTo', '59'); }
+    else if (value === '60_plus') params.set('ageFrom', '60');
+  }
+
+  function appendPersonFilter(params, key, value) {
+    if (!value) return;
+    if (key === 'residenceCombined') applyResidence(params, value);
+    else if (key === 'ageGroup') applyAgeGroup(params, value);
+    else params.set(key, value);
+  }
+
+  function buildPersonParams(includeSearch) {
+    const state = window.App && App.persons ? App.persons : { page: 1, pageSize: 20 };
+    const params = new URLSearchParams({ page: state.page || 1, pageSize: state.pageSize || 20 });
+    if (state.householdId) params.set('householdId', state.householdId);
+    if (includeSearch) {
+      const search = textValue((document.querySelector('#personSearch') && document.querySelector('#personSearch').value) || state.search || '');
+      if (search) params.set('search', search);
+    }
+    document.querySelectorAll('[data-person-filter]').forEach(el => {
+      const key = el.dataset.personFilter;
+      const value = textValue(el.value || '');
+      if (state && key) state[key] = value;
+      appendPersonFilter(params, key, value);
+    });
+    return params;
+  }
+
+  function activeFilterObject() {
+    const params = buildPersonParams(false);
+    params.delete('page');
+    params.delete('pageSize');
+    return Object.fromEntries(params.entries());
+  }
+
   function ensurePersonTableHeader() {
     const header = document.querySelector('#personsScreen .person-table thead tr');
     if (!header || header.dataset.thon09PersonColumns === '12') return;
@@ -133,25 +177,17 @@
         const searchEl = document.querySelector('#personSearch');
         const searchText = normalizeValue((searchEl && searchEl.value) || (window.App && App.persons && App.persons.search) || '');
         if (window.App && App.persons) App.persons.search = (searchEl && searchEl.value || '').trim();
-        const householdText = (window.App && App.persons && App.persons.householdId || '').trim();
         let items = [];
         let total = 0;
         if (searchText) {
-          const extra = householdText ? { householdId: householdText } : (typeof window.activeFilterParams === 'function' ? window.activeFilterParams() : {});
-          const allItems = await window.fetchAllPaged('/api/persons', extra);
+          const allItems = await window.fetchAllPaged('/api/persons', activeFilterObject());
           const filtered = allItems.filter(row => [row.full_name, row.citizen_code, row.identity_number, row.personal_id, row.national_id, row.phone, row.household_code, row.current_address, row.household_address]
             .some(value => normalizeValue(value).includes(searchText)));
           total = filtered.length;
           const startIndex = ((App.persons.page || 1) - 1) * (App.persons.pageSize || 20);
           items = filtered.slice(startIndex, startIndex + (App.persons.pageSize || 20));
         } else {
-          let params;
-          if (typeof window.personParams === 'function') params = window.personParams(false);
-          else {
-            params = new URLSearchParams({ page: App.persons.page || 1, pageSize: App.persons.pageSize || 20 });
-            if (householdText) params.set('householdId', householdText);
-          }
-          const data = await window.api('/api/persons?' + params.toString());
+          const data = await window.api('/api/persons?' + buildPersonParams(false).toString());
           items = data.items || [];
           total = data.total || 0;
         }
