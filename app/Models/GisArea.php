@@ -169,7 +169,7 @@ final class GisArea extends BaseModel
             FROM households h
             LEFT JOIN v_household_member_counts v ON v.household_id = h.id
             LEFT JOIN citizens c ON c.household_id = h.id
-            WHERE h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")
+            WHERE (h.status IS NULL OR h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE"))
             GROUP BY h.id, h.household_code, h.latitude, h.longitude, h.poor_household, h.near_poor_household, h.meritorious_family, h.disabled_household, v.total_members, v.at_home_count, v.away_count');
     }
 
@@ -250,7 +250,6 @@ final class GisArea extends BaseModel
             'area_code' => (string) $row['area_code'],
             'polygon' => $polygon,
             'geometry' => $polygon,
-            'geojson' => $this->toGeoJson($polygon),
             'color' => (string) ($row['color'] ?? '#0f8a4b'),
             'note' => (string) ($row['note'] ?? ''),
             'updated_at' => $row['updated_at'] ?? $row['created_at'] ?? null,
