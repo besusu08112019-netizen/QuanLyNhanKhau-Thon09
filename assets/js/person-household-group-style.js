@@ -2,14 +2,7 @@
   'use strict';
 
   function normalize(value) {
-    return String(value || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/Đ/g, 'D')
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .trim();
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/\s+/g, ' ').trim();
   }
 
   function escapeHtml(value) {
@@ -21,18 +14,16 @@
 
   function parseDate(value) {
     var text = String(value || '').trim();
-    var day, month, year;
     var match = text.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-    if (match) {
-      day = Number(match[1]); month = Number(match[2]); year = Number(match[3]);
-    } else {
+    var day, month, year;
+    if (match) { day = Number(match[1]); month = Number(match[2]); year = Number(match[3]); }
+    else {
       match = text.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
       if (!match) return null;
       year = Number(match[1]); month = Number(match[2]); day = Number(match[3]);
     }
     var date = new Date(year, month - 1, day);
-    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
-    return date;
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
   }
 
   function formatDate(value) {
@@ -50,13 +41,8 @@
     return age >= 0 && age < 130 ? age : null;
   }
 
-  function residenceInfo(row) {
-    if (row && row.presence_status === 'AWAY') return { text: 'Tạm vắng', cls: 'population-status-away', badgeCls: 'person-badge-away' };
-    if (row && row.residency_status === 'TEMPORARY') return { text: 'Tạm trú', cls: 'population-status-temp', badgeCls: 'person-badge-temp' };
-    if (row && (row.residency_status === 'MOVED' || row.life_status === 'MOVED')) return { text: 'Chuyển đi', cls: 'population-status-away', badgeCls: 'person-badge-away' };
-    if (row && (row.life_status === 'DECEASED' || row.life_status === 'DEAD')) return { text: 'Đã mất', cls: 'population-status-muted', badgeCls: 'person-badge-muted' };
-    var text = typeof window.residencyLabel === 'function' ? window.residencyLabel(row && row.residency_status) : 'Thường trú';
-    return { text: text || 'Thường trú', cls: 'population-status-home', badgeCls: 'person-badge-home' };
+  function householdCodeOf(row) {
+    return String(row && (row.household_code || row.householdCode || row.household_id || row.householdId) || 'Chưa có hộ').trim() || 'Chưa có hộ';
   }
 
   function relationshipText(row) {
@@ -79,11 +65,6 @@
     return text === 'chu ho' || text.includes('chu ho') || text === 'head';
   }
 
-  function householdCodeOf(row) {
-    var code = row && (row.household_code || row.householdCode || row.household_id || row.householdId);
-    return String(code || 'Chưa có hộ').trim() || 'Chưa có hộ';
-  }
-
   function compareText(a, b) {
     return String(a || '').localeCompare(String(b || ''), 'vi', { numeric: true, sensitivity: 'base' });
   }
@@ -95,6 +76,15 @@
         || compareText(a && a.full_name, b && b.full_name)
         || compareText(a && a.citizen_code, b && b.citizen_code);
     }) : [];
+  }
+
+  function residenceInfo(row) {
+    if (row && row.presence_status === 'AWAY') return { text: 'Tạm vắng', cls: 'population-status-away', badgeCls: 'person-badge-away' };
+    if (row && row.residency_status === 'TEMPORARY') return { text: 'Tạm trú', cls: 'population-status-temp', badgeCls: 'person-badge-temp' };
+    if (row && (row.residency_status === 'MOVED' || row.life_status === 'MOVED')) return { text: 'Chuyển đi', cls: 'population-status-away', badgeCls: 'person-badge-away' };
+    if (row && (row.life_status === 'DECEASED' || row.life_status === 'DEAD')) return { text: 'Đã mất', cls: 'population-status-muted', badgeCls: 'person-badge-muted' };
+    var text = typeof window.residencyLabel === 'function' ? window.residencyLabel(row && row.residency_status) : 'Thường trú';
+    return { text: text || 'Thường trú', cls: 'population-status-home', badgeCls: 'person-badge-home' };
   }
 
   function genderIcon(gender) {
@@ -130,36 +120,22 @@
     var age = ageFromBirthday(row.date_of_birth || row.birth_date || '');
     return '<td class="population-mobile-cell" data-mobile-role="population-card" colspan="10">'
       + '<article class="population-card">'
-      + '<header class="population-card-head">'
-      + '<div class="population-card-title-stack">'
+      + '<header class="population-card-head"><div class="population-card-title-stack">'
       + '<button type="button" class="population-card-name" onclick="showPerson(' + id + ')">' + escapeHtml(row.full_name || '') + '</button>'
       + (relation ? '<span class="population-relation-badge">' + relationshipIcon(relation) + ' ' + escapeHtml(relation) + '</span>' : '')
-      + '</div>'
-      + '<div class="population-card-head-actions">'
+      + '</div><div class="population-card-head-actions">'
       + (householdCode ? '<span class="population-household-badge">' + escapeHtml(householdCode) + '</span>' : '')
       + '<input type="checkbox" class="person-check population-check" value="' + id + '">'
-      + '</div>'
-      + '</header>'
-      + '<div class="population-code-grid">'
-      + '<div class="population-code-box"><span>Mã nhân khẩu</span><strong>' + escapeHtml(row.citizen_code || '') + '</strong></div>'
-      + '<div class="population-code-box"><span>CCCD/Số định danh</span><strong>' + escapeHtml(row.identity_number || row.personal_id || row.cccd || '') + '</strong></div>'
-      + '</div>'
+      + '</div></header>'
+      + '<div class="population-code-grid"><div class="population-code-box"><span>Mã nhân khẩu</span><strong>' + escapeHtml(row.citizen_code || '') + '</strong></div><div class="population-code-box"><span>CCCD/Số định danh</span><strong>' + escapeHtml(row.identity_number || row.personal_id || row.cccd || '') + '</strong></div></div>'
       + '<div class="population-info-grid">'
       + infoBox('<i class="fa-regular fa-calendar-days population-card-icon-date"></i>', 'Ngày sinh', birthText)
       + infoBox(genderIcon(row.gender || ''), 'Giới tính', row.gender || '')
       + infoBox('<i class="fa-solid fa-users population-card-icon-age"></i>', 'Tuổi', age === null ? '--' : age + ' tuổi')
       + '</div>'
-      + '<div class="population-status-grid">'
-      + '<div class="population-status-field"><span>Cư trú</span><em class="population-status-badge ' + residence.cls + '">' + escapeHtml(residence.text) + '</em></div>'
-      + '<div class="population-status-field"><span>Đảng viên</span><em class="population-status-badge ' + (party ? 'population-status-party' : 'population-status-muted') + '">' + (party ? 'Có' : 'Không') + '</em></div>'
-      + '</div>'
-      + '<div class="population-action-grid">'
-      + '<button type="button" class="population-action population-action-view" onclick="showPerson(' + id + ')"><i class="fa-regular fa-eye"></i><span>Xem</span></button>'
-      + '<button type="button" class="population-action population-action-edit" onclick="openPersonForm(' + id + ')"><i class="fa-regular fa-pen-to-square"></i><span>Sửa</span></button>'
-      + '<button type="button" class="population-action population-action-delete" onclick="deletePerson(' + id + ')"><i class="fa-regular fa-trash-can"></i><span>Xóa</span></button>'
-      + '</div>'
-      + '</article>'
-      + '</td>';
+      + '<div class="population-status-grid"><div class="population-status-field"><span>Cư trú</span><em class="population-status-badge ' + residence.cls + '">' + escapeHtml(residence.text) + '</em></div><div class="population-status-field"><span>Đảng viên</span><em class="population-status-badge ' + (party ? 'population-status-party' : 'population-status-muted') + '">' + (party ? 'Có' : 'Không') + '</em></div></div>'
+      + '<div class="population-action-grid"><button type="button" class="population-action population-action-view" onclick="showPerson(' + id + ')"><i class="fa-regular fa-eye"></i><span>Xem</span></button><button type="button" class="population-action population-action-edit" onclick="openPersonForm(' + id + ')"><i class="fa-regular fa-pen-to-square"></i><span>Sửa</span></button><button type="button" class="population-action population-action-delete" onclick="deletePerson(' + id + ')"><i class="fa-regular fa-trash-can"></i><span>Xóa</span></button></div>'
+      + '</article></td>';
   }
 
   function renderRow(row) {
@@ -186,12 +162,7 @@
 
   function groupHeader(group) {
     var head = householdHeadName(group.rows);
-    return '<tr class="group-row person-household-group-row" data-household-code="' + escapeHtml(group.code) + '">'
-      + '<td colspan="11"><div class="person-household-group-card">'
-      + '<div class="person-household-group-main"><span class="person-household-group-icon"><i class="fa-solid fa-house-chimney"></i></span><div><strong>Hộ ' + escapeHtml(group.code) + '</strong>'
-      + (head ? '<small>Chủ hộ: ' + escapeHtml(head) + '</small>' : '')
-      + '</div></div><span class="person-household-group-count">' + group.rows.length + ' nhân khẩu</span>'
-      + '</div></td></tr>';
+    return '<tr class="group-row person-household-group-row" data-household-code="' + escapeHtml(group.code) + '"><td colspan="11"><div class="person-household-group-card"><div class="person-household-group-main"><span class="person-household-group-icon"><i class="fa-solid fa-house-chimney"></i></span><div><strong>Hộ ' + escapeHtml(group.code) + '</strong>' + (head ? '<small>Chủ hộ: ' + escapeHtml(head) + '</small>' : '') + '</div></div><span class="person-household-group-count">' + group.rows.length + ' nhân khẩu</span></div></td></tr>';
   }
 
   function renderGroupedRows(items) {
@@ -221,8 +192,7 @@
         });
         var sorted = sortItems(filtered);
         total = sorted.length;
-        var startIndex = (app.persons.page - 1) * app.persons.pageSize;
-        items = sorted.slice(startIndex, startIndex + app.persons.pageSize);
+        items = sorted.slice((app.persons.page - 1) * app.persons.pageSize, (app.persons.page - 1) * app.persons.pageSize + app.persons.pageSize);
       } else {
         var params = new URLSearchParams({ page: app.persons.page, pageSize: app.persons.pageSize });
         if (householdText) params.set('householdId', householdText);
@@ -235,9 +205,7 @@
       var rowsHost = document.querySelector('#personRows');
       if (rowsHost) rowsHost.innerHTML = renderGroupedRows(items) || emptyRow();
       if (typeof window.updateBulkDeleteButtons === 'function') window.updateBulkDeleteButtons();
-      if (typeof window.renderPager === 'function') {
-        window.renderPager('#personPager', { total: total, page: app.persons.page, pageSize: app.persons.pageSize }, function (page) { app.persons.page = page; loadGroupedPersons(); });
-      }
+      if (typeof window.renderPager === 'function') window.renderPager('#personPager', { total: total, page: app.persons.page, pageSize: app.persons.pageSize }, function (page) { app.persons.page = page; loadGroupedPersons(); });
     } catch (error) {
       if (typeof window.showToast === 'function') window.showToast('Không tải được danh sách nhân khẩu: ' + error.message, 'danger');
     }
@@ -248,85 +216,24 @@
     if (old) old.remove();
     var style = document.createElement('style');
     style.id = 'person-household-group-style';
-    style.textContent = [
-      '@media (max-width: 1199px) {',
-      '  :root { --thon09-fluid-gap: clamp(8px, 2vw, 14px); --thon09-fluid-pad: clamp(12px, 3vw, 18px); }',
-      '  .screen, .dashboard-overview-screen, .person-management-screen, .report-screen { padding: clamp(14px, 3vw, 22px) !important; }',
-      '  .content-card, .module-filter-card, .person-search-card, .report-filter-card, .import-card, .settings-card, .backup-card { border-radius: clamp(12px, 2vw, 16px) !important; padding: var(--thon09-fluid-pad) !important; }',
-      '  .module-list-card, .person-list-card, .report-result-card { border-radius: clamp(12px, 2vw, 16px) !important; overflow: hidden !important; }',
-      '  .toolbar, .module-action-row, .person-action-row, .report-actions { gap: var(--thon09-fluid-gap) !important; }',
-      '  .form-control, .form-select, .btn { min-height: clamp(42px, 6vw, 48px) !important; }',
-      '  .modal-dialog { width: min(95vw, 860px) !important; max-width: 95vw !important; margin: 14px auto !important; }',
-      '  .modal-content { max-height: 90vh !important; overflow: hidden !important; border-radius: clamp(14px, 2.2vw, 18px) !important; }',
-      '  .modal-body { overflow: auto !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) { overflow: visible !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) table, .table-responsive.module-card-list:not(.person-table-wrap) tbody { display: block !important; width: 100% !important; min-width: 0 !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) thead { display: none !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important; gap: clamp(12px, 2vw, 18px) !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody tr:not(.group-row) { display: grid !important; gap: 8px !important; padding: clamp(12px, 2vw, 16px) !important; border: 1px solid #dfe7e2 !important; border-radius: 14px !important; background: #fff !important; box-shadow: 0 8px 20px rgba(15, 23, 42, .055) !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody tr.group-row { grid-column: 1 / -1 !important; display: block !important; border: 0 !important; background: transparent !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody tr.group-row td { display: block !important; padding: 8px 12px !important; border: 1px solid #d9f1e4 !important; border-radius: 12px !important; background: #f3fbf7 !important; color: #075f35 !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td { display: grid !important; grid-template-columns: minmax(92px, .8fr) minmax(0, 1.2fr) !important; align-items: center !important; gap: 8px !important; width: 100% !important; padding: 0 !important; border: 0 !important; background: transparent !important; font-size: clamp(12px, 2.2vw, 14px) !important; word-break: normal !important; overflow-wrap: anywhere !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td::before { content: attr(data-label); color: #667085; font-size: clamp(11px, 2vw, 13px); font-weight: 800; line-height: 1.25; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-empty="true"] { display: none !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="title"] { display: block !important; padding-bottom: 8px !important; border-bottom: 1px solid #edf2ee !important; color: #06733f !important; font-size: clamp(18px, 4vw, 24px) !important; font-weight: 850 !important; text-transform: uppercase !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="title"]::before { display: none !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="select"] { position: absolute !important; right: 14px !important; top: 14px !important; display: block !important; width: auto !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="select"]::before { display: none !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="actions"] { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; margin-top: 6px !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="actions"]::before { display: none !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="actions"] .btn, .table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="actions"] button { width: 100% !important; min-height: 44px !important; border-radius: 12px !important; font-size: clamp(12px, 2.2vw, 14px) !important; }',
-      '  #personsScreen #personRows, #personsScreen .person-table-wrap, #personsScreen .person-table-wrap table, #personsScreen .person-table-wrap tbody { display: block !important; width: 100% !important; min-width: 0 !important; }',
-      '  #personsScreen .person-table-wrap { overflow: visible !important; }',
-      '  #personsScreen .person-table-wrap thead, #personsScreen #personRows .population-desktop-cell { display: none !important; }',
-      '  #personsScreen #personRows .person-household-group-row, #personsScreen #personRows .person-household-group-row td, #personsScreen #personRows .population-row, #personsScreen #personRows .population-mobile-cell { display: block !important; width: 100% !important; }',
-      '  #personsScreen #personRows .person-household-group-row { margin: clamp(14px, 2.2vw, 20px) 0 10px !important; border: 0 !important; background: transparent !important; }',
-      '  #personsScreen #personRows .person-household-group-row td, #personsScreen #personRows .population-mobile-cell { padding: 0 !important; border: 0 !important; background: transparent !important; }',
-      '  #personsScreen #personRows .person-household-group-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: clamp(8px, 1.8vw, 12px) !important; padding: clamp(8px, 2vw, 12px) clamp(10px, 2.4vw, 14px) !important; border: 1px solid #d9f1e4 !important; border-radius: 12px !important; background: #f3fbf7 !important; color: #0f5132 !important; }',
-      '  #personsScreen #personRows .person-household-group-icon { width: 28px !important; height: 28px !important; border-radius: 9px !important; font-size: 13px !important; }',
-      '  #personsScreen #personRows .person-household-group-count { min-height: 24px !important; padding: 3px 8px !important; font-size: clamp(10px, 1.8vw, 11px) !important; white-space: nowrap !important; }',
-      '  #personsScreen #personRows .population-row { margin: 0 0 clamp(18px, 3vw, 20px) !important; border: 0 !important; background: transparent !important; }',
-      '  #personsScreen #personRows .population-card { display: grid !important; gap: clamp(10px, 2vw, 13px) !important; padding: clamp(14px, 3vw, 18px) !important; border: 1px solid #dfe7e2 !important; border-radius: 18px !important; background: #fff !important; box-shadow: 0 10px 24px rgba(15, 23, 42, .06) !important; }',
-      '  #personsScreen #personRows .population-card-head { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; gap: clamp(8px, 2vw, 12px) !important; align-items: center !important; padding-bottom: 8px !important; border-bottom: 1px solid #edf2ef !important; }',
-      '  #personsScreen #personRows .population-card-title-stack { min-width: 0 !important; display: grid !important; gap: 6px !important; }',
-      '  #personsScreen #personRows .population-card-name { max-width: 100% !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; word-break: normal !important; overflow-wrap: normal !important; font-size: clamp(18px, 5vw, 28px) !important; line-height: 1.18 !important; }',
-      '  #personsScreen #personRows .population-relation-badge { width: fit-content !important; max-width: 100% !important; display: inline-flex !important; align-items: center !important; gap: 5px !important; min-height: 24px !important; padding: 3px 9px !important; border-radius: 999px !important; border: 1px solid #d9eadf !important; background: #f4faf6 !important; color: #0f5132 !important; font-size: clamp(11px, 2.4vw, 12px) !important; font-weight: 800 !important; white-space: nowrap !important; }',
-      '  #personsScreen #personRows .population-card-head-actions { display: inline-flex !important; align-items: center !important; justify-content: flex-end !important; gap: 8px !important; }',
-      '  #personsScreen #personRows .population-household-badge { min-height: clamp(36px, 6vw, 40px) !important; padding: 3px 9px !important; font-size: clamp(16px, 3vw, 18px) !important; line-height: 1 !important; width: fit-content !important; white-space: nowrap !important; }',
-      '  #personsScreen #personRows .population-check { width: 24px !important; height: 24px !important; align-self: center !important; margin: 0 !important; flex: 0 0 auto !important; }',
-      '  #personsScreen #personRows .population-code-grid, #personsScreen #personRows .population-status-grid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: clamp(8px, 2vw, 10px) !important; }',
-      '  #personsScreen #personRows .population-info-grid { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: clamp(8px, 2vw, 10px) !important; }',
-      '  #personsScreen #personRows .population-code-box { min-height: clamp(54px, 9vw, 66px) !important; padding: clamp(8px, 2vw, 11px) !important; align-items: center !important; }',
-      '  #personsScreen #personRows .population-code-box span, #personsScreen #personRows .population-status-field span, #personsScreen #personRows .population-info-box span { font-size: clamp(12px, 2.8vw, 15px) !important; line-height: 1.2 !important; }',
-      '  #personsScreen #personRows .population-code-box strong, #personsScreen #personRows .population-info-box strong { font-size: clamp(15px, 4vw, 22px) !important; line-height: 1.18 !important; }',
-      '  #personsScreen #personRows .population-info-box { gap: clamp(8px, 2vw, 14px) !important; min-height: clamp(70px, 11vw, 82px) !important; padding: clamp(8px, 2vw, 12px) !important; }',
-      '  #personsScreen #personRows .population-card-icon { margin-right: 4px !important; font-size: clamp(20px, 4vw, 22px) !important; }',
-      '  #personsScreen #personRows .population-status-field { display: grid !important; grid-template-columns: minmax(74px, .7fr) auto !important; align-items: center !important; justify-content: normal !important; gap: 8px !important; min-height: clamp(52px, 8vw, 60px) !important; padding: 8px 10px !important; }',
-      '  #personsScreen #personRows .population-status-field span { white-space: nowrap !important; word-break: keep-all !important; overflow-wrap: normal !important; min-width: max-content !important; }',
-      '  #personsScreen #personRows .population-status-badge { justify-self: center !important; min-width: clamp(68px, 16vw, 86px) !important; padding: 4px 12px !important; text-align: center !important; white-space: nowrap !important; word-break: keep-all !important; font-size: clamp(13px, 2.8vw, 15px) !important; }',
-      '  #personsScreen #personRows .population-action-grid { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: clamp(8px, 2vw, 10px) !important; }',
-      '  #personsScreen #personRows .population-action { height: 48px !important; min-height: 48px !important; padding: 0 6px !important; border-radius: 12px !important; font-size: clamp(13px, 2.8vw, 15px) !important; }',
-      '  #personsScreen #personRows .population-action i { font-size: 20px !important; }',
-      '}',
-      '@media (min-width: 768px) and (max-width: 1199px) {',
-      '  #personsScreen #personRows { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)) !important; gap: 0 16px !important; }',
-      '  #personsScreen #personRows .person-household-group-row { grid-column: 1 / -1 !important; }',
-      '  #personsScreen #personRows .population-row { min-width: 0 !important; }',
-      '  #personsScreen #personRows .population-card { height: 100% !important; }',
-      '}',
-      '@media (min-width: 480px) and (max-width: 767px) {',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody { grid-template-columns: 1fr !important; }',
-      '}',
-      '@media (max-width: 479px) {',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody { grid-template-columns: 1fr !important; }',
-      '  .table-responsive.module-card-list:not(.person-table-wrap) tbody td { grid-template-columns: minmax(86px, .75fr) minmax(0, 1.25fr) !important; }',
-      '  #personsScreen #personRows .population-card { padding: 14px !important; border-radius: 16px !important; }',
-      '  #personsScreen #personRows .population-household-badge { min-height: 36px !important; height: 36px !important; font-size: 18px !important; padding-inline: 8px !important; }',
-      '  #personsScreen #personRows .population-info-box { flex-direction: column !important; align-items: flex-start !important; justify-content: center !important; gap: 5px !important; }',
-      '  #personsScreen #personRows .population-status-field { grid-template-columns: minmax(68px, .66fr) auto !important; gap: 6px !important; }',
-      '  #personsScreen #personRows .population-status-badge { min-width: 68px !important; padding-inline: 9px !important; }',
-      '}',
-    ].join('\n');
+    style.textContent = `
+@media (max-width:1199px){
+  html,body{max-width:100%!important;overflow-x:hidden!important}*,*::before,*::after{box-sizing:border-box} .screen,.dashboard-overview-screen,.person-management-screen,.report-screen{padding:clamp(14px,3vw,22px)!important}.content-card,.module-filter-card,.person-search-card,.report-filter-card,.import-card,.settings-card,.backup-card{border-radius:clamp(12px,2vw,16px)!important;padding:clamp(12px,3vw,18px)!important}.form-control,.form-select,.btn{min-height:clamp(42px,6vw,48px)!important}.modal-dialog{width:min(95vw,860px)!important;max-width:95vw!important;margin:14px auto!important}.modal-content{max-height:90vh!important;overflow:hidden!important;border-radius:clamp(14px,2.2vw,18px)!important}.modal-body{overflow:auto!important}
+  .table-responsive.module-card-list:not(.person-table-wrap){overflow:visible!important}.table-responsive.module-card-list:not(.person-table-wrap) table,.table-responsive.module-card-list:not(.person-table-wrap) tbody{display:block!important;width:100%!important;min-width:0!important}.table-responsive.module-card-list:not(.person-table-wrap) thead{display:none!important}.table-responsive.module-card-list:not(.person-table-wrap) tbody{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))!important;gap:clamp(12px,2vw,18px)!important}.table-responsive.module-card-list:not(.person-table-wrap) tbody tr:not(.group-row){display:grid!important;gap:8px!important;padding:clamp(12px,2vw,16px)!important;border:1px solid #dfe7e2!important;border-radius:14px!important;background:#fff!important;box-shadow:0 8px 20px rgba(15,23,42,.055)!important;max-width:100%!important;overflow:hidden!important}.table-responsive.module-card-list:not(.person-table-wrap) tbody td{display:grid!important;grid-template-columns:minmax(88px,.8fr) minmax(0,1.2fr)!important;align-items:center!important;gap:8px!important;width:100%!important;padding:0!important;border:0!important;background:transparent!important;font-size:clamp(12px,2.2vw,14px)!important;word-break:normal!important;overflow-wrap:anywhere!important}.table-responsive.module-card-list:not(.person-table-wrap) tbody td::before{content:attr(data-label);color:#667085;font-size:clamp(11px,2vw,13px);font-weight:800;line-height:1.25}.table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="actions"]{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin-top:6px!important}.table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="actions"]::before{display:none!important}.table-responsive.module-card-list:not(.person-table-wrap) tbody td[data-mobile-role="actions"] .btn{width:100%!important;min-height:44px!important;border-radius:12px!important}
+  #personsScreen #personRows,#personsScreen .person-table-wrap,#personsScreen .person-table-wrap table,#personsScreen .person-table-wrap tbody{display:block!important;width:100%!important;min-width:0!important}#personsScreen .person-table-wrap{overflow:visible!important}#personsScreen .person-table-wrap thead,#personsScreen #personRows .population-desktop-cell{display:none!important}#personsScreen #personRows .person-household-group-row,#personsScreen #personRows .person-household-group-row td,#personsScreen #personRows .population-row,#personsScreen #personRows .population-mobile-cell{display:block!important;width:100%!important}#personsScreen #personRows .person-household-group-row{margin:clamp(14px,2.2vw,20px) 0 10px!important;border:0!important;background:transparent!important}#personsScreen #personRows .person-household-group-row td,#personsScreen #personRows .population-mobile-cell{padding:0!important;border:0!important;background:transparent!important}
+  #personsScreen #personRows .person-household-group-card{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:clamp(8px,1.8vw,12px)!important;padding:clamp(8px,2vw,12px) clamp(10px,2.4vw,14px)!important;border:1px solid #d9f1e4!important;border-radius:12px!important;background:#f3fbf7!important;color:#0f5132!important}#personsScreen #personRows .person-household-group-icon{width:28px!important;height:28px!important;border-radius:9px!important;font-size:13px!important}#personsScreen #personRows .person-household-group-count{min-height:24px!important;padding:3px 8px!important;font-size:clamp(10px,1.8vw,11px)!important;white-space:nowrap!important}
+  #personsScreen #personRows .population-row{margin:0 0 clamp(18px,3vw,20px)!important;border:0!important;background:transparent!important}#personsScreen #personRows .population-card,#personsScreen #personRows .population-card *{box-sizing:border-box!important}#personsScreen #personRows .population-card{display:grid!important;width:100%!important;max-width:100%!important;overflow:hidden!important;gap:clamp(8px,1.9vw,12px)!important;padding:clamp(12px,3vw,18px)!important;border:1px solid #dfe7e2!important;border-radius:18px!important;background:#fff!important;box-shadow:0 10px 24px rgba(15,23,42,.06)!important}
+  #personsScreen #personRows .population-card-head{display:grid!important;grid-template-columns:minmax(0,58fr) minmax(0,42fr)!important;align-items:center!important;gap:clamp(6px,1.8vw,10px)!important;padding-bottom:8px!important;border-bottom:1px solid #edf2ef!important}#personsScreen #personRows .population-card-title-stack{min-width:0!important;width:100%!important;display:grid!important;gap:6px!important;overflow:hidden!important}#personsScreen #personRows .population-card-name{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;text-align:left!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;word-break:normal!important;overflow-wrap:normal!important;font-size:clamp(18px,4.8vw,28px)!important;line-height:1.18!important;letter-spacing:0!important}#personsScreen #personRows .population-relation-badge{width:fit-content!important;max-width:100%!important;display:inline-flex!important;align-items:center!important;gap:5px!important;min-height:24px!important;padding:3px 9px!important;border-radius:999px!important;border:1px solid #d9eadf!important;background:#f4faf6!important;color:#0f5132!important;font-size:clamp(11px,2.4vw,12px)!important;font-weight:800!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  #personsScreen #personRows .population-card-head-actions{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;justify-content:end!important;gap:clamp(6px,1.6vw,8px)!important;min-width:0!important;overflow:hidden!important}#personsScreen #personRows .population-household-badge{justify-self:end!important;width:auto!important;max-width:100%!important;min-width:0!important;height:clamp(32px,7vw,38px)!important;min-height:clamp(32px,7vw,38px)!important;padding:0 clamp(7px,2vw,10px)!important;font-size:clamp(14px,4vw,18px)!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}#personsScreen #personRows .population-check{align-self:center!important;justify-self:end!important;width:clamp(20px,5vw,24px)!important;height:clamp(20px,5vw,24px)!important;margin:0!important;flex:0 0 auto!important}
+  #personsScreen #personRows .population-code-grid,#personsScreen #personRows .population-status-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:clamp(7px,1.8vw,10px)!important;width:100%!important;overflow:hidden!important}#personsScreen #personRows .population-code-box{min-width:0!important;width:100%!important;min-height:clamp(50px,12vw,62px)!important;padding:clamp(7px,2vw,10px)!important;display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:center!important;gap:clamp(6px,1.8vw,10px)!important;overflow:hidden!important}#personsScreen #personRows .population-code-box span,#personsScreen #personRows .population-code-box strong{min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.15!important}#personsScreen #personRows .population-code-box span{font-size:clamp(11px,2.8vw,14px)!important}#personsScreen #personRows .population-code-box strong{font-size:clamp(13px,3.8vw,18px)!important}
+  #personsScreen #personRows .population-info-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(7px,1.8vw,10px)!important}#personsScreen #personRows .population-info-box{min-width:0!important;width:100%!important;min-height:clamp(62px,15vw,78px)!important;padding:clamp(7px,2vw,10px)!important;display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:center!important;gap:clamp(7px,1.8vw,12px)!important;overflow:hidden!important}#personsScreen #personRows .population-info-box>div{min-width:0!important;overflow:hidden!important}#personsScreen #personRows .population-info-box span,#personsScreen #personRows .population-info-box strong{display:block!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;word-break:keep-all!important;overflow-wrap:normal!important;line-height:1.18!important}#personsScreen #personRows .population-info-box span{font-size:clamp(10px,2.7vw,14px)!important}#personsScreen #personRows .population-info-box strong{font-size:clamp(13px,3.7vw,18px)!important}#personsScreen #personRows .population-card-icon{flex:0 0 auto!important;font-size:clamp(17px,4vw,22px)!important;margin:0!important}
+  #personsScreen #personRows .population-status-field{min-width:0!important;width:100%!important;min-height:clamp(48px,11vw,58px)!important;padding:clamp(7px,1.8vw,9px) clamp(7px,2vw,10px)!important;display:grid!important;grid-template-columns:minmax(52px,.52fr) minmax(0,.88fr)!important;align-items:center!important;justify-items:center!important;gap:clamp(5px,1.4vw,8px)!important;overflow:hidden!important}#personsScreen #personRows .population-status-field span{justify-self:start!important;min-width:0!important;max-width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;word-break:keep-all!important;overflow-wrap:normal!important;font-size:clamp(11px,2.9vw,14px)!important;line-height:1.15!important}#personsScreen #personRows .population-status-badge{justify-self:center!important;max-width:100%!important;width:auto!important;min-width:0!important;padding:4px clamp(7px,1.8vw,10px)!important;border-radius:999px!important;text-align:center!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;word-break:keep-all!important;overflow-wrap:normal!important;font-size:clamp(11px,2.9vw,14px)!important;line-height:1.1!important}
+  #personsScreen #personRows .population-action-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(7px,1.8vw,10px)!important;width:100%!important}#personsScreen #personRows .population-action{width:100%!important;min-width:0!important;height:clamp(44px,10vw,48px)!important;min-height:clamp(44px,10vw,48px)!important;padding:0 clamp(5px,1.6vw,8px)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:clamp(5px,1.4vw,8px)!important;overflow:hidden!important;border-radius:12px!important}#personsScreen #personRows .population-action span{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:clamp(12px,3vw,15px)!important}#personsScreen #personRows .population-action i{flex:0 0 auto!important;font-size:clamp(16px,4vw,20px)!important}
+}
+@media (max-width:479px){#personsScreen #personRows .population-card-head{grid-template-columns:minmax(0,60fr) minmax(0,40fr)!important}#personsScreen #personRows .population-code-box{grid-template-columns:1fr!important;align-content:center!important;gap:3px!important}#personsScreen #personRows .population-code-box strong{font-size:clamp(13px,4vw,17px)!important}#personsScreen #personRows .population-info-box{grid-template-columns:auto minmax(0,1fr)!important;min-height:clamp(58px,16vw,70px)!important}#personsScreen #personRows .population-info-box span{font-size:clamp(10px,2.8vw,12px)!important}#personsScreen #personRows .population-info-box strong{font-size:clamp(12px,3.7vw,16px)!important}#personsScreen #personRows .population-status-field{grid-template-columns:minmax(46px,.5fr) minmax(0,.9fr)!important}#personsScreen #personRows .population-status-field span,#personsScreen #personRows .population-status-badge{font-size:clamp(10px,3vw,13px)!important}}
+@media (min-width:768px) and (max-width:1199px){#personsScreen #personRows{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))!important;gap:0 16px!important}#personsScreen #personRows .person-household-group-row{grid-column:1/-1!important}#personsScreen #personRows .population-row{min-width:0!important}#personsScreen #personRows .population-card{height:100%!important}}
+@media (min-width:1200px){#personsScreen #personRows .population-mobile-cell{display:none!important}#personsScreen #personRows .population-desktop-cell{display:table-cell!important}}
+    `;
     document.head.appendChild(style);
   }
 
