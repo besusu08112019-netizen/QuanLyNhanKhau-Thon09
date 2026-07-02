@@ -12,7 +12,7 @@ final class GisHouseholdLocation extends BaseModel
             'latitude' => 'DECIMAL(10,8) NULL',
             'longitude' => 'DECIMAL(11,8) NULL',
             'location_accuracy' => 'INT NULL',
-            'location_source' => "ENUM('MANUAL','GPS') NOT NULL DEFAULT 'MANUAL'",
+            'location_source' => "ENUM('MANUAL','GPS') NULL DEFAULT NULL",
             'location_updated_at' => 'DATETIME NULL',
             'location_updated_by' => 'BIGINT NULL',
         ];
@@ -20,7 +20,7 @@ final class GisHouseholdLocation extends BaseModel
         foreach ($columns as $column => $definition) {
             if (!$this->columnExists('households', $column)) {
                 $this->execute('ALTER TABLE households ADD COLUMN ' . $column . ' ' . $definition);
-            } elseif (in_array($column, ['latitude', 'longitude', 'location_updated_by'], true)) {
+            } elseif (in_array($column, ['latitude', 'longitude', 'location_source', 'location_updated_by'], true)) {
                 $this->execute('ALTER TABLE households MODIFY COLUMN ' . $column . ' ' . $definition);
             }
         }
@@ -100,7 +100,7 @@ final class GisHouseholdLocation extends BaseModel
         return $this->findMarker($householdId) ?? ['id' => $householdId, 'area_code' => $areaCode];
     }
 
-    public function clearLocation(int $householdId, int $userId): void
+    public function clearLocation(int $householdId, int $userId): array
     {
         $this->ensureSchema();
         $updated = $this->execute(
@@ -108,7 +108,7 @@ final class GisHouseholdLocation extends BaseModel
              SET latitude = NULL,
                  longitude = NULL,
                  location_accuracy = NULL,
-                 location_source = "MANUAL",
+                 location_source = NULL,
                  location_updated_at = NOW(),
                  location_updated_by = :location_updated_by,
                  area_code = NULL,
@@ -118,6 +118,18 @@ final class GisHouseholdLocation extends BaseModel
             ['location_updated_by' => $userId, 'updated_by' => $userId, 'id' => $householdId]
         );
         if ($updated < 1) throw new \RuntimeException('Không tìm thấy hộ gia đình cần xóa vị trí');
+
+        return [
+            'id' => $householdId,
+            'latitude' => null,
+            'longitude' => null,
+            'location_accuracy' => null,
+            'location_source' => null,
+            'location_updated_at' => date('Y-m-d H:i:s'),
+            'location_updated_by' => $userId,
+            'area_code' => null,
+            'removed' => true,
+        ];
     }
 
     public function recalculateAreaCodes(): int
