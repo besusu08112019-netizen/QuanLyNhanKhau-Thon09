@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\BaseController;
 use App\Models\GisArea;
 use App\Models\GisHouseholdLocation;
 use App\Models\GisSearch;
@@ -39,7 +40,7 @@ class GisController extends BaseController
             $this->ok(['items' => $items]);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/areas', $e);
-            $this->error('Không tải được GIS: ' . $e->getMessage(), 500);
+            $this->fail('Không tải được GIS: ' . $e->getMessage(), 500);
         }
     }
 
@@ -51,7 +52,7 @@ class GisController extends BaseController
             $this->ok(['items' => $items]);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/households', $e);
-            $this->error('Không tải được vị trí hộ: ' . $e->getMessage(), 500);
+            $this->fail('Không tải được vị trí hộ: ' . $e->getMessage(), 500);
         }
     }
 
@@ -74,7 +75,7 @@ class GisController extends BaseController
             $this->ok(['items' => $items]);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/search', $e);
-            $this->error('Không tìm kiếm được hộ trên bản đồ: ' . $e->getMessage(), 500);
+            $this->fail('Không tìm kiếm được hộ trên bản đồ: ' . $e->getMessage(), 500);
         }
     }
 
@@ -86,10 +87,10 @@ class GisController extends BaseController
             $area = $this->areasModel()->create($payload, $this->currentUserId());
             $this->locationModel()->recalculateAreaCodes();
             $this->writeLog('CREATE', 'gis_areas', (string) $area['id'], $area);
-            $this->ok($area, 'Đã lưu khu vực');
+            $this->ok($area);
         } catch (Throwable $e) {
             $this->logException('POST /api/gis/areas', $e, $this->jsonPayload(false));
-            $this->error('Không lưu được khu vực: ' . $e->getMessage(), 400);
+            $this->fail('Không lưu được khu vực: ' . $e->getMessage(), 400);
         }
     }
 
@@ -101,10 +102,10 @@ class GisController extends BaseController
             $area = $this->areasModel()->update($id, $payload);
             $this->locationModel()->recalculateAreaCodes();
             $this->writeLog('UPDATE', 'gis_areas', (string) $id, $area);
-            $this->ok($area, 'Đã cập nhật khu vực');
+            $this->ok($area);
         } catch (Throwable $e) {
             $this->logException('PUT /api/gis/areas/' . $id, $e, $this->jsonPayload(false));
-            $this->error('Không cập nhật được khu vực: ' . $e->getMessage(), 400);
+            $this->fail('Không cập nhật được khu vực: ' . $e->getMessage(), 400);
         }
     }
 
@@ -115,10 +116,10 @@ class GisController extends BaseController
             $area = $this->areasModel()->delete($id);
             $this->locationModel()->recalculateAreaCodes();
             $this->writeLog('DELETE', 'gis_areas', (string) $id, $area);
-            $this->ok($area, 'Đã xóa khu vực');
+            $this->ok($area);
         } catch (Throwable $e) {
             $this->logException('DELETE /api/gis/areas/' . $id, $e);
-            $this->error('Không xóa được khu vực: ' . $e->getMessage(), 400);
+            $this->fail('Không xóa được khu vực: ' . $e->getMessage(), 400);
         }
     }
 
@@ -129,10 +130,10 @@ class GisController extends BaseController
             $payload = $this->jsonPayload();
             $item = $this->locationModel()->saveLocation($id, $payload, $this->currentUserId());
             $this->writeLog('UPDATE', 'household_location', (string) $id, $item);
-            $this->ok($item, 'Đã lưu vị trí hộ');
+            $this->ok($item);
         } catch (Throwable $e) {
             $this->logException('PUT /api/gis/households/' . $id . '/location', $e, $this->jsonPayload(false));
-            $this->error('Không lưu được vị trí hộ: ' . $e->getMessage(), 400);
+            $this->fail('Không lưu được vị trí hộ: ' . $e->getMessage(), 400);
         }
     }
 
@@ -142,10 +143,10 @@ class GisController extends BaseController
             $this->requirePermission('household', 'update');
             $item = $this->locationModel()->clearLocation($id, $this->currentUserId());
             $this->writeLog('DELETE', 'household_location', (string) $id, $item);
-            $this->ok($item, 'Đã xóa vị trí hộ');
+            $this->ok($item);
         } catch (Throwable $e) {
             $this->logException('DELETE /api/gis/households/' . $id . '/location', $e);
-            $this->error('Không xóa được vị trí hộ: ' . $e->getMessage(), 400);
+            $this->fail('Không xóa được vị trí hộ: ' . $e->getMessage(), 400);
         }
     }
 
@@ -217,21 +218,30 @@ class GisController extends BaseController
 
     private function currentUserId(): int
     {
-        return (int) ($_SESSION['user']['id'] ?? 0);
+        try {
+            return (int) ($this->user()['id'] ?? 0);
+        } catch (Throwable $ignored) {
+            return 0;
+        }
     }
 
     private function writeLog(string $action, string $module, string $target, array $data = []): void
     {
         try {
-            (new SystemLog())->record([
-                'user_id' => $_SESSION['user']['id'] ?? null,
-                'username' => $_SESSION['user']['username'] ?? null,
-                'action' => $action,
-                'module' => $module,
-                'target_id' => $target,
-                'description' => $module . ' ' . $action,
-                'metadata' => $data,
-            ]);
+            if (!class_exists(SystemLog::class) && defined('APP_ROOT') && is_file(APP_ROOT . '/app/Models/SystemLog.php')) {
+                require_once APP_ROOT . '/app/Models/SystemLog.php';
+            }
+            if (class_exists(SystemLog::class)) {
+                (new SystemLog())->record([
+                    'user_id' => $this->currentUserId() ?: null,
+                    'username' => null,
+                    'action' => $action,
+                    'module' => $module,
+                    'target_id' => $target,
+                    'description' => $module . ' ' . $action,
+                    'metadata' => $data,
+                ]);
+            }
         } catch (Throwable $ignored) {
             // Log writing must not block GIS operations.
         }
