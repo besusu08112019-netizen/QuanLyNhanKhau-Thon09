@@ -4,11 +4,11 @@
   const CSS_HREFS = [
     'assets/css/admin-design-system.css?v=20260701-admin-ds-2',
     'assets/css/person-card-layout.css?v=20260702-person-card-mobile-v1',
-    'assets/css/gis-household-location.css?v=20260702-sprint15-2'
+    'assets/css/gis-household-location.css?v=20260702-sprint15-3'
   ];
   const JS_SRC = 'assets/js/admin-design-system.js?v=20260701-admin-ds-1';
   const GROUP_JS_SRC = 'assets/js/person-household-group-style.js?v=20260702-person-final-ui';
-  const GIS_LOCATION_JS_SRC = 'assets/js/gis-household-location.js?v=20260702-sprint15-2';
+  const GIS_LOCATION_JS_SRC = 'assets/js/gis-household-location.js?v=20260702-sprint15-3';
 
   function ensureScript(src, fileName) {
     const existing = document.querySelector('script[src*="' + fileName + '"]');
