@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Core\BaseModel;
+
 class GisSearch extends BaseModel
 {
     public function households(string $query, int $limit = 10): array
@@ -43,7 +45,7 @@ class GisSearch extends BaseModel
                     END AS match_rank
                 FROM households h
                 LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-                WHERE h.status NOT IN ('DELETED', 'ARCHIVED')
+                WHERE (h.status IS NULL OR h.status NOT IN ('DELETED', 'ARCHIVED'))
                   AND (
                     h.household_code LIKE :household_code
                     OR h.head_citizen_name LIKE :head_name
@@ -51,7 +53,7 @@ class GisSearch extends BaseModel
                         SELECT 1
                         FROM citizens c
                         WHERE c.household_id = h.id
-                          AND c.status <> 'DELETED'
+                          AND (c.status IS NULL OR c.status <> 'DELETED')
                           AND c.full_name LIKE :citizen_name
                     )
                   )
