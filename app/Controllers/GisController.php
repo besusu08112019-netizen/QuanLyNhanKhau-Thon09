@@ -66,6 +66,10 @@ class GisController extends BaseController
                 return;
             }
 
+            if (!class_exists(GisSearch::class) && defined('APP_ROOT')) {
+                require_once APP_ROOT . '/app/Models/GisSearch.php';
+            }
+
             $items = (new GisSearch())->households($query, 10);
             $this->ok(['items' => $items]);
         } catch (Throwable $e) {
