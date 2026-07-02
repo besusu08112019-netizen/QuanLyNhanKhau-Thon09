@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 define('BASE_PATH', __DIR__);
+define('APP_ASSET_VERSION', '20260702-stable-v1');
 
 require BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -142,12 +143,38 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 
+function versioned_asset(string $path): string
+{
+    return $path . '?v=' . APP_ASSET_VERSION;
+}
+
 ob_start();
 require BASE_PATH . '/views/app.php';
 $html = (string) ob_get_clean();
-$html = str_replace('assets/js/import.js?v=20260630-import-final-1', 'assets/js/import.js?v=20260701-import-nullguard-1', $html);
-$html = str_replace('assets/css/app.css?v=20260701-gis-2', 'assets/css/app.css?v=20260701-sidebar-brand-1', $html);
-$html = str_replace('</head>', '<link rel="stylesheet" href="assets/css/mobile-household.css?v=20260701-mobile-household-3">' . "\n" . '<link rel="stylesheet" href="assets/css/mobile-household-dienho.css?v=20260701-mobile-ds-3">' . "\n" . '<link rel="stylesheet" href="assets/css/person-card-layout.css?v=20260701-person-card-mobile-only-1">' . "\n</head>", $html);
+
+foreach (['thon09-report-inline-stable', 'thon09-person-advanced-filter-fix', 'thon09-header-duplicate-guard', 'thon09-final-navigation-repair'] as $scriptId) {
+    $html = preg_replace('/\s*<script\s+id="' . preg_quote($scriptId, '/') . '"[^>]*>.*?<\/script>\s*/s', "\n", $html, 1) ?? $html;
+}
+
+$versionedAssets = [
+    'assets/css/app.css' => versioned_asset('assets/css/app.css'),
+    'assets/js/app.js' => versioned_asset('assets/js/app.js'),
+    'assets/js/csrf.js' => versioned_asset('assets/js/csrf.js'),
+    'assets/js/session.js' => versioned_asset('assets/js/session.js'),
+    'assets/js/admin.js' => versioned_asset('assets/js/admin.js'),
+    'assets/js/import.js' => versioned_asset('assets/js/import.js'),
+    'assets/js/admin-panel.js' => versioned_asset('assets/js/admin-panel.js'),
+    'assets/js/admin-panel-bridge.js' => versioned_asset('assets/js/admin-panel-bridge.js'),
+    'assets/js/sprint8.js' => versioned_asset('assets/js/sprint8.js'),
+    'assets/js/sprint9.js' => versioned_asset('assets/js/sprint9.js'),
+    'assets/js/sprint10.js' => versioned_asset('assets/js/sprint10.js'),
+];
+
+foreach ($versionedAssets as $plainPath => $versionedPath) {
+    $html = preg_replace('/' . preg_quote($plainPath, '/') . '\?v=[^"\']+/', $versionedPath, $html) ?? $html;
+}
+
+$html = str_replace('</head>', '<link rel="stylesheet" href="' . versioned_asset('assets/css/mobile-household.css') . '">' . "\n" . '<link rel="stylesheet" href="' . versioned_asset('assets/css/mobile-household-dienho.css') . '">' . "\n" . '<link rel="stylesheet" href="' . versioned_asset('assets/css/person-card-layout.css') . '">' . "\n</head>", $html);
 $html = str_replace(
     '<span class="state-mark small-mark">09</span>',
     '<div class="sidebar-official-logo" aria-label="Logo Thôn 09"><span class="sidebar-logo-flag"><i class="fa-solid fa-star"></i></span><span class="sidebar-logo-landmark"><i class="fa-solid fa-landmark"></i></span><span class="sidebar-logo-home"><i class="fa-solid fa-house-chimney"></i></span><span class="sidebar-logo-text">Thôn</span><strong>09</strong></div>',
@@ -155,48 +182,9 @@ $html = str_replace(
 );
 $sidebarCss = <<<'HTML'
 <style id="thon09-sidebar-redesign">
-  .gov-sidebar{padding:14px 12px!important;overflow-x:hidden!important}.gov-brand{display:grid!important;grid-template-columns:1fr!important;justify-items:center!important;align-items:center!important;gap:8px!important;text-align:center!important;padding:8px 8px 14px!important;margin:0 0 8px!important;border-bottom:1px solid rgba(15,23,42,.1)!important}.gov-brand>div:not(.sidebar-official-logo){display:grid!important;justify-items:center!important;gap:2px!important;text-align:center!important;width:100%!important}.gov-brand strong,.gov-brand b,.gov-brand small{max-width:204px!important;margin:0 auto!important;letter-spacing:0!important;text-align:center!important;text-transform:uppercase!important}.gov-brand strong{color:#064e2e!important;font-size:12px!important;line-height:1.22!important;font-weight:800!important}.gov-brand b{color:#dc2626!important;font-size:17px!important;line-height:1.15!important;font-weight:850!important}.gov-brand small{color:#667085!important;font-size:12px!important;line-height:1.2!important;font-weight:650!important}.sidebar-official-logo{width:88px;height:88px;position:relative;display:grid;place-items:center;border-radius:50%;background:transparent;isolation:isolate;flex:0 0 auto}.sidebar-official-logo:before{content:'';position:absolute;inset:3px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 58%,transparent 59%),conic-gradient(from -18deg,#f2b705,#0f8f4d,#f2b705,#0f8f4d,#f2b705);box-shadow:0 10px 24px rgba(10,143,77,.12);z-index:-2}.sidebar-official-logo:after{content:'';position:absolute;inset:13px;border-radius:50%;border:2px solid #0a8f4d;background:linear-gradient(180deg,#fffef6 0%,#eef8ec 100%);z-index:-1}.sidebar-logo-flag,.sidebar-logo-landmark,.sidebar-logo-home,.sidebar-logo-text,.sidebar-official-logo strong{position:absolute;z-index:1}.sidebar-logo-flag{top:17px;left:50%;width:28px;height:17px;transform:translateX(-50%);border-radius:4px 10px 10px 4px;background:#dc2626;color:#facc15;display:grid;place-items:center;font-size:8px}.sidebar-logo-landmark{top:38px;left:24px;color:#08733e;font-size:19px}.sidebar-logo-home{top:41px;right:24px;color:#2f9a4b;font-size:15px}.sidebar-logo-text{top:56px;left:0;right:0;color:#0a8f4d;font-size:10px;line-height:1;font-weight:850;text-align:center;text-transform:uppercase}.sidebar-official-logo strong{top:66px;left:0;right:0;color:#dc2626;font-size:24px;line-height:.9;font-weight:900;text-align:center}.nav-section{margin:5px 0 8px!important}.nav-section-title{padding:0 10px 5px!important;font-size:10px!important;letter-spacing:.08em!important;color:#8a968e!important}.gov-nav{gap:0!important}.gov-nav .nav-link,.gov-logout{min-height:45px!important;border-radius:13px!important;padding:0 11px!important;gap:10px!important;font-size:13.5px!important;font-weight:700!important}.gov-nav .nav-link.active{background:#0A8F4D!important;color:#fff!important;box-shadow:0 12px 24px rgba(10,143,77,.22)!important}.gov-nav .nav-link.active i{color:#fff!important}.gov-nav .nav-link:hover:not(.active){background:#e9f7ef!important;color:#0A8F4D!important}body.sidebar-collapsed .gov-brand>div:not(.sidebar-official-logo),body.sidebar-collapsed .nav-section-title,body.sidebar-collapsed .gov-nav .nav-link span,body.sidebar-collapsed .gov-logout span{display:none!important}body.sidebar-collapsed .sidebar-official-logo{width:52px;height:52px}body.sidebar-collapsed .sidebar-logo-flag{top:10px;width:18px;height:11px;font-size:6px}body.sidebar-collapsed .sidebar-logo-landmark{top:23px;left:14px;font-size:11px}body.sidebar-collapsed .sidebar-logo-home{top:24px;right:14px;font-size:10px}body.sidebar-collapsed .sidebar-logo-text{top:34px;font-size:7px}body.sidebar-collapsed .sidebar-official-logo strong{top:39px;font-size:14px}@media(max-width:991px){.gov-sidebar{width:min(240px,86vw)!important;max-width:86vw!important}}@media(max-width:360px){.gov-sidebar{width:min(232px,90vw)!important;max-width:90vw!important}.gov-nav .nav-link,.gov-logout{font-size:13px!important}}
+  .gov-sidebar{padding:14px 12px!important;overflow-x:hidden!important}.gov-brand{display:grid!important;grid-template-columns:1fr!important;justify-items:center!important;align-items:center!important;gap:8px!important;text-align:center!important;padding:8px 8px 14px!important;margin:0 0 8px!important;border-bottom:1px solid rgba(15,23,42,.1)!important}.gov-brand>div:not(.sidebar-official-logo){display:grid!important;justify-items:center!important;gap:2px!important;text-align:center!important;width:100%!important}.gov-brand strong,.gov-brand b,.gov-brand small{max-width:204px!important;margin:0 auto!important;letter-spacing:0!important;text-align:center!important;text-transform:uppercase!important}.gov-brand strong{color:#064e2e!important;font-size:12px!important;line-height:1.22!important;font-weight:800!important}.gov-brand b{color:#dc2626!important;font-size:17px!important;line-height:1.15!important;font-weight:850!important}.gov-brand small{color:#667085!important;font-size:12px!important;line-height:1.2!important;font-weight:650!important}.sidebar-official-logo{width:88px;height:88px;position:relative;display:grid;place-items:center;border-radius:50%;background:transparent;isolation:isolate;flex:0 0 auto}.sidebar-official-logo:before{content:'';position:absolute;inset:3px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 58%,transparent 59%),conic-gradient(from -18deg,#f2b705,#0f8f4d,#f2b705,#0f8f4d,#f2b705);box-shadow:0 10px 24px rgba(10,143,77,.12);z-index:-2}.sidebar-official-logo:after{content:'';position:absolute;inset:13px;border-radius:50%;border:2px solid #0a8f4d;background:linear-gradient(180deg,#fffef6 0%,#eef8ec 100%);z-index:-1}.sidebar-logo-flag,.sidebar-logo-landmark,.sidebar-logo-home,.sidebar-logo-text,.sidebar-official-logo strong{position:absolute;z-index:1}.sidebar-logo-flag{top:17px;left:50%;width:28px;height:17px;transform:translateX(-50%);border-radius:4px 10px 10px 4px;background:#dc2626;color:#facc15;display:grid;place-items:center;font-size:8px}.sidebar-logo-landmark{top:38px;left:24px;color:#08733e;font-size:19px}.sidebar-logo-home{top:41px;right:24px;color:#2f9a4b;font-size:15px}.sidebar-logo-text{top:56px;left:0;right:0;color:#0a8f4d;font-size:10px;line-height:1;font-weight:850;text-align:center;text-transform:uppercase}.sidebar-official-logo strong{top:66px;left:0;right:0;color:#dc2626;font-size:24px;line-height:.9;font-weight:900;text-align:center}.nav-section{margin:5px 0 8px!important}.nav-section-title{padding:0 10px 5px!important;font-size:10px!important;letter-spacing:.08em!important;color:#8a968e!important}.gov-nav{gap:0!important}.gov-nav .nav-link,.gov-logout{min-height:45px!important;border-radius:13px!important;padding:0 11px!important;gap:10px!important;font-size:13.5px!important;font-weight:700!important}.gov-nav .nav-link.active{background:#0A8F4D!important;color:#fff!important;box-shadow:0 12px 24px rgba(10,143,77,.22)!important}.gov-nav .nav-link.active i{color:#fff!important}.gov-nav .nav-link:hover:not(.active){background:#e9f7ef!important;color:#0A8F4D!important}body.sidebar-collapsed .gov-brand>div:not(.sidebar-official-logo),body.sidebar-collapsed .nav-section-title,body.sidebar-collapsed .gov-nav .nav-link span,body.sidebar-collapsed .gov-logout span{display:none!important}body.sidebar-collapsed .sidebar-official-logo{width:52px;height:52px}body.sidebar-collapsed .sidebar-logo-flag{top:10px;width:18px;height:11px;font-size:6px}body.sidebar-collapsed .sidebar-logo-landmark{top:23px;left:14px;font-size:11px}body.sidebar-collapsed .sidebar-logo-home{top:24px;right:14px;font-size:10px}body.sidebar-logo-text{top:34px;font-size:7px}body.sidebar-collapsed .sidebar-official-logo strong{top:39px;font-size:14px}@media(max-width:991px){.gov-sidebar{width:min(240px,86vw)!important;max-width:86vw!important}}@media(max-width:360px){.gov-sidebar{width:min(232px,90vw)!important;max-width:90vw!important}.gov-nav .nav-link,.gov-logout{font-size:13px!important}}
 </style>
 HTML;
-$html = preg_replace('/<\/head>/', $sidebarCss . "\n</head>", $html, 1);
-$html = preg_replace('/<\/body>/', '<script src="assets/js/mobile-design-system.js?v=20260701-mobile-ds-4"></script>' . "\n</body>", $html, 1);
-$safeReportPrint = <<<'JS'
-async function printReport(){
-  try{
-    var report=await ensureReport();
-    var printData=await fetchJson(apiUrl('/api/reports/print')).catch(function(){return report;});
-    var w=window.open('','_blank');
-    if(!w){showMessage('Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép popup.','warning');return;}
-    var title=esc(printData.title||report.title||'Báo cáo');
-    var rows=Number(printData.totalRows||0).toLocaleString('vi-VN');
-    var html=`
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <title>${title}</title>
-  <style>
-    body{font-family:Arial,sans-serif;color:#111827;margin:24px}
-    h1{text-align:center;font-size:20px;margin:0 0 8px}
-    p{text-align:center;margin:0 0 18px;color:#555}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{border:1px solid #777;padding:6px;text-align:left;vertical-align:top}
-    th{background:#eef2f7;font-weight:700}
-    .sign{margin-top:36px;display:flex;justify-content:flex-end;text-align:center}
-  </style>
-</head>
-<body>
-  <h1>${title}</h1>
-  <p>Loại báo cáo: ${esc(reportType())} - Tổng số: ${rows} dòng</p>
-  ${table(printData)}
-  <div class="sign"><div>Người lập báo cáo<br><br><br>........................</div></div>
-  <script>window.onload=function(){window.print();};<\/script>
-</body>
-</html>`;
-    w.document.write(html);
-    w.document.close();
-  }catch(e){showMessage(e.message||'Không in được báo cáo.','danger');}
-}
-JS;
-$html = preg_replace('/async function printReport\(\)\{try\{.*?\n  function lockReportTypes\(\)/s', $safeReportPrint . "\n  function lockReportTypes()", $html, 1);
+$html = preg_replace('/<\/head>/', $sidebarCss . "\n</head>", $html, 1) ?? $html;
+$html = preg_replace('/<\/body>/', '<script src="' . versioned_asset('assets/js/view-inline-patches.js') . '"></script>' . "\n" . '<script src="' . versioned_asset('assets/js/mobile-design-system.js') . '"></script>' . "\n</body>", $html, 1) ?? $html;
 echo $html;
