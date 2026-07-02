@@ -1,7 +1,7 @@
 <?php
 
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260703-gis-search-gps-1');
+define('APP_ASSET_VERSION', '20260703-gis-search-gps-2');
 
 require_once __DIR__ . '/app/Core/Env.php';
 require_once __DIR__ . '/app/Core/Database.php';
@@ -31,7 +31,6 @@ require_once __DIR__ . '/app/Models/InterfaceSetting.php';
 require_once __DIR__ . '/app/Models/DashboardStats.php';
 require_once __DIR__ . '/app/Models/GisArea.php';
 require_once __DIR__ . '/app/Models/GisHouseholdLocation.php';
-require_once __DIR__ . '/app/Models/GisSearch.php';
 require_once __DIR__ . '/app/Services/Auth.php';
 require_once __DIR__ . '/app/Services/Excel.php';
 require_once __DIR__ . '/app/Services/Response.php';
