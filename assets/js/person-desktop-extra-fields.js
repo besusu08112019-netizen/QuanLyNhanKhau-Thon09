@@ -164,6 +164,8 @@
     const originalNormalize = window.normalizePersonDetailData;
     window.normalizePersonDetailData = function normalizePersonDetailWithAge(row) {
       const normalized = originalNormalize.apply(this, arguments) || {};
+      if (!isDesktop()) return normalized;
+
       const source = row || {};
       if (!hasValue(normalized.relationship)) {
         const relationship = relationshipValue(source);
