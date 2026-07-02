@@ -1,12 +1,95 @@
 (() => {
+  installPersonTableRenderFix();
+
   const loadPopulationCardDesign = () => {
     if (!document.querySelector('script[src*="mobile-design-system.js"]')) {
       const script = document.createElement('script');
-      script.src = 'assets/js/mobile-design-system.js?v=20260701-person-card-5';
+      script.src = 'assets/js/mobile-design-system.js?v=20260703-person-table-source-fix-1';
       script.defer = true;
       document.body.appendChild(script);
     }
   };
+
+  function installPersonTableRenderFix() {
+    if (window.__thon09PersonTableRenderFixInstalled) return;
+    window.__thon09PersonTableRenderFixInstalled = true;
+
+    const text = value => value === null || value === undefined ? '' : String(value).trim();
+    const safe = value => typeof escapeHtml === 'function' ? escapeHtml(value) : text(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+    const fmtDate = value => typeof formatDate === 'function' ? formatDate(value) : text(value);
+    const normalize = value => typeof normalizeSearchText === 'function' ? normalizeSearchText(value) : text(value).toLowerCase();
+    const ageExact = value => {
+      const raw = text(value);
+      if (!raw) return null;
+      let birth = null;
+      const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) birth = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+      const vn = !birth && raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (vn) birth = new Date(Number(vn[3]), Number(vn[2]) - 1, Number(vn[1]));
+      if (!birth || Number.isNaN(birth.getTime())) return null;
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const birthdayPassed = today.getMonth() > birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+      if (!birthdayPassed) age -= 1;
+      return age >= 0 ? age : null;
+    };
+    const relationshipOf = row => text(row.relationship || row.relationship_to_head || row.relationshipToHead || row.relation_to_head || row.household_relationship);
+
+    window.personRow = function personRow(row = {}) {
+      const party = Number(row.party_member || row.partyMember || 0) === 1;
+      const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
+      const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : (typeof residencyLabel === 'function' ? residencyLabel(row.residency_status) : (row.residency_status || 'Thường trú'));
+      const age = ageExact(row.date_of_birth);
+      return '<tr>'
+        + '<td><input type="checkbox" class="person-check" value="' + safe(row.id || '') + '"></td>'
+        + '<td>' + safe(row.household_code || '') + '</td>'
+        + '<td>' + safe(relationshipOf(row)) + '</td>'
+        + '<td>' + safe(row.citizen_code || '') + '</td>'
+        + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + Number(row.id || 0) + ')">' + safe(row.full_name || '') + '</button></td>'
+        + '<td>' + fmtDate(row.date_of_birth) + '</td>'
+        + '<td>' + (age === null ? '' : safe(age + ' tuổi')) + '</td>'
+        + '<td>' + safe(row.gender || '') + '</td>'
+        + '<td>' + safe(row.identity_number || '') + '</td>'
+        + '<td><span class="person-badge ' + residenceClass + '">' + safe(residenceText) + '</span></td>'
+        + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
+        + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + Number(row.id || 0) + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + Number(row.id || 0) + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + Number(row.id || 0) + ')">Xóa</button></td>'
+        + '</tr>';
+    };
+
+    window.loadPersons = async function loadPersons() {
+      try {
+        const searchText = normalize(App.persons.search || '');
+        const householdText = (App.persons.householdId || '').trim();
+        let items = [];
+        let total = 0;
+        if (searchText) {
+          const extra = householdText ? { householdId: householdText } : {};
+          const allItems = await fetchAllPaged('/api/persons', extra);
+          const filtered = allItems.filter(row => [row.full_name, row.citizen_code, row.identity_number, row.personal_id, row.national_id, row.phone, row.household_code, row.current_address, row.household_address]
+            .some(value => normalize(value).includes(searchText)));
+          total = filtered.length;
+          const startIndex = (App.persons.page - 1) * App.persons.pageSize;
+          items = filtered.slice(startIndex, startIndex + App.persons.pageSize);
+        } else {
+          const params = new URLSearchParams({ page: App.persons.page, pageSize: App.persons.pageSize });
+          if (householdText) params.set('householdId', householdText);
+          const data = await api('/api/persons?' + params.toString());
+          items = data.items || [];
+          total = data.total || 0;
+        }
+        const grouped = items.reduce((acc, row) => {
+          const code = row.household_code || 'Chưa có hộ';
+          (acc[code] ||= []).push(row);
+          return acc;
+        }, {});
+        document.querySelector('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="12">Mã hộ: ' + safe(code) + '</td></tr>' + rows.map(window.personRow).join('')).join('') || '<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+        updateBulkDeleteButtons();
+        renderPager('#personPager', { total, page: App.persons.page, pageSize: App.persons.pageSize }, page => { App.persons.page = page; window.loadPersons(); });
+      } catch (error) {
+        showToast('Không tải được danh sách nhân khẩu: ' + error.message, 'danger');
+      }
+    };
+  }
 
   const start = () => {
     loadPopulationCardDesign();
