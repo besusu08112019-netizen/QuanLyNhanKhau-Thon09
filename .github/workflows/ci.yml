@@ -39,6 +39,23 @@ jobs:
             -path './backups' -prune -o \
             -name '*.php' -print0 | xargs -0 -n1 php -l
 
+      - name: Render app shell and verify assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -S 127.0.0.1:8080 index.php > /tmp/thon09-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill ${server_pid} >/dev/null 2>&1 || true' EXIT
+          sleep 2
+          curl -fsS http://127.0.0.1:8080/ -o /tmp/thon09-home.html
+          grep -q 'assets/js/view-inline-patches.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/mobile-design-system.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/css/person-card-layout.css?v=' /tmp/thon09-home.html
+          ! grep -q 'thon09-report-inline-stable' /tmp/thon09-home.html
+          ! grep -q 'thon09-person-advanced-filter-fix' /tmp/thon09-home.html
+          ! grep -q 'thon09-header-duplicate-guard' /tmp/thon09-home.html
+          ! grep -q 'thon09-final-navigation-repair' /tmp/thon09-home.html
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
