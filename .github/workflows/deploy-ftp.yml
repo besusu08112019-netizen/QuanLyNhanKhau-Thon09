@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: production-ftp
+  cancel-in-progress: false
+
 jobs:
   ftp-deploy:
     runs-on: ubuntu-latest
