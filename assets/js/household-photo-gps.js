@@ -1,0 +1,121 @@
+(function () {
+  if (window.__thon09HouseholdPhotoGpsLoaded) return;
+  window.__thon09HouseholdPhotoGpsLoaded = true;
+
+  const state = {
+    lastPosition: null,
+    lastRequestAt: 0,
+    requesting: false,
+  };
+
+  function toast(message, type = 'info') {
+    if (typeof window.toast === 'function') {
+      window.toast(message, type);
+    } else if (typeof window.showToast === 'function') {
+      window.showToast(message, type);
+    } else {
+      console[type === 'error' ? 'error' : 'log'](message);
+    }
+  }
+
+  function formOf(element) {
+    return element?.closest?.('form') || document.getElementById('householdForm') || document.querySelector('form[data-household-form]');
+  }
+
+  function ensureField(form, name) {
+    if (!form) return null;
+    let input = form.querySelector(`[name="${name}"]`);
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      form.appendChild(input);
+    }
+    return input;
+  }
+
+  function setValue(form, names, value) {
+    names.forEach((name) => {
+      const input = ensureField(form, name);
+      if (input) {
+        input.value = value == null ? '' : String(value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  }
+
+  function writePosition(form, position) {
+    if (!form || !position?.coords) return;
+    const coords = position.coords;
+    const latitude = Number(coords.latitude).toFixed(8);
+    const longitude = Number(coords.longitude).toFixed(8);
+    const accuracy = coords.accuracy != null ? Math.round(Number(coords.accuracy)) : '';
+
+    setValue(form, ['latitude'], latitude);
+    setValue(form, ['longitude'], longitude);
+    setValue(form, ['locationAccuracy', 'location_accuracy'], accuracy);
+    setValue(form, ['locationSource', 'location_source'], 'GPS');
+
+    state.lastPosition = {
+      latitude,
+      longitude,
+      accuracy,
+      source: 'GPS',
+      capturedAt: new Date().toISOString(),
+    };
+    window.__thon09LastHouseholdPhotoGps = state.lastPosition;
+
+    const sourceSelect = form.querySelector('[name="locationSource"], [name="location_source"]');
+    if (sourceSelect) sourceSelect.value = 'GPS';
+  }
+
+  function requestCurrentPosition(form) {
+    if (!window.isSecureContext) {
+      toast('GPS chỉ hoạt động trên HTTPS hoặc localhost.', 'warning');
+      return;
+    }
+    if (!navigator.geolocation) {
+      toast('Thiết bị không hỗ trợ GPS.', 'warning');
+      return;
+    }
+    if (state.requesting) return;
+
+    const now = Date.now();
+    if (state.lastPosition && now - state.lastRequestAt < 15000) {
+      writePosition(form, { coords: state.lastPosition });
+      return;
+    }
+
+    state.requesting = true;
+    state.lastRequestAt = now;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        state.requesting = false;
+        writePosition(form, position);
+        const accuracy = position.coords.accuracy != null ? Math.round(position.coords.accuracy) : null;
+        toast(accuracy ? `Đã gắn GPS cho ảnh hộ (±${accuracy} m).` : 'Đã gắn GPS cho ảnh hộ.', 'success');
+      },
+      (error) => {
+        state.requesting = false;
+        const messages = {
+          1: 'Bạn đã từ chối quyền GPS. Ảnh vẫn được chụp nhưng chưa có tọa độ.',
+          2: 'Không lấy được vị trí hiện tại. Vui lòng thử lại ngoài trời hoặc nhập tọa độ thủ công.',
+          3: 'Lấy GPS quá thời gian. Ảnh vẫn được chụp nhưng chưa có tọa độ.',
+        };
+        toast(messages[error.code] || 'Không lấy được GPS cho ảnh hộ.', 'warning');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 30000,
+      }
+    );
+  }
+
+  document.addEventListener('click', (event) => {
+    const captureButton = event.target.closest('#householdPhotoCaptureBtn, [data-household-photo-capture]');
+    if (!captureButton) return;
+    requestCurrentPosition(formOf(captureButton));
+  }, true);
+})();
