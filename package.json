@@ -1,0 +1,13 @@
+{
+  "name": "thon09-admin-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend checks for He thong Quan Ly Hanh Chinh Thon 09.",
+  "scripts": {
+    "check:js": "find assets/js -name '*.js' -print0 | xargs -0 -n1 node --check",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.3"
+  }
+}
