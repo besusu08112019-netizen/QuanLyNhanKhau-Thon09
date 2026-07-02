@@ -3,10 +3,25 @@
 
   const CSS_HREFS = [
     'assets/css/admin-design-system.css?v=20260701-admin-ds-2',
-    'assets/css/person-card-layout.css?v=20260702-person-card-mobile-v1'
+    'assets/css/person-card-layout.css?v=20260702-person-card-mobile-v1',
+    'assets/css/gis-household-location.css?v=20260702-sprint15-1'
   ];
   const JS_SRC = 'assets/js/admin-design-system.js?v=20260701-admin-ds-1';
   const GROUP_JS_SRC = 'assets/js/person-household-group-style.js?v=20260702-person-final-ui';
+  const GIS_LOCATION_JS_SRC = 'assets/js/gis-household-location.js?v=20260702-sprint15-1';
+
+  function ensureScript(src, fileName) {
+    const existing = document.querySelector('script[src*="' + fileName + '"]');
+    if (existing) {
+      const current = existing.getAttribute('src') || '';
+      if (current !== src) existing.setAttribute('src', src);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.defer = true;
+    document.body.appendChild(script);
+  }
 
   function ensureSharedDesignAssets() {
     CSS_HREFS.forEach(href => {
@@ -23,20 +38,9 @@
       document.head.appendChild(link);
     });
 
-    if (!document.querySelector('script[src*="admin-design-system.js"]')) {
-      const script = document.createElement('script');
-      script.src = JS_SRC;
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-
-    const existingGroupScript = document.querySelector('script[src*="person-household-group-style.js"]');
-    if (!existingGroupScript || (existingGroupScript.getAttribute('src') || '') !== GROUP_JS_SRC) {
-      const groupScript = document.createElement('script');
-      groupScript.src = GROUP_JS_SRC;
-      groupScript.defer = true;
-      document.body.appendChild(groupScript);
-    }
+    ensureScript(JS_SRC, 'admin-design-system.js');
+    ensureScript(GROUP_JS_SRC, 'person-household-group-style.js');
+    ensureScript(GIS_LOCATION_JS_SRC, 'gis-household-location.js');
   }
 
   function fitPopulationNames() {
