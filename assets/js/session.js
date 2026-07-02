@@ -32,8 +32,9 @@
   function loadFinalMobilePersonCards() {
     const run = async () => {
       try {
-        await loadScriptOnce('assets/js/mobile-design-system.js?v=20260702-person-card-v1-2', 'thon09-mobile-design-system');
+        await loadScriptOnce('assets/js/mobile-design-system.js?v=20260702-desktop-person-aligner-1', 'thon09-mobile-design-system');
         await loadScriptOnce('assets/js/person-household-group-style.js?v=20260702-person-card-v1-2', 'thon09-person-household-groups');
+        await loadScriptOnce('assets/js/person-desktop-column-aligner.js?v=20260702-desktop-person-aligner-1', 'thon09-person-desktop-column-aligner');
         if (typeof window.thon09FitPopulationNames === 'function') window.thon09FitPopulationNames();
         if (window.App && window.App.screen === 'persons' && typeof window.loadPersons === 'function') window.loadPersons();
       } catch (error) {
