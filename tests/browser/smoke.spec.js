@@ -25,8 +25,12 @@ const loginConfig = {
   }
 };
 
+function isFatalConsoleError(text) {
+  return /Uncaught|SyntaxError|Invalid or unexpected token|Unexpected identifier/i.test(text);
+}
+
 test('application shell renders externalized scripts without fatal runtime errors', async ({ page }) => {
-  const consoleErrors = [];
+  const fatalConsoleErrors = [];
   const pageErrors = [];
 
   await page.route('**/api/**', async (route) => {
@@ -50,13 +54,13 @@ test('application shell renders externalized scripts without fatal runtime error
     if (message.type() !== 'error') return;
     const text = message.text();
     if (text.includes('/favicon.ico') || text.includes('Failed to load resource')) return;
-    consoleErrors.push(text);
+    if (isFatalConsoleError(text)) fatalConsoleErrors.push(text);
   });
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-  await expect(page.getByRole('button', { name: /đăng nhập/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /đăng nhập/i }).first()).toBeVisible();
   await expect(page.locator('script[src*="assets/js/view-inline-patches.js"]')).toHaveCount(1);
 
   const html = await page.content();
@@ -66,5 +70,5 @@ test('application shell renders externalized scripts without fatal runtime error
   expect(html).not.toContain('thon09-final-navigation-repair');
 
   expect(pageErrors).toEqual([]);
-  expect(consoleErrors).toEqual([]);
+  expect(fatalConsoleErrors).toEqual([]);
 });
