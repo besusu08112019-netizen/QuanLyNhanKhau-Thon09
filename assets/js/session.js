@@ -30,9 +30,11 @@
   }
 
   function loadHouseholdPhotoCapture() {
-    return loadScriptOnce('assets/js/household-photo-capture.js?v=20260703-sprint16-1', 'thon09-household-photo-capture').catch(error => {
-      console.error('Không tải được chức năng chụp ảnh hộ', error);
-    });
+    return loadScriptOnce('assets/js/household-photo-capture.js?v=20260703-sprint16-1', 'thon09-household-photo-capture')
+      .then(() => loadScriptOnce('assets/js/household-photo-camera-fix.js?v=20260703-sprint16-1', 'thon09-household-photo-camera-fix'))
+      .catch(error => {
+        console.error('Không tải được chức năng chụp ảnh hộ', error);
+      });
   }
 
   function loadFinalMobilePersonCards() {
