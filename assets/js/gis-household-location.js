@@ -23,7 +23,11 @@
     const headers = Object.assign({ Accept: 'application/json' }, (options && options.headers) || {});
     if (token) headers.Authorization = 'Bearer ' + token;
     if (options && options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
-    const response = await fetch(path, Object.assign({}, options || {}, { headers }));
+    const fetchOptions = Object.assign({}, options || {}, { headers });
+    if (fetchOptions.body && typeof fetchOptions.body !== 'string' && !(typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData)) {
+      fetchOptions.body = JSON.stringify(fetchOptions.body);
+    }
+    const response = await fetch(path, fetchOptions);
     const json = await response.json().catch(() => null);
     if (!response.ok || !json || json.ok === false) throw new Error((json && json.error && json.error.message) || 'Không tải được dữ liệu.');
     return json.data || json;
@@ -127,7 +131,6 @@
 
   async function refreshAfterLocationChange() {
     await loadHouseholdMarkers();
-    if (typeof window.loadGisMap === 'function') setTimeout(() => window.loadGisMap(), 120);
     if (typeof window.loadDashboard === 'function') setTimeout(() => window.loadDashboard(), 160);
     if (typeof window.loadHouseholds === 'function') setTimeout(() => window.loadHouseholds(), 180);
   }
