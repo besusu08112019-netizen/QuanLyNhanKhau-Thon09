@@ -49,7 +49,7 @@ class GisController extends BaseController
         try {
             $this->requirePermission('household', 'read');
             $items = $this->locationModel()->markers($this->householdFiltersFromQuery());
-            $this->ok(['items' => $items]);
+            $this->ok($items);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/households', $e);
             $this->fail('Không tải được vị trí hộ: ' . $e->getMessage(), 500);
