@@ -68,11 +68,12 @@ final class HouseholdController extends BaseController
     public function destroy(string $id): void
     {
         $user = $this->requirePermission('household', 'delete');
+        $before = $this->households->find((int) $id);
+        if (!$before) $this->fail('Không tìm thấy hộ dân', 404);
+
         $db = Database::pdo();
         $db->beginTransaction();
         try {
-            $before = $this->households->find((int) $id);
-            if (!$before) $this->fail('Không tìm thấy hộ dân', 404);
             $this->households->softDelete((int) $id, (int) $user['id']);
             $after = $this->households->find((int) $id) ?: $before;
             $movementAfter = $after;
