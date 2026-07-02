@@ -52,9 +52,10 @@
     section.innerHTML =
       '<h6><i class="fa-solid fa-location-crosshairs"></i> Vị trí hộ gia đình</h6>' +
       '<div class="row g-2">' +
-        '<div class="col-md-4"><label class="form-label">Latitude</label><input name="latitude" class="form-control" readonly></div>' +
-        '<div class="col-md-4"><label class="form-label">Longitude</label><input name="longitude" class="form-control" readonly></div>' +
-        '<div class="col-md-4"><label class="form-label">Nguồn</label><input name="locationSource" class="form-control" readonly></div>' +
+        '<div class="col-md-3"><label class="form-label">Latitude</label><input name="latitude" class="form-control" readonly></div>' +
+        '<div class="col-md-3"><label class="form-label">Longitude</label><input name="longitude" class="form-control" readonly></div>' +
+        '<div class="col-md-3"><label class="form-label">Nguồn</label><input name="locationSource" class="form-control" readonly></div>' +
+        '<div class="col-md-3"><label class="form-label">Độ chính xác</label><input name="locationAccuracy" class="form-control" readonly></div>' +
       '</div>' +
       '<div class="household-location-actions">' +
         '<button class="btn btn-outline-success" type="button" data-household-location-action="pick"><i class="fa-solid fa-map-location-dot"></i> Chọn trên bản đồ</button>' +
@@ -71,9 +72,12 @@
     const lat = form.elements.latitude;
     const lng = form.elements.longitude;
     const source = form.elements.locationSource;
+    const accuracy = form.elements.locationAccuracy;
+    const accuracyValue = row ? (row.location_accuracy != null ? row.location_accuracy : row.accuracy) : '';
     if (lat) lat.value = row && row.latitude != null ? row.latitude : '';
     if (lng) lng.value = row && row.longitude != null ? row.longitude : '';
     if (source) source.value = row && row.location_source ? row.location_source : '';
+    if (accuracy) accuracy.value = accuracyValue !== '' && accuracyValue != null ? '±' + accuracyValue + ' m' : '';
   }
 
   async function hydrateHouseholdLocation(id) {
@@ -188,16 +192,54 @@
     document.querySelectorAll('.gis-location-pick-banner').forEach(el => el.remove());
   }
 
-  function useGps(householdId) {
+  function gpsErrorMessage(error) {
+    const rawMessage = String(error && error.message ? error.message : '').trim();
+    const message = rawMessage.toLowerCase();
+    if (message.includes('permission') && message.includes('policy')) {
+      return 'GPS đang bị chặn bởi Permissions-Policy của hosting. Vui lòng kiểm tra header geolocation=(self).';
+    }
+    if (error && error.code === error.PERMISSION_DENIED) {
+      return 'Bạn đã từ chối quyền vị trí. Vui lòng mở Site Settings của trình duyệt và cho phép Location.';
+    }
+    if (error && error.code === error.POSITION_UNAVAILABLE) {
+      return 'Thiết bị không cung cấp được vị trí hiện tại. Vui lòng bật GPS hoặc thử lại ngoài trời.';
+    }
+    if (error && error.code === error.TIMEOUT) {
+      return 'Quá thời gian lấy GPS. Vui lòng kiểm tra tín hiệu vị trí và thử lại.';
+    }
+    return rawMessage || 'Không lấy được vị trí GPS.';
+  }
+
+  function useGps(householdId, triggerButton) {
     if (!householdId) { toast('Vui lòng lưu hộ gia đình trước khi lấy GPS.', 'warning'); return; }
+    if (!window.isSecureContext) { toast('GPS chỉ hoạt động trên HTTPS hoặc localhost. Vui lòng truy cập bằng HTTPS.', 'danger'); return; }
     if (!navigator.geolocation) { toast('Thiết bị không hỗ trợ GPS.', 'warning'); return; }
+
+    const button = triggerButton || $('[data-household-location-action="gps"]');
+    const originalHtml = button ? button.innerHTML : '';
+    const restoreButton = function () {
+      if (!button) return;
+      button.disabled = false;
+      button.innerHTML = originalHtml;
+    };
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS...';
+    }
+
     navigator.geolocation.getCurrentPosition(async position => {
       try {
-        await saveLocation(householdId, position.coords.latitude, position.coords.longitude, 'GPS', Math.round(position.coords.accuracy || 0));
+        const accuracy = Math.round(position.coords.accuracy || 0);
+        await saveLocation(householdId, position.coords.latitude, position.coords.longitude, 'GPS', accuracy);
       } catch (error) {
         toast(error.message || 'Không lưu được vị trí GPS.', 'danger');
+      } finally {
+        restoreButton();
       }
-    }, error => toast(error.message || 'Không lấy được vị trí GPS.', 'danger'), { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+    }, error => {
+      restoreButton();
+      toast(gpsErrorMessage(error), 'danger');
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
   }
 
   function bindLocationButtons() {
@@ -208,7 +250,7 @@
       const householdId = currentHouseholdId();
       const action = button.dataset.householdLocationAction;
       if (action === 'pick') startPicker(householdId);
-      if (action === 'gps') useGps(householdId);
+      if (action === 'gps') useGps(householdId, button);
       if (action === 'clear') {
         if (!householdId) return;
         if (!window.confirm('Xóa vị trí hiện tại của hộ gia đình này?')) return;
