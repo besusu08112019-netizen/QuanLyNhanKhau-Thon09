@@ -6,6 +6,7 @@
     'assets/css/person-card-layout.css?v=20260702-person-card-mobile-v1'
   ];
   const JS_SRC = 'assets/js/admin-design-system.js?v=20260701-admin-ds-1';
+  const GROUP_JS_SRC = 'assets/js/person-household-group-style.js?v=20260702-person-final-ui';
 
   function ensureSharedDesignAssets() {
     CSS_HREFS.forEach(href => {
@@ -27,6 +28,14 @@
       script.src = JS_SRC;
       script.defer = true;
       document.body.appendChild(script);
+    }
+
+    const existingGroupScript = document.querySelector('script[src*="person-household-group-style.js"]');
+    if (!existingGroupScript || (existingGroupScript.getAttribute('src') || '') !== GROUP_JS_SRC) {
+      const groupScript = document.createElement('script');
+      groupScript.src = GROUP_JS_SRC;
+      groupScript.defer = true;
+      document.body.appendChild(groupScript);
     }
   }
 
