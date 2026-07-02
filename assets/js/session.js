@@ -9,16 +9,43 @@
     showLogin();
   }
 
+  function loadScriptOnce(src, marker) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector('script[data-' + marker + ']')) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.defer = true;
+      script.dataset[marker.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = '1';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Không tải được ' + src));
+      document.head.appendChild(script);
+    });
+  }
+
   function loadFinalResponsiveOverrides() {
-    if (document.querySelector('script[data-thon09-responsive-final]')) return;
-    const script = document.createElement('script');
-    script.src = 'assets/js/responsive-final-production.js?v=20260702-final-responsive-2';
-    script.defer = true;
-    script.dataset.thon09ResponsiveFinal = '1';
-    document.head.appendChild(script);
+    return loadScriptOnce('assets/js/responsive-final-production.js?v=20260702-final-responsive-2', 'thon09-responsive-final').catch(() => {});
+  }
+
+  function loadFinalMobilePersonCards() {
+    const run = async () => {
+      try {
+        await loadScriptOnce('assets/js/mobile-design-system.js?v=20260702-person-card-v1-1', 'thon09-mobile-design-system');
+        await loadScriptOnce('assets/js/person-household-group-style.js?v=20260702-person-card-v1-1', 'thon09-person-household-groups');
+        if (typeof window.thon09FitPopulationNames === 'function') window.thon09FitPopulationNames();
+        if (window.App && window.App.screen === 'persons' && typeof window.loadPersons === 'function') window.loadPersons();
+      } catch (error) {
+        console.error('Không tải được giao diện nhân khẩu mobile cuối cùng', error);
+      }
+    };
+    if (document.readyState === 'complete') run();
+    else window.addEventListener('load', run, { once: true });
   }
 
   loadFinalResponsiveOverrides();
+  loadFinalMobilePersonCards();
 
   window.clearClientSession = clearSession;
 
