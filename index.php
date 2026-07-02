@@ -1,115 +1,133 @@
 <?php
 
+define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260703-gis-search-gps-2');
+define('APP_ASSET_VERSION', '20260703-gis-search-gps-3');
 
-require_once __DIR__ . '/app/Core/Env.php';
-require_once __DIR__ . '/app/Core/Database.php';
-require_once __DIR__ . '/app/Core/Router.php';
-require_once __DIR__ . '/app/Core/Session.php';
-require_once __DIR__ . '/app/Controllers/BaseController.php';
-require_once __DIR__ . '/app/Controllers/AuthController.php';
-require_once __DIR__ . '/app/Controllers/DashboardController.php';
-require_once __DIR__ . '/app/Controllers/HouseholdController.php';
-require_once __DIR__ . '/app/Controllers/CitizenController.php';
-require_once __DIR__ . '/app/Controllers/TemporaryResidenceController.php';
-require_once __DIR__ . '/app/Controllers/TemporaryAbsenceController.php';
-require_once __DIR__ . '/app/Controllers/MovementController.php';
-require_once __DIR__ . '/app/Controllers/ImportController.php';
-require_once __DIR__ . '/app/Controllers/ExportController.php';
-require_once __DIR__ . '/app/Controllers/ReportController.php';
-require_once __DIR__ . '/app/Controllers/AccountController.php';
-require_once __DIR__ . '/app/Controllers/SystemController.php';
-require_once __DIR__ . '/app/Controllers/GisController.php';
-require_once __DIR__ . '/app/Models/BaseModel.php';
-require_once __DIR__ . '/app/Models/User.php';
-require_once __DIR__ . '/app/Models/Household.php';
-require_once __DIR__ . '/app/Models/Citizen.php';
-require_once __DIR__ . '/app/Models/Movement.php';
-require_once __DIR__ . '/app/Models/SystemLog.php';
-require_once __DIR__ . '/app/Models/InterfaceSetting.php';
-require_once __DIR__ . '/app/Models/DashboardStats.php';
-require_once __DIR__ . '/app/Models/GisArea.php';
-require_once __DIR__ . '/app/Models/GisHouseholdLocation.php';
-require_once __DIR__ . '/app/Services/Auth.php';
-require_once __DIR__ . '/app/Services/Excel.php';
-require_once __DIR__ . '/app/Services/Response.php';
+require_once BASE_PATH . '/app/Core/Autoloader.php';
 
+use App\Core\Autoloader;
+use App\Core\Request;
 use App\Core\Router;
-use App\Core\Session;
+use App\Core\Response;
 use App\Controllers\AuthController;
+use App\Controllers\BackupController;
 use App\Controllers\DashboardController;
-use App\Controllers\HouseholdController;
-use App\Controllers\CitizenController;
-use App\Controllers\TemporaryResidenceController;
-use App\Controllers\TemporaryAbsenceController;
-use App\Controllers\MovementController;
-use App\Controllers\ImportController;
-use App\Controllers\ExportController;
-use App\Controllers\ReportController;
-use App\Controllers\AccountController;
-use App\Controllers\SystemController;
+use App\Controllers\FileController;
 use App\Controllers\GisController;
+use App\Controllers\HouseholdController;
+use App\Controllers\ImportController;
+use App\Controllers\InsightController;
+use App\Controllers\LogController;
+use App\Controllers\MovementController;
+use App\Controllers\PermissionController;
+use App\Controllers\PersonController;
+use App\Controllers\ProfileController;
+use App\Controllers\ReportController;
+use App\Controllers\SettingController;
+use App\Controllers\UserController;
 
-Session::start();
+Autoloader::register();
 
-$router = new Router();
+$request = Request::capture();
+$router = new Router($request);
 
-$router->get('/api/public/login-config', [SystemController::class, 'publicLoginConfig']);
+$router->get('/api/public/login-config', [SettingController::class, 'publicLoginConfig']);
+
+$router->post('/api/setup', [AuthController::class, 'setup']);
 $router->post('/api/login', [AuthController::class, 'login']);
 $router->post('/api/logout', [AuthController::class, 'logout']);
 $router->get('/api/me', [AuthController::class, 'me']);
 
-$router->get('/api/dashboard', [DashboardController::class, 'stats']);
+$router->get('/api/dashboard', [DashboardController::class, 'summary']);
+$router->get('/api/dashboard/summary', [DashboardController::class, 'summary']);
+$router->get('/api/dashboard/population-chart', [DashboardController::class, 'populationChart']);
+$router->get('/api/dashboard/household-chart', [DashboardController::class, 'householdChart']);
+$router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
 $router->get('/api/households/{id}', [HouseholdController::class, 'show']);
 $router->put('/api/households/{id}', [HouseholdController::class, 'update']);
-$router->delete('/api/households/{id}', [HouseholdController::class, 'delete']);
+$router->delete('/api/households/{id}', [HouseholdController::class, 'destroy']);
 $router->post('/api/households/bulk-delete', [HouseholdController::class, 'bulkDelete']);
-$router->post('/api/households/{id}/photo', [HouseholdController::class, 'uploadPhoto']);
-$router->delete('/api/households/{id}/photo', [HouseholdController::class, 'deletePhoto']);
 
-$router->get('/api/citizens', [CitizenController::class, 'index']);
-$router->post('/api/citizens', [CitizenController::class, 'store']);
-$router->get('/api/citizens/{id}', [CitizenController::class, 'show']);
-$router->put('/api/citizens/{id}', [CitizenController::class, 'update']);
-$router->delete('/api/citizens/{id}', [CitizenController::class, 'delete']);
-$router->post('/api/citizens/bulk-delete', [CitizenController::class, 'bulkDelete']);
+$router->get('/api/citizens', [PersonController::class, 'index']);
+$router->post('/api/citizens', [PersonController::class, 'store']);
+$router->get('/api/citizens/{id}', [PersonController::class, 'show']);
+$router->put('/api/citizens/{id}', [PersonController::class, 'update']);
+$router->delete('/api/citizens/{id}', [PersonController::class, 'destroy']);
+$router->post('/api/citizens/bulk-delete', [PersonController::class, 'bulkDelete']);
+$router->post('/api/citizens/{id}/restore', [PersonController::class, 'restore']);
 
-$router->get('/api/temporary-residence', [TemporaryResidenceController::class, 'index']);
-$router->get('/api/temporary-absence', [TemporaryAbsenceController::class, 'index']);
+$router->get('/api/persons', [PersonController::class, 'index']);
+$router->post('/api/persons', [PersonController::class, 'store']);
+$router->get('/api/persons/{id}', [PersonController::class, 'show']);
+$router->put('/api/persons/{id}', [PersonController::class, 'update']);
+$router->delete('/api/persons/{id}', [PersonController::class, 'destroy']);
+
+$router->get('/api/temporary-residence', [PersonController::class, 'temporaryResidence']);
+$router->get('/api/temporary-absence', [PersonController::class, 'temporaryAbsence']);
+
 $router->get('/api/movements', [MovementController::class, 'index']);
 $router->post('/api/movements', [MovementController::class, 'store']);
+$router->get('/api/movements/types', [MovementController::class, 'types']);
+$router->get('/api/movements/{id}', [MovementController::class, 'show']);
+$router->put('/api/movements/{id}', [MovementController::class, 'update']);
+$router->delete('/api/movements/{id}', [MovementController::class, 'destroy']);
 
-$router->post('/api/import/check', [ImportController::class, 'check']);
-$router->post('/api/import/execute', [ImportController::class, 'execute']);
 $router->get('/api/import/template', [ImportController::class, 'template']);
+$router->post('/api/import/preview', [ImportController::class, 'preview']);
+$router->post('/api/import/process', [ImportController::class, 'process']);
+$router->post('/api/import/check', [ImportController::class, 'preview']);
+$router->post('/api/import/execute', [ImportController::class, 'process']);
 
-$router->get('/api/export/excel', [ExportController::class, 'excel']);
-$router->get('/api/export/templates', [ExportController::class, 'templates']);
+$router->get('/api/reports', [ReportController::class, 'summary']);
+$router->get('/api/reports/summary', [ReportController::class, 'summary']);
+$router->get('/api/reports/population', [ReportController::class, 'population']);
+$router->get('/api/reports/household', [ReportController::class, 'household']);
+$router->get('/api/reports/temporary-residence', [ReportController::class, 'temporaryResidence']);
+$router->get('/api/reports/temporary-absence', [ReportController::class, 'temporaryAbsence']);
+$router->get('/api/reports/births', [ReportController::class, 'births']);
+$router->get('/api/reports/deaths', [ReportController::class, 'deaths']);
+$router->get('/api/reports/migration', [ReportController::class, 'migration']);
+$router->get('/api/reports/export-excel', [ReportController::class, 'exportExcel']);
+$router->get('/api/reports/print', [ReportController::class, 'print']);
+$router->get('/api/reports/export-pdf', [ReportController::class, 'exportPdf']);
+$router->get('/api/export/excel', [ReportController::class, 'exportExcel']);
 
-$router->get('/api/reports', [ReportController::class, 'index']);
-$router->get('/api/reports/export', [ReportController::class, 'export']);
+$router->get('/api/accounts', [UserController::class, 'index']);
+$router->post('/api/accounts', [UserController::class, 'store']);
+$router->get('/api/accounts/{id}', [UserController::class, 'show']);
+$router->put('/api/accounts/{id}', [UserController::class, 'update']);
+$router->delete('/api/accounts/{id}', [UserController::class, 'destroy']);
+$router->post('/api/accounts/{id}/lock', [UserController::class, 'lock']);
+$router->post('/api/accounts/{id}/unlock', [UserController::class, 'unlock']);
+$router->get('/api/roles', [UserController::class, 'roles']);
+$router->get('/api/permissions', [PermissionController::class, 'index']);
+$router->put('/api/permissions', [PermissionController::class, 'update']);
 
-$router->get('/api/accounts', [AccountController::class, 'index']);
-$router->post('/api/accounts', [AccountController::class, 'store']);
-$router->put('/api/accounts/{id}', [AccountController::class, 'update']);
-$router->delete('/api/accounts/{id}', [AccountController::class, 'delete']);
-$router->post('/api/accounts/{id}/reset-password', [AccountController::class, 'resetPassword']);
-$router->get('/api/roles', [AccountController::class, 'roles']);
-$router->get('/api/system/logs', [SystemController::class, 'logs']);
-$router->get('/api/system/settings', [SystemController::class, 'settings']);
-$router->put('/api/system/settings', [SystemController::class, 'updateSettings']);
-$router->get('/api/system/interface', [SystemController::class, 'interfaceSettings']);
-$router->put('/api/system/interface', [SystemController::class, 'updateInterfaceSettings']);
-$router->post('/api/system/interface/upload', [SystemController::class, 'uploadInterfaceAsset']);
-$router->delete('/api/system/interface/asset', [SystemController::class, 'deleteInterfaceAsset']);
-$router->post('/api/system/backup', [SystemController::class, 'backup']);
-$router->get('/api/system/backups', [SystemController::class, 'backups']);
-$router->post('/api/system/restore', [SystemController::class, 'restore']);
-$router->get('/api/system/health', [SystemController::class, 'health']);
+$router->get('/api/system/logs', [LogController::class, 'index']);
+$router->get('/api/system/settings', [SettingController::class, 'index']);
+$router->put('/api/system/settings', [SettingController::class, 'update']);
+$router->get('/api/system/interface', [SettingController::class, 'index']);
+$router->put('/api/system/interface', [SettingController::class, 'update']);
+$router->post('/api/system/interface/upload', [SettingController::class, 'uploadMedia']);
+$router->delete('/api/system/interface/asset', [SettingController::class, 'deleteMedia']);
+$router->get('/api/system/interface/media', [SettingController::class, 'media']);
+$router->get('/api/system/backups', [BackupController::class, 'index']);
+$router->post('/api/system/backup', [BackupController::class, 'create']);
+$router->post('/api/system/restore', [BackupController::class, 'restore']);
+
+$router->get('/api/insights/search', [InsightController::class, 'search']);
+$router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
+$router->get('/api/profiles/household/{id}', [ProfileController::class, 'household']);
+$router->get('/api/profiles/citizen/{id}', [ProfileController::class, 'citizen']);
+$router->get('/api/profiles/timeline/{type}/{id}', [ProfileController::class, 'timeline']);
+$router->get('/api/files', [FileController::class, 'index']);
+$router->post('/api/files', [FileController::class, 'upload']);
+$router->get('/api/files/{id}/download', [FileController::class, 'download']);
+$router->delete('/api/files/{id}', [FileController::class, 'destroy']);
 
 $router->get('/api/gis/areas', [GisController::class, 'areas']);
 $router->get('/api/gis/search', [GisController::class, 'search']);
@@ -121,15 +139,10 @@ $router->put('/api/gis/households/{id}/location', [GisController::class, 'saveHo
 $router->delete('/api/gis/households/{id}/location', [GisController::class, 'clearHouseholdLocation']);
 $router->get('/api/gis/export-pdf', [GisController::class, 'exportPdf']);
 
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-if ($router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $path)) {
-    exit;
-}
-
 function versioned_asset(string $path): string
 {
     $normalized = ltrim($path, '/');
-    $file = APP_ROOT . '/' . $normalized;
+    $file = BASE_PATH . '/' . $normalized;
     $version = defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1';
     if (is_file($file)) {
         $version .= '-' . filemtime($file);
@@ -138,42 +151,37 @@ function versioned_asset(string $path): string
     return $normalized . $separator . 'v=' . rawurlencode($version);
 }
 
-if ($path === '/' || !str_starts_with($path, '/api')) {
-    $html = file_get_contents(__DIR__ . '/views/app.php');
+if (!str_starts_with($request->path(), '/api')) {
+    $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);
         echo 'Không tải được giao diện ứng dụng.';
         exit;
     }
 
-    $html = preg_replace('/<script>\s*window\.__THON09_INLINE_START__[\s\S]*?<\/script>/u', '', $html) ?? $html;
-    $html = preg_replace('/<script>\s*window\.showApp\s*=\s*window\.showApp[\s\S]*?<\/script>/u', '', $html) ?? $html;
-    $html = preg_replace('/<script>\s*\/\/ Sidebar toggle[\s\S]*?<\/script>/u', '', $html) ?? $html;
-    $html = preg_replace('/<script>\s*\/\/ Default credentials[\s\S]*?<\/script>/u', '', $html) ?? $html;
-
     $versionedAssets = [
-        'assets/js/csrf.js' => versioned_asset('assets/js/csrf.js'),
-        'assets/js/gis.js' => versioned_asset('assets/js/gis.js'),
-        'assets/js/gis-household-location.js' => versioned_asset('assets/js/gis-household-location.js'),
-        'assets/js/household-photo-capture.js' => versioned_asset('assets/js/household-photo-capture.js'),
-        'assets/js/household-photo-gps.js' => versioned_asset('assets/js/household-photo-gps.js'),
-        'assets/js/gis-search.js' => versioned_asset('assets/js/gis-search.js'),
-        'assets/js/reports.js' => versioned_asset('assets/js/reports.js'),
-        'assets/js/reports-ui-fix.js' => versioned_asset('assets/js/reports-ui-fix.js'),
-        'assets/js/mobile-design-system.js' => versioned_asset('assets/js/mobile-design-system.js'),
-        'assets/js/household-member-popup.js' => versioned_asset('assets/js/household-member-popup.js'),
-        'assets/css/design-system.css' => versioned_asset('assets/css/design-system.css'),
-        'assets/css/mobile-design-system.css' => versioned_asset('assets/css/mobile-design-system.css'),
-        'assets/css/dashboard-redesign.css' => versioned_asset('assets/css/dashboard-redesign.css'),
-        'assets/css/login-redesign.css' => versioned_asset('assets/css/login-redesign.css'),
-        'assets/css/mobile-person-card.css' => versioned_asset('assets/css/mobile-person-card.css'),
-        'assets/css/mobile-tablet-responsive.css' => versioned_asset('assets/css/mobile-tablet-responsive.css'),
-        'assets/css/sidebar-modern.css' => versioned_asset('assets/css/sidebar-modern.css'),
-        'assets/css/header-cleanup.css' => versioned_asset('assets/css/header-cleanup.css'),
+        'assets/js/csrf.js',
+        'assets/js/gis.js',
+        'assets/js/gis-household-location.js',
+        'assets/js/household-photo-capture.js',
+        'assets/js/household-photo-gps.js',
+        'assets/js/gis-search.js',
+        'assets/js/reports.js',
+        'assets/js/reports-ui-fix.js',
+        'assets/js/mobile-design-system.js',
+        'assets/js/household-member-popup.js',
+        'assets/css/design-system.css',
+        'assets/css/mobile-design-system.css',
+        'assets/css/dashboard-redesign.css',
+        'assets/css/login-redesign.css',
+        'assets/css/mobile-person-card.css',
+        'assets/css/mobile-tablet-responsive.css',
+        'assets/css/sidebar-modern.css',
+        'assets/css/header-cleanup.css',
     ];
 
-    foreach ($versionedAssets as $asset => $versioned) {
-        $html = str_replace($asset, $versioned, $html);
+    foreach ($versionedAssets as $asset) {
+        $html = str_replace($asset, versioned_asset($asset), $html);
     }
 
     $runtimeScripts = [
@@ -194,6 +202,5 @@ if ($path === '/' || !str_starts_with($path, '/api')) {
     exit;
 }
 
-http_response_code(404);
-header('Content-Type: application/json; charset=utf-8');
-echo json_encode(['ok' => false, 'error' => ['message' => 'Không tìm thấy đường dẫn']], JSON_UNESCAPED_UNICODE);
+$router->dispatch();
+Response::error('Không tìm thấy đường dẫn', 404);
