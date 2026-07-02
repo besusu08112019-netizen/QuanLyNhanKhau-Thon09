@@ -12,7 +12,7 @@
   function loadFinalResponsiveOverrides() {
     if (document.querySelector('script[data-thon09-responsive-final]')) return;
     const script = document.createElement('script');
-    script.src = 'assets/js/responsive-final-production.js?v=20260702-final-responsive-1';
+    script.src = 'assets/js/responsive-final-production.js?v=20260702-final-responsive-2';
     script.defer = true;
     script.dataset.thon09ResponsiveFinal = '1';
     document.head.appendChild(script);
