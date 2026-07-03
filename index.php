@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260703-api-route-alias-1');
+define('APP_ASSET_VERSION', '20260703-api-route-alias-2');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -67,6 +67,8 @@ $router->post('/api/persons', [PersonController::class, 'store']);
 $router->get('/api/persons/{id}', [PersonController::class, 'show']);
 $router->put('/api/persons/{id}', [PersonController::class, 'update']);
 $router->delete('/api/persons/{id}', [PersonController::class, 'destroy']);
+$router->post('/api/persons/bulk-delete', [PersonController::class, 'bulkDelete']);
+$router->post('/api/persons/{id}/restore', [PersonController::class, 'restore']);
 
 $router->get('/api/temporary-residence', [PersonController::class, 'temporaryResidence']);
 $router->get('/api/temporary-absence', [PersonController::class, 'temporaryAbsence']);
