@@ -4,33 +4,70 @@ on:
   push:
     branches:
       - main
+  pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  patch-person-table:
-    name: One-shot person desktop table mapping patch
+  quality:
+    name: PHP, JavaScript, and browser smoke checks
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
 
-      - name: Patch source files
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: fileinfo, json, mbstring, pdo, pdo_mysql, simplexml, zip
+          coverage: none
+
+      - name: Validate Composer metadata
+        run: composer validate --strict
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Lint PHP files
         shell: bash
         run: |
           set -euo pipefail
-          python -c "import base64; exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKdmlldyA9IFBhdGgoJ3ZpZXdzL2FwcC5waHAnKQphcHAgPSBQYXRoKCdhc3NldHMvanMvYXBwLmpzJykKdmlld190ZXh0ID0gdmlldy5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykKYXBwX3RleHQgPSBhcHAucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpCgpvbGRfaGVhZCA9ICc8dGhlYWQ+PHRyPjx0aD48aW5wdXQgdHlwZT0iY2hlY2tib3giIGlkPSJwZXJzb25DaGVja0FsbCI+PC90aD48dGg+TcOjIGjhu5k8L3RoPjx0aD5Nw6MgbmjDom4ga2jhuql1PC90aD48dGg+SOG7jSB2w6AgdMOqbjwvdGg+PHRoPk5nw6B5IHNpbmg8L3RoPjx0aD5HaeG7m2kgdMOtbmg8L3RoPjx0aD5DQ0NEL1Phu5EgxJHhu4tuaCBkYW5oPC90aD48dGg+Q8awIHRyw7o8L3RoPjx0aD7EkOG6o25nIHZpw6puPC90aD48dGggY2xhc3M9InRleHQtZW5kIj5UaGFvIHTDoWM8L3RoPjwvdHI+PC90aGVhZD4nCm5ld19oZWFkID0gJzx0aGVhZD48dHI+PHRoPjxpbnB1dCB0eXBlPSJjaGVja2JveCIgaWQ9InBlcnNvbkNoZWNrQWxsIj48L3RoPjx0aD5Nw6MgaOG7mTwvdGg+PHRoPk3DoyBuaMOibiBraOG6qXU8L3RoPjx0aD5I4buNIHbDoCB0w6puPC90aD48dGg+UXVhbiBo4buHPC90aD48dGg+TmfDoHkgc2luaDwvdGg+PHRoPlR14buVaTwvdGg+PHRoPkdp4bubaSB0w61uaDwvdGg+PHRoPkNDQ0QvU+G7kSDEkeG7i25oIGRhbmg8L3RoPjx0aD5DxrAgdHLDujwvdGg+PHRoPsSQ4bqjbmcgdmnDqm48L3RoPjx0aCBjbGFzcz0idGV4dC1lbmQiPlRoYW8gdMOhYzwvdGg+PC90cj48L3RoZWFkPicKaWYgb2xkX2hlYWQgbm90IGluIHZpZXdfdGV4dCBhbmQgbmV3X2hlYWQgbm90IGluIHZpZXdfdGV4dDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoJ0NvdWxkIG5vdCBsb2NhdGUgcGVyc29uIHRhYmxlIGhlYWRlciBpbiB2aWV3cy9hcHAucGhwJykKdmlld190ZXh0ID0gdmlld190ZXh0LnJlcGxhY2Uob2xkX2hlYWQsIG5ld19oZWFkKQp2aWV3X3RleHQgPSB2aWV3X3RleHQucmVwbGFjZSgnY29sc3Bhbj0iMTAiIGNsYXNzPSJ0ZXh0LWNlbnRlciB0ZXh0LW11dGVkIHB5LTQiPktow7RuZyBjw7MgZOG7ryBsaeG7h3UnLCAnY29sc3Bhbj0iMTIiIGNsYXNzPSJ0ZXh0LWNlbnRlciB0ZXh0LW11dGVkIHB5LTQiPktow7RuZyBjw7MgZOG7ryBsaeG7h3UnKQp2aWV3X3RleHQgPSByZS5zdWIociJhc3NldHMvanMvYXBwXC5qc1w/dj1bXlwiJ10rIiwgJ2Fzc2V0cy9qcy9hcHAuanM/dj0yMDI2MDcwMy1wZXJzb24tdGFibGUtMScsIHZpZXdfdGV4dCkKdmlldy53cml0ZV90ZXh0KHZpZXdfdGV4dCwgZW5jb2Rpbmc9J3V0Zi04JykKCm5ld19wZXJzb25fcm93ID0gJycnZnVuY3Rpb24gcGVyc29uUm93KHJvdykge1xuICBjb25zdCBwYXJ0eSA9IE51bWJlcihyb3cucGFydHlfbWVtYmVyIHx8IHJvdy5wYXJ0eU1lbWJlciB8fCAwKSA9PT0gMTtcbiAgY29uc3QgcmVzaWRlbmNlQ2xhc3MgPSByb3cucHJlc2VuY2Vfc3RhdHVzID09PSAnQVdBWScgPyAncGVyc29uLWJhZGdlLWF3YXknIDogKHJvdy5yZXNpZGVuY3lfc3RhdHVzID09PSAnVEVNUE9SQVJZJyA/ICdwZXJzb24tYmFkZ2UtdGVtcCcgOiAncGVyc29uLWJhZGdlLWhvbWUnKTtcbiAgY29uc3QgcmVzaWRlbmNlVGV4dCA9IHJvdy5wcmVzZW5jZV9zdGF0dXMgPT09ICdBV0FZJyA/ICdU4bqhbSB24bqvbmcnIDogcmVzaWRlbmN5TGFiZWwocm93LnJlc2lkZW5jeV9zdGF0dXMpO1xuICBjb25zdCBwZXJzb25Db2RlID0gcm93LnBlcnNvbl9jb2RlIHx8IHJvdy5jaXRpemVuX2NvZGUgfHwgJyc7XG4gIGNvbnN0IGFnZSA9IHJvdy5hZ2UgPz8gcGVyc29uQWdlKHJvdy5kYXRlX29mX2JpcnRoKTtcbiAgY29uc3QgYWdlVGV4dCA9IGFnZSA9PT0gbnVsbCB8fCBhZ2UgPT09IHVuZGVmaW5lZCA/ICcnIDogU3RyaW5nKGFnZSk7XG4gIHJldHVybiAnPHRyPidcbiAgICArICc8dGQ+PGlucHV0IHR5cGU9ImNoZWNrYm94IiBjbGFzcz0icGVyc29uLWNoZWNrIiB2YWx1ZT0iJyArIHJvdy5pZCArICciPjwvdGQ+J1xuICAgICsgJzx0ZD4nICsgZXNjYXBlSHRtbChyb3cuaG91c2Vob2xkX2NvZGUgfHwgJycpICsgJzwvdGQ+J1xuICAgICsgJzx0ZD4nICsgZXNjYXBlSHRtbChwZXJzb25Db2RlKSArICc8L3RkPidcbiAgICArICc8dGQ+PGJ1dHRvbiBjbGFzcz0iYnRuIGJ0bi1saW5rIHBlcnNvbi1uYW1lLWxpbmsiIG9uY2xpY2s9InNob3dQZXJzb24oJyArIHJvdy5pZCArICcpIj4nICsgZXNjYXBlSHRtbChyb3cuZnVsbF9uYW1lIHx8ICcnKSArICc8L2J1dHRvbj48L3RkPidcbiAgICArICc8dGQ+JyArIGVzY2FwZUh0bWwocGVyc29uUmVsYXRpb25zaGlwKHJvdykpICsgJzwvdGQ+J1xuICAgICsgJzx0ZD4nICsgZm9ybWF0RGF0ZShyb3cuZGF0ZV9vZl9iaXJ0aCkgKyAnPC90ZD4nXG4gICAgKyAnPHRkPicgKyBlc2NhcGVIdG1sKGFnZVRleHQpICsgJzwvdGQ+J1xuICAgICsgJzx0ZD4nICsgZXNjYXBlSHRtbChyb3cuZ2VuZGVyIHx8ICcnKSArICc8L3RkPidcbiAgICArICc8dGQ+JyArIGVzY2FwZUh0bWwocm93LmlkZW50aXR5X251bWJlciB8fCAnJykgKyAnPC90ZD4nXG4gICAgKyAnPHRkPjxzcGFuIGNsYXNzPSJwZXJzb24tYmFkZ2UgJyArIHJlc2lkZW5jZUNsYXNzICsgJyI+JyArIGVzY2FwZUh0bWwocmVzaWRlbmNlVGV4dCkgKyAnPC9zcGFuPjwvdGQ+J1xuICAgICsgJzx0ZD48c3BhbiBjbGFzcz0icGVyc29uLWJhZGdlICcgKyAocGFydHkgPyAncGVyc29uLWJhZGdlLXBhcnR5JyA6ICdwZXJzb24tYmFkZ2UtbXV0ZWQnKSArICciPicgKyAocGFydHkgPyAnQ8OzJyA6ICdLaMO0bmcnKSArICc8L3NwYW4+PC90ZD4nXG4gICAgKyAnPHRkIGNsYXNzPSJ0ZXh0LWVuZCI+PGJ1dHRvbiBjbGFzcz0iYnRuIGJ0bi1zbSBwZXJzb24tcm93LWJ0biIgb25jbGljaz0ic2hvd1BlcnNvbignICsgcm93LmlkICsgJykiPlhlbTwvYnV0dG9uPiA8YnV0dG9uIGNsYXNzPSJidG4gYnRuLXNtIHBlcnNvbi1yb3ctYnRuIHBlcnNvbi1yb3ctZWRpdCIgb25jbGljaz0ib3BlblBlcnNvbkZvcm0oJyArIHJvdy5pZCArICcpIj5T4butYTwvYnV0dG9uPiA8YnV0dG9uIGNsYXNzPSJidG4gYnRuLXNtIGJ0bi1vdXRsaW5lLWRhbmdlciIgb25jbGljaz0iZGVsZXRlUGVyc29uKCcgKyByb3cuaWQgKyAnKSI+WMOzYTwvYnV0dG9uPjwvdGQ+J1xuICAgICsgJzwvdHI+Jztcbn0nJycKYXBwX3RleHQsIGNvdW50ID0gcmUuc3VibihyJ2Z1bmN0aW9uIHBlcnNvblJvd1wocm93XCkgXHsuKj9cblx9JywgbmV3X3BlcnNvbl9yb3csIGFwcF90ZXh0LCBjb3VudD0xLCBmbGFncz1yZS5TKQppZiBjb3VudCAhPSAxOgogICAgcmFpc2UgU3lzdGVtRXhpdCgnQ291bGQgbm90IHJlcGxhY2UgcGVyc29uUm93IGluIGFzc2V0cy9qcy9hcHAuanMnKQphcHBfdGV4dCA9IGFwcF90ZXh0LnJlcGxhY2UoJ2NvbHNwYW49IjEwIiBjbGFzcz0idGV4dC1jZW50ZXIgdGV4dC1tdXRlZCBweS00Ij5LaMO0bmcgY8OzIGThu68gbGnhu4d1JywgJ2NvbHNwYW49IjEyIiBjbGFzcz0idGV4dC1jZW50ZXIgdGV4dC1tdXRlZCBweS00Ij5LaMO0bmcgY8OzIGThu68gbGnhu4d1JykKYXBwLndyaXRlX3RleHQoYXBwX3RleHQsIGVuY29kaW5nPSd1dGYtOCcpCg=='))"
-          node --check assets/js/app.js
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add views/app.php assets/js/app.js
-          if git diff --cached --quiet; then
-            echo "No source changes to commit"
-          else
-            git commit -m "Fix person desktop table column mapping"
-            git push
-          fi
+          find . \
+            -path './vendor' -prune -o \
+            -path './uploads' -prune -o \
+            -path './backups' -prune -o \
+            -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Render app shell and verify assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -S 127.0.0.1:8080 index.php > /tmp/thon09-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill ${server_pid} >/dev/null 2>&1 || true' EXIT
+          sleep 2
+          curl -fsS http://127.0.0.1:8080/ -o /tmp/thon09-home.html
+          grep -q 'assets/js/view-inline-patches.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/desktop-only-reset.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/gis-household-location.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/gis-search.js?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/js/mobile-design-system.js?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/css/person-card-layout.css?v=' /tmp/thon09-home.html
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JavaScript test tools
+        run: npm install --no-audit --no-fund
+
+      - name: Check JavaScript syntax
+        run: npm run check:js
+
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        run: npm run test:browser
