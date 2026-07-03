@@ -196,7 +196,10 @@ if (!str_starts_with($request->path(), '/api')) {
         fn(string $script): string => '<script src="' . versioned_asset($script) . '"></script>',
         $runtimeScripts
     ));
-    $html = preg_replace('/<\/body>/', $runtimeHtml . "\n</body>", $html, 1) ?? $html;
+    $bodyClosePosition = strripos($html, '</body>');
+    if ($bodyClosePosition !== false) {
+        $html = substr_replace($html, $runtimeHtml . "\n</body>", $bodyClosePosition, strlen('</body>'));
+    }
 
     echo $html;
     exit;
