@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260703-desktop-only-cleanup-1');
+define('APP_ASSET_VERSION', '20260703-desktop-only-cleanup-2');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -195,6 +195,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/sprint10.js',
         'assets/js/gis.js',
         'assets/js/gis-household-location.js',
+        'assets/js/desktop-only-reset.js',
         'assets/js/household-photo-capture.js',
         'assets/js/household-photo-gps.js',
         'assets/js/gis-search.js',
@@ -213,6 +214,7 @@ if (!str_starts_with($request->path(), '/api')) {
     }
 
     $runtimeScripts = [
+        'assets/js/desktop-only-reset.js',
         'assets/js/view-inline-patches.js',
         'assets/js/gis-household-location.js',
         'assets/js/household-photo-capture.js',
