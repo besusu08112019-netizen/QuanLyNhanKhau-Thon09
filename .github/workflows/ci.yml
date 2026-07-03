@@ -49,8 +49,11 @@ jobs:
           sleep 2
           curl -fsS http://127.0.0.1:8080/ -o /tmp/thon09-home.html
           grep -q 'assets/js/view-inline-patches.js?v=' /tmp/thon09-home.html
-          grep -q 'assets/js/mobile-design-system.js?v=' /tmp/thon09-home.html
-          grep -q 'assets/css/person-card-layout.css?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/desktop-only-reset.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/gis-household-location.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/gis-search.js?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/js/mobile-design-system.js?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/css/person-card-layout.css?v=' /tmp/thon09-home.html
           ! grep -q 'thon09-report-inline-stable' /tmp/thon09-home.html
           ! grep -q 'thon09-person-advanced-filter-fix' /tmp/thon09-home.html
           ! grep -q 'thon09-header-duplicate-guard' /tmp/thon09-home.html
