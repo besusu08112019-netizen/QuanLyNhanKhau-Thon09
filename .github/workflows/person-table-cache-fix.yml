@@ -1,6 +1,10 @@
 name: Person table cache fix
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/person-table-cache-fix.yml'
   workflow_dispatch:
 
 permissions:
