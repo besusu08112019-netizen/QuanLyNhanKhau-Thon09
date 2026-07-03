@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260703-person-table-admin-4');
+define('APP_ASSET_VERSION', '20260704-console-cleanup-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -30,6 +30,12 @@ use App\Controllers\UserController;
 Autoloader::register();
 
 $request = Request::capture();
+if ($request->path() === '/favicon.ico') {
+    header('Content-Type: image/svg+xml; charset=UTF-8');
+    header('Cache-Control: public, max-age=604800');
+    echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0a8f4d"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="Arial, sans-serif" font-weight="700" fill="#ffffff">09</text></svg>';
+    exit;
+}
 $router = new Router($request);
 
 $router->get('/api/public/login-config', [SettingController::class, 'publicLoginConfig']);

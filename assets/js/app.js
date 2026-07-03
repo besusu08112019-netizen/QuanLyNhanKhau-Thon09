@@ -297,6 +297,7 @@ async function login(event) {
     const res = await api('/api/auth/login', { method: 'POST', body: payload, public: true });
     App.token = res.token;
     App.user = res.user;
+    window.__thon09SessionExpired = false;
     localStorage.setItem('thon09_token', App.token);
     localStorage.setItem('thon09_user', JSON.stringify(App.user));
     window.App = App;

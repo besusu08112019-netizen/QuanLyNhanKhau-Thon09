@@ -1,5 +1,22 @@
 (() => {
   App.csrfToken = localStorage.getItem('thon09_csrf') || App.csrfToken || '';
+  const AUTH_REQUIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
+
+  function redirectToLoginOnAuthFailure() {
+    if (window.__thon09SessionExpired) return;
+    window.__thon09SessionExpired = true;
+    if (typeof clearClientSession === 'function') {
+      clearClientSession();
+    } else {
+      App.token = '';
+      App.user = null;
+      App.csrfToken = '';
+      localStorage.removeItem('thon09_token');
+      localStorage.removeItem('thon09_user');
+      localStorage.removeItem('thon09_csrf');
+    }
+    if (typeof showLogin === 'function') showLogin();
+  }
 
   window.api = async function secureApi(url, options = {}) {
     setLoading(true);
@@ -10,6 +27,10 @@
 
       if (options.body && !isFormData) {
         headers['Content-Type'] = 'application/json';
+      }
+      if (!options.public && !App.token) {
+        redirectToLoginOnAuthFailure();
+        throw new Error(AUTH_REQUIRED_MESSAGE);
       }
       if (App.token && !options.public) {
         headers.Authorization = `Bearer ${App.token}`;
@@ -35,8 +56,8 @@
         localStorage.setItem('thon09_csrf', App.csrfToken);
       }
       if (response.status === 401 && !options.public && !String(url).includes('/api/auth/logout')) {
-        clearClientSession();
-        showLogin();
+        redirectToLoginOnAuthFailure();
+        throw new Error(AUTH_REQUIRED_MESSAGE);
       }
       if (!response.ok || !payload?.ok) {
         throw new Error(payload?.error?.message || 'Không nhận được phản hồi từ hệ thống');
@@ -330,6 +351,10 @@
 
   async function loadAreas(options = {}) {
     if (state.loading) return null;
+    if (!window.App?.token) {
+      setStatus('Vui lòng đăng nhập lại để tải bản đồ');
+      return null;
+    }
     ensureUi();
     if (!ensureMap()) return null;
     state.loading = true;

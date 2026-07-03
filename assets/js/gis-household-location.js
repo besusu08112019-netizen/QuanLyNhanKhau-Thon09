@@ -20,6 +20,7 @@
   async function request(path, options) {
     if (typeof window.api === 'function') return window.api(path, options || {});
     const token = localStorage.getItem('thon09_token') || (window.App && window.App.token) || '';
+    if (!isAuthenticated()) throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
     const headers = Object.assign({ Accept: 'application/json' }, (options && options.headers) || {});
     if (token) headers.Authorization = 'Bearer ' + token;
     if (options && options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
@@ -41,6 +42,7 @@
     };
   }
   function map() { return window.App && window.App.gis && window.App.gis.map ? window.App.gis.map : null; }
+  function isAuthenticated() { return Boolean(window.App && window.App.token); }
 
   function ensureLocationFields() {
     const form = $('#householdForm');
@@ -299,6 +301,7 @@
   }
 
   async function loadHouseholdMarkers(search) {
+    if (!isAuthenticated()) return;
     const m = map();
     if (!m || !window.L || state.loading) return;
     state.loading = true;
@@ -373,7 +376,7 @@
     wrapHouseholdForm();
     bindLocationButtons();
     bindGisMapHooks();
-    setTimeout(() => loadHouseholdMarkers(), 1200);
+    if (isAuthenticated()) setTimeout(() => loadHouseholdMarkers(), 1200);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

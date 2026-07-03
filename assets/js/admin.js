@@ -1,15 +1,6 @@
 (() => {
   installPersonTableRenderFix();
 
-  const loadPopulationCardDesign = () => {
-    if (!document.querySelector('script[src*="mobile-design-system.js"]')) {
-      const script = document.createElement('script');
-      script.src = 'assets/js/mobile-design-system.js?v=20260703-person-table-source-fix-1';
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  };
-
   function installPersonTableRenderFix() {
     if (window.__thon09PersonTableRenderFixInstalled) return;
     window.__thon09PersonTableRenderFixInstalled = true;
@@ -92,7 +83,6 @@
   }
 
   const start = () => {
-    loadPopulationCardDesign();
     if (!isAdminUser()) return;
     injectAdminScreens();
     bindAdminNavigation();

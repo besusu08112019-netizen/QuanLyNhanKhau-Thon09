@@ -31,12 +31,15 @@
       || window.CSRF_TOKEN
       || '';
     if (token) headers['X-CSRF-TOKEN'] = token;
+    if (window.App && window.App.token) headers.Authorization = 'Bearer ' + window.App.token;
     return headers;
   }
 
   function mapInstance() {
     return window.App?.gis?.map || window.gisMap || null;
   }
+
+  function isAuthenticated() { return Boolean(window.App && window.App.token); }
 
   function areaList() {
     const areas = window.App?.gis?.areas;
@@ -133,9 +136,15 @@
   }
 
   async function search(query) {
+    if (!isAuthenticated()) return [];
     const url = `${API}?q=${encodeURIComponent(query)}`;
     const response = await fetch(url, { headers: authHeaders(), credentials: 'same-origin' });
     const json = await response.json().catch(() => null);
+    if (response.status === 401) {
+      if (typeof window.clearClientSession === 'function') window.clearClientSession();
+      if (typeof window.showLogin === 'function') window.showLogin();
+      return [];
+    }
     if (!response.ok || !json) {
       throw new Error(json?.error?.message || json?.message || 'Không tìm kiếm được GIS');
     }
