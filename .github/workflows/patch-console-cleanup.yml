@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/patch-console-cleanup.yml"
+      - ".github/scripts/console_cleanup_patch.py"
   workflow_dispatch:
 
 permissions:
@@ -14,5 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Smoke
-        run: echo "workflow is valid"
+      - name: Apply patch
+        run: python3 .github/scripts/console_cleanup_patch.py
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/admin.js assets/js/csrf.js assets/js/app.js assets/js/gis-household-location.js assets/js/gis-search.js index.php views/app.php
+          git commit -m "Fix console resource and auth cleanup"
+          git push
