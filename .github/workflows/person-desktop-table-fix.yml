@@ -18,8 +18,9 @@ jobs:
         with:
           persist-credentials: true
       - name: Patch person desktop table mapping
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
           import re
 
@@ -34,7 +35,7 @@ jobs:
               raise SystemExit('Could not locate person table header in views/app.php')
           view_text = view_text.replace(old_head, new_head)
           view_text = view_text.replace('colspan="10" class="text-center text-muted py-4">Không có dữ liệu', 'colspan="12" class="text-center text-muted py-4">Không có dữ liệu')
-          view_text = re.sub(r'assets/js/app\.js\?v=[^"\']+', 'assets/js/app.js?v=20260703-person-table-1', view_text)
+          view_text = re.sub(r"assets/js/app\.js\?v=[^\"']+", 'assets/js/app.js?v=20260703-person-table-1', view_text)
           view.write_text(view_text, encoding='utf-8')
 
           new_person_row = r'''function personRow(row) {
@@ -68,6 +69,7 @@ jobs:
           workflow = Path('.github/workflows/person-desktop-table-fix.yml')
           if workflow.exists():
               workflow.unlink()
+          PY
       - name: Validate JavaScript syntax
         run: node --check assets/js/app.js
       - name: Commit patched files
