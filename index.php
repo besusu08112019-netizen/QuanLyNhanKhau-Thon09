@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260703-person-table-cache-3');
+define('APP_ASSET_VERSION', '20260703-person-table-admin-4');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
