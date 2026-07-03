@@ -1,32 +1,4 @@
 (() => {
-  function installApiRouteCompat() {
-    if (window.__thon09ApiRouteCompat) return;
-    window.__thon09ApiRouteCompat = true;
-    const originalFetch = window.fetch;
-    if (typeof originalFetch !== 'function') return;
-
-    function rewriteUrl(input) {
-      if (typeof input === 'string') {
-        return input
-          .replace(/\/api\/auth\/login(?=\?|$)/, '/api/login')
-          .replace(/\/api\/auth\/logout(?=\?|$)/, '/api/logout');
-      }
-      if (input && typeof input.url === 'string' && input.url.includes('/api/auth/')) {
-        const nextUrl = input.url
-          .replace(/\/api\/auth\/login(?=\?|$)/, '/api/login')
-          .replace(/\/api\/auth\/logout(?=\?|$)/, '/api/logout');
-        try { return new Request(nextUrl, input); } catch (error) { return input; }
-      }
-      return input;
-    }
-
-    window.fetch = function fetchWithRouteCompat(input, init) {
-      return originalFetch.call(this, rewriteUrl(input), init);
-    };
-  }
-
-  installApiRouteCompat();
-
   function clearSession() {
     App.token = '';
     App.user = null;
