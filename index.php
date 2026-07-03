@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260703-gis-search-gps-3');
+define('APP_ASSET_VERSION', '20260703-api-route-alias-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -105,11 +105,20 @@ $router->put('/api/accounts/{id}', [UserController::class, 'update']);
 $router->delete('/api/accounts/{id}', [UserController::class, 'destroy']);
 $router->post('/api/accounts/{id}/lock', [UserController::class, 'lock']);
 $router->post('/api/accounts/{id}/unlock', [UserController::class, 'unlock']);
+$router->get('/api/users', [UserController::class, 'index']);
+$router->post('/api/users', [UserController::class, 'store']);
+$router->get('/api/users/{id}', [UserController::class, 'show']);
+$router->put('/api/users/{id}', [UserController::class, 'update']);
+$router->delete('/api/users/{id}', [UserController::class, 'destroy']);
+$router->post('/api/users/{id}/lock', [UserController::class, 'lock']);
+$router->post('/api/users/{id}/unlock', [UserController::class, 'unlock']);
 $router->get('/api/roles', [UserController::class, 'roles']);
 $router->get('/api/permissions', [PermissionController::class, 'index']);
 $router->put('/api/permissions', [PermissionController::class, 'update']);
+$router->post('/api/permissions', [PermissionController::class, 'update']);
 
 $router->get('/api/system/logs', [LogController::class, 'index']);
+$router->get('/api/logs', [LogController::class, 'index']);
 $router->get('/api/system/settings', [SettingController::class, 'index']);
 $router->put('/api/system/settings', [SettingController::class, 'update']);
 $router->get('/api/system/interface', [SettingController::class, 'index']);
@@ -117,9 +126,18 @@ $router->put('/api/system/interface', [SettingController::class, 'update']);
 $router->post('/api/system/interface/upload', [SettingController::class, 'uploadMedia']);
 $router->delete('/api/system/interface/asset', [SettingController::class, 'deleteMedia']);
 $router->get('/api/system/interface/media', [SettingController::class, 'media']);
+$router->get('/api/settings', [SettingController::class, 'index']);
+$router->post('/api/settings', [SettingController::class, 'update']);
+$router->put('/api/settings', [SettingController::class, 'update']);
+$router->post('/api/settings/media', [SettingController::class, 'uploadMedia']);
+$router->post('/api/settings/media/delete', [SettingController::class, 'deleteMedia']);
+$router->get('/api/media/{folder}/{kind}/{year}/{month}/{file}', [SettingController::class, 'media']);
 $router->get('/api/system/backups', [BackupController::class, 'index']);
 $router->post('/api/system/backup', [BackupController::class, 'create']);
 $router->post('/api/system/restore', [BackupController::class, 'restore']);
+$router->get('/api/backups', [BackupController::class, 'index']);
+$router->post('/api/backups', [BackupController::class, 'create']);
+$router->post('/api/backups/restore', [BackupController::class, 'restore']);
 
 $router->get('/api/insights/search', [InsightController::class, 'search']);
 $router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
@@ -162,7 +180,17 @@ if (!str_starts_with($request->path(), '/api')) {
     }
 
     $versionedAssets = [
+        'assets/css/app.css',
+        'assets/js/app.js',
         'assets/js/csrf.js',
+        'assets/js/session.js',
+        'assets/js/admin.js',
+        'assets/js/import.js',
+        'assets/js/admin-panel.js',
+        'assets/js/admin-panel-bridge.js',
+        'assets/js/sprint8.js',
+        'assets/js/sprint9.js',
+        'assets/js/sprint10.js',
         'assets/js/gis.js',
         'assets/js/gis-household-location.js',
         'assets/js/household-photo-capture.js',
