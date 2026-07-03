@@ -652,14 +652,17 @@ function personRow(row) {
   const party = Number(row.party_member || row.partyMember || 0) === 1;
   const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
   const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : residencyLabel(row.residency_status);
+  const personCode = row.person_code || row.citizen_code || '';
+  const age = row.age ?? personAge(row.date_of_birth);
+  const ageText = age === null || age === undefined ? '' : String(age);
   return '<tr>'
     + '<td><input type="checkbox" class="person-check" value="' + row.id + '"></td>'
     + '<td>' + escapeHtml(row.household_code || '') + '</td>'
-    + '<td>' + escapeHtml(personRelationship(row)) + '</td>'
-    + '<td>' + escapeHtml(row.citizen_code || '') + '</td>'
+    + '<td>' + escapeHtml(personCode) + '</td>'
     + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + row.id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
+    + '<td>' + escapeHtml(personRelationship(row)) + '</td>'
     + '<td>' + formatDate(row.date_of_birth) + '</td>'
-    + '<td>' + escapeHtml(personAge(row.date_of_birth)) + '</td>'
+    + '<td>' + escapeHtml(ageText) + '</td>'
     + '<td>' + escapeHtml(row.gender || '') + '</td>'
     + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
     + '<td><span class="person-badge ' + residenceClass + '">' + escapeHtml(residenceText) + '</span></td>'
