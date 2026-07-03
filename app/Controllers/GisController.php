@@ -34,10 +34,14 @@ class GisController extends BaseController
     {
         try {
             $this->requirePermission('dashboard', 'read');
-            $includeStats = $this->boolQuery('stats', true);
-            $bounds = $this->boundsFromQuery();
-            $items = $this->areasModel()->all($includeStats, $bounds);
-            $this->ok(['items' => $items]);
+            $data = $this->areasModel()->all($this->boolQuery('stats', true), $this->boundsFromQuery());
+            $areas = $data['areas'] ?? [];
+            $this->ok([
+                'areas' => $areas,
+                'items' => $areas,
+                'summary' => $data['summary'] ?? [],
+                'unassigned' => $data['unassigned'] ?? ['households' => 0],
+            ]);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/areas', $e);
             $this->fail('Không tải được GIS: ' . $e->getMessage(), 500);
@@ -81,30 +85,31 @@ class GisController extends BaseController
 
     public function storeArea(): void
     {
+        $payload = $this->jsonPayload(false);
         try {
-            $this->requirePermission('settings', 'update');
-            $payload = $this->jsonPayload();
-            $area = $this->areasModel()->create($payload, $this->currentUserId());
+            $user = $this->requirePermission('household', 'update');
+            $area = $this->areasModel()->save($payload, (int) ($user['id'] ?? 0));
             $this->locationModel()->recalculateAreaCodes();
-            $this->writeLog('CREATE', 'gis_areas', (string) $area['id'], $area);
+            $this->writeLog('CREATE', 'gis_areas', (string) ($area['id'] ?? ''), $area);
             $this->ok($area);
         } catch (Throwable $e) {
-            $this->logException('POST /api/gis/areas', $e, $this->jsonPayload(false));
+            $this->logException('POST /api/gis/areas', $e, $payload);
             $this->fail('Không lưu được khu vực: ' . $e->getMessage(), 400);
         }
     }
 
     public function updateArea(int $id): void
     {
+        $payload = $this->jsonPayload(false);
         try {
-            $this->requirePermission('settings', 'update');
-            $payload = $this->jsonPayload();
-            $area = $this->areasModel()->update($id, $payload);
+            $user = $this->requirePermission('household', 'update');
+            $payload['id'] = $id;
+            $area = $this->areasModel()->save($payload, (int) ($user['id'] ?? 0));
             $this->locationModel()->recalculateAreaCodes();
             $this->writeLog('UPDATE', 'gis_areas', (string) $id, $area);
             $this->ok($area);
         } catch (Throwable $e) {
-            $this->logException('PUT /api/gis/areas/' . $id, $e, $this->jsonPayload(false));
+            $this->logException('PUT /api/gis/areas/' . $id, $e, $payload);
             $this->fail('Không cập nhật được khu vực: ' . $e->getMessage(), 400);
         }
     }
@@ -112,9 +117,10 @@ class GisController extends BaseController
     public function deleteArea(int $id): void
     {
         try {
-            $this->requirePermission('settings', 'delete');
-            $area = $this->areasModel()->delete($id);
+            $user = $this->requirePermission('household', 'delete');
+            $this->areasModel()->delete($id, (int) ($user['id'] ?? 0));
             $this->locationModel()->recalculateAreaCodes();
+            $area = ['id' => $id, 'deleted' => true];
             $this->writeLog('DELETE', 'gis_areas', (string) $id, $area);
             $this->ok($area);
         } catch (Throwable $e) {
@@ -125,14 +131,14 @@ class GisController extends BaseController
 
     public function saveHouseholdLocation(int $id): void
     {
+        $payload = $this->jsonPayload(false);
         try {
             $this->requirePermission('household', 'update');
-            $payload = $this->jsonPayload();
             $item = $this->locationModel()->saveLocation($id, $payload, $this->currentUserId());
             $this->writeLog('UPDATE', 'household_location', (string) $id, $item);
             $this->ok($item);
         } catch (Throwable $e) {
-            $this->logException('PUT /api/gis/households/' . $id . '/location', $e, $this->jsonPayload(false));
+            $this->logException('PUT /api/gis/households/' . $id . '/location', $e, $payload);
             $this->fail('Không lưu được vị trí hộ: ' . $e->getMessage(), 400);
         }
     }
@@ -153,7 +159,8 @@ class GisController extends BaseController
     public function exportPdf(): void
     {
         $this->requirePermission('report', 'export');
-        $areas = $this->areasModel()->all(true, null);
+        $data = $this->areasModel()->all(true, null);
+        $areas = $data['areas'] ?? [];
         $filename = 'ban-do-dia-ban-' . date('Ymd-His') . '.html';
         header('Content-Type: text/html; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -162,7 +169,8 @@ class GisController extends BaseController
         echo '</head><body><h1>Báo cáo bản đồ địa bàn</h1><p>Ngày xuất: ' . date('d/m/Y H:i') . '</p>';
         echo '<table><thead><tr><th>Khu vực</th><th>Mã</th><th>Màu</th><th>Diện tích (m²)</th><th>Số hộ</th><th>Nhân khẩu</th><th>Ghi chú</th></tr></thead><tbody>';
         foreach ($areas as $area) {
-            echo '<tr><td>' . htmlspecialchars((string) $area['name']) . '</td><td>' . htmlspecialchars((string) $area['area_code']) . '</td><td><span class="sw" style="background:' . htmlspecialchars((string) $area['color']) . '"></span>' . htmlspecialchars((string) $area['color']) . '</td><td>' . number_format((float) $area['area_m2']) . '</td><td>' . (int) $area['household_count'] . '</td><td>' . (int) $area['citizen_count'] . '</td><td>' . htmlspecialchars((string) ($area['note'] ?? '')) . '</td></tr>';
+            $stats = $area['stats'] ?? [];
+            echo '<tr><td>' . htmlspecialchars((string) $area['name']) . '</td><td>' . htmlspecialchars((string) $area['area_code']) . '</td><td><span class="sw" style="background:' . htmlspecialchars((string) $area['color']) . '"></span>' . htmlspecialchars((string) $area['color']) . '</td><td>' . number_format((float) ($stats['area_m2'] ?? 0)) . '</td><td>' . (int) ($stats['households'] ?? 0) . '</td><td>' . (int) ($stats['citizens'] ?? 0) . '</td><td>' . htmlspecialchars((string) ($area['note'] ?? '')) . '</td></tr>';
         }
         echo '</tbody></table></body></html>';
     }
