@@ -37,6 +37,8 @@ $router->get('/api/public/login-config', [SettingController::class, 'publicLogin
 $router->post('/api/setup', [AuthController::class, 'setup']);
 $router->post('/api/login', [AuthController::class, 'login']);
 $router->post('/api/logout', [AuthController::class, 'logout']);
+$router->post('/api/auth/login', [AuthController::class, 'login']);
+$router->post('/api/auth/logout', [AuthController::class, 'logout']);
 $router->get('/api/me', [AuthController::class, 'me']);
 
 $router->get('/api/dashboard', [DashboardController::class, 'summary']);
