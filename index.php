@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260703-api-route-alias-2');
+define('APP_ASSET_VERSION', '20260703-desktop-only-cleanup-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -200,14 +200,10 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/gis-search.js',
         'assets/js/reports.js',
         'assets/js/reports-ui-fix.js',
-        'assets/js/mobile-design-system.js',
         'assets/js/household-member-popup.js',
         'assets/css/design-system.css',
-        'assets/css/mobile-design-system.css',
         'assets/css/dashboard-redesign.css',
         'assets/css/login-redesign.css',
-        'assets/css/mobile-person-card.css',
-        'assets/css/mobile-tablet-responsive.css',
         'assets/css/sidebar-modern.css',
         'assets/css/header-cleanup.css',
     ];
@@ -218,7 +214,6 @@ if (!str_starts_with($request->path(), '/api')) {
 
     $runtimeScripts = [
         'assets/js/view-inline-patches.js',
-        'assets/js/mobile-design-system.js',
         'assets/js/gis-household-location.js',
         'assets/js/household-photo-capture.js',
         'assets/js/household-photo-gps.js',
