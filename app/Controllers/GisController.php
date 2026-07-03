@@ -34,7 +34,7 @@ class GisController extends BaseController
     {
         try {
             $this->requirePermission('dashboard', 'read');
-            $data = $this->areasModel()->all($this->boolQuery('stats', true), $this->boundsFromQuery());
+            $data = $this->areasModel()->all();
             $areas = $data['areas'] ?? [];
             $this->ok([
                 'areas' => $areas,
@@ -159,7 +159,7 @@ class GisController extends BaseController
     public function exportPdf(): void
     {
         $this->requirePermission('report', 'export');
-        $data = $this->areasModel()->all(true, null);
+        $data = $this->areasModel()->all();
         $areas = $data['areas'] ?? [];
         $filename = 'ban-do-dia-ban-' . date('Ymd-His') . '.html';
         header('Content-Type: text/html; charset=utf-8');
