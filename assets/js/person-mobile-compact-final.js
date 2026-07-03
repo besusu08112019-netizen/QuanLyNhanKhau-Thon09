@@ -11,18 +11,24 @@
     style.textContent = `
 @media (max-width: 1199px) {
   :root {
-    --thon09-person-border: #d7eadf;
-    --thon09-person-line: #edf2f0;
-    --thon09-person-soft: #f0faf4;
-    --thon09-person-soft-2: #f7fcf9;
-    --thon09-person-green: #087a42;
-    --thon09-person-text: #1f2937;
-    --thon09-person-muted: #667085;
-    --thon09-person-radius: 16px;
+    --thon09-card-border: #d7eadf;
+    --thon09-card-line: #edf2f0;
+    --thon09-card-soft: #f0faf4;
+    --thon09-card-soft-2: #f7fcf9;
+    --thon09-card-green: #087a42;
+    --thon09-card-text: #1f2937;
+    --thon09-card-muted: #667085;
+    --thon09-card-radius: 16px;
+    --thon09-card-header-radius: 14px;
+    --thon09-card-gap: 10px;
   }
 
   #personsScreen table thead,
-  #personsScreen #personRows .population-desktop-cell {
+  #personsScreen #personRows .population-desktop-cell,
+  #personsScreen #personRows .person-party-floating,
+  #personsScreen #personRows .population-floating-party,
+  #personsScreen #personRows .population-party-floating,
+  #personsScreen #personRows [data-field="party_member"]:empty {
     display: none !important;
   }
 
@@ -43,9 +49,9 @@
     flex-direction: column !important;
     gap: 0 !important;
     margin: 0 0 14px !important;
-    padding: 10px !important;
-    border: 1px solid var(--thon09-person-border) !important;
-    border-radius: var(--thon09-person-radius) !important;
+    padding: 16px !important;
+    border: 1px solid var(--thon09-card-border) !important;
+    border-radius: var(--thon09-card-radius) !important;
     background: #fff !important;
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
   }
@@ -54,13 +60,13 @@
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 10px !important;
     min-height: 0 !important;
-    margin: 0 0 7px !important;
+    margin: 0 0 12px !important;
     padding: 10px 11px !important;
     border: 0 !important;
-    border-radius: 14px !important;
-    background: var(--thon09-person-soft) !important;
+    border-radius: var(--thon09-card-header-radius) !important;
+    background: var(--thon09-card-soft) !important;
     box-shadow: none !important;
   }
 
@@ -85,7 +91,7 @@
     height: 30px !important;
     border-radius: 10px !important;
     background: #d7f3e4 !important;
-    color: var(--thon09-person-green) !important;
+    color: var(--thon09-card-green) !important;
     font-family: 'Font Awesome 6 Free' !important;
     font-weight: 900 !important;
     font-size: 14px !important;
@@ -101,7 +107,7 @@
     border: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
-    color: var(--thon09-person-green) !important;
+    color: var(--thon09-card-green) !important;
     font-size: clamp(17px, 4.6vw, 19px) !important;
     font-weight: 700 !important;
     line-height: 1.1 !important;
@@ -113,7 +119,7 @@
 
   #personsScreen #personRows .population-person-subcode {
     grid-area: code !important;
-    color: var(--thon09-person-muted) !important;
+    color: var(--thon09-card-muted) !important;
     font-size: clamp(12px, 3vw, 13px) !important;
     font-weight: 650 !important;
     line-height: 1.15 !important;
@@ -122,12 +128,12 @@
 
   #personsScreen #personRows .population-relation-badge {
     width: max-content !important;
-    max-width: 36vw !important;
+    max-width: 34vw !important;
     padding: 4px 8px !important;
     border: 1px solid #cbead8 !important;
     border-radius: 999px !important;
     background: #fff !important;
-    color: var(--thon09-person-green) !important;
+    color: var(--thon09-card-green) !important;
     font-size: clamp(11px, 3vw, 13px) !important;
     font-weight: 650 !important;
     line-height: 1.05 !important;
@@ -145,8 +151,8 @@
   }
 
   #personsScreen #personRows .population-check {
-    width: 23px !important;
-    height: 23px !important;
+    width: 22px !important;
+    height: 22px !important;
     margin: 0 !important;
     align-self: center !important;
   }
@@ -164,14 +170,14 @@
   #personsScreen #personRows .population-detail-box,
   #personsScreen #personRows .population-status-card {
     display: grid !important;
-    grid-template-columns: auto minmax(0, 1fr) !important;
+    grid-template-columns: 22px minmax(88px, 108px) minmax(0, 1fr) !important;
     align-items: center !important;
-    gap: 9px !important;
+    gap: 8px !important;
     min-height: 0 !important;
     margin: 0 !important;
-    padding: 8px 2px !important;
+    padding: 8px 0 !important;
     border: 0 !important;
-    border-top: 1px solid var(--thon09-person-line) !important;
+    border-top: 1px solid var(--thon09-card-line) !important;
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
@@ -184,7 +190,7 @@
   #personsScreen #personRows .population-code-box span,
   #personsScreen #personRows .population-detail-label {
     display: block !important;
-    color: var(--thon09-person-muted) !important;
+    color: var(--thon09-card-muted) !important;
     font-size: clamp(12px, 3vw, 13px) !important;
     font-weight: 650 !important;
     line-height: 1.15 !important;
@@ -198,7 +204,7 @@
     display: inline-block !important;
     width: auto !important;
     max-width: 100% !important;
-    color: var(--thon09-person-text) !important;
+    color: var(--thon09-card-text) !important;
     font-size: clamp(15px, 3.8vw, 17px) !important;
     font-weight: 650 !important;
     line-height: 1.2 !important;
@@ -208,7 +214,8 @@
     word-break: keep-all !important;
   }
 
-  #personsScreen #personRows .population-card-icon {
+  #personsScreen #personRows .population-card-icon,
+  #personsScreen #personRows .population-code-icon {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -216,22 +223,15 @@
     min-width: 22px !important;
     height: 22px !important;
     border-radius: 8px !important;
-    background: var(--thon09-person-soft-2) !important;
-    color: var(--thon09-person-green) !important;
-    font-size: 16px !important;
+    background: var(--thon09-card-soft-2) !important;
+    color: var(--thon09-card-green) !important;
+    font-size: 15px !important;
     line-height: 1 !important;
   }
 
   #personsScreen #personRows .population-detail-copy {
-    display: grid !important;
-    grid-template-columns: minmax(82px, auto) minmax(0, 1fr) !important;
-    align-items: center !important;
-    gap: 8px !important;
+    display: contents !important;
     min-width: 0 !important;
-  }
-
-  #personsScreen #personRows .population-code-box {
-    grid-template-columns: minmax(112px, auto) minmax(0, 1fr) !important;
   }
 
   #personsScreen #personRows .population-birth-age {
@@ -246,23 +246,23 @@
 
   #personsScreen #personRows .population-residence-compact-final {
     min-height: 0 !important;
-    padding: 8px 2px !important;
+    padding: 8px 0 !important;
   }
 
   #personsScreen #personRows .population-residence-compact-final .population-detail-label {
-    display: none !important;
-  }
-
-  #personsScreen #personRows .population-residence-compact-final .population-detail-copy {
     display: block !important;
   }
 
+  #personsScreen #personRows .population-residence-compact-final .population-detail-copy {
+    display: contents !important;
+  }
+
   #personsScreen #personRows .population-residence-compact-final .population-status-pill {
-    padding: 4px 10px !important;
+    padding: 3px 10px !important;
     border: 1px solid #bfe8cf !important;
     border-radius: 999px !important;
     background: #eaf8f0 !important;
-    color: var(--thon09-person-green) !important;
+    color: var(--thon09-card-green) !important;
     font-size: clamp(13px, 3.3vw, 15px) !important;
     font-style: normal !important;
     font-weight: 700 !important;
@@ -274,8 +274,8 @@
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 8px !important;
     margin-top: 2px !important;
-    padding-top: 9px !important;
-    border-top: 1px solid var(--thon09-person-line) !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--thon09-card-line) !important;
   }
 
   #personsScreen #personRows .population-action {
@@ -298,8 +298,8 @@
     margin: 0 0 9px !important;
     padding: 9px 11px !important;
     border-radius: 12px !important;
-    background: var(--thon09-person-soft) !important;
-    border: 1px solid var(--thon09-person-border) !important;
+    background: var(--thon09-card-soft) !important;
+    border: 1px solid var(--thon09-card-border) !important;
     box-shadow: none !important;
   }
 
@@ -318,7 +318,7 @@
 @media (max-width: 479px) {
   #personsScreen #personRows .population-card {
     margin-bottom: 12px !important;
-    padding: 9px !important;
+    padding: 14px !important;
   }
 
   #personsScreen #personRows .population-card-head {
@@ -338,24 +338,17 @@
   #personsScreen #personRows .population-code-box,
   #personsScreen #personRows .population-detail-box,
   #personsScreen #personRows .population-status-card {
-    padding: 7px 1px !important;
+    grid-template-columns: 20px minmax(72px, 92px) minmax(0, 1fr) !important;
+    padding: 7px 0 !important;
     gap: 7px !important;
   }
 
-  #personsScreen #personRows .population-detail-copy {
-    grid-template-columns: minmax(72px, auto) minmax(0, 1fr) !important;
-    gap: 7px !important;
-  }
-
-  #personsScreen #personRows .population-code-box {
-    grid-template-columns: minmax(102px, auto) minmax(0, 1fr) !important;
-  }
-
-  #personsScreen #personRows .population-card-icon {
+  #personsScreen #personRows .population-card-icon,
+  #personsScreen #personRows .population-code-icon {
     width: 20px !important;
     min-width: 20px !important;
     height: 20px !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
   }
 }
 `;
@@ -381,6 +374,14 @@
       var relation = titleStack && titleStack.querySelector('.population-relation-badge');
       if (relation && headActions && relation.parentElement !== headActions) {
         headActions.insertBefore(relation, headActions.firstChild);
+      }
+
+      var codeBoxes = card.querySelectorAll('.population-code-box');
+      if (codeBoxes.length > 1 && !codeBoxes[1].querySelector('.population-code-icon')) {
+        var icon = document.createElement('span');
+        icon.className = 'population-code-icon';
+        icon.innerHTML = '<i class="fa-regular fa-id-card"></i>';
+        codeBoxes[1].insertBefore(icon, codeBoxes[1].firstChild);
       }
 
       var birthBox = card.querySelector('.population-birth-box');
