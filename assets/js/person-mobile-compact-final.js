@@ -12,13 +12,13 @@
 @media (max-width: 1199px) {
   :root {
     --thon09-person-border: #d7eadf;
-    --thon09-person-soft: #eefaf4;
+    --thon09-person-line: #edf2f0;
+    --thon09-person-soft: #f0faf4;
     --thon09-person-soft-2: #f7fcf9;
     --thon09-person-green: #087a42;
     --thon09-person-text: #1f2937;
     --thon09-person-muted: #667085;
     --thon09-person-radius: 16px;
-    --thon09-person-radius-sm: 12px;
   }
 
   #personsScreen table thead,
@@ -56,9 +56,9 @@
     align-items: center !important;
     gap: 8px !important;
     min-height: 0 !important;
-    margin: 0 0 8px !important;
+    margin: 0 0 7px !important;
     padding: 10px 11px !important;
-    border: 1px solid var(--thon09-person-border) !important;
+    border: 0 !important;
     border-radius: 14px !important;
     background: var(--thon09-person-soft) !important;
     box-shadow: none !important;
@@ -68,7 +68,7 @@
     position: relative !important;
     display: grid !important;
     grid-template-columns: auto minmax(0, 1fr) !important;
-    grid-template-areas: 'icon name' 'icon code' 'icon relation' !important;
+    grid-template-areas: 'icon name' 'icon code' !important;
     column-gap: 9px !important;
     row-gap: 2px !important;
     align-items: center !important;
@@ -121,11 +121,9 @@
   }
 
   #personsScreen #personRows .population-relation-badge {
-    grid-area: relation !important;
-    width: fit-content !important;
-    max-width: 100% !important;
-    margin-top: 2px !important;
-    padding: 3px 7px !important;
+    width: max-content !important;
+    max-width: 36vw !important;
+    padding: 4px 8px !important;
     border: 1px solid #cbead8 !important;
     border-radius: 999px !important;
     background: #fff !important;
@@ -133,18 +131,22 @@
     font-size: clamp(11px, 3vw, 13px) !important;
     font-weight: 650 !important;
     line-height: 1.05 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
   #personsScreen #personRows .population-card-head-actions {
     align-self: center !important;
     display: inline-flex !important;
     align-items: center !important;
-    justify-content: center !important;
+    justify-content: flex-end !important;
+    gap: 7px !important;
   }
 
   #personsScreen #personRows .population-check {
-    width: 24px !important;
-    height: 24px !important;
+    width: 23px !important;
+    height: 23px !important;
     margin: 0 !important;
     align-self: center !important;
   }
@@ -169,7 +171,7 @@
     margin: 0 !important;
     padding: 8px 2px !important;
     border: 0 !important;
-    border-top: 1px solid #edf2f0 !important;
+    border-top: 1px solid var(--thon09-person-line) !important;
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
@@ -273,7 +275,7 @@
     gap: 8px !important;
     margin-top: 2px !important;
     padding-top: 9px !important;
-    border-top: 1px solid #edf2f0 !important;
+    border-top: 1px solid var(--thon09-person-line) !important;
   }
 
   #personsScreen #personRows .population-action {
@@ -296,7 +298,7 @@
     margin: 0 0 9px !important;
     padding: 9px 11px !important;
     border-radius: 12px !important;
-    background: #f0faf4 !important;
+    background: var(--thon09-person-soft) !important;
     border: 1px solid var(--thon09-person-border) !important;
     box-shadow: none !important;
   }
@@ -326,6 +328,11 @@
   #personsScreen #personRows .population-card-title-stack::before {
     width: 28px !important;
     height: 28px !important;
+  }
+
+  #personsScreen #personRows .population-relation-badge {
+    max-width: 30vw !important;
+    padding: 3px 7px !important;
   }
 
   #personsScreen #personRows .population-code-box,
@@ -362,14 +369,18 @@
 
       var codeBox = card.querySelector('.population-code-box');
       var titleStack = card.querySelector('.population-card-title-stack');
+      var headActions = card.querySelector('.population-card-head-actions');
       var codeValue = codeBox && codeBox.querySelector('strong') ? codeBox.querySelector('strong').textContent.trim() : '';
       if (titleStack && codeValue && !titleStack.querySelector('.population-person-subcode')) {
         var subCode = document.createElement('span');
         subCode.className = 'population-person-subcode';
         subCode.textContent = codeValue;
-        var relation = titleStack.querySelector('.population-relation-badge');
-        if (relation) titleStack.insertBefore(subCode, relation);
-        else titleStack.appendChild(subCode);
+        titleStack.appendChild(subCode);
+      }
+
+      var relation = titleStack && titleStack.querySelector('.population-relation-badge');
+      if (relation && headActions && relation.parentElement !== headActions) {
+        headActions.insertBefore(relation, headActions.firstChild);
       }
 
       var birthBox = card.querySelector('.population-birth-box');
