@@ -42,7 +42,7 @@
       try {
         await loadScriptOnce('assets/js/mobile-design-system.js?v=20260703-person-table-source-fix-1', 'thon09-mobile-design-system');
         await loadScriptOnce('assets/js/person-household-group-style.js?v=20260702-person-card-v1-2', 'thon09-person-household-groups');
-        await loadScriptOnce('assets/js/person-mobile-compact-final.js?v=20260703-person-household-style-2', 'thon09-person-mobile-compact-final');
+        await loadScriptOnce('assets/js/person-mobile-compact-final.js?v=20260703-person-final-ds-1', 'thon09-person-mobile-compact-final');
         if (typeof window.thon09FitPopulationNames === 'function') window.thon09FitPopulationNames();
         if (typeof window.thon09CompactPopulationCards === 'function') window.thon09CompactPopulationCards();
         if (window.App && window.App.screen === 'persons' && typeof window.loadPersons === 'function') window.loadPersons();
