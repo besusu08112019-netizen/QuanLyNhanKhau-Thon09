@@ -20,6 +20,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           index = Path('index.php')
           text = index.read_text(encoding='utf-8')
           text = text.replace("define('APP_ASSET_VERSION', '20260703-person-table-cache-3');", "define('APP_ASSET_VERSION', '20260703-person-table-admin-4');")
@@ -27,18 +28,12 @@ jobs:
 
           path = Path('assets/js/admin.js')
           text = path.read_text(encoding='utf-8')
-          text = text.replace(
-          """        + '<td>' + safe(row.household_code || '') + '</td>'
-        + '<td>' + safe(relationshipOf(row)) + '</td>'
-        + '<td>' + safe(row.citizen_code || '') + '</td>'
-        + '<td><button class=\"btn btn-link person-name-link\" onclick=\"showPerson(' + Number(row.id || 0) + ')\">' + safe(row.full_name || '') + '</button></td>'
-        + '<td>' + fmtDate(row.date_of_birth) + '</td>'""",
-          """        + '<td>' + safe(row.household_code || '') + '</td>'
-        + '<td>' + safe(row.person_code || row.citizen_code || '') + '</td>'
-        + '<td><button class=\"btn btn-link person-name-link\" onclick=\"showPerson(' + Number(row.id || 0) + ')\">' + safe(row.full_name || '') + '</button></td>'
-        + '<td>' + safe(relationshipOf(row)) + '</td>'
-        + '<td>' + fmtDate(row.date_of_birth) + '</td>'""")
-          path.write_text(text, encoding='utf-8')
+          pattern = r"\+ '<td>' \+ safe\(row\.household_code \|\| ''\) \+ '</td>'\n\s*\+ '<td>' \+ safe\(relationshipOf\(row\)\) \+ '</td>'\n\s*\+ '<td>' \+ safe\(row\.citizen_code \|\| ''\) \+ '</td>'\n\s*\+ '<td><button class=\\\"btn btn-link person-name-link\\\" onclick=\\\"showPerson\(' \+ Number\(row\.id \|\| 0\) \+ '\)\\\">' \+ safe\(row\.full_name \|\| ''\) \+ '</button></td>'\n\s*\+ '<td>' \+ fmtDate\(row\.date_of_birth\) \+ '</td>'"
+          replacement = "+ '<td>' + safe(row.household_code || '') + '</td>'\n        + '<td>' + safe(row.person_code || row.citizen_code || '') + '</td>'\n        + '<td><button class=\"btn btn-link person-name-link\" onclick=\"showPerson(' + Number(row.id || 0) + ')\">' + safe(row.full_name || '') + '</button></td>'\n        + '<td>' + safe(relationshipOf(row)) + '</td>'\n        + '<td>' + fmtDate(row.date_of_birth) + '</td>'"
+          new_text, count = re.subn(pattern, replacement, text, count=1)
+          if count != 1:
+              raise SystemExit('admin.js personRow block was not matched')
+          path.write_text(new_text, encoding='utf-8')
           PY
       - name: Commit source changes
         shell: bash
