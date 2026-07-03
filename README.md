@@ -1,7 +1,6 @@
 # Hệ thống Quản lý Nhân khẩu Thôn 09
 
-Ứng dụng Web quản lý hộ dân và nhân khẩu cho Thôn 09 xã Hồng Phong, đã chuyển sang chạy độc lập trên Linux Hosting bằng PHP/MySQL. Dự án không còn phụ thuộc Google Apps Script, Google Sheets, Google Drive hoặc `google.script.run`.
-
+Ứng dụng Web quản lý hộ dân và nhân khẩu cho Thôn 09 xã Hồng Phong, đã chuyển sang chạy độc lập trên Linux Hosting bằng PHP/MySQL. 
 ## Nền tảng
 
 - PHP 8.2 trở lên.
