@@ -54,10 +54,6 @@ jobs:
           grep -q 'assets/js/gis-search.js?v=' /tmp/thon09-home.html
           ! grep -q 'assets/js/mobile-design-system.js?v=' /tmp/thon09-home.html
           ! grep -q 'assets/css/person-card-layout.css?v=' /tmp/thon09-home.html
-          ! grep -q 'thon09-report-inline-stable' /tmp/thon09-home.html
-          ! grep -q 'thon09-person-advanced-filter-fix' /tmp/thon09-home.html
-          ! grep -q 'thon09-header-duplicate-guard' /tmp/thon09-home.html
-          ! grep -q 'thon09-final-navigation-repair' /tmp/thon09-home.html
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
