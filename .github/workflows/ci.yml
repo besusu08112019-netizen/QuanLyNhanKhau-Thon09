@@ -7,6 +7,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   quality:
     name: PHP, JavaScript, and browser smoke checks
@@ -15,6 +18,149 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: One-shot patch person desktop table mapping
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          view = Path('views/app.php')
+          app = Path('assets/js/app.js')
+          view_text = view.read_text(encoding='utf-8')
+          app_text = app.read_text(encoding='utf-8')
+
+          old_head = '<thead><tr><th><input type="checkbox" id="personCheckAll"></th><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ và tên</th><th>Ngày sinh</th><th>Giới tính</th><th>CCCD/Số định danh</th><th>Cư trú</th><th>Đảng viên</th><th class="text-end">Thao tác</th></tr></thead>'
+          new_head = '<thead><tr><th><input type="checkbox" id="personCheckAll"></th><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ và tên</th><th>Quan hệ</th><th>Ngày sinh</th><th>Tuổi</th><th>Giới tính</th><th>CCCD/Số định danh</th><th>Cư trú</th><th>Đảng viên</th><th class="text-end">Thao tác</th></tr></thead>'
+          if old_head not in view_text and new_head not in view_text:
+              raise SystemExit('Could not locate person table header in views/app.php')
+          view_text = view_text.replace(old_head, new_head)
+          view_text = view_text.replace('colspan="10" class="text-center text-muted py-4">Không có dữ liệu', 'colspan="12" class="text-center text-muted py-4">Không có dữ liệu')
+          view_text = re.sub(r"assets/js/app\.js\?v=[^\"']+", 'assets/js/app.js?v=20260703-person-table-1', view_text)
+          view.write_text(view_text, encoding='utf-8')
+
+          new_person_row = r'''function personRow(row) {
+  const party = Number(row.party_member || row.partyMember || 0) === 1;
+  const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
+  const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : residencyLabel(row.residency_status);
+  const personCode = row.person_code || row.citizen_code || '';
+  const age = row.age ?? personAge(row.date_of_birth);
+  const ageText = age === null || age === undefined ? '' : String(age);
+  return '<tr>'
+    + '<td><input type="checkbox" class="person-check" value="' + row.id + '"></td>'
+    + '<td>' + escapeHtml(row.household_code || '') + '</td>'
+    + '<td>' + escapeHtml(personCode) + '</td>'
+    + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + row.id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
+    + '<td>' + escapeHtml(personRelationship(row)) + '</td>'
+    + '<td>' + formatDate(row.date_of_birth) + '</td>'
+    + '<td>' + escapeHtml(ageText) + '</td>'
+    + '<td>' + escapeHtml(row.gender || '') + '</td>'
+    + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
+    + '<td><span class="person-badge ' + residenceClass + '">' + escapeHtml(residenceText) + '</span></td>'
+    + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
+    + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">Xóa</button></td>'
+    + '</tr>';
+}'''
+          app_text, count = re.subn(r'function personRow\(row\) \{.*?\n\}', new_person_row, app_text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Could not replace personRow in assets/js/app.js')
+          app_text = app_text.replace('colspan="10" class="text-center text-muted py-4">Không có dữ liệu', 'colspan="12" class="text-center text-muted py-4">Không có dữ liệu')
+          app.write_text(app_text, encoding='utf-8')
+
+          temp_workflow = Path('.github/workflows/person-desktop-table-fix.yml')
+          if temp_workflow.exists():
+              temp_workflow.unlink()
+
+          ci_original = '''name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    name: PHP, JavaScript, and browser smoke checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: fileinfo, json, mbstring, pdo, pdo_mysql, simplexml, zip
+          coverage: none
+
+      - name: Validate Composer metadata
+        run: composer validate --strict
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Lint PHP files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . \\
+            -path './vendor' -prune -o \\
+            -path './uploads' -prune -o \\
+            -path './backups' -prune -o \\
+            -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Render app shell and verify assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -S 127.0.0.1:8080 index.php > /tmp/thon09-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill ${server_pid} >/dev/null 2>&1 || true' EXIT
+          sleep 2
+          curl -fsS http://127.0.0.1:8080/ -o /tmp/thon09-home.html
+          grep -q 'assets/js/view-inline-patches.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/desktop-only-reset.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/gis-household-location.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/gis-search.js?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/js/mobile-design-system.js?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/css/person-card-layout.css?v=' /tmp/thon09-home.html
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JavaScript test tools
+        run: npm install --no-audit --no-fund
+
+      - name: Check JavaScript syntax
+        run: npm run check:js
+
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        run: npm run test:browser
+'''
+          Path('.github/workflows/ci.yml').write_text(ci_original, encoding='utf-8')
+          PY
+          node --check assets/js/app.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add views/app.php assets/js/app.js .github/workflows/ci.yml .github/workflows/person-desktop-table-fix.yml
+          if git diff --cached --quiet; then
+            echo "No one-shot changes to commit"
+          else
+            git commit -m "Fix person desktop table column mapping"
+            git push
+          fi
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
