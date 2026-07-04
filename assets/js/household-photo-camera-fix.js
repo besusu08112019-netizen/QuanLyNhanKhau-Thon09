@@ -8,6 +8,8 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyHouseholdCameraCapture);
   else applyHouseholdCameraCapture();
 
-  const observer = new MutationObserver(applyHouseholdCameraCapture);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('shown.bs.modal', event => {
+    if (event.target?.id === 'householdModal') window.setTimeout(applyHouseholdCameraCapture, 30);
+  });
+  document.addEventListener('thon09:household-photo-ready', applyHouseholdCameraCapture);
 })();
