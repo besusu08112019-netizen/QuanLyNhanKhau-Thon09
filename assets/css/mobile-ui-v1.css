@@ -1,0 +1,577 @@
+/* Mobile UI v1 - shared administrative design system */
+:root {
+  --mobile-radius: 16px;
+  --mobile-radius-sm: 12px;
+  --mobile-gap: 12px;
+  --mobile-pad: 16px;
+  --mobile-shadow: 0 10px 28px rgba(16, 36, 28, .08);
+}
+
+.mobile-bottom-nav,
+.mobile-fab {
+  display: none;
+}
+
+@media (max-width: 1199.98px) {
+  html,
+  body {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .app-shell {
+    display: block;
+  }
+
+  .gov-topbar {
+    min-height: 58px;
+    padding: 10px 16px;
+  }
+
+  .topbar-meta {
+    min-width: 0;
+  }
+
+  .screen:not(.gis-screen),
+  .dashboard-overview-screen,
+  .person-management-screen,
+  .report-screen {
+    padding: 18px;
+  }
+
+  .dashboard-kpi-grid,
+  .dashboard-chart-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .dashboard-age-layout,
+  .dashboard-party-layout,
+  .dashboard-gender-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-donut {
+    width: min(220px, 58vw);
+    height: min(220px, 58vw);
+  }
+
+  .content-card,
+  .dashboard-kpi,
+  .dashboard-panel,
+  .module-filter-card,
+  .person-search-card,
+  .report-filter-card,
+  .module-list-card,
+  .person-list-card,
+  .report-result-card {
+    border-radius: var(--mobile-radius);
+    box-shadow: var(--mobile-shadow);
+  }
+
+  .household-filter-grid,
+  .person-search-row,
+  .person-quick-filter-grid,
+  .person-advanced-grid,
+  .report-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: var(--mobile-gap);
+  }
+
+  .module-primary-action,
+  .person-primary-action,
+  .report-view-btn,
+  .module-reset-btn,
+  .person-advanced-toggle,
+  .report-action-btn {
+    min-height: 44px;
+    border-radius: var(--mobile-radius-sm);
+  }
+
+  .modal-dialog {
+    max-width: min(760px, calc(100vw - 24px));
+    margin: 12px auto;
+  }
+
+  .modal-content {
+    max-height: calc(100vh - 24px);
+    overflow: hidden;
+  }
+
+  .modal-body {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 767.98px) {
+  body {
+    padding-bottom: 78px;
+  }
+
+  .gov-topbar {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .gov-breadcrumb-block {
+    min-width: 0;
+  }
+
+  .gov-breadcrumb-block .breadcrumb-trail {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: clamp(12px, 3.2vw, 13px);
+  }
+
+  .topbar-meta {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 10px;
+    width: 100%;
+    font-size: 12px;
+  }
+
+  .topbar-clock {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .topbar-user {
+    grid-column: 1 / -1;
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  #logoutBtn {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    font-size: 12px;
+  }
+
+  .screen:not(.gis-screen),
+  .dashboard-overview-screen,
+  .person-management-screen,
+  .report-screen {
+    padding: 12px;
+  }
+
+  .module-action-row,
+  .person-action-row,
+  .module-list-head,
+  .person-list-head,
+  .report-result-head,
+  .report-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .module-primary-action,
+  .person-primary-action,
+  .report-view-btn,
+  .report-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .household-filter-grid,
+  .person-search-row,
+  .person-quick-filter-grid,
+  .person-advanced-grid,
+  .report-filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .module-field .form-control,
+  .module-field .form-select,
+  .person-field .form-control,
+  .person-field .form-select,
+  .report-field .form-control,
+  .report-field .form-select {
+    min-height: 44px;
+    font-size: 15px;
+  }
+
+  .table-responsive:not(.gis-area-list),
+  .person-table-wrap,
+  .report-preview {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .module-table,
+  .person-table,
+  .report-table,
+  .data-table {
+    min-width: 0 !important;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+  }
+
+  .module-table thead,
+  .person-table thead,
+  .report-table thead,
+  .data-table thead {
+    display: none;
+  }
+
+  .module-table tbody,
+  .person-table tbody,
+  .report-table tbody,
+  .data-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .module-table tr,
+  .person-table tr,
+  .report-table tr,
+  .data-table tr {
+    display: grid;
+    width: 100%;
+  }
+
+  .module-table tr.ds-record-row,
+  .person-table tr.ds-record-row,
+  .report-table tbody tr,
+  .data-table tbody tr {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--mobile-radius);
+    background: var(--card);
+    box-shadow: var(--mobile-shadow);
+  }
+
+  .module-table td,
+  .person-table td,
+  .report-table td,
+  .data-table td {
+    display: grid;
+    grid-template-columns: minmax(104px, 38%) minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border: 0;
+    border-bottom: 1px solid #edf2f0;
+    font-size: clamp(13px, 3.45vw, 15px);
+    word-break: break-word;
+  }
+
+  .module-table td:last-child,
+  .person-table td:last-child,
+  .report-table td:last-child,
+  .data-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .module-table td::before,
+  .person-table td::before,
+  .report-table td::before,
+  .data-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: clamp(12px, 3.2vw, 13px);
+    font-weight: 750;
+  }
+
+  .module-table td[data-label="Chá»n"],
+  .person-table td[data-label="Chá»n"] {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .module-table td[data-label="Chá»n"]::before,
+  .person-table td[data-label="Chá»n"]::before {
+    display: none;
+  }
+
+  .module-table td[data-label="MÃ£ há»™"],
+  .person-table td[data-label="Há» vÃ  tÃªn"],
+  .person-table td[data-label="MÃ£ há»™"] {
+    padding-right: 36px;
+  }
+
+  .person-table td[data-label="Há» vÃ  tÃªn"] {
+    grid-template-columns: 1fr;
+    padding-bottom: 10px;
+  }
+
+  .person-table td[data-label="Há» vÃ  tÃªn"]::before {
+    display: none;
+  }
+
+  .person-name-link {
+    display: block;
+    max-width: calc(100vw - 92px);
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--brand);
+    font-size: clamp(18px, 5vw, 22px);
+    line-height: 1.25;
+    font-weight: 850;
+  }
+
+  .person-table td[data-label="Quan há»‡"] {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+    min-height: 28px;
+    padding: 4px 10px;
+    border: 1px solid rgba(11,107,58,.15);
+    border-radius: 999px;
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-size: 13px;
+    font-weight: 750;
+  }
+
+  .person-table td[data-label="Quan há»‡"]::before {
+    display: none;
+  }
+
+  .person-badge,
+  .badge-soft {
+    max-width: 100%;
+    justify-self: start;
+    white-space: nowrap;
+  }
+
+  .ds-action-cell {
+    grid-template-columns: 1fr !important;
+    padding-top: 12px !important;
+  }
+
+  .ds-action-cell::before {
+    display: none;
+  }
+
+  .ds-action-cell {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px;
+  }
+
+  .ds-action-cell .btn {
+    min-height: 42px;
+    margin: 0 !important;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 750;
+  }
+
+  .ds-group-row {
+    margin: 2px 0 -2px;
+  }
+
+  .ds-group-row td {
+    display: block !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  .ds-group-row td::before {
+    display: none !important;
+  }
+
+  .ds-group-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 10px;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid rgba(11,107,58,.12);
+    border-radius: 14px;
+    background: #edf8f1;
+    color: var(--brand);
+  }
+
+  .ds-group-header span {
+    min-width: 0;
+    font-weight: 850;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ds-group-header small {
+    grid-column: 1 / -1;
+    color: #4d5f55;
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .ds-group-header b {
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--brand);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .pager,
+  .module-pager,
+  .person-pager {
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 0 2px;
+  }
+
+  .modal-dialog {
+    width: calc(100vw - 20px);
+    margin: 10px auto;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 14px 16px;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 95;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid rgba(223,231,226,.92);
+    border-radius: 20px;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 16px 40px rgba(15,23,42,.18);
+    backdrop-filter: blur(16px);
+  }
+
+  .mobile-bottom-nav button {
+    min-width: 0;
+    min-height: 48px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: #526071;
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 750;
+  }
+
+  .mobile-bottom-nav button i {
+    font-size: 16px;
+  }
+
+  .mobile-bottom-nav button.active {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  .mobile-fab {
+    position: fixed;
+    right: 16px;
+    bottom: 86px;
+    z-index: 96;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--brand), #078246);
+    color: #fff;
+    box-shadow: 0 16px 36px rgba(11,107,58,.28);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+  }
+
+  .mobile-fab.d-none,
+  .mobile-bottom-nav.d-none {
+    display: none !important;
+  }
+}
+
+@media (max-width: 479.98px) {
+  :root {
+    --mobile-pad: 14px;
+    --mobile-gap: 10px;
+  }
+
+  .module-table tr.ds-record-row,
+  .person-table tr.ds-record-row,
+  .report-table tbody tr,
+  .data-table tbody tr {
+    padding: 12px;
+  }
+
+  .module-table td,
+  .person-table td,
+  .report-table td,
+  .data-table td {
+    grid-template-columns: minmax(92px, 36%) minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .person-name-link {
+    font-size: clamp(17px, 5.2vw, 21px);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .ds-record-row > td:first-child {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .ds-record-row > td:first-child::before,
+  .ds-person-row > td:nth-child(4)::before,
+  .ds-person-row > td:nth-child(5)::before,
+  .ds-action-cell::before {
+    display: none !important;
+  }
+
+  .ds-person-row > td:nth-child(4) {
+    grid-template-columns: 1fr;
+    padding-right: 36px;
+    padding-bottom: 10px;
+  }
+
+  .ds-person-row > td:nth-child(5) {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+    min-height: 28px;
+    padding: 4px 10px;
+    border: 1px solid rgba(11,107,58,.15);
+    border-radius: 999px;
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-size: 13px;
+    font-weight: 750;
+  }
+}
