@@ -380,11 +380,14 @@
   }
 
   .ds-group-row {
+    grid-template-columns: 1fr !important;
     margin: 2px 0 -2px;
   }
 
   .ds-group-row td {
     display: block !important;
+    width: 100% !important;
+    grid-column: 1 / -1 !important;
     padding: 0 !important;
     border: 0 !important;
   }
