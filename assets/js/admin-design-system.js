@@ -122,14 +122,9 @@
 
   function start() {
     enhance(document);
-    if (window.__thon09AdminDesignObserver) return;
-    window.__thon09AdminDesignObserver = true;
-    new MutationObserver(mutations => {
-      mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
-        if (node.nodeType === 1) enhance(node);
-      }));
-    }).observe(document.body, { childList: true, subtree: true });
   }
+
+  window.thon09EnhanceDesignSystem = enhance;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
