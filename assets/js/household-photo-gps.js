@@ -83,18 +83,13 @@
     if (input.dataset.thon09PhotoPrepared === '1') return;
     input.dataset.thon09PhotoPrepared = '1';
 
-    // The photo capture enhancer watches DOM mutations; this tells it to re-scan
-    // after the household photo input receives the stable id it expects.
-    const marker = document.createComment('thon09-household-photo-ready');
-    document.body.appendChild(marker);
-    marker.remove();
+    if (typeof window.thon09EnhanceHouseholdPhotoCapture === 'function') {
+      window.thon09EnhanceHouseholdPhotoCapture();
+    }
   }
 
   function observeHouseholdPhotoInput() {
     prepareHouseholdPhotoInput();
-
-    const observer = new MutationObserver(() => prepareHouseholdPhotoInput());
-    observer.observe(document.body, { childList: true, subtree: true });
 
     document.addEventListener('shown.bs.modal', (event) => {
       if (event.target?.id === 'householdModal') {
