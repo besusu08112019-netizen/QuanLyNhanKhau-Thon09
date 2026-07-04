@@ -1,0 +1,24 @@
+/* Mobile UI final overrides - keep person action buttons in one row */
+@media (max-width: 767.98px) {
+  .person-table-wrap .person-table tr.ds-person-row > td.ds-action-cell {
+    grid-area: auto / 1 / auto / -1 !important;
+    grid-column-start: 1 !important;
+    grid-column-end: -1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    justify-content: stretch !important;
+  }
+
+  .person-table-wrap .person-table tr.ds-person-row > td.ds-action-cell::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .person-table-wrap .person-table tr.ds-person-row > td.ds-action-cell .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
