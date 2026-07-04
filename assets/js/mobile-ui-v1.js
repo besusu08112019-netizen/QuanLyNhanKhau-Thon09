@@ -164,9 +164,112 @@
     updateMobileActions();
   }
 
+  function currentScreen() {
+    return (window.App && App.screen) || localStorage.getItem('thon09_screen') || 'dashboard';
+  }
+
+  function refreshCurrentScreen() {
+    const loaders = {
+      dashboard: window.loadDashboard,
+      households: window.loadHouseholds,
+      persons: window.loadPersons,
+      gis: window.loadGisAreas,
+      reports: window.thon09ViewReport
+    };
+    const loader = loaders[currentScreen()];
+    if (typeof loader !== 'function') return;
+    const result = loader();
+    if (result && typeof result.catch === 'function') {
+      result.catch(error => {
+        if (typeof window.showToast === 'function') window.showToast(error.message || 'Không tải lại được dữ liệu.', 'danger');
+      });
+    }
+  }
+
+  function initPullToRefresh() {
+    if (document.body.dataset.mobilePullRefreshBound) return;
+    document.body.dataset.mobilePullRefreshBound = '1';
+    const indicator = document.createElement('div');
+    indicator.className = 'mobile-refresh-indicator';
+    indicator.innerHTML = '<i class="fa-solid fa-arrow-rotate-right"></i><span>Kéo để tải lại</span>';
+    document.body.appendChild(indicator);
+    let startY = 0;
+    let pulling = false;
+    document.addEventListener('touchstart', event => {
+      if (window.innerWidth >= 1200 || window.scrollY > 0 || event.touches.length !== 1) return;
+      startY = event.touches[0].clientY;
+      pulling = true;
+    }, { passive: true });
+    document.addEventListener('touchmove', event => {
+      if (!pulling) return;
+      const diff = event.touches[0].clientY - startY;
+      if (diff <= 0) return;
+      indicator.classList.toggle('ready', diff > 72);
+      indicator.style.transform = 'translate(-50%, ' + Math.min(diff / 2, 64) + 'px)';
+      indicator.style.opacity = Math.min(diff / 72, 1);
+    }, { passive: true });
+    document.addEventListener('touchend', event => {
+      if (!pulling) return;
+      const diff = (event.changedTouches[0] ? event.changedTouches[0].clientY : startY) - startY;
+      pulling = false;
+      indicator.style.transform = '';
+      indicator.style.opacity = '';
+      indicator.classList.remove('ready');
+      if (diff > 72) refreshCurrentScreen();
+    }, { passive: true });
+  }
+
+  function initMobileFilterSheet() {
+    if (document.body.dataset.mobileSheetBound) return;
+    document.body.dataset.mobileSheetBound = '1';
+    const backdrop = document.createElement('button');
+    backdrop.type = 'button';
+    backdrop.className = 'mobile-sheet-backdrop d-none';
+    backdrop.setAttribute('aria-label', 'Đóng bộ lọc');
+    document.body.appendChild(backdrop);
+    const closeSheet = () => {
+      document.querySelectorAll('.mobile-bottom-sheet.is-open').forEach(panel => panel.classList.remove('is-open'));
+      backdrop.classList.add('d-none');
+    };
+    backdrop.addEventListener('click', closeSheet);
+    document.addEventListener('click', event => {
+      if (window.innerWidth > 767) return;
+      const trigger = event.target.closest('#personAdvancedToggle, .person-advanced-toggle');
+      if (!trigger) return;
+      setTimeout(() => {
+        const panel = document.querySelector('#personAdvancedFilters');
+        if (!panel || panel.classList.contains('d-none')) return;
+        panel.classList.add('mobile-bottom-sheet', 'is-open');
+        backdrop.classList.remove('d-none');
+      }, 0);
+    });
+    document.addEventListener('click', event => {
+      if (event.target.closest('#personAdvancedApply, #personAdvancedClear, #personFilterReset')) {
+        setTimeout(closeSheet, 0);
+      }
+    });
+  }
+
+  function initScreenTransitions() {
+    if (document.body.dataset.mobileTransitionBound) return;
+    document.body.dataset.mobileTransitionBound = '1';
+    const originalSwitch = window.switchScreen;
+    if (typeof originalSwitch !== 'function' || originalSwitch.__mobileTransitionWrapped) return;
+    window.switchScreen = function switchScreenWithTransition(screen) {
+      document.body.classList.add('mobile-screen-changing');
+      const result = originalSwitch.apply(this, arguments);
+      window.setTimeout(() => document.body.classList.remove('mobile-screen-changing'), 180);
+      return result;
+    };
+    window.switchScreen.__mobileTransitionWrapped = true;
+  }
+
   function boot() {
     initResponsiveTableLabels();
     initMobileActions();
+    initPullToRefresh();
+    initMobileFilterSheet();
+    initScreenTransitions();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
