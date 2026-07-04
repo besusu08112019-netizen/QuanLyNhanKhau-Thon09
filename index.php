@@ -190,6 +190,7 @@ if (!str_starts_with($request->path(), '/api')) {
     $versionedAssets = [
         'assets/css/app.css',
         'assets/css/mobile-ui-v1.css',
+        'assets/css/mobile-ui-v1-fix.css',
         'assets/js/app.js',
         'assets/js/csrf.js',
         'assets/js/session.js',
@@ -222,6 +223,7 @@ if (!str_starts_with($request->path(), '/api')) {
 
     $runtimeStyles = [
         'assets/css/mobile-ui-v1.css',
+        'assets/css/mobile-ui-v1-fix.css',
     ];
     $runtimeCss = implode("\n", array_map(
         fn(string $style): string => '<link rel="stylesheet" href="' . versioned_asset($style) . '">',
