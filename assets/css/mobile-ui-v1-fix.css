@@ -1,5 +1,27 @@
 /* Mobile UI final overrides - keep person action buttons in one row */
 @media (max-width: 767.98px) {
+  #personRows tr.ds-group-row > td {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  #personRows .ds-group-header {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 4px 10px !important;
+  }
+
+  #personRows .ds-group-header span {
+    min-width: 0 !important;
+  }
+
+  #personRows .ds-group-header small {
+    display: block !important;
+    grid-column: 1 / -1 !important;
+    margin-top: 2px !important;
+  }
+
   #personRows tr.ds-person-row {
     grid-template-columns: 1fr !important;
   }
