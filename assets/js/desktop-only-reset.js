@@ -22,29 +22,16 @@
   window.decorateMobileCardActions = noop;
   window.thon09FitPopulationNames = noop;
   window.thon09CompactPopulationCards = noop;
+  window.thon09StripMobileTableState = stripMobileTableState;
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      stripMobileTableState(document);
-    }, { once: true });
-  } else {
+  function runStrip() {
     stripMobileTableState(document);
   }
 
-  var observer = new MutationObserver(function (mutations) {
-    mutations.forEach(function (mutation) {
-      mutation.addedNodes.forEach(function (node) {
-        if (node.nodeType === 1) stripMobileTableState(node);
-      });
-    });
-  });
-
-  if (document.body) {
-    observer.observe(document.body, { childList: true, subtree: true });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runStrip, { once: true });
   } else {
-    document.addEventListener('DOMContentLoaded', function () {
-      observer.observe(document.body, { childList: true, subtree: true });
-    }, { once: true });
+    runStrip();
   }
 })();
 
@@ -52,66 +39,80 @@
   'use strict';
 
   function hasSession() {
-    return !!(localStorage.getItem('thon09_token') || (window.App && window.App.token));
+    try {
+      return Boolean(localStorage.getItem('thon09_token') || (window.App && window.App.token));
+    } catch (error) {
+      return Boolean(window.App && window.App.token);
+    }
   }
 
-  function setVisible(visible) {
-    document.querySelector('.mobile-bottom-nav')?.classList.toggle('d-none', !visible);
-    document.querySelector('.mobile-fab')?.classList.toggle('d-none', !visible);
-    document.querySelector('.mobile-refresh-indicator')?.classList.toggle('d-none', !visible);
-    if (!visible) {
-      document.querySelector('.mobile-sheet-backdrop')?.classList.add('d-none');
-      document.querySelectorAll('.mobile-bottom-sheet.is-open').forEach(function (panel) {
-        panel.classList.remove('is-open');
-      });
-      document.body.classList.remove('sidebar-open', 'mobile-screen-changing');
-      document.querySelector('.sidebar')?.classList.remove('open');
+  function setClass(element, className, enabled) {
+    if (!element) return;
+    if (element.classList.contains(className) !== enabled) {
+      element.classList.toggle(className, enabled);
     }
   }
 
   function syncMobileChrome() {
-    setVisible(hasSession());
+    var visible = hasSession();
+    setClass(document.querySelector('.mobile-bottom-nav'), 'd-none', !visible);
+    setClass(document.querySelector('.mobile-fab'), 'd-none', !visible);
+    setClass(document.querySelector('.mobile-refresh-indicator'), 'd-none', !visible);
+
+    if (!visible) {
+      setClass(document.querySelector('.mobile-sheet-backdrop'), 'd-none', true);
+      document.querySelectorAll('.mobile-bottom-sheet.is-open').forEach(function (panel) {
+        panel.classList.remove('is-open');
+      });
+      document.body.classList.remove('sidebar-open', 'mobile-screen-changing');
+      var sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.classList.remove('open');
+    }
   }
 
-  function observeMobileChrome() {
-    var target = document.body || document.documentElement;
-    if (!target || window.__thon09MobileAuthGateObserver) return;
-    window.__thon09MobileAuthGateObserver = true;
-    var chromeObserver = new MutationObserver(syncMobileChrome);
-    chromeObserver.observe(target, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  function queueSync() {
+    if (window.__thon09MobileChromeSyncQueued) return;
+    window.__thon09MobileChromeSyncQueued = true;
+    window.requestAnimationFrame(function () {
+      window.__thon09MobileChromeSyncQueued = false;
+      syncMobileChrome();
+    });
   }
 
   function patchStorage() {
-    if (window.__thon09MobileAuthGateStorage) return;
-    window.__thon09MobileAuthGateStorage = true;
-    var originalSetItem = Storage.prototype.setItem;
-    var originalRemoveItem = Storage.prototype.removeItem;
-
-    Storage.prototype.setItem = function patchedSetItem(key, value) {
-      var result = originalSetItem.apply(this, arguments);
-      if (this === localStorage && key === 'thon09_token') window.setTimeout(syncMobileChrome, 0);
+    if (window.__thon09MobileChromeStoragePatch) return;
+    window.__thon09MobileChromeStoragePatch = true;
+    var setItem = Storage.prototype.setItem;
+    var removeItem = Storage.prototype.removeItem;
+    Storage.prototype.setItem = function patchedSetItem(key) {
+      var result = setItem.apply(this, arguments);
+      if (this === localStorage && key === 'thon09_token') queueSync();
       return result;
     };
-
     Storage.prototype.removeItem = function patchedRemoveItem(key) {
-      var result = originalRemoveItem.apply(this, arguments);
-      if (this === localStorage && key === 'thon09_token') window.setTimeout(syncMobileChrome, 0);
+      var result = removeItem.apply(this, arguments);
+      if (this === localStorage && key === 'thon09_token') queueSync();
       return result;
     };
   }
 
-  patchStorage();
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      observeMobileChrome();
-      syncMobileChrome();
-    });
-  } else {
-    observeMobileChrome();
+  function start() {
+    patchStorage();
     syncMobileChrome();
+    window.setTimeout(syncMobileChrome, 0);
+    window.setTimeout(syncMobileChrome, 300);
   }
-  document.addEventListener('visibilitychange', syncMobileChrome);
+
+  window.thon09SyncMobileChrome = syncMobileChrome;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
+  }
+  window.addEventListener('pageshow', queueSync);
   window.addEventListener('storage', function (event) {
-    if (event.key === 'thon09_token') syncMobileChrome();
+    if (event.key === 'thon09_token') queueSync();
   });
+  document.addEventListener('thon09:auth-state', queueSync);
 })();
