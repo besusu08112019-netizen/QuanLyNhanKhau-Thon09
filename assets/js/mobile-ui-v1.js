@@ -100,6 +100,11 @@
 
   function updateMobileActions() {
     const fab = document.querySelector('.mobile-fab');
+    document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen], .mobile-bottom-nav [data-screen]').forEach(button => {
+      const screenName = button.dataset.mobileScreen || button.dataset.screen;
+      const currentScreen = (window.App && App.screen) || localStorage.getItem('thon09_screen') || 'dashboard';
+      button.classList.toggle('active', screenName === currentScreen);
+    });
     if (!fab) return;
     const screen = (window.App && App.screen) || localStorage.getItem('thon09_screen') || 'dashboard';
     const config = {
@@ -126,12 +131,20 @@
         ['reports', 'fa-chart-pie', 'Báo cáo']
       ].map(item => '<button type="button" data-mobile-screen="' + item[0] + '"><i class="fa-solid ' + item[1] + '"></i><span>' + item[2] + '</span></button>').join('');
       document.body.appendChild(nav);
-      nav.addEventListener('click', event => {
-        const button = event.target.closest('[data-mobile-screen]');
+    }
+    if (!document.body.dataset.mobileV1NavBound) {
+      document.body.dataset.mobileV1NavBound = '1';
+      document.addEventListener('click', event => {
+        const button = event.target.closest('.mobile-bottom-nav [data-mobile-screen], .mobile-bottom-nav [data-screen]');
         if (!button || typeof window.switchScreen !== 'function') return;
-        window.switchScreen(button.dataset.mobileScreen);
+        const screen = button.dataset.mobileScreen || button.dataset.screen;
+        if (!screen) return;
+        event.preventDefault();
+        window.switchScreen(screen);
+        setTimeout(updateMobileActions, 0);
         document.querySelector('.sidebar')?.classList.remove('open');
-      });
+        document.body.classList.remove('sidebar-open');
+      }, true);
     }
     if (!document.querySelector('.mobile-fab')) {
       const fab = document.createElement('button');
