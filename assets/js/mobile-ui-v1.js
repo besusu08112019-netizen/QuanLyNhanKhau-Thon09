@@ -10,6 +10,43 @@
     return text(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
   }
 
+  function hasSession() {
+    return !!(localStorage.getItem('thon09_token') || (window.App && App.token));
+  }
+
+  function setMobileChromeVisible(visible) {
+    document.querySelector('.mobile-bottom-nav')?.classList.toggle('d-none', !visible);
+    document.querySelector('.mobile-fab')?.classList.toggle('d-none', !visible);
+    document.querySelector('.mobile-refresh-indicator')?.classList.toggle('d-none', !visible);
+    if (!visible) {
+      document.querySelector('.mobile-sheet-backdrop')?.classList.add('d-none');
+      document.querySelectorAll('.mobile-bottom-sheet.is-open').forEach(panel => panel.classList.remove('is-open'));
+      document.body.classList.remove('sidebar-open', 'mobile-screen-changing');
+      document.querySelector('.sidebar')?.classList.remove('open');
+    }
+  }
+
+  function signalAuthState(authenticated) {
+    document.dispatchEvent(new CustomEvent('thon09:auth-state', { detail: { authenticated: !!authenticated } }));
+  }
+
+  function watchSessionToken() {
+    if (window.__thon09MobileSessionWatcher) return;
+    window.__thon09MobileSessionWatcher = true;
+    const setItem = Storage.prototype.setItem;
+    const removeItem = Storage.prototype.removeItem;
+    Storage.prototype.setItem = function patchedSetItem(key, value) {
+      const result = setItem.apply(this, arguments);
+      if (this === localStorage && key === 'thon09_token') window.setTimeout(() => signalAuthState(true), 0);
+      return result;
+    };
+    Storage.prototype.removeItem = function patchedRemoveItem(key) {
+      const result = removeItem.apply(this, arguments);
+      if (this === localStorage && key === 'thon09_token') window.setTimeout(() => signalAuthState(false), 0);
+      return result;
+    };
+  }
+
   function fmtDate(value) {
     return typeof window.formatDate === 'function' ? window.formatDate(value) : text(value);
   }
@@ -93,12 +130,22 @@
         });
       });
     };
-    document.querySelectorAll('table').forEach(sync);
-    const observer = new MutationObserver(() => document.querySelectorAll('table').forEach(sync));
-    observer.observe(document.body, { childList: true, subtree: true });
+    const syncRoot = (root = document) => {
+      const tables = new Set();
+      if (root?.matches?.('table')) tables.add(root);
+      root?.querySelectorAll?.('table').forEach(table => tables.add(table));
+      tables.forEach(sync);
+    };
+    syncRoot(document);
+    window.thon09SyncResponsiveTableLabels = syncRoot;
   }
 
   function updateMobileActions() {
+    if (!hasSession()) {
+      setMobileChromeVisible(false);
+      return;
+    }
+    setMobileChromeVisible(true);
     const fab = document.querySelector('.mobile-fab');
     document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen], .mobile-bottom-nav [data-screen]').forEach(button => {
       const screenName = button.dataset.mobileScreen || button.dataset.screen;
@@ -119,6 +166,10 @@
   }
 
   function initMobileActions() {
+    if (!hasSession()) {
+      setMobileChromeVisible(false);
+      return;
+    }
     if (!document.querySelector('.mobile-bottom-nav')) {
       const nav = document.createElement('nav');
       nav.className = 'mobile-bottom-nav';
@@ -169,6 +220,7 @@
   }
 
   function refreshCurrentScreen() {
+    if (!hasSession()) return;
     const loaders = {
       dashboard: window.loadDashboard,
       households: window.loadHouseholds,
@@ -187,6 +239,7 @@
   }
 
   function initPullToRefresh() {
+    if (!hasSession()) return;
     if (document.body.dataset.mobilePullRefreshBound) return;
     document.body.dataset.mobilePullRefreshBound = '1';
     const indicator = document.createElement('div');
@@ -196,6 +249,7 @@
     let startY = 0;
     let pulling = false;
     document.addEventListener('touchstart', event => {
+      if (!hasSession()) return;
       if (window.innerWidth >= 1200 || window.scrollY > 0 || event.touches.length !== 1) return;
       startY = event.touches[0].clientY;
       pulling = true;
@@ -220,6 +274,7 @@
   }
 
   function initMobileFilterSheet() {
+    if (!hasSession()) return;
     if (document.body.dataset.mobileSheetBound) return;
     document.body.dataset.mobileSheetBound = '1';
     const backdrop = document.createElement('button');
@@ -251,6 +306,7 @@
   }
 
   function initScreenTransitions() {
+    if (!hasSession()) return;
     if (document.body.dataset.mobileTransitionBound) return;
     document.body.dataset.mobileTransitionBound = '1';
     const originalSwitch = window.switchScreen;
@@ -258,6 +314,9 @@
     window.switchScreen = function switchScreenWithTransition(screen) {
       document.body.classList.add('mobile-screen-changing');
       const result = originalSwitch.apply(this, arguments);
+      window.requestAnimationFrame(() => {
+        if (window.thon09SyncResponsiveTableLabels) window.thon09SyncResponsiveTableLabels(document);
+      });
       window.setTimeout(() => document.body.classList.remove('mobile-screen-changing'), 180);
       return result;
     };
@@ -265,12 +324,30 @@
   }
 
   function boot() {
+    watchSessionToken();
     initResponsiveTableLabels();
+    if (hasSession()) {
+      initMobileActions();
+      initPullToRefresh();
+      initMobileFilterSheet();
+      initScreenTransitions();
+    } else {
+      setMobileChromeVisible(false);
+    }
+  }
+
+  window.thon09InitMobileUi = function thon09InitMobileUi() {
     initMobileActions();
     initPullToRefresh();
     initMobileFilterSheet();
     initScreenTransitions();
-  }
+    updateMobileActions();
+  };
+
+  document.addEventListener('thon09:auth-state', event => {
+    if (event.detail && event.detail.authenticated) window.thon09InitMobileUi();
+    else setMobileChromeVisible(false);
+  });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
