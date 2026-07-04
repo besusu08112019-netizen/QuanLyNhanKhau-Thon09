@@ -9,7 +9,15 @@ dist/
 build/
 coverage/
 *.log
+error_log
 work/
 outputs/
 config/database.php
 config/database.local.php
+storage/logs/*
+storage/cache/*
+cache/*
+logs/*
+uploads/tmp/*
+uploads.zip
+vendor/bin/*
