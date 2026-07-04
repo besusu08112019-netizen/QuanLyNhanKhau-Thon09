@@ -258,8 +258,6 @@
   function boot() {
     mount();
     document.addEventListener('thon09:screen-change', mount);
-    const observer = new MutationObserver(() => mount());
-    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   if (document.readyState === 'loading') {
