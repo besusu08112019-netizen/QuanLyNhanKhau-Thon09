@@ -12,6 +12,7 @@ coverage/
 error_log
 work/
 outputs/
+runtime-ui-audit.out
 config/database.php
 config/database.local.php
 storage/logs/*
