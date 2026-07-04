@@ -183,7 +183,7 @@ if (!str_starts_with($request->path(), '/api')) {
     $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);
-        echo 'KhÃ´ng táº£i Ä‘Æ°á»£c giao diá»‡n á»©ng dá»¥ng.';
+        echo 'Không tải được giao diện ứng dụng.';
         exit;
     }
 
@@ -200,10 +200,20 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/sprint8.js',
         'assets/js/sprint9.js',
         'assets/js/sprint10.js',
+        'assets/js/gis.js',
         'assets/js/gis-household-location.js',
+        'assets/js/desktop-only-reset.js',
         'assets/js/household-photo-capture.js',
         'assets/js/household-photo-gps.js',
         'assets/js/gis-search.js',
+        'assets/js/reports.js',
+        'assets/js/reports-ui-fix.js',
+        'assets/js/household-member-popup.js',
+        'assets/css/design-system.css',
+        'assets/css/dashboard-redesign.css',
+        'assets/css/login-redesign.css',
+        'assets/css/sidebar-modern.css',
+        'assets/css/header-cleanup.css',
     ];
 
     foreach ($versionedAssets as $asset) {
@@ -223,6 +233,7 @@ if (!str_starts_with($request->path(), '/api')) {
     }
 
     $runtimeScripts = [
+        'assets/js/desktop-only-reset.js',
         'assets/js/mobile-ui-v1.js',
         'assets/js/view-inline-patches.js',
         'assets/js/gis-household-location.js',
@@ -244,4 +255,4 @@ if (!str_starts_with($request->path(), '/api')) {
 }
 
 $router->dispatch();
-Response::error('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ°á»ng dáº«n', 404);
+Response::error('Không tìm thấy đường dẫn', 404);
