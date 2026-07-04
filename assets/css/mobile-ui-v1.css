@@ -183,6 +183,10 @@
     justify-content: center;
   }
 
+  .person-primary-action {
+    display: none !important;
+  }
+
   .household-filter-grid,
   .person-search-row,
   .person-quick-filter-grid,
