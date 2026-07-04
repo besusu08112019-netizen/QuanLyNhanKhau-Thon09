@@ -4,12 +4,6 @@
     display: none !important;
   }
 
-  .app-shell.d-none ~ .mobile-bottom-nav,
-  .app-shell.d-none ~ .mobile-fab,
-  .app-shell.d-none ~ .mobile-refresh-indicator {
-    display: none !important;
-  }
-
   .mobile-bottom-nav {
     z-index: 3000 !important;
     pointer-events: auto !important;
@@ -21,10 +15,6 @@
   }
 
   .mobile-fab {
-    width: 48px !important;
-    min-width: 48px !important;
-    height: 48px !important;
-    min-height: 48px !important;
     z-index: 3001 !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;

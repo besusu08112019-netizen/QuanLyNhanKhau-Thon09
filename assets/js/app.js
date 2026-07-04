@@ -180,6 +180,7 @@ function applyResponsiveTableLabels(root = document) {
     });
   });
   decorateMobileCardActions(root);
+  if (window.thon09EnhanceDesignSystem) window.thon09EnhanceDesignSystem(root);
 }
 
 function isMobileCardTitleLabel(label, index) {
@@ -240,17 +241,12 @@ function normalizeMobileBadgeText(cell, label, value) {
 }
 
 function startResponsiveTableObserver() {
-  if (window.__thon09ResponsiveTableObserver) return;
-  window.__thon09ResponsiveTableObserver = true;
   applyResponsiveTableLabels();
-  const observer = new MutationObserver(mutations => {
-    for (const mutation of mutations) {
-      mutation.addedNodes.forEach(node => {
-        if (node.nodeType === 1) applyResponsiveTableLabels(node);
-      });
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function refreshUiEnhancements(root = document) {
+  applyResponsiveTableLabels(root);
+  if (window.thon09SyncResponsiveTableLabels) window.thon09SyncResponsiveTableLabels(root);
 }
 
 function decorateMobileCardActions(root = document) {
@@ -352,6 +348,7 @@ function switchScreen(screen) {
   if (screen === 'gis') loadGisMap();
   if (screen === 'households') loadHouseholds();
   if (screen === 'persons') loadPersons();
+  document.dispatchEvent(new CustomEvent('thon09:screen-change', { detail: { screen, requestedScreen } }));
 }
 
 async function loadDashboard() {
@@ -594,6 +591,7 @@ async function loadHouseholds() {
     '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
     updateBulkDeleteButtons();
     renderPager('#householdPager', { total, page: App.households.page, pageSize: App.households.pageSize }, page => { App.households.page = page; loadHouseholds(); });
+    refreshUiEnhancements($('#householdsScreen') || document);
   } catch (error) { showToast('Không tải được danh sách hộ dân: ' + error.message, 'danger'); }
 }
 
@@ -626,6 +624,7 @@ async function loadPersons() {
     $('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="12">Mã hộ: ' + escapeHtml(code) + '</td></tr>' + rows.map(personRow).join('')).join('') || '<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
     updateBulkDeleteButtons();
     renderPager('#personPager', { total, page: App.persons.page, pageSize: App.persons.pageSize }, page => { App.persons.page = page; loadPersons(); });
+    refreshUiEnhancements($('#personsScreen') || document);
   } catch (error) { showToast('Không tải được danh sách nhân khẩu: ' + error.message, 'danger'); }
 }
 
@@ -722,6 +721,7 @@ async function showHousehold(id) {
     const members = await api('/api/persons?' + new URLSearchParams({ householdId: row.household_code, pageSize: 100 }).toString());
     $('#detailTitle').textContent = 'Chi tiết hộ dân';
     $('#detailBody').innerHTML = details([['Mã hộ', row.household_code], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ', row.address], ['Số điện thoại', row.phone], ['Ở nhà', row.at_home_count || 0], ['Đi vắng', row.away_count || 0], ['Diện hộ', stripTags(householdBadges(row))], ['Ghi chú', row.note]]) + memberTable(members.items || []);
+    refreshUiEnhancements($('#detailBody') || document);
     App.modals.detail.show();
   } catch (error) { showToast(error.message, 'danger'); }
 }
@@ -731,6 +731,7 @@ async function showPerson(id) {
     const row = await api(`/api/persons/${id}`);
     $('#detailTitle').textContent = 'Chi tiết nhân khẩu';
     $('#detailBody').innerHTML = renderDynamicPersonDetail(row);
+    refreshUiEnhancements($('#detailBody') || document);
     App.modals.detail.show();
   } catch (error) { showToast(error.message, 'danger'); }
 }
