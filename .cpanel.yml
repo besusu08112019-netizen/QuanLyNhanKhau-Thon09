@@ -1,0 +1,4 @@
+---
+deployment:
+  tasks:
+    - /bin/echo "Direct public_html repository: source is already deployed from this working tree."
