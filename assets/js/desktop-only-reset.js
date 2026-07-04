@@ -73,6 +73,14 @@
     setVisible(hasSession());
   }
 
+  function observeMobileChrome() {
+    var target = document.body || document.documentElement;
+    if (!target || window.__thon09MobileAuthGateObserver) return;
+    window.__thon09MobileAuthGateObserver = true;
+    var chromeObserver = new MutationObserver(syncMobileChrome);
+    chromeObserver.observe(target, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  }
+
   function patchStorage() {
     if (window.__thon09MobileAuthGateStorage) return;
     window.__thon09MobileAuthGateStorage = true;
@@ -94,8 +102,12 @@
 
   patchStorage();
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', syncMobileChrome);
+    document.addEventListener('DOMContentLoaded', function () {
+      observeMobileChrome();
+      syncMobileChrome();
+    });
   } else {
+    observeMobileChrome();
     syncMobileChrome();
   }
   document.addEventListener('visibilitychange', syncMobileChrome);
