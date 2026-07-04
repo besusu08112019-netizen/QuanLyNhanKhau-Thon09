@@ -3,6 +3,7 @@ Thumbs.db
 node_modules/
 .env
 .env.*
+!/.env.example
 .clasp.json.local
 dist/
 build/
@@ -10,3 +11,5 @@ coverage/
 *.log
 work/
 outputs/
+config/database.php
+config/database.local.php
