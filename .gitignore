@@ -13,6 +13,9 @@ error_log
 work/
 outputs/
 runtime-ui-audit.out
+.ftp-deploy-sync-state.json
+.ftpquota
+.well-known/
 config/database.php
 config/database.local.php
 storage/logs/*
