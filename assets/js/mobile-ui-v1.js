@@ -96,7 +96,7 @@
     });
     return Array.from(groups.entries()).map(([code, members]) => {
       const head = members.find(row => /chủ hộ/i.test(relation(row))) || members[0] || {};
-      return '<tr class="ds-group-row person-household-group"><td colspan="11"><div class="ds-group-header"><div><i class="fa-solid fa-house-chimney"></i><span>Hộ ' + safe(code) + '</span><small>Chủ hộ: ' + safe(head.full_name || '') + '</small></div><strong>' + members.length + ' nhân khẩu</strong></div></td></tr>' + members.map(window.personRow).join('');
+      return '<tr class="ds-group-row person-household-group"><td colspan="12"><div class="ds-group-header"><div><i class="fa-solid fa-house-chimney"></i><span>Hộ ' + safe(code) + '</span><small>Chủ hộ: ' + safe(head.full_name || '') + '</small></div><strong>' + members.length + ' nhân khẩu</strong></div></td></tr>' + members.map(window.personRow).join('');
     }).join('');
   };
 

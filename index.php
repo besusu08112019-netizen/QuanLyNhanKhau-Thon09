@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260705-mobile-observer-loop-fix-1');
+define('APP_ASSET_VERSION', '20260705-mobile-ui-v2-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -191,6 +191,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/css/app.css',
         'assets/css/mobile-ui-v1.css',
         'assets/css/mobile-ui-v1-fix.css',
+        'assets/css/mobile-ui-v2.css',
         'assets/js/app.js',
         'assets/js/csrf.js',
         'assets/js/session.js',
@@ -224,6 +225,7 @@ if (!str_starts_with($request->path(), '/api')) {
     $runtimeStyles = [
         'assets/css/mobile-ui-v1.css',
         'assets/css/mobile-ui-v1-fix.css',
+        'assets/css/mobile-ui-v2.css',
     ];
     $runtimeCss = implode("\n", array_map(
         fn(string $style): string => '<link rel="stylesheet" href="' . versioned_asset($style) . '">',
@@ -237,6 +239,7 @@ if (!str_starts_with($request->path(), '/api')) {
     $runtimeScripts = [
         'assets/js/desktop-only-reset.js',
         'assets/js/mobile-ui-v1.js',
+        'assets/js/mobile-ui-v2.js',
         'assets/js/view-inline-patches.js',
         'assets/js/gis-household-location.js',
         'assets/js/household-photo-capture.js',
