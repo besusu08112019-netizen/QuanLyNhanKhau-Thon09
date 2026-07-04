@@ -1,5 +1,25 @@
 /* Mobile UI final overrides - keep person action buttons in one row */
 @media (max-width: 1199.98px) {
+  .mobile-bottom-nav {
+    z-index: 3000 !important;
+    pointer-events: auto !important;
+  }
+
+  .mobile-bottom-nav button {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+
+  .mobile-fab {
+    z-index: 3001 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+
+  .screen {
+    padding-bottom: 92px !important;
+  }
+
   #personRows tr.ds-group-row > td {
     grid-column: 1 / -1 !important;
     width: 100% !important;
