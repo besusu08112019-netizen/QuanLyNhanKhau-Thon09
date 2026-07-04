@@ -227,6 +227,7 @@
 
     fileInput.addEventListener('change', () => handleFile(fileInput.files && fileInput.files[0]));
     captureInput.addEventListener('change', () => handleFile(captureInput.files && captureInput.files[0]));
+    document.dispatchEvent(new CustomEvent('thon09:household-photo-ready'));
   }
 
   async function enhancedSaveHousehold(originalHandler, event) {
@@ -274,12 +275,14 @@
   function boot() {
     enhancePhotoField();
     hookHouseholdForm();
-    const observer = new MutationObserver(() => {
-      enhancePhotoField();
-      hookHouseholdForm();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
   }
+
+  window.thon09EnhanceHouseholdPhotoCapture = boot;
+
+  document.addEventListener('shown.bs.modal', event => {
+    if (event.target?.id !== 'householdModal') return;
+    window.setTimeout(boot, 30);
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
