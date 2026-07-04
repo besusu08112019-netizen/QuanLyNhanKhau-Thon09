@@ -21,6 +21,10 @@
   }
 
   .mobile-fab {
+    width: 48px !important;
+    min-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
     z-index: 3001 !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;
