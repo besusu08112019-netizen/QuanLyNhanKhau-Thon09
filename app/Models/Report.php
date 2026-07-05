@@ -37,8 +37,8 @@ final class Report extends BaseModel
     {
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
         [$householdWhere, $householdParams] = $this->householdWhere($filters);
-        $citizens = $this->fetchOne("SELECT COUNT(*) AS total, SUM(gender='Nam') AS male, SUM(gender='Nữ') AS female, SUM(residency_status='TEMPORARY') AS temporary, SUM(presence_status='AWAY') AS away, SUM(life_status='DECEASED') AS deceased, SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= 15 THEN 1 ELSE 0 END) AS children, SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END) AS elderly" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $citizenWhere", $citizenParams) ?: [];
-        $households = $this->fetchOne("SELECT COUNT(*) AS total, SUM(meritorious_family=1) AS meritorious, SUM(poor_household=1) AS poor, SUM(near_poor_household=1) AS near_poor, SUM(disabled_household=1) AS disabled, SUM(poor_household=0 AND near_poor_household=0 AND meritorious_family=0 AND disabled_household=0) AS normal FROM households h $householdWhere", $householdParams) ?: [];
+        $citizens = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN gender='Nam' THEN 1 ELSE 0 END),0) AS male, COALESCE(SUM(CASE WHEN gender='Nữ' THEN 1 ELSE 0 END),0) AS female, COALESCE(SUM(CASE WHEN residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary, COALESCE(SUM(CASE WHEN presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $citizenWhere", $citizenParams) ?: [];
+        $households = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN meritorious_family=1 THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN disabled_household=1 THEN 1 ELSE 0 END),0) AS disabled, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN poor_household=0 AND near_poor_household=0 AND meritorious_family=0 AND disabled_household=0 THEN 1 ELSE 0 END),0) AS normal FROM households h $householdWhere", $householdParams) ?: [];
         $total = max(1, (int) ($citizens['total'] ?? 0));
         $rows = [
             ['Tổng số hộ', (int) ($households['total'] ?? 0)],
@@ -68,7 +68,7 @@ final class Report extends BaseModel
             ['Người cao tuổi', (int) ($citizens['elderly'] ?? 0) . ' (' . $this->percent((int) ($citizens['elderly'] ?? 0), $total) . ')'],
             ['Hộ nghèo', (int) ($households['poor'] ?? 0)],
             ['Hộ cận nghèo', (int) ($households['near_poor'] ?? 0)],
-            ['Hộ chính sách', 0],
+            ['Hộ chính sách', (int) ($households['policy'] ?? 0)],
             ['Hộ có công', (int) ($households['meritorious'] ?? 0)],
             ['Hộ bình thường', (int) ($households['normal'] ?? 0)],
             ['Hộ khác', (int) ($households['disabled'] ?? 0)],
@@ -133,17 +133,18 @@ final class Report extends BaseModel
 
     public function laborReport(array $filters = []): array
     {
-        $columns = ['employed' => 'Có việc làm', 'unemployed' => 'Thất nghiệp', 'freelance_labor' => 'Lao động tự do', 'out_province_labor' => 'Lao động ngoài tỉnh', 'foreign_labor' => 'Lao động nước ngoài', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu'];
+        $columns = ['employed' => 'Có việc làm', 'unemployed' => 'Chưa có việc làm', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu', 'other' => 'Khác'];
         [$where, $params] = $this->citizenWhere($filters);
-        $selects = [];
-        foreach ($columns as $column => $label) $selects[] = ($this->columnExists('citizens', $column) ? "SUM(c.$column=1)" : '0') . " AS $column";
-        $row = $this->fetchOne('SELECT COUNT(*) AS total, ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $where", $params) ?: [];
-        $total = max(1, (int) ($row['total'] ?? 0));
+        $selects = ['c.occupation'];
+        foreach (['employed','unemployed','pupil','student','retired'] as $column) $selects[] = ($this->columnExists('citizens', $column) ? "c.$column" : '0') . " AS $column";
+        $rows = $this->fetchAll('SELECT ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $where", $params);
+        $groups = array_fill_keys(array_keys($columns), 0);
+        foreach ($rows as $row) $groups[$this->laborGroup($row)]++;
+        $total = max(1, count($rows));
         $body = [];
-        foreach ($columns as $column => $label) $body[] = [$label, ((int) ($row[$column] ?? 0)) . ' (' . $this->percent((int) ($row[$column] ?? 0), $total) . ')'];
+        foreach ($columns as $column => $label) $body[] = [$label, ((int) ($groups[$column] ?? 0)) . ' (' . $this->percent((int) ($groups[$column] ?? 0), $total) . ')'];
         return $this->table('Báo cáo Lao động', ['Nhóm lao động','Số lượng / Tỷ lệ'], $body, $filters);
     }
-
     public function ageRangeReport(string $title, ?int $from, ?int $to, array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
@@ -176,7 +177,7 @@ final class Report extends BaseModel
 
     private function householdWhere(array $filters): array
     {
-        $where = ['h.status <> "DELETED"']; $params = [];
+        $where = [$this->activeHouseholdCondition('h')]; $params = [];
         if (!empty($filters['dateFrom'])) { $where[] = 'DATE(h.created_at) >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'DATE(h.created_at) <= :date_to'; $params['date_to'] = $filters['dateTo']; }
         if (!empty($filters['householdStatus'])) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
@@ -187,7 +188,8 @@ final class Report extends BaseModel
 
     private function citizenWhere(array $filters): array
     {
-        $where = ['c.status <> "DELETED"', 'h.status <> "DELETED"']; $params = [];
+        $where = [$this->activeCitizenCondition('c'), $this->activeHouseholdCondition('h')]; $params = [];
+        if (!empty($filters['householdStatus'])) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
         if (!empty($filters['dateFrom'])) { $where[] = 'DATE(c.created_at) >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'DATE(c.created_at) <= :date_to'; $params['date_to'] = $filters['dateTo']; }
         if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
@@ -220,6 +222,15 @@ final class Report extends BaseModel
         };
     }
 
+    private function activeHouseholdCondition(string $alias): string
+    {
+        return $alias . ".status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')";
+    }
+
+    private function activeCitizenCondition(string $alias): string
+    {
+        return $alias . ".status <> 'DELETED' AND COALESCE(" . $alias . ".life_status,'ALIVE') <> 'DECEASED' AND COALESCE(" . $alias . ".residency_status,'PERMANENT') <> 'TRANSFERRED_OUT'";
+    }
     private function addTextCategoryWhere(array &$where, array &$params, string $category): void
     {
         $label = ['escaped_poverty' => 'Hộ mới thoát nghèo', 'policy' => 'Hộ chính sách'][$category] ?? $category;
@@ -252,6 +263,17 @@ final class Report extends BaseModel
         return trim(preg_replace('/[^a-z0-9]+/', ' ', $value));
     }
 
+    private function laborGroup(array $row): string
+    {
+        $occupation = $this->normalize((string) ($row['occupation'] ?? ''));
+        if ((int) ($row['pupil'] ?? 0) === 1 || str_contains($occupation, 'hoc sinh')) return 'pupil';
+        if ((int) ($row['student'] ?? 0) === 1 || str_contains($occupation, 'sinh vien')) return 'student';
+        if ((int) ($row['retired'] ?? 0) === 1 || str_contains($occupation, 'nghi huu') || str_contains($occupation, 'huu tri')) return 'retired';
+        if ((int) ($row['unemployed'] ?? 0) === 1 || str_contains($occupation, 'that nghiep') || str_contains($occupation, 'chua co viec') || str_contains($occupation, 'khong co viec')) return 'unemployed';
+        if ((int) ($row['employed'] ?? 0) === 1) return 'employed';
+        if ($occupation === '' || str_contains($occupation, 'khac') || str_contains($occupation, 'noi tro')) return 'other';
+        return 'employed';
+    }
     private function flagSelects(string $alias): string
     {
         $columns = ['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'];
