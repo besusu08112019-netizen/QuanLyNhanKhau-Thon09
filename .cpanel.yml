@@ -1,4 +1,4 @@
 ---
 deployment:
   tasks:
-    - /bin/echo "Direct public_html repository: source is already deployed from this working tree."
+    - /bin/bash -lc 'set -euo pipefail; DEPLOYPATH="${DEPLOYPATH:-$HOME/public_html}"; if [ "$(pwd -P)" != "$(cd "$DEPLOYPATH" && pwd -P)" ]; then /usr/bin/rsync -a --exclude=.git --exclude=.cpanel.yml --exclude=config/database.php --exclude=config/database.local.php --exclude=.env --exclude=uploads/ --exclude=node_modules/ --exclude=test-results/ --exclude=playwright-report/ ./ "$DEPLOYPATH"/; else /bin/echo "Deploy path is current working tree: $DEPLOYPATH"; fi; /usr/bin/find "$DEPLOYPATH" -type f -name "*.php" -exec /bin/touch {} +; /usr/bin/find "$DEPLOYPATH" -type f \( -name "*.js" -o -name "*.css" \) -exec /bin/touch {} +; /bin/echo "Deployment completed for $(git rev-parse --short HEAD)"'
