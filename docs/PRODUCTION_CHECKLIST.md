@@ -1,73 +1,80 @@
-# Production Checklist - PHP/MySQL Linux Hosting
+# Production Release Checklist
 
-## Triển khai
+Checklist này dùng cho bản PHP/MySQL chạy trên Linux hosting hoặc cPanel.
 
-- Hosting chạy PHP 8.2 trở lên.
-- Database MySQL/MariaDB đã được tạo với charset `utf8mb4`.
-- Đã import `database/database.sql` thành công.
-- `config/database.php` đã đúng host, database, username, password và charset.
-- Domain hoặc subdomain đã trỏ tới thư mục chứa `index.php`.
-- Apache đã nhận `.htaccess`, hoặc Nginx đã cấu hình rewrite về `index.php`.
-- Truy cập `/api/health` trả về trạng thái `ok`.
-- Tạo tài khoản quản trị đầu tiên qua `/api/auth/setup` nếu database chưa có Admin.
+## 1. Git và Source
 
-## Bảo mật
+- [ ] `git status` sạch trước khi tag release.
+- [ ] `main` trùng với `origin/main`.
+- [ ] Không có commit local chưa push.
+- [ ] Không có file tạm như `test-results/`, `playwright-report/`, `*.tmp`, `*.bak`, `*.log`.
+- [ ] Không commit `config/database.php`, dữ liệu production trong `uploads/`, backup SQL hoặc credential thật.
+- [ ] `.cpanel.yml` tồn tại và đúng cấu hình deploy hiện tại.
 
-- Không dùng mật khẩu quản trị yếu hoặc mật khẩu mẫu.
-- Thư mục `app`, `config`, `database`, `docs`, `uploads`, `vendor`, `controllers`, `models` không truy cập trực tiếp từ trình duyệt.
-- Người dùng không phải Admin không thấy menu Người dùng, Nhật ký và Sao lưu.
-- API quản trị vẫn chặn truy cập trái phép kể cả khi gọi trực tiếp.
-- Tài khoản Cán bộ chỉ thao tác nghiệp vụ được phân quyền.
-- Tài khoản Chỉ xem không thể thêm, sửa, xóa hoặc xuất dữ liệu nếu không có quyền.
+## 2. Build và Static Verification
 
-## Kiểm thử chức năng
+- [ ] `npm.cmd run build:assets` PASS.
+- [ ] `npm.cmd run check:js` PASS.
+- [ ] PHP lint toàn bộ file `.php` PASS.
+- [ ] `npm.cmd run test:browser` PASS trên desktop, tablet và mobile smoke profile.
+- [ ] Không có `console.log`, `debugger`, `var_dump`, `print_r`, `die` debug trong source production.
 
-- Đăng nhập/đăng xuất hoạt động và có ghi nhật ký.
-- Dashboard hiển thị tổng hộ, tổng nhân khẩu, Nam, Nữ, còn sống, tạm trú, tạm vắng.
-- Bộ lọc Dashboard theo thời gian, trạng thái hộ, thường trú/tạm trú và ở nhà/đi vắng hoạt động.
-- Hộ dân: danh sách, tìm kiếm, phân trang, thêm, sửa, xóa mềm, xóa nhiều.
-- Hộ dân: Mã hộ là định danh thống nhất, không dùng lẫn ID hộ trong giao diện.
-- Hộ dân: hiển thị chủ hộ, diện hộ, số người ở nhà và số người đi vắng đúng theo nhân khẩu cùng mã hộ.
-- Hộ dân: bấm vào một hộ hiển thị thành viên cùng mã hộ.
-- Nhân khẩu: danh sách, tìm kiếm, phân trang, thêm, sửa, xóa mềm, khôi phục, xóa nhiều.
-- Nhân khẩu: không trùng CCCD khi có dữ liệu CCCD.
-- Nhân khẩu: Mã hộ phải tồn tại trước khi thêm.
-- Nhân khẩu: ngày sinh hiển thị dạng ngày/tháng/năm.
-- Nhân khẩu: nếu quan hệ là Chủ hộ thì thông tin chủ hộ bên Hộ dân được cập nhật.
-- Import: tài khoản Admin/Cán bộ thấy menu Import dữ liệu.
-- Import: đọc được file CSV/XLSX theo tên cột, không phụ thuộc thứ tự cột.
-- Import: kiểm tra trước hiển thị tổng dòng, dòng hợp lệ và dòng lỗi.
-- Import: import Hộ dân hỗ trợ bỏ qua hoặc cập nhật khi trùng Mã hộ.
-- Import: import Nhân khẩu kiểm tra Mã hộ, Họ tên, Ngày sinh và CCCD qua model hiện có.
-- Báo cáo: tổng hợp, hộ dân, nhân khẩu, giới tính, độ tuổi, cư trú, biến động và nhóm chính sách.
-- Xuất Excel tải được file và giữ dữ liệu tiếng Việt.
-- Xuất PDF tải được file đúng định dạng cơ bản.
-- In phiếu mở cửa sổ in khổ A4.
-- Người dùng: thêm, sửa, xóa, khóa, mở khóa, đổi vai trò.
-- Nhật ký: tìm kiếm, phân trang và ghi thao tác dữ liệu chính.
-- Sao lưu: tạo và tải file SQL.
-- Phục hồi: chỉ Admin thực hiện sau khi đã có backup an toàn.
+## 3. Database và Migration
 
-## Dữ liệu
+- [ ] Database production dùng `utf8mb4`.
+- [ ] Đã import `database/database.sql` nếu triển khai mới.
+- [ ] Đã chạy mọi migration trong `database/migrations/` theo thứ tự tên file nếu nâng cấp.
+- [ ] Đã kiểm tra các bảng chính: `users`, `households`, `citizens`, `permissions`, `audit_logs`, `backups`.
+- [ ] Đã kiểm tra index phục vụ tìm kiếm và GIS.
+- [ ] Không có mojibake tiếng Việt trong dữ liệu thật.
 
-- Không sửa tay khóa chính trong database production.
-- Không xóa cứng dữ liệu nếu chưa có backup.
-- Kiểm tra index của `household_code`, `citizen_code`, `identity_number`, `status`, `created_at` đã có sau khi import SQL.
-- Kiểm tra dữ liệu tiếng Việt không bị lỗi font sau khi import.
-- Với dữ liệu thực, tạo backup trước và sau khi import.
+## 4. Backup
 
-## Hiệu năng
+- [ ] Tạo backup SQL trước khi deploy hoặc chạy migration.
+- [ ] Tải được backup SQL qua module Sao lưu.
+- [ ] File backup có header `Quan Ly Nhan Khau Thon 09 backup`.
+- [ ] Restore chỉ thao tác bởi tài khoản đủ quyền và chỉ dùng backup do ứng dụng sinh ra.
+- [ ] Không test restore trực tiếp trên production nếu chưa có phê duyệt mất dữ liệu.
 
-- Danh sách Hộ dân và Nhân khẩu dùng phân trang, không tải toàn bộ dữ liệu ra giao diện.
-- Tìm kiếm dùng API server-side.
-- Dashboard đọc dữ liệu tổng hợp qua truy vấn SQL, không lặp xử lý trên giao diện.
-- Import đọc file một lần, map theo tiêu đề cột và ghi qua model nghiệp vụ hiện có.
-- Báo cáo lớn nên lọc theo khoảng thời gian hoặc nhóm dữ liệu trước khi xuất.
+## 5. Security
 
-## Bàn giao
+- [ ] `APP_KEY` production đã cấu hình hoặc `uploads/.app_key` đã được tạo và giữ ổn định.
+- [ ] HTTPS hoạt động.
+- [ ] Header `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` có hiệu lực.
+- [ ] Thư mục `app`, `config`, `database`, `docs`, `uploads`, `vendor`, `controllers`, `models` không truy cập trực tiếp từ browser.
+- [ ] API không token trả lỗi xác thực, không trả dữ liệu nghiệp vụ.
+- [ ] Request thay đổi dữ liệu thiếu CSRF token bị chặn.
+- [ ] Upload chỉ nhận loại file hợp lệ và không thực thi file upload.
 
-- Ghi lại domain truy cập.
-- Ghi lại thông tin database ở nơi an toàn của đơn vị.
-- Bàn giao tài khoản Admin đầu tiên và yêu cầu đổi mật khẩu sau khi nhận.
-- Tạo ít nhất một tài khoản Cán bộ và một tài khoản Chỉ xem để kiểm thử phân quyền.
-- Tạo backup SQL cuối cùng trước khi bàn giao.
+## 6. Functional QA
+
+- [ ] Login/logout.
+- [ ] Dashboard.
+- [ ] Hộ gia đình: danh sách, tìm kiếm, thêm, sửa, xóa mềm, xem hồ sơ.
+- [ ] Nhân khẩu: danh sách, tìm kiếm, thêm, sửa, xóa mềm, khôi phục, xem chi tiết.
+- [ ] GIS: tải bản đồ, khu vực, vị trí hộ, tìm kiếm, export.
+- [ ] Báo cáo: xem, lọc, export Excel/PDF, in.
+- [ ] Import: template, preview, process, validation lỗi.
+- [ ] Tài khoản và phân quyền.
+- [ ] Nhật ký.
+- [ ] Sao lưu.
+- [ ] Cài đặt và giao diện.
+
+## 7. Responsive và Browser QA
+
+- [ ] Desktop.
+- [ ] Tablet 768, 820, 1024 px.
+- [ ] Mobile 360, 375, 390, 412 px.
+- [ ] Không horizontal overflow.
+- [ ] Bottom navigation, FAB, header, popup, modal và form hoạt động đúng.
+- [ ] Console không có JavaScript error.
+- [ ] API responses thành công, không có lỗi 500 bất ngờ.
+
+## 8. Deployment Verification
+
+- [ ] Commit release đã push lên `origin/main`.
+- [ ] Hosting đã nhận đúng commit release.
+- [ ] Asset cache đã cập nhật, không còn file JS/CSS cũ.
+- [ ] Production login thành công bằng tài khoản quản trị.
+- [ ] Kiểm tra production sau deploy trên desktop, tablet và mobile.
+- [ ] Không kết luận Production Ready nếu bất kỳ mục nào ở trên chưa PASS.

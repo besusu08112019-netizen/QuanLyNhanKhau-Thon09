@@ -1,94 +1,80 @@
 # Hệ thống Quản lý Nhân khẩu Thôn 09
 
-Ứng dụng Web quản lý hộ dân và nhân khẩu cho Thôn 09 xã Hồng Phong
+Ứng dụng web quản lý hộ gia đình, nhân khẩu, GIS, báo cáo, import/export, phân quyền, nhật ký và sao lưu dữ liệu cho Thôn 09 xã Hồng Phong.
+
 ## Nền tảng
 
 - PHP 8.2 trở lên.
-- MySQL hoặc MariaDB.
-- Apache hoặc Nginx trên Linux Hosting thông thường.
-- HTML5, CSS3, Bootstrap 5, JavaScript ES6 và Fetch API.
-- Backend MVC, REST API, PDO và JSON API.
+- MySQL hoặc MariaDB với charset `utf8mb4`.
+- Apache/cPanel hoặc Linux hosting có rewrite về `index.php`.
+- Frontend HTML5, CSS, Bootstrap 5, JavaScript ES6 và Fetch API.
+- Backend MVC nhẹ, REST API, PDO prepared statements và JSON API.
 
 ## Cấu trúc chính
 
-- `app/`: lõi ứng dụng, controller, model, service dùng chung.
-- `assets/css`: giao diện.
-- `assets/js`: xử lý màn hình và gọi REST API.
-- `views`: giao diện Web.
-- `database/database.sql`: cấu trúc cơ sở dữ liệu MySQL/MariaDB.
-- `database/migrations/2026_06_28_sprint8.sql`: migration nâng cấp tài khoản, vai trò và phân quyền Sprint 8.
-- `sample-data/import_template_thon09.xls`: file Excel mẫu cho màn hình Import.
-- `config/database.php`: cấu hình kết nối cơ sở dữ liệu.
-- `docs`: tài liệu phân tích, triển khai và checklist.
-- `uploads`: thư mục phục vụ file phát sinh khi triển khai.
-- `index.php`: điểm vào ứng dụng.
-- `.htaccess`: điều hướng URL và bảo vệ thư mục nhạy cảm.
+- `app/`: controller, model, service và core framework.
+- `assets/css`, `assets/js`: giao diện và logic frontend.
+- `views/app.php`: shell giao diện chính.
+- `database/database.sql`: schema cơ sở dữ liệu nền.
+- `database/migrations/`: migration bổ sung theo sprint.
+- `sample-data/`: file mẫu import CSV/XLSX.
+- `config/database.php`: cấu hình database production, không commit file này.
+- `docs/`: tài liệu triển khai, kiểm thử, release và audit.
+- `uploads/`: dữ liệu phát sinh khi vận hành, bị chặn truy cập trực tiếp qua `.htaccess`.
+- `.cpanel.yml`: cấu hình cPanel Git Version Control.
 
 ## Chức năng
 
-- Đăng nhập bằng tài khoản và mật khẩu.
+- Đăng nhập, đăng xuất, session token và CSRF token.
 - Dashboard tổng quan, thống kê và biểu đồ.
-- Quản lý hộ dân.
-- Quản lý nhân khẩu.
-- Popup xem thành viên trong hộ theo cùng Mã hộ, có tìm kiếm và phân trang.
-- Popup xem đầy đủ thông tin nhân khẩu, có sửa, in và đóng.
-- Tìm kiếm, phân trang, thêm, sửa, xóa mềm, xóa nhiều.
-- Đồng bộ chủ hộ và số thành viên theo mã hộ.
-- Cảnh báo khi một hộ đã có Chủ hộ và không cho tạo trùng Chủ hộ.
-- Import dữ liệu hộ dân và nhân khẩu từ CSV/XLSX theo tên cột.
-- Tải file Excel mẫu ngay tại màn hình Import.
-- Báo cáo thống kê, báo cáo người có công, hộ nghèo, hộ cận nghèo, tàn tật.
-- Xuất Excel, xuất PDF và in phiếu.
-- Quản lý người dùng, vai trò và phân quyền.
-- Nhật ký hệ thống.
-- Sao lưu và phục hồi dữ liệu SQL.
+- Quản lý hộ gia đình và nhân khẩu với tìm kiếm, phân trang, CRUD, xóa mềm và khôi phục.
+- Hồ sơ hộ, hồ sơ nhân khẩu, popup chi tiết và lịch sử biến động.
+- GIS, khu vực bản đồ, tìm kiếm vị trí hộ và xuất bản đồ.
+- Import dữ liệu hộ/nhân khẩu từ CSV/XLSX theo tên cột.
+- Báo cáo, export Excel/PDF và in biểu mẫu.
+- Tài khoản, vai trò, phân quyền, nhật ký, sao lưu và khôi phục SQL.
+- Cấu hình giao diện, logo, ảnh nền và thông tin hệ thống.
 
 ## Phân quyền
 
 - `SUPER_ADMIN`: toàn quyền hệ thống.
-- `ADMIN`: quản lý hộ, nhân khẩu, import, export và dashboard.
-- `OFFICER`: thêm, sửa, xem; không được xóa dữ liệu hoặc quản lý tài khoản.
-- `VIEWER`: chỉ xem dashboard, hộ dân, nhân khẩu và báo cáo.
+- `ADMIN`: quản lý nghiệp vụ chính theo quyền mặc định.
+- `OFFICER`: xem, thêm, sửa nghiệp vụ được phân quyền.
+- `VIEWER`: chỉ xem dashboard, hộ, nhân khẩu và báo cáo.
 
-Mọi API nghiệp vụ đều kiểm tra token đăng nhập và quyền trước khi xử lý.
-
-## Sprint 8
-
-Nếu nâng cấp từ bản đã triển khai trước đó, hãy chạy `database/migrations/2026_06_28_sprint8.sql` hoặc thực hiện các thay đổi tương đương trong phpMyAdmin để bổ sung `username`, `phone`, `position` cho bảng `users` và chuẩn hóa role về `SUPER_ADMIN`, `ADMIN`, `OFFICER`, `VIEWER`.
-
-Màn hình Import có nút tải file mẫu `sample-data/import_template_thon09.xls`. Không đổi tên Sheet, không đổi tiêu đề cột, ngày sinh dùng định dạng `dd/MM/yyyy`, CCCD để dạng Text và không nhập trùng Mã nhân khẩu.
+Mọi API nghiệp vụ đều kiểm tra token đăng nhập và quyền trước khi xử lý. Các request thay đổi dữ liệu yêu cầu CSRF token hợp lệ.
 
 ## Triển khai nhanh
 
-1. Upload toàn bộ source lên hosting.
-2. Trỏ document root của website vào thư mục chứa `index.php`.
-3. Tạo database MySQL/MariaDB rỗng.
-4. Import file `database/database.sql`.
-5. Chỉnh thông tin kết nối tại `config/database.php`, hoặc khai báo biến môi trường `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_CHARSET`.
-6. Mở website và tạo tài khoản quản trị đầu tiên qua API `/api/auth/setup` nếu database chưa có admin.
-7. Đăng nhập, kiểm tra Dashboard, Hộ dân, Nhân khẩu, Import, Báo cáo, Người dùng, Nhật ký và Sao lưu.
+1. Trỏ document root của website vào thư mục chứa `index.php`.
+2. Tạo database MySQL/MariaDB rỗng với charset `utf8mb4`.
+3. Import `database/database.sql`.
+4. Chạy các migration trong `database/migrations/` theo thứ tự tên file nếu nâng cấp từ bản cũ.
+5. Tạo `config/database.php` từ `config/database.example.php` hoặc cấu hình biến môi trường `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_CHARSET`.
+6. Đảm bảo `APP_KEY` được cấu hình trong môi trường production. Nếu không, ứng dụng sẽ tạo secret runtime trong `uploads/.app_key`.
+7. Mở website, tạo tài khoản quản trị đầu tiên nếu database chưa có admin.
+8. Chạy checklist trong `docs/PRODUCTION_CHECKLIST.md` trước khi bàn giao.
 
-Chi tiết xem `docs/DEPLOY_LINUX_HOSTING.md` và `docs/PRODUCTION_CHECKLIST.md`.
+## Build và kiểm thử local
 
-## Cấu hình database
-
-Mặc định file `config/database.php` đọc biến môi trường trước, sau đó dùng giá trị mẫu. Khi đưa lên hosting, nên chỉnh trực tiếp theo thông tin database của hosting nếu không có quyền cấu hình biến môi trường.
-
-```php
-return [
-    'host' => 'localhost',
-    'port' => '3306',
-    'database' => 'quan_ly_nhan_khau_thon09',
-    'username' => 'ten_user_database',
-    'password' => 'mat_khau_database',
-    'charset' => 'utf8mb4',
-];
+```powershell
+npm.cmd run build:assets
+npm.cmd run check:js
+npm.cmd run test:browser
+Get-ChildItem -Recurse -Filter *.php | ForEach-Object { php -l $_.FullName }
 ```
+
+## Tài liệu liên quan
+
+- `docs/DEPLOY_LINUX_HOSTING.md`: hướng dẫn triển khai Linux/cPanel.
+- `docs/PRODUCTION_CHECKLIST.md`: checklist release production.
+- `docs/security-audit-2026-07-05.md`: báo cáo security audit gần nhất.
+- `docs/RELEASE_NOTES_2026-07-05.md`: release notes bản hiện tại.
 
 ## Lưu ý vận hành
 
-- Không seed mật khẩu mặc định trong `database.sql` để tránh rủi ro bảo mật.
-- Sau khi tạo tài khoản quản trị đầu tiên, nên tạo bản sao lưu SQL ngay.
-- Thao tác xóa là xóa mềm để giữ lịch sử dữ liệu.
-- File PDF dùng bộ tạo PDF PHP thuần, phù hợp shared hosting không cần cài thêm dịch vụ.
-- Trước khi bàn giao, chạy theo checklist trong `docs/PRODUCTION_CHECKLIST.md`.
+- Không commit `config/database.php`, backup SQL hoặc dữ liệu upload production.
+- Tạo backup SQL trước khi import dữ liệu thật, chạy migration hoặc khôi phục dữ liệu.
+- Không xóa cứng dữ liệu nếu chưa có backup và phê duyệt nghiệp vụ.
+- Kiểm tra tiếng Việt, console, API và responsive sau mỗi lần deploy.
+- Chỉ kết luận Production Ready khi deployment production, migration và backup đã được xác minh thành công trên môi trường thật.
