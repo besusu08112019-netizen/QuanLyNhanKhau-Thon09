@@ -163,8 +163,12 @@ $router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
 $router->get('/api/profiles/household/{id}', [ProfileController::class, 'household']);
 $router->get('/api/profiles/citizen/{id}', [ProfileController::class, 'citizen']);
 $router->get('/api/profiles/timeline/{type}/{id}', [ProfileController::class, 'timeline']);
+$router->post('/api/profiles/{type}/{id}/notes', [ProfileController::class, 'createNote']);
+$router->delete('/api/profiles/notes/{id}', [ProfileController::class, 'deleteNote']);
+$router->put('/api/profiles/notes/{id}', [ProfileController::class, 'updateNote']);
 $router->get('/api/files', [FileController::class, 'index']);
 $router->post('/api/files', [FileController::class, 'upload']);
+$router->get('/api/files/{id}/preview', [FileController::class, 'preview']);
 $router->get('/api/files/{id}/download', [FileController::class, 'download']);
 $router->delete('/api/files/{id}', [FileController::class, 'destroy']);
 
@@ -216,6 +220,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/household-photo-capture.min.js',
         'assets/js/household-photo-gps.min.js',
         'assets/js/gis-search.min.js',
+        'assets/js/digital-profile.min.js',
     ];
 
     foreach ($versionedAssets as $asset) {
@@ -239,6 +244,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/household-photo-capture.min.js',
         'assets/js/household-photo-gps.min.js',
         'assets/js/gis-search.min.js',
+        'assets/js/digital-profile.min.js',
     ];
     $runtimeHtml = implode("\n", array_map(
         fn(string $script): string => '<script src="' . versioned_asset($script) . '"></script>',

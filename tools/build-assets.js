@@ -46,7 +46,8 @@ const assets = [
   ['assets/js/gis-household-location.js', 'assets/js/gis-household-location.min.js', compactJs],
   ['assets/js/household-photo-capture.js', 'assets/js/household-photo-capture.min.js', compactJs],
   ['assets/js/household-photo-gps.js', 'assets/js/household-photo-gps.min.js', compactJs],
-  ['assets/js/gis-search.js', 'assets/js/gis-search.min.js', compactJs]
+  ['assets/js/gis-search.js', 'assets/js/gis-search.min.js', compactJs],
+  ['assets/js/digital-profile.js', 'assets/js/digital-profile.min.js', compactJs]
 ];
 
 for (const [src, dest, fn] of assets) {
@@ -55,5 +56,5 @@ for (const [src, dest, fn] of assets) {
   const output = fn(input);
   write(dest, output);
   const saved = Buffer.byteLength(input) - Buffer.byteLength(output);
-  console.log(`${dest}: ${Buffer.byteLength(output)} bytes (${saved >= 0 ? '-' : '+'}${Math.abs(saved)})`);
+  process.stdout.write(`${dest}: ${Buffer.byteLength(output)} bytes (${saved >= 0 ? '-' : '+'}${Math.abs(saved)})\n`);
 }

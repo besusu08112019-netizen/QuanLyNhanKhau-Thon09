@@ -8,7 +8,19 @@ final class FileAttachment extends BaseModel
 {
     public function create(array $data, int $userId): array
     {
-        $id = $this->insert('INSERT INTO file_attachments (module, entity_id, file_type, original_name, stored_name, file_path, mime_type, file_size, status, created_by) VALUES (:module,:entity_id,:file_type,:original_name,:stored_name,:file_path,:mime_type,:file_size,"ACTIVE",:user)', $data + ['user' => $userId]);
+        $columns = ['module', 'entity_id', 'file_type', 'original_name', 'stored_name', 'file_path', 'mime_type', 'file_size', 'status', 'created_by'];
+        $values = [':module', ':entity_id', ':file_type', ':original_name', ':stored_name', ':file_path', ':mime_type', ':file_size', '"ACTIVE"', ':user'];
+        $params = $data + ['user' => $userId];
+
+        foreach (['description', 'profile_section'] as $column) {
+            if ($this->columnExists('file_attachments', $column)) {
+                $columns[] = $column;
+                $values[] = ':' . $column;
+                $params[$column] = $params[$column] ?? null;
+            }
+        }
+
+        $id = $this->insert('INSERT INTO file_attachments (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         return $this->find($id);
     }
 

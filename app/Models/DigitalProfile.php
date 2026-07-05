@@ -27,6 +27,11 @@ final class DigitalProfile extends BaseModel
                     'address' => 'Địa chỉ',
                     'phone' => 'Điện thoại',
                     'area_code' => 'Mã khu vực',
+                    'latitude' => 'Vĩ độ GPS',
+                    'longitude' => 'Kinh độ GPS',
+                    'location_accuracy' => 'Độ chính xác GPS',
+                    'location_source' => 'Nguồn định vị',
+                    'location_updated_at' => 'Cập nhật vị trí',
                     'household_type' => 'Diện hộ',
                     'status' => 'Trạng thái',
                 ]),
@@ -38,13 +43,16 @@ final class DigitalProfile extends BaseModel
                     'near_poor_household' => 'Hộ cận nghèo',
                     'meritorious_family' => 'Gia đình có công',
                     'disabled_household' => 'Hộ có người khuyết tật',
+                    'note' => 'Ghi chú hộ',
                 ]),
             ],
             'members' => array_map(fn($row) => $this->citizenSummary($row), $members),
             'files' => $this->files('household', $id),
+            'notes' => $this->notes('household', $id),
             'movements' => $this->householdMovements($id, $citizenIds),
             'logs' => $this->logs('household', (string) $id),
             'timeline' => $this->timeline('household', $id, $citizenIds),
+            'links' => $this->householdLinks($id),
         ];
     }
 
@@ -91,15 +99,18 @@ final class DigitalProfile extends BaseModel
                     'education_level' => 'Trình độ học vấn',
                     'marital_status' => 'Tình trạng hôn nhân',
                     'nationality' => 'Quốc tịch',
+                    'note' => 'Ghi chú nhân khẩu',
                 ]),
                 'administrative' => $this->section($citizen, $this->extendedCitizenLabels()),
             ],
             'household' => $household ? $this->compactRow($household) : null,
             'family' => array_map(fn($row) => $this->citizenSummary($row), $family),
             'files' => $this->files('citizen', $id),
+            'notes' => $this->notes('citizen', $id),
             'movements' => $this->citizenMovements($id),
             'logs' => $this->logs('citizen', (string) $id),
             'timeline' => $this->timeline('citizen', $id),
+            'links' => $this->citizenLinks($id, $householdId),
         ];
     }
 
@@ -107,7 +118,10 @@ final class DigitalProfile extends BaseModel
     {
         $items = [];
         foreach ($this->files($module, $entityId) as $file) {
-            $items[] = ['time' => $file['created_at'] ?? null, 'type' => 'FILE', 'title' => 'Tệp đính kèm', 'description' => $file['original_name'] ?? '', 'data' => $file];
+            $items[] = ['time' => $file['created_at'] ?? null, 'type' => 'FILE', 'title' => $this->fileSectionLabel((string) ($file['profile_section'] ?? ''), (string) ($file['file_type'] ?? '')), 'description' => $file['original_name'] ?? '', 'data' => $file];
+        }
+        foreach ($this->notes($module, $entityId) as $note) {
+            $items[] = ['time' => $note['updated_at'] ?? $note['created_at'] ?? null, 'type' => 'NOTE', 'title' => $note['title'] ?? 'Ghi chú nghiệp vụ', 'description' => $note['content'] ?? '', 'data' => $note];
         }
         foreach ($this->logs($module, (string) $entityId) as $log) {
             $items[] = ['time' => $log['created_at'] ?? null, 'type' => 'LOG', 'title' => $log['message'] ?? $log['action'] ?? 'Nhật ký', 'description' => $log['actor_email'] ?? '', 'data' => $log];
@@ -118,6 +132,58 @@ final class DigitalProfile extends BaseModel
         }
         usort($items, fn($a, $b) => strcmp((string) ($b['time'] ?? ''), (string) ($a['time'] ?? '')));
         return array_values($items);
+    }
+
+    public function createNote(string $module, int $entityId, array $data, int $userId): array
+    {
+        $this->assertNotesReady();
+        $module = $this->normalizeModule($module);
+        $title = trim((string) ($data['title'] ?? 'Ghi chú nghiệp vụ')) ?: 'Ghi chú nghiệp vụ';
+        $content = trim((string) ($data['content'] ?? ''));
+        if ($content === '') throw new \RuntimeException('Nội dung ghi chú là bắt buộc');
+        $section = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($data['section'] ?? 'general'))) ?: 'general';
+        $id = $this->insert('INSERT INTO profile_notes (module, entity_id, section, title, content, status, created_by) VALUES (:module,:entity_id,:section,:title,:content,"ACTIVE",:user)', [
+            'module' => $module,
+            'entity_id' => $entityId,
+            'section' => $section,
+            'title' => mb_substr($title, 0, 255),
+            'content' => $content,
+            'user' => $userId,
+        ]);
+        return $this->noteById($id) ?? ['id' => $id, 'module' => $module, 'entity_id' => $entityId, 'section' => $section, 'title' => $title, 'content' => $content];
+    }
+
+    public function note(int $id): ?array
+    {
+        return $this->tableExists('profile_notes') ? $this->noteById($id) : null;
+    }
+
+    public function deleteNote(int $id, int $userId): ?array
+    {
+        $this->assertNotesReady();
+        $note = $this->noteById($id);
+        if (!$note) return null;
+        $this->execute('UPDATE profile_notes SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        return $note;
+    }
+
+    public function updateNote(int $id, array $data, int $userId): ?array
+    {
+        $this->assertNotesReady();
+        $note = $this->noteById($id);
+        if (!$note) return null;
+        $title = trim((string) ($data['title'] ?? $note['title'] ?? 'Ghi chú nghiệp vụ')) ?: 'Ghi chú nghiệp vụ';
+        $content = trim((string) ($data['content'] ?? $note['content'] ?? ''));
+        if ($content === '') throw new \RuntimeException('Nội dung ghi chú là bắt buộc');
+        $section = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($data['section'] ?? $note['section'] ?? 'general'))) ?: 'general';
+        $this->execute('UPDATE profile_notes SET section=:section, title=:title, content=:content, updated_by=:user WHERE id=:id AND status="ACTIVE"', [
+            'id' => $id,
+            'section' => $section,
+            'title' => mb_substr($title, 0, 255),
+            'content' => $content,
+            'user' => $userId,
+        ]);
+        return $this->noteById($id);
     }
 
     private function householdMovements(int $householdId, array $citizenIds): array
@@ -143,12 +209,29 @@ final class DigitalProfile extends BaseModel
 
     private function files(string $module, int $entityId): array
     {
-        return $this->fetchAll('SELECT id, module, entity_id, file_type, original_name, file_path, mime_type, file_size, created_at, created_by FROM file_attachments WHERE module=:module AND entity_id=:entity_id AND status="ACTIVE" ORDER BY created_at DESC, id DESC', ['module' => $module, 'entity_id' => $entityId]);
+        $description = $this->columnExists('file_attachments', 'description') ? 'description' : 'NULL AS description';
+        $profileSection = $this->columnExists('file_attachments', 'profile_section') ? 'profile_section' : 'NULL AS profile_section';
+        return $this->fetchAll('SELECT id, module, entity_id, file_type, original_name, file_path, mime_type, file_size, created_at, created_by, ' . $description . ', ' . $profileSection . ' FROM file_attachments WHERE module=:module AND entity_id=:entity_id AND status="ACTIVE" ORDER BY created_at DESC, id DESC', ['module' => $module, 'entity_id' => $entityId]);
+    }
+
+    private function notes(string $module, int $entityId): array
+    {
+        if (!$this->tableExists('profile_notes')) return [];
+        return $this->fetchAll('SELECT n.*, u.display_name AS created_by_name, u.email AS created_by_email FROM profile_notes n LEFT JOIN users u ON u.id=n.created_by WHERE n.module=:module AND n.entity_id=:entity_id AND n.status="ACTIVE" ORDER BY n.created_at DESC, n.id DESC', ['module' => $module, 'entity_id' => $entityId]);
+    }
+
+    private function noteById(int $id): ?array
+    {
+        return $this->fetchOne('SELECT n.*, u.display_name AS created_by_name, u.email AS created_by_email FROM profile_notes n LEFT JOIN users u ON u.id=n.created_by WHERE n.id=:id AND n.status="ACTIVE"', ['id' => $id]);
     }
 
     private function logs(string $module, string $entityId): array
     {
-        return $this->fetchAll('SELECT id, actor_user_id, actor_email, module, action, entity_id, level, message, metadata, created_at FROM audit_logs WHERE module=:module AND entity_id=:entity_id ORDER BY created_at DESC, id DESC LIMIT 100', ['module' => $module, 'entity_id' => $entityId]);
+        $columns = ['id', 'actor_user_id', 'actor_email', 'module', 'action', 'entity_id', 'level', 'message', 'metadata', 'created_at'];
+        foreach (['ip_address', 'user_agent', 'before_data', 'after_data'] as $column) {
+            if ($this->columnExists('audit_logs', $column)) $columns[] = $column;
+        }
+        return $this->fetchAll('SELECT ' . implode(',', $columns) . ' FROM audit_logs WHERE module=:module AND entity_id=:entity_id ORDER BY created_at DESC, id DESC LIMIT 100', ['module' => $module, 'entity_id' => $entityId]);
     }
 
     private function section(array $row, array $labels): array
@@ -173,6 +256,24 @@ final class DigitalProfile extends BaseModel
         return $this->compactRow($row);
     }
 
+    private function householdLinks(int $id): array
+    {
+        return [
+            'gis' => ['screen' => 'gis', 'entity' => 'household', 'id' => $id],
+            'members' => ['screen' => 'persons', 'householdId' => $id],
+            'files' => ['api' => '/api/files?module=household&entityId=' . $id],
+        ];
+    }
+
+    private function citizenLinks(int $id, int $householdId): array
+    {
+        return [
+            'household' => $householdId > 0 ? ['api' => '/api/profiles/household/' . $householdId, 'id' => $householdId] : null,
+            'movements' => ['screen' => 'movements', 'citizenId' => $id],
+            'files' => ['api' => '/api/files?module=citizen&entityId=' . $id],
+        ];
+    }
+
     private function extendedCitizenLabels(): array
     {
         return [
@@ -184,7 +285,17 @@ final class DigitalProfile extends BaseModel
 
     private function movementLabel(string $type): string
     {
-        return ['BIRTH' => 'Sinh', 'DEATH' => 'Tử', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi', 'HOUSEHOLD_SPLIT' => 'Tách hộ', 'HOUSEHOLD_MERGE' => 'Nhập hộ', 'HEAD_CHANGE' => 'Thay đổi chủ hộ', 'INFO_CHANGE' => 'Thay đổi thông tin', 'TEMPORARY_RESIDENCE' => 'Tạm trú', 'TEMPORARY_ABSENCE' => 'Tạm vắng'][$type] ?? 'Biến động khác';
+        return [
+            'BIRTH' => 'Sinh ra', 'DEATH' => 'Tử', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi', 'HOUSEHOLD_SPLIT' => 'Tách hộ', 'HOUSEHOLD_MERGE' => 'Nhập hộ', 'HOUSEHOLD_HEAD_CHANGE' => 'Thay đổi chủ hộ', 'HEAD_CHANGE' => 'Thay đổi chủ hộ', 'CITIZEN_UPDATE' => 'Cập nhật thông tin', 'INFO_CHANGE' => 'Cập nhật thông tin', 'IDENTITY_UPDATE' => 'Thay đổi CCCD', 'MARRIAGE' => 'Kết hôn', 'RESTORE' => 'Hoàn tác', 'TEMPORARY_RESIDENCE' => 'Đăng ký tạm trú', 'TEMPORARY_ABSENCE' => 'Tạm vắng',
+        ][$type] ?? 'Biến động khác';
+    }
+
+    private function fileSectionLabel(string $section, string $type): string
+    {
+        return [
+            'front_house' => 'Ảnh mặt trước nhà', 'location_photo' => 'Ảnh vị trí thực tế', 'household_video' => 'Video hộ gia đình', 'household_document' => 'Tài liệu hộ gia đình',
+            'portrait' => 'Ảnh chân dung', 'cccd_front' => 'CCCD mặt trước', 'cccd_back' => 'CCCD mặt sau', 'birth_certificate' => 'Giấy khai sinh', 'household_book' => 'Sổ hộ khẩu', 'citizen_document' => 'Giấy tờ liên quan',
+        ][$section] ?? ($type === 'VIDEO' ? 'Video' : ($type === 'PHOTO' || $type === 'IMAGE' ? 'Hình ảnh' : 'Tệp đính kèm'));
     }
 
     private function hasValue(mixed $value): bool
@@ -212,5 +323,23 @@ final class DigitalProfile extends BaseModel
         $identity = trim($identity);
         if (mb_strlen($identity) <= 8) return $identity;
         return mb_substr($identity, 0, 4) . '••••' . mb_substr($identity, -4);
+    }
+
+    private function normalizeModule(string $module): string
+    {
+        $module = $module === 'persons' ? 'citizen' : rtrim($module, 's');
+        if (!in_array($module, ['household', 'citizen'], true)) throw new \RuntimeException('Loại hồ sơ không hợp lệ');
+        return $module;
+    }
+
+    private function assertNotesReady(): void
+    {
+        if (!$this->tableExists('profile_notes')) throw new \RuntimeException('Bảng ghi chú hồ sơ chưa sẵn sàng');
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
     }
 }

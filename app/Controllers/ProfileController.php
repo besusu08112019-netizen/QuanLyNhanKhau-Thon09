@@ -31,14 +31,51 @@ final class ProfileController extends BaseController
 
     public function timeline(string $module, string $id): void
     {
-        $module = $module === 'persons' ? 'citizen' : rtrim($module, 's');
-        if (!in_array($module, ['household', 'citizen'], true)) {
-            $this->fail('Loại hồ sơ không hợp lệ');
-        }
+        $module = $this->normalizeModule($module);
         $this->requirePermission($module === 'citizen' ? 'citizen' : 'household', 'read');
         $profile = $module === 'citizen'
             ? $this->profiles->citizen((int) $id)
             : $this->profiles->household((int) $id);
         $profile ? $this->ok($profile['timeline'] ?? []) : $this->fail('Không tìm thấy hồ sơ', 404);
+    }
+
+    public function createNote(string $module, string $id): void
+    {
+        $module = $this->normalizeModule($module);
+        $user = $this->requirePermission('profile', 'create');
+        $note = $this->profiles->createNote($module, (int) $id, $this->input(), (int) $user['id']);
+        $this->audit($user, $module, 'note', 'Thêm ghi chú hồ sơ', (int) $id, ['note' => $note['id'] ?? null, 'section' => $note['section'] ?? null]);
+        $this->ok($note);
+    }
+
+    public function deleteNote(string $id): void
+    {
+        $note = $this->profiles->note((int) $id);
+        if (!$note) $this->fail('Không tìm thấy ghi chú hồ sơ', 404);
+        $module = (string) ($note['module'] ?? 'household');
+        $user = $this->requirePermission('profile', 'delete');
+        $this->profiles->deleteNote((int) $id, (int) $user['id']);
+        $this->audit($user, $module, 'delete_note', 'Xóa ghi chú hồ sơ', $note['entity_id'] ?? null, ['note' => (int) $id, 'title' => $note['title'] ?? '']);
+        $this->ok(['id' => (int) $id]);
+    }
+
+    public function updateNote(string $id): void
+    {
+        $note = $this->profiles->note((int) $id);
+        if (!$note) $this->fail('Không tìm thấy ghi chú hồ sơ', 404);
+        $module = (string) ($note['module'] ?? 'household');
+        $user = $this->requirePermission('profile', 'update');
+        $updated = $this->profiles->updateNote((int) $id, $this->input(), (int) $user['id']);
+        $this->audit($user, $module, 'update_note', 'Sửa ghi chú hồ sơ', $note['entity_id'] ?? null, ['note' => (int) $id, 'title' => $updated['title'] ?? '']);
+        $this->ok($updated);
+    }
+
+    private function normalizeModule(string $module): string
+    {
+        $module = $module === 'persons' ? 'citizen' : rtrim($module, 's');
+        if (!in_array($module, ['household', 'citizen'], true)) {
+            $this->fail('Loại hồ sơ không hợp lệ');
+        }
+        return $module;
     }
 }

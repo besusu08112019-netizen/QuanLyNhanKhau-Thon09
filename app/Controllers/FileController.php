@@ -21,6 +21,9 @@ final class FileController extends BaseController
         $module = preg_replace('/[^a-z_]/', '', (string) ($_POST['module'] ?? ''));
         $entityId = (int) ($_POST['entityId'] ?? 0);
         $fileType = strtoupper(preg_replace('/[^A-Z_]/', '', (string) ($_POST['fileType'] ?? 'OTHER')));
+        $profileSection = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($_POST['profileSection'] ?? $_POST['profile_section'] ?? '')));
+        $description = trim((string) ($_POST['description'] ?? ''));
+        if (!in_array($fileType, ['PHOTO','DOCUMENT','SCAN','WORD','EXCEL','IMAGE','VIDEO','LOGO','BACKGROUND','OTHER'], true)) $this->fail('Loại file không hợp lệ');
         if (!in_array($module, ['household','citizen','settings'], true)) $this->fail('Module upload không hợp lệ');
         if ($entityId <= 0 && $module !== 'settings') $this->fail('Mã dữ liệu upload không hợp lệ');
         $user = $this->requirePermission($module === 'citizen' ? 'citizen' : ($module === 'household' ? 'household' : 'settings'), 'update');
@@ -52,6 +55,8 @@ final class FileController extends BaseController
             'file_path' => $relative,
             'mime_type' => $mime,
             'file_size' => (int) $file['size'],
+            'description' => $description !== '' ? mb_substr($description, 0, 500) : null,
+            'profile_section' => $profileSection !== '' ? $profileSection : null,
         ], (int) $user['id']);
         $this->audit($user, $module, 'upload', 'Upload file đính kèm', $entityId, ['file' => $row['id'], 'type' => $fileType]);
         $this->ok($row);
@@ -70,19 +75,30 @@ final class FileController extends BaseController
 
     public function download(string $id): void
     {
+        $this->streamFile($id, true);
+    }
+
+    public function preview(string $id): void
+    {
+        $this->streamFile($id, false);
+    }
+
+    private function streamFile(string $id, bool $download): void
+    {
         $file = $this->files->find((int) $id);
         if (!$file) $this->fail('Không tìm thấy file', 404);
         $this->requirePermission($file['module'] === 'citizen' ? 'citizen' : ($file['module'] === 'household' ? 'household' : 'settings'), 'read');
         $path = $this->safeUploadedPath((string) $file['file_path']);
         if ($path === null || !is_file($path)) $this->fail('File is no longer available on the server', 404);
+        $mime = (string) ($file['mime_type'] ?: 'application/octet-stream');
+        if (!$download && !$this->canPreview($mime)) $download = true;
         header('X-Content-Type-Options: nosniff');
-        header('Content-Type: ' . ($file['mime_type'] ?: 'application/octet-stream'));
+        header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));
-        header('Content-Disposition: attachment; filename="' . rawurlencode((string) $file['original_name']) . '"');
+        header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . rawurlencode((string) $file['original_name']) . '"');
         readfile($path);
         exit;
     }
-
     public function destroy(string $id): void
     {
         $file = $this->files->find((int) $id);
@@ -114,6 +130,10 @@ final class FileController extends BaseController
         return $extension !== '' && in_array($extension, $allowedExtensions, true);
     }
 
+    private function canPreview(string $mime): bool
+    {
+        return str_starts_with($mime, 'image/') || in_array($mime, ['application/pdf', 'text/csv', 'text/plain', 'video/mp4'], true);
+    }
     private function safeUploadedPath(string $relative): ?string
     {
         $base = realpath(BASE_PATH . '/uploads');
