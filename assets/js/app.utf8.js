@@ -331,7 +331,14 @@ function syncMobileBottomNavigation(screen, requestedScreen = screen) {
   });
 }
 
+const mobileFilterQuery = window.matchMedia ? window.matchMedia('(max-width: 1024px)') : null;
+
 function ensureMobileFilterPanels() {
+  bindMobileFilterBreakpoint();
+  if (mobileFilterQuery && !mobileFilterQuery.matches) {
+    destroyMobileFilterPanels();
+    return;
+  }
   setupMobileFilterPanel({
     cardSelector: '.household-filter-card',
     gridSelector: '.household-filter-grid',
@@ -348,6 +355,13 @@ function ensureMobileFilterPanels() {
   });
 }
 
+function bindMobileFilterBreakpoint() {
+  if (!mobileFilterQuery || window.__thon09MobileFilterBreakpointBound) return;
+  window.__thon09MobileFilterBreakpointBound = true;
+  const sync = () => ensureMobileFilterPanels();
+  if (typeof mobileFilterQuery.addEventListener === 'function') mobileFilterQuery.addEventListener('change', sync);
+  else if (typeof mobileFilterQuery.addListener === 'function') mobileFilterQuery.addListener(sync);
+}
 function setupMobileFilterPanel(config) {
   const card = document.querySelector(config.cardSelector);
   const grid = card?.querySelector(config.gridSelector);
@@ -365,7 +379,12 @@ function setupMobileFilterPanel(config) {
   sheet.setAttribute('aria-hidden', 'true');
   sheet.innerHTML = '<div class="mobile-filter-sheet-head"><strong>' + escapeHtml(config.label) + '</strong><button class="mobile-filter-close" type="button" aria-label="Đóng bộ lọc"><i class="fa-solid fa-xmark"></i></button></div><div class="mobile-filter-sheet-body"></div>';
   const body = sheet.querySelector('.mobile-filter-sheet-body');
-  controls.forEach(control => body.appendChild(control));
+  const placements = controls.map(control => {
+    const marker = document.createComment('mobile-filter-control');
+    control.parentNode.insertBefore(marker, control);
+    body.appendChild(control);
+    return { control, marker };
+  });
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'mobile-filter-toggle';
@@ -377,6 +396,7 @@ function setupMobileFilterPanel(config) {
   shell.append(toggle, sheet);
   if (search) search.insertAdjacentElement('afterend', shell);
   else card.prepend(shell);
+  card.__mobileFilterState = { shell, placements };
 }
 
 function setMobileFilterOpen(card, open) {
@@ -386,6 +406,24 @@ function setMobileFilterOpen(card, open) {
   if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   if (sheet) sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
   document.body.classList.toggle('mobile-filter-active', open);
+}
+
+function destroyMobileFilterPanels() {
+  $$('.household-filter-card, .person-search-card').forEach(card => {
+    const state = card.__mobileFilterState;
+    if (!state) return;
+    state.placements.forEach(({ control, marker }) => {
+      if (marker.parentNode) {
+        marker.parentNode.insertBefore(control, marker);
+        marker.remove();
+      }
+    });
+    state.shell.remove();
+    card.classList.remove('mobile-filter-open');
+    delete card.dataset.mobileFilterReady;
+    delete card.__mobileFilterState;
+  });
+  document.body.classList.remove('mobile-filter-active');
 }
 function toggleMobileSidebar() {
   const sidebar = $('.sidebar');
@@ -1650,4 +1688,3 @@ window.loadGisMap = loadGisMap;
 window.filterHouseholdsByGisArea = filterHouseholdsByGisArea;
 window.focusGisArea = focusGisArea;
 window.deleteGisArea = deleteGisArea;
-
