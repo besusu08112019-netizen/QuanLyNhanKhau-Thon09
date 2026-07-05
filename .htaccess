@@ -36,3 +36,12 @@ RewriteRule ^ index.php [QSA,L]
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
 </IfModule>
+<IfModule mod_headers.c>
+  SetEnvIf Request_URI "^/api/" thon09_api_request=1
+  Header always unset Cache-Control env=thon09_api_request
+  Header always unset Expires env=thon09_api_request
+  Header always unset Pragma env=thon09_api_request
+  Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=thon09_api_request
+  Header always set Pragma "no-cache" env=thon09_api_request
+  Header always set Expires "0" env=thon09_api_request
+</IfModule>
