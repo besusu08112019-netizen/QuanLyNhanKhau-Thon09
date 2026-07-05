@@ -37,16 +37,29 @@ final class FileAttachment extends BaseModel
 
     public function byEntity(string $entityType, int $entityId): array
     {
-        $where = ['f.entity_id = :entity_id', 'f.status = "ACTIVE"'];
-        $params = ['entity_type' => $entityType, 'entity_id' => $entityId];
+        if (!$this->tableExists('file_attachments')) {
+            throw new \RuntimeException('Bảng file_attachments chưa tồn tại. Cần chạy migration 2026_06_28_admin_panel.sql trước khi dùng Hồ sơ số.');
+        }
+
+        $missing = array_diff(['id', 'module', 'entity_id'], $this->existingColumns('file_attachments', ['id', 'module', 'entity_id']));
+        if ($missing) {
+            throw new \RuntimeException('Bảng file_attachments thiếu cột bắt buộc: ' . implode(', ', $missing));
+        }
+
+        $where = ['f.entity_id = :entity_id'];
+        $params = ['entity_type' => $entityType, 'module' => $entityType, 'entity_id' => $entityId];
+        if ($this->columnExists('file_attachments', 'status')) {
+            $where[] = 'f.status = "ACTIVE"';
+        }
         if ($this->columnExists('file_attachments', 'entity_type')) {
-            $where[] = '(f.entity_type = :entity_type OR f.module = :entity_type)';
+            $where[] = '(f.entity_type = :entity_type OR f.module = :module)';
         } else {
             $where[] = 'f.module = :entity_type';
         }
+
         $select = 'f.*';
         $join = '';
-        if ($this->tableExists('users')) {
+        if ($this->tableExists('users') && $this->columnExists('file_attachments', 'created_by')) {
             $select .= ', uc.display_name AS created_by_name, uc.email AS created_by_email';
             $join = ' LEFT JOIN users uc ON uc.id = f.created_by';
             if ($this->columnExists('file_attachments', 'updated_by')) {
@@ -54,7 +67,9 @@ final class FileAttachment extends BaseModel
                 $join .= ' LEFT JOIN users uu ON uu.id = f.updated_by';
             }
         }
-        return $this->fetchAll('SELECT ' . $select . ' FROM file_attachments f' . $join . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY f.created_at DESC, f.id DESC', $params);
+
+        $orderBy = $this->columnExists('file_attachments', 'created_at') ? 'f.created_at DESC, f.id DESC' : 'f.id DESC';
+        return $this->fetchAll('SELECT ' . $select . ' FROM file_attachments f' . $join . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY ' . $orderBy, $params);
     }
 
     public function softDelete(int $id, int $userId): void

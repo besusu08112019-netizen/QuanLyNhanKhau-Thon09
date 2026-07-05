@@ -18,6 +18,7 @@ function send_security_headers(): void
 send_security_headers();
 
 use App\Core\Autoloader;
+use App\Core\BaseModel;
 use App\Core\Request;
 use App\Core\Router;
 use App\Core\Response;
@@ -40,7 +41,56 @@ use App\Controllers\UserController;
 
 Autoloader::register();
 
+function api_exception_payload(Throwable $e, int $status = 500): array
+{
+    $lastQuery = BaseModel::lastQuery();
+    $error = [
+        'message' => $e->getMessage() !== '' ? $e->getMessage() : 'Internal Server Error',
+        'type' => get_class($e),
+        'code' => (string) $e->getCode(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'stack_trace' => $e->getTraceAsString(),
+        'sql' => $lastQuery['sql'] ?? null,
+        'sql_params' => $lastQuery['params'] ?? null,
+    ];
+    if ($e instanceof PDOException) {
+        $error['sqlstate'] = $e->errorInfo[0] ?? $e->getCode();
+        $error['driver_code'] = $e->errorInfo[1] ?? null;
+        $error['driver_message'] = $e->errorInfo[2] ?? null;
+    }
+    return ['ok' => false, 'success' => false, 'error' => $error, 'status' => $status];
+}
 $request = Request::capture();
+set_exception_handler(function (Throwable $e) use ($request): void {
+    if (str_starts_with($request->path(), '/api')) {
+        error_log('[API_EXCEPTION] ' . json_encode(api_exception_payload($e), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        Response::json(api_exception_payload($e), 500);
+    }
+    throw $e;
+});
+
+register_shutdown_function(function () use ($request): void {
+    $error = error_get_last();
+    if (!$error || !str_starts_with($request->path(), '/api')) return;
+    if (!in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) return;
+    if (headers_sent()) return;
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'ok' => false,
+        'success' => false,
+        'error' => [
+            'message' => $error['message'] ?? 'Fatal error',
+            'type' => 'FatalError',
+            'file' => $error['file'] ?? null,
+            'line' => $error['line'] ?? null,
+            'sql' => BaseModel::lastQuery()['sql'] ?? null,
+            'sql_params' => BaseModel::lastQuery()['params'] ?? null,
+        ],
+        'status' => 500,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+});
 if ($request->path() === '/favicon.ico') {
     header('Content-Type: image/svg+xml; charset=UTF-8');
     header('Cache-Control: public, max-age=604800');
@@ -261,6 +311,13 @@ if (!str_starts_with($request->path(), '/api')) {
     exit;
 }
 
-$router->dispatch();
+try {
+    $router->dispatch();
+} catch (Throwable $e) {
+    if (str_starts_with($request->path(), '/api')) {
+        error_log('[API_EXCEPTION] ' . json_encode(api_exception_payload($e), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        Response::json(api_exception_payload($e), 500);
+    }
+    throw $e;
+}
 Response::error('Không tìm thấy đường dẫn', 404);
-

@@ -6,12 +6,12 @@ final class Response
 {
     public static function ok(mixed $data = null, int $status = 200): void
     {
-        self::json(['ok' => true, 'data' => $data], $status);
+        self::json(['ok' => true, 'success' => true, 'data' => $data], $status);
     }
 
     public static function error(string $message, int $status = 400, array $details = []): void
     {
-        self::json(['ok' => false, 'error' => ['message' => $message, 'details' => $details]], $status);
+        self::json(['ok' => false, 'success' => false, 'error' => ['message' => $message, 'details' => $details]], $status);
     }
 
     public static function json(array $payload, int $status = 200): void

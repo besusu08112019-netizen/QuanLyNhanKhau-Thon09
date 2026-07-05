@@ -7,6 +7,7 @@ use PDO;
 abstract class BaseModel
 {
     protected PDO $db;
+    private static ?array $lastQuery = null;
 
     public function __construct()
     {
@@ -15,6 +16,7 @@ abstract class BaseModel
 
     protected function fetchOne(string $sql, array $params = []): ?array
     {
+        self::rememberQuery($sql, $params);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
@@ -23,6 +25,7 @@ abstract class BaseModel
 
     protected function fetchAll(string $sql, array $params = []): array
     {
+        self::rememberQuery($sql, $params);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
@@ -30,6 +33,7 @@ abstract class BaseModel
 
     protected function execute(string $sql, array $params = []): int
     {
+        self::rememberQuery($sql, $params);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->rowCount();
@@ -55,6 +59,15 @@ abstract class BaseModel
         return array_values(array_filter($columns, fn($column) => $this->columnExists($table, $column)));
     }
 
+    public static function lastQuery(): ?array
+    {
+        return self::$lastQuery;
+    }
+
+    private static function rememberQuery(string $sql, array $params): void
+    {
+        self::$lastQuery = ['sql' => $sql, 'params' => $params];
+    }
     protected function page(int $page, int $pageSize): array
     {
         $page = max($page, 1);
