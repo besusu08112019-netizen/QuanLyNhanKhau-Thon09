@@ -1,20 +1,26 @@
 (() => {
   const sectionOptions = {
     household: [
-      ['front_house', 'PHOTO', 'Ảnh mặt trước nhà'],
-      ['location_photo', 'PHOTO', 'Ảnh vị trí thực tế'],
+      ['front_house', 'PHOTO', 'Ảnh mặt tiền nhà'],
+      ['gate_photo', 'PHOTO', 'Ảnh cổng'],
+      ['overview_photo', 'PHOTO', 'Ảnh toàn cảnh khuôn viên'],
       ['household_video', 'VIDEO', 'Video hộ gia đình'],
-      ['household_document', 'DOCUMENT', 'File đính kèm'],
-    ],
-    citizen: [
+      ['household_pdf', 'DOCUMENT', 'Hồ sơ PDF'],
+      ['head_cccd_scan', 'IMAGE', 'CCCD scan của chủ hộ'],
+      ['old_household_book', 'DOCUMENT', 'Sổ hộ khẩu cũ'],
+      ['household_document', 'DOCUMENT', 'Giấy tờ liên quan'],
+      ['household_avatar', 'PHOTO', 'Logo hoặc hình đại diện hộ'],
+    ],    citizen: [
       ['portrait', 'PHOTO', 'Ảnh chân dung'],
       ['cccd_front', 'IMAGE', 'CCCD mặt trước'],
       ['cccd_back', 'IMAGE', 'CCCD mặt sau'],
       ['birth_certificate', 'DOCUMENT', 'Giấy khai sinh'],
-      ['household_book', 'DOCUMENT', 'Sổ hộ khẩu'],
-      ['citizen_document', 'DOCUMENT', 'Giấy tờ liên quan'],
-    ],
-  };
+      ['party_profile', 'DOCUMENT', 'Hồ sơ Đảng'],
+      ['military_profile', 'DOCUMENT', 'Hồ sơ quân sự'],
+      ['health_insurance', 'DOCUMENT', 'Hồ sơ BHYT'],
+      ['social_insurance', 'DOCUMENT', 'Hồ sơ BHXH'],
+      ['citizen_document', 'DOCUMENT', 'Giấy tờ khác'],
+    ],  };
 
   function $(selector, root = document) { return root.querySelector(selector); }
   function $$(selector, root = document) { return Array.from(root.querySelectorAll(selector)); }
@@ -118,7 +124,7 @@
     const options = (sectionOptions[type] || []).map(([section, fileType, label]) => '<option value="' + section + '" data-file-type="' + fileType + '">' + esc(label) + '</option>').join('');
     return '<section class="mb-3" id="digitalProfileFiles"><h6 class="border-bottom pb-2 mb-2">Tài liệu đính kèm</h6>'
       + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">Loại tài liệu</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">Mô tả</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> Tải lên</button></div></form>'
-      + (files.length ? '<div class="list-group list-group-flush border rounded">' + files.map(file => '<div class="list-group-item d-flex justify-content-between gap-2 align-items-start"><div><div class="fw-semibold">' + esc(file.original_name || 'Tệp đính kèm') + '</div><div class="small text-muted">' + esc(file.profile_section || file.file_type || '') + (file.description ? ' - ' + esc(file.description) : '') + '</div></div><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">Chưa có tài liệu đính kèm.</div>')
+      + (files.length ? '<div class="list-group list-group-flush border rounded">' + files.map(file => '<div class="list-group-item d-flex justify-content-between gap-2 align-items-start"><div><div class="fw-semibold">' + esc(file.original_name || 'Tệp đính kèm') + '</div><div class="small text-muted">' + esc(file.profile_section || file.file_type || '') + (file.description ? ' - ' + esc(file.description) : '') + '</div></div><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">Chưa có tài liệu đính kèm.</div>')
       + '</section>';
   }
 
@@ -152,6 +158,7 @@
     $$('[data-open-citizen]', root).forEach(btn => btn.addEventListener('click', () => window.showPerson(btn.dataset.openCitizen)));
     $$('[data-preview-file]', root).forEach(btn => btn.addEventListener('click', () => previewFile(btn.dataset.previewFile)));
     $$('[data-download-file]', root).forEach(btn => btn.addEventListener('click', () => downloadFile(btn.dataset.downloadFile)));
+    $$('[data-delete-file]', root).forEach(btn => btn.addEventListener('click', () => deleteFile(btn.dataset.deleteFile, type, id)));
     $$('[data-edit-note]', root).forEach(btn => btn.addEventListener('click', () => editNote(btn, type, id)));
     $$('[data-delete-note]', root).forEach(btn => btn.addEventListener('click', () => deleteNote(btn.dataset.deleteNote, type, id)));
     $('[data-profile-upload]', root)?.addEventListener('submit', event => uploadFile(event, type, id));
@@ -201,6 +208,12 @@
     type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
+  async function deleteFile(id, type, entityId) {
+    if (!confirm('Xóa file đính kèm này?')) return;
+    await api('/api/files/' + encodeURIComponent(id), { method: 'DELETE' });
+    show('Đã xóa file đính kèm');
+    type === 'household' ? window.showHousehold(entityId) : window.showPerson(entityId);
+  }
   function previewFile(id) {
     window.open('/api/files/' + encodeURIComponent(id) + '/preview', '_blank', 'noopener');
   }
