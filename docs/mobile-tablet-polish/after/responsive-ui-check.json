@@ -1,0 +1,282 @@
+[
+  {
+    "viewport": "m360",
+    "module": "dashboard",
+    "active": "dashboardScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m360",
+    "module": "households",
+    "active": "householdsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m360",
+    "module": "persons",
+    "active": "personsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m360",
+    "module": "gis",
+    "active": "gisScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m360",
+    "module": "reports",
+    "active": "reportsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m375",
+    "module": "dashboard",
+    "active": "dashboardScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m375",
+    "module": "households",
+    "active": "householdsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m375",
+    "module": "persons",
+    "active": "personsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m375",
+    "module": "gis",
+    "active": "gisScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m375",
+    "module": "reports",
+    "active": "reportsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m390",
+    "module": "dashboard",
+    "active": "dashboardScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m390",
+    "module": "households",
+    "active": "householdsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m390",
+    "module": "persons",
+    "active": "personsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m390",
+    "module": "gis",
+    "active": "gisScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m390",
+    "module": "reports",
+    "active": "reportsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m412",
+    "module": "dashboard",
+    "active": "dashboardScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m412",
+    "module": "households",
+    "active": "householdsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m412",
+    "module": "persons",
+    "active": "personsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m412",
+    "module": "gis",
+    "active": "gisScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "m412",
+    "module": "reports",
+    "active": "reportsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t768",
+    "module": "dashboard",
+    "active": "dashboardScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t768",
+    "module": "households",
+    "active": "householdsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t768",
+    "module": "persons",
+    "active": "personsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t768",
+    "module": "gis",
+    "active": "gisScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t768",
+    "module": "reports",
+    "active": "reportsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t820",
+    "module": "dashboard",
+    "active": "dashboardScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t820",
+    "module": "households",
+    "active": "householdsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t820",
+    "module": "persons",
+    "active": "personsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t820",
+    "module": "gis",
+    "active": "gisScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t820",
+    "module": "reports",
+    "active": "reportsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t1024",
+    "module": "dashboard",
+    "active": "dashboardScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t1024",
+    "module": "households",
+    "active": "householdsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t1024",
+    "module": "persons",
+    "active": "personsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t1024",
+    "module": "gis",
+    "active": "gisScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  },
+  {
+    "viewport": "t1024",
+    "module": "reports",
+    "active": "reportsScreen",
+    "overflow": 0,
+    "navCut": false,
+    "consoleErrors": []
+  }
+]

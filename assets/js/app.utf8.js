@@ -52,6 +52,7 @@ function init() {
   initNotificationPopover();
   initLoginExperience();
   ensureMobileBottomNavigation();
+  ensureMobileFilterPanels();
   App.token ? showApp() : showLogin();
 }
 
@@ -147,6 +148,7 @@ function applyResponsiveTableLabels(root = document) {
         const hasControl = !!cell.querySelector('button, .btn, a[href], input, select, textarea');
         const hasRealValue = hasControl || !!textValue && !isEmptyMobileCardValue(normalizedValue);
         cell.dataset.mobileRole = '';
+        cell.dataset.mobileField = mobileCardFieldKey(normalizedLabel);
         cell.toggleAttribute('data-mobile-empty', !hasRealValue);
         delete cell.dataset.mobileTone;
         if (cell.querySelector('input[type="checkbox"]') && index === 0) {
@@ -182,6 +184,25 @@ function applyResponsiveTableLabels(root = document) {
   });
   decorateMobileCardActions(root);
   if (window.thon09EnhanceDesignSystem) window.thon09EnhanceDesignSystem(root);
+}
+
+function mobileCardFieldKey(label) {
+  if (label.includes('ho va ten') || label.includes('ho ten') || label.includes('chu ho')) return 'name';
+  if (label === 'ma ho' || label.includes('ma ho')) return 'household-code';
+  if (label.includes('ma nhan khau')) return 'person-code';
+  if (label.includes('cccd') || label.includes('so dinh danh')) return 'identity';
+  if (label.includes('quan he')) return 'relationship';
+  if (label.includes('ngay sinh')) return 'birthdate';
+  if (label.includes('tuoi')) return 'age';
+  if (label.includes('gioi tinh')) return 'gender';
+  if (label.includes('cu tru')) return 'residence';
+  if (label.includes('dang vien')) return 'party';
+  if (label.includes('dia chi')) return 'address';
+  if (label.includes('o nha')) return 'at-home';
+  if (label.includes('di vang')) return 'away';
+  if (label.includes('dien ho')) return 'household-type';
+  if (label.includes('trang thai') || label.includes('status')) return 'status';
+  return label.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'field';
 }
 
 function isMobileCardTitleLabel(label, index) {
@@ -306,6 +327,63 @@ function syncMobileBottomNavigation(screen, requestedScreen = screen) {
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-current', active ? 'page' : 'false');
   });
+}
+
+function ensureMobileFilterPanels() {
+  setupMobileFilterPanel({
+    cardSelector: '.household-filter-card',
+    gridSelector: '.household-filter-grid',
+    searchSelector: '.household-search-field',
+    filterSelector: '.module-field:not(.household-search-field), #householdFilterReset',
+    label: 'Bộ lọc hộ'
+  });
+  setupMobileFilterPanel({
+    cardSelector: '.person-search-card',
+    gridSelector: '.person-quick-filter-grid',
+    searchSelector: '.person-search-row',
+    filterSelector: '.person-field:not(.person-search-field), .person-filter-actions',
+    label: 'Bộ lọc nhân khẩu'
+  });
+}
+
+function setupMobileFilterPanel(config) {
+  const card = document.querySelector(config.cardSelector);
+  const grid = card?.querySelector(config.gridSelector);
+  if (!card || !grid || card.dataset.mobileFilterReady === '1') return;
+  card.dataset.mobileFilterReady = '1';
+  const search = card.querySelector(config.searchSelector);
+  const controls = Array.from(grid.querySelectorAll(config.filterSelector)).filter(el => !el.closest(config.searchSelector));
+  if (!controls.length) return;
+  const shell = document.createElement('div');
+  shell.className = 'mobile-filter-shell';
+  const sheet = document.createElement('div');
+  sheet.className = 'mobile-filter-sheet';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-hidden', 'true');
+  sheet.innerHTML = '<div class="mobile-filter-sheet-head"><strong>' + escapeHtml(config.label) + '</strong><button class="mobile-filter-close" type="button" aria-label="Đóng bộ lọc"><i class="fa-solid fa-xmark"></i></button></div><div class="mobile-filter-sheet-body"></div>';
+  const body = sheet.querySelector('.mobile-filter-sheet-body');
+  controls.forEach(control => body.appendChild(control));
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'mobile-filter-toggle';
+  toggle.innerHTML = '<i class="fa-solid fa-sliders"></i><span>Bộ lọc</span>';
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.addEventListener('click', () => setMobileFilterOpen(card, true));
+  sheet.querySelector('.mobile-filter-close').addEventListener('click', () => setMobileFilterOpen(card, false));
+  sheet.addEventListener('click', event => { if (event.target === sheet) setMobileFilterOpen(card, false); });
+  shell.append(toggle, sheet);
+  if (search) search.insertAdjacentElement('afterend', shell);
+  else card.prepend(shell);
+}
+
+function setMobileFilterOpen(card, open) {
+  card.classList.toggle('mobile-filter-open', open);
+  const toggle = card.querySelector('.mobile-filter-toggle');
+  const sheet = card.querySelector('.mobile-filter-sheet');
+  if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (sheet) sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
+  document.body.classList.toggle('mobile-filter-active', open);
 }
 function toggleMobileSidebar() {
   const sidebar = $('.sidebar');

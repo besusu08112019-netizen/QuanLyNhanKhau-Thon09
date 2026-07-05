@@ -2871,3 +2871,494 @@ body.sidebar-open {
     transition: none;
   }
 }
+
+/* Mobile and tablet production polish - shared design system */
+@media (max-width: 1024px) {
+  body.app-authenticated {
+    --mobile-space-1: 4px;
+    --mobile-space-2: 8px;
+    --mobile-space-3: 12px;
+    --mobile-space-4: 16px;
+    --mobile-radius-sm: 10px;
+    --mobile-radius-md: 14px;
+    --mobile-radius-lg: 18px;
+    --mobile-touch: 48px;
+  }
+
+  body.app-authenticated .screen,
+  body.app-authenticated .dashboard-overview-screen,
+  body.app-authenticated .person-management-screen,
+  body.app-authenticated .household-management-screen,
+  body.app-authenticated .report-screen,
+  body.app-authenticated .gis-screen {
+    padding: var(--mobile-space-3);
+  }
+
+  body.app-authenticated .content-card,
+  body.app-authenticated .module-filter-card,
+  body.app-authenticated .person-search-card,
+  body.app-authenticated .report-filter-card,
+  body.app-authenticated .dashboard-kpi,
+  body.app-authenticated .dashboard-panel {
+    border-radius: var(--mobile-radius-md);
+    box-shadow: 0 8px 20px rgba(16, 36, 28, .07);
+  }
+
+  body.app-authenticated .module-filter-card,
+  body.app-authenticated .person-search-card,
+  body.app-authenticated .report-filter-card {
+    padding: var(--mobile-space-3);
+    margin-bottom: var(--mobile-space-3);
+  }
+
+  body.app-authenticated .module-list-head,
+  body.app-authenticated .person-list-head,
+  body.app-authenticated .report-result-head {
+    min-height: 0;
+    padding: var(--mobile-space-3);
+    gap: var(--mobile-space-2);
+  }
+
+  body.app-authenticated .module-list-head h3,
+  body.app-authenticated .person-list-head h3,
+  body.app-authenticated .report-result-head h3,
+  body.app-authenticated .section-title {
+    font-size: 16px;
+    line-height: 1.3;
+  }
+
+  body.app-authenticated .form-control,
+  body.app-authenticated .form-select,
+  body.app-authenticated textarea {
+    min-height: 44px;
+    font-size: 16px;
+    line-height: 1.4;
+    border-radius: 12px;
+  }
+
+  body.app-authenticated .btn,
+  body.app-authenticated button {
+    letter-spacing: 0;
+  }
+
+  body.app-authenticated .topbar.gov-topbar {
+    min-height: 52px;
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 8px;
+    padding: max(7px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 7px max(10px, env(safe-area-inset-left, 0px));
+  }
+
+  body.app-authenticated #sidebarToggle,
+  body.app-authenticated .gov-notification-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 13px;
+  }
+
+  body.app-authenticated .topbar-title-block {
+    grid-column: 2;
+    min-height: 42px;
+    align-items: center;
+  }
+
+  body.app-authenticated .breadcrumb-trail {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 800;
+  }
+
+  body.app-authenticated .topbar-meta {
+    grid-column: 3;
+    width: auto;
+    display: flex;
+    justify-content: flex-end;
+    margin-left: 0 !important;
+  }
+
+  body.app-authenticated .topbar-clock,
+  body.app-authenticated .topbar-user,
+  body.app-authenticated #logoutBtn {
+    display: none !important;
+  }
+
+  body.app-authenticated .dashboard-status-row,
+  body.app-authenticated .module-action-row,
+  body.app-authenticated .person-action-row {
+    margin-bottom: var(--mobile-space-3);
+  }
+
+  body.app-authenticated .dashboard-kpi-grid,
+  body.app-authenticated .dashboard-chart-grid {
+    gap: var(--mobile-space-3);
+  }
+
+  body.app-authenticated .dashboard-kpi {
+    min-height: 108px;
+    padding: var(--mobile-space-3);
+    gap: var(--mobile-space-2);
+  }
+
+  body.app-authenticated .dashboard-kpi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+  }
+
+  body.app-authenticated .dashboard-kpi-value {
+    margin-left: 0;
+  }
+
+  body.app-authenticated .dashboard-kpi-value strong {
+    font-size: 26px;
+  }
+
+  body.app-authenticated .table-responsive tbody,
+  body.app-authenticated .table-responsive.module-card-list tbody {
+    gap: 10px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody tr:not(.group-row),
+  body.app-authenticated .table-responsive.module-card-list tbody tr:not(.group-row) {
+    padding: 10px !important;
+    gap: 5px 6px !important;
+    border-radius: var(--mobile-radius-md) !important;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, .055) !important;
+  }
+
+  body.app-authenticated .table-responsive tbody tr.group-row {
+    padding: 7px 10px !important;
+    border-radius: 11px !important;
+    font-size: 12px;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="select"] {
+    top: 9px !important;
+    right: 9px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="select"] input {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="title"] {
+    order: 1 !important;
+    padding: 0 92px 5px 0 !important;
+    min-height: 26px;
+    font-size: 14px !important;
+    line-height: 1.22 !important;
+    text-transform: none;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="header-meta"] {
+    max-width: 74px !important;
+    min-height: 22px;
+    padding: 2px 6px !important;
+    font-size: 10px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="household-code"] { order: 2 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="person-code"] { order: 4 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="identity"] { order: 5 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="relationship"] { order: 6 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="birthdate"] { order: 7 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="age"] { order: 8 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="gender"] { order: 9 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="residence"] { order: 16 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="party"] { order: 17 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="address"] { order: 3 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="at-home"] { order: 4 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="away"] { order: 5 !important; }
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="household-type"] { order: 6 !important; }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="meta"] {
+    min-height: 25px !important;
+    padding: 3px 7px !important;
+    font-size: 11px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="address"] {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="stat"] {
+    min-height: 38px !important;
+    padding: 4px 6px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="badge"] {
+    min-height: 26px;
+    gap: 5px !important;
+    align-items: center;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="residence"],
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="party"] {
+    grid-column: span 3 !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="badge"] .badge,
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="badge"] .badge-soft,
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="badge"] .person-badge,
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="badge"] span {
+    min-height: 22px !important;
+    padding: 2px 7px !important;
+    font-size: 10.5px !important;
+    line-height: 1.15;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="actions"],
+  body.app-authenticated .table-responsive tbody td.text-end:has(button),
+  body.app-authenticated .table-responsive tbody td.text-end:has(.btn) {
+    order: 30 !important;
+    gap: 6px !important;
+    padding-top: 7px !important;
+    margin-top: 1px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="actions"] .btn,
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="actions"] button,
+  body.app-authenticated .table-responsive tbody td.text-end .btn,
+  body.app-authenticated .table-responsive tbody td.text-end button {
+    min-height: 42px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+  }
+
+  body.app-authenticated .modal-dialog {
+    width: min(96vw, 860px);
+    max-width: 96vw;
+    margin: 8px auto;
+  }
+
+  body.app-authenticated .modal-content {
+    max-height: calc(100dvh - 16px);
+    border-radius: var(--mobile-radius-lg);
+  }
+
+  body.app-authenticated .modal-header,
+  body.app-authenticated .modal-footer {
+    padding: 12px 14px;
+  }
+
+  body.app-authenticated .modal-body {
+    max-height: calc(100dvh - 132px);
+    padding: 14px;
+  }
+}
+
+@media (max-width: 820px) {
+  body.app-authenticated {
+    padding-bottom: calc(94px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.app-authenticated .screen,
+  body.app-authenticated .dashboard-overview-screen,
+  body.app-authenticated .person-management-screen,
+  body.app-authenticated .household-management-screen,
+  body.app-authenticated .report-screen,
+  body.app-authenticated .gis-screen {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.mobile-filter-active {
+    overflow: hidden;
+  }
+
+  body.app-authenticated .household-filter-grid,
+  body.app-authenticated .person-search-card {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 8px !important;
+  }
+
+  body.app-authenticated .person-search-row,
+  body.app-authenticated .household-search-field {
+    width: 100%;
+  }
+
+  .mobile-filter-shell {
+    display: block;
+    width: 100%;
+  }
+
+  .mobile-filter-toggle {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #cfe4d7;
+    border-radius: 12px;
+    background: #e8f5ee;
+    color: #075f35;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 800;
+  }
+
+  .mobile-filter-sheet {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 70;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    max-height: min(72dvh, 560px);
+    padding: 0 max(14px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+    border-radius: 22px 22px 0 0;
+    background: #fff;
+    box-shadow: 0 -20px 45px rgba(15, 23, 42, .2);
+    transform: translateY(105%);
+    transition: transform .2s ease;
+    pointer-events: none;
+  }
+
+  .mobile-filter-open .mobile-filter-sheet {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .mobile-filter-open .mobile-filter-sheet::before {
+    content: '';
+    position: fixed;
+    inset: -100vh 0 100% 0;
+    background: rgba(15, 23, 42, .34);
+  }
+
+  .mobile-filter-sheet-head {
+    position: relative;
+    z-index: 1;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mobile-filter-sheet-head strong {
+    color: var(--brand);
+    font-size: 16px;
+  }
+
+  .mobile-filter-close {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 13px;
+    background: #f1f5f9;
+    color: #334155;
+  }
+
+  .mobile-filter-sheet-body {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-top: 12px;
+    overflow-y: auto;
+  }
+
+  .mobile-filter-sheet-body > * {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  body.app-authenticated .mobile-bottom-nav {
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    min-height: 72px;
+    padding: 7px;
+    gap: 3px;
+    border-radius: 24px;
+  }
+
+  .mobile-bottom-nav button {
+    min-height: 56px;
+    padding: 5px 2px;
+    border-radius: 17px;
+    font-size: 10.5px;
+    line-height: 1.05;
+  }
+
+  .mobile-bottom-nav i {
+    font-size: 23px;
+  }
+
+  .mobile-bottom-label {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  body.app-authenticated #householdsScreen.active .module-action-row,
+  body.app-authenticated #personsScreen.active .person-action-row {
+    right: max(14px, env(safe-area-inset-right, 0px));
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.app-authenticated #householdsScreen.active .module-primary-action,
+  body.app-authenticated #personsScreen.active .person-primary-action {
+    min-width: 104px;
+    min-height: 50px;
+    padding: 0 14px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 430px) {
+  body.app-authenticated .screen,
+  body.app-authenticated .dashboard-overview-screen,
+  body.app-authenticated .person-management-screen,
+  body.app-authenticated .household-management-screen,
+  body.app-authenticated .report-screen,
+  body.app-authenticated .gis-screen {
+    padding-inline: 10px;
+  }
+
+  body.app-authenticated .table-responsive tbody tr:not(.group-row),
+  body.app-authenticated .table-responsive.module-card-list tbody tr:not(.group-row) {
+    padding: 9px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="title"] {
+    padding-right: 84px !important;
+    font-size: 13px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-role="header-meta"] {
+    right: 32px !important;
+    max-width: 66px !important;
+    font-size: 9.5px !important;
+  }
+
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="residence"],
+  body.app-authenticated .table-responsive tbody td[data-mobile-field="party"] {
+    grid-column: 1 / -1 !important;
+  }
+
+  .mobile-bottom-nav button {
+    font-size: 10px;
+  }
+
+  .mobile-bottom-nav i {
+    font-size: 22px;
+  }
+}
