@@ -1,0 +1,66 @@
+[
+  {
+    "width": 360,
+    "consoleErrors": []
+  },
+  {
+    "width": 375,
+    "consoleErrors": []
+  },
+  {
+    "width": 390,
+    "consoleErrors": []
+  },
+  {
+    "width": 412,
+    "consoleErrors": []
+  },
+  {
+    "width": 768,
+    "screen": "households",
+    "overflow": 0,
+    "overlap": true
+  },
+  {
+    "width": 768,
+    "screen": "persons",
+    "overflow": 0,
+    "overlap": true
+  },
+  {
+    "width": 768,
+    "consoleErrors": []
+  },
+  {
+    "width": 820,
+    "screen": "households",
+    "overflow": 0,
+    "overlap": true
+  },
+  {
+    "width": 820,
+    "screen": "persons",
+    "overflow": 0,
+    "overlap": true
+  },
+  {
+    "width": 820,
+    "consoleErrors": []
+  },
+  {
+    "width": 1024,
+    "screen": "households",
+    "overflow": 0,
+    "overlap": true
+  },
+  {
+    "width": 1024,
+    "screen": "persons",
+    "overflow": 0,
+    "overlap": true
+  },
+  {
+    "width": 1024,
+    "consoleErrors": []
+  }
+]
