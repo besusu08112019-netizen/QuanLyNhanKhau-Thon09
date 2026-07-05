@@ -301,10 +301,10 @@
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260703-person-table-1"></script>
+  <script src="assets/js/app.utf8.js?v=20260705-utf8-1"></script>
   <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
   <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
-  <script src="assets/js/admin.js?v=20260629-temporary-filter-3"></script>
+  <script src="assets/js/admin.utf8.js?v=20260705-utf8-1"></script>
   <script src="assets/js/import.js?v=20260630-import-final-1"></script>
   <script src="assets/js/admin-panel.js?v=20260630-phase2-uiux-1"></script>
   <script src="assets/js/admin-panel-bridge.js?v=20260630-final-bridge-title-1"></script>

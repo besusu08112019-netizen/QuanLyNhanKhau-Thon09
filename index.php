@@ -191,9 +191,11 @@ if (!str_starts_with($request->path(), '/api')) {
     $versionedAssets = [
         'assets/css/app.css',
         'assets/js/app.js',
+        'assets/js/app.utf8.js',
         'assets/js/csrf.js',
         'assets/js/session.js',
         'assets/js/admin.js',
+        'assets/js/admin.utf8.js',
         'assets/js/import.js',
         'assets/js/admin-panel.js',
         'assets/js/admin-panel-bridge.js',
