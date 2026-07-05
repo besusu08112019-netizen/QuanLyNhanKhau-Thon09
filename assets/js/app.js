@@ -309,6 +309,7 @@ async function logout() {
   localStorage.removeItem('thon09_token');
   localStorage.removeItem('thon09_user');
   localStorage.removeItem('thon09_screen');
+  document.dispatchEvent(new CustomEvent('thon09:auth-state', { detail: { authenticated: false } }));
   showLogin();
 }
 
@@ -319,6 +320,7 @@ function showApp() {
   renderTopbarUser();
   if (typeof window.ensureAdminScreens === 'function') window.ensureAdminScreens();
   switchScreen(App.screen);
+  document.dispatchEvent(new CustomEvent('thon09:auth-state', { detail: { authenticated: true } }));
 }
 
 function normalizeAppHeader(screen) {
@@ -1449,3 +1451,259 @@ window.loadGisMap = loadGisMap;
 window.filterHouseholdsByGisArea = filterHouseholdsByGisArea;
 window.focusGisArea = focusGisArea;
 window.deleteGisArea = deleteGisArea;
+
+/* Mobile/tablet UI system - active asset loaded by views/app.php. */
+(function () {
+  'use strict';
+
+  var MOBILE_QUERY = '(max-width: 1199.98px)';
+  var mq = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : { matches: false };
+  var activeSheet = null;
+
+  function q(selector, root) { return (root || document).querySelector(selector); }
+  function qa(selector, root) { return Array.prototype.slice.call((root || document).querySelectorAll(selector)); }
+  function isMobile() { return !!mq.matches; }
+  function hasSession() { return !!(localStorage.getItem('thon09_token') || (window.App && App.token)); }
+  function clean(value) { return value == null ? '' : String(value).trim(); }
+
+  function currentScreen() {
+    return (window.App && App.screen) || localStorage.getItem('thon09_screen') || 'dashboard';
+  }
+
+  function userLabel() {
+    if (window.App && App.user) return clean(App.user.email || App.user.username || App.user.name) || 'Tai khoan';
+    var raw = clean(q('#currentUser') && q('#currentUser').textContent);
+    return raw || 'Tai khoan';
+  }
+
+  function roleLabelMobile() {
+    if (window.App && App.user && typeof window.roleLabel === 'function') return window.roleLabel(App.user.role);
+    if (window.App && App.user) return clean(App.user.role);
+    return '';
+  }
+
+  function ensureUserMenu() {
+    var topbar = q('.topbar-meta');
+    if (!topbar || q('.mobile-user-menu-btn')) return;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'mobile-user-menu-btn';
+    button.setAttribute('aria-haspopup', 'true');
+    button.setAttribute('aria-expanded', 'false');
+    button.innerHTML = '<i class="fa-regular fa-user"></i><span>Tai khoan</span>';
+
+    var popover = document.createElement('div');
+    popover.className = 'mobile-user-popover';
+    popover.hidden = true;
+    popover.innerHTML = '<strong></strong><small></small><button type="button"><i class="fa-solid fa-right-from-bracket"></i><span>Dang xuat</span></button>';
+
+    button.addEventListener('click', function (event) {
+      event.preventDefault();
+      var open = popover.hidden;
+      popover.hidden = !open;
+      button.setAttribute('aria-expanded', open ? 'true' : 'false');
+      q('strong', popover).textContent = userLabel();
+      q('small', popover).textContent = roleLabelMobile();
+    });
+    q('button', popover).addEventListener('click', function () {
+      var logout = q('#logoutBtn');
+      if (logout) logout.click();
+      else if (typeof window.logout === 'function') window.logout();
+    });
+    document.addEventListener('click', function (event) {
+      if (popover.hidden || event.target.closest('.mobile-user-menu-btn,.mobile-user-popover')) return;
+      popover.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    });
+    topbar.appendChild(button);
+    topbar.appendChild(popover);
+  }
+
+  function ensureMobileChrome() {
+    if (!q('.mobile-bottom-nav')) {
+      var nav = document.createElement('nav');
+      nav.className = 'mobile-bottom-nav d-none';
+      nav.setAttribute('aria-label', 'Dieu huong nhanh');
+      nav.innerHTML = [
+        ['dashboard', 'fa-gauge-high', 'Tong quan'],
+        ['households', 'fa-house-chimney', 'Ho'],
+        ['persons', 'fa-users', 'Nhan khau'],
+        ['gis', 'fa-map-location-dot', 'GIS'],
+        ['reports', 'fa-chart-pie', 'Bao cao']
+      ].map(function (item) {
+        return '<button type="button" data-mobile-screen="' + item[0] + '"><i class="fa-solid ' + item[1] + '"></i><span>' + item[2] + '</span></button>';
+      }).join('');
+      document.body.appendChild(nav);
+    }
+    if (!q('.mobile-fab')) {
+      var fab = document.createElement('button');
+      fab.type = 'button';
+      fab.className = 'mobile-fab d-none';
+      document.body.appendChild(fab);
+    }
+    if (!document.body.dataset.mobileChromeBound) {
+      document.body.dataset.mobileChromeBound = '1';
+      document.addEventListener('click', function (event) {
+        var button = event.target.closest('.mobile-bottom-nav [data-mobile-screen]');
+        if (!button || typeof window.switchScreen !== 'function') return;
+        event.preventDefault();
+        window.switchScreen(button.dataset.mobileScreen);
+        closeFilterSheet();
+        window.setTimeout(syncMobileChrome, 0);
+      }, true);
+    }
+  }
+
+  function syncMobileChrome() {
+    var authenticated = hasSession();
+    qa('.mobile-bottom-nav,.mobile-fab').forEach(function (el) { el.classList.toggle('d-none', !authenticated || !isMobile()); });
+    if (!authenticated || !isMobile()) return;
+    var screen = currentScreen();
+    qa('.mobile-bottom-nav [data-mobile-screen]').forEach(function (button) {
+      button.classList.toggle('active', button.dataset.mobileScreen === screen);
+    });
+    var config = {
+      households: ['fa-plus', 'Them ho', function () { if (window.openHouseholdForm) window.openHouseholdForm(); }],
+      persons: ['fa-plus', 'Them NK', function () { if (window.openPersonForm) window.openPersonForm(); }],
+      gis: ['fa-draw-polygon', 'Ve khu vuc', function () { q('#gisDrawBtn') && q('#gisDrawBtn').click(); }]
+    }[screen];
+    var fab = q('.mobile-fab');
+    if (!fab) return;
+    fab.classList.toggle('d-none', !config);
+    if (!config) return;
+    fab.innerHTML = '<i class="fa-solid ' + config[0] + '"></i><span>' + config[1] + '</span>';
+    fab.onclick = config[2];
+  }
+
+  function ensureFilterSheet() {
+    var backdrop = q('.mobile-filter-sheet-backdrop');
+    var sheet = q('.mobile-filter-sheet');
+    if (backdrop && sheet) return { backdrop: backdrop, sheet: sheet };
+    backdrop = document.createElement('button');
+    backdrop.type = 'button';
+    backdrop.className = 'mobile-filter-sheet-backdrop';
+    backdrop.hidden = true;
+    backdrop.setAttribute('aria-label', 'Dong bo loc');
+    sheet = document.createElement('aside');
+    sheet.className = 'mobile-filter-sheet';
+    sheet.hidden = true;
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+    sheet.innerHTML = '<div class="sheet-handle" aria-hidden="true"></div><div class="sheet-head"><strong>Bo loc</strong><button type="button" aria-label="Dong"><i class="fa-solid fa-xmark"></i></button></div><div class="sheet-grid"></div>';
+    document.body.appendChild(backdrop);
+    document.body.appendChild(sheet);
+    backdrop.addEventListener('click', closeFilterSheet);
+    q('.sheet-head button', sheet).addEventListener('click', closeFilterSheet);
+    return { backdrop: backdrop, sheet: sheet };
+  }
+
+  function moveNodesToSheet(title, nodes) {
+    var pair = ensureFilterSheet();
+    var grid = q('.sheet-grid', pair.sheet);
+    grid.innerHTML = '';
+    activeSheet = [];
+    nodes.forEach(function (node) {
+      if (!node || node.classList.contains('mobile-filter-trigger')) return;
+      var marker = document.createComment('mobile-filter-source');
+      var hidden = node.classList.contains('d-none');
+      node.parentNode.insertBefore(marker, node);
+      node.classList.remove('d-none');
+      grid.appendChild(node);
+      activeSheet.push({ node: node, marker: marker, hidden: hidden });
+    });
+    q('.sheet-head strong', pair.sheet).textContent = title;
+  }
+
+  function openFilterSheet(title, nodes) {
+    if (!isMobile()) return;
+    closeFilterSheet(true);
+    moveNodesToSheet(title, nodes);
+    var pair = ensureFilterSheet();
+    pair.backdrop.hidden = false;
+    pair.sheet.hidden = false;
+    requestAnimationFrame(function () {
+      pair.backdrop.classList.add('is-open');
+      pair.sheet.classList.add('is-open');
+    });
+    document.body.classList.add('mobile-filter-open');
+  }
+
+  function closeFilterSheet(immediate) {
+    var backdrop = q('.mobile-filter-sheet-backdrop');
+    var sheet = q('.mobile-filter-sheet');
+    if (sheet) sheet.classList.remove('is-open');
+    if (backdrop) backdrop.classList.remove('is-open');
+    document.body.classList.remove('mobile-filter-open');
+    if (activeSheet) {
+      activeSheet.forEach(function (item) {
+        if (item.marker.parentNode) item.marker.parentNode.insertBefore(item.node, item.marker);
+        if (item.hidden) item.node.classList.add('d-none');
+        item.marker.remove();
+      });
+      activeSheet = null;
+    }
+    window.setTimeout(function () {
+      if (sheet) sheet.hidden = true;
+      if (backdrop) backdrop.hidden = true;
+    }, immediate ? 0 : 160);
+  }
+
+  function children(parent, skipSelector) {
+    if (!parent) return [];
+    return Array.prototype.slice.call(parent.children).filter(function (child) { return !skipSelector || !child.matches(skipSelector); });
+  }
+
+  function trigger(card, label) {
+    var button = q(':scope > .mobile-filter-trigger', card);
+    if (button) return button;
+    button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'mobile-filter-trigger';
+    button.innerHTML = '<i class="fa-solid fa-sliders"></i><span>' + label + '</span>';
+    card.appendChild(button);
+    return button;
+  }
+
+  function bindFilterSheets() {
+    var householdCard = q('.household-filter-card');
+    var householdGrid = q('.household-filter-grid');
+    if (householdCard && householdGrid && !householdCard.dataset.mobileFilterBound) {
+      householdCard.dataset.mobileFilterBound = '1';
+      trigger(householdCard, 'Bo loc').addEventListener('click', function () {
+        openFilterSheet('Bo loc ho gia dinh', children(householdGrid, '.household-search-field'));
+      });
+    }
+    var personCard = q('.person-search-card');
+    var personGrid = q('.person-quick-filter-grid');
+    if (personCard && personGrid && !personCard.dataset.mobileFilterBound) {
+      personCard.dataset.mobileFilterBound = '1';
+      trigger(personCard, 'Bo loc').addEventListener('click', function () {
+        var nodes = children(personGrid);
+        var advanced = q('#personAdvancedFilters');
+        openFilterSheet('Bo loc nhan khau', advanced ? nodes.concat([advanced]) : nodes);
+      });
+    }
+    var reportCard = q('.report-filter-card');
+    var reportGrid = q('.report-filter-grid');
+    if (reportCard && reportGrid && !reportCard.dataset.mobileFilterBound) {
+      reportCard.dataset.mobileFilterBound = '1';
+      trigger(reportCard, 'Bo loc').addEventListener('click', function () {
+        openFilterSheet('Bo loc bao cao', children(reportGrid, '.report-type-field'));
+      });
+    }
+  }
+
+  function bootMobileUi() {
+    ensureUserMenu();
+    ensureMobileChrome();
+    bindFilterSheets();
+    syncMobileChrome();
+  }
+
+  window.thon09BootMobileUi = bootMobileUi;
+  document.addEventListener('DOMContentLoaded', bootMobileUi);
+  document.addEventListener('thon09:auth-state', function () { window.setTimeout(bootMobileUi, 0); });
+  document.addEventListener('thon09:screen-change', function () { window.setTimeout(bootMobileUi, 0); });
+  window.addEventListener('resize', function () { syncMobileChrome(); if (!isMobile()) closeFilterSheet(true); }, { passive: true });
+  if (document.readyState !== 'loading') bootMobileUi();
+})();

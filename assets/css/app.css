@@ -2629,3 +2629,451 @@ body.sidebar-open {
 .gis-popup-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 @media (max-width: 1024px) { .gis-screen { padding: 16px; } .gis-layout { grid-template-columns: 1fr; } .gis-panel { max-height: none; order: 2; } .gis-map-card { order: 1; } .gis-map { height: 58vh; min-height: 420px; } }
 @media (max-width: 600px) { .gis-screen { padding: 12px; } .gis-map-toolbar { flex-direction: column; align-items: stretch; } .gis-status-pill { text-align: center; } .gis-map { height: 54vh; min-height: 340px; border-radius: 14px; } .gis-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Sprint mobile/tablet audit final layer - desktop >=1200px untouched. */
+@media (max-width: 1199.98px) {
+  :root {
+    --m-bg: #f4f7f5;
+    --m-card: #ffffff;
+    --m-ink: #14211a;
+    --m-muted: #667085;
+    --m-line: #dfe8e2;
+    --m-green: #0b6b3a;
+    --m-green-soft: #eaf6ef;
+    --m-radius: 12px;
+    --m-nav-h: 68px;
+    --m-touch: 44px;
+  }
+
+  html,
+  body,
+  .app-shell,
+  .main-area {
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body { background: var(--m-bg); font-size: 14px; }
+  button, .btn, .form-control, .form-select { min-height: var(--m-touch); }
+  .btn, .form-control, .form-select, .content-card, .modal-content { border-radius: var(--m-radius); }
+  .form-control, .form-select { font-size: 16px; }
+
+  .topbar.gov-topbar {
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 52px !important;
+    padding: max(6px, env(safe-area-inset-top)) 12px 6px !important;
+    border-bottom: 1px solid var(--m-line);
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(10px);
+  }
+
+  #sidebarToggle {
+    width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center;
+    border-radius: 11px !important;
+  }
+
+  .topbar-title-block {
+    min-width: 0;
+    min-height: 0 !important;
+    display: block !important;
+  }
+
+  .breadcrumb-trail {
+    display: block;
+    margin: 0 !important;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--m-ink) !important;
+    font-size: 13px !important;
+    font-weight: 800;
+    line-height: 1.2 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap !important;
+  }
+
+  .topbar-meta {
+    grid-column: auto !important;
+    width: auto !important;
+    margin-left: 0 !important;
+    display: contents !important;
+  }
+
+  .topbar-clock,
+  .topbar-user,
+  #logoutBtn { display: none !important; }
+
+  .gov-notification-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center;
+    border-radius: 12px !important;
+  }
+
+  .mobile-user-menu-btn {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 1px solid var(--m-line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--m-green);
+    display: inline-grid;
+    place-items: center;
+  }
+  .mobile-user-menu-btn span { display: none; }
+  .mobile-user-popover {
+    position: fixed;
+    top: calc(54px + env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 3060;
+    width: min(280px, calc(100vw - 20px));
+    padding: 12px;
+    border: 1px solid var(--m-line);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 22px 55px rgba(15,23,42,.2);
+  }
+  .mobile-user-popover[hidden] { display: none !important; }
+  .mobile-user-popover strong,
+  .mobile-user-popover small { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-user-popover strong { color: var(--m-ink); font-size: 13px; font-weight: 850; }
+  .mobile-user-popover small { color: var(--m-muted); font-size: 12px; font-weight: 700; }
+  .mobile-user-popover button { width: 100%; margin-top: 10px; border: 0; border-radius: 11px; background: #fff1f2; color: #b42318; font-weight: 800; }
+
+  .screen:not(.gis-screen),
+  .dashboard-overview-screen,
+  .person-management-screen,
+  .report-screen {
+    padding: 10px 10px calc(var(--m-nav-h) + 30px + env(safe-area-inset-bottom)) !important;
+  }
+  .gis-screen { padding: 10px 10px calc(var(--m-nav-h) + 24px + env(safe-area-inset-bottom)) !important; }
+
+  .content-card,
+  .dashboard-panel,
+  .dashboard-kpi,
+  .metric-card {
+    padding: 12px !important;
+    border: 1px solid var(--m-line) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 6px 16px rgba(15,23,42,.055) !important;
+  }
+
+  .dashboard-kpi-grid,
+  .dashboard-chart-grid,
+  .action-grid,
+  .gis-layout { gap: 10px !important; }
+  .dashboard-panel-head h3,
+  .module-list-head h3,
+  .person-list-head h3,
+  .admin-heading h3 { font-size: 15px !important; line-height: 1.25 !important; margin: 0; }
+  .dashboard-sync-note, .module-list-head span, .person-list-head span { font-size: 12px !important; }
+
+  .module-action-row,
+  .person-action-row { display: none !important; }
+
+  .module-filter-card,
+  .person-search-card,
+  .report-filter-card {
+    position: relative;
+    padding: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .household-filter-grid,
+  .person-search-row,
+  .report-filter-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    align-items: end !important;
+  }
+
+  .household-search-field,
+  .person-search-field,
+  .report-type-field { grid-column: 1 !important; min-width: 0; }
+  .person-quick-filter-grid,
+  .household-filter-grid > :not(.household-search-field),
+  .report-filter-grid > :not(.report-type-field) { display: none !important; }
+  .household-search-field label,
+  .person-search-field label,
+  .report-type-field label { display: none !important; }
+  .module-search-input-wrap,
+  .person-search-input-wrap,
+  .gis-search-wrap { min-width: 0; }
+
+  .mobile-filter-trigger {
+    grid-column: 2;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid #b9dec8;
+    border-radius: 12px;
+    background: var(--m-green-soft);
+    color: var(--m-green);
+    display: inline-grid;
+    place-items: center;
+    font-weight: 850;
+  }
+  .mobile-filter-trigger span { display: none; }
+
+  .mobile-filter-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 3040;
+    border: 0;
+    background: rgba(15,23,42,.36);
+    opacity: 0;
+    transition: opacity .16s ease;
+  }
+  .mobile-filter-sheet-backdrop.is-open { opacity: 1; }
+  .mobile-filter-sheet-backdrop[hidden] { display: none !important; }
+  .mobile-filter-sheet {
+    position: fixed;
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 3050;
+    max-height: min(76dvh, 620px);
+    overflow: auto;
+    padding: 12px;
+    border: 1px solid var(--m-line);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 26px 70px rgba(15,23,42,.24);
+    transform: translateY(110%);
+    transition: transform .18s ease;
+  }
+  .mobile-filter-sheet.is-open { transform: translateY(0); }
+  .sheet-handle { width: 44px; height: 4px; margin: 0 auto 10px; border-radius: 999px; background: #d0d5dd; }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .sheet-head strong { color: var(--m-ink); font-size: 15px; font-weight: 850; }
+  .sheet-head button { width: 40px; min-height: 40px; border: 0; border-radius: 11px; background: #f2f4f7; color: #344054; }
+  .sheet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .sheet-grid > * { display: block !important; min-width: 0; }
+  .sheet-grid label { margin-bottom: 4px; color: var(--m-muted); font-size: 11px; font-weight: 800; }
+  .sheet-grid .person-filter-actions,
+  .sheet-grid .person-advanced-footer { grid-column: 1 / -1; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0; }
+  .sheet-grid #personAdvancedFilters { grid-column: 1 / -1; }
+  .sheet-grid .person-advanced-grid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 3000;
+    min-height: 60px;
+    padding: 6px;
+    border: 1px solid rgba(208, 213, 221, .95);
+    border-radius: 18px;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 18px 44px rgba(15,23,42,.16);
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .mobile-bottom-nav.d-none,
+  .mobile-fab.d-none { display: none !important; }
+  .mobile-bottom-nav button {
+    min-width: 0;
+    min-height: 48px;
+    padding: 4px 2px;
+    border: 0;
+    border-radius: 13px;
+    background: transparent;
+    color: #667085;
+    display: grid;
+    place-items: center;
+    gap: 1px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.05;
+  }
+  .mobile-bottom-nav button i { font-size: 16px; }
+  .mobile-bottom-nav button.active { background: var(--m-green-soft); color: var(--m-green); }
+
+  .mobile-fab {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(var(--m-nav-h) + max(18px, env(safe-area-inset-bottom)));
+    z-index: 2990;
+    max-width: calc(100vw - 24px);
+    min-height: 46px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--m-green);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 850;
+    box-shadow: 0 14px 32px rgba(11,107,58,.28);
+  }
+  .mobile-fab span { max-width: 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .module-list-card,
+  .person-list-card { padding: 10px !important; }
+  .module-list-head,
+  .person-list-head { margin-bottom: 8px !important; gap: 8px !important; align-items: center !important; }
+  .person-page-size { width: 78px !important; min-height: 38px !important; font-size: 12px !important; }
+
+  #householdRows,
+  #personRows,
+  .table-responsive tbody {
+    gap: 8px !important;
+  }
+  .table-responsive tbody tr:not(.group-row):not(.ds-group-row) {
+    padding: 9px 10px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 5px 14px rgba(15,23,42,.05) !important;
+  }
+  .table-responsive tbody td[data-mobile-role='title'] {
+    padding-right: 94px !important;
+    min-height: 24px !important;
+    font-size: 13.5px !important;
+    line-height: 1.2 !important;
+    text-transform: none !important;
+  }
+  .table-responsive tbody td[data-mobile-role='header-meta'] {
+    top: 9px !important;
+    right: 34px !important;
+    max-width: 84px !important;
+    min-height: 22px !important;
+    padding: 3px 7px !important;
+    font-size: 10px !important;
+  }
+  .table-responsive tbody td[data-mobile-role='address'] {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.28 !important;
+  }
+  .table-responsive tbody td[data-mobile-role='address']::before { content: attr(data-label) !important; }
+  .table-responsive tbody td[data-mobile-role='stat'] {
+    min-height: 38px !important;
+    padding: 5px !important;
+    font-size: 13px !important;
+  }
+  .table-responsive tbody td[data-mobile-role='meta'],
+  .table-responsive tbody td[data-mobile-role='badge'] {
+    min-height: 24px !important;
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+  }
+  .table-responsive tbody td[data-mobile-role='badge'] .badge,
+  .table-responsive tbody td[data-mobile-role='badge'] .badge-soft,
+  .table-responsive tbody td[data-mobile-role='badge'] .person-badge,
+  .table-responsive tbody td[data-mobile-role='badge'] span {
+    min-height: 22px !important;
+    padding: 3px 7px !important;
+    font-size: 10.5px !important;
+  }
+  .table-responsive tbody td:not([data-mobile-role='title']):not([data-mobile-role='header-meta']):not([data-mobile-role='meta']):not([data-mobile-role='address']):not([data-mobile-role='stat']):not([data-mobile-role='badge']):not([data-mobile-role='actions']):not([data-mobile-role='select']) {
+    padding: 0 !important;
+    font-size: 11.5px !important;
+  }
+  .table-responsive tbody td::before,
+  .table-responsive tbody td[data-mobile-role='badge']::before { font-size: 9px !important; }
+  .table-responsive tbody td[data-mobile-role='actions'],
+  .table-responsive tbody td.text-end:has(button),
+  .table-responsive tbody td.text-end:has(.btn) {
+    gap: 5px !important;
+    padding-top: 6px !important;
+  }
+  .table-responsive tbody td[data-mobile-role='actions'] .btn,
+  .table-responsive tbody td[data-mobile-role='actions'] button,
+  .table-responsive tbody td.text-end .btn,
+  .table-responsive tbody td.text-end button {
+    min-height: 40px !important;
+    padding: 6px 2px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+  .table-responsive tbody td[data-mobile-role='actions'] [data-mobile-action]::before,
+  .table-responsive tbody td.text-end [data-mobile-action]::before { content: none !important; }
+
+  .modal-dialog {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+  .modal-content {
+    max-height: calc(100dvh - 16px) !important;
+    overflow: hidden !important;
+    border-radius: 14px !important;
+  }
+  .modal-header,
+  .modal-footer { padding: 10px 12px !important; }
+  .modal-title { font-size: 15px !important; font-weight: 850; }
+  .modal-body { padding: 12px !important; overflow: auto !important; -webkit-overflow-scrolling: touch; }
+  .modal-footer { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; }
+  .modal-footer .btn { width: 100%; margin: 0 !important; }
+  .modal-body .row { --bs-gutter-x: 10px; --bs-gutter-y: 10px; }
+  .modal-body .form-label { margin-bottom: 4px; font-size: 12px; font-weight: 750; color: var(--m-muted); }
+
+  .gis-layout { grid-template-columns: 1fr !important; min-height: auto !important; }
+  .gis-panel { order: 2; max-height: none !important; gap: 10px !important; }
+  .gis-map-card { order: 1; padding: 10px !important; }
+  .gis-map { height: min(58dvh, 520px) !important; min-height: 340px !important; border-radius: 12px !important; }
+  .gis-map-toolbar { gap: 8px !important; margin-bottom: 8px !important; }
+  .gis-status-pill { padding: 6px 8px !important; font-size: 11px !important; }
+}
+
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .screen:not(.gis-screen),
+  .dashboard-overview-screen,
+  .person-management-screen,
+  .report-screen { padding: 14px 14px calc(var(--m-nav-h) + 34px + env(safe-area-inset-bottom)) !important; }
+  .dashboard-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .dashboard-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .dashboard-panel-large { grid-column: span 2; }
+  #householdRows,
+  #personRows,
+  .table-responsive tbody { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .sheet-grid,
+  .sheet-grid .person-advanced-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mobile-bottom-nav { left: 50%; right: auto; width: min(620px, calc(100vw - 24px)); transform: translateX(-50%); }
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-kpi-grid,
+  .dashboard-chart-grid,
+  #householdRows,
+  #personRows,
+  .table-responsive tbody { grid-template-columns: 1fr !important; }
+  .dashboard-kpi { min-height: 72px !important; }
+  .dashboard-kpi-value strong { font-size: 23px !important; }
+  .module-list-head,
+  .person-list-head { flex-direction: row !important; }
+  .sheet-grid,
+  .sheet-grid .person-advanced-grid { grid-template-columns: 1fr; }
+  .gis-map-toolbar { flex-direction: column; align-items: stretch; }
+}
+
+@media (max-width: 390px) {
+  .topbar.gov-topbar { grid-template-columns: 40px minmax(0, 1fr) 38px 38px; padding-inline: 8px !important; }
+  .breadcrumb-trail { font-size: 12px !important; }
+  .screen:not(.gis-screen), .dashboard-overview-screen, .person-management-screen, .report-screen { padding-inline: 8px !important; }
+  .content-card, .dashboard-panel, .dashboard-kpi, .metric-card { padding: 10px !important; }
+  .mobile-bottom-nav { left: max(6px, env(safe-area-inset-left)); right: max(6px, env(safe-area-inset-right)); bottom: max(6px, env(safe-area-inset-bottom)); padding: 5px; }
+  .mobile-bottom-nav button { font-size: 9.5px; }
+  .table-responsive tbody tr:not(.group-row):not(.ds-group-row) { padding: 8px !important; }
+  .table-responsive tbody td[data-mobile-role='title'] { padding-right: 84px !important; font-size: 13px !important; }
+  .table-responsive tbody td[data-mobile-role='header-meta'] { max-width: 72px !important; }
+}
