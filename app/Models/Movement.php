@@ -126,10 +126,6 @@ final class Movement extends BaseModel
     }
 
 
-    public function page(array $filters = []): array
-    {
-        return $this->paginate($filters);
-    }
 
     public function find(int $id): ?array
     {
