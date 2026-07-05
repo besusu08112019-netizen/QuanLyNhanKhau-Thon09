@@ -1,0 +1,226 @@
+{
+  "commit": "13786561c71c6e14d13edeb53c596d7ff4ec93d0",
+  "checkedAt": "2026-07-05T03:14:02.232Z",
+  "targets": [
+    {
+      "target": "desktop",
+      "login": "PASS",
+      "modules": [
+        {
+          "module": "Dashboard",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-dashboard.png",
+          "api": [
+            "200 /api/dashboard/summary"
+          ]
+        },
+        {
+          "module": "Household",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-household.png",
+          "api": [
+            "200 /api/households"
+          ]
+        },
+        {
+          "module": "Person",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-person.png",
+          "api": [
+            "200 /api/persons"
+          ]
+        },
+        {
+          "module": "Person Detail Popup",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-person-detail-popup.png",
+          "api": [
+            "200 /api/persons/8"
+          ]
+        },
+        {
+          "module": "GIS",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-gis.png",
+          "api": [
+            "200 /api/gis/areas",
+            "200 /api/gis/households"
+          ]
+        },
+        {
+          "module": "Reports",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-reports.png",
+          "api": []
+        },
+        {
+          "module": "User Management",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-user-management.png",
+          "api": []
+        },
+        {
+          "module": "Logs",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-logs.png",
+          "api": []
+        },
+        {
+          "module": "Backup",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "desktop-backup.png",
+          "api": []
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "target": "mobile-390",
+      "login": "PASS",
+      "modules": [
+        {
+          "module": "Dashboard",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-dashboard.png",
+          "api": [
+            "200 /api/dashboard/summary"
+          ]
+        },
+        {
+          "module": "Household",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-household.png",
+          "api": [
+            "200 /api/households"
+          ]
+        },
+        {
+          "module": "Person",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-person.png",
+          "api": [
+            "200 /api/persons"
+          ]
+        },
+        {
+          "module": "Person Detail Popup",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-person-detail-popup.png",
+          "api": [
+            "200 /api/persons/8"
+          ]
+        },
+        {
+          "module": "GIS",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-gis.png",
+          "api": [
+            "200 /api/gis/areas",
+            "200 /api/gis/households"
+          ]
+        },
+        {
+          "module": "Reports",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-reports.png",
+          "api": []
+        },
+        {
+          "module": "User Management",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-user-management.png",
+          "api": [
+            "200 /api/gis/households"
+          ]
+        },
+        {
+          "module": "Logs",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-logs.png",
+          "api": []
+        },
+        {
+          "module": "Backup",
+          "status": "PASS",
+          "visible": true,
+          "hasText": true,
+          "mojibake": false,
+          "horizontalOverflow": false,
+          "screenshot": "mobile-390-backup.png",
+          "api": []
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  ]
+}
