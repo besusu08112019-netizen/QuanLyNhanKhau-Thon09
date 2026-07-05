@@ -47,12 +47,12 @@ final class FileAttachment extends BaseModel
         }
 
         $where = ['f.entity_id = :entity_id'];
-        $params = ['entity_type' => $entityType, 'module' => $entityType, 'entity_id' => $entityId];
+        $params = ['entity_type' => $entityType, 'entity_id' => $entityId];
         if ($this->columnExists('file_attachments', 'status')) {
             $where[] = 'f.status = "ACTIVE"';
         }
         if ($this->columnExists('file_attachments', 'entity_type')) {
-            $where[] = '(f.entity_type = :entity_type OR f.module = :module)';
+            $where[] = 'COALESCE(f.entity_type, f.module) = :entity_type';
         } else {
             $where[] = 'f.module = :entity_type';
         }
