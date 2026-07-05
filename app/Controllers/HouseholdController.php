@@ -49,7 +49,7 @@ final class HouseholdController extends BaseController
         $row = $this->households->create($input, (int) $user['id']);
         $this->movementService->afterHouseholdCreated($row, $input, (int) $user['id']);
         $row = $this->households->find((int) $row['id']) ?: $row;
-        $this->audit($user, 'household', 'create', 'Tạo hộ dân', $row['id']);
+        $this->audit($user, 'household', 'create', 'Tạo hộ dân', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -62,7 +62,7 @@ final class HouseholdController extends BaseController
         $row = $this->households->update((int) $id, $input, (int) $user['id']);
         $this->movementService->afterHouseholdUpdated($before, $row, $input, (int) $user['id']);
         $row = $this->households->find((int) $id) ?: $row;
-        $this->audit($user, 'household', 'update', 'Cập nhật hộ dân và ghi biến động dân cư', $id);
+        $this->audit($user, 'household', 'update', 'Cập nhật hộ dân và ghi biến động dân cư', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -85,7 +85,7 @@ final class HouseholdController extends BaseController
             if ($db->inTransaction()) $db->rollBack();
             throw $e;
         }
-        $this->audit($user, 'household', 'delete', 'Kết thúc hộ dân', $id);
+        $this->audit($user, 'household', 'delete', 'Kết thúc hộ dân', $id, ['before' => $before, 'after' => $after ?? null]);
         $this->ok(['id' => (int) $id]);
     }
 
@@ -115,7 +115,7 @@ final class HouseholdController extends BaseController
             throw $e;
         }
 
-        $this->audit($user, 'household', 'delete', 'Kết thúc hàng loạt hộ gia đình', null, ['ids' => $ids, 'deleted' => $deleted]);
+        $this->audit($user, 'household', 'delete', 'Kết thúc hàng loạt hộ gia đình', null, ['ids' => $ids, 'deleted' => $deleted, 'before' => 'bulk_households']);
         $this->ok(['success' => $deleted, 'errors' => []]);
     }
 }

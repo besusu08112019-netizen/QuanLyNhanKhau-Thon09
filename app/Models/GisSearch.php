@@ -31,6 +31,7 @@ class GisSearch extends BaseModel
                     h.location_accuracy,
                     h.location_source,
                     h.location_updated_at,
+                    h.status,
                     h.poor_household,
                     h.near_poor_household,
                     h.meritorious_family,
@@ -41,7 +42,8 @@ class GisSearch extends BaseModel
                     CASE
                         WHEN h.household_code LIKE :rank_code THEN 0
                         WHEN h.head_citizen_name LIKE :rank_head THEN 1
-                        ELSE 2
+                        WHEN h.address LIKE :rank_address THEN 2
+                        ELSE 3
                     END AS match_rank
                 FROM households h
                 LEFT JOIN v_household_member_counts v ON v.household_id = h.id
@@ -49,6 +51,7 @@ class GisSearch extends BaseModel
                   AND (
                     h.household_code LIKE :household_code
                     OR h.head_citizen_name LIKE :head_name
+                    OR h.address LIKE :address
                     OR EXISTS (
                         SELECT 1
                         FROM citizens c
@@ -63,8 +66,10 @@ class GisSearch extends BaseModel
         $rows = $this->fetchAll($sql, [
             'rank_code' => $prefix,
             'rank_head' => $prefix,
+            'rank_address' => $prefix,
             'household_code' => $like,
             'head_name' => $like,
+            'address' => $like,
             'citizen_name' => $like,
         ]);
 
@@ -92,8 +97,23 @@ class GisSearch extends BaseModel
             'total_members' => (int) ($row['total_members'] ?? 0),
             'at_home_count' => (int) ($row['at_home_count'] ?? 0),
             'away_count' => (int) ($row['away_count'] ?? 0),
+            'residency_status' => $this->residencyStatus($row),
+            'status' => (string) ($row['status'] ?? ''),
             'household_type' => $this->householdType($row),
         ];
+    }
+
+    private function residencyStatus(array $row): string
+    {
+        $atHome = (int) ($row['at_home_count'] ?? 0);
+        $away = (int) ($row['away_count'] ?? 0);
+        if ($atHome > 0 && $away > 0) {
+            return 'Có người đi vắng';
+        }
+        if ($away > 0) {
+            return 'Tạm vắng';
+        }
+        return 'Thường trú';
     }
 
     private function householdType(array $row): string

@@ -36,6 +36,7 @@ final class GisHouseholdLocation extends BaseModel
         $rows = $this->fetchAll(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
                 h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
+                h.status,
                 h.poor_household, h.near_poor_household, h.meritorious_family, h.disabled_household,
                 COALESCE(v.total_members, 0) AS total_members,
                 COALESCE(v.at_home_count, 0) AS at_home_count,
@@ -193,8 +194,19 @@ final class GisHouseholdLocation extends BaseModel
             'total_members' => (int) ($row['total_members'] ?? 0),
             'at_home_count' => (int) ($row['at_home_count'] ?? 0),
             'away_count' => (int) ($row['away_count'] ?? 0),
+            'residency_status' => $this->residencyStatus($row),
+            'status' => (string) ($row['status'] ?? ''),
             'household_type' => $this->householdType($row),
         ];
+    }
+
+    private function residencyStatus(array $row): string
+    {
+        $atHome = (int) ($row['at_home_count'] ?? 0);
+        $away = (int) ($row['away_count'] ?? 0);
+        if ($atHome > 0 && $away > 0) return 'Có người đi vắng';
+        if ($away > 0) return 'Tạm vắng';
+        return 'Thường trú';
     }
 
     private function householdType(array $row): string

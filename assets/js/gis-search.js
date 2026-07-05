@@ -8,6 +8,10 @@
     results: [],
     marker: null,
     polygonHighlight: null,
+    userMarker: null,
+    routeLine: null,
+    routePopup: null,
+    activeTarget: null,
   };
 
   function qs(selector, root = document) {
@@ -119,6 +123,7 @@
       return;
     }
 
+    state.activeTarget = item;
     const latLng = [Number(item.latitude), Number(item.longitude)];
     const focused = typeof window.thon09GisFocusHouseholdMarker === 'function'
       ? window.thon09GisFocusHouseholdMarker(item)
@@ -149,6 +154,82 @@
       throw new Error(json?.error?.message || json?.message || 'Không tìm kiếm được GIS');
     }
     return json.data?.items || json.items || [];
+  }
+
+  function distanceMeters(a, b) {
+    const radius = 6371000;
+    const toRad = value => Number(value) * Math.PI / 180;
+    const dLat = toRad(b[0] - a[0]);
+    const dLng = toRad(b[1] - a[1]);
+    const lat1 = toRad(a[0]);
+    const lat2 = toRad(b[0]);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return 2 * radius * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+
+  function routeSummary(meters) {
+    const distance = meters >= 1000 ? (meters / 1000).toFixed(2) + ' km' : Math.round(meters) + ' m';
+    const minutes = Math.max(1, Math.round((meters / 1000) / 4.5 * 60));
+    return { distance, eta: minutes + ' ph\u00fat' };
+  }
+
+  function clearRoute() {
+    const map = mapInstance();
+    if (!map) return;
+    if (state.userMarker) map.removeLayer(state.userMarker);
+    if (state.routeLine) map.removeLayer(state.routeLine);
+    if (state.routePopup) map.removeLayer(state.routePopup);
+    state.userMarker = null;
+    state.routeLine = null;
+    state.routePopup = null;
+  }
+
+  function routeTo(item) {
+    const map = mapInstance();
+    if (!map || !window.L) {
+      showToast('B\u1ea3n \u0111\u1ed3 ch\u01b0a s\u1eb5n s\u00e0ng.', 'warning');
+      return;
+    }
+    if (!item || item.latitude == null || item.longitude == null) {
+      showToast('H\u1ed9 n\u00e0y ch\u01b0a c\u00f3 t\u1ecda \u0111\u1ed9 tr\u00ean b\u1ea3n \u0111\u1ed3.', 'warning');
+      return;
+    }
+    if (!window.isSecureContext) {
+      showToast('GPS ch\u1ec9 ho\u1ea1t \u0111\u1ed9ng tr\u00ean HTTPS ho\u1eb7c localhost.', 'warning');
+      return;
+    }
+    if (!navigator.geolocation) {
+      showToast('Thi\u1ebft b\u1ecb kh\u00f4ng h\u1ed7 tr\u1ee3 GPS.', 'warning');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(position => {
+      const from = [Number(position.coords.latitude), Number(position.coords.longitude)];
+      const to = [Number(item.latitude), Number(item.longitude)];
+      const meters = distanceMeters(from, to);
+      const summary = routeSummary(meters);
+      clearRoute();
+      state.userMarker = window.L.circleMarker(from, {
+        radius: 7,
+        color: '#2563eb',
+        weight: 3,
+        fillColor: '#60a5fa',
+        fillOpacity: 0.85,
+      }).addTo(map).bindPopup('V\u1ecb tr\u00ed hi\u1ec7n t\u1ea1i');
+      state.routeLine = window.L.polyline([from, to], {
+        color: '#2563eb',
+        weight: 5,
+        opacity: 0.85,
+        dashArray: '8 8',
+      }).addTo(map);
+      state.routePopup = window.L.popup({ closeButton: true, autoClose: false })
+        .setLatLng(to)
+        .setContent('<div class="gis-route-popup"><strong>' + escapeHtml(item.household_code || '') + '</strong><br>Kho\u1ea3ng c\u00e1ch: <b>' + summary.distance + '</b><br>Th\u1eddi gian d\u1ef1 ki\u1ebfn: <b>' + summary.eta + '</b></div>')
+        .openOn(map);
+      map.fitBounds(window.L.latLngBounds([from, to]), { padding: [42, 42], maxZoom: 17 });
+    }, error => {
+      const denied = error && error.code === error.PERMISSION_DENIED;
+      showToast(denied ? 'B\u1ea1n \u0111\u00e3 t\u1eeb ch\u1ed1i quy\u1ec1n v\u1ecb tr\u00ed GPS.' : 'Kh\u00f4ng l\u1ea5y \u0111\u01b0\u1ee3c v\u1ecb tr\u00ed hi\u1ec7n t\u1ea1i.', 'warning');
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 });
   }
 
   function renderResults(box, items) {
@@ -254,6 +335,14 @@
       if (!box.contains(event.target)) list.hidden = true;
     });
   }
+
+
+  window.thon09GisRouteToHousehold = function (id) {
+    const key = String(id || '');
+    const item = state.results.find(row => String(row.id) === key) || (state.activeTarget && String(state.activeTarget.id) === key ? state.activeTarget : null) || (typeof window.thon09GisGetHouseholdMarkerRow === 'function' ? window.thon09GisGetHouseholdMarkerRow(id) : null);
+    if (item) routeTo(item);
+    else showToast('Vui l\u00f2ng ch\u1ecdn h\u1ed9 tr\u00ean b\u1ea3n \u0111\u1ed3 tr\u01b0\u1edbc khi ch\u1ec9 \u0111\u01b0\u1eddng.', 'warning');
+  };
 
   function boot() {
     mount();

@@ -29,6 +29,8 @@
       || window.CSRF_TOKEN
       || '';
     if (token) headers['X-CSRF-TOKEN'] = token;
+    const bearer = window.App?.token || localStorage.getItem('thon09_token') || '';
+    if (bearer) headers.Authorization = 'Bearer ' + bearer;
     return headers;
   }
 
@@ -171,8 +173,11 @@
   async function uploadPhoto(entityId) {
     if (!currentFile || !entityId) return;
     const formData = new FormData();
-    formData.append('photo', currentFile);
-    await fetchJson(`/api/households/${entityId}/photo`, {
+    formData.append('module', 'household');
+    formData.append('entityId', String(entityId));
+    formData.append('fileType', 'PHOTO');
+    formData.append('file', currentFile);
+    await fetchJson('/api/files', {
       method: 'POST',
       body: formData,
     });
@@ -181,10 +186,13 @@
 
   async function deletePhoto(entityId) {
     if (!removeExisting || !entityId) return;
-    await fetchJson(`/api/households/${entityId}/photo`, { method: 'DELETE' });
+    const files = await fetchJson('/api/files?module=household&entityId=' + encodeURIComponent(entityId));
+    const photos = (files.data || files || []).filter(file => String(file.file_type || '').toUpperCase() === 'PHOTO');
+    for (const file of photos) {
+      await fetchJson('/api/files/' + encodeURIComponent(file.id), { method: 'DELETE' });
+    }
     removeExisting = false;
   }
-
   function enhancePhotoField() {
     if (!isHouseholdFormVisible()) return;
     const fileInput = qs('#householdPhoto') || qs('[name="photo"]') || qs('input[type="file"][accept*="image"]');

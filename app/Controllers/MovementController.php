@@ -32,7 +32,7 @@ final class MovementController extends BaseController
     {
         $user = $this->requirePermission('movement', 'create');
         $row = $this->movements->create($this->input(), (int) $user['id']);
-        $this->audit($user, 'movement', 'create', 'Tạo biến động nhân khẩu', $row['id']);
+        $this->audit($user, 'movement', 'create', 'Tạo biến động nhân khẩu', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 

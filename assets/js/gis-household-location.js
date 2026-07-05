@@ -273,13 +273,15 @@
         '<dt>Chủ hộ</dt><dd>' + escapeHtml(row.head_citizen_name) + '</dd>' +
         '<dt>Địa chỉ</dt><dd>' + escapeHtml(row.address) + '</dd>' +
         '<dt>Nhân khẩu</dt><dd>' + Number(row.total_members || 0).toLocaleString('vi-VN') + '</dd>' +
+        '<dt>C\u01b0 tr\u00fa</dt><dd>' + escapeHtml(row.residency_status || 'Th\u01b0\u1eddng tr\u00fa') + '</dd>' +
         '<dt>Điện thoại</dt><dd>' + escapeHtml(row.phone || '') + '</dd>' +
         '<dt>Diện hộ</dt><dd>' + escapeHtml(row.household_type || '') + '</dd>' +
       '</dl>' +
       '<div class="gis-household-popup-actions">' +
-        '<button class="btn btn-outline-secondary" type="button" onclick="thon09GisOpenHousehold(' + row.id + ')">Xem</button>' +
+        '<button class="btn btn-outline-secondary" type="button" onclick="thon09GisOpenHousehold(' + row.id + ')">M\u1edf h\u1ed3 s\u01a1 h\u1ed9</button>' +
         '<button class="btn btn-outline-primary" type="button" onclick="thon09GisEditHousehold(' + row.id + ')">Sửa</button>' +
         '<button class="btn btn-outline-success" type="button" onclick="thon09GisRelocateHousehold(' + row.id + ')">Định vị lại</button>' +
+        '<button class="btn btn-success" type="button" onclick="thon09GisRouteToHousehold(' + row.id + ')">Ch\u1ec9 \u0111\u01b0\u1eddng</button>' +
       '</div>' +
     '</div>';
   }
@@ -319,6 +321,7 @@
           marker.setIcon(markerIcon(true));
         });
         marker.addTo(state.layer);
+        marker.__thon09HouseholdRow = row;
         state.markers.set(String(row.id), marker);
       });
       if (search && state.markers.size) {
@@ -361,6 +364,36 @@
     }
     setInterval(bindMove, 1000);
   }
+
+
+
+  window.thon09GisGetHouseholdMarkerRow = function (id) {
+    const marker = state.markers.get(String(id || ''));
+    return marker ? marker.__thon09HouseholdRow || null : null;
+  };
+
+  window.thon09GisFocusHouseholdMarker = function (row) {
+    const m = map();
+    if (!m || !row) return false;
+    const id = String(row.id || '');
+    let marker = id ? state.markers.get(id) : null;
+    if (!marker && row.latitude != null && row.longitude != null) {
+      const normalized = Object.assign({}, row, { head_citizen_name: row.head_citizen_name || row.head_name || '' });
+      marker = L.marker([row.latitude, row.longitude], { icon: markerIcon(true), title: normalized.head_citizen_name || normalized.household_code });
+      marker.__thon09HouseholdRow = normalized;
+      marker.bindPopup(popupHtml(normalized));
+      if (!state.layer) state.layer = L.layerGroup().addTo(m);
+      marker.addTo(state.layer);
+      state.markers.set(id, marker);
+    }
+    if (!marker) return false;
+    state.activeMarkerId = id;
+    state.markers.forEach(item => item.setIcon(markerIcon(false)));
+    marker.setIcon(markerIcon(true));
+    m.setView(marker.getLatLng(), Math.max(m.getZoom(), 17), { animate: true });
+    marker.openPopup();
+    return true;
+  };
 
   window.thon09GisOpenHousehold = function (id) {
     if (typeof window.showHousehold === 'function') window.showHousehold(id);
