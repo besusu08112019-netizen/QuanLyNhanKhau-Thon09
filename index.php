@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260705-revert-unintended-ui-1');
+define('APP_ASSET_VERSION', '20260705-utf8-vietnamese-text-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -180,10 +180,11 @@ function versioned_asset(string $path): string
 }
 
 if (!str_starts_with($request->path(), '/api')) {
+    header('Content-Type: text/html; charset=UTF-8');
     $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);
-        echo 'KhÃ´ng táº£i Ä‘Æ°á»£c giao diá»‡n á»©ng dá»¥ng.';
+        echo 'Không tải được giao diện ứng dụng.';
         exit;
     }
 
@@ -250,5 +251,5 @@ if (!str_starts_with($request->path(), '/api')) {
 }
 
 $router->dispatch();
-Response::error('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ°á»ng dáº«n', 404);
+Response::error('Không tìm thấy đường dẫn', 404);
 
