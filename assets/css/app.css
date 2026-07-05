@@ -3362,3 +3362,54 @@ body.sidebar-open {
     font-size: 22px;
   }
 }
+/* Desktop filter restore: keep current mobile/tablet filter sheets untouched. */
+@media (min-width: 1025px) {
+  body.app-authenticated .household-filter-card .household-filter-grid {
+    display: grid !important;
+    grid-template-columns: minmax(260px, 1fr) 210px 180px 100px auto !important;
+    gap: 12px !important;
+    align-items: end !important;
+  }
+
+  body.app-authenticated .household-filter-card .module-page-size-field {
+    display: grid !important;
+  }
+
+  body.app-authenticated .household-filter-card .module-reset-btn {
+    width: auto;
+    min-width: 100px;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    grid-column: auto !important;
+  }
+
+  body.app-authenticated .household-filter-card .module-reset-btn i {
+    font-size: 14px;
+    margin-right: 0;
+  }
+
+  body.app-authenticated .person-search-card .person-search-row {
+    display: grid !important;
+    grid-template-columns: minmax(260px, 1fr) !important;
+    gap: 12px !important;
+    align-items: end !important;
+  }
+
+  body.app-authenticated .person-search-card .person-quick-filter-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto !important;
+    gap: 12px !important;
+    align-items: end !important;
+  }
+
+  body.app-authenticated .person-search-card .person-filter-actions {
+    grid-column: auto !important;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
