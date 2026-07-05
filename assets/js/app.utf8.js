@@ -51,6 +51,7 @@ function init() {
   bindEvents();
   initNotificationPopover();
   initLoginExperience();
+  ensureMobileBottomNavigation();
   App.token ? showApp() : showLogin();
 }
 
@@ -270,6 +271,42 @@ function ensureMobileSidebarBackdrop() {
   });
 }
 
+function ensureMobileBottomNavigation() {
+  if (document.querySelector('.mobile-bottom-nav')) return;
+  const items = [
+    { screen: 'dashboard', label: 'Dashboard', icon: 'fa-gauge-high' },
+    { screen: 'households', label: 'H\u1ed9', icon: 'fa-house-chimney' },
+    { screen: 'persons', label: 'Nh\u00e2n kh\u1ea9u', icon: 'fa-users' },
+    { screen: 'gis', label: 'GIS', icon: 'fa-map-location-dot' },
+    { screen: 'reports', label: 'B\u00e1o c\u00e1o', icon: 'fa-chart-pie' }
+  ];
+  const nav = document.createElement('nav');
+  nav.className = 'mobile-bottom-nav';
+  nav.setAttribute('aria-label', '\u0110i\u1ec1u h\u01b0\u1edbng ch\u00ednh tr\u00ean di \u0111\u1ed9ng');
+  items.forEach(item => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.mobileScreen = item.screen;
+    button.setAttribute('aria-label', item.label);
+    button.innerHTML = `<i class="fa-solid ${item.icon}" aria-hidden="true"></i><span class="mobile-bottom-label">${item.label}</span>`;
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      button.classList.add('is-pressing');
+      window.setTimeout(() => button.classList.remove('is-pressing'), 180);
+      switchScreen(item.screen);
+    });
+    nav.appendChild(button);
+  });
+  document.body.appendChild(nav);
+}
+
+function syncMobileBottomNavigation(screen, requestedScreen = screen) {
+  $$('.mobile-bottom-nav [data-mobile-screen]').forEach(btn => {
+    const active = btn.dataset.mobileScreen === screen || btn.dataset.mobileScreen === requestedScreen;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-current', active ? 'page' : 'false');
+  });
+}
 function toggleMobileSidebar() {
   const sidebar = $('.sidebar');
   if (!sidebar) return;
@@ -313,10 +350,11 @@ async function logout() {
   showLogin();
 }
 
-function showLogin() { $('#loginView').classList.remove('d-none'); $('#appView').classList.add('d-none'); initLoginExperience(); }
+function showLogin() { $('#loginView').classList.remove('d-none'); $('#appView').classList.add('d-none'); document.body.classList.remove('app-authenticated'); initLoginExperience(); }
 function showApp() {
   $('#loginView').classList.add('d-none');
   $('#appView').classList.remove('d-none');
+  document.body.classList.add('app-authenticated');
   renderTopbarUser();
   if (typeof window.ensureAdminScreens === 'function') window.ensureAdminScreens();
   switchScreen(App.screen);
@@ -342,6 +380,7 @@ function switchScreen(screen) {
   App.screen = screen;
   localStorage.setItem('thon09_screen', screen);
   $$('.sidebar .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === screen || btn.dataset.screen === requestedScreen));
+  syncMobileBottomNavigation(screen, requestedScreen);
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
   normalizeAppHeader(screen);

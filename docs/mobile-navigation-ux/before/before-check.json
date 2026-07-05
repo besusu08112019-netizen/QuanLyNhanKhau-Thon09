@@ -1,0 +1,22 @@
+[
+  {
+    "viewport": "mobile-390",
+    "consoleErrors": 0,
+    "check": {
+      "width": 390,
+      "scrollWidth": 390,
+      "bottomNavCount": 0,
+      "bodyClass": "theme-light"
+    }
+  },
+  {
+    "viewport": "tablet-768",
+    "consoleErrors": 0,
+    "check": {
+      "width": 768,
+      "scrollWidth": 768,
+      "bottomNavCount": 0,
+      "bodyClass": "theme-light"
+    }
+  }
+]

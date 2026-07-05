@@ -1,0 +1,492 @@
+[
+  {
+    "viewport": "mobile-360",
+    "navOk": true,
+    "activeOk": true,
+    "touchOk": true,
+    "labelsOk": true,
+    "overflowOk": true,
+    "overlapOk": true,
+    "consoleErrors": 0,
+    "check": {
+      "width": 360,
+      "scrollWidth": 360,
+      "navDisplay": "grid",
+      "navRect": {
+        "left": 6,
+        "right": 354,
+        "top": 718,
+        "bottom": 792,
+        "width": 348,
+        "height": 74
+      },
+      "buttons": [
+        {
+          "label": "Dashboard",
+          "active": false,
+          "width": 65.59375,
+          "height": 58,
+          "screen": "dashboard"
+        },
+        {
+          "label": "Hộ",
+          "active": true,
+          "width": 65.59375,
+          "height": 58,
+          "screen": "households"
+        },
+        {
+          "label": "Nhân khẩu",
+          "active": false,
+          "width": 65.609375,
+          "height": 58,
+          "screen": "persons"
+        },
+        {
+          "label": "GIS",
+          "active": false,
+          "width": 65.59375,
+          "height": 58,
+          "screen": "gis"
+        },
+        {
+          "label": "Báo cáo",
+          "active": false,
+          "width": 65.59375,
+          "height": 58,
+          "screen": "reports"
+        }
+      ],
+      "activeCount": 1,
+      "fabRect": {
+        "left": 201.46875,
+        "right": 344,
+        "top": 644,
+        "bottom": 698,
+        "width": 142.53125,
+        "height": 54
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "mobile-375",
+    "navOk": true,
+    "activeOk": true,
+    "touchOk": true,
+    "labelsOk": true,
+    "overflowOk": true,
+    "overlapOk": true,
+    "consoleErrors": 0,
+    "check": {
+      "width": 375,
+      "scrollWidth": 375,
+      "navDisplay": "grid",
+      "navRect": {
+        "left": 6,
+        "right": 369,
+        "top": 730,
+        "bottom": 804,
+        "width": 363,
+        "height": 74
+      },
+      "buttons": [
+        {
+          "label": "Dashboard",
+          "active": false,
+          "width": 68.59375,
+          "height": 58,
+          "screen": "dashboard"
+        },
+        {
+          "label": "Hộ",
+          "active": true,
+          "width": 68.59375,
+          "height": 58,
+          "screen": "households"
+        },
+        {
+          "label": "Nhân khẩu",
+          "active": false,
+          "width": 68.609375,
+          "height": 58,
+          "screen": "persons"
+        },
+        {
+          "label": "GIS",
+          "active": false,
+          "width": 68.59375,
+          "height": 58,
+          "screen": "gis"
+        },
+        {
+          "label": "Báo cáo",
+          "active": false,
+          "width": 68.59375,
+          "height": 58,
+          "screen": "reports"
+        }
+      ],
+      "activeCount": 1,
+      "fabRect": {
+        "left": 216.46875,
+        "right": 359,
+        "top": 656,
+        "bottom": 710,
+        "width": 142.53125,
+        "height": 54
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "mobile-390",
+    "navOk": true,
+    "activeOk": true,
+    "touchOk": true,
+    "labelsOk": true,
+    "overflowOk": true,
+    "overlapOk": true,
+    "consoleErrors": 0,
+    "check": {
+      "width": 390,
+      "scrollWidth": 390,
+      "navDisplay": "grid",
+      "navRect": {
+        "left": 10,
+        "right": 380,
+        "top": 760,
+        "bottom": 834,
+        "width": 370,
+        "height": 74
+      },
+      "buttons": [
+        {
+          "label": "Dashboard",
+          "active": false,
+          "width": 67.1875,
+          "height": 56,
+          "screen": "dashboard"
+        },
+        {
+          "label": "Hộ",
+          "active": true,
+          "width": 67.203125,
+          "height": 56,
+          "screen": "households"
+        },
+        {
+          "label": "Nhân khẩu",
+          "active": false,
+          "width": 67.203125,
+          "height": 56,
+          "screen": "persons"
+        },
+        {
+          "label": "GIS",
+          "active": false,
+          "width": 67.203125,
+          "height": 56,
+          "screen": "gis"
+        },
+        {
+          "label": "Báo cáo",
+          "active": false,
+          "width": 67.1875,
+          "height": 56,
+          "screen": "reports"
+        }
+      ],
+      "activeCount": 1,
+      "fabRect": {
+        "left": 231.46875,
+        "right": 374,
+        "top": 688,
+        "bottom": 742,
+        "width": 142.53125,
+        "height": 54
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "mobile-412",
+    "navOk": true,
+    "activeOk": true,
+    "touchOk": true,
+    "labelsOk": true,
+    "overflowOk": true,
+    "overlapOk": true,
+    "consoleErrors": 0,
+    "check": {
+      "width": 412,
+      "scrollWidth": 412,
+      "navDisplay": "grid",
+      "navRect": {
+        "left": 10,
+        "right": 402,
+        "top": 831,
+        "bottom": 905,
+        "width": 392,
+        "height": 74
+      },
+      "buttons": [
+        {
+          "label": "Dashboard",
+          "active": false,
+          "width": 71.59375,
+          "height": 56,
+          "screen": "dashboard"
+        },
+        {
+          "label": "Hộ",
+          "active": true,
+          "width": 71.59375,
+          "height": 56,
+          "screen": "households"
+        },
+        {
+          "label": "Nhân khẩu",
+          "active": false,
+          "width": 71.609375,
+          "height": 56,
+          "screen": "persons"
+        },
+        {
+          "label": "GIS",
+          "active": false,
+          "width": 71.59375,
+          "height": 56,
+          "screen": "gis"
+        },
+        {
+          "label": "Báo cáo",
+          "active": false,
+          "width": 71.59375,
+          "height": 56,
+          "screen": "reports"
+        }
+      ],
+      "activeCount": 1,
+      "fabRect": {
+        "left": 253.46875,
+        "right": 396,
+        "top": 759,
+        "bottom": 813,
+        "width": 142.53125,
+        "height": 54
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "tablet-768",
+    "navOk": true,
+    "activeOk": true,
+    "touchOk": true,
+    "labelsOk": true,
+    "overflowOk": true,
+    "overlapOk": true,
+    "consoleErrors": 0,
+    "check": {
+      "width": 768,
+      "scrollWidth": 768,
+      "navDisplay": "grid",
+      "navRect": {
+        "left": 10,
+        "right": 758,
+        "top": 940,
+        "bottom": 1014,
+        "width": 748,
+        "height": 74
+      },
+      "buttons": [
+        {
+          "label": "Dashboard",
+          "active": false,
+          "width": 142.796875,
+          "height": 56,
+          "screen": "dashboard"
+        },
+        {
+          "label": "Hộ",
+          "active": true,
+          "width": 142.796875,
+          "height": 56,
+          "screen": "households"
+        },
+        {
+          "label": "Nhân khẩu",
+          "active": false,
+          "width": 142.796875,
+          "height": 56,
+          "screen": "persons"
+        },
+        {
+          "label": "GIS",
+          "active": false,
+          "width": 142.796875,
+          "height": 56,
+          "screen": "gis"
+        },
+        {
+          "label": "Báo cáo",
+          "active": false,
+          "width": 142.8125,
+          "height": 56,
+          "screen": "reports"
+        }
+      ],
+      "activeCount": 1,
+      "fabRect": {
+        "left": 609.46875,
+        "right": 752,
+        "top": 868,
+        "bottom": 922,
+        "width": 142.53125,
+        "height": 54
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "tablet-820",
+    "navOk": true,
+    "activeOk": true,
+    "touchOk": true,
+    "labelsOk": true,
+    "overflowOk": true,
+    "overlapOk": true,
+    "consoleErrors": 0,
+    "check": {
+      "width": 820,
+      "scrollWidth": 820,
+      "navDisplay": "grid",
+      "navRect": {
+        "left": 10,
+        "right": 810,
+        "top": 1096,
+        "bottom": 1170,
+        "width": 800,
+        "height": 74
+      },
+      "buttons": [
+        {
+          "label": "Dashboard",
+          "active": false,
+          "width": 153.1875,
+          "height": 56,
+          "screen": "dashboard"
+        },
+        {
+          "label": "Hộ",
+          "active": true,
+          "width": 153.203125,
+          "height": 56,
+          "screen": "households"
+        },
+        {
+          "label": "Nhân khẩu",
+          "active": false,
+          "width": 153.203125,
+          "height": 56,
+          "screen": "persons"
+        },
+        {
+          "label": "GIS",
+          "active": false,
+          "width": 153.203125,
+          "height": 56,
+          "screen": "gis"
+        },
+        {
+          "label": "Báo cáo",
+          "active": false,
+          "width": 153.1875,
+          "height": 56,
+          "screen": "reports"
+        }
+      ],
+      "activeCount": 1,
+      "fabRect": {
+        "left": 661.46875,
+        "right": 804,
+        "top": 1024,
+        "bottom": 1078,
+        "width": 142.53125,
+        "height": 54
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "desktop-1024",
+    "navOk": true,
+    "activeOk": true,
+    "touchOk": true,
+    "labelsOk": true,
+    "overflowOk": true,
+    "overlapOk": true,
+    "consoleErrors": 0,
+    "check": {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "navDisplay": "none",
+      "navRect": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0,
+        "width": 0,
+        "height": 0
+      },
+      "buttons": [
+        {
+          "label": "Dashboard",
+          "active": false,
+          "width": 0,
+          "height": 0,
+          "screen": "dashboard"
+        },
+        {
+          "label": "Hộ",
+          "active": true,
+          "width": 0,
+          "height": 0,
+          "screen": "households"
+        },
+        {
+          "label": "Nhân khẩu",
+          "active": false,
+          "width": 0,
+          "height": 0,
+          "screen": "persons"
+        },
+        {
+          "label": "GIS",
+          "active": false,
+          "width": 0,
+          "height": 0,
+          "screen": "gis"
+        },
+        {
+          "label": "Báo cáo",
+          "active": false,
+          "width": 0,
+          "height": 0,
+          "screen": "reports"
+        }
+      ],
+      "activeCount": 1,
+      "fabRect": {
+        "left": 859.46875,
+        "right": 1002,
+        "top": 86,
+        "bottom": 128,
+        "width": 142.53125,
+        "height": 42
+      }
+    },
+    "errors": []
+  }
+]
