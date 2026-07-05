@@ -1,0 +1,200 @@
+[
+  {
+    "viewport": "desktop",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "apiResults": [
+      {
+        "path": "/api/dashboard/summary",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"metrics\":{\"total_households\":148,\"total_citizens\":529,\"male_count\":266,\"female_count\":263,\"household_head_count\":148,\"active_citizens\":529,\"children_count\":125,\"elderly_count\":109,\"working_age_count\":"
+      },
+      {
+        "path": "/api/households?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":10,\"household_code\":\"H09-0001\",\"head_citizen_id\":8,\"head_citizen_name\":\"NGUYỄN THỊ KHUYÊN\",\"address\":\"03,Thôn 09, xã Hồng Phong\",\"phone\":\"395992416\",\"area_code\":null,\"member_count\":0,\"me"
+      },
+      {
+        "path": "/api/persons?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":8,\"citizen_code\":\"NK-3001\",\"household_id\":10,\"full_name\":\"NGUYỄN THỊ KHUYÊN\",\"gender\":\"Nữ\",\"date_of_birth\":\"1955-06-28\",\"identity_number\":\"036155013781\",\"identity_issue_date\":null,\"ident"
+      },
+      {
+        "path": "/api/gis/areas",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"areas\":[{\"id\":4,\"name\":\"01, Thôn 09\",\"area_code\":\"01\",\"polygon\":[{\"lat\":20.069113,\"lng\":106.1749005},{\"lat\":20.0623207,\"lng\":106.1754584},{\"lat\":20.0633487,\"lng\":106.1861444},{\"lat\":20.0718137,\"lng\":1"
+      },
+      {
+        "path": "/api/reports/summary?type=summary",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"title\":\"Báo cáo tổng hợp\",\"headers\":[\"Chỉ tiêu\",\"Số lượng / Tỷ lệ\"],\"rows\":[[\"Tổng số hộ\",149],[\"Tổng số nhân khẩu\",530],[\"Nam\",267],[\"Nữ\",263],[\"Tạm trú\",0],[\"Tạm vắng\",176],[\"Đảng viên\",\"6 (1,13%)\"]"
+      },
+      {
+        "path": "/api/users?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":1,\"username\":\"admin\",\"email\":\"admin@nhankhauthon09.com\",\"display_name\":\"Quản trị hệ thống\",\"phone\":null,\"position\":null,\"role\":\"SUPER_ADMIN\",\"status\":\"ACTIVE\",\"last_login_at\":\"2026-07-05"
+      },
+      {
+        "path": "/api/logs?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":724,\"created_at\":\"2026-07-05 10:39:43\",\"actor_user_id\":1,\"actor_email\":\"admin@nhankhauthon09.com\",\"module\":\"user\",\"action\":\"read\",\"entity_id\":\"1\",\"level\":\"INFO\",\"message\":\"Đăng nhập hệ t"
+      },
+      {
+        "path": "/api/backups",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":7,\"file_name\":\"Backup_20260629_2335.sql\",\"file_path\":\"download://Backup_20260629_2335.sql\",\"file_size\":899668,\"checksum\":\"d9736eaaf786f838fb48240d77c84311f26f3da2699fc4647f4f85d3a9a26b45"
+      }
+    ],
+    "overflowOk": true,
+    "mojibake": true
+  },
+  {
+    "viewport": "tablet",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "apiResults": [
+      {
+        "path": "/api/dashboard/summary",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"metrics\":{\"total_households\":148,\"total_citizens\":529,\"male_count\":266,\"female_count\":263,\"household_head_count\":148,\"active_citizens\":529,\"children_count\":125,\"elderly_count\":109,\"working_age_count\":"
+      },
+      {
+        "path": "/api/households?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":10,\"household_code\":\"H09-0001\",\"head_citizen_id\":8,\"head_citizen_name\":\"NGUYỄN THỊ KHUYÊN\",\"address\":\"03,Thôn 09, xã Hồng Phong\",\"phone\":\"395992416\",\"area_code\":null,\"member_count\":0,\"me"
+      },
+      {
+        "path": "/api/persons?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":8,\"citizen_code\":\"NK-3001\",\"household_id\":10,\"full_name\":\"NGUYỄN THỊ KHUYÊN\",\"gender\":\"Nữ\",\"date_of_birth\":\"1955-06-28\",\"identity_number\":\"036155013781\",\"identity_issue_date\":null,\"ident"
+      },
+      {
+        "path": "/api/gis/areas",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"areas\":[{\"id\":4,\"name\":\"01, Thôn 09\",\"area_code\":\"01\",\"polygon\":[{\"lat\":20.069113,\"lng\":106.1749005},{\"lat\":20.0623207,\"lng\":106.1754584},{\"lat\":20.0633487,\"lng\":106.1861444},{\"lat\":20.0718137,\"lng\":1"
+      },
+      {
+        "path": "/api/reports/summary?type=summary",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"title\":\"Báo cáo tổng hợp\",\"headers\":[\"Chỉ tiêu\",\"Số lượng / Tỷ lệ\"],\"rows\":[[\"Tổng số hộ\",149],[\"Tổng số nhân khẩu\",530],[\"Nam\",267],[\"Nữ\",263],[\"Tạm trú\",0],[\"Tạm vắng\",176],[\"Đảng viên\",\"6 (1,13%)\"]"
+      },
+      {
+        "path": "/api/users?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":1,\"username\":\"admin\",\"email\":\"admin@nhankhauthon09.com\",\"display_name\":\"Quản trị hệ thống\",\"phone\":null,\"position\":null,\"role\":\"SUPER_ADMIN\",\"status\":\"ACTIVE\",\"last_login_at\":\"2026-07-05"
+      },
+      {
+        "path": "/api/logs?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":725,\"created_at\":\"2026-07-05 10:39:53\",\"actor_user_id\":1,\"actor_email\":\"admin@nhankhauthon09.com\",\"module\":\"user\",\"action\":\"read\",\"entity_id\":\"1\",\"level\":\"INFO\",\"message\":\"Đăng nhập hệ t"
+      },
+      {
+        "path": "/api/backups",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":7,\"file_name\":\"Backup_20260629_2335.sql\",\"file_path\":\"download://Backup_20260629_2335.sql\",\"file_size\":899668,\"checksum\":\"d9736eaaf786f838fb48240d77c84311f26f3da2699fc4647f4f85d3a9a26b45"
+      }
+    ],
+    "overflowOk": true,
+    "mojibake": true
+  },
+  {
+    "viewport": "mobile",
+    "consoleErrors": [],
+    "failedRequests": [
+      "https://a.tile.openstreetmap.org/14/13015/7250.png :: net::ERR_ABORTED",
+      "https://b.tile.openstreetmap.org/14/13015/7251.png :: net::ERR_ABORTED"
+    ],
+    "apiResults": [
+      {
+        "path": "/api/dashboard/summary",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"metrics\":{\"total_households\":148,\"total_citizens\":529,\"male_count\":266,\"female_count\":263,\"household_head_count\":148,\"active_citizens\":529,\"children_count\":125,\"elderly_count\":109,\"working_age_count\":"
+      },
+      {
+        "path": "/api/households?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":10,\"household_code\":\"H09-0001\",\"head_citizen_id\":8,\"head_citizen_name\":\"NGUYỄN THỊ KHUYÊN\",\"address\":\"03,Thôn 09, xã Hồng Phong\",\"phone\":\"395992416\",\"area_code\":null,\"member_count\":0,\"me"
+      },
+      {
+        "path": "/api/persons?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":8,\"citizen_code\":\"NK-3001\",\"household_id\":10,\"full_name\":\"NGUYỄN THỊ KHUYÊN\",\"gender\":\"Nữ\",\"date_of_birth\":\"1955-06-28\",\"identity_number\":\"036155013781\",\"identity_issue_date\":null,\"ident"
+      },
+      {
+        "path": "/api/gis/areas",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"areas\":[{\"id\":4,\"name\":\"01, Thôn 09\",\"area_code\":\"01\",\"polygon\":[{\"lat\":20.069113,\"lng\":106.1749005},{\"lat\":20.0623207,\"lng\":106.1754584},{\"lat\":20.0633487,\"lng\":106.1861444},{\"lat\":20.0718137,\"lng\":1"
+      },
+      {
+        "path": "/api/reports/summary?type=summary",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"title\":\"Báo cáo tổng hợp\",\"headers\":[\"Chỉ tiêu\",\"Số lượng / Tỷ lệ\"],\"rows\":[[\"Tổng số hộ\",149],[\"Tổng số nhân khẩu\",530],[\"Nam\",267],[\"Nữ\",263],[\"Tạm trú\",0],[\"Tạm vắng\",176],[\"Đảng viên\",\"6 (1,13%)\"]"
+      },
+      {
+        "path": "/api/users?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":1,\"username\":\"admin\",\"email\":\"admin@nhankhauthon09.com\",\"display_name\":\"Quản trị hệ thống\",\"phone\":null,\"position\":null,\"role\":\"SUPER_ADMIN\",\"status\":\"ACTIVE\",\"last_login_at\":\"2026-07-05"
+      },
+      {
+        "path": "/api/logs?page=1&pageSize=5",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":726,\"created_at\":\"2026-07-05 10:40:04\",\"actor_user_id\":1,\"actor_email\":\"admin@nhankhauthon09.com\",\"module\":\"user\",\"action\":\"read\",\"entity_id\":\"1\",\"level\":\"INFO\",\"message\":\"Đăng nhập hệ t"
+      },
+      {
+        "path": "/api/backups",
+        "status": 200,
+        "ok": true,
+        "okShape": true,
+        "text": "{\"ok\":true,\"data\":{\"items\":[{\"id\":7,\"file_name\":\"Backup_20260629_2335.sql\",\"file_path\":\"download://Backup_20260629_2335.sql\",\"file_size\":899668,\"checksum\":\"d9736eaaf786f838fb48240d77c84311f26f3da2699fc4647f4f85d3a9a26b45"
+      }
+    ],
+    "overflowOk": true,
+    "mojibake": true
+  }
+]

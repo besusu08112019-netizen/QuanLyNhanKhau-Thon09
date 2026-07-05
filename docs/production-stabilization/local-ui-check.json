@@ -1,0 +1,38 @@
+[
+  {
+    "viewport": "desktop",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "layout": {
+      "width": 1366,
+      "scrollWidth": 1366,
+      "bodyClass": "theme-light app-authenticated",
+      "navCount": 5
+    },
+    "overflowOk": true
+  },
+  {
+    "viewport": "tablet",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "layout": {
+      "width": 768,
+      "scrollWidth": 768,
+      "bodyClass": "theme-light app-authenticated",
+      "navCount": 5
+    },
+    "overflowOk": true
+  },
+  {
+    "viewport": "mobile",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "layout": {
+      "width": 390,
+      "scrollWidth": 390,
+      "bodyClass": "theme-light app-authenticated",
+      "navCount": 5
+    },
+    "overflowOk": true
+  }
+]

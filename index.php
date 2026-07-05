@@ -190,11 +190,9 @@ if (!str_starts_with($request->path(), '/api')) {
 
     $versionedAssets = [
         'assets/css/app.css',
-        'assets/js/app.js',
         'assets/js/app.utf8.js',
         'assets/js/csrf.js',
         'assets/js/session.js',
-        'assets/js/admin.js',
         'assets/js/admin.utf8.js',
         'assets/js/import.js',
         'assets/js/admin-panel.js',
@@ -202,19 +200,11 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/sprint8.js',
         'assets/js/sprint9.js',
         'assets/js/sprint10.js',
-        'assets/js/gis.js',
+        'assets/js/view-inline-patches.js',
         'assets/js/gis-household-location.js',
         'assets/js/household-photo-capture.js',
         'assets/js/household-photo-gps.js',
         'assets/js/gis-search.js',
-        'assets/js/reports.js',
-        'assets/js/reports-ui-fix.js',
-        'assets/js/household-member-popup.js',
-        'assets/css/design-system.css',
-        'assets/css/dashboard-redesign.css',
-        'assets/css/login-redesign.css',
-        'assets/css/sidebar-modern.css',
-        'assets/css/header-cleanup.css',
     ];
 
     foreach ($versionedAssets as $asset) {

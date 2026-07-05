@@ -8,7 +8,6 @@
 
 ## Files Changed
 - `assets/css/app.css`
-- `assets/js/app.js`
 - `assets/js/app.utf8.js`
 - `assets/js/view-inline-patches.js`
 

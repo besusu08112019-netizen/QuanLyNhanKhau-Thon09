@@ -691,7 +691,7 @@ function personAge(dateValue) {
 
 function renderPersonRows(items) {
   const rows = Array.isArray(items) ? items : [];
-  if (!rows.length) return '<tr><td colspan="12" class="text-center text-muted py-4">Khong co du lieu</td></tr>';
+  if (!rows.length) return '<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
   const groups = rows.reduce((acc, row) => {
     const code = String(row.household_code || row.householdCode || 'Chua co ho').trim();
     (acc[code] ||= []).push(row);
