@@ -1,0 +1,74 @@
+[
+  {
+    "width": 390,
+    "screen": "dashboard",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "screen": "households",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "screen": "persons",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  },
+  {
+    "width": 768,
+    "screen": "dashboard",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  },
+  {
+    "width": 768,
+    "screen": "households",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  },
+  {
+    "width": 768,
+    "screen": "persons",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  },
+  {
+    "width": 1366,
+    "screen": "dashboard",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  },
+  {
+    "width": 1366,
+    "screen": "households",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  },
+  {
+    "width": 1366,
+    "screen": "persons",
+    "overflow": 0,
+    "newFilterSheet": false,
+    "newUserMenu": false,
+    "errors": []
+  }
+]

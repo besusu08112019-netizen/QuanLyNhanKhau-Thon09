@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260705-frontend-polish-1');
+define('APP_ASSET_VERSION', '20260705-revert-unintended-ui-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -229,7 +229,8 @@ if (!str_starts_with($request->path(), '/api')) {
         $html = substr_replace($html, $runtimeCss . "\n</head>", $headClosePosition, strlen('</head>'));
     }
 
-    $runtimeScripts = [        'assets/js/view-inline-patches.js',
+    $runtimeScripts = [
+        'assets/js/view-inline-patches.js',
         'assets/js/gis-household-location.js',
         'assets/js/household-photo-capture.js',
         'assets/js/household-photo-gps.js',
