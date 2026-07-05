@@ -650,6 +650,24 @@ function personAge(dateValue) {
   return age >= 0 ? age + ' tuá»•i' : '';
 }
 
+function renderPersonRows(items) {
+  const rows = Array.isArray(items) ? items : [];
+  if (!rows.length) return '<tr><td colspan="12" class="text-center text-muted py-4">Khong co du lieu</td></tr>';
+  const groups = rows.reduce((acc, row) => {
+    const code = String(row.household_code || row.householdCode || 'Chua co ho').trim();
+    (acc[code] ||= []).push(row);
+    return acc;
+  }, {});
+  return Object.entries(groups).map(([code, members]) => {
+    const head = members.find(row => /chu ho/i.test(normalizeSearchText(personRelationship(row)))) || members[0] || {};
+    const group = '<tr class="group-row ds-group-row person-household-group"><td colspan="12"><div class="ds-group-header"><div><i class="fa-solid fa-house-chimney"></i><span>Ho ' + escapeHtml(code) + '</span><small>Chu ho: ' + escapeHtml(head.full_name || '') + '</small></div><strong>' + number(members.length) + ' nhan khau</strong></div></td></tr>';
+    return group + members.map(personRow).join('');
+  }).join('');
+}
+
+window.renderPersonRows = renderPersonRows;
+window.thon09SyncResponsiveTableLabels = applyResponsiveTableLabels;
+
 function personRow(row) {
   const party = Number(row.party_member || row.partyMember || 0) === 1;
   const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
