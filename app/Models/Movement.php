@@ -25,10 +25,106 @@ final class Movement extends BaseModel
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$sqlWhere, $params] = $this->where($filters);
-        $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere", $params)['total'];
-        $items = $this->fetchAll("SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere ORDER BY m.effective_date DESC, m.id DESC LIMIT $pageSize OFFSET $offset", $params);
+        try {
+            $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere", $params)['total'];
+            $items = $this->fetchAll("SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere ORDER BY m.effective_date DESC, m.id DESC LIMIT $pageSize OFFSET $offset", $params);
+        } catch (\Throwable $e) {
+            return $this->fallbackPaginate($filters, $page, $pageSize, $offset, $e);
+        }
         return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
+
+    private function fallbackPaginate(array $filters, int $page, int $pageSize, int $offset, \Throwable $sourceError): array
+    {
+        try {
+            [$sqlWhere, $params, $orderBy, $select, $joins] = $this->fallbackQueryParts($filters);
+            $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM movements m $joins $sqlWhere", $params)['total'];
+            $items = $this->fetchAll("SELECT $select FROM movements m $joins $sqlWhere ORDER BY $orderBy DESC, m.id DESC LIMIT $pageSize OFFSET $offset", $params);
+            return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        } catch (\Throwable $fallbackError) {
+            error_log('[MOVEMENT_PAGINATE_FALLBACK_FAILED] ' . $sourceError->getMessage() . ' | ' . $fallbackError->getMessage());
+            return ['items' => [], 'page' => $page, 'pageSize' => $pageSize, 'total' => 0, 'totalPages' => 1];
+        }
+    }
+
+    private function fallbackQueryParts(array $filters): array
+    {
+        $citizenId = $this->firstExistingColumn('movements', ['citizen_id', 'citizenId']);
+        $householdId = $this->firstExistingColumn('movements', ['household_id', 'householdId']);
+        $effectiveDate = $this->firstExistingColumn('movements', ['effective_date', 'effectiveDate']);
+        $documentNumber = $this->firstExistingColumn('movements', ['document_number', 'documentNumber']);
+        $fromAddress = $this->firstExistingColumn('movements', ['from_address', 'fromAddress']);
+        $toAddress = $this->firstExistingColumn('movements', ['to_address', 'toAddress']);
+        $type = $this->firstExistingColumn('movements', ['type']);
+        $reason = $this->firstExistingColumn('movements', ['reason']);
+        $note = $this->firstExistingColumn('movements', ['note']);
+        $status = $this->firstExistingColumn('movements', ['status']);
+
+        $joins = '';
+        if ($citizenId) $joins .= ' LEFT JOIN citizens c ON c.id=m.' . $citizenId;
+        if ($householdId) $joins .= ' LEFT JOIN households h ON h.id=m.' . $householdId;
+        $where = [];
+        $params = [];
+        if ($status) $where[] = 'COALESCE(m.' . $status . ', "ACTIVE") <> "DELETED"';
+        else $where[] = '1=1';
+        if (!empty($filters['type']) && $type) { $where[] = 'm.' . $type . ' = :type'; $params['type'] = $filters['type']; }
+        if (!empty($filters['dateFrom']) && $effectiveDate) { $where[] = 'm.' . $effectiveDate . ' >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
+        if (!empty($filters['dateTo']) && $effectiveDate) { $where[] = 'm.' . $effectiveDate . ' <= :date_to'; $params['date_to'] = $filters['dateTo']; }
+        if (!empty($filters['month']) && $effectiveDate) { $where[] = 'DATE_FORMAT(m.' . $effectiveDate . ', "%Y-%m") = :month'; $params['month'] = $filters['month']; }
+        if (!empty($filters['year']) && $effectiveDate) { $where[] = 'YEAR(m.' . $effectiveDate . ') = :year'; $params['year'] = (int) $filters['year']; }
+        if (!empty($filters['search'])) {
+            $q = '%' . $filters['search'] . '%';
+            $parts = [];
+            if ($citizenId) $parts[] = 'c.full_name LIKE :q_name';
+            if ($citizenId) $parts[] = 'c.identity_number LIKE :q_identity';
+            if ($citizenId) $parts[] = 'c.citizen_code LIKE :q_citizen';
+            if ($householdId) $parts[] = 'h.household_code LIKE :q_household';
+            if ($reason) $parts[] = 'm.' . $reason . ' LIKE :q_reason';
+            if ($documentNumber) $parts[] = 'm.' . $documentNumber . ' LIKE :q_document';
+            if ($note) $parts[] = 'm.' . $note . ' LIKE :q_note';
+            if ($parts) {
+                $where[] = '(' . implode(' OR ', $parts) . ')';
+                if ($citizenId) {
+                    $params['q_name'] = $q;
+                    $params['q_identity'] = $q;
+                    $params['q_citizen'] = $q;
+                }
+                if ($householdId) $params['q_household'] = $q;
+                if ($reason) $params['q_reason'] = $q;
+                if ($documentNumber) $params['q_document'] = $q;
+                if ($note) $params['q_note'] = $q;
+            }
+        }
+
+        $select = implode(', ', [
+            'm.*',
+            $citizenId ? 'c.full_name' : 'NULL AS full_name',
+            $citizenId ? 'c.identity_number' : 'NULL AS identity_number',
+            $citizenId ? 'c.citizen_code' : 'NULL AS citizen_code',
+            $householdId ? 'h.household_code' : 'NULL AS household_code',
+            $this->aliasExpr($citizenId, 'citizen_id'),
+            $this->aliasExpr($householdId, 'household_id'),
+            $this->aliasExpr($effectiveDate, 'effective_date'),
+            $this->aliasExpr($documentNumber, 'document_number'),
+            $this->aliasExpr($fromAddress, 'from_address'),
+            $this->aliasExpr($toAddress, 'to_address'),
+        ]);
+        return ['WHERE ' . implode(' AND ', $where), $params, $effectiveDate ? 'm.' . $effectiveDate : 'm.id', $select, $joins];
+    }
+
+    private function firstExistingColumn(string $table, array $columns): ?string
+    {
+        foreach ($columns as $column) {
+            if ($this->columnExists($table, $column)) return $column;
+        }
+        return null;
+    }
+
+    private function aliasExpr(?string $column, string $alias): string
+    {
+        return $column ? 'm.' . $column . ' AS ' . $alias : 'NULL AS ' . $alias;
+    }
+
 
     public function page(array $filters = []): array
     {

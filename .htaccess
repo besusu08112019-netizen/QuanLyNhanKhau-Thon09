@@ -13,7 +13,7 @@ RewriteRule ^ index.php [QSA,L]
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "same-origin"
-  Header always set Permissions-Policy "geolocation=(self), microphone=(), camera=()"
+  Header always set Permissions-Policy "geolocation=(self), camera=(self), microphone=()"
 </IfModule>
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
