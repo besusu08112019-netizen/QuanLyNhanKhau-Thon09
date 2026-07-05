@@ -72,4 +72,9 @@ final class FileAttachment extends BaseModel
         $row['file_name'] = $row['file_name'] ?? ($row['original_name'] ?? '');
         return $row;
     }
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
+    }
 }
