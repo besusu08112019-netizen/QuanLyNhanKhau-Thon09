@@ -6,6 +6,17 @@ define('APP_ASSET_VERSION', '20260705-utf8-vietnamese-text-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
+function send_security_headers(): void
+{
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: same-origin');
+    header('Permissions-Policy: geolocation=(self), microphone=(), camera=()');
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
+}
+
+send_security_headers();
+
 use App\Core\Autoloader;
 use App\Core\Request;
 use App\Core\Router;
@@ -189,22 +200,22 @@ if (!str_starts_with($request->path(), '/api')) {
     }
 
     $versionedAssets = [
-        'assets/css/app.css',
-        'assets/js/app.utf8.js',
-        'assets/js/csrf.js',
-        'assets/js/session.js',
-        'assets/js/admin.utf8.js',
-        'assets/js/import.js',
-        'assets/js/admin-panel.js',
-        'assets/js/admin-panel-bridge.js',
-        'assets/js/sprint8.js',
-        'assets/js/sprint9.js',
-        'assets/js/sprint10.js',
-        'assets/js/view-inline-patches.js',
-        'assets/js/gis-household-location.js',
-        'assets/js/household-photo-capture.js',
-        'assets/js/household-photo-gps.js',
-        'assets/js/gis-search.js',
+        'assets/css/app.min.css',
+        'assets/js/app.utf8.min.js',
+        'assets/js/csrf.min.js',
+        'assets/js/session.min.js',
+        'assets/js/admin.utf8.min.js',
+        'assets/js/import.min.js',
+        'assets/js/admin-panel.min.js',
+        'assets/js/admin-panel-bridge.min.js',
+        'assets/js/sprint8.min.js',
+        'assets/js/sprint9.min.js',
+        'assets/js/sprint10.min.js',
+        'assets/js/view-inline-patches.min.js',
+        'assets/js/gis-household-location.min.js',
+        'assets/js/household-photo-capture.min.js',
+        'assets/js/household-photo-gps.min.js',
+        'assets/js/gis-search.min.js',
     ];
 
     foreach ($versionedAssets as $asset) {
@@ -223,11 +234,11 @@ if (!str_starts_with($request->path(), '/api')) {
     }
 
     $runtimeScripts = [
-        'assets/js/view-inline-patches.js',
-        'assets/js/gis-household-location.js',
-        'assets/js/household-photo-capture.js',
-        'assets/js/household-photo-gps.js',
-        'assets/js/gis-search.js',
+        'assets/js/view-inline-patches.min.js',
+        'assets/js/gis-household-location.min.js',
+        'assets/js/household-photo-capture.min.js',
+        'assets/js/household-photo-gps.min.js',
+        'assets/js/gis-search.min.js',
     ];
     $runtimeHtml = implode("\n", array_map(
         fn(string $script): string => '<script src="' . versioned_asset($script) . '"></script>',

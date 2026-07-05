@@ -53,21 +53,12 @@
         const householdText = (App.persons.householdId || '').trim();
         let items = [];
         let total = 0;
-        if (searchText) {
-          const extra = householdText ? { householdId: householdText } : {};
-          const allItems = await fetchAllPaged('/api/persons', extra);
-          const filtered = allItems.filter(row => [row.full_name, row.citizen_code, row.identity_number, row.personal_id, row.national_id, row.phone, row.household_code, row.current_address, row.household_address]
-            .some(value => normalize(value).includes(searchText)));
-          total = filtered.length;
-          const startIndex = (App.persons.page - 1) * App.persons.pageSize;
-          items = filtered.slice(startIndex, startIndex + App.persons.pageSize);
-        } else {
-          const params = new URLSearchParams({ page: App.persons.page, pageSize: App.persons.pageSize });
-          if (householdText) params.set('householdId', householdText);
-          const data = await api('/api/persons?' + params.toString());
-          items = data.items || [];
-          total = data.total || 0;
-        }
+        const params = new URLSearchParams({ page: App.persons.page, pageSize: App.persons.pageSize });
+        if (householdText) params.set('householdId', householdText);
+        if (App.persons.search) params.set('search', App.persons.search);
+        const data = await api('/api/persons?' + params.toString(), { cacheTtl: 12000 });
+        items = data.items || [];
+        total = data.total || 0;
         const rows = document.querySelector('#personRows');
         if (rows) rows.innerHTML = renderPersonRows(items);
         updateBulkDeleteButtons();

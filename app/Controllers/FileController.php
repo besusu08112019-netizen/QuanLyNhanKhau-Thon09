@@ -27,7 +27,8 @@ final class FileController extends BaseController
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) $this->fail('Vui lòng chọn file');
 
         $file = $_FILES['file'];
-        if ((int) $file['size'] > 20 * 1024 * 1024) $this->fail('File tối đa 20MB');
+        $this->validateUploadedFile($file, 20 * 1024 * 1024);
+        if (!$this->hasAllowedExtension($file, array_values($this->allowedMimeTypes()))) $this->fail('File extension is not supported');
         $mime = mime_content_type($file['tmp_name']) ?: 'application/octet-stream';
         $allowed = $this->allowedMimeTypes();
         if (!isset($allowed[$mime])) $this->fail('Định dạng file chưa được hỗ trợ');
@@ -56,8 +57,13 @@ final class FileController extends BaseController
         $this->ok($row);
     }
 
-    public function index(string $module, string $entityId): void
+    public function index(string $module = '', string $entityId = ''): void
     {
+        $module = preg_replace('/[^a-z_]/', '', $module !== '' ? $module : (string) $this->query('module', ''));
+        $entityId = $entityId !== '' ? $entityId : (string) $this->query('entityId', $this->query('entity_id', ''));
+        if (!in_array($module, ['household','citizen'], true) || (int) $entityId <= 0) {
+            $this->fail('Invalid file query', 422);
+        }
         $this->requirePermission($module === 'citizen' ? 'citizen' : 'household', 'read');
         $this->ok($this->files->byEntity($module, (int) $entityId));
     }
@@ -67,8 +73,9 @@ final class FileController extends BaseController
         $file = $this->files->find((int) $id);
         if (!$file) $this->fail('Không tìm thấy file', 404);
         $this->requirePermission($file['module'] === 'citizen' ? 'citizen' : ($file['module'] === 'household' ? 'household' : 'settings'), 'read');
-        $path = BASE_PATH . '/' . ltrim((string) $file['file_path'], '/');
-        if (!is_file($path)) $this->fail('File không còn tồn tại trên máy chủ', 404);
+        $path = $this->safeUploadedPath((string) $file['file_path']);
+        if ($path === null || !is_file($path)) $this->fail('File is no longer available on the server', 404);
+        header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . ($file['mime_type'] ?: 'application/octet-stream'));
         header('Content-Length: ' . filesize($path));
         header('Content-Disposition: attachment; filename="' . rawurlencode((string) $file['original_name']) . '"');
@@ -84,6 +91,37 @@ final class FileController extends BaseController
         $this->files->softDelete((int) $id, (int) $user['id']);
         $this->audit($user, (string) $file['module'], 'delete_file', 'Xóa file đính kèm', $file['entity_id'] ?? null, ['file' => (int) $id, 'name' => $file['original_name'] ?? '']);
         $this->ok(['id' => (int) $id]);
+    }
+
+    private function validateUploadedFile(array $file, int $maxBytes): void
+    {
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            $this->fail('File upload không hợp lệ');
+        }
+        $size = (int) ($file['size'] ?? 0);
+        if ($size <= 0) {
+            $this->fail('File upload rỗng');
+        }
+        if ($size > $maxBytes) {
+            $this->fail('File tối đa ' . (int) ($maxBytes / 1024 / 1024) . 'MB');
+        }
+    }
+
+    private function hasAllowedExtension(array $file, array $allowedExtensions): bool
+    {
+        $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+        if ($extension === 'jpeg') $extension = 'jpg';
+        return $extension !== '' && in_array($extension, $allowedExtensions, true);
+    }
+
+    private function safeUploadedPath(string $relative): ?string
+    {
+        $base = realpath(BASE_PATH . '/uploads');
+        $candidate = BASE_PATH . '/' . ltrim($relative, '/\\');
+        $real = realpath($candidate);
+        if (!$base || !$real) return null;
+        $basePrefix = rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        return str_starts_with($real, $basePrefix) ? $real : null;
     }
 
     private function allowedMimeTypes(): array
@@ -107,6 +145,10 @@ final class FileController extends BaseController
     {
         if ($module !== 'settings' || !in_array($fileType, ['LOGO','IMAGE'], true)) {
             $this->fail('SVG chỉ được phép dùng cho logo hoặc hình cấu hình giao diện');
+        }
+
+        if (filesize($path) > 1024 * 1024) {
+            $this->fail('SVG file maximum size is 1MB');
         }
 
         $content = file_get_contents($path);
@@ -137,7 +179,7 @@ final class FileController extends BaseController
         }
 
         libxml_use_internal_errors(true);
-        $xml = simplexml_load_string($content);
+        $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NONET);
         if (!$xml || strtolower($xml->getName()) !== 'svg') {
             $this->fail('File SVG không đúng định dạng');
         }

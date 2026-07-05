@@ -127,12 +127,16 @@ final class ImportController extends BaseController
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
             $this->fail('Vui lòng chọn file CSV hoặc XLSX', 422);
         }
-        if ((int) ($_FILES['file']['size'] ?? 0) > 5 * 1024 * 1024) {
-            throw new \RuntimeException('File import tối đa 5MB');
+        if (($_FILES['file']['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            throw new \RuntimeException('Invalid import upload');
+        }
+        if ((int) ($_FILES['file']['size'] ?? 0) <= 0 || (int) ($_FILES['file']['size'] ?? 0) > 5 * 1024 * 1024) {
+            throw new \RuntimeException('Import file size is invalid');
         }
         $name = strtolower((string) $_FILES['file']['name']);
-        if (str_ends_with($name, '.csv')) return $this->readCsv($_FILES['file']['tmp_name']);
-        if (str_ends_with($name, '.xlsx')) return $this->readXlsx($_FILES['file']['tmp_name']);
+        $mime = mime_content_type($_FILES['file']['tmp_name']) ?: 'application/octet-stream';
+        if (str_ends_with($name, '.csv') && in_array($mime, ['text/plain','text/csv','application/csv','application/vnd.ms-excel'], true)) return $this->readCsv($_FILES['file']['tmp_name']);
+        if (str_ends_with($name, '.xlsx') && in_array($mime, ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/zip'], true)) return $this->readXlsx($_FILES['file']['tmp_name']);
         throw new \RuntimeException('Chỉ hỗ trợ file CSV hoặc XLSX');
     }
 
@@ -150,6 +154,7 @@ final class ImportController extends BaseController
             $line++;
             if (!array_filter($values, fn($value) => trim((string) $value) !== '')) continue;
             $rows[] = ['row' => $line, 'data' => $this->mapRow($headers, $values)];
+            if (count($rows) > 5000) throw new \RuntimeException('Import file has too many rows');
         }
         fclose($handle);
         return $rows;
@@ -164,7 +169,8 @@ final class ImportController extends BaseController
         $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
         $zip->close();
         if ($xml === false) throw new \RuntimeException('File XLSX chưa có sheet dữ liệu đầu tiên');
-        $sheet = simplexml_load_string($this->stripSpreadsheetNamespaces($xml));
+        if (strlen($xml) > 15 * 1024 * 1024) throw new \RuntimeException('XLSX worksheet is too large');
+        $sheet = simplexml_load_string($this->stripSpreadsheetNamespaces($xml), 'SimpleXMLElement', LIBXML_NONET);
         $matrix = [];
         foreach ($sheet->sheetData->row as $row) {
             $line = (int) $row['r'];
@@ -192,6 +198,7 @@ final class ImportController extends BaseController
             for ($index = 0; $index < count($headers); $index++) $values[] = $cells[$index] ?? '';
             if (!array_filter($values, fn($value) => trim((string) $value) !== '')) continue;
             $rows[] = ['row' => $line, 'data' => $this->mapRow($headers, $values)];
+            if (count($rows) > 5000) throw new \RuntimeException('Import file has too many rows');
         }
         return $rows;
     }
@@ -207,7 +214,8 @@ final class ImportController extends BaseController
     {
         $xml = $zip->getFromName('xl/sharedStrings.xml');
         if ($xml === false) return [];
-        $data = simplexml_load_string($this->stripSpreadsheetNamespaces($xml));
+        if (strlen($xml) > 10 * 1024 * 1024) throw new \RuntimeException('XLSX shared strings are too large');
+        $data = simplexml_load_string($this->stripSpreadsheetNamespaces($xml), 'SimpleXMLElement', LIBXML_NONET);
         $strings = [];
         foreach ($data->si as $item) {
             if (isset($item->t)) { $strings[] = (string) $item->t; continue; }

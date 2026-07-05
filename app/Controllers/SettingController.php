@@ -53,7 +53,7 @@ final class SettingController extends BaseController
         $user = $this->requirePermission('settings', 'update');
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) $this->fail('Vui lòng chọn file');
         $file = $_FILES['file'];
-        if ((int) $file['size'] > 2 * 1024 * 1024) $this->fail('File tối đa 2MB');
+        $this->validateUploadedFile($file, 2 * 1024 * 1024);
 
         $type = strtolower((string) ($_POST['type'] ?? $this->input('type', 'ui')));
         $folderMap = ['logo' => 'logo', 'background' => 'background', 'news' => 'news', 'gallery' => 'gallery', 'intro' => 'gallery', 'ui' => 'gallery'];
@@ -69,7 +69,7 @@ final class SettingController extends BaseController
             $this->fail('Chỉ cho phép PNG, JPG, SVG hoặc WebP');
         }
         if ($extension === 'svg' && $this->svgContainsUnsafeContent($file['tmp_name'])) {
-            $this->fail('SVG có nội dung không an toàn');
+            $this->fail('Unsafe SVG content');
         }
 
         $datePath = date('Y/m');
@@ -125,6 +125,10 @@ final class SettingController extends BaseController
         if (!$base || !$real || strpos($real, $base) !== 0 || !is_file($real)) $this->fail('Không tìm thấy media', 404);
         $extension = strtolower(pathinfo($real, PATHINFO_EXTENSION));
         $types = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'svg' => 'image/svg+xml', 'webp' => 'image/webp'];
+        header('X-Content-Type-Options: nosniff');
+        if ($extension === 'svg') {
+            header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
+        }
         header('Content-Type: ' . ($types[$extension] ?? 'application/octet-stream'));
         header('Cache-Control: public, max-age=31536000, immutable');
         header('Content-Length: ' . filesize($real));
@@ -170,6 +174,20 @@ final class SettingController extends BaseController
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
+    private function validateUploadedFile(array $file, int $maxBytes): void
+    {
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            $this->fail('Invalid uploaded file');
+        }
+        $size = (int) ($file['size'] ?? 0);
+        if ($size <= 0) {
+            $this->fail('Uploaded file is empty');
+        }
+        if ($size > $maxBytes) {
+            $this->fail('Uploaded file is too large');
+        }
+    }
+
     private function ensureUploadDir(string $dir): void
     {
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) $this->fail('Không tạo được thư mục upload');
@@ -206,8 +224,14 @@ final class SettingController extends BaseController
 
     private function svgContainsUnsafeContent(string $path): bool
     {
-        $content = strtolower((string) file_get_contents($path));
-        return strpos($content, '<script') !== false || strpos($content, 'javascript:') !== false || preg_match('/\son[a-z]+\s*=/', $content) === 1;
+        if (filesize($path) > 1024 * 1024) return true;
+        $content = (string) file_get_contents($path);
+        $lower = strtolower($content);
+        if (strpos($lower, '<script') !== false || strpos($lower, 'javascript:') !== false || preg_match('/\son[a-z]+\s*=/', $lower) === 1) return true;
+        if (strpos($lower, '<foreignobject') !== false || strpos($lower, '<iframe') !== false || strpos($lower, '<object') !== false || strpos($lower, '<embed') !== false) return true;
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NONET);
+        return !$xml || strtolower($xml->getName()) !== 'svg';
     }
 
     private function versionedUrl(string $relative): string

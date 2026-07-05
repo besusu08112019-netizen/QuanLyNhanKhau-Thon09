@@ -9,9 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css">
-  <link rel="stylesheet" href="assets/css/app.css?v=20260701-gis-2">
+  <link rel="stylesheet" href="assets/css/app.min.css?v=20260705-prod-1">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -298,19 +296,16 @@
   <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 id="detailTitle" class="modal-title">Chi tiết</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div id="detailBody" class="modal-body"></div></div></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="assets/js/app.utf8.js?v=20260705-utf8-1"></script>
-  <script src="assets/js/csrf.js?v=20260629-temporary-filter-3"></script>
-  <script src="assets/js/session.js?v=20260629-temporary-filter-3"></script>
-  <script src="assets/js/admin.utf8.js?v=20260705-utf8-1"></script>
-  <script src="assets/js/import.js?v=20260630-import-final-1"></script>
-  <script src="assets/js/admin-panel.js?v=20260630-phase2-uiux-1"></script>
-  <script src="assets/js/admin-panel-bridge.js?v=20260630-final-bridge-title-1"></script>
-  <script src="assets/js/sprint8.js?v=20260630-import-final-1"></script>
-  <script src="assets/js/sprint9.js?v=20260630-import-final-1"></script>
-  <script src="assets/js/sprint10.js?v=20260630-import-template-1"></script>
+  <script src="assets/js/app.utf8.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/csrf.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/session.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/admin.utf8.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/import.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/admin-panel.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/admin-panel-bridge.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/sprint8.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/sprint9.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/sprint10.min.js?v=20260705-prod-1"></script>
 
 <script id="thon09-report-inline-stable">
 (function(){
@@ -350,7 +345,7 @@
   function personParams(includeSearch){var p=new URLSearchParams({page:App.persons.page||1,pageSize:App.persons.pageSize||20});if(includeSearch){var search=(qs('#personSearch')&&qs('#personSearch').value||App.persons.search||'').trim();if(search)p.set('search',search);}qsa('[data-person-filter]').forEach(function(el){var key=el.dataset.personFilter,val=String(el.value||'').trim();App.persons[key]=val;appendFilter(p,key,val);});return p;}
   function activeFilterParams(){var p=personParams(false);p.delete('page');p.delete('pageSize');return Object.fromEntries(p.entries());}
   function matchesQuickSearch(row,searchText){return [row.full_name,row.citizen_code,row.identity_number].some(function(value){return normalizeSearchText(value).includes(searchText);});}
-  window.loadPersons=async function loadPersonsAdvanced(){try{var searchText=normalizeSearchText((qs('#personSearch')&&qs('#personSearch').value||App.persons.search||'').trim());App.persons.search=(qs('#personSearch')&&qs('#personSearch').value||'').trim();var items=[],total=0;if(searchText){var allItems=await fetchAllPaged('/api/persons',activeFilterParams());var filtered=allItems.filter(function(row){return matchesQuickSearch(row,searchText);});total=filtered.length;items=filtered.slice((App.persons.page-1)*App.persons.pageSize,(App.persons.page-1)*App.persons.pageSize+App.persons.pageSize);}else{var data=await api('/api/persons?'+personParams(false).toString());items=data.items||[];total=data.total||0;}var grouped=items.reduce(function(acc,row){var code=row.household_code||'Chưa có hộ';(acc[code]||(acc[code]=[])).push(row);return acc;},{});var totalEl=qs('#personTotalCount');if(totalEl)totalEl.innerHTML='Tổng số: <strong>'+number(total)+'</strong> nhân khẩu';qs('#personRows').innerHTML=items.map(personRow).join('')||'<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';if(typeof updateBulkDeleteButtons==='function')updateBulkDeleteButtons();renderPager('#personPager',{total:total,page:App.persons.page,pageSize:App.persons.pageSize},function(page){App.persons.page=page;window.loadPersons();});}catch(error){showToast('Không tải được danh sách nhân khẩu: '+error.message,'danger');}};
+  window.loadPersons=async function loadPersonsAdvanced(){try{var searchText=normalizeSearchText((qs('#personSearch')&&qs('#personSearch').value||App.persons.search||'').trim());App.persons.search=(qs('#personSearch')&&qs('#personSearch').value||'').trim();var items=[],total=0;var data=await api('/api/persons?'+personParams(true).toString(),{cacheTtl:12000});items=data.items||[];total=data.total||0;var grouped=items.reduce(function(acc,row){var code=row.household_code||'Chưa có hộ';(acc[code]||(acc[code]=[])).push(row);return acc;},{});var totalEl=qs('#personTotalCount');if(totalEl)totalEl.innerHTML='Tổng số: <strong>'+number(total)+'</strong> nhân khẩu';qs('#personRows').innerHTML=items.map(personRow).join('')||'<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';if(typeof updateBulkDeleteButtons==='function')updateBulkDeleteButtons();renderPager('#personPager',{total:total,page:App.persons.page,pageSize:App.persons.pageSize},function(page){App.persons.page=page;window.loadPersons();});}catch(error){showToast('Không tải được danh sách nhân khẩu: '+error.message,'danger');}};
   function bind(){fillSelects();if(window.__thon09PersonAdvancedBound)return;window.__thon09PersonAdvancedBound=true;qsa('[data-person-filter]').forEach(function(el){el.addEventListener('change',function(){App.persons.page=1;window.loadPersons();});el.addEventListener('input',debounce(function(){App.persons.page=1;window.loadPersons();},350));});var search=qs('#personSearch');if(search)search.addEventListener('input',debounce(function(){App.persons.page=1;window.loadPersons();},350));var pageSize=qs('#personPageSize');if(pageSize)pageSize.addEventListener('change',function(){App.persons.pageSize=Number(this.value||20);App.persons.page=1;window.loadPersons();});var toggle=qs('#personAdvancedToggle'),panel=qs('#personAdvancedFilters');function setAdvancedFilterOpen(open){if(!toggle||!panel)return;panel.classList.toggle('d-none',!open);toggle.setAttribute('aria-expanded',open?'true':'false');toggle.innerHTML='<i class="fa-solid fa-sliders"></i> '+(open?'Ẩn bộ lọc nâng cao':'Bộ lọc nâng cao');}if(toggle&&panel)toggle.addEventListener('click',function(){setAdvancedFilterOpen(panel.classList.contains('d-none'));});var apply=qs('#personAdvancedApply');if(apply)apply.addEventListener('click',function(){setAdvancedFilterOpen(false);App.persons.page=1;window.loadPersons();});var clearAdvanced=qs('#personAdvancedClear');if(clearAdvanced)clearAdvanced.addEventListener('click',function(){qsa('#personAdvancedFilters [data-person-filter]').forEach(function(el){el.value='';App.persons[el.dataset.personFilter]='';});App.persons.page=1;window.loadPersons();});var reset=qs('#personFilterReset');if(reset)reset.addEventListener('click',function(){if(search)search.value='';qsa('[data-person-filter]').forEach(function(el){el.value='';App.persons[el.dataset.personFilter]='';});App.persons.search='';App.persons.page=1;setAdvancedFilterOpen(false);window.loadPersons();});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();

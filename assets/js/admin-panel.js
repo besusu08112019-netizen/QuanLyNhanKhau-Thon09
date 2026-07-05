@@ -162,7 +162,12 @@
     if (!host) return;
     const normalized = (items || []).map(i => ({ label: i.label || 'Khác', value: Number(i.value || 0) }));
     host.innerHTML = '<canvas id="' + canvasId + '" height="180"></canvas>';
-    if (!window.Chart) return;
+    if (!window.Chart) {
+      if (typeof window.loadScriptOnce === 'function') {
+        window.loadScriptOnce('https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js', () => Boolean(window.Chart)).then(() => renderChart(selector, items)).catch(() => {});
+      }
+      return;
+    }
     charts[canvasId]?.destroy();
     const isDoughnut = selector.includes('gender') || selector.includes('household') || selector.includes('residency');
     charts[canvasId] = new Chart(document.getElementById(canvasId), {

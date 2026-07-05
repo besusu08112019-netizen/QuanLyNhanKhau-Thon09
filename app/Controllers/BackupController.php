@@ -43,8 +43,10 @@ final class BackupController extends BaseController
     private function restoreSqlContent(): string
     {
         if (!empty($_FILES['file']) && is_uploaded_file($_FILES['file']['tmp_name'])) {
+            if (($_FILES['file']['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) throw new \RuntimeException('Invalid restore file');
+            if ((int) ($_FILES['file']['size'] ?? 0) <= 0 || (int) ($_FILES['file']['size'] ?? 0) > 20 * 1024 * 1024) throw new \RuntimeException('Restore file size is invalid');
             $name = strtolower((string) $_FILES['file']['name']);
-            if (!str_ends_with($name, '.sql')) throw new \RuntimeException('Chỉ hỗ trợ phục hồi file .sql');
+            if (!str_ends_with($name, '.sql')) throw new \RuntimeException('Only .sql restore files are supported');
             $content = file_get_contents($_FILES['file']['tmp_name']);
             return is_string($content) ? $content : '';
         }

@@ -351,6 +351,7 @@
 
   async function loadAreas(options = {}) {
     if (state.loading) return null;
+    if (typeof window.ensureGisAssets === 'function') await window.ensureGisAssets();
     if (!window.App?.token) {
       setStatus('Vui lòng đăng nhập lại để tải bản đồ');
       return null;

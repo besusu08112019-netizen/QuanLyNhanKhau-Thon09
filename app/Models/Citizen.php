@@ -45,7 +45,19 @@ final class Citizen extends BaseModel
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$sqlWhere, $params] = $this->where($filters);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere", $params)['total'];
-        $items = $this->fetchAll("SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name LIMIT $pageSize OFFSET $offset", $params);
+        $baseColumns = [
+            'c.id', 'c.citizen_code', 'c.household_id', 'c.full_name', 'c.gender', 'c.date_of_birth',
+            'c.identity_number', 'c.relationship', 'c.ethnicity', 'c.religion', 'c.occupation', 'c.phone',
+            'c.residency_status', 'c.current_address', 'c.education_level', 'c.marital_status',
+            'c.life_status', 'c.presence_status', 'c.status',
+        ];
+        foreach ($this->activeExtendedColumns() as $column) {
+            $baseColumns[] = 'c.' . $column;
+        }
+        $baseColumns[] = 'h.household_code';
+        $baseColumns[] = 'h.address AS household_address';
+        $baseColumns[] = 'h.head_citizen_name';
+        $items = $this->fetchAll('SELECT ' . implode(', ', $baseColumns) . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name LIMIT $pageSize OFFSET $offset", $params);
         return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
 

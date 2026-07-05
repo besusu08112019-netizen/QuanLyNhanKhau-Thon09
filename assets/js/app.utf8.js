@@ -18,6 +18,8 @@ const App = {
 
 window.App = App;
 
+const RuntimeCache = { api: new Map(), assets: new Map(), loadingCount: 0 };
+
 const DASHBOARD_STAT_CONFIG = [
   { key: 'total_households', label: 'Tổng số hộ', icon: 'fa-house', loginClass: 'stat-house', unit: 'hộ' },
   { key: 'total_citizens', label: 'Tổng nhân khẩu', icon: 'fa-users', loginClass: 'stat-pop', unit: 'người' },
@@ -412,6 +414,8 @@ async function login(event) {
     localStorage.setItem('thon09_token', App.token);
     localStorage.setItem('thon09_user', JSON.stringify(App.user));
     window.App = App;
+
+const RuntimeCache = { api: new Map(), assets: new Map(), loadingCount: 0 };
     showToast('Đăng nhập thành công');
     showApp();
   } catch (error) { showToast(error.message, 'danger'); }
@@ -464,7 +468,7 @@ function switchScreen(screen) {
   normalizeAppHeader(screen);
   closeMobileSidebar();
   if (screen === 'dashboard') { loadDashboard(); refreshLoginConfig(); }
-  if (screen === 'gis') loadGisMap();
+  if (screen === 'gis') ensureGisAssets().then(() => loadGisMap()).catch(error => showToast('Không tải được thư viện bản đồ: ' + error.message, 'danger'));
   if (screen === 'households') loadHouseholds();
   if (screen === 'persons') loadPersons();
   document.dispatchEvent(new CustomEvent('thon09:screen-change', { detail: { screen, requestedScreen } }));
@@ -472,7 +476,7 @@ function switchScreen(screen) {
 
 async function loadDashboard() {
   try {
-    const data = await api('/api/dashboard/summary');
+    const data = await api('/api/dashboard/summary', { cacheTtl: 15000 });
     App.dashboardSummary = data;
     const metrics = data?.metrics || {};
     const charts = data?.charts || {};
@@ -677,25 +681,15 @@ function renderDonut(items, total, options = {}) {
 window.loadDashboard = loadDashboard;
 async function loadHouseholds() {
   try {
-    const searchText = normalizeSearchText(App.households.search || '');
     let items = [];
     let total = 0;
-    if (searchText) {
-      const allItems = await fetchAllPaged('/api/households');
-      const filtered = allItems.filter(row => [row.household_code, row.head_citizen_name, row.address, row.phone, row.note]
-        .some(value => normalizeSearchText(value).includes(searchText)));
-      total = filtered.length;
-      const startIndex = (App.households.page - 1) * App.households.pageSize;
-      items = filtered.slice(startIndex, startIndex + App.households.pageSize);
-    } else {
-      const params = new URLSearchParams({ page: App.households.page, pageSize: App.households.pageSize });
-      if (App.households.search) params.set('search', App.households.search);
-      if (App.households.category) { params.set('category', App.households.category); params.set('household_type', App.households.category); }
-      if (App.households.status) params.set('status', App.households.status);
-      const data = await api('/api/households?' + params.toString());
-      items = data.items || [];
-      total = data.total || 0;
-    }
+    const params = new URLSearchParams({ page: App.households.page, pageSize: App.households.pageSize });
+    if (App.households.search) params.set('search', App.households.search);
+    if (App.households.category) { params.set('category', App.households.category); params.set('household_type', App.households.category); }
+    if (App.households.status) params.set('status', App.households.status);
+    const data = await api('/api/households?' + params.toString(), { cacheTtl: 12000 });
+    items = data.items || [];
+    total = data.total || 0;
     const householdTotal = $('#householdTotalCount');
     if (householdTotal) householdTotal.innerHTML = 'Tổng số: <strong>' + number(total) + '</strong> hộ';
     $('#householdRows').innerHTML = items.map(row => '<tr>' +
@@ -716,25 +710,15 @@ async function loadHouseholds() {
 
 async function loadPersons() {
   try {
-    const searchText = normalizeSearchText(App.persons.search || '');
     const householdText = (App.persons.householdId || '').trim();
     let items = [];
     let total = 0;
-    if (searchText) {
-      const extra = householdText ? { householdId: householdText } : {};
-      const allItems = await fetchAllPaged('/api/persons', extra);
-      const filtered = allItems.filter(row => [row.full_name, row.citizen_code, row.identity_number, row.personal_id, row.national_id, row.phone, row.household_code, row.current_address, row.household_address]
-        .some(value => normalizeSearchText(value).includes(searchText)));
-      total = filtered.length;
-      const startIndex = (App.persons.page - 1) * App.persons.pageSize;
-      items = filtered.slice(startIndex, startIndex + App.persons.pageSize);
-    } else {
-      const params = new URLSearchParams({ page: App.persons.page, pageSize: App.persons.pageSize });
-      if (householdText) params.set('householdId', householdText);
-      const data = await api('/api/persons?' + params.toString());
-      items = data.items || [];
-      total = data.total || 0;
-    }
+    const params = new URLSearchParams({ page: App.persons.page, pageSize: App.persons.pageSize });
+    if (householdText) params.set('householdId', householdText);
+    if (App.persons.search) params.set('search', App.persons.search);
+    const data = await api('/api/persons?' + params.toString(), { cacheTtl: 12000 });
+    items = data.items || [];
+    total = data.total || 0;
     const grouped = items.reduce((acc, row) => {
       const code = row.household_code || 'Chưa có hộ';
       (acc[code] ||= []).push(row);
@@ -1054,20 +1038,33 @@ function updateBulkDeleteButtons() {
 }
 
 async function api(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const canCache = method === 'GET' && Number(options.cacheTtl || 0) > 0;
+  const cacheKey = canCache ? [url, App.token || '', options.public ? 'public' : 'auth'].join('|') : '';
+  if (canCache) {
+    const cached = RuntimeCache.api.get(cacheKey);
+    if (cached && cached.expires > Date.now()) return cached.data;
+  }
   setLoading(true);
   try {
     const headers = { 'Accept': 'application/json' };
     if (options.body) headers['Content-Type'] = 'application/json';
     if (App.token && !options.public) headers.Authorization = `Bearer ${App.token}`;
-    const response = await fetch(url, { method: options.method || 'GET', headers, body: options.body ? JSON.stringify(options.body) : undefined });
+    const response = await fetch(url, { method, headers, body: options.body ? JSON.stringify(options.body) : undefined, cache: canCache ? 'default' : 'no-store' });
     const payload = await response.json().catch(() => null);
     if (response.status === 401 && !options.public) logout();
     if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'Không nhận được phản hồi từ hệ thống');
+    if (method !== 'GET') RuntimeCache.api.clear();
+    if (canCache) RuntimeCache.api.set(cacheKey, { expires: Date.now() + Number(options.cacheTtl), data: payload.data });
     return payload.data;
   } finally { setLoading(false); }
 }
 
-function setLoading(active) { $('#loadingBar').classList.toggle('d-none', !active); }
+function setLoading(active) {
+  RuntimeCache.loadingCount = Math.max(0, RuntimeCache.loadingCount + (active ? 1 : -1));
+  const bar = $('#loadingBar');
+  if (bar) bar.classList.toggle('d-none', RuntimeCache.loadingCount === 0);
+}
 function debounce(fn, wait) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), wait); }; }
 function number(value) { return new Intl.NumberFormat('vi-VN').format(Number(value || 0)); }
 function formatDate(value) { if (!value) return ''; const [y, m, d] = String(value).split('-'); return y && m && d ? `${d}/${m}/${y}` : value; }
@@ -1313,11 +1310,20 @@ function updateLoginHistory(settings) {
 function sanitizeRichHtml(value) {
   const template = document.createElement('template');
   template.innerHTML = String(value || '');
-  template.content.querySelectorAll('script,style,iframe,object,embed').forEach(el => el.remove());
+  template.content.querySelectorAll('script,style,iframe,object,embed,link,meta,base').forEach(el => el.remove());
   template.content.querySelectorAll('*').forEach(el => {
     Array.from(el.attributes).forEach(attr => {
       const name = attr.name.toLowerCase();
-      if (name.startsWith('on') || (['href','src'].includes(name) && /^javascript:/i.test(attr.value))) el.removeAttribute(attr.name);
+      const raw = String(attr.value || '').trim();
+      const normalized = raw.replace(/[\u0000-\u001F\u007F\s]+/g, '').toLowerCase();
+      if (name.startsWith('on') || ['srcdoc','formaction','xlink:href'].includes(name)) {
+        el.removeAttribute(attr.name);
+        return;
+      }
+      const safeUrl = new RegExp('^(https?:|mailto:|tel:|#|/|\\./|\\.\\./|data:image/(png|jpeg|jpg|webp|gif);base64,)', 'i');
+      if (['href','src'].includes(name) && normalized && !safeUrl.test(normalized)) {
+        el.removeAttribute(attr.name);
+      }
     });
   });
   return template.innerHTML;
@@ -1428,6 +1434,45 @@ function gisCentroid(points) {
   const sum = points.reduce((acc, p) => [acc[0] + Number(p.lat || 0), acc[1] + Number(p.lng || 0)], [0, 0]);
   return [sum[0] / points.length, sum[1] / points.length];
 }
+function loadStyleOnce(href) {
+  if (document.querySelector('link[href="' + href + '"]')) return Promise.resolve();
+  if (RuntimeCache.assets.has(href)) return RuntimeCache.assets.get(href);
+  const promise = new Promise((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.onload = resolve;
+    link.onerror = () => reject(new Error(href));
+    document.head.appendChild(link);
+  });
+  RuntimeCache.assets.set(href, promise);
+  return promise;
+}
+
+function loadScriptOnce(src, test) {
+  if (typeof test === 'function' && test()) return Promise.resolve();
+  if (RuntimeCache.assets.has(src)) return RuntimeCache.assets.get(src);
+  const promise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(src));
+    document.head.appendChild(script);
+  });
+  RuntimeCache.assets.set(src, promise);
+  return promise;
+}
+
+async function ensureGisAssets() {
+  await Promise.all([
+    loadStyleOnce('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'),
+    loadStyleOnce('https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css'),
+    loadScriptOnce('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js', () => Boolean(window.L))
+  ]);
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js', () => Boolean(window.L?.Draw));
+}
+window.ensureGisAssets = ensureGisAssets;
 function gisPolygonLatLngs(area) {
   return (area.geometry || []).map(p => [Number(p.lat), Number(p.lng)]).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
 }
@@ -1452,6 +1497,7 @@ function gisTooltip(area) {
 }
 async function loadGisMap() {
   try {
+    await ensureGisAssets();
     if (!window.L) {
       const status = $('#gisMapStatus');
       if (status) status.textContent = 'Không tải được thư viện bản đồ';
@@ -1468,7 +1514,7 @@ async function loadGisMap() {
 }
 function initGisMap() {
   if (App.gis.map) { setTimeout(() => App.gis.map.invalidateSize(), 80); return; }
-  const map = L.map('gisMap', { zoomControl: true }).setView([20.2506, 105.9748], 14);
+  const map = L.map('gisMap', { zoomControl: true, preferCanvas: true }).setView([20.2506, 105.9748], 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; OpenStreetMap' }).addTo(map);
   App.gis.map = map;
   App.gis.layerGroup = L.featureGroup().addTo(map);
@@ -1536,7 +1582,7 @@ function renderGisAreas(data) {
     if (latLngs.length < 3) return;
     const polygon = L.polygon(latLngs, { color: area.color || '#0f8a4b', fillColor: area.color || '#0f8a4b', fillOpacity: .18, weight: 2 });
     polygon.bindPopup(gisAreaPopup(area));
-    polygon.bindTooltip(gisTooltip(area), { permanent: true, direction: 'center', className: 'gis-area-tooltip' });
+    if ((data.areas || []).length <= 30) polygon.bindTooltip(gisTooltip(area), { permanent: true, direction: 'center', className: 'gis-area-tooltip' });
     polygon.on('click', () => filterHouseholdsByGisArea(area.area_code));
     polygon.addTo(group);
     latLngs.forEach(p => bounds.push(p));

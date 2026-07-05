@@ -58,7 +58,7 @@ final class User extends BaseModel
         if (!preg_match('/^[a-z0-9._-]{3,60}$/', $username)) throw new \RuntimeException('Username không hợp lệ');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new \RuntimeException('Email không hợp lệ');
         if ($name === '') throw new \RuntimeException('Họ tên là bắt buộc');
-        if (strlen($password) < 8) throw new \RuntimeException('Mật khẩu tối thiểu 8 ký tự');
+        $this->assertPasswordPolicy($password);
         if ($this->findByEmail($email)) throw new \RuntimeException('Email đã tồn tại');
         if ($this->findByUsername($username)) throw new \RuntimeException('Username đã tồn tại');
         $id = $this->insert('INSERT INTO users (username,email,display_name,phone,position,password_hash,role,status,created_by) VALUES (:username,:email,:display_name,:phone,:position,:password_hash,:role,"ACTIVE",:actor)', ['username' => $username, 'email' => $email, 'display_name' => $name, 'phone' => $this->nullable($data['phone'] ?? null), 'position' => $this->nullable($data['position'] ?? null), 'password_hash' => password_hash($password, PASSWORD_DEFAULT), 'role' => $role, 'actor' => $actorId]);
@@ -89,7 +89,7 @@ final class User extends BaseModel
 
     public function changePassword(int $id, string $password, int $actorId): void
     {
-        if (strlen($password) < 8) throw new \RuntimeException('Mật khẩu tối thiểu 8 ký tự');
+        $this->assertPasswordPolicy($password);
         $this->execute('UPDATE users SET password_hash=:hash, updated_by=:actor WHERE id=:id', ['id' => $id, 'hash' => password_hash($password, PASSWORD_DEFAULT), 'actor' => $actorId]);
     }
 
@@ -101,7 +101,10 @@ final class User extends BaseModel
     {
         $login = strtolower(trim($email));
         $user = filter_var($login, FILTER_VALIDATE_EMAIL) ? $this->findByEmail($login) : $this->findByUsername($login);
-        if (!$user || $user['status'] !== 'ACTIVE' || !password_verify($password, (string) $user['password_hash'])) throw new \RuntimeException('Tài khoản hoặc mật khẩu không đúng');
+        if (strlen($password) > 1024 || !$user || $user['status'] !== 'ACTIVE' || !password_verify($password, (string) $user['password_hash'])) throw new \RuntimeException('Invalid account or password');
+        if (password_needs_rehash((string) $user['password_hash'], PASSWORD_DEFAULT)) {
+            $this->execute('UPDATE users SET password_hash=:hash WHERE id=:id', ['id' => $user['id'], 'hash' => password_hash($password, PASSWORD_DEFAULT)]);
+        }
         $this->execute('UPDATE users SET last_login_at = NOW() WHERE id = :id', ['id' => $user['id']]);
         $token = bin2hex(random_bytes(32));
         $config = require BASE_PATH . '/config/app.php';
@@ -136,6 +139,14 @@ final class User extends BaseModel
         if ($user['role'] === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','import'], true) && in_array($action, ['read','create','update'], true);
         if ($user['role'] === 'VIEWER') return in_array($module, ['dashboard','household','citizen','report'], true) && $action === 'read';
         return false;
+    }
+
+    private function assertPasswordPolicy(string $password): void
+    {
+        $length = strlen($password);
+        if ($length < 8 || $length > 1024) {
+            throw new \RuntimeException('Password length is invalid');
+        }
     }
 
     private function setStatus(int $id, string $status, int $actorId): void
