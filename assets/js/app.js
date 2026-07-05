@@ -1,4 +1,4 @@
-const App = {
+﻿const App = {
   token: localStorage.getItem('thon09_token') || '',
   user: JSON.parse(localStorage.getItem('thon09_user') || 'null'),
   screen: localStorage.getItem('thon09_screen') || 'dashboard',
@@ -7,24 +7,24 @@ const App = {
   persons: { page: 1, pageSize: 20, search: '', householdId: '' },
   modals: {},
   dictionaries: {
-    ethnicities: ['Kinh','Tày','Thái','Mường','Khmer','Hoa','Nùng','Hmong','Dao','Gia Rai','Ê Đê','Ba Na','Sán Chay','Chăm','Cơ Ho','Xơ Đăng','Sán Dìu','Hrê','Ra Glai','Mnông','Thổ','Stiêng','Khơ Mú','Bru - Vân Kiều','Cơ Tu','Giáy','Tà Ôi','Mạ','Co','Chơ Ro','Xinh Mun','Hà Nhì','Chu Ru','Lào','La Chí','La Ha','Phù Lá','La Hủ','Lự','Lô Lô','Chứt','Mảng','Pà Thẻn','Cơ Lao','Cống','Bố Y','Si La','Pu Péo','Brâu','Ơ Đu','Rơ Măm','Ngái','Cờ Ho','Khác'],
-    religions: ['Không','Phật giáo','Công giáo','Tin lành','Cao Đài','Hòa Hảo','Hồi giáo','Tín ngưỡng dân gian','Khác'],
-    occupations: ['Nông nghiệp','Công nhân','Cán bộ','Công chức','Viên chức','Kinh doanh','Lao động tự do','Học sinh','Sinh viên','Nội trợ','Hưu trí','Không có việc làm','Khác'],
-    relationships: ['Chủ hộ','Vợ','Chồng','Con','Cha','Mẹ','Ông','Bà','Cháu','Anh','Chị','Em','Người ở cùng','Khác'],
-    educationLevels: ['Chưa đi học','Tiểu học','Trung học cơ sở','Trung học phổ thông','Trung cấp','Cao đẳng','Đại học','Sau đại học','Khác'],
-    maritalStatuses: ['Chưa kết hôn','Đã kết hôn','Ly hôn','Góa','Khác']
+    ethnicities: ['Kinh','TÃ y','ThÃ¡i','MÆ°á»ng','Khmer','Hoa','NÃ¹ng','Hmong','Dao','Gia Rai','ÃŠ ÄÃª','Ba Na','SÃ¡n Chay','ChÄƒm','CÆ¡ Ho','XÆ¡ ÄÄƒng','SÃ¡n DÃ¬u','HrÃª','Ra Glai','MnÃ´ng','Thá»•','StiÃªng','KhÆ¡ MÃº','Bru - VÃ¢n Kiá»u','CÆ¡ Tu','GiÃ¡y','TÃ  Ã”i','Máº¡','Co','ChÆ¡ Ro','Xinh Mun','HÃ  NhÃ¬','Chu Ru','LÃ o','La ChÃ­','La Ha','PhÃ¹ LÃ¡','La Há»§','Lá»±','LÃ´ LÃ´','Chá»©t','Máº£ng','PÃ  Tháº»n','CÆ¡ Lao','Cá»‘ng','Bá»‘ Y','Si La','Pu PÃ©o','BrÃ¢u','Æ  Äu','RÆ¡ MÄƒm','NgÃ¡i','Cá» Ho','KhÃ¡c'],
+    religions: ['KhÃ´ng','Pháº­t giÃ¡o','CÃ´ng giÃ¡o','Tin lÃ nh','Cao ÄÃ i','HÃ²a Háº£o','Há»“i giÃ¡o','TÃ­n ngÆ°á»¡ng dÃ¢n gian','KhÃ¡c'],
+    occupations: ['NÃ´ng nghiá»‡p','CÃ´ng nhÃ¢n','CÃ¡n bá»™','CÃ´ng chá»©c','ViÃªn chá»©c','Kinh doanh','Lao Ä‘á»™ng tá»± do','Há»c sinh','Sinh viÃªn','Ná»™i trá»£','HÆ°u trÃ­','KhÃ´ng cÃ³ viá»‡c lÃ m','KhÃ¡c'],
+    relationships: ['Chá»§ há»™','Vá»£','Chá»“ng','Con','Cha','Máº¹','Ã”ng','BÃ ','ChÃ¡u','Anh','Chá»‹','Em','NgÆ°á»i á»Ÿ cÃ¹ng','KhÃ¡c'],
+    educationLevels: ['ChÆ°a Ä‘i há»c','Tiá»ƒu há»c','Trung há»c cÆ¡ sá»Ÿ','Trung há»c phá»• thÃ´ng','Trung cáº¥p','Cao Ä‘áº³ng','Äáº¡i há»c','Sau Ä‘áº¡i há»c','KhÃ¡c'],
+    maritalStatuses: ['ChÆ°a káº¿t hÃ´n','ÄÃ£ káº¿t hÃ´n','Ly hÃ´n','GÃ³a','KhÃ¡c']
   }
 };
 
 window.App = App;
 
 const DASHBOARD_STAT_CONFIG = [
-  { key: 'total_households', label: 'Tổng số hộ', icon: 'fa-house', loginClass: 'stat-house', unit: 'hộ' },
-  { key: 'total_citizens', label: 'Tổng nhân khẩu', icon: 'fa-users', loginClass: 'stat-pop', unit: 'người' },
-  { key: 'party_member_count', label: 'Đảng viên', icon: 'fa-landmark-flag', loginClass: 'stat-party', unit: 'người' },
-  { key: 'male_count', label: 'Nam', icon: 'fa-person', dashboardIcon: 'fa-mars', loginClass: 'stat-male', unit: 'người' },
-  { key: 'female_count', label: 'Nữ', icon: 'fa-person-dress', dashboardIcon: 'fa-venus', loginClass: 'stat-female', unit: 'người' },
-  { key: 'away_count', label: 'Tạm vắng', icon: 'fa-person-walking-arrow-right', loginClass: 'stat-away', unit: 'người' }
+  { key: 'total_households', label: 'Tá»•ng sá»‘ há»™', icon: 'fa-house', loginClass: 'stat-house', unit: 'há»™' },
+  { key: 'total_citizens', label: 'Tá»•ng nhÃ¢n kháº©u', icon: 'fa-users', loginClass: 'stat-pop', unit: 'ngÆ°á»i' },
+  { key: 'party_member_count', label: 'Äáº£ng viÃªn', icon: 'fa-landmark-flag', loginClass: 'stat-party', unit: 'ngÆ°á»i' },
+  { key: 'male_count', label: 'Nam', icon: 'fa-person', dashboardIcon: 'fa-mars', loginClass: 'stat-male', unit: 'ngÆ°á»i' },
+  { key: 'female_count', label: 'Ná»¯', icon: 'fa-person-dress', dashboardIcon: 'fa-venus', loginClass: 'stat-female', unit: 'ngÆ°á»i' },
+  { key: 'away_count', label: 'Táº¡m váº¯ng', icon: 'fa-person-walking-arrow-right', loginClass: 'stat-away', unit: 'ngÆ°á»i' }
 ];
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -61,9 +61,9 @@ function bindEvents() {
   ensureMobileSidebarBackdrop();
   startResponsiveTableObserver();
   const dashboardFilters = $('#dashboardFilters');
-  if (dashboardFilters) dashboardFilters.addEventListener('submit', event => { event.preventDefault(); loadDashboard(); refreshLoginConfig(); });
+  if (dashboardFilters) dashboardFilters.addEventListener('submit', event => { event.preventDefault(); loadDashboard(); refreshLoginConfig({ force: true }); });
   const dashboardResetBtn = $('#dashboardResetBtn');
-  if (dashboardResetBtn) dashboardResetBtn.addEventListener('click', () => { if (dashboardFilters) dashboardFilters.reset(); loadDashboard(); refreshLoginConfig(); });
+  if (dashboardResetBtn) dashboardResetBtn.addEventListener('click', () => { if (dashboardFilters) dashboardFilters.reset(); loadDashboard(); refreshLoginConfig({ force: true }); });
   $('#householdAddBtn').addEventListener('click', () => openHouseholdForm());
   const personAddBtn = $('#personAddBtn');
   if (personAddBtn) personAddBtn.addEventListener('click', () => openPersonForm());
@@ -297,7 +297,7 @@ async function login(event) {
     localStorage.setItem('thon09_token', App.token);
     localStorage.setItem('thon09_user', JSON.stringify(App.user));
     window.App = App;
-    showToast('Đăng nhập thành công');
+    showToast('ÄÄƒng nháº­p thÃ nh cÃ´ng');
     showApp();
   } catch (error) { showToast(error.message, 'danger'); }
 }
@@ -324,12 +324,12 @@ function showApp() {
 }
 
 function normalizeAppHeader(screen) {
-  const screenLabels = { dashboard: 'Dashboard', gis: 'Bản đồ địa bàn', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', exportExcel: 'Export Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền' };
+  const screenLabels = { dashboard: 'Dashboard', gis: 'Báº£n Ä‘á»“ Ä‘á»‹a bÃ n', households: 'Quáº£n lÃ½ há»™ gia Ä‘Ã¬nh', persons: 'Quáº£n lÃ½ nhÃ¢n kháº©u', temporaryResidence: 'Táº¡m trÃº', temporaryAbsence: 'Táº¡m váº¯ng', movements: 'Biáº¿n Ä‘á»™ng nhÃ¢n kháº©u', reports: 'BÃ¡o cÃ¡o thá»‘ng kÃª', import: 'Import dá»¯ liá»‡u', export: 'Export Excel', exportExcel: 'Export Excel', printForms: 'In biá»ƒu máº«u', users: 'Quáº£n lÃ½ tÃ i khoáº£n', logs: 'Nháº­t kÃ½ há»‡ thá»‘ng', appearance: 'Cáº¥u hÃ¬nh giao diá»‡n', settings: 'Cáº¥u hÃ¬nh há»‡ thá»‘ng', backups: 'Sao lÆ°u dá»¯ liá»‡u', restore: 'KhÃ´i phá»¥c dá»¯ liá»‡u', permissions: 'PhÃ¢n quyá»n' };
   const label = screenLabels[screen] || 'Dashboard';
   const title = $('#screenTitle');
   const breadcrumb = $('#breadcrumbTrail');
   if (title) title.textContent = label;
-  if (breadcrumb) breadcrumb.textContent = 'Trang chủ / ' + label;
+  if (breadcrumb) breadcrumb.textContent = 'Trang chá»§ / ' + label;
   $$('.topbar-title-block small:not(#breadcrumbTrail), .topbar-title-block .text-muted:not(#breadcrumbTrail), .topbar > div:first-of-type small:not(#breadcrumbTrail), .topbar > div:first-of-type .text-muted:not(#breadcrumbTrail)').forEach(el => el.remove());
   $$('.dashboard-hero-row, .module-page-head > div, .person-page-head > div, .report-page-head, .screen > .admin-heading > div').forEach(el => el.remove());
 }
@@ -368,7 +368,7 @@ async function loadDashboard() {
     renderLaborStatusChart(charts.labor || charts.occupations || [], metrics);
     updateDashboardGeneratedAt(data.generatedAt);
   } catch (error) {
-    if (!String(error.message || '').includes('đăng nhập')) showToast('Không tải được tổng quan: ' + error.message, 'danger');
+    if (!String(error.message || '').includes('Ä‘Äƒng nháº­p')) showToast('KhÃ´ng táº£i Ä‘Æ°á»£c tá»•ng quan: ' + error.message, 'danger');
   }
 }
 
@@ -376,19 +376,19 @@ function updateDashboardGeneratedAt(value) {
   const el = $('#dashboardGeneratedAt');
   if (!el) return;
   const date = value ? new Date(value) : new Date();
-  el.textContent = 'Cập nhật lúc ' + new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+  el.textContent = 'Cáº­p nháº­t lÃºc ' + new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
 function renderDashboardKpis(metrics) {
   const host = $('#dashboardKpis');
   if (!host) return;
   const cards = [
-    { key: 'total_households', label: 'Tổng số hộ', unit: 'hộ', icon: 'fa-house-chimney', tone: 'green' },
-    { key: 'total_citizens', label: 'Tổng số nhân khẩu', unit: 'người', icon: 'fa-users', tone: 'blue' },
-    { key: 'party_member_count', label: 'Đảng viên', unit: 'người', icon: 'fa-star', tone: 'orange' },
-    { key: 'male_count', label: 'Nam', unit: 'người', icon: 'fa-person', tone: 'cyan' },
-    { key: 'female_count', label: 'Nữ', unit: 'người', icon: 'fa-person-dress', tone: 'pink' },
-    { key: 'away_count', label: 'Tạm vắng', unit: 'người', icon: 'fa-person-walking-arrow-right', tone: 'purple' }
+    { key: 'total_households', label: 'Tá»•ng sá»‘ há»™', unit: 'há»™', icon: 'fa-house-chimney', tone: 'green' },
+    { key: 'total_citizens', label: 'Tá»•ng sá»‘ nhÃ¢n kháº©u', unit: 'ngÆ°á»i', icon: 'fa-users', tone: 'blue' },
+    { key: 'party_member_count', label: 'Äáº£ng viÃªn', unit: 'ngÆ°á»i', icon: 'fa-star', tone: 'orange' },
+    { key: 'male_count', label: 'Nam', unit: 'ngÆ°á»i', icon: 'fa-person', tone: 'cyan' },
+    { key: 'female_count', label: 'Ná»¯', unit: 'ngÆ°á»i', icon: 'fa-person-dress', tone: 'pink' },
+    { key: 'away_count', label: 'Táº¡m váº¯ng', unit: 'ngÆ°á»i', icon: 'fa-person-walking-arrow-right', tone: 'purple' }
   ];
   host.innerHTML = cards.map(card => {
     const value = Number(metrics[card.key] || 0);
@@ -400,7 +400,7 @@ function renderDashboardKpis(metrics) {
 }
 
 function normalizeChartItems(items) {
-  return (items || []).map(item => ({ label: item.label || 'Khác', value: Number(item.value || 0) })).filter(item => item.value >= 0);
+  return (items || []).map(item => ({ label: item.label || 'KhÃ¡c', value: Number(item.value || 0) })).filter(item => item.value >= 0);
 }
 
 function totalChartValue(items) {
@@ -416,7 +416,7 @@ function formatPercent(value) {
   return String(value).replace('.', ',') + '%';
 }
 
-function chartEmpty(message = 'Chưa có dữ liệu') {
+function chartEmpty(message = 'ChÆ°a cÃ³ dá»¯ liá»‡u') {
   return '<div class="dashboard-empty-chart">' + escapeHtml(message) + '</div>';
 }
 
@@ -424,11 +424,11 @@ function renderAgeStructureChart(items) {
   const host = $('#ageStructureChart');
   if (!host) return;
   const buckets = [
-    { key: '0_5', label: '0-5 tuổi', match: text => text.includes('0-5') },
-    { key: '6_14', label: '6-14 tuổi', match: text => text.includes('6-14') },
-    { key: '15_17', label: '15-17 tuổi', match: text => text.includes('15-17') },
-    { key: '18_59', label: '18-59 tuổi', match: text => text.includes('18-59') },
-    { key: '60_plus', label: 'Từ 60 tuổi trở lên', match: text => text.includes('60') && (text.includes('tro len') || text.includes('trở lên') || text.includes('tren') || text.includes('trên') || text.includes('+')) }
+    { key: '0_5', label: '0-5 tuá»•i', match: text => text.includes('0-5') },
+    { key: '6_14', label: '6-14 tuá»•i', match: text => text.includes('6-14') },
+    { key: '15_17', label: '15-17 tuá»•i', match: text => text.includes('15-17') },
+    { key: '18_59', label: '18-59 tuá»•i', match: text => text.includes('18-59') },
+    { key: '60_plus', label: 'Tá»« 60 tuá»•i trá»Ÿ lÃªn', match: text => text.includes('60') && (text.includes('tro len') || text.includes('trá»Ÿ lÃªn') || text.includes('tren') || text.includes('trÃªn') || text.includes('+')) }
   ];
   const source = normalizeChartItems(items);
   const normalized = buckets.map(bucket => {
@@ -441,7 +441,7 @@ function renderAgeStructureChart(items) {
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
   if (!total) { host.innerHTML = chartEmpty(); return; }
   host.innerHTML = '<div class="dashboard-age-layout">'
-    + renderDonut(normalized, total, { centerLabel: 'Tổng số', centerValue: number(total), centerUnit: 'người', className: 'dashboard-age-donut' })
+    + renderDonut(normalized, total, { centerLabel: 'Tá»•ng sá»‘', centerValue: number(total), centerUnit: 'ngÆ°á»i', className: 'dashboard-age-donut' })
     + '<div class="dashboard-legend">' + normalized.map((item, index) => renderLegendRow(item, total, index)).join('') + '</div>'
     + '</div>';
 }
@@ -449,7 +449,7 @@ function renderMonthlyChangeChart(items, fallbackTotal) {
   const host = $('#populationMovementChart');
   if (!host) return;
   const source = normalizeChartItems(items).slice(-6);
-  const rows = source.length ? source : [{ label: 'Hiện tại', value: Number(fallbackTotal || 0) }];
+  const rows = source.length ? source : [{ label: 'Hiá»‡n táº¡i', value: Number(fallbackTotal || 0) }];
   const values = rows.map(item => Number(item.value || 0));
   if (!values.some(Boolean)) { host.innerHTML = chartEmpty(); return; }
   const min = Math.min(...values);
@@ -483,15 +483,15 @@ function renderGenderDashboardChart(items, metrics) {
   const host = $('#genderStructureChart');
   if (!host) return;
   let normalized = normalizeChartItems(items);
-  if (!normalized.length) normalized = [{ label: 'Nam', value: Number(metrics.male_count || 0) }, { label: 'Nữ', value: Number(metrics.female_count || 0) }];
+  if (!normalized.length) normalized = [{ label: 'Nam', value: Number(metrics.male_count || 0) }, { label: 'Ná»¯', value: Number(metrics.female_count || 0) }];
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
   if (!total) { host.innerHTML = chartEmpty(); return; }
   const male = normalized.find(item => normalizeSearchText(item.label).includes('nam')) || { label: 'Nam', value: Number(metrics.male_count || 0) };
-  const female = normalized.find(item => normalizeSearchText(item.label).includes('nu')) || { label: 'Nữ', value: Number(metrics.female_count || 0) };
+  const female = normalized.find(item => normalizeSearchText(item.label).includes('nu')) || { label: 'Ná»¯', value: Number(metrics.female_count || 0) };
   host.innerHTML = '<div class="dashboard-gender-layout">'
     + renderSideStat('Nam', male.value, percent(male.value, total), 'blue', 'fa-mars')
-    + renderDonut([male, female], total, { centerLabel: 'Tổng số', centerValue: number(total), centerUnit: 'người', className: 'dashboard-gender-donut' })
-    + renderSideStat('Nữ', female.value, percent(female.value, total), 'pink', 'fa-venus')
+    + renderDonut([male, female], total, { centerLabel: 'Tá»•ng sá»‘', centerValue: number(total), centerUnit: 'ngÆ°á»i', className: 'dashboard-gender-donut' })
+    + renderSideStat('Ná»¯', female.value, percent(female.value, total), 'pink', 'fa-venus')
     + '</div>';
 }
 
@@ -501,11 +501,11 @@ function renderPartyDashboardChart(items, metrics) {
   const total = Number(metrics.total_citizens || 0);
   const party = Number(metrics.party_member_count || (normalizeChartItems(items)[0]?.value || 0));
   if (!total) { host.innerHTML = chartEmpty(); return; }
-  const rows = [{ label: 'Đảng viên', value: party }, { label: 'Còn lại', value: Math.max(0, total - party) }];
+  const rows = [{ label: 'Äáº£ng viÃªn', value: party }, { label: 'CÃ²n láº¡i', value: Math.max(0, total - party) }];
   const rate = percent(party, total);
   host.innerHTML = '<div class="dashboard-party-layout">'
-    + renderDonut(rows, total, { centerLabel: 'Tỷ lệ', centerValue: formatPercent(rate), centerUnit: 'Đảng viên', className: 'dashboard-party-donut' })
-    + '<div class="dashboard-summary-box"><span>Tổng số Đảng viên</span><strong>' + number(party) + ' người</strong><small>Tính trên tổng số ' + number(total) + ' nhân khẩu đang quản lý trong hệ thống.</small></div>'
+    + renderDonut(rows, total, { centerLabel: 'Tá»· lá»‡', centerValue: formatPercent(rate), centerUnit: 'Äáº£ng viÃªn', className: 'dashboard-party-donut' })
+    + '<div class="dashboard-summary-box"><span>Tá»•ng sá»‘ Äáº£ng viÃªn</span><strong>' + number(party) + ' ngÆ°á»i</strong><small>TÃ­nh trÃªn tá»•ng sá»‘ ' + number(total) + ' nhÃ¢n kháº©u Ä‘ang quáº£n lÃ½ trong há»‡ thá»‘ng.</small></div>'
     + '</div>';
 }
 
@@ -516,8 +516,8 @@ function renderHouseholdTypeChart(items, metrics) {
   const total = rows.reduce((sum, item) => sum + item.value, 0) || Number(metrics.total_households || 0);
   if (!total || !rows.length) { host.innerHTML = chartEmpty(); return; }
   host.innerHTML = '<div class="dashboard-household-type-layout">'
-    + renderDonut(rows, total, { centerLabel: 'Tổng số', centerValue: number(total), centerUnit: 'hộ', className: 'dashboard-household-type-donut' })
-    + '<div class="dashboard-legend">' + rows.map((item, index) => renderLegendRow(item, total, index, 'hộ')).join('') + '</div>'
+    + renderDonut(rows, total, { centerLabel: 'Tá»•ng sá»‘', centerValue: number(total), centerUnit: 'há»™', className: 'dashboard-household-type-donut' })
+    + '<div class="dashboard-legend">' + rows.map((item, index) => renderLegendRow(item, total, index, 'há»™')).join('') + '</div>'
     + '</div>';
 }
 
@@ -531,7 +531,7 @@ function renderLaborStatusChart(items, metrics) {
   host.innerHTML = '<div class="dashboard-bar-chart">' + rows.map((item, index) => {
     const height = Math.max(8, Math.round(item.value * 100 / max));
     const rate = percent(item.value, total);
-    return '<div class="dashboard-bar-item" title="' + escapeHtml(item.label + ': ' + number(item.value) + ' nhân khẩu (' + formatPercent(rate) + ')') + '">'
+    return '<div class="dashboard-bar-item" title="' + escapeHtml(item.label + ': ' + number(item.value) + ' nhÃ¢n kháº©u (' + formatPercent(rate) + ')') + '">'
       + '<strong>' + number(item.value) + '</strong>'
       + '<div class="dashboard-bar-track"><span class="dashboard-bar-fill dashboard-bar-color-' + ((index % 6) + 1) + '" style="height:' + height + '%"></span></div>'
       + '<small>' + escapeHtml(item.label) + '<br><b>' + formatPercent(rate) + '</b></small>'
@@ -543,7 +543,7 @@ function renderSideStat(label, value, rate, tone, icon) {
   return '<div class="dashboard-side-stat dashboard-side-' + tone + '"><span><i class="fa-solid ' + icon + '"></i></span><strong>' + number(value) + '</strong><small>' + escapeHtml(label) + ' - ' + formatPercent(rate) + '</small></div>';
 }
 
-function renderLegendRow(item, total, index, unit = 'người') {
+function renderLegendRow(item, total, index, unit = 'ngÆ°á»i') {
   return '<div class="dashboard-legend-row"><i class="dashboard-dot dashboard-dot-' + (index + 1) + '"></i><span>' + escapeHtml(item.label) + '</span><strong>' + number(item.value) + ' ' + escapeHtml(unit) + ' (' + formatPercent(percent(item.value, total)) + ')</strong></div>';
 }
 
@@ -580,7 +580,7 @@ async function loadHouseholds() {
       total = data.total || 0;
     }
     const householdTotal = $('#householdTotalCount');
-    if (householdTotal) householdTotal.innerHTML = 'Tổng số: <strong>' + number(total) + '</strong> hộ';
+    if (householdTotal) householdTotal.innerHTML = 'Tá»•ng sá»‘: <strong>' + number(total) + '</strong> há»™';
     $('#householdRows').innerHTML = items.map(row => '<tr>' +
       '<td><input type="checkbox" class="household-check" value="' + row.id + '"></td>' +
       '<td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(' + row.id + ')">' + escapeHtml(row.household_code) + '</button></td>' +
@@ -589,12 +589,12 @@ async function loadHouseholds() {
       '<td>' + number(row.at_home_count || 0) + '</td>' +
       '<td>' + number(row.away_count || 0) + '</td>' +
       '<td>' + householdBadges(row) + '</td>' +
-      '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" onclick="showHousehold(' + row.id + ')">Xem</button> <button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button></td>' +
-    '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
+      '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" onclick="showHousehold(' + row.id + ')">Xem</button> <button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sá»­a</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">XÃ³a</button></td>' +
+    '</tr>').join('') || emptyRow(8, 'KhÃ´ng cÃ³ dá»¯ liá»‡u');
     updateBulkDeleteButtons();
     renderPager('#householdPager', { total, page: App.households.page, pageSize: App.households.pageSize }, page => { App.households.page = page; loadHouseholds(); });
     refreshUiEnhancements($('#householdsScreen') || document);
-  } catch (error) { showToast('Không tải được danh sách hộ dân: ' + error.message, 'danger'); }
+  } catch (error) { showToast('KhÃ´ng táº£i Ä‘Æ°á»£c danh sÃ¡ch há»™ dÃ¢n: ' + error.message, 'danger'); }
 }
 
 async function loadPersons() {
@@ -619,15 +619,15 @@ async function loadPersons() {
       total = data.total || 0;
     }
     const grouped = items.reduce((acc, row) => {
-      const code = row.household_code || 'Chưa có hộ';
+      const code = row.household_code || 'ChÆ°a cÃ³ há»™';
       (acc[code] ||= []).push(row);
       return acc;
     }, {});
-    $('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="12">Mã hộ: ' + escapeHtml(code) + '</td></tr>' + rows.map(personRow).join('')).join('') || '<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+    $('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="12">MÃ£ há»™: ' + escapeHtml(code) + '</td></tr>' + rows.map(personRow).join('')).join('') || '<tr><td colspan="12" class="text-center text-muted py-4">KhÃ´ng cÃ³ dá»¯ liá»‡u</td></tr>';
     updateBulkDeleteButtons();
     renderPager('#personPager', { total, page: App.persons.page, pageSize: App.persons.pageSize }, page => { App.persons.page = page; loadPersons(); });
     refreshUiEnhancements($('#personsScreen') || document);
-  } catch (error) { showToast('Không tải được danh sách nhân khẩu: ' + error.message, 'danger'); }
+  } catch (error) { showToast('KhÃ´ng táº£i Ä‘Æ°á»£c danh sÃ¡ch nhÃ¢n kháº©u: ' + error.message, 'danger'); }
 }
 
 function personRelationship(row) {
@@ -647,13 +647,13 @@ function personAge(dateValue) {
   let age = today.getFullYear() - birth.getFullYear();
   const hadBirthday = today.getMonth() > birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
   if (!hadBirthday) age -= 1;
-  return age >= 0 ? age + ' tuổi' : '';
+  return age >= 0 ? age + ' tuá»•i' : '';
 }
 
 function personRow(row) {
   const party = Number(row.party_member || row.partyMember || 0) === 1;
   const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
-  const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : residencyLabel(row.residency_status);
+  const residenceText = row.presence_status === 'AWAY' ? 'Táº¡m váº¯ng' : residencyLabel(row.residency_status);
   const personCode = row.person_code || row.citizen_code || '';
   const age = row.age ?? personAge(row.date_of_birth);
   const ageText = age === null || age === undefined ? '' : String(age);
@@ -668,8 +668,8 @@ function personRow(row) {
     + '<td>' + escapeHtml(row.gender || '') + '</td>'
     + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
     + '<td><span class="person-badge ' + residenceClass + '">' + escapeHtml(residenceText) + '</span></td>'
-    + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
-    + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">Xóa</button></td>'
+    + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'CÃ³' : 'KhÃ´ng') + '</span></td>'
+    + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sá»­a</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">XÃ³a</button></td>'
     + '</tr>';
 }
 
@@ -701,7 +701,7 @@ async function saveHousehold(event) {
   const id = payload.id; delete payload.id;
   try {
     await api(id ? `/api/households/${id}` : '/api/households', { method: id ? 'PUT' : 'POST', body: payload });
-    App.modals.household.hide(); showToast('Đã lưu hộ dân'); loadHouseholds(); loadDashboard(); refreshLoginConfig();
+    App.modals.household.hide(); showToast('ÄÃ£ lÆ°u há»™ dÃ¢n'); loadHouseholds(); loadDashboard(); refreshLoginConfig({ force: true });
   } catch (error) { showToast(error.message, 'danger'); }
 }
 
@@ -713,7 +713,7 @@ async function savePerson(event) {
   const id = payload.id; delete payload.id;
   try {
     await api(id ? `/api/persons/${id}` : '/api/persons', { method: id ? 'PUT' : 'POST', body: payload });
-    App.modals.person.hide(); showToast('Đã lưu nhân khẩu'); loadPersons(); loadHouseholds(); loadDashboard(); refreshLoginConfig();
+    App.modals.person.hide(); showToast('ÄÃ£ lÆ°u nhÃ¢n kháº©u'); loadPersons(); loadHouseholds(); loadDashboard(); refreshLoginConfig({ force: true });
   } catch (error) { showToast(error.message, 'danger'); }
 }
 
@@ -721,8 +721,8 @@ async function showHousehold(id) {
   try {
     const row = await api(`/api/households/${id}`);
     const members = await api('/api/persons?' + new URLSearchParams({ householdId: row.household_code, pageSize: 100 }).toString());
-    $('#detailTitle').textContent = 'Chi tiết hộ dân';
-    $('#detailBody').innerHTML = details([['Mã hộ', row.household_code], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ', row.address], ['Số điện thoại', row.phone], ['Ở nhà', row.at_home_count || 0], ['Đi vắng', row.away_count || 0], ['Diện hộ', stripTags(householdBadges(row))], ['Ghi chú', row.note]]) + memberTable(members.items || []);
+    $('#detailTitle').textContent = 'Chi tiáº¿t há»™ dÃ¢n';
+    $('#detailBody').innerHTML = details([['MÃ£ há»™', row.household_code], ['Chá»§ há»™', row.head_citizen_name], ['Äá»‹a chá»‰', row.address], ['Sá»‘ Ä‘iá»‡n thoáº¡i', row.phone], ['á»ž nhÃ ', row.at_home_count || 0], ['Äi váº¯ng', row.away_count || 0], ['Diá»‡n há»™', stripTags(householdBadges(row))], ['Ghi chÃº', row.note]]) + memberTable(members.items || []);
     refreshUiEnhancements($('#detailBody') || document);
     App.modals.detail.show();
   } catch (error) { showToast(error.message, 'danger'); }
@@ -731,7 +731,7 @@ async function showHousehold(id) {
 async function showPerson(id) {
   try {
     const row = await api(`/api/persons/${id}`);
-    $('#detailTitle').textContent = 'Chi tiết nhân khẩu';
+    $('#detailTitle').textContent = 'Chi tiáº¿t nhÃ¢n kháº©u';
     $('#detailBody').innerHTML = renderDynamicPersonDetail(row);
     refreshUiEnhancements($('#detailBody') || document);
     App.modals.detail.show();
@@ -746,12 +746,12 @@ function renderDynamicPersonDetail(row) {
   const photo = normalized.personPhoto || normalized.photo || normalized.avatar || normalized.image || '';
   return '<article class="person-detail-card person-detail-dynamic">'
     + '<section class="person-detail-hero">'
-    + (hasDisplayValue(photo) ? '<div class="person-detail-photo"><img src="' + escapeHtml(photo) + '" alt="Ảnh nhân khẩu" loading="lazy"></div>' : '')
-    + '<div class="person-detail-identity"><span>Hồ sơ nhân khẩu</span><h3>' + escapeHtml(normalized.fullName || normalized.name || 'Nhân khẩu') + '</h3>'
-    + '<div class="person-detail-codes">' + renderCodeBadge('Mã NK', normalized.citizenCode) + renderCodeBadge('CCCD', normalized.identityNumber) + renderCodeBadge('Mã hộ', normalized.householdCode) + '</div>'
+    + (hasDisplayValue(photo) ? '<div class="person-detail-photo"><img src="' + escapeHtml(photo) + '" alt="áº¢nh nhÃ¢n kháº©u" loading="lazy"></div>' : '')
+    + '<div class="person-detail-identity"><span>Há»“ sÆ¡ nhÃ¢n kháº©u</span><h3>' + escapeHtml(normalized.fullName || normalized.name || 'NhÃ¢n kháº©u') + '</h3>'
+    + '<div class="person-detail-codes">' + renderCodeBadge('MÃ£ NK', normalized.citizenCode) + renderCodeBadge('CCCD', normalized.identityNumber) + renderCodeBadge('MÃ£ há»™', normalized.householdCode) + '</div>'
     + (heroBadges ? '<div class="person-detail-badges">' + heroBadges + '</div>' : '')
     + '</div></section>'
-    + (sections ? '<div class="person-detail-sections">' + sections + '</div>' : '<div class="person-detail-empty">Chưa có thông tin chi tiết để hiển thị.</div>')
+    + (sections ? '<div class="person-detail-sections">' + sections + '</div>' : '<div class="person-detail-empty">ChÆ°a cÃ³ thÃ´ng tin chi tiáº¿t Ä‘á»ƒ hiá»ƒn thá»‹.</div>')
     + '</article>';
 }
 
@@ -774,10 +774,10 @@ function normalizePersonDetailData(row) {
 function buildDynamicPersonGroups(data) {
   const used = new Set(['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'deletedAt', 'deleted_at', 'personPhoto', 'photo', 'avatar', 'image']);
   const groupDefs = [
-    { key: 'basic', title: 'Thông tin cơ bản', icon: 'fa-id-card', fields: ['fullName','citizenCode','gender','dateOfBirth','age','identityNumber','phone','email'] },
-    { key: 'residence', title: 'Thông tin cư trú', icon: 'fa-house-user', fields: ['householdCode','householdAddress','permanentAddress','currentAddress','residencyStatus','presenceStatus','relationship','lifeStatus'] },
-    { key: 'personal', title: 'Thông tin cá nhân', icon: 'fa-user', fields: ['occupation','job','workPlace','ethnicity','religion','educationLevel','maritalStatus','nationality','bloodType'] },
-    { key: 'administrative', title: 'Thông tin hành chính', icon: 'fa-landmark', fields: ['partyMember','youthUnionMember','womenUnionMember','farmersUnionMember','veteransUnionMember','elderlyUnionMember','meritoriousPerson','martyrRelative','woundedSoldier','sickSoldier','disabledPerson','socialAssistance','householdType','poorHousehold','nearPoorHousehold','healthInsurance','socialInsurance','note'] }
+    { key: 'basic', title: 'ThÃ´ng tin cÆ¡ báº£n', icon: 'fa-id-card', fields: ['fullName','citizenCode','gender','dateOfBirth','age','identityNumber','phone','email'] },
+    { key: 'residence', title: 'ThÃ´ng tin cÆ° trÃº', icon: 'fa-house-user', fields: ['householdCode','householdAddress','permanentAddress','currentAddress','residencyStatus','presenceStatus','relationship','lifeStatus'] },
+    { key: 'personal', title: 'ThÃ´ng tin cÃ¡ nhÃ¢n', icon: 'fa-user', fields: ['occupation','job','workPlace','ethnicity','religion','educationLevel','maritalStatus','nationality','bloodType'] },
+    { key: 'administrative', title: 'ThÃ´ng tin hÃ nh chÃ­nh', icon: 'fa-landmark', fields: ['partyMember','youthUnionMember','womenUnionMember','farmersUnionMember','veteransUnionMember','elderlyUnionMember','meritoriousPerson','martyrRelative','woundedSoldier','sickSoldier','disabledPerson','socialAssistance','householdType','poorHousehold','nearPoorHousehold','healthInsurance','socialInsurance','note'] }
   ];
   const groups = groupDefs.map(def => ({ ...def, items: [] }));
   const addField = (group, key) => {
@@ -815,7 +815,7 @@ function hasDisplayValue(value) {
   if (typeof value === 'object') return Object.values(value).some(hasDisplayValue);
   const text = String(value).trim();
   if (!text) return false;
-  return !['null','undefined','n/a','na','--','—','không có dữ liệu','khong co du lieu'].includes(normalizeSearchText(text));
+  return !['null','undefined','n/a','na','--','â€”','khÃ´ng cÃ³ dá»¯ liá»‡u','khong co du lieu'].includes(normalizeSearchText(text));
 }
 
 function formatPersonDetailValue(key, value) {
@@ -831,18 +831,18 @@ function formatPersonDetailValue(key, value) {
 }
 
 function booleanDisplayValue(value) {
-  if (value === true || value === 1 || value === '1') return 'Có';
-  if (value === false || value === 0 || value === '0') return 'Không';
+  if (value === true || value === 1 || value === '1') return 'CÃ³';
+  if (value === false || value === 0 || value === '0') return 'KhÃ´ng';
   return null;
 }
 
 function personFieldLabel(key) {
   const labels = {
-    householdCode: 'Mã hộ', citizenCode: 'Mã nhân khẩu', fullName: 'Họ tên', gender: 'Giới tính', dateOfBirth: 'Ngày sinh', age: 'Tuổi', identityNumber: 'CCCD/Số định danh', phone: 'Số điện thoại', email: 'Email',
-    householdAddress: 'Địa chỉ hộ', permanentAddress: 'Địa chỉ thường trú', currentAddress: 'Địa chỉ hiện tại', residencyStatus: 'Tình trạng cư trú', presenceStatus: 'Hiện tại', relationship: 'Quan hệ với chủ hộ', lifeStatus: 'Trạng thái',
-    occupation: 'Nghề nghiệp', job: 'Nghề nghiệp', workPlace: 'Nơi làm việc', ethnicity: 'Dân tộc', religion: 'Tôn giáo', educationLevel: 'Trình độ học vấn', maritalStatus: 'Tình trạng hôn nhân', nationality: 'Quốc tịch', bloodType: 'Nhóm máu',
-    partyMember: 'Đảng viên', youthUnionMember: 'Đoàn viên Thanh niên', womenUnionMember: 'Hội viên Hội Phụ nữ', farmersUnionMember: 'Hội viên Hội Nông dân', veteransUnionMember: 'Hội viên Hội Cựu chiến binh', elderlyUnionMember: 'Hội viên Hội Người cao tuổi',
-    meritoriousPerson: 'Người có công', martyrRelative: 'Thân nhân liệt sĩ', woundedSoldier: 'Thương binh', sickSoldier: 'Bệnh binh', disabledPerson: 'Người khuyết tật', socialAssistance: 'Bảo trợ xã hội', householdType: 'Diện hộ', poorHousehold: 'Hộ nghèo', nearPoorHousehold: 'Hộ cận nghèo', healthInsurance: 'Bảo hiểm y tế', socialInsurance: 'Bảo hiểm xã hội', note: 'Ghi chú'
+    householdCode: 'MÃ£ há»™', citizenCode: 'MÃ£ nhÃ¢n kháº©u', fullName: 'Há» tÃªn', gender: 'Giá»›i tÃ­nh', dateOfBirth: 'NgÃ y sinh', age: 'Tuá»•i', identityNumber: 'CCCD/Sá»‘ Ä‘á»‹nh danh', phone: 'Sá»‘ Ä‘iá»‡n thoáº¡i', email: 'Email',
+    householdAddress: 'Äá»‹a chá»‰ há»™', permanentAddress: 'Äá»‹a chá»‰ thÆ°á»ng trÃº', currentAddress: 'Äá»‹a chá»‰ hiá»‡n táº¡i', residencyStatus: 'TÃ¬nh tráº¡ng cÆ° trÃº', presenceStatus: 'Hiá»‡n táº¡i', relationship: 'Quan há»‡ vá»›i chá»§ há»™', lifeStatus: 'Tráº¡ng thÃ¡i',
+    occupation: 'Nghá» nghiá»‡p', job: 'Nghá» nghiá»‡p', workPlace: 'NÆ¡i lÃ m viá»‡c', ethnicity: 'DÃ¢n tá»™c', religion: 'TÃ´n giÃ¡o', educationLevel: 'TrÃ¬nh Ä‘á»™ há»c váº¥n', maritalStatus: 'TÃ¬nh tráº¡ng hÃ´n nhÃ¢n', nationality: 'Quá»‘c tá»‹ch', bloodType: 'NhÃ³m mÃ¡u',
+    partyMember: 'Äáº£ng viÃªn', youthUnionMember: 'ÄoÃ n viÃªn Thanh niÃªn', womenUnionMember: 'Há»™i viÃªn Há»™i Phá»¥ ná»¯', farmersUnionMember: 'Há»™i viÃªn Há»™i NÃ´ng dÃ¢n', veteransUnionMember: 'Há»™i viÃªn Há»™i Cá»±u chiáº¿n binh', elderlyUnionMember: 'Há»™i viÃªn Há»™i NgÆ°á»i cao tuá»•i',
+    meritoriousPerson: 'NgÆ°á»i cÃ³ cÃ´ng', martyrRelative: 'ThÃ¢n nhÃ¢n liá»‡t sÄ©', woundedSoldier: 'ThÆ°Æ¡ng binh', sickSoldier: 'Bá»‡nh binh', disabledPerson: 'NgÆ°á»i khuyáº¿t táº­t', socialAssistance: 'Báº£o trá»£ xÃ£ há»™i', householdType: 'Diá»‡n há»™', poorHousehold: 'Há»™ nghÃ¨o', nearPoorHousehold: 'Há»™ cáº­n nghÃ¨o', healthInsurance: 'Báº£o hiá»ƒm y táº¿', socialInsurance: 'Báº£o hiá»ƒm xÃ£ há»™i', note: 'Ghi chÃº'
   };
   return labels[key] || humanizeFieldName(key);
 }
@@ -865,7 +865,7 @@ function isCodePersonField(key) {
 
 function buildPersonHeroBadges(data) {
   return [
-    ['gender', data.gender, 'neutral'], ['partyMember', data.partyMember, 'green'], ['relationship', data.relationship === 'Chủ hộ' ? 'Chủ hộ' : '', 'gold'],
+    ['gender', data.gender, 'neutral'], ['partyMember', data.partyMember, 'green'], ['relationship', data.relationship === 'Chá»§ há»™' ? 'Chá»§ há»™' : '', 'gold'],
     ['residencyStatus', data.residencyStatus, 'blue'], ['presenceStatus', data.presenceStatus, 'purple']
   ].filter(([, value]) => hasDisplayValue(value)).map(([key, value, tone]) => '<span class="person-detail-badge person-detail-badge-' + tone + '">' + escapeHtml(formatPersonDetailValue(key, value)) + '</span>');
 }
@@ -873,40 +873,40 @@ function buildPersonHeroBadges(data) {
 async function deleteHousehold(id) {
   try {
     const row = await api('/api/households/' + id);
-    const message = 'Bạn có chắc chắn muốn xóa hộ gia đình này?\n\n'
-      + 'Mã hộ: ' + (row.household_code || '') + '\n'
-      + 'Chủ hộ: ' + (row.head_citizen_name || '') + '\n'
-      + 'Địa chỉ: ' + (row.address || '') + '\n'
-      + 'Số thành viên: ' + number(row.member_count_real || row.total_members || 0);
+    const message = 'Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a há»™ gia Ä‘Ã¬nh nÃ y?\n\n'
+      + 'MÃ£ há»™: ' + (row.household_code || '') + '\n'
+      + 'Chá»§ há»™: ' + (row.head_citizen_name || '') + '\n'
+      + 'Äá»‹a chá»‰: ' + (row.address || '') + '\n'
+      + 'Sá»‘ thÃ nh viÃªn: ' + number(row.member_count_real || row.total_members || 0);
     if (!confirm(message)) return;
     await api('/api/households/' + id, { method: 'DELETE' });
-    showToast('Đã xóa hộ gia đình');
-    loadHouseholds(); loadPersons(); loadDashboard(); refreshLoginConfig();
+    showToast('ÄÃ£ xÃ³a há»™ gia Ä‘Ã¬nh');
+    loadHouseholds(); loadPersons(); loadDashboard(); refreshLoginConfig({ force: true });
   } catch (error) { showToast(error.message, 'danger'); }
 }
 async function deletePerson(id) {
   try {
     const row = await api('/api/persons/' + id);
-    const message = 'Bạn có chắc chắn muốn xóa nhân khẩu này?\n\n'
-      + 'Mã nhân khẩu: ' + (row.citizen_code || '') + '\n'
-      + 'Họ và tên: ' + (row.full_name || '') + '\n'
+    const message = 'Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a nhÃ¢n kháº©u nÃ y?\n\n'
+      + 'MÃ£ nhÃ¢n kháº©u: ' + (row.citizen_code || '') + '\n'
+      + 'Há» vÃ  tÃªn: ' + (row.full_name || '') + '\n'
       + 'CCCD: ' + (row.identity_number || '');
     if (!confirm(message)) return;
     await api('/api/persons/' + id, { method: 'DELETE' });
-    showToast('Đã xóa nhân khẩu');
-    loadPersons(); loadHouseholds(); loadDashboard(); refreshLoginConfig();
+    showToast('ÄÃ£ xÃ³a nhÃ¢n kháº©u');
+    loadPersons(); loadHouseholds(); loadDashboard(); refreshLoginConfig({ force: true });
   } catch (error) { showToast(error.message, 'danger'); }
 }
-async function bulkDeleteHouseholds() { await bulkDelete('.household-check:checked', '/api/households/bulk-delete', () => { loadHouseholds(); loadPersons(); }, 'hộ gia đình'); }
-async function bulkDeletePersons() { await bulkDelete('.person-check:checked', '/api/persons/bulk-delete', () => { loadPersons(); loadHouseholds(); }, 'nhân khẩu'); }
+async function bulkDeleteHouseholds() { await bulkDelete('.household-check:checked', '/api/households/bulk-delete', () => { loadHouseholds(); loadPersons(); }, 'há»™ gia Ä‘Ã¬nh'); }
+async function bulkDeletePersons() { await bulkDelete('.person-check:checked', '/api/persons/bulk-delete', () => { loadPersons(); loadHouseholds(); }, 'nhÃ¢n kháº©u'); }
 async function bulkDelete(selector, url, reload, label) {
   const ids = $$(selector).map(c => Number(c.value)).filter(Boolean);
-  if (ids.length < 2) return showToast('Vui lòng chọn từ 2 bản ghi trở lên để xóa hàng loạt', 'warning');
-  if (!confirm('Bạn sắp xóa ' + ids.length + ' bản ghi.\nBạn có chắc chắn muốn tiếp tục?')) return;
+  if (ids.length < 2) return showToast('Vui lÃ²ng chá»n tá»« 2 báº£n ghi trá»Ÿ lÃªn Ä‘á»ƒ xÃ³a hÃ ng loáº¡t', 'warning');
+  if (!confirm('Báº¡n sáº¯p xÃ³a ' + ids.length + ' báº£n ghi.\nBáº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c?')) return;
   try {
     const result = await api(url, { method: 'POST', body: { ids } });
-    showToast('Đã xóa ' + (result.success || ids.length) + ' ' + label);
-    reload(); loadDashboard(); refreshLoginConfig(); updateBulkDeleteButtons();
+    showToast('ÄÃ£ xÃ³a ' + (result.success || ids.length) + ' ' + label);
+    reload(); loadDashboard(); refreshLoginConfig({ force: true }); updateBulkDeleteButtons();
   } catch (error) { showToast(error.message, 'danger'); }
 }
 function updateBulkDeleteButtons() {
@@ -927,7 +927,7 @@ async function api(url, options = {}) {
     const response = await fetch(url, { method: options.method || 'GET', headers, body: options.body ? JSON.stringify(options.body) : undefined });
     const payload = await response.json().catch(() => null);
     if (response.status === 401 && !options.public) logout();
-    if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'Không nhận được phản hồi từ hệ thống');
+    if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'KhÃ´ng nháº­n Ä‘Æ°á»£c pháº£n há»“i tá»« há»‡ thá»‘ng');
     return payload.data;
   } finally { setLoading(false); }
 }
@@ -939,7 +939,7 @@ function formatDate(value) { if (!value) return ''; const [y, m, d] = String(val
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[c])); }
 function stripTags(html) { return String(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
 function normalizeSearchText(value) {
-  return String(value || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd');
+  return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/Ä‘/g, 'd').replace(/Ä/g, 'd');
 }
 async function fetchAllPaged(basePath, extra = {}) {
   const pageSize = 100;
@@ -965,11 +965,11 @@ function ageFromDate(value) {
 }
 function buildAgeGroups(persons) {
   const groups = [
-    { label: '0-5 tuổi', value: 0 },
-    { label: '6-14 tuổi', value: 0 },
-    { label: '15-17 tuổi', value: 0 },
-    { label: '18-59 tuổi', value: 0 },
-    { label: 'Trên 60 tuổi', value: 0 }
+    { label: '0-5 tuá»•i', value: 0 },
+    { label: '6-14 tuá»•i', value: 0 },
+    { label: '15-17 tuá»•i', value: 0 },
+    { label: '18-59 tuá»•i', value: 0 },
+    { label: 'TrÃªn 60 tuá»•i', value: 0 }
   ];
   (persons || []).forEach(person => {
     const age = ageFromDate(person.date_of_birth);
@@ -982,22 +982,22 @@ function buildAgeGroups(persons) {
   });
   return groups;
 }
-function roleLabel(role) { return ({ SUPER_ADMIN:'Quản trị tối cao', ADMIN:'Quản trị', OFFICER:'Cán bộ', VIEWER:'Chỉ xem' })[role] || role || ''; }
-function residencyLabel(value) { return value === 'TEMPORARY' ? 'Tạm trú' : 'Thường trú'; }
-function presenceLabel(value) { return value === 'AWAY' ? 'Đi vắng' : 'Ở nhà'; }
-function lifeLabel(value) { return value === 'DECEASED' ? 'Đã chết' : 'Còn sống'; }
+function roleLabel(role) { return ({ SUPER_ADMIN:'Quáº£n trá»‹ tá»‘i cao', ADMIN:'Quáº£n trá»‹', OFFICER:'CÃ¡n bá»™', VIEWER:'Chá»‰ xem' })[role] || role || ''; }
+function residencyLabel(value) { return value === 'TEMPORARY' ? 'Táº¡m trÃº' : 'ThÆ°á»ng trÃº'; }
+function presenceLabel(value) { return value === 'AWAY' ? 'Äi váº¯ng' : 'á»ž nhÃ '; }
+function lifeLabel(value) { return value === 'DECEASED' ? 'ÄÃ£ cháº¿t' : 'CÃ²n sá»‘ng'; }
 function emptyRow(colspan, message) { return `<tr><td colspan="${colspan}" class="text-center text-muted py-4">${message}</td></tr>`; }
 function householdBadges(row) {
   const badges = [];
-  if (Number(row.meritorious_family)) badges.push('Có công');
-  if (Number(row.poor_household)) badges.push('Hộ nghèo');
-  if (Number(row.near_poor_household)) badges.push('Cận nghèo');
-  if (Number(row.disabled_household)) badges.push('Tàn tật');
-  return badges.length ? badges.map(b => `<span class="badge-soft">${b}</span>`).join('') : '<span class="text-muted">Không</span>';
+  if (Number(row.meritorious_family)) badges.push('CÃ³ cÃ´ng');
+  if (Number(row.poor_household)) badges.push('Há»™ nghÃ¨o');
+  if (Number(row.near_poor_household)) badges.push('Cáº­n nghÃ¨o');
+  if (Number(row.disabled_household)) badges.push('TÃ n táº­t');
+  return badges.length ? badges.map(b => `<span class="badge-soft">${b}</span>`).join('') : '<span class="text-muted">KhÃ´ng</span>';
 }
 function memberTable(items) {
-  const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.citizen_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.household_address || '')}</td><td>${escapeHtml(row.phone || '')}</td></tr>`).join('') || `<tr><td colspan="7" class="text-center text-muted py-3">Chưa có thành viên</td></tr>`;
-  return `<h6 class="mt-4 mb-2">Thành viên trong hộ</h6><div class="table-responsive"><table class="table table-sm table-bordered align-middle"><thead><tr><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Số điện thoại</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.citizen_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.household_address || '')}</td><td>${escapeHtml(row.phone || '')}</td></tr>`).join('') || `<tr><td colspan="7" class="text-center text-muted py-3">ChÆ°a cÃ³ thÃ nh viÃªn</td></tr>`;
+  return `<h6 class="mt-4 mb-2">ThÃ nh viÃªn trong há»™</h6><div class="table-responsive"><table class="table table-sm table-bordered align-middle"><thead><tr><th>MÃ£ há»™</th><th>MÃ£ nhÃ¢n kháº©u</th><th>Há» tÃªn</th><th>NgÃ y sinh</th><th>CCCD</th><th>Äá»‹a chá»‰</th><th>Sá»‘ Ä‘iá»‡n thoáº¡i</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function formData(form) {
   const data = Object.fromEntries(new FormData(form).entries());
@@ -1018,7 +1018,7 @@ function renderPager(selector, data, go) {
   const totalPages = Math.max(1, Number(data.totalPages || Math.ceil(total / pageSize) || 1));
   const host = $(selector);
   if (!host) return;
-  host.innerHTML = `<span class="text-muted small">Trang ${page}/${totalPages} - ${number(total)} dòng</span><button class="btn btn-outline-secondary btn-sm" ${page <= 1 ? 'disabled' : ''} data-page="${page - 1}">Trước</button><button class="btn btn-outline-secondary btn-sm" ${page >= totalPages ? 'disabled' : ''} data-page="${page + 1}">Sau</button>`;
+  host.innerHTML = `<span class="text-muted small">Trang ${page}/${totalPages} - ${number(total)} dÃ²ng</span><button class="btn btn-outline-secondary btn-sm" ${page <= 1 ? 'disabled' : ''} data-page="${page - 1}">TrÆ°á»›c</button><button class="btn btn-outline-secondary btn-sm" ${page >= totalPages ? 'disabled' : ''} data-page="${page + 1}">Sau</button>`;
   $$(`${selector} button`).forEach(btn => btn.addEventListener('click', () => {
     const nextPage = Number(btn.dataset.page || 1);
     if (nextPage >= 1 && nextPage <= totalPages) go(nextPage);
@@ -1026,11 +1026,11 @@ function renderPager(selector, data, go) {
 }
 function renderChart(selector, items) {
   const host = $(selector);
-  const normalized = (items || []).map(item => ({ label: item.label || 'Khác', value: Number(item.value || 0) }));
+  const normalized = (items || []).map(item => ({ label: item.label || 'KhÃ¡c', value: Number(item.value || 0) }));
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
   if (!host) return;
   if (!total) {
-    host.innerHTML = '<p class="text-muted mb-0">Chưa có dữ liệu</p>';
+    host.innerHTML = '<p class="text-muted mb-0">ChÆ°a cÃ³ dá»¯ liá»‡u</p>';
     return;
   }
   host.innerHTML = '<div class="percent-chart-list ' + (normalized.length === 1 ? 'single' : '') + '">' + normalized.map(item => {
@@ -1038,7 +1038,7 @@ function renderChart(selector, items) {
     const sweep = Math.max(2, percent);
     return '<div class="percent-chart-item">'
       + '<div class="percent-donut" style="--percent:' + sweep + '"><span>' + percent + '%</span></div>'
-      + '<div class="percent-chart-meta"><strong>' + escapeHtml(item.label || 'Khác') + '</strong><small>' + number(item.value) + '</small></div>'
+      + '<div class="percent-chart-meta"><strong>' + escapeHtml(item.label || 'KhÃ¡c') + '</strong><small>' + number(item.value) + '</small></div>'
       + '</div>';
   }).join('') + '</div>';
 }
@@ -1047,7 +1047,7 @@ function details(rows) {
 }
 function showToast(message, type = 'success') {
   const id = 'toast-' + Date.now();
-  $('#toastHost').insertAdjacentHTML('beforeend', `<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert"><div class="d-flex"><div class="toast-body">${escapeHtml(message)}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Đóng"></button></div></div>`);
+  $('#toastHost').insertAdjacentHTML('beforeend', `<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert"><div class="d-flex"><div class="toast-body">${escapeHtml(message)}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="ÄÃ³ng"></button></div></div>`);
   const el = $('#' + id);
   const toast = new bootstrap.Toast(el, { delay: 3500 });
   toast.show();
@@ -1063,7 +1063,7 @@ function initNotificationPopover() {
   const panel = document.createElement('div');
   panel.id = 'notificationPanel';
   panel.className = 'notification-popover d-none';
-  panel.innerHTML = '<div class="notification-popover-head"><strong>Thông báo</strong><span>Gần đây</span></div><div class="notification-popover-empty">Chưa có thông báo mới.</div>';
+  panel.innerHTML = '<div class="notification-popover-head"><strong>ThÃ´ng bÃ¡o</strong><span>Gáº§n Ä‘Ã¢y</span></div><div class="notification-popover-empty">ChÆ°a cÃ³ thÃ´ng bÃ¡o má»›i.</div>';
   button.insertAdjacentElement('afterend', panel);
   button.addEventListener('click', event => {
     event.stopPropagation();
@@ -1098,7 +1098,7 @@ function initLoginExperience() {
     toggle.addEventListener('click', () => {
       const visible = password.type === 'text';
       password.type = visible ? 'password' : 'text';
-      toggle.setAttribute('aria-label', visible ? 'Hiện mật khẩu' : 'Ẩn mật khẩu');
+      toggle.setAttribute('aria-label', visible ? 'Hiá»‡n máº­t kháº©u' : 'áº¨n máº­t kháº©u');
       toggle.innerHTML = '<i class="fa-solid ' + (visible ? 'fa-eye' : 'fa-eye-slash') + '" aria-hidden="true"></i>';
     });
   }
@@ -1110,12 +1110,30 @@ async function hydrateLoginIntro() {
   await refreshLoginConfig();
 }
 
-async function refreshLoginConfig() {
-  try {
-    const data = await loginFetchJson('/api/public/login-config', true);
-    if (data?.settings) applyLoginSettings(data.settings);
-    if (data?.metrics) updateLoginStats(data.metrics);
-  } catch (_) {}
+let loginConfigCache = null;
+let loginConfigFetchedAt = 0;
+let loginConfigInFlight = null;
+
+async function refreshLoginConfig(options = {}) {
+  const force = !!options.force;
+  const now = Date.now();
+  if (!force && loginConfigCache && now - loginConfigFetchedAt < 15000) {
+    if (loginConfigCache.settings) applyLoginSettings(loginConfigCache.settings);
+    if (loginConfigCache.metrics) updateLoginStats(loginConfigCache.metrics);
+    return loginConfigCache;
+  }
+  if (!force && loginConfigInFlight) return loginConfigInFlight;
+  loginConfigInFlight = loginFetchJson('/api/public/login-config', true)
+    .then(data => {
+      loginConfigCache = data || {};
+      loginConfigFetchedAt = Date.now();
+      if (data?.settings) applyLoginSettings(data.settings);
+      if (data?.metrics) updateLoginStats(data.metrics);
+      return data;
+    })
+    .catch(() => null)
+    .finally(() => { loginConfigInFlight = null; });
+  return loginConfigInFlight;
 }
 window.refreshLoginConfig = refreshLoginConfig;
 
@@ -1124,7 +1142,7 @@ async function loginFetchJson(url, isPublic = false) {
   if (!isPublic && App.token) headers.Authorization = 'Bearer ' + App.token;
   const response = await fetch(url, { headers, cache: 'no-store' });
   const payload = await response.json().catch(() => null);
-  if (!response.ok || !payload?.ok) throw new Error('Không tải được dữ liệu');
+  if (!response.ok || !payload?.ok) throw new Error('KhÃ´ng táº£i Ä‘Æ°á»£c dá»¯ liá»‡u');
   return payload.data;
 }
 
@@ -1137,12 +1155,12 @@ function updateLoginStats(metrics) {
 }
 
 function applyLoginSettings(settings) {
-  setText('#loginSystemName', settings.systemName || 'Hệ thống Quản lý Hành chính');
-  setText('#loginHamletName', settings.hamletName || 'Thôn 09');
-  setText('#loginCommuneName', settings.communeName || 'Xã Hồng Phong');
-  setText('#loginSlogan', settings.slogan || 'Vì Nhân dân phục vụ');
-  setText('#loginVersion', 'Phiên bản ' + (settings.softwareVersion || 'v2.0'));
-  setText('#loginCopyright', settings.copyright || ('© ' + (settings.hamletName || 'Thôn 09') + ' - ' + (settings.communeName || 'Xã Hồng Phong')));
+  setText('#loginSystemName', settings.systemName || 'Há»‡ thá»‘ng Quáº£n lÃ½ HÃ nh chÃ­nh');
+  setText('#loginHamletName', settings.hamletName || 'ThÃ´n 09');
+  setText('#loginCommuneName', settings.communeName || 'XÃ£ Há»“ng Phong');
+  setText('#loginSlogan', settings.slogan || 'VÃ¬ NhÃ¢n dÃ¢n phá»¥c vá»¥');
+  setText('#loginVersion', 'PhiÃªn báº£n ' + (settings.softwareVersion || 'v2.0'));
+  setText('#loginCopyright', settings.copyright || ('Â© ' + (settings.hamletName || 'ThÃ´n 09') + ' - ' + (settings.communeName || 'XÃ£ Há»“ng Phong')));
   updateLoginHistory(settings);
   updateLoginLogo(settings.logoUrl || '');
   updateLoginBackground(settings);
@@ -1176,7 +1194,7 @@ function updateLoginLogo(url) {
   if (!logo.dataset.defaultHtml) logo.dataset.defaultHtml = logo.innerHTML;
   if (url) {
     logo.classList.add('login-logo-image');
-    logo.innerHTML = '<img src="' + escapeHtml(url) + '" alt="Logo Thôn 09" decoding="async">';
+    logo.innerHTML = '<img src="' + escapeHtml(url) + '" alt="Logo ThÃ´n 09" decoding="async">';
   } else {
     logo.classList.remove('login-logo-image');
     logo.innerHTML = logo.dataset.defaultHtml;
@@ -1220,7 +1238,7 @@ function animateLoginNumber(el, target) {
 }
 
 
-window.addEventListener('thon09:data-mutated', () => { if (typeof refreshLoginConfig === 'function') refreshLoginConfig(); });
+window.addEventListener('thon09:data-mutated', () => { if (typeof refreshLoginConfig === 'function') refreshLoginConfig({ force: true }); });
 
 function startTopbarClock() {
   if (window.__thon09TopbarClockStarted) return;
@@ -1280,29 +1298,29 @@ function gisPolygonLatLngs(area) {
 }
 function gisStatsHtml(stats) {
   return '<div class="gis-popup-stats">'
-    + '<span><b>' + gisNumber(stats.households) + '</b> hộ</span>'
-    + '<span><b>' + gisNumber(stats.citizens) + '</b> nhân khẩu</span>'
-    + '<span><b>' + gisNumber(stats.temporary) + '</b> tạm trú</span>'
-    + '<span><b>' + gisNumber(stats.away) + '</b> tạm vắng</span>'
+    + '<span><b>' + gisNumber(stats.households) + '</b> há»™</span>'
+    + '<span><b>' + gisNumber(stats.citizens) + '</b> nhÃ¢n kháº©u</span>'
+    + '<span><b>' + gisNumber(stats.temporary) + '</b> táº¡m trÃº</span>'
+    + '<span><b>' + gisNumber(stats.away) + '</b> táº¡m váº¯ng</span>'
     + '</div>';
 }
 function gisAreaPopup(area) {
   const stats = area.stats || {};
-  return '<div class="gis-popup"><h4>' + gisEscape(area.name) + '</h4><p>Mã khu vực: <b>' + gisEscape(area.area_code) + '</b></p>'
+  return '<div class="gis-popup"><h4>' + gisEscape(area.name) + '</h4><p>MÃ£ khu vá»±c: <b>' + gisEscape(area.area_code) + '</b></p>'
     + gisStatsHtml(stats)
-    + '<div class="gis-popup-actions"><button class="btn btn-sm btn-success" onclick="filterHouseholdsByGisArea(\'' + gisEscape(area.area_code) + '\')">Lọc hộ khu vực này</button>'
-    + '<button class="btn btn-sm btn-outline-danger" onclick="deleteGisArea(' + Number(area.id) + ')">Xóa ranh giới</button></div></div>';
+    + '<div class="gis-popup-actions"><button class="btn btn-sm btn-success" onclick="filterHouseholdsByGisArea(\'' + gisEscape(area.area_code) + '\')">Lá»c há»™ khu vá»±c nÃ y</button>'
+    + '<button class="btn btn-sm btn-outline-danger" onclick="deleteGisArea(' + Number(area.id) + ')">XÃ³a ranh giá»›i</button></div></div>';
 }
 function gisTooltip(area) {
   const stats = area.stats || {};
-  return '<strong>' + gisEscape(area.name) + '</strong><br>' + gisNumber(stats.households) + ' hộ - ' + gisNumber(stats.citizens) + ' nhân khẩu';
+  return '<strong>' + gisEscape(area.name) + '</strong><br>' + gisNumber(stats.households) + ' há»™ - ' + gisNumber(stats.citizens) + ' nhÃ¢n kháº©u';
 }
 async function loadGisMap() {
   try {
     if (!window.L) {
       const status = $('#gisMapStatus');
-      if (status) status.textContent = 'Không tải được thư viện bản đồ';
-      showToast('Không tải được Leaflet/OpenStreetMap. Vui lòng kiểm tra kết nối mạng.', 'danger');
+      if (status) status.textContent = 'KhÃ´ng táº£i Ä‘Æ°á»£c thÆ° viá»‡n báº£n Ä‘á»“';
+      showToast('KhÃ´ng táº£i Ä‘Æ°á»£c Leaflet/OpenStreetMap. Vui lÃ²ng kiá»ƒm tra káº¿t ná»‘i máº¡ng.', 'danger');
       return;
     }
     initGisMap();
@@ -1310,7 +1328,7 @@ async function loadGisMap() {
     App.gis.areas = data.areas || [];
     renderGisAreas(data);
   } catch (error) {
-    showToast('Không tải được bản đồ địa bàn: ' + error.message, 'danger');
+    showToast('KhÃ´ng táº£i Ä‘Æ°á»£c báº£n Ä‘á»“ Ä‘á»‹a bÃ n: ' + error.message, 'danger');
   }
 }
 function initGisMap() {
@@ -1345,12 +1363,12 @@ function setGisDrawnLayer(layer) {
   if (layer.setStyle) layer.setStyle({ color, fillColor: color, fillOpacity: .18, weight: 2 });
 }
 function startGisDraw() {
-  if (!App.gis.map || !window.L?.Draw?.Polygon) return showToast('Chưa sẵn sàng công cụ vẽ bản đồ', 'warning');
+  if (!App.gis.map || !window.L?.Draw?.Polygon) return showToast('ChÆ°a sáºµn sÃ ng cÃ´ng cá»¥ váº½ báº£n Ä‘á»“', 'warning');
   new L.Draw.Polygon(App.gis.map, { allowIntersection: false, showArea: true, shapeOptions: { color: $('#gisAreaColor')?.value || '#0f8a4b' } }).enable();
 }
 async function saveGisArea() {
   const layer = App.gis.drawnLayer;
-  if (!layer) return showToast('Vui lòng vẽ ranh giới trên bản đồ trước khi lưu', 'warning');
+  if (!layer) return showToast('Vui lÃ²ng váº½ ranh giá»›i trÃªn báº£n Ä‘á»“ trÆ°á»›c khi lÆ°u', 'warning');
   const latLngs = (layer.getLatLngs()[0] || []).map(p => ({ lat: Number(p.lat.toFixed(7)), lng: Number(p.lng.toFixed(7)) }));
   const payload = {
     id: $('#gisAreaId')?.value || undefined,
@@ -1360,9 +1378,9 @@ async function saveGisArea() {
     note: $('#gisAreaNote')?.value.trim(),
     geometry: latLngs
   };
-  if (!payload.name) return showToast('Vui lòng nhập tên khu vực', 'warning');
+  if (!payload.name) return showToast('Vui lÃ²ng nháº­p tÃªn khu vá»±c', 'warning');
   const saved = await api('/api/gis/areas', { method: 'POST', body: payload });
-  showToast('Đã lưu ranh giới khu vực');
+  showToast('ÄÃ£ lÆ°u ranh giá»›i khu vá»±c');
   clearGisForm();
   await loadGisMap();
   focusGisArea(saved.area_code);
@@ -1389,7 +1407,7 @@ function renderGisAreas(data) {
     latLngs.forEach(p => bounds.push(p));
   });
   if (bounds.length) map.fitBounds(bounds, { padding: [24, 24] });
-  $('#gisMapStatus').textContent = (data.areas || []).length + ' khu vực - ' + gisNumber(data.summary?.households) + ' hộ';
+  $('#gisMapStatus').textContent = (data.areas || []).length + ' khu vá»±c - ' + gisNumber(data.summary?.households) + ' há»™';
   renderGisSummary(data);
   renderGisAreaList(data.areas || [], $('#gisSearch')?.value || '');
   setTimeout(() => map.invalidateSize(), 120);
@@ -1397,17 +1415,17 @@ function renderGisAreas(data) {
 function renderGisSummary(data) {
   const host = $('#gisSummaryCards');
   if (!host) return;
-  host.innerHTML = '<div><span>Khu vực</span><b>' + gisNumber(data.areas?.length || 0) + '</b></div>'
-    + '<div><span>Số hộ</span><b>' + gisNumber(data.summary?.households) + '</b></div>'
-    + '<div><span>Nhân khẩu</span><b>' + gisNumber(data.summary?.citizens) + '</b></div>'
-    + '<div><span>Chưa gán</span><b>' + gisNumber(data.unassigned?.households) + '</b></div>';
+  host.innerHTML = '<div><span>Khu vá»±c</span><b>' + gisNumber(data.areas?.length || 0) + '</b></div>'
+    + '<div><span>Sá»‘ há»™</span><b>' + gisNumber(data.summary?.households) + '</b></div>'
+    + '<div><span>NhÃ¢n kháº©u</span><b>' + gisNumber(data.summary?.citizens) + '</b></div>'
+    + '<div><span>ChÆ°a gÃ¡n</span><b>' + gisNumber(data.unassigned?.households) + '</b></div>';
 }
 function renderGisAreaList(areas, keyword = '') {
   const host = $('#gisAreaList');
   if (!host) return;
   const q = normalizeSearchText(keyword);
   const filtered = (areas || []).filter(area => !q || [area.name, area.area_code, area.note].some(v => normalizeSearchText(v).includes(q)));
-  host.innerHTML = filtered.map(area => '<button class="gis-area-item" type="button" onclick="focusGisArea(\'' + gisEscape(area.area_code) + '\')"><span><b>' + gisEscape(area.name) + '</b><small>' + gisEscape(area.area_code) + '</small></span><em>' + gisNumber(area.stats?.households) + ' hộ / ' + gisNumber(area.stats?.citizens) + ' NK</em></button>').join('') || '<div class="text-muted small py-2">Chưa có khu vực bản đồ</div>';
+  host.innerHTML = filtered.map(area => '<button class="gis-area-item" type="button" onclick="focusGisArea(\'' + gisEscape(area.area_code) + '\')"><span><b>' + gisEscape(area.name) + '</b><small>' + gisEscape(area.area_code) + '</small></span><em>' + gisNumber(area.stats?.households) + ' há»™ / ' + gisNumber(area.stats?.citizens) + ' NK</em></button>').join('') || '<div class="text-muted small py-2">ChÆ°a cÃ³ khu vá»±c báº£n Ä‘á»“</div>';
 }
 function focusGisArea(areaCode) {
   const area = (App.gis.areas || []).find(item => String(item.area_code) === String(areaCode));
@@ -1424,16 +1442,16 @@ function filterHouseholdsByGisArea(areaCode) {
   setTimeout(() => loadHouseholds(), 100);
 }
 async function deleteGisArea(id) {
-  if (!confirm('Xóa ranh giới khu vực này? Dữ liệu hộ dân không bị xóa.')) return;
+  if (!confirm('XÃ³a ranh giá»›i khu vá»±c nÃ y? Dá»¯ liá»‡u há»™ dÃ¢n khÃ´ng bá»‹ xÃ³a.')) return;
   await api('/api/gis/areas/' + id, { method: 'DELETE' });
-  showToast('Đã xóa ranh giới khu vực');
+  showToast('ÄÃ£ xÃ³a ranh giá»›i khu vá»±c');
   loadGisMap();
 }
 function exportGisPdf() {
-  if (!App.token) return showToast('Vui lòng đăng nhập lại để xuất PDF', 'warning');
+  if (!App.token) return showToast('Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i Ä‘á»ƒ xuáº¥t PDF', 'warning');
   fetch('/api/gis/export-pdf', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' })
     .then(response => {
-      if (!response.ok) throw new Error('Không xuất được bản đồ');
+      if (!response.ok) throw new Error('KhÃ´ng xuáº¥t Ä‘Æ°á»£c báº£n Ä‘á»“');
       return response.blob();
     })
     .then(blob => {
@@ -1445,7 +1463,7 @@ function exportGisPdf() {
       }
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     })
-    .catch(error => showToast(error.message || 'Không xuất được bản đồ', 'danger'));
+    .catch(error => showToast(error.message || 'KhÃ´ng xuáº¥t Ä‘Æ°á»£c báº£n Ä‘á»“', 'danger'));
 }
 window.loadGisMap = loadGisMap;
 window.filterHouseholdsByGisArea = filterHouseholdsByGisArea;

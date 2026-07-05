@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260705-mobile-ui-v2-1');
+define('APP_ASSET_VERSION', '20260705-frontend-polish-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -183,15 +183,12 @@ if (!str_starts_with($request->path(), '/api')) {
     $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);
-        echo 'Không tải được giao diện ứng dụng.';
+        echo 'KhÃ´ng táº£i Ä‘Æ°á»£c giao diá»‡n á»©ng dá»¥ng.';
         exit;
     }
 
     $versionedAssets = [
         'assets/css/app.css',
-        'assets/css/mobile-ui-v1.css',
-        'assets/css/mobile-ui-v1-fix.css',
-        'assets/css/mobile-ui-v2.css',
         'assets/js/app.js',
         'assets/js/csrf.js',
         'assets/js/session.js',
@@ -204,7 +201,6 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/sprint10.js',
         'assets/js/gis.js',
         'assets/js/gis-household-location.js',
-        'assets/js/desktop-only-reset.js',
         'assets/js/household-photo-capture.js',
         'assets/js/household-photo-gps.js',
         'assets/js/gis-search.js',
@@ -223,9 +219,6 @@ if (!str_starts_with($request->path(), '/api')) {
     }
 
     $runtimeStyles = [
-        'assets/css/mobile-ui-v1.css',
-        'assets/css/mobile-ui-v1-fix.css',
-        'assets/css/mobile-ui-v2.css',
     ];
     $runtimeCss = implode("\n", array_map(
         fn(string $style): string => '<link rel="stylesheet" href="' . versioned_asset($style) . '">',
@@ -236,11 +229,7 @@ if (!str_starts_with($request->path(), '/api')) {
         $html = substr_replace($html, $runtimeCss . "\n</head>", $headClosePosition, strlen('</head>'));
     }
 
-    $runtimeScripts = [
-        'assets/js/desktop-only-reset.js',
-        'assets/js/mobile-ui-v1.js',
-        'assets/js/mobile-ui-v2.js',
-        'assets/js/view-inline-patches.js',
+    $runtimeScripts = [        'assets/js/view-inline-patches.js',
         'assets/js/gis-household-location.js',
         'assets/js/household-photo-capture.js',
         'assets/js/household-photo-gps.js',
@@ -260,4 +249,5 @@ if (!str_starts_with($request->path(), '/api')) {
 }
 
 $router->dispatch();
-Response::error('Không tìm thấy đường dẫn', 404);
+Response::error('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ°á»ng dáº«n', 404);
+
