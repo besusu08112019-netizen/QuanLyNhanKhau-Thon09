@@ -41,6 +41,21 @@ use App\Controllers\UserController;
 
 Autoloader::register();
 
+function api_log_exception(Throwable $e, array $payload): void
+{
+    $entry = [
+        'time' => date('c'),
+        'method' => $_SERVER['REQUEST_METHOD'] ?? null,
+        'uri' => $_SERVER['REQUEST_URI'] ?? null,
+        'payload' => $payload,
+    ];
+    $line = '[API_EXCEPTION] ' . json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+    error_log($line);
+    $dir = BASE_PATH . '/storage';
+    if (is_dir($dir) && is_writable($dir)) {
+        @file_put_contents($dir . '/api-errors.log', $line, FILE_APPEND | LOCK_EX);
+    }
+}
 function api_exception_payload(Throwable $e, int $status = 500): array
 {
     $lastQuery = BaseModel::lastQuery();
@@ -64,8 +79,9 @@ function api_exception_payload(Throwable $e, int $status = 500): array
 $request = Request::capture();
 set_exception_handler(function (Throwable $e) use ($request): void {
     if (str_starts_with($request->path(), '/api')) {
-        error_log('[API_EXCEPTION] ' . json_encode(api_exception_payload($e), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        Response::json(api_exception_payload($e), 500);
+        $payload = api_exception_payload($e);
+        api_log_exception($e, $payload);
+        Response::json($payload, 500);
     }
     throw $e;
 });
@@ -315,8 +331,9 @@ try {
     $router->dispatch();
 } catch (Throwable $e) {
     if (str_starts_with($request->path(), '/api')) {
-        error_log('[API_EXCEPTION] ' . json_encode(api_exception_payload($e), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        Response::json(api_exception_payload($e), 500);
+        $payload = api_exception_payload($e);
+        api_log_exception($e, $payload);
+        Response::json($payload, 500);
     }
     throw $e;
 }
