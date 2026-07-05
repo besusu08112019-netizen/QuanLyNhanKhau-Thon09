@@ -163,6 +163,7 @@ $router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
 $router->get('/api/profiles/household/{id}', [ProfileController::class, 'household']);
 $router->get('/api/profiles/citizen/{id}', [ProfileController::class, 'citizen']);
 $router->get('/api/profiles/timeline/{type}/{id}', [ProfileController::class, 'timeline']);
+$router->get('/api/timeline/{type}/{id}', [ProfileController::class, 'timeline']);
 $router->post('/api/profiles/{type}/{id}/notes', [ProfileController::class, 'createNote']);
 $router->delete('/api/profiles/notes/{id}', [ProfileController::class, 'deleteNote']);
 $router->put('/api/profiles/notes/{id}', [ProfileController::class, 'updateNote']);
