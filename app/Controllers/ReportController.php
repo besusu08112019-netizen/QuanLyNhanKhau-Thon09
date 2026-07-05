@@ -19,7 +19,7 @@ final class ReportController extends BaseController
     public function summary(): void
     {
         $this->requirePermission('report', 'read');
-        $this->ok($this->reports->build((string) $this->query('type', 'summary'), $this->filters()));
+        $this->ok($this->reports->build($this->reportType(), $this->filters()));
     }
 
     public function population(): void
@@ -67,7 +67,7 @@ final class ReportController extends BaseController
     public function exportExcel(): void
     {
         $user = $this->requirePermission('report', 'export');
-        $type = (string) $this->query('type', 'summary');
+        $type = $this->reportType();
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'export', 'Xuất Excel báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadExcel($report);
@@ -76,7 +76,7 @@ final class ReportController extends BaseController
     public function print(): void
     {
         $user = $this->requirePermission('report', 'read');
-        $type = (string) $this->query('type', 'summary');
+        $type = $this->reportType();
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'print', 'In báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->ok($report);
@@ -85,12 +85,20 @@ final class ReportController extends BaseController
     public function exportPdf(): void
     {
         $user = $this->requirePermission('report', 'export');
-        $type = (string) $this->query('type', 'summary');
+        $type = $this->reportType();
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'export', 'Xuất PDF báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadPdf($report);
     }
 
+    private function reportType(): string
+    {
+        $type = trim((string) $this->query('type', ''));
+        if ($type === '') {
+            $type = trim((string) $this->query('report_type', ''));
+        }
+        return $type === '' ? 'summary' : $type;
+    }
     private function filters(): array
     {
         $filters = [
