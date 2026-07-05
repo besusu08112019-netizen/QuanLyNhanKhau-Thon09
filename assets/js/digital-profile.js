@@ -1,4 +1,5 @@
 (() => {
+  const legacyShowPerson = window.showPerson;
   const sectionOptions = {
     household: [
       ['front_house', 'PHOTO', 'Ảnh mặt tiền nhà'],
@@ -10,17 +11,23 @@
       ['old_household_book', 'DOCUMENT', 'Sổ hộ khẩu cũ'],
       ['household_document', 'DOCUMENT', 'Giấy tờ liên quan'],
       ['household_avatar', 'PHOTO', 'Logo hoặc hình đại diện hộ'],
-    ],    citizen: [
+    ],
+    citizen: [
       ['portrait', 'PHOTO', 'Ảnh chân dung'],
       ['cccd_front', 'IMAGE', 'CCCD mặt trước'],
       ['cccd_back', 'IMAGE', 'CCCD mặt sau'],
       ['birth_certificate', 'DOCUMENT', 'Giấy khai sinh'],
+      ['health_insurance', 'DOCUMENT', 'BHYT'],
+      ['social_insurance', 'DOCUMENT', 'BHXH'],
       ['party_profile', 'DOCUMENT', 'Hồ sơ Đảng'],
-      ['military_profile', 'DOCUMENT', 'Hồ sơ quân sự'],
-      ['health_insurance', 'DOCUMENT', 'Hồ sơ BHYT'],
-      ['social_insurance', 'DOCUMENT', 'Hồ sơ BHXH'],
-      ['citizen_document', 'DOCUMENT', 'Giấy tờ khác'],
-    ],  };
+      ['military_profile', 'DOCUMENT', 'Hồ sơ Quân sự'],
+      ['citizen_video', 'VIDEO', 'Video'],
+      ['citizen_pdf', 'DOCUMENT', 'File PDF'],
+      ['citizen_word', 'WORD', 'File Word'],
+      ['citizen_excel', 'EXCEL', 'File Excel'],
+      ['citizen_document', 'DOCUMENT', 'Tài liệu khác'],
+    ],
+  };
 
   function $(selector, root = document) { return root.querySelector(selector); }
   function $$(selector, root = document) { return Array.from(root.querySelectorAll(selector)); }
@@ -46,13 +53,140 @@
 
   window.showPerson = async function showPersonDigitalProfile(id) {
     try {
-      const profile = await loadProfile('citizen', id);
-      $('#detailTitle').textContent = 'Hồ sơ số nhân khẩu';
-      $('#detailBody').innerHTML = renderProfile(profile);
-      bindProfileActions(profile);
+      const row = await api('/api/persons/' + encodeURIComponent(id));
+      $('#detailTitle').textContent = 'Chi tiết nhân khẩu';
+      $('#detailBody').innerHTML = renderCitizenTabbedProfile(row);
+      bindCitizenTabs(Number(row.id || id));
+      refreshUiEnhancements($('#detailBody') || document);
       App.modals.detail.show();
-    } catch (error) { show(error.message, 'danger'); }
+    } catch (error) {
+      if (typeof legacyShowPerson === 'function') return legacyShowPerson(id);
+      show(error.message, 'danger');
+    }
   };
+
+  function renderCitizenTabbedProfile(row) {
+    const id = Number(row?.id || 0);
+    const infoHtml = typeof renderDynamicPersonDetail === 'function'
+      ? renderDynamicPersonDetail(row)
+      : '<div class="text-muted small">Không tải được thông tin nhân khẩu.</div>';
+    return '<div class="citizen-profile-tabs" data-citizen-profile="' + id + '">'
+      + '<ul class="nav nav-tabs mb-3" role="tablist">'
+      + '<li class="nav-item" role="presentation"><button class="nav-link active" type="button" data-profile-tab="info">Thông tin</button></li>'
+      + '<li class="nav-item" role="presentation"><button class="nav-link" type="button" data-profile-tab="files">Hồ sơ số</button></li>'
+      + '<li class="nav-item" role="presentation"><button class="nav-link" type="button" data-profile-tab="timeline">Timeline</button></li>'
+      + '</ul>'
+      + '<section data-profile-pane="info">' + infoHtml + '</section>'
+      + '<section data-profile-pane="files" class="d-none"><div class="text-muted small py-3">Chọn tab Hồ sơ số để tải tài liệu.</div></section>'
+      + '<section data-profile-pane="timeline" class="d-none"><div class="text-muted small py-3">Chọn tab Timeline để tải lịch sử.</div></section>'
+      + '</div>';
+  }
+
+  function bindCitizenTabs(id) {
+    const root = $('[data-citizen-profile]');
+    if (!root) return;
+    $$('[data-profile-tab]', root).forEach(button => {
+      button.addEventListener('click', () => {
+        const tab = button.dataset.profileTab;
+        $$('[data-profile-tab]', root).forEach(item => item.classList.toggle('active', item === button));
+        $$('[data-profile-pane]', root).forEach(pane => pane.classList.toggle('d-none', pane.dataset.profilePane !== tab));
+        if (tab === 'files') loadCitizenFileManager(id, root);
+        if (tab === 'timeline') loadCitizenTimeline(id, root);
+      });
+    });
+  }
+
+  async function loadCitizenFileManager(id, root, force = false) {
+    const pane = $('[data-profile-pane="files"]', root);
+    if (!pane || (pane.dataset.loaded === '1' && !force)) return;
+    pane.innerHTML = '<div class="text-muted small py-3">Đang tải hồ sơ số...</div>';
+    try {
+      const files = await api('/api/files?' + new URLSearchParams({ module: 'citizen', entityId: String(id) }).toString());
+      pane.innerHTML = renderCitizenFileManager(Array.isArray(files) ? files : []);
+      pane.dataset.loaded = '1';
+      bindFileManagerActions(pane, id, root);
+    } catch (error) {
+      pane.innerHTML = '<div class="alert alert-danger py-2">' + esc(error.message) + '</div>';
+    }
+  }
+
+  function renderCitizenFileManager(files) {
+    const grouped = groupFiles(files);
+    return '<div class="digital-file-manager">'
+      + sectionOptions.citizen.map(([section, fileType, label]) => renderFileGroup(section, fileType, label, grouped[section] || [])).join('')
+      + '</div>';
+  }
+
+  function renderFileGroup(section, fileType, label, files) {
+    return '<section class="border rounded mb-2 p-2" data-file-group="' + esc(section) + '">'
+      + '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">'
+      + '<h6 class="mb-0">' + esc(label) + '</h6>'
+      + '<form class="d-flex flex-wrap gap-2 align-items-center" data-file-manager-upload data-section="' + esc(section) + '" data-file-type="' + esc(fileType) + '">'
+      + '<input class="form-control form-control-sm" type="file" name="file" required>'
+      + '<input class="form-control form-control-sm" type="text" name="description" placeholder="Mô tả">'
+      + '<button class="btn btn-sm btn-primary" type="submit"><i class="fa-solid fa-upload"></i> Upload</button>'
+      + '</form></div>'
+      + (files.length ? '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Tên file</th><th>Dung lượng</th><th>Ngày upload</th><th>Người upload</th><th class="text-end">Thao tác</th></tr></thead><tbody>'
+        + files.map(file => '<tr><td>' + esc(file.original_name || file.file_name || 'Tệp đính kèm') + '</td><td>' + esc(formatSize(file.file_size)) + '</td><td>' + esc(dateText(file.created_at)) + '</td><td>' + esc(file.created_by_name || file.created_by_email || file.created_by || '') + '</td><td class="text-end"><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></td></tr>').join('')
+        + '</tbody></table></div>' : '<div class="text-muted small">Chưa có file.</div>')
+      + '</section>';
+  }
+
+  function groupFiles(files) {
+    return files.reduce((acc, file) => {
+      const section = file.profile_section || file.category || file.file_type || 'citizen_document';
+      (acc[section] ||= []).push(file);
+      return acc;
+    }, {});
+  }
+
+  function bindFileManagerActions(pane, id, root) {
+    $$('[data-file-manager-upload]', pane).forEach(form => form.addEventListener('submit', event => uploadCitizenFile(event, id, root)));
+    $$('[data-preview-file]', pane).forEach(btn => btn.addEventListener('click', () => previewFile(btn.dataset.previewFile)));
+    $$('[data-download-file]', pane).forEach(btn => btn.addEventListener('click', () => downloadFile(btn.dataset.downloadFile)));
+    $$('[data-delete-file]', pane).forEach(btn => btn.addEventListener('click', () => deleteCitizenFile(btn.dataset.deleteFile, id, root)));
+  }
+
+  async function uploadCitizenFile(event, id, root) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const file = form.elements.file.files[0];
+    if (!file) return show('Vui lòng chọn file', 'warning');
+    const data = new FormData();
+    data.append('module', 'citizen');
+    data.append('entityId', id);
+    data.append('profileSection', form.dataset.section || 'citizen_document');
+    data.append('fileType', form.dataset.fileType || 'DOCUMENT');
+    data.append('description', form.elements.description.value || '');
+    data.append('file', file);
+    await api('/api/files', { method: 'POST', body: data });
+    show('Đã tải lên tài liệu');
+    await loadCitizenFileManager(id, root, true);
+    const timelinePane = $('[data-profile-pane="timeline"]', root);
+    if (timelinePane) timelinePane.dataset.loaded = '0';
+  }
+
+  async function deleteCitizenFile(fileId, id, root) {
+    if (!confirm('Xóa file đính kèm này?')) return;
+    await api('/api/files/' + encodeURIComponent(fileId), { method: 'DELETE' });
+    show('Đã xóa file đính kèm');
+    await loadCitizenFileManager(id, root, true);
+    const timelinePane = $('[data-profile-pane="timeline"]', root);
+    if (timelinePane) timelinePane.dataset.loaded = '0';
+  }
+
+  async function loadCitizenTimeline(id, root, force = false) {
+    const pane = $('[data-profile-pane="timeline"]', root);
+    if (!pane || (pane.dataset.loaded === '1' && !force)) return;
+    pane.innerHTML = '<div class="text-muted small py-3">Đang tải timeline...</div>';
+    try {
+      const items = await api('/api/profiles/timeline/citizen/' + encodeURIComponent(id));
+      pane.innerHTML = renderTimeline(Array.isArray(items) ? items : []);
+      pane.dataset.loaded = '1';
+    } catch (error) {
+      pane.innerHTML = '<div class="alert alert-danger py-2">' + esc(error.message) + '</div>';
+    }
+  }
 
   function renderProfile(profile) {
     const type = profile.type;
@@ -73,17 +207,11 @@
     const row = profile.profile || {};
     const title = profile.type === 'household' ? (row.household_code || 'Hộ gia đình') : (row.full_name || 'Nhân khẩu');
     const subtitle = profile.type === 'household' ? (row.head_citizen_name || row.address || '') : [row.citizen_code, row.identity_number].filter(Boolean).join(' - ');
-    return '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">'
-      + '<div><div class="text-muted small">Hồ sơ số</div><h4 class="mb-1">' + esc(title) + '</h4><div class="text-muted">' + esc(subtitle) + '</div></div>'
-      + '<div class="btn-group btn-group-sm" role="group">'
-      + '<button class="btn btn-outline-primary" type="button" data-profile-refresh><i class="fa-solid fa-rotate-right"></i> Tải lại</button>'
-      + '<button class="btn btn-outline-secondary" type="button" data-profile-print><i class="fa-solid fa-print"></i> In</button>'
-      + '</div></div>';
+    return '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3"><div><div class="text-muted small">Hồ sơ số</div><h4 class="mb-1">' + esc(title) + '</h4><div class="text-muted">' + esc(subtitle) + '</div></div><div class="btn-group btn-group-sm" role="group"><button class="btn btn-outline-primary" type="button" data-profile-refresh><i class="fa-solid fa-rotate-right"></i> Tải lại</button><button class="btn btn-outline-secondary" type="button" data-profile-print><i class="fa-solid fa-print"></i> In</button></div></div>';
   }
 
   function renderQuickLinks(profile) {
     const type = profile.type;
-    const id = Number(profile.profile?.id || 0);
     const householdId = Number(profile.household?.id || profile.profile?.household_id || 0);
     const buttons = [];
     if (type === 'household') {
@@ -137,7 +265,7 @@
 
   function renderTimeline(items) {
     return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Timeline lịch sử</h6>'
-      + (items.length ? '<div class="list-group list-group-flush border rounded">' + items.map(item => '<div class="list-group-item"><div class="d-flex justify-content-between gap-2"><strong>' + esc(item.title || item.type || '') + '</strong><span class="small text-muted">' + dateText(item.time) + '</span></div><div class="small text-muted">' + esc(item.type || '') + '</div>' + (item.description ? '<div>' + esc(item.description) + '</div>' : '') + '</div>').join('') + '</div>' : '<div class="text-muted small">Chưa có lịch sử.</div>')
+      + (items.length ? '<div class="list-group list-group-flush border rounded">' + items.map(item => '<div class="list-group-item"><div class="d-flex justify-content-between gap-2"><strong>' + esc(item.title || item.type || '') + '</strong><span class="small text-muted">' + dateText(item.time) + '</span></div><div class="small text-muted">' + esc(timelineActor(item)) + '</div>' + (item.description ? '<div>' + esc(item.description) + '</div>' : '') + '</div>').join('') + '</div>' : '<div class="text-muted small">Chưa có lịch sử.</div>')
       + '</section>';
   }
 
@@ -201,6 +329,7 @@
     show('Đã sửa ghi chú');
     type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
+
   async function deleteNote(noteId, type, id) {
     if (!confirm('Xóa ghi chú này?')) return;
     await api('/api/profiles/notes/' + encodeURIComponent(noteId), { method: 'DELETE' });
@@ -214,9 +343,16 @@
     show('Đã xóa file đính kèm');
     type === 'household' ? window.showHousehold(entityId) : window.showPerson(entityId);
   }
-  function previewFile(id) {
-    window.open('/api/files/' + encodeURIComponent(id) + '/preview', '_blank', 'noopener');
+
+  async function previewFile(id) {
+    const response = await fetch('/api/files/' + encodeURIComponent(id) + '/preview', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
+    if (!response.ok) return show('Không xem trước được file', 'danger');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
+
   async function downloadFile(id) {
     const response = await fetch('/api/files/' + encodeURIComponent(id) + '/download', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
     if (!response.ok) return show('Không tải được file', 'danger');
@@ -237,6 +373,19 @@
     if (link === 'files') return document.getElementById('digitalProfileFiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (link === 'movements' && typeof window.switchScreen === 'function') return window.switchScreen('movements');
     if (link.startsWith('household:')) return window.showHousehold(link.split(':')[1]);
+  }
+
+  function formatSize(bytes) {
+    const size = Number(bytes || 0);
+    if (!size) return '';
+    if (size < 1024) return size + ' B';
+    if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
+    return (size / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  function timelineActor(item) {
+    const data = item?.data || {};
+    return data.actor_email || data.created_by_name || data.created_by_email || data.updated_by_name || data.updated_by_email || item?.description || '';
   }
 
   function sectionTitle(key) {

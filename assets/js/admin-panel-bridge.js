@@ -201,7 +201,7 @@
   }
 
   function loadSprint8Script() {
-    if (document.querySelector('script[src*="sprint8.js"]')) return;
+    if (document.querySelector('script[src*="sprint8"]')) return;
     const script = document.createElement('script');
     script.src = 'assets/js/sprint8.js?v=20260628-sprint8';
     script.defer = true;
@@ -209,7 +209,7 @@
   }
 
   function loadSprint9Script() {
-    if (document.querySelector('script[src*="sprint9.js"]')) return;
+    if (document.querySelector('script[src*="sprint9"]')) return;
     const script = document.createElement('script');
     script.src = 'assets/js/sprint9.js?v=20260629-sprint9';
     script.defer = true;

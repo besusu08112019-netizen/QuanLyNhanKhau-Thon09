@@ -37,14 +37,24 @@ final class FileAttachment extends BaseModel
 
     public function byEntity(string $entityType, int $entityId): array
     {
-        $where = ['entity_id = :entity_id', 'status = "ACTIVE"'];
+        $where = ['f.entity_id = :entity_id', 'f.status = "ACTIVE"'];
         $params = ['entity_type' => $entityType, 'entity_id' => $entityId];
         if ($this->columnExists('file_attachments', 'entity_type')) {
-            $where[] = '(entity_type = :entity_type OR module = :entity_type)';
+            $where[] = '(f.entity_type = :entity_type OR f.module = :entity_type)';
         } else {
-            $where[] = 'module = :entity_type';
+            $where[] = 'f.module = :entity_type';
         }
-        return $this->fetchAll('SELECT * FROM file_attachments WHERE ' . implode(' AND ', $where) . ' ORDER BY created_at DESC, id DESC', $params);
+        $select = 'f.*';
+        $join = '';
+        if ($this->tableExists('users')) {
+            $select .= ', uc.display_name AS created_by_name, uc.email AS created_by_email';
+            $join = ' LEFT JOIN users uc ON uc.id = f.created_by';
+            if ($this->columnExists('file_attachments', 'updated_by')) {
+                $select .= ', uu.display_name AS updated_by_name, uu.email AS updated_by_email';
+                $join .= ' LEFT JOIN users uu ON uu.id = f.updated_by';
+            }
+        }
+        return $this->fetchAll('SELECT ' . $select . ' FROM file_attachments f' . $join . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY f.created_at DESC, f.id DESC', $params);
     }
 
     public function softDelete(int $id, int $userId): void
