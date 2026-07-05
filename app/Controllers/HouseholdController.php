@@ -45,6 +45,7 @@ final class HouseholdController extends BaseController
     {
         $user = $this->requirePermission('household', 'create');
         $input = $this->input();
+        $this->requireInputFields((array) $input, ['householdCode' => 'Mã hộ', 'headCitizenName' => 'Tên chủ hộ', 'address' => 'Địa chỉ']);
         $row = $this->households->create($input, (int) $user['id']);
         $this->movementService->afterHouseholdCreated($row, $input, (int) $user['id']);
         $row = $this->households->find((int) $row['id']) ?: $row;

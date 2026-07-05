@@ -125,7 +125,7 @@ final class ImportController extends BaseController
     private function readRows(): array
     {
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
-            throw new \RuntimeException('Vui lòng chọn file CSV hoặc XLSX');
+            $this->fail('Vui lòng chọn file CSV hoặc XLSX', 422);
         }
         if ((int) ($_FILES['file']['size'] ?? 0) > 5 * 1024 * 1024) {
             throw new \RuntimeException('File import tối đa 5MB');

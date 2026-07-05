@@ -74,6 +74,7 @@ final class PersonController extends BaseController
     {
         $user = $this->requirePermission('citizen', 'create');
         $input = $this->input();
+        $this->requireInputFields((array) $input, ['householdCode' => 'Mã hộ', 'fullName' => 'Họ và tên', 'dateOfBirth' => 'Ngày sinh']);
         $row = $this->citizens->create($input, (int) $user['id']);
         $this->movementService->afterCitizenCreated($row, $input, (int) $user['id']);
         $row = $this->citizens->find((int) $row['id']) ?: $row;

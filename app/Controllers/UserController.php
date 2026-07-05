@@ -22,7 +22,9 @@ final class UserController extends BaseController
     public function store(): void
     {
         $actor = $this->requireAdmin();
-        $user = $this->users()->create($this->input(), (int) $actor['id']);
+        $input = (array) $this->input();
+        $this->requireInputFields($input, ['username' => 'Tên đăng nhập', 'email' => 'Email', 'password' => 'Mật khẩu', 'role' => 'Vai trò']);
+        $user = $this->users()->create($input, (int) $actor['id']);
         $this->audit($actor, 'user', 'create', 'Tạo người dùng', $user['id']);
         $this->ok($this->users()->publicUser($user));
     }

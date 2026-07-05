@@ -19,6 +19,19 @@ abstract class BaseController
     protected function ok(mixed $data = null): void { Response::ok($data); }
     protected function fail(string $message, int $status = 400): void { Response::error($message, $status); }
 
+    protected function requireInputFields(array $input, array $fields): void
+    {
+        $missing = [];
+        foreach ($fields as $field => $label) {
+            $value = $input[$field] ?? null;
+            if ($value === null || trim((string) $value) === '') {
+                $missing[$field] = $label;
+            }
+        }
+        if ($missing) {
+            Response::json(['ok' => false, 'error' => ['message' => 'Dữ liệu không hợp lệ', 'details' => ['missing' => $missing]]], 422);
+        }
+    }
     protected function users(): User
     {
         return $this->usersModel ??= new User();
