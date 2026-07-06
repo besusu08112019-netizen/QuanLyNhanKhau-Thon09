@@ -288,6 +288,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/view-inline-patches.min.js',
         'assets/js/gis-household-location.min.js',
         'assets/js/household-photo-capture.min.js',
+        'assets/js/household-photo-camera-fix.min.js',
         'assets/js/household-photo-gps.min.js',
         'assets/js/gis-search.min.js',
         'assets/js/gis-smart.min.js',

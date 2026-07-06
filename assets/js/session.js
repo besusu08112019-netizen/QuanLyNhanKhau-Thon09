@@ -9,32 +9,6 @@
     showLogin();
   }
 
-  function loadScriptOnce(src, marker) {
-    return new Promise((resolve, reject) => {
-      if (document.querySelector('script[data-' + marker + ']')) {
-        resolve();
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = src;
-      script.defer = true;
-      script.dataset[marker.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = '1';
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Không tải được ' + src));
-      document.head.appendChild(script);
-    });
-  }
-
-  function loadHouseholdPhotoCapture() {
-    return loadScriptOnce('assets/js/household-photo-capture.js?v=20260703-sprint16-1', 'thon09-household-photo-capture')
-      .then(() => loadScriptOnce('assets/js/household-photo-camera-fix.js?v=20260703-sprint16-1', 'thon09-household-photo-camera-fix'))
-      .catch(error => {
-        console.error('Không tải được chức năng chụp ảnh hộ', error);
-      });
-  }
-
-  loadHouseholdPhotoCapture();
-
   window.clearClientSession = clearSession;
 
   window.logout = async function logout() {

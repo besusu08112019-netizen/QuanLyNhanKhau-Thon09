@@ -46,6 +46,7 @@ const assets = [
   ['assets/js/view-inline-patches.js', 'assets/js/view-inline-patches.min.js', compactJs],
   ['assets/js/gis-household-location.js', 'assets/js/gis-household-location.min.js', compactJs],
   ['assets/js/household-photo-capture.js', 'assets/js/household-photo-capture.min.js', compactJs],
+  ['assets/js/household-photo-camera-fix.js', 'assets/js/household-photo-camera-fix.min.js', compactJs],
   ['assets/js/household-photo-gps.js', 'assets/js/household-photo-gps.min.js', compactJs],
   ['assets/js/gis-search.js', 'assets/js/gis-search.min.js', compactJs],
   ['assets/js/gis-smart.js', 'assets/js/gis-smart.min.js', compactJs],

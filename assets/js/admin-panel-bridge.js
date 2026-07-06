@@ -15,8 +15,6 @@
   };
 
   document.addEventListener('DOMContentLoaded', () => {
-    loadSprint8Script();
-    loadSprint9Script();
     enforceSuperAdminMenu();
     setupHouseholdCategoryFilters();
     setupDigitalGovernmentFeatures();
@@ -28,7 +26,6 @@
       window.showApp = function bridgeShowApp() {
         previousShowApp();
         enforceSuperAdminMenu();
-        loadSprint9Script();
         setupHouseholdCategoryFilters();
         setupDigitalGovernmentFeatures();
         setTimeout(setupReportCategoryFilter, 500);
@@ -386,23 +383,7 @@
     return '<table class="table table-bordered table-hover align-middle mb-0"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
   }
 
-  function loadSprint8Script() {
-    if (document.querySelector('script[src*="sprint8"]')) return;
-    const script = document.createElement('script');
-    script.src = 'assets/js/sprint8.js?v=20260628-sprint8';
-    script.defer = true;
-    document.body.appendChild(script);
-  }
-
-  function loadSprint9Script() {
-    if (document.querySelector('script[src*="sprint9"]')) return;
-    const script = document.createElement('script');
-    script.src = 'assets/js/sprint9.js?v=20260629-sprint9';
-    script.defer = true;
-    document.body.appendChild(script);
-  }
-
-  function scheduleCategoryFilterSetup() {
+function scheduleCategoryFilterSetup() {
     setupHouseholdCategoryFilters();
     setupReportCategoryFilter();
     setTimeout(setupHouseholdCategoryFilters, 250);

@@ -310,6 +310,7 @@
   <script src="assets/js/view-inline-patches.min.js"></script>
   <script src="assets/js/gis-household-location.min.js"></script>
   <script src="assets/js/household-photo-capture.min.js"></script>
+  <script src="assets/js/household-photo-camera-fix.min.js"></script>
   <script src="assets/js/household-photo-gps.min.js"></script>
   <script src="assets/js/gis-search.min.js"></script>
   <script src="assets/js/gis-smart.min.js"></script>
