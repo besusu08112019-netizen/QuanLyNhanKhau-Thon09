@@ -13,7 +13,8 @@
     renderingMarkers: false,
     reopeningPopup: false,
     lastMarkerTouchAt: 0,
-    allowPopupCloseUntil: 0
+    allowPopupCloseUntil: 0,
+    guardedMap: null
   };
 
   function $(selector, root) { return (root || document).querySelector(selector); }
@@ -319,10 +320,27 @@
     loadPreviewBlobUrl(row.thumbnail_file_id).then(url => {
       row.__thumbnailObjectUrl = url;
       marker.__thon09HouseholdRow = row;
-      marker.setIcon(markerIcon(state.activeMarkerId === String(row.id), url));
+      const popupIsOpen = state.openPopupId === String(row.id) && marker.isPopupOpen && marker.isPopupOpen();
+      if (!popupIsOpen) marker.setIcon(markerIcon(state.activeMarkerId === String(row.id), url));
       marker.setPopupContent(popupHtml(row));
-      if (state.openPopupId === String(row.id) && marker.isPopupOpen && marker.isPopupOpen()) marker.openPopup();
+      if (popupIsOpen) marker.openPopup();
     }).catch(() => {});
+  }
+
+  function shouldDeferMarkerReload(search, options) {
+    if (search || (options && options.force)) return false;
+    return Boolean(state.openPopupId);
+  }
+
+  function guardMapClosePopup(m) {
+    if (!m || state.guardedMap === m || typeof m.closePopup !== 'function') return;
+    state.guardedMap = m;
+    const originalClosePopup = m.closePopup;
+    m.closePopup = function () {
+      const isMarkerTouchClose = state.openPopupId && Date.now() - state.lastMarkerTouchAt < 900 && Date.now() > state.allowPopupCloseUntil;
+      if (isMarkerTouchClose) return this;
+      return originalClosePopup.apply(this, arguments);
+    };
   }
 
   function stopLeafletEvent(event) {
@@ -467,10 +485,12 @@
     return params;
   }
 
-  async function loadHouseholdMarkers(search) {
+  async function loadHouseholdMarkers(search, options) {
     if (!isAuthenticated()) return;
+    if (shouldDeferMarkerReload(search, options)) return;
     const m = map();
     if (!m || !window.L || state.loading) return;
+    guardMapClosePopup(m);
     state.loading = true;
     state.renderingMarkers = true;
     try {
@@ -525,6 +545,7 @@
     const bindMove = () => {
       const m = map();
       if (!m || m.__thon09HouseholdMarkerMoveBound) return;
+      guardMapClosePopup(m);
       m.__thon09HouseholdMarkerMoveBound = true;
       m.on('moveend zoomend', debounce(() => {
         if (state.openPopupId) return;
