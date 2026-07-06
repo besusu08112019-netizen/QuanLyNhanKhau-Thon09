@@ -296,6 +296,7 @@
   <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 id="detailTitle" class="modal-title">Chi tiết</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div id="detailBody" class="modal-body"></div></div></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/i18n.min.js?v=20260705-prod-1"></script>
   <script src="assets/js/app.utf8.min.js?v=20260705-prod-1"></script>
   <script src="assets/js/csrf.min.js?v=20260705-prod-1"></script>
   <script src="assets/js/session.min.js?v=20260705-prod-1"></script>

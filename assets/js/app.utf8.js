@@ -261,7 +261,7 @@ function getMobileBadgeTone(label, value) {
 function normalizeMobileBadgeText(cell, label, value) {
   if (!label.includes('dien ho') || value !== 'khong') return;
   const target = cell.querySelector('.badge, .badge-soft, .person-badge, span, a, button') || cell;
-  target.textContent = 'Khong uu tien';
+  target.textContent = personUiText('Khong uu tien');
 }
 
 function startResponsiveTableObserver() {
@@ -793,13 +793,13 @@ function renderPersonRows(items) {
   const rows = Array.isArray(items) ? items : [];
   if (!rows.length) return '<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
   const groups = rows.reduce((acc, row) => {
-    const code = String(row.household_code || row.householdCode || 'Chua co ho').trim();
+    const code = String(row.household_code || row.householdCode || personUiText('Chua co ho', 'Ch\u01b0a c\u00f3 h\u1ed9')).trim();
     (acc[code] ||= []).push(row);
     return acc;
   }, {});
   return Object.entries(groups).map(([code, members]) => {
     const head = members.find(row => /chu ho/i.test(normalizeSearchText(personRelationship(row)))) || members[0] || {};
-    const group = '<tr class="group-row ds-group-row person-household-group"><td colspan="12"><div class="ds-group-header"><div><i class="fa-solid fa-house-chimney"></i><span>Ho ' + escapeHtml(code) + '</span><small>Chu ho: ' + escapeHtml(head.full_name || '') + '</small></div><strong>' + number(members.length) + ' nhan khau</strong></div></td></tr>';
+    const group = '<tr class="group-row ds-group-row person-household-group"><td colspan="12"><div class="ds-group-header"><div><i class="fa-solid fa-house-chimney"></i><span>' + personUiText('Ho') + ' ' + escapeHtml(code) + '</span><small>' + personUiText('Chu ho') + ': ' + escapeHtml(head.full_name || '') + '</small></div><strong>' + number(members.length) + ' ' + personUiText('nhan khau') + '</strong></div></td></tr>';
     return group + members.map(personRow).join('');
   }).join('');
 }
@@ -819,10 +819,10 @@ function personRow(row) {
     + '<td>' + escapeHtml(row.household_code || '') + '</td>'
     + '<td>' + escapeHtml(personCode) + '</td>'
     + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + row.id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
-    + '<td>' + escapeHtml(personRelationship(row)) + '</td>'
+    + '<td>' + escapeHtml(personUiText(personRelationship(row))) + '</td>'
     + '<td>' + formatDate(row.date_of_birth) + '</td>'
     + '<td>' + escapeHtml(ageText) + '</td>'
-    + '<td>' + escapeHtml(row.gender || '') + '</td>'
+    + '<td>' + escapeHtml(personUiText(row.gender || '')) + '</td>'
     + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
     + '<td><span class="person-badge ' + residenceClass + '">' + escapeHtml(residenceText) + '</span></td>'
     + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
@@ -939,12 +939,16 @@ function normalizePersonDetailData(row) {
   return normalized;
 }
 
+function personUiText(value, fallback) {
+  return window.AppI18n && typeof window.AppI18n.text === 'function' ? window.AppI18n.text(value, fallback) : (fallback || String(value || ''));
+}
+
 function buildDynamicPersonGroups(data) {
   const used = new Set(personInternalFields());
   const groupDefs = [
-    { key: 'basic', title: 'Thong tin co ban', icon: 'fa-id-card', required: true, fields: ['citizenCode','fullName','relationship','householdCode','dateOfBirth','age','gender','identityNumber','residencyStatus','displayAddress','displayStatus'] },
-    { key: 'personal', title: 'Thong tin mo rong', icon: 'fa-user', fields: ['occupation','job','workPlace','educationLevel','maritalStatus','phone','email','ethnicity','religion','nationality','bloodType'] },
-    { key: 'administrative', title: 'Thong tin nghiep vu', icon: 'fa-landmark', fields: ['healthInsurance','socialInsurance','partyMember','youthUnionMember','womenUnionMember','farmersUnionMember','veteransUnionMember','elderlyUnionMember','meritoriousPerson','martyrRelative','woundedSoldier','sickSoldier','socialAssistance','poorHousehold','nearPoorHousehold','disabledPerson','disabledHousehold','householdType','employed','unemployed','freelanceLabor','outProvinceLabor','foreignLabor','pupil','student','retired','note'] }
+    { key: 'basic', title: personUiText('Thong tin co ban'), icon: 'fa-id-card', required: true, fields: ['citizenCode','fullName','relationship','householdCode','dateOfBirth','age','gender','identityNumber','residencyStatus','displayAddress','displayStatus'] },
+    { key: 'personal', title: personUiText('Thong tin mo rong'), icon: 'fa-user', fields: ['occupation','job','workPlace','educationLevel','maritalStatus','phone','email','ethnicity','religion','nationality','bloodType'] },
+    { key: 'administrative', title: personUiText('Thong tin nghiep vu'), icon: 'fa-landmark', fields: ['healthInsurance','socialInsurance','partyMember','youthUnionMember','womenUnionMember','farmersUnionMember','veteransUnionMember','elderlyUnionMember','meritoriousPerson','martyrRelative','woundedSoldier','sickSoldier','socialAssistance','poorHousehold','nearPoorHousehold','disabledPerson','disabledHousehold','householdType','employed','unemployed','freelanceLabor','outProvinceLabor','foreignLabor','pupil','student','retired','note'] }
   ];
   const groups = groupDefs.map(def => ({ ...def, items: [] }));
   const addField = (group, key) => {
@@ -1046,29 +1050,11 @@ function formatPersonDetailValue(key, value, required = false) {
 }
 
 function mapPersonDisplayValue(key, value) {
-  const raw = String(value ?? '').trim();
-  if (!raw) return '';
-  const normalized = normalizeSearchText(raw).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
-  const common = {
-    'co': 'C\u00f3', 'khong': 'Kh\u00f4ng', 'nam': 'Nam', 'nu': 'N\u1eef', 'khac': 'Kh\u00e1c',
-    'chu ho': 'Ch\u1ee7 h\u1ed9', 'vo': 'V\u1ee3', 'chong': 'Ch\u1ed3ng', 'con': 'Con', 'cha': 'Cha', 'me': 'M\u1eb9', 'ong': '\u00d4ng', 'ba': 'B\u00e0', 'chau': 'Ch\u00e1u',
-    'doc than': '\u0110\u1ed9c th\u00e2n', 'chua ket hon': 'Ch\u01b0a k\u1ebft h\u00f4n', 'da ket hon': '\u0110\u00e3 k\u1ebft h\u00f4n', 'ly hon': 'Ly h\u00f4n', 'goa': 'G\u00f3a',
-    'huu tri': 'H\u01b0u tr\u00ed', 'nghi huu': 'Ngh\u1ec9 h\u01b0u', 'nong nghiep': 'N\u00f4ng nghi\u1ec7p', 'cong nhan': 'C\u00f4ng nh\u00e2n', 'can bo': 'C\u00e1n b\u1ed9', 'cong chuc': 'C\u00f4ng ch\u1ee9c', 'vien chuc': 'Vi\u00ean ch\u1ee9c', 'hoc sinh': 'H\u1ecdc sinh', 'sinh vien': 'Sinh vi\u00ean', 'lao dong tu do': 'Lao \u0111\u1ed9ng t\u1ef1 do', 'khong co viec lam': 'Kh\u00f4ng c\u00f3 vi\u1ec7c l\u00e0m',
-    'o nha': '\u1ede nh\u00e0', 'tam vang': 'T\u1ea1m v\u1eafng', 'tam tru': 'T\u1ea1m tr\u00fa', 'thuong tru': 'Th\u01b0\u1eddng tr\u00fa',
-    'dang vien': '\u0110\u1ea3ng vi\u00ean', 'than nhan liet si': 'Th\u00e2n nh\u00e2n li\u1ec7t s\u0129', 'benh binh': 'B\u1ec7nh binh', 'thuong binh': 'Th\u01b0\u01a1ng binh', 'nguoi co cong': 'Ng\u01b0\u1eddi c\u00f3 c\u00f4ng', 'nguoi khuyet tat': 'Ng\u01b0\u1eddi khuy\u1ebft t\u1eadt',
-    'alive': 'C\u00f2n s\u1ed1ng', 'deceased': '\u0110\u00e3 m\u1ea5t', 'active': '\u0110ang qu\u1ea3n l\u00fd', 'inactive': 'Ng\u1eebng qu\u1ea3n l\u00fd'
-  };
-  return common[normalized] || raw;
+  return personUiText(value);
 }
+
 function personDetailLabels() {
-  return {
-    householdCode: 'M\u00e3 h\u1ed9', citizenCode: 'M\u00e3 nh\u00e2n kh\u1ea9u', fullName: 'H\u1ecd t\u00ean', gender: 'Gi\u1edbi t\u00ednh', dateOfBirth: 'Ng\u00e0y sinh', age: 'Tu\u1ed5i', identityNumber: 'CCCD/S\u1ed1 \u0111\u1ecbnh danh', phone: 'S\u1ed1 \u0111i\u1ec7n tho\u1ea1i', email: 'Th\u01b0 \u0111i\u1ec7n t\u1eed',
-    displayAddress: '\u0110\u1ecba ch\u1ec9', displayStatus: 'T\u00ecnh tr\u1ea1ng', relationship: 'Quan h\u1ec7 v\u1edbi ch\u1ee7 h\u1ed9', residencyStatus: 'C\u01b0 tr\u00fa', presenceStatus: 'Hi\u1ec7n t\u1ea1i',
-    occupation: 'Ngh\u1ec1 nghi\u1ec7p', job: 'Ngh\u1ec1 nghi\u1ec7p', workPlace: 'N\u01a1i l\u00e0m vi\u1ec7c', ethnicity: 'D\u00e2n t\u1ed9c', religion: 'T\u00f4n gi\u00e1o', educationLevel: 'Tr\u00ecnh \u0111\u1ed9 h\u1ecdc v\u1ea5n', maritalStatus: 'T\u00ecnh tr\u1ea1ng h\u00f4n nh\u00e2n', nationality: 'Qu\u1ed1c t\u1ecbch', bloodType: 'Nh\u00f3m m\u00e1u',
-    partyMember: '\u0110\u1ea3ng vi\u00ean', youthUnionMember: '\u0110o\u00e0n vi\u00ean Thanh ni\u00ean', womenUnionMember: 'H\u1ed9i vi\u00ean H\u1ed9i Ph\u1ee5 n\u1eef', farmersUnionMember: 'H\u1ed9i vi\u00ean H\u1ed9i N\u00f4ng d\u00e2n', veteransUnionMember: 'H\u1ed9i vi\u00ean H\u1ed9i C\u1ef1u chi\u1ebfn binh', elderlyUnionMember: 'H\u1ed9i vi\u00ean H\u1ed9i Ng\u01b0\u1eddi cao tu\u1ed5i',
-    meritoriousPerson: 'Ng\u01b0\u1eddi c\u00f3 c\u00f4ng', martyrRelative: 'Th\u00e2n nh\u00e2n li\u1ec7t s\u0129', woundedSoldier: 'Th\u01b0\u01a1ng binh', sickSoldier: 'B\u1ec7nh binh', disabledPerson: 'Ng\u01b0\u1eddi khuy\u1ebft t\u1eadt', disabledHousehold: 'H\u1ed9 c\u00f3 ng\u01b0\u1eddi khuy\u1ebft t\u1eadt', socialAssistance: 'B\u1ea3o tr\u1ee3 x\u00e3 h\u1ed9i', householdType: 'Di\u1ec7n h\u1ed9', poorHousehold: 'H\u1ed9 ngh\u00e8o', nearPoorHousehold: 'H\u1ed9 c\u1eadn ngh\u00e8o', healthInsurance: 'B\u1ea3o hi\u1ec3m y t\u1ebf', socialInsurance: 'B\u1ea3o hi\u1ec3m x\u00e3 h\u1ed9i',
-    employed: 'C\u00f3 vi\u1ec7c l\u00e0m', unemployed: 'Th\u1ea5t nghi\u1ec7p', freelanceLabor: 'Lao \u0111\u1ed9ng t\u1ef1 do', outProvinceLabor: 'Lao \u0111\u1ed9ng ngo\u00e0i t\u1ec9nh', foreignLabor: 'Lao \u0111\u1ed9ng n\u01b0\u1edbc ngo\u00e0i', pupil: 'H\u1ecdc sinh', student: 'Sinh vi\u00ean', retired: 'Ngh\u1ec9 h\u01b0u', note: 'Ghi ch\u00fa'
-  };
+  return window.AppI18n && typeof window.AppI18n.personDetailLabels === 'function' ? window.AppI18n.personDetailLabels() : {};
 }
 
 function personFieldLabel(key) {
@@ -1093,7 +1079,7 @@ function isCodePersonField(key) {
 
 function buildPersonHeroBadges(data) {
   return [
-    ['gender', data.gender, 'neutral'], ['partyMember', data.partyMember, 'green'], ['relationship', normalizeSearchText(data.relationship) === 'chu ho' ? 'Ch\u1ee7 h\u1ed9' : '', 'gold'],
+    ['gender', data.gender, 'neutral'], ['partyMember', data.partyMember, 'green'], ['relationship', normalizeSearchText(data.relationship) === 'chu ho' ? personUiText('Chu ho') : '', 'gold'],
     ['residencyStatus', data.residencyStatus, 'blue'], ['presenceStatus', data.presenceStatus, 'purple']
   ].filter(([, value]) => personHasExtendedValue(value)).map(([key, value, tone]) => '<span class="person-detail-badge person-detail-badge-' + tone + '">' + escapeHtml(formatPersonDetailValue(key, value, false)) + '</span>');
 }
