@@ -3808,3 +3808,61 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
     min-width: min(140px, 100%);
   }
 }
+
+
+/* Sprint 14.9 mobile FAB clearance */
+@media (max-width: 820px) {
+  body.app-authenticated {
+    --mobile-fab-clearance: calc(var(--mobile-bottom-nav-clearance, 96px) + env(safe-area-inset-bottom, 0px));
+    --mobile-fab-z: 43;
+  }
+
+  body.app-authenticated #householdsScreen.active .module-action-row,
+  body.app-authenticated #personsScreen.active .module-action-row,
+  body.app-authenticated .screen.active .module-action-row.is-floating,
+  body.app-authenticated .screen.active .floating-action-row,
+  body.app-authenticated .screen.active .fab-row {
+    position: fixed;
+    right: max(14px, env(safe-area-inset-right, 0px));
+    bottom: var(--mobile-fab-clearance);
+    z-index: var(--mobile-fab-z);
+    margin: 0;
+    pointer-events: none;
+  }
+
+  body.app-authenticated #householdsScreen.active .module-primary-action,
+  body.app-authenticated #personsScreen.active .person-primary-action,
+  body.app-authenticated .screen.active .floating-action-row .btn,
+  body.app-authenticated .screen.active .fab-row .btn {
+    pointer-events: auto;
+    min-height: 52px;
+    max-width: calc(100vw - 28px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    padding: 0 16px;
+    border-radius: 16px;
+    box-shadow: 0 16px 34px rgba(11, 107, 58, .28);
+  }
+
+  body.app-authenticated.modal-open #householdsScreen.active .module-action-row,
+  body.app-authenticated.modal-open #personsScreen.active .module-action-row,
+  body.app-authenticated.mobile-filter-active #householdsScreen.active .module-action-row,
+  body.app-authenticated.mobile-filter-active #personsScreen.active .module-action-row,
+  body.app-authenticated.modal-open .screen.active .floating-action-row,
+  body.app-authenticated.modal-open .screen.active .fab-row,
+  body.app-authenticated.mobile-filter-active .screen.active .floating-action-row,
+  body.app-authenticated.mobile-filter-active .screen.active .fab-row {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(10px);
+  }
+}
+
+@media (max-width: 380px) {
+  body.app-authenticated #householdsScreen.active .module-action-row,
+  body.app-authenticated #personsScreen.active .module-action-row,
+  body.app-authenticated .screen.active .module-action-row.is-floating,
+  body.app-authenticated .screen.active .floating-action-row,
+  body.app-authenticated .screen.active .fab-row {
+    right: max(10px, env(safe-area-inset-right, 0px));
+  }
+}

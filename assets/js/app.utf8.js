@@ -294,8 +294,23 @@ function ensureMobileSidebarBackdrop() {
   });
 }
 
+function syncMobileLayoutMetrics() {
+  const nav = document.querySelector('.mobile-bottom-nav');
+  const root = document.documentElement;
+  if (!nav || !root) return;
+  const rect = nav.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const bottomGap = Math.max(0, viewportHeight - rect.bottom);
+  const clearance = Math.ceil(rect.height + bottomGap + 16);
+  root.style.setProperty('--mobile-bottom-nav-height', `${Math.max(72, Math.ceil(rect.height))}px`);
+  root.style.setProperty('--mobile-bottom-nav-clearance', `${Math.max(96, clearance)}px`);
+}
+
 function ensureMobileBottomNavigation() {
-  if (document.querySelector('.mobile-bottom-nav')) return;
+  if (document.querySelector('.mobile-bottom-nav')) {
+    syncMobileLayoutMetrics();
+    return;
+  }
   const items = [
     { screen: 'dashboard', label: 'Dashboard', icon: 'fa-gauge-high' },
     { screen: 'operationCenter', label: 'Điều hành', icon: 'fa-tower-broadcast' },
@@ -322,6 +337,7 @@ function ensureMobileBottomNavigation() {
     nav.appendChild(button);
   });
   document.body.appendChild(nav);
+  syncMobileLayoutMetrics();
 }
 
 function syncMobileBottomNavigation(screen, requestedScreen = screen) {
@@ -333,6 +349,8 @@ function syncMobileBottomNavigation(screen, requestedScreen = screen) {
 }
 
 const mobileFilterQuery = window.matchMedia ? window.matchMedia('(max-width: 1024px)') : null;
+window.addEventListener('resize', syncMobileLayoutMetrics, { passive: true });
+window.addEventListener('orientationchange', () => window.setTimeout(syncMobileLayoutMetrics, 120), { passive: true });
 
 function ensureMobileFilterPanels() {
   bindMobileFilterBreakpoint();

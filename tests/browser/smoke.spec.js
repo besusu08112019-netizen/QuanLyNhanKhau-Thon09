@@ -311,3 +311,80 @@ test('mobile overlays hide bottom navigation and keep actions reachable', async 
     document.querySelectorAll('.modal-backdrop').forEach((el) => el.remove());
   });
 });
+
+
+test('mobile FAB stays above bottom navigation and hides under overlays', async ({ page }) => {
+  await page.route('**/api/**', async (route) => {
+    const url = route.request().url();
+    const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
+    if (url.includes('/api/public/login-config')) return payload(loginConfig.data);
+    if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {} });
+    return payload({});
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
+    window.App.token = 'test-token';
+    window.App.csrfToken = 'test-csrf';
+    window.App.user = user;
+    localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_csrf', 'test-csrf');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.showApp === 'function') window.showApp();
+  });
+
+  const viewport = page.viewportSize();
+  if (!viewport || viewport.width > 820) return;
+
+  await expect(page.locator('.mobile-bottom-nav')).toBeVisible();
+
+  const assertFabClearance = async (screen, rowSelector, buttonSelector) => {
+    await page.evaluate((name) => window.switchScreen && window.switchScreen(name), screen);
+    await expect(page.locator(rowSelector)).toBeVisible();
+    await expect(page.locator(buttonSelector)).toBeVisible();
+
+    const metrics = await page.evaluate(({ rowSelector: rowSel, buttonSelector: buttonSel }) => {
+      const nav = document.querySelector('.mobile-bottom-nav');
+      const row = document.querySelector(rowSel);
+      const button = document.querySelector(buttonSel);
+      const root = document.documentElement;
+      if (!nav || !row || !button) return null;
+      const navRect = nav.getBoundingClientRect();
+      const rowRect = row.getBoundingClientRect();
+      const buttonRect = button.getBoundingClientRect();
+      return {
+        navTop: navRect.top,
+        rowBottom: rowRect.bottom,
+        buttonBottom: buttonRect.bottom,
+        rowZ: Number(getComputedStyle(row).zIndex),
+        navZ: Number(getComputedStyle(nav).zIndex),
+        clearance: root.style.getPropertyValue('--mobile-bottom-nav-clearance')
+      };
+    }, { rowSelector, buttonSelector });
+
+    expect(metrics).not.toBeNull();
+    expect(metrics.buttonBottom).toBeLessThanOrEqual(metrics.navTop - 8);
+    expect(metrics.rowBottom).toBeLessThanOrEqual(metrics.navTop - 8);
+    expect(metrics.rowZ).toBeGreaterThan(metrics.navZ);
+    expect(metrics.clearance).toContain('px');
+  };
+
+  await assertFabClearance('households', '#householdsScreen .module-action-row', '#householdAddBtn');
+  await assertFabClearance('persons', '#personsScreen .module-action-row', '#personAddBtn');
+
+  await page.evaluate(() => {
+    if (typeof window.switchScreen === 'function') window.switchScreen('households');
+    document.body.classList.add('modal-open');
+  });
+  await expect(page.locator('#householdsScreen .module-action-row')).toBeHidden();
+
+  await page.evaluate(() => {
+    document.body.classList.remove('modal-open');
+    document.body.classList.add('mobile-filter-active');
+  });
+  await expect(page.locator('#householdsScreen .module-action-row')).toBeHidden();
+
+  await page.evaluate(() => document.body.classList.remove('mobile-filter-active'));
+});
