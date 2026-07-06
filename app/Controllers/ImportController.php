@@ -40,7 +40,7 @@ final class ImportController extends BaseController
 
     public function preview(): void
     {
-        $user = $this->requirePermission('import', 'create');
+        $user = $this->requirePermission('import', 'import');
         $type = $this->type();
         $rows = $this->readRows();
         $result = $this->validateRows($type, $rows);
@@ -50,7 +50,7 @@ final class ImportController extends BaseController
 
     public function process(): void
     {
-        $user = $this->requirePermission('import', 'create');
+        $user = $this->requirePermission('import', 'import');
         $type = $this->type();
         $mode = (string) ($_POST['mode'] ?? $this->input('mode', 'skip'));
         $rows = $this->readRows();
@@ -62,7 +62,7 @@ final class ImportController extends BaseController
 
         if (!empty($errors)) {
             $payload = ['type' => $type, 'total' => count($rows), 'success' => 0, 'skipped' => 0, 'failed' => count($errors), 'rolledBack' => false, 'warnings' => $result['warnings'] ?? [], 'errors' => $errors];
-            $this->audit($user, 'import', 'create', 'Import dữ liệu không hợp lệ', null, $payload, 'WARN');
+            $this->audit($user, 'import', 'import', 'Import dữ liệu không hợp lệ', null, $payload, 'WARN');
             $this->ok($payload);
             return;
         }
@@ -111,7 +111,7 @@ final class ImportController extends BaseController
         }
 
         $payload = ['type' => $type, 'total' => count($rows), 'success' => $success, 'skipped' => $skipped, 'failed' => count($errors), 'rolledBack' => $rolledBack, 'warnings' => $result['warnings'] ?? [], 'errors' => $errors];
-        $this->audit($user, 'import', 'create', 'Import dữ liệu', null, $payload, count($errors) ? 'WARN' : 'INFO');
+        $this->audit($user, 'import', 'import', 'Import dữ liệu', null, $payload, count($errors) ? 'WARN' : 'INFO');
         $this->ok($payload);
     }
 

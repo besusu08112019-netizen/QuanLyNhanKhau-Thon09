@@ -77,7 +77,7 @@ final class OperationCenterController extends BaseController
 
     public function exportLogs(): void
     {
-        $user = $this->requirePermission('logs', 'read');
+        $user = $this->requirePermission('logs', 'export');
         $data = $this->operation->systemLogs(array_merge($this->query(), ['pageSize' => 100]));
         $rows = [];
         foreach (($data['data']['items'] ?? []) as $item) {

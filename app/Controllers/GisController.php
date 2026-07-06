@@ -33,7 +33,7 @@ class GisController extends BaseController
     public function areas(): void
     {
         try {
-            $this->requirePermission('dashboard', 'read');
+            $this->requirePermission('gis', 'read');
             $data = $this->areasModel()->all();
             $areas = $data['areas'] ?? [];
             $this->ok([
@@ -51,7 +51,7 @@ class GisController extends BaseController
     public function households(): void
     {
         try {
-            $this->requirePermission('household', 'read');
+            $this->requirePermission('gis', 'read');
             $items = $this->locationModel()->markers($this->householdFiltersFromQuery());
             $this->ok($items);
         } catch (Throwable $e) {
@@ -65,7 +65,7 @@ class GisController extends BaseController
         $query = trim((string) $this->query('q', ''));
 
         try {
-            $this->requirePermission('household', 'read');
+            $this->requirePermission('gis', 'read');
             if (mb_strlen($query) < 2) {
                 $this->ok(['items' => []]);
                 return;
@@ -87,7 +87,7 @@ class GisController extends BaseController
     {
         $payload = $this->jsonPayload(false);
         try {
-            $user = $this->requirePermission('household', 'update');
+            $user = $this->requirePermission('gis', 'update');
             $area = $this->areasModel()->save($payload, (int) ($user['id'] ?? 0));
             $this->locationModel()->recalculateAreaCodes();
             $this->writeLog('CREATE', 'gis_areas', (string) ($area['id'] ?? ''), $area);
@@ -102,7 +102,7 @@ class GisController extends BaseController
     {
         $payload = $this->jsonPayload(false);
         try {
-            $user = $this->requirePermission('household', 'update');
+            $user = $this->requirePermission('gis', 'update');
             $payload['id'] = $id;
             $area = $this->areasModel()->save($payload, (int) ($user['id'] ?? 0));
             $this->locationModel()->recalculateAreaCodes();
@@ -117,7 +117,7 @@ class GisController extends BaseController
     public function deleteArea(int $id): void
     {
         try {
-            $user = $this->requirePermission('household', 'delete');
+            $user = $this->requirePermission('gis', 'delete');
             $this->areasModel()->delete($id, (int) ($user['id'] ?? 0));
             $this->locationModel()->recalculateAreaCodes();
             $area = ['id' => $id, 'deleted' => true];
@@ -133,7 +133,7 @@ class GisController extends BaseController
     {
         $payload = $this->jsonPayload(false);
         try {
-            $this->requirePermission('household', 'update');
+            $this->requirePermission('gis', 'update');
             $item = $this->locationModel()->saveLocation($id, $payload, $this->currentUserId());
             $this->writeLog('UPDATE', 'household_location', (string) $id, $item);
             $this->ok($item);
@@ -146,7 +146,7 @@ class GisController extends BaseController
     public function clearHouseholdLocation(int $id): void
     {
         try {
-            $this->requirePermission('household', 'update');
+            $this->requirePermission('gis', 'update');
             $item = $this->locationModel()->clearLocation($id, $this->currentUserId());
             $this->writeLog('DELETE', 'household_location', (string) $id, $item ?? []);
             $this->ok($item ?? ['id' => $id, 'removed' => true]);
@@ -158,7 +158,7 @@ class GisController extends BaseController
 
     public function exportPdf(): void
     {
-        $this->requirePermission('report', 'export');
+        $this->requirePermission('gis', 'export');
         $data = $this->areasModel()->all();
         $areas = $data['areas'] ?? [];
         $filename = 'ban-do-dia-ban-' . date('Ymd-His') . '.html';

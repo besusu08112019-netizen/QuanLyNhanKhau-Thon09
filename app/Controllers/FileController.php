@@ -28,7 +28,8 @@ final class FileController extends BaseController
             $description = trim((string) ($_POST['description'] ?? ''));
 
             $this->storage->validateEntity($entityType, $entityId);
-            $user = $this->requirePermission($this->storage->permissionModule($entityType), 'update');
+            $this->requirePermission($this->storage->permissionModule($entityType), 'read');
+            $user = $this->requirePermission('file', 'upload');
             if (empty($_FILES['file'])) $this->fail('Vui long chon file');
 
             $uploads = $this->normalizeUploadedFiles($_FILES['file']);
@@ -52,6 +53,7 @@ final class FileController extends BaseController
             $this->fail('Invalid file query', 422);
         }
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
+        $this->requirePermission('file', 'read');
         $filters = [
             'page' => $this->query('page', ''),
             'pageSize' => $this->query('pageSize', $this->query('page_size', '')),
@@ -72,6 +74,7 @@ final class FileController extends BaseController
         if (!$file) $this->fail('Khong tim thay file', 404);
         $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
+        $this->requirePermission('file', 'read');
         $this->ok($this->files->normalizeRow($file));
     }
 
@@ -81,7 +84,8 @@ final class FileController extends BaseController
             $file = $this->files->find((int) $id);
             if (!$file) $this->fail('Khong tim thay file', 404);
             $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
-            $user = $this->requirePermission($this->storage->permissionModule($entityType), 'update');
+            $this->requirePermission($this->storage->permissionModule($entityType), 'read');
+            $user = $this->requirePermission('file', 'update');
             $input = $this->input();
             $payload = [];
             if (array_key_exists('file_name', $input) || array_key_exists('fileName', $input)) {
@@ -176,8 +180,8 @@ final class FileController extends BaseController
         $module = $this->storage->permissionModule($entityType);
         $user = $this->user();
         $this->verifyCsrfToken();
-        if (!$this->users()->can($user, $module, 'delete') && !$this->users()->can($user, $module, 'update')) {
-            $this->fail('Khong co quyen xoa file module ' . $module, 403);
+        if (!$this->users()->can($user, $module, 'read') || !$this->users()->can($user, 'file', 'delete')) {
+            $this->fail('Khong co quyen xoa file', 403);
         }
         return $user;
     }
@@ -192,6 +196,7 @@ final class FileController extends BaseController
         if ($path === null || !is_file($path)) $this->fail('File is no longer available on the server', 404);
         $mime = (string) ($file['mime_type'] ?: 'application/octet-stream');
         if (!$download && !$this->storage->canPreview($mime)) $download = true;
+        $this->requirePermission('file', $download ? 'download' : 'read');
         header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));

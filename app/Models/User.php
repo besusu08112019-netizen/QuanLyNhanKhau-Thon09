@@ -127,7 +127,7 @@ final class User extends BaseModel
     public function publicUser(?array $user): ?array
     {
         if (!$user) return null;
-        return ['id' => (int) $user['id'], 'username' => $user['username'] ?? '', 'email' => $user['email'], 'displayName' => $user['display_name'], 'phone' => $user['phone'] ?? '', 'position' => $user['position'] ?? '', 'role' => $user['role'], 'status' => $user['status'], 'created_at' => $user['created_at'] ?? null, 'lastLoginAt' => $user['last_login_at']];
+        return ['id' => (int) $user['id'], 'username' => $user['username'] ?? '', 'email' => $user['email'], 'displayName' => $user['display_name'], 'phone' => $user['phone'] ?? '', 'position' => $user['position'] ?? '', 'role' => $user['role'], 'status' => $user['status'], 'created_at' => $user['created_at'] ?? null, 'lastLoginAt' => $user['last_login_at'], 'permissions' => $this->effectivePermissions($user)];
     }
 
     public function can(array $user, string $module, string $action): bool
@@ -136,19 +136,30 @@ final class User extends BaseModel
         if ($role === 'SUPER_ADMIN' || $role === 'ADMIN') return true;
 
         if ($role === 'VIEWER') {
-            return in_array($module, ['dashboard','household','citizen','report'], true) && $action === 'read';
+            return in_array($module, ['dashboard','household','citizen','report','gis'], true) && $action === 'read';
         }
 
-        if (in_array($module, ['user','permission','logs','settings','backup','system_admin'], true)) {
-            return false;
-        }
 
         $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $role, 'module' => $module, 'action' => $action]);
         if ($permission) return (bool) $permission['allowed'];
-        if ($role === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','import'], true) && in_array($action, ['read','create','update'], true);
+        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','citizen','movement','report'], true) && in_array($action, ['read','create','update'], true)) || ($module === 'gis' && $action === 'read');
         return false;
     }
 
+
+    private function effectivePermissions(array $user): array
+    {
+        try {
+            $role = (string) ($user['role'] ?? '');
+            $matrix = (new Permission())->matrix();
+            foreach (($matrix['roles'] ?? []) as $row) {
+                if (($row['role'] ?? '') === $role) return (array) ($row['permissions'] ?? []);
+            }
+        } catch (\Throwable $e) {
+            error_log('[RBAC_PUBLIC_PERMISSIONS_ERROR] ' . $e->getMessage());
+        }
+        return [];
+    }
     private function assertPasswordPolicy(string $password): void
     {
         $length = strlen($password);

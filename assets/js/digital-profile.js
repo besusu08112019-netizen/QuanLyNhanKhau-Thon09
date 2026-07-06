@@ -45,6 +45,23 @@
   function hasValue(value) { return value !== null && value !== undefined && String(value).trim() !== ''; }
   function dateText(value) { if (!hasValue(value)) return ''; const date = new Date(String(value).replace(' ', 'T')); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('vi-VN'); }
   function show(message, type = 'success') { if (typeof showToast === 'function') showToast(message, type); }
+  function can(module, action) { return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess(module, action) : false; }
+  function requirePermission(module, action) {
+    if (can(module, action)) return true;
+    show('Tài khoản hiện tại không có quyền thực hiện thao tác này', 'warning');
+    return false;
+  }
+  function applyProfilePermissions(root) {
+    if (!root) return;
+    $$('[data-file-manager-upload],[data-profile-upload]', root).forEach(el => { if (!can('file', 'upload')) el.remove(); });
+    $$('[data-preview-file]', root).forEach(el => { if (!can('file', 'read')) el.remove(); });
+    $$('[data-download-file]', root).forEach(el => { if (!can('file', 'download')) el.remove(); });
+    $$('[data-edit-file]', root).forEach(el => { if (!can('file', 'update')) el.remove(); });
+    $$('[data-delete-file]', root).forEach(el => { if (!can('file', 'delete')) el.remove(); });
+    $$('[data-profile-note]', root).forEach(el => { if (!can('profile', 'create')) el.remove(); });
+    $$('[data-edit-note]', root).forEach(el => { if (!can('profile', 'update')) el.remove(); });
+    $$('[data-delete-note]', root).forEach(el => { if (!can('profile', 'delete')) el.remove(); });
+  }
 
   async function loadProfile(type, id) {
     const normalized = type === 'persons' ? 'citizen' : type;
@@ -151,6 +168,7 @@
   }
 
   function bindFileManagerActions(pane, id, root) {
+    applyProfilePermissions(pane);
     $$('[data-file-manager-upload]', pane).forEach(form => form.addEventListener('submit', event => uploadCitizenFile(event, id, root)));
     $$('[data-preview-file]', pane).forEach(btn => btn.addEventListener('click', () => previewFile(btn.dataset.previewFile)));
     $$('[data-download-file]', pane).forEach(btn => btn.addEventListener('click', () => downloadFile(btn.dataset.downloadFile)));
@@ -160,6 +178,7 @@
 
   async function uploadCitizenFile(event, id, root) {
     event.preventDefault();
+    if (!requirePermission('file', 'upload')) return;
     const form = event.currentTarget;
     const file = form.elements.file.files[0];
     if (!file) return show('Vui lòng chọn file', 'warning');
@@ -178,6 +197,7 @@
   }
 
   async function editCitizenFile(button, id, root) {
+    if (!requirePermission('file', 'update')) return;
     const fileName = prompt('Ten file', button.dataset.fileName || '');
     if (fileName === null) return;
     const description = prompt('Mo ta', button.dataset.fileDescription || '');
@@ -190,6 +210,7 @@
   }
 
   async function editFile(button, type, id) {
+    if (!requirePermission('file', 'update')) return;
     const fileName = prompt('Ten file', button.dataset.fileName || '');
     if (fileName === null) return;
     const description = prompt('Mo ta', button.dataset.fileDescription || '');
@@ -200,6 +221,7 @@
   }
 
   async function deleteCitizenFile(fileId, id, root) {
+    if (!requirePermission('file', 'delete')) return;
     if (!confirm('Xóa file đính kèm này?')) return;
     await api('/api/files/' + encodeURIComponent(fileId), { method: 'DELETE' });
     show('Đã xóa file đính kèm');
@@ -330,6 +352,7 @@
 
   async function uploadFile(event, type, id) {
     event.preventDefault();
+    if (!requirePermission('file', 'upload')) return;
     const form = event.currentTarget;
     const data = new FormData();
     const section = form.elements.profileSection.value;
@@ -347,6 +370,7 @@
 
   async function createNote(event, type, id) {
     event.preventDefault();
+    if (!requirePermission('profile', 'create')) return;
     const form = event.currentTarget;
     await api('/api/profiles/' + type + '/' + id + '/notes', { method: 'POST', body: { title: form.elements.title.value, content: form.elements.content.value, section: 'general' } });
     show('Đã thêm ghi chú');
@@ -354,6 +378,7 @@
   }
 
   async function editNote(button, type, id) {
+    if (!requirePermission('profile', 'update')) return;
     const title = prompt('Tiêu đề ghi chú', button.dataset.noteTitle || 'Ghi chú nghiệp vụ');
     if (title === null) return;
     const content = prompt('Nội dung ghi chú', button.dataset.noteContent || '');
@@ -365,6 +390,7 @@
   }
 
   async function deleteNote(noteId, type, id) {
+    if (!requirePermission('profile', 'delete')) return;
     if (!confirm('Xóa ghi chú này?')) return;
     await api('/api/profiles/notes/' + encodeURIComponent(noteId), { method: 'DELETE' });
     show('Đã xóa ghi chú');
@@ -372,6 +398,7 @@
   }
 
   async function deleteFile(id, type, entityId) {
+    if (!requirePermission('file', 'delete')) return;
     if (!confirm('Xóa file đính kèm này?')) return;
     await api('/api/files/' + encodeURIComponent(id), { method: 'DELETE' });
     show('Đã xóa file đính kèm');
@@ -379,6 +406,7 @@
   }
 
   async function previewFile(id) {
+    if (!requirePermission('file', 'read')) return;
     const response = await fetch('/api/files/' + encodeURIComponent(id) + '/preview', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
     if (!response.ok) return show('Không xem trước được file', 'danger');
     const blob = await response.blob();
@@ -388,6 +416,7 @@
   }
 
   async function downloadFile(id) {
+    if (!requirePermission('file', 'download')) return;
     const response = await fetch('/api/files/' + encodeURIComponent(id) + '/download', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
     if (!response.ok) return show('Không tải được file', 'danger');
     const blob = await response.blob();

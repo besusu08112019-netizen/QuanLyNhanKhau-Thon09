@@ -37,9 +37,11 @@ function isAdminRole() { return ['SUPER_ADMIN', 'ADMIN'].includes(currentRole())
 function canAccess(module, action) {
   const role = currentRole();
   if (['SUPER_ADMIN', 'ADMIN'].includes(role)) return true;
-  if (role === 'VIEWER') return ['dashboard','household','citizen','report'].includes(module) && action === 'read';
+  const permissions = App.user?.permissions;
+  if (permissions && Object.prototype.hasOwnProperty.call(permissions, module) && Object.prototype.hasOwnProperty.call(permissions[module] || {}, action)) return !!permissions[module][action];
+  if (role === 'VIEWER') return ['dashboard','household','citizen','report','gis'].includes(module) && action === 'read';
   if (['user','permission','logs','settings','backup','system_admin'].includes(module)) return false;
-  if (role === 'OFFICER') return ['dashboard','household','citizen','movement','report','import'].includes(module) && ['read','create','update'].includes(action);
+  if (role === 'OFFICER') return (['dashboard','household','citizen','movement','report'].includes(module) && ['read','create','update'].includes(action)) || (module === 'gis' && action === 'read');
   return false;
 }
 function requireUiPermission(module, action) {
@@ -55,7 +57,8 @@ function applyAccessControls() {
   const admin = isAdminRole();
   const householdCreate = canAccess('household', 'create');
   const citizenCreate = canAccess('citizen', 'create');
-  const householdUpdate = canAccess('household', 'update');
+  const gisUpdate = canAccess('gis', 'update');
+  const gisExport = canAccess('gis', 'export');
   const adminOnly = ['users','permissions','logs','settings','appearance','backups','restore','systemAdmin'];
   $$('.sidebar .nav-link[data-screen]').forEach(btn => {
     const screen = btn.dataset.screen;
@@ -68,7 +71,8 @@ function applyAccessControls() {
   if (personAdd) personAdd.classList.toggle('d-none', !citizenCreate);
   $$('[data-quick-action="addHousehold"]').forEach(btn => btn.classList.toggle('d-none', !householdCreate));
   $$('[data-quick-action="addPerson"]').forEach(btn => btn.classList.toggle('d-none', !citizenCreate));
-  ['gisDrawBtn','gisSaveBtn'].forEach(id => { const el = $('#' + id); if (el) el.classList.toggle('d-none', !householdUpdate); });
+  ['gisDrawBtn','gisSaveBtn'].forEach(id => { const el = $('#' + id); if (el) el.classList.toggle('d-none', !gisUpdate); });
+  const gisPdf = $('#gisPdfBtn'); if (gisPdf) gisPdf.classList.toggle('d-none', !gisExport);
   updateBulkDeleteButtons();
 }
 window.thon09CanAccess = canAccess;
@@ -1849,7 +1853,7 @@ function gisAreaPopup(area) {
   return '<div class="gis-popup"><h4>' + gisEscape(area.name) + '</h4><p>Mã khu vực: <b>' + gisEscape(area.area_code) + '</b></p>'
     + gisStatsHtml(stats)
     + '<div class="gis-popup-actions"><button class="btn btn-sm btn-success" onclick="filterHouseholdsByGisArea(\'' + gisEscape(area.area_code) + '\')">Lọc hộ khu vực này</button>'
-    + '<button class="btn btn-sm btn-outline-danger" onclick="deleteGisArea(' + Number(area.id) + ')">Xóa ranh giới</button></div></div>';
+    + (canAccess('gis', 'delete') ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteGisArea(' + Number(area.id) + ')">Xóa ranh giới</button>' : '') + '</div></div>';
 }
 function gisTooltip(area) {
   const stats = area.stats || {};
@@ -1904,12 +1908,12 @@ function setGisDrawnLayer(layer) {
   if (layer.setStyle) layer.setStyle({ color, fillColor: color, fillOpacity: .18, weight: 2 });
 }
 function startGisDraw() {
-  if (!requireUiPermission('household', 'update')) return;
+  if (!requireUiPermission('gis', 'update')) return;
   if (!App.gis.map || !window.L?.Draw?.Polygon) return showToast('Chưa sẵn sàng công cụ vẽ bản đồ', 'warning');
   new L.Draw.Polygon(App.gis.map, { allowIntersection: false, showArea: true, shapeOptions: { color: $('#gisAreaColor')?.value || '#0f8a4b' } }).enable();
 }
 async function saveGisArea() {
-  if (!requireUiPermission('household', 'update')) return;
+  if (!requireUiPermission('gis', 'update')) return;
   const layer = App.gis.drawnLayer;
   if (!layer) return showToast('Vui lòng vẽ ranh giới trên bản đồ trước khi lưu', 'warning');
   const latLngs = (layer.getLatLngs()[0] || []).map(p => ({ lat: Number(p.lat.toFixed(7)), lng: Number(p.lng.toFixed(7)) }));
@@ -1985,13 +1989,14 @@ function filterHouseholdsByGisArea(areaCode) {
   setTimeout(() => loadHouseholds(), 100);
 }
 async function deleteGisArea(id) {
-  if (!requireUiPermission('household', 'delete')) return;
+  if (!requireUiPermission('gis', 'delete')) return;
   if (!confirm('Xóa ranh giới khu vực này? Dữ liệu hộ dân không bị xóa.')) return;
   await api('/api/gis/areas/' + id, { method: 'DELETE' });
   showToast('Đã xóa ranh giới khu vực');
   loadGisMap();
 }
 function exportGisPdf() {
+  if (!requireUiPermission('gis', 'export')) return;
   if (!App.token) return showToast('Vui lòng đăng nhập lại để xuất PDF', 'warning');
   fetch('/api/gis/export-pdf', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' })
     .then(response => {

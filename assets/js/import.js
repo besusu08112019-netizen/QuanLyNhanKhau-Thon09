@@ -16,8 +16,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 
   function canImport() {
-    const role = window.App?.user?.role;
-    return role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'OFFICER';
+    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('import', 'import') : false;
   }
 
   function injectImportScreen() {

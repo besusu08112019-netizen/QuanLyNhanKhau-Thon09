@@ -76,7 +76,7 @@ final class ReportController extends BaseController
 
     public function print(): void
     {
-        $user = $this->requirePermission('report', 'read');
+        $user = $this->requirePermission('report', 'print');
         $type = $this->reportType();
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'print', 'In báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
@@ -120,7 +120,7 @@ final class ReportController extends BaseController
 
     public function saveTemplate(): void
     {
-        $user = $this->requirePermission('report', 'export');
+        $user = $this->requirePermission('report', 'update');
         $input = is_array($this->input()) ? $this->input() : [];
         $template = $this->reports->saveTemplate((int) ($user['id'] ?? 0), $input);
         $this->audit($user, 'report', 'save_template', 'L?u m?u b?o c?o', $template['id'] ?? null, ['type' => $template['type'] ?? null]);
@@ -129,7 +129,7 @@ final class ReportController extends BaseController
 
     public function deleteTemplate(string $id): void
     {
-        $user = $this->requirePermission('report', 'export');
+        $user = $this->requirePermission('report', 'delete');
         $this->reports->deleteTemplate((int) ($user['id'] ?? 0), (int) $id);
         $this->audit($user, 'report', 'delete_template', 'X?a m?u b?o c?o', $id);
         $this->ok(['deleted' => true, 'id' => (int) $id]);
@@ -137,7 +137,7 @@ final class ReportController extends BaseController
 
     public function defaultTemplate(string $id): void
     {
-        $user = $this->requirePermission('report', 'export');
+        $user = $this->requirePermission('report', 'update');
         $this->reports->setDefaultTemplate((int) ($user['id'] ?? 0), (int) $id);
         $this->audit($user, 'report', 'default_template', '??t m?u b?o c?o m?c ??nh', $id);
         $this->ok(['default' => true, 'id' => (int) $id]);

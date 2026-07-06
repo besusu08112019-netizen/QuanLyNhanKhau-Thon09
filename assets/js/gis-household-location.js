@@ -24,6 +24,7 @@
     if (typeof window.showToast === 'function') window.showToast(message, type || 'info');
     else console[type === 'danger' ? 'error' : 'log'](message);
   }
+  function can(module, action) { return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess(module, action) : false; }
   async function request(path, options) {
     if (typeof window.api === 'function') return window.api(path, options || {});
     const token = localStorage.getItem('thon09_token') || (window.App && window.App.token) || '';
@@ -149,6 +150,7 @@
   }
 
   async function saveLocation(householdId, lat, lng, source, accuracy) {
+    if (!can('gis', 'update')) { toast('Tài khoản hiện tại không có quyền cập nhật GIS.', 'warning'); return null; }
     const marker = await request('/api/gis/households/' + encodeURIComponent(householdId) + '/location', {
       method: 'PUT',
       body: { latitude: lat, longitude: lng, source: source || 'MANUAL', accuracy: accuracy || null }
@@ -160,6 +162,7 @@
   }
 
   async function clearLocation(householdId) {
+    if (!can('gis', 'update')) { toast('Tài khoản hiện tại không có quyền cập nhật GIS.', 'warning'); return; }
     await request('/api/gis/households/' + encodeURIComponent(householdId) + '/location', { method: 'DELETE' });
     setLocationFields(null);
     await refreshAfterLocationChange();
@@ -187,6 +190,7 @@
   }
 
   function startPicker(householdId) {
+    if (!can('gis', 'update')) { toast('Tài khoản hiện tại không có quyền cập nhật GIS.', 'warning'); return; }
     if (!householdId) { toast('Vui lòng lưu hộ gia đình trước khi định vị.', 'warning'); return; }
     closeHouseholdModal();
     if (typeof window.switchScreen === 'function') window.switchScreen('gis');
@@ -607,7 +611,7 @@
         '<button class="btn btn-sm btn-success" type="button" data-gis-popup-action="route" data-household-id="' + householdId + '"><i class="fa-solid fa-route"></i> Chỉ đường</button>' +
         '<button class="btn btn-sm btn-outline-secondary" type="button" data-gis-popup-action="gallery" data-household-id="' + householdId + '"><i class="fa-solid fa-images"></i> Xem ảnh</button>' +
         (phone ? '<a class="btn btn-sm btn-outline-primary" href="tel:' + escapeHtml(phone) + '" data-gis-popup-action="phone" data-household-id="' + householdId + '" data-phone="' + escapeHtml(phone) + '"><i class="fa-solid fa-phone"></i> Gọi điện</a>' : '') +
-        '<button class="btn btn-sm btn-outline-success" type="button" data-gis-popup-action="relocate" data-household-id="' + householdId + '"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>' +
+        (can('gis', 'update') ? '<button class="btn btn-sm btn-outline-success" type="button" data-gis-popup-action="relocate" data-household-id="' + householdId + '"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>' : '') +
       '</div>' +
     '</div>';
   }
