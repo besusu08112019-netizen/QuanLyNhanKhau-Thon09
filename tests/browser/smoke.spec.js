@@ -7,12 +7,12 @@ const loginConfig = {
       logoUrl: null,
       backgroundUrl: null,
       backgroundImages: [],
-      systemName: 'Hệ thống Quản lý Hành chính',
-      hamletName: 'Thôn 09',
-      communeName: 'Xã Hồng Phong',
-      slogan: 'Vì Nhân dân phục vụ',
+      systemName: 'Administrative Management System',
+      hamletName: 'Hamlet 09',
+      communeName: 'Hong Phong Commune',
+      slogan: 'Serving citizens',
       version: 'v2.0',
-      copyright: '© Thôn 09 - Xã Hồng Phong'
+      copyright: 'Hamlet 09 - Hong Phong Commune'
     },
     metrics: {
       total_households: 0,
@@ -44,5 +44,64 @@ test('application shell opens in browser', async ({ page }) => {
   });
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('button', { name: /đăng nhập/i }).first()).toBeVisible();
+  await expect(page.locator('#loginForm .login-submit')).toBeVisible();
+});
+
+test('operation center renders widgets without console errors', async ({ page }) => {
+  const consoleErrors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('pageerror', error => consoleErrors.push(error.message));
+
+  await page.route('**/api/**', async (route) => {
+    const url = route.request().url();
+    const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
+
+    if (url.includes('/api/public/login-config')) return payload(loginConfig.data);
+    if (url.includes('/api/auth/login')) return payload({
+      token: 'test-token',
+      csrfToken: 'test-csrf',
+      expiresIn: 3600,
+      user: { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' }
+    });
+    if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/operation-center/notifications')) return payload({ ok: true, widget: 'notifications', data: { items: [{ key: 'missing_gps', label: 'Missing GPS', count: 2, priority: 'high', status: 'new', screen: 'gis', action: 'Open GIS', createdAt: new Date().toISOString() }] } });
+    if (url.includes('/api/operation-center/tasks')) return payload({ ok: true, widget: 'tasks', data: { items: [{ key: 'missing_photo', label: 'Missing photo', count: 3, priority: 'high', status: 'open', screen: 'persons' }] } });
+    if (url.includes('/api/operation-center/timeline')) return payload({ ok: true, widget: 'timeline', data: { items: [{ title: 'Created household', time: new Date().toISOString(), module: 'households', actor: 'admin@example.test' }] } });
+    if (url.includes('/api/operation-center/area-dashboard')) return payload({ ok: true, widget: 'areaDashboard', data: { area: '', areas: [{ area_code: 'A1', total: 4 }], metrics: { total_households: 4, total_citizens: 12, male_count: 6, female_count: 6, children_count: 2, elderly_count: 1, party_member_count: 1, poor_households: 0, near_poor_households: 1 }, gpsProgress: { done: 3, total: 4, percent: 75 }, profileProgress: { done: 2, total: 4, percent: 50 } } });
+    if (url.includes('/api/operation-center/progress')) return payload({ ok: true, widget: 'progress', data: { items: [{ key: 'gps', label: 'GPS', progress: { done: 8, total: 10, percent: 80 } }, { key: 'identity', label: 'CCCD', progress: { done: 7, total: 10, percent: 70 } }] } });
+    if (url.includes('/api/operation-center/system-logs')) return payload({ ok: true, widget: 'systemLogs', data: { items: [{ created_at: new Date().toISOString(), user_email: 'admin@example.test', module: 'operation_center', message: 'Test log', ip_address: '127.0.0.1' }], total: 1, page: 1, pageSize: 20 } });
+    if (url.includes('/api/operation-center/search')) return payload({ ok: true, widget: 'search', data: { items: [{ type: 'household', id: 1, title: 'HK001', subtitle: 'Head - Address' }], total: 1 } });
+    if (url.includes('/api/operation-center/quick-profile')) return payload({ ok: true, widget: 'quickProfile', data: { type: 'household', id: 1, profile: { household_code: 'HK001', head_citizen_name: 'Head', address: 'Address' }, members: [{ full_name: 'Member A', relationship: 'Head' }], files: [{ original_name: 'profile.pdf' }], gps: { latitude: 10.1, longitude: 106.1 }, timeline: [{ created_at: '2026-07-06', message: 'Created household' }] } });
+
+    return payload({});
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
+    window.App.token = 'test-token';
+    window.App.csrfToken = 'test-csrf';
+    window.App.user = user;
+    localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_csrf', 'test-csrf');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.showApp === 'function') window.showApp();
+    if (typeof window.switchScreen === 'function') window.switchScreen('operationCenter');
+  });
+  await expect(page.locator('#appView')).not.toHaveClass(/d-none/);
+
+  await expect(page.locator('#operationCenterScreen')).toHaveClass(/active/);
+  await expect(page.locator('#operationNotifications')).toContainText('GPS');
+  await expect(page.locator('#operationTasks')).toContainText('Missing photo');
+  await expect(page.locator('#operationProgress')).toContainText('80%');
+
+  await page.locator('#operationSearchInput').fill('HK001');
+  await expect(page.locator('#operationSearchResults')).toContainText('HK001');
+  await page.locator('#operationSearchResults [data-profile-id="1"]').click();
+  await expect(page.locator('#detailModal')).toContainText('HK001');
+
+  expect(consoleErrors).toEqual([]);
 });

@@ -10,7 +10,7 @@ module.exports = defineConfig({
     trace: 'retain-on-failure'
   },
   webServer: {
-    command: 'php -S 127.0.0.1:8080 index.php',
+    command: 'php -S 127.0.0.1:8080',
     url: 'http://127.0.0.1:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 15000

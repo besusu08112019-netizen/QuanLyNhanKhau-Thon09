@@ -32,6 +32,7 @@ use App\Controllers\ImportController;
 use App\Controllers\InsightController;
 use App\Controllers\LogController;
 use App\Controllers\MovementController;
+use App\Controllers\OperationCenterController;
 use App\Controllers\PermissionController;
 use App\Controllers\PersonController;
 use App\Controllers\ProfileController;
@@ -225,6 +226,16 @@ $router->get('/api/backups', [BackupController::class, 'index']);
 $router->post('/api/backups', [BackupController::class, 'create']);
 $router->post('/api/backups/restore', [BackupController::class, 'restore']);
 
+$router->get('/api/operation-center/notifications', [OperationCenterController::class, 'notifications']);
+$router->get('/api/operation-center/tasks', [OperationCenterController::class, 'tasks']);
+$router->get('/api/operation-center/search', [OperationCenterController::class, 'search']);
+$router->get('/api/operation-center/quick-profile', [OperationCenterController::class, 'quickProfile']);
+$router->get('/api/operation-center/timeline', [OperationCenterController::class, 'timeline']);
+$router->get('/api/operation-center/area-dashboard', [OperationCenterController::class, 'areaDashboard']);
+$router->get('/api/operation-center/progress', [OperationCenterController::class, 'progress']);
+$router->get('/api/operation-center/system-logs', [OperationCenterController::class, 'systemLogs']);
+$router->get('/api/operation-center/export-report', [OperationCenterController::class, 'exportReport']);
+$router->get('/api/operation-center/export-logs', [OperationCenterController::class, 'exportLogs']);
 $router->get('/api/insights/search', [InsightController::class, 'search']);
 $router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
 $router->get('/api/profiles/household/{id}', [ProfileController::class, 'household']);
@@ -287,6 +298,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/sprint9.min.js',
         'assets/js/sprint10.min.js',
         'assets/js/view-inline-patches.min.js',
+        'assets/js/operation-center.min.js',
         'assets/js/gis-household-location.min.js',
         'assets/js/household-photo-capture.min.js',
         'assets/js/household-photo-camera-fix.min.js',

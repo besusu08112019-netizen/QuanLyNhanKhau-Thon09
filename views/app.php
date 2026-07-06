@@ -60,7 +60,7 @@
         </div>
       </div>
       <nav class="nav flex-column gov-nav" aria-label="Điều hướng chính">
-        <div class="nav-section"><div class="nav-section-title">Tổng quan</div><button class="nav-link active" data-screen="dashboard" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button><button class="nav-link" data-screen="gis" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-map-location-dot"></i><span>Bản đồ địa bàn</span></button></div>
+        <div class="nav-section"><div class="nav-section-title">Tổng quan</div><button class="nav-link active" data-screen="dashboard" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button><button class="nav-link" data-screen="operationCenter" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-tower-broadcast"></i><span>Trung tâm điều hành</span></button><button class="nav-link" data-screen="gis" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-map-location-dot"></i><span>Bản đồ địa bàn</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Quản lý dân cư</div><button class="nav-link" data-screen="households" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-house-chimney"></i><span>Quản lý hộ gia đình</span></button><button class="nav-link" data-screen="persons" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-users"></i><span>Quản lý nhân khẩu</span></button><button class="nav-link" data-screen="temporaryResidence" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-location-dot"></i><span>Tạm trú</span></button><button class="nav-link" data-screen="temporaryAbsence" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Tạm vắng</span></button><button class="nav-link" data-screen="movements" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-right-left"></i><span>Biến động nhân khẩu</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Báo cáo</div><button class="nav-link" data-screen="reports" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-chart-pie"></i><span>Báo cáo thống kê</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Dữ liệu</div><button class="nav-link" data-screen="import" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-file-import"></i><span>Import dữ liệu</span></button><button class="nav-link" data-screen="exportExcel" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-file-export"></i><span>Xuất Excel</span></button><button class="nav-link" data-screen="printForms" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-print"></i><span>In biểu mẫu</span></button></div>
@@ -127,6 +127,30 @@
             <div id="laborStatusChart" class="dashboard-chart-body"></div>
           </article>
         </section>
+      </section>
+      <section id="operationCenterScreen" class="screen operation-center-screen">
+        <div class="operation-shell" data-operation-center>
+          <section class="operation-toolbar content-card">
+            <div class="operation-toolbar-main">
+              <h3>Trung tâm điều hành số</h3>
+              <div class="operation-search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="operationSearchInput" class="form-control" autocomplete="off" placeholder="Tìm họ tên, CCCD, mã hộ, chủ hộ, địa chỉ, điện thoại, GPS, hồ sơ số"><div id="operationSearchResults" class="operation-search-results d-none"></div></div>
+            </div>
+            <div class="operation-toolbar-actions">
+              <select id="operationReportRange" class="form-select form-select-sm"><option value="today">Hôm nay</option><option value="week">Tuần</option><option value="month">Tháng</option><option value="quarter">Quý</option><option value="year">Năm</option></select>
+              <button class="btn btn-outline-primary btn-sm" type="button" data-operation-export="pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+              <button class="btn btn-outline-success btn-sm" type="button" data-operation-export="excel"><i class="fa-solid fa-file-excel"></i> Excel</button>
+              <button class="btn btn-outline-secondary btn-sm" type="button" data-operation-export="word"><i class="fa-solid fa-file-word"></i> Word</button>
+            </div>
+          </section>
+          <section class="operation-grid">
+            <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Notification Center</h4><button class="btn btn-sm btn-outline-secondary" type="button" data-operation-refresh="notifications"><i class="fa-solid fa-rotate-right"></i></button></div><div id="operationNotifications"></div></article>
+            <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Cần xử lý</h4><div class="operation-filter-inline"><select id="operationTaskPriority" class="form-select form-select-sm"><option value="">Tất cả</option><option value="high">Cao</option><option value="medium">Vừa</option><option value="low">Theo dõi</option></select><input id="operationTaskDate" class="form-control form-control-sm" type="date"></div></div><div id="operationTasks"></div></article>
+            <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Timeline toàn hệ thống</h4><div class="operation-filter-inline"><input id="operationTimelineSearch" class="form-control form-control-sm" placeholder="Tìm nhật ký"><select id="operationTimelineModule" class="form-select form-select-sm"><option value="">Tất cả module</option><option value="household">Hộ</option><option value="citizen">Công dân</option><option value="movements">Biến động</option><option value="gis">GIS</option><option value="file">Hồ sơ số</option></select></div></div><div id="operationTimeline"></div></article>
+            <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Dashboard theo khu vực</h4><select id="operationAreaSelect" class="form-select form-select-sm"><option value="">Tất cả khu vực</option></select></div><div id="operationAreaDashboard"></div></article>
+            <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Widget tiến độ</h4><button class="btn btn-sm btn-outline-secondary" type="button" data-operation-refresh="progress"><i class="fa-solid fa-rotate-right"></i></button></div><div id="operationProgress"></div></article>
+            <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Nhật ký hệ thống</h4><button class="btn btn-sm btn-outline-success" type="button" data-operation-export-logs><i class="fa-solid fa-file-excel"></i> Xuất Excel</button></div><div class="operation-log-filters"><input id="operationLogSearch" class="form-control form-control-sm" placeholder="Tìm nhật ký"><input id="operationLogDateFrom" class="form-control form-control-sm" type="date"><input id="operationLogDateTo" class="form-control form-control-sm" type="date"></div><div id="operationLogs"></div></article>
+          </section>
+        </div>
       </section>
 
 
@@ -308,6 +332,7 @@
   <script src="assets/js/sprint9.min.js"></script>
   <script src="assets/js/sprint10.min.js"></script>
   <script src="assets/js/view-inline-patches.min.js"></script>
+  <script src="assets/js/operation-center.min.js"></script>
   <script src="assets/js/gis-household-location.min.js"></script>
   <script src="assets/js/household-photo-capture.min.js"></script>
   <script src="assets/js/household-photo-camera-fix.min.js"></script>
