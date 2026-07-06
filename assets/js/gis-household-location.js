@@ -465,7 +465,7 @@
     const lat = Number(row.latitude);
     const lng = Number(row.longitude);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
-    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng);
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng;
   }
 
   function openHouseholdTab(id, tab) {
@@ -489,6 +489,17 @@
       return;
     }
     window.open(url, '_blank', 'noopener');
+  }
+
+  function closeOpenHouseholdPopup(exceptId) {
+    const except = String(exceptId || '').trim();
+    state.markers.forEach((marker, id) => {
+      if (except && String(id) === except) return;
+      if (marker && marker.isPopupOpen && marker.isPopupOpen() && marker.closePopup) marker.closePopup();
+    });
+    const m = map();
+    if (m && typeof m.closePopup === 'function' && (!except || state.openPopupId !== except)) m.closePopup();
+    if (!except || state.openPopupId !== except) state.openPopupId = '';
   }
   function runPopupAction(action, row, event) {
     if (event) {
@@ -554,7 +565,7 @@
   function bindHouseholdPopup(marker, row) {
     row = normalizeHouseholdRow(row) || {};
     const rowId = normalizeHouseholdId(row);
-    const popup = L.popup({ closeButton: true, autoClose: false, closeOnClick: false, bubblingMouseEvents: false, autoPan: true, keepInView: true }).setContent(popupHtml(row));
+    const popup = L.popup({ closeButton: true, autoClose: true, closeOnClick: false, bubblingMouseEvents: false, autoPan: true, keepInView: true }).setContent(popupHtml(row));
     popup.on('add', () => {
       protectPopupElement(popup);
       bindPopupActions(popup, row);
@@ -564,6 +575,7 @@
       gisDebugLog('marker click', { id: rowId });
       state.lastMarkerTouchAt = Date.now();
       stopLeafletPropagation(event);
+      closeOpenHouseholdPopup(rowId);
       state.openPopupId = rowId;
       marker.openPopup();
       activateMarker(marker, row);
@@ -629,7 +641,6 @@
         '<dt>Địa chỉ</dt><dd>' + escapeHtml(row.address) + '</dd>' +
         '<dt>Số nhân khẩu</dt><dd>' + Number(row.total_members || 0).toLocaleString('vi-VN') + '</dd>' +
         '<dt>Đang cư trú</dt><dd>' + Number(row.at_home_count || 0).toLocaleString('vi-VN') + '</dd>' +
-        '<dt>Trạng thái</dt><dd>' + escapeHtml(row.status || 'ACTIVE') + '</dd>' +
         '<dt>GPS</dt><dd>' + escapeHtml(gpsText(row)) + '</dd>' +
       '</dl>' +
       '<div class="gis-smart-popup-actions">' +
@@ -736,7 +747,9 @@
       if (search && state.markers.size) {
         const first = state.markers.values().next().value;
         m.setView(first.getLatLng(), Math.max(m.getZoom(), 17));
-        state.openPopupId = String((first.__thon09HouseholdRow || {}).id || '');
+        const firstId = String((first.__thon09HouseholdRow || {}).id || '');
+        closeOpenHouseholdPopup(firstId);
+        state.openPopupId = firstId;
         first.openPopup();
       }
     } catch (error) {
@@ -816,6 +829,7 @@
     state.activeMarkerId = id;
     activateMarker(marker, marker.__thon09HouseholdRow || row || { id });
     m.setView(marker.getLatLng(), Math.max(m.getZoom(), 17), { animate: true });
+    closeOpenHouseholdPopup(id);
     state.openPopupId = id;
     marker.openPopup();
     return true;
@@ -823,6 +837,8 @@
 
   window.thon09GisOpenHousehold = function (id) { openHouseholdTab(id, 'files'); };
   window.thon09GisOpenHouseholdGallery = function (id) { openHouseholdTab(id, 'gallery'); };
+  window.thon09GisDirectionsUrl = function (row) { return googleDirectionsUrl(normalizeHouseholdRow(row)); };
+  window.thon09GisOpenDirectionsForRow = function (row) { openGoogleDirections(normalizeHouseholdRow(row)); };
   if (typeof window.thon09GisRouteToHousehold !== 'function') {
     window.thon09GisRouteToHousehold = function (id) { openGoogleDirections(popupRowById(id)); };
     window.thon09GisRouteToHousehold.__thon09Fallback = true;

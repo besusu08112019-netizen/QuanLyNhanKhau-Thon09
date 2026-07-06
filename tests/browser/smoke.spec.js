@@ -105,3 +105,31 @@ test('operation center renders widgets without console errors', async ({ page })
 
   expect(consoleErrors).toEqual([]);
 });
+
+test('gis directions opens Google Maps with household coordinates', async ({ page }) => {
+  await page.route('**/api/**', async (route) => {
+    const url = route.request().url();
+    if (url.includes('/api/public/login-config')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify(loginConfig) });
+      return;
+    }
+    if (url.includes('/api/auth/me')) {
+      await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ ok: false, error: { message: 'Unauthenticated' } }) });
+      return;
+    }
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data: {} }) });
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof window.thon09GisOpenDirectionsForRow === 'function');
+  const openedUrl = await page.evaluate(() => {
+    let captured = '';
+    const originalOpen = window.open;
+    window.open = (url) => { captured = String(url || ''); return null; };
+    window.thon09GisOpenDirectionsForRow({ id: 123, latitude: 10.123456, longitude: 106.654321 });
+    window.open = originalOpen;
+    return captured;
+  });
+
+  expect(openedUrl).toBe('https://www.google.com/maps/dir/?api=1&destination=10.123456,106.654321');
+});
