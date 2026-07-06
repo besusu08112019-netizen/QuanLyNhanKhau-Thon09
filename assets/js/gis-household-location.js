@@ -347,8 +347,8 @@
     state.guardedMap = m;
     const originalClosePopup = m.closePopup;
     m.closePopup = function () {
-      const isMarkerTouchClose = state.openPopupId && Date.now() - state.lastMarkerTouchAt < 900 && Date.now() > state.allowPopupCloseUntil;
-      if (isMarkerTouchClose) return this;
+      const shouldKeepHouseholdPopup = state.openPopupId && Date.now() > state.allowPopupCloseUntil;
+      if (shouldKeepHouseholdPopup) return this;
       return originalClosePopup.apply(this, arguments);
     };
   }
@@ -404,11 +404,7 @@
         state.openPopupId = '';
         return;
       }
-      if (Date.now() - state.lastMarkerTouchAt < 700) {
-        restoreOpenPopup();
-        return;
-      }
-      state.openPopupId = '';
+      restoreOpenPopup();
     });
     ['touchstart', 'touchend', 'pointerdown', 'pointerup'].forEach(type => {
       marker.on(type, event => {
