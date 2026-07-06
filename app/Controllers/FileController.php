@@ -29,31 +29,16 @@ final class FileController extends BaseController
 
             $this->storage->validateEntity($entityType, $entityId);
             $user = $this->requirePermission($this->storage->permissionModule($entityType), 'update');
-            if (empty($_FILES['file'])) $this->fail('Vui lòng chọn file');
+            if (empty($_FILES['file'])) $this->fail('Vui long chon file');
 
-            $file = $_FILES['file'];
-            $inspection = $this->storage->inspectUpload($file, $fileType, $entityType);
-            $category = $this->storage->normalizeCategory($categoryInput, $fileType, $inspection['mime']);
-            $stored = $this->storage->storeUpload($file, $entityType, $category, $inspection['extension']);
-            $originalName = basename((string) $file['name']);
+            $uploads = $this->normalizeUploadedFiles($_FILES['file']);
+            $rows = [];
+            foreach ($uploads as $file) {
+                $rows[] = $this->uploadOne($file, $entityType, $entityId, $fileType, $categoryInput, $description, (int) $user['id']);
+            }
 
-            $row = $this->files->create([
-                'module' => $this->storage->moduleForEntity($entityType),
-                'entity_type' => $entityType,
-                'entity_id' => $entityId,
-                'category' => $category,
-                'file_type' => $fileType,
-                'file_name' => $originalName,
-                'original_name' => $originalName,
-                'stored_name' => $stored['stored_name'],
-                'file_path' => $stored['file_path'],
-                'mime_type' => $inspection['mime'],
-                'file_size' => (int) $file['size'],
-                'description' => $description !== '' ? mb_substr($description, 0, 500) : null,
-                'profile_section' => $categoryInput !== '' ? preg_replace('/[^a-z0-9_\-]/', '', strtolower($categoryInput)) : $category,
-            ], (int) $user['id']);
-            $this->audit($user, $entityType, 'upload', 'Upload file đính kèm', $entityId, ['file' => $row['id'] ?? null, 'type' => $fileType, 'category' => $category]);
-            $this->ok($this->files->normalizeRow($row));
+            $this->audit($user, $entityType, 'upload', 'Upload file dinh kem', $entityId, ['files' => array_column($rows, 'id'), 'type' => $fileType, 'category' => $categoryInput]);
+            $this->ok(count($rows) === 1 ? $rows[0] : $rows);
         } catch (\Throwable $e) {
             $this->fail($e->getMessage(), 400);
         }
@@ -73,10 +58,44 @@ final class FileController extends BaseController
     public function show(string $id): void
     {
         $file = $this->files->find((int) $id);
-        if (!$file) $this->fail('Không tìm thấy file', 404);
+        if (!$file) $this->fail('Khong tim thay file', 404);
         $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
         $this->ok($this->files->normalizeRow($file));
+    }
+
+    public function update(string $id): void
+    {
+        try {
+            $file = $this->files->find((int) $id);
+            if (!$file) $this->fail('Khong tim thay file', 404);
+            $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
+            $user = $this->requirePermission($this->storage->permissionModule($entityType), 'update');
+            $input = $this->input();
+            $payload = [];
+            if (array_key_exists('file_name', $input) || array_key_exists('fileName', $input)) {
+                $payload['file_name'] = $input['file_name'] ?? $input['fileName'];
+            }
+            if (array_key_exists('original_name', $input) || array_key_exists('originalName', $input)) {
+                $payload['original_name'] = $input['original_name'] ?? $input['originalName'];
+            }
+            if (array_key_exists('description', $input)) {
+                $payload['description'] = $input['description'];
+            }
+            if (array_key_exists('profile_section', $input) || array_key_exists('profileSection', $input) || array_key_exists('category', $input)) {
+                $section = (string) ($input['profile_section'] ?? $input['profileSection'] ?? $input['category'] ?? '');
+                $payload['category'] = $section;
+                $payload['profile_section'] = $section;
+            }
+            if (array_key_exists('file_type', $input) || array_key_exists('fileType', $input)) {
+                $payload['file_type'] = $input['file_type'] ?? $input['fileType'];
+            }
+            $updated = $this->files->updateMetadata((int) $id, $payload, (int) $user['id']);
+            $this->audit($user, $entityType, 'update_file', 'Cap nhat thong tin file dinh kem', $file['entity_id'] ?? null, ['file' => (int) $id]);
+            $this->ok($updated ? $this->files->normalizeRow($updated) : null);
+        } catch (\Throwable $e) {
+            $this->fail($e->getMessage(), 400);
+        }
     }
 
     public function download(string $id): void
@@ -92,12 +111,53 @@ final class FileController extends BaseController
     public function destroy(string $id): void
     {
         $file = $this->files->find((int) $id);
-        if (!$file) $this->fail('Không tìm thấy file', 404);
+        if (!$file) $this->fail('Khong tim thay file', 404);
         $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
         $user = $this->requireFileMutationPermission($entityType);
         $this->files->softDelete((int) $id, (int) $user['id']);
-        $this->audit($user, $entityType, 'delete_file', 'Xóa file đính kèm', $file['entity_id'] ?? null, ['file' => (int) $id, 'name' => $file['original_name'] ?? $file['file_name'] ?? '']);
+        $this->audit($user, $entityType, 'delete_file', 'Xoa file dinh kem', $file['entity_id'] ?? null, ['file' => (int) $id, 'name' => $file['original_name'] ?? $file['file_name'] ?? '']);
         $this->ok(['id' => (int) $id]);
+    }
+
+    private function uploadOne(array $file, string $entityType, int $entityId, string $fileType, string $categoryInput, string $description, int $userId): array
+    {
+        $inspection = $this->storage->inspectUpload($file, $fileType, $entityType);
+        $category = $this->storage->normalizeCategory($categoryInput, $fileType, $inspection['mime']);
+        $stored = $this->storage->storeUpload($file, $entityType, $category, $inspection['extension']);
+        $originalName = basename((string) $file['name']);
+
+        $row = $this->files->create([
+            'module' => $this->storage->moduleForEntity($entityType),
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'category' => $category,
+            'file_type' => $fileType,
+            'file_name' => $originalName,
+            'original_name' => $originalName,
+            'stored_name' => $stored['stored_name'],
+            'file_path' => $stored['file_path'],
+            'mime_type' => $inspection['mime'],
+            'file_size' => (int) $file['size'],
+            'description' => $description !== '' ? mb_substr($description, 0, 500) : null,
+            'profile_section' => $categoryInput !== '' ? preg_replace('/[^a-z0-9_\-]/', '', strtolower($categoryInput)) : $category,
+        ], $userId);
+        return $this->files->normalizeRow($row);
+    }
+
+    private function normalizeUploadedFiles(array $file): array
+    {
+        if (!is_array($file['name'] ?? null)) return [$file];
+        $rows = [];
+        foreach ($file['name'] as $index => $name) {
+            $rows[] = [
+                'name' => $name,
+                'type' => $file['type'][$index] ?? null,
+                'tmp_name' => $file['tmp_name'][$index] ?? null,
+                'error' => $file['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $file['size'][$index] ?? 0,
+            ];
+        }
+        return $rows;
     }
 
     private function requireFileMutationPermission(string $entityType): array
@@ -106,14 +166,15 @@ final class FileController extends BaseController
         $user = $this->user();
         $this->verifyCsrfToken();
         if (!$this->users()->can($user, $module, 'delete') && !$this->users()->can($user, $module, 'update')) {
-            $this->fail('Không có quyền xóa file module ' . $module, 403);
+            $this->fail('Khong co quyen xoa file module ' . $module, 403);
         }
         return $user;
     }
+
     private function streamFile(string $id, bool $download): void
     {
         $file = $this->files->find((int) $id);
-        if (!$file) $this->fail('Không tìm thấy file', 404);
+        if (!$file) $this->fail('Khong tim thay file', 404);
         $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
         $path = $this->storage->safeFilePath((string) $file['file_path']);

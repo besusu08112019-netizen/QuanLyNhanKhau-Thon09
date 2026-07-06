@@ -209,9 +209,11 @@ final class DigitalProfile extends BaseModel
 
     private function files(string $module, int $entityId): array
     {
-        $description = $this->columnExists('file_attachments', 'description') ? 'description' : 'NULL AS description';
-        $profileSection = $this->columnExists('file_attachments', 'profile_section') ? 'profile_section' : 'NULL AS profile_section';
-        return $this->fetchAll('SELECT id, module, entity_id, file_type, original_name, file_path, mime_type, file_size, created_at, created_by, ' . $description . ', ' . $profileSection . ' FROM file_attachments WHERE module=:module AND entity_id=:entity_id AND status="ACTIVE" ORDER BY created_at DESC, id DESC', ['module' => $module, 'entity_id' => $entityId]);
+        if (!$this->tableExists('file_attachments')) return [];
+        return array_map(
+            fn(array $row): array => (new FileAttachment())->normalizeRow($row),
+            (new FileAttachment())->byEntity($module, $entityId)
+        );
     }
 
     private function notes(string $module, int $entityId): array

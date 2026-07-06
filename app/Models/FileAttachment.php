@@ -80,6 +80,68 @@ final class FileAttachment extends BaseModel
         $this->execute('UPDATE file_attachments SET ' . implode(',', $sets) . ' WHERE id=:id', ['id' => $id, 'user' => $userId]);
     }
 
+    public function updateMetadata(int $id, array $data, int $userId): ?array
+    {
+        $file = $this->find($id);
+        if (!$file) return null;
+
+        $sets = [];
+        $params = ['id' => $id, 'user' => $userId];
+
+        if (array_key_exists('file_name', $data) && $this->columnExists('file_attachments', 'file_name')) {
+            $name = trim((string) $data['file_name']);
+            if ($name === '') {
+                throw new \RuntimeException('T?n file kh?ng ???c r?ng');
+            }
+            $sets[] = 'file_name=:file_name';
+            $params['file_name'] = mb_substr($name, 0, 255);
+        }
+
+        if (array_key_exists('original_name', $data)) {
+            $name = trim((string) $data['original_name']);
+            if ($name !== '') {
+                $sets[] = 'original_name=:original_name';
+                $params['original_name'] = mb_substr($name, 0, 255);
+            }
+        }
+
+        if (array_key_exists('description', $data) && $this->columnExists('file_attachments', 'description')) {
+            $description = trim((string) $data['description']);
+            $sets[] = 'description=:description';
+            $params['description'] = $description !== '' ? mb_substr($description, 0, 500) : null;
+        }
+
+        if (array_key_exists('category', $data) && $this->columnExists('file_attachments', 'category')) {
+            $category = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $data['category']));
+            if ($category !== '') {
+                $sets[] = 'category=:category';
+                $params['category'] = $category;
+            }
+        }
+
+        if (array_key_exists('profile_section', $data) && $this->columnExists('file_attachments', 'profile_section')) {
+            $section = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $data['profile_section']));
+            if ($section !== '') {
+                $sets[] = 'profile_section=:profile_section';
+                $params['profile_section'] = $section;
+            }
+        }
+
+        if (array_key_exists('file_type', $data)) {
+            $fileType = preg_replace('/[^A-Z_]/', '', strtoupper((string) $data['file_type']));
+            if ($fileType !== '') {
+                $sets[] = 'file_type=:file_type';
+                $params['file_type'] = $fileType;
+            }
+        }
+
+        if (!$sets) return $file;
+        if ($this->columnExists('file_attachments', 'updated_by')) $sets[] = 'updated_by=:user';
+        if ($this->columnExists('file_attachments', 'updated_at')) $sets[] = 'updated_at=NOW()';
+        $this->execute('UPDATE file_attachments SET ' . implode(',', $sets) . ' WHERE id=:id AND status="ACTIVE"', $params);
+        return $this->find($id);
+    }
+
     public function normalizeRow(array $row): array
     {
         $row['entity_type'] = $row['entity_type'] ?? ($row['module'] ?? '');

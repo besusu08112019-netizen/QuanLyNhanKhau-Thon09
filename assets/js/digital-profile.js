@@ -13,19 +13,23 @@
       ['household_avatar', 'PHOTO', 'Logo hoặc hình đại diện hộ'],
     ],
     citizen: [
-      ['portrait', 'PHOTO', 'Ảnh chân dung'],
-      ['cccd_front', 'IMAGE', 'CCCD mặt trước'],
-      ['cccd_back', 'IMAGE', 'CCCD mặt sau'],
-      ['birth_certificate', 'DOCUMENT', 'Giấy khai sinh'],
-      ['health_insurance', 'DOCUMENT', 'BHYT'],
-      ['social_insurance', 'DOCUMENT', 'BHXH'],
-      ['party_profile', 'DOCUMENT', 'Hồ sơ Đảng'],
-      ['military_profile', 'DOCUMENT', 'Hồ sơ Quân sự'],
-      ['citizen_video', 'VIDEO', 'Video'],
+      ['portrait', 'PHOTO', 'Anh chan dung'],
+      ['cccd_front', 'IMAGE', 'CCCD mat truoc'],
+      ['cccd_back', 'IMAGE', 'CCCD mat sau'],
+      ['birth_certificate', 'DOCUMENT', 'Giay khai sinh'],
+      ['passport', 'DOCUMENT', 'Ho chieu'],
+      ['driver_license', 'DOCUMENT', 'Giay phep lai xe'],
+      ['health_insurance', 'DOCUMENT', 'The BHYT'],
+      ['party_profile', 'DOCUMENT', 'Ho so Dang'],
+      ['youth_union_profile', 'DOCUMENT', 'Ho so Doan'],
+      ['military_profile', 'DOCUMENT', 'Ho so Nghia vu quan su'],
+      ['degree_certificate', 'DOCUMENT', 'Van bang, chung chi'],
       ['citizen_pdf', 'DOCUMENT', 'File PDF'],
       ['citizen_word', 'WORD', 'File Word'],
       ['citizen_excel', 'EXCEL', 'File Excel'],
-      ['citizen_document', 'DOCUMENT', 'Tài liệu khác'],
+      ['citizen_image', 'IMAGE', 'Hinh anh'],
+      ['citizen_video', 'VIDEO', 'Video'],
+      ['citizen_document', 'DOCUMENT', 'Giay to lien quan'],
     ],
   };
 
@@ -122,12 +126,12 @@
       + '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">'
       + '<h6 class="mb-0">' + esc(label) + '</h6>'
       + '<form class="d-flex flex-wrap gap-2 align-items-center" data-file-manager-upload data-section="' + esc(section) + '" data-file-type="' + esc(fileType) + '">'
-      + '<input class="form-control form-control-sm" type="file" name="file" required>'
+      + '<input class="form-control form-control-sm" type="file" name="file" multiple required>'
       + '<input class="form-control form-control-sm" type="text" name="description" placeholder="Mô tả">'
       + '<button class="btn btn-sm btn-primary" type="submit"><i class="fa-solid fa-upload"></i> Upload</button>'
       + '</form></div>'
       + (files.length ? '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Tên file</th><th>Dung lượng</th><th>Ngày upload</th><th>Người upload</th><th class="text-end">Thao tác</th></tr></thead><tbody>'
-        + files.map(file => '<tr><td>' + esc(file.original_name || file.file_name || 'Tệp đính kèm') + '</td><td>' + esc(formatSize(file.file_size)) + '</td><td>' + esc(dateText(file.created_at)) + '</td><td>' + esc(file.created_by_name || file.created_by_email || file.created_by || '') + '</td><td class="text-end"><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></td></tr>').join('')
+        + files.map(file => '<tr><td>' + esc(file.original_name || file.file_name || 'Tệp đính kèm') + '</td><td>' + esc(formatSize(file.file_size)) + '</td><td>' + esc(dateText(file.created_at)) + '</td><td>' + esc(file.created_by_name || file.created_by_email || file.created_by || '') + '</td><td class="text-end"><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-primary" type="button" data-edit-file="' + Number(file.id || 0) + '" data-file-name="' + esc(file.file_name || file.original_name || '') + '" data-file-description="' + esc(file.description || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></td></tr>').join('')
         + '</tbody></table></div>' : '<div class="text-muted small">Chưa có file.</div>')
       + '</section>';
   }
@@ -145,6 +149,7 @@
     $$('[data-preview-file]', pane).forEach(btn => btn.addEventListener('click', () => previewFile(btn.dataset.previewFile)));
     $$('[data-download-file]', pane).forEach(btn => btn.addEventListener('click', () => downloadFile(btn.dataset.downloadFile)));
     $$('[data-delete-file]', pane).forEach(btn => btn.addEventListener('click', () => deleteCitizenFile(btn.dataset.deleteFile, id, root)));
+    $$('[data-edit-file]', pane).forEach(btn => btn.addEventListener('click', () => editCitizenFile(btn, id, root)));
   }
 
   async function uploadCitizenFile(event, id, root) {
@@ -158,12 +163,34 @@
     data.append('profileSection', form.dataset.section || 'citizen_document');
     data.append('fileType', form.dataset.fileType || 'DOCUMENT');
     data.append('description', form.elements.description.value || '');
-    data.append('file', file);
+    Array.from(form.elements.file.files || []).forEach(item => data.append('file[]', item));
     await api('/api/files', { method: 'POST', body: data });
     show('Đã tải lên tài liệu');
     await loadCitizenFileManager(id, root, true);
     const timelinePane = $('[data-profile-pane="timeline"]', root);
     if (timelinePane) timelinePane.dataset.loaded = '0';
+  }
+
+  async function editCitizenFile(button, id, root) {
+    const fileName = prompt('Ten file', button.dataset.fileName || '');
+    if (fileName === null) return;
+    const description = prompt('Mo ta', button.dataset.fileDescription || '');
+    if (description === null) return;
+    await api('/api/files/' + encodeURIComponent(button.dataset.editFile), { method: 'PUT', body: { file_name: fileName, original_name: fileName, description } });
+    show('Da cap nhat file dinh kem');
+    await loadCitizenFileManager(id, root, true);
+    const timelinePane = $('[data-profile-pane="timeline"]', root);
+    if (timelinePane) timelinePane.dataset.loaded = '0';
+  }
+
+  async function editFile(button, type, id) {
+    const fileName = prompt('Ten file', button.dataset.fileName || '');
+    if (fileName === null) return;
+    const description = prompt('Mo ta', button.dataset.fileDescription || '');
+    if (description === null) return;
+    await api('/api/files/' + encodeURIComponent(button.dataset.editFile), { method: 'PUT', body: { file_name: fileName, original_name: fileName, description } });
+    show('Da cap nhat file dinh kem');
+    type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function deleteCitizenFile(fileId, id, root) {
@@ -251,8 +278,8 @@
   function renderFiles(type, files) {
     const options = (sectionOptions[type] || []).map(([section, fileType, label]) => '<option value="' + section + '" data-file-type="' + fileType + '">' + esc(label) + '</option>').join('');
     return '<section class="mb-3" id="digitalProfileFiles"><h6 class="border-bottom pb-2 mb-2">Tài liệu đính kèm</h6>'
-      + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">Loại tài liệu</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">Mô tả</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> Tải lên</button></div></form>'
-      + (files.length ? '<div class="list-group list-group-flush border rounded">' + files.map(file => '<div class="list-group-item d-flex justify-content-between gap-2 align-items-start"><div><div class="fw-semibold">' + esc(file.original_name || 'Tệp đính kèm') + '</div><div class="small text-muted">' + esc(file.profile_section || file.file_type || '') + (file.description ? ' - ' + esc(file.description) : '') + '</div></div><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">Chưa có tài liệu đính kèm.</div>')
+      + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">Loại tài liệu</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">Mô tả</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" multiple required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> Tải lên</button></div></form>'
+      + (files.length ? '<div class="list-group list-group-flush border rounded">' + files.map(file => '<div class="list-group-item d-flex justify-content-between gap-2 align-items-start"><div><div class="fw-semibold">' + esc(file.original_name || 'Tệp đính kèm') + '</div><div class="small text-muted">' + esc(file.profile_section || file.file_type || '') + (file.description ? ' - ' + esc(file.description) : '') + '</div></div><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-primary" type="button" data-edit-file="' + Number(file.id || 0) + '" data-file-name="' + esc(file.file_name || file.original_name || '') + '" data-file-description="' + esc(file.description || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">Chưa có tài liệu đính kèm.</div>')
       + '</section>';
   }
 
@@ -287,6 +314,7 @@
     $$('[data-preview-file]', root).forEach(btn => btn.addEventListener('click', () => previewFile(btn.dataset.previewFile)));
     $$('[data-download-file]', root).forEach(btn => btn.addEventListener('click', () => downloadFile(btn.dataset.downloadFile)));
     $$('[data-delete-file]', root).forEach(btn => btn.addEventListener('click', () => deleteFile(btn.dataset.deleteFile, type, id)));
+    $$('[data-edit-file]', root).forEach(btn => btn.addEventListener('click', () => editFile(btn, type, id)));
     $$('[data-edit-note]', root).forEach(btn => btn.addEventListener('click', () => editNote(btn, type, id)));
     $$('[data-delete-note]', root).forEach(btn => btn.addEventListener('click', () => deleteNote(btn.dataset.deleteNote, type, id)));
     $('[data-profile-upload]', root)?.addEventListener('submit', event => uploadFile(event, type, id));
@@ -305,7 +333,7 @@
     data.append('profileSection', section);
     data.append('fileType', option?.dataset.fileType || 'OTHER');
     data.append('description', form.elements.description.value || '');
-    data.append('file', form.elements.file.files[0]);
+    Array.from(form.elements.file.files || []).forEach(item => data.append('file[]', item));
     await api('/api/files', { method: 'POST', body: data });
     show('Đã tải lên tài liệu');
     type === 'household' ? window.showHousehold(id) : window.showPerson(id);

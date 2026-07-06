@@ -236,6 +236,7 @@ $router->put('/api/profiles/notes/{id}', [ProfileController::class, 'updateNote'
 $router->get('/api/files', [FileController::class, 'index']);
 $router->post('/api/files', [FileController::class, 'upload']);
 $router->get('/api/files/{id}', [FileController::class, 'show']);
+$router->put('/api/files/{id}', [FileController::class, 'update']);
 $router->get('/api/files/{id}/preview', [FileController::class, 'preview']);
 $router->get('/api/files/{id}/download', [FileController::class, 'download']);
 $router->delete('/api/files/{id}', [FileController::class, 'destroy']);
