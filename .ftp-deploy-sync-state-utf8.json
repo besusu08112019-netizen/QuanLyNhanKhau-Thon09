@@ -1,0 +1,2547 @@
+{
+    "description": "DO NOT DELETE THIS FILE. This file is used to keep track of which files have been synced in the most recent deployment. If you delete this file a resync will need to be done (which can take a while) - read more: https://github.com/SamKirkland/FTP-Deploy-Action",
+    "version": "1.0.0",
+    "generatedTime": 1783305228680,
+    "data": [
+        {
+            "type": "file",
+            "name": ".cpanel.yml",
+            "size": 730,
+            "hash": "71c8514f3c31007f0103270c2b3396396aa5733587f18feeb3dea80aad0a5371"
+        },
+        {
+            "type": "file",
+            "name": ".env",
+            "size": 154,
+            "hash": "ea3cb285c1edd468cb0d392d94fddc131c160ad175a884464d9652b183aaf1d4"
+        },
+        {
+            "type": "file",
+            "name": ".env.example",
+            "size": 447,
+            "hash": "10ec7da88b437a73ea772ef3a963d7dca09b94dbb198c9e870cbd89b3b4cd82e"
+        },
+        {
+            "type": "file",
+            "name": ".htaccess",
+            "size": 1894,
+            "hash": "46b5d243a72bc58b9399dc7db36c3dcc2ee736fef4463a09232d188b987551d9"
+        },
+        {
+            "type": "file",
+            "name": "README.md",
+            "size": 4213,
+            "hash": "069d18c92d9b77a43d79d1d28dd1fd263f41b8c7bc2d172efbf88dd2836a61a0"
+        },
+        {
+            "type": "folder",
+            "name": "api"
+        },
+        {
+            "type": "folder",
+            "name": "app"
+        },
+        {
+            "type": "folder",
+            "name": "assets"
+        },
+        {
+            "type": "file",
+            "name": "composer.json",
+            "size": 573,
+            "hash": "49227a75a451128b120dcd88ad442c7647ce74b8ba8b4fe9a80bef4e60ccf0f6"
+        },
+        {
+            "type": "folder",
+            "name": "config"
+        },
+        {
+            "type": "folder",
+            "name": "controllers"
+        },
+        {
+            "type": "folder",
+            "name": "database"
+        },
+        {
+            "type": "folder",
+            "name": "docs"
+        },
+        {
+            "type": "file",
+            "name": "favicon.ico",
+            "size": 257,
+            "hash": "e672bae3135683565b2ea4b95830b481fb193e2b24a74b72bb0b0a8c33979129"
+        },
+        {
+            "type": "file",
+            "name": "index.php",
+            "size": 17067,
+            "hash": "709434296335866ba5f57e78a11929aa2846dace9c0e2e36698838556a073834"
+        },
+        {
+            "type": "folder",
+            "name": "models"
+        },
+        {
+            "type": "file",
+            "name": "package.json",
+            "size": 725,
+            "hash": "924a5af1e9d7a5701e0d00efc520174fe7aabd39897c20f01c2f1c29c2dbb775"
+        },
+        {
+            "type": "file",
+            "name": "package-lock.json",
+            "size": 2247,
+            "hash": "55d634dd93639764b982109c321129075fb608fb58a2cdf83f005452e49a6dec"
+        },
+        {
+            "type": "file",
+            "name": "playwright.config.js",
+            "size": 910,
+            "hash": "3ee71b69459244fdf06ea29dd47c6885a055d026b12be3dfc909646be29613c6"
+        },
+        {
+            "type": "folder",
+            "name": "sample-data"
+        },
+        {
+            "type": "folder",
+            "name": "storage"
+        },
+        {
+            "type": "folder",
+            "name": "tests"
+        },
+        {
+            "type": "folder",
+            "name": "tools"
+        },
+        {
+            "type": "folder",
+            "name": "views"
+        },
+        {
+            "type": "folder",
+            "name": "vendor"
+        },
+        {
+            "type": "file",
+            "name": "api/index.php",
+            "size": 74,
+            "hash": "0ed26f7d8a773c164dab9b07691532531e97fd15e9864cc8afd83037dbeea1af"
+        },
+        {
+            "type": "folder",
+            "name": "app/Controllers"
+        },
+        {
+            "type": "folder",
+            "name": "app/Core"
+        },
+        {
+            "type": "folder",
+            "name": "app/Models"
+        },
+        {
+            "type": "folder",
+            "name": "app/Services"
+        },
+        {
+            "type": "file",
+            "name": "assets/README.md",
+            "size": 174,
+            "hash": "fa12e3ac9c6a54a4883d24560d1e1dbb051bd84f622245f39be67c9ec2d3882b"
+        },
+        {
+            "type": "folder",
+            "name": "assets/css"
+        },
+        {
+            "type": "folder",
+            "name": "assets/js"
+        },
+        {
+            "type": "folder",
+            "name": "assets/images"
+        },
+        {
+            "type": "file",
+            "name": "config/app.php",
+            "size": 1138,
+            "hash": "1d98b65aefeea9aab02ca780c6fa92fbe85cff55857e1d5d7b8f2c235780afc5"
+        },
+        {
+            "type": "file",
+            "name": "config/database.example.php",
+            "size": 2306,
+            "hash": "63e424b609832cf3b1e1d78dee468eea95fec7ee71b72afe41e226d7ef6dfced"
+        },
+        {
+            "type": "file",
+            "name": "database/database.sql",
+            "size": 16949,
+            "hash": "0d66811a77e67187e6ef89357d4481e4b657b59d26a88a46af9e769dcf3b046e"
+        },
+        {
+            "type": "folder",
+            "name": "database/migrations"
+        },
+        {
+            "type": "file",
+            "name": "database/schema.md",
+            "size": 1499,
+            "hash": "adb295458af6c0cc19c933eec0aea35b1585bb4ea45e738450e607e5b6a164eb"
+        },
+        {
+            "type": "file",
+            "name": "docs/ARCHITECTURE.md",
+            "size": 1006,
+            "hash": "04a6f0a481128256344a05da4ca30aa60764e4714ba0b81045cb1890875bc3cc"
+        },
+        {
+            "type": "file",
+            "name": "docs/DEPLOYMENT.md",
+            "size": 897,
+            "hash": "ae8560d59126ed08d21b22ab174d1bd033bff8165f4e318841760fc87275ab2d"
+        },
+        {
+            "type": "file",
+            "name": "docs/DEPLOY_LINUX_HOSTING.md",
+            "size": 5738,
+            "hash": "87dd8f8fac9b5d2e5678be79af8ab88a7ee33728fbce230a7d189f942198ad7b"
+        },
+        {
+            "type": "file",
+            "name": "docs/MIGRATION_SPRINT_1.md",
+            "size": 8962,
+            "hash": "50f7c1ad1cf69551fb2671cc5a88905003bbc3866246cd14131e7e6154cfe84d"
+        },
+        {
+            "type": "file",
+            "name": "docs/MIGRATION_SPRINT_2.md",
+            "size": 2243,
+            "hash": "6ef5fd4f84c867e49ac1355864b5813218aaf847ea22bc8555fcf02e95307db6"
+        },
+        {
+            "type": "file",
+            "name": "docs/MIGRATION_SPRINT_3.md",
+            "size": 2085,
+            "hash": "71ab583128254f506da7f5d3c9e3f63e356a79006ead295d04a4732a047bac86"
+        },
+        {
+            "type": "file",
+            "name": "docs/MIGRATION_SPRINT_4.md",
+            "size": 1616,
+            "hash": "e881f6c3efe788f9574728ed3a5d13cad7cf2680bf00491f106a2089fa59974d"
+        },
+        {
+            "type": "file",
+            "name": "docs/MIGRATION_SPRINT_5.md",
+            "size": 1455,
+            "hash": "4defc5c43ee8eadb3b39c798280a19e217203fda4ed771bbbc38357c36a3580d"
+        },
+        {
+            "type": "file",
+            "name": "docs/MIGRATION_SPRINT_6.md",
+            "size": 1032,
+            "hash": "64af39a6f4ab668b3e2d15cfca6b6892148954a1b9dabfa29bda5c99ebbd2702"
+        },
+        {
+            "type": "file",
+            "name": "docs/MIGRATION_SPRINT_7.md",
+            "size": 1952,
+            "hash": "7806b14a42bb99168e9b65bf5d3948e0316bc021ee9c225516a84e478e51d7a8"
+        },
+        {
+            "type": "file",
+            "name": "docs/PRODUCTION_AUDIT_REPORT.md",
+            "size": 4014,
+            "hash": "1a296c0f9abee75124e8fd0efd1bc29e7ce0f78a21f2f8605b36aa11c6400675"
+        },
+        {
+            "type": "file",
+            "name": "docs/PRODUCTION_CHECKLIST.md",
+            "size": 3817,
+            "hash": "637387c2cf1f8f6057b39c2fbdbc01053618580917bffd605d6d63f3ce0cbbad"
+        },
+        {
+            "type": "file",
+            "name": "docs/RELEASE_NOTES_2026-07-05.md",
+            "size": 1846,
+            "hash": "d4df6205a256e1d08d13dccdcceb096384ddb21ecaf70b20ca7bc9ce6c08b0bb"
+        },
+        {
+            "type": "folder",
+            "name": "docs/e2e-qa"
+        },
+        {
+            "type": "folder",
+            "name": "docs/frontend-polish-audit"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-audit-screenshots"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-navigation-ux"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-tablet-polish"
+        },
+        {
+            "type": "folder",
+            "name": "docs/production-stabilization"
+        },
+        {
+            "type": "folder",
+            "name": "docs/production-verification-1378656"
+        },
+        {
+            "type": "folder",
+            "name": "docs/revert-unintended-ui"
+        },
+        {
+            "type": "file",
+            "name": "docs/security-audit-2026-07-05.md",
+            "size": 4223,
+            "hash": "c5ba04f8e7c3b7c211606e38305af7f41b8d334af727fe54065e9ef413b04b64"
+        },
+        {
+            "type": "folder",
+            "name": "docs/utf8-encoding-fix"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/Mau_Import_HoDan.xlsx",
+            "size": 70371,
+            "hash": "8523bba2176f5b9a9c609cdbe225a3cb34b4d2335071e0b908a88878ebb9d544"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/Mau_Import_HoDan_ChinhQuyenSo.xls",
+            "size": 811,
+            "hash": "9b775b33f86f86f3926d78c33b19fefbbdc19e510d5381c4013464ab0550ee46"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/Mau_Import_NhanKhau.xlsx",
+            "size": 119135,
+            "hash": "c4942f4ba4dee621b0f60d50835e7d48ba1c686459799dce7cde1ee19b4f9276"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/Mau_Import_NhanKhau_ChinhQuyenSo.xls",
+            "size": 2719,
+            "hash": "48f852d3b28a3a1dacb624ef21c92023fa80960d627ca5446c7f490a2b23ca70"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/README.md",
+            "size": 172,
+            "hash": "b69a77e80540cb438259f7972c1ee257b3e416d267faae7dead7b955eb0d21db"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/import-template.csv",
+            "size": 108,
+            "hash": "2791974d6c3261d8fc1f7d53207417b1e14bf667dc05bb58584a97bb92054546"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/import_household_template.csv",
+            "size": 130,
+            "hash": "e1d6f76caa7d86f8f7923f4ad44f8ec9951a39632995fb9a83c804ac5bef844a"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/import_person_template.csv",
+            "size": 246,
+            "hash": "b376b7f5ec87e223cd5c6c3ab8edbdf8dc9f1f763176ecee5dcacb0011f99354"
+        },
+        {
+            "type": "file",
+            "name": "sample-data/import_template_thon09.xls",
+            "size": 4702,
+            "hash": "8032f75790eb13046d3ab6bd0c8b7bedf958f19328fcd2f887d937378b58db08"
+        },
+        {
+            "type": "file",
+            "name": "storage/.htaccess",
+            "size": 19,
+            "hash": "fa28d421a28ed9b6f4b997d5119c2b8adbacff6e2dd119a179b71230f9664934"
+        },
+        {
+            "type": "folder",
+            "name": "tests/browser"
+        },
+        {
+            "type": "file",
+            "name": "tools/build-assets.js",
+            "size": 2368,
+            "hash": "4eacc7761df92c8152c36ff1eb09f492f4ffb62220b1bd3cb78389a6953512ff"
+        },
+        {
+            "type": "file",
+            "name": "views/app.php",
+            "size": 33947,
+            "hash": "ede5f5f0bbe674e95e231472f5a36ce0417e5da80b11989cfac5e81471c77d1b"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/AuthController.php",
+            "size": 1651,
+            "hash": "3488830ef4458b3bb1a919cc667f55069be632e0039afdcf048d6b9bb115bf58"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/BackupController.php",
+            "size": 2201,
+            "hash": "0037aaef80d647e6a6d064df80e291dca82ab612b0e425fa75821af81e568162"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/DashboardController.php",
+            "size": 1018,
+            "hash": "82f8b66fa315b4e1c887de28d3e974747e15d001348f2e9e64626ec0c4688a2a"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/FileController.php",
+            "size": 9434,
+            "hash": "bff1e7e2aa72923c60659bc9599189118cd8be91dcfe5f61063bf3c143adfc36"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/GisController.php",
+            "size": 10553,
+            "hash": "47e9fd20dc5ec89868011066b0edc459478ca21b04c83111c6b68415a8656252"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/HouseholdController.php",
+            "size": 5272,
+            "hash": "c74ef863045150006ad47c7e3749495d46a79eb3561bdcbd02858505966d59f3"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/ImportController.php",
+            "size": 23931,
+            "hash": "56f483531a6e6dcd6648332c8eadc90d4c09460c783eeac3b44a0e29602315f4"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/InsightController.php",
+            "size": 774,
+            "hash": "9a36db31db3c020d12976c0c25a47e4b366967b2055959a4a688196172fd74f8"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/LogController.php",
+            "size": 302,
+            "hash": "0ff9829378eb16379d42ca9b4759fc9e9484dcda155eaffae88e4b3679cde810"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/MovementController.php",
+            "size": 1676,
+            "hash": "193511b6eea6c0cca9736b2f2404ae345b5ee9cb444e044c8a91de95e0ae8dfd"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/PermissionController.php",
+            "size": 811,
+            "hash": "359767f8b64ed6a723dbec0bd49d7a6efb04c35792d548cbef9cbe0da2340383"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/PersonController.php",
+            "size": 7495,
+            "hash": "03d303fc54c6b164b9566089333d4fca4abc6ebb1686cd71702a0afab92125c1"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/ProfileController.php",
+            "size": 3327,
+            "hash": "f9162bfcb8eda2fb6a1bd120822d571ac10582778f922490476978466864b9d0"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/ReportController.php",
+            "size": 8674,
+            "hash": "86e7c5faa4c6ccfd39774dc839e894eac88000433484fcbcd19e5e2ccbb7c96c"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/SettingController.php",
+            "size": 11921,
+            "hash": "c314ffe27b5a6a178770692c9e887f3af83586514ed20e83c1ed80268764b922"
+        },
+        {
+            "type": "file",
+            "name": "app/Controllers/UserController.php",
+            "size": 2563,
+            "hash": "cb5126c072b0d5457badad28210e9d956eca3b48c1a96153418ad2238b60def6"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/Autoloader.php",
+            "size": 530,
+            "hash": "37141e40a90a6e41bd83e9f916761d4a42bd0bf53ebf70eaec38d150155cf772"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/BaseController.php",
+            "size": 2966,
+            "hash": "430016cd7069862850f167d0571efe7b165f522528ba04f174c53f7c0938d5c5"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/BaseModel.php",
+            "size": 2279,
+            "hash": "fdc6c03933bb35d28bdc0ded5638a3e750b59d78dbdbbf88fcff435fdd88ad2c"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/Database.php",
+            "size": 8305,
+            "hash": "0675b49825453eddc8afeabe5a8a492ed61b8498c089344ec74967ccbf90dacb"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/DatabaseException.php",
+            "size": 88,
+            "hash": "d8ad023dffe8d7e544ea57628b597db51849b2282a6742095b93434fb1135c74"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/Request.php",
+            "size": 2273,
+            "hash": "1d73e36f8d8e8c6f80ca43d4ed6a5b6e4f693bc4f3b3d91f60251dafad3a6aef"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/Response.php",
+            "size": 1678,
+            "hash": "bc01d42f98aa700efdb63c3d5d7f35c8ea42384b3a9be8690f705e67b60935b3"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/Router.php",
+            "size": 2891,
+            "hash": "9c7be01f344104ec2b8dce153f7f57edc46cad82584032fcadbd47222b163d09"
+        },
+        {
+            "type": "file",
+            "name": "app/Core/SimplePdf.php",
+            "size": 3876,
+            "hash": "71a1f7e6607d33875a447a691bde3c2781a098ed28fdac3d2c1c49e282086cab"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/AuditLog.php",
+            "size": 2571,
+            "hash": "1dd8f57c0afc60a651a3de52235cdf5e78047626a0a1dcfade2d4247600c2224"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/Backup.php",
+            "size": 4372,
+            "hash": "83465f818cc487645a084df84738ef532182863e91d232b28df3bc128a688787"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/Citizen.php",
+            "size": 23502,
+            "hash": "2896a1d8c9b46b6cbb2d48db9d56b257343a6e55c78f3bc663da4792409d527c"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/Dashboard.php",
+            "size": 20287,
+            "hash": "8fe1e977004c52ad5d519f038606ea6d18b5284dc9c87bd34211ccc36f20b771"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/DigitalProfile.php",
+            "size": 18703,
+            "hash": "9797777a18c514e1af5f96f8be476d53f81a1a2927043e8562218959731cedbf"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/FileAttachment.php",
+            "size": 7517,
+            "hash": "afa29a466877fa505770865735ec57f4437087e4a766fe3bd5141810c826b3e3"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/GisHouseholdLocation.php",
+            "size": 13228,
+            "hash": "b9fc54e1ba439f48537d1334f469be979aaeb1b2ea4f3750bbbf1b7f11588d35"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/GisArea.php",
+            "size": 16665,
+            "hash": "934811f2847d9816ec2ec16352ef3a8687f302edf33b46e29844aff2a9d10db3"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/GisSearch.php",
+            "size": 5991,
+            "hash": "5b9d61f50355d2d4273e65e8bf0828bcbbfa612eee6dea69fffc7df994fc755e"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/Household.php",
+            "size": 13207,
+            "hash": "eeaead07fa9fd78cfc6921d1e95336b4c2438a85f3e440ea98c837fd086b5048"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/Movement.php",
+            "size": 13936,
+            "hash": "8b26a26556703665bb1eea50296b471d4cd0ff2382ab3b84d15b5d2ab056a3db"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/Permission.php",
+            "size": 3167,
+            "hash": "d983ab969a18756867fa161c578a224245aea77214b4f48f8d84f52b8a545848"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/Report.php",
+            "size": 28205,
+            "hash": "ea887e52cdedacaef0f22fad2aaecda52c0f99aa244f4ea42f4b95588897fcf2"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/SystemInsight.php",
+            "size": 4499,
+            "hash": "7738218907794ccf1c55a8cf4f3a003fc5c749941e67c0bc5e3fff4c1225aad6"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/SystemSetting.php",
+            "size": 2085,
+            "hash": "148786bbfd70137058e59fc48d43c3303a0f858bacecd7536bce584e20876c98"
+        },
+        {
+            "type": "file",
+            "name": "app/Models/User.php",
+            "size": 11627,
+            "hash": "4254e08d9718c9302391b0c371036b7097fb5c583b157af20063c1c13cf9328d"
+        },
+        {
+            "type": "file",
+            "name": "app/Services/FileStorageService.php",
+            "size": 8785,
+            "hash": "36f1184aea215d74682bbd67b0a2d2ac4b1bebfb3eb1165159ec94759c43131e"
+        },
+        {
+            "type": "file",
+            "name": "app/Services/PopulationMovementService.php",
+            "size": 21568,
+            "hash": "edff5435669941f94297007fd7cabf2cb726bc880cfcc16a4157dc0f6ffe1dae"
+        },
+        {
+            "type": "file",
+            "name": "assets/css/app.css",
+            "size": 142396,
+            "hash": "7a5258d9599bfe9f8b259597812b19bdc0d423db9281c882b140f7232d904588"
+        },
+        {
+            "type": "file",
+            "name": "assets/css/app.min.css",
+            "size": 121108,
+            "hash": "a10a0e0260683c6cc8eedcd30746c25af9858db65d4ed38739f30e3e4647392b"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/admin-panel-bridge.js",
+            "size": 30233,
+            "hash": "bd2eec347537d95c9a2bf1570508577d6748e2741472e9e833062b995770168b"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/admin-panel-bridge.min.js",
+            "size": 28357,
+            "hash": "5cedeaf3ed6dd1b7cb076466b7e12778776f5cfa1483b8729ee53f311b5bec66"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/admin-panel.js",
+            "size": 38430,
+            "hash": "3a4767fafffd171907deb68d4c0ab772187a794ea6db8994da336cecdfe87197"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/admin-panel.min.js",
+            "size": 36508,
+            "hash": "186941e6ef1c005f0d6a26cfc845f64464c8d81e82a3e8336630d15d9c696df2"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/admin.utf8.js",
+            "size": 14997,
+            "hash": "4dffc6fdfe47d27aa1008973b47598f3bf56d54352579043ee103381afa23926"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/admin.utf8.min.js",
+            "size": 14471,
+            "hash": "866123b0c427c9ed57f3d2992bff42fc880e19664a7b505c40844954df393be6"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/app.utf8.js",
+            "size": 93671,
+            "hash": "cd16423c71de341e3773281a158f51618f73499f0985b4bc466b6226ebbdcf2a"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/app.utf8.min.js",
+            "size": 89489,
+            "hash": "6e58cebba848726522d6d250255113a6394c0edab4dadc50f1def3ff3624007e"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/csrf.min.js",
+            "size": 29981,
+            "hash": "a40ab982f80444a5b19bc0ecb3d281d4a284c10776c819f9243533576b103546"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/csrf.js",
+            "size": 32508,
+            "hash": "4cffb7b000fb1513e30807f4ab5430db8f7098017690323b6d087e94aa7ca6ea"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/digital-profile.js",
+            "size": 28977,
+            "hash": "f61b1706751e09269826f72fe59c864e8613bed7c9c6d2e321dc83c4552bc2c1"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/digital-profile.min.js",
+            "size": 27334,
+            "hash": "4ad393561af638aaca55cf7d6ce8fa526354a99d32a2247830a7c1ec2db35a1d"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/gis-household-location.js",
+            "size": 18925,
+            "hash": "9ec6b95aff3dbb962e7fb6de43510a940c262e63ca7795be397596414c561afb"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/gis-household-location.min.js",
+            "size": 17087,
+            "hash": "8746aac36b8ce43f2ddce760f8b708af4163ab736499877f36f449b069f376af"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/gis-search.js",
+            "size": 14626,
+            "hash": "e89d805389563994c717a9c35e4b585a13d8fce607684d4b043c04c4d1a748eb"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/gis-search.min.js",
+            "size": 13047,
+            "hash": "c4364b917f3b8b1e5f6bd360a6867eb27c34f51fe756cce54c665c0fba8723ec"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/household-photo-camera-fix.js",
+            "size": 648,
+            "hash": "f089ca0612eb8a72bd51c5a71f0da4b3143434bf260ad7462f0c62f499b1f71a"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/household-photo-capture.js",
+            "size": 12366,
+            "hash": "62e5c4777a64380cca51167380901fd737691de292b276660ad47d9921ee47cc"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/household-photo-capture.min.js",
+            "size": 11147,
+            "hash": "c2732b398226cb6db289c98984b75cf5525573b51dda44d84c8bde8770faf8a6"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/household-photo-gps.js",
+            "size": 5133,
+            "hash": "c68edc8df7c40e772eaa3dfb6fc3ec42ec0cb35eb574afae3d64bd64402504f2"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/household-photo-gps.min.js",
+            "size": 4496,
+            "hash": "2ebf8454e9f7fc45e51b5ebe28dfc91983bac4fd5fe1c7427d64c91aabbf4dca"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/import.js",
+            "size": 12180,
+            "hash": "0d4a2a9971eedf62aafd38a871546c7b9435cf049128ae262dc8cca8670dec78"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/import.min.js",
+            "size": 11502,
+            "hash": "373a07b67cc4854c591c6770aaebb2336c9c1d431036a1c38b3b6c465547b6f6"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/report.js",
+            "size": 4695,
+            "hash": "e105cfd952a82cac3e746b0668762b5a105a76fdd10476cf90ac86446dc3031d"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/session.js",
+            "size": 1779,
+            "hash": "b543fd2640bb9ad82b78da2a1f9f3b1ac86d7c308e820e19bee83da56756eb0f"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/session.min.js",
+            "size": 1529,
+            "hash": "e5bd6d497c49f5d6ced410865d142b3fc0e93295d1496afa5c9f7a67a572510b"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/sprint10.min.js",
+            "size": 20256,
+            "hash": "4f201d87412b98cbaec12707872fa683e9b0574c5d25efe9b325c12976cc87b5"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/sprint10.js",
+            "size": 21091,
+            "hash": "8c3ab304bad3e8345d89981e3abce715ad7df7222a3507936eeedcd82a7c9199"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/sprint8.js",
+            "size": 18149,
+            "hash": "7d86a1875d2361060230f955aaba60a7c51686c3b2156975972829d2a5876243"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/sprint8.min.js",
+            "size": 17301,
+            "hash": "0793297f7f9c4d8d90df53f4f458decb81d2e128f6464866553da882687b2df3"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/sprint9.js",
+            "size": 3960,
+            "hash": "c8eea14d6e19c08a0762ec1a2d4c9434647b8da6a488daab94a4606b2c585a37"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/sprint9.min.js",
+            "size": 3808,
+            "hash": "1a73f58c0349e57eaf7214f4fe67f20094e3c960fe774b7d37d6f4981aedf9d5"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/view-inline-patches.js",
+            "size": 18399,
+            "hash": "8d92a72776b7ecb7e985a06cf4a15f670b1630ef37406129f80f452571989b42"
+        },
+        {
+            "type": "file",
+            "name": "assets/js/view-inline-patches.min.js",
+            "size": 18108,
+            "hash": "739c204dfacde0feaee082c9c8de24fff1a7b0a7e5821644ff9c89dbfa4680c4"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/20260701_110000_create_gis_areas.sql",
+            "size": 1325,
+            "hash": "90cebd92469faf0ffba0036c6c7b4593a92ea6f69c4930ea28a17aa5569027f1"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/20260701_180000_population_movement_automation.sql",
+            "size": 3025,
+            "hash": "b1495ec08b2beeee6b32a3c1bf6b9a8cf9d86240d083a34d88877b5b5574c29e"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/20260702_150000_sprint15_household_location_markers.sql",
+            "size": 908,
+            "hash": "acbbeb440d607c2d93a2999baf08639846c09fcd2f3158bacd246f6886e7b1bf"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/20260701_210000_sprint13_digital_profiles.sql",
+            "size": 2435,
+            "hash": "d5bdda3b6f9103cf1975d22c71856a75178e627acd263a1d27364cec81d25e5e"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/20260703_120000_gis_search_indexes.sql",
+            "size": 1221,
+            "hash": "241191e8ea9eb71357a386f66dd6590f5c65427516dfdde0a400f44916c4f3ad"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/20260705_170000_sprint1_file_storage_foundation.sql",
+            "size": 1501,
+            "hash": "ec09c9364b6de88710fd1306c31ae6155a6991aa91e132849c0ce9ba5c82c135"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/2026_06_28_admin_panel.sql",
+            "size": 3908,
+            "hash": "e71d30ddc090bfc2d8fca500d59379add03617436fcbf8e2be5d9523fdcbe1ff"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/2026_06_28_sprint8.sql",
+            "size": 1364,
+            "hash": "87d426f08b6e2652b4300ee7bc04622a37d9136c23c6c13b744a7204eba6e17c"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/2026_06_29_add_household_type.sql",
+            "size": 620,
+            "hash": "ec7600c4ea0c5bfff017584b2a914209334a3bd683ac6960b0a1a4ea6fba40de"
+        },
+        {
+            "type": "file",
+            "name": "database/migrations/2026_06_29_digital_government_population_fields.sql",
+            "size": 2450,
+            "hash": "5b6f7a8f85d5b8f126d7900530227cb8945491d1a4decc25b47684fef642554b"
+        },
+        {
+            "type": "file",
+            "name": "docs/e2e-qa/README.md",
+            "size": 1459,
+            "hash": "dd35b9d70b20ff0a43cc5f7f504fe9673c1df8bfd38cf0db0711090e23d82fcd"
+        },
+        {
+            "type": "file",
+            "name": "docs/e2e-qa/desktop-e2e.png",
+            "size": 70599,
+            "hash": "e479e28bdf732f01e0413cb4155e615e441c221fd9caa2614dbc0e0a3142c331"
+        },
+        {
+            "type": "file",
+            "name": "docs/e2e-qa/mobile-e2e.png",
+            "size": 27889,
+            "hash": "2b9236c2fddff6cc8019f4a8d1f8c9f21efd3ad5cdafb2ebda1b65c0fa541b8a"
+        },
+        {
+            "type": "file",
+            "name": "docs/e2e-qa/tablet-e2e.png",
+            "size": 31705,
+            "hash": "bf68b1e3917eeb34dc2df9a4085915f05857badb8c5a74923ed150f030f551b6"
+        },
+        {
+            "type": "folder",
+            "name": "docs/frontend-polish-audit/cleanup-after"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-audit-screenshots/after"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-audit-screenshots/before"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/README.md",
+            "size": 1786,
+            "hash": "cab54d3adb9197731cebb6834546e039a05a4c4543bb7ba846bfec14637623eb"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-navigation-ux/after"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-navigation-ux/before"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/README.md",
+            "size": 4017,
+            "hash": "298cfdb6436ae8db8bee1303eab77aaacfb0127cc02f235f863eef8a10a7323b"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-tablet-polish/after"
+        },
+        {
+            "type": "folder",
+            "name": "docs/mobile-tablet-polish/before"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/README.md",
+            "size": 1825,
+            "hash": "08a3918316ee71fe7797ecbc207fe2d00df538013a04c72215b926839b6255d0"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/desktop-stabilization.png",
+            "size": 140696,
+            "hash": "cd50dbaa609a7e2c4f1cf50c39ebddb46173decac2658eb1dc34a924255a24eb"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/local-ui-check.json",
+            "size": 755,
+            "hash": "8f058a02ef96a87a66460ad6ff9290722f5c040a59dfd23876fce18901cc1666"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/mobile-stabilization.png",
+            "size": 102618,
+            "hash": "d6c333b6f0375e63777c400459e46078bee72a7be1ae4eef0c2f30d7dc411553"
+        },
+        {
+            "type": "folder",
+            "name": "docs/production-stabilization/production"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/tablet-stabilization.png",
+            "size": 107871,
+            "hash": "bae721c2297cd4970f70167b1e11cfcfc590f0e64a4dafed17ff733d3cbd7003"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/README.md",
+            "size": 1638,
+            "hash": "0bcf5fdb2ca5b717eb5af5975cad433d5c37d9aa515de88d3bd580d6c02b3fa2"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-backup.png",
+            "size": 68022,
+            "hash": "679f8803fe3133078103616895915ecf22b943f69e78f9d698331b912d4de5c8"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-dashboard.png",
+            "size": 249976,
+            "hash": "ac0eb7cbed507fdd73d4ada1953e6141e7e6b9a6c9f95eb4084e1dfeb20c766e"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-gis.png",
+            "size": 276864,
+            "hash": "fceda59ac490655eb939209d082d711615fbc3762bc233af3ff77fbacfa8e9ca"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-household.png",
+            "size": 170431,
+            "hash": "6e1385c820cb22dfabe6c111532eb4eda7f2a0f8e271384507e79cbea0506d79"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-login-after.png",
+            "size": 249850,
+            "hash": "605468251c137b7f7108b632a61c5a38ec0ff262b1c3ae23205589039a9e8ed4"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-logs.png",
+            "size": 70222,
+            "hash": "03cf30da4dced2416063cf1aad274cbee5a4099c2864b03bf70564de763b0941"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-person-detail-popup.png",
+            "size": 210775,
+            "hash": "4535182bf7d1cc420d6380e000bc40b9b4ddd8cb6b36ba47c5ed9f4ff364091e"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-person.png",
+            "size": 160728,
+            "hash": "552317c23d688b48ba6006fce774c6de974f8b494964b6f32b5538edc7351bd9"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-reports.png",
+            "size": 95528,
+            "hash": "44778b89de06d4cd50943b281ba5b1ddc5c4e4bf128032b390ebeb0e15f67e31"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-backup.png",
+            "size": 66755,
+            "hash": "b57bca3b7a8b6ffd50ace790113e1fa13b7d6b4c2661e1a656aa4f87aba97965"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/desktop-user-management.png",
+            "size": 73165,
+            "hash": "cacb555bbc9b577dfffd1c6569ba8ecff0f7397d314afe161d262acb172cc6a3"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-dashboard.png",
+            "size": 750067,
+            "hash": "e99c8cff8530871d50d60fe23f2a93a789cdfb368ab16a7e1e26ce7bdfee682a"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-gis.png",
+            "size": 1104268,
+            "hash": "538527330d4faebd2a82bbca44c0fe3a82b2fbfb6a1c86d2d9b76ed08ee16aee"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-household.png",
+            "size": 1445870,
+            "hash": "288d8475bce9b9c1942a23cf7b3cac075fcdb4c440e8bccd7dc18c8f06599023"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-login-after.png",
+            "size": 750067,
+            "hash": "e99c8cff8530871d50d60fe23f2a93a789cdfb368ab16a7e1e26ce7bdfee682a"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-logs.png",
+            "size": 73026,
+            "hash": "747ae8d34fdcd085c621050412b0a8d004cd70a9e56b6395cec2d8d345f6ec64"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-person-detail-popup.png",
+            "size": 2044638,
+            "hash": "e73e2f9ccc3362e12a197b14db064aaebdd94469acbd22523976dfb93b454912"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-person.png",
+            "size": 2050303,
+            "hash": "7aa89fbc2735d38f248e076358f84570faa49ae3927d68acef6e72a647532ceb"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-reports.png",
+            "size": 201550,
+            "hash": "15b5a38ff03dc36aceff06a7a5f29d272dfb7d21eea3d756b2df502f0c577e9c"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/mobile-390-user-management.png",
+            "size": 74730,
+            "hash": "ab32b5897be80ee74ecda00435ab496e8e1d56dfbd188cdd65250e0af5d8ad55"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-verification-1378656/report.json",
+            "size": 5921,
+            "hash": "77f45b604bf8770e63ca7f4cc28a988c1127584b40ca78dd4005beb6c5e45b0c"
+        },
+        {
+            "type": "folder",
+            "name": "docs/revert-unintended-ui/after"
+        },
+        {
+            "type": "folder",
+            "name": "docs/revert-unintended-ui/before"
+        },
+        {
+            "type": "folder",
+            "name": "docs/utf8-encoding-fix/before"
+        },
+        {
+            "type": "folder",
+            "name": "docs/utf8-encoding-fix/after"
+        },
+        {
+            "type": "file",
+            "name": "tests/browser/smoke.spec.js",
+            "size": 1455,
+            "hash": "e0e8442422dbce504a792e9cf867728d07db09bca9ab827c55fb5ab016b5aaba"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/dashboard-1024.png",
+            "size": 190850,
+            "hash": "c6a198d566018394f261942e8c89bfb59bee73aa689fade41971cb9795b7bc96"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/dashboard-1366.png",
+            "size": 195259,
+            "hash": "1e2ad42f35cee315f157ac8ee2c0e692d110fc06b84f442dc868f17404177475"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/dashboard-360.png",
+            "size": 151226,
+            "hash": "f5cad2dfb7d148de1d9ecde5a404f90b8991ad7dd6382b508e5dfd57b63a3a92"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/dashboard-390.png",
+            "size": 150783,
+            "hash": "efaecd7397b5dd4bf1ae91fde60aa5d608cde6908c939acc7f8dd56e818b50c1"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/gis-1024.png",
+            "size": 528980,
+            "hash": "5c63566c1928a03cd853fb0be6cea8784d2768fb1bbc4729ca765dacaeb1eb43"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/dashboard-768.png",
+            "size": 146227,
+            "hash": "24d45f00ca60699d51df5bc693b7cb859cc3bbdfa7728daa852a6c7231c13373"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/gis-1366.png",
+            "size": 602579,
+            "hash": "15ab107696ee07040d89f592e60ea6a57607acbc3f3badfc2157d67df5f44161"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/gis-360.png",
+            "size": 290313,
+            "hash": "1d9524400430f7d69b205f2d17a81200396d8482e9c55edbe0f0a9ee5a03fc01"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/gis-390.png",
+            "size": 317781,
+            "hash": "04dce96be07fe8cfd55c61c048332253e21d2a367ba05d9936d6d7a76c8ea8dd"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/gis-768.png",
+            "size": 520797,
+            "hash": "8a5eb19c89ef80690ab6aeff9717b1b09ea09d86972ab6d950e06db6b235df21"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/households-1024.png",
+            "size": 108163,
+            "hash": "4ec6c9b21bbf74613ea36ae0fd07f2ac13277082344efebdbe2af254a6a11659"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/households-1366.png",
+            "size": 117057,
+            "hash": "f7de2f4407468ca1c218c154a227592464c13d5b8cd1b4f131e168366ff0b70b"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/households-390.png",
+            "size": 62093,
+            "hash": "4dad043241200d76cd412e4403341345c838e3824d647013ada4f54825ecc2c2"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/households-360.png",
+            "size": 59989,
+            "hash": "d81730c68de5578febe017ebceb8255618345c81ebcf8bff2192377e7690228c"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/persons-1024.png",
+            "size": 92695,
+            "hash": "d4803682b47ff3412da4019b9257b9b7cec5f365d3568149ee3b64896fa0cf89"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/households-768.png",
+            "size": 60402,
+            "hash": "e89829ef2367d680adc825ccaefc0633bf6626c43713f6ac49978f4d49700220"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/persons-1366.png",
+            "size": 121616,
+            "hash": "bf04368ea93367eeb5e9857591d0e045b6044d447d6b7bff527edb92fe84a9ff"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/persons-360.png",
+            "size": 38823,
+            "hash": "41447e90153da5af32c4bc2402879e145cc8ac765a772b8c478db7c513c8d97e"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/persons-390.png",
+            "size": 39366,
+            "hash": "2447d08fa3c7e454c211d6fa6c4a9e3d01d18edec86fae6d0652b07a4849e66a"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/persons-768.png",
+            "size": 46368,
+            "hash": "3505d4cfa33b978a8e9dc15abb94c9f2570ba381dba3b6abef88445fd4375bb7"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/reports-1024.png",
+            "size": 85337,
+            "hash": "be0474d7a854bfd7924309bb39f0e2c7af05c0fd895b89ad47969d0ad137faa6"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/reports-1366.png",
+            "size": 102650,
+            "hash": "39b68eb7bec0623738dc579adf03d6413ddb997af93cefdce56be4c178dcea98"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/reports-360.png",
+            "size": 36890,
+            "hash": "7b557994307a9bd70daf41472e9a4cfa1d17e7b5bbbbd343ddb0a7caa92e84ce"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/reports-390.png",
+            "size": 37523,
+            "hash": "e0d0b90f98bdc8cae21c8972f3d5aeaa8ba32aabc7f93ea28aa2da2c6522e48b"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/reports-768.png",
+            "size": 40647,
+            "hash": "20c0247c13ab60cf1dfaf29a5ec369679784cdf81bce3285aa250a5f88c51310"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/responsive-report.json",
+            "size": 207,
+            "hash": "61b2cbd1be7d3a6c08c8fa37e535c4e78918598f966b0845f092ad9011bb0aa5"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/settings-1024.png",
+            "size": 80845,
+            "hash": "1b3e8fee5b77b34e4a54e75ce52500368471ac439d4f4eb681ab9a4252a8c0d0"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/settings-1366.png",
+            "size": 79624,
+            "hash": "1208a950c94943a4cc9ab57ac9a85b555073c8857f20e056def2bbb0edc1a117"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/settings-360.png",
+            "size": 39774,
+            "hash": "9d7055e52eeaf0c3d27d45b92b881cee29ad180e76ff6c16744d521a4a6c7795"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/settings-390.png",
+            "size": 39593,
+            "hash": "3cdbd37bb7219e2520ea06d56069c50c8adaf612590856038f167070efa8bed0"
+        },
+        {
+            "type": "file",
+            "name": "docs/frontend-polish-audit/cleanup-after/settings-768.png",
+            "size": 42701,
+            "hash": "d8ac426dbdf91f338e9eb663dc654ca89e1d5eda3f8add806ed4aa3538844b3b"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/dashboard-1024.png",
+            "size": 189319,
+            "hash": "c717fb35ff46d0e79893bc0c69c780c15fd42326f717b9b9246d32273df035a9"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/dashboard-360.png",
+            "size": 141540,
+            "hash": "8562f82413389c889fa67ee4bab0d2e26118ed97841315f80e0c9969fba1c057"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/dashboard-375.png",
+            "size": 143289,
+            "hash": "9de9ce5bd1409a6d0800ec71d3c0195a0f8b9e51f92a02b357fc7f061a65878e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/dashboard-390.png",
+            "size": 142652,
+            "hash": "946ebade0bf158aa06d060ec9c018fa95b789f3b60bfbda8472148bfaf606b2e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/dashboard-412.png",
+            "size": 145280,
+            "hash": "271182eb58711a9cd79f39ea1d19b68571d0a96db3a505a960f6ce81567e91cc"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/dashboard-768.png",
+            "size": 125751,
+            "hash": "09561104ad4e38ab74b9a8ea5860d010896a45fb53a194d7dc914df72347ecc7"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/dashboard-820.png",
+            "size": 128197,
+            "hash": "0e95e6f59f9cc19b76bda7fc41a0628713648983bff846a7df644ba31dcb28c9"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/gis-1024.png",
+            "size": 594498,
+            "hash": "88043eb85f1685a5db56a13965d705fd6491e256908f3778274e058ac4b782fd"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/gis-360.png",
+            "size": 288578,
+            "hash": "fe7eed5ea73bc37235f329e2e09523660cddaf5811c99e8024bc7a51cd2f040e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/gis-375.png",
+            "size": 301686,
+            "hash": "02c7ce98452fb41f74828f0616c4b38e17e6dac012a98b9253798fa9f18b3246"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/gis-390.png",
+            "size": 317268,
+            "hash": "9c576fb52b8a7a91e153ef2b4324f67dfe8d52130c7f398012a8642fdffea63c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/gis-412.png",
+            "size": 344051,
+            "hash": "217e247373c3e65b1b388b25e5b1a450a4729471bd60808146f6a24297273176"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/gis-768.png",
+            "size": 494977,
+            "hash": "8dd989357f48663821addbd4e2cad61f43f1250eccda35a03fb32686cdb4ea5b"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/gis-820.png",
+            "size": 513578,
+            "hash": "9ace25aabb28d0f9254b579a33f8a56199f16288b8898827471836b3a03a3a49"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-1024.png",
+            "size": 107953,
+            "hash": "d098ea894f863b42d76bb1df9847032d9da1acdf4c74f83524441afedb118ac0"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-360.png",
+            "size": 66576,
+            "hash": "ca116276c96a0e119d4d3d86221b00380c3e8b38dbe2ee3994318b85de76523f"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-375.png",
+            "size": 65589,
+            "hash": "67ff05e8157c6efaf749021cbb8c5860f4ed8ca8deb63c24cf6f222841460443"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-390.png",
+            "size": 65345,
+            "hash": "df36b4f011a383c48a99c75af05e2e85e269061075f898be734ce73bf00f8d55"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-412.png",
+            "size": 66923,
+            "hash": "23b6fa0b29d4e9a0177b3b7c6f39f1a064ce9bf9e352b37ae917f47803122efe"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-768.png",
+            "size": 46738,
+            "hash": "d37ebee9095d7bf12dba9f814cd590aff9b39f94b2b5c4d04105cc84de85e030"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-820.png",
+            "size": 48399,
+            "hash": "fbe7305e750b3c50cf22f78609abf00f9df23475ea680e396edf49c3c95aff4a"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-filter-1024.png",
+            "size": 116233,
+            "hash": "fa31f8134bced2d8ecd098f7af04dbb8098a61feb33ffe000c8f6973e6f12ecb"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-filter-360.png",
+            "size": 62918,
+            "hash": "736001ca46872f7bb7e7677ea59b1d0b52bb20ce75ee81ab74d890342e7dd4e3"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-filter-375.png",
+            "size": 63035,
+            "hash": "377cb78aac56a1203c71445f069d3f14ad14a469704feed2a73fd2273814c419"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-filter-412.png",
+            "size": 62269,
+            "hash": "035745aece00b2d4d3b51d1594de939918734965ec1505cf9cfdc083045ce4f1"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-filter-390.png",
+            "size": 61921,
+            "hash": "0f9c8d1a7efa0b956fdafae8d789472da6f99c7b8ed55cc0432cd16fafa767c9"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-filter-768.png",
+            "size": 53161,
+            "hash": "0fa2fd000bf9fd5c9362c9a92df6a1c318d2cc2115ae3a63f94f9d44ae708dcb"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-modal-360.png",
+            "size": 86211,
+            "hash": "19bf7db1a36522cc1f6ecf2030314dd0a946e23649337d198420902d36e8c65c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-filter-820.png",
+            "size": 56022,
+            "hash": "bdbd67b25a7eadd30155c701efb438cbd6383e828f873df288fcc488ff8c17d7"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-modal-390.png",
+            "size": 86772,
+            "hash": "afa15eb9aa2d14c55ee18025f5c8c1b3def57da121840f3b72ef0618a41fb5c4"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-modal-375.png",
+            "size": 85422,
+            "hash": "e6af902ae83ff24706a09f47b30e80b19539795a85b1ea1dca375bb6e1308c17"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/households-modal-412.png",
+            "size": 88189,
+            "hash": "4aec145dec623ebd1e964387e8b1fa923af5e399a87141d5e794e510ceca22ea"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/login-1024.png",
+            "size": 345030,
+            "hash": "7d6ec9cdc9c1ea99b02064670ea78b325088a3870021019be48422b96350cc87"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/login-360.png",
+            "size": 92809,
+            "hash": "a9bfc81f73dcaef9af50dc70ba7f7b421296e198375401ed3d580666a8584a89"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/login-375.png",
+            "size": 97387,
+            "hash": "a15bc0588339f4ccd50779d484f7dbfea9efff99a185791b22b9524493030413"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/login-390.png",
+            "size": 104925,
+            "hash": "630a5f31e072d8c260032541d3db81cf09760fe3a2efcfe4888b05a7f7b99ef3"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/login-412.png",
+            "size": 116023,
+            "hash": "398dc28f26fc485b83cb29e4acec81c50cf7addf1385b27a32a98f70a20fb7d4"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/login-768.png",
+            "size": 254520,
+            "hash": "082d259e2eafae09fd8daa66fd1421e9f2f9a81b942d9feb70838080e128aeea"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/login-820.png",
+            "size": 301575,
+            "hash": "a211d162a9a8ea40ed11a0bbdcc77183030992c9844d696c5e472cce78837d55"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-1024.png",
+            "size": 127293,
+            "hash": "fc6ad27d35004e71a629ca34edbaaad27bb4febdab803159856885591800b057"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-360.png",
+            "size": 72936,
+            "hash": "5adf6987a8732d799946f8041ef38c4c47bfaed43440def19d973cc5e468fd80"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-375.png",
+            "size": 73091,
+            "hash": "1bc8f021c757f88b8832cdb1fae8b985218dd2ad13ca7403c0d06c493bcf5f3a"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-390.png",
+            "size": 72883,
+            "hash": "b7aa622238ad32193e2c54c729675f1b9652aa0649940411406f6215472771ea"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-412.png",
+            "size": 72521,
+            "hash": "253dce41a56f99155c68ec9e56e0017bf46089da1f45e0795a9b943483daed3c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-768.png",
+            "size": 65388,
+            "hash": "37fa4bc1b7abf46f72f74bb25ae8c6089d132f4547817bea4ade0b34e50a5644"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-820.png",
+            "size": 66060,
+            "hash": "c107801612569ca362c5e21e87a061ca961828e332624b952e5d21953eeee5a5"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-modal-360.png",
+            "size": 88548,
+            "hash": "21ddbf0af5d38ea163a42b13f618138fa867f8ecfa75ccd0c8009c5dde2428d4"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-modal-375.png",
+            "size": 90216,
+            "hash": "9f00ce4c894a1b66b51bc32a27aad89cc8d9b682f32da038ec6d97bf847f9163"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-modal-390.png",
+            "size": 90711,
+            "hash": "993206337cac35fc37227ac24a8edc56a04f708b4cdceb95b1e51f1fa5f27187"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/persons-modal-412.png",
+            "size": 92114,
+            "hash": "0d1ddc6900503fa2e7d4359bf743a407e7a339b76987d78204345ed09a8e0271"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/reports-1024.png",
+            "size": 86165,
+            "hash": "237077549b21b76410a0f7186a2e2a990476a8a777f4fa940b50a6332ef4e8e7"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/reports-360.png",
+            "size": 38642,
+            "hash": "79773616866b1327ef6bdc17cd568d7f0a59fad4750cc693546b4e3f37b04db0"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/reports-375.png",
+            "size": 39010,
+            "hash": "3f15942a20acc4036cc53777a3bbc6a1b6cdfa84e49c7995e9d5ed517a05858c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/reports-390.png",
+            "size": 39277,
+            "hash": "3109227f4e5cf554361eeb70838211e4d98a8f07135b91c2177619d5e36d11e9"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/reports-412.png",
+            "size": 39645,
+            "hash": "7106e1b2b7a07e5cfcd14a4bdbc459d26afae28d0097ae9b13af178bebe018b4"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/reports-768.png",
+            "size": 26998,
+            "hash": "282e102fc8858a15c05f14252cc63033844d32d35b49061d443e36380a7be03f"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/reports-820.png",
+            "size": 28179,
+            "hash": "1d9cc9639d30acb2e245511b07e28e98ac35d017f0bf8bdb104fe0bf3af3e36d"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/responsive-report.json",
+            "size": 360,
+            "hash": "7f57a1fa94fb82b48742c9978c9cafbc47f9387e97915fe3f566be6e70125644"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/settings-1024.png",
+            "size": 68937,
+            "hash": "6adbb0db84110a0b0507de83003c6fde75ce0470e8d0b0b6a40539de43d965ac"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/settings-360.png",
+            "size": 38613,
+            "hash": "1512f04f4fc327980140717c87a02d0ce2e33b6d8077a1e4ac68e2bc3de4e8bd"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/settings-375.png",
+            "size": 39005,
+            "hash": "c4348be3708dced6aa951b0157826c94d72e04acbfaae2131b598751fc7fe264"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/settings-412.png",
+            "size": 39193,
+            "hash": "21506ceeb8cb30cb165f45fa04d4a43c99f0a18ebbf9895732f1fef40ac3b21c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/settings-390.png",
+            "size": 37768,
+            "hash": "b274db643648eb29cdca98557eb790b046f8f760bf92fb869588ae6451e5a5ea"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/settings-768.png",
+            "size": 29260,
+            "hash": "eacb56d747f93f04eb13d2af3433388651f3586eb8729208205e540afa03927a"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/settings-820.png",
+            "size": 30626,
+            "hash": "0d663e7db58f5c4fc138b4e46dc42fb04b22816e10b58a42e0ddfeb1fb330c32"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/users-1024.png",
+            "size": 58097,
+            "hash": "56311456c09891e60cfef2d55fbcc388fd854b2855d67a0be87651e15a6e2bd6"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/users-360.png",
+            "size": 27466,
+            "hash": "0647b385e611dd203f2f9b09979d2f6cc52fa201d5cab9da2ee541caf3be8d39"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/users-375.png",
+            "size": 27942,
+            "hash": "e62872117ec22e6e6a188a4aa42ef21307822d9b915af090269b7181f0961e18"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/users-390.png",
+            "size": 28297,
+            "hash": "8b2fec3923758eb0f4a9a2f666c33ca09936f3ebd164142a92e22ec4f356e563"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/users-412.png",
+            "size": 28782,
+            "hash": "0e56a21fd64543128ed18dc7788b1da70b2d5ebec2764b500310ff8ef6ec7bad"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/users-768.png",
+            "size": 21481,
+            "hash": "27d4cdee82d8b9af73da3d29d72a27cf9bfb9ad7ca669d89aa91e28d48cfddf7"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/after/users-820.png",
+            "size": 22475,
+            "hash": "66629e8098fbb91dbff10792486f3971a8a9c090deab9b4abb0fb609d318858e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/dashboard-1024.png",
+            "size": 202044,
+            "hash": "62d4ce11575b0ad6767f4c45f18cc357e0e0d23fb8a236a9bbb3fc54994e535e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/dashboard-360.png",
+            "size": 159169,
+            "hash": "0d35b01a9259a0cf0bd6fd5670b4d611e8ba1e5374be60fcaf47239a3f2228ce"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/dashboard-375.png",
+            "size": 160984,
+            "hash": "179b9dffcc1cb5e7b34f2156989b636643012e173ca3e693235389f9ae6d147c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/dashboard-390.png",
+            "size": 160321,
+            "hash": "b1a2e1a75460301c543a6baac596f2d7ec4a7ca48003d5a332ecc001ee06253c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/dashboard-412.png",
+            "size": 162548,
+            "hash": "d40f6130a1afe932204a609b226cebfbe2ce6face609d626294d29f025b62dd3"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/dashboard-768.png",
+            "size": 148527,
+            "hash": "4a25bdc27a8231c67690342c1016c5f6534f665c0b34d2554e1fc7f455491128"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/dashboard-820.png",
+            "size": 144040,
+            "hash": "3aaa4f64c394ab948f1a3bc3c0dd30646c553bc16feb490279ad5d8ecf19f7ef"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/households-1024.png",
+            "size": 122359,
+            "hash": "497581c152bf9e54f35a1f2a1a80a43e9ea2e1b856fc5d71dd574f75534459e7"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/households-360.png",
+            "size": 86273,
+            "hash": "3491b11b9836f4a8f11f58777e809f650a2287a3e4ebe9946f185d98884c86a9"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/households-375.png",
+            "size": 87215,
+            "hash": "eece2c5e220261278a8cff9686e36a71f277d0f7ec5ae33469944bc94ef26990"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/households-390.png",
+            "size": 85906,
+            "hash": "029b8dc225a95ffab06a83c8f6ea403c649fad47022aa8573ed12caed3fb5eb5"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/households-412.png",
+            "size": 86202,
+            "hash": "c1bddab1a30c393987d08879fbed3695196093cb974ffdb54289c95c9bbe64b7"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/households-820.png",
+            "size": 63949,
+            "hash": "78d7fb072f29b334a14e6d042cc9dc1a36a9baefb89d8d489f03d8cde7511e2e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/login-1024.png",
+            "size": 345030,
+            "hash": "7d6ec9cdc9c1ea99b02064670ea78b325088a3870021019be48422b96350cc87"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/login-360.png",
+            "size": 92809,
+            "hash": "a9bfc81f73dcaef9af50dc70ba7f7b421296e198375401ed3d580666a8584a89"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/login-375.png",
+            "size": 97387,
+            "hash": "a15bc0588339f4ccd50779d484f7dbfea9efff99a185791b22b9524493030413"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/login-390.png",
+            "size": 104925,
+            "hash": "630a5f31e072d8c260032541d3db81cf09760fe3a2efcfe4888b05a7f7b99ef3"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/households-768.png",
+            "size": 62071,
+            "hash": "e51adc441cc59b7dd351203827b6e327b04214b7c71db1e71fe55dc53ac34751"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/login-412.png",
+            "size": 116023,
+            "hash": "398dc28f26fc485b83cb29e4acec81c50cf7addf1385b27a32a98f70a20fb7d4"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/login-768.png",
+            "size": 254520,
+            "hash": "082d259e2eafae09fd8daa66fd1421e9f2f9a81b942d9feb70838080e128aeea"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/persons-360.png",
+            "size": 84221,
+            "hash": "b1dfd0e15a5e13dfb71d2a8cdb1ee78573d3bd6affa477c5cfab36afc67c4a1e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/persons-1024.png",
+            "size": 144984,
+            "hash": "dad997e10a23e04b7237d29b3170ed5b10ba37c96e72d151614517dcd05eda1d"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/persons-375.png",
+            "size": 84413,
+            "hash": "af31c6adbd7806aaf437c4e480cdb02c28fc393f2238d8f219f3c11f1730ebae"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/persons-390.png",
+            "size": 83727,
+            "hash": "f1253990e19633cfae7f67988a78403610048528b0fd3b95191794a5ea3060be"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/login-820.png",
+            "size": 301575,
+            "hash": "a211d162a9a8ea40ed11a0bbdcc77183030992c9844d696c5e472cce78837d55"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/persons-412.png",
+            "size": 83785,
+            "hash": "60ef9033752e299dd75ad48e400e2c9a934c8661e3fdb91d55a993b2c8844bf3"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/persons-768.png",
+            "size": 84155,
+            "hash": "b5663c28f1f2475491ce554def697acdb8f92e460f5192181b8e594e42f59018"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/persons-820.png",
+            "size": 84557,
+            "hash": "026c229790cbfe89338ce663963a5bff80e3b718889843380780c55385459cb7"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-audit-screenshots/before/responsive-report.json",
+            "size": 917,
+            "hash": "c2a212af93af6d59273748eb0911f19eda0312f517bb4bbf4c3ec8656a37c9ad"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/desktop-1024-dashboard.png",
+            "size": 199778,
+            "hash": "fd823df48c70bf92906cfd2b98b3a38b4a807b18a3a5819d85ef78372476a9b0"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/mobile-360-dashboard.png",
+            "size": 151002,
+            "hash": "58b45694902b71e291446623488b34c32468b859193ee18b82c28ba9cacb288b"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/mobile-375-dashboard.png",
+            "size": 152186,
+            "hash": "245e2499eb477349f88484fbb85649def3b0e39952e8b2a7ff0a9cb903dbe322"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/mobile-390-dashboard.png",
+            "size": 155508,
+            "hash": "b523d7f33e7f6b89f34c7b4944c159ebc15ff6157754dd9662ca92635379d500"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/mobile-390-households.png",
+            "size": 76856,
+            "hash": "95307f94942b9738f199e9468cedeeaca5987aa2db9ffe887eb099af4bc717ad"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/mobile-390-persons.png",
+            "size": 113777,
+            "hash": "f562e4522657a9af10a4e01c61c4c1de3cd02c7f977688b1ec0772964dbb03bf"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/mobile-390-reports.png",
+            "size": 57511,
+            "hash": "280c5bfc5efcc18b0150033944eb1cd8bf589877f1ff7ac665b3a2b74eb7b642"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/mobile-412-dashboard.png",
+            "size": 155972,
+            "hash": "0822f60df08b45dc5c1ecafb0478c9faf1f5bdfa7966dec78726a8377bc9e924"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/responsive-check.json",
+            "size": 10400,
+            "hash": "fd3e43e304c98dc847eca42bae17911b76e888ca99a1d8f66904918313882447"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/tablet-768-dashboard.png",
+            "size": 158908,
+            "hash": "556ed2bc083d14ddd4a5a88e64f0ef421b06661f0afecb3706cfdf95fba28e5e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/tablet-768-households.png",
+            "size": 82981,
+            "hash": "bd6522d602423e53f7ed2dc433439f4812b1561707c6765f3b2eb29b9ac38bcc"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/tablet-768-persons.png",
+            "size": 115444,
+            "hash": "7e4faf03e97958e856902c0a49e4d6eb8dcdff7db7aa85c3bbf4292d8ba86ed5"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/after/tablet-820-dashboard.png",
+            "size": 161410,
+            "hash": "3e534d907563a8f13d0b4a759ddaf0f4a5a2b6abd64df4a8b40c25bd2dbd72e2"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/before-check.json",
+            "size": 382,
+            "hash": "46b66be8c3f7c63b1d03b4354361147f1a90ba68c07957393e50dfd6dcb54215"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/mobile-390-households.png",
+            "size": 405811,
+            "hash": "118f97e9f8588689406f37f86d3dfedb91bebf7e34e7fb8584d9aab14e22c2e6"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/mobile-390-dashboard.png",
+            "size": 220810,
+            "hash": "62a4eb82c2fef3238c4fa0552bb74e0f7190bca774ae873e2d25001f848aaa71"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/mobile-390-persons.png",
+            "size": 592548,
+            "hash": "bf7f25541b1b29a70a4a6fd3f84984d11c4b753dfd539a94ad84ce7a33374724"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/mobile-390-reports.png",
+            "size": 52882,
+            "hash": "808cd0ae2ce11c82db771247b4978b8628650b1f9980a24bdf88c331d27d726a"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/tablet-768-dashboard.png",
+            "size": 230549,
+            "hash": "44267264c2fbd958a4aec89b6abb774b57d80ce7126fad61896fc16c4b7feeb4"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/tablet-768-households.png",
+            "size": 359054,
+            "hash": "e4f158f02e7f2e4f2fb755f0b49275d23b965823cc16663301431fe185a63dfa"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/tablet-768-persons.png",
+            "size": 544086,
+            "hash": "c16c24edf54b921244e7524cef489f8b11ec8914f5a519a6d56ee732fc025c23"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-navigation-ux/before/tablet-768-reports.png",
+            "size": 63076,
+            "hash": "4ece50af985f9caf50e10baa31dc4bb6b64960f2d1b9a9c877716e2f6b0e5517"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m360-dashboard.png",
+            "size": 167903,
+            "hash": "ec06ec98211e3355b8353904658247e1b75ac5cfa611d9af055ea24cc581b302"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m360-households.png",
+            "size": 134669,
+            "hash": "d48ee3b162083fcabfcc677832b36f68bbd4ad179dac3201a98982d36e6c6175"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m360-reports.png",
+            "size": 53838,
+            "hash": "f52e1a71701bdd629b2da1f94a21bd9473fc319aef186f3f61955dcbb5d98a16"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m360-persons.png",
+            "size": 221627,
+            "hash": "423047abf5ba213ab11880587964110ba5c16ce30f1a9f619b576a151a2793cd"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m375-dashboard.png",
+            "size": 167528,
+            "hash": "b5c9da1fcf2e80489031a88412238afcf8779bfc5aae9dd4d9340af41fa5376e"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m375-persons.png",
+            "size": 222062,
+            "hash": "4b5218a5eaec4f2fd59f58d7286b7ab15efc510984d2c33d0103f8393a38c5bf"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m375-reports.png",
+            "size": 58561,
+            "hash": "7d12bfaaf4ecd1ff2712130989031eb83bef071bc3ef137a137e2e82c5abe049"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m390-dashboard.png",
+            "size": 171233,
+            "hash": "dee6b2e1e0ef679be3d6cf3d096fe7751859665c761efdca1a58b9251d2ae59b"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m390-households.png",
+            "size": 138094,
+            "hash": "eb4d1845a586db034c87904268f859ae703f62dc54d179d1353a581650d431d4"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m375-households.png",
+            "size": 134057,
+            "hash": "538ce9538f2a1984cb3baa979ece58d2f6cde939e6b4ade3a8823bba20377717"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m390-persons.png",
+            "size": 225512,
+            "hash": "35a31f0e158f762718b9a79f0ad446ef051fb24a95cba2b45d680fe33f899070"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m390-reports.png",
+            "size": 59425,
+            "hash": "53f6aeb864bc25d64c0d00990f3784998e78ff77eecb9f0bacb321ef2a92687c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m412-dashboard.png",
+            "size": 171341,
+            "hash": "7e23291c9f7d18f9d716f5b8837b9616512d3a627a4ae01620c4e7bc34d6d0a0"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m412-persons.png",
+            "size": 222979,
+            "hash": "5368ef00a3076892aaef8b066ef30569178d05a5173e63708b4e227603890651"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m412-households.png",
+            "size": 135974,
+            "hash": "5d7e77a2ebddcd461aad37c9ef22f4dd77b05dd55153e4167833d26909ba42f1"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/m412-reports.png",
+            "size": 60047,
+            "hash": "d6f2f1bce8d8e20d5216a46e6930d6f21c6ad9e0a2ede546930e6452bfcd9654"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/responsive-ui-check.json",
+            "size": 5376,
+            "hash": "2196696af402cc17bb8a24c719d21bd15b18a024561180b77799af8655e34886"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t1024-dashboard.png",
+            "size": 213883,
+            "hash": "ac1c7c2f2bb5539ac65fe1330a0628efb842d76245065c3189fd231188cca614"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t1024-households.png",
+            "size": 163396,
+            "hash": "165dd9f695dc0c645d18f4fd358a1125bedc93ec109eff61aa669852b7c1461a"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t1024-persons.png",
+            "size": 276928,
+            "hash": "6083ad4647ac7a418143318d22d0e12e6681fcd9973b8748eb99bda95f386eae"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t1024-reports.png",
+            "size": 98153,
+            "hash": "a285542d0d154dafd2c819239480f78960e8b30ff6a00bcf464b675ee5cad26b"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t768-dashboard.png",
+            "size": 172620,
+            "hash": "e2b82e4cd9c2dafd2c47e4aba1b19464738226c904a4bd4ccdb26f6662c23c6c"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t768-households.png",
+            "size": 123751,
+            "hash": "5802db28bf9e6e88780e305c0a937b777e2a7e2cf210a43705eeae4029064009"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t768-persons.png",
+            "size": 180504,
+            "hash": "b8f2bc30e2f8551dd7a1b6e292ac84b729150cd1cd28efc6d5a1b0479e53c79a"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t768-reports.png",
+            "size": 67152,
+            "hash": "d3bcc348403e91fd6911349bc2100ccc3a9f0a24ca71d36266aba18323242c6b"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t820-dashboard.png",
+            "size": 173850,
+            "hash": "61adddd950c5efbe19bd75576dea3d94863c245fee1275bbf191621a5f7eb96b"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t820-households.png",
+            "size": 125121,
+            "hash": "b58461d4eade358b7a037f1490da6eb23a306a1496555931da132e493f0449f4"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t820-reports.png",
+            "size": 69087,
+            "hash": "7e1bce9af126f6f7d1367de0c79972d6313187beed542da10e2ae1361ab5c98f"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/after/t820-persons.png",
+            "size": 179703,
+            "hash": "fdf5d453c3276d8257b32c32265508a5f9e2129a7e06c6de5cc26cd70efd721d"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/before/mobile-390-households.png",
+            "size": 405811,
+            "hash": "118f97e9f8588689406f37f86d3dfedb91bebf7e34e7fb8584d9aab14e22c2e6"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/before/mobile-390-persons.png",
+            "size": 592548,
+            "hash": "bf7f25541b1b29a70a4a6fd3f84984d11c4b753dfd539a94ad84ce7a33374724"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/before/tablet-768-households.png",
+            "size": 359054,
+            "hash": "e4f158f02e7f2e4f2fb755f0b49275d23b965823cc16663301431fe185a63dfa"
+        },
+        {
+            "type": "file",
+            "name": "docs/mobile-tablet-polish/before/tablet-768-persons.png",
+            "size": 544086,
+            "hash": "c16c24edf54b921244e7524cef489f8b11ec8914f5a519a6d56ee732fc025c23"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/production/desktop.png",
+            "size": 68633,
+            "hash": "58a7f0e56683f784dc982779132346dc59f4899cfa6e0709143141440617937d"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/production/mobile.png",
+            "size": 25635,
+            "hash": "f97fb8ec04e7d96668fd51822cd6f9cc26121bc745446a263e4efd3f7add1b38"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/production/production-check.json",
+            "size": 10457,
+            "hash": "2693131fa81a0baa79a136c8d83f084e569b9fe8f0a8231c2e30d7bc3e989778"
+        },
+        {
+            "type": "file",
+            "name": "docs/production-stabilization/production/tablet.png",
+            "size": 29412,
+            "hash": "6242b10b38bf4f77c75bb465cdf4517a1ffae93d50fb94039878761af15df46a"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/dashboard-1366.png",
+            "size": 159147,
+            "hash": "6c0d418f80f434711c44168ce42e4ef2c1f2b2319cdc9eda3bf66462862cd83e"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/dashboard-390.png",
+            "size": 129910,
+            "hash": "a325b61da0c1a604d7e4d0d64bbeb6243d20add17e8956369b063f6c36c9d81a"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/dashboard-768.png",
+            "size": 130452,
+            "hash": "4f03d9b7e5383e9a2e79b30a194c829ffacfab60707a30a296e72293438096fc"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/households-1366.png",
+            "size": 114011,
+            "hash": "397377cad9b5915a9ae3149d88cebdd908c8a3832016e53a3ec46b0a204b6bde"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/households-390.png",
+            "size": 71985,
+            "hash": "c4069c73329a3962cb0eb15008b5dd7ab9d63e3e72823c7d706e486a48246052"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/households-768.png",
+            "size": 68995,
+            "hash": "9d97c114bc43e365add3e321ba85181e35260be6a441d6a48e815cc46e2d7d51"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/persons-1366.png",
+            "size": 136927,
+            "hash": "88e9d99854703a02e33d603e94d4c0862a9fb0efd1c3861e7058aeee3d4c8097"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/persons-390.png",
+            "size": 106062,
+            "hash": "f83265b75da897dd10964fccd7581c801dc9919b03e1143abf9f91c5a2dc078a"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/persons-768.png",
+            "size": 100609,
+            "hash": "c07956510a681ee4d89fbbe4152bf7bdd10ec572274d09ad1d0a3f916df70e6a"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/after/responsive-report.json",
+            "size": 1307,
+            "hash": "bc732864b8e8931e79f736bfc616ac006939a3ebb6a9f375ef42d3217729f7dd"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/dashboard-1366.png",
+            "size": 185740,
+            "hash": "b9414e2b55255bce19f553e782d327867a7d62638457a4d36de1e9ae715c835a"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/dashboard-390.png",
+            "size": 136132,
+            "hash": "164914f1e91c79987892a7ffbda1e12a89438fa893dee5833e97f2dc320bacfb"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/dashboard-768.png",
+            "size": 132126,
+            "hash": "e33a98c3977722abdd6cb97da702ad0271e8948e51bfb94f03f4159a23a95d5f"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/households-1366.png",
+            "size": 108864,
+            "hash": "d3ed63e0ceb1ad14098aa8dfd86c3df60e873d4b9b15fdba8cbdefd257dc9969"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/households-390.png",
+            "size": 48483,
+            "hash": "7ada8cb4b4c4b4e3f3d3ac09a8e585aef391d5786784f2e8c4ad188121e6c8ab"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/households-768.png",
+            "size": 54320,
+            "hash": "20d158ca0c5547e8ce9f58d65e72378adbb264e2a84e264986e831cff01271c5"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/persons-1366.png",
+            "size": 132089,
+            "hash": "61bf8edf4235d2add3ba5c252a61a35c602d799b58c3ca0174a8db8061c9045d"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/persons-390.png",
+            "size": 61486,
+            "hash": "4bae307eabbdc12848e996f9b3baff1daacb7d999db6caa075005b5481555765"
+        },
+        {
+            "type": "file",
+            "name": "docs/revert-unintended-ui/before/persons-768.png",
+            "size": 69955,
+            "hash": "434901d17a309e7d19747261302627af913692fe83fe56989739c4117ba94eb2"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/desktop-chromium-households.png",
+            "size": 107367,
+            "hash": "d8dc186f8e8c1c33a49da4af59d768ea5bebad293124794462e4bcc86e39e7f5"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/desktop-chromium-dashboard.png",
+            "size": 194340,
+            "hash": "c50d0add143d4e5377fa02ccbb5e53026a7655922ebbaca58ee24a6767221f74"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/mobile-390-dashboard.png",
+            "size": 556914,
+            "hash": "58f3528c5d025196eb9cd8761a2d6c5e757b3a423bf4e4177b18528178fa1675"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/desktop-chromium-persons.png",
+            "size": 124864,
+            "hash": "98faeb10a9ef33628c74a71094b746f56965459a768aea79cc07d69362911af1"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/mobile-390-households.png",
+            "size": 239148,
+            "hash": "b8940a63463331e6984e45e7ae625c4441bb347ca8a7755d2ada1734ee2d3433"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/mobile-390-persons.png",
+            "size": 305778,
+            "hash": "a2975d59a2a5817ca8ea7e39ad660c04d50997d52cad03d1fea2ebdd32bb6247"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/tablet-768-dashboard.png",
+            "size": 405414,
+            "hash": "3624c1324604fb672984f48e7e13b60bd015abba3cb3875b9ee42f03ca3bc339"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/tablet-768-households.png",
+            "size": 160608,
+            "hash": "782e44dfa94f7575d62bad1104152978d0113bbe605bafcec1c337116ed14814"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/before/tablet-768-persons.png",
+            "size": 212327,
+            "hash": "cdb22e7f8240a7242513ebec93f7ee42616b385941fef779e102e302325600c2"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/desktop-chromium-dashboard.png",
+            "size": 185525,
+            "hash": "e4d5aaf56c4493d185e78ffaed1357f96a74e8cdc9a64227fc74bc0ac0b47dd6"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/desktop-chromium-households.png",
+            "size": 106716,
+            "hash": "32b6d8c54e9808fa462fb19b24c509a2aca0784c5bf48a3a7830063c41ce924a"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/desktop-chromium-persons.png",
+            "size": 123997,
+            "hash": "d0e21ac8bcd61b991446b8859d95ce2a69a1346b26f81364022d1210b674465d"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/mobile-390-dashboard.png",
+            "size": 521035,
+            "hash": "db091dbbcb8d004abcda67c9feb6833b385a533fb2ea8419e80181287c336511"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/mobile-390-households.png",
+            "size": 239599,
+            "hash": "482224382923308c441831575b872ecd2f5ead4786b97dfb07490007e205fa57"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/mobile-390-persons.png",
+            "size": 303697,
+            "hash": "32e3e8d8f885112c4176d9d5a59600065bee16cb78c65e9513dcbf270afec6f0"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/tablet-768-dashboard.png",
+            "size": 376672,
+            "hash": "4bf14630cc4ea90c1645edd50122d4e87860c76055c0bebd8fefef4571c4a66c"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/tablet-768-persons.png",
+            "size": 210672,
+            "hash": "97398dfac7387e76cbe753ae470e2a2c4f23d46fcc6be8e7dee35263a755dea7"
+        },
+        {
+            "type": "file",
+            "name": "docs/utf8-encoding-fix/after/tablet-768-households.png",
+            "size": 160053,
+            "hash": "8513d0cb793406846288f5b44ce1bcf83263505aacdae102caa7eb7c784c2db6"
+        }
+    ]
+}

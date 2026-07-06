@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260705-utf8-vietnamese-text-1');
+define('APP_ASSET_VERSION', 'deploy-349-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
