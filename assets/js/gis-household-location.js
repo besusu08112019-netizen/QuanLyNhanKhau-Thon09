@@ -460,16 +460,12 @@
     return fallback || null;
   }
 
-  function popupMapUrl(row, provider, routeMode) {
+  function googleDirectionsUrl(row) {
     if (!row || row.latitude == null || row.longitude == null) return '';
     const lat = Number(row.latitude);
     const lng = Number(row.longitude);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
-    const label = row.household_code || row.head_citizen_name || 'Ho gia dinh';
-    const coord = lat + ',' + lng;
-    if (provider === 'apple') return routeMode ? 'https://maps.apple.com/?daddr=' + encodeURIComponent(coord) : 'https://maps.apple.com/?ll=' + encodeURIComponent(coord) + '&q=' + encodeURIComponent(label);
-    if (provider === 'osm') return 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(lat) + '&mlon=' + encodeURIComponent(lng) + '#map=18/' + encodeURIComponent(lat) + '/' + encodeURIComponent(lng);
-    return routeMode ? 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(coord) : 'https://www.google.com/maps?q=' + encodeURIComponent(coord);
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng);
   }
 
   function openHouseholdTab(id, tab) {
@@ -486,21 +482,8 @@
     }).catch(error => toast(error.message || 'Không mở được hồ sơ hộ.', 'danger'));
   }
 
-  function fallbackRouteToHousehold(row) {
-    if (!row || row.latitude == null || row.longitude == null) {
-      toast('Hộ này chưa có tọa độ trên bản đồ.', 'warning');
-      return;
-    }
-    if (typeof window.thon09GisRouteToHousehold === 'function' && !window.thon09GisRouteToHousehold.__thon09Fallback) {
-      window.thon09GisRouteToHousehold(row.id);
-      return;
-    }
-    const url = popupMapUrl(row, /iPad|iPhone|iPod/.test(navigator.userAgent || '') ? 'apple' : 'google', true);
-    if (url) window.open(url, '_blank', 'noopener');
-  }
-
-  function fallbackOpenMapProvider(row, provider) {
-    const url = popupMapUrl(row, provider || 'google', false);
+  function openGoogleDirections(row) {
+    const url = googleDirectionsUrl(row);
     if (!url) {
       toast('Hộ này chưa có tọa độ trên bản đồ.', 'warning');
       return;
@@ -522,10 +505,9 @@
       return;
     }
     if (action === 'open') window.thon09GisOpenHousehold(householdId);
-    if (action === 'route') fallbackRouteToHousehold(activeRow);
+    if (action === 'route') openGoogleDirections(activeRow);
     if (action === 'gallery') window.thon09GisOpenHouseholdGallery(householdId);
     if (action === 'relocate') window.thon09GisRelocateHousehold(householdId, target);
-    if (action === 'provider') fallbackOpenMapProvider(activeRow, targetDataset.provider || 'google');
     if (action === 'phone') {
       const phone = targetDataset.phone || '';
       if (phone) window.location.href = 'tel:' + phone;
@@ -657,7 +639,6 @@
         (phone ? '<a class="btn btn-sm btn-outline-primary" href="tel:' + escapeHtml(phone) + '" data-gis-popup-action="phone" data-household-id="' + householdId + '" data-phone="' + escapeHtml(phone) + '"><i class="fa-solid fa-phone"></i> Gọi điện</a>' : '') +
         '<button class="btn btn-sm btn-outline-success" type="button" data-gis-popup-action="relocate" data-household-id="' + householdId + '"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>' +
       '</div>' +
-      '<div class="gis-smart-route-links"><button type="button" data-gis-popup-action="provider" data-household-id="' + householdId + '" data-provider="google">Google Maps</button><button type="button" data-gis-popup-action="provider" data-household-id="' + householdId + '" data-provider="apple">Apple Maps</button><button type="button" data-gis-popup-action="provider" data-household-id="' + householdId + '" data-provider="osm">OpenStreetMap</button></div>' +
     '</div>';
   }
 
@@ -843,10 +824,9 @@
   window.thon09GisOpenHousehold = function (id) { openHouseholdTab(id, 'files'); };
   window.thon09GisOpenHouseholdGallery = function (id) { openHouseholdTab(id, 'gallery'); };
   if (typeof window.thon09GisRouteToHousehold !== 'function') {
-    window.thon09GisRouteToHousehold = function (id) { fallbackRouteToHousehold(popupRowById(id)); };
+    window.thon09GisRouteToHousehold = function (id) { openGoogleDirections(popupRowById(id)); };
     window.thon09GisRouteToHousehold.__thon09Fallback = true;
   }
-  window.thon09GisOpenMapProvider = function (id, provider) { fallbackOpenMapProvider(popupRowById(id), provider); };
   window.thon09GisEditHousehold = function (id) {
     if (typeof window.openHouseholdForm === 'function') window.openHouseholdForm(id);
   };
