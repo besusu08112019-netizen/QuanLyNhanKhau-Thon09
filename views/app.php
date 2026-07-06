@@ -261,53 +261,94 @@
         </div>
       </section>
 
-      <section id="reportsScreen" class="screen report-screen">
+      <section id="reportsScreen" class="screen report-screen smart-report-screen">
+        <div class="report-center-grid">
+          <section class="content-card smart-report-center">
+            <div class="smart-report-head">
+              <div><h3>Trung t&#226;m B&#225;o c&#225;o</h3><span>Nh&#243;m b&#225;o c&#225;o d&#249;ng d&#7919; li&#7879;u th&#7921;c, l&#7885;c n&#226;ng cao v&#224; xu&#7845;t theo m&#7851;u A4.</span></div>
+              <button id="reportRefreshBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-rotate"></i> T&#7843;i l&#7841;i</button>
+            </div>
+            <div id="reportGroupGrid" class="report-group-grid"></div>
+          </section>
 
-        <form id="reportForm" class="content-card report-filter-card">
-          <div class="report-filter-grid">
+          <section class="content-card smart-report-bi">
+            <div class="smart-report-head"><div><h3>Dashboard BI</h3><span id="reportBiGeneratedAt">&#272;ang ch&#7901; d&#7919; li&#7879;u</span></div></div>
+            <div id="reportBiKpis" class="report-bi-kpis"></div>
+            <div id="reportBiCharts" class="report-bi-charts"></div>
+          </section>
+        </div>
+
+        <form id="reportForm" class="content-card report-filter-card smart-report-filter-card">
+          <div class="report-filter-toolbar">
             <div class="report-field report-type-field">
-              <label class="form-label">Loại báo cáo</label>
+              <label class="form-label">Lo&#7841;i b&#225;o c&#225;o</label>
               <select name="type" class="form-select" id="reportTypeSelect">
-                <option value="summary">Báo cáo tổng hợp</option>
-                <option value="population">Báo cáo nhân khẩu</option>
-                <option value="household">Báo cáo hộ gia đình</option>
-                <option value="temporary_residence">Báo cáo tạm trú</option>
-                <option value="temporary_absence">Báo cáo tạm vắng</option>
-                <option value="migration">Báo cáo biến động</option>
-                <option value="party_member">Báo cáo Đảng viên</option>
-                <option value="meritorious_person">Báo cáo người có công</option>
-                <option value="disabled_person">Báo cáo người khuyết tật</option>
-                <option value="age">Báo cáo theo độ tuổi</option>
-                <option value="gender">Báo cáo theo giới tính</option>
+                <option value="summary">B&#225;o c&#225;o t&#7893;ng h&#7907;p</option>
+                <option value="population">B&#225;o c&#225;o nh&#226;n kh&#7849;u</option>
+                <option value="household">B&#225;o c&#225;o h&#7897; gia &#273;&#236;nh</option>
+                <option value="migration">B&#225;o c&#225;o bi&#7871;n &#273;&#7897;ng</option>
+                <option value="gis">B&#225;o c&#225;o GIS</option>
+                <option value="gis-located">H&#7897; &#273;&#227; &#273;&#7883;nh v&#7883; GPS</option>
+                <option value="gis-unlocated">H&#7897; ch&#432;a &#273;&#7883;nh v&#7883; GPS</option>
+                <option value="digital-profile">B&#225;o c&#225;o H&#7891; s&#417; s&#7889;</option>
+                <option value="profile-complete">H&#7891; s&#417; ho&#224;n ch&#7881;nh</option>
+                <option value="profile-missing-photo">H&#7891; s&#417; thi&#7871;u &#7843;nh</option>
+                <option value="profile-missing-documents">H&#7891; s&#417; thi&#7871;u gi&#7845;y t&#7901;</option>
+                <option value="profile-incomplete">H&#7891; s&#417; ch&#432;a ho&#224;n thi&#7879;n</option>
+                <option value="temporary_residence">Danh s&#225;ch t&#7841;m tr&#250;</option>
+                <option value="temporary_absence">Danh s&#225;ch t&#7841;m v&#7855;ng</option>
+                <option value="children">Danh s&#225;ch tr&#7867; em</option>
+                <option value="elderly">Danh s&#225;ch ng&#432;&#7901;i cao tu&#7893;i</option>
+                <option value="labor">Danh s&#225;ch lao &#273;&#7897;ng</option>
+                <option value="party_member">Danh s&#225;ch &#272;&#7843;ng vi&#234;n</option>
+                <option value="youth_union">Danh s&#225;ch &#272;o&#224;n vi&#234;n</option>
+                <option value="poor-households">Danh s&#225;ch h&#7897; ngh&#232;o</option>
+                <option value="near-poor-households">Danh s&#225;ch h&#7897; c&#7853;n ngh&#232;o</option>
+                <option value="age">Th&#7889;ng k&#234; theo &#273;&#7897; tu&#7893;i</option>
+                <option value="gender">Th&#7889;ng k&#234; theo gi&#7899;i t&#237;nh</option>
               </select>
             </div>
-            <div class="report-field report-date-field" data-report-date-field>
-              <label class="form-label">Từ ngày</label>
-              <input name="dateFrom" type="date" class="form-control">
+            <button class="btn report-view-btn" type="submit"><i class="fa-solid fa-chart-column"></i> Xem b&#225;o c&#225;o</button>
+          </div>
+          <div class="report-filter-grid smart-report-filter-grid">
+            <div class="report-field"><label class="form-label">T&#7915; ng&#224;y</label><input name="dateFrom" type="date" class="form-control"></div>
+            <div class="report-field"><label class="form-label">&#272;&#7871;n ng&#224;y</label><input name="dateTo" type="date" class="form-control"></div>
+            <div class="report-field"><label class="form-label">Khu v&#7921;c</label><input name="area" class="form-control" placeholder="M&#227; khu v&#7921;c"></div>
+            <div class="report-field"><label class="form-label">M&#227; h&#7897;</label><input name="householdCode" class="form-control" placeholder="VD: H001"></div>
+            <div class="report-field"><label class="form-label">Ch&#7911; h&#7897;</label><input name="headName" class="form-control" placeholder="T&#234;n ch&#7911; h&#7897;"></div>
+            <div class="report-field"><label class="form-label">Nh&#226;n kh&#7849;u</label><input name="citizen" class="form-control" placeholder="H&#7885; t&#234;n, CCCD, S&#272;T"></div>
+            <div class="report-field"><label class="form-label">Gi&#7899;i t&#237;nh</label><select name="gender" class="form-select"><option value="">T&#7845;t c&#7843;</option><option>Nam</option><option>N&#7919;</option><option>Kh&#225;c</option></select></div>
+            <div class="report-field"><label class="form-label">Tu&#7893;i t&#7915;</label><input name="ageFrom" type="number" min="0" class="form-control"></div>
+            <div class="report-field"><label class="form-label">Tu&#7893;i &#273;&#7871;n</label><input name="ageTo" type="number" min="0" class="form-control"></div>
+            <div class="report-field"><label class="form-label">Ngh&#7873; nghi&#7879;p</label><input name="occupation" class="form-control" placeholder="Ngh&#7873; nghi&#7879;p"></div>
+            <div class="report-field"><label class="form-label">Di&#7879;n h&#7897;</label><select name="category" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="poor">H&#7897; ngh&#232;o</option><option value="near_poor">H&#7897; c&#7853;n ngh&#232;o</option><option value="meritorious">H&#7897; c&#243; c&#244;ng</option><option value="policy">H&#7897; ch&#237;nh s&#225;ch</option><option value="normal">H&#7897; b&#236;nh th&#432;&#7901;ng</option></select></div>
+            <div class="report-field"><label class="form-label">C&#432; tr&#250;</label><select name="residencyStatus" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="PERMANENT">Th&#432;&#7901;ng tr&#250;</option><option value="TEMPORARY">T&#7841;m tr&#250;</option></select></div>
+            <div class="report-field"><label class="form-label">Hi&#7879;n di&#7879;n</label><select name="presenceStatus" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="AT_HOME">&#7902; nh&#224;</option><option value="AWAY">T&#7841;m v&#7855;ng</option></select></div>
+            <div class="report-field"><label class="form-label">GPS</label><select name="gpsStatus" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="located">&#272;&#227; &#273;&#7883;nh v&#7883;</option><option value="missing">Ch&#432;a &#273;&#7883;nh v&#7883;</option></select></div>
+            <div class="report-field"><label class="form-label">H&#7891; s&#417; s&#7889;</label><select name="digitalProfileStatus" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="complete">Ho&#224;n ch&#7881;nh</option><option value="incomplete">Ch&#432;a ho&#224;n thi&#7879;n</option></select></div>
+            <div class="report-checks">
+              <label><input name="party_member" type="checkbox" value="1"> &#272;&#7843;ng vi&#234;n</label>
+              <label><input name="youth_union_member" type="checkbox" value="1"> &#272;o&#224;n vi&#234;n</label>
             </div>
-            <div class="report-field report-date-field" data-report-date-field>
-              <label class="form-label">Đến ngày</label>
-              <input name="dateTo" type="date" class="form-control">
-            </div>
-            <button class="btn report-view-btn" type="submit"><i class="fa-solid fa-chart-column"></i> Xem báo cáo</button>
           </div>
         </form>
 
-        <div class="content-card report-result-card">
+        <div class="report-tools-grid">
+          <section class="content-card report-template-card"><div class="smart-report-head"><div><h3>Th&#432; vi&#7879;n bi&#7875;u m&#7851;u</h3><span>Chu&#7849;n kh&#7893; A4, d&#249;ng chung b&#7897; l&#7885;c hi&#7879;n t&#7841;i.</span></div></div><div id="reportTemplateLibrary" class="report-template-library"></div></section>
+          <section class="content-card report-template-card"><div class="smart-report-head"><div><h3>M&#7851;u &#273;&#227; l&#432;u</h3><span>L&#432;u, m&#7903; l&#7841;i, x&#243;a ho&#7863;c &#273;&#7863;t m&#7863;c &#273;&#7883;nh b&#7897; l&#7885;c.</span></div><button id="reportSaveTemplateBtn" class="btn btn-outline-primary btn-sm" type="button"><i class="fa-solid fa-bookmark"></i> L&#432;u m&#7851;u</button></div><div id="reportSavedTemplates" class="report-saved-templates"></div></section>
+        </div>
+
+        <div class="content-card report-result-card smart-report-result-card">
           <div class="report-result-head">
-            <div>
-              <h3 id="reportTitle">Báo cáo</h3>
-              <span id="reportCount">Chưa sinh báo cáo</span>
-            </div>
+            <div><h3 id="reportTitle">B&#225;o c&#225;o</h3><span id="reportCount">Ch&#432;a sinh b&#225;o c&#225;o</span></div>
             <div id="reportActions" class="report-actions d-none">
               <button id="reportPrintBtn" class="btn report-action-btn" type="button"><i class="fa-solid fa-print"></i> In</button>
-              <button id="reportExcelBtn" class="btn report-action-btn report-excel-btn" type="button"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
-              <button id="reportPdfBtn" class="btn report-action-btn report-pdf-btn" type="button"><i class="fa-solid fa-file-pdf"></i> Xuất PDF</button>
+              <button id="reportExcelBtn" class="btn report-action-btn report-excel-btn" type="button"><i class="fa-solid fa-file-excel"></i> Excel</button>
+              <button id="reportPdfBtn" class="btn report-action-btn report-pdf-btn" type="button"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+              <button id="reportWordBtn" class="btn report-action-btn report-word-btn" type="button"><i class="fa-solid fa-file-word"></i> Word</button>
             </div>
           </div>
-          <div id="reportPreview" class="report-preview table-responsive">
-            <div class="report-empty-state">Chọn loại báo cáo và bấm Xem báo cáo để sinh dữ liệu.</div>
-          </div>
+          <div id="reportPreview" class="report-preview table-responsive"><div class="report-empty-state">Ch?n lo?i b?o c?o v? b?m Xem b&#225;o c&#225;o ?? sinh d? li?u.</div></div>
         </div>
       </section>
     </section>
@@ -333,6 +374,7 @@
   <script src="assets/js/sprint10.min.js"></script>
   <script src="assets/js/view-inline-patches.min.js"></script>
   <script src="assets/js/operation-center.min.js"></script>
+  <script src="assets/js/report.min.js"></script>
   <script src="assets/js/gis-household-location.min.js"></script>
   <script src="assets/js/household-photo-capture.min.js"></script>
   <script src="assets/js/household-photo-camera-fix.min.js"></script>

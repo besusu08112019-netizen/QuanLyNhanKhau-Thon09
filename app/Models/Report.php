@@ -274,6 +274,18 @@ final class Report extends BaseModel
         if ($occupation === '' || str_contains($occupation, 'khac') || str_contains($occupation, 'noi tro')) return 'other';
         return 'employed';
     }
+
+    private function ensureReportTemplatesTable(): void
+    {
+        $this->execute('CREATE TABLE IF NOT EXISTS report_templates (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, name VARCHAR(150) NOT NULL, type VARCHAR(80) NOT NULL, filters_json JSON NULL, is_default TINYINT(1) NOT NULL DEFAULT 0, status VARCHAR(20) NOT NULL DEFAULT "ACTIVE", created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NULL, INDEX idx_report_templates_user (user_id, status), INDEX idx_report_templates_default (user_id, is_default)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
+    }
+
     private function flagSelects(string $alias): string
     {
         $columns = ['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'];
@@ -292,4 +304,129 @@ final class Report extends BaseModel
     private function presence(?string $value): string { return $value === 'AWAY' ? 'Đi vắng' : 'Ở nhà'; }
     private function life(?string $value): string { return $value === 'DECEASED' ? 'Đã chết' : 'Còn sống'; }
     private function movement(?string $value): string { return ['BIRTH' => 'Sinh', 'DEATH' => 'Tử', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi', 'TEMPORARY_RESIDENCE' => 'Tạm trú', 'TEMPORARY_ABSENCE' => 'Tạm vắng', 'OTHER' => 'Khác'][$value] ?? (string) $value; }
+
+    public function center(): array
+    {
+        return [
+            'groups' => [
+                ['key' => 'population', 'title' => 'Bao cao dan cu', 'icon' => 'fa-users', 'description' => 'Nhan khau, gioi tinh, do tuoi, nghe nghiep, Dang vien, Doan vien.', 'types' => ['population','children','elderly','labor','party_member','youth_union','gender','age']],
+                ['key' => 'household', 'title' => 'Bao cao ho gia dinh', 'icon' => 'fa-house-chimney', 'description' => 'Danh sach ho, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','poor-households','near-poor-households','special']],
+                ['key' => 'movement', 'title' => 'Bao cao bien dong', 'icon' => 'fa-right-left', 'description' => 'Khai sinh, khai tu, chuyen di, chuyen den, tam tru, tam vang.', 'types' => ['migration','temporary_residence','temporary_absence','births','deaths']],
+                ['key' => 'gis', 'title' => 'Bao cao GIS', 'icon' => 'fa-map-location-dot', 'description' => 'Ho da dinh vi, chua dinh vi, ty le hoan thanh GPS theo khu vuc va thoi gian.', 'types' => ['gis','gis-located','gis-unlocated']],
+                ['key' => 'digital_profile', 'title' => 'Bao cao Ho so so', 'icon' => 'fa-folder-open', 'description' => 'Ho so hoan chinh, thieu anh, thieu giay to va chua hoan thien.', 'types' => ['digital-profile','profile-complete','profile-missing-photo','profile-missing-documents','profile-incomplete']],
+                ['key' => 'operation', 'title' => 'Bao cao dieu hanh', 'icon' => 'fa-tower-broadcast', 'description' => 'Chi tieu nhanh phuc vu dieu hanh va theo doi tien do.', 'types' => ['summary']],
+                ['key' => 'summary', 'title' => 'Bao cao tong hop', 'icon' => 'fa-chart-pie', 'description' => 'Tong hop toan he thong theo nhieu dieu kien loc.', 'types' => ['summary']],
+            ],
+            'templates' => [
+                ['key' => 'household-form', 'title' => 'Phieu quan ly ho gia dinh', 'type' => 'household'],
+                ['key' => 'household-list', 'title' => 'Danh sach ho', 'type' => 'household'],
+                ['key' => 'citizen-list', 'title' => 'Danh sach nhan khau', 'type' => 'population'],
+                ['key' => 'children-list', 'title' => 'Danh sach tre em', 'type' => 'children'],
+                ['key' => 'elderly-list', 'title' => 'Danh sach nguoi cao tuoi', 'type' => 'elderly'],
+                ['key' => 'labor-list', 'title' => 'Danh sach lao dong', 'type' => 'labor'],
+                ['key' => 'party-list', 'title' => 'Danh sach Dang vien', 'type' => 'party_member'],
+                ['key' => 'poor-list', 'title' => 'Danh sach ho ngheo', 'type' => 'poor-households'],
+                ['key' => 'near-poor-list', 'title' => 'Danh sach ho can ngheo', 'type' => 'near-poor-households'],
+                ['key' => 'temporary-residence-list', 'title' => 'Danh sach tam tru', 'type' => 'temporary_residence'],
+                ['key' => 'temporary-absence-list', 'title' => 'Danh sach tam vang', 'type' => 'temporary_absence'],
+            ],
+            'filters' => ['dateFrom','dateTo','area','householdCode','headName','householdId','citizen','gender','ageFrom','ageTo','occupation','party_member','youth_union_member','category','residencyStatus','presenceStatus','gpsStatus','digitalProfileStatus'],
+            'exports' => ['preview','print','pdf','excel','word'],
+            'scheduler' => ['ready' => true, 'enabled' => false, 'message' => 'Da chuan bi cau truc lap lich, chua bat gui tu dong.'],
+        ];
+    }
+
+    public function biDashboard(array $filters = []): array
+    {
+        $dashboard = new \App\Models\Dashboard();
+        $operation = new \App\Models\OperationCenter();
+        $summary = $dashboard->summary($filters);
+        $progress = $operation->progress($filters)['data']['items'] ?? [];
+        return [
+            'metrics' => $summary['metrics'] ?? [],
+            'charts' => [
+                'population' => $summary['charts']['population'] ?? [],
+                'age' => $summary['charts']['ages'] ?? [],
+                'gender' => $summary['charts']['population'] ?? [],
+                'occupation' => $summary['charts']['occupations'] ?? [],
+                'partyMembers' => $summary['charts']['partyMembers'] ?? [],
+                'labor' => $summary['charts']['labor'] ?? [],
+                'poverty' => $summary['charts']['poverty'] ?? [],
+                'gpsProgress' => $summary['charts']['gpsProgress'] ?? [],
+                'profileProgress' => $summary['charts']['profileProgress'] ?? [],
+                'monthlyMovements' => $summary['charts']['monthlyChanges'] ?? [],
+            ],
+            'progress' => $progress,
+            'filters' => $filters,
+            'generatedAt' => date('c'),
+        ];
+    }
+
+    public function gisReport(array $filters = [], string $mode = 'all'): array
+    {
+        $filters['gpsStatus'] = $mode === 'located' ? 'located' : ($mode === 'unlocated' ? 'missing' : ($filters['gpsStatus'] ?? null));
+        [$where, $params] = $this->householdWhere($filters);
+        $lat = $this->columnExists('households', 'latitude') ? 'h.latitude' : 'NULL';
+        $lng = $this->columnExists('households', 'longitude') ? 'h.longitude' : 'NULL';
+        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.area_code, $lat AS latitude, $lng AS longitude, h.location_updated_at FROM households h $where ORDER BY h.area_code, h.household_code", $params);
+        $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['area_code'], $r['latitude'], $r['longitude'], $this->date($r['location_updated_at'] ?? '')], $rows);
+        $title = $mode === 'located' ? 'Bao cao ho da dinh vi GPS' : ($mode === 'unlocated' ? 'Bao cao ho chua dinh vi GPS' : 'Bao cao GIS ho gia dinh');
+        return $this->table($title, ['Ma ho','Chu ho','Dia chi','Khu vuc','Vi do','Kinh do','Ngay cap nhat GPS'], $body, $filters);
+    }
+
+    public function digitalProfileReport(array $filters = [], string $mode = 'all'): array
+    {
+        $filters['digitalProfileStatus'] = $mode === 'complete' ? 'complete' : ($mode === 'incomplete' ? 'incomplete' : ($filters['digitalProfileStatus'] ?? null));
+        [$where, $params] = $this->householdWhere($filters);
+        $hasFiles = $this->tableExists('file_attachments');
+        $fileModuleWhere = 'f.module=\'household\'';
+        if ($hasFiles && $this->columnExists('file_attachments', 'entity_type')) $fileModuleWhere = '(' . $fileModuleWhere . ' OR f.entity_type=\'household\')';
+        $fileStatusWhere = $hasFiles && $this->columnExists('file_attachments', 'status') ? ' AND f.status=\'ACTIVE\'' : '';
+        $photoParts = [];
+        if ($hasFiles && $this->columnExists('file_attachments', 'file_type')) $photoParts[] = "f.file_type IN ('PHOTO','image','image/jpeg','image/png')";
+        if ($hasFiles && $this->columnExists('file_attachments', 'mime_type')) $photoParts[] = "f.mime_type LIKE 'image/%'";
+        if ($hasFiles && $this->columnExists('file_attachments', 'profile_section')) $photoParts[] = "f.profile_section LIKE '%photo%'";
+        $photoWhere = $photoParts ? ' AND (' . implode(' OR ', $photoParts) . ')' : '';
+        $photoSql = $hasFiles ? "(SELECT COUNT(*) FROM file_attachments f WHERE f.entity_id=h.id AND $fileModuleWhere$fileStatusWhere$photoWhere)" : '0';
+        $docSql = $hasFiles ? "(SELECT COUNT(*) FROM file_attachments f WHERE f.entity_id=h.id AND $fileModuleWhere$fileStatusWhere)" : '0';
+        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.area_code, $photoSql AS photo_count, $docSql AS document_count FROM households h $where ORDER BY h.household_code", $params);
+        if ($mode === 'complete') $rows = array_values(array_filter($rows, fn($r) => (int) ($r['photo_count'] ?? 0) > 0 && (int) ($r['document_count'] ?? 0) > 0));
+        if ($mode === 'incomplete') $rows = array_values(array_filter($rows, fn($r) => (int) ($r['photo_count'] ?? 0) === 0 || (int) ($r['document_count'] ?? 0) === 0));
+        if ($mode === 'missing_photo') $rows = array_values(array_filter($rows, fn($r) => (int) ($r['photo_count'] ?? 0) === 0));
+        if ($mode === 'missing_documents') $rows = array_values(array_filter($rows, fn($r) => (int) ($r['document_count'] ?? 0) === 0));
+        $title = ['complete' => 'Bao cao ho so so hoan chinh', 'missing_photo' => 'Bao cao ho so thieu anh', 'missing_documents' => 'Bao cao ho so thieu giay to', 'incomplete' => 'Bao cao ho so chua hoan thien'][$mode] ?? 'Bao cao Ho so so';
+        return $this->table($title, ['Ma ho','Chu ho','Dia chi','Khu vuc','So anh','So giay to','Trang thai'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['area_code'], (int) $r['photo_count'], (int) $r['document_count'], ((int) $r['photo_count'] > 0 && (int) $r['document_count'] > 0) ? 'Hoan chinh' : 'Chua hoan thien'], $rows), $filters);
+    }
+
+    public function templates(int $userId): array
+    {
+        $this->ensureReportTemplatesTable();
+        return $this->fetchAll('SELECT id, name, type, filters_json, is_default, created_at, updated_at FROM report_templates WHERE user_id=:user_id AND status="ACTIVE" ORDER BY is_default DESC, updated_at DESC, id DESC', ['user_id' => $userId]);
+    }
+
+    public function saveTemplate(int $userId, array $input): array
+    {
+        $this->ensureReportTemplatesTable();
+        $name = trim((string) ($input['name'] ?? '')) ?: 'Mau bao cao';
+        $type = trim((string) ($input['type'] ?? 'summary')) ?: 'summary';
+        $filters = is_array($input['filters'] ?? null) ? $input['filters'] : [];
+        $isDefault = !empty($input['isDefault']) ? 1 : 0;
+        if ($isDefault) $this->execute('UPDATE report_templates SET is_default=0 WHERE user_id=:user_id', ['user_id' => $userId]);
+        $id = $this->insert('INSERT INTO report_templates (user_id, name, type, filters_json, is_default, status, created_at, updated_at) VALUES (:user_id,:name,:type,:filters,:is_default,"ACTIVE",NOW(),NOW())', ['user_id' => $userId, 'name' => $name, 'type' => $type, 'filters' => json_encode($filters, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 'is_default' => $isDefault]);
+        return $this->fetchOne('SELECT id, name, type, filters_json, is_default, created_at, updated_at FROM report_templates WHERE id=:id', ['id' => $id]) ?: ['id' => $id, 'name' => $name, 'type' => $type, 'filters_json' => json_encode($filters), 'is_default' => $isDefault];
+    }
+
+    public function deleteTemplate(int $userId, int $id): void
+    {
+        $this->ensureReportTemplatesTable();
+        $this->execute('UPDATE report_templates SET status="DELETED", updated_at=NOW() WHERE id=:id AND user_id=:user_id', ['id' => $id, 'user_id' => $userId]);
+    }
+
+    public function setDefaultTemplate(int $userId, int $id): void
+    {
+        $this->ensureReportTemplatesTable();
+        $this->execute('UPDATE report_templates SET is_default=0 WHERE user_id=:user_id', ['user_id' => $userId]);
+        $this->execute('UPDATE report_templates SET is_default=1, updated_at=NOW() WHERE id=:id AND user_id=:user_id AND status="ACTIVE"', ['id' => $id, 'user_id' => $userId]);
+    }
+
 }

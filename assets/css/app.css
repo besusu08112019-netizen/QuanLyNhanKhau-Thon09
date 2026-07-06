@@ -3567,3 +3567,53 @@ body.theme-dark .dashboard-search-results, body.theme-dark .dashboard-alert-item
 body.theme-dark .dashboard-search-results strong, body.theme-dark .dashboard-alert-item, body.theme-dark .dashboard-task-item, body.theme-dark .dashboard-metric-line strong { color: #e5e7eb; }
 @media (max-width: 1360px) { .dashboard-ops-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-ops-panel:nth-child(n) { grid-column: auto; } }
 @media (max-width: 720px) { .dashboard-search-box { max-width: none; } .dashboard-ops-grid { grid-template-columns: 1fr; } .dashboard-window div { grid-template-columns: 1fr; } }
+
+/* Sprint 16 Smart Reporting */
+.smart-report-screen { display: none; gap: 18px; }
+.smart-report-screen.active { display: block; }
+.report-center-grid, .report-tools-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); gap: 18px; margin-bottom: 18px; }
+.smart-report-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.smart-report-head h3 { margin: 0; color: var(--brand); font-size: 16px; font-weight: 850; }
+.smart-report-head span { display: block; color: #667085; font-size: 13px; margin-top: 3px; }
+.report-group-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.report-group-item { min-height: 112px; border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 12px; text-align: left; display: grid; grid-template-columns: 34px 1fr; gap: 8px 10px; align-items: start; }
+.report-group-item i { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; color: #0b6b3a; background: #e9f6ef; }
+.report-group-item strong { color: #1f2937; font-size: 14px; line-height: 1.25; }
+.report-group-item span { grid-column: 2; color: #667085; font-size: 12px; line-height: 1.35; }
+.report-group-item:hover { border-color: #9bd4b5; background: #fbfdfb; }
+.report-filter-toolbar { display: grid; grid-template-columns: minmax(260px, 1fr) auto; gap: 14px; align-items: end; margin-bottom: 14px; }
+.smart-report-filter-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.report-checks { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 44px; }
+.report-checks label { display: inline-flex; align-items: center; gap: 6px; color: #344054; font-weight: 700; font-size: 13px; }
+.report-bi-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.report-bi-kpis div { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #fbfdfb; }
+.report-bi-kpis span { display: block; color: #667085; font-size: 12px; font-weight: 700; }
+.report-bi-kpis strong { display: block; color: #0b6b3a; font-size: 20px; line-height: 1.15; margin-top: 3px; }
+.report-bi-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.report-bi-chart { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fff; min-width: 0; }
+.report-bi-chart h4 { margin: 0 0 10px; color: #344054; font-size: 13px; font-weight: 850; }
+.report-mini-bar { display: grid; grid-template-columns: minmax(80px, 1fr) minmax(70px, 1.4fr) auto; align-items: center; gap: 8px; margin: 7px 0; font-size: 12px; color: #475467; }
+.report-mini-bar i { height: 8px; border-radius: 99px; background: #e4eaf0; position: relative; overflow: hidden; }
+.report-mini-bar i::before { content: ''; display: block; height: 100%; width: var(--w); border-radius: inherit; background: #0b6b3a; }
+.report-mini-bar b { color: #1f2937; font-weight: 800; }
+.report-template-library, .report-saved-templates { display: grid; gap: 8px; }
+.report-template-library button, .report-saved-template { border: 1px solid var(--line); border-radius: 8px; background: #fff; min-height: 44px; }
+.report-template-library button { display: flex; align-items: center; gap: 9px; padding: 9px 11px; color: #344054; font-weight: 750; text-align: left; }
+.report-template-library i { color: #0b6b3a; }
+.report-saved-template { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px; }
+.report-saved-template > button { border: 0; background: transparent; text-align: left; padding: 0; }
+.report-saved-template strong, .report-saved-template span { display: block; }
+.report-saved-template strong { color: #1f2937; font-size: 13px; }
+.report-saved-template span { color: #667085; font-size: 12px; }
+.report-saved-template div { display: flex; gap: 4px; }
+.report-saved-template div button { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #475467; }
+.report-template-empty, .report-widget-error { min-height: 44px; display: grid; place-items: center; border: 1px dashed var(--line); border-radius: 8px; color: #667085; font-size: 13px; padding: 10px; }
+.report-widget-error { color: #b42318; background: #fff5f5; border-color: #fecaca; }
+.report-word-btn { color: #334155; border-color: #cbd5e1; background: #f8fafc; }
+@media (max-width: 1180px) { .report-center-grid, .report-tools-grid { grid-template-columns: 1fr; } .smart-report-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .report-group-grid, .report-bi-charts, .report-bi-kpis, .report-filter-toolbar, .smart-report-filter-grid { grid-template-columns: 1fr; } .report-center-grid, .report-tools-grid { gap: 12px; } .smart-report-head { flex-direction: column; } .report-mini-bar { grid-template-columns: 1fr; } }
+body.theme-dark .report-group-item, body.theme-dark .report-bi-chart, body.theme-dark .report-template-library button, body.theme-dark .report-saved-template, body.theme-dark .report-saved-template div button { background: #1f2937; border-color: #344155; }
+body.theme-dark .report-group-item strong, body.theme-dark .report-bi-chart h4, body.theme-dark .report-saved-template strong { color: #e5e7eb; }
+
+.report-preview-title { padding: 14px 16px 0; color: #0b6b3a; font-size: 16px; font-weight: 850; }
+body.theme-dark .report-preview-title { color: #e5e7eb; }

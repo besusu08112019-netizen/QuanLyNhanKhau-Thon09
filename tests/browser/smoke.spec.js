@@ -133,3 +133,47 @@ test('gis directions opens Google Maps with household coordinates', async ({ pag
 
   expect(openedUrl).toBe('https://www.google.com/maps/dir/?api=1&destination=10.123456,106.654321');
 });
+
+
+test('smart reporting renders center, filters, BI and export actions', async ({ page }) => {
+  const consoleErrors = [];
+  page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+  page.on('pageerror', error => consoleErrors.push(error.message));
+
+  await page.route('**/api/**', async (route) => {
+    const url = route.request().url();
+    const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
+    if (url.includes('/api/public/login-config')) return payload(loginConfig.data);
+    if (url.includes('/api/auth/login')) return payload({ token: 'test-token', csrfToken: 'test-csrf', expiresIn: 3600, user: { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' } });
+    if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/reports/center')) return payload({ ok: true, widget: 'center', data: { groups: [{ key: 'gis', title: 'GIS reports', icon: 'fa-map-location-dot', description: 'GPS reports', types: ['gis'] }, { key: 'profile', title: 'Digital profile reports', icon: 'fa-folder-open', description: 'Profile reports', types: ['digital-profile'] }], templates: [{ key: 'household-list', title: 'Household list', type: 'household' }], filters: [], exports: ['preview', 'print', 'pdf', 'excel', 'word'] } });
+    if (url.includes('/api/reports/bi')) return payload({ ok: true, widget: 'bi', data: { metrics: { total_households: 3, total_citizens: 9, male_count: 4, female_count: 5, poor_households: 1 }, charts: { population: [{ label: 'Nam', value: 4 }, { label: 'Nu', value: 5 }], age: [{ label: '18-59', value: 6 }], occupation: [{ label: 'Worker', value: 3 }], labor: [{ label: 'Employed', value: 5 }], poverty: [{ label: 'Poor', value: 1 }], monthlyMovements: [{ label: '2026-07', value: 2 }] }, progress: [{ key: 'gps', progress: { percent: 80 } }], generatedAt: new Date().toISOString() } });
+    if (url.includes('/api/reports/templates')) return payload({ ok: true, widget: 'templates', data: [] });
+    if (url.includes('/api/reports/summary')) return payload({ title: 'Smart report preview', headers: ['Metric', 'Value'], rows: [['Households', 3]], totalRows: 1, generatedAt: new Date().toISOString() });
+    if (url.includes('/api/reports/print')) return payload({ title: 'Smart report preview', headers: ['Metric', 'Value'], rows: [['Households', 3]], totalRows: 1 });
+    return payload({});
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
+    window.App.token = 'test-token';
+    window.App.csrfToken = 'test-csrf';
+    window.App.user = user;
+    localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_csrf', 'test-csrf');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.showApp === 'function') window.showApp();
+    if (typeof window.switchScreen === 'function') window.switchScreen('reports');
+  });
+
+  await expect(page.locator('#reportsScreen')).toHaveClass(/active/);
+  await expect(page.locator('#reportGroupGrid')).toContainText('GIS reports');
+  await expect(page.locator('#reportBiKpis')).toContainText('3');
+  await page.locator('#reportTypeSelect').selectOption('gis');
+  await page.locator('#reportForm').evaluate(form => form.requestSubmit());
+  await expect(page.locator('#reportPreview')).toContainText('Smart report preview');
+  await expect(page.locator('#reportWordBtn')).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});

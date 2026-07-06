@@ -1,116 +1,281 @@
 (() => {
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('#reportForm');
-    if (!form) return;
-    form.addEventListener('submit', event => { event.preventDefault(); loadReport(); });
-    document.querySelector('#reportExcelBtn').addEventListener('click', () => downloadReport('/api/reports/export-excel', 'xls', 'Đã xuất Excel'));
-    document.querySelector('#reportPdfBtn').addEventListener('click', () => downloadReport('/api/reports/export-pdf', 'pdf', 'Đã xuất PDF'));
-    document.querySelector('#reportPrintBtn').addEventListener('click', printReport);
+  'use strict';
+
+  const state = { report: null, center: null, templates: [], loaded: false };
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+  const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c]));
+  const fmt = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
+  const token = () => (window.App && App.token) || localStorage.getItem('thon09_token') || '';
+  const csrf = () => (window.App && App.csrfToken) || localStorage.getItem('thon09_csrf') || '';
+
+  document.addEventListener('DOMContentLoaded', bindSmartReporting);
+  document.addEventListener('thon09:screen-change', event => {
+    if (event.detail?.screen === 'reports') initSmartReporting(true);
   });
 
-  window.loadReport = async function loadReport() {
-    try {
-      const query = reportQuery();
-      const report = await api('/api/reports/summary?' + query);
-      renderReport(report);
-    } catch (error) {
-      showToast('Không tải được báo cáo: ' + error.message, 'danger');
-    }
-  };
-
-  async function downloadReport(endpoint, extension, successMessage) {
-    try {
-      const response = await fetch(endpoint + '?' + reportQuery(), { headers: { Authorization: `Bearer ${App.token}` } });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error?.message || 'Không xuất được dữ liệu');
+  function bindSmartReporting() {
+    if (window.__thon09SmartReportingBound) return;
+    window.__thon09SmartReportingBound = true;
+    const form = $('#reportForm');
+    if (!form) return;
+    ensureReportTypes();
+    setTimeout(ensureReportTypes, 0);
+    setTimeout(ensureReportTypes, 80);
+    form.addEventListener('submit', event => { event.preventDefault(); event.stopImmediatePropagation(); loadReport(); }, true);
+    form.addEventListener('change', event => {
+      if (event.target?.name === 'type') {
+        state.report = null;
+        setActions(false);
       }
-      const blob = await response.blob();
-      const fileName = fileNameFromHeader(response.headers.get('Content-Disposition')) || `bao_cao_${timestamp()}.${extension}`;
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      showToast(successMessage);
-    } catch (error) {
-      showToast(error.message, 'danger');
-    }
+      scheduleBiRefresh();
+    });
+    $('#reportRefreshBtn')?.addEventListener('click', event => { event.preventDefault(); initSmartReporting(true); });
+    $('#reportPrintBtn')?.addEventListener('click', capture(printReport), true);
+    $('#reportExcelBtn')?.addEventListener('click', capture(() => downloadReport('/api/reports/export-excel', 'xls', '?? xu?t Excel')), true);
+    $('#reportPdfBtn')?.addEventListener('click', capture(() => downloadReport('/api/reports/export-pdf', 'pdf', '?? xu?t PDF')), true);
+    $('#reportWordBtn')?.addEventListener('click', capture(() => downloadReport('/api/reports/export-word', 'doc', '?? xu?t Word')), true);
+    $('#reportSaveTemplateBtn')?.addEventListener('click', event => { event.preventDefault(); saveTemplate(); });
+    initSmartReporting();
   }
 
-  async function printReport() {
-    try {
-      const report = await api('/api/reports/print?' + reportQuery());
-      const html = reportHtml(report);
-      const popup = window.open('', '_blank', 'width=1024,height=768');
-      if (!popup) {
-        showToast('Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép popup.', 'warning');
-        return;
-      }
+  function capture(fn) {
+    return event => { event.preventDefault(); event.stopImmediatePropagation(); fn(); };
+  }
 
-      const printHtml = `
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <title>${escapeHtml(report.title || 'Báo cáo')}</title>
-  <style>
-    @page { size: A4; margin: 14mm; }
-    body { font-family: Arial, sans-serif; color: #111; }
-    h1 { text-align: center; font-size: 20px; margin: 0 0 12px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { border: 1px solid #555; padding: 6px; vertical-align: top; }
-    th { background: #f0f3f7; }
-    .meta { text-align: right; font-size: 12px; margin-bottom: 12px; }
-  </style>
-</head>
-<body>
-  ${html}
-  <script>
-    window.onload = function () { window.print(); };
-  <\/script>
-</body>
-</html>`;
+  function ensureReportTypes() {
+    const select = $('#reportTypeSelect');
+    if (!select) return;
+    const value = select.value || 'summary';
+    const types = [
+      ['summary', 'Bao cao tong hop'], ['population', 'Bao cao nhan khau'], ['household', 'Bao cao ho gia dinh'], ['migration', 'Bao cao bien dong'],
+      ['gis', 'Bao cao GIS'], ['gis-located', 'Ho da dinh vi GPS'], ['gis-unlocated', 'Ho chua dinh vi GPS'],
+      ['digital-profile', 'Bao cao Ho so so'], ['profile-complete', 'Ho so hoan chinh'], ['profile-missing-photo', 'Ho so thieu anh'], ['profile-missing-documents', 'Ho so thieu giay to'], ['profile-incomplete', 'Ho so chua hoan thien'],
+      ['temporary_residence', 'Danh sach tam tru'], ['temporary_absence', 'Danh sach tam vang'], ['children', 'Danh sach tre em'], ['elderly', 'Danh sach nguoi cao tuoi'], ['labor', 'Danh sach lao dong'], ['party_member', 'Danh sach Dang vien'], ['youth_union', 'Danh sach Doan vien'], ['poor-households', 'Danh sach ho ngheo'], ['near-poor-households', 'Danh sach ho can ngheo'], ['age', 'Thong ke theo do tuoi'], ['gender', 'Thong ke theo gioi tinh']
+    ];
+    select.innerHTML = types.map(([key, label]) => '<option value="' + esc(key) + '">' + esc(label) + '</option>').join('');
+    select.value = types.some(([key]) => key === value) ? value : 'summary';
+  }
 
-      popup.document.write(printHtml);
-      popup.document.close();
-    } catch (error) {
-      showToast(error.message, 'danger');
+  async function initSmartReporting(force = false) {
+    ensureReportTypes();
+    if (!token()) return;
+    if (state.loaded && !force) return;
+    state.loaded = true;
+    await Promise.allSettled([loadCenter(), loadTemplates(), loadBi()]);
+    if (!state.report) loadReport().catch(() => {});
+  }
+
+  async function smartApi(url, options = {}) {
+    if (typeof window.api === 'function' && !options.raw) {
+      const payload = await window.api(url, options);
+      return payload?.data ?? payload;
     }
+    const headers = { Accept: 'application/json' };
+    if (options.body) headers['Content-Type'] = 'application/json';
+    if (token()) headers.Authorization = 'Bearer ' + token();
+    if (csrf()) headers['X-CSRF-Token'] = csrf();
+    const res = await fetch(url, { method: options.method || 'GET', headers, body: options.body ? JSON.stringify(options.body) : undefined, cache: 'no-store' });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'Kh?ng t?i ???c d? li?u');
+    return json.data?.data ?? json.data ?? {};
   }
 
   function reportQuery() {
-    const data = formData(document.querySelector('#reportForm'));
-    return new URLSearchParams(data).toString();
+    const form = $('#reportForm');
+    const params = new URLSearchParams();
+    if (!form) return params.toString();
+    new FormData(form).forEach((value, key) => {
+      const text = String(value ?? '').trim();
+      if (text !== '') params.set(key, text);
+    });
+    const type = params.get('type') || 'summary';
+    params.set('type', type);
+    params.set('report_type', type);
+    return params.toString();
   }
 
-  function renderReport(report) {
-    document.querySelector('#reportTitle').textContent = report.title || 'Báo cáo';
-    document.querySelector('#reportCount').textContent = `${number(report.totalRows || 0)} dòng`;
-    document.querySelector('#reportPreview').innerHTML = reportTable(report);
+  function currentFilters() {
+    const out = {};
+    const form = $('#reportForm');
+    if (!form) return out;
+    new FormData(form).forEach((value, key) => {
+      const text = String(value ?? '').trim();
+      if (text !== '') out[key] = text;
+    });
+    return out;
   }
 
-  function reportHtml(report) {
-    return `<h1>${escapeHtml(report.title || 'Báo cáo')}</h1><div class="meta">Ngày in: ${new Date().toLocaleString('vi-VN')}</div>${reportTable(report)}`;
+  async function loadCenter() {
+    try {
+      const data = await smartApi('/api/reports/center');
+      state.center = data;
+      renderGroups(data.groups || []);
+      renderTemplateLibrary(data.templates || []);
+    } catch (error) {
+      renderBox('#reportGroupGrid', '<div class="report-widget-error">' + esc(error.message) + '</div>');
+    }
+  }
+
+  async function loadBi() {
+    try {
+      const data = await smartApi('/api/reports/bi?' + reportQuery());
+      renderBi(data);
+    } catch (error) {
+      renderBox('#reportBiCharts', '<div class="report-widget-error">' + esc(error.message) + '</div>');
+    }
+  }
+
+  const scheduleBiRefresh = debounce(() => loadBi().catch(() => {}), 350);
+
+  async function loadTemplates() {
+    try {
+      state.templates = await smartApi('/api/reports/templates');
+      renderSavedTemplates(state.templates || []);
+    } catch (error) {
+      renderBox('#reportSavedTemplates', '<div class="report-widget-error">' + esc(error.message) + '</div>');
+    }
+  }
+
+  window.loadReport = window.thon09ViewReport = async function loadReport() {
+    setActions(false);
+    setTitle('B?o c?o');
+    setCount('?ang t?i d? li?u...');
+    renderBox('#reportPreview', '<div class="report-empty-state">?ang sinh b?o c?o...</div>');
+    try {
+      const report = await smartApi('/api/reports/summary?' + reportQuery());
+      state.report = report;
+      setTitle(report.title || 'B?o c?o');
+      setCount(fmt(report.totalRows || 0) + ' d?ng');
+      renderBox('#reportPreview', '<div class="report-preview-title">' + esc(report.title || 'Bao cao') + '</div>' + reportTable(report));
+      setActions(true);
+      return report;
+    } catch (error) {
+      setCount('Kh?ng sinh ???c b?o c?o');
+      renderBox('#reportPreview', '<div class="alert alert-danger mb-0">' + esc(error.message) + '</div>');
+      throw error;
+    }
+  };
+
+  function renderGroups(groups) {
+    renderBox('#reportGroupGrid', groups.map(group => '<button class="report-group-item" type="button" data-report-type="' + esc(group.types?.[0] || 'summary') + '"><i class="fa-solid ' + esc(group.icon || 'fa-chart-pie') + '"></i><strong>' + esc(group.title) + '</strong><span>' + esc(group.description) + '</span></button>').join(''));
+    $$('#reportGroupGrid [data-report-type]').forEach(btn => btn.addEventListener('click', () => selectReportType(btn.dataset.reportType)));
+  }
+
+  function renderTemplateLibrary(items) {
+    renderBox('#reportTemplateLibrary', items.map(item => '<button type="button" data-report-type="' + esc(item.type) + '"><i class="fa-solid fa-file-lines"></i><span>' + esc(item.title) + '</span></button>').join(''));
+    $$('#reportTemplateLibrary [data-report-type]').forEach(btn => btn.addEventListener('click', () => selectReportType(btn.dataset.reportType, true)));
+  }
+
+  function renderSavedTemplates(items) {
+    if (!items.length) return renderBox('#reportSavedTemplates', '<div class="report-template-empty">Ch?a c? m?u ?? l?u</div>');
+    renderBox('#reportSavedTemplates', items.map(item => {
+      const filters = esc(item.filters_json || '{}');
+      return '<article class="report-saved-template"><button type="button" data-template-open="' + item.id + '" data-filters="' + filters + '" data-type="' + esc(item.type) + '"><strong>' + esc(item.name) + '</strong><span>' + esc(item.type) + (Number(item.is_default) ? ' - M?c ??nh' : '') + '</span></button><div><button type="button" title="??t m?c ??nh" data-template-default="' + item.id + '"><i class="fa-solid fa-star"></i></button><button type="button" title="X?a" data-template-delete="' + item.id + '"><i class="fa-solid fa-trash"></i></button></div></article>';
+    }).join(''));
+    $$('[data-template-open]').forEach(btn => btn.addEventListener('click', () => openTemplate(btn)));
+    $$('[data-template-delete]').forEach(btn => btn.addEventListener('click', () => deleteTemplate(btn.dataset.templateDelete)));
+    $$('[data-template-default]').forEach(btn => btn.addEventListener('click', () => defaultTemplate(btn.dataset.templateDefault)));
+  }
+
+  function renderBi(data) {
+    const metrics = data.metrics || {};
+    $('#reportBiGeneratedAt') && ($('#reportBiGeneratedAt').textContent = 'C?p nh?t ' + new Date(data.generatedAt || Date.now()).toLocaleString('vi-VN'));
+    const kpis = [
+      ['H?', metrics.total_households], ['Nh?n kh?u', metrics.total_citizens], ['Nam', metrics.male_count], ['N?', metrics.female_count], ['H? ngh?o', metrics.poor_households], ['GPS', progressValue(data, 'gps')]
+    ];
+    renderBox('#reportBiKpis', kpis.map(([label, value]) => '<div><span>' + esc(label) + '</span><strong>' + esc(value ?? 0) + '</strong></div>').join(''));
+    const charts = data.charts || {};
+    const cards = [
+      ['C? c?u d?n s?', charts.population], ['?? tu?i', charts.age], ['Ngh? nghi?p', charts.occupation], ['Lao ??ng', charts.labor], ['H? ngh?o/c?n ngh?o', charts.poverty], ['Bi?n ??ng theo th?ng', charts.monthlyMovements]
+    ];
+    renderBox('#reportBiCharts', cards.map(([title, rows]) => '<article class="report-bi-chart"><h4>' + esc(title) + '</h4>' + miniBars(rows || []) + '</article>').join(''));
+  }
+
+  function progressValue(data, key) {
+    const item = (data.progress || []).find(row => row.key === key);
+    return item ? (item.progress?.percent || 0) + '%' : '0%';
+  }
+
+  function miniBars(rows) {
+    const max = Math.max(1, ...rows.map(row => Number(row.value || 0)));
+    return rows.length ? rows.slice(0, 8).map(row => '<div class="report-mini-bar"><span>' + esc(row.label || '') + '</span><i style="--w:' + Math.round(Number(row.value || 0) * 100 / max) + '%"></i><b>' + fmt(row.value || 0) + '</b></div>').join('') : '<div class="report-template-empty">Ch?a c? d? li?u</div>';
+  }
+
+  function selectReportType(type, autoLoad = false) {
+    ensureReportTypes();
+    const select = $('#reportTypeSelect');
+    if (select) select.value = type || 'summary';
+    state.report = null;
+    setActions(false);
+    if (autoLoad) loadReport().catch(() => {});
+    scheduleBiRefresh();
+  }
+
+  async function saveTemplate() {
+    const name = prompt('T?n m?u b?o c?o');
+    if (!name) return;
+    const filters = currentFilters();
+    const template = await smartApi('/api/reports/templates', { method: 'POST', body: { name, type: filters.type || 'summary', filters } });
+    state.templates.unshift(template);
+    await loadTemplates();
+    toast('?? l?u m?u b?o c?o');
+  }
+
+  function openTemplate(btn) {
+    const type = btn.dataset.type || 'summary';
+    let filters = {};
+    try { filters = JSON.parse(btn.dataset.filters || '{}') || {}; } catch (_) {}
+    const form = $('#reportForm');
+    if (form) Object.entries(filters).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
+    selectReportType(type, true);
+  }
+
+  async function deleteTemplate(id) {
+    await smartApi('/api/reports/templates/' + encodeURIComponent(id), { method: 'DELETE' });
+    await loadTemplates();
+    toast('?? x?a m?u b?o c?o');
+  }
+
+  async function defaultTemplate(id) {
+    await smartApi('/api/reports/templates/' + encodeURIComponent(id) + '/default', { method: 'POST', body: {} });
+    await loadTemplates();
+    toast('?? ??t m?u m?c ??nh');
+  }
+
+  async function downloadReport(endpoint, extension, successMessage) {
+    const response = await fetch(endpoint + '?' + reportQuery(), { headers: { Authorization: 'Bearer ' + token() }, cache: 'no-store' });
+    if (!response.ok) throw new Error('Kh?ng xu?t ???c d? li?u');
+    const blob = await response.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileNameFromHeader(response.headers.get('Content-Disposition')) || 'bao_cao_' + Date.now() + '.' + extension;
+    document.body.appendChild(link);
+    link.click();
+    URL.revokeObjectURL(link.href);
+    link.remove();
+    toast(successMessage);
+  }
+
+  async function printReport() {
+    const report = state.report || await loadReport();
+    const popup = window.open('', '_blank', 'width=1024,height=768');
+    if (!popup) return toast('Tr?nh duy?t ?ang ch?n c?a s? in', 'warning');
+    popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(report.title || 'B?o c?o') + '</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#111}h1{text-align:center;font-size:20px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}</style></head><body><h1>' + esc(report.title || 'B?o c?o') + '</h1><p>Ng?y in: ' + new Date().toLocaleString('vi-VN') + '</p>' + reportTable(report) + '<script>window.onload=function(){window.print();};</script></body></html>');
+    popup.document.close();
   }
 
   function reportTable(report) {
-    const headers = (report.headers || []).map(header => `<th>${escapeHtml(header)}</th>`).join('');
-    const rows = (report.rows || []).map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell ?? '')}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${Math.max((report.headers || []).length, 1)}" class="text-center text-muted py-3">Không có dữ liệu</td></tr>`;
-    return `<table class="table table-bordered table-sm align-middle mb-0"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    const headers = (report.headers || []).map(header => '<th>' + esc(header) + '</th>').join('');
+    const rows = (report.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + esc(cell) + '</td>').join('') + '</tr>').join('') || '<tr><td colspan="' + Math.max(1, (report.headers || []).length) + '" class="text-center text-muted py-4">Kh?ng c? d? li?u</td></tr>';
+    return '<table class="table report-table align-middle mb-0"><thead><tr>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
-  function fileNameFromHeader(header) {
-    const match = /filename="?([^";]+)"?/i.exec(header || '');
-    return match ? match[1] : '';
-  }
-
-  function timestamp() {
-    const now = new Date();
-    const pad = value => String(value).padStart(2, '0');
-    return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  }
+  function setTitle(text) { const el = $('#reportTitle'); if (el) el.textContent = text; }
+  function setCount(text) { const el = $('#reportCount'); if (el) el.textContent = text; }
+  function setActions(show) { $('#reportActions')?.classList.toggle('d-none', !show); }
+  function renderBox(selector, html) { const el = $(selector); if (el) el.innerHTML = html; }
+  function fileNameFromHeader(header) { return (/filename="?([^";]+)"?/i.exec(header || '') || [])[1] || ''; }
+  function toast(message, type = 'success') { if (typeof window.showToast === 'function') window.showToast(message, type); }
+  function debounce(fn, wait) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), wait); }; }
 })();
