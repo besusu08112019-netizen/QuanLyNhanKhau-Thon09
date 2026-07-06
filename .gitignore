@@ -25,3 +25,6 @@ logs/*
 uploads/tmp/*
 uploads.zip
 vendor/bin/*
+test-results/
+playwright-report/
+uploads/.app_key

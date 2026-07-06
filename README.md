@@ -78,3 +78,8 @@ Get-ChildItem -Recurse -Filter *.php | ForEach-Object { php -l $_.FullName }
 - Không xóa cứng dữ liệu nếu chưa có backup và phê duyệt nghiệp vụ.
 - Kiểm tra tiếng Việt, console, API và responsive sau mỗi lần deploy.
 - Chỉ kết luận Production Ready khi deployment production, migration và backup đã được xác minh thành công trên môi trường thật.
+
+## Release v1.0.0
+
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Production runbook: [docs/RELEASE_V1.0.0.md](docs/RELEASE_V1.0.0.md)

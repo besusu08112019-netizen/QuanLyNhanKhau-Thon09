@@ -74,43 +74,6 @@
   function map() { return window.App && window.App.gis && window.App.gis.map ? window.App.gis.map : null; }
   function isAuthenticated() { return Boolean(window.App && window.App.token); }
 
-  function gisDebugEnabled() {
-    try {
-      return /(?:^|[?&])gis_debug=1(?:&|$)/.test(window.location.search || '') || localStorage.getItem('thon09_gis_debug') === '1';
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function gisDebugLog(label, detail) {
-    if (!gisDebugEnabled()) return;
-    const payload = Object.assign({
-      label,
-      time: new Date().toISOString(),
-      openPopupId: state.openPopupId,
-      markerCount: state.markers.size,
-      layerCount: state.layer && typeof state.layer.getLayers === 'function' ? state.layer.getLayers().length : null,
-      touchViewport: typeof isTouchViewport === 'function' ? isTouchViewport() : null,
-    }, detail || {});
-    console.log('[GIS_POPUP_DEBUG]', payload);
-    console.trace('[GIS_POPUP_TRACE] ' + label);
-  }
-
-  function wrapMethodForGisDebug(target, methodName, label) {
-    if (!target || typeof target[methodName] !== 'function') return;
-    const flag = '__thon09DebugWrapped_' + methodName;
-    if (target[flag]) return;
-    target[flag] = true;
-    const original = target[methodName];
-    target[methodName] = function () {
-      gisDebugLog(label || methodName, { args: Array.from(arguments).map(arg => {
-        if (arg && typeof arg === 'object') return arg.constructor && arg.constructor.name ? '[object ' + arg.constructor.name + ']' : '[object]';
-        return arg;
-      }) });
-      return original.apply(this, arguments);
-    };
-  }
-
 
   function ensureLocationFields() {
     const form = $('#householdForm');
@@ -572,7 +535,6 @@
     });
     marker.bindPopup(popup);
     marker.on('click', event => {
-      gisDebugLog('marker click', { id: rowId });
       state.lastMarkerTouchAt = Date.now();
       stopLeafletPropagation(event);
       closeOpenHouseholdPopup(rowId);
@@ -581,7 +543,6 @@
       activateMarker(marker, row);
     });
     marker.on('popupopen', event => {
-      gisDebugLog('popup open', { id: rowId, popupInDom: Boolean(event && event.popup && event.popup.getElement && event.popup.getElement()) });
       state.openPopupId = rowId;
       disableMapDraggingForPopup();
       window.thon09GisEnsureHouseholdMarkerLayerVisible && window.thon09GisEnsureHouseholdMarkerLayerVisible();
@@ -590,7 +551,6 @@
       activateMarker(marker, row);
     });
     marker.on('popupclose', () => {
-      gisDebugLog('popup close', { id: rowId, renderingMarkers: state.renderingMarkers, now: Date.now() });
       if (state.renderingMarkers) return;
       if (state.openPopupId !== rowId) return;
       state.openPopupId = '';
@@ -598,7 +558,6 @@
     });
     ['touchstart', 'touchend', 'pointerdown', 'pointerup'].forEach(type => {
       marker.on(type, event => {
-        gisDebugLog('marker ' + type, { id: rowId });
         state.lastMarkerTouchAt = Date.now();
         stopLeafletPropagation(event);
       });
@@ -671,7 +630,6 @@
 
   function createHouseholdMarkerLayer() {
     const useCluster = !isTouchViewport() && Boolean(L.markerClusterGroup);
-    gisDebugLog('markerLayer:create', { markerCluster: useCluster, touchViewport: isTouchViewport() });
     return useCluster
       ? L.markerClusterGroup({ chunkedLoading: true, showCoverageOnHover: false, maxClusterRadius: 46 })
       : L.layerGroup();
@@ -682,7 +640,6 @@
   }
 
   function renderLocatedMarkers(rows) {
-    gisDebugLog('renderLocatedMarkers', { rows: (rows || []).length });
     if (!state.layer) return;
     state.layer.clearLayers();
     state.markers.clear();
@@ -697,7 +654,6 @@
   }
 
   function restoreMarkersIfMissing() {
-    gisDebugLog('restoreMarkersIfMissing:check');
     const m = map();
     if (!m || !window.L || !state.layer || !isTouchViewport() || !state.lastLocatedRows.length) return;
     if (typeof m.hasLayer === 'function' && !m.hasLayer(state.layer)) state.layer.addTo(m);
@@ -708,7 +664,6 @@
   }
 
   async function loadHouseholdMarkers(search, options) {
-    gisDebugLog('loadHouseholdMarkers:start', { search: search || '', options: options || null });
     if (!isAuthenticated()) return;
     if (shouldDeferMarkerReload(search, options)) return;
     const m = map();
@@ -719,14 +674,10 @@
       if (!state.layer) {
         if (!isTouchViewport()) await ensureMarkerCluster();
         state.layer = createHouseholdMarkerLayer();
-        wrapMethodForGisDebug(state.layer, 'clearLayers', 'markerLayer.clearLayers');
-        wrapMethodForGisDebug(state.layer, 'addLayer', 'markerLayer.addLayer');
-        wrapMethodForGisDebug(state.layer, 'removeLayer', 'markerLayer.removeLayer');
         state.layer.addTo(m);
       }
       const popupIdBeforeRender = state.openPopupId;
       const data = await request('/api/gis/households?' + markerParams(search || '').toString());
-      gisDebugLog('loadHouseholdMarkers:response', { items: (data.items || []).length });
       const popupOpenedDuringRequest = !popupIdBeforeRender && state.openPopupId && !search && !(options && options.force);
       if (popupOpenedDuringRequest) {
         document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer, keptExisting: true, skippedStaleReload: true } }));
