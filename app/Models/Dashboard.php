@@ -8,36 +8,94 @@ final class Dashboard extends BaseModel
 {
     public function summary(array $filters = []): array
     {
-        return [
-            'metrics' => $this->metrics($filters),
-            'charts' => [
-                'population' => $this->populationChart($filters),
-                'households' => $this->householdChart($filters),
-                'ages' => $this->ageChart($filters),
-                'residency' => $this->residencyChart($filters),
-                'hamlets' => $this->hamletChart($filters),
-                'monthlyChanges' => $this->monthlyChangeChart($filters),
-                'poverty' => $this->povertyChart($filters),
-                'partyMembers' => $this->flagChart($filters, 'party_member', 'Đảng viên'),
-                'youthUnion' => $this->flagChart($filters, 'youth_union_member', 'Đoàn viên'),
-                'labor' => $this->laborChart($filters),
-                'occupations' => $this->groupChart($filters, 'occupation', 'Nghề nghiệp'),
-                'educationLevels' => $this->groupChart($filters, 'education_level', 'Trình độ học vấn'),
-                'ethnicities' => $this->groupChart($filters, 'ethnicity', 'Dân tộc'),
-                'religions' => $this->groupChart($filters, 'religion', 'Tôn giáo'),
-                'gpsProgress' => $this->gpsProgressChart($filters),
-                'profileProgress' => $this->profileProgressChart($filters),
-            ],
-            'alerts' => $this->alerts($filters),
-            'movementWindows' => $this->movementWindows($filters),
-            'gis' => $this->gisSummary($filters),
-            'profiles' => $this->profileSummary($filters),
-            'tasks' => $this->tasks($filters),
+        $errors = [];
+        $metrics = $this->safeWidget('metrics', fn() => $this->metrics($filters), $this->defaultMetrics(), $errors);
+        $charts = [
+            'population' => $this->safeWidget('charts.population', fn() => $this->populationChart($filters), [], $errors),
+            'households' => $this->safeWidget('charts.households', fn() => $this->householdChart($filters), [], $errors),
+            'ages' => $this->safeWidget('charts.ages', fn() => $this->ageChart($filters), [], $errors),
+            'residency' => $this->safeWidget('charts.residency', fn() => $this->residencyChart($filters), [], $errors),
+            'hamlets' => $this->safeWidget('charts.hamlets', fn() => $this->hamletChart($filters), [], $errors),
+            'monthlyChanges' => $this->safeWidget('charts.monthlyChanges', fn() => $this->monthlyChangeChart($filters), [], $errors),
+            'poverty' => $this->safeWidget('charts.poverty', fn() => $this->povertyChart($filters), [], $errors),
+            'partyMembers' => $this->safeWidget('charts.partyMembers', fn() => $this->flagChart($filters, 'party_member', 'Đảng viên'), [], $errors),
+            'youthUnion' => $this->safeWidget('charts.youthUnion', fn() => $this->flagChart($filters, 'youth_union_member', 'Đoàn viên'), [], $errors),
+            'labor' => $this->safeWidget('charts.labor', fn() => $this->laborChart($filters), [], $errors),
+            'occupations' => $this->safeWidget('charts.occupations', fn() => $this->groupChart($filters, 'occupation', 'Nghề nghiệp'), [], $errors),
+            'educationLevels' => $this->safeWidget('charts.educationLevels', fn() => $this->groupChart($filters, 'education_level', 'Trình độ học vấn'), [], $errors),
+            'ethnicities' => $this->safeWidget('charts.ethnicities', fn() => $this->groupChart($filters, 'ethnicity', 'Dân tộc'), [], $errors),
+            'religions' => $this->safeWidget('charts.religions', fn() => $this->groupChart($filters, 'religion', 'Tôn giáo'), [], $errors),
+            'gpsProgress' => $this->safeWidget('charts.gpsProgress', fn() => $this->gpsProgressChart($filters), [], $errors),
+            'profileProgress' => $this->safeWidget('charts.profileProgress', fn() => $this->profileProgressChart($filters), [], $errors),
+        ];
+
+        $payload = [
+            'metrics' => $metrics,
+            'charts' => $charts,
+            'alerts' => $this->safeWidget('alerts', fn() => $this->alerts($filters), null, $errors),
+            'movementWindows' => $this->safeWidget('movementWindows', fn() => $this->movementWindows($filters), null, $errors),
+            'gis' => $this->safeWidget('gis', fn() => $this->gisSummary($filters), null, $errors),
+            'profiles' => $this->safeWidget('profiles', fn() => $this->profileSummary($filters), null, $errors),
+            'tasks' => $this->safeWidget('tasks', fn() => $this->tasks($filters), null, $errors),
             'filters' => $this->normalizeFilters($filters),
             'generatedAt' => date('c'),
         ];
+        if ($errors) $payload['widgetErrors'] = $errors;
+        return $payload;
     }
 
+    private function safeWidget(string $name, callable $callback, mixed $fallback, array &$errors): mixed
+    {
+        try {
+            return $callback();
+        } catch (\Throwable $exception) {
+            $lastQuery = self::lastQuery();
+            $errors[$name] = [
+                'type' => get_class($exception),
+                'message' => $exception->getMessage(),
+            ];
+            error_log('[DASHBOARD_WIDGET_ERROR] ' . json_encode([
+                'widget' => $name,
+                'type' => get_class($exception),
+                'message' => $exception->getMessage(),
+                'sql' => $lastQuery['sql'] ?? null,
+                'params' => $lastQuery['params'] ?? null,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            return $fallback;
+        }
+    }
+
+    private function defaultMetrics(): array
+    {
+        $metrics = [
+            'total_households' => 0,
+            'total_citizens' => 0,
+            'male_count' => 0,
+            'female_count' => 0,
+            'household_head_count' => 0,
+            'active_citizens' => 0,
+            'children_count' => 0,
+            'elderly_count' => 0,
+            'working_age_count' => 0,
+            'temporary_count' => 0,
+            'away_count' => 0,
+            'poor_households' => 0,
+            'near_poor_households' => 0,
+            'policy_households' => 0,
+            'meritorious_households' => 0,
+            'normal_households' => 0,
+        ];
+        foreach (['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
+            $metrics[$key . '_count'] = 0;
+            $metrics[$key . '_percent'] = 0;
+        }
+        $metrics['poor_households_percent'] = 0;
+        $metrics['near_poor_households_percent'] = 0;
+        $metrics['children_percent'] = 0;
+        $metrics['elderly_percent'] = 0;
+        $metrics['working_age_percent'] = 0;
+        return $metrics;
+    }
     public function metrics(array $filters = []): array
     {
         [$householdWhere, $householdParams] = $this->householdWhere($filters);
