@@ -163,20 +163,25 @@
     if (typeof window.thon09LoadGisHouseholdMarkers === 'function') window.thon09LoadGisHouseholdMarkers();
   }
 
+  function hasOpenHouseholdPopup() {
+    return typeof window.thon09GisHasOpenHouseholdPopup === 'function' && window.thon09GisHasOpenHouseholdPopup();
+  }
+
   function applyLayers() {
     const m = map();
     if (!m) return;
     document.body.classList.toggle('gis-smart-hide-photos', !state.layers.photos);
-    toggleLayer(state.markerLayer, state.layers.markers);
+    toggleLayer(state.markerLayer, state.layers.markers || hasOpenHouseholdPopup(), true);
     toggleLayer(polygonLayer(), state.layers.polygons && state.layers.boundaries);
     toggleRoads();
     renderHeatmap();
     toggleGps();
   }
 
-  function toggleLayer(layer, visible) {
+  function toggleLayer(layer, visible, isMarkerLayer) {
     const m = map();
     if (!m || !layer) return;
+    if (isMarkerLayer && hasOpenHouseholdPopup()) visible = true;
     if (visible && !m.hasLayer(layer)) layer.addTo(m);
     if (!visible && m.hasLayer(layer)) m.removeLayer(layer);
   }
@@ -256,6 +261,7 @@
   document.addEventListener('thon09:gis-markers-loaded', event => {
     state.rows = event.detail?.rows || [];
     state.markerLayer = event.detail?.layer || state.markerLayer;
+    if (hasOpenHouseholdPopup() && typeof window.thon09GisEnsureHouseholdMarkerLayerVisible === 'function') window.thon09GisEnsureHouseholdMarkerLayerVisible();
     applyLayers();
     updateSummary();
   });

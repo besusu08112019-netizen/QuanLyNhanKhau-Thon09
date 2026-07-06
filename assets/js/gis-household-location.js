@@ -382,6 +382,7 @@
     });
     marker.on('popupopen', event => {
       state.openPopupId = String(row.id || '');
+      window.thon09GisEnsureHouseholdMarkerLayerVisible && window.thon09GisEnsureHouseholdMarkerLayerVisible();
       protectPopupElement(event && event.popup ? event.popup : marker.getPopup && marker.getPopup());
       activateMarker(marker, row);
     });
@@ -568,6 +569,17 @@
   }
 
 
+
+  window.thon09GisHasOpenHouseholdPopup = function () {
+    return Boolean(state.openPopupId);
+  };
+
+  window.thon09GisEnsureHouseholdMarkerLayerVisible = function () {
+    const m = map();
+    if (!m || !state.layer) return false;
+    if (typeof m.hasLayer === 'function' && !m.hasLayer(state.layer)) state.layer.addTo(m);
+    return true;
+  };
 
   window.thon09GisGetHouseholdMarkerRow = function (id) {
     const marker = state.markers.get(String(id || ''));
