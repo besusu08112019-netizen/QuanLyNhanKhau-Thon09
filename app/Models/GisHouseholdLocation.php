@@ -33,6 +33,7 @@ final class GisHouseholdLocation extends BaseModel
     {
         $this->ensureSchema();
         [$where, $params] = $this->markerConditions($filters);
+        $photoSql = $this->householdPhotoSql();
         $rows = $this->fetchAll(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
                 h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
@@ -48,8 +49,8 @@ final class GisHouseholdLocation extends BaseModel
                 COALESCE(cm.permanent_count, 0) AS permanent_count,
                 COALESCE(cm.temporary_count, 0) AS temporary_count,
                 COALESCE(cm.labor_count, 0) AS labor_count,
-                (SELECT f.id FROM file_attachments f WHERE COALESCE(f.entity_type, f.module) = "household" AND f.entity_id = h.id AND (f.status IS NULL OR f.status <> "DELETED") AND (f.file_type IN ("PHOTO","IMAGE") OR f.mime_type LIKE "image/%") ORDER BY CASE COALESCE(f.profile_section, f.category, "") WHEN "front_house" THEN 0 WHEN "inside_house" THEN 1 ELSE 2 END, f.id DESC LIMIT 1) AS thumbnail_file_id,
-                (SELECT COUNT(1) FROM file_attachments f WHERE COALESCE(f.entity_type, f.module) = "household" AND f.entity_id = h.id AND (f.status IS NULL OR f.status <> "DELETED") AND (f.file_type IN ("PHOTO","IMAGE") OR f.mime_type LIKE "image/%")) AS gallery_count
+                ' . $photoSql['thumbnail'] . ' AS thumbnail_file_id,
+                ' . $photoSql['count'] . ' AS gallery_count
              FROM households h
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
              LEFT JOIN (
@@ -171,6 +172,72 @@ final class GisHouseholdLocation extends BaseModel
         return $changed;
     }
 
+    private function householdPhotoSql(): array
+    {
+        if (!$this->tableExists('file_attachments')) {
+            return [
+                'thumbnail' => 'NULL',
+                'count' => '0',
+            ];
+        }
+
+        $columns = $this->existingColumns('file_attachments', [
+            'id', 'module', 'entity_type', 'entity_id', 'status', 'file_type', 'mime_type', 'profile_section', 'category',
+        ]);
+        if (!in_array('id', $columns, true) || !in_array('entity_id', $columns, true)) {
+            return [
+                'thumbnail' => 'NULL',
+                'count' => '0',
+            ];
+        }
+
+        $where = ['f.entity_id = h.id'];
+        if (in_array('entity_type', $columns, true) && in_array('module', $columns, true)) {
+            $where[] = 'COALESCE(f.entity_type, f.module) = "household"';
+        } elseif (in_array('entity_type', $columns, true)) {
+            $where[] = 'f.entity_type = "household"';
+        } elseif (in_array('module', $columns, true)) {
+            $where[] = 'f.module = "household"';
+        }
+        if (in_array('status', $columns, true)) {
+            $where[] = '(f.status IS NULL OR f.status <> "DELETED")';
+        }
+
+        $imageParts = [];
+        if (in_array('file_type', $columns, true)) {
+            $imageParts[] = 'f.file_type IN ("PHOTO","IMAGE")';
+        }
+        if (in_array('mime_type', $columns, true)) {
+            $imageParts[] = 'f.mime_type LIKE "image/%"';
+        }
+        if ($imageParts) {
+            $where[] = '(' . implode(' OR ', $imageParts) . ')';
+        }
+
+        $sectionExpr = $this->photoSectionExpression($columns);
+        $whereSql = implode(' AND ', $where);
+        return [
+            'thumbnail' => '(SELECT f.id FROM file_attachments f WHERE ' . $whereSql . ' ORDER BY CASE ' . $sectionExpr . ' WHEN "front_house" THEN 0 WHEN "inside_house" THEN 1 ELSE 2 END, f.id DESC LIMIT 1)',
+            'count' => '(SELECT COUNT(1) FROM file_attachments f WHERE ' . $whereSql . ')',
+        ];
+    }
+
+    private function photoSectionExpression(array $columns): string
+    {
+        $parts = [];
+        foreach (['profile_section', 'category'] as $column) {
+            if (in_array($column, $columns, true)) {
+                $parts[] = 'f.' . $column;
+            }
+        }
+        return $parts ? 'COALESCE(' . implode(', ', $parts) . ', "")' : '""';
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
+    }
     private function findMarker(int $householdId): ?array
     {
         $rows = $this->markers(['id' => $householdId]);
