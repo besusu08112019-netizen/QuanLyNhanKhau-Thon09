@@ -227,3 +227,87 @@ test('mobile bottom navigation does not cover module content', async ({ page }) 
     expect(paddingBottom).toBeGreaterThanOrEqual(100);
   }
 });
+
+
+test('mobile overlays hide bottom navigation and keep actions reachable', async ({ page }) => {
+  await page.route('**/api/**', async (route) => {
+    const url = route.request().url();
+    const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
+    if (url.includes('/api/public/login-config')) return payload(loginConfig.data);
+    if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {} });
+    return payload({});
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
+    window.App.token = 'test-token';
+    window.App.csrfToken = 'test-csrf';
+    window.App.user = user;
+    localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_csrf', 'test-csrf');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.showApp === 'function') window.showApp();
+    if (typeof window.switchScreen === 'function') window.switchScreen('households');
+  });
+
+  const viewport = page.viewportSize();
+  if (!viewport || viewport.width > 1024) return;
+
+  const nav = page.locator('.mobile-bottom-nav');
+  await expect(nav).toBeVisible();
+
+  await page.evaluate(() => {
+    let host = document.querySelector('[data-test-mobile-sheet-host]');
+    if (!host) {
+      host = document.createElement('div');
+      host.dataset.testMobileSheetHost = '1';
+      host.className = 'mobile-filter-open';
+      host.innerHTML = '<div class="mobile-filter-sheet"><div class="mobile-filter-sheet-head"><strong>Filter</strong><button class="mobile-filter-close" type="button">Close</button></div><div class="mobile-filter-sheet-body"><input class="form-control"><button class="btn btn-primary">Apply</button></div></div>';
+      document.body.appendChild(host);
+    }
+    document.body.classList.add('mobile-filter-active');
+  });
+
+  await expect(nav).toBeHidden();
+  const sheetMetrics = await page.locator('[data-test-mobile-sheet-host] .mobile-filter-sheet').evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { zIndex: Number(style.zIndex), maxHeight: style.maxHeight, overflow: getComputedStyle(el.querySelector('.mobile-filter-sheet-body')).overflowY };
+  });
+  expect(sheetMetrics.zIndex).toBeGreaterThan(42);
+  expect(sheetMetrics.maxHeight).toContain('px');
+  expect(sheetMetrics.overflow).toBe('auto');
+
+  await page.evaluate(() => {
+    document.body.classList.remove('mobile-filter-active');
+    document.querySelector('[data-test-mobile-sheet-host]')?.remove();
+  });
+  await expect(nav).toBeVisible();
+
+  await page.evaluate(() => {
+    const modal = document.getElementById('householdModal');
+    window.bootstrap.Modal.getOrCreateInstance(modal).show();
+  });
+  await expect(page.locator('#householdModal')).toHaveClass(/show/);
+  await expect(nav).toBeHidden();
+  await expect(page.locator('#householdModal .modal-footer')).toBeVisible();
+
+  const modalMetrics = await page.locator('#householdModal .modal-content').evaluate((el) => {
+    const style = getComputedStyle(el);
+    const body = el.querySelector('.modal-body');
+    return { maxHeight: style.maxHeight, display: style.display, bodyOverflow: getComputedStyle(body).overflowY };
+  });
+  expect(modalMetrics.maxHeight).toContain('px');
+  expect(modalMetrics.display).toBe('grid');
+  expect(modalMetrics.bodyOverflow).toBe('auto');
+
+  await page.evaluate(() => {
+    const modal = document.getElementById('householdModal');
+    window.bootstrap.Modal.getInstance(modal)?.hide();
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+    document.querySelectorAll('.modal-backdrop').forEach((el) => el.remove());
+  });
+});
