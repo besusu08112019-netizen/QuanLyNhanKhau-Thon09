@@ -3617,3 +3617,77 @@ body.theme-dark .report-group-item strong, body.theme-dark .report-bi-chart h4, 
 
 .report-preview-title { padding: 14px 16px 0; color: #0b6b3a; font-size: 16px; font-weight: 850; }
 body.theme-dark .report-preview-title { color: #e5e7eb; }
+
+
+/* Sprint 14.4 mobile bottom navigation safe-area fix */
+@media (max-width: 1024px) {
+  body.app-authenticated,
+  body.app-authenticated .app-shell,
+  body.app-authenticated .main-area {
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  body.app-authenticated .main-area {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.app-authenticated .screen,
+  body.app-authenticated .dashboard-overview-screen,
+  body.app-authenticated .operation-center-screen,
+  body.app-authenticated .person-management-screen,
+  body.app-authenticated .household-management-screen,
+  body.app-authenticated .report-screen,
+  body.app-authenticated .smart-report-screen,
+  body.app-authenticated .gis-screen {
+    min-height: auto;
+    overflow-y: visible;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.app-authenticated .gis-layout {
+    min-height: auto;
+  }
+
+  body.app-authenticated .gis-panel {
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  body.app-authenticated .modal-dialog.modal-fullscreen,
+  body.app-authenticated .modal.fullscreen .modal-dialog,
+  body.app-authenticated .mobile-filter-sheet {
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 820px) {
+  body.app-authenticated {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.app-authenticated .screen,
+  body.app-authenticated .dashboard-overview-screen,
+  body.app-authenticated .operation-center-screen,
+  body.app-authenticated .person-management-screen,
+  body.app-authenticated .household-management-screen,
+  body.app-authenticated .report-screen,
+  body.app-authenticated .smart-report-screen,
+  body.app-authenticated .gis-screen {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.app-authenticated .mobile-bottom-nav {
+    bottom: 0;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.app-authenticated #householdsScreen.active .module-action-row,
+  body.app-authenticated #personsScreen.active .person-action-row,
+  body.app-authenticated .modal-dialog.modal-fullscreen,
+  body.app-authenticated .modal.fullscreen .modal-dialog {
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+}

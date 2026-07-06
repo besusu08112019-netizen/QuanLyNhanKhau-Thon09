@@ -177,3 +177,53 @@ test('smart reporting renders center, filters, BI and export actions', async ({ 
   await expect(page.locator('#reportWordBtn')).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
+
+
+test('mobile bottom navigation does not cover module content', async ({ page }) => {
+  await page.route('**/api/**', async (route) => {
+    const url = route.request().url();
+    const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
+    if (url.includes('/api/public/login-config')) return payload(loginConfig.data);
+    if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/reports/center')) return payload({ groups: [], templates: [], filters: [], exports: [] });
+    if (url.includes('/api/reports/bi')) return payload({ metrics: {}, charts: {}, progress: [] });
+    if (url.includes('/api/reports/templates')) return payload([]);
+    return payload({});
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
+    window.App.token = 'test-token';
+    window.App.csrfToken = 'test-csrf';
+    window.App.user = user;
+    localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_csrf', 'test-csrf');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.showApp === 'function') window.showApp();
+  });
+
+  const viewport = page.viewportSize();
+  if (!viewport || viewport.width > 820) return;
+
+  const nav = page.locator('.mobile-bottom-nav');
+  await expect(nav).toBeVisible();
+  await expect(nav).toHaveCSS('position', 'fixed');
+
+  const screens = [
+    ['dashboard', '#dashboardScreen'],
+    ['operationCenter', '#operationCenterScreen'],
+    ['households', '#householdsScreen'],
+    ['persons', '#personsScreen'],
+    ['gis', '#gisScreen'],
+    ['reports', '#reportsScreen']
+  ];
+
+  for (const [screen, selector] of screens) {
+    await page.evaluate((name) => window.switchScreen && window.switchScreen(name), screen);
+    await expect(page.locator(selector)).toHaveClass(/active/);
+    const paddingBottom = await page.locator(selector).evaluate((el) => parseFloat(getComputedStyle(el).paddingBottom));
+    expect(paddingBottom).toBeGreaterThanOrEqual(100);
+  }
+});
