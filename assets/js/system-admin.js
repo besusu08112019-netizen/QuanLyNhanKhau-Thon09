@@ -1,0 +1,231 @@
+﻿(() => {
+  'use strict';
+
+  const API = '/api/system-admin';
+  const state = { loaded: false, timers: {} };
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+  const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[c]));
+  const fmt = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
+  const token = () => (window.App && App.token) || localStorage.getItem('thon09_token') || '';
+  const csrf = () => (window.App && App.csrfToken) || localStorage.getItem('thon09_csrf') || '';
+
+  document.addEventListener('DOMContentLoaded', boot);
+  document.addEventListener('thon09:auth-state', event => { if (event.detail?.authenticated) boot(); });
+  document.addEventListener('thon09:screen-change', event => { if (event.detail?.screen === 'systemAdmin') loadAll(); });
+
+  function boot() {
+    ensureNav();
+    ensureScreen();
+    wrapSwitchScreen();
+    bindEvents();
+    if (isActive()) loadAll();
+  }
+
+  function ensureNav() {
+    const existing = $('[data-screen="systemAdmin"]');
+    if (existing) { syncAdminNavVisibility(existing); return; }
+    const systemSection = Array.from(document.querySelectorAll('.nav-section')).find(section => (section.textContent || '').includes('Hệ thống'));
+    if (!systemSection) return;
+    const btn = document.createElement('button');
+    btn.className = 'nav-link';
+    btn.dataset.screen = 'systemAdmin';
+    btn.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i><span>Quản trị hệ thống</span>';
+    btn.addEventListener('click', () => window.switchScreen && window.switchScreen('systemAdmin'));
+    syncAdminNavVisibility(btn);
+    systemSection.insertBefore(btn, systemSection.firstElementChild?.nextSibling || null);
+  }
+
+  function syncAdminNavVisibility(btn) {
+    const role = window.App && App.user && App.user.role;
+    btn.classList.toggle('d-none', !['SUPER_ADMIN', 'ADMIN'].includes(role || ''));
+  }
+
+  function ensureScreen() {
+    const main = $('.content-area') || $('.main-content') || $('#appView');
+    if (!main || $('#systemAdminScreen')) return;
+    main.insertAdjacentHTML('beforeend', `
+      <section id="systemAdminScreen" class="screen system-admin-screen">
+        <div class="system-admin-shell">
+          <div class="system-admin-head">
+            <div><h3>Quản trị hệ thống</h3><span id="systemAdminGeneratedAt">Đang tải trạng thái vận hành</span></div>
+            <div class="system-admin-actions">
+              <button class="btn btn-outline-success" type="button" data-system-refresh><i class="fa-solid fa-rotate"></i> Làm mới</button>
+              <button class="btn btn-primary" type="button" data-system-backup="database"><i class="fa-solid fa-database"></i> Backup Database</button>
+              <button class="btn btn-outline-primary" type="button" data-system-backup="full"><i class="fa-solid fa-box-archive"></i> Backup toàn hệ thống</button>
+            </div>
+          </div>
+          <div id="systemAdminOverview" class="system-admin-kpis"></div>
+          <div class="system-admin-grid">
+            ${panel('systemAdminHealth', 'Kiểm tra sức khỏe hệ thống', 'fa-heart-pulse')}
+            ${panel('systemAdminSessions', 'Quản lý phiên đăng nhập', 'fa-user-clock', '<input id="systemSessionSearch" class="form-control form-control-sm" placeholder="Tìm phiên"><select id="systemSessionStatus" class="form-select form-select-sm"><option value="active">Đang hoạt động</option><option value="">Tất cả</option><option value="revoked">Đã thu hồi</option></select><button class="btn btn-sm btn-outline-danger" type="button" data-revoke-all>Đăng xuất tất cả</button>')}
+            ${panel('systemAdminMemory', 'Quản lý bộ nhớ', 'fa-broom')}
+            ${panel('systemAdminPerformance', 'Hiệu năng', 'fa-gauge-high')}
+            ${panel('systemAdminSecurity', 'Bảo mật', 'fa-shield-halved')}
+            ${panel('systemAdminConfig', 'Cấu hình hệ thống', 'fa-gears')}
+          </div>
+        </div>
+      </section>`);
+  }
+
+  function panel(id, title, icon, tools = '') {
+    return '<article class="content-card system-admin-panel"><div class="system-admin-panel-head"><h4><i class="fa-solid ' + icon + '"></i> ' + title + '</h4><div class="system-admin-tools">' + tools + '</div></div><div id="' + id + '"></div></article>';
+  }
+
+  function wrapSwitchScreen() {
+    if (window.__thon09SystemAdminSwitchWrapped) return;
+    window.__thon09SystemAdminSwitchWrapped = true;
+    const original = typeof window.switchScreen === 'function' ? window.switchScreen : null;
+    window.switchScreen = function (screen) {
+      const result = original ? original.apply(this, arguments) : undefined;
+      if (screen === 'systemAdmin') {
+        normalizeHeader();
+        setTimeout(loadAll, 0);
+      }
+      return result;
+    };
+  }
+
+  function normalizeHeader() {
+    const title = $('#screenTitle');
+    const crumb = $('#breadcrumbTrail');
+    if (title) title.textContent = 'Quản trị hệ thống';
+    if (crumb) crumb.textContent = 'Trang chủ / Quản trị hệ thống';
+  }
+
+  function bindEvents() {
+    $('[data-system-refresh]')?.addEventListener('click', () => loadAll(true));
+    $$('[data-system-backup]').forEach(btn => {
+      if (btn.dataset.boundSystemBackup === '1') return;
+      btn.dataset.boundSystemBackup = '1';
+      btn.addEventListener('click', () => createBackup(btn.dataset.systemBackup || 'database'));
+    });
+    $('#systemSessionSearch')?.addEventListener('input', debounce(loadSessions, 300));
+    $('#systemSessionStatus')?.addEventListener('change', loadSessions);
+    $('[data-revoke-all]')?.addEventListener('click', revokeAllSessions);
+  }
+
+  function isActive() { return !!$('#systemAdminScreen.active'); }
+  function loading(selector) { const host = $(selector); if (host) host.innerHTML = '<div class="system-admin-empty">Đang tải dữ liệu...</div>'; }
+  function errorBox(selector, error) { const host = $(selector); if (host) host.innerHTML = '<div class="system-admin-error">' + esc(error?.message || 'Widget tạm thời không tải được') + '</div>'; }
+
+  async function apiGet(path, params = {}) {
+    const query = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
+    if (typeof window.api === 'function') return window.api(path + query, { cacheTtl: 0 });
+    const res = await fetch(path + query, { headers: authHeaders(), cache: 'no-store' });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'Không tải được dữ liệu');
+    return json.data;
+  }
+
+  async function apiPost(path, body = {}) {
+    const res = await fetch(path, { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() }, body: JSON.stringify(body), cache: 'no-store' });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'Không thực hiện được thao tác');
+    return json.data;
+  }
+
+  function authHeaders() {
+    const headers = { Accept: 'application/json' };
+    if (token()) headers.Authorization = 'Bearer ' + token();
+    return headers;
+  }
+
+  function loadAll(force = false) {
+    if (!token()) return;
+    if (state.loaded && !force && !isActive()) return;
+    state.loaded = true;
+    bindEvents();
+    loadOverview(); loadHealth(); loadSessions(); loadMemory(); loadPerformance(); loadSecurity(); loadConfig();
+  }
+
+  async function loadOverview() {
+    loading('#systemAdminOverview');
+    try {
+      const data = await apiGet(API + '/overview');
+      $('#systemAdminGeneratedAt').textContent = 'Cập nhật lúc ' + formatTime(data.system?.generatedAt);
+      const c = data.counts || {}, s = data.storage || {}, sys = data.system || {};
+      $('#systemAdminOverview').innerHTML = [
+        kpi('Phiên bản hệ thống', esc(sys.version || '')), kpi('Database', esc(sys.databaseVersion || '')), kpi('Uptime', esc(sys.uptime || '')),
+        kpi('Dung lượng Upload', esc(s.uploads?.label || '0 B')), kpi('Người dùng', fmt(c.users)), kpi('Hộ', fmt(c.households)),
+        kpi('Nhân khẩu', fmt(c.citizens)), kpi('Hồ sơ số', fmt(c.digitalProfiles)), kpi('Tài liệu', fmt(c.documents)), kpi('Ảnh', fmt(c.images)), kpi('Video', fmt(c.videos))
+      ].join('');
+    } catch (error) { errorBox('#systemAdminOverview', error); }
+  }
+
+  async function loadHealth() {
+    loading('#systemAdminHealth');
+    try {
+      const data = await apiGet(API + '/health');
+      $('#systemAdminHealth').innerHTML = '<div class="system-admin-checks">' + (data.checks || []).map(check => checkRow(check)).join('') + '</div>';
+    } catch (error) { errorBox('#systemAdminHealth', error); }
+  }
+
+  async function loadSessions() {
+    loading('#systemAdminSessions');
+    try {
+      const data = await apiGet(API + '/sessions', { search: value('#systemSessionSearch'), status: value('#systemSessionStatus') || 'active', pageSize: 30 });
+      const rows = data.items || [];
+      $('#systemAdminSessions').innerHTML = rows.length ? '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Người dùng</th><th>Thiết bị</th><th>IP</th><th>Hoạt động</th><th></th></tr></thead><tbody>' + rows.map(row => '<tr><td><strong>' + esc(row.display_name || row.email || '') + '</strong><small>' + esc(row.email || '') + '</small></td><td>' + esc(row.device) + ' / ' + esc(row.browser) + '</td><td>' + esc(row.ip_address || '') + '</td><td><span class="system-admin-status is-' + esc((row.status || '').toLowerCase()) + '">' + esc(row.status) + '</span><small>' + esc(formatTime(row.created_at)) + '</small></td><td>' + (row.status === 'ACTIVE' ? '<button class="btn btn-sm btn-outline-danger" data-revoke-session="' + Number(row.id) + '">Đăng xuất</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>' : empty('Không có phiên phù hợp');
+      $$('[data-revoke-session]').forEach(btn => btn.addEventListener('click', () => revokeSession(btn.dataset.revokeSession)));
+    } catch (error) { errorBox('#systemAdminSessions', error); }
+  }
+
+  async function loadMemory() {
+    loading('#systemAdminMemory');
+    try {
+      const data = await apiGet(API + '/memory');
+      $('#systemAdminMemory').innerHTML = '<div class="system-admin-memory">' + (data.items || []).map(item => '<div><span><strong>' + esc(item.label) + '</strong><small>' + esc(item.stats?.label || '0 B') + ' · ' + fmt(item.stats?.files || item.stats?.expired || 0) + '</small></span>' + cleanupButton(item.key) + '</div>').join('') + '</div>';
+      $$('[data-cleanup]').forEach(btn => btn.addEventListener('click', () => cleanup(btn.dataset.cleanup)));
+    } catch (error) { errorBox('#systemAdminMemory', error); }
+  }
+
+  async function loadPerformance() {
+    loading('#systemAdminPerformance');
+    try {
+      const data = await apiGet(API + '/performance');
+      $('#systemAdminPerformance').innerHTML = '<div class="system-admin-perf">' + (data.metrics || []).map(m => '<div><strong>' + esc(m.label) + '</strong><span>' + esc(m.value) + ' ' + esc(m.unit) + '</span></div>').join('') + '</div><h6>Đề xuất tối ưu</h6><ul class="system-admin-list">' + (data.recommendations || []).map(item => '<li>' + esc(item) + '</li>').join('') + '</ul>';
+    } catch (error) { errorBox('#systemAdminPerformance', error); }
+  }
+
+  async function loadSecurity() {
+    loading('#systemAdminSecurity');
+    try {
+      const data = await apiGet(API + '/security');
+      $('#systemAdminSecurity').innerHTML = '<div class="system-admin-checks">' + (data.checks || []).map(check => checkRow(check)).join('') + '</div>';
+    } catch (error) { errorBox('#systemAdminSecurity', error); }
+  }
+
+  async function loadConfig() {
+    loading('#systemAdminConfig');
+    try {
+      const data = await apiGet(API + '/configuration');
+      const settings = data.settings || {};
+      const keys = ['systemName','hamletName','communeName','email','phone','address','timezone','language'];
+      $('#systemAdminConfig').innerHTML = '<div class="system-admin-config">' + keys.map(key => '<div><span>' + esc(key) + '</span><strong>' + esc(settings[key] || data[key] || '') + '</strong></div>').join('') + '</div><button class="btn btn-sm btn-outline-primary mt-2" type="button" data-open-settings>Mở cấu hình</button>';
+      $('[data-open-settings]')?.addEventListener('click', () => window.switchScreen && window.switchScreen('settings'));
+    } catch (error) { errorBox('#systemAdminConfig', error); }
+  }
+
+  async function createBackup(type) {
+    if (!confirm(type === 'full' ? 'Tạo backup toàn hệ thống? Hiện tại hệ thống sẽ xuất SQL và ghi nhật ký thao tác.' : 'Tạo backup database ngay bây giờ?')) return;
+    const res = await fetch(API + '/backups', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() }, body: JSON.stringify({ type }), cache: 'no-store' });
+    if (!res.ok) { notify('Không tạo được backup', 'danger'); return; }
+    const blob = await res.blob(); const url = URL.createObjectURL(blob); const link = document.createElement('a');
+    link.href = url; link.download = 'system-backup.sql'; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+    notify('Đã tạo backup', 'success');
+  }
+
+  async function revokeSession(id) { if (!confirm('Đăng xuất phiên này?')) return; await apiPost(API + '/sessions/' + id + '/revoke'); notify('Đã đăng xuất phiên', 'success'); loadSessions(); }
+  async function revokeAllSessions() { if (!confirm('Đăng xuất tất cả phiên khác?')) return; await apiPost(API + '/sessions/revoke-all'); notify('Đã đăng xuất các phiên khác', 'success'); loadSessions(); }
+  async function cleanup(target) { if (!confirm('Dọn dẹp mục này? Dữ liệu người dùng sẽ không bị xóa.')) return; const data = await apiPost(API + '/cleanup', { target }); notify('Đã dọn ' + (data.label || ''), 'success'); loadMemory(); }
+
+  function kpi(label, value) { return '<div class="system-admin-kpi"><span>' + esc(label) + '</span><strong>' + value + '</strong></div>'; }
+  function checkRow(check) { return '<div class="system-admin-check is-' + esc(check.status || 'ok') + '"><span></span><div><strong>' + esc(check.label) + '</strong><small>' + esc(check.message) + '</small></div></div>'; }
+  function cleanupButton(key) { return ['cache','sessions','tmp'].includes(key) ? '<button class="btn btn-sm btn-outline-danger" data-cleanup="' + esc(key) + '">Dọn</button>' : '<span class="text-muted small">Chỉ xem</span>'; }
+  function empty(text) { return '<div class="system-admin-empty">' + esc(text) + '</div>'; }
+  function value(selector) { return String($(selector)?.value || '').trim(); }
+  function formatTime(value) { if (!value) return ''; try { return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)); } catch (_) { return String(value); } }
+  function debounce(fn, wait) { let timer; return function () { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, arguments), wait); }; }
+  function notify(message, type) { if (typeof window.showToast === 'function') window.showToast(message, type || 'info'); }
+})();

@@ -374,6 +374,7 @@
   <script src="assets/js/sprint10.min.js"></script>
   <script src="assets/js/view-inline-patches.min.js"></script>
   <script src="assets/js/operation-center.min.js"></script>
+  <script src="assets/js/system-admin.min.js"></script>
   <script src="assets/js/report.min.js"></script>
   <script src="assets/js/gis-household-location.min.js"></script>
   <script src="assets/js/household-photo-capture.min.js"></script>

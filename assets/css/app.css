@@ -3866,3 +3866,52 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
     right: max(10px, env(safe-area-inset-right, 0px));
   }
 }
+
+/* Sprint 17 system administration center */
+.system-admin-screen { background: #f6f8fb; }
+.system-admin-shell { display: grid; gap: 16px; }
+.system-admin-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.system-admin-head h3 { margin: 0; color: #0f3768; font-size: 22px; font-weight: 850; }
+.system-admin-head span { color: #64748b; font-size: 13px; }
+.system-admin-actions, .system-admin-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.system-admin-tools .form-control, .system-admin-tools .form-select { width: auto; min-width: 150px; }
+.system-admin-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.system-admin-kpi { border: 1px solid #dbe5ef; background: #fff; border-radius: 8px; padding: 13px; min-height: 84px; }
+.system-admin-kpi span { display: block; color: #64748b; font-size: 12px; margin-bottom: 7px; }
+.system-admin-kpi strong { display: block; color: #10243e; font-size: 22px; line-height: 1.2; word-break: break-word; }
+.system-admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.system-admin-panel { min-height: 260px; }
+.system-admin-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.system-admin-panel-head h4 { margin: 0; color: #0b6b3a; font-size: 15px; font-weight: 850; text-transform: uppercase; }
+.system-admin-checks, .system-admin-memory, .system-admin-config { display: grid; gap: 8px; }
+.system-admin-check, .system-admin-memory > div, .system-admin-config > div { border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 10px; }
+.system-admin-check { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 10px; align-items: start; }
+.system-admin-check > span { width: 10px; height: 10px; border-radius: 50%; background: #16a34a; margin-top: 5px; }
+.system-admin-check.is-warning > span { background: #d97706; }
+.system-admin-check.is-error > span { background: #dc2626; }
+.system-admin-check strong, .system-admin-memory strong, .system-admin-config strong { display: block; color: #172033; }
+.system-admin-check small, .system-admin-memory small, .system-admin-config span { display: block; color: #64748b; font-size: 12px; }
+.system-admin-memory > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.system-admin-perf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.system-admin-perf > div { border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 10px; }
+.system-admin-perf strong, .system-admin-perf span { display: block; }
+.system-admin-perf span { color: #0f3768; font-weight: 850; font-size: 18px; }
+.system-admin-list { margin: 0; padding-left: 18px; color: #334155; }
+.system-admin-status { display: inline-block; border-radius: 999px; padding: 3px 8px; background: #eef2f7; color: #334155; font-size: 12px; font-weight: 800; }
+.system-admin-status.is-active { background: #dcfce7; color: #166534; }
+.system-admin-status.is-revoked, .system-admin-status.is-expired { background: #fee2e2; color: #991b1b; }
+.system-admin-panel td small { display: block; color: #64748b; }
+.system-admin-empty, .system-admin-error { padding: 14px; border-radius: 8px; background: #f8fafc; color: #64748b; }
+.system-admin-error { background: #fef2f2; color: #b91c1c; }
+@media (max-width: 1100px) {
+  .system-admin-head { align-items: stretch; flex-direction: column; }
+  .system-admin-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .system-admin-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .system-admin-screen { padding: 12px; }
+  .system-admin-actions, .system-admin-tools { display: grid; grid-template-columns: 1fr; width: 100%; }
+  .system-admin-tools .form-control, .system-admin-tools .form-select, .system-admin-actions .btn { width: 100%; }
+  .system-admin-kpis, .system-admin-perf { grid-template-columns: 1fr; }
+  .system-admin-memory > div { align-items: stretch; flex-direction: column; }
+}

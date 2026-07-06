@@ -38,6 +38,7 @@ use App\Controllers\PersonController;
 use App\Controllers\ProfileController;
 use App\Controllers\ReportController;
 use App\Controllers\SettingController;
+use App\Controllers\SystemAdminController;
 use App\Controllers\UserController;
 
 Autoloader::register();
@@ -226,6 +227,18 @@ $router->get('/api/backups', [BackupController::class, 'index']);
 $router->post('/api/backups', [BackupController::class, 'create']);
 $router->post('/api/backups/restore', [BackupController::class, 'restore']);
 
+$router->get('/api/system-admin/overview', [SystemAdminController::class, 'overview']);
+$router->get('/api/system-admin/health', [SystemAdminController::class, 'health']);
+$router->get('/api/system-admin/sessions', [SystemAdminController::class, 'sessions']);
+$router->post('/api/system-admin/sessions/{id}/revoke', [SystemAdminController::class, 'revokeSession']);
+$router->post('/api/system-admin/sessions/revoke-all', [SystemAdminController::class, 'revokeAllSessions']);
+$router->get('/api/system-admin/memory', [SystemAdminController::class, 'memory']);
+$router->post('/api/system-admin/cleanup', [SystemAdminController::class, 'cleanup']);
+$router->get('/api/system-admin/performance', [SystemAdminController::class, 'performance']);
+$router->get('/api/system-admin/security', [SystemAdminController::class, 'security']);
+$router->get('/api/system-admin/configuration', [SystemAdminController::class, 'configuration']);
+$router->post('/api/system-admin/backups', [SystemAdminController::class, 'createBackup']);
+
 $router->get('/api/operation-center/notifications', [OperationCenterController::class, 'notifications']);
 $router->get('/api/operation-center/tasks', [OperationCenterController::class, 'tasks']);
 $router->get('/api/operation-center/search', [OperationCenterController::class, 'search']);
@@ -299,6 +312,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/sprint10.min.js',
         'assets/js/view-inline-patches.min.js',
         'assets/js/operation-center.min.js',
+        'assets/js/system-admin.min.js',
         'assets/js/gis-household-location.min.js',
         'assets/js/household-photo-capture.min.js',
         'assets/js/household-photo-camera-fix.min.js',

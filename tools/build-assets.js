@@ -46,6 +46,7 @@ const assets = [
   ['assets/js/sprint10.js', 'assets/js/sprint10.min.js', compactJs],
   ['assets/js/view-inline-patches.js', 'assets/js/view-inline-patches.min.js', compactJs],
   ['assets/js/operation-center.js', 'assets/js/operation-center.min.js', compactJs],
+  ['assets/js/system-admin.js', 'assets/js/system-admin.min.js', compactJs],
   ['assets/js/report.js', 'assets/js/report.min.js', compactJs],
   ['assets/js/gis-household-location.js', 'assets/js/gis-household-location.min.js', compactJs],
   ['assets/js/household-photo-capture.js', 'assets/js/household-photo-capture.min.js', compactJs],

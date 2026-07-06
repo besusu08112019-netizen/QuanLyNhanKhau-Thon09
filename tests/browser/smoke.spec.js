@@ -388,3 +388,47 @@ test('mobile FAB stays above bottom navigation and hides under overlays', async 
 
   await page.evaluate(() => document.body.classList.remove('mobile-filter-active'));
 });
+
+
+test('system administration center renders independent operation widgets', async ({ page }) => {
+  const consoleErrors = [];
+  page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+  await page.route('**/api/**', async (route) => {
+    const url = route.request().url();
+    const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
+    if (url.includes('/api/public/login-config')) return payload(loginConfig.data);
+    if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/system-admin/overview')) return payload({ system: { version: 'test-v17', databaseVersion: '8.0', uptime: 'Load 0.1', generatedAt: new Date().toISOString() }, counts: { users: 2, households: 3, citizens: 9, digitalProfiles: 4, documents: 5, images: 6, videos: 1 }, storage: { uploads: { label: '10 MB' } } });
+    if (url.includes('/api/system-admin/health')) return payload({ summary: { ok: 3, warning: 0, error: 0 }, checks: [{ label: 'Database connection', status: 'ok', message: 'OK' }, { label: 'API health', status: 'ok', message: 'OK' }] });
+    if (url.includes('/api/system-admin/sessions')) return payload({ items: [{ id: 1, email: 'admin@example.test', display_name: 'Admin Test', device: 'Desktop', browser: 'Chrome', ip_address: '127.0.0.1', status: 'ACTIVE', created_at: new Date().toISOString() }], total: 1 });
+    if (url.includes('/api/system-admin/memory')) return payload({ items: [{ key: 'cache', label: 'Cache', stats: { label: '1 KB', files: 1 } }, { key: 'sessions', label: 'Expired sessions', stats: { label: '0 sessions', expired: 0 } }] });
+    if (url.includes('/api/system-admin/performance')) return payload({ metrics: [{ label: 'Database response', value: 12, unit: 'ms' }], recommendations: ['Watch APIs over 500ms'] });
+    if (url.includes('/api/system-admin/security')) return payload({ checks: [{ label: 'CSRF', status: 'ok', message: 'Enabled' }, { label: 'SQL Injection', status: 'ok', message: 'Prepared statements' }] });
+    if (url.includes('/api/system-admin/configuration')) return payload({ settings: { systemName: 'Test System', hamletName: 'Hamlet 09', communeName: 'Hong Phong' }, timezone: 'Asia/Bangkok' });
+    return payload({});
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
+    window.App.token = 'test-token';
+    window.App.csrfToken = 'test-csrf';
+    window.App.user = user;
+    localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_csrf', 'test-csrf');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.showApp === 'function') window.showApp();
+    if (typeof window.switchScreen === 'function') window.switchScreen('systemAdmin');
+  });
+
+  await expect(page.locator('#systemAdminScreen')).toHaveClass(/active/);
+  await expect(page.locator('[data-screen="systemAdmin"]')).toBeVisible();
+  await expect(page.locator('#systemAdminOverview')).toContainText('test-v17');
+  await expect(page.locator('#systemAdminHealth')).toContainText('Database connection');
+  await expect(page.locator('#systemAdminSessions')).toContainText('Admin Test');
+  await expect(page.locator('#systemAdminMemory')).toContainText('Cache');
+  await expect(page.locator('#systemAdminSecurity')).toContainText('CSRF');
+  await expect(page.locator('#systemAdminConfig')).toContainText('Test System');
+  expect(consoleErrors).toEqual([]);
+});
