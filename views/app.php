@@ -348,7 +348,7 @@
               <button id="reportWordBtn" class="btn report-action-btn report-word-btn" type="button"><i class="fa-solid fa-file-word"></i> Word</button>
             </div>
           </div>
-          <div id="reportPreview" class="report-preview table-responsive"><div class="report-empty-state">Ch?n lo?i b?o c?o v? b?m Xem b&#225;o c&#225;o ?? sinh d? li?u.</div></div>
+          <div id="reportPreview" class="report-preview table-responsive"><div class="report-empty-state">Chọn loại báo cáo và bấm Xem báo cáo để sinh dữ liệu.</div></div>
         </div>
       </section>
     </section>

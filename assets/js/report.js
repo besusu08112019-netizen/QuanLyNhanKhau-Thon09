@@ -183,7 +183,7 @@
     if (!items.length) return renderBox('#reportSavedTemplates', '<div class="report-template-empty">Ch?a c? m?u ?? l?u</div>');
     renderBox('#reportSavedTemplates', items.map(item => {
       const filters = esc(item.filters_json || '{}');
-      return '<article class="report-saved-template"><button type="button" data-template-open="' + item.id + '" data-filters="' + filters + '" data-type="' + esc(item.type) + '"><strong>' + esc(item.name) + '</strong><span>' + esc(item.type) + (Number(item.is_default) ? ' - M?c ??nh' : '') + '</span></button><div><button type="button" title="??t m?c ??nh" data-template-default="' + item.id + '"><i class="fa-solid fa-star"></i></button><button type="button" title="X?a" data-template-delete="' + item.id + '"><i class="fa-solid fa-trash"></i></button></div></article>';
+      return '<article class="report-saved-template"><button type="button" data-template-open="' + item.id + '" data-filters="' + filters + '" data-type="' + esc(item.type) + '"><strong>' + esc(item.name) + '</strong><span>' + esc(item.type) + (Number(item.is_default) ? ' - Mặc định' : '') + '</span></button><div><button type="button" title="Đặt mặc định" data-template-default="' + item.id + '"><i class="fa-solid fa-star"></i></button><button type="button" title="Xóa" data-template-delete="' + item.id + '"><i class="fa-solid fa-trash"></i></button></div></article>';
     }).join(''));
     $$('[data-template-open]').forEach(btn => btn.addEventListener('click', () => openTemplate(btn)));
     $$('[data-template-delete]').forEach(btn => btn.addEventListener('click', () => deleteTemplate(btn.dataset.templateDelete)));

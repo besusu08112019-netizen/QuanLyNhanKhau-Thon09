@@ -131,7 +131,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'delete');
         $this->reports->deleteTemplate((int) ($user['id'] ?? 0), (int) $id);
-        $this->audit($user, 'report', 'delete_template', 'X?a m?u b?o c?o', $id);
+        $this->audit($user, 'report', 'delete_template', 'Xóa mẫu báo cáo', $id);
         $this->ok(['deleted' => true, 'id' => (int) $id]);
     }
 

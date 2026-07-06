@@ -45,7 +45,7 @@
         + '<td>' + safe(row.identity_number || '') + '</td>'
         + '<td><span class="person-badge ' + residenceClass + '">' + safe(residenceText) + '</span></td>'
         + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
-        + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + Number(row.id || 0) + ')">Xem</button>' + (canUpdateCitizen ? ' <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + Number(row.id || 0) + ')">S?a</button>' : '') + (canDeleteCitizen ? ' <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + Number(row.id || 0) + ')">X?a</button>' : '') + '</td>'
+        + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + Number(row.id || 0) + ')">Xem</button>' + (canUpdateCitizen ? ' <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + Number(row.id || 0) + ')">Sửa</button>' : '') + (canDeleteCitizen ? ' <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + Number(row.id || 0) + ')">Xóa</button>' : '') + '</td>'
         + '</tr>';
     };
 

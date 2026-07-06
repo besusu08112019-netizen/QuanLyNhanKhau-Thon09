@@ -46,12 +46,12 @@ function canAccess(module, action) {
 }
 function requireUiPermission(module, action) {
   if (canAccess(module, action)) return true;
-  showToast('T�i kho?n hi?n t?i kh�ng c� quy?n th?c hi?n thao t�c n�y', 'warning');
+  showToast('Tài khoản hiện tại không có quyền thực hiện thao tác này', 'warning');
   return false;
 }
 function actionCell(buttons) {
   const html = buttons.filter(Boolean).join(' ');
-  return '<td class="text-end">' + (html || '<span class="text-muted small">Ch? xem</span>') + '</td>';
+  return '<td class="text-end">' + (html || '<span class="text-muted small">Chỉ xem</span>') + '</td>';
 }
 function applyAccessControls() {
   const admin = isAdminRole();
@@ -971,8 +971,8 @@ async function loadHouseholds() {
       '<td>' + householdBadges(row) + '</td>' +
       actionCell([
         '<button class="btn btn-sm btn-outline-secondary" onclick="showHousehold(' + row.id + ')">Xem</button>',
-        canUpdateHousehold ? '<button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">S?a</button>' : '',
-        canDeleteHousehold ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">X?a</button>' : ''
+        canUpdateHousehold ? '<button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button>' : '',
+        canDeleteHousehold ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button>' : ''
       ]) +
     '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
     updateBulkDeleteButtons();
@@ -1063,8 +1063,8 @@ function personRow(row) {
     + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
     + actionCell([
       '<button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button>',
-      canAccess('citizen', 'update') ? '<button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">S?a</button>' : '',
-      canAccess('citizen', 'delete') ? '<button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">X?a</button>' : ''
+      canAccess('citizen', 'update') ? '<button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button>' : '',
+      canAccess('citizen', 'delete') ? '<button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">Xóa</button>' : ''
     ])
     + '</tr>';
 }
