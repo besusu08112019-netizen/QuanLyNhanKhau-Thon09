@@ -933,42 +933,46 @@ function normalizePersonDetailData(row) {
     acc[normalizedKey] = value;
     return acc;
   }, {});
-  if (!hasDisplayValue(normalized.age) && hasDisplayValue(normalized.dateOfBirth)) normalized.age = calculateAge(normalized.dateOfBirth);
+  if (!personHasTextValue(normalized.age) && personHasTextValue(normalized.dateOfBirth)) normalized.age = calculateAge(normalized.dateOfBirth);
+  normalized.displayAddress = firstPersonValue(normalized.currentAddress, normalized.permanentAddress, normalized.householdAddress);
+  normalized.displayStatus = firstPersonValue(normalized.lifeStatus, normalized.recordStatus);
   return normalized;
 }
 
 function buildDynamicPersonGroups(data) {
   const used = new Set(personInternalFields());
   const groupDefs = [
-    { key: 'basic', title: 'Thong tin co ban', icon: 'fa-id-card', fields: ['fullName','relationship','dateOfBirth','age','gender','identityNumber','phone'] },
-    { key: 'residence', title: 'Cu tru va ho gia dinh', icon: 'fa-house-user', fields: ['householdCode','headCitizenName','residencyStatus','presenceStatus','householdAddress','permanentAddress','currentAddress','areaCode','recordStatus'] },
-    { key: 'personal', title: 'Thong tin ca nhan', icon: 'fa-user', fields: ['ethnicity','religion','occupation','job','workPlace','educationLevel','maritalStatus','nationality','bloodType'] },
+    { key: 'basic', title: 'Thong tin co ban', icon: 'fa-id-card', required: true, fields: ['citizenCode','fullName','relationship','householdCode','dateOfBirth','age','gender','identityNumber','residencyStatus','displayAddress','displayStatus'] },
+    { key: 'personal', title: 'Thong tin mo rong', icon: 'fa-user', fields: ['occupation','job','workPlace','educationLevel','maritalStatus','phone','email','ethnicity','religion','nationality','bloodType'] },
     { key: 'administrative', title: 'Thong tin nghiep vu', icon: 'fa-landmark', fields: ['healthInsurance','socialInsurance','partyMember','youthUnionMember','womenUnionMember','farmersUnionMember','veteransUnionMember','elderlyUnionMember','meritoriousPerson','martyrRelative','woundedSoldier','sickSoldier','socialAssistance','poorHousehold','nearPoorHousehold','disabledPerson','disabledHousehold','householdType','employed','unemployed','freelanceLabor','outProvinceLabor','foreignLabor','pupil','student','retired','note'] }
   ];
   const groups = groupDefs.map(def => ({ ...def, items: [] }));
   const addField = (group, key) => {
-    if (used.has(key) || !isAllowedPersonDetailField(key) || !Object.prototype.hasOwnProperty.call(data, key) || !hasDisplayValue(data[key])) return;
+    if (used.has(key) || !isAllowedPersonDetailField(key) || !Object.prototype.hasOwnProperty.call(data, key)) return;
+    const required = group.required === true;
+    if (!required && !personHasExtendedValue(data[key])) return;
     const label = personFieldLabel(key);
     if (!label) return;
     used.add(key);
-    group.items.push({ key, label, value: formatPersonDetailValue(key, data[key]) });
+    group.items.push({ key, label, value: formatPersonDetailValue(key, data[key], required) });
   };
   groups.forEach(group => group.fields.forEach(key => addField(group, key)));
   Object.keys(data).forEach(key => {
-    if (used.has(key) || !isAllowedPersonDetailField(key) || !hasDisplayValue(data[key])) return;
+    if (used.has(key) || !isAllowedPersonDetailField(key) || !personHasExtendedValue(data[key])) return;
     const label = personFieldLabel(key);
     if (!label) return;
-    const group = groups.find(item => item.key === inferPersonGroup(key)) || groups[3];
+    const group = groups.find(item => item.key === inferPersonGroup(key)) || groups[groups.length - 1];
     used.add(key);
-    group.items.push({ key, label, value: formatPersonDetailValue(key, data[key]) });
+    group.items.push({ key, label, value: formatPersonDetailValue(key, data[key], false) });
   });
-  return groups.filter(group => group.items.length);
+  return groups.filter(group => group.required || group.items.length);
 }
 
 function personInternalFields() {
   return [
     'id','householdId','citizenId','headCitizenId','createdAt','created_at','createdBy','created_by','createdByName','createdByEmail','updatedAt','updated_at','updatedBy','updated_by','updatedByName','updatedByEmail','deletedAt','deleted_at','deletedBy','deleted_by','deletedByName','deletedByEmail',
-    'statusRaw','module','entityId','entityType','password','passwordHash','rememberToken','token','csrf','apiKey','sortOrder','rowNumber','personPhoto','photo','avatar','image','photoUrl','filePath','storedName','originalName','mimeType','metadata','beforeData','afterData','userAgent','ipAddress'
+    'statusRaw','module','entityId','entityType','password','passwordHash','rememberToken','token','csrf','apiKey','sortOrder','rowNumber','personPhoto','photo','avatar','image','photoUrl','filePath','storedName','originalName','mimeType','metadata','beforeData','afterData','userAgent','ipAddress',
+    'currentAddress','permanentAddress','householdAddress','lifeStatus','recordStatus'
   ];
 }
 
@@ -978,8 +982,7 @@ function isAllowedPersonDetailField(key) {
 
 function inferPersonGroup(key) {
   const text = normalizeSearchText(key);
-  if (/house|address|residen|presence|temporary|permanent|relation|area|head|ho|diachi|cu tru|tam tru|tam vang/.test(text)) return 'residence';
-  if (/job|work|occupation|ethnic|religion|education|marital|national|blood|nghe|dan toc|ton giao|hoc van|hon nhan|quoc tich/.test(text)) return 'personal';
+  if (/job|work|occupation|ethnic|religion|education|marital|national|blood|email|phone|nghe|dan toc|ton giao|hoc van|hon nhan|quoc tich/.test(text)) return 'personal';
   return 'administrative';
 }
 
@@ -998,29 +1001,54 @@ function hasDisplayValue(value) {
   return !['null','undefined','n/a','na','--','—','khong co du lieu'].includes(normalizeSearchText(text));
 }
 
-function formatPersonDetailValue(key, value) {
-  if (Array.isArray(value)) return value.filter(hasDisplayValue).map(item => formatPersonDetailValue(key, item)).join(', ');
-  if (typeof value === 'object' && value !== null) return Object.entries(value).filter(([k, v]) => hasDisplayValue(v) && personFieldLabel(k)).map(([k, v]) => personFieldLabel(k) + ': ' + formatPersonDetailValue(k, v)).join('; ');
-  const bool = booleanDisplayValue(value);
+function personHasTextValue(value) {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.some(personHasTextValue);
+  if (typeof value === 'object') return Object.values(value).some(personHasTextValue);
+  const text = String(value).trim();
+  if (!text) return false;
+  const normalized = normalizeSearchText(text);
+  if (normalized.startsWith('kh') && normalized.endsWith('ng')) return false;
+  return !['0','false','null','undefined','n/a','na','--','—','khong','khong co','khong co du lieu'].includes(normalized);
+}
+
+function personBooleanState(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0) return false;
+  const text = normalizeSearchText(value);
+  if (['1','co','yes','true'].includes(text)) return true;
+  if ((text.startsWith('kh') && text.endsWith('ng')) || ['0','khong','no','false'].includes(text)) return false;
+  return null;
+}
+
+function personHasExtendedValue(value) {
+  const bool = personBooleanState(value);
   if (bool !== null) return bool;
+  return personHasTextValue(value);
+}
+
+function firstPersonValue(...values) {
+  return values.find(value => personHasTextValue(value)) ?? '';
+}
+
+function formatPersonDetailValue(key, value, required = false) {
+  if (Array.isArray(value)) return value.filter(personHasExtendedValue).map(item => formatPersonDetailValue(key, item, required)).join(', ');
+  if (typeof value === 'object' && value !== null) return Object.entries(value).filter(([k, v]) => personHasExtendedValue(v) && personFieldLabel(k)).map(([k, v]) => personFieldLabel(k) + ': ' + formatPersonDetailValue(k, v, false)).join('; ');
+  const bool = personBooleanState(value);
+  if (bool !== null) return bool ? 'Co' : (required ? '' : '');
   if (/date|birth|ngay/i.test(key)) return formatDate(value);
   if (key === 'residencyStatus') return residencyLabel(value);
   if (key === 'presenceStatus') return presenceLabel(value);
   if (key === 'lifeStatus') return lifeLabel(value);
   if (key === 'recordStatus') return recordStatusLabel(value);
-  return String(value).trim();
-}
-
-function booleanDisplayValue(value) {
-  if (value === true || value === 1 || value === '1') return 'Co';
-  if (value === false || value === 0 || value === '0') return 'Khong';
-  return null;
+  if (key === 'displayStatus') return formatPersonStatusValue(value);
+  return String(value ?? '').trim();
 }
 
 function personDetailLabels() {
   return {
     householdCode: 'Ma ho', citizenCode: 'Ma nhan khau', fullName: 'Ho ten', gender: 'Gioi tinh', dateOfBirth: 'Ngay sinh', age: 'Tuoi', identityNumber: 'CCCD/So dinh danh', phone: 'So dien thoai', email: 'Thu dien tu',
-    householdAddress: 'Dia chi ho', permanentAddress: 'Dia chi thuong tru', currentAddress: 'Dia chi hien tai', areaCode: 'Khu vuc', headCitizenName: 'Chu ho', relationship: 'Quan he voi chu ho', residencyStatus: 'Cu tru', presenceStatus: 'Hien tai', lifeStatus: 'Tinh trang', recordStatus: 'Trang thai ho so',
+    displayAddress: 'Dia chi', displayStatus: 'Tinh trang', relationship: 'Quan he voi chu ho', residencyStatus: 'Cu tru', presenceStatus: 'Hien tai',
     occupation: 'Nghe nghiep', job: 'Nghe nghiep', workPlace: 'Noi lam viec', ethnicity: 'Dan toc', religion: 'Ton giao', educationLevel: 'Trinh do hoc van', maritalStatus: 'Tinh trang hon nhan', nationality: 'Quoc tich', bloodType: 'Nhom mau',
     partyMember: 'Dang vien', youthUnionMember: 'Doan vien Thanh nien', womenUnionMember: 'Hoi vien Hoi Phu nu', farmersUnionMember: 'Hoi vien Hoi Nong dan', veteransUnionMember: 'Hoi vien Hoi Cuu chien binh', elderlyUnionMember: 'Hoi vien Hoi Nguoi cao tuoi',
     meritoriousPerson: 'Nguoi co cong', martyrRelative: 'Than nhan liet si', woundedSoldier: 'Thuong binh', sickSoldier: 'Benh binh', disabledPerson: 'Nguoi khuyet tat', disabledHousehold: 'Ho co nguoi khuyet tat', socialAssistance: 'Bao tro xa hoi', householdType: 'Dien ho', poorHousehold: 'Ho ngheo', nearPoorHousehold: 'Ho can ngheo', healthInsurance: 'Bao hiem y te', socialInsurance: 'Bao hiem xa hoi',
@@ -1041,7 +1069,7 @@ function toCamelCase(key) {
 }
 
 function renderCodeBadge(label, value) {
-  return hasDisplayValue(value) ? '<strong>' + escapeHtml(label) + ': ' + escapeHtml(value) + '</strong>' : '';
+  return personHasTextValue(value) ? '<strong>' + escapeHtml(label) + ': ' + escapeHtml(value) + '</strong>' : '';
 }
 
 function isCodePersonField(key) {
@@ -1050,14 +1078,20 @@ function isCodePersonField(key) {
 
 function buildPersonHeroBadges(data) {
   return [
-    ['gender', data.gender, 'neutral'], ['partyMember', data.partyMember, 'green'], ['relationship', data.relationship === 'Chu ho' ? 'Chu ho' : '', 'gold'],
+    ['gender', data.gender, 'neutral'], ['partyMember', data.partyMember, 'green'], ['relationship', normalizeSearchText(data.relationship) === 'chu ho' ? 'Chu ho' : '', 'gold'],
     ['residencyStatus', data.residencyStatus, 'blue'], ['presenceStatus', data.presenceStatus, 'purple']
-  ].filter(([, value]) => hasDisplayValue(value)).map(([key, value, tone]) => '<span class="person-detail-badge person-detail-badge-' + tone + '">' + escapeHtml(formatPersonDetailValue(key, value)) + '</span>');
+  ].filter(([, value]) => personHasExtendedValue(value)).map(([key, value, tone]) => '<span class="person-detail-badge person-detail-badge-' + tone + '">' + escapeHtml(formatPersonDetailValue(key, value, false)) + '</span>');
 }
 
 function recordStatusLabel(value) {
   const key = String(value || '').trim().toUpperCase();
   return ({ ACTIVE: 'Dang quan ly', INACTIVE: 'Ngung quan ly', DELETED: 'Da xoa', MOVED: 'Da chuyen di' })[key] || String(value || '').trim();
+}
+
+function formatPersonStatusValue(value) {
+  const key = String(value || '').trim().toUpperCase();
+  if (['ALIVE','DECEASED'].includes(key)) return lifeLabel(value);
+  return recordStatusLabel(value);
 }
 
 function calculateAge(value) {
