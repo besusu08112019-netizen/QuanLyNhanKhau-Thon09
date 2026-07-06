@@ -9,6 +9,7 @@
     lastSearch: '',
     thumbnailCache: new Map(),
     lastRows: [],
+    lastLocatedRows: [],
     openPopupId: '',
     renderingMarkers: false,
     reopeningPopup: false,
@@ -495,6 +496,34 @@
     return params;
   }
 
+  function locatedRowsFromResponse(rows) {
+    return (rows || []).filter(row => row.latitude != null && row.longitude != null);
+  }
+
+  function renderLocatedMarkers(rows) {
+    if (!state.layer) return;
+    state.layer.clearLayers();
+    state.markers.clear();
+    rows.forEach(row => {
+      const marker = L.marker([row.latitude, row.longitude], { icon: markerIcon(false, row.__thumbnailObjectUrl || ''), title: row.head_citizen_name || row.household_code, bubblingMouseEvents: false });
+      marker.__thon09HouseholdRow = row;
+      bindHouseholdPopup(marker, row);
+      marker.addTo(state.layer);
+      state.markers.set(String(row.id), marker);
+      hydrateMarkerThumbnail(marker, row);
+    });
+  }
+
+  function restoreMarkersIfMissing() {
+    const m = map();
+    if (!m || !window.L || !state.layer || !isTouchViewport() || !state.lastLocatedRows.length) return;
+    if (typeof m.hasLayer === 'function' && !m.hasLayer(state.layer)) state.layer.addTo(m);
+    const layerHasMarkers = typeof state.layer.getLayers === 'function' ? state.layer.getLayers().length > 0 : state.markers.size > 0;
+    if (state.markers.size > 0 && layerHasMarkers) return;
+    renderLocatedMarkers(state.lastLocatedRows);
+    document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer, restored: true } }));
+  }
+
   async function loadHouseholdMarkers(search, options) {
     if (!isAuthenticated()) return;
     if (shouldDeferMarkerReload(search, options)) return;
@@ -517,23 +546,15 @@
         return;
       }
       const rows = data.items || [];
-      const locatedRows = rows.filter(row => row.latitude != null && row.longitude != null);
+      const locatedRows = locatedRowsFromResponse(rows);
       const keepExistingMarkers = !search && !(options && options.force) && locatedRows.length === 0 && state.markers.size > 0;
       if (keepExistingMarkers) {
         document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer, keptExisting: true } }));
         return;
       }
-      state.layer.clearLayers();
-      state.markers.clear();
       state.openPopupId = popupIdBeforeRender;
-      locatedRows.forEach(row => {
-        const marker = L.marker([row.latitude, row.longitude], { icon: markerIcon(false, row.__thumbnailObjectUrl || ''), title: row.head_citizen_name || row.household_code, bubblingMouseEvents: false });
-        marker.__thon09HouseholdRow = row;
-        bindHouseholdPopup(marker, row);
-        marker.addTo(state.layer);
-        state.markers.set(String(row.id), marker);
-        hydrateMarkerThumbnail(marker, row);
-      });
+      if (locatedRows.length > 0) state.lastLocatedRows = locatedRows;
+      renderLocatedMarkers(locatedRows);
       state.lastRows = rows;
       document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer } }));
       if (search && state.markers.size) {
@@ -575,6 +596,10 @@
       m.on('click touchend pointerup', event => {
         if (Date.now() - state.lastMarkerTouchAt < 700) stopLeafletEvent(event);
       });
+      if (!m.__thon09HouseholdMarkerRestoreBound) {
+        m.__thon09HouseholdMarkerRestoreBound = true;
+        setInterval(restoreMarkersIfMissing, 700);
+      }
     };
     const search = $('#gisSearch');
     if (search && !search.__thon09HouseholdSearchBound) {
@@ -585,6 +610,7 @@
         else loadHouseholdMarkers();
       }, 450));
     }
+    bindMove();
     setInterval(bindMove, 1000);
   }
 
