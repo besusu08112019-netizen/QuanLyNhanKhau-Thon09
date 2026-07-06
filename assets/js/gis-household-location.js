@@ -357,8 +357,9 @@
     loadPreviewBlobUrl(row.thumbnail_file_id).then(url => {
       row.__thumbnailObjectUrl = url;
       marker.__thon09HouseholdRow = row;
-      const popupIsOpen = state.openPopupId === String(row.id) && marker.isPopupOpen && marker.isPopupOpen();
-      if (!popupIsOpen) marker.setIcon(markerIcon(state.activeMarkerId === String(row.id), url));
+      const rowId = normalizeHouseholdId(row);
+      const popupIsOpen = state.openPopupId === rowId && marker.isPopupOpen && marker.isPopupOpen();
+      if (!popupIsOpen) marker.setIcon(markerIcon(state.activeMarkerId === rowId, url));
       marker.setPopupContent(popupHtml(row));
       if (popupIsOpen) {
         marker.openPopup();
@@ -429,13 +430,34 @@
     });
   }
 
+  function normalizeHouseholdId(row) {
+    if (!row) return '';
+    const raw = row.id != null && row.id !== '' ? row.id : (row.household_id != null && row.household_id !== '' ? row.household_id : row.householdId);
+    return raw == null ? '' : String(raw).trim();
+  }
+
+  function normalizeHouseholdRow(row) {
+    if (!row) return null;
+    const id = normalizeHouseholdId(row);
+    return id && String(row.id || '') !== id ? Object.assign({}, row, { id }) : row;
+  }
+
+  function popupActionElement(event) {
+    if (!event) return null;
+    const current = event.currentTarget;
+    if (current && current.dataset && current.dataset.gisPopupAction) return current;
+    const target = event.target;
+    return target && typeof target.closest === 'function' ? target.closest('[data-gis-popup-action]') : null;
+  }
   function popupRowById(id, fallbackRow) {
-    if (fallbackRow && String(fallbackRow.id || '') === String(id || fallbackRow.id || '')) return fallbackRow;
-    if (typeof window.thon09GisGetHouseholdMarkerRow === 'function') {
-      const row = window.thon09GisGetHouseholdMarkerRow(id);
+    const fallback = normalizeHouseholdRow(fallbackRow);
+    const key = String(id || normalizeHouseholdId(fallback) || '').trim();
+    if (fallback && (!key || normalizeHouseholdId(fallback) === key)) return fallback;
+    if (key && typeof window.thon09GisGetHouseholdMarkerRow === 'function') {
+      const row = normalizeHouseholdRow(window.thon09GisGetHouseholdMarkerRow(key));
       if (row) return row;
     }
-    return fallbackRow || null;
+    return fallback || null;
   }
 
   function popupMapUrl(row, provider, routeMode) {
@@ -490,20 +512,22 @@
       event.preventDefault();
       event.stopPropagation();
     }
-    const target = event && event.currentTarget ? event.currentTarget : null;
-    const id = (target && target.dataset.householdId) || (row && row.id);
+    const target = popupActionElement(event);
+    const targetDataset = target && target.dataset ? target.dataset : {};
+    const id = String(targetDataset.householdId || normalizeHouseholdId(row) || '').trim();
     const activeRow = popupRowById(id, row);
-    if (!id) {
+    const householdId = id || normalizeHouseholdId(activeRow);
+    if (!householdId) {
       toast('Không xác định được hộ gia đình.', 'warning');
       return;
     }
-    if (action === 'open') window.thon09GisOpenHousehold(id);
+    if (action === 'open') window.thon09GisOpenHousehold(householdId);
     if (action === 'route') fallbackRouteToHousehold(activeRow);
-    if (action === 'gallery') window.thon09GisOpenHouseholdGallery(id);
-    if (action === 'relocate') window.thon09GisRelocateHousehold(id, target);
-    if (action === 'provider') fallbackOpenMapProvider(activeRow, target ? target.dataset.provider : 'google');
+    if (action === 'gallery') window.thon09GisOpenHouseholdGallery(householdId);
+    if (action === 'relocate') window.thon09GisRelocateHousehold(householdId, target);
+    if (action === 'provider') fallbackOpenMapProvider(activeRow, targetDataset.provider || 'google');
     if (action === 'phone') {
-      const phone = target ? target.dataset.phone : '';
+      const phone = targetDataset.phone || '';
       if (phone) window.location.href = 'tel:' + phone;
     }
   }
@@ -514,7 +538,8 @@
     document.addEventListener('click', event => {
       const button = event.target && event.target.closest ? event.target.closest('.leaflet-popup [data-gis-popup-action]') : null;
       if (!button || button.__thon09PopupActionBound) return;
-      runPopupAction(button.dataset.gisPopupAction, popupRowById(button.dataset.householdId), event);
+      const householdId = button.getAttribute('data-household-id') || '';
+      runPopupAction(button.dataset.gisPopupAction, popupRowById(householdId), event);
     });
   }
 
@@ -545,6 +570,8 @@
   }
 
   function bindHouseholdPopup(marker, row) {
+    row = normalizeHouseholdRow(row) || {};
+    const rowId = normalizeHouseholdId(row);
     const popup = L.popup({ closeButton: true, autoClose: false, closeOnClick: false, bubblingMouseEvents: false, autoPan: true, keepInView: true }).setContent(popupHtml(row));
     popup.on('add', () => {
       protectPopupElement(popup);
@@ -552,16 +579,16 @@
     });
     marker.bindPopup(popup);
     marker.on('click', event => {
-      gisDebugLog('marker click', { id: row.id });
+      gisDebugLog('marker click', { id: rowId });
       state.lastMarkerTouchAt = Date.now();
       stopLeafletPropagation(event);
-      state.openPopupId = String(row.id || '');
+      state.openPopupId = rowId;
       marker.openPopup();
       activateMarker(marker, row);
     });
     marker.on('popupopen', event => {
-      gisDebugLog('popup open', { id: row.id, popupInDom: Boolean(event && event.popup && event.popup.getElement && event.popup.getElement()) });
-      state.openPopupId = String(row.id || '');
+      gisDebugLog('popup open', { id: rowId, popupInDom: Boolean(event && event.popup && event.popup.getElement && event.popup.getElement()) });
+      state.openPopupId = rowId;
       disableMapDraggingForPopup();
       window.thon09GisEnsureHouseholdMarkerLayerVisible && window.thon09GisEnsureHouseholdMarkerLayerVisible();
       protectPopupElement(event && event.popup ? event.popup : marker.getPopup && marker.getPopup());
@@ -569,16 +596,15 @@
       activateMarker(marker, row);
     });
     marker.on('popupclose', () => {
-      gisDebugLog('popup close', { id: row.id, renderingMarkers: state.renderingMarkers, now: Date.now() });
+      gisDebugLog('popup close', { id: rowId, renderingMarkers: state.renderingMarkers, now: Date.now() });
       if (state.renderingMarkers) return;
-      const rowId = String(row.id || '');
       if (state.openPopupId !== rowId) return;
       state.openPopupId = '';
       restoreMapDraggingAfterPopup();
     });
     ['touchstart', 'touchend', 'pointerdown', 'pointerup'].forEach(type => {
       marker.on(type, event => {
-        gisDebugLog('marker ' + type, { id: row.id });
+        gisDebugLog('marker ' + type, { id: rowId });
         state.lastMarkerTouchAt = Date.now();
         stopLeafletPropagation(event);
       });
@@ -586,7 +612,7 @@
   }
 
   function activateMarker(marker, row) {
-    state.activeMarkerId = String(row.id || '');
+    state.activeMarkerId = normalizeHouseholdId(row);
     state.markers.forEach(item => {
       const element = item.getElement && item.getElement();
       if (element) element.classList.remove('is-active');
@@ -596,19 +622,22 @@
   }
 
   function gpsText(row) {
+    row = row || {};
     if (row.latitude == null || row.longitude == null) return 'Chưa có GPS';
     return Number(row.latitude).toFixed(6) + ', ' + Number(row.longitude).toFixed(6);
   }
 
   function popupImageHtml(row) {
+    row = row || {};
     const url = row.__thumbnailObjectUrl || '';
     if (url) return '<img src="' + escapeHtml(url) + '" alt="Ảnh hộ" loading="lazy">';
     return '<div class="gis-household-popup-photo-empty"><i class="fa-solid fa-house-chimney"></i></div>';
   }
 
   function popupHtml(row) {
+    row = normalizeHouseholdRow(row) || {};
     const phone = String(row.phone || '').trim();
-    const householdId = escapeHtml(row.id || '');
+    const householdId = escapeHtml(normalizeHouseholdId(row));
     return '<div class="gis-household-popup gis-smart-popup">' +
       '<div class="gis-smart-popup-head"><div class="gis-smart-popup-photo" data-gis-popup-photo="' + Number(row.thumbnail_file_id || 0) + '">' + popupImageHtml(row) + '</div>' +
       '<div><h4>' + escapeHtml(row.household_code || 'Hộ gia đình') + '</h4><p>' + escapeHtml(row.head_citizen_name || 'Chưa có chủ hộ') + '</p><span>' + escapeHtml(row.household_type || 'Hộ bình thường') + '</span></div></div>' +
@@ -657,7 +686,7 @@
   }
 
   function locatedRowsFromResponse(rows) {
-    return (rows || []).filter(row => row.latitude != null && row.longitude != null);
+    return (rows || []).map(normalizeHouseholdRow).filter(row => row && row.latitude != null && row.longitude != null);
   }
 
   function renderLocatedMarkers(rows) {
@@ -670,7 +699,7 @@
       marker.__thon09HouseholdRow = row;
       bindHouseholdPopup(marker, row);
       marker.addTo(state.layer);
-      state.markers.set(String(row.id), marker);
+      state.markers.set(normalizeHouseholdId(row), marker);
       hydrateMarkerThumbnail(marker, row);
     });
   }
@@ -791,7 +820,7 @@
   window.thon09GisFocusHouseholdMarker = function (row) {
     const m = map();
     if (!m || !row) return false;
-    const id = String(row.id || '');
+    const id = normalizeHouseholdId(row);
     let marker = id ? state.markers.get(id) : null;
     if (!marker && row.latitude != null && row.longitude != null) {
       const normalized = Object.assign({}, row, { head_citizen_name: row.head_citizen_name || row.head_name || '' });
