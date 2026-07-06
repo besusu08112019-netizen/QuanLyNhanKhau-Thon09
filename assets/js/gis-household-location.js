@@ -473,7 +473,7 @@
   function markerParams(search) {
     const params = new URLSearchParams();
     if (search) {
-      params.set('search', search);
+      params.set('q', search);
       return params;
     }
     const m = map();
@@ -501,12 +501,18 @@
         state.layer.addTo(m);
       }
       const popupIdBeforeRender = state.openPopupId;
+      const data = await request('/api/gis/households?' + markerParams(search || '').toString());
+      const rows = data.items || [];
+      const locatedRows = rows.filter(row => row.latitude != null && row.longitude != null);
+      const keepExistingMarkers = !search && !(options && options.force) && locatedRows.length === 0 && state.markers.size > 0;
+      if (keepExistingMarkers) {
+        document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer, keptExisting: true } }));
+        return;
+      }
       state.layer.clearLayers();
       state.markers.clear();
       state.openPopupId = popupIdBeforeRender;
-      const data = await request('/api/gis/households?' + markerParams(search || '').toString());
-      (data.items || []).forEach(row => {
-        if (row.latitude == null || row.longitude == null) return;
+      locatedRows.forEach(row => {
         const marker = L.marker([row.latitude, row.longitude], { icon: markerIcon(false, row.__thumbnailObjectUrl || ''), title: row.head_citizen_name || row.household_code, bubblingMouseEvents: false });
         marker.__thon09HouseholdRow = row;
         bindHouseholdPopup(marker, row);
@@ -514,7 +520,7 @@
         state.markers.set(String(row.id), marker);
         hydrateMarkerThumbnail(marker, row);
       });
-      state.lastRows = data.items || [];
+      state.lastRows = rows;
       document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer } }));
       if (search && state.markers.size) {
         const first = state.markers.values().next().value;
