@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.min.css?v=20260705-prod-1">
+  <link rel="stylesheet" href="assets/css/app.min.css">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -296,21 +296,24 @@
   <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 id="detailTitle" class="modal-title">Chi tiết</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div id="detailBody" class="modal-body"></div></div></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/js/i18n.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/app.utf8.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/csrf.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/session.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/admin.utf8.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/import.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/admin-panel.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/admin-panel-bridge.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/sprint8.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/sprint9.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/gis-household-location.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/gis-search.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/gis-smart.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/digital-profile.min.js?v=20260705-prod-1"></script>
-  <script src="assets/js/sprint10.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/i18n.min.js"></script>
+  <script src="assets/js/app.utf8.min.js"></script>
+  <script src="assets/js/csrf.min.js"></script>
+  <script src="assets/js/session.min.js"></script>
+  <script src="assets/js/admin.utf8.min.js"></script>
+  <script src="assets/js/import.min.js"></script>
+  <script src="assets/js/admin-panel.min.js"></script>
+  <script src="assets/js/admin-panel-bridge.min.js"></script>
+  <script src="assets/js/sprint8.min.js"></script>
+  <script src="assets/js/sprint9.min.js"></script>
+  <script src="assets/js/sprint10.min.js"></script>
+  <script src="assets/js/view-inline-patches.min.js"></script>
+  <script src="assets/js/gis-household-location.min.js"></script>
+  <script src="assets/js/household-photo-capture.min.js"></script>
+  <script src="assets/js/household-photo-gps.min.js"></script>
+  <script src="assets/js/gis-search.min.js"></script>
+  <script src="assets/js/gis-smart.min.js"></script>
+  <script src="assets/js/digital-profile.min.js"></script>
 </body>
 </html>
 

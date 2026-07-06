@@ -274,6 +274,7 @@ if (!str_starts_with($request->path(), '/api')) {
 
     $versionedAssets = [
         'assets/css/app.min.css',
+        'assets/js/i18n.min.js',
         'assets/js/app.utf8.min.js',
         'assets/js/csrf.min.js',
         'assets/js/session.min.js',
@@ -289,6 +290,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/household-photo-capture.min.js',
         'assets/js/household-photo-gps.min.js',
         'assets/js/gis-search.min.js',
+        'assets/js/gis-smart.min.js',
         'assets/js/digital-profile.min.js',
     ];
 
@@ -306,24 +308,6 @@ if (!str_starts_with($request->path(), '/api')) {
     if ($headClosePosition !== false) {
         $html = substr_replace($html, $runtimeCss . "\n</head>", $headClosePosition, strlen('</head>'));
     }
-
-    $runtimeScripts = [
-        'assets/js/view-inline-patches.min.js',
-        'assets/js/gis-household-location.min.js',
-        'assets/js/household-photo-capture.min.js',
-        'assets/js/household-photo-gps.min.js',
-        'assets/js/gis-search.min.js',
-        'assets/js/digital-profile.min.js',
-    ];
-    $runtimeHtml = implode("\n", array_map(
-        fn(string $script): string => '<script src="' . versioned_asset($script) . '"></script>',
-        $runtimeScripts
-    ));
-    $bodyClosePosition = strripos($html, '</body>');
-    if ($bodyClosePosition !== false) {
-        $html = substr_replace($html, $runtimeHtml . "\n</body>", $bodyClosePosition, strlen('</body>'));
-    }
-
     echo $html;
     exit;
 }
