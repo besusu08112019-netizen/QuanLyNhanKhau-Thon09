@@ -126,6 +126,7 @@ $router->get('/api/me', [AuthController::class, 'me']);
 
 $router->get('/api/dashboard', [DashboardController::class, 'summary']);
 $router->get('/api/dashboard/summary', [DashboardController::class, 'summary']);
+$router->get('/api/dashboard/search', [DashboardController::class, 'search']);
 $router->get('/api/dashboard/population-chart', [DashboardController::class, 'populationChart']);
 $router->get('/api/dashboard/household-chart', [DashboardController::class, 'householdChart']);
 $router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart']);

@@ -22,9 +22,17 @@ final class Dashboard extends BaseModel
                 'youthUnion' => $this->flagChart($filters, 'youth_union_member', 'Đoàn viên'),
                 'labor' => $this->laborChart($filters),
                 'occupations' => $this->groupChart($filters, 'occupation', 'Nghề nghiệp'),
+                'educationLevels' => $this->groupChart($filters, 'education_level', 'Trình độ học vấn'),
                 'ethnicities' => $this->groupChart($filters, 'ethnicity', 'Dân tộc'),
                 'religions' => $this->groupChart($filters, 'religion', 'Tôn giáo'),
+                'gpsProgress' => $this->gpsProgressChart($filters),
+                'profileProgress' => $this->profileProgressChart($filters),
             ],
+            'alerts' => $this->alerts($filters),
+            'movementWindows' => $this->movementWindows($filters),
+            'gis' => $this->gisSummary($filters),
+            'profiles' => $this->profileSummary($filters),
+            'tasks' => $this->tasks($filters),
             'filters' => $this->normalizeFilters($filters),
             'generatedAt' => date('c'),
         ];
@@ -169,11 +177,263 @@ final class Dashboard extends BaseModel
 
     public function groupChart(array $filters, string $column, string $fallbackLabel): array
     {
-        if (!in_array($column, ['occupation','ethnicity','religion'], true)) return [];
+        if (!in_array($column, ['occupation','education_level','ethnicity','religion'], true)) return [];
+        if (!$this->columnExists('citizens', $column)) return [];
         [$where, $params] = $this->citizenWhere($filters);
         return $this->fetchAll("SELECT COALESCE(NULLIF(c.$column,''),'Khác') AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params);
     }
 
+    public function quickSearch(array $filters = []): array
+    {
+        $query = trim((string) ($filters['q'] ?? $filters['search'] ?? ''));
+        if ($query === '') return ['items' => [], 'total' => 0];
+        $limit = min(12, max(3, (int) ($filters['limit'] ?? 8)));
+        $like = '%' . $query . '%';
+        $items = [];
+
+        $households = $this->fetchAll(
+            'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone
+             FROM households h
+             WHERE ' . $this->activeHouseholdCondition('h') . ' AND (h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q OR h.phone LIKE :q)
+             ORDER BY h.household_code ASC LIMIT ' . $limit,
+            ['q' => $like]
+        );
+        foreach ($households as $row) {
+            $items[] = [
+                'type' => 'household',
+                'id' => (int) $row['id'],
+                'title' => $row['head_citizen_name'] ?: ($row['household_code'] ?? 'Hộ gia đình'),
+                'subtitle' => trim(($row['household_code'] ?? '') . ' - ' . ($row['address'] ?? ''), ' -'),
+                'phone' => $row['phone'] ?? '',
+                'screen' => 'households',
+            ];
+        }
+
+        $citizens = $this->fetchAll(
+            'SELECT c.id, c.citizen_code, c.full_name, c.identity_number, c.phone, c.current_address, h.household_code, h.head_citizen_name
+             FROM citizens c INNER JOIN households h ON h.id = c.household_id
+             WHERE ' . $this->activeCitizenCondition('c') . ' AND ' . $this->activeHouseholdCondition('h') . ' AND (c.full_name LIKE :q OR c.identity_number LIKE :q OR c.citizen_code LIKE :q OR c.phone LIKE :q OR c.current_address LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q)
+             ORDER BY c.full_name ASC LIMIT ' . $limit,
+            ['q' => $like]
+        );
+        foreach ($citizens as $row) {
+            $items[] = [
+                'type' => 'citizen',
+                'id' => (int) $row['id'],
+                'title' => $row['full_name'] ?: ($row['citizen_code'] ?? 'Nhân khẩu'),
+                'subtitle' => trim(($row['identity_number'] ?? '') . ' - ' . ($row['household_code'] ?? '') . ' - ' . ($row['current_address'] ?? ''), ' -'),
+                'phone' => $row['phone'] ?? '',
+                'screen' => 'persons',
+            ];
+        }
+
+        return ['items' => array_slice($items, 0, $limit), 'total' => count($items)];
+    }
+
+    private function alerts(array $filters): array
+    {
+        $items = [
+            ['key' => 'missing_citizen_photo', 'label' => 'Hồ sơ chưa có ảnh', 'count' => $this->missingCitizenPhotoCount($filters), 'priority' => 'high', 'screen' => 'persons'],
+            ['key' => 'missing_gps', 'label' => 'Hộ chưa định vị GPS', 'count' => $this->missingGpsCount($filters), 'priority' => 'high', 'screen' => 'gis'],
+            ['key' => 'missing_identity', 'label' => 'Nhân khẩu thiếu CCCD', 'count' => $this->missingCitizenFieldCount($filters, 'identity_number'), 'priority' => 'medium', 'screen' => 'persons'],
+            ['key' => 'missing_birthdate', 'label' => 'Nhân khẩu thiếu ngày sinh', 'count' => $this->missingCitizenFieldCount($filters, 'date_of_birth'), 'priority' => 'medium', 'screen' => 'persons'],
+            ['key' => 'recent_movements', 'label' => 'Có biến động mới', 'count' => $this->movementCount($filters, 7), 'priority' => 'low', 'screen' => 'movements'],
+            ['key' => 'incomplete_profiles', 'label' => 'Hồ sơ số chưa hoàn thiện', 'count' => $this->incompleteProfileCount($filters), 'priority' => 'medium', 'screen' => 'households'],
+        ];
+        if ($this->columnExists('citizens', 'identity_expiry_date')) {
+            $items[] = ['key' => 'identity_expiring', 'label' => 'CCCD sắp hết hạn', 'count' => $this->identityExpiringCount($filters), 'priority' => 'medium', 'screen' => 'persons'];
+        }
+        return $items;
+    }
+
+    private function movementWindows(array $filters): array
+    {
+        return [
+            'today' => ['label' => 'Hôm nay', 'items' => $this->movementTypeCounts($filters, 0)],
+            'sevenDays' => ['label' => '7 ngày gần nhất', 'items' => $this->movementTypeCounts($filters, 7)],
+            'thirtyDays' => ['label' => '30 ngày gần nhất', 'items' => $this->movementTypeCounts($filters, 30)],
+        ];
+    }
+
+    private function gisSummary(array $filters): array
+    {
+        [$where, $params] = $this->householdWhere($filters);
+        $hasLat = $this->columnExists('households', 'latitude');
+        $hasLng = $this->columnExists('households', 'longitude');
+        $locatedExpr = ($hasLat && $hasLng) ? "h.latitude IS NOT NULL AND h.latitude <> '' AND h.longitude IS NOT NULL AND h.longitude <> ''" : '0=1';
+        $row = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN $locatedExpr THEN 1 ELSE 0 END),0) AS located FROM households h $where", $params) ?: [];
+        $total = (int) ($row['total'] ?? 0);
+        $located = (int) ($row['located'] ?? 0);
+        $areas = 0;
+        if ($this->tableExists('gis_areas')) {
+            $areaSql = $this->columnExists('gis_areas', 'status') ? 'SELECT COUNT(*) AS total FROM gis_areas WHERE status <> "DELETED"' : 'SELECT COUNT(*) AS total FROM gis_areas';
+            $areas = (int) (($this->fetchOne($areaSql) ?: [])['total'] ?? 0);
+        }
+        return [
+            'totalHouseholds' => $total,
+            'locatedHouseholds' => $located,
+            'unlocatedHouseholds' => max(0, $total - $located),
+            'gpsPercent' => $total > 0 ? round($located * 100 / $total, 1) : 0,
+            'totalAreas' => $areas,
+            'activeMarkers' => $located,
+            'heatmapReady' => $located > 0,
+        ];
+    }
+
+    private function profileSummary(array $filters): array
+    {
+        [$householdWhere, $householdParams] = $this->householdWhere($filters);
+        [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
+        $citizenTotal = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [])['total'] ?? 0);
+        $householdTotal = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM households h $householdWhere", $householdParams) ?: [])['total'] ?? 0);
+        $citizenWithPhoto = $this->entityFileCount('citizen', 'c.id', true, 'citizens c INNER JOIN households h ON h.id = c.household_id', $citizenWhere, $citizenParams);
+        $citizenWithFiles = $this->entityFileCount('citizen', 'c.id', false, 'citizens c INNER JOIN households h ON h.id = c.household_id', $citizenWhere, $citizenParams);
+        $householdWithFiles = $this->entityFileCount('household', 'h.id', false, 'households h', $householdWhere, $householdParams);
+        $householdWithPhoto = $this->entityFileCount('household', 'h.id', true, 'households h', $householdWhere, $householdParams);
+        return [
+            'citizenComplete' => $this->progress($citizenWithPhoto, $citizenTotal),
+            'citizenMissingPhoto' => max(0, $citizenTotal - $citizenWithPhoto),
+            'citizenMissingDocuments' => max(0, $citizenTotal - $citizenWithFiles),
+            'householdComplete' => $this->progress($householdWithFiles, $householdTotal),
+            'householdMissingPhoto' => max(0, $householdTotal - $householdWithPhoto),
+            'householdMissingDocuments' => max(0, $householdTotal - $householdWithFiles),
+        ];
+    }
+
+    private function tasks(array $filters): array
+    {
+        return [
+            ['label' => 'Hộ chưa định vị', 'count' => $this->missingGpsCount($filters), 'screen' => 'gis', 'action' => 'Mở GIS'],
+            ['label' => 'Hồ sơ thiếu ảnh', 'count' => $this->missingCitizenPhotoCount($filters), 'screen' => 'persons', 'action' => 'Mở nhân khẩu'],
+            ['label' => 'Hồ sơ thiếu GPS', 'count' => $this->missingGpsCount($filters), 'screen' => 'households', 'action' => 'Mở hộ'],
+            ['label' => 'Biến động chưa xác nhận', 'count' => $this->pendingMovementCount(), 'screen' => 'movements', 'action' => 'Mở biến động'],
+        ];
+    }
+
+    private function gpsProgressChart(array $filters): array
+    {
+        $gis = $this->gisSummary($filters);
+        return [
+            ['label' => 'Đã định vị', 'value' => $gis['locatedHouseholds']],
+            ['label' => 'Chưa định vị', 'value' => $gis['unlocatedHouseholds']],
+        ];
+    }
+
+    private function profileProgressChart(array $filters): array
+    {
+        $profiles = $this->profileSummary($filters);
+        return [
+            ['label' => 'Hồ sơ công dân hoàn chỉnh', 'value' => (int) round($profiles['citizenComplete']['percent'] ?? 0)],
+            ['label' => 'Hồ sơ hộ hoàn chỉnh', 'value' => (int) round($profiles['householdComplete']['percent'] ?? 0)],
+        ];
+    }
+
+    private function missingGpsCount(array $filters): int
+    {
+        [$where, $params] = $this->householdWhere($filters);
+        if (!$this->columnExists('households', 'latitude') || !$this->columnExists('households', 'longitude')) {
+            return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM households h $where", $params) ?: [])['total'] ?? 0);
+        }
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM households h $where AND (h.latitude IS NULL OR h.latitude = '' OR h.longitude IS NULL OR h.longitude = '')", $params) ?: [])['total'] ?? 0);
+    }
+
+    private function missingCitizenFieldCount(array $filters, string $column): int
+    {
+        if (!$this->columnExists('citizens', $column)) return 0;
+        [$where, $params] = $this->citizenWhere($filters);
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id $where AND (c.$column IS NULL OR c.$column = '' OR c.$column = '0')", $params) ?: [])['total'] ?? 0);
+    }
+
+    private function missingCitizenPhotoCount(array $filters): int
+    {
+        [$where, $params] = $this->citizenWhere($filters);
+        $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params) ?: [])['total'] ?? 0);
+        $withPhoto = $this->entityFileCount('citizen', 'c.id', true, 'citizens c INNER JOIN households h ON h.id = c.household_id', $where, $params);
+        return max(0, $total - $withPhoto);
+    }
+
+    private function incompleteProfileCount(array $filters): int
+    {
+        $profiles = $this->profileSummary($filters);
+        return (int) ($profiles['citizenMissingPhoto'] + $profiles['householdMissingDocuments']);
+    }
+
+    private function movementCount(array $filters, int $days): int
+    {
+        [$condition, $params] = $this->movementWindowCondition($days);
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements m WHERE m.status <> 'DELETED' AND $condition", $params) ?: [])['total'] ?? 0);
+    }
+
+    private function movementTypeCounts(array $filters, int $days): array
+    {
+        [$condition, $params] = $this->movementWindowCondition($days);
+        $rows = $this->fetchAll("SELECT m.type, COUNT(*) AS value FROM movements m WHERE m.status <> 'DELETED' AND $condition GROUP BY m.type", $params);
+        $map = ['BIRTH' => 0, 'MOVE_IN' => 0, 'MOVE_OUT' => 0, 'DEATH' => 0, 'TEMPORARY_RESIDENCE' => 0, 'TEMPORARY_ABSENCE' => 0];
+        foreach ($rows as $row) {
+            $type = (string) ($row['type'] ?? '');
+            if (array_key_exists($type, $map)) $map[$type] = (int) $row['value'];
+        }
+        return [
+            ['key' => 'BIRTH', 'label' => 'Sinh mới', 'value' => $map['BIRTH']],
+            ['key' => 'MOVE_IN', 'label' => 'Chuyển đến', 'value' => $map['MOVE_IN']],
+            ['key' => 'MOVE_OUT', 'label' => 'Chuyển đi', 'value' => $map['MOVE_OUT']],
+            ['key' => 'DEATH', 'label' => 'Qua đời', 'value' => $map['DEATH']],
+            ['key' => 'TEMPORARY_RESIDENCE', 'label' => 'Tạm trú', 'value' => $map['TEMPORARY_RESIDENCE']],
+            ['key' => 'TEMPORARY_ABSENCE', 'label' => 'Tạm vắng', 'value' => $map['TEMPORARY_ABSENCE']],
+        ];
+    }
+
+    private function movementWindowCondition(int $days): array
+    {
+        if ($days <= 0) return ['DATE(m.effective_date) = CURDATE()', []];
+        return ['DATE(m.effective_date) >= DATE_SUB(CURDATE(), INTERVAL ' . $days . ' DAY)', []];
+    }
+
+    private function pendingMovementCount(): int
+    {
+        if (!$this->tableExists('movements')) return 0;
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements WHERE status IN ('PENDING','DRAFT')") ?: [])['total'] ?? 0);
+    }
+
+    private function identityExpiringCount(array $filters): int
+    {
+        [$where, $params] = $this->citizenWhere($filters);
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id $where AND c.identity_expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 90 DAY)", $params) ?: [])['total'] ?? 0);
+    }
+
+    private function entityFileCount(string $module, string $idExpr, bool $imageOnly, string $fromSql, string $entityWhere, array $entityParams): int
+    {
+        if (!$this->tableExists('file_attachments')) return 0;
+        $columns = $this->existingColumns('file_attachments', ['id', 'module', 'entity_type', 'entity_id', 'status', 'file_type', 'mime_type']);
+        if (!in_array('id', $columns, true) || !in_array('entity_id', $columns, true)) return 0;
+        $where = ["f.entity_id = $idExpr"];
+        $usesFileModuleParam = false;
+        if (in_array('entity_type', $columns, true) && in_array('module', $columns, true)) {
+            $where[] = 'COALESCE(f.entity_type, f.module) = :file_module';
+            $usesFileModuleParam = true;
+        } elseif (in_array('entity_type', $columns, true)) {
+            $where[] = 'f.entity_type = :file_module';
+            $usesFileModuleParam = true;
+        } elseif (in_array('module', $columns, true)) {
+            $where[] = 'f.module = :file_module';
+            $usesFileModuleParam = true;
+        }
+        if (in_array('status', $columns, true)) $where[] = 'f.status = "ACTIVE"';
+        if ($imageOnly) {
+            $image = [];
+            if (in_array('file_type', $columns, true)) $image[] = 'f.file_type IN ("PHOTO","IMAGE")';
+            if (in_array('mime_type', $columns, true)) $image[] = 'f.mime_type LIKE "image/%"';
+            if ($image) $where[] = '(' . implode(' OR ', $image) . ')';
+        }
+        $params = $entityParams;
+        if ($usesFileModuleParam) $params['file_module'] = $module;
+        return (int) (($this->fetchOne("SELECT COUNT(DISTINCT $idExpr) AS total FROM $fromSql $entityWhere AND EXISTS (SELECT 1 FROM file_attachments f WHERE " . implode(' AND ', $where) . ')', $params) ?: [])['total'] ?? 0);
+    }
+
+    private function progress(int $done, int $total): array
+    {
+        return ['done' => $done, 'total' => $total, 'percent' => $total > 0 ? round($done * 100 / $total, 1) : 0];
+    }
     private function normalizeFilters(array $filters): array
     {
         return [
@@ -283,4 +543,9 @@ final class Dashboard extends BaseModel
         return implode('', $parts);
     }
 
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
+    }
 }

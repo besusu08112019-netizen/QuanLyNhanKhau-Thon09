@@ -525,6 +525,7 @@ async function loadDashboard() {
     renderPartyDashboardChart(charts.partyMembers || [], metrics);
     renderHouseholdTypeChart(charts.households || charts.poverty || [], metrics);
     renderLaborStatusChart(charts.labor || charts.occupations || [], metrics);
+    renderDashboardOperations(data);
     updateDashboardGeneratedAt(data.generatedAt);
   } catch (error) {
     if (!String(error.message || '').includes('đăng nhập')) showToast('Không tải được tổng quan: ' + error.message, 'danger');
@@ -544,10 +545,16 @@ function renderDashboardKpis(metrics) {
   const cards = [
     { key: 'total_households', label: 'Tổng số hộ', unit: 'hộ', icon: 'fa-house-chimney', tone: 'green' },
     { key: 'total_citizens', label: 'Tổng số nhân khẩu', unit: 'người', icon: 'fa-users', tone: 'blue' },
+    { key: 'male_count', label: 'Nam', unit: 'người', icon: 'fa-mars', tone: 'cyan' },
+    { key: 'female_count', label: 'Nữ', unit: 'người', icon: 'fa-venus', tone: 'pink' },
     { key: 'party_member_count', label: 'Đảng viên', unit: 'người', icon: 'fa-star', tone: 'orange' },
-    { key: 'male_count', label: 'Nam', unit: 'người', icon: 'fa-person', tone: 'cyan' },
-    { key: 'female_count', label: 'Nữ', unit: 'người', icon: 'fa-person-dress', tone: 'pink' },
-    { key: 'away_count', label: 'Tạm vắng', unit: 'người', icon: 'fa-person-walking-arrow-right', tone: 'purple' }
+    { key: 'children_count', label: 'Trẻ em', unit: 'người', icon: 'fa-child-reaching', tone: 'blue' },
+    { key: 'elderly_count', label: 'Người cao tuổi', unit: 'người', icon: 'fa-person-cane', tone: 'purple' },
+    { key: 'working_age_count', label: 'Lao động', unit: 'người', icon: 'fa-briefcase', tone: 'green' },
+    { key: 'temporary_count', label: 'Tạm trú', unit: 'người', icon: 'fa-location-dot', tone: 'cyan' },
+    { key: 'away_count', label: 'Tạm vắng', unit: 'người', icon: 'fa-person-walking-arrow-right', tone: 'purple' },
+    { key: 'poor_households', label: 'Hộ nghèo', unit: 'hộ', icon: 'fa-hand-holding-heart', tone: 'orange' },
+    { key: 'near_poor_households', label: 'Hộ cận nghèo', unit: 'hộ', icon: 'fa-hands-holding', tone: 'pink' }
   ];
   host.innerHTML = cards.map(card => {
     const value = Number(metrics[card.key] || 0);
@@ -558,6 +565,160 @@ function renderDashboardKpis(metrics) {
   }).join('');
 }
 
+function renderDashboardOperations(data) {
+  ensureDashboardRealtimeLayout();
+  renderDashboardAlerts(data.alerts || []);
+  renderDashboardMovements(data.movementWindows || {});
+  renderDashboardGis(data.gis || {});
+  renderDashboardProfiles(data.profiles || {});
+  renderDashboardTasks(data.tasks || []);
+  renderDashboardExtraCharts(data.charts || {});
+  bindDashboardActions();
+}
+
+function ensureDashboardRealtimeLayout() {
+  const screen = $('#dashboardScreen');
+  if (!screen) return;
+  if (!$('#dashboardQuickSearch')) {
+    const kpis = $('#dashboardKpis');
+    const html = '<section class="dashboard-command-center" aria-label="Tìm kiếm nhanh và cảnh báo">'
+      + '<div class="dashboard-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="dashboardQuickSearch" class="form-control" autocomplete="off" placeholder="Tìm họ tên, CCCD, mã hộ, chủ hộ, địa chỉ, số điện thoại"><div id="dashboardQuickSearchResults" class="dashboard-search-results d-none"></div></div>'
+      + '</section><section class="dashboard-ops-grid" aria-label="Trung tâm điều hành">'
+      + dashboardPanelShell('dashboardAlertCenter', 'Trung tâm cảnh báo', 'Ưu tiên')
+      + dashboardPanelShell('dashboardMovementCenter', 'Biến động thời gian thực', 'Hôm nay / 7 / 30 ngày')
+      + dashboardPanelShell('dashboardGisCenter', 'Dashboard GIS', 'Sprint 13')
+      + dashboardPanelShell('dashboardProfileCenter', 'Dashboard Hồ sơ số', 'Sprint 11 / 12')
+      + dashboardPanelShell('dashboardTaskCenter', 'Cần xử lý', 'Tác vụ')
+      + '</section>';
+    (kpis || screen).insertAdjacentHTML(kpis ? 'afterend' : 'beforeend', html);
+  }
+  const grid = $('.dashboard-chart-grid', screen);
+  if (grid && !$('#educationLevelChart')) {
+    grid.insertAdjacentHTML('beforeend', dashboardChartShell('educationLevelChart', 'Trình độ học vấn', 'Dữ liệu thực'));
+    grid.insertAdjacentHTML('beforeend', dashboardChartShell('gpsProgressChart', 'Tiến độ định vị GPS', 'GIS'));
+    grid.insertAdjacentHTML('beforeend', dashboardChartShell('profileProgressChart', 'Tiến độ hồ sơ số', 'Hồ sơ số'));
+  }
+  bindDashboardSearch();
+}
+
+function dashboardPanelShell(id, title, pill) {
+  return '<article class="dashboard-panel dashboard-ops-panel"><div class="dashboard-panel-head"><h3>' + escapeHtml(title) + '</h3><span class="dashboard-filter-pill">' + escapeHtml(pill) + '</span></div><div id="' + id + '" class="dashboard-ops-body"></div></article>';
+}
+
+function dashboardChartShell(id, title, pill) {
+  return '<article class="dashboard-panel"><div class="dashboard-panel-head"><h3>' + escapeHtml(title) + '</h3><span class="dashboard-filter-pill">' + escapeHtml(pill) + '</span></div><div id="' + id + '" class="dashboard-chart-body"></div></article>';
+}
+
+function renderDashboardAlerts(alerts) {
+  const host = $('#dashboardAlertCenter');
+  if (!host) return;
+  const rows = (alerts || []).filter(item => Number(item.count || 0) > 0);
+  host.innerHTML = rows.length ? '<div class="dashboard-alert-list">' + rows.map(item => '<button type="button" class="dashboard-alert-item dashboard-priority-' + escapeHtml(item.priority || 'low') + '" data-dashboard-screen="' + escapeHtml(item.screen || 'dashboard') + '"><span><strong>' + escapeHtml(item.label || '') + '</strong><small>' + dashboardPriorityLabel(item.priority) + '</small></span><b>' + number(item.count || 0) + '</b></button>').join('') + '</div>' : chartEmpty('Không có cảnh báo nổi bật');
+}
+
+function dashboardPriorityLabel(priority) {
+  return ({ high: 'Ưu tiên cao', medium: 'Ưu tiên vừa', low: 'Theo dõi' })[priority] || 'Theo dõi';
+}
+
+function renderDashboardMovements(windows) {
+  const host = $('#dashboardMovementCenter');
+  if (!host) return;
+  const entries = [windows.today, windows.sevenDays, windows.thirtyDays].filter(Boolean);
+  host.innerHTML = entries.length ? '<div class="dashboard-window-list">' + entries.map(group => '<section class="dashboard-window"><h4>' + escapeHtml(group.label || '') + '</h4><div>' + (group.items || []).map(item => '<button type="button" data-dashboard-screen="movements"><span>' + escapeHtml(item.label || '') + '</span><strong>' + number(item.value || 0) + '</strong></button>').join('') + '</div></section>').join('') + '</div>' : chartEmpty('Chưa có biến động');
+}
+
+function renderDashboardGis(gis) {
+  const host = $('#dashboardGisCenter');
+  if (!host) return;
+  host.innerHTML = '<div class="dashboard-metric-stack">'
+    + dashboardMetricLine('Hộ đã định vị', gis.locatedHouseholds, 'hộ')
+    + dashboardMetricLine('Hộ chưa định vị', gis.unlocatedHouseholds, 'hộ')
+    + dashboardMetricLine('Hoàn thành GPS', formatPercent(Number(gis.gpsPercent || 0)), '')
+    + dashboardMetricLine('Khu vực', gis.totalAreas, 'khu')
+    + dashboardMetricLine('Marker hoạt động', gis.activeMarkers, 'marker')
+    + '<button type="button" class="dashboard-open-btn" data-dashboard-screen="gis"><i class="fa-solid fa-map-location-dot"></i> Mở GIS</button></div>';
+}
+
+function renderDashboardProfiles(profiles) {
+  const host = $('#dashboardProfileCenter');
+  if (!host) return;
+  host.innerHTML = '<div class="dashboard-progress-list">'
+    + dashboardProgress('Hồ sơ công dân hoàn chỉnh', profiles.citizenComplete)
+    + dashboardProgress('Hồ sơ hộ gia đình hoàn chỉnh', profiles.householdComplete)
+    + dashboardMetricLine('Công dân thiếu ảnh', profiles.citizenMissingPhoto, 'hồ sơ')
+    + dashboardMetricLine('Công dân thiếu giấy tờ', profiles.citizenMissingDocuments, 'hồ sơ')
+    + dashboardMetricLine('Hộ thiếu tài liệu', profiles.householdMissingDocuments, 'hộ')
+    + '</div>';
+}
+
+function renderDashboardTasks(tasks) {
+  const host = $('#dashboardTaskCenter');
+  if (!host) return;
+  const rows = tasks || [];
+  host.innerHTML = rows.length ? '<div class="dashboard-task-list">' + rows.map(item => '<button type="button" class="dashboard-task-item" data-dashboard-screen="' + escapeHtml(item.screen || 'dashboard') + '"><span><strong>' + escapeHtml(item.label || '') + '</strong><small>' + escapeHtml(item.action || 'Mở') + '</small></span><b>' + number(item.count || 0) + '</b></button>').join('') + '</div>' : chartEmpty('Không có việc cần xử lý');
+}
+
+function renderDashboardExtraCharts(charts) {
+  renderChart('#educationLevelChart', charts.educationLevels || []);
+  renderChart('#gpsProgressChart', charts.gpsProgress || []);
+  renderChart('#profileProgressChart', charts.profileProgress || []);
+}
+
+function dashboardMetricLine(label, value, unit) {
+  const text = typeof value === 'string' ? value : number(value || 0);
+  return '<div class="dashboard-metric-line"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(text) + (unit ? ' <small>' + escapeHtml(unit) + '</small>' : '') + '</strong></div>';
+}
+
+function dashboardProgress(label, progress) {
+  const pct = Number(progress?.percent || 0);
+  return '<div class="dashboard-progress"><div><span>' + escapeHtml(label) + '</span><strong>' + formatPercent(pct) + '</strong></div><i style="--value:' + Math.max(0, Math.min(100, pct)) + '%"><b></b></i><small>' + number(progress?.done || 0) + '/' + number(progress?.total || 0) + '</small></div>';
+}
+
+function bindDashboardActions() {
+  $$('[data-dashboard-screen]', $('#dashboardScreen') || document).forEach(button => {
+    if (button.dataset.boundDashboardAction === '1') return;
+    button.dataset.boundDashboardAction = '1';
+    button.addEventListener('click', () => {
+      const screen = button.dataset.dashboardScreen || 'dashboard';
+      if (typeof window.switchScreen === 'function') window.switchScreen(screen);
+    });
+  });
+}
+
+function bindDashboardSearch() {
+  const input = $('#dashboardQuickSearch');
+  if (!input || input.dataset.boundDashboardSearch === '1') return;
+  input.dataset.boundDashboardSearch = '1';
+  input.addEventListener('input', debounce(() => runDashboardQuickSearch(input.value.trim()), 280));
+}
+
+async function runDashboardQuickSearch(query) {
+  const host = $('#dashboardQuickSearchResults');
+  if (!host) return;
+  if (query.length < 2) { host.classList.add('d-none'); host.innerHTML = ''; return; }
+  try {
+    const data = await api('/api/dashboard/search?' + new URLSearchParams({ q: query }).toString(), { cacheTtl: 5000 });
+    const items = data.items || [];
+    host.innerHTML = items.length ? items.map(item => '<button type="button" data-dashboard-result-type="' + escapeHtml(item.type || '') + '" data-dashboard-result-id="' + Number(item.id || 0) + '"><strong>' + escapeHtml(item.title || '') + '</strong><span>' + escapeHtml(item.subtitle || '') + '</span></button>').join('') : '<div class="dashboard-search-empty">Không tìm thấy kết quả</div>';
+    host.classList.remove('d-none');
+    $$('[data-dashboard-result-id]', host).forEach(button => button.addEventListener('click', () => openDashboardSearchResult(button.dataset.dashboardResultType, Number(button.dataset.dashboardResultId || 0))));
+  } catch (error) {
+    host.innerHTML = '<div class="dashboard-search-empty">Không tải được kết quả</div>';
+    host.classList.remove('d-none');
+  }
+}
+
+function openDashboardSearchResult(type, id) {
+  const host = $('#dashboardQuickSearchResults');
+  if (host) host.classList.add('d-none');
+  if (type === 'household') {
+    if (typeof window.switchScreen === 'function') window.switchScreen('households');
+    setTimeout(() => { if (typeof window.showHousehold === 'function') window.showHousehold(id); }, 220);
+  } else if (type === 'citizen') {
+    if (typeof window.switchScreen === 'function') window.switchScreen('persons');
+    setTimeout(() => { if (typeof window.showPerson === 'function') window.showPerson(id); }, 220);
+  }
+}
 function normalizeChartItems(items) {
   return (items || []).map(item => ({ label: item.label || 'Khác', value: Number(item.value || 0) })).filter(item => item.value >= 0);
 }

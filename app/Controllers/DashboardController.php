@@ -21,6 +21,11 @@ final class DashboardController extends BaseController
         $this->ok($this->dashboard->summary($this->query()));
     }
 
+    public function search(): void
+    {
+        $this->requirePermission('dashboard', 'read');
+        $this->ok($this->dashboard->quickSearch($this->query()));
+    }
     public function populationChart(): void
     {
         $this->requirePermission('dashboard', 'read');
