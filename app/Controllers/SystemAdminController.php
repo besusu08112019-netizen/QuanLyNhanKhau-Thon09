@@ -78,6 +78,7 @@ final class SystemAdminController extends BaseController
         $user = $this->user();
         if ($write) $this->verifyCsrfToken();
         if (!in_array((string) ($user['role'] ?? ''), ['SUPER_ADMIN', 'ADMIN'], true)) {
+            $this->auditPermissionDenied($user, 'system_admin', $write ? 'update' : 'read');
             $this->fail('Không có quyền quản trị hệ thống', 403);
         }
         return $user;

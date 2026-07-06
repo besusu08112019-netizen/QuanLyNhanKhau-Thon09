@@ -177,7 +177,8 @@
   }
 
   function renderPersonFileGroup(key, title, fileType, section, files) {
-    const rows = files.length ? files.map(file => '<tr><td><div class="fw-semibold">' + escapeHtml(file.original_name || file.file_name || 'Tệp đính kèm') + '</div><div class="small text-muted">' + escapeHtml(file.description || file.profile_section || file.category || '') + '</div></td><td>' + escapeHtml(formatFileSize(file.file_size)) + '</td><td>' + escapeHtml(formatDateTime(file.created_at)) + '</td><td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-profile-preview="' + Number(file.id || 0) + '">Xem</button><button class="btn btn-outline-secondary" type="button" data-profile-download="' + Number(file.id || 0) + '">Tải</button><button class="btn btn-outline-danger" type="button" data-profile-delete="' + Number(file.id || 0) + '">Xóa</button></div></td></tr>').join('') : '<tr><td colspan="4" class="text-muted small">Chưa có file.</td></tr>';
+    const canUpdateCitizen = typeof window.thon09CanAccess === 'function' && window.thon09CanAccess('citizen', 'update');
+    const rows = files.length ? files.map(file => '<tr><td><div class="fw-semibold">' + escapeHtml(file.original_name || file.file_name || 'Tệp đính kèm') + '</div><div class="small text-muted">' + escapeHtml(file.description || file.profile_section || file.category || '') + '</div></td><td>' + escapeHtml(formatFileSize(file.file_size)) + '</td><td>' + escapeHtml(formatDateTime(file.created_at)) + '</td><td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-profile-preview="' + Number(file.id || 0) + '">Xem</button><button class="btn btn-outline-secondary" type="button" data-profile-download="' + Number(file.id || 0) + '">Tải</button>' + (canUpdateCitizen ? '<button class="btn btn-outline-danger" type="button" data-profile-delete="' + Number(file.id || 0) + '">X?a</button>' : '') + '</div></td></tr>').join('') : '<tr><td colspan="4" class="text-muted small">Chưa có file.</td></tr>';
     return '<section class="border rounded p-3 mb-3" data-profile-file-group="' + key + '"><div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><h6 class="mb-0">' + title + '</h6><div class="d-flex flex-wrap gap-2"><input class="form-control form-control-sm" data-profile-description placeholder="Mô tả"><input type="file" class="d-none" data-profile-file-input data-file-type="' + fileType + '" data-section="' + section + '"><button class="btn btn-sm btn-primary" type="button" data-profile-upload>Upload</button></div></div><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Tên file</th><th>Dung lượng</th><th>Ngày upload</th><th>Thao tác</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
   }
 
@@ -314,15 +315,17 @@
       const items = data.items || [];
       const tbody = document.querySelector('#householdRows');
       if (!tbody) return;
+      const canDeleteHousehold = typeof window.thon09CanAccess === 'function' && window.thon09CanAccess('household', 'delete');
+      const canUpdateHousehold = typeof window.thon09CanAccess === 'function' && window.thon09CanAccess('household', 'update');
       tbody.innerHTML = items.map(row => '<tr>' +
-        '<td><input type="checkbox" class="household-check" value="' + row.id + '"></td>' +
+        '<td>' + (canDeleteHousehold ? '<input type="checkbox" class="household-check" value="' + row.id + '">' : '') + '</td>' +
         '<td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(' + row.id + ')">' + escapeHtml(row.household_code) + '</button></td>' +
         '<td>' + escapeHtml(row.head_citizen_name || '') + '</td>' +
         '<td>' + escapeHtml(row.address || '') + '</td>' +
         '<td>' + number(row.at_home_count || 0) + '</td>' +
         '<td>' + number(row.away_count || 0) + '</td>' +
         '<td>' + householdBadges(row) + '</td>' +
-        '<td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button></td>' +
+        '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" onclick="showHousehold(' + row.id + ')">Xem</button>' + (canUpdateHousehold ? ' <button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">S?a</button>' : '') + (canDeleteHousehold ? ' <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">X?a</button>' : '') + '</td>' +
       '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
       renderPager('#householdPager', data, page => { App.households.page = page; window.loadHouseholds(); });
     } catch (error) { showToast('Không tải được danh sách hộ dân: ' + error.message, 'danger'); }

@@ -28,7 +28,7 @@ final class Permission extends BaseModel
             $matrix[$role]['permissions'][$row['module']][$row['action']] = (bool) $row['allowed'];
         }
         $matrix['SUPER_ADMIN']['adminNote'] = 'Toàn quyền hệ thống.';
-        $matrix['ADMIN']['adminNote'] = 'Quản lý hộ, nhân khẩu, import/export và dashboard.';
+        $matrix['ADMIN']['adminNote'] = 'Toàn quyền hệ thống.';
         return ['roles' => array_values($matrix), 'modules' => $modules, 'actions' => $actions];
     }
 
@@ -49,7 +49,7 @@ final class Permission extends BaseModel
     private function defaultAllowed(string $role, string $module, string $action): bool
     {
         if ($role === 'SUPER_ADMIN') return true;
-        if ($role === 'ADMIN') return in_array($module, ['dashboard','household','citizen','import','export','report','pdf'], true) && in_array($action, ['read','create','update','delete','export','print'], true);
+        if ($role === 'ADMIN') return true;
         if ($role === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','import'], true) && in_array($action, ['read','create','update'], true);
         if ($role === 'VIEWER') return in_array($module, ['dashboard','household','citizen','report'], true) && $action === 'read';
         return false;

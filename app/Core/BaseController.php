@@ -77,6 +77,20 @@ abstract class BaseController
         return $user;
     }
 
+    protected function auditPermissionDenied(?array $user, string $module, string $action): void
+    {
+        try {
+            $this->audit($user, $module, 'permission_denied', 'T? ch?i thao tác không d? quy?n', null, [
+                'role' => $user['role'] ?? null,
+                'denied_action' => $action,
+                'endpoint' => $this->request->method() . ' ' . $this->request->path(),
+                'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+                'time' => date('c'),
+            ], 'WARN');
+        } catch (\Throwable $e) {
+            error_log('[RBAC_DENIED_AUDIT_ERROR] ' . $e->getMessage());
+        }
+    }
     protected function audit(?array $user, string $module, string $action, string $message, mixed $entityId = null, array $metadata = [], string $level = 'INFO'): void
     {
         $this->logs()->write($user['id'] ?? null, $user['email'] ?? null, $module, $action, $message, $entityId === null ? null : (string) $entityId, $metadata, $level);

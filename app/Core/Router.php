@@ -30,6 +30,8 @@ final class Router
             if ($params === null) {
                 continue;
             }
+            $this->enforceViewerReadOnly();
+
             if (is_array($handler)) {
                 [$class, $action] = $handler;
                 $instance = new $class($this->request);
@@ -66,9 +68,58 @@ final class Router
         }
 
         if (!$action) return false;
+        $this->enforceViewerReadOnly();
         $controller = new \App\Controllers\GisController($this->request);
         $controller->$action(...$params);
         return true;
+    }
+
+    private function enforceViewerReadOnly(): void
+    {
+        if (!in_array($this->request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            return;
+        }
+
+        $path = $this->request->path();
+        if (preg_match('#^/api/(auth/)?(login|logout)$#', $path) || $path === '/api/setup') {
+            return;
+        }
+
+        $token = $this->request->bearerToken();
+        if (!$token) {
+            return;
+        }
+
+        try {
+            $user = (new \App\Models\User())->findByToken($token);
+            if (!$user || (string) ($user['role'] ?? '') !== 'VIEWER') {
+                return;
+            }
+
+            try {
+                (new \App\Models\AuditLog())->write(
+                    (int) ($user['id'] ?? 0),
+                    $user['email'] ?? null,
+                    'rbac',
+                    'permission_denied',
+                    'T? ch?i request ghi d? li?u c?a t?i kho?n Kh?ch',
+                    null,
+                    [
+                        'role' => $user['role'] ?? null,
+                        'endpoint' => $this->request->method() . ' ' . $path,
+                        'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+                        'time' => date('c'),
+                    ],
+                    'WARN'
+                );
+            } catch (\Throwable $auditError) {
+                error_log('[RBAC_DENIED_AUDIT_ERROR] ' . $auditError->getMessage());
+            }
+
+            Response::error('T?i kho?n Kh?ch ch? ???c ph?p xem d? li?u', 403);
+        } catch (\Throwable $e) {
+            error_log('[RBAC_VIEWER_GUARD_ERROR] ' . $e->getMessage());
+        }
     }
 
     private function match(string $route, string $path): ?array

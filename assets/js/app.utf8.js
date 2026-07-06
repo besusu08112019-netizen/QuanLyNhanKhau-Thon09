@@ -32,6 +32,48 @@ const DASHBOARD_STAT_CONFIG = [
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+function currentRole() { return String(App.user?.role || '').toUpperCase(); }
+function isAdminRole() { return ['SUPER_ADMIN', 'ADMIN'].includes(currentRole()); }
+function canAccess(module, action) {
+  const role = currentRole();
+  if (['SUPER_ADMIN', 'ADMIN'].includes(role)) return true;
+  if (role === 'VIEWER') return ['dashboard','household','citizen','report'].includes(module) && action === 'read';
+  if (['user','permission','logs','settings','backup','system_admin'].includes(module)) return false;
+  if (role === 'OFFICER') return ['dashboard','household','citizen','movement','report','import'].includes(module) && ['read','create','update'].includes(action);
+  return false;
+}
+function requireUiPermission(module, action) {
+  if (canAccess(module, action)) return true;
+  showToast('T�i kho?n hi?n t?i kh�ng c� quy?n th?c hi?n thao t�c n�y', 'warning');
+  return false;
+}
+function actionCell(buttons) {
+  const html = buttons.filter(Boolean).join(' ');
+  return '<td class="text-end">' + (html || '<span class="text-muted small">Ch? xem</span>') + '</td>';
+}
+function applyAccessControls() {
+  const admin = isAdminRole();
+  const householdCreate = canAccess('household', 'create');
+  const citizenCreate = canAccess('citizen', 'create');
+  const householdUpdate = canAccess('household', 'update');
+  const adminOnly = ['users','permissions','logs','settings','appearance','backups','restore','systemAdmin'];
+  $$('.sidebar .nav-link[data-screen]').forEach(btn => {
+    const screen = btn.dataset.screen;
+    const hide = adminOnly.includes(screen) && !admin;
+    btn.classList.toggle('d-none', hide);
+  });
+  const householdAdd = $('#householdAddBtn');
+  if (householdAdd) householdAdd.classList.toggle('d-none', !householdCreate);
+  const personAdd = $('#personAddBtn');
+  if (personAdd) personAdd.classList.toggle('d-none', !citizenCreate);
+  $$('[data-quick-action="addHousehold"]').forEach(btn => btn.classList.toggle('d-none', !householdCreate));
+  $$('[data-quick-action="addPerson"]').forEach(btn => btn.classList.toggle('d-none', !citizenCreate));
+  ['gisDrawBtn','gisSaveBtn'].forEach(id => { const el = $('#' + id); if (el) el.classList.toggle('d-none', !householdUpdate); });
+  updateBulkDeleteButtons();
+}
+window.thon09CanAccess = canAccess;
+window.thon09ApplyAccessControls = applyAccessControls;
+
 window.switchScreen = switchScreen;
 if (!window.__thon09NavDelegated) {
   window.__thon09NavDelegated = true;
@@ -495,7 +537,9 @@ function showApp() {
   $('#appView').classList.remove('d-none');
   document.body.classList.add('app-authenticated');
   renderTopbarUser();
+  applyAccessControls();
   if (typeof window.ensureAdminScreens === 'function') window.ensureAdminScreens();
+  applyAccessControls();
   switchScreen(App.screen);
   document.dispatchEvent(new CustomEvent('thon09:auth-state', { detail: { authenticated: true } }));
 }
@@ -523,6 +567,7 @@ function switchScreen(screen) {
   $$('.screen').forEach(el => el.classList.remove('active'));
   $(`#${screen}Screen`).classList.add('active');
   normalizeAppHeader(screen);
+  applyAccessControls();
   closeMobileSidebar();
   if (screen === 'dashboard') { loadDashboard(); refreshLoginConfig(); }
   if (screen === 'gis') ensureGisAssets().then(() => loadGisMap()).catch(error => showToast('Không tải được thư viện bản đồ: ' + error.message, 'danger'));
@@ -910,15 +955,21 @@ async function loadHouseholds() {
     total = data.total || 0;
     const householdTotal = $('#householdTotalCount');
     if (householdTotal) householdTotal.innerHTML = 'Tổng số: <strong>' + number(total) + '</strong> hộ';
+    const canDeleteHousehold = canAccess('household', 'delete');
+    const canUpdateHousehold = canAccess('household', 'update');
     $('#householdRows').innerHTML = items.map(row => '<tr>' +
-      '<td><input type="checkbox" class="household-check" value="' + row.id + '"></td>' +
+      '<td>' + (canDeleteHousehold ? '<input type="checkbox" class="household-check" value="' + row.id + '">' : '') + '</td>' +
       '<td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(' + row.id + ')">' + escapeHtml(row.household_code) + '</button></td>' +
       '<td>' + escapeHtml(row.head_citizen_name || '') + '</td>' +
       '<td>' + escapeHtml(row.address || '') + '</td>' +
       '<td>' + number(row.at_home_count || 0) + '</td>' +
       '<td>' + number(row.away_count || 0) + '</td>' +
       '<td>' + householdBadges(row) + '</td>' +
-      '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" onclick="showHousehold(' + row.id + ')">Xem</button> <button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">Xóa</button></td>' +
+      actionCell([
+        '<button class="btn btn-sm btn-outline-secondary" onclick="showHousehold(' + row.id + ')">Xem</button>',
+        canUpdateHousehold ? '<button class="btn btn-sm btn-outline-primary" onclick="openHouseholdForm(' + row.id + ')">S?a</button>' : '',
+        canDeleteHousehold ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteHousehold(' + row.id + ')">X?a</button>' : ''
+      ]) +
     '</tr>').join('') || emptyRow(8, 'Không có dữ liệu');
     updateBulkDeleteButtons();
     renderPager('#householdPager', { total, page: App.households.page, pageSize: App.households.pageSize }, page => { App.households.page = page; loadHouseholds(); });
@@ -995,7 +1046,7 @@ function personRow(row) {
   const age = row.age ?? personAge(row.date_of_birth);
   const ageText = age === null || age === undefined ? '' : String(age);
   return '<tr>'
-    + '<td><input type="checkbox" class="person-check" value="' + row.id + '"></td>'
+    + '<td>' + (canAccess('citizen', 'delete') ? '<input type="checkbox" class="person-check" value="' + row.id + '">' : '') + '</td>'
     + '<td>' + escapeHtml(row.household_code || '') + '</td>'
     + '<td>' + escapeHtml(personCode) + '</td>'
     + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + row.id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
@@ -1006,11 +1057,16 @@ function personRow(row) {
     + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
     + '<td><span class="person-badge ' + residenceClass + '">' + escapeHtml(residenceText) + '</span></td>'
     + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
-    + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button> <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">Xóa</button></td>'
+    + actionCell([
+      '<button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button>',
+      canAccess('citizen', 'update') ? '<button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">S?a</button>' : '',
+      canAccess('citizen', 'delete') ? '<button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">X?a</button>' : ''
+    ])
     + '</tr>';
 }
 
 async function openHouseholdForm(id = null) {
+  if (!requireUiPermission('household', id ? 'update' : 'create')) return;
   const form = $('#householdForm');
   form.reset(); form.classList.remove('was-validated'); form.elements.id.value = '';
   if (id) {
@@ -1021,6 +1077,7 @@ async function openHouseholdForm(id = null) {
 }
 
 async function openPersonForm(id = null) {
+  if (!requireUiPermission('citizen', id ? 'update' : 'create')) return;
   const form = $('#personForm');
   form.reset(); form.classList.remove('was-validated'); form.elements.id.value = '';
   if (id) {
@@ -1033,6 +1090,8 @@ async function openPersonForm(id = null) {
 async function saveHousehold(event) {
   event.preventDefault();
   const form = event.currentTarget;
+  const pendingId = form.elements.id?.value || '';
+  if (!requireUiPermission('household', pendingId ? 'update' : 'create')) return;
   if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
   const payload = formData(form);
   const id = payload.id; delete payload.id;
@@ -1045,6 +1104,8 @@ async function saveHousehold(event) {
 async function savePerson(event) {
   event.preventDefault();
   const form = event.currentTarget;
+  const pendingId = form.elements.id?.value || '';
+  if (!requireUiPermission('citizen', pendingId ? 'update' : 'create')) return;
   if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
   const payload = formData(form);
   const id = payload.id; delete payload.id;
@@ -1285,6 +1346,7 @@ function calculateAge(value) {
   return age >= 0 && age < 130 ? age : '';
 }
 async function deleteHousehold(id) {
+  if (!requireUiPermission('household', 'delete')) return;
   try {
     const row = await api('/api/households/' + id);
     const message = 'Bạn có chắc chắn muốn xóa hộ gia đình này?\n\n'
@@ -1299,6 +1361,7 @@ async function deleteHousehold(id) {
   } catch (error) { showToast(error.message, 'danger'); }
 }
 async function deletePerson(id) {
+  if (!requireUiPermission('citizen', 'delete')) return;
   try {
     const row = await api('/api/persons/' + id);
     const message = 'Bạn có chắc chắn muốn xóa nhân khẩu này?\n\n'
@@ -1314,7 +1377,9 @@ async function deletePerson(id) {
 async function bulkDeleteHouseholds() { await bulkDelete('.household-check:checked', '/api/households/bulk-delete', () => { loadHouseholds(); loadPersons(); }, 'hộ gia đình'); }
 async function bulkDeletePersons() { await bulkDelete('.person-check:checked', '/api/persons/bulk-delete', () => { loadPersons(); loadHouseholds(); }, 'nhân khẩu'); }
 async function bulkDelete(selector, url, reload, label) {
-  const ids = $$(selector).map(c => Number(c.value)).filter(Boolean);
+  const module = url.includes('/persons') || url.includes('/citizens') ? 'citizen' : 'household';
+  if (!requireUiPermission(module, 'delete')) return;
+  const ids = $(selector).map(c => Number(c.value)).filter(Boolean);
   if (ids.length < 2) return showToast('Vui lòng chọn từ 2 bản ghi trở lên để xóa hàng loạt', 'warning');
   if (!confirm('Bạn sắp xóa ' + ids.length + ' bản ghi.\nBạn có chắc chắn muốn tiếp tục?')) return;
   try {
@@ -1328,8 +1393,8 @@ function updateBulkDeleteButtons() {
   const personCount = $$('.person-check:checked').length;
   const householdBtn = $('#householdBulkDeleteBtn');
   const personBtn = $('#personBulkDeleteBtn');
-  if (householdBtn) householdBtn.classList.toggle('d-none', householdCount < 2);
-  if (personBtn) personBtn.classList.toggle('d-none', personCount < 2);
+  if (householdBtn) householdBtn.classList.toggle('d-none', !canAccess('household', 'delete') || householdCount < 2);
+  if (personBtn) personBtn.classList.toggle('d-none', !canAccess('citizen', 'delete') || personCount < 2);
 }
 
 async function api(url, options = {}) {
@@ -1839,10 +1904,12 @@ function setGisDrawnLayer(layer) {
   if (layer.setStyle) layer.setStyle({ color, fillColor: color, fillOpacity: .18, weight: 2 });
 }
 function startGisDraw() {
+  if (!requireUiPermission('household', 'update')) return;
   if (!App.gis.map || !window.L?.Draw?.Polygon) return showToast('Chưa sẵn sàng công cụ vẽ bản đồ', 'warning');
   new L.Draw.Polygon(App.gis.map, { allowIntersection: false, showArea: true, shapeOptions: { color: $('#gisAreaColor')?.value || '#0f8a4b' } }).enable();
 }
 async function saveGisArea() {
+  if (!requireUiPermission('household', 'update')) return;
   const layer = App.gis.drawnLayer;
   if (!layer) return showToast('Vui lòng vẽ ranh giới trên bản đồ trước khi lưu', 'warning');
   const latLngs = (layer.getLatLngs()[0] || []).map(p => ({ lat: Number(p.lat.toFixed(7)), lng: Number(p.lng.toFixed(7)) }));
@@ -1918,6 +1985,7 @@ function filterHouseholdsByGisArea(areaCode) {
   setTimeout(() => loadHouseholds(), 100);
 }
 async function deleteGisArea(id) {
+  if (!requireUiPermission('household', 'delete')) return;
   if (!confirm('Xóa ranh giới khu vực này? Dữ liệu hộ dân không bị xóa.')) return;
   await api('/api/gis/areas/' + id, { method: 'DELETE' });
   showToast('Đã xóa ranh giới khu vực');

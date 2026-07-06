@@ -432,3 +432,64 @@ test('system administration center renders independent operation widgets', async
   await expect(page.locator('#systemAdminConfig')).toContainText('Test System');
   expect(consoleErrors).toEqual([]);
 });
+
+
+test('viewer role is read-only across household and citizen modules', async ({ page }) => {
+  const writeRequests = [];
+  await page.route('**/api/**', async (route) => {
+    const request = route.request();
+    const url = request.url();
+    const method = request.method();
+    const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
+
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !url.includes('/api/auth/')) {
+      writeRequests.push({ method, url });
+      await route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ ok: false, success: false, error: { message: 'Forbidden' } }) });
+      return;
+    }
+
+    if (url.includes('/api/public/login-config')) return payload(loginConfig.data);
+    if (url.includes('/api/auth/me')) return payload({ id: 3, email: 'viewer@example.test', displayName: 'Viewer Test', role: 'VIEWER', status: 'ACTIVE' });
+    if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/persons')) return payload({ items: [{ id: 11, household_code: 'HK001', citizen_code: 'NK001', full_name: 'Viewer Citizen', relationship: 'Ch? h?', date_of_birth: '1990-01-01', gender: 'Nam', identity_number: '123456789012', residency_status: 'PERMANENT', presence_status: 'AT_HOME', party_member: 0 }], total: 1, page: 1, pageSize: 20 });
+    if (url.includes('/api/households')) return payload({ items: [{ id: 21, household_code: 'HK001', head_citizen_name: 'Viewer Head', address: 'Address', at_home_count: 1, away_count: 0, status: 'ACTIVE' }], total: 1, page: 1, pageSize: 20 });
+    return payload({});
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const user = { id: 3, email: 'viewer@example.test', displayName: 'Viewer Test', role: 'VIEWER', status: 'ACTIVE' };
+    window.App.token = 'viewer-token';
+    window.App.csrfToken = 'viewer-csrf';
+    window.App.user = user;
+    localStorage.setItem('thon09_token', 'viewer-token');
+    localStorage.setItem('thon09_csrf', 'viewer-csrf');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.showApp === 'function') window.showApp();
+    if (typeof window.switchScreen === 'function') window.switchScreen('persons');
+  });
+
+  await expect(page.locator('#personsScreen')).toHaveClass(/active/);
+  await expect(page.locator('#personRows')).toContainText('Viewer Citizen');
+  await expect(page.locator('#personAddBtn')).toBeHidden();
+  await expect(page.locator('#personBulkDeleteBtn')).toBeHidden();
+  await expect(page.locator('#personRows [onclick^="openPersonForm"], #personRows [onclick^="deletePerson"], #personRows .person-check')).toHaveCount(0);
+
+  await page.evaluate(() => window.switchScreen && window.switchScreen('households'));
+  await expect(page.locator('#householdsScreen')).toHaveClass(/active/);
+  await expect(page.locator('#householdRows')).toContainText('HK001');
+  await expect(page.locator('#householdAddBtn')).toBeHidden();
+  await expect(page.locator('#householdBulkDeleteBtn')).toBeHidden();
+  await expect(page.locator('#householdRows [onclick^="openHouseholdForm"], #householdRows [onclick^="deleteHousehold"], #householdRows .household-check')).toHaveCount(0);
+  await expect(page.locator('.sidebar .nav-link[data-screen="users"]')).toBeHidden();
+  await expect(page.locator('.sidebar .nav-link[data-screen="backups"]')).toBeHidden();
+
+  await page.evaluate(async () => {
+    await window.openPersonForm?.(11);
+    await window.deletePerson?.(11);
+    await window.openHouseholdForm?.(21);
+    await window.deleteHousehold?.(21);
+  });
+  await page.waitForTimeout(100);
+  expect(writeRequests).toEqual([]);
+});

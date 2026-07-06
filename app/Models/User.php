@@ -132,12 +132,20 @@ final class User extends BaseModel
 
     public function can(array $user, string $module, string $action): bool
     {
-        if ($user['role'] === 'SUPER_ADMIN') return true;
-        if ($user['role'] === 'ADMIN') return in_array($module, ['dashboard','household','citizen','import','export','report','pdf','settings'], true) && in_array($action, ['read','create','update','delete','export','print'], true);
-        $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $user['role'], 'module' => $module, 'action' => $action]);
+        $role = (string) ($user['role'] ?? '');
+        if ($role === 'SUPER_ADMIN' || $role === 'ADMIN') return true;
+
+        if ($role === 'VIEWER') {
+            return in_array($module, ['dashboard','household','citizen','report'], true) && $action === 'read';
+        }
+
+        if (in_array($module, ['user','permission','logs','settings','backup','system_admin'], true)) {
+            return false;
+        }
+
+        $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $role, 'module' => $module, 'action' => $action]);
         if ($permission) return (bool) $permission['allowed'];
-        if ($user['role'] === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','import'], true) && in_array($action, ['read','create','update'], true);
-        if ($user['role'] === 'VIEWER') return in_array($module, ['dashboard','household','citizen','report'], true) && $action === 'read';
+        if ($role === 'OFFICER') return in_array($module, ['dashboard','household','citizen','movement','report','import'], true) && in_array($action, ['read','create','update'], true);
         return false;
     }
 
