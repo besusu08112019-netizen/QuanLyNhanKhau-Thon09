@@ -327,9 +327,18 @@
     }).catch(() => {});
   }
 
+  function isTouchViewport() {
+    return Boolean(
+      (navigator && navigator.maxTouchPoints > 0) ||
+      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+      window.innerWidth <= 1024
+    );
+  }
+
   function shouldDeferMarkerReload(search, options) {
     if (search || (options && options.force)) return false;
-    return Boolean(state.openPopupId);
+    if (state.openPopupId) return true;
+    return isTouchViewport() && state.markers.size > 0;
   }
 
   function guardMapClosePopup(m) {
@@ -550,7 +559,7 @@
     if (originalLoad) {
       window.loadGisMap = async function () {
         const result = await originalLoad.apply(this, arguments);
-        setTimeout(() => loadHouseholdMarkers(), 180);
+        setTimeout(() => loadHouseholdMarkers(undefined, { background: true }), 180);
         return result;
       };
     }
@@ -561,7 +570,7 @@
       m.__thon09HouseholdMarkerMoveBound = true;
       m.on('moveend zoomend', debounce(() => {
         if (state.openPopupId) return;
-        loadHouseholdMarkers();
+        loadHouseholdMarkers(undefined, { background: true });
       }, 450));
       m.on('click touchend pointerup', event => {
         if (Date.now() - state.lastMarkerTouchAt < 700) stopLeafletEvent(event);
@@ -634,7 +643,7 @@
     wrapHouseholdForm();
     bindLocationButtons();
     bindGisMapHooks();
-    if (isAuthenticated()) setTimeout(() => loadHouseholdMarkers(), 1200);
+    if (isAuthenticated()) setTimeout(() => loadHouseholdMarkers(undefined, { background: true }), 1200);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

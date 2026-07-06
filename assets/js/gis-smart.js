@@ -160,7 +160,7 @@
 
   function reloadMarkers() {
     window.thon09GisSmartFilters = state.filters;
-    if (typeof window.thon09LoadGisHouseholdMarkers === 'function') window.thon09LoadGisHouseholdMarkers();
+    if (typeof window.thon09LoadGisHouseholdMarkers === 'function') window.thon09LoadGisHouseholdMarkers('', { force: true });
   }
 
   function hasOpenHouseholdPopup() {

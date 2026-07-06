@@ -162,7 +162,7 @@
         body: JSON.stringify(payload),
       });
       if (typeof window.thon09LoadGisHouseholdMarkers === 'function') {
-        window.thon09LoadGisHouseholdMarkers();
+        window.thon09LoadGisHouseholdMarkers('', { force: true });
       }
     } catch (error) {
       console.warn('[Household Photo GPS] Không lưu được tọa độ ảnh hộ', error);
