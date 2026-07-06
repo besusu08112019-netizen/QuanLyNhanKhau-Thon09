@@ -535,6 +535,14 @@
     return params;
   }
 
+  function createHouseholdMarkerLayer() {
+    const useCluster = !isTouchViewport() && Boolean(L.markerClusterGroup);
+    gisDebugLog('markerLayer:create', { markerCluster: useCluster, touchViewport: isTouchViewport() });
+    return useCluster
+      ? L.markerClusterGroup({ chunkedLoading: true, showCoverageOnHover: false, maxClusterRadius: 46 })
+      : L.layerGroup();
+  }
+
   function locatedRowsFromResponse(rows) {
     return (rows || []).filter(row => row.latitude != null && row.longitude != null);
   }
@@ -576,9 +584,8 @@
     state.renderingMarkers = true;
     try {
       if (!state.layer) {
-        await ensureMarkerCluster();
-        state.layer = L.markerClusterGroup ? L.markerClusterGroup({ chunkedLoading: true, showCoverageOnHover: false, maxClusterRadius: 46 }) : L.layerGroup();
-        gisDebugLog('markerLayer:create', { markerCluster: Boolean(L.markerClusterGroup) });
+        if (!isTouchViewport()) await ensureMarkerCluster();
+        state.layer = createHouseholdMarkerLayer();
         wrapMethodForGisDebug(state.layer, 'clearLayers', 'markerLayer.clearLayers');
         wrapMethodForGisDebug(state.layer, 'addLayer', 'markerLayer.addLayer');
         wrapMethodForGisDebug(state.layer, 'removeLayer', 'markerLayer.removeLayer');
@@ -689,7 +696,7 @@
       marker = L.marker([row.latitude, row.longitude], { icon: markerIcon(true), title: normalized.head_citizen_name || normalized.household_code });
       marker.__thon09HouseholdRow = normalized;
       bindHouseholdPopup(marker, normalized);
-      if (!state.layer) state.layer = L.layerGroup().addTo(m);
+      if (!state.layer) state.layer = createHouseholdMarkerLayer().addTo(m);
       marker.addTo(state.layer);
       state.markers.set(id, marker);
     }

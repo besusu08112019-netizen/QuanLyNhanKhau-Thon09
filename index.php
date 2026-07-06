@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-351-gis-debug');
+define('APP_ASSET_VERSION', 'deploy-352-gis-mobile-cluster');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
