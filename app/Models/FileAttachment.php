@@ -72,6 +72,54 @@ final class FileAttachment extends BaseModel
         return $this->fetchAll('SELECT ' . $select . ' FROM file_attachments f' . $join . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY ' . $orderBy, $params);
     }
 
+    public function searchByEntity(string $entityType, int $entityId, array $filters = []): array
+    {
+        $page = max(1, (int) ($filters['page'] ?? 1));
+        $pageSize = min(100, max(1, (int) ($filters['pageSize'] ?? $filters['page_size'] ?? 24)));
+        $offset = ($page - 1) * $pageSize;
+
+        [$where, $params] = $this->entityWhere($entityType, $entityId);
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $searchParts = ['f.original_name LIKE :search_original'];
+            $params['search_original'] = '%' . $search . '%';
+            foreach (['file_name' => 'search_file', 'description' => 'search_description', 'profile_section' => 'search_section', 'category' => 'search_category'] as $column => $param) {
+                if (!$this->columnExists('file_attachments', $column)) continue;
+                $searchParts[] = 'f.' . $column . ' LIKE :' . $param;
+                $params[$param] = '%' . $search . '%';
+            }
+            $where[] = '(' . implode(' OR ', $searchParts) . ')';
+        }
+
+        $category = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($filters['category'] ?? $filters['profileSection'] ?? '')));
+        if ($category !== '') {
+            $categoryParts = [];
+            if ($this->columnExists('file_attachments', 'profile_section')) $categoryParts[] = 'f.profile_section = :category';
+            if ($this->columnExists('file_attachments', 'category')) $categoryParts[] = 'f.category = :category';
+            if (!$categoryParts) $categoryParts[] = 'f.file_type = :category';
+            $where[] = '(' . implode(' OR ', $categoryParts) . ')';
+            $params['category'] = $category;
+        }
+
+        $fileType = preg_replace('/[^A-Z_]/', '', strtoupper((string) ($filters['fileType'] ?? $filters['file_type'] ?? '')));
+        if ($fileType !== '') {
+            $where[] = 'f.file_type = :file_type';
+            $params['file_type'] = $fileType;
+        }
+
+        $select = $this->fileSelectAndJoin();
+        $whereSql = implode(' AND ', $where);
+        $orderBy = $this->columnExists('file_attachments', 'created_at') ? 'f.created_at DESC, f.id DESC' : 'f.id DESC';
+        $totalRow = $this->fetchOne('SELECT COUNT(*) AS total FROM file_attachments f WHERE ' . $whereSql, $params);
+        $items = $this->fetchAll('SELECT ' . $select['select'] . ' FROM file_attachments f' . $select['join'] . ' WHERE ' . $whereSql . ' ORDER BY ' . $orderBy . ' LIMIT ' . $pageSize . ' OFFSET ' . $offset, $params);
+
+        return [
+            'items' => array_map(fn(array $row): array => $this->normalizeRow($row), $items),
+            'total' => (int) ($totalRow['total'] ?? 0),
+            'page' => $page,
+            'pageSize' => $pageSize,
+        ];
+    }
     public function softDelete(int $id, int $userId): void
     {
         $sets = ['status="DELETED"', 'deleted_at=NOW()', 'deleted_by=:user'];
@@ -147,8 +195,41 @@ final class FileAttachment extends BaseModel
         $row['entity_type'] = $row['entity_type'] ?? ($row['module'] ?? '');
         $row['category'] = $row['category'] ?? ($row['profile_section'] ?? ($row['file_type'] ?? ''));
         $row['file_name'] = $row['file_name'] ?? ($row['original_name'] ?? '');
+        $row['display_name'] = $row['file_name'] ?: ($row['original_name'] ?? '');
+        $row['version'] = $row['version'] ?? null;
         return $row;
     }
+
+    private function entityWhere(string $entityType, int $entityId): array
+    {
+        $where = ['f.entity_id = :entity_id'];
+        $params = ['entity_type' => $entityType, 'entity_id' => $entityId];
+        if ($this->columnExists('file_attachments', 'status')) {
+            $where[] = 'f.status = "ACTIVE"';
+        }
+        if ($this->columnExists('file_attachments', 'entity_type')) {
+            $where[] = 'COALESCE(f.entity_type, f.module) = :entity_type';
+        } else {
+            $where[] = 'f.module = :entity_type';
+        }
+        return [$where, $params];
+    }
+
+    private function fileSelectAndJoin(): array
+    {
+        $select = 'f.*';
+        $join = '';
+        if ($this->tableExists('users') && $this->columnExists('file_attachments', 'created_by')) {
+            $select .= ', uc.display_name AS created_by_name, uc.email AS created_by_email';
+            $join = ' LEFT JOIN users uc ON uc.id = f.created_by';
+            if ($this->columnExists('file_attachments', 'updated_by')) {
+                $select .= ', uu.display_name AS updated_by_name, uu.email AS updated_by_email';
+                $join .= ' LEFT JOIN users uu ON uu.id = f.updated_by';
+            }
+        }
+        return ['select' => $select, 'join' => $join];
+    }
+
     private function tableExists(string $table): bool
     {
         $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);

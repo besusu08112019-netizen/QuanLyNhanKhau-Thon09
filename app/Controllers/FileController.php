@@ -52,6 +52,17 @@ final class FileController extends BaseController
             $this->fail('Invalid file query', 422);
         }
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
+        $filters = [
+            'page' => $this->query('page', ''),
+            'pageSize' => $this->query('pageSize', $this->query('page_size', '')),
+            'search' => $this->query('search', ''),
+            'category' => $this->query('category', $this->query('profileSection', '')),
+            'fileType' => $this->query('fileType', $this->query('file_type', '')),
+        ];
+        $hasPagedQuery = trim(implode('', array_map('strval', $filters))) !== '';
+        if ($hasPagedQuery) {
+            $this->ok($this->files->searchByEntity($entityType, (int) $entityId, $filters));
+        }
         $this->ok(array_map(fn(array $row): array => $this->files->normalizeRow($row), $this->files->byEntity($entityType, (int) $entityId)));
     }
 

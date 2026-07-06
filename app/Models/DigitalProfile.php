@@ -295,7 +295,7 @@ final class DigitalProfile extends BaseModel
     private function fileSectionLabel(string $section, string $type): string
     {
         return [
-            'front_house' => 'Ảnh mặt trước nhà', 'location_photo' => 'Ảnh vị trí thực tế', 'household_video' => 'Video hộ gia đình', 'household_document' => 'Tài liệu hộ gia đình',
+            'front_house' => 'Anh mat tien nha', 'inside_house' => 'Anh ben trong nha', 'auxiliary_work' => 'Anh cong trinh phu', 'household_video' => 'Video', 'household_pdf' => 'Tai lieu PDF', 'household_word' => 'File Word', 'household_excel' => 'File Excel', 'land_use_rights' => 'Ho so quyen su dung dat', 'building_permit' => 'Giay phep xay dung', 'electric_contract' => 'Hop dong dien', 'water_contract' => 'Hop dong nuoc', 'internet_contract' => 'Hop dong Internet', 'meeting_minutes' => 'Bien ban hop', 'household_document' => 'Cac giay to khac',
             'portrait' => 'Ảnh chân dung', 'cccd_front' => 'CCCD mặt trước', 'cccd_back' => 'CCCD mặt sau', 'birth_certificate' => 'Giấy khai sinh', 'household_book' => 'Sổ hộ khẩu', 'citizen_document' => 'Giấy tờ liên quan',
         ][$section] ?? ($type === 'VIDEO' ? 'Video' : ($type === 'PHOTO' || $type === 'IMAGE' ? 'Hình ảnh' : 'Tệp đính kèm'));
     }
