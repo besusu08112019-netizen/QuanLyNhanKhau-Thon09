@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-353-gis-mobile-popup-lifecycle');
+define('APP_ASSET_VERSION', 'deploy-354-gis-mobile-popup-touch');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
