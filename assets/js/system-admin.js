@@ -2,6 +2,7 @@
   'use strict';
 
   const API = '/api/system-admin';
+  const DEBUG_PREFIX = '[SystemAdmin]';
   const state = { loaded: false, timers: {} };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -15,11 +16,17 @@
   document.addEventListener('thon09:screen-change', event => { if (event.detail?.screen === 'systemAdmin') loadAll(); });
 
   function boot() {
-    ensureNav();
-    ensureScreen();
-    wrapSwitchScreen();
-    bindEvents();
-    if (isActive()) loadAll();
+    try {
+      debug('Module initialized');
+      ensureNav();
+      ensureScreen();
+      wrapSwitchScreen();
+      bindEvents();
+      if (isActive()) loadAll();
+    } catch (error) {
+      logError('Module initialization failed', error);
+      renderFatal(error);
+    }
   }
 
   function ensureNav() {
@@ -42,8 +49,9 @@
   }
 
   function ensureScreen() {
-    const main = $('.content-area') || $('.main-content') || $('#appView');
-    if (!main || $('#systemAdminScreen')) return;
+    const main = screenHost();
+    if ($('#systemAdminScreen')) return;
+    if (!main) throw new Error('System admin render container not found');
     main.insertAdjacentHTML('beforeend', `
       <section id="systemAdminScreen" class="screen system-admin-screen">
         <div class="system-admin-shell">
@@ -68,6 +76,10 @@
       </section>`);
   }
 
+  function screenHost() {
+    return $('.main-area') || $('.content-area') || $('.main-content') || $('#appView');
+  }
+
   function panel(id, title, icon, tools = '') {
     return '<article class="content-card system-admin-panel"><div class="system-admin-panel-head"><h4><i class="fa-solid ' + icon + '"></i> ' + title + '</h4><div class="system-admin-tools">' + tools + '</div></div><div id="' + id + '"></div></article>';
   }
@@ -77,6 +89,7 @@
     window.__thon09SystemAdminSwitchWrapped = true;
     const original = typeof window.switchScreen === 'function' ? window.switchScreen : null;
     window.switchScreen = function (screen) {
+      if (screen === 'systemAdmin') ensureScreen();
       const result = original ? original.apply(this, arguments) : undefined;
       if (screen === 'systemAdmin') {
         normalizeHeader();
@@ -106,16 +119,55 @@
   }
 
   function isActive() { return !!$('#systemAdminScreen.active'); }
-  function loading(selector) { const host = $(selector); if (host) host.innerHTML = '<div class="system-admin-empty">Đang tải dữ liệu...</div>'; }
-  function errorBox(selector, error) { const host = $(selector); if (host) host.innerHTML = '<div class="system-admin-error">' + esc(error?.message || 'Widget tạm thời không tải được') + '</div>'; }
+  function loading(selector) { setHtml(selector, '<div class="system-admin-empty">?ang t?i d? li?u...</div>'); }
+  function setHtml(selector, html) {
+    const host = $(selector);
+    if (!host) throw new Error('System admin container not found: ' + selector);
+    host.innerHTML = html;
+    return host;
+  }
+  function setText(selector, value) {
+    const host = $(selector);
+    if (!host) throw new Error('System admin text container not found: ' + selector);
+    host.textContent = value;
+  }
+  function errorBox(selector, error) {
+    logError('Widget render failed: ' + selector, error);
+    try { setHtml(selector, '<div class="system-admin-error">' + esc(error?.message || 'Widget t?m th?i kh?ng t?i ???c') + '</div>'); }
+    catch (renderError) { logError('Cannot render widget error box: ' + selector, renderError); renderFatal(error || renderError); }
+  }
+  function renderFatal(error) {
+    const main = screenHost();
+    if (!main) return;
+    let screen = $('#systemAdminScreen');
+    if (!screen) {
+      main.insertAdjacentHTML('beforeend', '<section id="systemAdminScreen" class="screen system-admin-screen"><div class="content-card system-admin-error"></div></section>');
+      screen = $('#systemAdminScreen');
+    }
+    const box = $('.system-admin-error', screen) || screen;
+    box.innerHTML = '<strong>Kh?ng hi?n th? ???c module Qu?n tr? h? th?ng.</strong><div>' + esc(error?.message || 'L?i kh?ng x?c ??nh') + '</div>';
+  }
+  function debug(message, detail) { console.info(DEBUG_PREFIX + ' ' + message, detail || ''); }
+  function logError(message, error) { console.error(DEBUG_PREFIX + ' ' + message, error); }
 
   async function apiGet(path, params = {}) {
     const query = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    if (typeof window.api === 'function') return window.api(path + query, { cacheTtl: 0 });
-    const res = await fetch(path + query, { headers: authHeaders(), cache: 'no-store' });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'Không tải được dữ liệu');
-    return json.data;
+    const url = path + query;
+    try {
+      let data;
+      if (typeof window.api === 'function') data = await window.api(url, { cacheTtl: 0 });
+      else {
+        const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
+        const json = await res.json().catch(() => null);
+        if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'Kh?ng t?i ???c d? li?u');
+        data = json.data;
+      }
+      debug('API loaded', { url });
+      return data;
+    } catch (error) {
+      logError('API failed: ' + url, error);
+      throw error;
+    }
   }
 
   async function apiPost(path, body = {}) {
@@ -131,12 +183,22 @@
     return headers;
   }
 
-  function loadAll(force = false) {
-    if (!token()) return;
-    if (state.loaded && !force && !isActive()) return;
-    state.loaded = true;
-    bindEvents();
-    loadOverview(); loadHealth(); loadSessions(); loadMemory(); loadPerformance(); loadSecurity(); loadConfig();
+  async function loadAll(force = false) {
+    try {
+      ensureScreen();
+      debug('Render started', { force, active: isActive() });
+      if (!token()) throw new Error('Missing authentication token');
+      if (state.loaded && !force && !isActive()) return;
+      state.loaded = true;
+      bindEvents();
+      const results = await Promise.allSettled([loadOverview(), loadHealth(), loadSessions(), loadMemory(), loadPerformance(), loadSecurity(), loadConfig()]);
+      const rejected = results.filter(result => result.status === 'rejected');
+      rejected.forEach(result => logError('Render task rejected', result.reason));
+      debug('DOM rendered', { rejected: rejected.length });
+    } catch (error) {
+      logError('Render failed', error);
+      renderFatal(error);
+    }
   }
 
   async function loadOverview() {
@@ -145,11 +207,11 @@
       const data = await apiGet(API + '/overview');
       $('#systemAdminGeneratedAt').textContent = 'Cập nhật lúc ' + formatTime(data.system?.generatedAt);
       const c = data.counts || {}, s = data.storage || {}, sys = data.system || {};
-      $('#systemAdminOverview').innerHTML = [
+      setHtml('#systemAdminOverview', [
         kpi('Phiên bản hệ thống', esc(sys.version || '')), kpi('Database', esc(sys.databaseVersion || '')), kpi('Uptime', esc(sys.uptime || '')),
         kpi('Dung lượng Upload', esc(s.uploads?.label || '0 B')), kpi('Người dùng', fmt(c.users)), kpi('Hộ', fmt(c.households)),
         kpi('Nhân khẩu', fmt(c.citizens)), kpi('Hồ sơ số', fmt(c.digitalProfiles)), kpi('Tài liệu', fmt(c.documents)), kpi('Ảnh', fmt(c.images)), kpi('Video', fmt(c.videos))
-      ].join('');
+      ].join(''));
     } catch (error) { errorBox('#systemAdminOverview', error); }
   }
 
@@ -157,7 +219,7 @@
     loading('#systemAdminHealth');
     try {
       const data = await apiGet(API + '/health');
-      $('#systemAdminHealth').innerHTML = '<div class="system-admin-checks">' + (data.checks || []).map(check => checkRow(check)).join('') + '</div>';
+      setHtml('#systemAdminHealth', '<div class="system-admin-checks">' + (data.checks || []).map(check => checkRow(check)).join('') + '</div>');
     } catch (error) { errorBox('#systemAdminHealth', error); }
   }
 
@@ -166,7 +228,7 @@
     try {
       const data = await apiGet(API + '/sessions', { search: value('#systemSessionSearch'), status: value('#systemSessionStatus') || 'active', pageSize: 30 });
       const rows = data.items || [];
-      $('#systemAdminSessions').innerHTML = rows.length ? '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Người dùng</th><th>Thiết bị</th><th>IP</th><th>Hoạt động</th><th></th></tr></thead><tbody>' + rows.map(row => '<tr><td><strong>' + esc(row.display_name || row.email || '') + '</strong><small>' + esc(row.email || '') + '</small></td><td>' + esc(row.device) + ' / ' + esc(row.browser) + '</td><td>' + esc(row.ip_address || '') + '</td><td><span class="system-admin-status is-' + esc((row.status || '').toLowerCase()) + '">' + esc(row.status) + '</span><small>' + esc(formatTime(row.created_at)) + '</small></td><td>' + (row.status === 'ACTIVE' ? '<button class="btn btn-sm btn-outline-danger" data-revoke-session="' + Number(row.id) + '">Đăng xuất</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>' : empty('Không có phiên phù hợp');
+      setHtml('#systemAdminSessions', rows.length ? '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Người dùng</th><th>Thiết bị</th><th>IP</th><th>Hoạt động</th><th></th></tr></thead><tbody>' + rows.map(row => '<tr><td><strong>' + esc(row.display_name || row.email || '') + '</strong><small>' + esc(row.email || '') + '</small></td><td>' + esc(row.device) + ' / ' + esc(row.browser) + '</td><td>' + esc(row.ip_address || '') + '</td><td><span class="system-admin-status is-' + esc((row.status || '').toLowerCase()) + '">' + esc(row.status) + '</span><small>' + esc(formatTime(row.created_at)) + '</small></td><td>' + (row.status === 'ACTIVE' ? '<button class="btn btn-sm btn-outline-danger" data-revoke-session="' + Number(row.id) + '">Đăng xuất</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>' : empty('Không có phiên phù hợp'));
       $$('[data-revoke-session]').forEach(btn => btn.addEventListener('click', () => revokeSession(btn.dataset.revokeSession)));
     } catch (error) { errorBox('#systemAdminSessions', error); }
   }
@@ -175,7 +237,7 @@
     loading('#systemAdminMemory');
     try {
       const data = await apiGet(API + '/memory');
-      $('#systemAdminMemory').innerHTML = '<div class="system-admin-memory">' + (data.items || []).map(item => '<div><span><strong>' + esc(item.label) + '</strong><small>' + esc(item.stats?.label || '0 B') + ' · ' + fmt(item.stats?.files || item.stats?.expired || 0) + '</small></span>' + cleanupButton(item.key) + '</div>').join('') + '</div>';
+      setHtml('#systemAdminMemory', '<div class="system-admin-memory">' + (data.items || []).map(item => '<div><span><strong>' + esc(item.label) + '</strong><small>' + esc(item.stats?.label || '0 B') + ' · ' + fmt(item.stats?.files || item.stats?.expired || 0) + '</small></span>' + cleanupButton(item.key) + '</div>').join('') + '</div>');
       $$('[data-cleanup]').forEach(btn => btn.addEventListener('click', () => cleanup(btn.dataset.cleanup)));
     } catch (error) { errorBox('#systemAdminMemory', error); }
   }
@@ -184,7 +246,7 @@
     loading('#systemAdminPerformance');
     try {
       const data = await apiGet(API + '/performance');
-      $('#systemAdminPerformance').innerHTML = '<div class="system-admin-perf">' + (data.metrics || []).map(m => '<div><strong>' + esc(m.label) + '</strong><span>' + esc(m.value) + ' ' + esc(m.unit) + '</span></div>').join('') + '</div><h6>Đề xuất tối ưu</h6><ul class="system-admin-list">' + (data.recommendations || []).map(item => '<li>' + esc(item) + '</li>').join('') + '</ul>';
+      setHtml('#systemAdminPerformance', '<div class="system-admin-perf">' + (data.metrics || []).map(m => '<div><strong>' + esc(m.label) + '</strong><span>' + esc(m.value) + ' ' + esc(m.unit) + '</span></div>').join('') + '</div><h6>Đề xuất tối ưu</h6><ul class="system-admin-list">' + (data.recommendations || []).map(item => '<li>' + esc(item) + '</li>').join('') + '</ul>');
     } catch (error) { errorBox('#systemAdminPerformance', error); }
   }
 
@@ -192,7 +254,7 @@
     loading('#systemAdminSecurity');
     try {
       const data = await apiGet(API + '/security');
-      $('#systemAdminSecurity').innerHTML = '<div class="system-admin-checks">' + (data.checks || []).map(check => checkRow(check)).join('') + '</div>';
+      setHtml('#systemAdminSecurity', '<div class="system-admin-checks">' + (data.checks || []).map(check => checkRow(check)).join('') + '</div>');
     } catch (error) { errorBox('#systemAdminSecurity', error); }
   }
 
@@ -202,7 +264,7 @@
       const data = await apiGet(API + '/configuration');
       const settings = data.settings || {};
       const keys = ['systemName','hamletName','communeName','email','phone','address','timezone','language'];
-      $('#systemAdminConfig').innerHTML = '<div class="system-admin-config">' + keys.map(key => '<div><span>' + esc(key) + '</span><strong>' + esc(settings[key] || data[key] || '') + '</strong></div>').join('') + '</div><button class="btn btn-sm btn-outline-primary mt-2" type="button" data-open-settings>Mở cấu hình</button>';
+      setHtml('#systemAdminConfig', '<div class="system-admin-config">' + keys.map(key => '<div><span>' + esc(key) + '</span><strong>' + esc(settings[key] || data[key] || '') + '</strong></div>').join('') + '</div><button class="btn btn-sm btn-outline-primary mt-2" type="button" data-open-settings>Mở cấu hình</button>');
       $('[data-open-settings]')?.addEventListener('click', () => window.switchScreen && window.switchScreen('settings'));
     } catch (error) { errorBox('#systemAdminConfig', error); }
   }
