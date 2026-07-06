@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\BaseController;
 use App\Core\SimplePdf;
 use App\Models\Report;
+use Throwable;
 
 final class ReportController extends BaseController
 {

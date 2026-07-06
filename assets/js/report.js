@@ -8,6 +8,18 @@
   const fmt = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
   const token = () => (window.App && App.token) || localStorage.getItem('thon09_token') || '';
   const csrf = () => (window.App && App.csrfToken) || localStorage.getItem('thon09_csrf') || '';
+  const REPORT_ENDPOINTS = Object.freeze({
+    center: '/api/reports/center',
+    bi: '/api/reports/bi',
+    templates: '/api/reports/templates',
+    summary: '/api/reports/summary',
+    exportExcel: '/api/reports/export-excel',
+    exportPdf: '/api/reports/export-pdf',
+    exportWord: '/api/reports/export-word',
+    template: id => '/api/reports/templates/' + encodeURIComponent(id),
+    templateDefault: id => '/api/reports/templates/' + encodeURIComponent(id) + '/default'
+  });
+  const reportEndpoint = (name, query) => REPORT_ENDPOINTS[name] + (query ? '?' + query : '');
 
   document.addEventListener('DOMContentLoaded', bindSmartReporting);
   document.addEventListener('thon09:screen-change', event => {
@@ -32,9 +44,9 @@
     });
     $('#reportRefreshBtn')?.addEventListener('click', event => { event.preventDefault(); initSmartReporting(true); });
     $('#reportPrintBtn')?.addEventListener('click', capture(printReport), true);
-    $('#reportExcelBtn')?.addEventListener('click', capture(() => downloadReport('/api/reports/export-excel', 'xls', '?? xu?t Excel')), true);
-    $('#reportPdfBtn')?.addEventListener('click', capture(() => downloadReport('/api/reports/export-pdf', 'pdf', '?? xu?t PDF')), true);
-    $('#reportWordBtn')?.addEventListener('click', capture(() => downloadReport('/api/reports/export-word', 'doc', '?? xu?t Word')), true);
+    $('#reportExcelBtn')?.addEventListener('click', capture(() => downloadReport(REPORT_ENDPOINTS.exportExcel, 'xls', '?? xu?t Excel')), true);
+    $('#reportPdfBtn')?.addEventListener('click', capture(() => downloadReport(REPORT_ENDPOINTS.exportPdf, 'pdf', '?? xu?t PDF')), true);
+    $('#reportWordBtn')?.addEventListener('click', capture(() => downloadReport(REPORT_ENDPOINTS.exportWord, 'doc', '?? xu?t Word')), true);
     $('#reportSaveTemplateBtn')?.addEventListener('click', event => { event.preventDefault(); saveTemplate(); });
     initSmartReporting();
   }
@@ -108,7 +120,7 @@
 
   async function loadCenter() {
     try {
-      const data = await smartApi('/api/reports/center');
+      const data = await smartApi(REPORT_ENDPOINTS.center);
       state.center = data;
       renderGroups(data.groups || []);
       renderTemplateLibrary(data.templates || []);
@@ -119,7 +131,7 @@
 
   async function loadBi() {
     try {
-      const data = await smartApi('/api/reports/bi?' + reportQuery());
+      const data = await smartApi(reportEndpoint('bi', reportQuery()));
       renderBi(data);
     } catch (error) {
       renderBox('#reportBiCharts', '<div class="report-widget-error">' + esc(error.message) + '</div>');
@@ -130,7 +142,7 @@
 
   async function loadTemplates() {
     try {
-      state.templates = await smartApi('/api/reports/templates');
+      state.templates = await smartApi(REPORT_ENDPOINTS.templates);
       renderSavedTemplates(state.templates || []);
     } catch (error) {
       renderBox('#reportSavedTemplates', '<div class="report-widget-error">' + esc(error.message) + '</div>');
@@ -143,7 +155,7 @@
     setCount('?ang t?i d? li?u...');
     renderBox('#reportPreview', '<div class="report-empty-state">?ang sinh b?o c?o...</div>');
     try {
-      const report = await smartApi('/api/reports/summary?' + reportQuery());
+      const report = await smartApi(reportEndpoint('summary', reportQuery()));
       state.report = report;
       setTitle(report.title || 'B?o c?o');
       setCount(fmt(report.totalRows || 0) + ' d?ng');
@@ -216,7 +228,7 @@
     const name = prompt('T?n m?u b?o c?o');
     if (!name) return;
     const filters = currentFilters();
-    const template = await smartApi('/api/reports/templates', { method: 'POST', body: { name, type: filters.type || 'summary', filters } });
+    const template = await smartApi(REPORT_ENDPOINTS.templates, { method: 'POST', body: { name, type: filters.type || 'summary', filters } });
     state.templates.unshift(template);
     await loadTemplates();
     toast('?? l?u m?u b?o c?o');
@@ -232,13 +244,13 @@
   }
 
   async function deleteTemplate(id) {
-    await smartApi('/api/reports/templates/' + encodeURIComponent(id), { method: 'DELETE' });
+    await smartApi(REPORT_ENDPOINTS.template(id), { method: 'DELETE' });
     await loadTemplates();
     toast('?? x?a m?u b?o c?o');
   }
 
   async function defaultTemplate(id) {
-    await smartApi('/api/reports/templates/' + encodeURIComponent(id) + '/default', { method: 'POST', body: {} });
+    await smartApi(REPORT_ENDPOINTS.templateDefault(id), { method: 'POST', body: {} });
     await loadTemplates();
     toast('?? ??t m?u m?c ??nh');
   }

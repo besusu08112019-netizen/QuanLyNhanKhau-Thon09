@@ -174,6 +174,13 @@ $router->post('/api/import/execute', [ImportController::class, 'process']);
 
 $router->get('/api/reports', [ReportController::class, 'summary']);
 $router->get('/api/reports/summary', [ReportController::class, 'summary']);
+$router->get('/api/reports/center', [ReportController::class, 'center']);
+$router->get('/api/reports/bi', [ReportController::class, 'bi']);
+$router->get('/api/reports/bitype-summary', [ReportController::class, 'bi']);
+$router->get('/api/reports/templates', [ReportController::class, 'templates']);
+$router->post('/api/reports/templates', [ReportController::class, 'saveTemplate']);
+$router->delete('/api/reports/templates/{id}', [ReportController::class, 'deleteTemplate']);
+$router->post('/api/reports/templates/{id}/default', [ReportController::class, 'defaultTemplate']);
 $router->get('/api/reports/population', [ReportController::class, 'population']);
 $router->get('/api/reports/household', [ReportController::class, 'household']);
 $router->get('/api/reports/temporary-residence', [ReportController::class, 'temporaryResidence']);
@@ -184,6 +191,7 @@ $router->get('/api/reports/migration', [ReportController::class, 'migration']);
 $router->get('/api/reports/export-excel', [ReportController::class, 'exportExcel']);
 $router->get('/api/reports/print', [ReportController::class, 'print']);
 $router->get('/api/reports/export-pdf', [ReportController::class, 'exportPdf']);
+$router->get('/api/reports/export-word', [ReportController::class, 'exportWord']);
 $router->get('/api/export/excel', [ReportController::class, 'exportExcel']);
 
 $router->get('/api/accounts', [UserController::class, 'index']);
