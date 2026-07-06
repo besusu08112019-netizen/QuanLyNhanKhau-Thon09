@@ -194,14 +194,20 @@ class GisController extends BaseController
 
     private function householdFiltersFromQuery(): array
     {
-        return [
+        $filters = [
             'search' => $this->query('q'),
             'area_code' => $this->query('area_code'),
             'located' => $this->query('located'),
-            'bounds' => $this->boundsFromQuery(),
         ];
+        foreach (['party', 'children', 'elderly', 'poor', 'near_poor', 'labor', 'permanent', 'temporary'] as $key) {
+            $filters[$key] = $this->query($key);
+        }
+        $bounds = $this->boundsFromQuery();
+        if ($bounds !== null) {
+            $filters += $bounds;
+        }
+        return $filters;
     }
-
     private function boolQuery(string $key, bool $default): bool
     {
         $value = $this->query($key);

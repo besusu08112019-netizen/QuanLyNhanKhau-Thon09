@@ -6,7 +6,9 @@
     layer: null,
     loading: false,
     picker: null,
-    lastSearch: ''
+    lastSearch: '',
+    thumbnailCache: new Map(),
+    lastRows: []
   };
 
   function $(selector, root) { return (root || document).querySelector(selector); }
@@ -33,6 +35,29 @@
     if (!response.ok || !json || json.ok === false) throw new Error((json && json.error && json.error.message) || 'Không tải được dữ liệu.');
     return json.data || json;
   }
+  function loadAssetOnce(kind, url, test) {
+    if (typeof test === 'function' && test()) return Promise.resolve(true);
+    const attr = 'data-gis-smart-asset';
+    if (document.querySelector('[' + attr + '="' + url + '"]')) return Promise.resolve(true);
+    return new Promise(resolve => {
+      const el = kind === 'style' ? document.createElement('link') : document.createElement('script');
+      el.setAttribute(attr, url);
+      if (kind === 'style') { el.rel = 'stylesheet'; el.href = url; } else { el.src = url; el.async = true; }
+      el.onload = () => resolve(true);
+      el.onerror = () => resolve(false);
+      document.head.appendChild(el);
+    });
+  }
+
+  function ensureMarkerCluster() {
+    if (!window.L || window.L.markerClusterGroup) return Promise.resolve(Boolean(window.L && window.L.markerClusterGroup));
+    return Promise.all([
+      loadAssetOnce('style', 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'),
+      loadAssetOnce('style', 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css'),
+      loadAssetOnce('script', 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js', () => Boolean(window.L && window.L.markerClusterGroup))
+    ]).then(() => Boolean(window.L && window.L.markerClusterGroup));
+  }
+
   function debounce(fn, wait) {
     let timer;
     return function () {
@@ -261,28 +286,72 @@
     });
   }
 
-  function markerIcon(active) {
-    return L.divIcon({ className: 'gis-household-marker' + (active ? ' is-active' : ''), html: '<i class="fa-solid fa-house-chimney"></i>', iconSize: [34, 34], iconAnchor: [17, 28], popupAnchor: [0, -28] });
+  function previewUrl(id) { return id ? '/api/files/' + encodeURIComponent(id) + '/preview' : ''; }
+
+  async function loadPreviewBlobUrl(fileId) {
+    if (!fileId) return '';
+    const key = String(fileId);
+    if (state.thumbnailCache.has(key)) return state.thumbnailCache.get(key);
+    const headers = {};
+    if (window.App && window.App.token) headers.Authorization = 'Bearer ' + window.App.token;
+    const response = await fetch(previewUrl(fileId), { headers, cache: 'force-cache' });
+    if (!response.ok) throw new Error('Kh?ng t?i ???c ?nh h?');
+    const url = URL.createObjectURL(await response.blob());
+    state.thumbnailCache.set(key, url);
+    return url;
+  }
+
+  function markerIcon(active, thumbnailUrl) {
+    const html = thumbnailUrl
+      ? '<span class="gis-household-marker-thumb"><img src="' + escapeHtml(thumbnailUrl) + '" alt=""></span>'
+      : '<span class="gis-household-marker-default"><i class="fa-solid fa-house-chimney"></i></span>';
+    return L.divIcon({ className: 'gis-household-marker' + (active ? ' is-active' : '') + (thumbnailUrl ? ' has-photo' : ''), html, iconSize: [44, 44], iconAnchor: [22, 38], popupAnchor: [0, -36] });
+  }
+
+  function hydrateMarkerThumbnail(marker, row) {
+    if (!row.thumbnail_file_id || marker.__thon09ThumbLoading) return;
+    marker.__thon09ThumbLoading = true;
+    loadPreviewBlobUrl(row.thumbnail_file_id).then(url => {
+      row.__thumbnailObjectUrl = url;
+      marker.__thon09HouseholdRow = row;
+      marker.setIcon(markerIcon(state.activeMarkerId === String(row.id), url));
+      marker.setPopupContent(popupHtml(row));
+    }).catch(() => {});
+  }
+
+  function gpsText(row) {
+    if (row.latitude == null || row.longitude == null) return 'Ch?a c? GPS';
+    return Number(row.latitude).toFixed(6) + ', ' + Number(row.longitude).toFixed(6);
+  }
+
+  function popupImageHtml(row) {
+    const url = row.__thumbnailObjectUrl || '';
+    if (url) return '<img src="' + escapeHtml(url) + '" alt="?nh h?" loading="lazy">';
+    return '<div class="gis-household-popup-photo-empty"><i class="fa-solid fa-house-chimney"></i></div>';
   }
 
   function popupHtml(row) {
-    return '<div class="gis-household-popup">' +
-      '<h4>Hộ gia đình</h4>' +
+    const phone = String(row.phone || '').trim();
+    return '<div class="gis-household-popup gis-smart-popup">' +
+      '<div class="gis-smart-popup-head"><div class="gis-smart-popup-photo" data-gis-popup-photo="' + Number(row.thumbnail_file_id || 0) + '">' + popupImageHtml(row) + '</div>' +
+      '<div><h4>' + escapeHtml(row.household_code || 'H? gia ??nh') + '</h4><p>' + escapeHtml(row.head_citizen_name || 'Ch?a c? ch? h?') + '</p><span>' + escapeHtml(row.household_type || 'H? b?nh th??ng') + '</span></div></div>' +
       '<dl>' +
-        '<dt>Mã hộ</dt><dd>' + escapeHtml(row.household_code) + '</dd>' +
-        '<dt>Chủ hộ</dt><dd>' + escapeHtml(row.head_citizen_name) + '</dd>' +
-        '<dt>Địa chỉ</dt><dd>' + escapeHtml(row.address) + '</dd>' +
-        '<dt>Nhân khẩu</dt><dd>' + Number(row.total_members || 0).toLocaleString('vi-VN') + '</dd>' +
-        '<dt>C\u01b0 tr\u00fa</dt><dd>' + escapeHtml(row.residency_status || 'Th\u01b0\u1eddng tr\u00fa') + '</dd>' +
-        '<dt>Điện thoại</dt><dd>' + escapeHtml(row.phone || '') + '</dd>' +
-        '<dt>Diện hộ</dt><dd>' + escapeHtml(row.household_type || '') + '</dd>' +
+        '<dt>M? h?</dt><dd>' + escapeHtml(row.household_code) + '</dd>' +
+        '<dt>Ch? h?</dt><dd>' + escapeHtml(row.head_citizen_name) + '</dd>' +
+        '<dt>??a ch?</dt><dd>' + escapeHtml(row.address) + '</dd>' +
+        '<dt>S? nh?n kh?u</dt><dd>' + Number(row.total_members || 0).toLocaleString('vi-VN') + '</dd>' +
+        '<dt>?ang c? tr?</dt><dd>' + Number(row.at_home_count || 0).toLocaleString('vi-VN') + '</dd>' +
+        '<dt>Tr?ng th?i h?</dt><dd>' + escapeHtml(row.status || 'ACTIVE') + '</dd>' +
+        '<dt>GPS</dt><dd>' + escapeHtml(gpsText(row)) + '</dd>' +
       '</dl>' +
-      '<div class="gis-household-popup-actions">' +
-        '<button class="btn btn-outline-secondary" type="button" onclick="thon09GisOpenHousehold(' + row.id + ')">M\u1edf h\u1ed3 s\u01a1 h\u1ed9</button>' +
-        '<button class="btn btn-outline-primary" type="button" onclick="thon09GisEditHousehold(' + row.id + ')">Sửa</button>' +
-        '<button class="btn btn-outline-success" type="button" onclick="thon09GisRelocateHousehold(' + row.id + ')">Định vị lại</button>' +
-        '<button class="btn btn-success" type="button" onclick="thon09GisRouteToHousehold(' + row.id + ')">Ch\u1ec9 \u0111\u01b0\u1eddng</button>' +
+      '<div class="gis-smart-popup-actions">' +
+        '<button class="btn btn-sm btn-primary" type="button" onclick="thon09GisOpenHousehold(' + row.id + ')"><i class="fa-solid fa-folder-open"></i> H? s? s?</button>' +
+        '<button class="btn btn-sm btn-success" type="button" onclick="thon09GisRouteToHousehold(' + row.id + ')"><i class="fa-solid fa-route"></i> Ch? ???ng</button>' +
+        '<button class="btn btn-sm btn-outline-secondary" type="button" onclick="thon09GisOpenHouseholdGallery(' + row.id + ')"><i class="fa-solid fa-images"></i> Xem ?nh</button>' +
+        (phone ? '<a class="btn btn-sm btn-outline-primary" href="tel:' + escapeHtml(phone) + '"><i class="fa-solid fa-phone"></i> G?i ?i?n</a>' : '') +
+        '<button class="btn btn-sm btn-outline-success" type="button" onclick="thon09GisRelocateHousehold(' + row.id + ')"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>' +
       '</div>' +
+      '<div class="gis-smart-route-links"><button type="button" onclick="thon09GisOpenMapProvider(' + row.id + ', \'google\')">Google Maps</button><button type="button" onclick="thon09GisOpenMapProvider(' + row.id + ', \'apple\')">Apple Maps</button><button type="button" onclick="thon09GisOpenMapProvider(' + row.id + ', \'osm\')">OpenStreetMap</button></div>' +
     '</div>';
   }
 
@@ -308,22 +377,28 @@
     if (!m || !window.L || state.loading) return;
     state.loading = true;
     try {
-      if (!state.layer) state.layer = L.layerGroup().addTo(m);
+      if (!state.layer) {
+        await ensureMarkerCluster();
+        state.layer = L.markerClusterGroup ? L.markerClusterGroup({ chunkedLoading: true, showCoverageOnHover: false, maxClusterRadius: 46 }) : L.layerGroup();
+        state.layer.addTo(m);
+      }
       state.layer.clearLayers();
       state.markers.clear();
       const data = await request('/api/gis/households?' + markerParams(search || '').toString());
       (data.items || []).forEach(row => {
         if (row.latitude == null || row.longitude == null) return;
-        const marker = L.marker([row.latitude, row.longitude], { icon: markerIcon(false), title: row.head_citizen_name || row.household_code });
+        const marker = L.marker([row.latitude, row.longitude], { icon: markerIcon(false, (item.__thon09HouseholdRow || {}).__thumbnailObjectUrl || ''), title: row.head_citizen_name || row.household_code });
         marker.bindPopup(popupHtml(row));
         marker.on('click', () => {
-          state.markers.forEach(item => item.setIcon(markerIcon(false)));
-          marker.setIcon(markerIcon(true));
+          state.markers.forEach(item => item.setIcon(markerIcon(false, (item.__thon09HouseholdRow || {}).__thumbnailObjectUrl || '')));
+          marker.setIcon(markerIcon(true, (marker.__thon09HouseholdRow || {}).__thumbnailObjectUrl || ''));
         });
         marker.addTo(state.layer);
         marker.__thon09HouseholdRow = row;
         state.markers.set(String(row.id), marker);
       });
+      state.lastRows = data.items || [];
+      document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer } }));
       if (search && state.markers.size) {
         const first = state.markers.values().next().value;
         m.setView(first.getLatLng(), Math.max(m.getZoom(), 17));
@@ -388,7 +463,7 @@
     }
     if (!marker) return false;
     state.activeMarkerId = id;
-    state.markers.forEach(item => item.setIcon(markerIcon(false)));
+    state.markers.forEach(item => item.setIcon(markerIcon(false, (item.__thon09HouseholdRow || {}).__thumbnailObjectUrl || '')));
     marker.setIcon(markerIcon(true));
     m.setView(marker.getLatLng(), Math.max(m.getZoom(), 17), { animate: true });
     marker.openPopup();

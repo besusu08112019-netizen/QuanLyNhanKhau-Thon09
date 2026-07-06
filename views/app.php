@@ -306,6 +306,10 @@
   <script src="assets/js/admin-panel-bridge.min.js?v=20260705-prod-1"></script>
   <script src="assets/js/sprint8.min.js?v=20260705-prod-1"></script>
   <script src="assets/js/sprint9.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/gis-household-location.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/gis-search.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/gis-smart.min.js?v=20260705-prod-1"></script>
+  <script src="assets/js/digital-profile.min.js?v=20260705-prod-1"></script>
   <script src="assets/js/sprint10.min.js?v=20260705-prod-1"></script>
 </body>
 </html>

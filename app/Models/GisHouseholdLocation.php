@@ -40,9 +40,31 @@ final class GisHouseholdLocation extends BaseModel
                 h.poor_household, h.near_poor_household, h.meritorious_family, h.disabled_household,
                 COALESCE(v.total_members, 0) AS total_members,
                 COALESCE(v.at_home_count, 0) AS at_home_count,
-                COALESCE(v.away_count, 0) AS away_count
+                COALESCE(v.away_count, 0) AS away_count,
+                COALESCE(cm.party_members, 0) AS party_members,
+                COALESCE(cm.children_count, 0) AS children_count,
+                COALESCE(cm.elderly_count, 0) AS elderly_count,
+                COALESCE(cm.working_age_count, 0) AS working_age_count,
+                COALESCE(cm.permanent_count, 0) AS permanent_count,
+                COALESCE(cm.temporary_count, 0) AS temporary_count,
+                COALESCE(cm.labor_count, 0) AS labor_count,
+                (SELECT f.id FROM file_attachments f WHERE COALESCE(f.entity_type, f.module) = "household" AND f.entity_id = h.id AND (f.status IS NULL OR f.status <> "DELETED") AND (f.file_type IN ("PHOTO","IMAGE") OR f.mime_type LIKE "image/%") ORDER BY CASE COALESCE(f.profile_section, f.category, "") WHEN "front_house" THEN 0 WHEN "inside_house" THEN 1 ELSE 2 END, f.id DESC LIMIT 1) AS thumbnail_file_id,
+                (SELECT COUNT(1) FROM file_attachments f WHERE COALESCE(f.entity_type, f.module) = "household" AND f.entity_id = h.id AND (f.status IS NULL OR f.status <> "DELETED") AND (f.file_type IN ("PHOTO","IMAGE") OR f.mime_type LIKE "image/%")) AS gallery_count
              FROM households h
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
+             LEFT JOIN (
+                SELECT c.household_id,
+                    SUM(CASE WHEN c.party_member = 1 THEN 1 ELSE 0 END) AS party_members,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) < 16 THEN 1 ELSE 0 END) AS children_count,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) >= 60 THEN 1 ELSE 0 END) AS elderly_count,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END) AS working_age_count,
+                    SUM(CASE WHEN c.residency_status = "PERMANENT" THEN 1 ELSE 0 END) AS permanent_count,
+                    SUM(CASE WHEN c.residency_status = "TEMPORARY" THEN 1 ELSE 0 END) AS temporary_count,
+                    SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count
+                FROM citizens c
+                WHERE c.status <> "DELETED"
+                GROUP BY c.household_id
+             ) cm ON cm.household_id = h.id
              WHERE h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")
                 AND h.latitude IS NOT NULL AND h.longitude IS NOT NULL' . $where . '
              ORDER BY h.household_code ASC
@@ -165,9 +187,19 @@ final class GisHouseholdLocation extends BaseModel
         }
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
-            $where .= ' AND (h.household_code LIKE :search OR h.head_citizen_name LIKE :search OR h.address LIKE :search OR h.phone LIKE :search)';
+            $where .= ' AND (h.household_code LIKE :search OR h.head_citizen_name LIKE :search OR h.address LIKE :search OR h.phone LIKE :search OR EXISTS (SELECT 1 FROM citizens cs WHERE cs.household_id = h.id AND cs.status <> "DELETED" AND (cs.full_name LIKE :search OR cs.identity_number LIKE :search)))';
             $params['search'] = '%' . $search . '%';
         }
+        $areaCode = trim((string) ($filters['area_code'] ?? ''));
+        if ($areaCode !== '') {
+            $where .= ' AND h.area_code = :area_code';
+            $params['area_code'] = $areaCode;
+        }
+        foreach (['party' => 'cm.party_members', 'children' => 'cm.children_count', 'elderly' => 'cm.elderly_count', 'labor' => 'cm.labor_count', 'permanent' => 'cm.permanent_count', 'temporary' => 'cm.temporary_count'] as $filterKey => $column) {
+            if ($this->enabledFilter($filters[$filterKey] ?? null)) $where .= ' AND ' . $column . ' > 0';
+        }
+        if ($this->enabledFilter($filters['poor'] ?? null)) $where .= ' AND h.poor_household = 1';
+        if ($this->enabledFilter($filters['near_poor'] ?? null)) $where .= ' AND h.near_poor_household = 1';
         foreach (['north', 'south', 'east', 'west'] as $key) {
             if (isset($filters[$key]) && $filters[$key] !== '') $params[$key] = (float) $filters[$key];
         }
@@ -175,6 +207,12 @@ final class GisHouseholdLocation extends BaseModel
             $where .= ' AND h.latitude BETWEEN :south AND :north AND h.longitude BETWEEN :west AND :east';
         }
         return [$where, $params];
+    }
+
+    private function enabledFilter(mixed $value): bool
+    {
+        if ($value === null || $value === '') return false;
+        return !in_array(strtolower((string) $value), ['0', 'false', 'no', 'off'], true);
     }
 
     private function normalizeMarker(array $row): array
@@ -197,6 +235,19 @@ final class GisHouseholdLocation extends BaseModel
             'residency_status' => $this->residencyStatus($row),
             'status' => (string) ($row['status'] ?? ''),
             'household_type' => $this->householdType($row),
+            'poor_household' => (int) ($row['poor_household'] ?? 0),
+            'near_poor_household' => (int) ($row['near_poor_household'] ?? 0),
+            'thumbnail_file_id' => $row['thumbnail_file_id'] !== null ? (int) $row['thumbnail_file_id'] : null,
+            'thumbnail_url' => $row['thumbnail_file_id'] !== null ? '/api/files/' . (int) $row['thumbnail_file_id'] . '/preview' : null,
+            'gallery_count' => (int) ($row['gallery_count'] ?? 0),
+            'party_members' => (int) ($row['party_members'] ?? 0),
+            'children_count' => (int) ($row['children_count'] ?? 0),
+            'elderly_count' => (int) ($row['elderly_count'] ?? 0),
+            'working_age_count' => (int) ($row['working_age_count'] ?? 0),
+            'permanent_count' => (int) ($row['permanent_count'] ?? 0),
+            'temporary_count' => (int) ($row['temporary_count'] ?? 0),
+            'labor_count' => (int) ($row['labor_count'] ?? 0),
+            'gps' => trim((string) ($row['latitude'] ?? '')) . ', ' . trim((string) ($row['longitude'] ?? '')),
         ];
     }
 

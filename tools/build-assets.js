@@ -48,6 +48,7 @@ const assets = [
   ['assets/js/household-photo-capture.js', 'assets/js/household-photo-capture.min.js', compactJs],
   ['assets/js/household-photo-gps.js', 'assets/js/household-photo-gps.min.js', compactJs],
   ['assets/js/gis-search.js', 'assets/js/gis-search.min.js', compactJs],
+  ['assets/js/gis-smart.js', 'assets/js/gis-smart.min.js', compactJs],
   ['assets/js/digital-profile.js', 'assets/js/digital-profile.min.js', compactJs]
 ];
 

@@ -57,7 +57,7 @@ class GisSearch extends BaseModel
                         FROM citizens c
                         WHERE c.household_id = h.id
                           AND (c.status IS NULL OR c.status <> 'DELETED')
-                          AND c.full_name LIKE :citizen_name
+                          AND (c.full_name LIKE :citizen_name OR c.identity_number LIKE :identity_number)
                     )
                   )
                 ORDER BY match_rank ASC, h.household_code ASC, h.head_citizen_name ASC
@@ -71,6 +71,7 @@ class GisSearch extends BaseModel
             'head_name' => $like,
             'address' => $like,
             'citizen_name' => $like,
+            'identity_number' => $like,
         ]);
 
         return array_map(fn(array $row): array => $this->normalize($row), $rows);
