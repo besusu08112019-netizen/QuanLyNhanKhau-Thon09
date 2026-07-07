@@ -160,6 +160,17 @@
     return '';
   }
 
+  async function openPreview(file) {
+    if (!file) return;
+    const id = Number(file.id || 0);
+    if (id > 0 && typeof window.thon09PreviewFile === 'function') {
+      window.thon09PreviewFile(id);
+      return;
+    }
+    const url = filePreviewUrl(file);
+    if (url) window.open(url, '_blank', 'noopener');
+  }
+
   function renderCurrentPhoto(file) {
     currentPhoto = file || null;
     const host = document.getElementById('householdPhotoCurrent');
@@ -176,7 +187,7 @@
     host.innerHTML = '<img src="' + url + '" alt="Ảnh hộ hiện tại" loading="lazy"><span>Ảnh hộ hiện tại đã được lưu trên hệ thống.</span>';
     if (viewBtn) {
       viewBtn.classList.remove('d-none');
-      viewBtn.onclick = () => window.open(url, '_blank', 'noopener');
+      viewBtn.onclick = () => openPreview(file);
     }
   }
 

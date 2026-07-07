@@ -348,6 +348,7 @@
     $('[data-profile-upload]', root)?.addEventListener('submit', event => uploadFile(event, type, id));
     $('[data-profile-note]', root)?.addEventListener('submit', event => createNote(event, type, id));
     $$('[data-profile-link]', root).forEach(btn => btn.addEventListener('click', () => openLink(btn.dataset.profileLink)));
+    hydrateAuthPreviews(root);
   }
 
   async function uploadFile(event, type, id) {
@@ -407,13 +408,15 @@
 
   async function previewFile(id) {
     if (!requirePermission('file', 'read')) return;
-    const response = await fetch('/api/files/' + encodeURIComponent(id) + '/preview', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
-    if (!response.ok) return show('Không xem trước được file', 'danger');
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank', 'noopener');
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    try {
+      const url = await loadPreviewBlob(id);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      show('Kh\u00F4ng xem tr\u01B0\u1EDBc \u0111\u01B0\u1EE3c file', 'danger');
+    }
   }
+  window.thon09PreviewFile = previewFile;
 
   async function downloadFile(id) {
     if (!requirePermission('file', 'download')) return;
@@ -489,26 +492,30 @@
 
   function householdPrimaryPhoto(profile) {
     const row = profile?.profile || {};
-    const directUrl = row.household_photo_url || row.photo_url || row.thumbnail_url || row.image_url || '';
-    if (directUrl) return { url: directUrl, name: row.household_code || 'Ảnh hộ' };
     const files = Array.isArray(profile?.files) ? profile.files : [];
     const photo = files.find(file => {
       const type = String(file.file_type || file.fileType || '').toUpperCase();
       const mime = String(file.mime_type || file.mimeType || '').toLowerCase();
       return type === 'PHOTO' || type === 'IMAGE' || mime.startsWith('image/');
     });
-    if (!photo) return null;
-    const id = Number(photo.id || 0);
-    const url = photo.preview_url || photo.previewUrl || photo.thumbnail_url || photo.thumbnailUrl || photo.url || (id > 0 ? '/api/files/' + id + '/preview' : '');
-    return url ? { url, name: photo.display_name || photo.original_name || photo.file_name || 'Ảnh hộ' } : null;
+    if (photo) {
+      const id = Number(photo.id || 0);
+      const url = photo.preview_url || photo.previewUrl || photo.thumbnail_url || photo.thumbnailUrl || photo.url || (id > 0 ? '/api/files/' + id + '/preview' : '');
+      if (url || id > 0) return { id, url, name: photo.display_name || photo.original_name || photo.file_name || '\u1EA2nh h\u1ED9' };
+    }
+    const directUrl = row.household_photo_url || row.photo_url || row.thumbnail_url || row.image_url || '';
+    const directId = Number(row.photo_file_id || row.thumbnail_file_id || 0);
+    return directUrl || directId > 0 ? { id: directId, url: directUrl, name: row.household_code || '\u1EA2nh h\u1ED9' } : null;
   }
 
   function renderHouseholdPhoto(profile) {
     const photo = householdPrimaryPhoto(profile);
-    if (!photo?.url) return '';
+    if (!photo?.url && !photo?.id) return '';
+    const image = photo.id ? '<img data-auth-preview="' + Number(photo.id) + '" alt="' + esc(photo.name || '\u1EA2nh h\u1ED9') + '" loading="lazy">' : '<img src="' + esc(photo.url) + '" alt="' + esc(photo.name || '\u1EA2nh h\u1ED9') + '" loading="lazy">';
+    const action = photo.id ? '<button class="btn btn-sm btn-outline-primary" type="button" data-preview-file="' + Number(photo.id) + '">' + 'Xem \u1EA3nh' + '</button>' : '<a class="btn btn-sm btn-outline-primary" href="' + esc(photo.url) + '" target="_blank" rel="noopener">' + 'Xem \u1EA3nh' + '</a>';
     return '<div class="household-detail-photo mb-3">'
-      + '<img src="' + esc(photo.url) + '" alt="' + esc(photo.name || 'Ảnh hộ') + '" loading="lazy">'
-      + '<a class="btn btn-sm btn-outline-primary" href="' + esc(photo.url) + '" target="_blank" rel="noopener">' + 'Xem ảnh' + '</a>'
+      + image
+      + action
       + '</div>';
   }
   function renderHouseholdInfo(profile) {
@@ -536,7 +543,9 @@
         if (tab === 'timeline') loadHouseholdTimeline(id, root);
       });
     });
+    $$('[data-preview-file]', root).forEach(button => button.addEventListener('click', () => previewFile(button.dataset.previewFile)));
     $$('[data-gps-action]', root).forEach(button => button.addEventListener('click', () => handleGpsAction(button.dataset.gpsAction, profile.profile || {})));
+    hydrateAuthPreviews(root);
   }
 
   async function fetchHouseholdFiles(id, extra = {}) {

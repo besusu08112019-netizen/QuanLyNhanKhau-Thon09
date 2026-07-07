@@ -26,6 +26,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   let uploadCount = 0;
   let deleteCount = 0;
   const uploadedFiles = [];
+  const previewIds = [];
 
   await page.route('**/api/**', async route => {
     const request = route.request();
@@ -89,7 +90,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
       const id = 900 + uploadCount;
       const file = { id, file_type: 'PHOTO', mime_type: 'image/jpeg', preview_url: `/api/files/${id}/preview` };
       uploadedFiles.push(file);
-      savedHousehold = { ...savedHousehold, photo_file_id: id, photo_url: file.preview_url, household_photo_url: file.preview_url, thumbnail_url: file.preview_url, gallery_count: uploadedFiles.length };
+      savedHousehold = { ...savedHousehold, photo_file_id: 2, photo_url: '/api/files/2/preview', household_photo_url: '/api/files/2/preview', thumbnail_url: '/api/files/2/preview', gallery_count: uploadedFiles.length };
       return payload(file);
     }
     if (/^\/api\/files\/\d+$/.test(url.pathname) && request.method() === 'DELETE') {
@@ -101,8 +102,9 @@ test('household photo is uploaded, read back and replaced from library/camera in
       if (index >= 0) uploadedFiles.splice(index, 1);
       return payload({ id });
     }
-    if (/^\/api\/files\/\d+\/preview$/.test(url.pathname)) {
+    if (new RegExp('^/api/files/\\d+/preview$').test(url.pathname)) {
       expect(request.headers()['cookie'] || '').toContain('thon09_token=test-token');
+      previewIds.push(Number(url.pathname.split('/')[3]));
       return route.fulfill({ contentType: 'image/png', body: fs.readFileSync(pngFile('thon09-preview.png')) });
     }
 
@@ -138,7 +140,13 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await page.evaluate(() => window.showHousehold(123));
   await expect(page.locator('#detailModal')).toHaveClass(/show/);
   await expect(page.locator('#detailModal .household-detail-photo img')).toBeVisible();
-  await expect(page.locator('#detailModal .household-detail-photo a', { hasText: 'Xem ảnh' })).toBeVisible();
+  const detailPreviewButton = page.locator('#detailModal .household-detail-photo [data-preview-file]');
+  await expect(detailPreviewButton).toBeVisible();
+  await expect(detailPreviewButton).toHaveAttribute('data-preview-file', '901');
+  const previewsBeforeClick = previewIds.length;
+  await detailPreviewButton.click();
+  await expect.poll(() => previewIds.length).toBeGreaterThan(previewsBeforeClick);
+  expect(previewIds).not.toContain(2);
   await page.evaluate(() => {
     const modal = document.getElementById('detailModal');
     if (modal) {

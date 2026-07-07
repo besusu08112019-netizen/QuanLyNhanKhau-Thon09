@@ -211,6 +211,11 @@ final class FileAttachment extends BaseModel
         $row['file_name'] = $row['file_name'] ?? ($row['original_name'] ?? '');
         $row['display_name'] = $row['file_name'] ?: ($row['original_name'] ?? '');
         $row['version'] = $row['version'] ?? null;
+        $id = (int) ($row['id'] ?? 0);
+        if ($id > 0) {
+            $row['preview_url'] = '/api/files/' . $id . '/preview';
+            $row['download_url'] = '/api/files/' . $id . '/download';
+        }
         return $row;
     }
 
