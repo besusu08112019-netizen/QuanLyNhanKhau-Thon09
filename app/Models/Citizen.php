@@ -24,6 +24,17 @@ final class Citizen extends BaseModel
         'social_assistance' => 'Bảo trợ xã hội',
     ];
 
+    private const HEALTH_INSURANCE_FIELDS = [
+        'has_health_insurance' => 'BHYT',
+    ];
+
+    private const HEALTH_INSURANCE_DETAIL_COLUMNS = ['health_insurance_number','health_insurance_group','health_insurance_start_date','health_insurance_end_date','health_insurance_facility'];
+
+    private const HEALTH_INSURANCE_GROUPS = [
+        'Hộ gia đình', 'Người nghèo', 'Cận nghèo', 'Trẻ em dưới 6 tuổi', 'Học sinh - Sinh viên',
+        'Người lao động', 'Người hưởng lương hưu', 'Người có công', 'Người cao tuổi', 'Khác',
+    ];
+
     private const LABOR_FIELDS = [
         'employed' => 'Có việc làm',
         'unemployed' => 'Thất nghiệp',
@@ -37,7 +48,7 @@ final class Citizen extends BaseModel
 
     public static function extendedFields(): array
     {
-        return self::POLITICAL_FIELDS + self::POLICY_FIELDS + self::LABOR_FIELDS;
+        return self::POLITICAL_FIELDS + self::POLICY_FIELDS + self::HEALTH_INSURANCE_FIELDS + self::LABOR_FIELDS;
     }
 
     public function paginate(array $filters): array
@@ -52,6 +63,9 @@ final class Citizen extends BaseModel
             'c.life_status', 'c.presence_status', 'c.status',
         ];
         foreach ($this->activeExtendedColumns() as $column) {
+            $baseColumns[] = 'c.' . $column;
+        }
+        foreach ($this->activeHealthInsuranceColumns() as $column) {
             $baseColumns[] = 'c.' . $column;
         }
         $baseColumns[] = 'h.household_code';
@@ -82,6 +96,7 @@ final class Citizen extends BaseModel
         $columns = ['citizen_code','household_id','full_name','gender','date_of_birth','identity_number','identity_issue_date','identity_issue_place','relationship','ethnicity','religion','occupation','phone','residency_status','current_address','education_level','marital_status','life_status','presence_status','status','created_by'];
         $values = [':code',':household_id',':full_name',':gender',':dob',':identity',':issue_date',':issue_place',':relationship',':ethnicity',':religion',':occupation',':phone',':residency',':current_address',':education',':marital',':life',':presence','"ACTIVE"',':user'];
         foreach ($this->activeExtendedColumns() as $column) { $columns[] = $column; $values[] = ':' . $column; }
+        foreach ($this->activeHealthInsuranceColumns() as $column) { $columns[] = $column; $values[] = ':' . $column; }
         $id = $this->insert('INSERT INTO citizens (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         $this->syncHouseholdHead((int) $params['household_id']);
         return $this->find($id);
@@ -97,6 +112,7 @@ final class Citizen extends BaseModel
         $this->ensureSingleHead((int) $params['household_id'], $id, $params['relationship']);
         $sets = ['citizen_code=:code','household_id=:household_id','full_name=:full_name','gender=:gender','date_of_birth=:dob','identity_number=:identity','identity_issue_date=:issue_date','identity_issue_place=:issue_place','relationship=:relationship','ethnicity=:ethnicity','religion=:religion','occupation=:occupation','phone=:phone','residency_status=:residency','current_address=:current_address','education_level=:education','marital_status=:marital','life_status=:life','presence_status=:presence','updated_by=:user'];
         foreach ($this->activeExtendedColumns() as $column) $sets[] = $column . '=:' . $column;
+        foreach ($this->activeHealthInsuranceColumns() as $column) $sets[] = $column . '=:' . $column;
         $this->execute('UPDATE citizens SET ' . implode(',', $sets) . ' WHERE id=:id', $params);
         $this->syncHouseholdHead((int) $before['household_id']);
         $this->syncHouseholdHead((int) $params['household_id']);
@@ -208,10 +224,48 @@ final class Citizen extends BaseModel
             'user' => $userId,
         ];
         foreach ($this->activeExtendedColumns() as $column) $params[$column] = $this->boolValue($data[$column] ?? $data[$this->camel($column)] ?? $fallback[$column] ?? 0);
+        $this->applyHealthInsuranceParams($params, $data, $fallback);
         return $params;
     }
 
     private function activeExtendedColumns(): array { return $this->existingColumns('citizens', array_keys(self::extendedFields())); }
+    private function activeHealthInsuranceColumns(): array { return $this->existingColumns('citizens', self::HEALTH_INSURANCE_DETAIL_COLUMNS); }
+
+    private function applyHealthInsuranceParams(array &$params, array $data, ?array $fallback): void
+    {
+        $active = $this->activeHealthInsuranceColumns();
+        if (!$active) return;
+        $has = $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? $fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? 0);
+        $params['has_health_insurance'] = $has;
+        $params['health_insurance_number'] = $has ? $this->nullableString($data['health_insurance_number'] ?? $data['healthInsuranceNumber'] ?? $fallback['health_insurance_number'] ?? null, 20) : null;
+        $params['health_insurance_group'] = $has ? $this->healthInsuranceGroup($data['health_insurance_group'] ?? $data['healthInsuranceGroup'] ?? $fallback['health_insurance_group'] ?? null) : null;
+        $params['health_insurance_start_date'] = $has ? $this->nullableDate($data['health_insurance_start_date'] ?? $data['healthInsuranceStartDate'] ?? $fallback['health_insurance_start_date'] ?? null) : null;
+        $params['health_insurance_end_date'] = $has ? $this->nullableDate($data['health_insurance_end_date'] ?? $data['healthInsuranceEndDate'] ?? $fallback['health_insurance_end_date'] ?? null) : null;
+        $params['health_insurance_facility'] = $has ? $this->nullableString($data['health_insurance_facility'] ?? $data['healthInsuranceFacility'] ?? $fallback['health_insurance_facility'] ?? null, 255) : null;
+    }
+
+    private function nullableString(mixed $value, int $max): ?string
+    {
+        $text = trim((string) ($value ?? ''));
+        if ($text === '') return null;
+        return mb_substr($text, 0, $max);
+    }
+
+    private function nullableDate(mixed $value): ?string
+    {
+        $text = trim((string) ($value ?? ''));
+        if ($text === '') return null;
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $text)) throw new \RuntimeException('Ngày BHYT không hợp lệ');
+        return $text;
+    }
+
+    private function healthInsuranceGroup(mixed $value): ?string
+    {
+        $text = $this->nullableString($value, 100);
+        if ($text === null) return null;
+        return in_array($text, self::HEALTH_INSURANCE_GROUPS, true) ? $text : mb_substr($text, 0, 100);
+    }
+
     private function boolValue(mixed $value): int { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['1','true','yes','co','có','x'], true) ? 1 : 0; }
     private function camel(string $column): string { return preg_replace_callback('/_([a-z])/', fn($m) => strtoupper($m[1]), $column); }
     private function searchFlag(string $search): ?string
@@ -219,7 +273,7 @@ final class Citizen extends BaseModel
         $text = $this->normalize($search);
         $map = [
             'dang vien' => 'party_member', 'doan vien' => 'youth_union_member', 'hoi phu nu' => 'women_union_member', 'nong dan' => 'farmers_union_member', 'cuu chien binh' => 'veterans_union_member', 'nguoi cao tuoi' => 'elderly_union_member',
-            'nguoi co cong' => 'meritorious_person', 'than nhan liet si' => 'martyr_relative', 'thuong binh' => 'wounded_soldier', 'benh binh' => 'sick_soldier', 'khuyet tat' => 'disabled_person', 'bao tro xa hoi' => 'social_assistance',
+            'nguoi co cong' => 'meritorious_person', 'than nhan liet si' => 'martyr_relative', 'thuong binh' => 'wounded_soldier', 'benh binh' => 'sick_soldier', 'khuyet tat' => 'disabled_person', 'bao tro xa hoi' => 'social_assistance', 'bhyt' => 'has_health_insurance', 'bao hiem y te' => 'has_health_insurance',
             'co viec lam' => 'employed', 'that nghiep' => 'unemployed', 'lao dong tu do' => 'freelance_labor', 'ngoai tinh' => 'out_province_labor', 'nuoc ngoai' => 'foreign_labor', 'hoc sinh' => 'pupil', 'sinh vien' => 'student', 'nghi huu' => 'retired',
         ];
         foreach ($map as $needle => $column) if (str_contains($text, $needle)) return $column;

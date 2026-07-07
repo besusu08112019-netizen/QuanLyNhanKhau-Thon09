@@ -119,6 +119,7 @@ function bindEvents() {
   if (personAddBtn) personAddBtn.addEventListener('click', () => openPersonForm());
   $('#householdForm').addEventListener('submit', saveHousehold);
   $('#personForm').addEventListener('submit', savePerson);
+  bindHealthInsuranceForm();
   $('#householdSearch').addEventListener('input', debounce(() => { App.households.search = $('#householdSearch').value.trim(); App.households.page = 1; loadHouseholds(); }, 350));
   const personSearchInput = $('#personSearch');
   if (personSearchInput) personSearchInput.addEventListener('input', debounce(() => { App.persons.search = personSearchInput.value.trim(); App.persons.page = 1; loadPersons(); }, 350));
@@ -619,6 +620,7 @@ function renderDashboardKpis(metrics) {
     { key: 'children_count', label: 'Trẻ em', unit: 'người', icon: 'fa-child-reaching', tone: 'blue' },
     { key: 'elderly_count', label: 'Người cao tuổi', unit: 'người', icon: 'fa-person-cane', tone: 'purple' },
     { key: 'working_age_count', label: 'Lao động', unit: 'người', icon: 'fa-briefcase', tone: 'green' },
+    { key: 'health_insurance_count', label: 'Có BHYT', unit: 'người', icon: 'fa-notes-medical', tone: 'green' },
     { key: 'temporary_count', label: 'Tạm trú', unit: 'người', icon: 'fa-location-dot', tone: 'cyan' },
     { key: 'away_count', label: 'Tạm vắng', unit: 'người', icon: 'fa-person-walking-arrow-right', tone: 'purple' },
     { key: 'poor_households', label: 'Hộ nghèo', unit: 'hộ', icon: 'fa-hand-holding-heart', tone: 'orange' },
@@ -639,6 +641,7 @@ function renderDashboardOperations(data) {
   renderDashboardMovements(data.movementWindows || {});
   renderDashboardGis(data.gis || {});
   renderDashboardProfiles(data.profiles || {});
+  renderDashboardHealthInsurance(data.metrics || {});
   renderDashboardTasks(data.tasks || []);
   renderDashboardExtraCharts(data.charts || {});
   bindDashboardActions();
@@ -656,6 +659,7 @@ function ensureDashboardRealtimeLayout() {
       + dashboardPanelShell('dashboardMovementCenter', 'Biến động thời gian thực', 'Hôm nay / 7 / 30 ngày')
       + dashboardPanelShell('dashboardGisCenter', 'Dashboard GIS', 'Sprint 13')
       + dashboardPanelShell('dashboardProfileCenter', 'Dashboard Hồ sơ số', 'Sprint 11 / 12')
+      + dashboardPanelShell('dashboardHealthInsuranceCenter', 'Bảo hiểm y tế', 'BHYT')
       + dashboardPanelShell('dashboardTaskCenter', 'Cần xử lý', 'Tác vụ')
       + '</section>';
     (kpis || screen).insertAdjacentHTML(kpis ? 'afterend' : 'beforeend', html);
@@ -716,6 +720,20 @@ function renderDashboardProfiles(profiles) {
     + dashboardMetricLine('Công dân thiếu ảnh', profiles.citizenMissingPhoto, 'hồ sơ')
     + dashboardMetricLine('Công dân thiếu giấy tờ', profiles.citizenMissingDocuments, 'hồ sơ')
     + dashboardMetricLine('Hộ thiếu tài liệu', profiles.householdMissingDocuments, 'hộ')
+    + '</div>';
+}
+
+function renderDashboardHealthInsurance(metrics) {
+  const host = $('#dashboardHealthInsuranceCenter');
+  if (!host) return;
+  const total = Number(metrics.health_insurance_total ?? metrics.total_citizens ?? 0);
+  const insured = Number(metrics.health_insurance_count ?? metrics.health_insurance_covered_count ?? 0);
+  const uninsured = Number(metrics.health_insurance_missing_count ?? metrics.health_insurance_uninsured_count ?? Math.max(0, total - insured));
+  const coverage = Number(metrics.health_insurance_coverage_percent ?? metrics.health_insurance_percent ?? (total > 0 ? insured * 100 / total : 0));
+  host.innerHTML = '<div class="dashboard-metric-stack">'
+    + dashboardMetricLine('Có BHYT', number(insured) + '/' + number(total), 'nhân khẩu')
+    + dashboardMetricLine('Chưa có BHYT', uninsured, 'nhân khẩu')
+    + dashboardMetricLine('Tỷ lệ bao phủ', formatPercent(coverage), '')
     + '</div>';
 }
 
@@ -997,7 +1015,7 @@ async function loadPersons() {
       (acc[code] ||= []).push(row);
       return acc;
     }, {});
-    $('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="12">Mã hộ: ' + escapeHtml(code) + '</td></tr>' + rows.map(personRow).join('')).join('') || '<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+    $('#personRows').innerHTML = Object.entries(grouped).map(([code, rows]) => '<tr class="group-row"><td colspan="13">Mã hộ: ' + escapeHtml(code) + '</td></tr>' + rows.map(personRow).join('')).join('') || '<tr><td colspan="13" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
     updateBulkDeleteButtons();
     renderPager('#personPager', { total, page: App.persons.page, pageSize: App.persons.pageSize }, page => { App.persons.page = page; loadPersons(); });
     refreshUiEnhancements($('#personsScreen') || document);
@@ -1026,7 +1044,7 @@ function personAge(dateValue) {
 
 function renderPersonRows(items) {
   const rows = Array.isArray(items) ? items : [];
-  if (!rows.length) return '<tr><td colspan="12" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+  if (!rows.length) return '<tr><td colspan="13" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
   const groups = rows.reduce((acc, row) => {
     const code = String(row.household_code || row.householdCode || personUiText('Chua co ho', 'Ch\u01b0a c\u00f3 h\u1ed9')).trim();
     (acc[code] ||= []).push(row);
@@ -1034,7 +1052,7 @@ function renderPersonRows(items) {
   }, {});
   return Object.entries(groups).map(([code, members]) => {
     const head = members.find(row => /chu ho/i.test(normalizeSearchText(personRelationship(row)))) || members[0] || {};
-    const group = '<tr class="group-row ds-group-row person-household-group"><td colspan="12"><div class="ds-group-header"><div><i class="fa-solid fa-house-chimney"></i><span>' + personUiText('Ho') + ' ' + escapeHtml(code) + '</span><small>' + personUiText('Chu ho') + ': ' + escapeHtml(head.full_name || '') + '</small></div><strong>' + number(members.length) + ' ' + personUiText('nhan khau') + '</strong></div></td></tr>';
+    const group = '<tr class="group-row ds-group-row person-household-group"><td colspan="13"><div class="ds-group-header"><div><i class="fa-solid fa-house-chimney"></i><span>' + personUiText('Ho') + ' ' + escapeHtml(code) + '</span><small>' + personUiText('Chu ho') + ': ' + escapeHtml(head.full_name || '') + '</small></div><strong>' + number(members.length) + ' ' + personUiText('nhân khẩu') + '</strong></div></td></tr>';
     return group + members.map(personRow).join('');
   }).join('');
 }
@@ -1044,6 +1062,7 @@ window.thon09SyncResponsiveTableLabels = applyResponsiveTableLabels;
 
 function personRow(row) {
   const party = Number(row.party_member || row.partyMember || 0) === 1;
+  const bhyt = healthInsuranceStatus(row);
   const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
   const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : residencyLabel(row.residency_status);
   const personCode = row.person_code || row.citizen_code || '';
@@ -1061,12 +1080,69 @@ function personRow(row) {
     + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
     + '<td><span class="person-badge ' + residenceClass + '">' + escapeHtml(residenceText) + '</span></td>'
     + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
+    + '<td><span class="person-badge ' + bhyt.className + '" title="' + escapeHtml(bhyt.tooltip) + '">' + escapeHtml(bhyt.label) + '</span></td>'
     + actionCell([
       '<button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button>',
       canAccess('citizen', 'update') ? '<button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button>' : '',
       canAccess('citizen', 'delete') ? '<button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">Xóa</button>' : ''
     ])
     + '</tr>';
+}
+
+function healthInsuranceStatus(row = {}) {
+  const has = Number(row.has_health_insurance ?? row.hasHealthInsurance ?? row.health_insurance ?? row.healthInsurance ?? 0) === 1;
+  const numberValue = String(row.health_insurance_number ?? row.healthInsuranceNumber ?? '').trim();
+  const endValue = row.health_insurance_end_date ?? row.healthInsuranceEndDate ?? '';
+  if (!has) return { key: 'missing', label: '⚪ Chưa tham gia', detailLabel: 'Chưa tham gia BHYT', className: 'person-badge-muted person-badge-bhyt-missing', tooltip: 'Chưa tham gia BHYT' };
+  const endDate = parseDateOnly(endValue);
+  const today = startOfToday();
+  let key = 'valid';
+  let label = 'Còn hạn';
+  let detailLabel = 'Còn hạn';
+  let className = 'person-badge-bhyt-valid';
+  if (endDate) {
+    const days = Math.ceil((endDate.getTime() - today.getTime()) / 86400000);
+    if (days < 0) { key = 'expired'; label = 'Hết hạn'; detailLabel = 'Hết hạn'; className = 'person-badge-bhyt-expired'; }
+    else if (days <= 30) { key = 'expiring'; label = 'Sắp hết hạn'; detailLabel = 'Sắp hết hạn'; className = 'person-badge-bhyt-expiring'; }
+  }
+  const tooltip = 'Số BHYT: ' + (numberValue || 'Chưa cập nhật') + '\nNgày hết hạn: ' + (formatDate(endValue) || 'Chưa cập nhật');
+  return { key, label, detailLabel, className, tooltip };
+}
+window.healthInsuranceStatus = healthInsuranceStatus;
+
+function parseDateOnly(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function startOfToday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function bindHealthInsuranceForm() {
+  const form = $('#personForm');
+  if (!form || form.dataset.healthInsuranceBound === '1') return;
+  form.dataset.healthInsuranceBound = '1';
+  form.addEventListener('change', event => {
+    if (event.target && event.target.name === 'hasHealthInsurance') syncHealthInsuranceFields(form);
+  });
+  syncHealthInsuranceFields(form);
+}
+
+function syncHealthInsuranceFields(form = $('#personForm')) {
+  if (!form) return;
+  const checkbox = form.elements.hasHealthInsurance;
+  const details = form.querySelector('[data-health-insurance-fields]');
+  const active = !!checkbox?.checked;
+  if (details) details.classList.toggle('d-none', !active);
+  ['healthInsuranceNumber','healthInsuranceGroup','healthInsuranceStartDate','healthInsuranceEndDate','healthInsuranceFacility'].forEach(name => {
+    if (form.elements[name]) form.elements[name].disabled = !active;
+  });
 }
 
 async function openHouseholdForm(id = null) {
@@ -1086,8 +1162,9 @@ async function openPersonForm(id = null) {
   form.reset(); form.classList.remove('was-validated'); form.elements.id.value = '';
   if (id) {
     const row = await api(`/api/persons/${id}`);
-    setForm(form, { id: row.id, householdCode: row.household_code, citizenCode: row.citizen_code, fullName: row.full_name, gender: row.gender, dateOfBirth: row.date_of_birth, identityNumber: row.identity_number, phone: row.phone, relationship: row.relationship, ethnicity: row.ethnicity, religion: row.religion, occupation: row.occupation, educationLevel: row.education_level, maritalStatus: row.marital_status, residency_status: row.residency_status, presenceStatus: row.presence_status, status: row.life_status, currentAddress: row.current_address });
+    setForm(form, { id: row.id, householdCode: row.household_code, citizenCode: row.citizen_code, fullName: row.full_name, gender: row.gender, dateOfBirth: row.date_of_birth, identityNumber: row.identity_number, phone: row.phone, relationship: row.relationship, ethnicity: row.ethnicity, religion: row.religion, occupation: row.occupation, educationLevel: row.education_level, maritalStatus: row.marital_status, residency_status: row.residency_status, presenceStatus: row.presence_status, status: row.life_status, currentAddress: row.current_address, hasHealthInsurance: !!Number(row.has_health_insurance || row.hasHealthInsurance || row.health_insurance || row.healthInsurance || 0), healthInsuranceNumber: row.health_insurance_number, healthInsuranceGroup: row.health_insurance_group, healthInsuranceStartDate: row.health_insurance_start_date, healthInsuranceEndDate: row.health_insurance_end_date, healthInsuranceFacility: row.health_insurance_facility });
   }
+  syncHealthInsuranceFields(form);
   App.modals.person.show();
 }
 
@@ -1168,7 +1245,7 @@ function normalizePersonDetailData(row) {
     education_level: 'educationLevel', educationLevel: 'educationLevel', marital_status: 'maritalStatus', maritalStatus: 'maritalStatus', work_place: 'workPlace', workplace: 'workPlace', workPlace: 'workPlace',
     party_member: 'partyMember', partyMember: 'partyMember', youth_union_member: 'youthUnionMember', women_union_member: 'womenUnionMember', farmers_union_member: 'farmersUnionMember', veterans_union_member: 'veteransUnionMember', elderly_union_member: 'elderlyUnionMember',
     meritorious_person: 'meritoriousPerson', martyr_relative: 'martyrRelative', wounded_soldier: 'woundedSoldier', sick_soldier: 'sickSoldier', disabled_person: 'disabledPerson', social_assistance: 'socialAssistance',
-    health_insurance: 'healthInsurance', healthInsurance: 'healthInsurance', social_insurance: 'socialInsurance', socialInsurance: 'socialInsurance', household_type: 'householdType', householdType: 'householdType',
+    has_health_insurance: 'hasHealthInsurance', hasHealthInsurance: 'hasHealthInsurance', health_insurance: 'hasHealthInsurance', healthInsurance: 'hasHealthInsurance', health_insurance_number: 'healthInsuranceNumber', healthInsuranceNumber: 'healthInsuranceNumber', health_insurance_group: 'healthInsuranceGroup', healthInsuranceGroup: 'healthInsuranceGroup', health_insurance_start_date: 'healthInsuranceStartDate', healthInsuranceStartDate: 'healthInsuranceStartDate', health_insurance_end_date: 'healthInsuranceEndDate', healthInsuranceEndDate: 'healthInsuranceEndDate', health_insurance_facility: 'healthInsuranceFacility', healthInsuranceFacility: 'healthInsuranceFacility', social_insurance: 'socialInsurance', socialInsurance: 'socialInsurance', household_type: 'householdType', householdType: 'householdType',
     poor_household: 'poorHousehold', poorHousehold: 'poorHousehold', near_poor_household: 'nearPoorHousehold', nearPoorHousehold: 'nearPoorHousehold', disabled_household: 'disabledHousehold', disabledHousehold: 'disabledHousehold',
     employed: 'employed', unemployed: 'unemployed', freelance_labor: 'freelanceLabor', out_province_labor: 'outProvinceLabor', foreign_labor: 'foreignLabor', pupil: 'pupil', student: 'student', retired: 'retired',
     person_photo: 'personPhoto', photo_url: 'personPhoto', blood_type: 'bloodType', note: 'note', notes: 'note'
@@ -1181,6 +1258,7 @@ function normalizePersonDetailData(row) {
   if (!personHasTextValue(normalized.age) && personHasTextValue(normalized.dateOfBirth)) normalized.age = calculateAge(normalized.dateOfBirth);
   normalized.displayAddress = firstPersonValue(normalized.currentAddress, normalized.permanentAddress, normalized.householdAddress);
   normalized.displayStatus = firstPersonValue(normalized.lifeStatus, normalized.recordStatus);
+  normalized.healthInsuranceParticipationStatus = healthInsuranceStatus(normalized).detailLabel;
   return normalized;
 }
 
@@ -1193,7 +1271,8 @@ function buildDynamicPersonGroups(data) {
   const groupDefs = [
     { key: 'basic', title: personUiText('Thong tin co ban'), icon: 'fa-id-card', required: true, fields: ['citizenCode','fullName','relationship','householdCode','dateOfBirth','age','gender','identityNumber','residencyStatus','displayAddress','displayStatus'] },
     { key: 'personal', title: personUiText('Thong tin mo rong'), icon: 'fa-user', fields: ['occupation','job','workPlace','educationLevel','maritalStatus','phone','email','ethnicity','religion','nationality','bloodType'] },
-    { key: 'administrative', title: personUiText('Thong tin nghiep vu'), icon: 'fa-landmark', fields: ['healthInsurance','socialInsurance','partyMember','youthUnionMember','womenUnionMember','farmersUnionMember','veteransUnionMember','elderlyUnionMember','meritoriousPerson','martyrRelative','woundedSoldier','sickSoldier','socialAssistance','poorHousehold','nearPoorHousehold','disabledPerson','disabledHousehold','householdType','employed','unemployed','freelanceLabor','outProvinceLabor','foreignLabor','pupil','student','retired','note'] }
+    { key: 'healthInsurance', title: 'BẢO HIỂM Y TẾ', icon: 'fa-notes-medical', fields: ['healthInsuranceParticipationStatus','healthInsuranceNumber','healthInsuranceGroup','healthInsuranceStartDate','healthInsuranceEndDate','healthInsuranceFacility'] },
+    { key: 'administrative', title: personUiText('Thong tin nghiep vu'), icon: 'fa-landmark', fields: ['socialInsurance','partyMember','youthUnionMember','womenUnionMember','farmersUnionMember','veteransUnionMember','elderlyUnionMember','meritoriousPerson','martyrRelative','woundedSoldier','sickSoldier','socialAssistance','poorHousehold','nearPoorHousehold','disabledPerson','disabledHousehold','householdType','employed','unemployed','freelanceLabor','outProvinceLabor','foreignLabor','pupil','student','retired','note'] }
   ];
   const groups = groupDefs.map(def => ({ ...def, items: [] }));
   const addField = (group, key) => {

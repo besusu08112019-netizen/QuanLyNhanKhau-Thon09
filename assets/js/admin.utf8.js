@@ -28,6 +28,7 @@
 
     window.personRow = function personRow(row = {}) {
       const party = Number(row.party_member || row.partyMember || 0) === 1;
+      const bhyt = typeof window.healthInsuranceStatus === 'function' ? window.healthInsuranceStatus(row) : { label: '', className: 'person-badge-muted', tooltip: '' };
       const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
       const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : (typeof residencyLabel === 'function' ? residencyLabel(row.residency_status) : (row.residency_status || 'Thường trú'));
       const age = ageExact(row.date_of_birth);
@@ -45,6 +46,7 @@
         + '<td>' + safe(row.identity_number || '') + '</td>'
         + '<td><span class="person-badge ' + residenceClass + '">' + safe(residenceText) + '</span></td>'
         + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
+        + '<td><span class="person-badge ' + bhyt.className + '" title="' + safe(bhyt.tooltip) + '">' + safe(bhyt.label) + '</span></td>'
         + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + Number(row.id || 0) + ')">Xem</button>' + (canUpdateCitizen ? ' <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + Number(row.id || 0) + ')">Sửa</button>' : '') + (canDeleteCitizen ? ' <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + Number(row.id || 0) + ')">Xóa</button>' : '') + '</td>'
         + '</tr>';
     };

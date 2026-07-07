@@ -4088,3 +4088,31 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
   .system-admin-kpis, .system-admin-perf { grid-template-columns: 1fr; }
   .system-admin-memory > div { align-items: stretch; flex-direction: column; }
 }
+
+
+/* Sprint 19 health insurance fields */
+.person-bhyt-form-section {
+  border: 1px solid #dbe5ef;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 12px;
+}
+.person-bhyt-form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.person-bhyt-form-head strong {
+  color: #10243e;
+  font-size: 14px;
+  font-weight: 800;
+}
+.person-badge-bhyt-valid { background: #dcfce7; color: #166534; }
+.person-badge-bhyt-expiring { background: #fef3c7; color: #92400e; }
+.person-badge-bhyt-expired { background: #fee2e2; color: #991b1b; }
+.person-badge-bhyt-missing { background: #f1f5f9; color: #475569; }
+@media (max-width: 640px) {
+  .person-bhyt-form-head { align-items: flex-start; flex-direction: column; }
+}

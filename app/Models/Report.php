@@ -19,6 +19,12 @@ final class Report extends BaseModel
             'gender' => $this->groupedCitizenReport($filters, 'gender', 'Giới tính'),
             'age' => $this->ageReport($filters),
             'residency' => $this->groupedCitizenReport($filters, 'residency_status', 'Tình trạng cư trú'),
+            'health-insurance', 'health_insurance', 'has_health_insurance', 'bhyt', 'bao-hiem-y-te' => $this->healthInsuranceReport($filters),
+            'health-insurance-missing', 'bhyt-missing', 'bhyt-chua-tham-gia' => $this->healthInsuranceListReport('missing', $filters),
+            'health-insurance-expiring', 'bhyt-expiring', 'bhyt-sap-het-han' => $this->healthInsuranceListReport('expiring', $filters),
+            'health-insurance-expired', 'bhyt-expired', 'bhyt-het-han' => $this->healthInsuranceListReport('expired', $filters),
+            'health-insurance-household', 'bhyt-household' => $this->healthInsuranceHouseholdReport($filters),
+            'health-insurance-area', 'bhyt-area' => $this->healthInsuranceAreaReport($filters),
             'party-members', 'party_members', 'party_member', 'party', 'dang-vien' => $this->flagCitizenReport('Báo cáo Đảng viên', 'party_member', 'Đảng viên', $filters),
             'youth-union', 'youth_union', 'youth_union_member', 'doan-vien' => $this->flagCitizenReport('Báo cáo Đoàn viên', 'youth_union_member', 'Đoàn viên', $filters),
             'meritorious-people', 'meritorious', 'meritorious_person', 'nguoi-co-cong' => $this->flagCitizenReport('Báo cáo Người có công', 'meritorious_person', 'Người có công', $filters),
@@ -40,6 +46,7 @@ final class Report extends BaseModel
         $citizens = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN gender='Nam' THEN 1 ELSE 0 END),0) AS male, COALESCE(SUM(CASE WHEN gender='Nữ' THEN 1 ELSE 0 END),0) AS female, COALESCE(SUM(CASE WHEN residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary, COALESCE(SUM(CASE WHEN presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $citizenWhere", $citizenParams) ?: [];
         $households = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN meritorious_family=1 THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN disabled_household=1 THEN 1 ELSE 0 END),0) AS disabled, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN poor_household=0 AND near_poor_household=0 AND meritorious_family=0 AND disabled_household=0 THEN 1 ELSE 0 END),0) AS normal FROM households h $householdWhere", $householdParams) ?: [];
         $total = max(1, (int) ($citizens['total'] ?? 0));
+        $healthInsurance = (new Dashboard())->healthInsuranceStats($filters);
         $rows = [
             ['Tổng số hộ', (int) ($households['total'] ?? 0)],
             ['Tổng số nhân khẩu', (int) ($citizens['total'] ?? 0)],
@@ -47,6 +54,9 @@ final class Report extends BaseModel
             ['Nữ', (int) ($citizens['female'] ?? 0)],
             ['Tạm trú', (int) ($citizens['temporary'] ?? 0)],
             ['Tạm vắng', (int) ($citizens['away'] ?? 0)],
+            ['Có BHYT', $this->healthInsuranceCoveredText($healthInsurance)],
+            ['Chưa có BHYT', $healthInsurance['uninsured'] . ' nhân khẩu'],
+            ['Tỷ lệ bao phủ BHYT', $this->percentValue($healthInsurance['coverage_percent'])],
             ['Đảng viên', $this->countPercent($citizens, 'party_member', $total)],
             ['Đoàn viên', $this->countPercent($citizens, 'youth_union_member', $total)],
             ['Hội viên Hội Phụ nữ', $this->countPercent($citizens, 'women_union_member', $total)],
@@ -131,6 +141,47 @@ final class Report extends BaseModel
         return $this->table($title, $headers, $body, $filters);
     }
 
+    public function healthInsuranceReport(array $filters = []): array
+    {
+        $stats = (new Dashboard())->healthInsuranceStats($filters);
+        $rows = [
+            ['Tổng số nhân khẩu', $stats['total']],
+            ['Có BHYT', $this->healthInsuranceCoveredText($stats)],
+            ['Chưa có BHYT', $stats['uninsured'] . ' nhân khẩu'],
+            ['Tỷ lệ bao phủ', $this->percentValue($stats['coverage_percent'])],
+        ];
+        return $this->table('Báo cáo Bảo hiểm y tế', ['Chỉ tiêu', 'Số lượng / Tỷ lệ'], $rows, $filters);
+    }
+
+    public function healthInsuranceListReport(string $mode, array $filters = []): array
+    {
+        [$where, $params] = $this->citizenWhere($filters);
+        if ($mode === 'missing') $where .= ' AND COALESCE(c.has_health_insurance,0)=0';
+        if ($mode === 'expired') $where .= ' AND COALESCE(c.has_health_insurance,0)=1 AND c.health_insurance_end_date IS NOT NULL AND c.health_insurance_end_date < CURDATE()';
+        if ($mode === 'expiring') $where .= ' AND COALESCE(c.has_health_insurance,0)=1 AND c.health_insurance_end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)';
+        $rows = $this->fetchAll("SELECT h.household_code, h.area_code, c.citizen_code, c.full_name, c.gender, c.date_of_birth, c.identity_number, c.health_insurance_number, c.health_insurance_group, c.health_insurance_end_date, c.health_insurance_facility FROM citizens c INNER JOIN households h ON h.id=c.household_id $where ORDER BY h.household_code, c.full_name", $params);
+        $title = [
+            'missing' => 'Danh sách chưa tham gia BHYT',
+            'expired' => 'Danh sách BHYT đã hết hạn',
+            'expiring' => 'Danh sách BHYT sắp hết hạn 30 ngày',
+        ][$mode] ?? 'Danh sách BHYT';
+        return $this->table($title, ['Mã hộ','Khu vực','Mã nhân khẩu','Họ tên','Giới tính','Ngày sinh','CCCD','Số BHYT','Nhóm đối tượng','Hết hạn','Nơi KCB'], array_map(fn($r) => [$r['household_code'], $r['area_code'], $r['citizen_code'], $r['full_name'], $r['gender'], $this->date($r['date_of_birth']), $r['identity_number'], $r['health_insurance_number'], $r['health_insurance_group'], $this->date($r['health_insurance_end_date']), $r['health_insurance_facility']], $rows), $filters);
+    }
+
+    public function healthInsuranceHouseholdReport(array $filters = []): array
+    {
+        [$where, $params] = $this->citizenWhere($filters);
+        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.area_code, COUNT(c.id) AS total, SUM(COALESCE(c.has_health_insurance,0)=1) AS enrolled, SUM(COALESCE(c.has_health_insurance,0)=0) AS missing, SUM(COALESCE(c.has_health_insurance,0)=1 AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE())) AS effective FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY h.id, h.household_code, h.head_citizen_name, h.area_code ORDER BY h.household_code", $params);
+        return $this->table('Thống kê BHYT theo hộ', ['Mã hộ','Chủ hộ','Khu vực','Tổng nhân khẩu','Có BHYT','Còn hiệu lực','Chưa tham gia','Tỷ lệ bao phủ'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['area_code'], (int) $r['total'], (int) $r['enrolled'], (int) $r['effective'], (int) $r['missing'], $this->percent((int) $r['effective'], max(1, (int) $r['total']))], $rows), $filters);
+    }
+
+    public function healthInsuranceAreaReport(array $filters = []): array
+    {
+        [$where, $params] = $this->citizenWhere($filters);
+        $rows = $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'Chưa phân khu') AS area, COUNT(c.id) AS total, SUM(COALESCE(c.has_health_insurance,0)=1) AS enrolled, SUM(COALESCE(c.has_health_insurance,0)=0) AS missing, SUM(COALESCE(c.has_health_insurance,0)=1 AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE())) AS effective FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY area ORDER BY area", $params);
+        return $this->table('Thống kê BHYT theo khu vực', ['Khu vực','Tổng nhân khẩu','Có BHYT','Còn hiệu lực','Chưa tham gia','Tỷ lệ bao phủ'], array_map(fn($r) => [$r['area'], (int) $r['total'], (int) $r['enrolled'], (int) $r['effective'], (int) $r['missing'], $this->percent((int) $r['effective'], max(1, (int) $r['total']))], $rows), $filters);
+    }
+
     public function laborReport(array $filters = []): array
     {
         $columns = ['employed' => 'Có việc làm', 'unemployed' => 'Chưa có việc làm', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu', 'other' => 'Khác'];
@@ -203,7 +254,7 @@ final class Report extends BaseModel
         if (!empty($filters['ethnicity'])) { $where[] = 'c.ethnicity LIKE :ethnicity'; $params['ethnicity'] = '%' . $filters['ethnicity'] . '%'; }
         if (!empty($filters['religion'])) { $where[] = 'c.religion LIKE :religion'; $params['religion'] = '%' . $filters['religion'] . '%'; }
         if (!empty($filters['occupation'])) { $where[] = 'c.occupation LIKE :occupation'; $params['occupation'] = '%' . $filters['occupation'] . '%'; }
-        foreach (['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $column) {
+        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $column) {
             if (($filters[$column] ?? null) !== null && $filters[$column] !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $filters[$column]; }
         }
         return ['WHERE ' . implode(' AND ', $where), $params];
@@ -295,6 +346,8 @@ final class Report extends BaseModel
     }
 
     private function countPercent(array $row, string $key, int $total): string { $count = (int) ($row[$key] ?? 0); return $count . ' (' . $this->percent($count, $total) . ')'; }
+    private function healthInsuranceCoveredText(array $stats): string { return $stats['insured'] . '/' . $stats['total'] . ' nhân khẩu'; }
+    private function percentValue(float|int $value): string { return number_format((float) $value, 2, '.', '') . '%'; }
     private function percent(int $count, int $total): string { return number_format($total > 0 ? ($count * 100 / $total) : 0, 2, ',', '.') . '%'; }
 
     private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }
@@ -309,7 +362,7 @@ final class Report extends BaseModel
     {
         return [
             'groups' => [
-                ['key' => 'population', 'title' => 'Bao cao dan cu', 'icon' => 'fa-users', 'description' => 'Nhan khau, gioi tinh, do tuoi, nghe nghiep, Dang vien, Doan vien.', 'types' => ['population','children','elderly','labor','party_member','youth_union','gender','age']],
+                ['key' => 'population', 'title' => 'Bao cao dan cu', 'icon' => 'fa-users', 'description' => 'Nhan khau, gioi tinh, do tuoi, nghe nghiep, BHYT, Dang vien, Doan vien.', 'types' => ['population','health_insurance','health-insurance-missing','health-insurance-expiring','health-insurance-expired','health-insurance-household','health-insurance-area','children','elderly','labor','party_member','youth_union','gender','age']],
                 ['key' => 'household', 'title' => 'Bao cao ho gia dinh', 'icon' => 'fa-house-chimney', 'description' => 'Danh sach ho, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','poor-households','near-poor-households','special']],
                 ['key' => 'movement', 'title' => 'Bao cao bien dong', 'icon' => 'fa-right-left', 'description' => 'Khai sinh, khai tu, chuyen di, chuyen den, tam tru, tam vang.', 'types' => ['migration','temporary_residence','temporary_absence','births','deaths']],
                 ['key' => 'gis', 'title' => 'Bao cao GIS', 'icon' => 'fa-map-location-dot', 'description' => 'Ho da dinh vi, chua dinh vi, ty le hoan thanh GPS theo khu vuc va thoi gian.', 'types' => ['gis','gis-located','gis-unlocated']],
@@ -324,13 +377,14 @@ final class Report extends BaseModel
                 ['key' => 'children-list', 'title' => 'Danh sach tre em', 'type' => 'children'],
                 ['key' => 'elderly-list', 'title' => 'Danh sach nguoi cao tuoi', 'type' => 'elderly'],
                 ['key' => 'labor-list', 'title' => 'Danh sach lao dong', 'type' => 'labor'],
+                ['key' => 'health-insurance-summary', 'title' => 'Thống kê Bảo hiểm y tế', 'type' => 'health_insurance'],
                 ['key' => 'party-list', 'title' => 'Danh sach Dang vien', 'type' => 'party_member'],
                 ['key' => 'poor-list', 'title' => 'Danh sach ho ngheo', 'type' => 'poor-households'],
                 ['key' => 'near-poor-list', 'title' => 'Danh sach ho can ngheo', 'type' => 'near-poor-households'],
                 ['key' => 'temporary-residence-list', 'title' => 'Danh sach tam tru', 'type' => 'temporary_residence'],
                 ['key' => 'temporary-absence-list', 'title' => 'Danh sach tam vang', 'type' => 'temporary_absence'],
             ],
-            'filters' => ['dateFrom','dateTo','area','householdCode','headName','householdId','citizen','gender','ageFrom','ageTo','occupation','party_member','youth_union_member','category','residencyStatus','presenceStatus','gpsStatus','digitalProfileStatus'],
+            'filters' => ['dateFrom','dateTo','area','householdCode','headName','householdId','citizen','gender','ageFrom','ageTo','occupation','health_insurance','has_health_insurance','party_member','youth_union_member','category','residencyStatus','presenceStatus','gpsStatus','digitalProfileStatus'],
             'exports' => ['preview','print','pdf','excel','word'],
             'scheduler' => ['ready' => true, 'enabled' => false, 'message' => 'Da chuan bi cau truc lap lich, chua bat gui tu dong.'],
         ];
@@ -354,6 +408,7 @@ final class Report extends BaseModel
                 'poverty' => $summary['charts']['poverty'] ?? [],
                 'gpsProgress' => $summary['charts']['gpsProgress'] ?? [],
                 'profileProgress' => $summary['charts']['profileProgress'] ?? [],
+                'healthInsurance' => $summary['charts']['healthInsurance'] ?? [],
                 'monthlyMovements' => $summary['charts']['monthlyChanges'] ?? [],
             ],
             'progress' => $progress,

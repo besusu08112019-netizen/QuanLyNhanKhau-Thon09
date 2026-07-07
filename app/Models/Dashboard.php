@@ -27,6 +27,7 @@ final class Dashboard extends BaseModel
             'religions' => $this->safeWidget('charts.religions', fn() => $this->groupChart($filters, 'religion', 'Tôn giáo'), [], $errors),
             'gpsProgress' => $this->safeWidget('charts.gpsProgress', fn() => $this->gpsProgressChart($filters), [], $errors),
             'profileProgress' => $this->safeWidget('charts.profileProgress', fn() => $this->profileProgressChart($filters), [], $errors),
+            'healthInsurance' => $this->safeWidget('charts.healthInsurance', fn() => $this->healthInsuranceChart($filters), [], $errors),
         ];
 
         $payload = [
@@ -84,8 +85,15 @@ final class Dashboard extends BaseModel
             'policy_households' => 0,
             'meritorious_households' => 0,
             'normal_households' => 0,
+            'health_insurance_total' => 0,
+            'health_insurance_count' => 0,
+            'health_insurance_covered_count' => 0,
+            'health_insurance_missing_count' => 0,
+            'health_insurance_uninsured_count' => 0,
+            'health_insurance_coverage_percent' => 0,
+            'health_insurance_percent' => 0,
         ];
-        foreach (['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
+        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
             $metrics[$key . '_count'] = 0;
             $metrics[$key . '_percent'] = 0;
         }
@@ -122,7 +130,7 @@ final class Dashboard extends BaseModel
             'meritorious_households' => (int) ($households['meritorious_households'] ?? 0),
             'normal_households' => (int) ($households['normal_households'] ?? 0),
         ];
-        foreach (['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
+        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
             $metrics[$key . '_count'] = (int) ($citizens[$key] ?? 0);
             $metrics[$key . '_percent'] = round($metrics[$key . '_count'] * 100 / $totalCitizens, 2);
         }
@@ -131,7 +139,46 @@ final class Dashboard extends BaseModel
         $metrics['children_percent'] = round($metrics['children_count'] * 100 / $totalCitizens, 2);
         $metrics['elderly_percent'] = round($metrics['elderly_count'] * 100 / $totalCitizens, 2);
         $metrics['working_age_percent'] = round($metrics['working_age_count'] * 100 / $totalCitizens, 2);
+        $healthInsurance = $this->healthInsuranceStats($filters);
+        $metrics['health_insurance_total'] = $healthInsurance['total'];
+        $metrics['health_insurance_count'] = $healthInsurance['insured'];
+        $metrics['health_insurance_covered_count'] = $healthInsurance['insured'];
+        $metrics['health_insurance_missing_count'] = $healthInsurance['uninsured'];
+        $metrics['health_insurance_uninsured_count'] = $healthInsurance['uninsured'];
+        $metrics['health_insurance_coverage_percent'] = $healthInsurance['coverage_percent'];
+        $metrics['health_insurance_percent'] = $healthInsurance['coverage_percent'];
         return $metrics;
+    }
+
+    public function healthInsuranceStats(array $filters = []): array
+    {
+        [$where, $params] = $this->citizenWhere($filters);
+        $hasColumn = $this->columnExists('citizens', 'has_health_insurance');
+        $endColumn = $this->columnExists('citizens', 'health_insurance_end_date');
+        $hasExpr = $hasColumn ? 'c.has_health_insurance=1' : '0=1';
+        $effectiveExpr = $endColumn ? "($hasExpr AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE()))" : $hasExpr;
+        $row = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN $hasExpr THEN 1 ELSE 0 END),0) AS enrolled, COALESCE(SUM(CASE WHEN $effectiveExpr THEN 1 ELSE 0 END),0) AS effective FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params) ?: [];
+        $total = (int) ($row['total'] ?? 0);
+        $enrolled = (int) ($row['enrolled'] ?? 0);
+        $effective = (int) ($row['effective'] ?? 0);
+        $uninsured = max(0, $total - $enrolled);
+        return [
+            'total' => $total,
+            'insured' => $effective,
+            'enrolled' => $enrolled,
+            'effective' => $effective,
+            'uninsured' => $uninsured,
+            'coverage_percent' => $total > 0 ? round($effective * 100 / $total, 2) : 0,
+        ];
+    }
+
+    public function healthInsuranceChart(array $filters = []): array
+    {
+        $stats = $this->healthInsuranceStats($filters);
+        return [
+            ['label' => 'Có BHYT', 'value' => $stats['insured']],
+            ['label' => 'Chưa có BHYT', 'value' => $stats['uninsured']],
+        ];
     }
 
     public function populationChart(array $filters = []): array
@@ -530,7 +577,7 @@ final class Dashboard extends BaseModel
         if ($filters['dateTo']) { $where[] = 'DATE(c.created_at) <= :citizen_date_to'; $params['citizen_date_to'] = $filters['dateTo']; }
         $category = $this->categoryKey($filters['householdType']);
         if ($category) $this->addCategoryWhere($where, $params, $category);
-        foreach (['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $column) {
+        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $column) {
             $value = $rawFilters[$column] ?? $rawFilters[$this->camel($column)] ?? null;
             if ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $value; }
         }
@@ -595,7 +642,7 @@ final class Dashboard extends BaseModel
 
     private function flagSelects(string $alias): string
     {
-        $columns = ['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'];
+        $columns = ['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'];
         $parts = [];
         foreach ($columns as $column) $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
         return implode('', $parts);
