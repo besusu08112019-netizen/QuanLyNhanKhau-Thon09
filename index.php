@@ -284,6 +284,32 @@ $router->put('/api/gis/households/{id}/location', [GisController::class, 'saveHo
 $router->delete('/api/gis/households/{id}/location', [GisController::class, 'clearHouseholdLocation']);
 $router->get('/api/gis/export-pdf', [GisController::class, 'exportPdf']);
 
+function load_env_file(string $path): void
+{
+    if (!is_file($path) || !is_readable($path)) return;
+    foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+        $line = trim((string) preg_replace('/^\xEF\xBB\xBF/', '', $line));
+        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
+        [$key, $value] = array_map('trim', explode('=', $line, 2));
+        $key = (string) preg_replace('/^\xEF\xBB\xBF/', '', $key);
+        if ($key === '') continue;
+        $value = trim($value, " \t\n\r\0\x0B\"'");
+        if (env_value($key) !== '') continue;
+        putenv($key . '=' . $value);
+        $_ENV[$key] = $value;
+        $_SERVER[$key] = $value;
+    }
+}
+
+function env_value(string $key): string
+{
+    $value = getenv($key);
+    if ($value !== false && trim((string) $value) !== '') return trim((string) $value);
+    if (isset($_ENV[$key]) && trim((string) $_ENV[$key]) !== '') return trim((string) $_ENV[$key]);
+    if (isset($_SERVER[$key]) && trim((string) $_SERVER[$key]) !== '') return trim((string) $_SERVER[$key]);
+    return '';
+}
+
 function versioned_asset(string $path): string
 {
     $normalized = ltrim($path, '/');
@@ -305,22 +331,9 @@ if (!str_starts_with($request->path(), '/api')) {
         exit;
     }
 
-    $loadLocalEnv = static function (string $path): void {
-        if (!is_file($path) || !is_readable($path)) return;
-        foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
-            $line = trim($line);
-            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
-            [$key, $value] = array_map('trim', explode('=', $line, 2));
-            if ($key === '' || (getenv($key) !== false && getenv($key) !== '')) continue;
-            $value = trim($value, " \t\n\r\0\x0B\"'");
-            putenv($key . '=' . $value);
-            $_ENV[$key] = $value;
-            $_SERVER[$key] = $value;
-        }
-    };
-    $loadLocalEnv(BASE_PATH . '/.env');
-    $loadLocalEnv(dirname(BASE_PATH) . '/.env');
-    $googleMapsApiKey = getenv('GOOGLE_MAPS_API_KEY') ?: getenv('VITE_GOOGLE_MAPS_API_KEY') ?: '';
+    load_env_file(BASE_PATH . '/.env');
+    load_env_file(dirname(BASE_PATH) . '/.env');
+    $googleMapsApiKey = env_value('GOOGLE_MAPS_API_KEY') ?: env_value('VITE_GOOGLE_MAPS_API_KEY');
     $googleMapsConfig = '<script>window.THON09_GOOGLE_MAPS_API_KEY=' . json_encode($googleMapsApiKey, JSON_UNESCAPED_SLASHES) . ';</script>';
     $headClosePosition = stripos($html, '</head>');
     if ($headClosePosition !== false) {
