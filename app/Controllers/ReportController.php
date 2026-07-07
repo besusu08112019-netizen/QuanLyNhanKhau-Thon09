@@ -216,6 +216,7 @@ final class ReportController extends BaseController
             'sick_soldier' => ['sickSoldier'],
             'disabled_person' => ['disabledPerson', 'disabled'],
             'social_assistance' => ['socialAssistance'],
+            'has_health_insurance' => ['hasHealthInsurance', 'health_insurance', 'healthInsurance'],
             'employed' => ['employed'],
             'unemployed' => ['unemployed'],
             'freelance_labor' => ['freelanceLabor'],
