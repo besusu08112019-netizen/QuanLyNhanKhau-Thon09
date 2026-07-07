@@ -555,7 +555,7 @@ function showApp() {
 }
 
 function normalizeAppHeader(screen) {
-  const screenLabels = { dashboard: 'Dashboard', operationCenter: 'Trung tâm điều hành', gis: 'Bản đồ địa bàn', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', exportExcel: 'Export Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền' };
+  const screenLabels = { dashboard: 'Dashboard', operationCenter: 'Trung tâm điều hành', gis: 'Bản đồ địa bàn', households: 'Quản lý hộ gia đình', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', exportExcel: 'Export Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền', gisGoogle: 'GIS Google Beta' };
   const label = screenLabels[screen] || 'Dashboard';
   const title = $('#screenTitle');
   const breadcrumb = $('#breadcrumbTrail');

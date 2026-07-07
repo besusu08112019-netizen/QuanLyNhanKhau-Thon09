@@ -12,7 +12,7 @@ function send_security_headers(): void
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: same-origin');
     header('Permissions-Policy: geolocation=(self), camera=(self), microphone=()');
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://maps.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org https://maps.gstatic.com https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https://maps.googleapis.com; frame-src 'self' https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
 }
 
 send_security_headers();
@@ -305,6 +305,28 @@ if (!str_starts_with($request->path(), '/api')) {
         exit;
     }
 
+    $loadLocalEnv = static function (string $path): void {
+        if (!is_file($path) || !is_readable($path)) return;
+        foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
+            [$key, $value] = array_map('trim', explode('=', $line, 2));
+            if ($key === '' || (getenv($key) !== false && getenv($key) !== '')) continue;
+            $value = trim($value, " \t\n\r\0\x0B\"'");
+            putenv($key . '=' . $value);
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+        }
+    };
+    $loadLocalEnv(BASE_PATH . '/.env');
+    $loadLocalEnv(dirname(BASE_PATH) . '/.env');
+    $googleMapsApiKey = getenv('GOOGLE_MAPS_API_KEY') ?: getenv('VITE_GOOGLE_MAPS_API_KEY') ?: '';
+    $googleMapsConfig = '<script>window.THON09_GOOGLE_MAPS_API_KEY=' . json_encode($googleMapsApiKey, JSON_UNESCAPED_SLASHES) . ';</script>';
+    $headClosePosition = stripos($html, '</head>');
+    if ($headClosePosition !== false) {
+        $html = substr_replace($html, $googleMapsConfig . "\n</head>", $headClosePosition, strlen('</head>'));
+    }
+
     $versionedAssets = [
         'assets/css/app.min.css',
         'assets/js/i18n.min.js',
@@ -327,6 +349,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/household-photo-gps.min.js',
         'assets/js/gis-search.min.js',
         'assets/js/gis-smart.min.js',
+        'assets/js/gis-google.min.js',
         'assets/js/digital-profile.min.js',
     ];
 

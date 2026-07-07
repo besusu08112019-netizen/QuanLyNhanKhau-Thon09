@@ -135,8 +135,8 @@
       },
       {
         enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 30000,
+        timeout: 30000,
+        maximumAge: 0,
       }
     );
   }
