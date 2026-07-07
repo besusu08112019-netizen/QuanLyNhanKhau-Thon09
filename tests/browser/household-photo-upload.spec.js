@@ -64,6 +64,8 @@ test('household photo is uploaded, read back and replaced from library/camera in
     }
     if (url.pathname === '/api/households/123' && request.method() === 'GET') return payload(savedHousehold);
     if (url.pathname === '/api/households/123' && request.method() === 'PUT') {
+      expect(request.headers()['authorization']).toBe('Bearer test-token');
+      expect(request.headers()['x-csrf-token']).toBe('test-csrf');
       const body = JSON.parse(request.postData() || '{}');
       savedHousehold = { ...savedHousehold, household_code: body.householdCode, head_citizen_name: body.headCitizenName, address: body.address };
       return payload(savedHousehold);
@@ -73,6 +75,8 @@ test('household photo is uploaded, read back and replaced from library/camera in
       return payload(uploadedFiles.slice().reverse());
     }
     if (url.pathname === '/api/files' && request.method() === 'POST') {
+      expect(request.headers()['authorization']).toBe('Bearer test-token');
+      expect(request.headers()['x-csrf-token']).toBe('test-csrf');
       const multipart = request.postDataBuffer().toString('latin1');
       expect(multipart).toContain('name="module"');
       expect(multipart).toContain('household');
@@ -89,6 +93,8 @@ test('household photo is uploaded, read back and replaced from library/camera in
       return payload(file);
     }
     if (/^\/api\/files\/\d+$/.test(url.pathname) && request.method() === 'DELETE') {
+      expect(request.headers()['authorization']).toBe('Bearer test-token');
+      expect(request.headers()['x-csrf-token']).toBe('test-csrf');
       deleteCount += 1;
       const id = Number(url.pathname.split('/').pop());
       const index = uploadedFiles.findIndex(file => file.id === id);
