@@ -8,25 +8,35 @@ final class FileAttachment extends BaseModel
 {
     public function create(array $data, int $userId): array
     {
-        $params = $data + ['user' => $userId];
+        $params = $data;
         $params['module'] = $params['module'] ?? ($params['entity_type'] ?? '');
         $params['entity_type'] = $params['entity_type'] ?? $params['module'];
         $params['category'] = $params['category'] ?? ($params['profile_section'] ?? ($params['file_type'] ?? 'OTHER'));
         $params['file_name'] = $params['file_name'] ?? ($params['original_name'] ?? '');
         $params['original_name'] = $params['original_name'] ?? $params['file_name'];
+        $params['created_by'] = $userId;
 
         $columns = ['module', 'entity_id', 'file_type', 'original_name', 'stored_name', 'file_path', 'mime_type', 'file_size', 'status', 'created_by'];
-        $values = [':module', ':entity_id', ':file_type', ':original_name', ':stored_name', ':file_path', ':mime_type', ':file_size', '"ACTIVE"', ':user'];
+        $values = [':module', ':entity_id', ':file_type', ':original_name', ':stored_name', ':file_path', ':mime_type', ':file_size', '"ACTIVE"', ':created_by'];
 
-        foreach (['entity_type', 'category', 'file_name', 'description', 'profile_section', 'updated_by'] as $column) {
+        foreach (['entity_type', 'category', 'file_name', 'description', 'profile_section'] as $column) {
             if ($this->columnExists('file_attachments', $column)) {
                 $columns[] = $column;
-                $values[] = $column === 'updated_by' ? ':user' : ':' . $column;
+                $values[] = ':' . $column;
                 $params[$column] = $params[$column] ?? null;
             }
         }
 
-        $id = $this->insert('INSERT INTO file_attachments (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
+        if ($this->columnExists('file_attachments', 'updated_by')) {
+            $columns[] = 'updated_by';
+            $values[] = ':updated_by';
+            $params['updated_by'] = $userId;
+        }
+
+        $sql = 'INSERT INTO file_attachments (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')';
+        $bindParams = $this->prepareSqlParams($sql, $params);
+        $this->logSqlBindingDebug($sql, $bindParams);
+        $id = $this->insert($sql, $bindParams);
         return $this->find($id) ?: ['id' => $id] + $data;
     }
 
@@ -120,14 +130,18 @@ final class FileAttachment extends BaseModel
             'pageSize' => $pageSize,
         ];
     }
+
     public function softDelete(int $id, int $userId): void
     {
-        $sets = ['status="DELETED"', 'deleted_at=NOW()', 'deleted_by=:user'];
-        if ($this->columnExists('file_attachments', 'updated_by')) $sets[] = 'updated_by=:user';
+        $sets = ['status="DELETED"', 'deleted_at=NOW()', 'deleted_by=:deleted_by'];
+        $params = ['id' => $id, 'deleted_by' => $userId];
+        if ($this->columnExists('file_attachments', 'updated_by')) {
+            $sets[] = 'updated_by=:updated_by';
+            $params['updated_by'] = $userId;
+        }
         if ($this->columnExists('file_attachments', 'updated_at')) $sets[] = 'updated_at=NOW()';
-        $this->execute('UPDATE file_attachments SET ' . implode(',', $sets) . ' WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE file_attachments SET ' . implode(',', $sets) . ' WHERE id=:id', $params);
     }
-
     public function updateMetadata(int $id, array $data, int $userId): ?array
     {
         $file = $this->find($id);
@@ -228,6 +242,27 @@ final class FileAttachment extends BaseModel
             }
         }
         return ['select' => $select, 'join' => $join];
+    }
+
+    private function prepareSqlParams(string $sql, array $params): array
+    {
+        $placeholders = $this->sqlPlaceholders($sql);
+        $missing = array_values(array_diff($placeholders, array_keys($params)));
+        if ($missing) {
+            throw new \RuntimeException('SQL binding missing parameters: ' . implode(', ', $missing));
+        }
+        return array_intersect_key($params, array_flip($placeholders));
+    }
+
+    private function sqlPlaceholders(string $sql): array
+    {
+        preg_match_all('/:[a-zA-Z_][a-zA-Z0-9_]*/', $sql, $matches);
+        return array_values(array_unique(array_map(static fn(string $placeholder): string => substr($placeholder, 1), $matches[0] ?? [])));
+    }
+
+    private function logSqlBindingDebug(string $sql, array $params): void
+    {
+        error_log('[FileAttachment] SQL=' . $sql . ' placeholders=' . json_encode($this->sqlPlaceholders($sql)) . ' params=' . json_encode(array_keys($params)));
     }
 
     private function tableExists(string $table): bool
