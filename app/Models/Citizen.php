@@ -6,6 +6,7 @@ use App\Core\BaseModel;
 
 final class Citizen extends BaseModel
 {
+    private bool $healthInsuranceSchemaEnsured = false;
     private const POLITICAL_FIELDS = [
         'party_member' => 'Đảng viên',
         'youth_union_member' => 'Đoàn viên Thanh niên',
@@ -53,6 +54,7 @@ final class Citizen extends BaseModel
 
     public function paginate(array $filters): array
     {
+        $this->ensureHealthInsuranceSchema();
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$sqlWhere, $params] = $this->where($filters);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere", $params)['total'];
@@ -77,6 +79,7 @@ final class Citizen extends BaseModel
 
     public function findByIdentity(string $identity): ?array
     {
+        $this->ensureHealthInsuranceSchema();
         $identity = trim($identity);
         if ($identity === '') return null;
         return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.identity_number=:identity AND c.status <> "DELETED"', ['identity' => $identity]);
@@ -84,11 +87,13 @@ final class Citizen extends BaseModel
 
     public function find(int $id): ?array
     {
+        $this->ensureHealthInsuranceSchema();
         return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
     }
 
     public function create(array $data, int $userId): array
     {
+        $this->ensureHealthInsuranceSchema();
         $params = $this->params($data, $userId);
         if ($params['code'] === '') $params['code'] = $this->nextCode((int) $params['household_id']);
         $this->ensureUniqueIdentity($params['identity']);
@@ -104,6 +109,7 @@ final class Citizen extends BaseModel
 
     public function update(int $id, array $data, int $userId): array
     {
+        $this->ensureHealthInsuranceSchema();
         $before = $this->find($id);
         if (!$before) throw new \RuntimeException('Không tìm thấy nhân khẩu');
         $params = $this->params($data, $userId, $before); $params['id'] = $id;
@@ -228,8 +234,45 @@ final class Citizen extends BaseModel
         return $params;
     }
 
-    private function activeExtendedColumns(): array { return $this->existingColumns('citizens', array_keys(self::extendedFields())); }
-    private function activeHealthInsuranceColumns(): array { return $this->existingColumns('citizens', self::HEALTH_INSURANCE_DETAIL_COLUMNS); }
+    private function activeExtendedColumns(): array
+    {
+        $columns = $this->existingColumns('citizens', array_keys(self::extendedFields()));
+        if ($this->healthInsuranceSchemaEnsured && !in_array('has_health_insurance', $columns, true)) $columns[] = 'has_health_insurance';
+        return $columns;
+    }
+
+    private function activeHealthInsuranceColumns(): array
+    {
+        return $this->healthInsuranceSchemaEnsured ? self::HEALTH_INSURANCE_DETAIL_COLUMNS : $this->existingColumns('citizens', self::HEALTH_INSURANCE_DETAIL_COLUMNS);
+    }
+
+    public function ensureHealthInsuranceSchema(): void
+    {
+        if ($this->healthInsuranceSchemaEnsured) return;
+        $columns = [
+            'has_health_insurance' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'health_insurance_number' => 'VARCHAR(20) NULL',
+            'health_insurance_group' => 'VARCHAR(100) NULL',
+            'health_insurance_start_date' => 'DATE NULL',
+            'health_insurance_end_date' => 'DATE NULL',
+            'health_insurance_facility' => 'VARCHAR(255) NULL',
+        ];
+        foreach ($columns as $column => $definition) {
+            if (!$this->columnExists('citizens', $column)) {
+                $this->execute('ALTER TABLE citizens ADD COLUMN ' . $column . ' ' . $definition);
+            }
+        }
+        $this->createHealthInsuranceIndexIfMissing();
+        $this->healthInsuranceSchemaEnsured = true;
+    }
+
+    private function createHealthInsuranceIndexIfMissing(): void
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index', ['table' => 'citizens', 'index' => 'idx_citizens_health_insurance']);
+        if ((int) ($row['total'] ?? 0) === 0) {
+            $this->execute('CREATE INDEX idx_citizens_health_insurance ON citizens (has_health_insurance, health_insurance_end_date)');
+        }
+    }
 
     private function applyHealthInsuranceParams(array &$params, array $data, ?array $fallback): void
     {

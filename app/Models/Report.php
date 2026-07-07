@@ -143,6 +143,7 @@ final class Report extends BaseModel
 
     public function healthInsuranceReport(array $filters = []): array
     {
+        (new Citizen())->ensureHealthInsuranceSchema();
         $stats = (new Dashboard())->healthInsuranceStats($filters);
         $rows = [
             ['Tổng số nhân khẩu', $stats['total']],
@@ -155,6 +156,7 @@ final class Report extends BaseModel
 
     public function healthInsuranceListReport(string $mode, array $filters = []): array
     {
+        (new Citizen())->ensureHealthInsuranceSchema();
         [$where, $params] = $this->citizenWhere($filters);
         if ($mode === 'missing') $where .= ' AND COALESCE(c.has_health_insurance,0)=0';
         if ($mode === 'expired') $where .= ' AND COALESCE(c.has_health_insurance,0)=1 AND c.health_insurance_end_date IS NOT NULL AND c.health_insurance_end_date < CURDATE()';
@@ -170,6 +172,7 @@ final class Report extends BaseModel
 
     public function healthInsuranceHouseholdReport(array $filters = []): array
     {
+        (new Citizen())->ensureHealthInsuranceSchema();
         [$where, $params] = $this->citizenWhere($filters);
         $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.area_code, COUNT(c.id) AS total, SUM(COALESCE(c.has_health_insurance,0)=1) AS enrolled, SUM(COALESCE(c.has_health_insurance,0)=0) AS missing, SUM(COALESCE(c.has_health_insurance,0)=1 AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE())) AS effective FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY h.id, h.household_code, h.head_citizen_name, h.area_code ORDER BY h.household_code", $params);
         return $this->table('Thống kê BHYT theo hộ', ['Mã hộ','Chủ hộ','Khu vực','Tổng nhân khẩu','Có BHYT','Còn hiệu lực','Chưa tham gia','Tỷ lệ bao phủ'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['area_code'], (int) $r['total'], (int) $r['enrolled'], (int) $r['effective'], (int) $r['missing'], $this->percent((int) $r['effective'], max(1, (int) $r['total']))], $rows), $filters);
@@ -177,6 +180,7 @@ final class Report extends BaseModel
 
     public function healthInsuranceAreaReport(array $filters = []): array
     {
+        (new Citizen())->ensureHealthInsuranceSchema();
         [$where, $params] = $this->citizenWhere($filters);
         $rows = $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'Chưa phân khu') AS area, COUNT(c.id) AS total, SUM(COALESCE(c.has_health_insurance,0)=1) AS enrolled, SUM(COALESCE(c.has_health_insurance,0)=0) AS missing, SUM(COALESCE(c.has_health_insurance,0)=1 AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE())) AS effective FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY area ORDER BY area", $params);
         return $this->table('Thống kê BHYT theo khu vực', ['Khu vực','Tổng nhân khẩu','Có BHYT','Còn hiệu lực','Chưa tham gia','Tỷ lệ bao phủ'], array_map(fn($r) => [$r['area'], (int) $r['total'], (int) $r['enrolled'], (int) $r['effective'], (int) $r['missing'], $this->percent((int) $r['effective'], max(1, (int) $r['total']))], $rows), $filters);

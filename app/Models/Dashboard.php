@@ -152,6 +152,7 @@ final class Dashboard extends BaseModel
 
     public function healthInsuranceStats(array $filters = []): array
     {
+        (new Citizen())->ensureHealthInsuranceSchema();
         [$where, $params] = $this->citizenWhere($filters);
         $hasColumn = $this->columnExists('citizens', 'has_health_insurance');
         $endColumn = $this->columnExists('citizens', 'health_insurance_end_date');
