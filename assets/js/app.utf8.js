@@ -77,6 +77,9 @@ function applyAccessControls() {
 }
 window.thon09CanAccess = canAccess;
 window.thon09ApplyAccessControls = applyAccessControls;
+window.loadHouseholds = loadHouseholds;
+window.loadDashboard = loadDashboard;
+window.refreshLoginConfig = refreshLoginConfig;
 
 window.switchScreen = switchScreen;
 if (!window.__thon09NavDelegated) {
@@ -1196,12 +1199,20 @@ async function savePerson(event) {
   } catch (error) { showToast(error.message, 'danger'); }
 }
 
+function householdPhotoDetailHtml(row = {}) {
+  const url = row.household_photo_url || row.photo_url || row.thumbnail_url || '';
+  if (!url) return '';
+  return '<div class="household-detail-photo mb-3">'
+    + '<img src="' + escapeHtml(url) + '" alt="Ảnh hộ" loading="lazy">'
+    + '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Xem ảnh</a>'
+    + '</div>';
+}
 async function showHousehold(id) {
   try {
     const row = await api(`/api/households/${id}`);
     const members = await api('/api/persons?' + new URLSearchParams({ householdId: row.household_code, pageSize: 100 }).toString());
     $('#detailTitle').textContent = 'Chi tiết hộ dân';
-    $('#detailBody').innerHTML = details([['Mã hộ', row.household_code], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ', row.address], ['Số điện thoại', row.phone], ['Ở nhà', row.at_home_count || 0], ['Đi vắng', row.away_count || 0], ['Diện hộ', stripTags(householdBadges(row))], ['Ghi chú', row.note]]) + memberTable(members.items || []);
+    $('#detailBody').innerHTML = householdPhotoDetailHtml(row) + details([['Mã hộ', row.household_code], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ', row.address], ['Số điện thoại', row.phone], ['Ở nhà', row.at_home_count || 0], ['Đi vắng', row.away_count || 0], ['Diện hộ', stripTags(householdBadges(row))], ['Ghi chú', row.note]]) + memberTable(members.items || []);
     refreshUiEnhancements($('#detailBody') || document);
     App.modals.detail.show();
   } catch (error) { showToast(error.message, 'danger'); }

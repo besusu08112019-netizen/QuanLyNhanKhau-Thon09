@@ -22,13 +22,13 @@ final class Household extends BaseModel
         [$sqlWhere, $params] = $this->where($filters);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM households h $sqlWhere", $params)['total'];
         $items = $this->fetchAll("SELECT h.id, h.household_code, h.head_citizen_id, h.head_citizen_name, h.address, h.phone, h.area_code, h.meritorious_family, h.poor_household, h.near_poor_household, h.disabled_household, h.note, h.status, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere ORDER BY h.household_code LIMIT $pageSize OFFSET $offset", $params);
-        return ['items' => array_map(fn($row) => $this->withCategory($row), $items), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return ['items' => array_map(fn($row) => $this->withPhoto($this->withCategory($row)), $items), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
 
     public function find(int $id): ?array
     {
         $row = $this->fetchOne('SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id WHERE h.id = :id AND h.status <> "DELETED"', ['id' => $id]);
-        return $row ? $this->withCategory($row) : null;
+        return $row ? $this->withPhoto($this->withCategory($row)) : null;
     }
 
     public function findByCode(string $code): ?array { return $this->fetchOne('SELECT * FROM households WHERE household_code = :code AND status <> "DELETED"', ['code' => strtoupper(trim($code))]); }
@@ -207,6 +207,57 @@ final class Household extends BaseModel
         };
     }
 
+    private function withPhoto(array $row): array
+    {
+        $row['photo_file_id'] = null;
+        $row['photo_url'] = null;
+        $row['household_photo_url'] = null;
+        $row['thumbnail_url'] = null;
+        $row['gallery_count'] = 0;
+        $id = (int) ($row['id'] ?? 0);
+        if ($id <= 0 || !$this->tableExists('file_attachments')) return $row;
+
+        $columns = $this->existingColumns('file_attachments', ['id', 'module', 'entity_type', 'entity_id', 'status', 'file_type', 'mime_type']);
+        if (!in_array('id', $columns, true) || !in_array('entity_id', $columns, true)) return $row;
+
+        $where = ['entity_id = :entity_id'];
+        $params = ['entity_id' => $id];
+        if (in_array('entity_type', $columns, true) && in_array('module', $columns, true)) {
+            $where[] = 'COALESCE(entity_type, module) = :entity_type';
+            $params['entity_type'] = 'household';
+        } elseif (in_array('entity_type', $columns, true)) {
+            $where[] = 'entity_type = :entity_type';
+            $params['entity_type'] = 'household';
+        } elseif (in_array('module', $columns, true)) {
+            $where[] = 'module = :entity_type';
+            $params['entity_type'] = 'household';
+        }
+        if (in_array('status', $columns, true)) $where[] = '(status IS NULL OR status <> "DELETED")';
+
+        $imageParts = [];
+        if (in_array('file_type', $columns, true)) $imageParts[] = 'file_type IN ("PHOTO","IMAGE")';
+        if (in_array('mime_type', $columns, true)) $imageParts[] = 'mime_type LIKE "image/%"';
+        if ($imageParts) $where[] = '(' . implode(' OR ', $imageParts) . ')';
+
+        $whereSql = implode(' AND ', $where);
+        $count = $this->fetchOne('SELECT COUNT(*) AS total FROM file_attachments WHERE ' . $whereSql, $params);
+        $photo = $this->fetchOne('SELECT id FROM file_attachments WHERE ' . $whereSql . ' ORDER BY id DESC LIMIT 1', $params);
+        $fileId = isset($photo['id']) ? (int) $photo['id'] : 0;
+        $row['gallery_count'] = (int) ($count['total'] ?? 0);
+        if ($fileId > 0) {
+            $row['photo_file_id'] = $fileId;
+            $row['photo_url'] = '/api/files/' . $fileId . '/preview';
+            $row['household_photo_url'] = $row['photo_url'];
+            $row['thumbnail_url'] = $row['photo_url'];
+        }
+        return $row;
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
+    }
     private function ensureUniqueCode(string $code, ?int $ignoreId = null): void
     {
         $params = ['code' => $code];

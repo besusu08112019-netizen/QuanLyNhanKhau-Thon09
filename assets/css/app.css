@@ -4116,3 +4116,5 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 @media (max-width: 640px) {
   .person-bhyt-form-head { align-items: flex-start; flex-direction: column; }
 }
+
+.household-detail-photo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px;border:1px solid var(--line);border-radius:8px;background:#f8fafc}.household-detail-photo img{width:128px;height:96px;object-fit:cover;border-radius:8px;border:1px solid #dbe5ef;background:#fff}@media (max-width:576px){.household-detail-photo{align-items:stretch}.household-detail-photo img{width:100%;height:auto;max-height:240px}.household-detail-photo .btn{width:100%}}
