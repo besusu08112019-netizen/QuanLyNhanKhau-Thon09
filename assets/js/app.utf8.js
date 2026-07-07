@@ -521,6 +521,7 @@ async function login(event) {
     localStorage.setItem('thon09_token', App.token);
     localStorage.setItem('thon09_user', JSON.stringify(App.user));
     window.App = App;
+    if (typeof syncAuthCookie === 'function') syncAuthCookie();
 
 const RuntimeCache = { api: new Map(), assets: new Map(), loadingCount: 0 };
     showToast('Đăng nhập thành công');
@@ -535,6 +536,7 @@ async function logout() {
   localStorage.removeItem('thon09_token');
   localStorage.removeItem('thon09_user');
   localStorage.removeItem('thon09_screen');
+    if (typeof syncAuthCookie === 'function') syncAuthCookie();
   document.dispatchEvent(new CustomEvent('thon09:auth-state', { detail: { authenticated: false } }));
   showLogin();
 }

@@ -44,12 +44,16 @@ final class Request
     public function input(?string $key = null, mixed $default = null): mixed { return $key === null ? $this->input : ($this->input[$key] ?? $default); }
     public function query(?string $key = null, mixed $default = null): mixed { return $key === null ? $this->query : ($this->query[$key] ?? $default); }
     public function header(string $key, mixed $default = null): mixed { return $this->headers[strtolower($key)] ?? $default; }
+
     public function bearerToken(): ?string
     {
         $authorization = (string) $this->header('authorization', '');
         if (preg_match('/Bearer\s+(.+)/i', $authorization, $matches)) {
             return trim($matches[1]);
         }
-        return $this->header('x-auth-token') ?: null;
+        $headerToken = $this->header('x-auth-token');
+        if ($headerToken) return (string) $headerToken;
+        $cookieToken = $_COOKIE['thon09_token'] ?? '';
+        return $cookieToken !== '' ? (string) $cookieToken : null;
     }
 }

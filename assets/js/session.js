@@ -1,4 +1,22 @@
 (() => {
+  function authCookieAttributes(maxAge) {
+    const secure = location.protocol === 'https:' ? '; Secure' : '';
+    return '; path=/; SameSite=Lax; max-age=' + Number(maxAge || 0) + secure;
+  }
+
+  function syncAuthCookie() {
+    const token = App.token || localStorage.getItem('thon09_token') || '';
+    if (!token) return clearAuthCookie();
+    document.cookie = 'thon09_token=' + encodeURIComponent(token) + authCookieAttributes(21600);
+  }
+
+  function clearAuthCookie() {
+    document.cookie = 'thon09_token=' + authCookieAttributes(0);
+  }
+
+  window.syncAuthCookie = syncAuthCookie;
+  syncAuthCookie();
+
   function clearSession() {
     App.token = '';
     App.user = null;
@@ -6,6 +24,7 @@
     localStorage.removeItem('thon09_token');
     localStorage.removeItem('thon09_user');
     localStorage.removeItem('thon09_csrf');
+    clearAuthCookie();
     showLogin();
   }
 

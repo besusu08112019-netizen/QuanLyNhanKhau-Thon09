@@ -102,6 +102,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
       return payload({ id });
     }
     if (/^\/api\/files\/\d+\/preview$/.test(url.pathname)) {
+      expect(request.headers()['cookie'] || '').toContain('thon09_token=test-token');
       return route.fulfill({ contentType: 'image/png', body: fs.readFileSync(pngFile('thon09-preview.png')) });
     }
 
@@ -117,6 +118,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
     localStorage.setItem('thon09_token', 'test-token');
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.syncAuthCookie === 'function') window.syncAuthCookie();
     window.showApp();
     window.switchScreen('households');
   });
