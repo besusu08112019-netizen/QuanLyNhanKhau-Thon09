@@ -31,6 +31,7 @@ use App\Controllers\HouseholdBusinessController;
 use App\Controllers\HouseholdController;
 use App\Controllers\ImportController;
 use App\Controllers\InsightController;
+use App\Controllers\LivestockController;
 use App\Controllers\LogController;
 use App\Controllers\MovementController;
 use App\Controllers\OperationCenterController;
@@ -177,6 +178,15 @@ $router->delete('/api/household-businesses/{id}/files/{fileId}', [HouseholdBusin
 $router->get('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'show']);
 $router->put('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'update']);
 $router->delete('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'destroy']);
+$router->get('/api/livestock', [LivestockController::class, 'index']);
+$router->post('/api/livestock', [LivestockController::class, 'store']);
+$router->get('/api/livestock/dashboard', [LivestockController::class, 'dashboard']);
+$router->get('/api/livestock/catalogs', [LivestockController::class, 'catalogs']);
+$router->get('/api/livestock/household-search', [LivestockController::class, 'householdSearch']);
+$router->get('/api/livestock/household/{householdId}', [LivestockController::class, 'byHousehold']);
+$router->get('/api/livestock/{id}', [LivestockController::class, 'show']);
+$router->put('/api/livestock/{id}', [LivestockController::class, 'update']);
+$router->delete('/api/livestock/{id}', [LivestockController::class, 'destroy']);
 
 $router->get('/api/citizens', [PersonController::class, 'index']);
 $router->post('/api/citizens', [PersonController::class, 'store']);
@@ -403,6 +413,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/gis-google.min.js',
         'assets/js/digital-profile.min.js',
         'assets/js/household-business.min.js',
+        'assets/js/livestock.min.js',
         'assets/js/module-dashboards.min.js',
     ];
 

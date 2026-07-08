@@ -555,23 +555,25 @@ final class Dashboard extends BaseModel
         $errors = [];
         $metrics = $this->safeWidget('overview.metrics', fn() => $this->metrics($filters), $this->defaultMetrics(), $errors);
         $business = $this->safeWidget('overview.business', fn() => (new \App\Models\HouseholdBusiness())->dashboard($filters), [], $errors);
+        $livestock = $this->safeWidget('overview.livestock', fn() => (new \App\Models\Livestock())->dashboard($filters), [], $errors);
         $gis = $this->safeWidget('overview.gis', fn() => $this->gisSummary($filters), [], $errors);
         $businessCharts = $this->safeWidget('overview.businessCharts', fn() => (new \App\Models\HouseholdBusiness())->charts($filters), [], $errors);
+        $livestockCharts = $this->safeWidget('overview.livestockCharts', fn() => (new \App\Models\Livestock())->charts($filters), [], $errors);
         $payload = ['module' => 'overview', 'title' => 'Dashboard Tổng quan', 'kpis' => [
             $this->kpi('Tổng số hộ', $metrics['total_households'] ?? 0, 'hộ', 'fa-house-chimney', 'green'),
             $this->kpi('Tổng số nhân khẩu', $metrics['total_citizens'] ?? 0, 'người', 'fa-users', 'blue'),
             $this->kpi('Tổng số hộ kinh doanh', $business['economic_households'] ?? 0, 'hộ', 'fa-store', 'orange'),
             $this->kpi('Tổng số cơ sở kinh doanh', $business['establishment_total'] ?? 0, 'cơ sở', 'fa-briefcase', 'cyan'),
             $this->kpi('Tổng số phương tiện', 0, 'xe', 'fa-car', 'purple'),
-            $this->kpi('Tổng số hộ chăn nuôi', 0, 'hộ', 'fa-warehouse', 'green'),
-            $this->kpi('Tổng số vật nuôi', 0, 'con', 'fa-paw', 'orange'),
+            $this->kpi('Tổng số hộ chăn nuôi', $livestock['livestock_households'] ?? 0, 'hộ', 'fa-warehouse', 'green'),
+            $this->kpi('Tổng số vật nuôi', $livestock['livestock_total'] ?? 0, 'con', 'fa-paw', 'orange'),
             $this->kpi('Tổng khu vực GIS', $gis['totalAreas'] ?? 0, 'khu', 'fa-map-location-dot', 'cyan'),
             $this->kpi('Tỷ lệ BHYT', $metrics['health_insurance_coverage_percent'] ?? 0, '%', 'fa-notes-medical', 'green'),
             $this->kpi('Đảng viên', $metrics['party_member_count'] ?? 0, 'người', 'fa-star', 'orange'),
         ], 'charts' => [
             'households' => $this->safeWidget('overview.households', fn() => $this->householdChart($filters), [], $errors),
             'businessSectors' => $businessCharts['sectors'] ?? [],
-            'vehicles' => [], 'livestock' => [],
+            'vehicles' => [], 'livestock' => $livestockCharts['types'] ?? [],
         ], 'generatedAt' => date('c')];
         if ($errors) $payload['widgetErrors'] = $errors;
         return $payload;
@@ -625,7 +627,20 @@ final class Dashboard extends BaseModel
 
     public function livestockDashboard(array $filters = []): array
     {
-        return $this->emptyDomainDashboard('livestock','Dashboard Chăn nuôi',[['Tổng hộ chăn nuôi','fa-warehouse'],['Tổng vật nuôi','fa-paw'],['Trâu','fa-circle-dot'],['Bò','fa-circle-dot'],['Lợn','fa-circle-dot'],['Dê','fa-circle-dot'],['Gà','fa-circle-dot'],['Vịt','fa-circle-dot'],['Ngan','fa-circle-dot'],['Chim','fa-circle-dot'],['Ong','fa-circle-dot'],['Khác','fa-circle-dot']],['types','scale','areas']);
+        $model = new \App\Models\Livestock();
+        $stats = $model->dashboard($filters);
+        $charts = $model->charts($filters);
+        return ['module'=>'livestock','title'=>'Dashboard Chăn nuôi','kpis'=>[
+            $this->kpi('Tổng hộ chăn nuôi',$stats['livestock_households']??0,'hộ','fa-warehouse','green'),
+            $this->kpi('Tổng vật nuôi',$stats['livestock_total']??0,'con','fa-paw','blue'),
+            $this->kpi('Trâu',$stats['buffalo_total']??0,'con','fa-circle-dot','orange'),
+            $this->kpi('Bò',$stats['cow_total']??0,'con','fa-circle-dot','cyan'),
+            $this->kpi('Lợn',$stats['pig_total']??0,'con','fa-circle-dot','purple'),
+            $this->kpi('Dê',$stats['goat_total']??0,'con','fa-circle-dot','pink'),
+            $this->kpi('Gia cầm',$stats['poultry_total']??0,'con','fa-dove','green'),
+            $this->kpi('Đã tiêm phòng',$stats['vaccinated_households']??0,'hộ','fa-shield-heart','blue'),
+            $this->kpi('Có dịch bệnh',$stats['disease_households']??0,'hộ','fa-triangle-exclamation','orange'),
+        ],'charts'=>['types'=>$charts['types']??[],'scale'=>$charts['scale']??[],'areas'=>$charts['areas']??[],'vaccination'=>$charts['vaccination']??[]],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
     }
 
     public function gisDashboard(array $filters = []): array

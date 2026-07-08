@@ -14,7 +14,7 @@ final class Permission extends BaseModel
             'OFFICER' => 'Cán bộ',
             'VIEWER' => 'Khách',
         ];
-        $modules = ['dashboard','household','household_business','citizen','movement','report','pdf','import','export','print','profile','file','gis','photo','video','gps','notification','user','permission','logs','settings','backup','system_admin'];
+        $modules = ['dashboard','household','household_business','livestock','citizen','movement','report','pdf','import','export','print','profile','file','gis','photo','video','gps','notification','user','permission','logs','settings','backup','system_admin'];
         $actions = ['read','create','update','delete','upload','download','import','export','print','approve','restore','backup'];
         $rows = $this->fetchAll('SELECT role, module, action, allowed FROM permissions');
         $matrix = [];
@@ -50,8 +50,8 @@ final class Permission extends BaseModel
     {
         if ($role === 'SUPER_ADMIN') return true;
         if ($role === 'ADMIN') return true;
-        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','household_business','citizen','movement','report'], true) && in_array($action, ['read','create','update'], true)) || ($module === 'gis' && $action === 'read');
-        if ($role === 'VIEWER') return in_array($module, ['dashboard','household','household_business','citizen','report','gis'], true) && $action === 'read';
+        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','household_business','livestock','citizen','movement','report'], true) && in_array($action, ['read','create','update'], true)) || ($module === 'gis' && $action === 'read');
+        if ($role === 'VIEWER') return in_array($module, ['dashboard','household','household_business','livestock','citizen','report','gis'], true) && $action === 'read';
         return false;
     }
 }

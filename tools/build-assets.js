@@ -57,6 +57,7 @@ const assets = [
   ['assets/js/gis-google.js', 'assets/js/gis-google.min.js', compactJs],
   ['assets/js/digital-profile.js', 'assets/js/digital-profile.min.js', compactJs],
   ['assets/js/household-business.js', 'assets/js/household-business.min.js', compactJs],
+  ['assets/js/livestock.js', 'assets/js/livestock.min.js', compactJs],
   ['assets/js/module-dashboards.js', 'assets/js/module-dashboards.min.js', compactJs]
 ];
 
