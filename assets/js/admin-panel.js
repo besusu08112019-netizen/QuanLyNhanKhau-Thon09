@@ -164,7 +164,7 @@
     host.innerHTML = '<canvas id="' + canvasId + '" height="180"></canvas>';
     if (!window.Chart) {
       if (typeof window.loadScriptOnce === 'function') {
-        window.loadScriptOnce('https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js', () => Boolean(window.Chart)).then(() => renderChart(selector, items)).catch(() => {});
+        window.loadScriptOnce('/assets/vendor/chartjs/chart.umd.min.js', () => Boolean(window.Chart)).then(() => renderChart(selector, items)).catch(() => {});
       }
       return;
     }

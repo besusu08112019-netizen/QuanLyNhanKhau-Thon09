@@ -229,7 +229,7 @@ SQL);
             'SELECT
                 COALESCE(SUM(CASE WHEN hb.business_type = "PRODUCTION" THEN 1 ELSE 0 END),0) AS production,
                 COALESCE(SUM(CASE WHEN hb.business_type = "BUSINESS" THEN 1 ELSE 0 END),0) AS business,
-                COALESCE(SUM(CASE WHEN hb.business_type = "BOTH" THEN 1 ELSE 0 END),0) AS both,
+                COALESCE(SUM(CASE WHEN hb.business_type = "BOTH" THEN 1 ELSE 0 END),0) AS both_households,
                 COALESCE(SUM(hb.worker_count),0) AS workers,
                 COALESCE(SUM(hb.is_ocop=1),0) AS ocop,
                 COALESCE(SUM(hb.food_safety_certified=1),0) AS food_safety,
@@ -240,7 +240,7 @@ SQL);
         return [
             'production_households' => (int) ($row['production'] ?? 0),
             'business_households' => (int) ($row['business'] ?? 0),
-            'production_business_households' => (int) ($row['both'] ?? 0),
+            'production_business_households' => (int) ($row['both_households'] ?? 0),
             'business_worker_total' => (int) ($row['workers'] ?? 0),
             'ocop_households' => (int) ($row['ocop'] ?? 0),
             'food_safety_households' => (int) ($row['food_safety'] ?? 0),
