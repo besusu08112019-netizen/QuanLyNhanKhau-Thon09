@@ -136,13 +136,13 @@ final class User extends BaseModel
         if ($role === 'SUPER_ADMIN' || $role === 'ADMIN') return true;
 
         if ($role === 'VIEWER') {
-            return in_array($module, ['dashboard','household','citizen','report','gis'], true) && $action === 'read';
+            return in_array($module, ['dashboard','household','household_business','citizen','report','gis'], true) && $action === 'read';
         }
 
 
         $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $role, 'module' => $module, 'action' => $action]);
         if ($permission) return (bool) $permission['allowed'];
-        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','citizen','movement','report'], true) && in_array($action, ['read','create','update'], true)) || ($module === 'gis' && $action === 'read');
+        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','household_business','citizen','movement','report'], true) && in_array($action, ['read','create','update'], true)) || ($module === 'gis' && $action === 'read');
         return false;
     }
 

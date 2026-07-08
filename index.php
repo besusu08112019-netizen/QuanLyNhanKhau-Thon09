@@ -27,6 +27,7 @@ use App\Controllers\BackupController;
 use App\Controllers\DashboardController;
 use App\Controllers\FileController;
 use App\Controllers\GisController;
+use App\Controllers\HouseholdBusinessController;
 use App\Controllers\HouseholdController;
 use App\Controllers\ImportController;
 use App\Controllers\InsightController;
@@ -139,6 +140,14 @@ $router->get('/api/households/{id}', [HouseholdController::class, 'show']);
 $router->put('/api/households/{id}', [HouseholdController::class, 'update']);
 $router->delete('/api/households/{id}', [HouseholdController::class, 'destroy']);
 $router->post('/api/households/bulk-delete', [HouseholdController::class, 'bulkDelete']);
+
+$router->get('/api/household-business', [HouseholdBusinessController::class, 'index']);
+$router->post('/api/household-business', [HouseholdBusinessController::class, 'store']);
+$router->get('/api/household-business/dashboard', [HouseholdBusinessController::class, 'dashboard']);
+$router->get('/api/household-business/household/{householdId}', [HouseholdBusinessController::class, 'byHousehold']);
+$router->get('/api/household-business/{id}', [HouseholdBusinessController::class, 'show']);
+$router->put('/api/household-business/{id}', [HouseholdBusinessController::class, 'update']);
+$router->delete('/api/household-business/{id}', [HouseholdBusinessController::class, 'destroy']);
 
 $router->get('/api/citizens', [PersonController::class, 'index']);
 $router->post('/api/citizens', [PersonController::class, 'store']);
@@ -364,6 +373,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/gis-smart.min.js',
         'assets/js/gis-google.min.js',
         'assets/js/digital-profile.min.js',
+        'assets/js/household-business.min.js',
     ];
 
     foreach ($versionedAssets as $asset) {

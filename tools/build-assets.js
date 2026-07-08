@@ -55,7 +55,8 @@ const assets = [
   ['assets/js/gis-search.js', 'assets/js/gis-search.min.js', compactJs],
   ['assets/js/gis-smart.js', 'assets/js/gis-smart.min.js', compactJs],
   ['assets/js/gis-google.js', 'assets/js/gis-google.min.js', compactJs],
-  ['assets/js/digital-profile.js', 'assets/js/digital-profile.min.js', compactJs]
+  ['assets/js/digital-profile.js', 'assets/js/digital-profile.min.js', compactJs],
+  ['assets/js/household-business.js', 'assets/js/household-business.min.js', compactJs]
 ];
 
 for (const [src, dest, fn] of assets) {

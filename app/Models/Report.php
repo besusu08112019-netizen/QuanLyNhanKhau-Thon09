@@ -10,6 +10,12 @@ final class Report extends BaseModel
     {
         return match ($type) {
             'household', 'households' => $this->householdReport($filters),
+            'household-business', 'household_business', 'business-households' => (new \App\Models\HouseholdBusiness())->report('all', $filters),
+            'household-business-production', 'production-households', 'business-production' => (new \App\Models\HouseholdBusiness())->report('production', $filters),
+            'household-business-trade', 'business-trade', 'trade-households' => (new \App\Models\HouseholdBusiness())->report('business', $filters),
+            'household-business-sector', 'business-sector' => (new \App\Models\HouseholdBusiness())->report('sector', $filters),
+            'household-business-status', 'business-status' => (new \App\Models\HouseholdBusiness())->report('status', $filters),
+            'household-business-gis', 'business-gis' => (new \App\Models\HouseholdBusiness())->report('gis', $filters),
             'population', 'citizen', 'citizens' => $this->populationReport($filters),
             'temporary-residence', 'temporary_residence', 'temporary' => $this->temporaryResidenceReport($filters),
             'temporary-absence', 'temporary_absence', 'absence' => $this->temporaryAbsenceReport($filters),
@@ -368,6 +374,7 @@ final class Report extends BaseModel
             'groups' => [
                 ['key' => 'population', 'title' => 'Bao cao dan cu', 'icon' => 'fa-users', 'description' => 'Nhan khau, gioi tinh, do tuoi, nghe nghiep, BHYT, Dang vien, Doan vien.', 'types' => ['population','health_insurance','health-insurance-missing','health-insurance-expiring','health-insurance-expired','health-insurance-household','health-insurance-area','children','elderly','labor','party_member','youth_union','gender','age']],
                 ['key' => 'household', 'title' => 'Bao cao ho gia dinh', 'icon' => 'fa-house-chimney', 'description' => 'Danh sach ho, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','poor-households','near-poor-households','special']],
+                ['key' => 'household_business', 'title' => 'Bao cao ho san xuat va kinh doanh', 'icon' => 'fa-store', 'description' => 'Danh sach ho san xuat, ho kinh doanh, nganh nghe, trang thai va khu vuc GIS.', 'types' => ['household-business-production','household-business-trade','household-business-sector','household-business-status','household-business-gis']],
                 ['key' => 'movement', 'title' => 'Bao cao bien dong', 'icon' => 'fa-right-left', 'description' => 'Khai sinh, khai tu, chuyen di, chuyen den, tam tru, tam vang.', 'types' => ['migration','temporary_residence','temporary_absence','births','deaths']],
                 ['key' => 'gis', 'title' => 'Bao cao GIS', 'icon' => 'fa-map-location-dot', 'description' => 'Ho da dinh vi, chua dinh vi, ty le hoan thanh GPS theo khu vuc va thoi gian.', 'types' => ['gis','gis-located','gis-unlocated']],
                 ['key' => 'digital_profile', 'title' => 'Bao cao Ho so so', 'icon' => 'fa-folder-open', 'description' => 'Ho so hoan chinh, thieu anh, thieu giay to va chua hoan thien.', 'types' => ['digital-profile','profile-complete','profile-missing-photo','profile-missing-documents','profile-incomplete']],
@@ -385,6 +392,8 @@ final class Report extends BaseModel
                 ['key' => 'party-list', 'title' => 'Danh sach Dang vien', 'type' => 'party_member'],
                 ['key' => 'poor-list', 'title' => 'Danh sach ho ngheo', 'type' => 'poor-households'],
                 ['key' => 'near-poor-list', 'title' => 'Danh sach ho can ngheo', 'type' => 'near-poor-households'],
+                ['key' => 'household-business-production', 'title' => 'Danh sach ho san xuat', 'type' => 'household-business-production'],
+                ['key' => 'household-business-trade', 'title' => 'Danh sach ho kinh doanh', 'type' => 'household-business-trade'],
                 ['key' => 'temporary-residence-list', 'title' => 'Danh sach tam tru', 'type' => 'temporary_residence'],
                 ['key' => 'temporary-absence-list', 'title' => 'Danh sach tam vang', 'type' => 'temporary_absence'],
             ],

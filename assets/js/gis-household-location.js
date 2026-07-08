@@ -28,7 +28,7 @@
   async function request(path, options) {
     if (typeof window.api === 'function') return window.api(path, options || {});
     const token = localStorage.getItem('thon09_token') || (window.App && window.App.token) || '';
-    if (!isAuthenticated()) throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
+    if (!isAuthenticated()) throw new Error('PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n, vui lÃ²ng Ä‘Äƒng nháº­p láº¡i');
     const headers = Object.assign({ Accept: 'application/json' }, (options && options.headers) || {});
     if (token) headers.Authorization = 'Bearer ' + token;
     if (options && options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
@@ -38,7 +38,7 @@
     }
     const response = await fetch(path, fetchOptions);
     const json = await response.json().catch(() => null);
-    if (!response.ok || !json || json.ok === false) throw new Error((json && json.error && json.error.message) || 'Không tải được dữ liệu.');
+    if (!response.ok || !json || json.ok === false) throw new Error((json && json.error && json.error.message) || 'KhÃ´ng táº£i Ä‘Æ°á»£c dá»¯ liá»‡u.');
     return json.data || json;
   }
   function loadAssetOnce(kind, url, test) {
@@ -84,17 +84,17 @@
     const section = document.createElement('div');
     section.className = 'col-12 household-location-section';
     section.innerHTML =
-      '<h6><i class="fa-solid fa-location-crosshairs"></i> Vị trí hộ gia đình</h6>' +
+      '<h6><i class="fa-solid fa-location-crosshairs"></i> Vá»‹ trÃ­ há»™ gia Ä‘Ã¬nh</h6>' +
       '<div class="row g-2">' +
         '<div class="col-md-3"><label class="form-label">Latitude</label><input name="latitude" class="form-control" readonly></div>' +
         '<div class="col-md-3"><label class="form-label">Longitude</label><input name="longitude" class="form-control" readonly></div>' +
-        '<div class="col-md-3"><label class="form-label">Nguồn</label><input name="locationSource" class="form-control" readonly></div>' +
-        '<div class="col-md-3"><label class="form-label">Độ chính xác</label><input name="locationAccuracy" class="form-control" readonly></div>' +
+        '<div class="col-md-3"><label class="form-label">Nguá»“n</label><input name="locationSource" class="form-control" readonly></div>' +
+        '<div class="col-md-3"><label class="form-label">Äá»™ chÃ­nh xÃ¡c</label><input name="locationAccuracy" class="form-control" readonly></div>' +
       '</div>' +
       '<div class="household-location-actions">' +
-        '<button class="btn btn-outline-success" type="button" data-household-location-action="pick"><i class="fa-solid fa-map-location-dot"></i> Chọn trên bản đồ</button>' +
-        '<button class="btn btn-outline-primary" type="button" data-household-location-action="gps"><i class="fa-solid fa-satellite-dish"></i> Lấy GPS</button>' +
-        '<button class="btn btn-outline-danger" type="button" data-household-location-action="clear"><i class="fa-solid fa-trash"></i> Xóa vị trí</button>' +
+        '<button class="btn btn-outline-success" type="button" data-household-location-action="pick"><i class="fa-solid fa-map-location-dot"></i> Chá»n trÃªn báº£n Ä‘á»“</button>' +
+        '<button class="btn btn-outline-primary" type="button" data-household-location-action="gps"><i class="fa-solid fa-satellite-dish"></i> Láº¥y GPS</button>' +
+        '<button class="btn btn-outline-danger" type="button" data-household-location-action="clear"><i class="fa-solid fa-trash"></i> XÃ³a vá»‹ trÃ­</button>' +
       '</div>';
     row.appendChild(section);
   }
@@ -111,7 +111,7 @@
     if (lat) lat.value = row && row.latitude != null ? row.latitude : '';
     if (lng) lng.value = row && row.longitude != null ? row.longitude : '';
     if (source) source.value = row && row.location_source ? row.location_source : '';
-    if (accuracy) accuracy.value = accuracyValue !== '' && accuracyValue != null ? '±' + accuracyValue + ' m' : '';
+    if (accuracy) accuracy.value = accuracyValue !== '' && accuracyValue != null ? 'Â±' + accuracyValue + ' m' : '';
   }
 
   async function hydrateHouseholdLocation(id) {
@@ -150,23 +150,23 @@
   }
 
   async function saveLocation(householdId, lat, lng, source, accuracy) {
-    if (!can('gis', 'update')) { toast('Tài khoản hiện tại không có quyền cập nhật GIS.', 'warning'); return null; }
+    if (!can('gis', 'update')) { toast('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n cáº­p nháº­t GIS.', 'warning'); return null; }
     const marker = await request('/api/gis/households/' + encodeURIComponent(householdId) + '/location', {
       method: 'PUT',
       body: { latitude: lat, longitude: lng, source: source || 'MANUAL', accuracy: accuracy || null }
     });
     setLocationFields(marker);
     await refreshAfterLocationChange();
-    toast('Đã lưu vị trí hộ gia đình.', 'success');
+    toast('ÄÃ£ lÆ°u vá»‹ trÃ­ há»™ gia Ä‘Ã¬nh.', 'success');
     return marker;
   }
 
   async function clearLocation(householdId) {
-    if (!can('gis', 'update')) { toast('Tài khoản hiện tại không có quyền cập nhật GIS.', 'warning'); return; }
+    if (!can('gis', 'update')) { toast('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n cáº­p nháº­t GIS.', 'warning'); return; }
     await request('/api/gis/households/' + encodeURIComponent(householdId) + '/location', { method: 'DELETE' });
     setLocationFields(null);
     await refreshAfterLocationChange();
-    toast('Đã xóa vị trí hộ gia đình.', 'success');
+    toast('ÄÃ£ xÃ³a vá»‹ trÃ­ há»™ gia Ä‘Ã¬nh.', 'success');
   }
 
   async function refreshAfterLocationChange() {
@@ -185,28 +185,28 @@
   function getMapWhenReady(callback, tries) {
     const m = map();
     if (m) { callback(m); return; }
-    if ((tries || 0) > 30) { toast('Bản đồ chưa sẵn sàng. Vui lòng mở lại màn hình bản đồ.', 'warning'); return; }
+    if ((tries || 0) > 30) { toast('Báº£n Ä‘á»“ chÆ°a sáºµn sÃ ng. Vui lÃ²ng má»Ÿ láº¡i mÃ n hÃ¬nh báº£n Ä‘á»“.', 'warning'); return; }
     setTimeout(() => getMapWhenReady(callback, (tries || 0) + 1), 120);
   }
 
   function startPicker(householdId) {
-    if (!can('gis', 'update')) { toast('Tài khoản hiện tại không có quyền cập nhật GIS.', 'warning'); return; }
-    if (!householdId) { toast('Vui lòng lưu hộ gia đình trước khi định vị.', 'warning'); return; }
+    if (!can('gis', 'update')) { toast('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n cáº­p nháº­t GIS.', 'warning'); return; }
+    if (!householdId) { toast('Vui lÃ²ng lÆ°u há»™ gia Ä‘Ã¬nh trÆ°á»›c khi Ä‘á»‹nh vá»‹.', 'warning'); return; }
     closeHouseholdModal();
     if (typeof window.switchScreen === 'function') window.switchScreen('gis');
     getMapWhenReady(m => {
       state.picker = { householdId: String(householdId) };
       document.body.classList.add('gis-location-picking');
-      showPickBanner('Bấm vào vị trí ngôi nhà trên bản đồ để lưu tọa độ.');
+      showPickBanner('Báº¥m vÃ o vá»‹ trÃ­ ngÃ´i nhÃ  trÃªn báº£n Ä‘á»“ Ä‘á»ƒ lÆ°u tá»a Ä‘á»™.');
       m.once('click', async event => {
-        const ok = window.confirm('Lưu vị trí này cho hộ gia đình?\nLatitude: ' + event.latlng.lat.toFixed(8) + '\nLongitude: ' + event.latlng.lng.toFixed(8));
+        const ok = window.confirm('LÆ°u vá»‹ trÃ­ nÃ y cho há»™ gia Ä‘Ã¬nh?\nLatitude: ' + event.latlng.lat.toFixed(8) + '\nLongitude: ' + event.latlng.lng.toFixed(8));
         hidePickBanner();
         document.body.classList.remove('gis-location-picking');
         if (!ok) return;
         try {
           await saveLocation(householdId, event.latlng.lat, event.latlng.lng, 'MANUAL');
         } catch (error) {
-          toast(error.message || 'Không lưu được vị trí hộ gia đình.', 'danger');
+          toast(error.message || 'KhÃ´ng lÆ°u Ä‘Æ°á»£c vá»‹ trÃ­ há»™ gia Ä‘Ã¬nh.', 'danger');
         } finally {
           state.picker = null;
         }
@@ -233,24 +233,24 @@
     const rawMessage = String(error && error.message ? error.message : '').trim();
     const message = rawMessage.toLowerCase();
     if (message.includes('permission') && message.includes('policy')) {
-      return 'GPS đang bị chặn bởi Permissions-Policy của hosting. Vui lòng kiểm tra header geolocation=(self).';
+      return 'GPS Ä‘ang bá»‹ cháº·n bá»Ÿi Permissions-Policy cá»§a hosting. Vui lÃ²ng kiá»ƒm tra header geolocation=(self).';
     }
     if (error && error.code === error.PERMISSION_DENIED) {
-      return 'Bạn đã từ chối quyền vị trí. Vui lòng mở Site Settings của trình duyệt và cho phép Location.';
+      return 'Báº¡n Ä‘Ã£ tá»« chá»‘i quyá»n vá»‹ trÃ­. Vui lÃ²ng má»Ÿ Site Settings cá»§a trÃ¬nh duyá»‡t vÃ  cho phÃ©p Location.';
     }
     if (error && error.code === error.POSITION_UNAVAILABLE) {
-      return 'Thiết bị không cung cấp được vị trí hiện tại. Vui lòng bật GPS hoặc thử lại ngoài trời.';
+      return 'Thiáº¿t bá»‹ khÃ´ng cung cáº¥p Ä‘Æ°á»£c vá»‹ trÃ­ hiá»‡n táº¡i. Vui lÃ²ng báº­t GPS hoáº·c thá»­ láº¡i ngoÃ i trá»i.';
     }
     if (error && error.code === error.TIMEOUT) {
-      return 'Quá thời gian lấy GPS. Vui lòng kiểm tra tín hiệu vị trí và thử lại.';
+      return 'QuÃ¡ thá»i gian láº¥y GPS. Vui lÃ²ng kiá»ƒm tra tÃ­n hiá»‡u vá»‹ trÃ­ vÃ  thá»­ láº¡i.';
     }
-    return rawMessage || 'Không lấy được vị trí GPS.';
+    return rawMessage || 'KhÃ´ng láº¥y Ä‘Æ°á»£c vá»‹ trÃ­ GPS.';
   }
 
   function useGps(householdId, triggerButton) {
-    if (!householdId) { toast('Vui lòng lưu hộ gia đình trước khi lấy GPS.', 'warning'); return; }
-    if (!window.isSecureContext) { toast('GPS chỉ hoạt động trên HTTPS hoặc localhost. Vui lòng truy cập bằng HTTPS.', 'danger'); return; }
-    if (!navigator.geolocation) { toast('Thiết bị không hỗ trợ GPS.', 'warning'); return; }
+    if (!householdId) { toast('Vui lÃ²ng lÆ°u há»™ gia Ä‘Ã¬nh trÆ°á»›c khi láº¥y GPS.', 'warning'); return; }
+    if (!window.isSecureContext) { toast('GPS chá»‰ hoáº¡t Ä‘á»™ng trÃªn HTTPS hoáº·c localhost. Vui lÃ²ng truy cáº­p báº±ng HTTPS.', 'danger'); return; }
+    if (!navigator.geolocation) { toast('Thiáº¿t bá»‹ khÃ´ng há»— trá»£ GPS.', 'warning'); return; }
 
     const button = triggerButton || $('[data-household-location-action="gps"]');
     const originalHtml = button ? button.innerHTML : '';
@@ -261,7 +261,7 @@
     };
     if (button) {
       button.disabled = true;
-      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS...';
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Äang láº¥y GPS...';
     }
 
     navigator.geolocation.getCurrentPosition(async position => {
@@ -269,7 +269,7 @@
         const accuracy = Math.round(position.coords.accuracy || 0);
         await saveLocation(householdId, position.coords.latitude, position.coords.longitude, 'GPS', accuracy);
       } catch (error) {
-        toast(error.message || 'Không lưu được vị trí GPS.', 'danger');
+        toast(error.message || 'KhÃ´ng lÆ°u Ä‘Æ°á»£c vá»‹ trÃ­ GPS.', 'danger');
       } finally {
         restoreButton();
       }
@@ -290,8 +290,8 @@
       if (action === 'gps') useGps(householdId, button);
       if (action === 'clear') {
         if (!householdId) return;
-        if (!window.confirm('Xóa vị trí hiện tại của hộ gia đình này?')) return;
-        try { await clearLocation(householdId); } catch (error) { toast(error.message || 'Không xóa được vị trí.', 'danger'); }
+        if (!window.confirm('XÃ³a vá»‹ trÃ­ hiá»‡n táº¡i cá»§a há»™ gia Ä‘Ã¬nh nÃ y?')) return;
+        try { await clearLocation(householdId); } catch (error) { toast(error.message || 'KhÃ´ng xÃ³a Ä‘Æ°á»£c vá»‹ trÃ­.', 'danger'); }
       }
     });
   }
@@ -305,7 +305,7 @@
     const headers = {};
     if (window.App && window.App.token) headers.Authorization = 'Bearer ' + window.App.token;
     const response = await fetch(previewUrl(fileId), { headers, cache: 'force-cache' });
-    if (!response.ok) throw new Error('Không tải được ảnh hộ');
+    if (!response.ok) throw new Error('KhÃ´ng táº£i Ä‘Æ°á»£c áº£nh há»™');
     const url = URL.createObjectURL(await response.blob());
     state.thumbnailCache.set(key, url);
     return url;
@@ -437,7 +437,7 @@
 
   function openHouseholdTab(id, tab) {
     if (!id || typeof window.showHousehold !== 'function') {
-      toast('Không mở được hồ sơ hộ.', 'warning');
+      toast('KhÃ´ng má»Ÿ Ä‘Æ°á»£c há»“ sÆ¡ há»™.', 'warning');
       return;
     }
     Promise.resolve(window.showHousehold(id)).then(() => {
@@ -446,13 +446,13 @@
         const button = document.querySelector('[data-household-tab="' + tab + '"]');
         if (button) button.click();
       }, 80);
-    }).catch(error => toast(error.message || 'Không mở được hồ sơ hộ.', 'danger'));
+    }).catch(error => toast(error.message || 'KhÃ´ng má»Ÿ Ä‘Æ°á»£c há»“ sÆ¡ há»™.', 'danger'));
   }
 
   function openGoogleDirections(row) {
     const url = googleDirectionsUrl(row);
     if (!url) {
-      toast('Hộ này chưa có tọa độ trên bản đồ.', 'warning');
+      toast('Há»™ nÃ y chÆ°a cÃ³ tá»a Ä‘á»™ trÃªn báº£n Ä‘á»“.', 'warning');
       return;
     }
     window.open(url, '_blank', 'noopener');
@@ -479,7 +479,7 @@
     const activeRow = popupRowById(id, row);
     const householdId = id || normalizeHouseholdId(activeRow);
     if (!householdId) {
-      toast('Không xác định được hộ gia đình.', 'warning');
+      toast('KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c há»™ gia Ä‘Ã¬nh.', 'warning');
       return;
     }
     if (action === 'open') window.thon09GisOpenHousehold(householdId);
@@ -580,37 +580,47 @@
 
   function gpsText(row) {
     row = row || {};
-    if (row.latitude == null || row.longitude == null) return 'Chưa có GPS';
+    if (row.latitude == null || row.longitude == null) return 'ChÆ°a cÃ³ GPS';
     return Number(row.latitude).toFixed(6) + ', ' + Number(row.longitude).toFixed(6);
   }
 
   function popupImageHtml(row) {
     row = row || {};
     const url = row.__thumbnailObjectUrl || '';
-    if (url) return '<img src="' + escapeHtml(url) + '" alt="Ảnh hộ" loading="lazy">';
+    if (url) return '<img src="' + escapeHtml(url) + '" alt="áº¢nh há»™" loading="lazy">';
     return '<div class="gis-household-popup-photo-empty"><i class="fa-solid fa-house-chimney"></i></div>';
   }
 
+
+  function businessPopupRows(row) {
+    if (!row || !row.business_name) return '';
+    return '<dt>Tên cơ sở</dt><dd>' + escapeHtml(row.business_name || '') + '</dd>' +
+      '<dt>Loại hình SX/KD</dt><dd>' + escapeHtml(row.business_type_label || '') + '</dd>' +
+      '<dt>Ngành nghề</dt><dd>' + escapeHtml(row.business_sector || '') + '</dd>' +
+      '<dt>Chủ cơ sở</dt><dd>' + escapeHtml(row.business_owner_name || '') + '</dd>' +
+      '<dt>SĐT cơ sở</dt><dd>' + escapeHtml(row.business_phone || '') + '</dd>';
+  }
   function popupHtml(row) {
     row = normalizeHouseholdRow(row) || {};
     const phone = String(row.phone || '').trim();
     const householdId = escapeHtml(normalizeHouseholdId(row));
     return '<div class="gis-household-popup gis-smart-popup">' +
       '<div class="gis-smart-popup-head"><div class="gis-smart-popup-photo" data-gis-popup-photo="' + Number(row.thumbnail_file_id || 0) + '">' + popupImageHtml(row) + '</div>' +
-      '<div><h4>' + escapeHtml(row.household_code || 'Hộ gia đình') + '</h4><p>' + escapeHtml(row.head_citizen_name || 'Chưa có chủ hộ') + '</p><span>' + escapeHtml(row.household_type || 'Hộ bình thường') + '</span></div></div>' +
+      '<div><h4>' + escapeHtml(row.household_code || 'Há»™ gia Ä‘Ã¬nh') + '</h4><p>' + escapeHtml(row.head_citizen_name || 'ChÆ°a cÃ³ chá»§ há»™') + '</p><span>' + escapeHtml(row.household_type || 'Há»™ bÃ¬nh thÆ°á»ng') + '</span></div></div>' +
       '<dl>' +
-        '<dt>Mã hộ</dt><dd>' + escapeHtml(row.household_code) + '</dd>' +
-        '<dt>Chủ hộ</dt><dd>' + escapeHtml(row.head_citizen_name) + '</dd>' +
-        '<dt>Địa chỉ</dt><dd>' + escapeHtml(row.address) + '</dd>' +
-        '<dt>Số nhân khẩu</dt><dd>' + Number(row.total_members || 0).toLocaleString('vi-VN') + '</dd>' +
-        '<dt>Đang cư trú</dt><dd>' + Number(row.at_home_count || 0).toLocaleString('vi-VN') + '</dd>' +
+        '<dt>MÃ£ há»™</dt><dd>' + escapeHtml(row.household_code) + '</dd>' +
+        '<dt>Chá»§ há»™</dt><dd>' + escapeHtml(row.head_citizen_name) + '</dd>' +
+        '<dt>Äá»‹a chá»‰</dt><dd>' + escapeHtml(row.address) + '</dd>' +
+        '<dt>Sá»‘ nhÃ¢n kháº©u</dt><dd>' + Number(row.total_members || 0).toLocaleString('vi-VN') + '</dd>' +
+        '<dt>Äang cÆ° trÃº</dt><dd>' + Number(row.at_home_count || 0).toLocaleString('vi-VN') + '</dd>' +
         '<dt>GPS</dt><dd>' + escapeHtml(gpsText(row)) + '</dd>' +
+        businessPopupRows(row) +
       '</dl>' +
       '<div class="gis-smart-popup-actions">' +
-        '<button class="btn btn-sm btn-primary" type="button" data-gis-popup-action="open" data-household-id="' + householdId + '"><i class="fa-solid fa-folder-open"></i> Hồ sơ số</button>' +
-        '<button class="btn btn-sm btn-success" type="button" data-gis-popup-action="route" data-household-id="' + householdId + '"><i class="fa-solid fa-route"></i> Chỉ đường</button>' +
-        '<button class="btn btn-sm btn-outline-secondary" type="button" data-gis-popup-action="gallery" data-household-id="' + householdId + '"><i class="fa-solid fa-images"></i> Xem ảnh</button>' +
-        (phone ? '<a class="btn btn-sm btn-outline-primary" href="tel:' + escapeHtml(phone) + '" data-gis-popup-action="phone" data-household-id="' + householdId + '" data-phone="' + escapeHtml(phone) + '"><i class="fa-solid fa-phone"></i> Gọi điện</a>' : '') +
+        '<button class="btn btn-sm btn-primary" type="button" data-gis-popup-action="open" data-household-id="' + householdId + '"><i class="fa-solid fa-folder-open"></i> Há»“ sÆ¡ sá»‘</button>' +
+        '<button class="btn btn-sm btn-success" type="button" data-gis-popup-action="route" data-household-id="' + householdId + '"><i class="fa-solid fa-route"></i> Chá»‰ Ä‘Æ°á»ng</button>' +
+        '<button class="btn btn-sm btn-outline-secondary" type="button" data-gis-popup-action="gallery" data-household-id="' + householdId + '"><i class="fa-solid fa-images"></i> Xem áº£nh</button>' +
+        (phone ? '<a class="btn btn-sm btn-outline-primary" href="tel:' + escapeHtml(phone) + '" data-gis-popup-action="phone" data-household-id="' + householdId + '" data-phone="' + escapeHtml(phone) + '"><i class="fa-solid fa-phone"></i> Gá»i Ä‘iá»‡n</a>' : '') +
         (can('gis', 'update') ? '<button class="btn btn-sm btn-outline-success" type="button" data-gis-popup-action="relocate" data-household-id="' + householdId + '"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>' : '') +
       '</div>' +
     '</div>';

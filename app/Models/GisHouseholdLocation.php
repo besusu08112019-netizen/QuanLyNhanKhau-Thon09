@@ -34,6 +34,9 @@ final class GisHouseholdLocation extends BaseModel
         $this->ensureSchema();
         [$where, $params] = $this->markerConditions($filters);
         $photoSql = $this->householdPhotoSql();
+        $hasBusinessTable = $this->tableExists('household_business');
+        $businessJoin = $hasBusinessTable ? ' LEFT JOIN household_business hb ON hb.household_id = h.id AND hb.status <> "DELETED"' : '';
+        $businessSelect = $hasBusinessTable ? ', hb.business_name, hb.business_type AS business_marker_type, hb.production_sector, hb.business_sector, hb.owner_name AS business_owner_name, hb.phone AS business_phone' : ', NULL AS business_name, NULL AS business_marker_type, NULL AS production_sector, NULL AS business_sector, NULL AS business_owner_name, NULL AS business_phone';
         $rows = $this->fetchAll(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
                 h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
@@ -51,8 +54,10 @@ final class GisHouseholdLocation extends BaseModel
                 COALESCE(cm.labor_count, 0) AS labor_count,
                 ' . $photoSql['thumbnail'] . ' AS thumbnail_file_id,
                 ' . $photoSql['count'] . ' AS gallery_count
+                ' . $businessSelect . '
              FROM households h
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
+             ' . $businessJoin . '
              LEFT JOIN (
                 SELECT c.household_id,
                     SUM(CASE WHEN c.party_member = 1 THEN 1 ELSE 0 END) AS party_members,
@@ -66,8 +71,7 @@ final class GisHouseholdLocation extends BaseModel
                 WHERE c.status <> "DELETED"
                 GROUP BY c.household_id
              ) cm ON cm.household_id = h.id
-             WHERE h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")
-                AND h.latitude IS NOT NULL AND h.longitude IS NOT NULL' . $where . '
+             WHERE h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")' . $where . '
              ORDER BY h.household_code ASC
              LIMIT 1000',
             $params
@@ -76,6 +80,7 @@ final class GisHouseholdLocation extends BaseModel
         return [
             'items' => array_map(fn(array $row) => $this->normalizeMarker($row), $rows),
             'total' => count($rows),
+            'summary' => $this->summary($filters),
         ];
     }
 
@@ -114,7 +119,7 @@ final class GisHouseholdLocation extends BaseModel
                     'id' => $householdId,
                 ]
             );
-            if ($updated < 1) throw new \RuntimeException('Không tìm thấy hộ gia đình cần định vị');
+            if ($updated < 1) throw new \RuntimeException('KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh cÃ¡ÂºÂ§n Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹');
             $this->db->commit();
         } catch (\Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
@@ -141,7 +146,7 @@ final class GisHouseholdLocation extends BaseModel
              WHERE id = :id AND status <> "DELETED"',
             ['location_updated_by' => $userId, 'updated_by' => $userId, 'id' => $householdId]
         );
-        if ($updated < 1) throw new \RuntimeException('Không tìm thấy hộ gia đình cần xóa vị trí');
+        if ($updated < 1) throw new \RuntimeException('KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh cÃ¡ÂºÂ§n xÃƒÂ³a vÃ¡Â»â€¹ trÃƒÂ­');
 
         return [
             'id' => $householdId,
@@ -172,6 +177,42 @@ final class GisHouseholdLocation extends BaseModel
         return $changed;
     }
 
+
+    private function summary(array $filters): array
+    {
+        $this->ensureSchema();
+        [$where, $params] = $this->markerConditions(array_merge($filters, ['located' => '']));
+        $locatedExpr = "h.latitude IS NOT NULL AND h.latitude <> '' AND h.longitude IS NOT NULL AND h.longitude <> ''";
+        $row = $this->fetchOne(
+            "SELECT COUNT(*) AS households,
+                COALESCE(SUM(CASE WHEN $locatedExpr THEN 1 ELSE 0 END), 0) AS located
+             FROM households h
+             LEFT JOIN v_household_member_counts v ON v.household_id = h.id
+             ' . $businessJoin . '
+             LEFT JOIN (
+                SELECT c.household_id,
+                    SUM(CASE WHEN c.party_member = 1 THEN 1 ELSE 0 END) AS party_members,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) < 16 THEN 1 ELSE 0 END) AS children_count,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) >= 60 THEN 1 ELSE 0 END) AS elderly_count,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END) AS working_age_count,
+                    SUM(CASE WHEN c.residency_status = \"PERMANENT\" THEN 1 ELSE 0 END) AS permanent_count,
+                    SUM(CASE WHEN c.residency_status = \"TEMPORARY\" THEN 1 ELSE 0 END) AS temporary_count,
+                    SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count
+                FROM citizens c
+                WHERE c.status <> \"DELETED\"
+                GROUP BY c.household_id
+             ) cm ON cm.household_id = h.id
+             WHERE h.status NOT IN (\"DELETED\", \"ENDED\", \"MERGED\", \"TRANSFERRED_OUT\", \"MOVED_OUT\", \"INACTIVE\")" . $where,
+            $params
+        ) ?: [];
+        $households = (int) ($row['households'] ?? 0);
+        $located = (int) ($row['located'] ?? 0);
+        return [
+            'households' => $households,
+            'located' => $located,
+            'unlocated' => max(0, $households - $located),
+        ];
+    }
     private function householdPhotoSql(): array
     {
         if (!$this->tableExists('file_attachments')) {
@@ -252,6 +293,12 @@ final class GisHouseholdLocation extends BaseModel
             $where .= ' AND h.id = :id';
             $params['id'] = (int) $filters['id'];
         }
+        $located = (string) ($filters['located'] ?? '');
+        if ($located === '1') {
+            $where .= " AND h.latitude IS NOT NULL AND h.latitude <> '' AND h.longitude IS NOT NULL AND h.longitude <> ''";
+        } elseif ($located === '0') {
+            $where .= " AND (h.latitude IS NULL OR h.latitude = '' OR h.longitude IS NULL OR h.longitude = '')";
+        }
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $where .= ' AND (h.household_code LIKE :search OR h.head_citizen_name LIKE :search OR h.address LIKE :search OR h.phone LIKE :search OR EXISTS (SELECT 1 FROM citizens cs WHERE cs.household_id = h.id AND cs.status <> "DELETED" AND (cs.full_name LIKE :search OR cs.identity_number LIKE :search)))';
@@ -291,8 +338,8 @@ final class GisHouseholdLocation extends BaseModel
             'address' => (string) ($row['address'] ?? ''),
             'phone' => (string) ($row['phone'] ?? ''),
             'area_code' => ($row['area_code'] ?? '') !== '' ? (string) $row['area_code'] : null,
-            'latitude' => (float) $row['latitude'],
-            'longitude' => (float) $row['longitude'],
+            'latitude' => ($row['latitude'] !== null && $row['latitude'] !== '') ? (float) $row['latitude'] : null,
+            'longitude' => ($row['longitude'] !== null && $row['longitude'] !== '') ? (float) $row['longitude'] : null,
             'location_accuracy' => $row['location_accuracy'] !== null ? (int) $row['location_accuracy'] : null,
             'location_source' => (string) ($row['location_source'] ?? 'MANUAL'),
             'location_updated_at' => $row['location_updated_at'] ?? null,
@@ -314,33 +361,50 @@ final class GisHouseholdLocation extends BaseModel
             'permanent_count' => (int) ($row['permanent_count'] ?? 0),
             'temporary_count' => (int) ($row['temporary_count'] ?? 0),
             'labor_count' => (int) ($row['labor_count'] ?? 0),
-            'gps' => trim((string) ($row['latitude'] ?? '')) . ', ' . trim((string) ($row['longitude'] ?? '')),
+            'gps' => ($row['latitude'] !== null && $row['latitude'] !== '' && $row['longitude'] !== null && $row['longitude'] !== '') ? trim((string) $row['latitude']) . ', ' . trim((string) $row['longitude']) : '',
+            'business_name' => (string) ($row['business_name'] ?? ''),
+            'business_type_code' => (string) ($row['business_marker_type'] ?? ''),
+            'business_type_label' => $this->businessTypeLabel($row['business_marker_type'] ?? ''),
+            'business_sector' => trim((string) ($row['production_sector'] ?? '')) ?: trim((string) ($row['business_sector'] ?? '')),
+            'business_owner_name' => (string) ($row['business_owner_name'] ?? ''),
+            'business_phone' => (string) ($row['business_phone'] ?? ''),
+            'business_marker' => $this->businessMarkerKey($row['business_marker_type'] ?? ''),
         ];
     }
 
+
+    private function businessTypeLabel(mixed $value): string
+    {
+        return ['RESIDENT' => 'Há»™ dÃ¢n', 'PRODUCTION' => 'Há»™ sáº£n xuáº¥t', 'BUSINESS' => 'Há»™ kinh doanh', 'BOTH' => 'Há»™ sáº£n xuáº¥t vÃ  kinh doanh'][strtoupper((string) $value)] ?? '';
+    }
+
+    private function businessMarkerKey(mixed $value): string
+    {
+        return ['PRODUCTION' => 'production', 'BUSINESS' => 'business', 'BOTH' => 'production_business'][strtoupper((string) $value)] ?? 'household';
+    }
     private function residencyStatus(array $row): string
     {
         $atHome = (int) ($row['at_home_count'] ?? 0);
         $away = (int) ($row['away_count'] ?? 0);
-        if ($atHome > 0 && $away > 0) return 'Có người đi vắng';
-        if ($away > 0) return 'Tạm vắng';
-        return 'Thường trú';
+        if ($atHome > 0 && $away > 0) return 'CÃƒÂ³ ngÃ†Â°Ã¡Â»Âi Ã„â€˜i vÃ¡ÂºÂ¯ng';
+        if ($away > 0) return 'TÃ¡ÂºÂ¡m vÃ¡ÂºÂ¯ng';
+        return 'ThÃ†Â°Ã¡Â»Âng trÃƒÂº';
     }
 
     private function householdType(array $row): string
     {
-        if ((int) ($row['poor_household'] ?? 0) === 1) return 'Hộ nghèo';
-        if ((int) ($row['near_poor_household'] ?? 0) === 1) return 'Hộ cận nghèo';
-        if ((int) ($row['meritorious_family'] ?? 0) === 1) return 'Hộ có công';
-        if ((int) ($row['disabled_household'] ?? 0) === 1) return 'Hộ có người khuyết tật';
-        return 'Hộ bình thường';
+        if ((int) ($row['poor_household'] ?? 0) === 1) return 'HÃ¡Â»â„¢ nghÃƒÂ¨o';
+        if ((int) ($row['near_poor_household'] ?? 0) === 1) return 'HÃ¡Â»â„¢ cÃ¡ÂºÂ­n nghÃƒÂ¨o';
+        if ((int) ($row['meritorious_family'] ?? 0) === 1) return 'HÃ¡Â»â„¢ cÃƒÂ³ cÃƒÂ´ng';
+        if ((int) ($row['disabled_household'] ?? 0) === 1) return 'HÃ¡Â»â„¢ cÃƒÂ³ ngÃ†Â°Ã¡Â»Âi khuyÃ¡ÂºÂ¿t tÃ¡ÂºÂ­t';
+        return 'HÃ¡Â»â„¢ bÃƒÂ¬nh thÃ†Â°Ã¡Â»Âng';
     }
 
     private function coordinate(mixed $value, float $min, float $max, string $label): float
     {
-        if ($value === null || $value === '' || !is_numeric($value)) throw new \RuntimeException($label . ' không hợp lệ');
+        if ($value === null || $value === '' || !is_numeric($value)) throw new \RuntimeException($label . ' khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡');
         $number = (float) $value;
-        if ($number < $min || $number > $max) throw new \RuntimeException($label . ' nằm ngoài phạm vi cho phép');
+        if ($number < $min || $number > $max) throw new \RuntimeException($label . ' nÃ¡ÂºÂ±m ngoÃƒÂ i phÃ¡ÂºÂ¡m vi cho phÃƒÂ©p');
         return round($number, 8);
     }
 

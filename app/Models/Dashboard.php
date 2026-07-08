@@ -10,6 +10,8 @@ final class Dashboard extends BaseModel
     {
         $errors = [];
         $metrics = $this->safeWidget('metrics', fn() => $this->metrics($filters), $this->defaultMetrics(), $errors);
+        $businessDashboard = $this->safeWidget('household_business.dashboard', fn() => (new \App\Models\HouseholdBusiness())->dashboard(), ['production_households' => 0, 'business_households' => 0, 'production_business_households' => 0, 'business_worker_total' => 0], $errors);
+        $metrics = array_merge($metrics, $businessDashboard);
         $charts = [
             'population' => $this->safeWidget('charts.population', fn() => $this->populationChart($filters), [], $errors),
             'households' => $this->safeWidget('charts.households', fn() => $this->householdChart($filters), [], $errors),
@@ -28,6 +30,9 @@ final class Dashboard extends BaseModel
             'gpsProgress' => $this->safeWidget('charts.gpsProgress', fn() => $this->gpsProgressChart($filters), [], $errors),
             'profileProgress' => $this->safeWidget('charts.profileProgress', fn() => $this->profileProgressChart($filters), [], $errors),
             'healthInsurance' => $this->safeWidget('charts.healthInsurance', fn() => $this->healthInsuranceChart($filters), [], $errors),
+            'businessTypes' => $this->safeWidget('charts.businessTypes', fn() => (new \App\Models\HouseholdBusiness())->charts()['types'] ?? [], [], $errors),
+            'businessSectors' => $this->safeWidget('charts.businessSectors', fn() => (new \App\Models\HouseholdBusiness())->charts()['sectors'] ?? [], [], $errors),
+            'businessStatuses' => $this->safeWidget('charts.businessStatuses', fn() => (new \App\Models\HouseholdBusiness())->charts()['statuses'] ?? [], [], $errors),
         ];
 
         $payload = [
@@ -92,6 +97,10 @@ final class Dashboard extends BaseModel
             'health_insurance_uninsured_count' => 0,
             'health_insurance_coverage_percent' => 0,
             'health_insurance_percent' => 0,
+            'production_households' => 0,
+            'business_households' => 0,
+            'production_business_households' => 0,
+            'business_worker_total' => 0,
         ];
         foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
             $metrics[$key . '_count'] = 0;
