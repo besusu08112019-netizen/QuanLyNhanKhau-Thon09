@@ -328,6 +328,17 @@ CREATE TABLE IF NOT EXISTS `household_business` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `household_id` BIGINT UNSIGNED NOT NULL,
   `business_type` ENUM('RESIDENT','PRODUCTION','BUSINESS','BOTH') NOT NULL DEFAULT 'RESIDENT',
+  `economic_type` VARCHAR(120) NULL,
+  `main_products` TEXT NULL,
+  `business_scale` VARCHAR(120) NULL,
+  `is_ocop` TINYINT(1) NOT NULL DEFAULT 0,
+  `ocop_product` VARCHAR(255) NULL,
+  `ocop_star` TINYINT UNSIGNED NULL,
+  `food_safety_certified` TINYINT(1) NOT NULL DEFAULT 0,
+  `food_safety_certificate_no` VARCHAR(120) NULL,
+  `food_safety_expired_date` DATE NULL,
+  `social_insurance` TINYINT(1) NOT NULL DEFAULT 0,
+  `insured_workers` INT UNSIGNED NOT NULL DEFAULT 0,
   `business_name` VARCHAR(255) NULL,
   `owner_name` VARCHAR(255) NULL,
   `production_sector` VARCHAR(255) NULL,
@@ -364,6 +375,43 @@ CREATE TABLE IF NOT EXISTS `household_business` (
   CONSTRAINT `fk_household_business_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_household_business_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_household_business_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `household_business_catalogs` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `catalog_type` VARCHAR(50) NOT NULL,
+  `value` VARCHAR(150) NOT NULL,
+  `label` VARCHAR(150) NOT NULL,
+  `sort_order` INT UNSIGNED NOT NULL DEFAULT 0,
+  `status` ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_hb_catalog` (`catalog_type`, `value`),
+  KEY `idx_hb_catalog_type` (`catalog_type`, `status`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `household_business_files` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `household_business_id` BIGINT UNSIGNED NOT NULL,
+  `file_kind` ENUM('IMAGE','DOCUMENT') NOT NULL,
+  `category` VARCHAR(120) NOT NULL,
+  `original_name` VARCHAR(255) NOT NULL,
+  `stored_name` VARCHAR(255) NOT NULL,
+  `file_path` VARCHAR(500) NOT NULL,
+  `mime_type` VARCHAR(120) NOT NULL,
+  `file_size` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  `status` ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` BIGINT UNSIGNED NULL,
+  `deleted_at` DATETIME NULL,
+  `deleted_by` BIGINT UNSIGNED NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_hb_files_business` (`household_business_id`, `status`, `file_kind`),
+  KEY `idx_hb_files_category` (`category`),
+  CONSTRAINT `fk_hb_files_business` FOREIGN KEY (`household_business_id`) REFERENCES `household_business` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hb_files_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_hb_files_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `permissions` (`role`, `module`, `action`, `allowed`)
