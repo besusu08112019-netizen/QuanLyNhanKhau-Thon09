@@ -89,7 +89,7 @@
       if (totalEl) totalEl.innerHTML = 'Tổng số: <strong>' + num(total) + '</strong> hộ';
       const start = (Number(data.page || state.page) - 1) * Number(data.pageSize || state.pageSize);
       const rows = $('#businessHouseholdRows');
-      if (rows) rows.innerHTML = items.length ? items.map((row, index) => rowHtml(row, start + index + 1)).join('') : '<tr><td colspan="14" class="text-center text-muted py-4">Chưa có hồ sơ sản xuất & kinh doanh</td></tr>';
+      if (rows) rows.innerHTML = items.length ? items.map((row, index) => rowHtml(row, start + index + 1)).join('') : '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có hồ sơ sản xuất & kinh doanh</td></tr>';
       renderPager(data);
       if (typeof window.thon09SyncResponsiveTableLabels === 'function') window.thon09SyncResponsiveTableLabels($('#businessHouseholdsScreen') || document);
     } catch (error) {
@@ -102,34 +102,64 @@
   }
 
   function compactList(values, empty = '') {
-    return badgeList(values, { empty, limit: 3, moreText: 'Xem tất cả' });
+    const items = uniqueValues(values);
+    return items.length ? esc(items[0]) : esc(empty);
+  }
+
+  function firstValue(values, empty = '') {
+    const items = uniqueValues(values);
+    return items.length ? items[0] : empty;
   }
 
   function activityLabel(activity, fallback = '') {
     return activity.business_name || activity.economic_type || activity.sector_label || activity.production_sector || activity.business_sector || fallback || 'Hoạt động kinh tế';
   }
 
-  function activityBadges(row, activities) {
-    return badgeList(activities.map(item => activityLabel(item, row.head_citizen_name)), { limit: 4, moreText: 'Còn {count} hoạt động khác' });
+  function sectorCellForRow(row, activities) {
+    const items = uniqueValues(activities.map(item => item.sector_label || item.economic_type));
+    if (!items.length) return '<span class="text-muted">Chưa cập nhật</span>';
+    const remaining = Math.max(0, activities.length - 1);
+    const householdId = Number(row.household_id || row.id || 0);
+    return '<div class="business-sector-cell" title="' + esc(items.join('\n')) + '"><span>' + esc(items[0]) + '</span>' + (remaining > 0 ? '<button class="business-more-badge" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">+' + remaining + ' hoạt động</button>' : '') + '</div>';
   }
 
-  function badgeList(values, options = {}) {
-    const items = uniqueValues(values);
-    if (!items.length) return esc(options.empty || '');
-    const limit = Math.max(1, Number(options.limit || items.length));
-    const shown = items.slice(0, limit);
-    const remaining = Math.max(0, items.length - shown.length);
-    let html = '<div class="business-activity-badges" title="' + esc(items.join('\n')) + '">' + shown.map(item => '<span class="business-activity-badge">' + esc(item) + '</span>').join('');
-    if (remaining > 0) {
-      const text = String(options.moreText || 'Còn {count} hoạt động khác').replace('{count}', remaining);
-      html += '<span class="business-activity-more">' + esc(text) + '</span>';
-    }
-    return html + '</div>';
+  function businessTypeBadge(label) {
+    const text = String(label || 'Chưa cập nhật').trim();
+    let short = text;
+    if (/sản xuấts+vàs+kinh doanh/i.test(text)) short = 'SX + KD';
+    else if (/hộs+sản xuất/i.test(text)) short = 'Hộ sản xuất';
+    else if (/hộs+kinh doanh/i.test(text)) short = 'Hộ kinh doanh';
+    return '<span class="business-type-badge">' + esc(short) + '</span>';
+  }
+
+  function typeCell(activities) {
+    const items = uniqueValues(activities.map(item => item.business_type_label));
+    if (!items.length) return businessTypeBadge('Chưa cập nhật');
+    return '<div class="business-type-stack" title="' + esc(items.join('\n')) + '">' + items.slice(0, 2).map(businessTypeBadge).join('') + (items.length > 2 ? '<span class="business-type-badge is-muted">Nhiều loại hình</span>' : '') + '</div>';
+  }
+
+  function statusBadge(status, label) {
+    const code = String(status || '').toUpperCase();
+    let cls = 'is-neutral';
+    if (code === 'ACTIVE') cls = 'is-active';
+    else if (code === 'SUSPENDED') cls = 'is-paused';
+    else if (code === 'INACTIVE') cls = 'is-inactive';
+    return '<span class="business-status-badge ' + cls + '">' + esc(label || status || 'Chưa cập nhật') + '</span>';
+  }
+
+  function statusCell(activities) {
+    const first = activities[0] || {};
+    const labels = uniqueValues(activities.map(item => item.status_label || item.status));
+    return '<div title="' + esc(labels.join('\n')) + '">' + statusBadge(first.status, first.status_label) + '</div>';
   }
 
   function activityCountText(row, activities) {
     const count = Number(row.business_count || activities.length || 0);
     return count + ' hoạt động';
+  }
+
+  function activityCountBadge(row, activities) {
+    return '<span class="business-count-badge">' + esc(activityCountText(row, activities)) + '</span>';
   }
 
   function activitiesOf(row) {
@@ -138,37 +168,34 @@
 
   function rowHtml(row, index) {
     const activities = activitiesOf(row);
-    const gps = row.latitude && row.longitude ? '<span class="badge text-bg-success">Có GPS</span>' : '<span class="badge text-bg-secondary">Không GPS</span>';
-    const ocop = row.is_ocop ? '<span class="badge text-bg-success">Có</span>' : '<span class="badge text-bg-light">Không</span>';
-    const sectors = compactList(activities.map(item => item.sector_label || item.economic_type));
-    const names = compactList(activities.map(item => item.business_name || row.head_citizen_name));
-    const types = compactList(activities.map(item => item.business_type_label));
-    const economicTypes = compactList(activities.map(item => item.economic_type));
-    const scales = compactList(activities.map(item => item.business_scale));
-    return '<tr>'
-      + '<td>' + index + '</td>'
-      + '<td><button class="btn btn-link p-0 fw-semibold" type="button" onclick="window.showHouseholdBusiness(' + Number(row.household_id || row.id || 0) + ')">' + esc(row.household_code) + '</button></td>'
-      + '<td>' + esc(row.head_citizen_name) + '</td>'
-      + '<td>' + names + '</td>'
-      + '<td>' + types + '</td>'
-      + '<td>' + economicTypes + '</td>'
-      + '<td>' + scales + '</td>'
-      + '<td>' + sectors + '</td>'
-      + '<td>' + activityBadges(row, activities) + '<div class="text-muted small mt-1">' + esc(activityCountText(row, activities)) + '</div></td>'
-      + '<td>' + ocop + '</td>'
-      + '<td>' + num(row.worker_count) + '</td>'
-      + '<td>' + gps + '</td>'
-      + '<td>' + date(row.updated_at || row.created_at) + '</td>'
-      + '<td class="text-end">' + actionButtons(row) + '</td>'
+    const householdId = Number(row.household_id || row.id || 0);
+    const names = uniqueValues(activities.map(item => item.business_name || row.head_citizen_name));
+    const primaryName = names[0] || row.head_citizen_name || '';
+    const secondaryName = names.length > 1 ? names.slice(1, 3).join(', ') : '';
+    return '<tr class="business-list-row">'
+      + '<td data-label="STT">' + index + '</td>'
+      + '<td data-label="Mã hộ"><button class="btn btn-link p-0 fw-semibold" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">' + esc(row.household_code) + '</button></td>'
+      + '<td data-label="Chủ hộ"><div class="business-main-person"><strong>' + esc(row.head_citizen_name || '') + '</strong><span>' + esc(row.household_code || '') + '</span></div></td>'
+      + '<td data-label="Tên cơ sở"><div class="business-establishment-cell"><strong>' + esc(primaryName) + '</strong>' + (secondaryName ? '<span>' + esc(secondaryName) + '</span>' : '') + '</div></td>'
+      + '<td data-label="Loại hình">' + typeCell(activities) + '</td>'
+      + '<td data-label="Ngành nghề">' + sectorCellForRow(row, activities) + '</td>'
+      + '<td data-label="Hoạt động">' + activityCountBadge(row, activities) + '</td>'
+      + '<td data-label="Trạng thái">' + statusCell(activities) + '</td>'
+      + '<td data-label="Thao tác" class="text-end business-actions-cell">' + actionButtons(row) + '</td>'
       + '</tr>';
   }
 
   function actionButtons(row) {
     const householdId = Number(row.household_id || row.id || 0);
-    return [
-      '<button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">Xem</button>',
-      can('household_business', 'create') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.addHouseholdBusinessActivity(' + householdId + ')">Thêm hoạt động</button>' : ''
-    ].filter(Boolean).join(' ') || '<span class="text-muted small">Chỉ xem</span>';
+    const activities = activitiesOf(row);
+    const firstActivityId = Number((activities[0] || {}).id || row.business_id || row.id || 0);
+    const buttons = [
+      '<button class="btn btn-sm btn-outline-secondary business-icon-btn" type="button" title="Xem chi tiết" aria-label="Xem chi tiết" onclick="window.showHouseholdBusiness(' + householdId + ')"><i class="fa-solid fa-eye"></i></button>',
+      can('household_business', 'update') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Sửa hoạt động" aria-label="Sửa hoạt động" onclick="window.openHouseholdBusinessForm(' + firstActivityId + ')"><i class="fa-solid fa-pen-to-square"></i></button>' : '',
+      can('household_business', 'create') ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Thêm hoạt động" aria-label="Thêm hoạt động" onclick="window.addHouseholdBusinessActivity(' + householdId + ')"><i class="fa-solid fa-plus"></i></button>' : '',
+      can('household_business', 'delete') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-danger business-icon-btn" type="button" title="Xóa hoạt động" aria-label="Xóa hoạt động" onclick="window.deleteHouseholdBusiness(' + firstActivityId + ')"><i class="fa-solid fa-trash"></i></button>' : ''
+    ];
+    return '<div class="business-row-actions">' + buttons.filter(Boolean).join('') + '</div>';
   }
 
   function renderPager(data) {
