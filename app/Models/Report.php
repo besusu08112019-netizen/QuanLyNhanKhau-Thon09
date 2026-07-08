@@ -10,7 +10,8 @@ final class Report extends BaseModel
     {
         return match ($type) {
             'household', 'households' => $this->householdReport($filters),
-            'household-business', 'household_business', 'business-households', 'household-business-establishments' => (new \App\Models\HouseholdBusiness())->report('all', $filters),
+            'household-business', 'household_business', 'business-households' => (new \App\Models\HouseholdBusiness())->report('all', $filters),
+            'household-business-establishments' => (new \App\Models\HouseholdBusiness())->report('establishments', $filters),
             'household-business-households', 'household-business-by-household', 'business-households-by-household' => (new \App\Models\HouseholdBusiness())->report('household_summary', $filters),
             'household-business-production', 'production-households', 'business-production' => (new \App\Models\HouseholdBusiness())->report('production', $filters),
             'household-business-trade', 'business-trade', 'trade-households' => (new \App\Models\HouseholdBusiness())->report('business', $filters),

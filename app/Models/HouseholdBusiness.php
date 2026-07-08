@@ -118,6 +118,90 @@ SQL);
         return ['items' => array_map(fn($row) => $this->normalize($row), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
     }
 
+    public function paginateHouseholds(array $filters): array
+    {
+        $this->ensureSchema();
+        [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
+        [$where, $params] = $this->where($filters);
+        $total = (int) (($this->fetchOne("SELECT COUNT(DISTINCT h.id) AS total FROM households h INNER JOIN household_business hb ON hb.household_id = h.id $where", $params) ?: [])['total'] ?? 0);
+        $order = $this->householdOrder($filters);
+        $idRows = $this->fetchAll(
+            "SELECT h.id,
+                    MAX(COALESCE(hb.updated_at, hb.created_at)) AS activity_updated_at,
+                    COALESCE(SUM(hb.worker_count),0) AS worker_count,
+                    MIN(NULLIF(hb.business_name,'')) AS business_name_sort,
+                    MIN(hb.business_type) AS business_type_sort,
+                    MIN(NULLIF(hb.economic_type,'')) AS economic_type_sort,
+                    MIN(NULLIF(hb.business_scale,'')) AS business_scale_sort,
+                    MIN(COALESCE(NULLIF(hb.production_sector,''), NULLIF(hb.business_sector,''))) AS sector_sort,
+                    MIN(hb.status) AS status_sort
+             FROM households h
+             INNER JOIN household_business hb ON hb.household_id = h.id
+             $where
+             GROUP BY h.id, h.household_code, h.head_citizen_name
+             $order
+             LIMIT $pageSize OFFSET $offset",
+            $params
+        );
+        $ids = array_map(fn($row) => (int) $row['id'], $idRows);
+        $items = $ids ? $this->householdSummaries($ids) : [];
+        $byId = [];
+        foreach ($items as $item) $byId[(int) $item['household_id']] = $item;
+        $ordered = [];
+        foreach ($ids as $id) if (isset($byId[$id])) $ordered[] = $byId[$id];
+        return ['items' => $ordered, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+    }
+
+    public function findHouseholdSummary(int $householdId): ?array
+    {
+        $this->ensureSchema();
+        $items = $this->householdSummaries([$householdId], true);
+        return $items[0] ?? null;
+    }
+
+    private function householdSummaries(array $householdIds, bool $includeFiles = false): array
+    {
+        $householdIds = array_values(array_unique(array_filter(array_map('intval', $householdIds), fn($id) => $id > 0)));
+        if (!$householdIds) return [];
+        $params = [];
+        $placeholders = [];
+        foreach ($householdIds as $index => $id) {
+            $key = 'hh_' . $index;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $id;
+        }
+        $in = implode(',', $placeholders);
+        $households = $this->fetchAll(
+            "SELECT h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
+             FROM households h
+             LEFT JOIN v_household_member_counts v ON v.household_id = h.id
+             WHERE h.id IN ($in) AND h.status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')",
+            $params
+        );
+        $activityRows = $this->fetchAll(
+            "SELECT hb.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
+             FROM household_business hb
+             INNER JOIN households h ON h.id = hb.household_id
+             LEFT JOIN v_household_member_counts v ON v.household_id = h.id
+             WHERE hb.household_id IN ($in) AND hb.status <> 'DELETED'
+             ORDER BY hb.household_id ASC, COALESCE(hb.updated_at, hb.created_at) DESC, hb.id DESC",
+            $params
+        );
+        $activitiesByHousehold = [];
+        foreach ($activityRows as $row) {
+            $activity = $this->normalize($row);
+            if ($includeFiles) $activity['files'] = $this->files((int) $activity['id']);
+            $activitiesByHousehold[(int) $activity['household_id']][] = $activity;
+        }
+        $out = [];
+        foreach ($households as $household) {
+            $activities = $activitiesByHousehold[(int) $household['household_id_real']] ?? [];
+            if (!$activities) continue;
+            $out[] = $this->normalizeHouseholdSummary($household, $activities);
+        }
+        return $out;
+    }
+
     public function find(int $id): ?array
     {
         $this->ensureSchema();
@@ -242,13 +326,13 @@ SQL);
             "SELECT
                 COUNT(DISTINCT hb.household_id) AS economic_households,
                 COUNT(*) AS establishment_total,
-                COALESCE(SUM(CASE WHEN hb.business_type = \"PRODUCTION\" THEN 1 ELSE 0 END),0) AS production_households,
-                COALESCE(SUM(CASE WHEN hb.business_type = \"BUSINESS\" THEN 1 ELSE 0 END),0) AS business_households,
-                COALESCE(SUM(CASE WHEN hb.business_type = \"BOTH\" THEN 1 ELSE 0 END),0) AS both_households,
+                COUNT(DISTINCT CASE WHEN hb.business_type = \"PRODUCTION\" THEN hb.household_id END) AS production_households,
+                COUNT(DISTINCT CASE WHEN hb.business_type = \"BUSINESS\" THEN hb.household_id END) AS business_households,
+                COUNT(DISTINCT CASE WHEN hb.business_type = \"BOTH\" THEN hb.household_id END) AS both_households,
                 COALESCE(SUM(hb.worker_count),0) AS workers,
-                COALESCE(SUM(hb.is_ocop=1),0) AS ocop_households,
-                COALESCE(SUM(hb.food_safety_certified=1),0) AS food_safety_households,
-                COALESCE(SUM(hb.social_insurance=1),0) AS social_insurance_households,
+                COUNT(DISTINCT CASE WHEN hb.is_ocop=1 THEN hb.household_id END) AS ocop_households,
+                COUNT(DISTINCT CASE WHEN hb.food_safety_certified=1 THEN hb.household_id END) AS food_safety_households,
+                COUNT(DISTINCT CASE WHEN hb.social_insurance=1 THEN hb.household_id END) AS social_insurance_households,
                 COALESCE(SUM(hb.insured_workers),0) AS insured_workers
              FROM household_business hb
              INNER JOIN households h ON h.id = hb.household_id
@@ -297,7 +381,7 @@ SQL);
         if ($mode === 'food_safety') $filters['food_safety'] = '1';
         if ($mode === 'social_insurance') $filters['social_insurance'] = '1';
         if ($mode === 'household_summary') return $this->householdSummaryReport($filters);
-        $rows = $this->paginate($filters)['items'];
+        $rows = $mode === 'establishments' ? $this->paginate($filters)['items'] : $this->paginateHouseholds($filters)['items'];
         $title = match ($mode) {
             'production' => 'Danh sách hộ sản xuất',
             'business' => 'Danh sách hộ kinh doanh',
@@ -394,6 +478,93 @@ SQL);
             'address' => 'COALESCE(NULLIF(hb.address,""), h.address)',
         ];
         return ['WHERE ' . implode(' AND ', $where), $params, 'ORDER BY ' . ($sortMap[$sort] ?? 'h.household_code') . ' ' . $direction . ', h.household_code ASC'];
+    }
+
+    private function householdOrder(array $filters): string
+    {
+        $sort = preg_replace('/[^a-z_]/', '', (string) ($filters['sort'] ?? 'household_code'));
+        $direction = strtoupper((string) ($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
+        $sortMap = [
+            'household_code' => 'h.household_code',
+            'head_citizen_name' => 'h.head_citizen_name',
+            'business_name' => 'business_name_sort',
+            'business_type' => 'business_type_sort',
+            'economic_type' => 'economic_type_sort',
+            'business_scale' => 'business_scale_sort',
+            'sector' => 'sector_sort',
+            'worker_count' => 'worker_count',
+            'status' => 'status_sort',
+            'updated_at' => 'activity_updated_at',
+            'address' => 'h.address',
+        ];
+        return 'ORDER BY ' . ($sortMap[$sort] ?? 'h.household_code') . ' ' . $direction . ', h.household_code ASC';
+    }
+
+    private function normalizeHouseholdSummary(array $household, array $activities): array
+    {
+        $types = [];
+        $economicTypes = [];
+        $scales = [];
+        $sectors = [];
+        $names = [];
+        $products = [];
+        $workerCount = 0;
+        $insuredWorkers = 0;
+        $isOcop = false;
+        $foodSafety = false;
+        $socialInsurance = false;
+        $lat = $household['household_latitude'] ?? null;
+        $lng = $household['household_longitude'] ?? null;
+        $updatedAt = null;
+        foreach ($activities as $activity) {
+            if (!empty($activity['business_type_label'])) $types[$activity['business_type_label']] = true;
+            if (!empty($activity['economic_type'])) $economicTypes[$activity['economic_type']] = true;
+            if (!empty($activity['business_scale'])) $scales[$activity['business_scale']] = true;
+            if (!empty($activity['sector_label'])) $sectors[$activity['sector_label']] = true;
+            if (!empty($activity['business_name'])) $names[$activity['business_name']] = true;
+            foreach (($activity['main_products'] ?? []) as $product) if ($product !== '') $products[$product] = true;
+            $workerCount += (int) ($activity['worker_count'] ?? 0);
+            $insuredWorkers += (int) ($activity['insured_workers'] ?? 0);
+            $isOcop = $isOcop || !empty($activity['is_ocop']);
+            $foodSafety = $foodSafety || !empty($activity['food_safety_certified']);
+            $socialInsurance = $socialInsurance || !empty($activity['social_insurance']);
+            if (($lat === null || $lat === '') && !empty($activity['latitude'])) $lat = $activity['latitude'];
+            if (($lng === null || $lng === '') && !empty($activity['longitude'])) $lng = $activity['longitude'];
+            $candidate = $activity['updated_at'] ?: $activity['created_at'];
+            if ($candidate && (!$updatedAt || strcmp((string) $candidate, (string) $updatedAt) > 0)) $updatedAt = $candidate;
+        }
+        $first = $activities[0];
+        return [
+            'id' => (int) ($household['household_id_real'] ?? 0),
+            'household_id' => (int) ($household['household_id_real'] ?? 0),
+            'household_code' => (string) ($household['household_code'] ?? ''),
+            'head_citizen_name' => (string) ($household['head_citizen_name'] ?? ''),
+            'business_name' => implode(', ', array_keys($names)) ?: (string) ($household['head_citizen_name'] ?? ''),
+            'business_type' => (string) ($first['business_type'] ?? ''),
+            'business_type_label' => implode(', ', array_keys($types)),
+            'economic_type' => implode(', ', array_keys($economicTypes)),
+            'business_scale' => implode(', ', array_keys($scales)),
+            'sector_label' => implode(', ', array_keys($sectors)),
+            'main_products' => array_keys($products),
+            'worker_count' => $workerCount,
+            'insured_workers' => $insuredWorkers,
+            'is_ocop' => $isOcop,
+            'ocop_star' => null,
+            'food_safety_certified' => $foodSafety,
+            'social_insurance' => $socialInsurance,
+            'phone' => (string) ($first['phone'] ?: ($household['household_phone'] ?? '')),
+            'address' => (string) ($household['household_address'] ?? ''),
+            'latitude' => $lat !== null && $lat !== '' ? (float) $lat : null,
+            'longitude' => $lng !== null && $lng !== '' ? (float) $lng : null,
+            'status' => (string) ($first['status'] ?? 'ACTIVE'),
+            'status_label' => (string) ($first['status_label'] ?? ''),
+            'area_code' => (string) ($household['area_code'] ?? ''),
+            'member_count' => (int) ($household['member_count'] ?? 0),
+            'business_count' => count($activities),
+            'activities' => array_values($activities),
+            'created_at' => $first['created_at'] ?? null,
+            'updated_at' => $updatedAt,
+        ];
     }
 
     private function params(array $data, int $userId): array

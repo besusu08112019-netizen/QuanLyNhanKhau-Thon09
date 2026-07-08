@@ -19,7 +19,7 @@ final class HouseholdBusinessController extends BaseController
     public function index(): void
     {
         $this->requirePermission('household_business', 'read');
-        $this->ok($this->businesses->paginate([
+        $this->ok($this->businesses->paginateHouseholds([
             'page' => $this->query('page', 1),
             'pageSize' => $this->query('pageSize', 20),
             'search' => $this->query('search', $this->query('q', '')),
@@ -57,7 +57,7 @@ final class HouseholdBusinessController extends BaseController
     {
         $this->requirePermission('household_business', 'read');
         $row = $this->businesses->find((int) $id);
-        if (!$row) $this->fail('Không tìm thấy thông tin hộ sản xuất/kinh doanh', 404);
+        if (!$row) $this->fail('Khong tim thay thong tin ho san xuat/kinh doanh', 404);
         $row['members'] = $this->businesses->members((int) $row['household_id']);
         $row['files'] = $this->businesses->files((int) $row['id']);
         $this->ok($row);
@@ -67,7 +67,9 @@ final class HouseholdBusinessController extends BaseController
     {
         $this->requirePermission('household_business', 'read');
         $items = $this->businesses->findAllByHousehold((int) $householdId);
-        $this->ok(['items' => $items, 'total' => count($items)]);
+        $summary = $this->businesses->findHouseholdSummary((int) $householdId);
+        if ($summary) $summary['members'] = $this->businesses->members((int) $summary['household_id']);
+        $this->ok(['items' => $items, 'summary' => $summary, 'total' => count($items)]);
     }
 
     public function store(): void
