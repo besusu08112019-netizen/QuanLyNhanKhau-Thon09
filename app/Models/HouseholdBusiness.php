@@ -89,7 +89,7 @@ SQL);
     public function catalogs(): array
     {
         $this->ensureSchema();
-        $rows = $this->fetchAll('SELECT catalog_type, value, label FROM household_business_catalogs WHERE status="ACTIVE" ORDER BY catalog_type, sort_order, label');
+        $rows = $this->fetchAll('SELECT hbc.catalog_type, hbc.value, hbc.label FROM household_business_catalogs hbc WHERE hbc.status="ACTIVE" ORDER BY hbc.catalog_type, hbc.sort_order, hbc.label');
         $out = [];
         foreach (array_keys(self::CATALOGS) as $type) $out[$type] = [];
         foreach ($rows as $row) $out[$row['catalog_type']][] = ['value' => $row['value'], 'label' => $row['label']];
@@ -102,11 +102,11 @@ SQL);
         $this->ensureSchema();
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$where, $params, $order] = $this->where($filters);
-        $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM household_business b INNER JOIN households h ON h.id = b.household_id $where", $params) ?: [])['total'] ?? 0);
+        $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where", $params) ?: [])['total'] ?? 0);
         $rows = $this->fetchAll(
-            "SELECT b.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
-             FROM household_business b
-             INNER JOIN households h ON h.id = b.household_id
+            "SELECT hb.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
+             FROM household_business hb
+             INNER JOIN households h ON h.id = hb.household_id
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
              $where
              $order
@@ -120,12 +120,12 @@ SQL);
     {
         $this->ensureSchema();
         $row = $this->fetchOne(
-            'SELECT b.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude,
+            'SELECT hb.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude,
                     COALESCE(v.total_members,0) AS member_count
-             FROM household_business b
-             INNER JOIN households h ON h.id = b.household_id
+             FROM household_business hb
+             INNER JOIN households h ON h.id = hb.household_id
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             WHERE b.id = :id AND b.status <> "DELETED" AND h.status <> "DELETED"',
+             WHERE hb.id = :id AND hb.status <> "DELETED" AND h.status <> "DELETED"',
             ['id' => $id]
         );
         return $row ? $this->normalize($row) : null;
@@ -135,11 +135,11 @@ SQL);
     {
         $this->ensureSchema();
         $row = $this->fetchOne(
-            'SELECT b.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
-             FROM household_business b
-             INNER JOIN households h ON h.id = b.household_id
+            'SELECT hb.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
+             FROM household_business hb
+             INNER JOIN households h ON h.id = hb.household_id
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             WHERE b.household_id = :id AND b.status <> "DELETED" AND h.status <> "DELETED"',
+             WHERE hb.household_id = :id AND hb.status <> "DELETED" AND h.status <> "DELETED"',
             ['id' => $householdId]
         );
         return $row ? $this->normalize($row) : null;
@@ -152,9 +152,9 @@ SQL);
         if (mb_strlen($query) < 2) return [];
         $keyword = '%' . mb_strtolower($query, 'UTF-8') . '%';
         $rows = $this->fetchAll(
-            'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.latitude, h.longitude, b.id AS business_id
+            'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.latitude, h.longitude, hb.id AS business_id
              FROM households h
-             LEFT JOIN household_business b ON b.household_id = h.id AND b.status <> "DELETED"
+             LEFT JOIN household_business hb ON hb.household_id = h.id AND hb.status <> "DELETED"
              WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
                AND (
                     LOWER(h.household_code) LIKE :household_code
@@ -186,7 +186,7 @@ SQL);
         if ($id && !$before) throw new \RuntimeException('Không tìm thấy thông tin hộ sản xuất/kinh doanh');
         if ($id) $params['id'] = $id;
 
-        $existing = $this->fetchOne('SELECT id FROM household_business WHERE household_id = :household_id AND status <> "DELETED"' . ($id ? ' AND id <> :id' : ''), $id ? ['household_id' => $params['household_id'], 'id' => $id] : ['household_id' => $params['household_id']]);
+        $existing = $this->fetchOne('SELECT hb.id FROM household_business hb WHERE hb.household_id = :household_id AND hb.status <> "DELETED"' . ($id ? ' AND hb.id <> :id' : ''), $id ? ['household_id' => $params['household_id'], 'id' => $id] : ['household_id' => $params['household_id']]);
         if ($existing) throw new \RuntimeException('Hộ này đã có hồ sơ sản xuất & kinh doanh.');
 
         if ($id) {
@@ -219,7 +219,7 @@ SQL);
 
     public function members(int $householdId): array
     {
-        return $this->fetchAll('SELECT id, citizen_code, full_name, relationship, gender, date_of_birth, identity_number, phone, residency_status, presence_status FROM citizens WHERE household_id = :id AND status <> "DELETED" ORDER BY CASE WHEN relationship = "Chủ hộ" THEN 0 ELSE 1 END, full_name', ['id' => $householdId]);
+        return $this->fetchAll('SELECT p.id, p.citizen_code, p.full_name, p.relationship, p.gender, p.date_of_birth, p.identity_number, p.phone, p.residency_status, p.presence_status FROM citizens p WHERE p.household_id = :id AND p.status <> "DELETED" ORDER BY CASE WHEN p.relationship = "Chủ hộ" THEN 0 ELSE 1 END, p.full_name', ['id' => $householdId]);
     }
 
     public function dashboard(): array
@@ -227,15 +227,15 @@ SQL);
         $this->ensureSchema();
         $row = $this->fetchOne(
             'SELECT
-                COALESCE(SUM(CASE WHEN business_type = "PRODUCTION" THEN 1 ELSE 0 END),0) AS production,
-                COALESCE(SUM(CASE WHEN business_type = "BUSINESS" THEN 1 ELSE 0 END),0) AS business,
-                COALESCE(SUM(CASE WHEN business_type = "BOTH" THEN 1 ELSE 0 END),0) AS both,
-                COALESCE(SUM(worker_count),0) AS workers,
-                COALESCE(SUM(is_ocop=1),0) AS ocop,
-                COALESCE(SUM(food_safety_certified=1),0) AS food_safety,
-                COALESCE(SUM(social_insurance=1),0) AS social_insurance,
-                COALESCE(SUM(insured_workers),0) AS insured_workers
-             FROM household_business WHERE status <> "DELETED"'
+                COALESCE(SUM(CASE WHEN hb.business_type = "PRODUCTION" THEN 1 ELSE 0 END),0) AS production,
+                COALESCE(SUM(CASE WHEN hb.business_type = "BUSINESS" THEN 1 ELSE 0 END),0) AS business,
+                COALESCE(SUM(CASE WHEN hb.business_type = "BOTH" THEN 1 ELSE 0 END),0) AS both,
+                COALESCE(SUM(hb.worker_count),0) AS workers,
+                COALESCE(SUM(hb.is_ocop=1),0) AS ocop,
+                COALESCE(SUM(hb.food_safety_certified=1),0) AS food_safety,
+                COALESCE(SUM(hb.social_insurance=1),0) AS social_insurance,
+                COALESCE(SUM(hb.insured_workers),0) AS insured_workers
+             FROM household_business hb WHERE hb.status <> "DELETED"'
         ) ?: [];
         return [
             'production_households' => (int) ($row['production'] ?? 0),
@@ -253,16 +253,16 @@ SQL);
     {
         $this->ensureSchema();
         return [
-            'types' => $this->fetchAll('SELECT business_type AS code, business_type AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY business_type ORDER BY business_type'),
-            'economicTypes' => $this->fetchAll('SELECT COALESCE(NULLIF(economic_type,""),"Chưa cập nhật") AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY label ORDER BY value DESC, label'),
-            'sectors' => $this->fetchAll('SELECT COALESCE(NULLIF(production_sector,""), NULLIF(business_sector,""), "Chưa cập nhật") AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY label ORDER BY value DESC, label LIMIT 10'),
-            'scales' => $this->fetchAll('SELECT COALESCE(NULLIF(business_scale,""),"Chưa cập nhật") AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY label ORDER BY value DESC, label'),
-            'statuses' => $this->fetchAll('SELECT status AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY status ORDER BY status'),
-            'ocop' => $this->fetchAll('SELECT CASE WHEN is_ocop=1 THEN "Tham gia OCOP" ELSE "Không OCOP" END AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY is_ocop ORDER BY is_ocop DESC'),
-            'ocopStars' => $this->fetchAll('SELECT CONCAT(ocop_star," sao") AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" AND is_ocop=1 AND ocop_star IS NOT NULL GROUP BY ocop_star ORDER BY ocop_star'),
-            'foodSafety' => $this->fetchAll('SELECT CASE WHEN food_safety_certified=1 THEN "Có ATTP" ELSE "Chưa có ATTP" END AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY food_safety_certified ORDER BY food_safety_certified DESC'),
-            'socialInsurance' => $this->fetchAll('SELECT CASE WHEN social_insurance=1 THEN "Có BHXH" ELSE "Chưa có BHXH" END AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY social_insurance ORDER BY social_insurance DESC'),
-            'workers' => $this->fetchAll('SELECT CASE WHEN worker_count=0 THEN "0" WHEN worker_count<=2 THEN "1-2" WHEN worker_count<=5 THEN "3-5" WHEN worker_count<=10 THEN "6-10" ELSE "Trên 10" END AS label, COUNT(*) AS value FROM household_business WHERE status <> "DELETED" GROUP BY label ORDER BY MIN(worker_count)'),
+            'types' => $this->fetchAll('SELECT hb.business_type AS code, hb.business_type AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY hb.business_type ORDER BY hb.business_type'),
+            'economicTypes' => $this->fetchAll('SELECT COALESCE(NULLIF(hb.economic_type,""),"Chưa cập nhật") AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY label ORDER BY value DESC, label'),
+            'sectors' => $this->fetchAll('SELECT COALESCE(NULLIF(hb.production_sector,""), NULLIF(hb.business_sector,""), "Chưa cập nhật") AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY label ORDER BY value DESC, label LIMIT 10'),
+            'scales' => $this->fetchAll('SELECT COALESCE(NULLIF(hb.business_scale,""),"Chưa cập nhật") AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY label ORDER BY value DESC, label'),
+            'statuses' => $this->fetchAll('SELECT hb.status AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY hb.status ORDER BY hb.status'),
+            'ocop' => $this->fetchAll('SELECT CASE WHEN hb.is_ocop=1 THEN "Tham gia OCOP" ELSE "Không OCOP" END AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY hb.is_ocop ORDER BY hb.is_ocop DESC'),
+            'ocopStars' => $this->fetchAll('SELECT CONCAT(hb.ocop_star," sao") AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" AND hb.is_ocop=1 AND hb.ocop_star IS NOT NULL GROUP BY hb.ocop_star ORDER BY hb.ocop_star'),
+            'foodSafety' => $this->fetchAll('SELECT CASE WHEN hb.food_safety_certified=1 THEN "Có ATTP" ELSE "Chưa có ATTP" END AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY hb.food_safety_certified ORDER BY hb.food_safety_certified DESC'),
+            'socialInsurance' => $this->fetchAll('SELECT CASE WHEN hb.social_insurance=1 THEN "Có BHXH" ELSE "Chưa có BHXH" END AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY hb.social_insurance ORDER BY hb.social_insurance DESC'),
+            'workers' => $this->fetchAll('SELECT CASE WHEN hb.worker_count=0 THEN "0" WHEN hb.worker_count<=2 THEN "1-2" WHEN hb.worker_count<=5 THEN "3-5" WHEN hb.worker_count<=10 THEN "6-10" ELSE "Trên 10" END AS label, COUNT(*) AS value FROM household_business hb WHERE hb.status <> "DELETED" GROUP BY label ORDER BY MIN(hb.worker_count)'),
         ];
     }
 
@@ -297,7 +297,7 @@ SQL);
 
     private function where(array $filters): array
     {
-        $where = ['b.status <> "DELETED"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
+        $where = ['hb.status <> "DELETED"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
         $params = [];
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
@@ -306,15 +306,15 @@ SQL);
                 'h.household_code' => 'q_household_code',
                 'h.head_citizen_name' => 'q_head_name',
                 'h.address' => 'q_address',
-                'b.business_name' => 'q_business_name',
-                'b.owner_name' => 'q_owner_name',
-                'b.production_sector' => 'q_production_sector',
-                'b.business_sector' => 'q_business_sector',
-                'b.phone' => 'q_phone',
-                'b.tax_code' => 'q_tax_code',
-                'b.economic_type' => 'q_economic_type',
-                'b.business_scale' => 'q_business_scale',
-                'b.main_products' => 'q_main_products',
+                'hb.business_name' => 'q_business_name',
+                'hb.owner_name' => 'q_owner_name',
+                'hb.production_sector' => 'q_production_sector',
+                'hb.business_sector' => 'q_business_sector',
+                'hb.phone' => 'q_phone',
+                'hb.tax_code' => 'q_tax_code',
+                'hb.economic_type' => 'q_economic_type',
+                'hb.business_scale' => 'q_business_scale',
+                'hb.main_products' => 'q_main_products',
             ];
             $parts = [];
             foreach ($searchColumns as $column => $param) {
@@ -325,52 +325,52 @@ SQL);
         }
         $type = $this->businessType($filters['business_type'] ?? $filters['businessType'] ?? '');
         if ($type !== '') {
-            $where[] = 'b.business_type = :business_type';
+            $where[] = 'hb.business_type = :business_type';
             $params['business_type'] = $type;
         }
         foreach (['economic_type' => 'economic_type', 'business_scale' => 'business_scale'] as $input => $column) {
             $value = trim((string) ($filters[$input] ?? ''));
-            if ($value !== '') { $where[] = "b.$column = :$input"; $params[$input] = $value; }
+            if ($value !== '') { $where[] = "hb.$column = :$input"; $params[$input] = $value; }
         }
         $product = trim((string) ($filters['product'] ?? ''));
-        if ($product !== '') { $where[] = 'b.main_products LIKE :product'; $params['product'] = '%' . $product . '%'; }
+        if ($product !== '') { $where[] = 'hb.main_products LIKE :product'; $params['product'] = '%' . $product . '%'; }
         foreach (['ocop' => 'is_ocop', 'food_safety' => 'food_safety_certified', 'social_insurance' => 'social_insurance'] as $filter => $column) {
             $value = trim((string) ($filters[$filter] ?? ''));
-            if ($value === '1' || $value === '0') $where[] = "COALESCE(b.$column,0) = " . (int) $value;
+            if ($value === '1' || $value === '0') $where[] = "COALESCE(hb.$column,0) = " . (int) $value;
         }
         $sector = trim((string) ($filters['sector'] ?? ''));
         if ($sector !== '') {
             $sectorKeyword = '%' . mb_strtolower($sector, 'UTF-8') . '%';
-            $where[] = '(LOWER(b.production_sector) LIKE :sector_production OR LOWER(b.business_sector) LIKE :sector_business)';
+            $where[] = '(LOWER(hb.production_sector) LIKE :sector_production OR LOWER(hb.business_sector) LIKE :sector_business)';
             $params['sector_production'] = $sectorKeyword;
             $params['sector_business'] = $sectorKeyword;
         }
         $status = strtoupper(trim((string) ($filters['status'] ?? '')));
         if ($status !== '') {
-            $where[] = 'b.status = :status';
+            $where[] = 'hb.status = :status';
             $params['status'] = $status;
         }
         foreach (['license' => 'business_license', 'tax' => 'tax_code'] as $filter => $column) {
             $value = trim((string) ($filters[$filter] ?? ''));
-            if ($value === '1') $where[] = "b.$column IS NOT NULL AND b.$column <> ''";
-            if ($value === '0') $where[] = "(b.$column IS NULL OR b.$column = '')";
+            if ($value === '1') $where[] = "hb.$column IS NOT NULL AND hb.$column <> ''";
+            if ($value === '0') $where[] = "(hb.$column IS NULL OR hb.$column = '')";
         }
         $located = trim((string) ($filters['located'] ?? ''));
-        if ($located === '1') $where[] = '((b.latitude IS NOT NULL AND b.longitude IS NOT NULL) OR (h.latitude IS NOT NULL AND h.longitude IS NOT NULL))';
-        if ($located === '0') $where[] = '((b.latitude IS NULL OR b.longitude IS NULL) AND (h.latitude IS NULL OR h.longitude IS NULL))';
+        if ($located === '1') $where[] = '((hb.latitude IS NOT NULL AND hb.longitude IS NOT NULL) OR (h.latitude IS NOT NULL AND h.longitude IS NOT NULL))';
+        if ($located === '0') $where[] = '((hb.latitude IS NULL OR hb.longitude IS NULL) AND (h.latitude IS NULL OR h.longitude IS NULL))';
         $sort = preg_replace('/[^a-z_]/', '', (string) ($filters['sort'] ?? 'household_code'));
         $direction = strtoupper((string) ($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = [
             'household_code' => 'h.household_code',
             'head_citizen_name' => 'h.head_citizen_name',
-            'business_name' => 'b.business_name',
-            'business_type' => 'b.business_type',
-            'economic_type' => 'b.economic_type',
-            'business_scale' => 'b.business_scale',
+            'business_name' => 'hb.business_name',
+            'business_type' => 'hb.business_type',
+            'economic_type' => 'hb.economic_type',
+            'business_scale' => 'hb.business_scale',
             'sector' => 'sector_label',
-            'worker_count' => 'b.worker_count',
-            'status' => 'b.status',
-            'address' => 'COALESCE(NULLIF(b.address,""), h.address)',
+            'worker_count' => 'hb.worker_count',
+            'status' => 'hb.status',
+            'address' => 'COALESCE(NULLIF(hb.address,""), h.address)',
         ];
         return ['WHERE ' . implode(' AND ', $where), $params, 'ORDER BY ' . ($sortMap[$sort] ?? 'h.household_code') . ' ' . $direction . ', h.household_code ASC'];
     }
@@ -379,7 +379,7 @@ SQL);
     {
         $householdId = (int) ($data['household_id'] ?? $data['householdId'] ?? 0);
         if ($householdId <= 0) throw new \RuntimeException('Hộ gia đình là bắt buộc');
-        if (!$this->fetchOne('SELECT id FROM households WHERE id = :id AND status <> "DELETED"', ['id' => $householdId])) throw new \RuntimeException('Không tìm thấy hộ gia đình liên kết');
+        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND h.status <> "DELETED"', ['id' => $householdId])) throw new \RuntimeException('Không tìm thấy hộ gia đình liên kết');
         $workerCount = max(0, (int) ($data['worker_count'] ?? $data['workerCount'] ?? 0));
         $isOcop = $this->boolValue($data['is_ocop'] ?? $data['isOcop'] ?? 0);
         $ocopStar = $isOcop ? (int) ($data['ocop_star'] ?? $data['ocopStar'] ?? 0) : null;
@@ -492,15 +492,15 @@ SQL);
     {
         $this->ensureSchema();
         $params = ['id' => $businessId];
-        $where = 'household_business_id=:id AND status="ACTIVE"';
-        if ($kind !== '') { $where .= ' AND file_kind=:kind'; $params['kind'] = strtoupper($kind); }
-        return array_map(fn($r) => $this->normalizeFile($r), $this->fetchAll("SELECT f.*, u.display_name AS uploaded_by_name, u.email AS uploaded_by_email FROM household_business_files f LEFT JOIN users u ON u.id=f.created_by WHERE $where ORDER BY f.created_at DESC, f.id DESC", $params));
+        $where = 'hbf.household_business_id=:id AND hbf.status="ACTIVE"';
+        if ($kind !== '') { $where .= ' AND hbf.file_kind=:kind'; $params['kind'] = strtoupper($kind); }
+        return array_map(fn($r) => $this->normalizeFile($r), $this->fetchAll("SELECT hbf.*, u.display_name AS uploaded_by_name, u.email AS uploaded_by_email FROM household_business_files hbf LEFT JOIN users u ON u.id=hbf.created_by WHERE $where ORDER BY hbf.created_at DESC, hbf.id DESC", $params));
     }
 
     public function file(int $fileId): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT f.*, b.household_id FROM household_business_files f INNER JOIN household_business b ON b.id=f.household_business_id WHERE f.id=:id AND f.status="ACTIVE" AND b.status <> "DELETED"', ['id' => $fileId]);
+        $row = $this->fetchOne('SELECT hbf.*, hb.household_id FROM household_business_files hbf INNER JOIN household_business hb ON hb.id=hbf.household_business_id WHERE hbf.id=:id AND hbf.status="ACTIVE" AND hb.status <> "DELETED"', ['id' => $fileId]);
         return $row ? $this->normalizeFile($row) : null;
     }
 
@@ -537,7 +537,7 @@ SQL);
     {
         $text = $this->nullable($value);
         if ($text === null) return null;
-        $row = $this->fetchOne('SELECT value FROM household_business_catalogs WHERE catalog_type=:type AND value=:value AND status="ACTIVE"', ['type' => $type, 'value' => $text]);
+        $row = $this->fetchOne('SELECT hbc.value FROM household_business_catalogs hbc WHERE hbc.catalog_type=:type AND hbc.value=:value AND hbc.status="ACTIVE"', ['type' => $type, 'value' => $text]);
         return $row ? (string) $row['value'] : $text;
     }
 
