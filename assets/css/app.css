@@ -4170,6 +4170,7 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 .business-main-person span, .business-establishment-cell span { color: #64748b; font-size: 12px; line-height: 1.3; }
 .business-sector-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; max-width: 220px; }
 .business-sector-cell > span { color: #0f172a; font-weight: 700; line-height: 1.3; }
+.business-sector-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border-radius: 999px; border: 1px solid #dbe7ef; background: #f8fafc; color: #0f172a; font-size: 12px; font-weight: 800; line-height: 1.2; white-space: normal; }
 .business-more-badge, .business-count-badge, .business-type-badge, .business-status-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; line-height: 1.2; border: 1px solid transparent; white-space: nowrap; }
 .business-more-badge { border-color: #dbeafe; background: #eff6ff; color: #1d4ed8; cursor: pointer; }
 .business-count-badge { border-color: #bbf7d0; background: #dcfce7; color: #166534; }
