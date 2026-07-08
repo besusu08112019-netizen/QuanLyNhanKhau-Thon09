@@ -66,8 +66,8 @@ final class HouseholdBusinessController extends BaseController
     public function byHousehold(string $householdId): void
     {
         $this->requirePermission('household_business', 'read');
-        $row = $this->businesses->findByHousehold((int) $householdId);
-        $row ? $this->ok($row) : $this->fail('Không tìm thấy hộ gia đình', 404);
+        $items = $this->businesses->findAllByHousehold((int) $householdId);
+        $this->ok(['items' => $items, 'total' => count($items)]);
     }
 
     public function store(): void
@@ -193,7 +193,22 @@ final class HouseholdBusinessController extends BaseController
     public function dashboard(): void
     {
         $this->requirePermission('household_business', 'read');
-        $this->ok(['metrics' => $this->businesses->dashboard(), 'charts' => $this->businesses->charts()]);
+        $filters = [
+            'search' => $this->query('search', $this->query('q', '')),
+            'business_type' => $this->query('business_type', $this->query('businessType', '')),
+            'economic_type' => $this->query('economic_type', $this->query('economicType', '')),
+            'business_scale' => $this->query('business_scale', $this->query('businessScale', '')),
+            'product' => $this->query('product', ''),
+            'ocop' => $this->query('ocop', ''),
+            'food_safety' => $this->query('food_safety', ''),
+            'social_insurance' => $this->query('social_insurance', ''),
+            'sector' => $this->query('sector', ''),
+            'status' => $this->query('status', ''),
+            'license' => $this->query('license', ''),
+            'tax' => $this->query('tax', ''),
+            'located' => $this->query('located', ''),
+        ];
+        $this->ok(['metrics' => $this->businesses->dashboard($filters), 'charts' => $this->businesses->charts($filters)]);
     }
 
     private function auditAction(string $type): string

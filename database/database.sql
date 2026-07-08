@@ -364,7 +364,7 @@ CREATE TABLE IF NOT EXISTS `household_business` (
   `deleted_at` DATETIME NULL,
   `deleted_by` BIGINT UNSIGNED NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_household_business_household` (`household_id`),
+  KEY `idx_household_business_household` (`household_id`),
   KEY `idx_household_business_type` (`business_type`),
   KEY `idx_household_business_status` (`status`),
   KEY `idx_household_business_sector` (`production_sector`, `business_sector`),

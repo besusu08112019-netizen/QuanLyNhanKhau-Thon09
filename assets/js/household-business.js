@@ -190,13 +190,12 @@
 
   function suggestionHtml(item) {
     return '<button type="button" class="list-group-item list-group-item-action" data-household-choice="' + Number(item.id) + '">'
-      + '<div class="d-flex justify-content-between gap-2"><strong>' + esc(item.household_code) + '</strong>' + (item.has_business ? '<span class="badge text-bg-warning">Đã có hồ sơ</span>' : '') + '</div>'
+      + '<div class="d-flex justify-content-between gap-2"><strong>' + esc(item.household_code) + '</strong>' + (Number(item.business_count || 0) > 0 ? '<span class="badge text-bg-light">' + num(item.business_count) + ' ho?t ??ng</span>' : '') + '</div>'
       + '<div>' + esc(item.head_citizen_name || '') + '</div><small class="text-muted">' + esc(item.address || '') + '</small></button>';
   }
 
   function selectHousehold(item) {
     if (!item) return;
-    if (item.has_business) { show('Hộ này đã có hồ sơ sản xuất & kinh doanh.', 'warning'); return; }
     state.selectedHousehold = item;
     const form = $('#businessHouseholdForm');
     if (!form) return;

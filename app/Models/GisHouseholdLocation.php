@@ -35,8 +35,30 @@ final class GisHouseholdLocation extends BaseModel
         [$where, $params] = $this->markerConditions($filters);
         $photoSql = $this->householdPhotoSql();
         $hasBusinessTable = $this->tableExists('household_business');
-        $businessJoin = $hasBusinessTable ? ' LEFT JOIN household_business hb ON hb.household_id = h.id AND hb.status <> "DELETED"' : '';
-        $businessSelect = $hasBusinessTable ? ', hb.business_name, hb.business_type AS business_marker_type, hb.production_sector, hb.business_sector, hb.owner_name AS business_owner_name, hb.phone AS business_phone' : ', NULL AS business_name, NULL AS business_marker_type, NULL AS production_sector, NULL AS business_sector, NULL AS business_owner_name, NULL AS business_phone';
+        $businessJoin = $hasBusinessTable ? ' LEFT JOIN (
+                SELECT x.household_id,
+                       GROUP_CONCAT(COALESCE(NULLIF(x.business_name,""),"Chua dat ten") ORDER BY x.id SEPARATOR ", ") AS business_names,
+                       GROUP_CONCAT(CONCAT_WS(CHAR(31),
+                           x.id,
+                           COALESCE(REPLACE(REPLACE(x.business_name, CHAR(30), " "), CHAR(31), " "), ""),
+                           COALESCE(x.business_type,""),
+                           CASE x.business_type WHEN "PRODUCTION" THEN "Ho san xuat" WHEN "BUSINESS" THEN "Ho kinh doanh" WHEN "BOTH" THEN "Ho san xuat va kinh doanh" ELSE "Ho dan" END,
+                           COALESCE(NULLIF(x.production_sector,""), NULLIF(x.business_sector,""), ""),
+                           COALESCE(REPLACE(REPLACE(x.owner_name, CHAR(30), " "), CHAR(31), " "), ""),
+                           COALESCE(REPLACE(REPLACE(x.phone, CHAR(30), " "), CHAR(31), " "), "")
+                       ) ORDER BY x.id SEPARATOR CHAR(30)) AS business_activities_json,
+                       CASE
+                           WHEN SUM(x.business_type = "BOTH") > 0 THEN "BOTH"
+                           WHEN SUM(x.business_type = "PRODUCTION") > 0 AND SUM(x.business_type = "BUSINESS") > 0 THEN "BOTH"
+                           WHEN SUM(x.business_type = "PRODUCTION") > 0 THEN "PRODUCTION"
+                           WHEN SUM(x.business_type = "BUSINESS") > 0 THEN "BUSINESS"
+                           ELSE "RESIDENT"
+                       END AS business_marker_type
+                FROM household_business x
+                WHERE x.status <> "DELETED"
+                GROUP BY x.household_id
+             ) hb ON hb.household_id = h.id' : '';
+        $businessSelect = $hasBusinessTable ? ', hb.business_names AS business_name, hb.business_marker_type, hb.business_activities_json' : ', NULL AS business_name, NULL AS business_marker_type, NULL AS business_activities_json';
         $rows = $this->fetchAll(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
                 h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
@@ -188,7 +210,6 @@ final class GisHouseholdLocation extends BaseModel
                 COALESCE(SUM(CASE WHEN $locatedExpr THEN 1 ELSE 0 END), 0) AS located
              FROM households h
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             ' . $businessJoin . '
              LEFT JOIN (
                 SELECT c.household_id,
                     SUM(CASE WHEN c.party_member = 1 THEN 1 ELSE 0 END) AS party_members,
@@ -372,6 +393,28 @@ final class GisHouseholdLocation extends BaseModel
         ];
     }
 
+
+    private function normalizeBusinessActivities(mixed $encoded): array
+    {
+        $text = (string) ($encoded ?? '');
+        if ($text === '') return [];
+        $items = [];
+        foreach (explode(chr(30), $text) as $row) {
+            $parts = explode(chr(31), $row);
+            if (count($parts) < 7) continue;
+            $type = strtoupper((string) ($parts[2] ?? ''));
+            $items[] = [
+                'id' => (int) ($parts[0] ?? 0),
+                'business_name' => (string) ($parts[1] ?? ''),
+                'business_type' => $type,
+                'business_type_label' => (string) ($parts[3] ?? $this->businessTypeLabel($type)),
+                'sector' => (string) ($parts[4] ?? ''),
+                'owner_name' => (string) ($parts[5] ?? ''),
+                'phone' => (string) ($parts[6] ?? ''),
+            ];
+        }
+        return $items;
+    }
 
     private function businessTypeLabel(mixed $value): string
     {

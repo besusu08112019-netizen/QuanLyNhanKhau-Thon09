@@ -461,6 +461,7 @@
     try {
       const profile = await loadProfile('household', id);
       const entityId = Number(profile.profile?.id || id || 0);
+      profile.businessActivities = await loadHouseholdBusinessActivities(entityId);
       $('#detailTitle').textContent = t('Ho so so ho gia dinh');
       $('#detailBody').innerHTML = renderHouseholdTabbedProfile(profile, entityId);
       bindHouseholdTabs(profile, entityId);
@@ -468,6 +469,16 @@
       App.modals.detail.show();
     } catch (error) { show(error.message, 'danger'); }
   };
+
+  async function loadHouseholdBusinessActivities(id) {
+    try {
+      const data = await api('/api/household-business/household/' + encodeURIComponent(id));
+      return Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.warn('[household-business-activities]', error);
+      return [];
+    }
+  }
 
   function renderHouseholdTabbedProfile(profile, id) {
     return '<div class="household-profile-tabs" data-household-profile="' + id + '">'
@@ -524,9 +535,22 @@
       return renderHouseholdPhoto(profile) + details([
         [t('Ma ho'), row.household_code], [t('Chu ho'), row.head_citizen_name], [t('Dia chi'), row.address], [t('So dien thoai'), row.phone],
         [t('O nha'), row.at_home_count || 0], [t('Di vang'), row.away_count || 0], [t('Dien ho'), row.household_type || ''], [t('Ghi chu'), row.note]
-      ]) + memberTable(profile.members || []);
+      ]) + renderHouseholdBusinessActivities(profile.businessActivities || []) + memberTable(profile.members || []);
     }
     return renderHouseholdPhoto(profile) + renderSections(profile.sections || {}) + renderMembers(profile.members || []);
+  }
+
+  function renderHouseholdBusinessActivities(items) {
+    if (!Array.isArray(items) || !items.length) return '';
+    const rows = items.map((item, index) => '<tr>'
+      + '<td>' + (index + 1) + '</td>'
+      + '<td>' + esc(item.business_name || '') + '</td>'
+      + '<td>' + esc(item.business_type_label || item.business_type || '') + '</td>'
+      + '<td>' + esc(item.economic_type || item.sector_label || item.production_sector || item.business_sector || '') + '</td>'
+      + '<td>' + esc(item.status_label || item.status || '') + '</td>'
+      + '</tr>').join('');
+    return '<section class="person-info-section mt-3"><div class="person-info-section-title"><i class="fa-solid fa-briefcase"></i><h4>Ho?t ??ng kinh t?</h4></div>'
+      + '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>STT</th><th>T?n c? s?</th><th>Lo?i h?nh</th><th>Ng?nh ngh?</th><th>Tr?ng th?i</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
   }
 
   function bindHouseholdTabs(profile, id) {
