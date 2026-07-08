@@ -474,15 +474,15 @@
 
   function businessActivityMasterDetail(activities, addButton) {
     if (!activities.length) return '<div class="person-detail-empty">Chưa có hoạt động sản xuất/kinh doanh.</div>' + (addButton ? '<div class="mt-3">' + addButton + '</div>' : '');
-    return '<section class="business-person-activity-shell">'
-      + '<aside class="business-person-activity-list"><div class="business-person-section-title"><i class="fa-solid fa-store"></i><h4>Hoạt động</h4></div>' + addButton + '<div class="business-person-activity-scroll">' + activities.map((activity, index) => businessActivityListItem(activity, index)).join('') + '</div></aside>'
-      + '<section class="business-person-activity-detail">' + activities.map((activity, index) => businessActivityDetailPanel(activity, index)).join('') + '</section>'
+    return '<section class="business-person-activity-shell business-modern-activity-shell">'
+      + '<aside class="business-person-activity-list business-modern-activity-list"><div class="business-modern-list-head"><div><i class="fa-solid fa-store"></i><strong>Hoạt động</strong><span>' + num(activities.length) + ' hoạt động</span></div>' + addButton + '</div><div class="business-person-activity-scroll business-modern-activity-scroll">' + activities.map((activity, index) => businessActivityListItem(activity, index)).join('') + '</div></aside>'
+      + '<section class="business-person-activity-detail business-modern-activity-detail">' + activities.map((activity, index) => businessActivityDetailPanel(activity, index)).join('') + '</section>'
       + '</section>';
   }
 
   function businessActivityListItem(activity, index) {
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
-    return '<button class="business-person-activity-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')"><strong>' + esc(title) + '</strong><span>' + esc(activity.business_type_label || activity.economic_type || activity.sector_label || 'Chưa cập nhật') + '</span>' + statusBadge(activity.status, activity.status_label) + '</button>';
+    return '<button class="business-person-activity-item business-modern-activity-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')"><strong>' + esc(title) + '</strong><span>' + esc(activity.business_type_label || activity.economic_type || activity.sector_label || 'Chưa cập nhật') + '</span>' + statusBadge(activity.status, activity.status_label) + '</button>';
   }
 
   function businessActivityDetailPanel(activity, index) {
@@ -493,46 +493,40 @@
     const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'Chưa cập nhật';
-    return '<article class="business-person-activity-panel business-economic-activity-panel ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
-      + '<header class="business-economic-activity-head"><div><span>Hoạt động ' + num(index + 1) + '</span><h3>' + esc(title) + '</h3><p>' + esc(activity.business_type_label || activity.business_type || 'Chưa cập nhật') + ' · ' + esc(sector) + '</p></div><div class="business-economic-activity-actions">' + statusBadge(activity.status, activity.status_label) + edit + del + '</div></header>'
-      + '<div class="business-economic-card-grid">'
-      + businessEconomicCard('Thông tin cơ bản', 'fa-id-card', [
-        businessEconomicField('Loại hình', activity.business_type_label || activity.business_type),
-        businessEconomicField('Loại hình kinh tế', activity.economic_type),
-        businessEconomicField('Ngành nghề', sector),
-        businessEconomicField('Quy mô', activity.business_scale),
-        businessEconomicField('Ngày bắt đầu', date(activity.start_date))
+    return '<article class="business-person-activity-panel business-modern-activity-panel ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
+      + '<header class="business-modern-detail-head"><div><span>Hoạt động ' + num(index + 1) + '</span><h3>' + esc(title) + '</h3><p>' + esc(activity.business_type_label || activity.business_type || 'Chưa cập nhật') + ' · ' + esc(sector) + '</p></div><div class="business-modern-detail-actions">' + statusBadge(activity.status, activity.status_label) + edit + del + '</div></header>'
+      + businessActivitySection('Thông tin cơ bản', 'fa-circle-info', [
+        businessPersonField('Loại hình', activity.business_type_label || activity.business_type),
+        businessPersonField('Loại hình kinh tế', activity.economic_type),
+        businessPersonField('Ngành nghề', sector),
+        businessPersonField('Quy mô', activity.business_scale),
+        businessPersonField('Ngày bắt đầu', date(activity.start_date))
       ].join(''))
-      + businessEconomicCard('Thông tin sản xuất', 'fa-chart-line', [
-        businessEconomicField('Sản phẩm chính', (activity.main_products || []).join(', ')),
-        businessEconomicField('Lao động', num(activity.worker_count || 0) + ' người'),
-        businessEconomicField('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'Chưa cập nhật'),
-        businessEconomicField('Diện tích / Quy mô', businessActivityValue(activity, ['production_area','area','scale_description','operation_scale','facility_area']) || 'Chưa cập nhật'),
-        businessEconomicField('Thị trường tiêu thụ', businessActivityValue(activity, ['consumption_market','market','target_market','distribution_market']) || 'Chưa cập nhật')
+      + businessActivitySection('Thông tin sản xuất', 'fa-chart-line', [
+        businessPersonField('Sản phẩm', (activity.main_products || []).join(', ')),
+        businessPersonField('Lao động', num(activity.worker_count || 0) + ' người'),
+        businessPersonField('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'Chưa cập nhật'),
+        businessPersonField('Diện tích / Quy mô', businessActivityValue(activity, ['production_area','area','scale_description','operation_scale','facility_area']) || 'Chưa cập nhật'),
+        businessPersonField('Thị trường tiêu thụ', businessActivityValue(activity, ['consumption_market','market','target_market','distribution_market']) || 'Chưa cập nhật')
       ].join(''))
-      + businessEconomicCard('Chứng nhận', 'fa-certificate', businessCertificationBadges(activity))
-      + businessEconomicCard('Vị trí', 'fa-location-dot', [
-        businessEconomicField('Địa chỉ', activity.address || 'Chưa cập nhật'),
-        businessEconomicField('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS'),
-        businessEconomicField('Ngày cập nhật', date(activity.updated_at || activity.created_at) || 'Chưa cập nhật')
+      + businessActivitySection('Chứng nhận', 'fa-certificate', businessCertificationBadges(activity), true)
+      + businessActivitySection('Vị trí', 'fa-location-dot', [
+        businessPersonField('Địa chỉ', activity.address || 'Chưa cập nhật'),
+        businessPersonField('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS'),
+        businessPersonField('Ngày cập nhật', date(activity.updated_at || activity.created_at) || 'Chưa cập nhật')
       ].join(''))
-      + '</div>'
-      + '<div class="business-economic-media-row">' + businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id) + '</div>'
-      + (activity.note ? '<section class="business-economic-note"><div class="business-economic-card-title"><i class="fa-solid fa-note-sticky"></i><h4>Ghi chú</h4></div><p>' + esc(activity.note) + '</p></section>' : '')
+      + '<section class="business-modern-media-row">' + businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id) + '</section>'
+      + (activity.note ? businessActivitySection('Ghi chú', 'fa-note-sticky', '<p class="business-modern-note-text">' + esc(activity.note) + '</p>', true) : '')
       + '</article>';
   }
 
-  function businessEconomicCard(title, icon, content) {
-    return '<section class="business-economic-card"><div class="business-economic-card-title"><i class="fa-solid ' + esc(icon) + '"></i><h4>' + esc(title) + '</h4></div><div class="business-economic-card-body">' + content + '</div></section>';
-  }
-
-  function businessEconomicField(label, value) {
-    if (value === null || value === undefined || String(value).trim() === '') return '';
-    return '<div class="business-economic-field"><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong></div>';
+  function businessActivitySection(title, icon, content, raw = false) {
+    if (!content) return '';
+    return '<section class="person-info-section business-modern-section"><div class="person-info-section-title"><i class="fa-solid ' + esc(icon) + '"></i><h4>' + esc(title) + '</h4></div>' + (raw ? '<div class="business-modern-section-body">' + content + '</div>' : '<div class="person-info-grid business-modern-info-grid">' + content + '</div>') + '</section>';
   }
 
   function businessCertificationBadges(activity) {
-    return '<div class="business-economic-cert-badges">'
+    return '<div class="business-modern-cert-row">'
       + flagBadge(businessTruthy(activity.is_ocop), businessTruthy(activity.is_ocop) ? (activity.ocop_star ? 'OCOP ' + activity.ocop_star + ' sao' : 'OCOP') : 'Không OCOP')
       + flagBadge(businessTruthy(activity.food_safety_certified), businessTruthy(activity.food_safety_certified) ? 'Có ATTP' : 'Không ATTP')
       + flagBadge(businessTruthy(activity.social_insurance), businessTruthy(activity.social_insurance) ? 'Có BHXH' : 'Không BHXH')
@@ -541,19 +535,19 @@
 
   function businessActivityImages(images, businessId) {
     const add = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(businessId || 0) + ')"><i class="fa-solid fa-plus"></i> Thêm ảnh</button>' : '';
-    if (!images.length) return '<section class="business-economic-media"><div class="business-economic-media-head"><span><i class="fa-solid fa-images"></i>Ảnh</span>' + add + '</div><p>Chưa có ảnh</p></section>';
-    return '<section class="business-economic-media"><div class="business-economic-media-head"><span><i class="fa-solid fa-images"></i>Ảnh</span>' + add + '</div><div class="business-economic-thumbs">' + images.slice(0, 6).map(file => mediaThumb(file, businessId)).join('') + (images.length > 6 ? '<span class="business-economic-more">+' + (images.length - 6) + '</span>' : '') + '</div></section>';
+    if (!images.length) return '<div class="business-modern-media-block"><div class="business-modern-media-title"><span><i class="fa-solid fa-images"></i>Ảnh</span>' + add + '</div><div class="business-modern-empty-line"><i class="fa-regular fa-image"></i> Chưa có ảnh</div></div>';
+    return '<div class="business-modern-media-block"><div class="business-modern-media-title"><span><i class="fa-solid fa-images"></i>Ảnh</span>' + add + '</div><div class="business-economic-thumbs business-modern-thumbs">' + images.slice(0, 6).map(file => mediaThumb(file, businessId)).join('') + (images.length > 6 ? '<span class="business-economic-more">+' + (images.length - 6) + '</span>' : '') + '</div></div>';
   }
 
   function businessActivityDocuments(documents, businessId) {
-    if (!documents.length) return '<section class="business-economic-media"><div class="business-economic-media-head"><span><i class="fa-solid fa-file-lines"></i>Tài liệu</span></div><p>Chưa có tài liệu</p></section>';
-    return '<section class="business-economic-media"><div class="business-economic-media-head"><span><i class="fa-solid fa-file-lines"></i>Tài liệu</span></div><div class="business-economic-doc-list">' + documents.map(file => businessActivityDocumentRow(file, businessId)).join('') + '</div></section>';
+    if (!documents.length) return '<div class="business-modern-media-block"><div class="business-modern-media-title"><span><i class="fa-solid fa-file-lines"></i>Tài liệu</span></div><div class="business-modern-empty-line"><i class="fa-regular fa-file-lines"></i> Chưa có tài liệu</div></div>';
+    return '<div class="business-modern-media-block"><div class="business-modern-media-title"><span><i class="fa-solid fa-file-lines"></i>Tài liệu</span></div><div class="business-modern-doc-list">' + documents.map(file => businessActivityDocumentRow(file, businessId)).join('') + '</div></div>';
   }
 
   function businessActivityDocumentRow(file, businessId) {
     const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
     const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
-    return '<div class="business-economic-doc"><i class="fa-solid fa-file-lines"></i><strong>' + esc(file.original_name || file.category || 'Tài liệu') + '</strong><span><a target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-eye"></i></a><a href="' + download + '" title="Tải xuống"><i class="fa-solid fa-download"></i></a></span></div>';
+    return '<div class="business-modern-doc"><i class="fa-solid fa-file-lines"></i><strong>' + esc(file.original_name || file.category || 'Tài liệu') + '</strong><span><a target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-eye"></i></a><a href="' + download + '" title="Tải xuống"><i class="fa-solid fa-download"></i></a></span></div>';
   }
 
   function businessActivityValue(activity, keys) {
