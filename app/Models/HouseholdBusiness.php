@@ -150,20 +150,26 @@ SQL);
         $this->ensureSchema();
         $query = trim($query);
         if (mb_strlen($query) < 2) return [];
+        $keyword = '%' . mb_strtolower($query, 'UTF-8') . '%';
         $rows = $this->fetchAll(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.latitude, h.longitude, b.id AS business_id
              FROM households h
              LEFT JOIN household_business b ON b.household_id = h.id AND b.status <> "DELETED"
              WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
-               AND (h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q)
+               AND (
+                    LOWER(h.household_code) LIKE :household_code
+                 OR LOWER(h.head_citizen_name) LIKE :head_name
+                 OR LOWER(h.address) LIKE :address
+               )
              ORDER BY h.household_code ASC
              LIMIT ' . max(1, min(20, $limit)),
-            ['q' => '%' . $query . '%']
+            ['household_code' => $keyword, 'head_name' => $keyword, 'address' => $keyword]
         );
         return array_map(fn($row) => [
             'id' => (int) $row['id'],
             'household_code' => (string) $row['household_code'],
             'head_citizen_name' => (string) $row['head_citizen_name'],
+            'householder_name' => (string) $row['head_citizen_name'],
             'address' => (string) ($row['address'] ?? ''),
             'phone' => (string) ($row['phone'] ?? ''),
             'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float) $row['latitude'] : null,
@@ -289,8 +295,27 @@ SQL);
         $params = [];
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
-            $where[] = '(h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q OR b.business_name LIKE :q OR b.owner_name LIKE :q OR b.production_sector LIKE :q OR b.business_sector LIKE :q OR b.phone LIKE :q OR b.tax_code LIKE :q OR b.economic_type LIKE :q OR b.business_scale LIKE :q OR b.main_products LIKE :q)';
-            $params['q'] = '%' . $search . '%';
+            $searchKeyword = '%' . mb_strtolower($search, 'UTF-8') . '%';
+            $searchColumns = [
+                'h.household_code' => 'q_household_code',
+                'h.head_citizen_name' => 'q_head_name',
+                'h.address' => 'q_address',
+                'b.business_name' => 'q_business_name',
+                'b.owner_name' => 'q_owner_name',
+                'b.production_sector' => 'q_production_sector',
+                'b.business_sector' => 'q_business_sector',
+                'b.phone' => 'q_phone',
+                'b.tax_code' => 'q_tax_code',
+                'b.economic_type' => 'q_economic_type',
+                'b.business_scale' => 'q_business_scale',
+                'b.main_products' => 'q_main_products',
+            ];
+            $parts = [];
+            foreach ($searchColumns as $column => $param) {
+                $parts[] = "LOWER($column) LIKE :$param";
+                $params[$param] = $searchKeyword;
+            }
+            $where[] = '(' . implode(' OR ', $parts) . ')';
         }
         $type = $this->businessType($filters['business_type'] ?? $filters['businessType'] ?? '');
         if ($type !== '') {
@@ -309,8 +334,10 @@ SQL);
         }
         $sector = trim((string) ($filters['sector'] ?? ''));
         if ($sector !== '') {
-            $where[] = '(b.production_sector LIKE :sector OR b.business_sector LIKE :sector)';
-            $params['sector'] = '%' . $sector . '%';
+            $sectorKeyword = '%' . mb_strtolower($sector, 'UTF-8') . '%';
+            $where[] = '(LOWER(b.production_sector) LIKE :sector_production OR LOWER(b.business_sector) LIKE :sector_business)';
+            $params['sector_production'] = $sectorKeyword;
+            $params['sector_business'] = $sectorKeyword;
         }
         $status = strtoupper(trim((string) ($filters['status'] ?? '')));
         if ($status !== '') {
