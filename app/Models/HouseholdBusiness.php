@@ -197,10 +197,13 @@ SQL);
             return $this->find($id);
         }
 
-        $newId = $this->insert(
-            'INSERT INTO household_business (household_id,business_type,economic_type,main_products,business_scale,is_ocop,ocop_product,ocop_star,food_safety_certified,food_safety_certificate_no,food_safety_expired_date,social_insurance,insured_workers,business_name,owner_name,production_sector,business_sector,business_license,license_date,license_place,tax_code,start_date,worker_count,annual_revenue,phone,email,address,latitude,longitude,status,note,created_by,updated_by) VALUES (:household_id,:business_type,:economic_type,:main_products,:business_scale,:is_ocop,:ocop_product,:ocop_star,:food_safety_certified,:food_safety_certificate_no,:food_safety_expired_date,:social_insurance,:insured_workers,:business_name,:owner_name,:production_sector,:business_sector,:business_license,:license_date,:license_place,:tax_code,:start_date,:worker_count,:annual_revenue,:phone,:email,:address,:latitude,:longitude,:status,:note,:user,:user)',
-            $params
-        );
+        $insertParams = $params;
+        $insertParams['created_by'] = $userId;
+        $insertParams['updated_by'] = $userId;
+        unset($insertParams['user']);
+        $insertSql = 'INSERT INTO household_business (household_id,business_type,economic_type,main_products,business_scale,is_ocop,ocop_product,ocop_star,food_safety_certified,food_safety_certificate_no,food_safety_expired_date,social_insurance,insured_workers,business_name,owner_name,production_sector,business_sector,business_license,license_date,license_place,tax_code,start_date,worker_count,annual_revenue,phone,email,address,latitude,longitude,status,note,created_by,updated_by) VALUES (:household_id,:business_type,:economic_type,:main_products,:business_scale,:is_ocop,:ocop_product,:ocop_star,:food_safety_certified,:food_safety_certificate_no,:food_safety_expired_date,:social_insurance,:insured_workers,:business_name,:owner_name,:production_sector,:business_sector,:business_license,:license_date,:license_place,:tax_code,:start_date,:worker_count,:annual_revenue,:phone,:email,:address,:latitude,:longitude,:status,:note,:created_by,:updated_by)';
+        $this->debugSql('household_business.insert', $insertSql, $insertParams);
+        $newId = $this->insert($insertSql, $insertParams);
         return $this->find($newId);
     }
 
@@ -208,7 +211,10 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy thông tin hộ sản xuất/kinh doanh');
-        $this->execute('UPDATE household_business SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $deleteSql = 'UPDATE household_business SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id';
+        $deleteParams = ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId];
+        $this->debugSql('household_business.delete', $deleteSql, $deleteParams);
+        $this->execute($deleteSql, $deleteParams);
     }
 
     public function members(int $householdId): array
@@ -417,6 +423,18 @@ SQL);
             'note' => $this->nullable($data['note'] ?? null),
             'user' => $userId,
         ];
+    }
+
+    private function debugSql(string $context, string $sql, array $params): void
+    {
+        if (!$this->debugEnabled()) return;
+        error_log('[HOUSEHOLD_BUSINESS_SQL] ' . json_encode(['context' => $context, 'sql' => $sql, 'params' => $params], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    private function debugEnabled(): bool
+    {
+        $value = strtolower((string) (getenv('APP_DEBUG') ?: getenv('THON09_DEBUG') ?: ''));
+        return in_array($value, ['1', 'true', 'yes', 'on'], true);
     }
 
     private function normalize(array $row): array

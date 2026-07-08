@@ -74,6 +74,7 @@ final class HouseholdBusinessController extends BaseController
     {
         $user = $this->requirePermission('household_business', 'create');
         $input = (array) $this->input();
+        $this->debugRequest('household_business.store', $input);
         $this->requireInputFields($input, ['household_id' => 'Hộ gia đình', 'business_type' => 'Loại hình']);
         $row = $this->businesses->upsert($input, (int) $user['id']);
         $action = $this->auditAction($row['business_type']);
@@ -148,6 +149,13 @@ final class HouseholdBusinessController extends BaseController
 
     public function previewFile(string $id, string $fileId): void { $this->streamFile($id, $fileId, false); }
     public function downloadFile(string $id, string $fileId): void { $this->streamFile($id, $fileId, true); }
+
+    private function debugRequest(string $context, array $input): void
+    {
+        $value = strtolower((string) (getenv('APP_DEBUG') ?: getenv('THON09_DEBUG') ?: ''));
+        if (!in_array($value, ['1', 'true', 'yes', 'on'], true)) return;
+        error_log('[HOUSEHOLD_BUSINESS_REQUEST] ' . json_encode(['context' => $context, 'input' => $input], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
 
     private function streamFile(string $id, string $fileId, bool $download): void
     {
