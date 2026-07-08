@@ -4122,3 +4122,37 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 .business-activity-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border-radius: 999px; border: 1px solid #dbe7ef; background: #eef7f2; color: #0b6b3a; font-size: 12px; font-weight: 700; line-height: 1.25; white-space: normal; }
 .business-activity-more { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border-radius: 999px; border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; line-height: 1.25; }
 @media (max-width: 768px) { .business-activity-badges { max-width: 100%; } }
+
+.business-detail-popup { display: grid; grid-template-columns: minmax(260px, 35%) minmax(0, 65%); gap: 18px; min-height: min(72vh, 760px); max-height: 76vh; color: #1f2937; }
+.business-detail-sidebar, .business-detail-main { min-height: 0; }
+.business-detail-sidebar { display: flex; flex-direction: column; gap: 14px; }
+.business-household-summary, .business-household-members, .business-detail-main, .business-activity-card { border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06); }
+.business-household-summary { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.business-household-summary h3 { margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; }
+.business-detail-owner { color: #334155; font-weight: 700; }
+.business-detail-kicker { color: #64748b; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.business-summary-grid { display: grid; gap: 10px; }
+.business-summary-item { display: grid; gap: 3px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0; }
+.business-summary-item span, .business-summary-stat span { color: #64748b; font-size: 12px; font-weight: 700; }
+.business-summary-item strong { color: #0f172a; font-size: 14px; line-height: 1.35; }
+.business-summary-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.business-summary-stat { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; display: grid; gap: 3px; }
+.business-summary-stat strong { color: #0b6b3a; font-size: 16px; }
+.business-detail-actions { display: grid; gap: 8px; margin-top: 2px; }
+.business-household-members { padding: 14px; overflow: hidden; }
+.business-household-members .table-responsive { max-height: 190px; overflow: auto; }
+.business-detail-main { padding: 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.business-detail-main-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+.business-detail-main-head h4 { margin: 2px 0 0; font-size: 20px; font-weight: 800; color: #0f172a; }
+.business-activity-scroll { min-height: 0; overflow-y: auto; padding-right: 4px; display: grid; gap: 18px; }
+.business-activity-card { padding: 18px; display: grid; gap: 14px; }
+.business-activity-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+.business-activity-card-head span { display: block; color: #64748b; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 3px; }
+.business-activity-card-head h5 { margin: 0; color: #0f172a; font-size: 18px; font-weight: 800; line-height: 1.3; }
+.business-card-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.business-activity-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.business-activity-files { display: grid; gap: 12px; }
+.business-activity-files .person-info-section { margin: 0; box-shadow: none; border-style: dashed; }
+.business-empty-state { border: 1px dashed #cbd5e1; border-radius: 8px; padding: 24px; color: #64748b; text-align: center; background: #f8fafc; }
+@media (max-width: 992px) { .business-detail-popup { grid-template-columns: 1fr; max-height: none; } .business-activity-scroll { overflow: visible; padding-right: 0; } .business-detail-main { min-height: auto; } }
+@media (max-width: 576px) { .business-activity-fields, .business-summary-stats { grid-template-columns: 1fr; } .business-activity-card, .business-detail-main, .business-household-summary { padding: 14px; } .business-activity-card-head { flex-direction: column; } .business-card-actions { justify-content: flex-start; } }
