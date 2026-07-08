@@ -52,7 +52,11 @@
       if(!body||body.querySelector('#householdLivestockTabBody'))return;
       let household={id};
       try{household=await request('/api/households/'+encodeURIComponent(id),{cacheTtl:5000});}catch(e){}
-      body.insertAdjacentHTML('beforeend','<section class="content-card mt-3"><div id="householdLivestockTabBody" data-code="'+esc(household.household_code||'')+'" data-head="'+esc(household.head_citizen_name||'')+'" data-address="'+esc(household.address||'')+'"><div class="text-muted">Đang tải vật nuôi...</div></div></section>');
+      const livestockSection=document.createElement('section');
+      livestockSection.className='content-card mt-3 household-livestock-section';
+      livestockSection.innerHTML='<div id="householdLivestockTabBody" data-code="'+esc(household.household_code||'')+'" data-head="'+esc(household.head_citizen_name||'')+'" data-address="'+esc(household.address||'')+'"><div class="text-muted">\u0110ang t\u1ea3i v\u1eadt nu\u00f4i...</div></div>';
+      const members=body.querySelector('.household-members-section');
+      if(members&&members.parentNode)members.parentNode.insertBefore(livestockSection,members);else body.appendChild(livestockSection);
       renderHouseholdLivestock(id);
     };
     wrapped.__livestockHooked=true;
