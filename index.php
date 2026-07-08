@@ -155,6 +155,20 @@ $router->delete('/api/household-business/{id}/files/{fileId}', [HouseholdBusines
 $router->get('/api/household-business/{id}', [HouseholdBusinessController::class, 'show']);
 $router->put('/api/household-business/{id}', [HouseholdBusinessController::class, 'update']);
 $router->delete('/api/household-business/{id}', [HouseholdBusinessController::class, 'destroy']);
+$router->get('/api/household-businesses', [HouseholdBusinessController::class, 'index']);
+$router->post('/api/household-businesses', [HouseholdBusinessController::class, 'store']);
+$router->get('/api/household-businesses/dashboard', [HouseholdBusinessController::class, 'dashboard']);
+$router->get('/api/household-businesses/catalogs', [HouseholdBusinessController::class, 'catalogs']);
+$router->get('/api/household-businesses/household-search', [HouseholdBusinessController::class, 'householdSearch']);
+$router->get('/api/household-businesses/household/{householdId}', [HouseholdBusinessController::class, 'byHousehold']);
+$router->get('/api/household-businesses/{id}/files', [HouseholdBusinessController::class, 'files']);
+$router->post('/api/household-businesses/{id}/files', [HouseholdBusinessController::class, 'uploadFile']);
+$router->get('/api/household-businesses/{id}/files/{fileId}/preview', [HouseholdBusinessController::class, 'previewFile']);
+$router->get('/api/household-businesses/{id}/files/{fileId}/download', [HouseholdBusinessController::class, 'downloadFile']);
+$router->delete('/api/household-businesses/{id}/files/{fileId}', [HouseholdBusinessController::class, 'deleteFile']);
+$router->get('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'show']);
+$router->put('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'update']);
+$router->delete('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'destroy']);
 
 $router->get('/api/citizens', [PersonController::class, 'index']);
 $router->post('/api/citizens', [PersonController::class, 'store']);

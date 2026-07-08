@@ -396,8 +396,8 @@ SQL);
             'product' => 'Báo cáo theo sản phẩm chính',
             default => 'Danh sách hộ sản xuất và kinh doanh',
         };
-        $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['business_name'], $r['business_type_label'], $r['economic_type'], $r['business_scale'], $r['sector_label'], implode(', ', $r['main_products']), $r['worker_count'], $r['is_ocop'] ? trim(($r['ocop_product'] ?: 'OCOP') . ' ' . ($r['ocop_star'] ? $r['ocop_star'] . ' sao' : '')) : 'Không', $r['food_safety_certified'] ? ($r['food_safety_certificate_no'] ?: 'Có') : 'Không', $r['social_insurance'] ? ((int) $r['insured_workers'] . ' lao động') : 'Không', $r['status_label']], $rows);
-        return $this->table($title, ['Mã hộ','Chủ hộ','Tên cơ sở','Loại hình','Loại hình kinh tế','Quy mô','Ngành nghề','Sản phẩm chính','Lao động','OCOP','ATTP','BHXH','Trạng thái'], $body, $filters);
+        $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['business_name'], $r['business_type_label'], $r['economic_type'], $r['business_scale'], $r['sector_label'], (int) ($r['business_count'] ?? 1), implode(', ', $r['main_products']), $r['worker_count'], $r['is_ocop'] ? trim(($r['ocop_product'] ?: 'OCOP') . ' ' . ($r['ocop_star'] ? $r['ocop_star'] . ' sao' : '')) : 'Khong', $r['food_safety_certified'] ? ($r['food_safety_certificate_no'] ?: 'Co') : 'Khong', $r['social_insurance'] ? ((int) $r['insured_workers'] . ' lao dong') : 'Khong', $r['status_label']], $rows);
+        return $this->table($title, ['Ma ho','Chu ho','Ten co so','Loai hinh','Loai hinh kinh te','Quy mo','Nganh nghe','So hoat dong','San pham chinh','Lao dong','OCOP','ATTP','BHXH','Trang thai'], $body, $filters);
     }
 
     private function where(array $filters): array
