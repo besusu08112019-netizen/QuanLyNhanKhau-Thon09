@@ -279,26 +279,28 @@
 
       <section id="businessHouseholdsScreen" class="screen household-management-screen">
         <div class="module-action-row"><button id="businessHouseholdAddBtn" class="module-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm thông tin SX/KD</button></div>
-        <div class="content-card module-filter-card household-filter-card">
-          <div class="household-filter-grid">
-            <div class="module-field household-search-field"><label for="businessHouseholdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="businessHouseholdSearch" class="form-control" placeholder="Mã hộ, chủ hộ, tên cơ sở, ngành nghề..."></div></div>
+        <div class="module-filter-panel household-filter-panel">
+          <div class="module-filter-grid household-filter-grid">
+            <div class="module-field household-search-field"><label for="businessHouseholdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="businessHouseholdSearch" class="form-control" placeholder="Mã hộ, chủ hộ, tên cơ sở, ngành nghề, điện thoại..."></div></div>
             <div class="module-field"><label for="businessHouseholdTypeFilter">Loại hình</label><select id="businessHouseholdTypeFilter" class="form-select"><option value="">Tất cả</option><option value="RESIDENT">Hộ dân</option><option value="PRODUCTION">Hộ sản xuất</option><option value="BUSINESS">Hộ kinh doanh</option><option value="BOTH">Hộ sản xuất và kinh doanh</option></select></div>
+            <div class="module-field"><label for="businessEconomicTypeFilter">Loại hình kinh tế</label><select id="businessEconomicTypeFilter" class="form-select"><option value="">Tất cả</option></select></div>
+            <div class="module-field"><label for="businessScaleFilter">Quy mô</label><select id="businessScaleFilter" class="form-select"><option value="">Tất cả</option></select></div>
             <div class="module-field"><label for="businessHouseholdSectorFilter">Ngành nghề</label><input id="businessHouseholdSectorFilter" class="form-control" placeholder="Nhập ngành nghề"></div>
+            <div class="module-field"><label for="businessOcopFilter">OCOP</label><select id="businessOcopFilter" class="form-select"><option value="">Tất cả</option><option value="1">Có OCOP</option><option value="0">Không OCOP</option></select></div>
+            <div class="module-field"><label for="businessFoodSafetyFilter">ATTP</label><select id="businessFoodSafetyFilter" class="form-select"><option value="">Tất cả</option><option value="1">Có ATTP</option><option value="0">Không ATTP</option></select></div>
+            <div class="module-field"><label for="businessSocialInsuranceFilter">BHXH</label><select id="businessSocialInsuranceFilter" class="form-select"><option value="">Tất cả</option><option value="1">Có BHXH</option><option value="0">Không BHXH</option></select></div>
+            <div class="module-field"><label for="businessHouseholdLocationFilter">GPS</label><select id="businessHouseholdLocationFilter" class="form-select"><option value="">Tất cả</option><option value="1">Có GPS</option><option value="0">Không GPS</option></select></div>
             <div class="module-field"><label for="businessHouseholdStatusFilter">Trạng thái</label><select id="businessHouseholdStatusFilter" class="form-select"><option value="">Tất cả</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Ngừng hoạt động</option><option value="SUSPENDED">Tạm ngừng</option></select></div>
-            <div class="module-field"><label for="businessHouseholdLicenseFilter">Giấy phép</label><select id="businessHouseholdLicenseFilter" class="form-select"><option value="">Tất cả</option><option value="1">Có giấy phép</option><option value="0">Không giấy phép</option></select></div>
-            <div class="module-field"><label for="businessHouseholdTaxFilter">Mã số thuế</label><select id="businessHouseholdTaxFilter" class="form-select"><option value="">Tất cả</option><option value="1">Có mã số thuế</option><option value="0">Không mã số thuế</option></select></div>
-            <div class="module-field"><label for="businessHouseholdLocationFilter">GPS</label><select id="businessHouseholdLocationFilter" class="form-select"><option value="">Tất cả</option><option value="1">Có vị trí</option><option value="0">Chưa định vị</option></select></div>
             <div class="module-field module-page-size-field"><label for="businessHouseholdPageSize">Hiển thị</label><select id="businessHouseholdPageSize" class="form-select"><option>20</option><option>50</option><option>100</option></select></div>
             <button id="businessHouseholdFilterReset" class="btn module-reset-btn" type="button"><i class="fa-solid fa-rotate-right"></i> Làm mới</button>
           </div>
         </div>
-        <div class="content-card module-list-card">
+        <div class="module-list-card household-list-card">
           <div class="module-list-head"><div><h3>Danh sách hộ sản xuất &amp; kinh doanh</h3><span id="businessHouseholdTotalCount">Tổng số: 0 hộ</span></div></div>
-          <div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th>STT</th><th data-business-sort="household_code">Mã hộ</th><th data-business-sort="head_citizen_name">Chủ hộ</th><th data-business-sort="business_name">Tên cơ sở</th><th data-business-sort="business_type">Loại hình</th><th data-business-sort="sector">Ngành nghề</th><th data-business-sort="worker_count">Số lao động</th><th data-business-sort="status">Trạng thái</th><th data-business-sort="address">Địa chỉ</th><th class="text-end">Thao tác</th></tr></thead><tbody id="businessHouseholdRows"></tbody></table></div>
+          <div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th>STT</th><th data-business-sort="household_code">Mã hộ</th><th data-business-sort="head_citizen_name">Chủ hộ</th><th data-business-sort="business_name">Tên cơ sở</th><th data-business-sort="business_type">Loại hình</th><th data-business-sort="economic_type">Loại hình kinh tế</th><th data-business-sort="business_scale">Quy mô</th><th data-business-sort="sector">Ngành nghề</th><th>OCOP</th><th data-business-sort="worker_count">Lao động</th><th>GPS</th><th data-business-sort="updated_at">Ngày cập nhật</th><th class="text-end">Thao tác</th></tr></thead><tbody id="businessHouseholdRows"></tbody></table></div>
           <div id="businessHouseholdPager" class="pager module-pager"></div>
         </div>
       </section>
-
       <section id="personsScreen" class="screen person-management-screen">
         <div class="module-action-row person-action-row"><button id="personAddBtn" class="person-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm nhân khẩu</button></div>
 

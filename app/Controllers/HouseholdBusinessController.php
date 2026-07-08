@@ -40,6 +40,13 @@ final class HouseholdBusinessController extends BaseController
         ]));
     }
 
+    public function householdSearch(): void
+    {
+        $this->requirePermission('household_business', 'read');
+        $q = (string) $this->query('q', $this->query('search', ''));
+        $this->ok(['items' => $this->businesses->searchHouseholds($q)]);
+    }
+
     public function catalogs(): void
     {
         $this->requirePermission('household_business', 'read');

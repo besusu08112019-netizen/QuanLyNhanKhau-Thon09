@@ -145,6 +145,7 @@ $router->get('/api/household-business', [HouseholdBusinessController::class, 'in
 $router->post('/api/household-business', [HouseholdBusinessController::class, 'store']);
 $router->get('/api/household-business/dashboard', [HouseholdBusinessController::class, 'dashboard']);
 $router->get('/api/household-business/catalogs', [HouseholdBusinessController::class, 'catalogs']);
+$router->get('/api/household-business/household-search', [HouseholdBusinessController::class, 'householdSearch']);
 $router->get('/api/household-business/household/{householdId}', [HouseholdBusinessController::class, 'byHousehold']);
 $router->get('/api/household-business/{id}/files', [HouseholdBusinessController::class, 'files']);
 $router->post('/api/household-business/{id}/files', [HouseholdBusinessController::class, 'uploadFile']);

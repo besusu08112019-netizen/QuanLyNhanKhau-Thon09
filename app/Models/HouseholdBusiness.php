@@ -102,12 +102,11 @@ SQL);
         $this->ensureSchema();
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$where, $params, $order] = $this->where($filters);
-        $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM households h LEFT JOIN household_business b ON b.household_id = h.id $where", $params) ?: [])['total'] ?? 0);
+        $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM household_business b INNER JOIN households h ON h.id = b.household_id $where", $params) ?: [])['total'] ?? 0);
         $rows = $this->fetchAll(
-            "SELECT b.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude,
-                    COALESCE(v.total_members,0) AS member_count
-             FROM households h
-             LEFT JOIN household_business b ON b.household_id = h.id
+            "SELECT b.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
+             FROM household_business b
+             INNER JOIN households h ON h.id = b.household_id
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
              $where
              $order
@@ -136,15 +135,41 @@ SQL);
     {
         $this->ensureSchema();
         $row = $this->fetchOne(
-            'SELECT b.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude,
-                    COALESCE(v.total_members,0) AS member_count
-             FROM households h
-             LEFT JOIN household_business b ON b.household_id = h.id AND b.status <> "DELETED"
+            'SELECT b.*, h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
+             FROM household_business b
+             INNER JOIN households h ON h.id = b.household_id
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             WHERE h.id = :id AND h.status <> "DELETED"',
+             WHERE b.household_id = :id AND b.status <> "DELETED" AND h.status <> "DELETED"',
             ['id' => $householdId]
         );
         return $row ? $this->normalize($row) : null;
+    }
+
+    public function searchHouseholds(string $query, int $limit = 10): array
+    {
+        $this->ensureSchema();
+        $query = trim($query);
+        if (mb_strlen($query) < 2) return [];
+        $rows = $this->fetchAll(
+            'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.latitude, h.longitude, b.id AS business_id
+             FROM households h
+             LEFT JOIN household_business b ON b.household_id = h.id AND b.status <> "DELETED"
+             WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
+               AND (h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q)
+             ORDER BY h.household_code ASC
+             LIMIT ' . max(1, min(20, $limit)),
+            ['q' => '%' . $query . '%']
+        );
+        return array_map(fn($row) => [
+            'id' => (int) $row['id'],
+            'household_code' => (string) $row['household_code'],
+            'head_citizen_name' => (string) $row['head_citizen_name'],
+            'address' => (string) ($row['address'] ?? ''),
+            'phone' => (string) ($row['phone'] ?? ''),
+            'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float) $row['latitude'] : null,
+            'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float) $row['longitude'] : null,
+            'has_business' => !empty($row['business_id']),
+        ], $rows);
     }
 
     public function upsert(array $data, int $userId, ?int $id = null): array
@@ -260,7 +285,7 @@ SQL);
 
     private function where(array $filters): array
     {
-        $where = ['h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
+        $where = ['b.status <> "DELETED"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
         $params = [];
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
@@ -291,8 +316,6 @@ SQL);
         if ($status !== '') {
             $where[] = 'b.status = :status';
             $params['status'] = $status;
-        } else {
-            $where[] = '(b.status IS NULL OR b.status <> "DELETED")';
         }
         foreach (['license' => 'business_license', 'tax' => 'tax_code'] as $filter => $column) {
             $value = trim((string) ($filters[$filter] ?? ''));
