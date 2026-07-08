@@ -494,7 +494,7 @@ SQL);
         $params = ['id' => $businessId];
         $where = 'household_business_id=:id AND status="ACTIVE"';
         if ($kind !== '') { $where .= ' AND file_kind=:kind'; $params['kind'] = strtoupper($kind); }
-        return array_map(fn($r) => $this->normalizeFile($r), $this->fetchAll("SELECT f.*, u.full_name AS uploaded_by_name, u.email AS uploaded_by_email FROM household_business_files f LEFT JOIN users u ON u.id=f.created_by WHERE $where ORDER BY f.created_at DESC, f.id DESC", $params));
+        return array_map(fn($r) => $this->normalizeFile($r), $this->fetchAll("SELECT f.*, u.display_name AS uploaded_by_name, u.email AS uploaded_by_email FROM household_business_files f LEFT JOIN users u ON u.id=f.created_by WHERE $where ORDER BY f.created_at DESC, f.id DESC", $params));
     }
 
     public function file(int $fileId): ?array
