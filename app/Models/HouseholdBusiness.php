@@ -181,7 +181,7 @@ SQL);
         if ($id) $params['id'] = $id;
 
         $existing = $this->fetchOne('SELECT id FROM household_business WHERE household_id = :household_id AND status <> "DELETED"' . ($id ? ' AND id <> :id' : ''), $id ? ['household_id' => $params['household_id'], 'id' => $id] : ['household_id' => $params['household_id']]);
-        if ($existing) throw new \RuntimeException('Hộ này đã có thông tin sản xuất/kinh doanh');
+        if ($existing) throw new \RuntimeException('Hộ này đã có hồ sơ sản xuất & kinh doanh.');
 
         if ($id) {
             $this->execute(
