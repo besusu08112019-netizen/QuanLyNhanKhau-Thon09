@@ -102,16 +102,34 @@
   }
 
   function compactList(values, empty = '') {
+    return badgeList(values, { empty, limit: 3, moreText: 'Xem tất cả' });
+  }
+
+  function activityLabel(activity, fallback = '') {
+    return activity.business_name || activity.economic_type || activity.sector_label || activity.production_sector || activity.business_sector || fallback || 'Hoạt động kinh tế';
+  }
+
+  function activityBadges(row, activities) {
+    return badgeList(activities.map(item => activityLabel(item, row.head_citizen_name)), { limit: 4, moreText: 'Còn {count} hoạt động khác' });
+  }
+
+  function badgeList(values, options = {}) {
     const items = uniqueValues(values);
-    if (!items.length) return esc(empty);
-    const title = esc(items.join('\n'));
-    if (items.length === 1) return '<button class="btn btn-link p-0 text-start text-decoration-none" type="button" title="' + title + '">' + esc(items[0]) + '</button>';
-    return '<button class="btn btn-link p-0 text-start text-decoration-none" type="button" title="' + title + '">' + esc(items[0]) + ' <span class="text-muted">(+' + (items.length - 1) + ')</span></button>';
+    if (!items.length) return esc(options.empty || '');
+    const limit = Math.max(1, Number(options.limit || items.length));
+    const shown = items.slice(0, limit);
+    const remaining = Math.max(0, items.length - shown.length);
+    let html = '<div class="business-activity-badges" title="' + esc(items.join('\n')) + '">' + shown.map(item => '<span class="business-activity-badge">' + esc(item) + '</span>').join('');
+    if (remaining > 0) {
+      const text = String(options.moreText || 'Còn {count} hoạt động khác').replace('{count}', remaining);
+      html += '<span class="business-activity-more">' + esc(text) + '</span>';
+    }
+    return html + '</div>';
   }
 
   function activityCountText(row, activities) {
     const count = Number(row.business_count || activities.length || 0);
-    return count + ' hoat dong';
+    return count + ' hoạt động';
   }
 
   function activitiesOf(row) {
@@ -120,8 +138,8 @@
 
   function rowHtml(row, index) {
     const activities = activitiesOf(row);
-    const gps = row.latitude && row.longitude ? '<span class="badge text-bg-success">Co GPS</span>' : '<span class="badge text-bg-secondary">Khong GPS</span>';
-    const ocop = row.is_ocop ? '<span class="badge text-bg-success">Co</span>' : '<span class="badge text-bg-light">Khong</span>';
+    const gps = row.latitude && row.longitude ? '<span class="badge text-bg-success">Có GPS</span>' : '<span class="badge text-bg-secondary">Không GPS</span>';
+    const ocop = row.is_ocop ? '<span class="badge text-bg-success">Có</span>' : '<span class="badge text-bg-light">Không</span>';
     const sectors = compactList(activities.map(item => item.sector_label || item.economic_type));
     const names = compactList(activities.map(item => item.business_name || row.head_citizen_name));
     const types = compactList(activities.map(item => item.business_type_label));
@@ -136,7 +154,7 @@
       + '<td>' + economicTypes + '</td>'
       + '<td>' + scales + '</td>'
       + '<td>' + sectors + '</td>'
-      + '<td><span class="badge text-bg-light">' + esc(activityCountText(row, activities)) + '</span></td>'
+      + '<td>' + activityBadges(row, activities) + '<div class="text-muted small mt-1">' + esc(activityCountText(row, activities)) + '</div></td>'
       + '<td>' + ocop + '</td>'
       + '<td>' + num(row.worker_count) + '</td>'
       + '<td>' + gps + '</td>'
@@ -149,8 +167,8 @@
     const householdId = Number(row.household_id || row.id || 0);
     return [
       '<button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">Xem</button>',
-      can('household_business', 'create') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.addHouseholdBusinessActivity(' + householdId + ')">Them hoat dong</button>' : ''
-    ].filter(Boolean).join(' ') || '<span class="text-muted small">Chi xem</span>';
+      can('household_business', 'create') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.addHouseholdBusinessActivity(' + householdId + ')">Thêm hoạt động</button>' : ''
+    ].filter(Boolean).join(' ') || '<span class="text-muted small">Chỉ xem</span>';
   }
 
   function renderPager(data) {
@@ -217,7 +235,7 @@
 
   function suggestionHtml(item) {
     return '<button type="button" class="list-group-item list-group-item-action" data-household-choice="' + Number(item.id) + '">'
-      + '<div class="d-flex justify-content-between gap-2"><strong>' + esc(item.household_code) + '</strong>' + (Number(item.business_count || 0) > 0 ? '<span class="badge text-bg-light">' + num(item.business_count) + ' hoat dong</span>' : '') + '</div>'
+      + '<div class="d-flex justify-content-between gap-2"><strong>' + esc(item.household_code) + '</strong>' + (Number(item.business_count || 0) > 0 ? '<span class="badge text-bg-light">' + num(item.business_count) + ' hoạt động</span>' : '') + '</div>'
       + '<div>' + esc(item.head_citizen_name || '') + '</div><small class="text-muted">' + esc(item.address || '') + '</small></button>';
   }
 
@@ -238,7 +256,7 @@
   }
 
   async function openFormForHousehold(householdId) {
-    if (!can('household_business', 'create')) return show('Tai khoan hien tai khong co quyen thuc hien thao tac nay', 'warning');
+    if (!can('household_business', 'create')) return show('Tài khoản hiện tại không có quyền thực hiện thao tác này', 'warning');
     const data = await request('/api/household-business/household/' + encodeURIComponent(householdId));
     const row = data.summary || summarizeHouseholdDetail(data.items || [], householdId);
     await openForm();
@@ -342,13 +360,13 @@
       const row = data.summary || summarizeHouseholdDetail(data.items || [], id);
       if (!row) {
         state.currentDetailHouseholdId = Number(id || 0) || null;
-        $('#detailTitle').textContent = 'Chi tiet ho san xuat & kinh doanh';
-        $('#detailBody').innerHTML = '<div class="text-muted p-3">Ho nay khong con hoat dong san xuat/kinh doanh.</div>';
+        $('#detailTitle').textContent = 'Chi tiết hộ sản xuất & kinh doanh';
+        $('#detailBody').innerHTML = '<div class="text-muted p-3">Hộ này không còn hoạt động sản xuất/kinh doanh.</div>';
         window.App.modals.detail?.show();
         return;
       }
       state.currentDetailHouseholdId = Number(row.household_id || row.id || id || 0) || null;
-      $('#detailTitle').textContent = 'Chi tiet ho san xuat & kinh doanh';
+      $('#detailTitle').textContent = 'Chi tiết hộ sản xuất & kinh doanh';
       $('#detailBody').innerHTML = detailHtml(row);
       window.App.modals.detail?.show();
     } catch (error) { show(error.message, 'danger'); }
@@ -357,36 +375,36 @@
   function detailHtml(row) {
     const activities = activitiesOf(row);
     const members = (row.members || []).map(member => '<tr><td>' + esc(member.citizen_code || '') + '</td><td>' + esc(member.full_name || '') + '</td><td>' + esc(member.relationship || '') + '</td><td>' + esc(member.phone || '') + '</td></tr>').join('');
-    const addButton = can('household_business', 'create') ? '<button class="btn btn-primary btn-sm" type="button" onclick="window.addHouseholdBusinessActivity(' + Number(row.household_id || row.id || 0) + ')"><i class="fa-solid fa-plus"></i> Them hoat dong kinh doanh</button>' : '';
-    return '<article class="person-detail-card person-detail-dynamic"><section class="person-detail-hero"><div class="person-detail-identity"><span>Ho san xuat/kinh doanh</span><h3>' + esc(row.household_code) + ' - ' + esc(row.head_citizen_name) + '</h3><div class="person-detail-codes"><strong>So hoat dong: ' + num(row.business_count || activities.length) + '</strong><strong>Tong lao dong: ' + num(row.worker_count || 0) + '</strong></div></div></section><div class="person-detail-sections">'
-      + section('Thong tin ho', [['Ma ho', row.household_code], ['Chu ho', row.head_citizen_name], ['Dia chi', row.address], ['Dien thoai', row.phone], ['GPS', row.latitude && row.longitude ? row.latitude + ', ' + row.longitude : 'Khong GPS']])
-      + '<section class="person-info-section"><div class="person-info-section-title"><i class="fa-solid fa-store"></i><h4>Hoat dong kinh te</h4></div>' + (activities.length ? activities.map((activity, index) => activityCard(activity, index)).join('') : '<p class="text-muted mb-0">Chua co hoat dong</p>') + '<div class="mt-3">' + addButton + '</div></section>'
-      + '</div><div class="mt-3 d-flex gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" onclick="window.showHousehold && window.showHousehold(' + Number(row.household_id || row.id || 0) + ')">Mo ho so Ho gia dinh</button></div>'
-      + '<section class="person-info-section mt-3"><div class="person-info-section-title"><i class="fa-solid fa-users"></i><h4>Danh sach nhan khau</h4></div><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Ma NK</th><th>Ho ten</th><th>Quan he</th><th>Dien thoai</th></tr></thead><tbody>' + (members || '<tr><td colspan="4" class="text-muted text-center">Chua co nhan khau</td></tr>') + '</tbody></table></div></section></article>';
+    const addButton = can('household_business', 'create') ? '<button class="btn btn-primary btn-sm" type="button" onclick="window.addHouseholdBusinessActivity(' + Number(row.household_id || row.id || 0) + ')"><i class="fa-solid fa-plus"></i> Thêm hoạt động kinh doanh</button>' : '';
+    return '<article class="person-detail-card person-detail-dynamic"><section class="person-detail-hero"><div class="person-detail-identity"><span>Hộ sản xuất/kinh doanh</span><h3>' + esc(row.household_code) + ' - ' + esc(row.head_citizen_name) + '</h3><div class="person-detail-codes"><strong>Số hoạt động: ' + num(row.business_count || activities.length) + '</strong><strong>Tổng lao động: ' + num(row.worker_count || 0) + '</strong></div></div></section><div class="person-detail-sections">'
+      + section('Thông tin hộ', [['Mã hộ', row.household_code], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ', row.address], ['Điện thoại', row.phone], ['GPS', row.latitude && row.longitude ? row.latitude + ', ' + row.longitude : 'Không GPS']])
+      + '<section class="person-info-section"><div class="person-info-section-title"><i class="fa-solid fa-store"></i><h4>Hoạt động kinh tế</h4></div>' + (activities.length ? activities.map((activity, index) => activityCard(activity, index)).join('') : '<p class="text-muted mb-0">Chưa có hoạt động</p>') + '<div class="mt-3">' + addButton + '</div></section>'
+      + '</div><div class="mt-3 d-flex gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" onclick="window.showHousehold && window.showHousehold(' + Number(row.household_id || row.id || 0) + ')">Mở hồ sơ Hộ gia đình</button></div>'
+      + '<section class="person-info-section mt-3"><div class="person-info-section-title"><i class="fa-solid fa-users"></i><h4>Danh sách nhân khẩu</h4></div><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Mã NK</th><th>Họ tên</th><th>Quan hệ</th><th>Điện thoại</th></tr></thead><tbody>' + (members || '<tr><td colspan="4" class="text-muted text-center">Chưa có nhân khẩu</td></tr>') + '</tbody></table></div></section></article>';
   }
 
   function activityCard(activity, index = 0) {
     const files = activity.files || [];
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')">Sua</button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')">Xoa</button>' : '';
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')">Sửa</button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')">Xóa</button>' : '';
     return '<div class="border rounded p-3 mb-3">'
-      + '<div class="d-flex justify-content-between gap-2 flex-wrap mb-2"><div><strong>Hoat dong so ' + (index + 1) + '</strong><div class="text-muted small">' + esc(activity.business_name || activity.economic_type || activity.sector_label || '') + '</div></div><div class="d-flex gap-2">' + edit + del + '</div></div>'
+      + '<div class="d-flex justify-content-between gap-2 flex-wrap mb-2"><div><strong>Hoạt động số ' + (index + 1) + '</strong><div class="text-muted small">' + esc(activity.business_name || activity.economic_type || activity.sector_label || '') + '</div></div><div class="d-flex gap-2">' + edit + del + '</div></div>'
       + '<div class="person-info-grid">'
-      + detailField('Loai hinh', activity.business_type_label)
-      + detailField('Loai hinh kinh te', activity.economic_type)
-      + detailField('Nganh nghe', activity.sector_label)
-      + detailField('Quy mo', activity.business_scale)
-      + detailField('San pham chinh', (activity.main_products || []).join(', '))
-      + detailField('Lao dong', num(activity.worker_count || 0))
-      + detailField('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Khong GPS')
-      + detailField('Ngay cap nhat', date(activity.updated_at || activity.created_at))
-      + detailField('OCOP', activity.is_ocop ? ((activity.ocop_product || 'Co') + (activity.ocop_star ? ' - ' + activity.ocop_star + ' sao' : '')) : 'Khong')
-      + detailField('ATTP', activity.food_safety_certified ? (activity.food_safety_certificate_no || 'Co') : 'Khong')
-      + detailField('BHXH', activity.social_insurance ? (num(activity.insured_workers || 0) + ' lao dong') : 'Khong')
-      + detailField('Trang thai', activity.status_label)
+      + detailField('Loại hình', activity.business_type_label)
+      + detailField('Loại hình kinh tế', activity.economic_type)
+      + detailField('Ngành nghề', activity.sector_label)
+      + detailField('Quy mô', activity.business_scale)
+      + detailField('Sản phẩm chính', (activity.main_products || []).join(', '))
+      + detailField('Lao động', num(activity.worker_count || 0))
+      + detailField('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS')
+      + detailField('Ngày cập nhật', date(activity.updated_at || activity.created_at))
+      + detailField('OCOP', activity.is_ocop ? ((activity.ocop_product || 'Có') + (activity.ocop_star ? ' - ' + activity.ocop_star + ' sao' : '')) : 'Không')
+      + detailField('ATTP', activity.food_safety_certified ? (activity.food_safety_certificate_no || 'Có') : 'Không')
+      + detailField('BHXH', activity.social_insurance ? (num(activity.insured_workers || 0) + ' lao động') : 'Không')
+      + detailField('Trạng thái', activity.status_label)
       + '</div>'
-      + fileGallery('Anh', files.filter(file => file.file_kind === 'IMAGE'), activity.id)
-      + fileGallery('Tai lieu', files.filter(file => file.file_kind === 'DOCUMENT'), activity.id)
+      + fileGallery('Ảnh', files.filter(file => file.file_kind === 'IMAGE'), activity.id)
+      + fileGallery('Tài liệu', files.filter(file => file.file_kind === 'DOCUMENT'), activity.id)
       + '</div>';
   }
 
@@ -421,15 +439,15 @@
   }
 
   async function remove(id) {
-    if (!can('household_business', 'delete')) return show('Tai khoan hien tai khong co quyen xoa', 'warning');
-    if (!confirm('Xoa hoat dong san xuat/kinh doanh nay? Du lieu ho gia dinh va nhan khau khong bi xoa.')) return;
+    if (!can('household_business', 'delete')) return show('Tài khoản hiện tại không có quyền xóa', 'warning');
+    if (!confirm('Xóa hoạt động sản xuất/kinh doanh này? Dữ liệu hộ gia đình và nhân khẩu không bị xóa.')) return;
     let householdId = state.currentDetailHouseholdId;
     try {
       const before = await request('/api/household-business/' + encodeURIComponent(id), { cacheTtl: 0 });
       householdId = Number(before.household_id || householdId || 0) || householdId;
     } catch (error) {}
     await request('/api/household-business/' + encodeURIComponent(id), { method: 'DELETE' });
-    show('Da xoa hoat dong san xuat/kinh doanh');
+    show('Đã xóa hoạt động sản xuất/kinh doanh');
     load();
     if (householdId) showDetail(householdId);
     renderDashboard();

@@ -4118,3 +4118,7 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 }
 
 .household-detail-photo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px;border:1px solid var(--line);border-radius:8px;background:#f8fafc}.household-detail-photo img{width:128px;height:96px;object-fit:cover;border-radius:8px;border:1px solid #dbe5ef;background:#fff}@media (max-width:576px){.household-detail-photo{align-items:stretch}.household-detail-photo img{width:100%;height:auto;max-height:240px}.household-detail-photo .btn{width:100%}}
+.business-activity-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; max-width: 280px; }
+.business-activity-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border-radius: 999px; border: 1px solid #dbe7ef; background: #eef7f2; color: #0b6b3a; font-size: 12px; font-weight: 700; line-height: 1.25; white-space: normal; }
+.business-activity-more { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border-radius: 999px; border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; line-height: 1.25; }
+@media (max-width: 768px) { .business-activity-badges { max-width: 100%; } }
