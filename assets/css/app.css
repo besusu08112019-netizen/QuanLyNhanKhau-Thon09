@@ -4379,3 +4379,53 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 .business-person-timeline-item p { margin: 0; color: #475467; font-size: 13px; }
 @media (max-width: 991px) { .business-person-activity-shell { grid-template-columns: 1fr; } .business-person-activity-scroll { max-height: 260px; } .business-person-activity-sections { grid-template-columns: 1fr; } }
 @media (max-width: 576px) { .business-person-tabbar { overflow-x: auto; flex-wrap: nowrap; } .business-person-tab { white-space: nowrap; } .business-person-activity-head, .business-person-file-row { grid-template-columns: 1fr; display: grid; } .business-person-activity-head > div:last-child, .business-person-file-row > div:last-child { justify-content: flex-start; } }
+
+.business-economic-popup { gap: 14px; }
+.business-economic-hero { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 16px 18px; }
+.business-economic-hero-main { min-width: 0; display: grid; gap: 3px; }
+.business-economic-hero-main span { color: #667085; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+.business-economic-hero-main h3 { margin: 0; color: #0b6b3a; font-size: clamp(22px, 2.2vw, 30px); font-weight: 900; line-height: 1.1; }
+.business-economic-hero-main strong { color: #1f2937; font-size: 16px; font-weight: 900; }
+.business-economic-hero-main p { margin: 0; color: #475467; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.business-economic-hero-badges { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: nowrap; white-space: nowrap; overflow-x: auto; max-width: 52vw; padding-bottom: 2px; }
+.business-economic-hero-badges .person-detail-badge { flex: 0 0 auto; margin: 0; }
+.business-person-activity-shell { grid-template-columns: minmax(240px, 30%) minmax(0, 70%); gap: 16px; }
+.business-person-activity-list { padding: 14px; }
+.business-person-activity-scroll { max-height: 560px; }
+.business-person-activity-item { border-radius: 8px; padding: 12px 13px; }
+.business-economic-activity-panel { gap: 14px; }
+.business-economic-activity-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid var(--dashboard-line, #e5eaf0); border-radius: 12px; background: linear-gradient(135deg, #f7fbf8, #ffffff); box-shadow: 0 8px 20px rgba(31, 41, 55, .045); }
+.business-economic-activity-head span { display: block; color: #667085; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+.business-economic-activity-head h3 { margin: 2px 0 4px; color: #0b6b3a; font-size: 22px; font-weight: 900; line-height: 1.2; }
+.business-economic-activity-head p { margin: 0; color: #475467; font-size: 13px; font-weight: 800; }
+.business-economic-activity-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.business-economic-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.business-economic-card { min-width: 0; padding: 15px; border: 1px solid var(--dashboard-line, #e5eaf0); border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(31, 41, 55, .045); }
+.business-economic-card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #edf2ef; }
+.business-economic-card-title i { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: #e9f6ef; color: #0b6b3a; }
+.business-economic-card-title h4 { margin: 0; color: #0b6b3a; font-size: 15px; font-weight: 900; }
+.business-economic-card-body { display: grid; gap: 0; }
+.business-economic-field { display: grid; grid-template-columns: minmax(132px, 38%) minmax(0, 1fr); gap: 12px; align-items: baseline; min-height: 34px; padding: 7px 0; border-bottom: 1px dashed #e7ece9; }
+.business-economic-field:last-child { border-bottom: 0; padding-bottom: 0; }
+.business-economic-field span { color: #667085; font-size: 12px; font-weight: 800; line-height: 1.35; }
+.business-economic-field strong { min-width: 0; color: #1f2937; font-size: 14px; font-weight: 800; line-height: 1.38; overflow-wrap: anywhere; }
+.business-economic-cert-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.business-economic-media-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.business-economic-media { min-width: 0; padding: 13px; border: 1px solid var(--dashboard-line, #e5eaf0); border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(31, 41, 55, .045); }
+.business-economic-media-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.business-economic-media-head span { display: inline-flex; align-items: center; gap: 8px; color: #0b6b3a; font-size: 14px; font-weight: 900; }
+.business-economic-media p { margin: 0; color: #667085; font-size: 13px; font-weight: 700; }
+.business-economic-thumbs { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.business-economic-thumbs .business-media-thumb, .business-economic-more { width: 48px; height: 48px; border-radius: 10px; }
+.business-economic-more { display: inline-grid; place-items: center; border: 1px solid #dbeafe; background: #eff6ff; color: #1d4ed8; font-weight: 900; }
+.business-economic-doc-list { display: grid; gap: 8px; }
+.business-economic-doc { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px dashed #e7ece9; }
+.business-economic-doc:last-child { border-bottom: 0; }
+.business-economic-doc > i { color: #0b6b3a; }
+.business-economic-doc strong { min-width: 0; color: #1f2937; font-size: 13px; font-weight: 800; overflow-wrap: anywhere; }
+.business-economic-doc span { display: inline-flex; gap: 8px; }
+.business-economic-doc a { color: #0b6b3a; }
+.business-economic-note { padding: 15px; border: 1px solid var(--dashboard-line, #e5eaf0); border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(31, 41, 55, .045); }
+.business-economic-note p { margin: 0; color: #334155; font-size: 14px; font-weight: 700; line-height: 1.5; white-space: pre-wrap; }
+@media (max-width: 991px) { .business-economic-hero { grid-template-columns: 1fr; align-items: start; } .business-economic-hero-badges { justify-content: flex-start; max-width: 100%; } .business-person-activity-shell { grid-template-columns: minmax(210px, 32%) minmax(0, 68%); } .business-economic-card-grid, .business-economic-media-row { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .business-economic-hero { position: static; } .business-person-activity-shell { grid-template-columns: 1fr; } .business-person-activity-scroll { max-height: 260px; } .business-economic-activity-head { flex-direction: column; } .business-economic-activity-actions { justify-content: flex-start; } .business-economic-field { grid-template-columns: 1fr; gap: 4px; } }

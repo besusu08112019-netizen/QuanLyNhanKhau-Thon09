@@ -420,17 +420,16 @@
       ['records', 'Hồ sơ', 'fa-folder-open', businessRecordsTab(activities)],
       ['timeline', 'Timeline', 'fa-clock-rotate-left', businessTimelineTab(activities)]
     ];
-    return '<article class="person-detail-card person-detail-dynamic business-person-detail">'
-      + '<section class="person-detail-hero business-person-hero">'
-      + '<div class="person-detail-identity"><span>Hồ sơ sản xuất & kinh doanh</span><h3>' + esc(row.head_citizen_name || row.household_code || 'Hộ sản xuất & kinh doanh') + '</h3>'
-      + '<div class="person-detail-codes">' + businessCodeBadge('Mã hộ', row.household_code) + businessCodeBadge('Chủ hộ', row.head_citizen_name) + businessCodeBadge('Hoạt động', num(activities.length || row.business_count || 0)) + '</div>'
-      + '<div class="person-detail-badges">'
+    return '<article class="person-detail-card person-detail-dynamic business-person-detail business-economic-popup">'
+      + '<section class="person-detail-hero business-economic-hero">'
+      + '<div class="business-economic-hero-main"><span>Hồ sơ sản xuất & kinh doanh</span><h3>' + esc(row.household_code || 'Hộ sản xuất & kinh doanh') + '</h3><strong>' + esc(row.head_citizen_name || 'Chưa cập nhật') + '</strong><p>' + esc(row.address || 'Chưa cập nhật địa chỉ') + '</p></div>'
+      + '<div class="business-economic-hero-badges">'
       + businessHeroBadge(isActive ? 'Đang hoạt động' : 'Chưa hoạt động', isActive ? 'green' : 'neutral')
       + businessHeroBadge(hasGps ? 'Có GPS' : 'Không GPS', hasGps ? 'blue' : 'neutral')
       + businessHeroBadge(hasOcop ? 'OCOP' : 'Không OCOP', hasOcop ? 'gold' : 'neutral')
       + businessHeroBadge(hasFoodSafety ? 'ATTP' : 'Không ATTP', hasFoodSafety ? 'green' : 'neutral')
       + businessHeroBadge(hasSocialInsurance ? 'BHXH' : 'Không BHXH', hasSocialInsurance ? 'purple' : 'neutral')
-      + '</div></div></section>'
+      + '</div></section>'
       + businessDetailTabs(tabs)
       + '</article>';
   }
@@ -493,40 +492,75 @@
     const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
     const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
-    return '<article class="business-person-activity-panel ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
-      + '<div class="business-person-activity-head"><div><span>Hoạt động ' + num(index + 1) + '</span><h3>' + esc(title) + '</h3></div><div>' + edit + del + '</div></div>'
-      + '<div class="person-detail-sections business-person-activity-sections">'
-      + businessPersonSection('Thông tin cơ bản', 'fa-id-card', [
-        businessPersonField('Tên hoạt động', title),
-        businessPersonField('Loại hình', activity.business_type_label || activity.business_type),
-        businessPersonField('Loại hình kinh tế', activity.economic_type),
-        businessPersonField('Ngành nghề', activity.sector_label || activity.production_sector || activity.business_sector),
-        businessPersonField('Quy mô', activity.business_scale),
-        businessPersonField('Sản phẩm', (activity.main_products || []).join(', '))
+    const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'Chưa cập nhật';
+    return '<article class="business-person-activity-panel business-economic-activity-panel ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
+      + '<header class="business-economic-activity-head"><div><span>Hoạt động ' + num(index + 1) + '</span><h3>' + esc(title) + '</h3><p>' + esc(activity.business_type_label || activity.business_type || 'Chưa cập nhật') + ' · ' + esc(sector) + '</p></div><div class="business-economic-activity-actions">' + statusBadge(activity.status, activity.status_label) + edit + del + '</div></header>'
+      + '<div class="business-economic-card-grid">'
+      + businessEconomicCard('Thông tin cơ bản', 'fa-id-card', [
+        businessEconomicField('Loại hình', activity.business_type_label || activity.business_type),
+        businessEconomicField('Loại hình kinh tế', activity.economic_type),
+        businessEconomicField('Ngành nghề', sector),
+        businessEconomicField('Quy mô', activity.business_scale),
+        businessEconomicField('Ngày bắt đầu', date(activity.start_date))
       ].join(''))
-      + businessPersonSection('Sản xuất - lao động', 'fa-people-carry-box', [
-        businessPersonField('Lao động', num(activity.worker_count || 0) + ' người'),
-        businessPersonField('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'Chưa cập nhật'),
-        businessPersonField('Ngày bắt đầu', date(activity.start_date)),
-        businessPersonField('Trạng thái', activity.status_label || activity.status || 'Chưa cập nhật')
+      + businessEconomicCard('Thông tin sản xuất', 'fa-chart-line', [
+        businessEconomicField('Sản phẩm chính', (activity.main_products || []).join(', ')),
+        businessEconomicField('Lao động', num(activity.worker_count || 0) + ' người'),
+        businessEconomicField('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'Chưa cập nhật'),
+        businessEconomicField('Diện tích / Quy mô', businessActivityValue(activity, ['production_area','area','scale_description','operation_scale','facility_area']) || 'Chưa cập nhật'),
+        businessEconomicField('Thị trường tiêu thụ', businessActivityValue(activity, ['consumption_market','market','target_market','distribution_market']) || 'Chưa cập nhật')
       ].join(''))
-      + businessPersonSection('Thông tin chứng nhận', 'fa-certificate', [
-        businessPersonField('OCOP', businessTruthy(activity.is_ocop) ? (activity.ocop_product ? 'Có - ' + activity.ocop_product : 'Có') : 'Không'),
-        businessPersonField('Số sao OCOP', activity.ocop_star),
-        businessPersonField('ATTP', businessTruthy(activity.food_safety_certified) ? 'Có' : 'Không'),
-        businessPersonField('Số chứng nhận ATTP', activity.food_safety_certificate_no),
-        businessPersonField('BHXH', businessTruthy(activity.social_insurance) ? 'Có' : 'Không'),
-        businessPersonField('Lao động BHXH', activity.insured_workers ? num(activity.insured_workers) + ' người' : '')
+      + businessEconomicCard('Chứng nhận', 'fa-certificate', businessCertificationBadges(activity))
+      + businessEconomicCard('Vị trí', 'fa-location-dot', [
+        businessEconomicField('Địa chỉ', activity.address || 'Chưa cập nhật'),
+        businessEconomicField('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS'),
+        businessEconomicField('Ngày cập nhật', date(activity.updated_at || activity.created_at) || 'Chưa cập nhật')
       ].join(''))
-      + businessPersonSection('Thông tin vị trí', 'fa-location-dot', [
-        businessPersonField('Địa chỉ', activity.address),
-        businessPersonField('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS'),
-        businessPersonField('Cập nhật', date(activity.updated_at || activity.created_at)),
-        businessPersonField('Ghi chú', activity.note || 'Không có ghi chú.')
-      ].join(''))
-      + businessPersonSection('Ảnh', 'fa-images', mediaInline('Ảnh', images, activity.id, 'image'))
-      + businessPersonSection('Tài liệu', 'fa-file-lines', mediaInline('Tài liệu', documents, activity.id, 'document'))
-      + '</div></article>';
+      + '</div>'
+      + '<div class="business-economic-media-row">' + businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id) + '</div>'
+      + (activity.note ? '<section class="business-economic-note"><div class="business-economic-card-title"><i class="fa-solid fa-note-sticky"></i><h4>Ghi chú</h4></div><p>' + esc(activity.note) + '</p></section>' : '')
+      + '</article>';
+  }
+
+  function businessEconomicCard(title, icon, content) {
+    return '<section class="business-economic-card"><div class="business-economic-card-title"><i class="fa-solid ' + esc(icon) + '"></i><h4>' + esc(title) + '</h4></div><div class="business-economic-card-body">' + content + '</div></section>';
+  }
+
+  function businessEconomicField(label, value) {
+    if (value === null || value === undefined || String(value).trim() === '') return '';
+    return '<div class="business-economic-field"><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong></div>';
+  }
+
+  function businessCertificationBadges(activity) {
+    return '<div class="business-economic-cert-badges">'
+      + flagBadge(businessTruthy(activity.is_ocop), businessTruthy(activity.is_ocop) ? (activity.ocop_star ? 'OCOP ' + activity.ocop_star + ' sao' : 'OCOP') : 'Không OCOP')
+      + flagBadge(businessTruthy(activity.food_safety_certified), businessTruthy(activity.food_safety_certified) ? 'Có ATTP' : 'Không ATTP')
+      + flagBadge(businessTruthy(activity.social_insurance), businessTruthy(activity.social_insurance) ? 'Có BHXH' : 'Không BHXH')
+      + '</div>';
+  }
+
+  function businessActivityImages(images, businessId) {
+    const add = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(businessId || 0) + ')"><i class="fa-solid fa-plus"></i> Thêm ảnh</button>' : '';
+    if (!images.length) return '<section class="business-economic-media"><div class="business-economic-media-head"><span><i class="fa-solid fa-images"></i>Ảnh</span>' + add + '</div><p>Chưa có ảnh</p></section>';
+    return '<section class="business-economic-media"><div class="business-economic-media-head"><span><i class="fa-solid fa-images"></i>Ảnh</span>' + add + '</div><div class="business-economic-thumbs">' + images.slice(0, 6).map(file => mediaThumb(file, businessId)).join('') + (images.length > 6 ? '<span class="business-economic-more">+' + (images.length - 6) + '</span>' : '') + '</div></section>';
+  }
+
+  function businessActivityDocuments(documents, businessId) {
+    if (!documents.length) return '<section class="business-economic-media"><div class="business-economic-media-head"><span><i class="fa-solid fa-file-lines"></i>Tài liệu</span></div><p>Chưa có tài liệu</p></section>';
+    return '<section class="business-economic-media"><div class="business-economic-media-head"><span><i class="fa-solid fa-file-lines"></i>Tài liệu</span></div><div class="business-economic-doc-list">' + documents.map(file => businessActivityDocumentRow(file, businessId)).join('') + '</div></section>';
+  }
+
+  function businessActivityDocumentRow(file, businessId) {
+    const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
+    const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
+    return '<div class="business-economic-doc"><i class="fa-solid fa-file-lines"></i><strong>' + esc(file.original_name || file.category || 'Tài liệu') + '</strong><span><a target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-eye"></i></a><a href="' + download + '" title="Tải xuống"><i class="fa-solid fa-download"></i></a></span></div>';
+  }
+
+  function businessActivityValue(activity, keys) {
+    for (const key of keys) {
+      if (activity[key] !== null && activity[key] !== undefined && String(activity[key]).trim() !== '') return activity[key];
+    }
+    return '';
   }
 
   function businessRecordsTab(activities) {
