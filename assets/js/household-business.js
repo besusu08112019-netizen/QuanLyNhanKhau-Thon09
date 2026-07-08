@@ -467,27 +467,52 @@
     const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')">Sửa</button>' : '';
     const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')">Xóa</button>' : '';
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
-    return '<article class="business-activity-card">'
-      + '<header class="business-activity-card-head"><div><span>Hoạt động số ' + (index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-card-actions">' + edit + del + '</div></header>'
-      + '<div class="business-activity-fields">'
-      + detailField('Loại hình', activity.business_type_label)
-      + detailField('Loại hình kinh tế', activity.economic_type)
-      + detailField('Ngành nghề', activity.sector_label)
-      + detailField('Quy mô', activity.business_scale)
-      + detailField('Sản phẩm chính', (activity.main_products || []).join(', '))
-      + detailField('Lao động', num(activity.worker_count || 0))
-      + detailField('Trạng thái', activity.status_label)
-      + detailField('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS')
-      + detailField('Ngày cập nhật', date(activity.updated_at || activity.created_at))
-      + detailField('OCOP', activity.is_ocop ? ((activity.ocop_product || 'Có') + (activity.ocop_star ? ' - ' + activity.ocop_star + ' sao' : '')) : 'Không')
-      + detailField('ATTP', activity.food_safety_certified ? (activity.food_safety_certificate_no || 'Có') : 'Không')
-      + detailField('BHXH', activity.social_insurance ? (num(activity.insured_workers || 0) + ' lao động') : 'Không')
+    return '<article class="business-activity-card business-profile-card">'
+      + '<header class="business-activity-card-head business-profile-head"><div><span>Hoạt động số ' + (index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-profile-head-side">' + statusBadge(activity.status, activity.status_label) + '<div class="business-card-actions">' + edit + del + '</div></div></header>'
+      + '<div class="business-profile-body">'
+      + activityInfoGroup('Thông tin cơ bản', [
+        activityInfoItem('Tên hoạt động', title),
+        activityInfoItem('Loại hình', activity.business_type_label),
+        activityInfoItem('Ngành nghề', activity.sector_label || activity.economic_type),
+        activityInfoItem('Quy mô', activity.business_scale),
+        activityInfoItem('Trạng thái', statusBadge(activity.status, activity.status_label), true)
+      ])
+      + activityInfoGroup('Thông tin sản xuất', [
+        activityInfoItem('Sản phẩm chính', (activity.main_products || []).join(', ')),
+        activityInfoItem('Lao động', num(activity.worker_count || 0) + ' người'),
+        activityInfoItem('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : '')
+      ])
+      + activityInfoGroup('Thông tin chứng nhận', [
+        activityInfoItem('OCOP', flagBadge(Boolean(activity.is_ocop), activity.is_ocop ? ((activity.ocop_product || 'Có') + (activity.ocop_star ? ' - ' + activity.ocop_star + ' sao' : '')) : 'Không'), true),
+        activityInfoItem('ATTP', flagBadge(Boolean(activity.food_safety_certified), activity.food_safety_certified ? (activity.food_safety_certificate_no || 'Có') : 'Không'), true),
+        activityInfoItem('BHXH', flagBadge(Boolean(activity.social_insurance), activity.social_insurance ? (num(activity.insured_workers || 0) + ' lao động') : 'Không'), true)
+      ])
+      + activityInfoGroup('Thông tin vị trí', [
+        activityInfoItem('Địa chỉ', activity.address),
+        activityInfoItem('GPS', flagBadge(Boolean(activity.latitude && activity.longitude), activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS'), true),
+        activityInfoItem('Ngày cập nhật', date(activity.updated_at || activity.created_at))
+      ])
       + '</div>'
-      + '<div class="business-activity-files">'
-      + fileGallery('Ảnh', images, activity.id)
-      + fileGallery('Tài liệu', documents, activity.id)
+      + '<div class="business-media-accordion">'
+      + fileGallery('Ảnh', images, activity.id, 'image')
+      + fileGallery('Tài liệu', documents, activity.id, 'document')
       + '</div>'
       + '</article>';
+  }
+
+  function activityInfoGroup(title, items) {
+    const content = items.filter(Boolean).join('');
+    if (!content) return '';
+    return '<section class="business-info-group"><h6>' + esc(title) + '</h6><div class="business-info-items">' + content + '</div></section>';
+  }
+
+  function activityInfoItem(label, value, trusted = false) {
+    if (value === null || value === undefined || String(value).trim() === '') return '';
+    return '<div class="business-info-item"><span>' + esc(label) + '</span><strong>' + (trusted ? value : esc(value)) + '</strong></div>';
+  }
+
+  function flagBadge(active, text) {
+    return '<span class="business-flag-badge ' + (active ? 'is-yes' : 'is-no') + '">' + esc(text) + '</span>';
   }
 
   function detailField(label, value) {
@@ -495,16 +520,20 @@
     return '<div class="person-info-field"><span>' + esc(label) + '</span><div class="person-info-value">' + esc(value) + '</div></div>';
   }
 
-  function fileGallery(title, files, businessId) {
-    if (!files.length) return section(title, [['Tệp đính kèm', 'Chưa có']]);
+  function fileGallery(title, files, businessId, kind = '') {
+    const countText = files.length ? num(files.length) + ' tệp' : 'Chưa có';
+    const icon = kind === 'image' ? 'fa-images' : 'fa-file-lines';
+    if (!files.length) {
+      return '<details class="business-media-panel"><summary><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><strong>' + countText + '</strong></summary><div class="business-media-empty">Chưa có dữ liệu</div></details>';
+    }
     const cards = files.map(file => {
       const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
       const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
-      const thumb = file.file_kind === 'IMAGE' ? '<a href="' + preview + '" target="_blank" rel="noopener"><img src="' + preview + '" alt="" style="width:72px;height:54px;object-fit:cover;border-radius:6px"></a>' : '<i class="fa-solid fa-file-lines fs-3 text-secondary"></i>';
-      const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusinessFile(' + Number(businessId) + ',' + Number(file.id) + ')"><i class="fa-solid fa-trash"></i></button>' : '';
-      return '<div class="d-flex align-items-center gap-2 border rounded p-2 mb-2">' + thumb + '<div class="flex-grow-1"><div class="fw-semibold">' + esc(file.original_name || '') + '</div><div class="text-muted small">' + esc(file.category || '') + ' - ' + date(file.created_at) + ' - ' + esc(file.uploaded_by || '') + '</div></div><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '"><i class="fa-solid fa-magnifying-glass-plus"></i></a><a class="btn btn-sm btn-outline-secondary" href="' + download + '"><i class="fa-solid fa-download"></i></a>' + del + '</div>';
+      const thumb = file.file_kind === 'IMAGE' ? '<a href="' + preview + '" target="_blank" rel="noopener"><img src="' + preview + '" alt=""></a>' : '<i class="fa-solid fa-file-lines business-file-icon"></i>';
+      const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="Xóa" onclick="window.deleteHouseholdBusinessFile(' + Number(businessId) + ',' + Number(file.id) + ')"><i class="fa-solid fa-trash"></i></button>' : '';
+      return '<div class="business-file-row">' + thumb + '<div class="business-file-meta"><strong>' + esc(file.original_name || '') + '</strong><span>' + esc(file.category || '') + ' - ' + date(file.created_at) + ' - ' + esc(file.uploaded_by || '') + '</span></div><div class="business-file-actions"><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-magnifying-glass-plus"></i></a><a class="btn btn-sm btn-outline-secondary" href="' + download + '" title="Tải xuống"><i class="fa-solid fa-download"></i></a>' + del + '</div></div>';
     }).join('');
-    return '<section class="person-info-section"><div class="person-info-section-title"><i class="fa-solid fa-paperclip"></i><h4>' + esc(title) + '</h4></div>' + cards + '</section>';
+    return '<details class="business-media-panel"><summary><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><strong>' + countText + '</strong></summary><div class="business-file-list">' + cards + '</div></details>';
   }
 
   function section(title, rows) {
