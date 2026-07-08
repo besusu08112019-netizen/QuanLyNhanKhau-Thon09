@@ -549,6 +549,154 @@ final class Dashboard extends BaseModel
     {
         return ['done' => $done, 'total' => $total, 'percent' => $total > 0 ? round($done * 100 / $total, 1) : 0];
     }
+
+    public function overviewDashboard(array $filters = []): array
+    {
+        $errors = [];
+        $metrics = $this->safeWidget('overview.metrics', fn() => $this->metrics($filters), $this->defaultMetrics(), $errors);
+        $business = $this->safeWidget('overview.business', fn() => (new \App\Models\HouseholdBusiness())->dashboard($filters), [], $errors);
+        $gis = $this->safeWidget('overview.gis', fn() => $this->gisSummary($filters), [], $errors);
+        $businessCharts = $this->safeWidget('overview.businessCharts', fn() => (new \App\Models\HouseholdBusiness())->charts($filters), [], $errors);
+        $payload = ['module' => 'overview', 'title' => 'Dashboard Tổng quan', 'kpis' => [
+            $this->kpi('Tổng số hộ', $metrics['total_households'] ?? 0, 'hộ', 'fa-house-chimney', 'green'),
+            $this->kpi('Tổng số nhân khẩu', $metrics['total_citizens'] ?? 0, 'người', 'fa-users', 'blue'),
+            $this->kpi('Tổng số hộ kinh doanh', $business['economic_households'] ?? 0, 'hộ', 'fa-store', 'orange'),
+            $this->kpi('Tổng số cơ sở kinh doanh', $business['establishment_total'] ?? 0, 'cơ sở', 'fa-briefcase', 'cyan'),
+            $this->kpi('Tổng số phương tiện', 0, 'xe', 'fa-car', 'purple'),
+            $this->kpi('Tổng số hộ chăn nuôi', 0, 'hộ', 'fa-warehouse', 'green'),
+            $this->kpi('Tổng số vật nuôi', 0, 'con', 'fa-paw', 'orange'),
+            $this->kpi('Tổng khu vực GIS', $gis['totalAreas'] ?? 0, 'khu', 'fa-map-location-dot', 'cyan'),
+            $this->kpi('Tỷ lệ BHYT', $metrics['health_insurance_coverage_percent'] ?? 0, '%', 'fa-notes-medical', 'green'),
+            $this->kpi('Đảng viên', $metrics['party_member_count'] ?? 0, 'người', 'fa-star', 'orange'),
+        ], 'charts' => [
+            'households' => $this->safeWidget('overview.households', fn() => $this->householdChart($filters), [], $errors),
+            'businessSectors' => $businessCharts['sectors'] ?? [],
+            'vehicles' => [], 'livestock' => [],
+        ], 'generatedAt' => date('c')];
+        if ($errors) $payload['widgetErrors'] = $errors;
+        return $payload;
+    }
+
+    public function householdDashboard(array $filters = []): array
+    {
+        $m = $this->metrics($filters);
+        return ['module'=>'households','title'=>'Dashboard Hộ dân','kpis'=>[
+            $this->kpi('Tổng số hộ',$m['total_households']??0,'hộ','fa-house-chimney','green'),
+            $this->kpi('Hộ nghèo',$m['poor_households']??0,'hộ','fa-hand-holding-heart','orange'),
+            $this->kpi('Hộ cận nghèo',$m['near_poor_households']??0,'hộ','fa-hands-holding','pink'),
+            $this->kpi('Hộ chính sách',$m['policy_households']??0,'hộ','fa-award','purple'),
+            $this->kpi('Hộ có công',$m['meritorious_households']??0,'hộ','fa-medal','blue'),
+        ],'charts'=>['households'=>$this->householdChart($filters),'gps'=>$this->gpsProgressChart($filters),'profiles'=>$this->profileProgressChart($filters)],'top'=>$this->tasks($filters),'generatedAt'=>date('c')];
+    }
+
+    public function populationDashboard(array $filters = []): array
+    {
+        $m = $this->metrics($filters);
+        return ['module'=>'population','title'=>'Dashboard Nhân khẩu','kpis'=>[
+            $this->kpi('Tổng nhân khẩu',$m['total_citizens']??0,'người','fa-users','blue'),
+            $this->kpi('Nam',$m['male_count']??0,'người','fa-mars','cyan'),
+            $this->kpi('Nữ',$m['female_count']??0,'người','fa-venus','pink'),
+            $this->kpi('Trẻ em',$m['children_count']??0,'người','fa-child-reaching','green'),
+            $this->kpi('Người cao tuổi',$m['elderly_count']??0,'người','fa-person-cane','purple'),
+            $this->kpi('Đảng viên',$m['party_member_count']??0,'người','fa-star','orange'),
+        ],'charts'=>['gender'=>$this->populationChart($filters),'ages'=>$this->ageChart($filters),'labor'=>$this->laborChart($filters),'healthInsurance'=>$this->healthInsuranceChart($filters)],'generatedAt'=>date('c')];
+    }
+
+    public function businessDashboard(array $filters = []): array
+    {
+        $model = new \App\Models\HouseholdBusiness();
+        $stats = $model->dashboard($filters);
+        $charts = $model->charts($filters);
+        return ['module'=>'business','title'=>'Dashboard Kinh doanh','kpis'=>[
+            $this->kpi('Tổng hộ kinh doanh',$stats['economic_households']??0,'hộ','fa-house-user','green'),
+            $this->kpi('Tổng cơ sở kinh doanh',$stats['establishment_total']??0,'cơ sở','fa-store','blue'),
+            $this->kpi('Hộ có giấy phép',$this->businessDistinctCount($filters,'hb.business_license IS NOT NULL AND hb.business_license <> ""'),'hộ','fa-file-signature','orange'),
+            $this->kpi('Hộ có mã số thuế',$this->businessDistinctCount($filters,'hb.tax_code IS NOT NULL AND hb.tax_code <> ""'),'hộ','fa-receipt','cyan'),
+            $this->kpi('Hộ tham gia OCOP',$stats['ocop_households']??0,'hộ','fa-award','purple'),
+            $this->kpi('Hộ đạt ATTP',$stats['food_safety_households']??0,'hộ','fa-shield-heart','green'),
+            $this->kpi('Hộ tham gia BHXH',$stats['social_insurance_households']??0,'hộ','fa-user-shield','blue'),
+        ],'charts'=>['types'=>$charts['economicTypes']??[],'sectors'=>$charts['sectors']??[],'sectorShare'=>$charts['sectors']??[],'scales'=>$charts['scales']??[]],'top'=>$this->businessTopHouseholds($filters),'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
+    }
+
+    public function vehicleDashboard(array $filters = []): array
+    {
+        return $this->emptyDomainDashboard('vehicles','Dashboard Xe cộ',[['Tổng phương tiện','fa-car'],['Ô tô','fa-car-side'],['Xe máy','fa-motorcycle'],['Xe tải','fa-truck'],['Máy cày','fa-tractor'],['Máy gặt','fa-gears'],['Công nông','fa-truck-pickup'],['Thuyền','fa-ship'],['Khác','fa-circle-dot']],['types','households','areas']);
+    }
+
+    public function livestockDashboard(array $filters = []): array
+    {
+        return $this->emptyDomainDashboard('livestock','Dashboard Chăn nuôi',[['Tổng hộ chăn nuôi','fa-warehouse'],['Tổng vật nuôi','fa-paw'],['Trâu','fa-circle-dot'],['Bò','fa-circle-dot'],['Lợn','fa-circle-dot'],['Dê','fa-circle-dot'],['Gà','fa-circle-dot'],['Vịt','fa-circle-dot'],['Ngan','fa-circle-dot'],['Chim','fa-circle-dot'],['Ong','fa-circle-dot'],['Khác','fa-circle-dot']],['types','scale','areas']);
+    }
+
+    public function gisDashboard(array $filters = []): array
+    {
+        $gis = $this->gisSummary($filters);
+        $business = (new \App\Models\HouseholdBusiness())->dashboard($filters);
+        return ['module'=>'gis','title'=>'Dashboard GIS','kpis'=>[
+            $this->kpi('Hộ dân',$gis['totalHouseholds']??0,'hộ','fa-house-chimney','green'),
+            $this->kpi('Hộ đã định vị',$gis['locatedHouseholds']??0,'hộ','fa-location-dot','blue'),
+            $this->kpi('Hộ chưa định vị',$gis['unlocatedHouseholds']??0,'hộ','fa-map-pin','orange'),
+            $this->kpi('Khu vực GIS',$gis['totalAreas']??0,'khu','fa-draw-polygon','purple'),
+            $this->kpi('Hộ kinh doanh',$business['economic_households']??0,'hộ','fa-store','cyan'),
+        ],'charts'=>['gps'=>$this->gpsProgressChart($filters),'business'=>(new \App\Models\HouseholdBusiness())->charts($filters)['economicTypes']??[]],'layers'=>['Hộ dân','Hộ kinh doanh','Phương tiện','Trang trại','Chuồng trại','Khu vực sản xuất','Khu vực chăn nuôi'],'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
+    }
+
+    public function reportsDashboard(array $filters = []): array
+    {
+        return ['module'=>'reports','title'=>'Dashboard Báo cáo','kpis'=>[
+            $this->kpi('Báo cáo nhân khẩu',1,'nhóm','fa-users','blue'),$this->kpi('Báo cáo kinh doanh',1,'nhóm','fa-store','green'),$this->kpi('Báo cáo xe',1,'nhóm','fa-car','orange'),$this->kpi('Báo cáo chăn nuôi',1,'nhóm','fa-paw','purple'),$this->kpi('Báo cáo GIS',1,'nhóm','fa-map-location-dot','cyan'),
+        ],'reports'=>['Báo cáo nhân khẩu','Báo cáo kinh doanh','Báo cáo xe','Báo cáo chăn nuôi','Báo cáo GIS'],'exports'=>['PDF','Excel','In trực tiếp'],'generatedAt'=>date('c')];
+    }
+
+    private function kpi(string $label, mixed $value, string $unit, string $icon, string $tone): array
+    {
+        return ['label'=>$label,'value'=>(float) $value,'unit'=>$unit,'icon'=>$icon,'tone'=>$tone];
+    }
+
+    private function emptyDomainDashboard(string $module, string $title, array $cards, array $chartKeys): array
+    {
+        $tones = ['green','blue','orange','cyan','purple','pink'];
+        $kpis = [];
+        foreach ($cards as $i => $card) $kpis[] = $this->kpi($card[0], 0, '', $card[1], $tones[$i % count($tones)]);
+        $charts = [];
+        foreach ($chartKeys as $key) $charts[$key] = [];
+        return ['module'=>$module,'title'=>$title,'kpis'=>$kpis,'charts'=>$charts,'top'=>[],'map'=>[],'generatedAt'=>date('c')];
+    }
+
+    private function businessDistinctCount(array $filters, string $condition): int
+    {
+        [$where, $params] = $this->businessWhere($filters);
+        return (int) (($this->fetchOne("SELECT COUNT(DISTINCT hb.household_id) AS total FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where AND ($condition)", $params) ?: [])['total'] ?? 0);
+    }
+
+    private function businessTopHouseholds(array $filters): array
+    {
+        [$where, $params] = $this->businessWhere($filters);
+        $rows = $this->fetchAll("SELECT h.id AS household_id, h.household_code, h.head_citizen_name, COUNT(hb.id) AS activity_count, COALESCE(SUM(hb.worker_count),0) AS worker_count FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY h.id, h.household_code, h.head_citizen_name ORDER BY activity_count DESC, worker_count DESC, h.household_code ASC LIMIT 10", $params);
+        return array_map(fn($r) => ['household_id'=>(int)$r['household_id'],'household_code'=>(string)$r['household_code'],'head_citizen_name'=>(string)$r['head_citizen_name'],'activity_count'=>(int)$r['activity_count'],'worker_count'=>(int)$r['worker_count']], $rows);
+    }
+
+    private function businessMapMarkers(array $filters): array
+    {
+        if (!$this->columnExists('households','latitude') || !$this->columnExists('households','longitude')) return [];
+        [$where, $params] = $this->businessWhere($filters);
+        $rows = $this->fetchAll("SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.latitude, h.longitude, COUNT(hb.id) AS activity_count, GROUP_CONCAT(COALESCE(NULLIF(hb.business_name,''), NULLIF(hb.economic_type,''), 'Hoạt động kinh tế') ORDER BY hb.id SEPARATOR '; ') AS activities FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where AND h.latitude IS NOT NULL AND h.latitude <> '' AND h.longitude IS NOT NULL AND h.longitude <> '' GROUP BY h.id, h.household_code, h.head_citizen_name, h.latitude, h.longitude LIMIT 200", $params);
+        return array_map(fn($r) => ['household_id'=>(int)$r['household_id'],'household_code'=>(string)$r['household_code'],'head_citizen_name'=>(string)$r['head_citizen_name'],'latitude'=>(float)$r['latitude'],'longitude'=>(float)$r['longitude'],'activity_count'=>(int)$r['activity_count'],'activities'=>(string)($r['activities']??'')], $rows);
+    }
+
+    private function businessWhere(array $filters): array
+    {
+        $where = ['hb.status <> "DELETED"', $this->activeHouseholdCondition('h')];
+        $params = [];
+        $area = trim((string) ($filters['area_code'] ?? $filters['areaCode'] ?? ''));
+        if ($area !== '') { $where[] = 'h.area_code = :business_area_code'; $params['business_area_code'] = $area; }
+        $from = trim((string) ($filters['date_from'] ?? $filters['dateFrom'] ?? ''));
+        if ($from !== '') { $where[] = 'DATE(COALESCE(hb.updated_at, hb.created_at)) >= :business_date_from'; $params['business_date_from'] = $from; }
+        $to = trim((string) ($filters['date_to'] ?? $filters['dateTo'] ?? ''));
+        if ($to !== '') { $where[] = 'DATE(COALESCE(hb.updated_at, hb.created_at)) <= :business_date_to'; $params['business_date_to'] = $to; }
+        return ['WHERE ' . implode(' AND ', $where), $params];
+    }
+
     private function normalizeFilters(array $filters): array
     {
         return [

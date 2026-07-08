@@ -129,6 +129,14 @@ $router->get('/api/me', [AuthController::class, 'me']);
 
 $router->get('/api/dashboard', [DashboardController::class, 'summary']);
 $router->get('/api/dashboard/summary', [DashboardController::class, 'summary']);
+$router->get('/api/dashboard/overview', [DashboardController::class, 'overview']);
+$router->get('/api/dashboard/households', [DashboardController::class, 'households']);
+$router->get('/api/dashboard/population', [DashboardController::class, 'population']);
+$router->get('/api/dashboard/business', [DashboardController::class, 'business']);
+$router->get('/api/dashboard/vehicles', [DashboardController::class, 'vehicles']);
+$router->get('/api/dashboard/livestock', [DashboardController::class, 'livestock']);
+$router->get('/api/dashboard/gis', [DashboardController::class, 'gis']);
+$router->get('/api/dashboard/reports', [DashboardController::class, 'reports']);
 $router->get('/api/dashboard/search', [DashboardController::class, 'search']);
 $router->get('/api/dashboard/population-chart', [DashboardController::class, 'populationChart']);
 $router->get('/api/dashboard/household-chart', [DashboardController::class, 'householdChart']);
@@ -395,6 +403,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/gis-google.min.js',
         'assets/js/digital-profile.min.js',
         'assets/js/household-business.min.js',
+        'assets/js/module-dashboards.min.js',
     ];
 
     foreach ($versionedAssets as $asset) {
