@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);

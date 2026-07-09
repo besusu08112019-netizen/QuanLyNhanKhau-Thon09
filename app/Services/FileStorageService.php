@@ -110,7 +110,8 @@ final class FileStorageService
     public function storeUpload(array $file, string $entityType, string $category, string $extension): array
     {
         $folder = $this->entityFolder($entityType) . '/' . $this->categoryFolder($category) . '/' . date('Y/m');
-        $dir = BASE_PATH . '/storage/' . $folder;
+        $root = 'uploads';
+        $dir = BASE_PATH . '/' . $root . '/' . $folder;
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
             throw new \RuntimeException('Không tạo được thư mục upload');
         }
@@ -119,7 +120,7 @@ final class FileStorageService
         if (!move_uploaded_file($file['tmp_name'], $path)) {
             throw new \RuntimeException('Không lưu được file upload');
         }
-        return ['stored_name' => $stored, 'file_path' => 'storage/' . $folder . '/' . $stored];
+        return ['stored_name' => $stored, 'file_path' => $root . '/' . $folder . '/' . $stored];
     }
 
     public function safeFilePath(string $relative): ?string
