@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const state = { page: 1, pageSize: 20, search: '', business_type: '', economic_type: '', business_scale: '', sector: '', status: '', ocop: '', food_safety: '', social_insurance: '', located: '', sort: 'updated_at', direction: 'DESC', catalogs: null, selectedHousehold: null, currentDetailHouseholdId: null };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -61,19 +61,19 @@
   async function ensureCatalogs() {
     if (state.catalogs) return state.catalogs;
     state.catalogs = await request('/api/household-business/catalogs', { cacheTtl: 60000 });
-    fillCatalogSelect('#businessEconomicTypeSelect', state.catalogs.economic_type, 'Chá»n loáº¡i hÃ¬nh');
-    fillCatalogSelect('#businessScaleSelect', state.catalogs.business_scale, 'Chá»n quy mÃ´');
-    fillCatalogSelect('#businessEconomicTypeFilter', state.catalogs.economic_type, 'Táº¥t cáº£');
-    fillCatalogSelect('#businessScaleFilter', state.catalogs.business_scale, 'Táº¥t cáº£');
-    fillCatalogSelect('#businessImageCategory', state.catalogs.image_category, 'Chá»n danh má»¥c áº£nh');
-    fillCatalogSelect('#businessDocumentCategory', state.catalogs.document_category, 'Chá»n loáº¡i tÃ i liá»‡u');
+    fillCatalogSelect('#businessEconomicTypeSelect', state.catalogs.economic_type, 'Chọn loại hình');
+    fillCatalogSelect('#businessScaleSelect', state.catalogs.business_scale, 'Chọn quy mô');
+    fillCatalogSelect('#businessEconomicTypeFilter', state.catalogs.economic_type, 'Tất cả');
+    fillCatalogSelect('#businessScaleFilter', state.catalogs.business_scale, 'Tất cả');
+    fillCatalogSelect('#businessImageCategory', state.catalogs.image_category, 'Chọn danh mục ảnh');
+    fillCatalogSelect('#businessDocumentCategory', state.catalogs.document_category, 'Chọn loại tài liệu');
     return state.catalogs;
   }
 
   function fillCatalogSelect(selector, items, firstLabel) {
     const select = $(selector);
     if (!select || !Array.isArray(items)) return;
-    select.innerHTML = '<option value="">' + esc(firstLabel || 'Chá»n') + '</option>' + items.map(item => '<option value="' + esc(item.value) + '">' + esc(item.label || item.value) + '</option>').join('');
+    select.innerHTML = '<option value="">' + esc(firstLabel || 'Chọn') + '</option>' + items.map(item => '<option value="' + esc(item.value) + '">' + esc(item.label || item.value) + '</option>').join('');
   }
 
   function applyAccess() { $('#businessHouseholdAddBtn')?.classList.toggle('d-none', !can('household_business', 'create')); }
@@ -88,14 +88,14 @@
       const items = data.items || [];
       const total = Number(data.total || 0);
       const totalEl = $('#businessHouseholdTotalCount');
-      if (totalEl) totalEl.innerHTML = 'Tá»•ng sá»‘: <strong>' + num(total) + '</strong> há»™';
+      if (totalEl) totalEl.innerHTML = 'Tổng số: <strong>' + num(total) + '</strong> hộ';
       const start = (Number(data.page || state.page) - 1) * Number(data.pageSize || state.pageSize);
       const rows = $('#businessHouseholdRows');
-      if (rows) rows.innerHTML = items.length ? items.map((row, index) => rowHtml(row, start + index + 1)).join('') : '<tr><td colspan="9" class="text-center text-muted py-4">ChÆ°a cÃ³ há»“ sÆ¡ sáº£n xuáº¥t & kinh doanh</td></tr>';
+      if (rows) rows.innerHTML = items.length ? items.map((row, index) => rowHtml(row, start + index + 1)).join('') : '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có hồ sơ sản xuất & kinh doanh</td></tr>';
       renderPager(data);
       if (typeof window.thon09SyncResponsiveTableLabels === 'function') window.thon09SyncResponsiveTableLabels($('#businessHouseholdsScreen') || document);
     } catch (error) {
-      show('KhÃ´ng táº£i Ä‘Æ°á»£c danh sÃ¡ch há»™ sáº£n xuáº¥t/kinh doanh: ' + error.message, 'danger');
+      show('Không tải được danh sách hộ sản xuất/kinh doanh: ' + error.message, 'danger');
     }
   }
 
@@ -114,36 +114,36 @@
   }
 
   function activityLabel(activity, fallback = '') {
-    return activity.business_name || activity.economic_type || activity.sector_label || activity.production_sector || activity.business_sector || fallback || 'Hoáº¡t Ä‘á»™ng kinh táº¿';
+    return activity.business_name || activity.economic_type || activity.sector_label || activity.production_sector || activity.business_sector || fallback || 'Hoạt động kinh tế';
   }
 
   function sectorCellForRow(row, activities) {
     const items = uniqueValues(activities.map(item => item.sector_label || item.economic_type || item.business_name));
-    if (!items.length) return '<span class="text-muted">ChÆ°a cáº­p nháº­t</span>';
+    if (!items.length) return '<span class="text-muted">Chưa cập nhật</span>';
     const householdId = Number(row.household_id || row.id || 0);
     const shown = items.slice(0, 3);
     const remaining = Math.max(0, items.length - shown.length);
     let html = '<div class="business-sector-cell" title="' + esc(items.join('\n')) + '">'
       + shown.map(item => '<span class="business-sector-badge">' + esc(item) + '</span>').join('');
     if (remaining > 0) {
-      html += '<button class="business-more-badge" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">CÃ²n ' + remaining + ' hoáº¡t Ä‘á»™ng khÃ¡c</button>';
+      html += '<button class="business-more-badge" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">Còn ' + remaining + ' hoạt động khác</button>';
     }
     return html + '</div>';
   }
 
   function businessTypeBadge(label) {
-    const text = String(label || 'ChÆ°a cáº­p nháº­t').trim();
+    const text = String(label || 'Chưa cập nhật').trim();
     let short = text;
-    if (/sáº£n xuáº¥ts+vÃ s+kinh doanh/i.test(text)) short = 'SX + KD';
-    else if (/há»™s+sáº£n xuáº¥t/i.test(text)) short = 'Há»™ sáº£n xuáº¥t';
-    else if (/há»™s+kinh doanh/i.test(text)) short = 'Há»™ kinh doanh';
+    if (/sản xuấts+vàs+kinh doanh/i.test(text)) short = 'SX + KD';
+    else if (/hộs+sản xuất/i.test(text)) short = 'Hộ sản xuất';
+    else if (/hộs+kinh doanh/i.test(text)) short = 'Hộ kinh doanh';
     return '<span class="business-type-badge">' + esc(short) + '</span>';
   }
 
   function typeCell(activities) {
     const items = uniqueValues(activities.map(item => item.business_type_label));
-    if (!items.length) return businessTypeBadge('ChÆ°a cáº­p nháº­t');
-    return '<div class="business-type-stack" title="' + esc(items.join('\n')) + '">' + items.slice(0, 2).map(businessTypeBadge).join('') + (items.length > 2 ? '<span class="business-type-badge is-muted">Nhiá»u loáº¡i hÃ¬nh</span>' : '') + '</div>';
+    if (!items.length) return businessTypeBadge('Chưa cập nhật');
+    return '<div class="business-type-stack" title="' + esc(items.join('\n')) + '">' + items.slice(0, 2).map(businessTypeBadge).join('') + (items.length > 2 ? '<span class="business-type-badge is-muted">Nhiều loại hình</span>' : '') + '</div>';
   }
 
   function statusBadge(status, label) {
@@ -152,7 +152,7 @@
     if (code === 'ACTIVE') cls = 'is-active';
     else if (code === 'SUSPENDED') cls = 'is-paused';
     else if (code === 'INACTIVE') cls = 'is-inactive';
-    return '<span class="business-status-badge ' + cls + '">' + esc(label || status || 'ChÆ°a cáº­p nháº­t') + '</span>';
+    return '<span class="business-status-badge ' + cls + '">' + esc(label || status || 'Chưa cập nhật') + '</span>';
   }
 
   function statusCell(activities) {
@@ -163,7 +163,7 @@
 
   function activityCountText(row, activities) {
     const count = Number(row.business_count || activities.length || 0);
-    return count + ' hoáº¡t Ä‘á»™ng';
+    return count + ' hoạt động';
   }
 
   function activityCountBadge(row, activities) {
@@ -182,14 +182,14 @@
     const secondaryName = names.length > 1 ? names.slice(1, 3).join(', ') : '';
     return '<tr class="business-list-row">'
       + '<td data-label="STT">' + index + '</td>'
-      + '<td data-label="MÃ£ há»™"><button class="btn btn-link p-0 fw-semibold" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">' + esc(row.household_code) + '</button></td>'
-      + '<td data-label="Chá»§ há»™"><div class="business-main-person"><strong>' + esc(row.head_citizen_name || '') + '</strong><span>' + esc(row.household_code || '') + '</span></div></td>'
-      + '<td data-label="TÃªn cÆ¡ sá»Ÿ"><div class="business-establishment-cell"><strong>' + esc(primaryName) + '</strong>' + (secondaryName ? '<span>' + esc(secondaryName) + '</span>' : '') + '</div></td>'
-      + '<td data-label="Loáº¡i hÃ¬nh">' + typeCell(activities) + '</td>'
-      + '<td data-label="NgÃ nh nghá»">' + sectorCellForRow(row, activities) + '</td>'
-      + '<td data-label="Hoáº¡t Ä‘á»™ng">' + activityCountBadge(row, activities) + '</td>'
-      + '<td data-label="Tráº¡ng thÃ¡i">' + statusCell(activities) + '</td>'
-      + '<td data-label="Thao tÃ¡c" class="text-end business-actions-cell">' + actionButtons(row) + '</td>'
+      + '<td data-label="Mã hộ"><button class="btn btn-link p-0 fw-semibold" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">' + esc(row.household_code) + '</button></td>'
+      + '<td data-label="Chủ hộ"><div class="business-main-person"><strong>' + esc(row.head_citizen_name || '') + '</strong><span>' + esc(row.household_code || '') + '</span></div></td>'
+      + '<td data-label="Tên cơ sở"><div class="business-establishment-cell"><strong>' + esc(primaryName) + '</strong>' + (secondaryName ? '<span>' + esc(secondaryName) + '</span>' : '') + '</div></td>'
+      + '<td data-label="Loại hình">' + typeCell(activities) + '</td>'
+      + '<td data-label="Ngành nghề">' + sectorCellForRow(row, activities) + '</td>'
+      + '<td data-label="Hoạt động">' + activityCountBadge(row, activities) + '</td>'
+      + '<td data-label="Trạng thái">' + statusCell(activities) + '</td>'
+      + '<td data-label="Thao tác" class="text-end business-actions-cell">' + actionButtons(row) + '</td>'
       + '</tr>';
   }
 
@@ -198,10 +198,10 @@
     const activities = activitiesOf(row);
     const firstActivityId = Number((activities[0] || {}).id || row.business_id || row.id || 0);
     const buttons = [
-      '<button class="btn btn-sm btn-outline-secondary business-icon-btn" type="button" title="Xem chi tiáº¿t" aria-label="Xem chi tiáº¿t" onclick="window.showHouseholdBusiness(' + householdId + ')"><i class="fa-solid fa-eye"></i></button>',
-      can('household_business', 'update') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Sá»­a hoáº¡t Ä‘á»™ng" aria-label="Sá»­a hoáº¡t Ä‘á»™ng" onclick="window.openHouseholdBusinessForm(' + firstActivityId + ')"><i class="fa-solid fa-pen-to-square"></i></button>' : '',
-      can('household_business', 'create') ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="ThÃªm hoáº¡t Ä‘á»™ng" aria-label="ThÃªm hoáº¡t Ä‘á»™ng" onclick="window.addHouseholdBusinessActivity(' + householdId + ')"><i class="fa-solid fa-plus"></i></button>' : '',
-      can('household_business', 'delete') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-danger business-icon-btn" type="button" title="XÃ³a hoáº¡t Ä‘á»™ng" aria-label="XÃ³a hoáº¡t Ä‘á»™ng" onclick="window.deleteHouseholdBusiness(' + firstActivityId + ')"><i class="fa-solid fa-trash"></i></button>' : ''
+      '<button class="btn btn-sm btn-outline-secondary business-icon-btn" type="button" title="Xem chi tiết" aria-label="Xem chi tiết" onclick="window.showHouseholdBusiness(' + householdId + ')"><i class="fa-solid fa-eye"></i></button>',
+      can('household_business', 'update') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Sửa hoạt động" aria-label="Sửa hoạt động" onclick="window.openHouseholdBusinessForm(' + firstActivityId + ')"><i class="fa-solid fa-pen-to-square"></i></button>' : '',
+      can('household_business', 'create') ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Thêm hoạt động" aria-label="Thêm hoạt động" onclick="window.addHouseholdBusinessActivity(' + householdId + ')"><i class="fa-solid fa-plus"></i></button>' : '',
+      can('household_business', 'delete') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-danger business-icon-btn" type="button" title="Xóa hoạt động" aria-label="Xóa hoạt động" onclick="window.deleteHouseholdBusiness(' + firstActivityId + ')"><i class="fa-solid fa-trash"></i></button>' : ''
     ];
     return '<div class="business-row-actions">' + buttons.filter(Boolean).join('') + '</div>';
   }
@@ -213,7 +213,7 @@
     const page = Number(data.page || state.page);
     const pages = [];
     for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) pages.push(i);
-    host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" ' + (page <= 1 ? 'disabled' : '') + ' data-business-page="' + (page - 1) + '">TrÆ°á»›c</button>'
+    host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" ' + (page <= 1 ? 'disabled' : '') + ' data-business-page="' + (page - 1) + '">Trước</button>'
       + pages.map(item => '<button class="btn btn-sm ' + (item === page ? 'btn-primary' : 'btn-outline-secondary') + '" data-business-page="' + item + '">' + item + '</button>').join('')
       + '<button class="btn btn-sm btn-outline-secondary" ' + (page >= totalPages ? 'disabled' : '') + ' data-business-page="' + (page + 1) + '">Sau</button>';
     host.querySelectorAll('[data-business-page]').forEach(btn => btn.addEventListener('click', () => { state.page = Number(btn.dataset.businessPage); load(); }));
@@ -229,7 +229,7 @@
   }
 
   async function openForm(id = null) {
-    if (!can('household_business', id ? 'update' : 'create')) return show('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n thao tÃ¡c nÃ y', 'warning');
+    if (!can('household_business', id ? 'update' : 'create')) return show('Tài khoản hiện tại không có quyền thực hiện thao tác này', 'warning');
     const form = $('#businessHouseholdForm');
     if (!form) return;
     form.reset();
@@ -269,14 +269,14 @@
     if (q.length < 2) { hideSuggestions(); return; }
     const data = await request('/api/household-business/household-search?q=' + encodeURIComponent(q), { cacheTtl: 3000 });
     const items = data.items || [];
-    host.innerHTML = items.length ? items.map(item => suggestionHtml(item)).join('') : '<div class="list-group-item text-muted">KhÃ´ng tÃ¬m tháº¥y há»™ phÃ¹ há»£p</div>';
+    host.innerHTML = items.length ? items.map(item => suggestionHtml(item)).join('') : '<div class="list-group-item text-muted">Không tìm thấy hộ phù hợp</div>';
     host.classList.remove('d-none');
     host.querySelectorAll('[data-household-choice]').forEach(btn => btn.addEventListener('click', () => selectHousehold(items.find(item => String(item.id) === btn.dataset.householdChoice))));
   }
 
   function suggestionHtml(item) {
     return '<button type="button" class="list-group-item list-group-item-action" data-household-choice="' + Number(item.id) + '">'
-      + '<div class="d-flex justify-content-between gap-2"><strong>' + esc(item.household_code) + '</strong>' + (Number(item.business_count || 0) > 0 ? '<span class="badge text-bg-light">' + num(item.business_count) + ' hoáº¡t Ä‘á»™ng</span>' : '') + '</div>'
+      + '<div class="d-flex justify-content-between gap-2"><strong>' + esc(item.household_code) + '</strong>' + (Number(item.business_count || 0) > 0 ? '<span class="badge text-bg-light">' + num(item.business_count) + ' hoạt động</span>' : '') + '</div>'
       + '<div>' + esc(item.head_citizen_name || '') + '</div><small class="text-muted">' + esc(item.address || '') + '</small></button>';
   }
 
@@ -301,7 +301,7 @@
   }
 
   async function openFormForHousehold(householdId) {
-    if (!can('household_business', 'create')) return show('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n thao tÃ¡c nÃ y', 'warning');
+    if (!can('household_business', 'create')) return show('Tài khoản hiện tại không có quyền thực hiện thao tác này', 'warning');
     const data = await request('/api/household-business/household/' + encodeURIComponent(householdId));
     const row = data.summary || summarizeHouseholdDetail(data.items || [], householdId);
     await openForm();
@@ -408,7 +408,7 @@
     if (action === 'map') {
       window.App?.modals?.businessHousehold?.hide();
       if (typeof window.switchScreen === 'function') window.switchScreen('gis');
-      show('\u0110\u00e3 m\u1edf GIS. H\u00e3y ch\u1ecdn h\u1ed9 v\u00e0 \u0111\u1eb7t marker tr\u00ean b\u1ea3n \u0111\u1ed3, h\u1ec7 th\u1ed1ng s\u1ebd d\u00f9ng GPS h\u1ed9 gia \u0111\u00ecnh.', 'info');
+      show('\u0110\u00e3 m\u1edf GIS Google. H\u00e3y ch\u1ecdn h\u1ed9 v\u00e0 \u0111\u1eb7t marker tr\u00ean b\u1ea3n \u0111\u1ed3, h\u1ec7 th\u1ed1ng s\u1ebd d\u00f9ng GPS h\u1ed9 gia \u0111\u00ecnh.', 'info');
       return;
     }
     if (action === 'geocode') {
@@ -457,8 +457,8 @@
     event.preventDefault();
     const form = event.currentTarget;
     const id = form.elements.id.value;
-    if (!can('household_business', id ? 'update' : 'create')) return show('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n thao tÃ¡c nÃ y', 'warning');
-    if (!form.elements.household_id.value) { show('Vui lÃ²ng chá»n há»™ gia Ä‘Ã¬nh tá»« danh sÃ¡ch gá»£i Ã½', 'warning'); return; }
+    if (!can('household_business', id ? 'update' : 'create')) return show('Tài khoản hiện tại không có quyền thực hiện thao tác này', 'warning');
+    if (!form.elements.household_id.value) { show('Vui lòng chọn hộ gia đình từ danh sách gợi ý', 'warning'); return; }
     if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
     const payload = Object.fromEntries(new FormData(form).entries());
     delete payload.id;
@@ -472,7 +472,7 @@
       const saved = await request(id ? '/api/household-business/' + encodeURIComponent(id) : '/api/household-business', { method: id ? 'PUT' : 'POST', body: payload });
       await uploadPendingFiles(saved.id || id);
       window.App.modals.businessHousehold?.hide();
-      show('ÄÃ£ lÆ°u thÃ´ng tin há»™ sáº£n xuáº¥t/kinh doanh');
+      show('Đã lưu thông tin hộ sản xuất/kinh doanh');
       load();
       if (state.currentDetailHouseholdId && Number(saved.household_id || payload.household_id || 0) === state.currentDetailHouseholdId) showDetail(state.currentDetailHouseholdId);
       renderDashboard();
@@ -485,8 +485,8 @@
   async function uploadPendingFiles(id) {
     const imageInput = $('#businessImageFiles');
     const docInput = $('#businessDocumentFiles');
-    if (imageInput?.files?.length) await uploadFiles(id, 'IMAGE', $('#businessImageCategory')?.value || 'KhÃ¡c', imageInput.files);
-    if (docInput?.files?.length) await uploadFiles(id, 'DOCUMENT', $('#businessDocumentCategory')?.value || 'Há»“ sÆ¡ khÃ¡c', docInput.files);
+    if (imageInput?.files?.length) await uploadFiles(id, 'IMAGE', $('#businessImageCategory')?.value || 'Khác', imageInput.files);
+    if (docInput?.files?.length) await uploadFiles(id, 'DOCUMENT', $('#businessDocumentCategory')?.value || 'Hồ sơ khác', docInput.files);
   }
 
   async function uploadFiles(id, kind, category, files) {
@@ -501,7 +501,7 @@
     const host = $('#businessFileExisting');
     if (!host) return;
     const active = Array.isArray(files) ? files : [];
-    host.innerHTML = active.length ? active.map(file => '<span class="badge text-bg-light me-1 mb-1">' + esc(file.file_kind === 'IMAGE' ? 'áº¢nh' : 'TÃ i liá»‡u') + ': ' + esc(file.original_name || '') + '</span>').join('') : 'ChÆ°a cÃ³ áº£nh hoáº·c há»“ sÆ¡ Ä‘Ã­nh kÃ¨m';
+    host.innerHTML = active.length ? active.map(file => '<span class="badge text-bg-light me-1 mb-1">' + esc(file.file_kind === 'IMAGE' ? 'Ảnh' : 'Tài liệu') + ': ' + esc(file.original_name || '') + '</span>').join('') : 'Chưa có ảnh hoặc hồ sơ đính kèm';
   }
 
   async function showDetail(id) {
@@ -510,13 +510,13 @@
       const row = data.summary || summarizeHouseholdDetail(data.items || [], id);
       if (!row) {
         state.currentDetailHouseholdId = Number(id || 0) || null;
-        $('#detailTitle').textContent = 'Chi tiáº¿t há»™ sáº£n xuáº¥t & kinh doanh';
-        $('#detailBody').innerHTML = '<div class="text-muted p-3">Há»™ nÃ y khÃ´ng cÃ²n hoáº¡t Ä‘á»™ng sáº£n xuáº¥t/kinh doanh.</div>';
+        $('#detailTitle').textContent = 'Chi tiết hộ sản xuất & kinh doanh';
+        $('#detailBody').innerHTML = '<div class="text-muted p-3">Hộ này không còn hoạt động sản xuất/kinh doanh.</div>';
         window.App.modals.detail?.show();
         return;
       }
       state.currentDetailHouseholdId = Number(row.household_id || row.id || id || 0) || null;
-      $('#detailTitle').textContent = 'Chi tiáº¿t há»™ sáº£n xuáº¥t & kinh doanh';
+      $('#detailTitle').textContent = 'Chi tiết hộ sản xuất & kinh doanh';
       $('#detailBody').innerHTML = detailHtml(row);
       window.App.modals.detail?.show();
     } catch (error) { show(error.message, 'danger'); }
@@ -525,27 +525,27 @@
   function detailHtml(row) {
     const activities = activitiesOf(row);
     const householdId = Number(row.household_id || row.id || 0);
-    const addButton = can('household_business', 'create') ? '<button class="btn btn-primary btn-sm" type="button" onclick="window.addHouseholdBusinessActivity(' + householdId + ')"><i class="fa-solid fa-plus"></i> ThÃªm hoáº¡t Ä‘á»™ng</button>' : '';
+    const addButton = can('household_business', 'create') ? '<button class="btn btn-primary btn-sm" type="button" onclick="window.addHouseholdBusinessActivity(' + householdId + ')"><i class="fa-solid fa-plus"></i> Thêm hoạt động</button>' : '';
     const hasOcop = activities.some(activity => businessTruthy(activity.is_ocop));
     const hasFoodSafety = activities.some(activity => businessTruthy(activity.food_safety_certified));
     const hasSocialInsurance = activities.some(activity => businessTruthy(activity.social_insurance));
     const hasGps = Boolean(row.latitude && row.longitude) || activities.some(activity => activity.latitude && activity.longitude);
     const isActive = activities.some(activity => String(activity.status || '').toUpperCase() === 'ACTIVE');
     const tabs = [
-      ['info', 'ThÃ´ng tin', 'fa-circle-info', businessInfoTab(row, activities)],
-      ['activities', 'Hoáº¡t Ä‘á»™ng kinh táº¿', 'fa-store', businessActivityMasterDetail(activities, addButton)],
-      ['records', 'Há»“ sÆ¡', 'fa-folder-open', businessRecordsTab(activities)],
+      ['info', 'Thông tin', 'fa-circle-info', businessInfoTab(row, activities)],
+      ['activities', 'Hoạt động kinh tế', 'fa-store', businessActivityMasterDetail(activities, addButton)],
+      ['records', 'Hồ sơ', 'fa-folder-open', businessRecordsTab(activities)],
       ['timeline', 'Timeline', 'fa-clock-rotate-left', businessTimelineTab(activities)]
     ];
     return '<article class="person-detail-card person-detail-dynamic business-person-detail business-economic-popup">'
       + '<section class="person-detail-hero business-economic-hero">'
-      + '<div class="business-economic-hero-main"><span>Há»“ sÆ¡ sáº£n xuáº¥t & kinh doanh</span><h3>' + esc(row.household_code || 'Há»™ sáº£n xuáº¥t & kinh doanh') + '</h3><strong>' + esc(row.head_citizen_name || 'ChÆ°a cáº­p nháº­t') + '</strong><p>' + esc(row.address || 'ChÆ°a cáº­p nháº­t Ä‘á»‹a chá»‰') + '</p></div>'
+      + '<div class="business-economic-hero-main"><span>Hồ sơ sản xuất & kinh doanh</span><h3>' + esc(row.household_code || 'Hộ sản xuất & kinh doanh') + '</h3><strong>' + esc(row.head_citizen_name || 'Chưa cập nhật') + '</strong><p>' + esc(row.address || 'Chưa cập nhật địa chỉ') + '</p></div>'
       + '<div class="business-economic-hero-badges">'
-      + businessHeroBadge(isActive ? 'Äang hoáº¡t Ä‘á»™ng' : 'ChÆ°a hoáº¡t Ä‘á»™ng', isActive ? 'green' : 'neutral')
-      + businessHeroBadge(hasGps ? 'CÃ³ GPS' : 'KhÃ´ng GPS', hasGps ? 'blue' : 'neutral')
-      + businessHeroBadge(hasOcop ? 'OCOP' : 'KhÃ´ng OCOP', hasOcop ? 'gold' : 'neutral')
-      + businessHeroBadge(hasFoodSafety ? 'ATTP' : 'KhÃ´ng ATTP', hasFoodSafety ? 'green' : 'neutral')
-      + businessHeroBadge(hasSocialInsurance ? 'BHXH' : 'KhÃ´ng BHXH', hasSocialInsurance ? 'purple' : 'neutral')
+      + businessHeroBadge(isActive ? 'Đang hoạt động' : 'Chưa hoạt động', isActive ? 'green' : 'neutral')
+      + businessHeroBadge(hasGps ? 'Có GPS' : 'Không GPS', hasGps ? 'blue' : 'neutral')
+      + businessHeroBadge(hasOcop ? 'OCOP' : 'Không OCOP', hasOcop ? 'gold' : 'neutral')
+      + businessHeroBadge(hasFoodSafety ? 'ATTP' : 'Không ATTP', hasFoodSafety ? 'green' : 'neutral')
+      + businessHeroBadge(hasSocialInsurance ? 'BHXH' : 'Không BHXH', hasSocialInsurance ? 'purple' : 'neutral')
       + '</div></section>'
       + businessDetailTabs(tabs)
       + '</article>';
@@ -562,43 +562,43 @@
     const activeTotal = activities.filter(activity => String(activity.status || '').toUpperCase() === 'ACTIVE').length;
     const revenueTotal = activities.reduce((sum, activity) => sum + Number(activity.annual_revenue || 0), 0);
     return '<div class="person-detail-sections">'
-      + businessPersonSection('ThÃ´ng tin há»™', 'fa-house-user', [
-        businessPersonField('MÃ£ há»™', row.household_code, true),
-        businessPersonField('Chá»§ há»™', row.head_citizen_name),
-        businessPersonField('Äá»‹a chá»‰', row.address),
-        businessPersonField('Äiá»‡n thoáº¡i', row.phone)
+      + businessPersonSection('Thông tin hộ', 'fa-house-user', [
+        businessPersonField('Mã hộ', row.household_code, true),
+        businessPersonField('Chủ hộ', row.head_citizen_name),
+        businessPersonField('Địa chỉ', row.address),
+        businessPersonField('Điện thoại', row.phone)
       ].join(''))
-      + businessPersonSection('ThÃ´ng tin liÃªn há»‡', 'fa-address-book', [
+      + businessPersonSection('Thông tin liên hệ', 'fa-address-book', [
         businessPersonField('Email', row.email),
-        businessPersonField('GPS há»™', row.latitude && row.longitude ? row.latitude + ', ' + row.longitude : 'ChÆ°a Ä‘á»‹nh vá»‹'),
-        businessPersonField('Äá»‹a chá»‰ cÆ¡ sá»Ÿ', firstBusinessValue(activities, 'address') || row.address),
-        businessPersonField('Cáº­p nháº­t', date(latestActivityDate(activities) || row.updated_at || row.created_at))
+        businessPersonField('GPS hộ', row.latitude && row.longitude ? row.latitude + ', ' + row.longitude : 'Chưa định vị'),
+        businessPersonField('Địa chỉ cơ sở', firstBusinessValue(activities, 'address') || row.address),
+        businessPersonField('Cập nhật', date(latestActivityDate(activities) || row.updated_at || row.created_at))
       ].join(''))
-      + businessPersonSection('ThÃ´ng tin tá»•ng há»£p', 'fa-chart-pie', [
-        businessPersonField('Tá»•ng hoáº¡t Ä‘á»™ng', num(activities.length || row.business_count || 0)),
-        businessPersonField('Äang hoáº¡t Ä‘á»™ng', num(activeTotal)),
-        businessPersonField('Tá»•ng lao Ä‘á»™ng', num(workerTotal) + ' ngÆ°á»i'),
-        businessPersonField('Doanh thu', revenueTotal ? num(revenueTotal) : 'ChÆ°a cáº­p nháº­t')
+      + businessPersonSection('Thông tin tổng hợp', 'fa-chart-pie', [
+        businessPersonField('Tổng hoạt động', num(activities.length || row.business_count || 0)),
+        businessPersonField('Đang hoạt động', num(activeTotal)),
+        businessPersonField('Tổng lao động', num(workerTotal) + ' người'),
+        businessPersonField('Doanh thu', revenueTotal ? num(revenueTotal) : 'Chưa cập nhật')
       ].join(''))
-      + businessPersonSection('Chá»©ng nháº­n', 'fa-certificate', [
-        businessPersonField('OCOP', activities.some(activity => businessTruthy(activity.is_ocop)) ? 'CÃ³' : 'KhÃ´ng'),
-        businessPersonField('ATTP', activities.some(activity => businessTruthy(activity.food_safety_certified)) ? 'CÃ³' : 'KhÃ´ng'),
-        businessPersonField('BHXH', activities.some(activity => businessTruthy(activity.social_insurance)) ? 'CÃ³' : 'KhÃ´ng'),
-        businessPersonField('CÃ³ GPS', (Boolean(row.latitude && row.longitude) || activities.some(activity => activity.latitude && activity.longitude)) ? 'CÃ³' : 'KhÃ´ng')
+      + businessPersonSection('Chứng nhận', 'fa-certificate', [
+        businessPersonField('OCOP', activities.some(activity => businessTruthy(activity.is_ocop)) ? 'Có' : 'Không'),
+        businessPersonField('ATTP', activities.some(activity => businessTruthy(activity.food_safety_certified)) ? 'Có' : 'Không'),
+        businessPersonField('BHXH', activities.some(activity => businessTruthy(activity.social_insurance)) ? 'Có' : 'Không'),
+        businessPersonField('Có GPS', (Boolean(row.latitude && row.longitude) || activities.some(activity => activity.latitude && activity.longitude)) ? 'Có' : 'Không')
       ].join(''))
       + '</div>';
   }
 
   function businessActivityMasterDetail(activities, addButton) {
-    if (!activities.length) return '<div class="person-detail-empty">ChÆ°a cÃ³ hoáº¡t Ä‘á»™ng sáº£n xuáº¥t/kinh doanh.</div>' + (addButton ? '<div class="mt-3">' + addButton + '</div>' : '');
+    if (!activities.length) return '<div class="person-detail-empty">Chưa có hoạt động sản xuất/kinh doanh.</div>' + (addButton ? '<div class="mt-3">' + addButton + '</div>' : '');
     return '<section class="business-person-activity-shell business-modern-activity-shell">'
-      + '<aside class="business-person-activity-list business-modern-activity-list"><div class="business-modern-list-head"><div><i class="fa-solid fa-store"></i><strong>Hoáº¡t Ä‘á»™ng</strong><span>' + num(activities.length) + ' hoáº¡t Ä‘á»™ng</span></div>' + addButton + '</div><div class="business-person-activity-scroll business-modern-activity-scroll">' + activities.map((activity, index) => businessActivityListItem(activity, index)).join('') + '</div></aside>'
+      + '<aside class="business-person-activity-list business-modern-activity-list"><div class="business-modern-list-head"><div><i class="fa-solid fa-store"></i><strong>Hoạt động</strong><span>' + num(activities.length) + ' hoạt động</span></div>' + addButton + '</div><div class="business-person-activity-scroll business-modern-activity-scroll">' + activities.map((activity, index) => businessActivityListItem(activity, index)).join('') + '</div></aside>'
       + '<section class="business-person-activity-detail business-modern-activity-detail">' + activities.map((activity, index) => businessActivityDetailPanel(activity, index)).join('') + '</section>'
       + '</section>';
   }
 
   function businessActivityListItem(activity, index) {
-    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoáº¡t Ä‘á»™ng sá»‘ ' + (index + 1);
+    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     return '<button class="business-person-activity-item business-modern-activity-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')"><strong>' + esc(title) + '</strong><span>' + esc(businessActivityListSubtitle(activity)) + '</span>' + statusBadge(activity.status, activity.status_label) + '</button>';
   }
 
@@ -606,35 +606,35 @@
     const files = activity.files || [];
     const images = files.filter(file => file.file_kind === 'IMAGE');
     const documents = files.filter(file => file.file_kind === 'DOCUMENT');
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sá»­a</button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> XÃ³a</button>' : '';
-    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoáº¡t Ä‘á»™ng sá»‘ ' + (index + 1);
-    const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'ChÆ°a cáº­p nháº­t';
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
+    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
+    const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'Chưa cập nhật';
     return '<article class="business-person-activity-panel business-dashboard-activity-view ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
-      + '<header class="business-dashboard-activity-hero"><div><h3>' + esc(title) + '</h3><p>' + esc(activity.business_type_label || activity.business_type || 'ChÆ°a cáº­p nháº­t') + '</p><p>' + esc(sector) + '</p></div><div class="business-dashboard-activity-actions">' + statusBadge(activity.status, activity.status_label) + edit + del + '</div></header>'
+      + '<header class="business-dashboard-activity-hero"><div><h3>' + esc(title) + '</h3><p>' + esc(activity.business_type_label || activity.business_type || 'Chưa cập nhật') + '</p><p>' + esc(sector) + '</p></div><div class="business-dashboard-activity-actions">' + statusBadge(activity.status, activity.status_label) + edit + del + '</div></header>'
       + '<div class="business-dashboard-card-stack">'
-      + businessDashboardSection('ThÃ´ng tin cÆ¡ báº£n', 'fa-circle-info', [
-        businessDashboardRow('Loáº¡i hÃ¬nh', activity.business_type_label || activity.business_type),
-        businessDashboardRow('NgÃ nh nghá»', sector),
-        businessDashboardRow('Quy mÃ´', activity.business_scale),
-        businessDashboardRow('Sáº£n pháº©m', (activity.main_products || []).join(', ')),
-        businessDashboardRow('NgÃ y báº¯t Ä‘áº§u', date(activity.start_date))
+      + businessDashboardSection('Thông tin cơ bản', 'fa-circle-info', [
+        businessDashboardRow('Loại hình', activity.business_type_label || activity.business_type),
+        businessDashboardRow('Ngành nghề', sector),
+        businessDashboardRow('Quy mô', activity.business_scale),
+        businessDashboardRow('Sản phẩm', (activity.main_products || []).join(', ')),
+        businessDashboardRow('Ngày bắt đầu', date(activity.start_date))
       ].join(''))
-      + businessDashboardSection('ThÃ´ng tin sáº£n xuáº¥t', 'fa-chart-line', [
-        businessDashboardRow('Sáº£n pháº©m chÃ­nh', (activity.main_products || []).join(', ') || 'ChÆ°a cáº­p nháº­t'),
-        businessDashboardRow('Lao Ä‘á»™ng', num(activity.worker_count || 0) + ' ngÆ°á»i'),
-        businessDashboardRow('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'ChÆ°a cáº­p nháº­t'),
-        businessDashboardRow('Diá»‡n tÃ­ch / Quy mÃ´', businessActivityValue(activity, ['production_area','area','scale_description','operation_scale','facility_area']) || 'ChÆ°a cáº­p nháº­t'),
-        businessDashboardRow('Thá»‹ trÆ°á»ng tiÃªu thá»¥', businessActivityValue(activity, ['consumption_market','market','target_market','distribution_market']) || 'ChÆ°a cáº­p nháº­t')
+      + businessDashboardSection('Thông tin sản xuất', 'fa-chart-line', [
+        businessDashboardRow('Sản phẩm chính', (activity.main_products || []).join(', ') || 'Chưa cập nhật'),
+        businessDashboardRow('Lao động', num(activity.worker_count || 0) + ' người'),
+        businessDashboardRow('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'Chưa cập nhật'),
+        businessDashboardRow('Diện tích / Quy mô', businessActivityValue(activity, ['production_area','area','scale_description','operation_scale','facility_area']) || 'Chưa cập nhật'),
+        businessDashboardRow('Thị trường tiêu thụ', businessActivityValue(activity, ['consumption_market','market','target_market','distribution_market']) || 'Chưa cập nhật')
       ].join(''))
-      + businessDashboardSection('Chá»©ng nháº­n', 'fa-certificate', businessCertificationBadges(activity), true)
-      + businessDashboardSection('Vá»‹ trÃ­', 'fa-location-dot', [
-        businessDashboardRow('Äá»‹a chá»‰', activity.address || 'ChÆ°a cáº­p nháº­t'),
+      + businessDashboardSection('Chứng nhận', 'fa-certificate', businessCertificationBadges(activity), true)
+      + businessDashboardSection('Vị trí', 'fa-location-dot', [
+        businessDashboardRow('Địa chỉ', activity.address || 'Chưa cập nhật'),
         businessDashboardRow('GPS', gpsDisplay(activity)),
-        businessDashboardRow('NgÃ y cáº­p nháº­t', date(activity.updated_at || activity.created_at) || 'ChÆ°a cáº­p nháº­t')
+        businessDashboardRow('Ngày cập nhật', date(activity.updated_at || activity.created_at) || 'Chưa cập nhật')
       ].join(''))
-      + businessDashboardSection('Há»“ sÆ¡', 'fa-folder-open', businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id), true)
-      + (activity.note ? businessDashboardSection('Ghi chÃº', 'fa-note-sticky', '<p class="business-dashboard-note">' + esc(activity.note) + '</p>', true) : '')
+      + businessDashboardSection('Hồ sơ', 'fa-folder-open', businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id), true)
+      + (activity.note ? businessDashboardSection('Ghi chú', 'fa-note-sticky', '<p class="business-dashboard-note">' + esc(activity.note) + '</p>', true) : '')
       + '</div></article>';
   }
 
@@ -654,27 +654,27 @@
 
   function businessCertificationBadges(activity) {
     return '<div class="business-dashboard-cert-list">'
-      + businessDashboardRow('OCOP', businessTruthy(activity.is_ocop) ? (activity.ocop_star ? 'OCOP ' + activity.ocop_star + ' sao' : 'CÃ³') : 'KhÃ´ng')
-      + businessDashboardRow('ATTP', businessTruthy(activity.food_safety_certified) ? 'CÃ³' : 'KhÃ´ng')
-      + businessDashboardRow('BHXH', businessTruthy(activity.social_insurance) ? 'CÃ³' : 'KhÃ´ng')
+      + businessDashboardRow('OCOP', businessTruthy(activity.is_ocop) ? (activity.ocop_star ? 'OCOP ' + activity.ocop_star + ' sao' : 'Có') : 'Không')
+      + businessDashboardRow('ATTP', businessTruthy(activity.food_safety_certified) ? 'Có' : 'Không')
+      + businessDashboardRow('BHXH', businessTruthy(activity.social_insurance) ? 'Có' : 'Không')
       + '</div>';
   }
 
   function businessActivityImages(images, businessId) {
-    const add = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(businessId || 0) + ')"><i class="fa-solid fa-plus"></i> ThÃªm áº£nh</button>' : '';
-    if (!images.length) return '<div class="business-dashboard-media-line"><div><span><i class="fa-solid fa-images"></i>áº¢nh</span><strong><i class="fa-regular fa-image"></i> ChÆ°a cÃ³ áº£nh</strong></div>' + add + '</div>';
-    return '<div class="business-dashboard-media-line"><div><span><i class="fa-solid fa-images"></i>áº¢nh</span><div class="business-dashboard-thumbs">' + images.slice(0, 6).map(file => mediaThumb(file, businessId)).join('') + (images.length > 6 ? '<span class="business-economic-more">+' + (images.length - 6) + '</span>' : '') + '</div></div>' + add + '</div>';
+    const add = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(businessId || 0) + ')"><i class="fa-solid fa-plus"></i> Thêm ảnh</button>' : '';
+    if (!images.length) return '<div class="business-dashboard-media-line"><div><span><i class="fa-solid fa-images"></i>Ảnh</span><strong><i class="fa-regular fa-image"></i> Chưa có ảnh</strong></div>' + add + '</div>';
+    return '<div class="business-dashboard-media-line"><div><span><i class="fa-solid fa-images"></i>Ảnh</span><div class="business-dashboard-thumbs">' + images.slice(0, 6).map(file => mediaThumb(file, businessId)).join('') + (images.length > 6 ? '<span class="business-economic-more">+' + (images.length - 6) + '</span>' : '') + '</div></div>' + add + '</div>';
   }
 
   function businessActivityDocuments(documents, businessId) {
-    if (!documents.length) return '<div class="business-dashboard-media-line"><div><span><i class="fa-solid fa-file-lines"></i>TÃ i liá»‡u</span><strong><i class="fa-regular fa-file-lines"></i> ChÆ°a cÃ³ tÃ i liá»‡u</strong></div></div>';
-    return '<div class="business-dashboard-document-list"><span><i class="fa-solid fa-file-lines"></i>TÃ i liá»‡u</span>' + documents.map(file => businessActivityDocumentRow(file, businessId)).join('') + '</div>';
+    if (!documents.length) return '<div class="business-dashboard-media-line"><div><span><i class="fa-solid fa-file-lines"></i>Tài liệu</span><strong><i class="fa-regular fa-file-lines"></i> Chưa có tài liệu</strong></div></div>';
+    return '<div class="business-dashboard-document-list"><span><i class="fa-solid fa-file-lines"></i>Tài liệu</span>' + documents.map(file => businessActivityDocumentRow(file, businessId)).join('') + '</div>';
   }
 
   function businessActivityDocumentRow(file, businessId) {
     const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
     const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
-    return '<div class="business-dashboard-document"><i class="fa-solid fa-file-lines"></i><strong>' + esc(file.original_name || file.category || 'TÃ i liá»‡u') + '</strong><span><a target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-eye"></i></a><a href="' + download + '" title="Táº£i xuá»‘ng"><i class="fa-solid fa-download"></i></a></span></div>';
+    return '<div class="business-dashboard-document"><i class="fa-solid fa-file-lines"></i><strong>' + esc(file.original_name || file.category || 'Tài liệu') + '</strong><span><a target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-eye"></i></a><a href="' + download + '" title="Tải xuống"><i class="fa-solid fa-download"></i></a></span></div>';
   }
 
   function businessActivityValue(activity, keys) {
@@ -689,8 +689,8 @@
     const documents = [];
     activities.forEach(activity => (activity.files || []).forEach(file => (file.file_kind === 'IMAGE' ? images : documents).push({ file, businessId: activity.id })));
     return '<div class="person-detail-sections">'
-      + businessPersonSection('áº¢nh cÆ¡ sá»Ÿ', 'fa-images', images.length ? '<div class="business-person-file-list">' + images.map(item => businessRecordRow(item.file, item.businessId, true)).join('') + '</div>' : '<div class="person-detail-empty">ChÆ°a cÃ³ áº£nh.</div>')
-      + businessPersonSection('Giáº¥y phÃ©p - chá»©ng nháº­n - tÃ i liá»‡u', 'fa-folder-open', documents.length ? '<div class="business-person-file-list">' + documents.map(item => businessRecordRow(item.file, item.businessId, false)).join('') + '</div>' : '<div class="person-detail-empty">ChÆ°a cÃ³ tÃ i liá»‡u.</div>')
+      + businessPersonSection('Ảnh cơ sở', 'fa-images', images.length ? '<div class="business-person-file-list">' + images.map(item => businessRecordRow(item.file, item.businessId, true)).join('') + '</div>' : '<div class="person-detail-empty">Chưa có ảnh.</div>')
+      + businessPersonSection('Giấy phép - chứng nhận - tài liệu', 'fa-folder-open', documents.length ? '<div class="business-person-file-list">' + documents.map(item => businessRecordRow(item.file, item.businessId, false)).join('') + '</div>' : '<div class="person-detail-empty">Chưa có tài liệu.</div>')
       + '</div>';
   }
 
@@ -698,19 +698,19 @@
     const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
     const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
     const icon = isImage ? '<img src="' + preview + '" alt="">' : '<i class="fa-solid fa-file-lines"></i>';
-    return '<div class="business-person-file-row"><div class="business-person-file-icon">' + icon + '</div><div><strong>' + esc(file.category || file.original_name || 'Há»“ sÆ¡') + '</strong><span>' + esc(file.original_name || '') + '</span></div><div><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '">Xem</a><a class="btn btn-sm btn-outline-secondary" href="' + download + '">Táº£i xuá»‘ng</a></div></div>';
+    return '<div class="business-person-file-row"><div class="business-person-file-icon">' + icon + '</div><div><strong>' + esc(file.category || file.original_name || 'Hồ sơ') + '</strong><span>' + esc(file.original_name || '') + '</span></div><div><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '">Xem</a><a class="btn btn-sm btn-outline-secondary" href="' + download + '">Tải xuống</a></div></div>';
   }
 
   function businessTimelineTab(activities) {
     const events = [];
     activities.forEach(activity => {
-      if (activity.created_at) events.push({ time: activity.created_at, title: 'Táº¡o hoáº¡t Ä‘á»™ng', text: activity.business_name || activity.economic_type || activity.sector_label || 'Hoáº¡t Ä‘á»™ng kinh táº¿' });
-      if (activity.updated_at && activity.updated_at !== activity.created_at) events.push({ time: activity.updated_at, title: 'Cáº­p nháº­t hoáº¡t Ä‘á»™ng', text: activity.business_name || activity.economic_type || activity.sector_label || 'Hoáº¡t Ä‘á»™ng kinh táº¿' });
-      (activity.files || []).forEach(file => events.push({ time: file.created_at || activity.updated_at || activity.created_at, title: file.file_kind === 'IMAGE' ? 'Upload áº£nh' : 'Upload tÃ i liá»‡u', text: file.original_name || file.category || '' }));
+      if (activity.created_at) events.push({ time: activity.created_at, title: 'Tạo hoạt động', text: activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động kinh tế' });
+      if (activity.updated_at && activity.updated_at !== activity.created_at) events.push({ time: activity.updated_at, title: 'Cập nhật hoạt động', text: activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động kinh tế' });
+      (activity.files || []).forEach(file => events.push({ time: file.created_at || activity.updated_at || activity.created_at, title: file.file_kind === 'IMAGE' ? 'Upload ảnh' : 'Upload tài liệu', text: file.original_name || file.category || '' }));
     });
     events.sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
-    if (!events.length) return '<div class="person-detail-empty">ChÆ°a cÃ³ lá»‹ch sá»­ hoáº¡t Ä‘á»™ng.</div>';
-    return '<section class="person-info-section business-person-timeline"><div class="person-info-section-title"><i class="fa-solid fa-clock-rotate-left"></i><h4>Timeline</h4></div><div class="business-person-timeline-list">' + events.map(event => '<div class="business-person-timeline-item"><span>' + esc(date(event.time) || 'ChÆ°a cáº­p nháº­t') + '</span><strong>' + esc(event.title) + '</strong><p>' + esc(event.text || '') + '</p></div>').join('') + '</div></section>';
+    if (!events.length) return '<div class="person-detail-empty">Chưa có lịch sử hoạt động.</div>';
+    return '<section class="person-info-section business-person-timeline"><div class="person-info-section-title"><i class="fa-solid fa-clock-rotate-left"></i><h4>Timeline</h4></div><div class="business-person-timeline-list">' + events.map(event => '<div class="business-person-timeline-item"><span>' + esc(date(event.time) || 'Chưa cập nhật') + '</span><strong>' + esc(event.title) + '</strong><p>' + esc(event.text || '') + '</p></div>').join('') + '</div></section>';
   }
 
   function businessPersonSection(title, icon, content) {
@@ -769,57 +769,57 @@
 
   function businessTypeCard(typeValues, activities) {
     if (typeValues.length < 2) return '';
-    const rows = activities.map((activity, index) => '<tr><td>' + num(index + 1) + '</td><td>' + esc(activity.business_type_label || activity.business_type || 'ChÆ°a cáº­p nháº­t') + '</td><td>' + esc(activity.sector_label || activity.economic_type || 'ChÆ°a cáº­p nháº­t') + '</td><td>' + esc(activity.business_scale || 'ChÆ°a cáº­p nháº­t') + '</td></tr>').join('');
-    return '<section class="business-detail-card"><div class="business-detail-card-head"><div><i class="fa-solid fa-layer-group"></i><h4>Loáº¡i hÃ¬nh kinh doanh</h4></div></div><div class="business-detail-table-wrap"><table class="table table-sm align-middle mb-0"><thead><tr><th>STT</th><th>Loáº¡i hÃ¬nh</th><th>NgÃ nh nghá»</th><th>Quy mÃ´</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
+    const rows = activities.map((activity, index) => '<tr><td>' + num(index + 1) + '</td><td>' + esc(activity.business_type_label || activity.business_type || 'Chưa cập nhật') + '</td><td>' + esc(activity.sector_label || activity.economic_type || 'Chưa cập nhật') + '</td><td>' + esc(activity.business_scale || 'Chưa cập nhật') + '</td></tr>').join('');
+    return '<section class="business-detail-card"><div class="business-detail-card-head"><div><i class="fa-solid fa-layer-group"></i><h4>Loại hình kinh doanh</h4></div></div><div class="business-detail-table-wrap"><table class="table table-sm align-middle mb-0"><thead><tr><th>STT</th><th>Loại hình</th><th>Ngành nghề</th><th>Quy mô</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
   }
 
   function dashboardActivityRow(activity, index) {
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" title="Sá»­a" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i></button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="XÃ³a" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i></button>' : '';
-    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoáº¡t Ä‘á»™ng sá»‘ ' + (index + 1);
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" title="Sửa" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i></button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="Xóa" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i></button>' : '';
+    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     return '<article class="business-detail-activity">'
-      + '<div class="business-detail-activity-head"><div><span>Hoáº¡t Ä‘á»™ng ' + num(index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-detail-activity-actions">' + edit + del + '</div></div>'
+      + '<div class="business-detail-activity-head"><div><span>Hoạt động ' + num(index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-detail-activity-actions">' + edit + del + '</div></div>'
       + '<div class="business-detail-activity-grid">'
-      + dashboardMiniField('NgÃ nh nghá»', activity.sector_label || activity.economic_type || activity.production_sector || activity.business_sector)
-      + dashboardMiniField('Loáº¡i hÃ¬nh', activity.business_type_label || activity.business_type)
-      + dashboardMiniField('Lao Ä‘á»™ng', num(activity.worker_count || 0) + ' ngÆ°á»i')
-      + dashboardMiniField('OCOP', businessTruthy(activity.is_ocop) ? 'CÃ³' : 'KhÃ´ng')
-      + dashboardMiniField('ATTP', businessTruthy(activity.food_safety_certified) ? 'CÃ³' : 'KhÃ´ng')
-      + dashboardMiniField('BHXH', businessTruthy(activity.social_insurance) ? 'CÃ³' : 'KhÃ´ng')
-      + dashboardMiniField('Tráº¡ng thÃ¡i', activity.status_label || activity.status || 'ChÆ°a cáº­p nháº­t')
+      + dashboardMiniField('Ngành nghề', activity.sector_label || activity.economic_type || activity.production_sector || activity.business_sector)
+      + dashboardMiniField('Loại hình', activity.business_type_label || activity.business_type)
+      + dashboardMiniField('Lao động', num(activity.worker_count || 0) + ' người')
+      + dashboardMiniField('OCOP', businessTruthy(activity.is_ocop) ? 'Có' : 'Không')
+      + dashboardMiniField('ATTP', businessTruthy(activity.food_safety_certified) ? 'Có' : 'Không')
+      + dashboardMiniField('BHXH', businessTruthy(activity.social_insurance) ? 'Có' : 'Không')
+      + dashboardMiniField('Trạng thái', activity.status_label || activity.status || 'Chưa cập nhật')
       + '</div>'
       + '</article>';
   }
 
   function dashboardMiniField(label, value) {
-    return '<div class="business-detail-mini-field"><span>' + esc(label) + '</span><strong>' + esc(value || 'ChÆ°a cáº­p nháº­t') + '</strong></div>';
+    return '<div class="business-detail-mini-field"><span>' + esc(label) + '</span><strong>' + esc(value || 'Chưa cập nhật') + '</strong></div>';
   }
 
   function documentsCard(activities) {
     const docs = [];
     activities.forEach(activity => (activity.files || []).filter(file => file.file_kind === 'DOCUMENT').forEach(file => docs.push({ file, businessId: activity.id })));
-    const body = docs.length ? '<div class="business-detail-doc-list">' + docs.map(item => documentRow(item.file, item.businessId)).join('') + '</div>' : '<div class="business-empty-state">ChÆ°a cÃ³ giáº¥y tá».</div>';
-    return dashboardInfoCard('Giáº¥y tá»', 'fa-file-lines', body);
+    const body = docs.length ? '<div class="business-detail-doc-list">' + docs.map(item => documentRow(item.file, item.businessId)).join('') + '</div>' : '<div class="business-empty-state">Chưa có giấy tờ.</div>';
+    return dashboardInfoCard('Giấy tờ', 'fa-file-lines', body);
   }
 
   function documentRow(file, businessId) {
     const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
     const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
-    return '<div class="business-detail-doc-row"><div><i class="fa-solid fa-file-lines"></i><strong>' + esc(file.category || file.original_name || 'TÃ i liá»‡u') + '</strong><span>' + esc(file.original_name || '') + '</span></div><div><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '">Xem</a><a class="btn btn-sm btn-outline-secondary" href="' + download + '">Táº£i xuá»‘ng</a></div></div>';
+    return '<div class="business-detail-doc-row"><div><i class="fa-solid fa-file-lines"></i><strong>' + esc(file.category || file.original_name || 'Tài liệu') + '</strong><span>' + esc(file.original_name || '') + '</span></div><div><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '">Xem</a><a class="btn btn-sm btn-outline-secondary" href="' + download + '">Tải xuống</a></div></div>';
   }
 
   function notesCard(activities) {
     const notes = uniqueValues(activities.map(activity => activity.note).filter(Boolean));
-    const body = '<div class="business-detail-note">' + esc(notes.length ? notes.join('\n') : 'KhÃ´ng cÃ³ ghi chÃº.') + '</div>';
-    return dashboardInfoCard('Ghi chÃº', 'fa-note-sticky', body);
+    const body = '<div class="business-detail-note">' + esc(notes.length ? notes.join('\n') : 'Không có ghi chú.') + '</div>';
+    return dashboardInfoCard('Ghi chú', 'fa-note-sticky', body);
   }
 
   function businessActivityMasterDetail(activities, addButton) {
     if (!activities.length) {
-      return '<section class="business-detail-card business-detail-card-wide"><div class="business-detail-card-head"><div><i class="fa-solid fa-store"></i><h4>Hoáº¡t Ä‘á»™ng kinh táº¿</h4></div>' + addButton + '</div><div class="business-empty-state">ChÆ°a cÃ³ hoáº¡t Ä‘á»™ng sáº£n xuáº¥t/kinh doanh.</div></section>';
+      return '<section class="business-detail-card business-detail-card-wide"><div class="business-detail-card-head"><div><i class="fa-solid fa-store"></i><h4>Hoạt động kinh tế</h4></div>' + addButton + '</div><div class="business-empty-state">Chưa có hoạt động sản xuất/kinh doanh.</div></section>';
     }
     return '<section class="business-detail-card business-detail-card-wide business-activity-master-card">'
-      + '<div class="business-detail-card-head"><div><i class="fa-solid fa-store"></i><h4>Hoáº¡t Ä‘á»™ng kinh táº¿</h4></div>' + addButton + '</div>'
+      + '<div class="business-detail-card-head"><div><i class="fa-solid fa-store"></i><h4>Hoạt động kinh tế</h4></div>' + addButton + '</div>'
       + '<div class="business-activity-master">'
       + '<aside class="business-activity-list-panel"><div class="business-activity-list-scroll">' + activities.map((activity, index) => businessActivityListItem(activity, index)).join('') + '</div></aside>'
       + '<section class="business-activity-detail-panel">' + activities.map((activity, index) => businessActivityDetailPanel(activity, index)).join('') + '</section>'
@@ -828,7 +828,7 @@
   }
 
   function businessActivityListItem(activity, index) {
-    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoáº¡t Ä‘á»™ng sá»‘ ' + (index + 1);
+    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     return '<button class="business-activity-list-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')">'
       + '<strong>' + esc(title) + '</strong>'
       + '<span>' + esc(businessActivityListSubtitle(activity)) + '</span>'
@@ -840,35 +840,35 @@
     const files = activity.files || [];
     const images = files.filter(file => file.file_kind === 'IMAGE');
     const documents = files.filter(file => file.file_kind === 'DOCUMENT');
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sá»­a</button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> XÃ³a</button>' : '';
-    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoáº¡t Ä‘á»™ng sá»‘ ' + (index + 1);
-    const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'ChÆ°a cáº­p nháº­t';
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
+    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
+    const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'Chưa cập nhật';
     return '<article class="business-activity-detail business-dashboard-activity-view ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
-      + '<header class="business-dashboard-activity-hero"><div><h3>' + esc(title) + '</h3><p>' + esc(activity.status_label || activity.status || 'ChÆ°a cáº­p nháº­t') + '</p><p>' + esc(activity.business_type_label || activity.business_type || 'ChÆ°a cáº­p nháº­t') + ' Â· ' + esc(sector) + '</p></div><div class="business-dashboard-activity-actions">' + edit + del + '</div></header>'
+      + '<header class="business-dashboard-activity-hero"><div><h3>' + esc(title) + '</h3><p>' + esc(activity.status_label || activity.status || 'Chưa cập nhật') + '</p><p>' + esc(activity.business_type_label || activity.business_type || 'Chưa cập nhật') + ' · ' + esc(sector) + '</p></div><div class="business-dashboard-activity-actions">' + edit + del + '</div></header>'
       + '<div class="business-dashboard-card-stack">'
-      + businessDashboardSection('ThÃ´ng tin cÆ¡ báº£n', 'fa-circle-info', [
-        businessDashboardRow('Loáº¡i hÃ¬nh', activity.business_type_label || activity.business_type),
-        businessDashboardRow('Loáº¡i hÃ¬nh kinh táº¿', activity.economic_type),
-        businessDashboardRow('NgÃ nh nghá»', sector),
-        businessDashboardRow('Quy mÃ´', activity.business_scale),
-        businessDashboardRow('NgÃ y báº¯t Ä‘áº§u', date(activity.start_date))
+      + businessDashboardSection('Thông tin cơ bản', 'fa-circle-info', [
+        businessDashboardRow('Loại hình', activity.business_type_label || activity.business_type),
+        businessDashboardRow('Loại hình kinh tế', activity.economic_type),
+        businessDashboardRow('Ngành nghề', sector),
+        businessDashboardRow('Quy mô', activity.business_scale),
+        businessDashboardRow('Ngày bắt đầu', date(activity.start_date))
       ].join(''))
-      + businessDashboardSection('ThÃ´ng tin sáº£n xuáº¥t', 'fa-chart-line', [
-        businessDashboardRow('Sáº£n pháº©m chÃ­nh', (activity.main_products || []).join(', ') || 'ChÆ°a cáº­p nháº­t'),
-        businessDashboardRow('Lao Ä‘á»™ng', num(activity.worker_count || 0) + ' ngÆ°á»i'),
-        businessDashboardRow('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'ChÆ°a cáº­p nháº­t'),
-        businessDashboardRow('Diá»‡n tÃ­ch / Quy mÃ´', businessActivityValue(activity, ['production_area','area','scale_description','operation_scale','facility_area']) || 'ChÆ°a cáº­p nháº­t'),
-        businessDashboardRow('Thá»‹ trÆ°á»ng tiÃªu thá»¥', businessActivityValue(activity, ['consumption_market','market','target_market','distribution_market']) || 'ChÆ°a cáº­p nháº­t')
+      + businessDashboardSection('Thông tin sản xuất', 'fa-chart-line', [
+        businessDashboardRow('Sản phẩm chính', (activity.main_products || []).join(', ') || 'Chưa cập nhật'),
+        businessDashboardRow('Lao động', num(activity.worker_count || 0) + ' người'),
+        businessDashboardRow('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'Chưa cập nhật'),
+        businessDashboardRow('Diện tích / Quy mô', businessActivityValue(activity, ['production_area','area','scale_description','operation_scale','facility_area']) || 'Chưa cập nhật'),
+        businessDashboardRow('Thị trường tiêu thụ', businessActivityValue(activity, ['consumption_market','market','target_market','distribution_market']) || 'Chưa cập nhật')
       ].join(''))
-      + businessDashboardSection('Chá»©ng nháº­n', 'fa-certificate', businessCertificationBadges(activity), true)
-      + businessDashboardSection('Vá»‹ trÃ­', 'fa-location-dot', [
-        businessDashboardRow('Äá»‹a chá»‰', activity.address || 'ChÆ°a cáº­p nháº­t'),
+      + businessDashboardSection('Chứng nhận', 'fa-certificate', businessCertificationBadges(activity), true)
+      + businessDashboardSection('Vị trí', 'fa-location-dot', [
+        businessDashboardRow('Địa chỉ', activity.address || 'Chưa cập nhật'),
         businessDashboardRow('GPS', gpsDisplay(activity)),
-        businessDashboardRow('NgÃ y cáº­p nháº­t', date(activity.updated_at || activity.created_at) || 'ChÆ°a cáº­p nháº­t')
+        businessDashboardRow('Ngày cập nhật', date(activity.updated_at || activity.created_at) || 'Chưa cập nhật')
       ].join(''))
-      + businessDashboardSection('Há»“ sÆ¡', 'fa-folder-open', businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id), true)
-      + (activity.note ? businessDashboardSection('Ghi chÃº', 'fa-note-sticky', '<p class="business-dashboard-note">' + esc(activity.note) + '</p>', true) : '')
+      + businessDashboardSection('Hồ sơ', 'fa-folder-open', businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id), true)
+      + (activity.note ? businessDashboardSection('Ghi chú', 'fa-note-sticky', '<p class="business-dashboard-note">' + esc(activity.note) + '</p>', true) : '')
       + '</div></article>';
   }
 
@@ -881,7 +881,7 @@
       if (normalizedSector.startsWith(normalizedType)) return sector;
       return type + ' - ' + sector;
     }
-    return type || sector || 'ChÆ°a cáº­p nháº­t';
+    return type || sector || 'Chưa cập nhật';
   }
 
   function selectBusinessActivity(index) {
@@ -904,10 +904,10 @@
   }
 
   function memberList(members) {
-    if (!members.length) return '<div class="business-member-empty">ChÆ°a cÃ³ nhÃ¢n kháº©u</div>';
+    if (!members.length) return '<div class="business-member-empty">Chưa có nhân khẩu</div>';
     const shown = members.slice(0, 6).map(member => '<div class="business-member-item"><strong>' + esc(member.full_name || '') + '</strong><span>' + esc(member.relationship || '') + '</span></div>').join('');
     const remaining = Math.max(0, members.length - 6);
-    return shown + (remaining ? '<div class="business-member-more">CÃ²n ' + remaining + ' nhÃ¢n kháº©u khÃ¡c</div>' : '');
+    return shown + (remaining ? '<div class="business-member-more">Còn ' + remaining + ' nhân khẩu khác</div>' : '');
   }
 
   function summaryItem(label, value) {
@@ -923,28 +923,28 @@
     const files = activity.files || [];
     const images = files.filter(file => file.file_kind === 'IMAGE');
     const documents = files.filter(file => file.file_kind === 'DOCUMENT');
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sá»­a</button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> XÃ³a</button>' : '';
-    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoáº¡t Ä‘á»™ng sá»‘ ' + (index + 1);
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
+    const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     return '<article class="business-dashboard-activity-card">'
-      + '<header class="business-activity-dashboard-head"><div><span>Hoáº¡t Ä‘á»™ng sá»‘ ' + (index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-activity-head-actions">' + statusBadge(activity.status, activity.status_label) + edit + del + '</div></header>'
+      + '<header class="business-activity-dashboard-head"><div><span>Hoạt động số ' + (index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-activity-head-actions">' + statusBadge(activity.status, activity.status_label) + edit + del + '</div></header>'
       + '<div class="business-activity-dashboard-grid">'
-      + dashboardField('Loáº¡i hÃ¬nh', activity.business_type_label)
-      + dashboardField('NgÃ nh nghá»', activity.sector_label || activity.economic_type)
-      + dashboardField('Quy mÃ´', activity.business_scale)
-      + dashboardField('Lao Ä‘á»™ng', num(activity.worker_count || 0) + ' ngÆ°á»i')
-      + dashboardField('Sáº£n pháº©m', (activity.main_products || []).join(', '))
+      + dashboardField('Loại hình', activity.business_type_label)
+      + dashboardField('Ngành nghề', activity.sector_label || activity.economic_type)
+      + dashboardField('Quy mô', activity.business_scale)
+      + dashboardField('Lao động', num(activity.worker_count || 0) + ' người')
+      + dashboardField('Sản phẩm', (activity.main_products || []).join(', '))
       + dashboardField('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : '')
       + '</div>'
       + '<div class="business-activity-supplement">'
       + '<div class="business-supplement-badges">'
       + flagBadge(hasGps(activity), hasGps(activity) ? gpsDisplay(activity) : 'Kh\u00f4ng GPS')
-      + flagBadge(businessTruthy(activity.is_ocop), activity.is_ocop ? 'OCOP' : 'KhÃ´ng OCOP')
-      + flagBadge(businessTruthy(activity.food_safety_certified), activity.food_safety_certified ? 'ATTP' : 'KhÃ´ng ATTP')
-      + flagBadge(businessTruthy(activity.social_insurance), activity.social_insurance ? 'BHXH' : 'KhÃ´ng BHXH')
+      + flagBadge(businessTruthy(activity.is_ocop), activity.is_ocop ? 'OCOP' : 'Không OCOP')
+      + flagBadge(businessTruthy(activity.food_safety_certified), activity.food_safety_certified ? 'ATTP' : 'Không ATTP')
+      + flagBadge(businessTruthy(activity.social_insurance), activity.social_insurance ? 'BHXH' : 'Không BHXH')
       + '</div>'
-      + '<div class="business-supplement-meta">' + compactMeta('Äá»‹a chá»‰', activity.address) + compactMeta('Cáº­p nháº­t', date(activity.updated_at || activity.created_at)) + '</div>'
-      + '<div class="business-activity-media-inline">' + mediaInline('áº¢nh', images, activity.id, 'image') + mediaInline('TÃ i liá»‡u', documents, activity.id, 'document') + '</div>'
+      + '<div class="business-supplement-meta">' + compactMeta('Địa chỉ', activity.address) + compactMeta('Cập nhật', date(activity.updated_at || activity.created_at)) + '</div>'
+      + '<div class="business-activity-media-inline">' + mediaInline('Ảnh', images, activity.id, 'image') + mediaInline('Tài liệu', documents, activity.id, 'document') + '</div>'
       + '</div>'
       + '</article>';
   }
@@ -976,7 +976,7 @@
 
   function mediaInline(title, files, businessId, kind = '') {
     const icon = kind === 'image' ? 'fa-images' : 'fa-file-lines';
-    if (!files.length) return '<div class="business-media-inline"><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><strong>ChÆ°a cÃ³ ' + esc(title.toLowerCase()) + '</strong></div>';
+    if (!files.length) return '<div class="business-media-inline"><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><strong>Chưa có ' + esc(title.toLowerCase()) + '</strong></div>';
     const previewItems = files.slice(0, 4).map(file => mediaThumb(file, businessId)).join('');
     const remaining = Math.max(0, files.length - 4);
     return '<div class="business-media-inline"><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><div class="business-media-thumbs">' + previewItems + (remaining ? '<button type="button" class="business-media-more">+' + remaining + '</button>' : '') + '</div></div>';
@@ -986,7 +986,7 @@
     const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
     const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
     if (file.file_kind === 'IMAGE') return '<a class="business-media-thumb" href="' + preview + '" target="_blank" rel="noopener"><img src="' + preview + '" alt=""></a>';
-    return '<a class="business-media-thumb is-document" href="' + download + '" title="' + esc(file.original_name || 'TÃ i liá»‡u') + '"><i class="fa-solid fa-file-lines"></i></a>';
+    return '<a class="business-media-thumb is-document" href="' + download + '" title="' + esc(file.original_name || 'Tài liệu') + '"><i class="fa-solid fa-file-lines"></i></a>';
   }
 
   function detailField(label, value) {
@@ -995,17 +995,17 @@
   }
 
   function fileGallery(title, files, businessId, kind = '') {
-    const countText = files.length ? num(files.length) + ' tá»‡p' : 'ChÆ°a cÃ³';
+    const countText = files.length ? num(files.length) + ' tệp' : 'Chưa có';
     const icon = kind === 'image' ? 'fa-images' : 'fa-file-lines';
     if (!files.length) {
-      return '<details class="business-media-panel"><summary><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><strong>' + countText + '</strong></summary><div class="business-media-empty">ChÆ°a cÃ³ dá»¯ liá»‡u</div></details>';
+      return '<details class="business-media-panel"><summary><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><strong>' + countText + '</strong></summary><div class="business-media-empty">Chưa có dữ liệu</div></details>';
     }
     const cards = files.map(file => {
       const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
       const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
       const thumb = file.file_kind === 'IMAGE' ? '<a href="' + preview + '" target="_blank" rel="noopener"><img src="' + preview + '" alt=""></a>' : '<i class="fa-solid fa-file-lines business-file-icon"></i>';
-      const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="XÃ³a" onclick="window.deleteHouseholdBusinessFile(' + Number(businessId) + ',' + Number(file.id) + ')"><i class="fa-solid fa-trash"></i></button>' : '';
-      return '<div class="business-file-row">' + thumb + '<div class="business-file-meta"><strong>' + esc(file.original_name || '') + '</strong><span>' + esc(file.category || '') + ' - ' + date(file.created_at) + ' - ' + esc(file.uploaded_by || '') + '</span></div><div class="business-file-actions"><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-magnifying-glass-plus"></i></a><a class="btn btn-sm btn-outline-secondary" href="' + download + '" title="Táº£i xuá»‘ng"><i class="fa-solid fa-download"></i></a>' + del + '</div></div>';
+      const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="Xóa" onclick="window.deleteHouseholdBusinessFile(' + Number(businessId) + ',' + Number(file.id) + ')"><i class="fa-solid fa-trash"></i></button>' : '';
+      return '<div class="business-file-row">' + thumb + '<div class="business-file-meta"><strong>' + esc(file.original_name || '') + '</strong><span>' + esc(file.category || '') + ' - ' + date(file.created_at) + ' - ' + esc(file.uploaded_by || '') + '</span></div><div class="business-file-actions"><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-magnifying-glass-plus"></i></a><a class="btn btn-sm btn-outline-secondary" href="' + download + '" title="Tải xuống"><i class="fa-solid fa-download"></i></a>' + del + '</div></div>';
     }).join('');
     return '<details class="business-media-panel"><summary><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><strong>' + countText + '</strong></summary><div class="business-file-list">' + cards + '</div></details>';
   }
@@ -1016,23 +1016,23 @@
   }
 
   async function deleteBusinessFile(businessId, fileId) {
-    if (!can('household_business', 'delete')) return show('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n xÃ³a file', 'warning');
-    if (!confirm('XÃ³a file Ä‘Ã­nh kÃ¨m nÃ y?')) return;
+    if (!can('household_business', 'delete')) return show('Tài khoản hiện tại không có quyền xóa file', 'warning');
+    if (!confirm('Xóa file đính kèm này?')) return;
     await request('/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(fileId), { method: 'DELETE' });
-    show('ÄÃ£ xÃ³a file Ä‘Ã­nh kÃ¨m');
+    show('Đã xóa file đính kèm');
     if (state.currentDetailHouseholdId) showDetail(state.currentDetailHouseholdId);
   }
 
   async function remove(id) {
-    if (!can('household_business', 'delete')) return show('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n xÃ³a', 'warning');
-    if (!confirm('XÃ³a hoáº¡t Ä‘á»™ng sáº£n xuáº¥t/kinh doanh nÃ y? Dá»¯ liá»‡u há»™ gia Ä‘Ã¬nh vÃ  nhÃ¢n kháº©u khÃ´ng bá»‹ xÃ³a.')) return;
+    if (!can('household_business', 'delete')) return show('Tài khoản hiện tại không có quyền xóa', 'warning');
+    if (!confirm('Xóa hoạt động sản xuất/kinh doanh này? Dữ liệu hộ gia đình và nhân khẩu không bị xóa.')) return;
     let householdId = state.currentDetailHouseholdId;
     try {
       const before = await request('/api/household-business/' + encodeURIComponent(id), { cacheTtl: 0 });
       householdId = Number(before.household_id || householdId || 0) || householdId;
     } catch (error) {}
     await request('/api/household-business/' + encodeURIComponent(id), { method: 'DELETE' });
-    show('ÄÃ£ xÃ³a hoáº¡t Ä‘á»™ng sáº£n xuáº¥t/kinh doanh');
+    show('Đã xóa hoạt động sản xuất/kinh doanh');
     load();
     if (householdId) showDetail(householdId);
     renderDashboard();
@@ -1047,10 +1047,10 @@
       let host = $('#businessDashboardExtension');
       if (!host) {
         const charts = $('.dashboard-chart-grid');
-        if (charts) charts.insertAdjacentHTML('beforeend', '<article id="businessDashboardExtension" class="dashboard-panel"><div class="dashboard-panel-head"><h3>Há»™ sáº£n xuáº¥t & kinh doanh</h3><span class="dashboard-filter-pill">SX/KD</span></div><div class="dashboard-chart-body"></div></article>');
+        if (charts) charts.insertAdjacentHTML('beforeend', '<article id="businessDashboardExtension" class="dashboard-panel"><div class="dashboard-panel-head"><h3>Hộ sản xuất & kinh doanh</h3><span class="dashboard-filter-pill">SX/KD</span></div><div class="dashboard-chart-body"></div></article>');
         host = $('#businessDashboardExtension');
       }
-      const cards = [['Há»™ sáº£n xuáº¥t', metrics.production_households, 'há»™'], ['Há»™ kinh doanh', metrics.business_households, 'há»™'], ['Vá»«a SX/KD', metrics.production_business_households, 'há»™'], ['Tá»•ng lao Ä‘á»™ng', metrics.business_worker_total, 'ngÆ°á»i'], ['OCOP', metrics.ocop_households, 'há»™'], ['CÃ³ ATTP', metrics.food_safety_households, 'há»™'], ['CÃ³ BHXH', metrics.social_insurance_households, 'há»™'], ['Lao Ä‘á»™ng BHXH', metrics.insured_worker_total, 'ngÆ°á»i']];
+      const cards = [['Hộ sản xuất', metrics.production_households, 'hộ'], ['Hộ kinh doanh', metrics.business_households, 'hộ'], ['Vừa SX/KD', metrics.production_business_households, 'hộ'], ['Tổng lao động', metrics.business_worker_total, 'người'], ['OCOP', metrics.ocop_households, 'hộ'], ['Có ATTP', metrics.food_safety_households, 'hộ'], ['Có BHXH', metrics.social_insurance_households, 'hộ'], ['Lao động BHXH', metrics.insured_worker_total, 'người']];
       host.querySelector('.dashboard-chart-body').innerHTML = '<div class="dashboard-metric-stack">' + cards.map(([label, value, unit]) => '<div class="dashboard-metric-line"><span>' + esc(label) + '</span><strong>' + num(value) + ' ' + esc(unit) + '</strong></div>').join('') + '</div>';
     } catch (error) { console.warn('[household-business-dashboard]', error); }
   }
@@ -1058,7 +1058,7 @@
   function addReportOptions() {
     const select = $('#reportTypeSelect');
     if (!select || select.querySelector('option[value="household-business-production"]')) return;
-    [['household-business-production','Danh sÃ¡ch há»™ sáº£n xuáº¥t'],['household-business-trade','Danh sÃ¡ch há»™ kinh doanh'],['household-business-sector','Theo ngÃ nh nghá» SX/KD'],['household-business-status','Theo tráº¡ng thÃ¡i SX/KD'],['household-business-gis','Theo khu vá»±c GIS SX/KD'],['household-business-ocop','Há»™ OCOP'],['household-business-food-safety','Há»™ cÃ³ ATTP'],['household-business-social-insurance','Há»™ tham gia BHXH'],['household-business-economic-type','Theo loáº¡i hÃ¬nh kinh táº¿'],['household-business-scale','Theo quy mÃ´ hoáº¡t Ä‘á»™ng'],['household-business-product','Theo sáº£n pháº©m chÃ­nh']].forEach(([value, label]) => select.insertAdjacentHTML('beforeend', '<option value="' + value + '">' + esc(label) + '</option>'));
+    [['household-business-production','Danh sách hộ sản xuất'],['household-business-trade','Danh sách hộ kinh doanh'],['household-business-sector','Theo ngành nghề SX/KD'],['household-business-status','Theo trạng thái SX/KD'],['household-business-gis','Theo khu vực GIS SX/KD'],['household-business-ocop','Hộ OCOP'],['household-business-food-safety','Hộ có ATTP'],['household-business-social-insurance','Hộ tham gia BHXH'],['household-business-economic-type','Theo loại hình kinh tế'],['household-business-scale','Theo quy mô hoạt động'],['household-business-product','Theo sản phẩm chính']].forEach(([value, label]) => select.insertAdjacentHTML('beforeend', '<option value="' + value + '">' + esc(label) + '</option>'));
   }
 
   function debounce(fn, wait) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), wait); }; }
