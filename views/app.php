@@ -60,7 +60,7 @@
         </div>
       </div>
       <nav class="nav flex-column gov-nav" aria-label="Điều hướng chính">
-        <div class="nav-section"><div class="nav-section-title">Dashboard</div><button class="nav-link active" data-screen="dashboard" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-gauge-high"></i><span>Dashboard Tổng quan</span></button><button class="nav-link" data-screen="dashboardHouseholds" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-house-chimney"></i><span>Dashboard Hộ dân</span></button><button class="nav-link" data-screen="dashboardPopulation" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-users"></i><span>Dashboard Nhân khẩu</span></button><button class="nav-link" data-screen="dashboardBusiness" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-store"></i><span>Dashboard Kinh doanh</span></button><button class="nav-link" data-screen="dashboardVehicles" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-car"></i><span>Dashboard Xe cộ</span></button><button class="nav-link" data-screen="dashboardLivestock" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-paw"></i><span>Dashboard Chăn nuôi</span></button><button class="nav-link" data-screen="dashboardGis" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-map-location-dot"></i><span>Dashboard GIS</span></button><button class="nav-link" data-screen="dashboardReports" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-file-lines"></i><span>Dashboard Báo cáo</span></button></div><div class="nav-section"><div class="nav-section-title">Tổng quan</div><button class="nav-link" data-screen="operationCenter" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-tower-broadcast"></i><span>Trung tâm điều hành</span></button><button class="nav-link" data-screen="gis" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-map-location-dot"></i><span>Bản đồ địa bàn</span></button><button class="nav-link" data-screen="gisGoogle" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-brands fa-google"></i><span>GIS Google Beta</span></button></div><div class="nav-section"><div class="nav-section-title">Quản lý dân cư</div><button class="nav-link" data-screen="households" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-house-chimney"></i><span>Quản lý hộ gia đình</span></button><button class="nav-link" data-screen="businessHouseholds" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-store"></i><span>Hộ sản xuất &amp; kinh doanh</span></button><button class="nav-link" data-screen="livestock" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-paw"></i><span>Quản lý vật nuôi</span></button><button class="nav-link" data-screen="persons" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-users"></i><span>Quản lý nhân khẩu</span></button><button class="nav-link" data-screen="temporaryResidence" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-location-dot"></i><span>Tạm trú</span></button><button class="nav-link" data-screen="temporaryAbsence" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Tạm vắng</span></button><button class="nav-link" data-screen="movements" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-right-left"></i><span>Biến động nhân khẩu</span></button></div>
+        <div class="nav-section"><div class="nav-section-title">Dashboard</div><button class="nav-link active" data-screen="dashboard" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-gauge-high"></i><span>Dashboard Tổng quan</span></button><button class="nav-link" data-screen="dashboardHouseholds" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-house-chimney"></i><span>Dashboard Hộ dân</span></button><button class="nav-link" data-screen="dashboardPopulation" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-users"></i><span>Dashboard Nhân khẩu</span></button><button class="nav-link" data-screen="dashboardBusiness" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-store"></i><span>Dashboard Kinh doanh</span></button><button class="nav-link" data-screen="dashboardVehicles" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-car"></i><span>Dashboard Xe cộ</span></button><button class="nav-link" data-screen="dashboardLivestock" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-paw"></i><span>Dashboard Chăn nuôi</span></button><button class="nav-link" data-screen="dashboardGis" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-map-location-dot"></i><span>Dashboard GIS</span></button><button class="nav-link" data-screen="dashboardReports" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-file-lines"></i><span>Dashboard Báo cáo</span></button></div><div class="nav-section"><div class="nav-section-title">Tổng quan</div><button class="nav-link" data-screen="operationCenter" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-tower-broadcast"></i><span>Trung tâm điều hành</span></button><button class="nav-link" data-screen="gis" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-map-location-dot"></i><span>Bản đồ địa bàn</span></button></div><div class="nav-section"><div class="nav-section-title">Quản lý dân cư</div><button class="nav-link" data-screen="households" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-house-chimney"></i><span>Quản lý hộ gia đình</span></button><button class="nav-link" data-screen="businessHouseholds" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-store"></i><span>Hộ sản xuất &amp; kinh doanh</span></button><button class="nav-link" data-screen="livestock" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-paw"></i><span>Quản lý vật nuôi</span></button><button class="nav-link" data-screen="persons" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-users"></i><span>Quản lý nhân khẩu</span></button><button class="nav-link" data-screen="temporaryResidence" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-location-dot"></i><span>Tạm trú</span></button><button class="nav-link" data-screen="temporaryAbsence" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-person-walking-arrow-right"></i><span>Tạm vắng</span></button><button class="nav-link" data-screen="movements" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-right-left"></i><span>Biến động nhân khẩu</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Báo cáo</div><button class="nav-link" data-screen="reports" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-chart-pie"></i><span>Báo cáo thống kê</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Dữ liệu</div><button class="nav-link" data-screen="import" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-file-import"></i><span>Import dữ liệu</span></button><button class="nav-link" data-screen="exportExcel" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-file-export"></i><span>Xuất Excel</span></button><button class="nav-link" data-screen="printForms" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-print"></i><span>In biểu mẫu</span></button></div>
         <div class="nav-section"><div class="nav-section-title">Hệ thống</div><button class="nav-link" data-screen="users" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-user-shield"></i><span>Quản lý tài khoản</span></button><button class="nav-link" data-screen="permissions" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-key"></i><span>Phân quyền</span></button><button class="nav-link" data-screen="logs" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-clock-rotate-left"></i><span>Nhật ký</span></button><button class="nav-link" data-screen="backups" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-database"></i><span>Sao lưu</span></button><button class="nav-link" data-screen="restore" onclick="window.switchScreen && window.switchScreen(this.dataset.screen)"><i class="fa-solid fa-rotate-left"></i><span>Khôi phục</span></button></div>
@@ -227,78 +227,13 @@
           </aside>
           <main class="gis-map-card content-card">
             <div class="gis-map-toolbar">
-              <div class="gis-search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="gisSearch" class="form-control" placeholder="Tìm khu vực, mã khu vực..."></div>
-              <span id="gisMapStatus" class="gis-status-pill">Đang tải bản đồ...</span>
+              <div class="gis-search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="gisSearch" class="form-control" placeholder="Tìm mã hộ, chủ hộ, thành viên, địa chỉ, điện thoại, kinh doanh..."><div id="gisSearchResults" class="gis-search-results d-none"></div></div>
+              <select id="gisBaseLayer" class="form-select form-select-sm gis-layer-select" aria-label="Lớp nền bản đồ"><option value="osm">OSM Standard</option><option value="hot">OSM Humanitarian</option><option value="cartoLight">Carto Light</option><option value="cartoDark">Carto Dark</option><option value="esriWorldImagery">Esri World Imagery</option></select><button id="gisCurrentLocationBtn" class="btn btn-outline-success btn-sm" type="button"><i class="fa-solid fa-location-crosshairs"></i> GPS</button><span id="gisMapStatus" class="gis-status-pill">Đang tải bản đồ...</span>
             </div>
             <div id="gisMap" class="gis-map" role="application" aria-label="Bản đồ địa bàn"></div>
           </main>
         </div>
       </section>
-
-      <section id="gisGoogleScreen" class="screen gis-google-screen">
-        <div class="gis-google-layout">
-          <aside class="gis-google-panel content-card">
-            <div>
-              <h3>GIS Google Beta</h3>
-              <p class="text-muted small mb-0">Module thu nghiem chay song song voi GIS hien tai. Du lieu lay tu API GIS hien co, khong thay doi Database hoac Backend.</p>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-              <button id="gisGoogleRefreshBtn" class="btn btn-primary btn-sm" type="button"><i class="fa-solid fa-rotate-right"></i> Tai du lieu</button>
-              <button id="gisGoogleFitBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-expand"></i> Fit ban do</button>
-              <button id="gisGoogleCurrentLocationBtn" class="btn btn-outline-success btn-sm" type="button"><i class="fa-solid fa-location-crosshairs"></i> Vi tri hien tai</button>
-            </div>
-            <div class="gis-google-filter-grid">
-              <div>
-                <label class="form-label small mb-1" for="gisGoogleSearch">Tim kiem ho dan</label>
-                <input id="gisGoogleSearch" class="form-control form-control-sm" placeholder="Ma ho, chu ho, dia chi...">
-              </div>
-              <div>
-                <label class="form-label small mb-1" for="gisGoogleAreaFilter">Khu vuc</label>
-                <select id="gisGoogleAreaFilter" class="form-select form-select-sm"><option value="">Tat ca khu vuc</option></select>
-              </div>
-              <div>
-                <label class="form-label small mb-1" for="gisGoogleLocatedFilter">Trang thai GPS</label>
-                <select id="gisGoogleLocatedFilter" class="form-select form-select-sm"><option value="">Tat ca</option><option value="1">Da dinh vi</option><option value="0">Chua dinh vi</option></select>
-              </div>
-            </div>
-            <div id="gisGoogleStats" class="gis-google-stats"></div>
-            <div class="gis-google-toolbox">
-              <div class="gis-google-tool-title">Khu vuc / Polygon</div>
-              <input type="hidden" id="gisGoogleAreaId">
-              <input id="gisGoogleAreaName" class="form-control form-control-sm" placeholder="Ten khu vuc">
-              <input id="gisGoogleAreaCode" class="form-control form-control-sm" placeholder="Ma khu vuc / area_code">
-              <div class="d-flex gap-2 align-items-center">
-                <input id="gisGoogleAreaColor" class="form-control form-control-color" type="color" value="#2563eb" title="Mau polygon">
-                <button id="gisGoogleNewAreaBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-plus"></i> Moi</button>
-                <button id="gisGoogleDrawAreaBtn" class="btn btn-success btn-sm" type="button"><i class="fa-solid fa-draw-polygon"></i> Ve</button>
-              </div>
-              <textarea id="gisGoogleAreaNote" class="form-control form-control-sm" rows="2" placeholder="Ghi chu"></textarea>
-              <div class="d-flex gap-2 flex-wrap">
-                <button id="gisGoogleSaveAreaBtn" class="btn btn-primary btn-sm" type="button" disabled><i class="fa-solid fa-floppy-disk"></i> Luu polygon</button>
-                <button id="gisGoogleClearDraftBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-xmark"></i> Huy ve</button>
-              </div>
-              <div id="gisGoogleAreaList" class="gis-google-area-list"></div>
-            </div>
-            <div class="gis-google-toolbox">
-              <div class="gis-google-tool-title">Marker ho dan</div>
-              <div class="d-flex gap-2 flex-wrap">
-                <button id="gisGoogleAddMarkerBtn" class="btn btn-outline-primary btn-sm" type="button"><i class="fa-solid fa-map-pin"></i> Dat marker</button>
-                <button id="gisGoogleCancelMarkerBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-xmark"></i> Huy</button>
-              </div>
-              <div id="gisGoogleMarkerHint" class="small text-muted">Chon ho trong danh sach tim kiem, sau do bam Dat marker va click tren ban do.</div>
-              <div id="gisGoogleSearchResults" class="gis-google-search-results"></div>
-            </div>
-            <div class="alert alert-info small mb-0">GIS Google Beta dang chay song song. Chi thay the GIS Leaflet khi tat ca chuc nang dat yeu cau.</div>
-          </aside>
-          <main class="gis-google-card content-card">
-            <div class="gis-google-toolbar">
-              <span id="gisGoogleStatus" class="gis-google-status">Chua tai Google Maps</span>
-            </div>
-            <div id="gisGoogleMap" class="gis-google-map" role="application" aria-label="Ban do Google Maps thu nghiem"></div>
-          </main>
-        </div>
-      </section>
-
       <section id="householdsScreen" class="screen household-management-screen">
         <div class="module-action-row"><button id="householdAddBtn" class="module-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm hộ dân</button></div>
         <div class="content-card module-filter-card household-filter-card">
@@ -626,9 +561,6 @@
   <script src="assets/js/household-photo-capture.min.js"></script>
   <script src="assets/js/household-photo-camera-fix.min.js"></script>
   <script src="assets/js/household-photo-gps.min.js"></script>
-  <script src="assets/js/gis-search.min.js"></script>
-  <script src="assets/js/gis-smart.min.js"></script>
-  <script src="assets/js/gis-google.min.js"></script>
   <script src="assets/js/digital-profile.min.js"></script>
   <script src="assets/js/household-business.min.js"></script>
   <script src="assets/js/livestock.min.js"></script>

@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --sidebar-width: 286px;
   --brand: #2563eb;
   --brand-2: #0f766e;
@@ -1153,7 +1153,7 @@ body.sidebar-open {
     overflow-x: visible;
   }
   .table-responsive::before {
-    content: 'Cuộn hoặc xem dạng thẻ bên dưới nếu nội dung dài';
+    content: 'Cuá»™n hoáº·c xem dáº¡ng tháº» bÃªn dÆ°á»›i náº¿u ná»™i dung dÃ i';
     display: none;
   }
   .table-responsive table,
@@ -1218,7 +1218,7 @@ body.sidebar-open {
   }
   .table-responsive tbody td.text-end::before {
     flex: 0 0 100%;
-    content: 'Thao tác';
+    content: 'Thao tÃ¡c';
   }
   .table-responsive tbody td .btn,
   .table-responsive tbody td button {
@@ -1486,7 +1486,7 @@ body.sidebar-open {
   .module-list-card > .table-responsive tbody td.text-end::before,
   .content-card.table-responsive tbody td.text-end::before {
     grid-column: 1 / -1;
-    content: 'Thao tác';
+    content: 'Thao tÃ¡c';
   }
 }
 
@@ -1658,7 +1658,7 @@ body.sidebar-open {
   .table-responsive tbody td:last-child:has(.btn)::before,
   .table-responsive tbody td:last-child:has(button)::before {
     grid-column: 1 / -1;
-    content: 'Thao tác';
+    content: 'Thao tÃ¡c';
   }
   .table-responsive tbody td .btn,
   .table-responsive tbody td button {
@@ -2088,7 +2088,7 @@ body.sidebar-open {
     line-height: 1.35;
   }
   .table-responsive tbody td[data-mobile-role="address"]::before {
-    content: '📍 ' attr(data-label);
+    content: 'ðŸ“ ' attr(data-label);
     color: #0b6b3a;
     font-size: 11px;
   }
@@ -2174,11 +2174,11 @@ body.sidebar-open {
     margin-right: 3px;
   }
   .table-responsive tbody td[data-mobile-role="actions"] [data-mobile-action="view"]::before,
-  .table-responsive tbody td.text-end [data-mobile-action="view"]::before { content: '👁'; }
+  .table-responsive tbody td.text-end [data-mobile-action="view"]::before { content: 'ðŸ‘'; }
   .table-responsive tbody td[data-mobile-role="actions"] [data-mobile-action="edit"]::before,
-  .table-responsive tbody td.text-end [data-mobile-action="edit"]::before { content: '✏️'; }
+  .table-responsive tbody td.text-end [data-mobile-action="edit"]::before { content: 'âœï¸'; }
   .table-responsive tbody td[data-mobile-role="actions"] [data-mobile-action="delete"]::before,
-  .table-responsive tbody td.text-end [data-mobile-action="delete"]::before { content: '🗑'; }
+  .table-responsive tbody td.text-end [data-mobile-action="delete"]::before { content: 'ðŸ—‘'; }
   .table-responsive tbody td:not([data-mobile-role="title"]):not([data-mobile-role="meta"]):not([data-mobile-role="address"]):not([data-mobile-role="stat"]):not([data-mobile-role="badge"]):not([data-mobile-role="actions"]):not([data-mobile-role="select"]) {
     grid-column: span 3;
     order: 6;
@@ -4879,3 +4879,31 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 .business-gis-switch { margin: 0; }
 .business-gis-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 576px) { .business-gis-header { flex-direction: column; } .business-gis-actions .btn { width: 100%; justify-content: center; } }
+
+.gis-layer-select { width: 190px; flex: 0 0 190px; }
+.gis-search-wrap { position: relative; }
+.gis-search-results { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 1060; max-height: 260px; overflow: auto; border: 1px solid #dbe7ef; border-radius: 8px; background: #fff; box-shadow: 0 16px 32px rgba(15,23,42,.14); }
+.gis-search-results button { display: grid; gap: 2px; width: 100%; padding: 10px 12px; border: 0; border-bottom: 1px solid #eef2f7; background: #fff; text-align: left; }
+.gis-search-results button:hover { background: #f0fdf4; }
+.gis-search-results strong { color: #0f172a; font-weight: 800; }
+.gis-search-results span { color: #64748b; font-size: 12px; }
+.gis-household-popup { display: grid; gap: 12px; min-width: 280px; max-width: min(420px, 86vw); color: #0f172a; }
+.gis-household-popup header h4 { margin: 0; color: #0b6b3a; font-size: 18px; font-weight: 900; }
+.gis-household-popup header p { margin: 2px 0; font-weight: 800; }
+.gis-household-popup section { display: grid; gap: 7px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+.gis-household-popup h5 { margin: 0; font-size: 13px; font-weight: 900; color: #334155; text-transform: uppercase; }
+.gis-popup-line { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; font-size: 13px; }
+.gis-popup-line span, .gis-popup-list-item span { color: #64748b; }
+.gis-popup-line strong { color: #0f172a; }
+.gis-popup-list-item { display: grid; gap: 2px; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; }
+.gis-popup-list-item:last-child { border-bottom: 0; }
+.gis-popup-list-item b { color: #0f172a; }
+.gis-gps-panel { position: absolute; right: 16px; bottom: 16px; z-index: 650; display: grid; gap: 12px; width: min(340px, calc(100% - 32px)); padding: 14px; border: 1px solid #dbe7ef; border-radius: 10px; background: #fff; box-shadow: 0 20px 44px rgba(15,23,42,.18); }
+.gis-gps-grid { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; font-size: 13px; }
+.gis-gps-grid span { color: #64748b; font-weight: 700; }
+.gis-gps-grid b { color: #0f172a; }
+.gis-marker-pulse { animation: gis-marker-pulse 1.8s ease-in-out; }
+@keyframes gis-marker-pulse { 0%,100% { filter: drop-shadow(0 0 0 rgba(22,163,74,0)); transform: scale(1); } 45% { filter: drop-shadow(0 0 12px rgba(22,163,74,.85)); transform: scale(1.18); } }
+@media (max-width: 768px) { .gis-layer-select { width: 100%; flex-basis: 100%; } .gis-map-toolbar { align-items: stretch; } .gis-map-toolbar .btn { min-height: 42px; } .leaflet-popup-content { margin: 14px; } .gis-household-popup { min-width: 250px; } .gis-popup-line { grid-template-columns: 1fr; gap: 2px; } .gis-gps-panel { left: 12px; right: 12px; bottom: 72px; width: auto; } }
+
+.gis-map-toolbar{position:relative;z-index:700}.gis-map{position:relative;z-index:1}

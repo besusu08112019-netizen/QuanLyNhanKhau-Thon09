@@ -59,6 +59,9 @@ final class Router
 
         if ($method === 'GET' && $path === '/api/gis/households') {
             $action = 'households';
+        } elseif ($method === 'GET' && preg_match('#^/api/gis/households/(\d+)/detail$#', $path, $matches)) {
+            $action = 'householdDetail';
+            $params[] = $matches[1];
         } elseif (($method === 'PUT' || $method === 'POST') && preg_match('#^/api/gis/households/(\d+)/location$#', $path, $matches)) {
             $action = 'saveHouseholdLocation';
             $params[] = $matches[1];

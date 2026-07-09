@@ -29,6 +29,104 @@ final class GisHouseholdLocation extends BaseModel
         $this->createIndexIfMissing('households', 'idx_households_area_location', 'area_code, latitude, longitude');
     }
 
+    public function lightMarkers(array $filters = []): array
+    {
+        $this->ensureSchema();
+        [$where, $params] = $this->markerConditions($filters);
+        $rows = $this->fetchAll(
+            'SELECT h.id, h.household_code, h.head_citizen_name, h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at
+             FROM households h
+             LEFT JOIN (
+                SELECT c.household_id,
+                    SUM(CASE WHEN c.party_member = 1 THEN 1 ELSE 0 END) AS party_members,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) < 16 THEN 1 ELSE 0 END) AS children_count,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) >= 60 THEN 1 ELSE 0 END) AS elderly_count,
+                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END) AS working_age_count,
+                    SUM(CASE WHEN c.residency_status = "PERMANENT" THEN 1 ELSE 0 END) AS permanent_count,
+                    SUM(CASE WHEN c.residency_status = "TEMPORARY" THEN 1 ELSE 0 END) AS temporary_count,
+                    SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count
+                FROM citizens c
+                WHERE c.status <> "DELETED"
+                GROUP BY c.household_id
+             ) cm ON cm.household_id = h.id
+             WHERE h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")' . $where . '
+               AND h.latitude IS NOT NULL AND h.latitude <> "" AND h.longitude IS NOT NULL AND h.longitude <> ""
+             ORDER BY h.id ASC
+             LIMIT 2000',
+            $params
+        );
+        return [
+            'items' => array_map(fn(array $row) => [
+                'id' => (int) $row['id'],
+                'household_code' => (string) ($row['household_code'] ?? ''),
+                'head_citizen_name' => (string) ($row['head_citizen_name'] ?? ''),
+                'latitude' => (float) $row['latitude'],
+                'longitude' => (float) $row['longitude'],
+                'located' => true,
+                'location_accuracy' => $row['location_accuracy'] !== null ? (int) $row['location_accuracy'] : null,
+                'location_source' => (string) ($row['location_source'] ?? ''),
+                'location_updated_at' => $row['location_updated_at'] ?? null,
+            ], $rows),
+            'total' => count($rows),
+            'summary' => $this->summary($filters),
+            'generatedAt' => date('c'),
+        ];
+    }
+
+    public function detail(int $householdId): array
+    {
+        $this->ensureSchema();
+        $row = $this->fetchOne(
+            'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code, h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
+                    COALESCE(v.total_members,0) AS total_members, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count
+             FROM households h
+             LEFT JOIN v_household_member_counts v ON v.household_id = h.id
+             WHERE h.id = :id AND h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")',
+            ['id' => $householdId]
+        );
+        if (!$row) throw new \RuntimeException('Kh?ng t?m th?y h? gia ??nh');
+        $members = $this->fetchAll('SELECT id, citizen_code, full_name, relationship, phone, residency_status, presence_status FROM citizens WHERE household_id = :id AND status <> "DELETED" ORDER BY CASE WHEN relationship = "Ch? h?" THEN 0 ELSE 1 END, full_name LIMIT 200', ['id' => $householdId]);
+        $business = [];
+        if ($this->tableExists('household_business')) {
+            $business = $this->fetchAll('SELECT id, business_name, business_type, economic_type, production_sector, business_sector, business_scale, worker_count, status FROM household_business WHERE household_id = :id AND status <> "DELETED" ORDER BY id ASC', ['id' => $householdId]);
+        }
+        $livestock = [];
+        if ($this->tableExists('livestock')) {
+            $livestock = $this->fetchAll('SELECT id, animal_type, breed, quantity, vaccinated, status FROM livestock WHERE household_id = :id AND status <> "DELETED" ORDER BY animal_type ASC, id ASC', ['id' => $householdId]);
+        }
+        return [
+            'household' => [
+                'id' => (int) $row['id'],
+                'household_code' => (string) $row['household_code'],
+                'head_citizen_name' => (string) $row['head_citizen_name'],
+                'address' => (string) ($row['address'] ?? ''),
+                'phone' => (string) ($row['phone'] ?? ''),
+                'area_code' => (string) ($row['area_code'] ?? ''),
+                'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float) $row['latitude'] : null,
+                'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float) $row['longitude'] : null,
+                'location_accuracy' => $row['location_accuracy'] !== null ? (int) $row['location_accuracy'] : null,
+                'location_source' => (string) ($row['location_source'] ?? ''),
+                'location_updated_at' => $row['location_updated_at'] ?? null,
+                'total_members' => (int) ($row['total_members'] ?? 0),
+                'at_home_count' => (int) ($row['at_home_count'] ?? 0),
+                'away_count' => (int) ($row['away_count'] ?? 0),
+            ],
+            'members' => array_map(fn($m) => [
+                'id' => (int) $m['id'], 'citizen_code' => (string) ($m['citizen_code'] ?? ''), 'full_name' => (string) ($m['full_name'] ?? ''), 'relationship' => (string) ($m['relationship'] ?? ''), 'phone' => (string) ($m['phone'] ?? ''), 'residency_status' => (string) ($m['residency_status'] ?? ''), 'presence_status' => (string) ($m['presence_status'] ?? ''),
+            ], $members),
+            'business' => array_map(fn($b) => [
+                'id' => (int) $b['id'], 'business_name' => (string) ($b['business_name'] ?: $b['economic_type'] ?: 'Ho?t ??ng kinh t?'), 'business_type' => (string) ($b['business_type'] ?? ''), 'economic_type' => (string) ($b['economic_type'] ?? ''), 'sector' => (string) (($b['production_sector'] ?? '') ?: ($b['business_sector'] ?? '')), 'business_scale' => (string) ($b['business_scale'] ?? ''), 'worker_count' => (int) ($b['worker_count'] ?? 0), 'status' => (string) ($b['status'] ?? ''),
+            ], $business),
+            'livestock' => array_map(fn($l) => [
+                'id' => (int) $l['id'], 'animal_type' => (string) ($l['animal_type'] ?? ''), 'breed' => (string) ($l['breed'] ?? ''), 'quantity' => (int) ($l['quantity'] ?? 0), 'vaccinated' => (int) ($l['vaccinated'] ?? 0) === 1, 'status' => (string) ($l['status'] ?? ''),
+            ], $livestock),
+            'vehicles' => [],
+            'contributions' => [],
+            'timeline' => [],
+            'generatedAt' => date('c'),
+        ];
+    }
+
     public function markers(array $filters = []): array
     {
         $this->ensureSchema();
@@ -322,7 +420,8 @@ final class GisHouseholdLocation extends BaseModel
         }
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
-            $where .= ' AND (h.household_code LIKE :search OR h.head_citizen_name LIKE :search OR h.address LIKE :search OR h.phone LIKE :search OR EXISTS (SELECT 1 FROM citizens cs WHERE cs.household_id = h.id AND cs.status <> "DELETED" AND (cs.full_name LIKE :search OR cs.identity_number LIKE :search)))';
+            $businessSearch = $this->tableExists('household_business') ? ' OR EXISTS (SELECT 1 FROM household_business hbq WHERE hbq.household_id = h.id AND hbq.status <> "DELETED" AND (hbq.business_name LIKE :search OR hbq.economic_type LIKE :search OR hbq.production_sector LIKE :search OR hbq.business_sector LIKE :search OR hbq.owner_name LIKE :search OR hbq.phone LIKE :search))' : '';
+            $where .= ' AND (h.household_code LIKE :search OR h.head_citizen_name LIKE :search OR h.address LIKE :search OR h.phone LIKE :search OR EXISTS (SELECT 1 FROM citizens cs WHERE cs.household_id = h.id AND cs.status <> "DELETED" AND (cs.full_name LIKE :search OR cs.identity_number LIKE :search))' . $businessSearch . ')';
             $params['search'] = '%' . $search . '%';
         }
         $areaCode = trim((string) ($filters['area_code'] ?? ''));

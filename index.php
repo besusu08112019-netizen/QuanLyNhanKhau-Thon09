@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
@@ -12,7 +12,7 @@ function send_security_headers(): void
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: same-origin');
     header('Permissions-Policy: geolocation=(self), camera=(self), microphone=()');
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://maps.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org https://maps.gstatic.com https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https://maps.googleapis.com; frame-src 'self' https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org https://*.openstreetmap.fr https://*.basemaps.cartocdn.com https://server.arcgisonline.com; connect-src 'self'; frame-src 'self' https://www.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
 }
 
 send_security_headers();
@@ -325,6 +325,7 @@ $router->delete('/api/files/{id}', [FileController::class, 'destroy']);
 $router->get('/api/gis/areas', [GisController::class, 'areas']);
 $router->get('/api/gis/search', [GisController::class, 'search']);
 $router->get('/api/gis/households', [GisController::class, 'households']);
+$router->get('/api/gis/households/{id}/detail', [GisController::class, 'householdDetail']);
 $router->post('/api/gis/areas', [GisController::class, 'storeArea']);
 $router->put('/api/gis/areas/{id}', [GisController::class, 'updateArea']);
 $router->delete('/api/gis/areas/{id}', [GisController::class, 'deleteArea']);
@@ -375,19 +376,9 @@ if (!str_starts_with($request->path(), '/api')) {
     $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);
-        echo 'Không tải được giao diện ứng dụng.';
+        echo 'KhÃ´ng táº£i Ä‘Æ°á»£c giao diá»‡n á»©ng dá»¥ng.';
         exit;
     }
-
-    load_env_file(BASE_PATH . '/.env');
-    load_env_file(dirname(BASE_PATH) . '/.env');
-    $googleMapsApiKey = env_value('GOOGLE_MAPS_API_KEY') ?: env_value('VITE_GOOGLE_MAPS_API_KEY');
-    $googleMapsConfig = '<script>window.THON09_GOOGLE_MAPS_API_KEY=' . json_encode($googleMapsApiKey, JSON_UNESCAPED_SLASHES) . ';</script>';
-    $headClosePosition = stripos($html, '</head>');
-    if ($headClosePosition !== false) {
-        $html = substr_replace($html, $googleMapsConfig . "\n</head>", $headClosePosition, strlen('</head>'));
-    }
-
     $versionedAssets = [
         'assets/css/app.min.css',
         'assets/js/i18n.min.js',
@@ -408,9 +399,6 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/household-photo-capture.min.js',
         'assets/js/household-photo-camera-fix.min.js',
         'assets/js/household-photo-gps.min.js',
-        'assets/js/gis-search.min.js',
-        'assets/js/gis-smart.min.js',
-        'assets/js/gis-google.min.js',
         'assets/js/digital-profile.min.js',
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
@@ -445,4 +433,4 @@ try {
     }
     throw $e;
 }
-Response::error('Không tìm thấy đường dẫn', 404);
+Response::error('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ°á»ng dáº«n', 404);

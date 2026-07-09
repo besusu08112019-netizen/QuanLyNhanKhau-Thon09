@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 const loginConfig = {
   ok: true,
@@ -106,7 +106,7 @@ test('operation center renders widgets without console errors', async ({ page })
   expect(consoleErrors).toEqual([]);
 });
 
-test('gis directions opens Google Maps with household coordinates', async ({ page }) => {
+test('gis directions opens OpenStreetMap with household coordinates', async ({ page }) => {
   await page.route('**/api/**', async (route) => {
     const url = route.request().url();
     if (url.includes('/api/public/login-config')) {
@@ -131,7 +131,7 @@ test('gis directions opens Google Maps with household coordinates', async ({ pag
     return captured;
   });
 
-  expect(openedUrl).toBe('https://www.google.com/maps/dir/?api=1&destination=10.123456,106.654321');
+  expect(openedUrl).toBe('https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=;10.123456,106.654321');
 });
 
 
@@ -451,7 +451,7 @@ test('viewer role is read-only across household and citizen modules', async ({ p
     if (url.includes('/api/public/login-config')) return payload(loginConfig.data);
     if (url.includes('/api/auth/me')) return payload({ id: 3, email: 'viewer@example.test', displayName: 'Viewer Test', role: 'VIEWER', status: 'ACTIVE' });
     if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {} });
-    if (url.includes('/api/persons')) return payload({ items: [{ id: 11, household_code: 'HK001', citizen_code: 'NK001', full_name: 'Viewer Citizen', relationship: 'Chủ hộ', date_of_birth: '1990-01-01', gender: 'Nam', identity_number: '123456789012', residency_status: 'PERMANENT', presence_status: 'AT_HOME', party_member: 0 }], total: 1, page: 1, pageSize: 20 });
+    if (url.includes('/api/persons')) return payload({ items: [{ id: 11, household_code: 'HK001', citizen_code: 'NK001', full_name: 'Viewer Citizen', relationship: 'Chá»§ há»™', date_of_birth: '1990-01-01', gender: 'Nam', identity_number: '123456789012', residency_status: 'PERMANENT', presence_status: 'AT_HOME', party_member: 0 }], total: 1, page: 1, pageSize: 20 });
     if (url.includes('/api/households')) return payload({ items: [{ id: 21, household_code: 'HK001', head_citizen_name: 'Viewer Head', address: 'Address', at_home_count: 1, away_count: 0, status: 'ACTIVE' }], total: 1, page: 1, pageSize: 20 });
     return payload({});
   });

@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   'use strict';
 
   const state = {
@@ -28,7 +28,7 @@
   async function request(path, options) {
     if (typeof window.api === 'function') return window.api(path, options || {});
     const token = localStorage.getItem('thon09_token') || (window.App && window.App.token) || '';
-    if (!isAuthenticated()) throw new Error('PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n, vui lÃ²ng Ä‘Äƒng nháº­p láº¡i');
+    if (!isAuthenticated()) throw new Error('PhiÃƒÂªn Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p Ã„â€˜ÃƒÂ£ hÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n, vui lÃƒÂ²ng Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p lÃ¡ÂºÂ¡i');
     const headers = Object.assign({ Accept: 'application/json' }, (options && options.headers) || {});
     if (token) headers.Authorization = 'Bearer ' + token;
     if (options && options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
@@ -38,7 +38,7 @@
     }
     const response = await fetch(path, fetchOptions);
     const json = await response.json().catch(() => null);
-    if (!response.ok || !json || json.ok === false) throw new Error((json && json.error && json.error.message) || 'KhÃ´ng táº£i Ä‘Æ°á»£c dá»¯ liá»‡u.');
+    if (!response.ok || !json || json.ok === false) throw new Error((json && json.error && json.error.message) || 'KhÃƒÂ´ng tÃ¡ÂºÂ£i Ã„â€˜Ã†Â°Ã¡Â»Â£c dÃ¡Â»Â¯ liÃ¡Â»â€¡u.');
     return json.data || json;
   }
   function loadAssetOnce(kind, url, test) {
@@ -84,17 +84,17 @@
     const section = document.createElement('div');
     section.className = 'col-12 household-location-section';
     section.innerHTML =
-      '<h6><i class="fa-solid fa-location-crosshairs"></i> Vá»‹ trÃ­ há»™ gia Ä‘Ã¬nh</h6>' +
+      '<h6><i class="fa-solid fa-location-crosshairs"></i> VÃ¡Â»â€¹ trÃƒÂ­ hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh</h6>' +
       '<div class="row g-2">' +
         '<div class="col-md-3"><label class="form-label">Latitude</label><input name="latitude" class="form-control" readonly></div>' +
         '<div class="col-md-3"><label class="form-label">Longitude</label><input name="longitude" class="form-control" readonly></div>' +
-        '<div class="col-md-3"><label class="form-label">Nguá»“n</label><input name="locationSource" class="form-control" readonly></div>' +
-        '<div class="col-md-3"><label class="form-label">Äá»™ chÃ­nh xÃ¡c</label><input name="locationAccuracy" class="form-control" readonly></div>' +
+        '<div class="col-md-3"><label class="form-label">NguÃ¡Â»â€œn</label><input name="locationSource" class="form-control" readonly></div>' +
+        '<div class="col-md-3"><label class="form-label">Ã„ÂÃ¡Â»â„¢ chÃƒÂ­nh xÃƒÂ¡c</label><input name="locationAccuracy" class="form-control" readonly></div>' +
       '</div>' +
       '<div class="household-location-actions">' +
-        '<button class="btn btn-outline-success" type="button" data-household-location-action="pick"><i class="fa-solid fa-map-location-dot"></i> Chá»n trÃªn báº£n Ä‘á»“</button>' +
-        '<button class="btn btn-outline-primary" type="button" data-household-location-action="gps"><i class="fa-solid fa-satellite-dish"></i> Láº¥y GPS</button>' +
-        '<button class="btn btn-outline-danger" type="button" data-household-location-action="clear"><i class="fa-solid fa-trash"></i> XÃ³a vá»‹ trÃ­</button>' +
+        '<button class="btn btn-outline-success" type="button" data-household-location-action="pick"><i class="fa-solid fa-map-location-dot"></i> ChÃ¡Â»Ân trÃƒÂªn bÃ¡ÂºÂ£n Ã„â€˜Ã¡Â»â€œ</button>' +
+        '<button class="btn btn-outline-primary" type="button" data-household-location-action="gps"><i class="fa-solid fa-satellite-dish"></i> LÃ¡ÂºÂ¥y GPS</button>' +
+        '<button class="btn btn-outline-danger" type="button" data-household-location-action="clear"><i class="fa-solid fa-trash"></i> XÃƒÂ³a vÃ¡Â»â€¹ trÃƒÂ­</button>' +
       '</div>';
     row.appendChild(section);
   }
@@ -111,7 +111,7 @@
     if (lat) lat.value = row && row.latitude != null ? row.latitude : '';
     if (lng) lng.value = row && row.longitude != null ? row.longitude : '';
     if (source) source.value = row && row.location_source ? row.location_source : '';
-    if (accuracy) accuracy.value = accuracyValue !== '' && accuracyValue != null ? 'Â±' + accuracyValue + ' m' : '';
+    if (accuracy) accuracy.value = accuracyValue !== '' && accuracyValue != null ? 'Ã‚Â±' + accuracyValue + ' m' : '';
   }
 
   async function hydrateHouseholdLocation(id) {
@@ -150,23 +150,23 @@
   }
 
   async function saveLocation(householdId, lat, lng, source, accuracy) {
-    if (!can('gis', 'update')) { toast('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n cáº­p nháº­t GIS.', 'warning'); return null; }
+    if (!can('gis', 'update')) { toast('TÃƒÂ i khoÃ¡ÂºÂ£n hiÃ¡Â»â€¡n tÃ¡ÂºÂ¡i khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân cÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t GIS.', 'warning'); return null; }
     const marker = await request('/api/gis/households/' + encodeURIComponent(householdId) + '/location', {
       method: 'PUT',
       body: { latitude: lat, longitude: lng, source: source || 'MANUAL', accuracy: accuracy || null }
     });
     setLocationFields(marker);
     await refreshAfterLocationChange();
-    toast('ÄÃ£ lÆ°u vá»‹ trÃ­ há»™ gia Ä‘Ã¬nh.', 'success');
+    toast('Ã„ÂÃƒÂ£ lÃ†Â°u vÃ¡Â»â€¹ trÃƒÂ­ hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh.', 'success');
     return marker;
   }
 
   async function clearLocation(householdId) {
-    if (!can('gis', 'update')) { toast('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n cáº­p nháº­t GIS.', 'warning'); return; }
+    if (!can('gis', 'update')) { toast('TÃƒÂ i khoÃ¡ÂºÂ£n hiÃ¡Â»â€¡n tÃ¡ÂºÂ¡i khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân cÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t GIS.', 'warning'); return; }
     await request('/api/gis/households/' + encodeURIComponent(householdId) + '/location', { method: 'DELETE' });
     setLocationFields(null);
     await refreshAfterLocationChange();
-    toast('ÄÃ£ xÃ³a vá»‹ trÃ­ há»™ gia Ä‘Ã¬nh.', 'success');
+    toast('Ã„ÂÃƒÂ£ xÃƒÂ³a vÃ¡Â»â€¹ trÃƒÂ­ hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh.', 'success');
   }
 
   async function refreshAfterLocationChange() {
@@ -185,28 +185,28 @@
   function getMapWhenReady(callback, tries) {
     const m = map();
     if (m) { callback(m); return; }
-    if ((tries || 0) > 30) { toast('Báº£n Ä‘á»“ chÆ°a sáºµn sÃ ng. Vui lÃ²ng má»Ÿ láº¡i mÃ n hÃ¬nh báº£n Ä‘á»“.', 'warning'); return; }
+    if ((tries || 0) > 30) { toast('BÃ¡ÂºÂ£n Ã„â€˜Ã¡Â»â€œ chÃ†Â°a sÃ¡ÂºÂµn sÃƒÂ ng. Vui lÃƒÂ²ng mÃ¡Â»Å¸ lÃ¡ÂºÂ¡i mÃƒÂ n hÃƒÂ¬nh bÃ¡ÂºÂ£n Ã„â€˜Ã¡Â»â€œ.', 'warning'); return; }
     setTimeout(() => getMapWhenReady(callback, (tries || 0) + 1), 120);
   }
 
   function startPicker(householdId) {
-    if (!can('gis', 'update')) { toast('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n cáº­p nháº­t GIS.', 'warning'); return; }
-    if (!householdId) { toast('Vui lÃ²ng lÆ°u há»™ gia Ä‘Ã¬nh trÆ°á»›c khi Ä‘á»‹nh vá»‹.', 'warning'); return; }
+    if (!can('gis', 'update')) { toast('TÃƒÂ i khoÃ¡ÂºÂ£n hiÃ¡Â»â€¡n tÃ¡ÂºÂ¡i khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân cÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t GIS.', 'warning'); return; }
+    if (!householdId) { toast('Vui lÃƒÂ²ng lÃ†Â°u hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh trÃ†Â°Ã¡Â»â€ºc khi Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹.', 'warning'); return; }
     closeHouseholdModal();
     if (typeof window.switchScreen === 'function') window.switchScreen('gis');
     getMapWhenReady(m => {
       state.picker = { householdId: String(householdId) };
       document.body.classList.add('gis-location-picking');
-      showPickBanner('Báº¥m vÃ o vá»‹ trÃ­ ngÃ´i nhÃ  trÃªn báº£n Ä‘á»“ Ä‘á»ƒ lÆ°u tá»a Ä‘á»™.');
+      showPickBanner('BÃ¡ÂºÂ¥m vÃƒÂ o vÃ¡Â»â€¹ trÃƒÂ­ ngÃƒÂ´i nhÃƒÂ  trÃƒÂªn bÃ¡ÂºÂ£n Ã„â€˜Ã¡Â»â€œ Ã„â€˜Ã¡Â»Æ’ lÃ†Â°u tÃ¡Â»Âa Ã„â€˜Ã¡Â»â„¢.');
       m.once('click', async event => {
-        const ok = window.confirm('LÆ°u vá»‹ trÃ­ nÃ y cho há»™ gia Ä‘Ã¬nh?\nLatitude: ' + event.latlng.lat.toFixed(8) + '\nLongitude: ' + event.latlng.lng.toFixed(8));
+        const ok = window.confirm('LÃ†Â°u vÃ¡Â»â€¹ trÃƒÂ­ nÃƒÂ y cho hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh?\nLatitude: ' + event.latlng.lat.toFixed(8) + '\nLongitude: ' + event.latlng.lng.toFixed(8));
         hidePickBanner();
         document.body.classList.remove('gis-location-picking');
         if (!ok) return;
         try {
           await saveLocation(householdId, event.latlng.lat, event.latlng.lng, 'MANUAL');
         } catch (error) {
-          toast(error.message || 'KhÃ´ng lÆ°u Ä‘Æ°á»£c vá»‹ trÃ­ há»™ gia Ä‘Ã¬nh.', 'danger');
+          toast(error.message || 'KhÃƒÂ´ng lÃ†Â°u Ã„â€˜Ã†Â°Ã¡Â»Â£c vÃ¡Â»â€¹ trÃƒÂ­ hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh.', 'danger');
         } finally {
           state.picker = null;
         }
@@ -233,24 +233,24 @@
     const rawMessage = String(error && error.message ? error.message : '').trim();
     const message = rawMessage.toLowerCase();
     if (message.includes('permission') && message.includes('policy')) {
-      return 'GPS Ä‘ang bá»‹ cháº·n bá»Ÿi Permissions-Policy cá»§a hosting. Vui lÃ²ng kiá»ƒm tra header geolocation=(self).';
+      return 'GPS Ã„â€˜ang bÃ¡Â»â€¹ chÃ¡ÂºÂ·n bÃ¡Â»Å¸i Permissions-Policy cÃ¡Â»Â§a hosting. Vui lÃƒÂ²ng kiÃ¡Â»Æ’m tra header geolocation=(self).';
     }
     if (error && error.code === error.PERMISSION_DENIED) {
-      return 'Báº¡n Ä‘Ã£ tá»« chá»‘i quyá»n vá»‹ trÃ­. Vui lÃ²ng má»Ÿ Site Settings cá»§a trÃ¬nh duyá»‡t vÃ  cho phÃ©p Location.';
+      return 'BÃ¡ÂºÂ¡n Ã„â€˜ÃƒÂ£ tÃ¡Â»Â« chÃ¡Â»â€˜i quyÃ¡Â»Ân vÃ¡Â»â€¹ trÃƒÂ­. Vui lÃƒÂ²ng mÃ¡Â»Å¸ Site Settings cÃ¡Â»Â§a trÃƒÂ¬nh duyÃ¡Â»â€¡t vÃƒÂ  cho phÃƒÂ©p Location.';
     }
     if (error && error.code === error.POSITION_UNAVAILABLE) {
-      return 'Thiáº¿t bá»‹ khÃ´ng cung cáº¥p Ä‘Æ°á»£c vá»‹ trÃ­ hiá»‡n táº¡i. Vui lÃ²ng báº­t GPS hoáº·c thá»­ láº¡i ngoÃ i trá»i.';
+      return 'ThiÃ¡ÂºÂ¿t bÃ¡Â»â€¹ khÃƒÂ´ng cung cÃ¡ÂºÂ¥p Ã„â€˜Ã†Â°Ã¡Â»Â£c vÃ¡Â»â€¹ trÃƒÂ­ hiÃ¡Â»â€¡n tÃ¡ÂºÂ¡i. Vui lÃƒÂ²ng bÃ¡ÂºÂ­t GPS hoÃ¡ÂºÂ·c thÃ¡Â»Â­ lÃ¡ÂºÂ¡i ngoÃƒÂ i trÃ¡Â»Âi.';
     }
     if (error && error.code === error.TIMEOUT) {
-      return 'QuÃ¡ thá»i gian láº¥y GPS. Vui lÃ²ng kiá»ƒm tra tÃ­n hiá»‡u vá»‹ trÃ­ vÃ  thá»­ láº¡i.';
+      return 'QuÃƒÂ¡ thÃ¡Â»Âi gian lÃ¡ÂºÂ¥y GPS. Vui lÃƒÂ²ng kiÃ¡Â»Æ’m tra tÃƒÂ­n hiÃ¡Â»â€¡u vÃ¡Â»â€¹ trÃƒÂ­ vÃƒÂ  thÃ¡Â»Â­ lÃ¡ÂºÂ¡i.';
     }
-    return rawMessage || 'KhÃ´ng láº¥y Ä‘Æ°á»£c vá»‹ trÃ­ GPS.';
+    return rawMessage || 'KhÃƒÂ´ng lÃ¡ÂºÂ¥y Ã„â€˜Ã†Â°Ã¡Â»Â£c vÃ¡Â»â€¹ trÃƒÂ­ GPS.';
   }
 
   function useGps(householdId, triggerButton) {
-    if (!householdId) { toast('Vui lÃ²ng lÆ°u há»™ gia Ä‘Ã¬nh trÆ°á»›c khi láº¥y GPS.', 'warning'); return; }
-    if (!window.isSecureContext) { toast('GPS chá»‰ hoáº¡t Ä‘á»™ng trÃªn HTTPS hoáº·c localhost. Vui lÃ²ng truy cáº­p báº±ng HTTPS.', 'danger'); return; }
-    if (!navigator.geolocation) { toast('Thiáº¿t bá»‹ khÃ´ng há»— trá»£ GPS.', 'warning'); return; }
+    if (!householdId) { toast('Vui lÃƒÂ²ng lÃ†Â°u hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh trÃ†Â°Ã¡Â»â€ºc khi lÃ¡ÂºÂ¥y GPS.', 'warning'); return; }
+    if (!window.isSecureContext) { toast('GPS chÃ¡Â»â€° hoÃ¡ÂºÂ¡t Ã„â€˜Ã¡Â»â„¢ng trÃƒÂªn HTTPS hoÃ¡ÂºÂ·c localhost. Vui lÃƒÂ²ng truy cÃ¡ÂºÂ­p bÃ¡ÂºÂ±ng HTTPS.', 'danger'); return; }
+    if (!navigator.geolocation) { toast('ThiÃ¡ÂºÂ¿t bÃ¡Â»â€¹ khÃƒÂ´ng hÃ¡Â»â€” trÃ¡Â»Â£ GPS.', 'warning'); return; }
 
     const button = triggerButton || $('[data-household-location-action="gps"]');
     const originalHtml = button ? button.innerHTML : '';
@@ -261,7 +261,7 @@
     };
     if (button) {
       button.disabled = true;
-      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Äang láº¥y GPS...';
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ã„Âang lÃ¡ÂºÂ¥y GPS...';
     }
 
     navigator.geolocation.getCurrentPosition(async position => {
@@ -269,7 +269,7 @@
         const accuracy = Math.round(position.coords.accuracy || 0);
         await saveLocation(householdId, position.coords.latitude, position.coords.longitude, 'GPS', accuracy);
       } catch (error) {
-        toast(error.message || 'KhÃ´ng lÆ°u Ä‘Æ°á»£c vá»‹ trÃ­ GPS.', 'danger');
+        toast(error.message || 'KhÃƒÂ´ng lÃ†Â°u Ã„â€˜Ã†Â°Ã¡Â»Â£c vÃ¡Â»â€¹ trÃƒÂ­ GPS.', 'danger');
       } finally {
         restoreButton();
       }
@@ -290,8 +290,8 @@
       if (action === 'gps') useGps(householdId, button);
       if (action === 'clear') {
         if (!householdId) return;
-        if (!window.confirm('XÃ³a vá»‹ trÃ­ hiá»‡n táº¡i cá»§a há»™ gia Ä‘Ã¬nh nÃ y?')) return;
-        try { await clearLocation(householdId); } catch (error) { toast(error.message || 'KhÃ´ng xÃ³a Ä‘Æ°á»£c vá»‹ trÃ­.', 'danger'); }
+        if (!window.confirm('XÃƒÂ³a vÃ¡Â»â€¹ trÃƒÂ­ hiÃ¡Â»â€¡n tÃ¡ÂºÂ¡i cÃ¡Â»Â§a hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh nÃƒÂ y?')) return;
+        try { await clearLocation(householdId); } catch (error) { toast(error.message || 'KhÃƒÂ´ng xÃƒÂ³a Ã„â€˜Ã†Â°Ã¡Â»Â£c vÃ¡Â»â€¹ trÃƒÂ­.', 'danger'); }
       }
     });
   }
@@ -305,7 +305,7 @@
     const headers = {};
     if (window.App && window.App.token) headers.Authorization = 'Bearer ' + window.App.token;
     const response = await fetch(previewUrl(fileId), { headers, cache: 'force-cache' });
-    if (!response.ok) throw new Error('KhÃ´ng táº£i Ä‘Æ°á»£c áº£nh há»™');
+    if (!response.ok) throw new Error('KhÃƒÂ´ng tÃ¡ÂºÂ£i Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã¡ÂºÂ£nh hÃ¡Â»â„¢');
     const url = URL.createObjectURL(await response.blob());
     state.thumbnailCache.set(key, url);
     return url;
@@ -427,17 +427,17 @@
     return fallback || null;
   }
 
-  function googleDirectionsUrl(row) {
+  function openStreetMapDirectionsUrl(row) {
     if (!row || row.latitude == null || row.longitude == null) return '';
     const lat = Number(row.latitude);
     const lng = Number(row.longitude);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
-    return 'https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng;
+    return 'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=;' + lat + ',' + lng;
   }
 
   function openHouseholdTab(id, tab) {
     if (!id || typeof window.showHousehold !== 'function') {
-      toast('KhÃ´ng má»Ÿ Ä‘Æ°á»£c há»“ sÆ¡ há»™.', 'warning');
+      toast('KhÃƒÂ´ng mÃ¡Â»Å¸ Ã„â€˜Ã†Â°Ã¡Â»Â£c hÃ¡Â»â€œ sÃ†Â¡ hÃ¡Â»â„¢.', 'warning');
       return;
     }
     Promise.resolve(window.showHousehold(id)).then(() => {
@@ -446,13 +446,13 @@
         const button = document.querySelector('[data-household-tab="' + tab + '"]');
         if (button) button.click();
       }, 80);
-    }).catch(error => toast(error.message || 'KhÃ´ng má»Ÿ Ä‘Æ°á»£c há»“ sÆ¡ há»™.', 'danger'));
+    }).catch(error => toast(error.message || 'KhÃƒÂ´ng mÃ¡Â»Å¸ Ã„â€˜Ã†Â°Ã¡Â»Â£c hÃ¡Â»â€œ sÃ†Â¡ hÃ¡Â»â„¢.', 'danger'));
   }
 
-  function openGoogleDirections(row) {
-    const url = googleDirectionsUrl(row);
+  function openOpenStreetMapDirections(row) {
+    const url = openStreetMapDirectionsUrl(row);
     if (!url) {
-      toast('Há»™ nÃ y chÆ°a cÃ³ tá»a Ä‘á»™ trÃªn báº£n Ä‘á»“.', 'warning');
+      toast('HÃ¡Â»â„¢ nÃƒÂ y chÃ†Â°a cÃƒÂ³ tÃ¡Â»Âa Ã„â€˜Ã¡Â»â„¢ trÃƒÂªn bÃ¡ÂºÂ£n Ã„â€˜Ã¡Â»â€œ.', 'warning');
       return;
     }
     window.open(url, '_blank', 'noopener');
@@ -479,11 +479,11 @@
     const activeRow = popupRowById(id, row);
     const householdId = id || normalizeHouseholdId(activeRow);
     if (!householdId) {
-      toast('KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c há»™ gia Ä‘Ã¬nh.', 'warning');
+      toast('KhÃƒÂ´ng xÃƒÂ¡c Ã„â€˜Ã¡Â»â€¹nh Ã„â€˜Ã†Â°Ã¡Â»Â£c hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh.', 'warning');
       return;
     }
     if (action === 'open') window.thon09GisOpenHousehold(householdId);
-    if (action === 'route') openGoogleDirections(activeRow);
+    if (action === 'route') openOpenStreetMapDirections(activeRow);
     if (action === 'gallery') window.thon09GisOpenHouseholdGallery(householdId);
     if (action === 'relocate') window.thon09GisRelocateHousehold(householdId, target);
     if (action === 'phone') {
@@ -580,14 +580,14 @@
 
   function gpsText(row) {
     row = row || {};
-    if (row.latitude == null || row.longitude == null) return 'ChÆ°a cÃ³ GPS';
+    if (row.latitude == null || row.longitude == null) return 'ChÃ†Â°a cÃƒÂ³ GPS';
     return Number(row.latitude).toFixed(6) + ', ' + Number(row.longitude).toFixed(6);
   }
 
   function popupImageHtml(row) {
     row = row || {};
     const url = row.__thumbnailObjectUrl || '';
-    if (url) return '<img src="' + escapeHtml(url) + '" alt="áº¢nh há»™" loading="lazy">';
+    if (url) return '<img src="' + escapeHtml(url) + '" alt="Ã¡ÂºÂ¢nh hÃ¡Â»â„¢" loading="lazy">';
     return '<div class="gis-household-popup-photo-empty"><i class="fa-solid fa-house-chimney"></i></div>';
   }
 
@@ -610,21 +610,21 @@
     const householdId = escapeHtml(normalizeHouseholdId(row));
     return '<div class="gis-household-popup gis-smart-popup">' +
       '<div class="gis-smart-popup-head"><div class="gis-smart-popup-photo" data-gis-popup-photo="' + Number(row.thumbnail_file_id || 0) + '">' + popupImageHtml(row) + '</div>' +
-      '<div><h4>' + escapeHtml(row.household_code || 'Há»™ gia Ä‘Ã¬nh') + '</h4><p>' + escapeHtml(row.head_citizen_name || 'ChÆ°a cÃ³ chá»§ há»™') + '</p><span>' + escapeHtml(row.household_type || 'Há»™ bÃ¬nh thÆ°á»ng') + '</span></div></div>' +
+      '<div><h4>' + escapeHtml(row.household_code || 'HÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh') + '</h4><p>' + escapeHtml(row.head_citizen_name || 'ChÃ†Â°a cÃƒÂ³ chÃ¡Â»Â§ hÃ¡Â»â„¢') + '</p><span>' + escapeHtml(row.household_type || 'HÃ¡Â»â„¢ bÃƒÂ¬nh thÃ†Â°Ã¡Â»Âng') + '</span></div></div>' +
       '<dl>' +
-        '<dt>MÃ£ há»™</dt><dd>' + escapeHtml(row.household_code) + '</dd>' +
-        '<dt>Chá»§ há»™</dt><dd>' + escapeHtml(row.head_citizen_name) + '</dd>' +
-        '<dt>Äá»‹a chá»‰</dt><dd>' + escapeHtml(row.address) + '</dd>' +
-        '<dt>Sá»‘ nhÃ¢n kháº©u</dt><dd>' + Number(row.total_members || 0).toLocaleString('vi-VN') + '</dd>' +
-        '<dt>Äang cÆ° trÃº</dt><dd>' + Number(row.at_home_count || 0).toLocaleString('vi-VN') + '</dd>' +
+        '<dt>MÃƒÂ£ hÃ¡Â»â„¢</dt><dd>' + escapeHtml(row.household_code) + '</dd>' +
+        '<dt>ChÃ¡Â»Â§ hÃ¡Â»â„¢</dt><dd>' + escapeHtml(row.head_citizen_name) + '</dd>' +
+        '<dt>Ã„ÂÃ¡Â»â€¹a chÃ¡Â»â€°</dt><dd>' + escapeHtml(row.address) + '</dd>' +
+        '<dt>SÃ¡Â»â€˜ nhÃƒÂ¢n khÃ¡ÂºÂ©u</dt><dd>' + Number(row.total_members || 0).toLocaleString('vi-VN') + '</dd>' +
+        '<dt>Ã„Âang cÃ†Â° trÃƒÂº</dt><dd>' + Number(row.at_home_count || 0).toLocaleString('vi-VN') + '</dd>' +
         '<dt>GPS</dt><dd>' + escapeHtml(gpsText(row)) + '</dd>' +
         businessPopupRows(row) +
       '</dl>' +
       '<div class="gis-smart-popup-actions">' +
-        '<button class="btn btn-sm btn-primary" type="button" data-gis-popup-action="open" data-household-id="' + householdId + '"><i class="fa-solid fa-folder-open"></i> Há»“ sÆ¡ sá»‘</button>' +
-        '<button class="btn btn-sm btn-success" type="button" data-gis-popup-action="route" data-household-id="' + householdId + '"><i class="fa-solid fa-route"></i> Chá»‰ Ä‘Æ°á»ng</button>' +
-        '<button class="btn btn-sm btn-outline-secondary" type="button" data-gis-popup-action="gallery" data-household-id="' + householdId + '"><i class="fa-solid fa-images"></i> Xem áº£nh</button>' +
-        (phone ? '<a class="btn btn-sm btn-outline-primary" href="tel:' + escapeHtml(phone) + '" data-gis-popup-action="phone" data-household-id="' + householdId + '" data-phone="' + escapeHtml(phone) + '"><i class="fa-solid fa-phone"></i> Gá»i Ä‘iá»‡n</a>' : '') +
+        '<button class="btn btn-sm btn-primary" type="button" data-gis-popup-action="open" data-household-id="' + householdId + '"><i class="fa-solid fa-folder-open"></i> HÃ¡Â»â€œ sÃ†Â¡ sÃ¡Â»â€˜</button>' +
+        '<button class="btn btn-sm btn-success" type="button" data-gis-popup-action="route" data-household-id="' + householdId + '"><i class="fa-solid fa-route"></i> ChÃ¡Â»â€° Ã„â€˜Ã†Â°Ã¡Â»Âng</button>' +
+        '<button class="btn btn-sm btn-outline-secondary" type="button" data-gis-popup-action="gallery" data-household-id="' + householdId + '"><i class="fa-solid fa-images"></i> Xem Ã¡ÂºÂ£nh</button>' +
+        (phone ? '<a class="btn btn-sm btn-outline-primary" href="tel:' + escapeHtml(phone) + '" data-gis-popup-action="phone" data-household-id="' + householdId + '" data-phone="' + escapeHtml(phone) + '"><i class="fa-solid fa-phone"></i> GÃ¡Â»Âi Ã„â€˜iÃ¡Â»â€¡n</a>' : '') +
         (can('gis', 'update') ? '<button class="btn btn-sm btn-outline-success" type="button" data-gis-popup-action="relocate" data-household-id="' + householdId + '"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>' : '') +
       '</div>' +
     '</div>';
@@ -730,39 +730,8 @@
   }
 
   function bindGisMapHooks() {
-    if (window.__thon09GisHouseholdMapWrapped) return;
-    window.__thon09GisHouseholdMapWrapped = true;
-    const originalLoad = typeof window.loadGisMap === 'function' ? window.loadGisMap : null;
-    if (originalLoad) {
-      window.loadGisMap = async function () {
-        const result = await originalLoad.apply(this, arguments);
-        setTimeout(() => loadHouseholdMarkers(undefined, { background: true }), 180);
-        return result;
-      };
-    }
-    const bindMove = () => {
-      const m = map();
-      if (!m || m.__thon09HouseholdMarkerMoveBound) return;
-      m.__thon09HouseholdMarkerMoveBound = true;
-      m.on('moveend zoomend', debounce(() => {
-        if (state.openPopupId) return;
-        loadHouseholdMarkers(undefined, { background: true });
-      }, 450));
-    };
-    const search = $('#gisSearch');
-    if (search && !search.__thon09HouseholdSearchBound) {
-      search.__thon09HouseholdSearchBound = true;
-      search.addEventListener('input', debounce(() => {
-        const value = String(search.value || '').trim();
-        if (value.length > 1) loadHouseholdMarkers(value);
-        else loadHouseholdMarkers();
-      }, 450));
-    }
-    bindMove();
-    setInterval(bindMove, 1000);
+    return;
   }
-
-
 
   window.thon09GisHasOpenHouseholdPopup = function () {
     return Boolean(state.openPopupId);
@@ -806,10 +775,10 @@
 
   window.thon09GisOpenHousehold = function (id) { openHouseholdTab(id, 'files'); };
   window.thon09GisOpenHouseholdGallery = function (id) { openHouseholdTab(id, 'gallery'); };
-  window.thon09GisDirectionsUrl = function (row) { return googleDirectionsUrl(normalizeHouseholdRow(row)); };
-  window.thon09GisOpenDirectionsForRow = function (row) { openGoogleDirections(normalizeHouseholdRow(row)); };
+  window.thon09GisDirectionsUrl = function (row) { return openStreetMapDirectionsUrl(normalizeHouseholdRow(row)); };
+  window.thon09GisOpenDirectionsForRow = function (row) { openOpenStreetMapDirections(normalizeHouseholdRow(row)); };
   if (typeof window.thon09GisRouteToHousehold !== 'function') {
-    window.thon09GisRouteToHousehold = function (id) { openGoogleDirections(popupRowById(id)); };
+    window.thon09GisRouteToHousehold = function (id) { openOpenStreetMapDirections(popupRowById(id)); };
     window.thon09GisRouteToHousehold.__thon09Fallback = true;
   }
   window.thon09GisEditHousehold = function (id) {
@@ -823,8 +792,8 @@
     wrapHouseholdForm();
     bindLocationButtons();
     bindPopupDelegation();
-    bindGisMapHooks();
-    if (isAuthenticated()) setTimeout(() => loadHouseholdMarkers(undefined, { background: true }), 1200);
+    // Household location helpers stay active, but marker loading is owned by the main Leaflet GIS module.
+
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

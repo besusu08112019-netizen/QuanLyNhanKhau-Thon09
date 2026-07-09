@@ -52,11 +52,25 @@ class GisController extends BaseController
     {
         try {
             $this->requirePermission('gis', 'read');
-            $items = $this->locationModel()->markers($this->householdFiltersFromQuery());
+            $filters = $this->householdFiltersFromQuery();
+            $items = (string) $this->query('light', '') === '1'
+                ? $this->locationModel()->lightMarkers($filters)
+                : $this->locationModel()->markers($filters);
             $this->ok($items);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/households', $e);
-            $this->fail('Không tải được vị trí hộ: ' . $e->getMessage(), 500);
+            $this->fail('Kh??ng t???i ???????c v??? tr?? h???: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function householdDetail(int $id): void
+    {
+        try {
+            $this->requirePermission('gis', 'read');
+            $this->ok($this->locationModel()->detail($id));
+        } catch (Throwable $e) {
+            $this->logException('GET /api/gis/households/' . $id . '/detail', $e);
+            $this->fail('Kh??ng t???i ???????c chi ti???t h??? tr??n GIS: ' . $e->getMessage(), 404);
         }
     }
 
