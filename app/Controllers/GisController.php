@@ -44,7 +44,7 @@ class GisController extends BaseController
             ]);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/areas', $e);
-            $this->fail('Không tải được GIS: ' . $e->getMessage(), 500);
+            $this->fail($this->safeExceptionMessage(json_decode('"Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u GIS"', true), $e), 500);
         }
     }
 
@@ -59,7 +59,7 @@ class GisController extends BaseController
             $this->ok($items);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/households', $e);
-            $this->fail('Kh??ng t???i ???????c v??? tr?? h???: ' . $e->getMessage(), 500);
+            $this->fail($this->safeExceptionMessage(json_decode('"Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c v\u1ecb tr\u00ed h\u1ed9 tr\u00ean GIS"', true), $e), 500);
         }
     }
 
@@ -70,7 +70,7 @@ class GisController extends BaseController
             $this->ok($this->locationModel()->detail($id));
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/households/' . $id . '/detail', $e);
-            $this->fail('Kh??ng t???i ???????c chi ti???t h??? tr??n GIS: ' . $e->getMessage(), 404);
+            $this->fail($this->safeExceptionMessage(json_decode('"Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c chi ti\u1ebft h\u1ed9 tr\u00ean GIS"', true), $e), 404);
         }
     }
 
@@ -93,7 +93,7 @@ class GisController extends BaseController
             $this->ok(['items' => $items]);
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/search', $e);
-            $this->fail('Không tìm kiếm được hộ trên bản đồ: ' . $e->getMessage(), 500);
+            $this->fail($this->safeExceptionMessage(json_decode('"Kh\u00f4ng t\u00ecm ki\u1ebfm \u0111\u01b0\u1ee3c h\u1ed9 tr\u00ean b\u1ea3n \u0111\u1ed3"', true), $e), 500);
         }
     }
 

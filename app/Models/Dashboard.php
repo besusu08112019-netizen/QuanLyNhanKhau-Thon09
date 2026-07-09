@@ -56,9 +56,10 @@ final class Dashboard extends BaseModel
             return $callback();
         } catch (\Throwable $exception) {
             $lastQuery = self::lastQuery();
+            $debug = $this->debugEnabled();
             $errors[$name] = [
-                'type' => get_class($exception),
-                'message' => $exception->getMessage(),
+                'type' => $debug ? get_class($exception) : 'WidgetError',
+                'message' => $debug ? $exception->getMessage() : json_decode('"Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u th\u1ed1ng k\u00ea"', true),
             ];
             error_log('[DASHBOARD_WIDGET_ERROR] ' . json_encode([
                 'widget' => $name,
@@ -69,6 +70,11 @@ final class Dashboard extends BaseModel
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             return $fallback;
         }
+    }
+
+    private function debugEnabled(): bool
+    {
+        return filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN);
     }
 
     private function defaultMetrics(): array

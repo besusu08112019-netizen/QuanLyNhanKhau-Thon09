@@ -18,6 +18,11 @@ abstract class BaseController
     protected function query(?string $key = null, mixed $default = null): mixed { return $this->request->query($key, $default); }
     protected function ok(mixed $data = null): void { Response::ok($data); }
     protected function fail(string $message, int $status = 400): void { Response::error($message, $status); }
+    protected function debugEnabled(): bool { return filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN); }
+    protected function safeExceptionMessage(string $message, \Throwable $exception): string
+    {
+        return $this->debugEnabled() ? $message . ': ' . $exception->getMessage() : $message;
+    }
 
     protected function requireInputFields(array $input, array $fields): void
     {
@@ -80,7 +85,7 @@ abstract class BaseController
     protected function auditPermissionDenied(?array $user, string $module, string $action): void
     {
         try {
-            $this->audit($user, $module, 'permission_denied', 'T? ch?i thao tác không d? quy?n', null, [
+            $this->audit($user, $module, 'permission_denied', json_decode('"T\u1eeb ch\u1ed1i thao t\u00e1c kh\u00f4ng \u0111\u1ee7 quy\u1ec1n"', true), null, [
                 'role' => $user['role'] ?? null,
                 'denied_action' => $action,
                 'endpoint' => $this->request->method() . ' ' . $this->request->path(),

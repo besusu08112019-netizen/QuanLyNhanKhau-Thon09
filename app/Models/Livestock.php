@@ -304,9 +304,21 @@ SQL);
         if ($householdId <= 0) throw new \RuntimeException('Hộ gia đình là bắt buộc');
         if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', ['id' => $householdId])) throw new \RuntimeException('Không tìm thấy hộ gia đình');
         $animalType = trim((string) ($data['animal_type'] ?? $data['animalType'] ?? ''));
-        if ($animalType === '') throw new \RuntimeException('Loại vật nuôi là bắt buộc');
-        $duplicate = $this->fetchOne('SELECT l.id FROM livestock l WHERE l.household_id = :household_id AND LOWER(l.animal_type) = LOWER(:animal_type) AND l.status <> "DELETED" AND (:current_id = 0 OR l.id <> :exclude_id) LIMIT 1', ['household_id' => $householdId, 'animal_type' => $animalType, 'current_id' => (int) ($id ?? 0), 'exclude_id' => (int) ($id ?? 0)]);
-        if ($duplicate) throw new \RuntimeException('Hộ này đã có bản ghi cho loại vật nuôi này.');
+        if ($animalType === '') throw new \RuntimeException(json_decode('"Lo\u1ea1i v\u1eadt nu\u00f4i l\u00e0 b\u1eaft bu\u1ed9c"', true));
+        $breed = trim((string) ($data['breed'] ?? '')) ?: null;
+        $barnArea = trim((string) ($data['barn_area'] ?? $data['barnArea'] ?? '')) ?: null;
+        $duplicate = $this->fetchOne(
+            'SELECT l.id FROM livestock l
+             WHERE l.household_id = :household_id
+               AND LOWER(l.animal_type) = LOWER(:animal_type)
+               AND LOWER(COALESCE(l.breed,"")) = LOWER(:breed)
+               AND LOWER(COALESCE(l.barn_area,"")) = LOWER(:barn_area)
+               AND l.status <> "DELETED"
+               AND (:current_id = 0 OR l.id <> :exclude_id)
+             LIMIT 1',
+            ['household_id' => $householdId, 'animal_type' => $animalType, 'breed' => $breed ?? '', 'barn_area' => $barnArea ?? '', 'current_id' => (int) ($id ?? 0), 'exclude_id' => (int) ($id ?? 0)]
+        );
+        if ($duplicate) throw new \RuntimeException(json_decode('"H\u1ed9 n\u00e0y \u0111\u00e3 c\u00f3 b\u1ea3n ghi tr\u00f9ng lo\u1ea1i, ph\u00e2n lo\u1ea1i v\u00e0 gi\u1ed1ng v\u1eadt nu\u00f4i."', true));
         $disease = strtoupper(trim((string) ($data['disease_status'] ?? $data['diseaseStatus'] ?? 'NONE')));
         if (!isset(self::DISEASE_LABELS[$disease])) $disease = 'NONE';
         $status = strtoupper(trim((string) ($data['status'] ?? 'ACTIVE')));
@@ -314,12 +326,12 @@ SQL);
         return [
             'household_id' => $householdId,
             'animal_type' => $animalType,
-            'breed' => trim((string) ($data['breed'] ?? '')) ?: null,
+            'breed' => $breed,
             'quantity' => max(0, (int) ($data['quantity'] ?? 0)),
             'vaccinated' => !empty($data['vaccinated']) && $data['vaccinated'] !== '0' ? 1 : 0,
             'vaccine_date' => trim((string) ($data['vaccine_date'] ?? $data['vaccineDate'] ?? '')) ?: null,
             'disease_status' => $disease,
-            'barn_area' => trim((string) ($data['barn_area'] ?? $data['barnArea'] ?? '')) ?: null,
+            'barn_area' => $barnArea,
             'status' => $status,
             'note' => trim((string) ($data['note'] ?? '')) ?: null,
             'user' => $userId,

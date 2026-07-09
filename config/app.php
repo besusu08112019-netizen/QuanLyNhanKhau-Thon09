@@ -28,9 +28,10 @@ $resolveAppKey = static function () use ($uploadPath): string {
 };
 
 return [
-    'name' => getenv('APP_NAME') ?: 'Quản Lý Nhân Khẩu Thôn 09 xã Hồng Phong',
+    'name' => getenv('APP_NAME') ?: json_decode('"Qu\u1ea3n l\u00fd Nh\u00e2n kh\u1ea9u Th\u00f4n 09 x\u00e3 H\u1ed3ng Phong"', true),
     'app_key' => $resolveAppKey(),
     'timezone' => getenv('APP_TIMEZONE') ?: 'Asia/Ho_Chi_Minh',
+    'debug' => filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN),
     'session_ttl_seconds' => (int) (getenv('SESSION_TTL_SECONDS') ?: 21600),
     'upload_path' => $uploadPath,
 ];

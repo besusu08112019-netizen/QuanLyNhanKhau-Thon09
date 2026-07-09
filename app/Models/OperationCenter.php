@@ -252,7 +252,8 @@ final class OperationCenter extends BaseModel
         } catch (\Throwable $exception) {
             $lastQuery = self::lastQuery();
             error_log('[OPERATION_CENTER_WIDGET_ERROR] ' . json_encode(['widget' => $widget, 'message' => $exception->getMessage(), 'sql' => $lastQuery['sql'] ?? null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-            return ['ok' => true, 'data' => $fallback, 'widget' => $widget, 'error' => ['message' => $exception->getMessage()]];
+            $message = filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN) ? $exception->getMessage() : json_decode('"Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u \u0111i\u1ec1u h\u00e0nh"', true);
+            return ['ok' => true, 'data' => $fallback, 'widget' => $widget, 'error' => ['message' => $message]];
         }
     }
 

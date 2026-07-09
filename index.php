@@ -49,11 +49,29 @@ Autoloader::register();
 
 function api_log_exception(Throwable $e, array $payload): void
 {
+    $lastQuery = BaseModel::lastQuery();
+    $exception = [
+        'message' => $e->getMessage(),
+        'type' => get_class($e),
+        'code' => (string) $e->getCode(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'sql' => $lastQuery['sql'] ?? null,
+        'sql_params' => $lastQuery['params'] ?? null,
+    ];
+    if ($e instanceof PDOException) {
+        $exception += [
+            'sqlstate' => $e->errorInfo[0] ?? $e->getCode(),
+            'driver_code' => $e->errorInfo[1] ?? null,
+            'driver_message' => $e->errorInfo[2] ?? null,
+        ];
+    }
     $entry = [
         'time' => date('c'),
         'method' => $_SERVER['REQUEST_METHOD'] ?? null,
         'uri' => $_SERVER['REQUEST_URI'] ?? null,
-        'payload' => $payload,
+        'response' => $payload,
+        'exception' => $exception,
     ];
     $line = '[API_EXCEPTION] ' . json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
     error_log($line);
@@ -62,24 +80,40 @@ function api_log_exception(Throwable $e, array $payload): void
         @file_put_contents($dir . '/api-errors.log', $line, FILE_APPEND | LOCK_EX);
     }
 }
+function app_debug_enabled(): bool
+{
+    static $debug = null;
+    if ($debug !== null) return $debug;
+    $config = require BASE_PATH . '/config/app.php';
+    $debug = !empty($config['debug']);
+    return $debug;
+}
+
 function api_exception_payload(Throwable $e, int $status = 500): array
 {
-    $lastQuery = BaseModel::lastQuery();
     $error = [
-        'message' => $e->getMessage() !== '' ? $e->getMessage() : 'Internal Server Error',
-        'type' => get_class($e),
-        'code' => (string) $e->getCode(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine(),
-        'stack_trace' => $e->getTraceAsString(),
-        'sql' => $lastQuery['sql'] ?? null,
-        'sql_params' => $lastQuery['params'] ?? null,
+        'message' => $status >= 500 ? 'Internal Server Error' : ($e->getMessage() ?: 'Request failed'),
+        'type' => $status >= 500 ? 'ServerError' : get_class($e),
     ];
-    if ($e instanceof PDOException) {
-        $error['sqlstate'] = $e->errorInfo[0] ?? $e->getCode();
-        $error['driver_code'] = $e->errorInfo[1] ?? null;
-        $error['driver_message'] = $e->errorInfo[2] ?? null;
+
+    if (app_debug_enabled()) {
+        $lastQuery = BaseModel::lastQuery();
+        $error += [
+            'debug_message' => $e->getMessage(),
+            'code' => (string) $e->getCode(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'stack_trace' => $e->getTraceAsString(),
+            'sql' => $lastQuery['sql'] ?? null,
+            'sql_params' => $lastQuery['params'] ?? null,
+        ];
+        if ($e instanceof PDOException) {
+            $error['sqlstate'] = $e->errorInfo[0] ?? $e->getCode();
+            $error['driver_code'] = $e->errorInfo[1] ?? null;
+            $error['driver_message'] = $e->errorInfo[2] ?? null;
+        }
     }
+
     return ['ok' => false, 'success' => false, 'error' => $error, 'status' => $status];
 }
 $request = Request::capture();
@@ -99,19 +133,25 @@ register_shutdown_function(function () use ($request): void {
     if (headers_sent()) return;
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode([
+    $payload = [
         'ok' => false,
         'success' => false,
         'error' => [
-            'message' => $error['message'] ?? 'Fatal error',
+            'message' => 'Internal Server Error',
             'type' => 'FatalError',
+        ],
+        'status' => 500,
+    ];
+    if (app_debug_enabled()) {
+        $payload['error'] += [
+            'debug_message' => $error['message'] ?? 'Fatal error',
             'file' => $error['file'] ?? null,
             'line' => $error['line'] ?? null,
             'sql' => BaseModel::lastQuery()['sql'] ?? null,
             'sql_params' => BaseModel::lastQuery()['params'] ?? null,
-        ],
-        'status' => 500,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        ];
+    }
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 });
 if ($request->path() === '/favicon.ico') {
     header('Content-Type: image/svg+xml; charset=UTF-8');
