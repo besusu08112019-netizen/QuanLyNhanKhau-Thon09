@@ -415,6 +415,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/digital-profile.min.js',
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
+        'assets/js/agriculture.min.js',
         'assets/js/module-dashboards.min.js',
     ];
 
