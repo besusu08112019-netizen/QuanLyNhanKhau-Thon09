@@ -1233,13 +1233,45 @@ async function savePerson(event) {
   } catch (error) { showToast(error.message, 'danger'); }
 }
 
+async function loadAuthenticatedPreviewBlob(id) {
+  const response = await fetch('/api/files/' + encodeURIComponent(id) + '/preview', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
+  if (!response.ok) throw new Error('Preview failed');
+  return URL.createObjectURL(await response.blob());
+}
+function hydrateAuthenticatedPreviews(root = document) {
+  $$('.js-auth-preview,[data-auth-preview]', root).forEach(async element => {
+    const id = Number(element.dataset.authPreview || element.dataset.fileId || 0);
+    if (!id || element.dataset.previewLoaded === '1') return;
+    element.dataset.previewLoaded = '1';
+    try {
+      const url = await loadAuthenticatedPreviewBlob(id);
+      element.src = url;
+      if (element.tagName !== 'VIDEO') element.addEventListener('load', () => setTimeout(() => URL.revokeObjectURL(url), 60000), { once: true });
+    } catch (error) {
+      element.removeAttribute('src');
+      element.classList.add('is-preview-error');
+    }
+  });
+}
+async function openAuthenticatedPreview(id) {
+  id = Number(id || 0);
+  if (!id) return;
+  if (typeof window.thon09PreviewFile === 'function') return window.thon09PreviewFile(id);
+  const url = await loadAuthenticatedPreviewBlob(id);
+  window.open(url, '_blank', 'noopener');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
 function householdPhotoDetailHtml(row = {}) {
+  const fileId = Number(row.photo_file_id || row.thumbnail_file_id || row.household_photo_file_id || 0);
   const url = row.household_photo_url || row.photo_url || row.thumbnail_url || '';
-  if (!url) return '';
-  return '<div class="household-detail-photo mb-3">'
-    + '<img src="' + escapeHtml(url) + '" alt="Ảnh hộ" loading="lazy">'
-    + '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Xem ảnh</a>'
-    + '</div>';
+  if (!fileId && !url) return '';
+  const image = fileId > 0
+    ? '<img data-auth-preview="' + fileId + '" alt="\u1ea2nh h\u1ed9" loading="lazy">'
+    : '<img src="' + escapeHtml(url) + '" alt="\u1ea2nh h\u1ed9" loading="lazy">';
+  const action = fileId > 0
+    ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="openAuthenticatedPreview(' + fileId + ')">Xem \u1ea3nh</button>'
+    : '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Xem \u1ea3nh</a>';
+  return '<div class="household-detail-photo mb-3">' + image + action + '</div>';
 }
 async function showHousehold(id) {
   try {
@@ -1248,6 +1280,7 @@ async function showHousehold(id) {
     $('#detailTitle').textContent = 'Chi tiết hộ dân';
     $('#detailBody').innerHTML = householdPhotoDetailHtml(row) + details([['Mã hộ', row.household_code], ['Chủ hộ', row.head_citizen_name], ['Địa chỉ', row.address], ['Số điện thoại', row.phone], ['Ở nhà', row.at_home_count || 0], ['Đi vắng', row.away_count || 0], ['Diện hộ', stripTags(householdBadges(row))], ['Ghi chú', row.note]]) + memberTable(members.items || []);
     refreshUiEnhancements($('#detailBody') || document);
+    hydrateAuthenticatedPreviews($('#detailBody') || document);
     App.modals.detail.show();
   } catch (error) { showToast(error.message, 'danger'); }
 }
@@ -2164,10 +2197,12 @@ async function openGisHouseholdPopup(id, marker) {
   App.gis.selectedHouseholdId = String(id);
   marker.setPopupContent(gisMarkerLoadingPopup(App.gis.markerCache.get(String(id))?.data || {}));
   marker.openPopup();
+  setTimeout(() => hydrateAuthenticatedPreviews(marker.getPopup?.().getElement?.() || document), 0);
   try {
     const detail = App.gis.detailCache.get(String(id)) || await api('/api/gis/households/' + encodeURIComponent(id) + '/detail', { cacheTtl: 30000 });
     App.gis.detailCache.set(String(id), detail);
     marker.setPopupContent(gisHouseholdDetailPopup(detail));
+    setTimeout(() => hydrateAuthenticatedPreviews(marker.getPopup?.().getElement?.() || document), 0);
   } catch (error) {
     marker.setPopupContent('<div class="gis-household-popup gis-smart-popup"><strong>Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c chi ti\u1ebft h\u1ed9</strong><p class="text-danger small">' + gisEscape(error.message || '') + '</p></div>');
   }
@@ -2194,8 +2229,10 @@ function gisHouseholdDetailPopup(detail) {
     + '</div>';
 }
 function gisPopupPhotoHtml(row) {
-  const url = row?.thumbnail_url || row?.household_photo_url || row?.photo_url || row?.thumbnailUrl || '';
-  if (url) return '<img src="' + gisEscape(url) + '" alt="\u1ea2nh h\u1ed9" loading="lazy">';
+  const fileId = Number(row?.thumbnail_file_id || row?.photo_file_id || row?.household_photo_file_id || 0);
+  if (fileId > 0) return '<img data-auth-preview="' + fileId + '" alt="\u1ea2nh h\u1ed9" loading="lazy">';
+  const url = row?.household_photo_url || row?.photo_url || row?.thumbnailUrl || '';
+  if (url && !/\/api\/files\/\d+\/preview/i.test(url)) return '<img src="' + gisEscape(url) + '" alt="\u1ea2nh h\u1ed9" loading="lazy">';
   return '<div class="gis-household-popup-photo-empty"><i class="fa-solid fa-house-chimney"></i></div>';
 }
 function gisHouseholdTypeText(h) {
