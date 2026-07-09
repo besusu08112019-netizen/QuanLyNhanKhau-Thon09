@@ -58,9 +58,9 @@
   function ensureMarkerCluster() {
     if (!window.L || window.L.markerClusterGroup) return Promise.resolve(Boolean(window.L && window.L.markerClusterGroup));
     return Promise.all([
-      loadAssetOnce('style', 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'),
-      loadAssetOnce('style', 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css'),
-      loadAssetOnce('script', 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js', () => Boolean(window.L && window.L.markerClusterGroup))
+      loadAssetOnce('style', 'assets/vendor/leaflet.markercluster/MarkerCluster.css'),
+      loadAssetOnce('style', 'assets/vendor/leaflet.markercluster/MarkerCluster.Default.css'),
+      loadAssetOnce('script', 'assets/vendor/leaflet.markercluster/leaflet.markercluster.js', () => Boolean(window.L && window.L.markerClusterGroup))
     ]).then(() => Boolean(window.L && window.L.markerClusterGroup));
   }
 
