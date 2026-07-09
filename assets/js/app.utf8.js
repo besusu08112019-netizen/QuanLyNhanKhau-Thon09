@@ -1997,6 +1997,46 @@ async function loadGisMap() {
     showToast('Kh?ng t?i ???c b?n ?? ??a b?n: ' + error.message, 'danger');
   }
 }
+function installGisManagers() {
+  App.gis.manager = {
+    map: {
+      init: initGisMap,
+      reload: loadGisMap,
+      switchBaseLayer: switchGisBaseLayer,
+      viewportKey: gisViewportKey,
+      boundsQuery: gisBoundsQuery
+    },
+    markers: {
+      loadViewport: loadGisViewportMarkers,
+      update: updateGisMarkers,
+      focus: focusGisHousehold
+    },
+    layers: {
+      renderAreas: renderGisAreas,
+      renderAreaList: renderGisAreaList,
+      focusArea: focusGisArea
+    },
+    popup: {
+      openHousehold: openGisHouseholdPopup,
+      renderHousehold: gisHouseholdDetailPopup
+    },
+    gps: {
+      start: startGisGps,
+      stop: stopGisGps
+    },
+    routing: {
+      householdDirectionsUrl: window.thon09GisDirectionsUrl || null
+    },
+    search: {
+      households: searchGisHouseholds
+    },
+    area: {
+      load: loadGisMap,
+      draw: startGisDraw,
+      save: saveGisArea
+    }
+  };
+}
 function initGisMap() {
   if (App.gis.map) { setTimeout(() => App.gis.map.invalidateSize(), 80); return; }
   const map = L.map('gisMap', { zoomControl: true, preferCanvas: true, updateWhenIdle: true }).setView([20.2506, 105.9748], 14);
@@ -2008,6 +2048,7 @@ function initGisMap() {
   App.gis.detailCache = new Map();
   App.gis.viewportCache = new Map();
   App.gis.loadedMarkerIds = new Set();
+  installGisManagers();
   App.gis.markerGroup = window.L.markerClusterGroup ? L.markerClusterGroup({ chunkedLoading: true, animate: true, showCoverageOnHover: false, maxClusterRadius: 54, spiderfyOnMaxZoom: true }) : L.layerGroup();
   App.gis.markerGroup.addTo(map);
   if (L.Control.Draw) {
@@ -2038,12 +2079,12 @@ function switchGisBaseLayer(key) {
 async function loadGisViewportMarkers(force = false) {
   const map = App.gis.map;
   if (!map) return;
-  const key = gisViewportKey(map);
+  const search = $('#gisSearch')?.value.trim() || '';
+  const key = gisViewportKey(map) + '|q=' + search.toLowerCase();
   if (!force && App.gis.lastViewportKey === key) return;
   App.gis.lastViewportKey = key;
-  const search = $('#gisSearch')?.value.trim() || '';
   const url = '/api/gis/households?light=1&' + gisBoundsQuery(map) + (search ? '&q=' + encodeURIComponent(search) : '');
-  const cached = App.gis.viewportCache?.get(key);
+  const cached = !force ? App.gis.viewportCache?.get(key) : null;
   const data = cached || await api(url, { cacheTtl: 20000 });
   if (!cached) App.gis.viewportCache?.set(key, data);
   updateGisMarkers(data.items || []);

@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
@@ -52,8 +52,6 @@ const assets = [
   ['assets/js/household-photo-capture.js', 'assets/js/household-photo-capture.min.js', compactJs],
   ['assets/js/household-photo-camera-fix.js', 'assets/js/household-photo-camera-fix.min.js', compactJs],
   ['assets/js/household-photo-gps.js', 'assets/js/household-photo-gps.min.js', compactJs],
-  ['assets/js/gis-search.js', 'assets/js/gis-search.min.js', compactJs],
-  ['assets/js/gis-smart.js', 'assets/js/gis-smart.min.js', compactJs],
   ['assets/js/digital-profile.js', 'assets/js/digital-profile.min.js', compactJs],
   ['assets/js/household-business.js', 'assets/js/household-business.min.js', compactJs],
   ['assets/js/livestock.js', 'assets/js/livestock.min.js', compactJs],
