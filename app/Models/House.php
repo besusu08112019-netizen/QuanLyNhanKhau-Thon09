@@ -95,7 +95,8 @@ SQL);
     {
         return [
             'house_types' => $this->listPairs($this->houseTypes()),
-            'structure_types' => $this->listPairs($this->structureTypes()),
+            'structure_types' => $this->listPairs($this->houseStructureTypes()),
+            'auxiliary_structure_types' => $this->listPairs($this->structureTypes()),
             'conditions' => $this->listPairs($this->conditions()),
             'solidities' => $this->listPairs($this->solidities()),
             'usages' => $this->listPairs($this->usages()),
@@ -431,6 +432,7 @@ SQL);
     private function u(string $value): string { return json_decode('"' . $value . '"') ?: $value; }
 
     private function houseTypes(): array { return [$this->u('Nh\u00e0 \u1edf ri\u00eang l\u1ebb'),$this->u('Nh\u00e0 c\u1ea5p 4'),$this->u('Nh\u00e0 nhi\u1ec1u t\u1ea7ng'),$this->u('Nh\u00e0 k\u1ebft h\u1ee3p kinh doanh'),$this->u('Nh\u00e0 tr\u1ecd'),$this->u('Kh\u00e1c')]; }
+    private function houseStructureTypes(): array { return [$this->u('B\u00ea t\u00f4ng c\u1ed1t th\u00e9p'),$this->u('T\u01b0\u1eddng g\u1ea1ch m\u00e1i b\u00ea t\u00f4ng'),$this->u('T\u01b0\u1eddng g\u1ea1ch m\u00e1i ng\u00f3i'),$this->u('T\u01b0\u1eddng g\u1ea1ch m\u00e1i t\u00f4n'),$this->u('Khung th\u00e9p m\u00e1i t\u00f4n'),$this->u('Khung g\u1ed7'),$this->u('Nh\u00e0 l\u1eafp gh\u00e9p'),$this->u('Nh\u00e0 t\u1ea1m'),$this->u('Kh\u00e1c')]; }
     private function structureTypes(): array { return [$this->u('B\u1ebfp'),$this->u('Nh\u00e0 v\u1ec7 sinh'),$this->u('Chu\u1ed3ng b\u00f2'),$this->u('Chu\u1ed3ng l\u1ee3n'),$this->u('Chu\u1ed3ng d\u00ea'),$this->u('Kho'),$this->u('Nh\u00e0 xe'),$this->u('Gi\u1ebfng'),$this->u('Ao'),$this->u('X\u01b0\u1edfng'),$this->u('Nh\u00e0 tr\u1ecd'),$this->u('Nh\u00e0 k\u00ednh'),$this->u('Nh\u00e0 l\u01b0\u1edbi'),$this->u('C\u00f4ng tr\u00ecnh kh\u00e1c')]; }
     private function conditions(): array { return [$this->u('T\u1ed1t'),$this->u('Trung b\u00ecnh'),$this->u('Xu\u1ed1ng c\u1ea5p'),$this->u('Nguy hi\u1ec3m')]; }
     private function solidities(): array { return [$this->u('Ki\u00ean c\u1ed1'),$this->u('B\u00e1n ki\u00ean c\u1ed1'),$this->u('Nh\u00e0 t\u1ea1m')]; }
