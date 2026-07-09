@@ -56,6 +56,7 @@ const assets = [
   ['assets/js/household-business.js', 'assets/js/household-business.min.js', compactJs],
   ['assets/js/livestock.js', 'assets/js/livestock.min.js', compactJs],
   ['assets/js/agriculture.js', 'assets/js/agriculture.min.js', compactJs],
+  ['assets/js/houses.js', 'assets/js/houses.min.js', compactJs],
   ['assets/js/module-dashboards.js', 'assets/js/module-dashboards.min.js', compactJs]
 ];
 

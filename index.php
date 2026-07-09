@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-359-agri-encoding');
+define('APP_ASSET_VERSION', 'deploy-360-houses-module');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -29,6 +29,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\FileController;
 use App\Controllers\GisController;
 use App\Controllers\HouseholdBusinessController;
+use App\Controllers\HouseController;
 use App\Controllers\HouseholdController;
 use App\Controllers\ImportController;
 use App\Controllers\InsightController;
@@ -191,6 +192,18 @@ $router->post('/api/agriculture/{parcelId}/plots', [AgricultureProductionControl
 $router->post('/api/agriculture/plots/{plotId}/seasons', [AgricultureProductionController::class, 'addSeason']);
 $router->post('/api/agriculture/seasons/{seasonId}/logs', [AgricultureProductionController::class, 'addLog']);
 $router->post('/api/agriculture/{parcelId}/damages', [AgricultureProductionController::class, 'addDamage']);
+$router->get('/api/houses', [HouseController::class, 'index']);
+$router->post('/api/houses', [HouseController::class, 'store']);
+$router->get('/api/houses/dashboard', [HouseController::class, 'dashboard']);
+$router->get('/api/houses/catalogs', [HouseController::class, 'catalogs']);
+$router->get('/api/houses/household-search', [HouseController::class, 'householdSearch']);
+$router->get('/api/houses/household/{householdId}', [HouseController::class, 'byHousehold']);
+$router->get('/api/houses/gis', [HouseController::class, 'gis']);
+$router->post('/api/houses/{id}/photos', [HouseController::class, 'uploadPhoto']);
+$router->delete('/api/houses/{id}/photos/{photoId}', [HouseController::class, 'deletePhoto']);
+$router->get('/api/houses/{id}', [HouseController::class, 'show']);
+$router->put('/api/houses/{id}', [HouseController::class, 'update']);
+$router->delete('/api/houses/{id}', [HouseController::class, 'destroy']);
 $router->get('/api/livestock', [LivestockController::class, 'index']);
 $router->post('/api/livestock', [LivestockController::class, 'store']);
 $router->get('/api/livestock/dashboard', [LivestockController::class, 'dashboard']);
@@ -416,6 +429,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
         'assets/js/agriculture.min.js',
+        'assets/js/houses.min.js',
         'assets/js/module-dashboards.min.js',
     ];
 

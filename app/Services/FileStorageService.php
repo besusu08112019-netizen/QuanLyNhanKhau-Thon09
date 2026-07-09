@@ -19,7 +19,7 @@ final class FileStorageService
 
     public function validateEntity(string $entityType, int $entityId): void
     {
-        if (!in_array($entityType, ['household', 'citizen', 'settings'], true)) {
+        if (!in_array($entityType, ['household', 'citizen', 'settings', 'house'], true)) {
             throw new \RuntimeException('Module upload không hợp lệ');
         }
         if ($entityType !== 'settings' && $entityId <= 0) {
@@ -37,6 +37,7 @@ final class FileStorageService
         return match ($entityType) {
             'citizen' => 'citizen',
             'household' => 'household',
+            'house' => 'houses',
             default => 'settings',
         };
     }
@@ -286,6 +287,7 @@ final class FileStorageService
             'household' => 'households',
             'citizen' => 'persons',
             'settings' => 'settings',
+            'house' => 'houses',
             default => 'documents',
         };
     }
