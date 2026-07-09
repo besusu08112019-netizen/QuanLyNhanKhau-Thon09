@@ -183,14 +183,14 @@ SQL);
     public function catalogs(): array
     {
         return [
-            'owner_types' => $this->pairs(self::OWNER_TYPES),
-            'usage_forms' => $this->pairs(self::USAGE_FORMS),
-            'land_types' => array_map(fn($v) => ['value' => $v, 'label' => $v], self::LAND_TYPES),
-            'crops' => array_map(fn($v) => ['value' => $v, 'label' => $v], self::CROPS),
-            'seasons' => array_map(fn($v) => ['value' => $v, 'label' => $v], self::SEASONS),
-            'statuses' => $this->pairs(self::STATUS_LABELS),
-            'log_types' => $this->pairs(self::LOG_TYPES),
-            'damage_types' => $this->pairs(self::DAMAGE_TYPES),
+            'owner_types' => $this->pairs($this->ownerTypes()),
+            'usage_forms' => $this->pairs($this->usageForms()),
+            'land_types' => array_map(fn($v) => ['value' => $v, 'label' => $v], $this->landTypes()),
+            'crops' => array_map(fn($v) => ['value' => $v, 'label' => $v], $this->crops()),
+            'seasons' => array_map(fn($v) => ['value' => $v, 'label' => $v], $this->seasonsCatalog()),
+            'statuses' => $this->pairs($this->statusLabels()),
+            'log_types' => $this->pairs($this->logTypes()),
+            'damage_types' => $this->pairs($this->damageTypes()),
         ];
     }
 
@@ -316,7 +316,7 @@ SQL);
         $this->ensureSchema();
         if (!$this->fetchOne('SELECT id FROM agri_crop_seasons WHERE id=:id AND status <> "DELETED"', ['id' => $seasonId])) throw new \RuntimeException("Không tìm thấy mùa vụ");
         $type = (string)($data['activity_type'] ?? $data['activityType'] ?? '');
-        if (!isset(self::LOG_TYPES[$type])) $type = 'LAND_PREP';
+        if (!isset($this->logTypes()[$type])) $type = 'LAND_PREP';
         $date = $this->dateOrNull($data['activity_date'] ?? $data['activityDate'] ?? null) ?: date('Y-m-d');
         $id = $this->insert('INSERT INTO agri_production_logs (season_id, activity_type, activity_date, actor_name, note, created_by) VALUES (:season_id, :activity_type, :activity_date, :actor_name, :note, :created_by)', ['season_id' => $seasonId, 'activity_type' => $type, 'activity_date' => $date, 'actor_name' => trim((string)($data['actor_name'] ?? $data['actorName'] ?? '')) ?: null, 'note' => trim((string)($data['note'] ?? '')) ?: null, 'created_by' => $userId]);
         return $this->fetchOne('SELECT * FROM agri_production_logs WHERE id=:id', ['id' => $id]) ?: [];
@@ -327,7 +327,7 @@ SQL);
         $this->ensureSchema();
         if (!$this->find($parcelId)) throw new \RuntimeException("Không tìm thấy thửa đất");
         $type = (string)($data['damage_type'] ?? $data['damageType'] ?? 'OTHER');
-        if (!isset(self::DAMAGE_TYPES[$type])) $type = 'OTHER';
+        if (!isset($this->damageTypes()[$type])) $type = 'OTHER';
         $id = $this->insert('INSERT INTO agri_damages (parcel_id, season_id, damage_type, event_date, affected_area, damage_percent, estimated_output_loss, note) VALUES (:parcel_id, :season_id, :damage_type, :event_date, :affected_area, :damage_percent, :estimated_output_loss, :note)', ['parcel_id' => $parcelId, 'season_id' => (int)($data['season_id'] ?? 0) ?: null, 'damage_type' => $type, 'event_date' => $this->dateOrNull($data['event_date'] ?? null) ?: date('Y-m-d'), 'affected_area' => $this->number($data['affected_area'] ?? 0), 'damage_percent' => min(100, max(0, $this->number($data['damage_percent'] ?? 0))), 'estimated_output_loss' => $this->number($data['estimated_output_loss'] ?? 0), 'note' => trim((string)($data['note'] ?? '')) ?: null]);
         return $this->fetchOne('SELECT * FROM agri_damages WHERE id=:id', ['id' => $id]) ?: [];
     }
@@ -382,21 +382,21 @@ SQL);
             $this->ensureSchema();
             [$where, $params] = $this->where($filters, false);
             $rows = $this->fetchAll("SELECT p.parcel_code, p.field_area, o.name AS owner_name, pr.name AS producer_name, d.damage_type, d.event_date, d.affected_area, d.damage_percent, d.estimated_output_loss, d.note FROM agri_damages d INNER JOIN agri_land_parcels p ON p.id=d.parcel_id INNER JOIN agri_stakeholders o ON o.id=p.owner_id INNER JOIN agri_stakeholders pr ON pr.id=p.producer_id $where ORDER BY d.event_date DESC, d.id DESC LIMIT 500", $params);
-            return $this->table('B?o c?o thi?t h?i s?n xu?t n?ng nghi?p', ['M? th?a','Khu ??ng','Ch? s? d?ng','Ng??i s?n xu?t','Lo?i thi?t h?i','Ng?y','Di?n t?ch ?nh h??ng','T? l?','S?n l??ng m?t','Ghi ch?'], array_map(fn($r) => [$r['parcel_code'], $r['field_area'], $r['owner_name'], $r['producer_name'], self::DAMAGE_TYPES[$r['damage_type']] ?? $r['damage_type'], $r['event_date'], $r['affected_area'], $r['damage_percent'] . '%', $r['estimated_output_loss'], $r['note']], $rows), $filters);
+            return $this->table($this->u("B\u00e1o c\u00e1o thi\u1ec7t h\u1ea1i s\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p"), [$this->u("M\u00e3 th\u1eeda"),$this->u("Khu \u0111\u1ed3ng"),$this->u("Ch\u1ee7 s\u1eed d\u1ee5ng"),$this->u("Ng\u01b0\u1eddi s\u1ea3n xu\u1ea5t"),$this->u("Lo\u1ea1i thi\u1ec7t h\u1ea1i"),$this->u("Ng\u00e0y"),$this->u("Di\u1ec7n t\u00edch \u1ea3nh h\u01b0\u1edfng"),$this->u("T\u1ef7 l\u1ec7"),$this->u("S\u1ea3n l\u01b0\u1ee3ng m\u1ea5t"),$this->u("Ghi ch\u00fa")], array_map(fn($r) => [$r['parcel_code'], $r['field_area'], $r['owner_name'], $r['producer_name'], $this->damageTypes()[$r['damage_type']] ?? $r['damage_type'], $r['event_date'], $r['affected_area'], $r['damage_percent'] . '%', $r['estimated_output_loss'], $r['note']], $rows), $filters);
         }
         $filters['page'] = 1;
         $filters['pageSize'] = 500;
         $rows = $this->paginate($filters)['items'];
         $title = match ($mode) {
-            'area' => 'B?o c?o di?n t?ch s?n xu?t n?ng nghi?p',
-            'crop' => 'B?o c?o c?y tr?ng',
-            'season' => 'B?o c?o m?a v?',
-            'production' => 'B?o c?o s?n l??ng s?n xu?t n?ng nghi?p',
-            'revenue' => 'B?o c?o doanh thu s?n xu?t n?ng nghi?p',
-            'producer' => 'Danh s?ch ch? th? s?n xu?t n?ng nghi?p',
-            default => 'Danh s?ch th?a s?n xu?t n?ng nghi?p',
+            'area' => $this->u("B\u00e1o c\u00e1o di\u1ec7n t\u00edch s\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p"),
+            'crop' => $this->u("B\u00e1o c\u00e1o c\u00e2y tr\u1ed3ng"),
+            'season' => $this->u("B\u00e1o c\u00e1o m\u00f9a v\u1ee5"),
+            'production' => $this->u("B\u00e1o c\u00e1o s\u1ea3n l\u01b0\u1ee3ng s\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p"),
+            'revenue' => $this->u("B\u00e1o c\u00e1o doanh thu s\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p"),
+            'producer' => $this->u("Danh s\u00e1ch ch\u1ee7 th\u1ec3 s\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p"),
+            default => $this->u("Danh s\u00e1ch th\u1eeda s\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p"),
         };
-        return $this->table($title, ['M? th?a','Khu ??ng','Ch? s? d?ng','Ng??i s?n xu?t','Di?n t?ch th?c t?','?ang s?n xu?t','B? hoang','C?y tr?ng hi?n t?i','M?a v? hi?n t?i','Tr?ng th?i'], array_map(fn($r) => [$r['parcel_code'], $r['field_area'], $r['owner_name'], $r['producer_name'], $r['actual_area'], $r['cultivated_area'], $r['abandoned_area'], $r['current_crop'], $r['current_season'], $r['status_label']], $rows), $filters);
+        return $this->table($title, [$this->u("M\u00e3 th\u1eeda"),$this->u("Khu \u0111\u1ed3ng"),$this->u("Ch\u1ee7 s\u1eed d\u1ee5ng"),$this->u("Ng\u01b0\u1eddi s\u1ea3n xu\u1ea5t"),$this->u("Di\u1ec7n t\u00edch th\u1ef1c t\u1ebf"),$this->u("\u0110ang s\u1ea3n xu\u1ea5t"),$this->u("B\u1ecf hoang"),$this->u("C\u00e2y tr\u1ed3ng hi\u1ec7n t\u1ea1i"),$this->u("M\u00f9a v\u1ee5 hi\u1ec7n t\u1ea1i"),$this->u("Tr\u1ea1ng th\u00e1i")], array_map(fn($r) => [$r['parcel_code'], $r['field_area'], $r['owner_name'], $r['producer_name'], $r['actual_area'], $r['cultivated_area'], $r['abandoned_area'], $r['current_crop'], $r['current_season'], $r['status_label']], $rows), $filters);
     }
 
     private function table(string $title, array $headers, array $rows, array $filters): array
@@ -433,7 +433,7 @@ SQL);
     private function upsertStakeholder(array $data, string $role, ?int $existingId = null): int
     {
         $type = (string)($data['stakeholder_type'] ?? $data['type'] ?? 'VILLAGE_HOUSEHOLD');
-        if (!isset(self::OWNER_TYPES[$type])) $type = 'VILLAGE_HOUSEHOLD';
+        if (!isset($this->ownerTypes()[$type])) $type = 'VILLAGE_HOUSEHOLD';
         $householdId = (int)($data['household_id'] ?? $data['householdId'] ?? 0) ?: null;
         $name = trim((string)($data['name'] ?? ''));
         if ($householdId && $name === '') {
@@ -457,9 +457,9 @@ SQL);
         $abandoned = $this->number($data['abandoned_area'] ?? $data['abandonedArea'] ?? 0);
         if (abs(($cultivated + $abandoned) - $actual) > 0.01) throw new \RuntimeException("Diện tích đang sản xuất + diện tích bỏ hoang phải bằng diện tích thực tế");
         $usage = (string)($data['usage_form'] ?? $data['usageForm'] ?? 'SELF');
-        if (!isset(self::USAGE_FORMS[$usage])) $usage = 'SELF';
+        if (!isset($this->usageForms()[$usage])) $usage = 'SELF';
         $status = (string)($data['status'] ?? 'ACTIVE');
-        if (!isset(self::STATUS_LABELS[$status]) || $status === 'DELETED') $status = 'ACTIVE';
+        if (!isset($this->statusLabels()[$status]) || $status === 'DELETED') $status = 'ACTIVE';
         return ['map_sheet_no' => trim((string)($data['map_sheet_no'] ?? $data['mapSheetNo'] ?? '')) ?: null, 'parcel_no' => trim((string)($data['parcel_no'] ?? $data['parcelNo'] ?? '')) ?: null, 'field_area' => trim((string)($data['field_area'] ?? $data['fieldArea'] ?? '')) ?: null, 'field_name' => trim((string)($data['field_name'] ?? $data['fieldName'] ?? '')) ?: null, 'land_type' => trim((string)($data['land_type'] ?? $data['landType'] ?? '')) ?: null, 'legal_area' => $this->number($data['legal_area'] ?? $data['legalArea'] ?? 0), 'actual_area' => $actual, 'cultivated_area' => $cultivated, 'abandoned_area' => $abandoned, 'owner_id' => $ownerId, 'producer_id' => $producerId, 'usage_form' => $usage, 'latitude' => isset($data['latitude']) && $data['latitude'] !== '' ? (float)$data['latitude'] : null, 'longitude' => isset($data['longitude']) && $data['longitude'] !== '' ? (float)$data['longitude'] : null, 'polygon_geojson' => trim((string)($data['polygon_geojson'] ?? $data['polygonGeojson'] ?? '')) ?: null, 'status' => $status, 'note' => trim((string)($data['note'] ?? '')) ?: null, 'created_by' => $userId, 'updated_by' => $userId];
     }
 
@@ -483,8 +483,19 @@ SQL);
 
     private function normalizeParcel(array $row): array
     {
-        return ['id' => (int)$row['id'], 'parcel_code' => (string)$row['parcel_code'], 'map_sheet_no' => (string)($row['map_sheet_no'] ?? ''), 'parcel_no' => (string)($row['parcel_no'] ?? ''), 'field_area' => (string)($row['field_area'] ?? ''), 'field_name' => (string)($row['field_name'] ?? ''), 'land_type' => (string)($row['land_type'] ?? ''), 'legal_area' => (float)($row['legal_area'] ?? 0), 'actual_area' => (float)($row['actual_area'] ?? 0), 'cultivated_area' => (float)($row['cultivated_area'] ?? 0), 'abandoned_area' => (float)($row['abandoned_area'] ?? 0), 'owner_id' => (int)$row['owner_id'], 'owner_name' => (string)($row['owner_name'] ?? ''), 'owner_type' => (string)($row['owner_type'] ?? ''), 'producer_id' => (int)$row['producer_id'], 'producer_name' => (string)($row['producer_name'] ?? ''), 'producer_type' => (string)($row['producer_type'] ?? ''), 'usage_form' => (string)($row['usage_form'] ?? 'SELF'), 'usage_form_label' => self::USAGE_FORMS[$row['usage_form'] ?? 'SELF'] ?? "Tự sản xuất", 'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float)$row['latitude'] : null, 'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float)$row['longitude'] : null, 'polygon_geojson' => (string)($row['polygon_geojson'] ?? ''), 'status' => (string)($row['status'] ?? 'ACTIVE'), 'status_label' => self::STATUS_LABELS[$row['status'] ?? 'ACTIVE'] ?? "Đang sản xuất", 'note' => (string)($row['note'] ?? ''), 'plot_count' => (int)($row['plot_count'] ?? 0), 'current_crop' => (string)($row['current_crop'] ?? ''), 'current_season' => (string)($row['current_season'] ?? ''), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null];
+        return ['id' => (int)$row['id'], 'parcel_code' => (string)$row['parcel_code'], 'map_sheet_no' => (string)($row['map_sheet_no'] ?? ''), 'parcel_no' => (string)($row['parcel_no'] ?? ''), 'field_area' => (string)($row['field_area'] ?? ''), 'field_name' => (string)($row['field_name'] ?? ''), 'land_type' => (string)($row['land_type'] ?? ''), 'legal_area' => (float)($row['legal_area'] ?? 0), 'actual_area' => (float)($row['actual_area'] ?? 0), 'cultivated_area' => (float)($row['cultivated_area'] ?? 0), 'abandoned_area' => (float)($row['abandoned_area'] ?? 0), 'owner_id' => (int)$row['owner_id'], 'owner_name' => (string)($row['owner_name'] ?? ''), 'owner_type' => (string)($row['owner_type'] ?? ''), 'producer_id' => (int)$row['producer_id'], 'producer_name' => (string)($row['producer_name'] ?? ''), 'producer_type' => (string)($row['producer_type'] ?? ''), 'usage_form' => (string)($row['usage_form'] ?? 'SELF'), 'usage_form_label' => $this->usageForms()[$row['usage_form'] ?? 'SELF'] ?? "Tự sản xuất", 'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float)$row['latitude'] : null, 'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float)$row['longitude'] : null, 'polygon_geojson' => (string)($row['polygon_geojson'] ?? ''), 'status' => (string)($row['status'] ?? 'ACTIVE'), 'status_label' => $this->statusLabels()[$row['status'] ?? 'ACTIVE'] ?? "Đang sản xuất", 'note' => (string)($row['note'] ?? ''), 'plot_count' => (int)($row['plot_count'] ?? 0), 'current_crop' => (string)($row['current_crop'] ?? ''), 'current_season' => (string)($row['current_season'] ?? ''), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null];
     }
+
+
+    private function ownerTypes(): array { return ['VILLAGE_HOUSEHOLD' => $this->u('H\u1ed9 trong th\u00f4n'), 'OUTSIDE_PERSON' => $this->u('C\u00e1 nh\u00e2n ngo\u00e0i th\u00f4n'), 'BUSINESS' => $this->u('Doanh nghi\u1ec7p'), 'COOPERATIVE' => $this->u('H\u1ee3p t\u00e1c x\u00e3'), 'ORGANIZATION' => $this->u('T\u1ed5 ch\u1ee9c kh\u00e1c')]; }
+    private function usageForms(): array { return ['SELF' => $this->u('T\u1ef1 s\u1ea3n xu\u1ea5t'), 'LEASE_OUT' => $this->u('Cho thu\u00ea'), 'LEASE_IN' => $this->u('Thu\u00ea'), 'BORROW' => $this->u('M\u01b0\u1ee3n'), 'PARTNERSHIP' => $this->u('Li\u00ean k\u1ebft')]; }
+    private function landTypes(): array { return [$this->u('\u0110\u1ea5t l\u00faa'), $this->u('\u0110\u1ea5t m\u00e0u'), $this->u('\u0110\u1ea5t c\u00e2y l\u00e2u n\u0103m'), $this->u('\u0110\u1ea5t nu\u00f4i tr\u1ed3ng th\u1ee7y s\u1ea3n'), $this->u('\u0110\u1ea5t v\u01b0\u1eddn'), $this->u('\u0110\u1ea5t kh\u00e1c')]; }
+    private function crops(): array { return [$this->u('L\u00faa'), $this->u('Ng\u00f4'), $this->u('Rau'), $this->u('Khoai'), $this->u('L\u1ea1c'), $this->u('C\u00e2y \u0103n qu\u1ea3'), $this->u('C\u00e2y l\u00e2u n\u0103m'), $this->u('Kh\u00e1c')]; }
+    private function seasonsCatalog(): array { return [$this->u('Xu\u00e2n'), $this->u('M\u00f9a'), $this->u('\u0110\u00f4ng'), $this->u('\u0110\u00f4ng Xu\u00e2n')]; }
+    private function statusLabels(): array { return ['ACTIVE' => $this->u('\u0110ang s\u1ea3n xu\u1ea5t'), 'IDLE' => $this->u('T\u1ea1m ngh\u1ec9'), 'LEASED' => $this->u('Cho thu\u00ea'), 'ABANDONED' => $this->u('B\u1ecf hoang'), 'DELETED' => $this->u('\u0110\u00e3 x\u00f3a')]; }
+    private function logTypes(): array { return ['LAND_PREP' => $this->u('L\u00e0m \u0111\u1ea5t'), 'SOWING' => $this->u('Gieo'), 'TRANSPLANT' => $this->u('C\u1ea5y'), 'FERTILIZER' => $this->u('B\u00f3n ph\u00e2n'), 'PESTICIDE' => $this->u('Phun thu\u1ed1c'), 'IRRIGATION' => $this->u('T\u01b0\u1edbi'), 'HARVEST' => $this->u('Thu ho\u1ea1ch')]; }
+    private function damageTypes(): array { return ['FLOOD' => $this->u('Ng\u1eadp \u00fang'), 'DROUGHT' => $this->u('H\u1ea1n h\u00e1n'), 'PEST' => $this->u('S\u00e2u b\u1ec7nh'), 'RAT' => $this->u('Chu\u1ed9t'), 'STORM' => $this->u('Gi\u00f3 b\u00e3o'), 'HAIL' => $this->u('M\u01b0a \u0111\u00e1'), 'OTHER' => $this->u('Kh\u00e1c')]; }
+    private function u(string $value): string { return json_decode('"' . $value . '"') ?: $value; }
 
     private function pairs(array $map): array { return array_map(fn($k, $v) => ['value' => $k, 'label' => $v], array_keys($map), array_values($map)); }
     private function number(mixed $value): float { return max(0, (float)str_replace(',', '.', (string)$value)); }
