@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-356-livestock-ui');
+define('APP_ASSET_VERSION', 'deploy-357-livestock-modal');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 

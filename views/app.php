@@ -308,8 +308,19 @@
 
         <div class="module-list-card household-list-card livestock-table-card"><div class="module-list-head"><div><h3>Danh s&#225;ch v&#7853;t nu&#244;i</h3><span id="livestockTotalCount">T&#7893;ng s&#7889;: 0 b&#7843;n ghi</span></div></div><div class="table-responsive livestock-table-responsive"><table class="table module-table livestock-data-table align-middle mb-0"><thead><tr><th>STT</th><th data-livestock-sort="household_code">M&#227; h&#7897;</th><th data-livestock-sort="head_citizen_name">Ch&#7911; h&#7897;</th><th>Khu v&#7921;c</th><th data-livestock-sort="animal_type">Lo&#7841;i v&#7853;t nu&#244;i</th><th>Ph&#226;n lo&#7841;i</th><th data-livestock-sort="breed">Gi&#7889;ng</th><th data-livestock-sort="quantity">S&#7889; l&#432;&#7907;ng</th><th>&#272;&#417;n v&#7883;</th><th data-livestock-sort="vaccinated">Ti&#234;m ph&#242;ng</th><th data-livestock-sort="updated_at">Ng&#224;y c&#7853;p nh&#7853;t</th><th class="text-end">Thao t&#225;c</th></tr></thead><tbody id="livestockRows"></tbody></table></div><div id="livestockPager" class="pager module-pager"></div></div>
       </section>
-      <div id="livestockDrawerBackdrop" class="livestock-drawer-backdrop" aria-hidden="true"></div>
-      <aside id="livestockHouseholdDrawer" class="livestock-drawer" aria-hidden="true" aria-labelledby="livestockDrawerTitle"><div class="livestock-drawer-shell"><header class="livestock-drawer-header"><div><span>H&#7891; s&#417; h&#7897; ch&#259;n nu&#244;i</span><h3 id="livestockDrawerTitle">&#272;ang t&#7843;i...</h3><p id="livestockDrawerSubtitle"></p></div><button id="livestockDrawerClose" class="btn btn-light livestock-drawer-close" type="button" aria-label="&#272;&#243;ng"><i class="fa-solid fa-xmark"></i></button></header><div id="livestockDrawerBody" class="livestock-drawer-body"></div></div></aside>
+
+      <div class="modal fade livestock-profile-modal" id="livestockHouseholdModal" tabindex="-1" aria-labelledby="livestockDrawerTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+          <div class="modal-content livestock-profile-content">
+            <div class="modal-header livestock-profile-header">
+              <div><span>H&#7891; s&#417; ch&#259;n nu&#244;i</span><h3 id="livestockDrawerTitle">&#272;ang t&#7843;i...</h3><p id="livestockDrawerSubtitle"></p></div>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="&#272;&#243;ng"></button>
+            </div>
+            <div id="livestockDrawerBody" class="modal-body livestock-profile-body"></div>
+            <div class="modal-footer livestock-profile-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">&#272;&#243;ng</button></div>
+          </div>
+        </div>
+      </div>
       <section id="personsScreen" class="screen person-management-screen">
         <div class="module-action-row person-action-row"><button id="personAddBtn" class="person-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm nhân khẩu</button></div>
 
