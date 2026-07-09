@@ -54,32 +54,6 @@ function actionCell(buttons) {
   const html = buttons.filter(Boolean).join(' ');
   return '<td class="text-end">' + (html || '<span class="text-muted small">Chỉ xem</span>') + '</td>';
 }
-function citizenProfileId(row = {}, extraKeys = []) {
-  const defaultKeys = ['citizen_id', 'citizenId', 'person_id', 'personId', 'head_citizen_id', 'headCitizenId', 'id'];
-  const keys = extraKeys.length ? extraKeys : defaultKeys;
-  for (const key of keys) {
-    const value = Number(row && row[key] || 0);
-    if (value > 0) return value;
-  }
-  return 0;
-}
-function renderCitizenProfileLink(row = {}, name = '', options = {}) {
-  const text = String(name || row.full_name || row.name || row.head_citizen_name || row.person_name || '').trim();
-  if (!text) return '';
-  const id = citizenProfileId(row, options.idKeys || []);
-  if (!id) return escapeHtml(text);
-  const cls = options.className ? ' ' + escapeHtml(options.className) : '';
-  const title = options.title || 'Xem hồ sơ nhân khẩu';
-  return '<button class="btn btn-link citizen-profile-link' + cls + '" type="button" title="' + escapeHtml(title) + '" aria-label="' + escapeHtml(title + ' ' + text) + '" onclick="openCitizenProfile(' + id + ')">' + escapeHtml(text) + '</button>';
-}
-function renderCitizenProfileAction(row = {}, options = {}) {
-  const id = citizenProfileId(row, options.idKeys || []);
-  if (!id) return '';
-  const title = options.title || 'Xem hồ sơ nhân khẩu';
-  return '<button class="btn btn-sm btn-outline-primary citizen-profile-action" type="button" title="' + escapeHtml(title) + '" aria-label="' + escapeHtml(title) + '" onclick="openCitizenProfile(' + id + ')"><i class="fa-solid fa-id-card"></i></button>';
-}
-window.renderCitizenProfileLink = renderCitizenProfileLink;
-window.renderCitizenProfileAction = renderCitizenProfileAction;
 function applyAccessControls() {
   const admin = isAdminRole();
   const householdCreate = canAccess('household', 'create');
@@ -119,29 +93,9 @@ if (!window.__thon09NavDelegated) {
   });
 }
 
-function installStackedModalSupport() {
-  if (window.__thon09StackedModalSupport) return;
-  window.__thon09StackedModalSupport = true;
-  document.addEventListener('show.bs.modal', event => {
-    const openCount = $$('.modal.show').length;
-    if (!openCount) return;
-    const zIndex = 1060 + openCount * 20;
-    event.target.style.zIndex = String(zIndex);
-    setTimeout(() => {
-      const backdrops = $$('.modal-backdrop');
-      const backdrop = backdrops[backdrops.length - 1];
-      if (backdrop) backdrop.style.zIndex = String(zIndex - 5);
-    }, 0);
-  });
-  document.addEventListener('hidden.bs.modal', event => {
-    event.target.style.zIndex = '';
-    if ($$('.modal.show').length) document.body.classList.add('modal-open');
-  });
-}
 document.addEventListener('DOMContentLoaded', init);
 
 function init() {
-  installStackedModalSupport();
   App.modals.household = new bootstrap.Modal($('#householdModal'));
   App.modals.person = new bootstrap.Modal($('#personModal'));
   App.modals.detail = new bootstrap.Modal($('#detailModal'));
@@ -891,7 +845,7 @@ function openDashboardSearchResult(type, id) {
     setTimeout(() => { if (typeof window.showHousehold === 'function') window.showHousehold(id); }, 220);
   } else if (type === 'citizen') {
     if (typeof window.switchScreen === 'function') window.switchScreen('persons');
-    setTimeout(() => { if (typeof window.openCitizenProfile === 'function') window.openCitizenProfile(id); }, 220);
+    setTimeout(() => { if (typeof window.showPerson === 'function') window.showPerson(id); }, 220);
   }
 }
 function normalizeChartItems(items) {
@@ -1071,7 +1025,7 @@ async function loadHouseholds() {
     $('#householdRows').innerHTML = items.map(row => '<tr>' +
       '<td>' + (canDeleteHousehold ? '<input type="checkbox" class="household-check" value="' + row.id + '">' : '') + '</td>' +
       '<td><button class="btn btn-link p-0 fw-semibold" onclick="showHousehold(' + row.id + ')">' + escapeHtml(row.household_code) + '</button></td>' +
-      '<td>' + renderCitizenProfileLink(row, row.head_citizen_name || '', { idKeys: ['head_citizen_id'] }) + '</td>' +
+      '<td>' + escapeHtml(row.head_citizen_name || '') + '</td>' +
       '<td>' + escapeHtml(row.address || '') + '</td>' +
       '<td>' + number(row.at_home_count || 0) + '</td>' +
       '<td>' + number(row.away_count || 0) + '</td>' +
@@ -1161,7 +1115,7 @@ function personRow(row) {
     + '<td>' + (canAccess('citizen', 'delete') ? '<input type="checkbox" class="person-check" value="' + row.id + '">' : '') + '</td>'
     + '<td>' + escapeHtml(row.household_code || '') + '</td>'
     + '<td>' + escapeHtml(personCode) + '</td>'
-    + '<td>' + renderCitizenProfileLink(row, row.full_name || '', { className: 'person-name-link' }) + '</td>'
+    + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + row.id + ')">' + escapeHtml(row.full_name || '') + '</button></td>'
     + '<td>' + escapeHtml(personUiText(personRelationship(row))) + '</td>'
     + '<td>' + formatDate(row.date_of_birth) + '</td>'
     + '<td>' + escapeHtml(ageText) + '</td>'
@@ -1171,7 +1125,7 @@ function personRow(row) {
     + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
     + '<td><span class="person-badge ' + bhyt.className + '" title="' + escapeHtml(bhyt.tooltip) + '">' + escapeHtml(bhyt.label) + '</span></td>'
     + actionCell([
-      '<button class="btn btn-sm person-row-btn" onclick="openCitizenProfile(' + row.id + ')">Xem</button>',
+      '<button class="btn btn-sm person-row-btn" onclick="showPerson(' + row.id + ')">Xem</button>',
       canAccess('citizen', 'update') ? '<button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + row.id + ')">Sửa</button>' : '',
       canAccess('citizen', 'delete') ? '<button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + row.id + ')">Xóa</button>' : ''
     ])
@@ -1745,7 +1699,10 @@ function memberTable(items) {
     const openAttrs = citizenId
       ? ' class="household-member-row" data-citizen-id="' + citizenId + '" ondblclick="openCitizenProfile(' + citizenId + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openCitizenProfile(' + citizenId + ')}" tabindex="0"'
       : '';
-    const nameCell = renderCitizenProfileLink(row, row.full_name || row.name || '', { className: 'household-member-link' });
+    const name = escapeHtml(row.full_name || row.name || '');
+    const nameCell = citizenId
+      ? '<button class="btn btn-link household-member-link" type="button" title="Xem hồ sơ nhân khẩu" aria-label="Xem hồ sơ nhân khẩu ' + name + '" onclick="openCitizenProfile(' + citizenId + ')">' + name + '</button>'
+      : name;
     return '<tr' + openAttrs + '><td>' + escapeHtml(row.household_code || '') + '</td><td>' + escapeHtml(row.citizen_code || '') + '</td><td>' + nameCell + '</td><td>' + formatDate(row.date_of_birth) + '</td><td>' + escapeHtml(row.identity_number || '') + '</td><td>' + escapeHtml(row.household_address || '') + '</td><td>' + escapeHtml(row.phone || '') + '</td><td class="text-end">' + memberActionButtons(row) + '</td></tr>';
   }).join('') || '<tr><td colspan="8" class="text-center text-muted py-3">Chưa có thành viên</td></tr>';
   return '<section class="household-members-section"><h6 class="mt-4 mb-2">Thành viên trong hộ</h6><div class="table-responsive"><table class="table table-sm table-bordered align-middle household-members-table"><thead><tr><th>Mã hộ</th><th>Mã nhân khẩu</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Số điện thoại</th><th class="text-end">Thao tác</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
@@ -1754,7 +1711,7 @@ function memberActionButtons(row) {
   const citizenId = Number(row.id || row.citizen_id || row.person_id || 0);
   const buttons = [];
   if (citizenId) {
-    buttons.push(renderCitizenProfileAction(row).replace('citizen-profile-action', 'citizen-profile-action household-member-action'));
+    buttons.push('<button class="btn btn-sm btn-outline-primary household-member-action" type="button" title="Xem hồ sơ nhân khẩu" aria-label="Xem hồ sơ nhân khẩu" onclick="openCitizenProfile(' + citizenId + ')"><i class="fa-solid fa-id-card"></i></button>');
     if (memberHasDigitalProfile(row)) buttons.push('<button class="btn btn-sm btn-outline-secondary household-member-action" type="button" title="Hồ sơ số" aria-label="Hồ sơ số" onclick="openCitizenProfile(' + citizenId + ')"><i class="fa-solid fa-folder-open"></i></button>');
   }
   const phone = String(row.phone || row.phone_number || '').trim();

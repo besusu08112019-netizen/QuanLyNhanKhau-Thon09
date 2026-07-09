@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   'use strict';
 
   const state = { booted: false, taskStatus: loadTaskStatus(), timers: {} };
@@ -147,8 +147,8 @@
       + detailLine('Điện thoại', p.phone)
       + detailLine('Địa chỉ', p.current_address || p.address || p.household_address)
       + detailLine('GPS', data.gps && data.gps.latitude ? data.gps.latitude + ', ' + data.gps.longitude : '')
-      + '</dl></section><section><h6>Thành viên hộ</h6><div class="operation-member-list">' + ((data.members || []).slice(0, 8).map(m => '<span>' + (window.renderCitizenProfileLink ? window.renderCitizenProfileLink(m, m.full_name || '') : esc(m.full_name || '')) + ' <small>' + esc(m.relationship || '') + '</small></span>').join('') || '<span>Chưa có dữ liệu</span>') + '</div></section><section><h6>Hồ sơ số</h6><div class="operation-file-list">' + ((data.files || []).slice(0, 8).map(f => '<span>' + esc(f.original_name || f.file_name || 'Tệp đính kèm') + '</span>').join('') || '<span>Chưa có hồ sơ số</span>') + '</div></section><section><h6>Nhật ký</h6><div class="operation-file-list">' + ((data.timeline || []).slice(0, 6).map(t => '<span>' + esc(t.created_at || '') + ' · ' + esc(t.message || t.action || '') + '</span>').join('') || '<span>Chưa có nhật ký</span>') + '</div></section></div><div class="mt-3"><button class="btn btn-primary" type="button" data-operation-detail="' + esc(data.type) + '" data-id="' + Number(data.id || 0) + '">Mở chi tiết</button></div>';
-    qsa('[data-operation-detail]', body).forEach(btn => btn.addEventListener('click', () => { App.modals.detail.hide(); if (btn.dataset.operationDetail === 'citizen' && typeof window.openCitizenProfile === 'function') window.openCitizenProfile(Number(btn.dataset.id)); else if (typeof window.showHousehold === 'function') window.showHousehold(Number(btn.dataset.id)); }));
+      + '</dl></section><section><h6>Thành viên hộ</h6><div class="operation-member-list">' + ((data.members || []).slice(0, 8).map(m => '<span>' + esc(m.full_name || '') + ' <small>' + esc(m.relationship || '') + '</small></span>').join('') || '<span>Chưa có dữ liệu</span>') + '</div></section><section><h6>Hồ sơ số</h6><div class="operation-file-list">' + ((data.files || []).slice(0, 8).map(f => '<span>' + esc(f.original_name || f.file_name || 'Tệp đính kèm') + '</span>').join('') || '<span>Chưa có hồ sơ số</span>') + '</div></section><section><h6>Nhật ký</h6><div class="operation-file-list">' + ((data.timeline || []).slice(0, 6).map(t => '<span>' + esc(t.created_at || '') + ' · ' + esc(t.message || t.action || '') + '</span>').join('') || '<span>Chưa có nhật ký</span>') + '</div></section></div><div class="mt-3"><button class="btn btn-primary" type="button" data-operation-detail="' + esc(data.type) + '" data-id="' + Number(data.id || 0) + '">Mở chi tiết</button></div>';
+    qsa('[data-operation-detail]', body).forEach(btn => btn.addEventListener('click', () => { App.modals.detail.hide(); if (btn.dataset.operationDetail === 'citizen' && typeof window.showPerson === 'function') window.showPerson(Number(btn.dataset.id)); else if (typeof window.showHousehold === 'function') window.showHousehold(Number(btn.dataset.id)); }));
     App.modals.detail.show();
   }
 

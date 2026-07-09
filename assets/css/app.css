@@ -5474,7 +5474,6 @@ button, input, select, textarea { font: inherit; min-width: 0; }
   cursor: pointer;
 }
 
-.citizen-profile-link,
 .household-member-link {
   min-height: 44px;
   padding: 0;
@@ -5485,8 +5484,6 @@ button, input, select, textarea { font: inherit; min-width: 0; }
   white-space: normal;
 }
 
-.citizen-profile-link:hover,
-.citizen-profile-link:focus,
 .household-member-link:hover,
 .household-member-link:focus {
   color: var(--brand-strong, #064e2e);
@@ -5514,10 +5511,4 @@ button, input, select, textarea { font: inherit; min-width: 0; }
     width: 44px;
     height: 44px;
   }
-}
-
-.citizen-profile-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }

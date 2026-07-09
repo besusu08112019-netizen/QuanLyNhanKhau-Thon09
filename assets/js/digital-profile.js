@@ -217,7 +217,7 @@
     if (description === null) return;
     await api('/api/files/' + encodeURIComponent(button.dataset.editFile), { method: 'PUT', body: { file_name: fileName, original_name: fileName, description } });
     show('Da cap nhat file dinh kem');
-    type === 'household' ? window.showHousehold(id) : (window.openCitizenProfile ? window.openCitizenProfile(id) : window.showPerson(id));
+    type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function deleteCitizenFile(fileId, id, root) {
@@ -292,14 +292,14 @@
   function renderMembers(members) {
     if (!members.length) return '';
     return '<section class="mb-3" id="digitalProfileMembers"><h6 class="border-bottom pb-2 mb-2">Danh sách nhân khẩu</h6><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Mã NK</th><th>Họ tên</th><th>Ngày sinh</th><th>Quan hệ</th><th></th></tr></thead><tbody>'
-      + members.map(row => '<tr><td>' + esc(row.citizen_code || '') + '</td><td>' + (window.renderCitizenProfileLink ? window.renderCitizenProfileLink(row, row.full_name || '') : esc(row.full_name || '')) + '</td><td>' + esc(row.date_of_birth || '') + '</td><td>' + esc(row.relationship || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-open-citizen="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
+      + members.map(row => '<tr><td>' + esc(row.citizen_code || '') + '</td><td>' + esc(row.full_name || '') + '</td><td>' + esc(row.date_of_birth || '') + '</td><td>' + esc(row.relationship || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-open-citizen="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
       + '</tbody></table></div></section>';
   }
 
   function renderFamily(family) {
     if (!family.length) return '';
     return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Người cùng hộ</h6><div class="table-responsive"><table class="table table-sm align-middle"><tbody>'
-      + family.map(row => '<tr><td>' + (window.renderCitizenProfileLink ? window.renderCitizenProfileLink(row, row.full_name || '') : esc(row.full_name || '')) + '</td><td>' + esc(row.relationship || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-open-citizen="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
+      + family.map(row => '<tr><td>' + esc(row.full_name || '') + '</td><td>' + esc(row.relationship || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-open-citizen="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
       + '</tbody></table></div></section>';
   }
 
@@ -336,9 +336,9 @@
     if (!root) return;
     const type = root.dataset.profileType;
     const id = Number(root.dataset.profileId || 0);
-    $('[data-profile-refresh]', root)?.addEventListener('click', () => type === 'household' ? window.showHousehold(id) : (window.openCitizenProfile ? window.openCitizenProfile(id) : window.showPerson(id)));
+    $('[data-profile-refresh]', root)?.addEventListener('click', () => type === 'household' ? window.showHousehold(id) : window.showPerson(id));
     $('[data-profile-print]', root)?.addEventListener('click', () => window.print());
-    $$('[data-open-citizen]', root).forEach(btn => btn.addEventListener('click', () => window.openCitizenProfile ? window.openCitizenProfile(btn.dataset.openCitizen) : window.showPerson(btn.dataset.openCitizen)));
+    $$('[data-open-citizen]', root).forEach(btn => btn.addEventListener('click', () => window.showPerson(btn.dataset.openCitizen)));
     $$('[data-preview-file]', root).forEach(btn => btn.addEventListener('click', () => previewFile(btn.dataset.previewFile)));
     $$('[data-download-file]', root).forEach(btn => btn.addEventListener('click', () => downloadFile(btn.dataset.downloadFile)));
     $$('[data-delete-file]', root).forEach(btn => btn.addEventListener('click', () => deleteFile(btn.dataset.deleteFile, type, id)));
@@ -366,7 +366,7 @@
     Array.from(form.elements.file.files || []).forEach(item => data.append('file[]', item));
     await api('/api/files', { method: 'POST', body: data });
     show('Đã tải lên tài liệu');
-    type === 'household' ? window.showHousehold(id) : (window.openCitizenProfile ? window.openCitizenProfile(id) : window.showPerson(id));
+    type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function createNote(event, type, id) {
@@ -375,7 +375,7 @@
     const form = event.currentTarget;
     await api('/api/profiles/' + type + '/' + id + '/notes', { method: 'POST', body: { title: form.elements.title.value, content: form.elements.content.value, section: 'general' } });
     show('Đã thêm ghi chú');
-    type === 'household' ? window.showHousehold(id) : (window.openCitizenProfile ? window.openCitizenProfile(id) : window.showPerson(id));
+    type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function editNote(button, type, id) {
@@ -387,7 +387,7 @@
     if (!content.trim()) return show('Nội dung ghi chú là bắt buộc', 'warning');
     await api('/api/profiles/notes/' + encodeURIComponent(button.dataset.editNote), { method: 'PUT', body: { title, content, section: 'general' } });
     show('Đã sửa ghi chú');
-    type === 'household' ? window.showHousehold(id) : (window.openCitizenProfile ? window.openCitizenProfile(id) : window.showPerson(id));
+    type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function deleteNote(noteId, type, id) {
@@ -395,7 +395,7 @@
     if (!confirm('Xóa ghi chú này?')) return;
     await api('/api/profiles/notes/' + encodeURIComponent(noteId), { method: 'DELETE' });
     show('Đã xóa ghi chú');
-    type === 'household' ? window.showHousehold(id) : (window.openCitizenProfile ? window.openCitizenProfile(id) : window.showPerson(id));
+    type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function deleteFile(id, type, entityId) {
@@ -403,7 +403,7 @@
     if (!confirm('Xóa file đính kèm này?')) return;
     await api('/api/files/' + encodeURIComponent(id), { method: 'DELETE' });
     show('Đã xóa file đính kèm');
-    type === 'household' ? window.showHousehold(entityId) : (window.openCitizenProfile ? window.openCitizenProfile(entityId) : window.showPerson(entityId));
+    type === 'household' ? window.showHousehold(entityId) : window.showPerson(entityId);
   }
 
   async function previewFile(id) {

@@ -905,7 +905,7 @@
 
   function memberList(members) {
     if (!members.length) return '<div class="business-member-empty">Chưa có nhân khẩu</div>';
-    const shown = members.slice(0, 6).map(member => '<div class="business-member-item"><strong>' + (window.renderCitizenProfileLink ? window.renderCitizenProfileLink(member, member.full_name || '') : esc(member.full_name || '')) + '</strong><span>' + esc(member.relationship || '') + '</span></div>').join('');
+    const shown = members.slice(0, 6).map(member => '<div class="business-member-item"><strong>' + esc(member.full_name || '') + '</strong><span>' + esc(member.relationship || '') + '</span></div>').join('');
     const remaining = Math.max(0, members.length - 6);
     return shown + (remaining ? '<div class="business-member-more">Còn ' + remaining + ' nhân khẩu khác</div>' : '');
   }

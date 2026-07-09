@@ -133,7 +133,7 @@
   }
   function errorBox(selector, error) {
     logError('Widget render failed: ' + selector, error);
-    try { setHtml(selector, '<div class="system-admin-error">' + esc(error?.message || 'Widget t\u1ea1m th\u1eddi kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c') + '</div>'); }
+    try { setHtml(selector, '<div class="system-admin-error">' + esc(error?.message || 'Widget t?m th?i kh?ng t?i ???c') + '</div>'); }
     catch (renderError) { logError('Cannot render widget error box: ' + selector, renderError); renderFatal(error || renderError); }
   }
   function renderFatal(error) {
@@ -145,7 +145,7 @@
       screen = $('#systemAdminScreen');
     }
     const box = $('.system-admin-error', screen) || screen;
-    box.innerHTML = '<strong>Kh\u00f4ng hi\u1ec3n th\u1ecb \u0111\u01b0\u1ee3c module Qu\u1ea3n tr\u1ecb h\u1ec7 th\u1ed1ng.</strong><div>' + esc(error?.message || 'L\u1ed7i kh\u00f4ng x\u00e1c \u0111\u1ecbnh') + '</div>';
+    box.innerHTML = '<strong>Kh?ng hi?n th? ???c module Qu?n tr? h? th?ng.</strong><div>' + esc(error?.message || 'L?i kh?ng x?c ??nh') + '</div>';
   }
   function debug(message, detail) { console.info(DEBUG_PREFIX + ' ' + message, detail || ''); }
   function logError(message, error) { console.error(DEBUG_PREFIX + ' ' + message, error); }
@@ -159,7 +159,7 @@
       else {
         const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
         const json = await res.json().catch(() => null);
-        if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u');
+        if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'Kh?ng t?i ???c d? li?u');
         data = json.data;
       }
       debug('API loaded', { url });
