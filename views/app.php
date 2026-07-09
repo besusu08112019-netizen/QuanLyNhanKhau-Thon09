@@ -557,8 +557,32 @@
             <div class="col-md-6"><label class="form-label">Email</label><input name="email" type="email" class="form-control"></div>
             <div class="col-md-6"><label class="form-label">Tr&#7841;ng th&aacute;i</label><select name="status" class="form-select"><option value="ACTIVE">&#272;ang ho&#7841;t &#273;&#7897;ng</option><option value="INACTIVE">Ng&#7915;ng ho&#7841;t &#273;&#7897;ng</option><option value="SUSPENDED">T&#7841;m ng&#7915;ng</option></select></div>
             <div class="col-12"><label class="form-label">&#272;&#7883;a ch&#7881;</label><input name="address" class="form-control"></div>
-            <div class="col-md-6"><label class="form-label">V&#297; &#273;&#7897; GPS</label><input name="latitude" class="form-control" inputmode="decimal"></div>
-            <div class="col-md-6"><label class="form-label">Kinh &#273;&#7897; GPS</label><input name="longitude" class="form-control" inputmode="decimal"></div>
+            <input type="hidden" name="gps_source" value="household">
+            <input type="hidden" name="latitude">
+            <input type="hidden" name="longitude">
+            <div class="col-12">
+              <div class="business-gis-panel" id="businessGpsPanel">
+                <div class="business-gis-header">
+                  <div>
+                    <div class="business-gis-title"><i class="fa-solid fa-location-dot"></i> GPS</div>
+                    <div class="business-gis-status" id="businessGpsStatusText">Ch&#432;a ch&#7885;n h&#7897; gia &#273;&igrave;nh.</div>
+                  </div>
+                  <span class="business-gis-badge" id="businessGpsSourceBadge">GPS h&#7897;</span>
+                </div>
+                <div class="business-gis-meta" id="businessGpsMeta">
+                  Ch&#7885;n h&#7897; gia &#273;&igrave;nh &#273;&#7875; h&#7879; th&#7889;ng t&#7921; l&#7845;y v&#7883; tr&iacute; GIS c&#7911;a h&#7897;.
+                </div>
+                <div class="form-check form-switch business-gis-switch">
+                  <input id="businessActivityOwnGps" class="form-check-input" type="checkbox">
+                  <label class="form-check-label" for="businessActivityOwnGps">Ho&#7841;t &#273;&#7897;ng c&oacute; v&#7883; tr&iacute; ri&ecirc;ng</label>
+                </div>
+                <div class="business-gis-actions d-none" id="businessGpsActions">
+                  <button type="button" class="btn btn-sm btn-outline-success" data-business-gps-action="current"><i class="fa-solid fa-location-crosshairs"></i> L&#7845;y GPS hi&#7879;n t&#7841;i</button>
+                  <button type="button" class="btn btn-sm btn-outline-primary" data-business-gps-action="map"><i class="fa-solid fa-map-location-dot"></i> Ch&#7885;n tr&ecirc;n b&#7843;n &#273;&#7891;</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" data-business-gps-action="geocode"><i class="fa-solid fa-magnifying-glass-location"></i> Nh&#7853;p &#273;&#7883;a ch&#7881;</button>
+                </div>
+              </div>
+            </div>
 
             <div class="col-12"><h6 class="module-section-title">H&igrave;nh &#7843;nh v&agrave; h&#7891; s&#417;</h6></div>
             <div class="col-md-4"><label class="form-label" for="businessImageCategory">Danh m&#7909;c &#7843;nh</label><select id="businessImageCategory" class="form-select"></select></div>

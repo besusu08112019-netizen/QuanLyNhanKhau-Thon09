@@ -4868,3 +4868,14 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
     flex-basis: auto;
   }
 }
+
+.business-gis-panel { display: grid; gap: 12px; padding: 14px 16px; border: 1px solid #dbe7ef; border-radius: 10px; background: #f8fafc; }
+.business-gis-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.business-gis-title { display: inline-flex; align-items: center; gap: 8px; color: #0f5132; font-weight: 800; }
+.business-gis-status { margin-top: 3px; color: #334155; font-size: 14px; font-weight: 700; }
+.business-gis-badge { display: inline-flex; align-items: center; min-height: 26px; padding: 4px 10px; border-radius: 999px; border: 1px solid #bbf7d0; background: #ecfdf5; color: #166534; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.business-gis-meta { color: #64748b; font-size: 13px; line-height: 1.45; }
+.business-gis-meta a { color: #0b6b3a; font-weight: 800; text-decoration: none; }
+.business-gis-switch { margin: 0; }
+.business-gis-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 576px) { .business-gis-header { flex-direction: column; } .business-gis-actions .btn { width: 100%; justify-content: center; } }

@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS household_business (
   address VARCHAR(500) NULL,
   latitude DECIMAL(10,8) NULL,
   longitude DECIMAL(11,8) NULL,
+  gps_source ENUM('household','activity') NOT NULL DEFAULT 'household',
   status ENUM('ACTIVE','INACTIVE','SUSPENDED','DELETED') NOT NULL DEFAULT 'ACTIVE',
   note TEXT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -75,6 +76,7 @@ SQL);
             'food_safety_expired_date' => 'DATE NULL AFTER food_safety_certificate_no',
             'social_insurance' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER food_safety_expired_date',
             'insured_workers' => 'INT UNSIGNED NOT NULL DEFAULT 0 AFTER social_insurance',
+            'gps_source' => 'ENUM("household","activity") NOT NULL DEFAULT "household" AFTER longitude',
         ];
         foreach ($columns as $column => $definition) {
             if (!$this->columnExists('household_business', $column)) {
@@ -287,7 +289,7 @@ SQL);
 
         if ($id) {
             $this->execute(
-                'UPDATE household_business SET household_id=:household_id,business_type=:business_type,economic_type=:economic_type,main_products=:main_products,business_scale=:business_scale,is_ocop=:is_ocop,ocop_product=:ocop_product,ocop_star=:ocop_star,food_safety_certified=:food_safety_certified,food_safety_certificate_no=:food_safety_certificate_no,food_safety_expired_date=:food_safety_expired_date,social_insurance=:social_insurance,insured_workers=:insured_workers,business_name=:business_name,owner_name=:owner_name,production_sector=:production_sector,business_sector=:business_sector,business_license=:business_license,license_date=:license_date,license_place=:license_place,tax_code=:tax_code,start_date=:start_date,worker_count=:worker_count,annual_revenue=:annual_revenue,phone=:phone,email=:email,address=:address,latitude=:latitude,longitude=:longitude,status=:status,note=:note,updated_by=:user WHERE id=:id',
+                'UPDATE household_business SET household_id=:household_id,business_type=:business_type,economic_type=:economic_type,main_products=:main_products,business_scale=:business_scale,is_ocop=:is_ocop,ocop_product=:ocop_product,ocop_star=:ocop_star,food_safety_certified=:food_safety_certified,food_safety_certificate_no=:food_safety_certificate_no,food_safety_expired_date=:food_safety_expired_date,social_insurance=:social_insurance,insured_workers=:insured_workers,business_name=:business_name,owner_name=:owner_name,production_sector=:production_sector,business_sector=:business_sector,business_license=:business_license,license_date=:license_date,license_place=:license_place,tax_code=:tax_code,start_date=:start_date,worker_count=:worker_count,annual_revenue=:annual_revenue,phone=:phone,email=:email,address=:address,latitude=:latitude,longitude=:longitude,gps_source=:gps_source,status=:status,note=:note,updated_by=:user WHERE id=:id',
                 $params
             );
             return $this->find($id);
@@ -297,7 +299,7 @@ SQL);
         $insertParams['created_by'] = $userId;
         $insertParams['updated_by'] = $userId;
         unset($insertParams['user']);
-        $insertSql = 'INSERT INTO household_business (household_id,business_type,economic_type,main_products,business_scale,is_ocop,ocop_product,ocop_star,food_safety_certified,food_safety_certificate_no,food_safety_expired_date,social_insurance,insured_workers,business_name,owner_name,production_sector,business_sector,business_license,license_date,license_place,tax_code,start_date,worker_count,annual_revenue,phone,email,address,latitude,longitude,status,note,created_by,updated_by) VALUES (:household_id,:business_type,:economic_type,:main_products,:business_scale,:is_ocop,:ocop_product,:ocop_star,:food_safety_certified,:food_safety_certificate_no,:food_safety_expired_date,:social_insurance,:insured_workers,:business_name,:owner_name,:production_sector,:business_sector,:business_license,:license_date,:license_place,:tax_code,:start_date,:worker_count,:annual_revenue,:phone,:email,:address,:latitude,:longitude,:status,:note,:created_by,:updated_by)';
+        $insertSql = 'INSERT INTO household_business (household_id,business_type,economic_type,main_products,business_scale,is_ocop,ocop_product,ocop_star,food_safety_certified,food_safety_certificate_no,food_safety_expired_date,social_insurance,insured_workers,business_name,owner_name,production_sector,business_sector,business_license,license_date,license_place,tax_code,start_date,worker_count,annual_revenue,phone,email,address,latitude,longitude,gps_source,status,note,created_by,updated_by) VALUES (:household_id,:business_type,:economic_type,:main_products,:business_scale,:is_ocop,:ocop_product,:ocop_star,:food_safety_certified,:food_safety_certificate_no,:food_safety_expired_date,:social_insurance,:insured_workers,:business_name,:owner_name,:production_sector,:business_sector,:business_license,:license_date,:license_place,:tax_code,:start_date,:worker_count,:annual_revenue,:phone,:email,:address,:latitude,:longitude,:gps_source,:status,:note,:created_by,:updated_by)';
         $this->debugSql('household_business.insert', $insertSql, $insertParams);
         $newId = $this->insert($insertSql, $insertParams);
         return $this->find($newId);
@@ -461,8 +463,8 @@ SQL);
             if ($value === '0') $where[] = "(hb.$column IS NULL OR hb.$column = '')";
         }
         $located = trim((string) ($filters['located'] ?? ''));
-        if ($located === '1') $where[] = '((hb.latitude IS NOT NULL AND hb.longitude IS NOT NULL) OR (h.latitude IS NOT NULL AND h.longitude IS NOT NULL))';
-        if ($located === '0') $where[] = '((hb.latitude IS NULL OR hb.longitude IS NULL) AND (h.latitude IS NULL OR h.longitude IS NULL))';
+        if ($located === '1') $where[] = '((hb.gps_source = "activity" AND hb.latitude IS NOT NULL AND hb.longitude IS NOT NULL) OR (hb.gps_source <> "activity" AND h.latitude IS NOT NULL AND h.longitude IS NOT NULL))';
+        if ($located === '0') $where[] = '((hb.gps_source = "activity" AND (hb.latitude IS NULL OR hb.longitude IS NULL)) OR (hb.gps_source <> "activity" AND (h.latitude IS NULL OR h.longitude IS NULL)))';
         $sort = preg_replace('/[^a-z_]/', '', (string) ($filters['sort'] ?? 'household_code'));
         $direction = strtoupper((string) ($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = [
@@ -609,8 +611,9 @@ SQL);
             'phone' => $this->nullable($data['phone'] ?? null),
             'email' => $this->nullable($data['email'] ?? null),
             'address' => $this->nullable($data['address'] ?? null),
-            'latitude' => $this->coordinateOrNull($data['latitude'] ?? null, -90, 90),
-            'longitude' => $this->coordinateOrNull($data['longitude'] ?? null, -180, 180),
+            'latitude' => $this->gpsSource($data) === 'activity' ? $this->coordinateOrNull($data['latitude'] ?? null, -90, 90) : null,
+            'longitude' => $this->gpsSource($data) === 'activity' ? $this->coordinateOrNull($data['longitude'] ?? null, -180, 180) : null,
+            'gps_source' => $this->gpsSource($data),
             'status' => in_array(strtoupper((string) ($data['status'] ?? 'ACTIVE')), ['ACTIVE','INACTIVE','SUSPENDED'], true) ? strtoupper((string) ($data['status'] ?? 'ACTIVE')) : 'ACTIVE',
             'note' => $this->nullable($data['note'] ?? null),
             'user' => $userId,
@@ -675,12 +678,25 @@ SQL);
         return in_array($value, ['1', 'true', 'yes', 'on'], true);
     }
 
+    private function gpsSource(array $data): string
+    {
+        $source = strtolower(trim((string) ($data['gps_source'] ?? $data['gpsSource'] ?? 'household')));
+        return $source === 'activity' ? 'activity' : 'household';
+    }
+
     private function normalize(array $row): array
     {
         $type = $this->businessType($row['business_type'] ?? '') ?: 'RESIDENT';
         $sector = trim((string) ($row['production_sector'] ?? '')) ?: trim((string) ($row['business_sector'] ?? ''));
-        $lat = $row['latitude'] ?? $row['household_latitude'] ?? null;
-        $lng = $row['longitude'] ?? $row['household_longitude'] ?? null;
+        $activityLat = $row['latitude'] ?? null;
+        $activityLng = $row['longitude'] ?? null;
+        $gpsSource = strtolower((string) ($row['gps_source'] ?? 'household')) === 'activity' ? 'activity' : 'household';
+        $lat = $gpsSource === 'activity' ? $activityLat : ($row['household_latitude'] ?? null);
+        $lng = $gpsSource === 'activity' ? $activityLng : ($row['household_longitude'] ?? null);
+        if (($lat === null || $lat === '') && ($lng === null || $lng === '') && $gpsSource === 'activity') {
+            $lat = $row['household_latitude'] ?? null;
+            $lng = $row['household_longitude'] ?? null;
+        }
         return [
             'id' => isset($row['id']) ? (int) $row['id'] : null,
             'household_id' => (int) ($row['household_id'] ?? $row['household_id_real'] ?? 0),
@@ -714,6 +730,12 @@ SQL);
             'phone' => (string) ($row['phone'] ?? $row['household_phone'] ?? ''),
             'email' => (string) ($row['email'] ?? ''),
             'address' => (string) ($row['address'] ?? $row['household_address'] ?? ''),
+            'gps_source' => $gpsSource,
+            'gps_source_label' => $gpsSource === 'activity' ? 'GPS riêng' : 'GPS hộ gia đình',
+            'activity_latitude' => $activityLat !== null && $activityLat !== '' ? (float) $activityLat : null,
+            'activity_longitude' => $activityLng !== null && $activityLng !== '' ? (float) $activityLng : null,
+            'household_latitude' => ($row['household_latitude'] ?? null) !== null && ($row['household_latitude'] ?? '') !== '' ? (float) $row['household_latitude'] : null,
+            'household_longitude' => ($row['household_longitude'] ?? null) !== null && ($row['household_longitude'] ?? '') !== '' ? (float) $row['household_longitude'] : null,
             'latitude' => $lat !== null && $lat !== '' ? (float) $lat : null,
             'longitude' => $lng !== null && $lng !== '' ? (float) $lng : null,
             'status' => (string) ($row['status'] ?? 'ACTIVE'),

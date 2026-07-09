@@ -355,6 +355,7 @@ CREATE TABLE IF NOT EXISTS `household_business` (
   `address` VARCHAR(500) NULL,
   `latitude` DECIMAL(10,8) NULL,
   `longitude` DECIMAL(11,8) NULL,
+  `gps_source` ENUM('household','activity') NOT NULL DEFAULT 'household',
   `status` ENUM('ACTIVE','INACTIVE','SUSPENDED','DELETED') NOT NULL DEFAULT 'ACTIVE',
   `note` TEXT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
