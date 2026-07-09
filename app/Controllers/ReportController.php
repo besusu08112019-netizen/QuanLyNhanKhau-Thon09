@@ -169,6 +169,12 @@ final class ReportController extends BaseController
             'ethnicity' => $this->nullableQuery('ethnicity'),
             'religion' => $this->nullableQuery('religion'),
             'occupation' => $this->nullableQuery('occupation'),
+            'search' => $this->nullableQueryAny('search', ['q']),
+            'land_type' => $this->nullableQueryAny('land_type', ['landType']),
+            'usage_form' => $this->nullableQueryAny('usage_form', ['usageForm']),
+            'crop' => $this->nullableQuery('crop'),
+            'season' => $this->nullableQuery('season'),
+            'status' => $this->nullableQuery('status'),
         ];
 
         foreach ($this->flagFilterAliases() as $field => $aliases) {

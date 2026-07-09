@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-357-livestock-modal');
+define('APP_ASSET_VERSION', 'deploy-358-agriculture-module');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -22,6 +22,7 @@ use App\Core\BaseModel;
 use App\Core\Request;
 use App\Core\Router;
 use App\Core\Response;
+use App\Controllers\AgricultureProductionController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\DashboardController;
@@ -178,6 +179,18 @@ $router->delete('/api/household-businesses/{id}/files/{fileId}', [HouseholdBusin
 $router->get('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'show']);
 $router->put('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'update']);
 $router->delete('/api/household-businesses/{id}', [HouseholdBusinessController::class, 'destroy']);
+$router->get('/api/agriculture', [AgricultureProductionController::class, 'index']);
+$router->post('/api/agriculture', [AgricultureProductionController::class, 'store']);
+$router->get('/api/agriculture/dashboard', [AgricultureProductionController::class, 'dashboard']);
+$router->get('/api/agriculture/catalogs', [AgricultureProductionController::class, 'catalogs']);
+$router->get('/api/agriculture/gis', [AgricultureProductionController::class, 'gis']);
+$router->get('/api/agriculture/{id}', [AgricultureProductionController::class, 'show']);
+$router->put('/api/agriculture/{id}', [AgricultureProductionController::class, 'update']);
+$router->delete('/api/agriculture/{id}', [AgricultureProductionController::class, 'destroy']);
+$router->post('/api/agriculture/{parcelId}/plots', [AgricultureProductionController::class, 'addPlot']);
+$router->post('/api/agriculture/plots/{plotId}/seasons', [AgricultureProductionController::class, 'addSeason']);
+$router->post('/api/agriculture/seasons/{seasonId}/logs', [AgricultureProductionController::class, 'addLog']);
+$router->post('/api/agriculture/{parcelId}/damages', [AgricultureProductionController::class, 'addDamage']);
 $router->get('/api/livestock', [LivestockController::class, 'index']);
 $router->post('/api/livestock', [LivestockController::class, 'store']);
 $router->get('/api/livestock/dashboard', [LivestockController::class, 'dashboard']);
