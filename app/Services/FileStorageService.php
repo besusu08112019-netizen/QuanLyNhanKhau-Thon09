@@ -124,14 +124,103 @@ final class FileStorageService
 
     public function safeFilePath(string $relative): ?string
     {
+        $candidate = $this->resolveFilePath($relative);
+        return $candidate['path'];
+    }
+
+    public function filePathDiagnostics(string $relative): array
+    {
+        return $this->resolveFilePath($relative);
+    }
+
+    private function resolveFilePath(string $relative): array
+    {
+        $input = trim($relative);
+        $normalized = $this->normalizeStoredPath($input);
+        $roots = $this->storageRoots();
+        $candidates = $this->filePathCandidates($normalized);
+
+        foreach ($candidates as $candidate) {
+            $real = realpath($candidate);
+            if (!$real || !is_file($real)) continue;
+            foreach ($roots as $base) {
+                $basePrefix = rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+                if ($real === $base || str_starts_with($real, $basePrefix)) {
+                    return ['path' => $real, 'input' => $input, 'normalized' => $normalized, 'checked' => $candidates];
+                }
+            }
+        }
+
+        $basename = basename($normalized);
+        if ($basename !== '' && $basename !== '.') {
+            foreach ($roots as $base) {
+                $found = $this->findFileByBasename($base, $basename);
+                if ($found) return ['path' => $found, 'input' => $input, 'normalized' => $normalized, 'checked' => $candidates];
+            }
+        }
+
+        return ['path' => null, 'input' => $input, 'normalized' => $normalized, 'checked' => $candidates];
+    }
+
+    private function normalizeStoredPath(string $path): string
+    {
+        $path = trim($path);
+        if (preg_match('#^https?://#i', $path)) {
+            $parts = parse_url($path);
+            $path = (string) ($parts['path'] ?? '');
+        }
+        $path = rawurldecode($path);
+        $path = str_replace('\\', '/', $path);
+        $base = str_replace('\\', '/', BASE_PATH);
+        if ($base !== '' && str_starts_with($path, $base)) {
+            $path = substr($path, strlen($base));
+        }
+        return ltrim($path, '/\\');
+    }
+
+    private function filePathCandidates(string $relative): array
+    {
         $relative = ltrim($relative, '/\\');
+        $variants = [$relative];
+        foreach (['storage/', 'uploads/', 'public/storage/', 'public/uploads/'] as $prefix) {
+            if (!str_starts_with($relative, $prefix)) $variants[] = $prefix . $relative;
+        }
+        $basename = basename($relative);
+        if ($basename && $basename !== $relative) {
+            $variants[] = 'storage/' . $basename;
+            $variants[] = 'uploads/' . $basename;
+        }
+        $paths = [];
+        foreach (array_unique(array_filter($variants)) as $variant) {
+            $paths[] = BASE_PATH . '/' . $variant;
+        }
+        return $paths;
+    }
+
+    private function storageRoots(): array
+    {
+        $roots = [];
         foreach (['storage', 'uploads'] as $root) {
             $base = realpath(BASE_PATH . '/' . $root);
-            $candidate = BASE_PATH . '/' . $relative;
-            $real = realpath($candidate);
-            if (!$base || !$real) continue;
-            $basePrefix = rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-            if (str_starts_with($real, $basePrefix)) return $real;
+            if ($base) $roots[] = $base;
+        }
+        return $roots;
+    }
+
+    private function findFileByBasename(string $base, string $basename): ?string
+    {
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
+            );
+            foreach ($iterator as $file) {
+                if (!$file->isFile() || $file->getFilename() !== $basename) continue;
+                $real = $file->getRealPath();
+                return $real !== false ? $real : null;
+            }
+        } catch (\Throwable) {
+            return null;
         }
         return null;
     }

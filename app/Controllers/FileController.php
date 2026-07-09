@@ -192,8 +192,19 @@ final class FileController extends BaseController
         if (!$file) $this->fail('Khong tim thay file', 404);
         $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
-        $path = $this->storage->safeFilePath((string) $file['file_path']);
-        if ($path === null || !is_file($path)) $this->fail('File is no longer available on the server', 404);
+        $diagnostics = $this->storage->filePathDiagnostics((string) ($file['file_path'] ?? ''));
+        $path = $diagnostics['path'] ?? null;
+        if ($path === null || !is_file($path)) {
+            error_log('[FilePreviewMissing] id=' . (int) $id
+                . ' entity_type=' . ($file['entity_type'] ?? $file['module'] ?? '')
+                . ' entity_id=' . ($file['entity_id'] ?? '')
+                . ' file_path=' . ($file['file_path'] ?? '')
+                . ' stored_name=' . ($file['stored_name'] ?? '')
+                . ' original_name=' . ($file['original_name'] ?? $file['file_name'] ?? '')
+                . ' normalized=' . ($diagnostics['normalized'] ?? '')
+                . ' checked=' . json_encode($diagnostics['checked'] ?? [], JSON_UNESCAPED_SLASHES));
+            $this->fail('File is no longer available on the server', 404);
+        }
         $mime = (string) ($file['mime_type'] ?: 'application/octet-stream');
         if (!$download && !$this->storage->canPreview($mime)) $download = true;
         $this->requirePermission('file', $download ? 'download' : 'read');
