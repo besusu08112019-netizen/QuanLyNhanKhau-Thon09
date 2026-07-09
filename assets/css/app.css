@@ -4732,3 +4732,78 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
   .business-dashboard-row,
   .business-dashboard-metrics { grid-template-columns: 1fr; }
 }
+
+/* Household Business popup - flat read-only label/value lists */
+.business-dashboard-section-body,
+.business-dashboard-cert-list {
+  display: block;
+}
+.business-dashboard-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+  min-width: 0;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+}
+.business-dashboard-row + .business-dashboard-row {
+  border-top: 1px solid #edf2ef;
+}
+.business-dashboard-row span {
+  flex: 0 0 168px;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.business-dashboard-row strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.45;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.business-dashboard-section {
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 8px 20px rgba(31, 41, 55, .035);
+}
+.business-dashboard-section-head {
+  margin-bottom: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #edf2ef;
+}
+.business-dashboard-section-head i {
+  width: 28px;
+  height: 28px;
+}
+.business-dashboard-metrics,
+.business-dashboard-metric,
+.business-modern-info-grid,
+.business-economic-card-grid,
+.business-economic-field {
+  display: contents;
+}
+.business-dashboard-metric,
+.business-modern-info-grid .person-info-field,
+.business-economic-field {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+@media (max-width: 720px) {
+  .business-dashboard-row {
+    display: grid;
+    gap: 3px;
+  }
+  .business-dashboard-row span {
+    flex-basis: auto;
+  }
+}
