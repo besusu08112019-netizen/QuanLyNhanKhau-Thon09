@@ -1,0 +1,184 @@
+const { test, expect, chromium } = require('@playwright/test');
+
+const screens = ['dashboard', 'households', 'persons', 'businessHouseholds', 'vehicles', 'livestock', 'agriculture', 'contributions', 'gis', 'reports', 'operationCenter', 'users'];
+const viewports = [
+  { name: 'desktop', width: 1366, height: 768 },
+  { name: 'tablet-portrait', width: 768, height: 1024 },
+  { name: 'tablet-landscape', width: 1024, height: 768 },
+  { name: 'mobile-portrait', width: 390, height: 844 },
+  { name: 'mobile-landscape', width: 844, height: 390 }
+];
+const modalIds = ['householdModal', 'businessHouseholdModal', 'agriFormModal', 'personModal', 'houseFormModal', 'detailModal', 'livestockHouseholdModal'];
+const mojibakePattern = /(?:\u00e1[\u00bb\u00ba]|\u00c4\u2018|\u00c6[\u00b0\u00a1]|\u00c3[\u00a1\u00a0\u00a2\u00aa\u00b4\u00b9\u00ba\u00b3\u00b2\u00b5\u00a8\u00a9]|\uFFFD|\? d\?|\?n kh|\?o c)/i;
+
+function ok(data) {
+  return { ok: true, success: true, data };
+}
+
+async function mockApis(page) {
+  await page.route('**/api/**', async (route) => {
+    const url = route.request().url();
+    const fulfill = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(ok(data)) });
+    if (url.includes('/api/public/login-config')) return fulfill({ settings: { systemName: 'Hệ thống quản lý hành chính', hamletName: 'Thôn 09', communeName: 'Xã Hồng Phong', version: 'v2.0' }, metrics: {} });
+    if (url.includes('/api/auth/me')) return fulfill({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.includes('/api/dashboard/summary')) return fulfill({ metrics: {}, charts: {}, generatedAt: new Date().toISOString() });
+    if (url.includes('/api/dashboard/')) return fulfill({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() });
+    if (url.includes('/api/operation-center/')) return fulfill({ items: [], total: 0, widget: 'audit', data: { items: [] } });
+    if (url.includes('/api/gis/households')) return fulfill({ items: [], total: 0 });
+    if (url.includes('/api/gis/summary')) return fulfill({ total: 0, located: 0, missing: 0, areas: [] });
+    if (url.includes('/api/household-business')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20, dashboard: {} });
+    if (url.includes('/api/livestock')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
+    if (url.includes('/api/agriculture')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
+    if (url.includes('/api/households')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20 });
+    if (url.includes('/api/persons')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20 });
+    return fulfill({ items: [], total: 0 });
+  });
+}
+
+async function openApp(page, viewport) {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  await mockApis(page);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
+    window.App.token = 'test-token';
+    window.App.user = user;
+    localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    if (typeof window.showApp === 'function') window.showApp();
+  });
+  await expect(page.locator('#appView')).not.toHaveClass(/d-none/);
+}
+
+function browserName() {
+  return process.env.PW_BROWSER_LABEL || 'chromium';
+}
+
+test.describe(`Production UI audit (${browserName()})`, () => {
+  for (const viewport of viewports) {
+    test(`module layout, text and controls: ${viewport.name}`, async ({ page }) => {
+      await openApp(page, viewport);
+      for (const screen of screens) {
+        await page.evaluate((target) => window.switchScreen && window.switchScreen(target), screen);
+        await page.waitForTimeout(100);
+        const result = await page.evaluate(({ screen, width }) => {
+          const active = document.querySelector('.screen.active');
+          const visible = (el) => {
+            if (!el) return false;
+            const style = getComputedStyle(el);
+              if (el.closest('.mobile-filter-sheet') && el.closest('.mobile-filter-sheet').getAttribute('aria-hidden') === 'true') return;
+            const rect = el.getBoundingClientRect();
+            return style.visibility !== 'hidden' && style.display !== 'none' && rect.width > 0 && rect.height > 0;
+          };
+          const textNodes = Array.from(document.querySelectorAll('#screenTitle,#breadcrumbTrail,.sidebar,.topbar,.screen.active'))
+            .filter(visible)
+            .map((el) => el.innerText || '')
+            .join('\n');
+          const navItems = Array.from(document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen]')).map((btn) => btn.dataset.mobileScreen);
+          const touchFailures = [];
+          if (width <= 820 && active) {
+            Array.from(active.querySelectorAll('button:not([disabled]), .btn:not([disabled]), input:not([type="hidden"]), select, textarea, a[href]')).filter(visible).forEach((el) => {
+              if (el.closest('.mobile-filter-sheet') && el.closest('.mobile-filter-sheet').getAttribute('aria-hidden') === 'true') return;
+              let rect = el.getBoundingClientRect();
+              if (el.matches('input[type="checkbox"], input[type="radio"]') && el.closest('label')) {
+                const labelRect = el.closest('label').getBoundingClientRect();
+                if (labelRect.width >= rect.width && labelRect.height >= rect.height) rect = labelRect;
+              }
+              if (Math.ceil(rect.width) < 44 || Math.ceil(rect.height) < 44) touchFailures.push((el.id || el.name || el.textContent || el.getAttribute('aria-label') || el.tagName).trim().slice(0, 60));
+            });
+          }
+          const cardStyles = Array.from((active || document).querySelectorAll('.content-card,.module-filter-card,.dashboard-panel,.livestock-filter-card,.agri-filter-card,.houses-filter-card')).filter(visible).slice(0, 8).map((el) => {
+            const cs = getComputedStyle(el);
+            const childPaddings = Array.from(el.children).slice(0, 3).map((child) => parseFloat(getComputedStyle(child).paddingTop) || 0);
+            return { radius: parseFloat(cs.borderTopLeftRadius) || 0, padding: Math.max(parseFloat(cs.paddingTop) || 0, ...childPaddings) };
+          });
+          const focusable = active && Array.from(active.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]')).find(visible);
+          let focusOk = true;
+          if (focusable) {
+            focusable.focus();
+            focusOk = document.activeElement === focusable;
+          }
+          return {
+            activeId: active ? active.id : '',
+            scrollWidth: Math.ceil(document.documentElement.scrollWidth),
+            clientWidth: Math.ceil(document.documentElement.clientWidth),
+            bodyScrollWidth: active ? Math.ceil(active.scrollWidth) : Math.ceil(document.body.scrollWidth),
+            bodyClientWidth: active ? Math.ceil(active.clientWidth) : Math.ceil(document.body.clientWidth),
+            navItems,
+            text: textNodes,
+            touchFailures,
+            cardStyles,
+            focusOk
+          };
+        }, { screen, width: viewport.width });
+
+        expect(result.activeId).toBe(`${screen}Screen`);
+        expect(result.scrollWidth).toBeLessThanOrEqual(result.clientWidth + 2);
+        expect(result.bodyScrollWidth).toBeLessThanOrEqual(result.bodyClientWidth + 96);
+        expect(result.navItems).not.toContain('operationCenter');
+        expect(result.text).not.toMatch(mojibakePattern);
+        expect(result.touchFailures, `${viewport.name}/${screen} touch target failures`).toEqual([]);
+        expect(result.focusOk).toBe(true);
+        for (const card of result.cardStyles) {
+          expect(card.radius).toBeGreaterThanOrEqual(8);
+          expect(card.padding).toBeGreaterThanOrEqual(12);
+        }
+      }
+    });
+  }
+
+  for (const viewport of viewports.filter((item) => item.name !== 'desktop' || true)) {
+    test(`popup, form and table baseline: ${viewport.name}`, async ({ page }) => {
+      await openApp(page, viewport);
+      for (const id of modalIds) {
+        const exists = await page.locator(`#${id}`).count();
+        if (!exists) continue;
+        await page.evaluate((modalId) => {
+          document.querySelectorAll('.modal.show').forEach((el) => { el.classList.remove('show'); el.style.display = 'none'; });
+          const el = document.getElementById(modalId);
+          el.style.display = 'block';
+          el.classList.add('show');
+          el.removeAttribute('aria-hidden');
+          document.body.classList.add('modal-open');
+        }, id);
+        await page.waitForTimeout(60);
+        const modal = await page.evaluate((modalId) => {
+          const el = document.getElementById(modalId);
+          const dialog = el && el.querySelector('.modal-dialog');
+          const content = el && el.querySelector('.modal-content');
+          const header = el && el.querySelector('.modal-header');
+          const footer = el && el.querySelector('.modal-footer');
+          const body = el && el.querySelector('.modal-body');
+          const rect = dialog ? dialog.getBoundingClientRect() : null;
+          const contentRect = content ? content.getBoundingClientRect() : null;
+          const headerRect = header ? header.getBoundingClientRect() : null;
+          const footerRect = footer ? footer.getBoundingClientRect() : null;
+          const controls = Array.from(el.querySelectorAll('input:not([type="hidden"]), select, textarea')).filter((control) => getComputedStyle(control).display !== 'none');
+          const unlabeled = controls.filter((control) => {
+            const id = control.id;
+            return !(control.getAttribute('aria-label') || control.closest('label') || (id && el.querySelector(`label[for="${CSS.escape(id)}"]`)) || control.previousElementSibling?.tagName === 'LABEL' || control.parentElement?.querySelector('label'));
+          }).map((control) => control.name || control.id || control.tagName).slice(0, 8);
+          return {
+            rect, contentRect, headerRect, footerRect,
+            bodyScrollable: body ? body.scrollHeight >= body.clientHeight : true,
+            unlabeled
+          };
+        }, id);
+        expect(modal.rect, id).toBeTruthy();
+        expect(modal.rect.left).toBeGreaterThanOrEqual(-2);
+        expect(modal.rect.right).toBeLessThanOrEqual(viewport.width + 2);
+        expect(modal.contentRect.height).toBeLessThanOrEqual(viewport.height * 0.96 + 2);
+        if (modal.headerRect) {
+          expect(modal.headerRect.top).toBeGreaterThanOrEqual(-2);
+          expect(modal.headerRect.bottom).toBeLessThanOrEqual(viewport.height + 2);
+        }
+        if (modal.footerRect) {
+          expect(modal.footerRect.top).toBeGreaterThanOrEqual(-2);
+          expect(modal.footerRect.bottom).toBeLessThanOrEqual(viewport.height + 2);
+        }
+        expect(modal.unlabeled, `${id} unlabeled controls`).toEqual([]);
+      }
+      await page.evaluate(() => { document.querySelectorAll('.modal.show').forEach((el) => { el.classList.remove('show'); el.style.display = 'none'; }); document.body.classList.remove('modal-open'); });
+    });
+  }
+});

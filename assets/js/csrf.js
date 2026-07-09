@@ -1,6 +1,6 @@
-﻿(() => {
+(() => {
   App.csrfToken = localStorage.getItem('thon09_csrf') || App.csrfToken || '';
-  const AUTH_REQUIRED_MESSAGE = 'PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n, vui lÃ²ng Ä‘Äƒng nháº­p láº¡i';
+  const AUTH_REQUIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
 
   function redirectToLoginOnAuthFailure() {
     if (window.__thon09SessionExpired) return;
@@ -38,7 +38,7 @@
       if (!options.public && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
         App.csrfToken = App.csrfToken || localStorage.getItem('thon09_csrf') || '';
         if (!App.csrfToken) {
-          throw new Error('PhiÃªn Ä‘Äƒng nháº­p thiáº¿u CSRF token, vui lÃ²ng Ä‘Äƒng nháº­p láº¡i');
+          throw new Error('Phiên đăng nhập thiếu CSRF token, vui lòng đăng nhập lại');
         }
         headers['X-CSRF-Token'] = App.csrfToken;
       }
@@ -60,7 +60,7 @@
         throw new Error(AUTH_REQUIRED_MESSAGE);
       }
       if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error?.message || 'KhÃ´ng nháº­n Ä‘Æ°á»£c pháº£n há»“i tá»« há»‡ thá»‘ng');
+        throw new Error(payload?.error?.message || 'Không nhận được phản hồi từ hệ thống');
       }
       return payload.data;
     } finally {

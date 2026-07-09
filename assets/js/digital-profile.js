@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const legacyShowPerson = window.showPerson;
   const sectionOptions = {
     household: [
@@ -48,7 +48,7 @@
   function can(module, action) { return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess(module, action) : false; }
   function requirePermission(module, action) {
     if (can(module, action)) return true;
-    show('TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n thao tÃ¡c nÃ y', 'warning');
+    show('Tài khoản hiện tại không có quyền thực hiện thao tác này', 'warning');
     return false;
   }
   function applyProfilePermissions(root) {
@@ -71,7 +71,7 @@
   window.showHousehold = async function showHouseholdDigitalProfile(id) {
     try {
       const profile = await loadProfile('household', id);
-      $('#detailTitle').textContent = 'Há»“ sÆ¡ sá»‘ há»™ gia Ä‘Ã¬nh';
+      $('#detailTitle').textContent = 'Hồ sơ số hộ gia đình';
       $('#detailBody').innerHTML = renderProfile(profile);
       bindProfileActions(profile);
       App.modals.detail.show();
@@ -81,7 +81,7 @@
   window.showPerson = async function showPersonDigitalProfile(id) {
     try {
       const row = await api('/api/persons/' + encodeURIComponent(id));
-      $('#detailTitle').textContent = 'Chi tiáº¿t nhÃ¢n kháº©u';
+      $('#detailTitle').textContent = 'Chi tiết nhân khẩu';
       $('#detailBody').innerHTML = renderCitizenTabbedProfile(row);
       bindCitizenTabs(Number(row.id || id));
       refreshUiEnhancements($('#detailBody') || document);
@@ -96,16 +96,16 @@
     const id = Number(row?.id || 0);
     const infoHtml = typeof renderDynamicPersonDetail === 'function'
       ? renderDynamicPersonDetail(row)
-      : '<div class="text-muted small">KhÃ´ng táº£i Ä‘Æ°á»£c thÃ´ng tin nhÃ¢n kháº©u.</div>';
+      : '<div class="text-muted small">Không tải được thông tin nhân khẩu.</div>';
     return '<div class="citizen-profile-tabs" data-citizen-profile="' + id + '">'
       + '<ul class="nav nav-tabs mb-3" role="tablist">'
-      + '<li class="nav-item" role="presentation"><button class="nav-link active" type="button" data-profile-tab="info">ThÃ´ng tin</button></li>'
-      + '<li class="nav-item" role="presentation"><button class="nav-link" type="button" data-profile-tab="files">Há»“ sÆ¡ sá»‘</button></li>'
+      + '<li class="nav-item" role="presentation"><button class="nav-link active" type="button" data-profile-tab="info">Thông tin</button></li>'
+      + '<li class="nav-item" role="presentation"><button class="nav-link" type="button" data-profile-tab="files">Hồ sơ số</button></li>'
       + '<li class="nav-item" role="presentation"><button class="nav-link" type="button" data-profile-tab="timeline">Timeline</button></li>'
       + '</ul>'
       + '<section data-profile-pane="info">' + infoHtml + '</section>'
-      + '<section data-profile-pane="files" class="d-none"><div class="text-muted small py-3">Chá»n tab Há»“ sÆ¡ sá»‘ Ä‘á»ƒ táº£i tÃ i liá»‡u.</div></section>'
-      + '<section data-profile-pane="timeline" class="d-none"><div class="text-muted small py-3">Chá»n tab Timeline Ä‘á»ƒ táº£i lá»‹ch sá»­.</div></section>'
+      + '<section data-profile-pane="files" class="d-none"><div class="text-muted small py-3">Chọn tab Hồ sơ số để tải tài liệu.</div></section>'
+      + '<section data-profile-pane="timeline" class="d-none"><div class="text-muted small py-3">Chọn tab Timeline để tải lịch sử.</div></section>'
       + '</div>';
   }
 
@@ -126,7 +126,7 @@
   async function loadCitizenFileManager(id, root, force = false) {
     const pane = $('[data-profile-pane="files"]', root);
     if (!pane || (pane.dataset.loaded === '1' && !force)) return;
-    pane.innerHTML = '<div class="text-muted small py-3">Äang táº£i há»“ sÆ¡ sá»‘...</div>';
+    pane.innerHTML = '<div class="text-muted small py-3">Đang tải hồ sơ số...</div>';
     try {
       const files = await api('/api/files?' + new URLSearchParams({ module: 'citizen', entityId: String(id) }).toString());
       pane.innerHTML = renderCitizenFileManager(Array.isArray(files) ? files : []);
@@ -150,12 +150,12 @@
       + '<h6 class="mb-0">' + esc(label) + '</h6>'
       + '<form class="d-flex flex-wrap gap-2 align-items-center" data-file-manager-upload data-section="' + esc(section) + '" data-file-type="' + esc(fileType) + '">'
       + '<input class="form-control form-control-sm" type="file" name="file" multiple required>'
-      + '<input class="form-control form-control-sm" type="text" name="description" placeholder="MÃ´ táº£">'
+      + '<input class="form-control form-control-sm" type="text" name="description" placeholder="Mô tả">'
       + '<button class="btn btn-sm btn-primary" type="submit"><i class="fa-solid fa-upload"></i> Upload</button>'
       + '</form></div>'
-      + (files.length ? '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>TÃªn file</th><th>Dung lÆ°á»£ng</th><th>NgÃ y upload</th><th>NgÆ°á»i upload</th><th class="text-end">Thao tÃ¡c</th></tr></thead><tbody>'
-        + files.map(file => '<tr><td>' + esc(file.original_name || file.file_name || 'Tá»‡p Ä‘Ã­nh kÃ¨m') + '</td><td>' + esc(formatSize(file.file_size)) + '</td><td>' + esc(dateText(file.created_at)) + '</td><td>' + esc(file.created_by_name || file.created_by_email || file.created_by || '') + '</td><td class="text-end"><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-primary" type="button" data-edit-file="' + Number(file.id || 0) + '" data-file-name="' + esc(file.file_name || file.original_name || '') + '" data-file-description="' + esc(file.description || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></td></tr>').join('')
-        + '</tbody></table></div>' : '<div class="text-muted small">ChÆ°a cÃ³ file.</div>')
+      + (files.length ? '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Tên file</th><th>Dung lượng</th><th>Ngày upload</th><th>Người upload</th><th class="text-end">Thao tác</th></tr></thead><tbody>'
+        + files.map(file => '<tr><td>' + esc(file.original_name || file.file_name || 'Tệp đính kèm') + '</td><td>' + esc(formatSize(file.file_size)) + '</td><td>' + esc(dateText(file.created_at)) + '</td><td>' + esc(file.created_by_name || file.created_by_email || file.created_by || '') + '</td><td class="text-end"><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-primary" type="button" data-edit-file="' + Number(file.id || 0) + '" data-file-name="' + esc(file.file_name || file.original_name || '') + '" data-file-description="' + esc(file.description || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></td></tr>').join('')
+        + '</tbody></table></div>' : '<div class="text-muted small">Chưa có file.</div>')
       + '</section>';
   }
 
@@ -181,7 +181,7 @@
     if (!requirePermission('file', 'upload')) return;
     const form = event.currentTarget;
     const file = form.elements.file.files[0];
-    if (!file) return show('Vui lÃ²ng chá»n file', 'warning');
+    if (!file) return show('Vui lòng chọn file', 'warning');
     const data = new FormData();
     data.append('module', 'citizen');
     data.append('entityId', id);
@@ -190,7 +190,7 @@
     data.append('description', form.elements.description.value || '');
     Array.from(form.elements.file.files || []).forEach(item => data.append('file[]', item));
     await api('/api/files', { method: 'POST', body: data });
-    show('ÄÃ£ táº£i lÃªn tÃ i liá»‡u');
+    show('Đã tải lên tài liệu');
     await loadCitizenFileManager(id, root, true);
     const timelinePane = $('[data-profile-pane="timeline"]', root);
     if (timelinePane) timelinePane.dataset.loaded = '0';
@@ -222,9 +222,9 @@
 
   async function deleteCitizenFile(fileId, id, root) {
     if (!requirePermission('file', 'delete')) return;
-    if (!confirm('XÃ³a file Ä‘Ã­nh kÃ¨m nÃ y?')) return;
+    if (!confirm('Xóa file đính kèm này?')) return;
     await api('/api/files/' + encodeURIComponent(fileId), { method: 'DELETE' });
-    show('ÄÃ£ xÃ³a file Ä‘Ã­nh kÃ¨m');
+    show('Đã xóa file đính kèm');
     await loadCitizenFileManager(id, root, true);
     const timelinePane = $('[data-profile-pane="timeline"]', root);
     if (timelinePane) timelinePane.dataset.loaded = '0';
@@ -233,7 +233,7 @@
   async function loadCitizenTimeline(id, root, force = false) {
     const pane = $('[data-profile-pane="timeline"]', root);
     if (!pane || (pane.dataset.loaded === '1' && !force)) return;
-    pane.innerHTML = '<div class="text-muted small py-3">Äang táº£i timeline...</div>';
+    pane.innerHTML = '<div class="text-muted small py-3">Đang tải timeline...</div>';
     try {
       const items = await api('/api/profiles/timeline/citizen/' + encodeURIComponent(id));
       pane.innerHTML = renderTimeline(Array.isArray(items) ? items : []);
@@ -260,9 +260,9 @@
 
   function renderHeader(profile) {
     const row = profile.profile || {};
-    const title = profile.type === 'household' ? (row.household_code || 'Há»™ gia Ä‘Ã¬nh') : (row.full_name || 'NhÃ¢n kháº©u');
+    const title = profile.type === 'household' ? (row.household_code || 'Hộ gia đình') : (row.full_name || 'Nhân khẩu');
     const subtitle = profile.type === 'household' ? (row.head_citizen_name || row.address || '') : [row.citizen_code, row.identity_number].filter(Boolean).join(' - ');
-    return '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3"><div><div class="text-muted small">Há»“ sÆ¡ sá»‘</div><h4 class="mb-1">' + esc(title) + '</h4><div class="text-muted">' + esc(subtitle) + '</div></div><div class="btn-group btn-group-sm" role="group"><button class="btn btn-outline-primary" type="button" data-profile-refresh><i class="fa-solid fa-rotate-right"></i> Táº£i láº¡i</button><button class="btn btn-outline-secondary" type="button" data-profile-print><i class="fa-solid fa-print"></i> In</button></div></div>';
+    return '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3"><div><div class="text-muted small">Hồ sơ số</div><h4 class="mb-1">' + esc(title) + '</h4><div class="text-muted">' + esc(subtitle) + '</div></div><div class="btn-group btn-group-sm" role="group"><button class="btn btn-outline-primary" type="button" data-profile-refresh><i class="fa-solid fa-rotate-right"></i> Tải lại</button><button class="btn btn-outline-secondary" type="button" data-profile-print><i class="fa-solid fa-print"></i> In</button></div></div>';
   }
 
   function renderQuickLinks(profile) {
@@ -271,12 +271,12 @@
     const buttons = [];
     if (type === 'household') {
       buttons.push(['gis', 'fa-map-location-dot', 'GIS']);
-      buttons.push(['members', 'fa-users', 'NhÃ¢n kháº©u']);
+      buttons.push(['members', 'fa-users', 'Nhân khẩu']);
     } else {
-      if (householdId > 0) buttons.push(['household:' + householdId, 'fa-house', 'Há»“ sÆ¡ há»™']);
-      buttons.push(['movements', 'fa-right-left', 'Biáº¿n Ä‘á»™ng']);
+      if (householdId > 0) buttons.push(['household:' + householdId, 'fa-house', 'Hồ sơ hộ']);
+      buttons.push(['movements', 'fa-right-left', 'Biến động']);
     }
-    buttons.push(['files', 'fa-paperclip', 'File Ä‘Ã­nh kÃ¨m']);
+    buttons.push(['files', 'fa-paperclip', 'File đính kèm']);
     return '<div class="d-flex flex-wrap gap-2 mb-3">' + buttons.map(btn => '<button class="btn btn-sm btn-outline-secondary" type="button" data-profile-link="' + esc(btn[0]) + '"><i class="fa-solid ' + btn[1] + '"></i> ' + esc(btn[2]) + '</button>').join('') + '</div>';
   }
 
@@ -291,42 +291,42 @@
 
   function renderMembers(members) {
     if (!members.length) return '';
-    return '<section class="mb-3" id="digitalProfileMembers"><h6 class="border-bottom pb-2 mb-2">Danh sÃ¡ch nhÃ¢n kháº©u</h6><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>MÃ£ NK</th><th>Há» tÃªn</th><th>NgÃ y sinh</th><th>Quan há»‡</th><th></th></tr></thead><tbody>'
+    return '<section class="mb-3" id="digitalProfileMembers"><h6 class="border-bottom pb-2 mb-2">Danh sách nhân khẩu</h6><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Mã NK</th><th>Họ tên</th><th>Ngày sinh</th><th>Quan hệ</th><th></th></tr></thead><tbody>'
       + members.map(row => '<tr><td>' + esc(row.citizen_code || '') + '</td><td>' + esc(row.full_name || '') + '</td><td>' + esc(row.date_of_birth || '') + '</td><td>' + esc(row.relationship || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-open-citizen="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
       + '</tbody></table></div></section>';
   }
 
   function renderFamily(family) {
     if (!family.length) return '';
-    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">NgÆ°á»i cÃ¹ng há»™</h6><div class="table-responsive"><table class="table table-sm align-middle"><tbody>'
+    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Người cùng hộ</h6><div class="table-responsive"><table class="table table-sm align-middle"><tbody>'
       + family.map(row => '<tr><td>' + esc(row.full_name || '') + '</td><td>' + esc(row.relationship || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-open-citizen="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
       + '</tbody></table></div></section>';
   }
 
   function renderFiles(type, files) {
     const options = (sectionOptions[type] || []).map(([section, fileType, label]) => '<option value="' + section + '" data-file-type="' + fileType + '">' + esc(label) + '</option>').join('');
-    return '<section class="mb-3" id="digitalProfileFiles"><h6 class="border-bottom pb-2 mb-2">TÃ i liá»‡u Ä‘Ã­nh kÃ¨m</h6>'
-      + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">Loáº¡i tÃ i liá»‡u</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">MÃ´ táº£</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" multiple required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> Táº£i lÃªn</button></div></form>'
-      + (files.length ? '<div class="list-group list-group-flush border rounded">' + files.map(file => '<div class="list-group-item d-flex justify-content-between gap-2 align-items-start"><div><div class="fw-semibold">' + esc(file.original_name || 'Tá»‡p Ä‘Ã­nh kÃ¨m') + '</div><div class="small text-muted">' + esc(file.profile_section || file.file_type || '') + (file.description ? ' - ' + esc(file.description) : '') + '</div></div><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-primary" type="button" data-edit-file="' + Number(file.id || 0) + '" data-file-name="' + esc(file.file_name || file.original_name || '') + '" data-file-description="' + esc(file.description || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">ChÆ°a cÃ³ tÃ i liá»‡u Ä‘Ã­nh kÃ¨m.</div>')
+    return '<section class="mb-3" id="digitalProfileFiles"><h6 class="border-bottom pb-2 mb-2">Tài liệu đính kèm</h6>'
+      + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">Loại tài liệu</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">Mô tả</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" multiple required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> Tải lên</button></div></form>'
+      + (files.length ? '<div class="list-group list-group-flush border rounded">' + files.map(file => '<div class="list-group-item d-flex justify-content-between gap-2 align-items-start"><div><div class="fw-semibold">' + esc(file.original_name || 'Tệp đính kèm') + '</div><div class="small text-muted">' + esc(file.profile_section || file.file_type || '') + (file.description ? ' - ' + esc(file.description) : '') + '</div></div><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-preview-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-download-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-primary" type="button" data-edit-file="' + Number(file.id || 0) + '" data-file-name="' + esc(file.file_name || file.original_name || '') + '" data-file-description="' + esc(file.description || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-delete-file="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">Chưa có tài liệu đính kèm.</div>')
       + '</section>';
   }
 
   function renderNotes(notes) {
-    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Ghi chÃº nghiá»‡p vá»¥</h6>'
-      + '<form class="row g-2 mb-2" data-profile-note><div class="col-md-3"><input name="title" class="form-control form-control-sm" placeholder="TiÃªu Ä‘á»"></div><div class="col-md-7"><input name="content" class="form-control form-control-sm" placeholder="Ná»™i dung ghi chÃº" required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">ThÃªm</button></div></form>'
-      + (notes.length ? '<div class="list-group list-group-flush border rounded">' + notes.map(note => '<div class="list-group-item d-flex justify-content-between gap-2"><div><div class="fw-semibold">' + esc(note.title || 'Ghi chÃº') + '</div><div>' + esc(note.content || '') + '</div><div class="small text-muted">' + esc(note.created_by_name || note.created_by_email || '') + ' - ' + dateText(note.created_at) + '</div></div><div class="btn-group btn-group-sm align-self-start"><button class="btn btn-outline-primary" type="button" data-edit-note="' + Number(note.id || 0) + '" data-note-title="' + esc(note.title || '') + '" data-note-content="' + esc(note.content || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-delete-note="' + Number(note.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">ChÆ°a cÃ³ ghi chÃº nghiá»‡p vá»¥.</div>')
+    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Ghi chú nghiệp vụ</h6>'
+      + '<form class="row g-2 mb-2" data-profile-note><div class="col-md-3"><input name="title" class="form-control form-control-sm" placeholder="Tiêu đề"></div><div class="col-md-7"><input name="content" class="form-control form-control-sm" placeholder="Nội dung ghi chú" required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">Thêm</button></div></form>'
+      + (notes.length ? '<div class="list-group list-group-flush border rounded">' + notes.map(note => '<div class="list-group-item d-flex justify-content-between gap-2"><div><div class="fw-semibold">' + esc(note.title || 'Ghi chú') + '</div><div>' + esc(note.content || '') + '</div><div class="small text-muted">' + esc(note.created_by_name || note.created_by_email || '') + ' - ' + dateText(note.created_at) + '</div></div><div class="btn-group btn-group-sm align-self-start"><button class="btn btn-outline-primary" type="button" data-edit-note="' + Number(note.id || 0) + '" data-note-title="' + esc(note.title || '') + '" data-note-content="' + esc(note.content || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-delete-note="' + Number(note.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">Chưa có ghi chú nghiệp vụ.</div>')
       + '</section>';
   }
 
   function renderTimeline(items) {
-    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Timeline lá»‹ch sá»­</h6>'
-      + (items.length ? '<div class="list-group list-group-flush border rounded">' + items.map(item => '<div class="list-group-item"><div class="d-flex justify-content-between gap-2"><strong>' + esc(item.title || item.type || '') + '</strong><span class="small text-muted">' + dateText(item.time) + '</span></div><div class="small text-muted">' + esc(timelineActor(item)) + '</div>' + (item.description ? '<div>' + esc(item.description) + '</div>' : '') + '</div>').join('') + '</div>' : '<div class="text-muted small">ChÆ°a cÃ³ lá»‹ch sá»­.</div>')
+    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Timeline lịch sử</h6>'
+      + (items.length ? '<div class="list-group list-group-flush border rounded">' + items.map(item => '<div class="list-group-item"><div class="d-flex justify-content-between gap-2"><strong>' + esc(item.title || item.type || '') + '</strong><span class="small text-muted">' + dateText(item.time) + '</span></div><div class="small text-muted">' + esc(timelineActor(item)) + '</div>' + (item.description ? '<div>' + esc(item.description) + '</div>' : '') + '</div>').join('') + '</div>' : '<div class="text-muted small">Chưa có lịch sử.</div>')
       + '</section>';
   }
 
   function renderAuditLogs(logs) {
     if (!logs.length) return '';
-    return '<section class="mb-1"><h6 class="border-bottom pb-2 mb-2">Nháº­t kÃ½ thao tÃ¡c</h6><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Thá»i gian</th><th>NgÆ°á»i thá»±c hiá»‡n</th><th>Thao tÃ¡c</th><th>Ná»™i dung</th></tr></thead><tbody>'
+    return '<section class="mb-1"><h6 class="border-bottom pb-2 mb-2">Nhật ký thao tác</h6><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Thao tác</th><th>Nội dung</th></tr></thead><tbody>'
       + logs.map(log => '<tr><td>' + dateText(log.created_at) + '</td><td>' + esc(log.actor_email || '') + '</td><td>' + esc(log.action || '') + '</td><td>' + esc(log.message || '') + '</td></tr>').join('')
       + '</tbody></table></div></section>';
   }
@@ -365,7 +365,7 @@
     data.append('description', form.elements.description.value || '');
     Array.from(form.elements.file.files || []).forEach(item => data.append('file[]', item));
     await api('/api/files', { method: 'POST', body: data });
-    show('ÄÃ£ táº£i lÃªn tÃ i liá»‡u');
+    show('Đã tải lên tài liệu');
     type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
@@ -374,35 +374,35 @@
     if (!requirePermission('profile', 'create')) return;
     const form = event.currentTarget;
     await api('/api/profiles/' + type + '/' + id + '/notes', { method: 'POST', body: { title: form.elements.title.value, content: form.elements.content.value, section: 'general' } });
-    show('ÄÃ£ thÃªm ghi chÃº');
+    show('Đã thêm ghi chú');
     type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function editNote(button, type, id) {
     if (!requirePermission('profile', 'update')) return;
-    const title = prompt('TiÃªu Ä‘á» ghi chÃº', button.dataset.noteTitle || 'Ghi chÃº nghiá»‡p vá»¥');
+    const title = prompt('Tiêu đề ghi chú', button.dataset.noteTitle || 'Ghi chú nghiệp vụ');
     if (title === null) return;
-    const content = prompt('Ná»™i dung ghi chÃº', button.dataset.noteContent || '');
+    const content = prompt('Nội dung ghi chú', button.dataset.noteContent || '');
     if (content === null) return;
-    if (!content.trim()) return show('Ná»™i dung ghi chÃº lÃ  báº¯t buá»™c', 'warning');
+    if (!content.trim()) return show('Nội dung ghi chú là bắt buộc', 'warning');
     await api('/api/profiles/notes/' + encodeURIComponent(button.dataset.editNote), { method: 'PUT', body: { title, content, section: 'general' } });
-    show('ÄÃ£ sá»­a ghi chÃº');
+    show('Đã sửa ghi chú');
     type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function deleteNote(noteId, type, id) {
     if (!requirePermission('profile', 'delete')) return;
-    if (!confirm('XÃ³a ghi chÃº nÃ y?')) return;
+    if (!confirm('Xóa ghi chú này?')) return;
     await api('/api/profiles/notes/' + encodeURIComponent(noteId), { method: 'DELETE' });
-    show('ÄÃ£ xÃ³a ghi chÃº');
+    show('Đã xóa ghi chú');
     type === 'household' ? window.showHousehold(id) : window.showPerson(id);
   }
 
   async function deleteFile(id, type, entityId) {
     if (!requirePermission('file', 'delete')) return;
-    if (!confirm('XÃ³a file Ä‘Ã­nh kÃ¨m nÃ y?')) return;
+    if (!confirm('Xóa file đính kèm này?')) return;
     await api('/api/files/' + encodeURIComponent(id), { method: 'DELETE' });
-    show('ÄÃ£ xÃ³a file Ä‘Ã­nh kÃ¨m');
+    show('Đã xóa file đính kèm');
     type === 'household' ? window.showHousehold(entityId) : window.showPerson(entityId);
   }
 
@@ -421,7 +421,7 @@
   async function downloadFile(id) {
     if (!requirePermission('file', 'download')) return;
     const response = await fetch('/api/files/' + encodeURIComponent(id) + '/download', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
-    if (!response.ok) return show('KhÃ´ng táº£i Ä‘Æ°á»£c file', 'danger');
+    if (!response.ok) return show('Không tải được file', 'danger');
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -455,7 +455,7 @@
   }
 
   function sectionTitle(key) {
-    return ({ general: 'ThÃ´ng tin chung', statistics: 'Thá»‘ng kÃª', basic: 'ThÃ´ng tin cÆ¡ báº£n', residence: 'CÆ° trÃº', personal: 'ThÃ´ng tin cÃ¡ nhÃ¢n', administrative: 'HÃ nh chÃ­nh' })[key] || key;
+    return ({ general: 'Thông tin chung', statistics: 'Thống kê', basic: 'Thông tin cơ bản', residence: 'Cư trú', personal: 'Thông tin cá nhân', administrative: 'Hành chính' })[key] || key;
   }
   window.showHousehold = async function showHouseholdSprint12(id) {
     try {

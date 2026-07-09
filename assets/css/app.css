@@ -1153,7 +1153,7 @@ body.sidebar-open {
     overflow-x: visible;
   }
   .table-responsive::before {
-    content: 'Cuá»™n hoáº·c xem dáº¡ng tháº» bÃªn dÆ°á»›i náº¿u ná»™i dung dÃ i';
+    content: 'Cuộn hoặc xem dạng thẻ bên dưới nếu nội dung dài';
     display: none;
   }
   .table-responsive table,
@@ -1218,7 +1218,7 @@ body.sidebar-open {
   }
   .table-responsive tbody td.text-end::before {
     flex: 0 0 100%;
-    content: 'Thao tÃ¡c';
+    content: 'Thao tác';
   }
   .table-responsive tbody td .btn,
   .table-responsive tbody td button {
@@ -1486,7 +1486,7 @@ body.sidebar-open {
   .module-list-card > .table-responsive tbody td.text-end::before,
   .content-card.table-responsive tbody td.text-end::before {
     grid-column: 1 / -1;
-    content: 'Thao tÃ¡c';
+    content: 'Thao tác';
   }
 }
 
@@ -1658,7 +1658,7 @@ body.sidebar-open {
   .table-responsive tbody td:last-child:has(.btn)::before,
   .table-responsive tbody td:last-child:has(button)::before {
     grid-column: 1 / -1;
-    content: 'Thao tÃ¡c';
+    content: 'Thao tác';
   }
   .table-responsive tbody td .btn,
   .table-responsive tbody td button {
@@ -3430,8 +3430,8 @@ body.sidebar-open {
   }
 
   .mobile-filter-close {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     border: 0;
     border-radius: 13px;
     background: #f1f5f9;
@@ -5349,5 +5349,123 @@ button, input, select, textarea { font: inherit; min-width: 0; }
 
   .mobile-bottom-nav i {
     font-size: 18px;
+  }
+}
+/* Production UI audit modal constraints */
+.modal-dialog {
+  max-height: calc(100dvh - 40px);
+}
+
+.modal-content,
+.modal-dialog-scrollable .modal-content {
+  max-height: calc(100dvh - 40px);
+  overflow: hidden;
+}
+
+.modal-dialog-scrollable .modal-body,
+.modal-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.modal-header,
+.modal-footer {
+  flex-shrink: 0;
+}
+
+@media (max-height: 500px) {
+  .modal-dialog {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    max-height: calc(100dvh - 16px);
+  }
+
+  .modal-content,
+  .modal-dialog-scrollable .modal-content {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 10px 14px;
+  }
+
+  .modal-body {
+    padding: 14px;
+  }
+}
+
+/* Production UI audit touch targets */
+@media (max-width: 1024px) {
+  button,
+  .btn,
+  .form-control,
+  .form-select {
+    min-height: 44px !important;
+  }
+
+  .btn,
+  button,
+  .mobile-filter-toggle,
+  .mobile-filter-close,
+  .filter-close,
+  .person-reset-icon,
+  #businessHouseholdFilterReset,
+  #householdsScreen .mobile-filter-toggle,
+  #agriSearchBtn,
+  #agriResetBtn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .mobile-filter-close,
+  .filter-close,
+  .person-reset-icon,
+  #businessHouseholdFilterReset,
+  #householdsScreen .mobile-filter-toggle,
+  #agriSearchBtn,
+  #agriResetBtn {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  #householdsScreen #householdSearch,
+  #householdsScreen .module-search-input-wrap,
+  #householdsScreen .household-search-field .module-search-input-wrap,
+  #householdsScreen .household-search-field .form-control,
+  #businessOcopFilter,
+  #businessOcopFilter.form-select,
+  #businessHouseholdsScreen #businessOcopFilter {
+    height: 44px !important;
+    min-height: 44px !important;
+    line-height: 1.4 !important;
+  }
+
+  #householdsScreen .mobile-filter-toggle,
+  #agriSearchBtn,
+  #agriResetBtn,
+  .leaflet-control-attribution a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .leaflet-control-zoom a,
+  .leaflet-draw-toolbar a,
+  .leaflet-control-attribution a {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+  }
+
+  .leaflet-control-attribution a {
+    padding: 0 8px !important;
+  }
+
+  .report-checks label {
+    min-height: 44px !important;
+    padding: 8px 10px !important;
+    border-radius: 10px;
   }
 }

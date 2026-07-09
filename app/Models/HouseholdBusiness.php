@@ -361,15 +361,15 @@ SQL);
         [$where, $params] = $this->where($filters);
         return [
             'types' => $this->fetchAll("SELECT hb.business_type AS code, hb.business_type AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY hb.business_type ORDER BY hb.business_type", $params),
-            'economicTypes' => $this->fetchAll("SELECT COALESCE(NULLIF(hb.economic_type,\"\"),\"Chua c?p nh?t\") AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
-            'sectors' => $this->fetchAll("SELECT COALESCE(NULLIF(hb.production_sector,\"\"), NULLIF(hb.business_sector,\"\"), \"Chua c?p nh?t\") AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
-            'scales' => $this->fetchAll("SELECT COALESCE(NULLIF(hb.business_scale,\"\"),\"Chua c?p nh?t\") AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
+            'economicTypes' => $this->fetchAll("SELECT COALESCE(NULLIF(hb.economic_type,\"\"),CONVERT(UNHEX('4368C6B0612063E1BAAD70206E68E1BAAD74') USING utf8mb4)) AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
+            'sectors' => $this->fetchAll("SELECT COALESCE(NULLIF(hb.production_sector,\"\"), NULLIF(hb.business_sector,\"\"), CONVERT(UNHEX('4368C6B0612063E1BAAD70206E68E1BAAD74') USING utf8mb4)) AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
+            'scales' => $this->fetchAll("SELECT COALESCE(NULLIF(hb.business_scale,\"\"),CONVERT(UNHEX('4368C6B0612063E1BAAD70206E68E1BAAD74') USING utf8mb4)) AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
             'statuses' => $this->fetchAll("SELECT hb.status AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY hb.status ORDER BY hb.status", $params),
-            'ocop' => $this->fetchAll("SELECT CASE WHEN hb.is_ocop=1 THEN \"Tham gia OCOP\" ELSE \"Kh�ng OCOP\" END AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY hb.is_ocop ORDER BY hb.is_ocop DESC", $params),
+            'ocop' => $this->fetchAll("SELECT CASE WHEN hb.is_ocop=1 THEN \"Tham gia OCOP\" ELSE CONVERT(UNHEX('4B68C3B46E67204F434F50') USING utf8mb4) END AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY hb.is_ocop ORDER BY hb.is_ocop DESC", $params),
             'ocopStars' => $this->fetchAll("SELECT CONCAT(hb.ocop_star,\" sao\") AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where AND hb.is_ocop=1 AND hb.ocop_star IS NOT NULL GROUP BY hb.ocop_star ORDER BY hb.ocop_star", $params),
-            'foodSafety' => $this->fetchAll("SELECT CASE WHEN hb.food_safety_certified=1 THEN \"C� ATTP\" ELSE \"Chua c� ATTP\" END AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY hb.food_safety_certified ORDER BY hb.food_safety_certified DESC", $params),
-            'socialInsurance' => $this->fetchAll("SELECT CASE WHEN hb.social_insurance=1 THEN \"C� BHXH\" ELSE \"Chua c� BHXH\" END AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY hb.social_insurance ORDER BY hb.social_insurance DESC", $params),
-            'workers' => $this->fetchAll("SELECT CASE WHEN hb.worker_count=0 THEN \"0\" WHEN hb.worker_count<=2 THEN \"1-2\" WHEN hb.worker_count<=5 THEN \"3-5\" WHEN hb.worker_count<=10 THEN \"6-10\" ELSE \"Tr�n 10\" END AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY label ORDER BY MIN(hb.worker_count)", $params),
+            'foodSafety' => $this->fetchAll("SELECT CASE WHEN hb.food_safety_certified=1 THEN CONVERT(UNHEX('43C3B32041545450') USING utf8mb4) ELSE CONVERT(UNHEX('4368C6B0612063C3B32041545450') USING utf8mb4) END AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY hb.food_safety_certified ORDER BY hb.food_safety_certified DESC", $params),
+            'socialInsurance' => $this->fetchAll("SELECT CASE WHEN hb.social_insurance=1 THEN CONVERT(UNHEX('43C3B32042485848') USING utf8mb4) ELSE CONVERT(UNHEX('4368C6B0612063C3B32042485848') USING utf8mb4) END AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY hb.social_insurance ORDER BY hb.social_insurance DESC", $params),
+            'workers' => $this->fetchAll("SELECT CASE WHEN hb.worker_count=0 THEN \"0\" WHEN hb.worker_count<=2 THEN \"1-2\" WHEN hb.worker_count<=5 THEN \"3-5\" WHEN hb.worker_count<=10 THEN \"6-10\" ELSE CONVERT(UNHEX('5472C3AA6E203130') USING utf8mb4) END AS label, COUNT(*) AS value FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where GROUP BY label ORDER BY MIN(hb.worker_count)", $params),
         ];
     }
     public function report(string $mode, array $filters = []): array
@@ -653,7 +653,7 @@ SQL);
             'SELECT h.household_code, h.head_citizen_name, COALESCE(NULLIF(h.address,""),"") AS address,
                     COUNT(hb.id) AS activity_count,
                     COALESCE(SUM(hb.worker_count),0) AS worker_count,
-                    GROUP_CONCAT(CONCAT(COALESCE(NULLIF(hb.business_name,""),"Ch?a ??t t?n"), " - ", COALESCE(NULLIF(hb.economic_type,""), NULLIF(hb.production_sector,""), NULLIF(hb.business_sector,""), "Ch?a c?p nh?t")) ORDER BY hb.id SEPARATOR "; ") AS activities
+                    GROUP_CONCAT(CONCAT(COALESCE(NULLIF(hb.business_name,""),CONVERT(UNHEX("4368C6B06120C491E1BAB7742074C3AA6E") USING utf8mb4)), " - ", COALESCE(NULLIF(hb.economic_type,""), NULLIF(hb.production_sector,""), NULLIF(hb.business_sector,""), CONVERT(UNHEX("4368C6B0612063E1BAAD70206E68E1BAAD74") USING utf8mb4))) ORDER BY hb.id SEPARATOR "; ") AS activities
              FROM household_business hb
              INNER JOIN households h ON h.id = hb.household_id
              ' . $where . '
@@ -663,7 +663,7 @@ SQL);
             $params
         );
         $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], (int) $r['activity_count'], $r['activities'], (int) $r['worker_count']], $rows);
-        return $this->table('B?o c?o h? c? ho?t ??ng kinh t?', ['M? h?','Ch? h?','??a ch?','S? ho?t ??ng','Ho?t ??ng kinh t?','T?ng lao ??ng'], $body, $filters);
+        return $this->table('Báo cáo hộ có hoạt động kinh tế', ['Mã hộ','Chủ hộ','Địa chỉ','Số hoạt động','Hoạt động kinh tế','Tổng lao động'], $body, $filters);
     }
 
     private function debugSql(string $context, string $sql, array $params): void
