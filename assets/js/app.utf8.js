@@ -556,7 +556,37 @@ function showApp() {
 }
 
 function normalizeAppHeader(screen) {
-  const screenLabels = { dashboard: 'Dashboard', dashboardHouseholds: 'Dashboard Hộ dân', dashboardPopulation: 'Dashboard Nhân khẩu', dashboardBusiness: 'Dashboard Kinh doanh', dashboardVehicles: 'Dashboard Xe cộ', dashboardLivestock: 'Dashboard Chăn nuôi', dashboardGis: 'Dashboard GIS', dashboardReports: 'Dashboard Báo cáo', dashboardHouseholds: 'Dashboard H? d?n', dashboardPopulation: 'Dashboard Nh?n kh?u', dashboardBusiness: 'Dashboard Kinh doanh', dashboardVehicles: 'Dashboard Xe c?', dashboardLivestock: 'Dashboard Ch?n nu?i', dashboardGis: 'Dashboard GIS', dashboardReports: 'Dashboard B?o c?o', operationCenter: 'Trung tâm điều hành', gis: 'Bản đồ địa bàn', households: 'Quản lý hộ gia đình', businessHouseholds: 'Hộ sản xuất & kinh doanh', persons: 'Quản lý nhân khẩu', temporaryResidence: 'Tạm trú', temporaryAbsence: 'Tạm vắng', movements: 'Biến động nhân khẩu', reports: 'Báo cáo thống kê', import: 'Import dữ liệu', export: 'Export Excel', exportExcel: 'Export Excel', printForms: 'In biểu mẫu', users: 'Quản lý tài khoản', logs: 'Nhật ký hệ thống', appearance: 'Cấu hình giao diện', settings: 'Cấu hình hệ thống', backups: 'Sao lưu dữ liệu', restore: 'Khôi phục dữ liệu', permissions: 'Phân quyền' };
+  const screenLabels = {
+    dashboard: 'Dashboard',
+    dashboardHouseholds: 'Dashboard H\u1ed9 d\u00e2n',
+    dashboardPopulation: 'Dashboard Nh\u00e2n kh\u1ea9u',
+    dashboardBusiness: 'Dashboard Kinh doanh',
+    dashboardVehicles: 'Dashboard Xe c\u1ed9',
+    dashboardLivestock: 'Dashboard Ch\u0103n nu\u00f4i',
+    dashboardGis: 'Dashboard GIS',
+    dashboardReports: 'Dashboard B\u00e1o c\u00e1o',
+    operationCenter: 'Trung t\u00e2m \u0111i\u1ec1u h\u00e0nh',
+    gis: 'B\u1ea3n \u0111\u1ed3 \u0111\u1ecba b\u00e0n',
+    households: 'Qu\u1ea3n l\u00fd h\u1ed9 gia \u0111\u00ecnh',
+    businessHouseholds: 'H\u1ed9 s\u1ea3n xu\u1ea5t & kinh doanh',
+    livestock: 'Qu\u1ea3n l\u00fd v\u1eadt nu\u00f4i',
+    persons: 'Qu\u1ea3n l\u00fd nh\u00e2n kh\u1ea9u',
+    temporaryResidence: 'T\u1ea1m tr\u00fa',
+    temporaryAbsence: 'T\u1ea1m v\u1eafng',
+    movements: 'Bi\u1ebfn \u0111\u1ed9ng nh\u00e2n kh\u1ea9u',
+    reports: 'B\u00e1o c\u00e1o th\u1ed1ng k\u00ea',
+    import: 'Import d\u1eef li\u1ec7u',
+    export: 'Export Excel',
+    exportExcel: 'Export Excel',
+    printForms: 'In bi\u1ec3u m\u1eabu',
+    users: 'Qu\u1ea3n l\u00fd t\u00e0i kho\u1ea3n',
+    logs: 'Nh\u1eadt k\u00fd h\u1ec7 th\u1ed1ng',
+    appearance: 'C\u1ea5u h\u00ecnh giao di\u1ec7n',
+    settings: 'C\u1ea5u h\u00ecnh h\u1ec7 th\u1ed1ng',
+    backups: 'Sao l\u01b0u d\u1eef li\u1ec7u',
+    restore: 'Kh\u00f4i ph\u1ee5c d\u1eef li\u1ec7u',
+    permissions: 'Ph\u00e2n quy\u1ec1n'
+  };
   const label = screenLabels[screen] || 'Dashboard';
   const title = $('#screenTitle');
   const breadcrumb = $('#breadcrumbTrail');
@@ -1941,30 +1971,30 @@ function gisPolygonLatLngs(area) {
 }
 function gisStatsHtml(stats) {
   return '<div class="gis-popup-stats">'
-    + '<span><b>' + gisNumber(stats.households) + '</b> h?</span>'
-    + '<span><b>' + gisNumber(stats.citizens) + '</b> nh?n kh?u</span>'
-    + '<span><b>' + gisNumber(stats.temporary) + '</b> t?m tr?</span>'
-    + '<span><b>' + gisNumber(stats.away) + '</b> t?m v?ng</span>'
+    + '<span><b>' + gisNumber(stats.households) + '</b> h\u1ed9</span>'
+    + '<span><b>' + gisNumber(stats.citizens) + '</b> nh\u00e2n kh\u1ea9u</span>'
+    + '<span><b>' + gisNumber(stats.temporary) + '</b> t\u1ea1m tr\u00fa</span>'
+    + '<span><b>' + gisNumber(stats.away) + '</b> t\u1ea1m v\u1eafng</span>'
     + '</div>';
 }
 function gisAreaPopup(area) {
   const stats = area.stats || {};
-  return '<div class="gis-popup"><h4>' + gisEscape(area.name) + '</h4><p>M? khu v?c: <b>' + gisEscape(area.area_code) + '</b></p>'
+  return '<div class="gis-popup"><h4>' + gisEscape(area.name) + '</h4><p>M\u00e3 khu v\u1ef1c: <b>' + gisEscape(area.area_code) + '</b></p>'
     + gisStatsHtml(stats)
-    + '<div class="gis-popup-actions"><button class="btn btn-sm btn-success" onclick="filterHouseholdsByGisArea(\'' + gisEscape(area.area_code) + '\')">L?c h? khu v?c n?y</button>'
-    + (canAccess('gis', 'delete') ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteGisArea(' + Number(area.id) + ')">X?a ranh gi?i</button>' : '') + '</div></div>';
+    + '<div class="gis-popup-actions"><button class="btn btn-sm btn-success" onclick="filterHouseholdsByGisArea(\'' + gisEscape(area.area_code) + '\')">L\u1ecdc h\u1ed9 khu v\u1ef1c n\u00e0y</button>'
+    + (canAccess('gis', 'delete') ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteGisArea(' + Number(area.id) + ')">X\u00f3a ranh gi\u1edbi</button>' : '') + '</div></div>';
 }
 function gisTooltip(area) {
   const stats = area.stats || {};
-  return '<strong>' + gisEscape(area.name) + '</strong><br>' + gisNumber(stats.households) + ' h? - ' + gisNumber(stats.citizens) + ' nh?n kh?u';
+  return '<strong>' + gisEscape(area.name) + '</strong><br>' + gisNumber(stats.households) + ' h\u1ed9 - ' + gisNumber(stats.citizens) + ' nh\u00e2n kh\u1ea9u';
 }
 function gisTileLayers() {
   return {
-    osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; OpenStreetMap', updateWhenIdle: true, keepBuffer: 4 }),
-    hot: L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; OpenStreetMap, HOT', updateWhenIdle: true, keepBuffer: 4 }),
-    cartoLight: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, attribution: '&copy; OpenStreetMap &copy; CARTO', updateWhenIdle: true, keepBuffer: 4 }),
-    cartoDark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, attribution: '&copy; OpenStreetMap &copy; CARTO', updateWhenIdle: true, keepBuffer: 4 }),
-    esriWorldImagery: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, attribution: 'Tiles &copy; Esri', updateWhenIdle: true, keepBuffer: 4 })
+    osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, maxNativeZoom: 19, attribution: '&copy; OpenStreetMap', updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 6, crossOrigin: true }),
+    hot: L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { maxZoom: 20, maxNativeZoom: 19, attribution: '&copy; OpenStreetMap, HOT', updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 6, crossOrigin: true }),
+    cartoLight: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, maxNativeZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO', updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 6, crossOrigin: true }),
+    cartoDark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, maxNativeZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO', updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 6, crossOrigin: true }),
+    esriWorldImagery: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 18, attribution: 'Tiles &copy; Esri', updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 6, detectRetina: false, crossOrigin: true })
   };
 }
 function gisBoundsQuery(map) {
@@ -1981,8 +2011,8 @@ async function loadGisMap() {
     await ensureGisAssets();
     if (!window.L) {
       const status = $('#gisMapStatus');
-      if (status) status.textContent = 'Kh?ng t?i ???c th? vi?n b?n ??';
-      showToast('Kh?ng t?i ???c Leaflet/OpenStreetMap. Vui l?ng ki?m tra k?t n?i m?ng.', 'danger');
+      if (status) status.textContent = 'Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c th\u01b0 vi\u1ec7n b\u1ea3n \u0111\u1ed3';
+      showToast('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c Leaflet/OpenStreetMap. Vui l\u00f2ng ki\u1ec3m tra k\u1ebft n\u1ed1i m\u1ea1ng.', 'danger');
       return;
     }
     initGisMap();
@@ -1990,11 +2020,12 @@ async function loadGisMap() {
       const data = await api('/api/gis/areas', { cacheTtl: 60000 });
       App.gis.areas = data.areas || [];
       App.gis.areasLoaded = true;
-      renderGisAreas(data, false);
+      renderGisAreas(data, !App.gis.hasInitialFit);
+      App.gis.hasInitialFit = true;
     }
     await loadGisViewportMarkers();
   } catch (error) {
-    showToast('Kh?ng t?i ???c b?n ?? ??a b?n: ' + error.message, 'danger');
+    showToast('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c b\u1ea3n \u0111\u1ed3 \u0111\u1ecba b\u00e0n: ' + error.message, 'danger');
   }
 }
 function installGisManagers() {
@@ -2039,7 +2070,7 @@ function installGisManagers() {
 }
 function initGisMap() {
   if (App.gis.map) { setTimeout(() => App.gis.map.invalidateSize(), 80); return; }
-  const map = L.map('gisMap', { zoomControl: true, preferCanvas: true, updateWhenIdle: true }).setView([20.2506, 105.9748], 14);
+  const map = L.map('gisMap', { zoomControl: true, preferCanvas: true, updateWhenIdle: true, updateWhenZooming: false, zoomSnap: 0.25, wheelDebounceTime: 80 }).setView([20.2506, 105.9748], 14);
   App.gis.map = map;
   App.gis.tiles = gisTileLayers();
   App.gis.baseLayer = App.gis.tiles.osm.addTo(map);
@@ -2100,7 +2131,7 @@ function updateGisMarkers(items) {
       return;
     }
     if (cached) App.gis.markerGroup.removeLayer(cached.marker);
-    const marker = L.marker([Number(item.latitude), Number(item.longitude)], { title: item.household_code || item.head_citizen_name || 'H? gia ??nh' });
+    const marker = L.marker([Number(item.latitude), Number(item.longitude)], { title: item.household_code || item.head_citizen_name || 'H\u1ed9 gia \u0111\u00ecnh' });
     marker.bindPopup(gisMarkerLoadingPopup(item));
     marker.on('click', () => openGisHouseholdPopup(item.id, marker));
     App.gis.markerCache.set(id, { marker, data: item });
@@ -2115,16 +2146,16 @@ function updateGisMarkers(items) {
 }
 function updateGisMarkerSummary(summary, items) {
   const status = $('#gisMapStatus');
-  if (status) status.textContent = gisNumber(items.length) + ' marker trong v?ng nh?n - ' + gisNumber(summary.located || 0) + '/' + gisNumber(summary.households || 0) + ' h? ?? ??nh v?';
+  if (status) status.textContent = gisNumber(items.length) + ' marker trong v\u00f9ng nh\u00ecn - ' + gisNumber(summary.located || 0) + '/' + gisNumber(summary.households || 0) + ' h\u1ed9 \u0111\u00e3 \u0111\u1ecbnh v\u1ecb';
   const host = $('#gisSummaryCards');
   if (!host) return;
-  host.innerHTML = '<div><span>T?ng h?</span><b>' + gisNumber(summary.households || 0) + '</b></div>'
-    + '<div><span>?? ??nh v?</span><b>' + gisNumber(summary.located || 0) + '</b></div>'
-    + '<div><span>Ch?a ??nh v?</span><b>' + gisNumber(summary.unlocated || 0) + '</b></div>'
-    + '<div><span>Trong v?ng nh?n</span><b>' + gisNumber(items.length) + '</b></div>';
+  host.innerHTML = '<div><span>T\u1ed5ng h\u1ed9</span><b>' + gisNumber(summary.households || 0) + '</b></div>'
+    + '<div><span>\u0110\u00e3 \u0111\u1ecbnh v\u1ecb</span><b>' + gisNumber(summary.located || 0) + '</b></div>'
+    + '<div><span>Ch\u01b0a \u0111\u1ecbnh v\u1ecb</span><b>' + gisNumber(summary.unlocated || 0) + '</b></div>'
+    + '<div><span>Trong v\u00f9ng nh\u00ecn</span><b>' + gisNumber(items.length) + '</b></div>';
 }
 function gisMarkerLoadingPopup(item) {
-  return '<div class="gis-household-popup"><h4>' + gisEscape(item.household_code || 'H? gia ??nh') + '</h4><p>' + gisEscape(item.head_citizen_name || '') + '</p><div class="text-muted small">?ang t?i chi ti?t...</div></div>';
+  return '<div class="gis-household-popup"><h4>' + gisEscape(item.household_code || 'H\u1ed9 gia \u0111\u00ecnh') + '</h4><p>' + gisEscape(item.head_citizen_name || '') + '</p><div class="text-muted small">\u0110ang t\u1ea3i chi ti\u1ebft...</div></div>';
 }
 async function openGisHouseholdPopup(id, marker) {
   App.gis.selectedHouseholdId = String(id);
@@ -2135,20 +2166,20 @@ async function openGisHouseholdPopup(id, marker) {
     App.gis.detailCache.set(String(id), detail);
     marker.setPopupContent(gisHouseholdDetailPopup(detail));
   } catch (error) {
-    marker.setPopupContent('<div class="gis-household-popup"><strong>Kh?ng t?i ???c chi ti?t h?</strong><p class="text-danger small">' + gisEscape(error.message || '') + '</p></div>');
+    marker.setPopupContent('<div class="gis-household-popup"><strong>Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c chi ti\u1ebft h\u1ed9</strong><p class="text-danger small">' + gisEscape(error.message || '') + '</p></div>');
   }
 }
 function gisHouseholdDetailPopup(detail) {
   const h = detail.household || {};
-  return '<div class="gis-household-popup"><header><h4>' + gisEscape(h.household_code || 'H? gia ??nh') + '</h4><p>' + gisEscape(h.head_citizen_name || '') + '</p><small>' + gisEscape(h.address || '') + '</small></header>'
-    + gisPopupSection('Th?ng tin h?', [gisPopupLine('?i?n tho?i', h.phone), gisPopupLine('Nh?n kh?u', gisNumber(h.total_members || 0)), gisPopupLine('? nh?', gisNumber(h.at_home_count || 0)), gisPopupLine('?i v?ng', gisNumber(h.away_count || 0)), gisPopupLine('GPS', h.latitude && h.longitude ? '?? ??nh v?' : 'Ch?a ??nh v?'), gisPopupLine('Sai s?', h.location_accuracy ? h.location_accuracy + ' m' : '')].join(''))
-    + gisPopupListSection('Th?nh vi?n', detail.members || [], m => '<b>' + gisEscape(m.full_name) + '</b><span>' + gisEscape(m.relationship || '') + '</span>')
+  return '<div class="gis-household-popup"><header><h4>' + gisEscape(h.household_code || 'H\u1ed9 gia \u0111\u00ecnh') + '</h4><p>' + gisEscape(h.head_citizen_name || '') + '</p><small>' + gisEscape(h.address || '') + '</small></header>'
+    + gisPopupSection('Th\u00f4ng tin h\u1ed9', [gisPopupLine('\u0110i\u1ec7n tho\u1ea1i', h.phone), gisPopupLine('Nh\u00e2n kh\u1ea9u', gisNumber(h.total_members || 0)), gisPopupLine('\u1ede nh\u00e0', gisNumber(h.at_home_count || 0)), gisPopupLine('\u0110i v\u1eafng', gisNumber(h.away_count || 0)), gisPopupLine('GPS', h.latitude && h.longitude ? '\u0110\u00e3 \u0111\u1ecbnh v\u1ecb' : 'Ch\u01b0a \u0111\u1ecbnh v\u1ecb'), gisPopupLine('Sai s\u1ed1', h.location_accuracy ? h.location_accuracy + ' m' : '')].join(''))
+    + gisPopupListSection('Th\u00e0nh vi\u00ean', detail.members || [], m => '<b>' + gisEscape(m.full_name) + '</b><span>' + gisEscape(m.relationship || '') + '</span>')
     + gisPopupListSection('Kinh doanh', detail.business || [], b => '<b>' + gisEscape(b.business_name) + '</b><span>' + gisEscape([b.economic_type, b.sector].filter(Boolean).join(' - ')) + '</span>')
-    + gisPopupListSection('Ch?n nu?i', detail.livestock || [], l => '<b>' + gisEscape(l.animal_type) + '</b><span>' + gisNumber(l.quantity) + ' con' + (l.breed ? ' - ' + gisEscape(l.breed) : '') + '</span>')
-    + gisPopupListSection('Xe c?', detail.vehicles || [], v => '<b>' + gisEscape(v.vehicle_type || '') + '</b><span>' + gisEscape(v.plate_number || '') + '</span>')
-    + gisPopupListSection('??ng g?p', detail.contributions || [], c => '<b>' + gisEscape(c.name || '') + '</b><span>' + gisEscape(c.status || '') + '</span>')
-    + gisPopupListSection('Nh?t k?', detail.timeline || [], t => '<b>' + gisEscape(t.message || '') + '</b><span>' + gisEscape(t.created_at || '') + '</span>')
-    + '<div class="gis-popup-actions"><button class="btn btn-sm btn-outline-primary" onclick="switchScreen(\'households\')">M? h? s? h?</button></div></div>';
+    + gisPopupListSection('Ch\u0103n nu\u00f4i', detail.livestock || [], l => '<b>' + gisEscape(l.animal_type) + '</b><span>' + gisNumber(l.quantity) + ' con' + (l.breed ? ' - ' + gisEscape(l.breed) : '') + '</span>')
+    + gisPopupListSection('Xe c\u1ed9', detail.vehicles || [], v => '<b>' + gisEscape(v.vehicle_type || '') + '</b><span>' + gisEscape(v.plate_number || '') + '</span>')
+    + gisPopupListSection('\u0110\u00f3ng g\u00f3p', detail.contributions || [], c => '<b>' + gisEscape(c.name || '') + '</b><span>' + gisEscape(c.status || '') + '</span>')
+    + gisPopupListSection('Nh\u1eadt k\u00fd', detail.timeline || [], t => '<b>' + gisEscape(t.message || '') + '</b><span>' + gisEscape(t.created_at || '') + '</span>')
+    + '<div class="gis-popup-actions"><button class="btn btn-sm btn-outline-primary" onclick="switchScreen(\'households\')">M\u1edf h\u1ed3 s\u01a1 h\u1ed9</button></div></div>';
 }
 function gisPopupLine(label, value) {
   if (value === null || value === undefined || String(value).trim() === '') return '';
@@ -2159,7 +2190,7 @@ function gisPopupSection(title, body) {
 }
 function gisPopupListSection(title, items, render) {
   const rows = (items || []).slice(0, 8).map(item => '<div class="gis-popup-list-item">' + render(item) + '</div>').join('');
-  return '<section><h5>' + gisEscape(title) + '</h5>' + (rows || '<div class="text-muted small">Ch?a c? d? li?u</div>') + ((items || []).length > 8 ? '<div class="text-muted small">C?n ' + ((items || []).length - 8) + ' m?c kh?c</div>' : '') + '</section>';
+  return '<section><h5>' + gisEscape(title) + '</h5>' + (rows || '<div class="text-muted small">Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u</div>') + ((items || []).length > 8 ? '<div class="text-muted small">C\u00f2n ' + ((items || []).length - 8) + ' m\u1ee5c kh\u00e1c</div>' : '') + '</section>';
 }
 async function searchGisHouseholds() {
   const host = $('#gisSearchResults');
@@ -2169,7 +2200,7 @@ async function searchGisHouseholds() {
   if (q.length < 2) { host.classList.add('d-none'); host.innerHTML = ''; return; }
   const data = await api('/api/gis/households?light=1&q=' + encodeURIComponent(q), { cacheTtl: 10000 });
   const items = (data.items || []).slice(0, 12);
-  host.innerHTML = items.length ? items.map(item => '<button type="button" data-gis-result="' + Number(item.id) + '"><strong>' + gisEscape(item.household_code) + '</strong><span>' + gisEscape(item.head_citizen_name || '') + '</span></button>').join('') : '<div class="text-muted small p-2">Kh?ng t?m th?y h? ?? ??nh v?</div>';
+  host.innerHTML = items.length ? items.map(item => '<button type="button" data-gis-result="' + Number(item.id) + '"><strong>' + gisEscape(item.household_code) + '</strong><span>' + gisEscape(item.head_citizen_name || '') + '</span></button>').join('') : '<div class="text-muted small p-2">Kh\u00f4ng t\u00ecm th\u1ea5y h\u1ed9 \u0111\u00e3 \u0111\u1ecbnh v\u1ecb</div>';
   host.classList.remove('d-none');
   host.querySelectorAll('[data-gis-result]').forEach(btn => btn.addEventListener('click', () => focusGisHousehold(btn.dataset.gisResult)));
 }
@@ -2194,18 +2225,18 @@ function setGisDrawnLayer(layer) {
 }
 function startGisDraw() {
   if (!requireUiPermission('gis', 'update')) return;
-  if (!App.gis.map || !window.L?.Draw?.Polygon) return showToast('Ch?a s?n s?ng c?ng c? v? b?n ??', 'warning');
+  if (!App.gis.map || !window.L?.Draw?.Polygon) return showToast('Ch\u01b0a s\u1eb5n s\u00e0ng c\u00f4ng c\u1ee5 v\u1ebd b\u1ea3n \u0111\u1ed3', 'warning');
   new L.Draw.Polygon(App.gis.map, { allowIntersection: false, showArea: true, shapeOptions: { color: $('#gisAreaColor')?.value || '#0f8a4b' } }).enable();
 }
 async function saveGisArea() {
   if (!requireUiPermission('gis', 'update')) return;
   const layer = App.gis.drawnLayer;
-  if (!layer) return showToast('Vui l?ng v? ranh gi?i tr?n b?n ?? tr??c khi l?u', 'warning');
+  if (!layer) return showToast('Vui l\u00f2ng v\u1ebd ranh gi\u1edbi tr\u00ean b\u1ea3n \u0111\u1ed3 tr\u01b0\u1edbc khi l\u01b0u', 'warning');
   const latLngs = (layer.getLatLngs()[0] || []).map(p => ({ lat: Number(p.lat.toFixed(7)), lng: Number(p.lng.toFixed(7)) }));
   const payload = { id: $('#gisAreaId')?.value || undefined, name: $('#gisAreaName')?.value.trim(), area_code: $('#gisAreaCode')?.value.trim(), color: $('#gisAreaColor')?.value || '#0f8a4b', note: $('#gisAreaNote')?.value.trim(), geometry: latLngs };
-  if (!payload.name) return showToast('Vui l?ng nh?p t?n khu v?c', 'warning');
+  if (!payload.name) return showToast('Vui l\u00f2ng nh\u1eadp t\u00ean khu v\u1ef1c', 'warning');
   const saved = await api('/api/gis/areas', { method: 'POST', body: payload });
-  showToast('?? l?u ranh gi?i khu v?c');
+  showToast('\u0110\u00e3 l\u01b0u ranh gi\u1edbi khu v\u1ef1c');
   clearGisForm();
   App.gis.areasLoaded = false;
   await loadGisMap();
@@ -2241,7 +2272,7 @@ function renderGisAreaList(areas, keyword = '') {
   if (!host) return;
   const q = normalizeSearchText(keyword);
   const filtered = (areas || []).filter(area => !q || [area.name, area.area_code, area.note].some(v => normalizeSearchText(v).includes(q)));
-  host.innerHTML = filtered.map(area => '<button class="gis-area-item" type="button" onclick="focusGisArea(\'' + gisEscape(area.area_code) + '\')"><span><b>' + gisEscape(area.name) + '</b><small>' + gisEscape(area.area_code) + '</small></span><em>' + gisNumber(area.stats?.households) + ' h? / ' + gisNumber(area.stats?.citizens) + ' NK</em></button>').join('') || '<div class="text-muted small py-2">Ch?a c? khu v?c b?n ??</div>';
+  host.innerHTML = filtered.map(area => '<button class="gis-area-item" type="button" onclick="focusGisArea(\'' + gisEscape(area.area_code) + '\')"><span><b>' + gisEscape(area.name) + '</b><small>' + gisEscape(area.area_code) + '</small></span><em>' + gisNumber(area.stats?.households) + ' h\u1ed9 / ' + gisNumber(area.stats?.citizens) + ' NK</em></button>').join('') || '<div class="text-muted small py-2">Ch\u01b0a c\u00f3 khu v\u1ef1c b\u1ea3n \u0111\u1ed3</div>';
 }
 function focusGisArea(areaCode) {
   const area = (App.gis.areas || []).find(item => String(item.area_code) === String(areaCode));
@@ -2259,32 +2290,32 @@ function filterHouseholdsByGisArea(areaCode) {
 }
 async function deleteGisArea(id) {
   if (!requireUiPermission('gis', 'delete')) return;
-  if (!confirm('X?a ranh gi?i khu v?c n?y? D? li?u h? d?n kh?ng b? x?a.')) return;
+  if (!confirm('X\u00f3a ranh gi\u1edbi khu v\u1ef1c n\u00e0y? D\u1eef li\u1ec7u h\u1ed9 d\u00e2n kh\u00f4ng b\u1ecb x\u00f3a.')) return;
   await api('/api/gis/areas/' + id, { method: 'DELETE' });
-  showToast('?? x?a ranh gi?i khu v?c');
+  showToast('\u0110\u00e3 x\u00f3a ranh gi\u1edbi khu v\u1ef1c');
   App.gis.areasLoaded = false;
   loadGisMap();
 }
 function exportGisPdf() {
   if (!requireUiPermission('gis', 'export')) return;
-  if (!App.token) return showToast('Vui l?ng ??ng nh?p l?i ?? xu?t PDF', 'warning');
+  if (!App.token) return showToast('Vui l\u00f2ng \u0111\u0103ng nh\u1eadp l\u1ea1i \u0111\u1ec3 xu\u1ea5t PDF', 'warning');
   fetch('/api/gis/export-pdf', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' })
-    .then(response => { if (!response.ok) throw new Error('Kh?ng xu?t ???c b?n ??'); return response.blob(); })
+    .then(response => { if (!response.ok) throw new Error('Kh\u00f4ng xu\u1ea5t \u0111\u01b0\u1ee3c b\u1ea3n \u0111\u1ed3'); return response.blob(); })
     .then(blob => { const url = URL.createObjectURL(blob); const win = window.open(url, '_blank'); if (!win) { const a = document.createElement('a'); a.href = url; a.download = 'ban_do_dia_ban.html'; document.body.appendChild(a); a.click(); a.remove(); } setTimeout(() => URL.revokeObjectURL(url), 30000); })
-    .catch(error => showToast(error.message || 'Kh?ng xu?t ???c b?n ??', 'danger'));
+    .catch(error => showToast(error.message || 'Kh\u00f4ng xu\u1ea5t \u0111\u01b0\u1ee3c b\u1ea3n \u0111\u1ed3', 'danger'));
 }
 async function startGisGps() {
-  if (!navigator.geolocation || !window.isSecureContext) return showToast('GPS ch? ho?t ??ng tr?n HTTPS ho?c localhost.', 'warning');
+  if (!navigator.geolocation || !window.isSecureContext) return showToast('GPS ch\u1ec9 ho\u1ea1t \u0111\u1ed9ng tr\u00ean HTTPS ho\u1eb7c localhost.', 'warning');
   if (App.gis.gpsWatch?.watchId != null) navigator.geolocation.clearWatch(App.gis.gpsWatch.watchId);
   const panel = renderGisGpsPanel();
   App.gis.gpsWatch = { panel, latest: null, marker: null, circle: null, watchId: null };
-  App.gis.gpsWatch.watchId = navigator.geolocation.watchPosition(updateGisGps, error => showToast(error.message || 'Kh?ng l?y ???c GPS hi?n t?i', 'warning'), { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
+  App.gis.gpsWatch.watchId = navigator.geolocation.watchPosition(updateGisGps, error => showToast(error.message || 'Kh\u00f4ng l\u1ea5y \u0111\u01b0\u1ee3c GPS hi\u1ec7n t\u1ea1i', 'warning'), { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
 }
 function renderGisGpsPanel() {
   const host = $('#gisMap')?.parentElement;
   let panel = $('#gisGpsPanel');
   if (!panel) { panel = document.createElement('div'); panel.id = 'gisGpsPanel'; panel.className = 'gis-gps-panel'; host?.appendChild(panel); }
-  panel.innerHTML = '<div class="d-flex justify-content-between gap-2"><strong>??nh v? GPS</strong><button class="btn btn-sm btn-outline-secondary" type="button" data-gis-gps-close>??ng</button></div><div class="gis-gps-grid"><span>?? ch?nh x?c</span><b data-gis-gps-accuracy>?ang ch?...</b><span>Tr?ng th?i</span><b data-gis-gps-status>?ang t?m t?n hi?u</b></div><div class="d-flex gap-2"><button class="btn btn-primary btn-sm" type="button" data-gis-gps-save disabled>L?u cho h? ?ang ch?n</button><button class="btn btn-outline-success btn-sm" type="button" data-gis-gps-retry>??nh v? l?i</button></div>';
+  panel.innerHTML = '<div class="d-flex justify-content-between gap-2"><strong>\u0110\u1ecbnh v\u1ecb GPS</strong><button class="btn btn-sm btn-outline-secondary" type="button" data-gis-gps-close>\u0110\u00f3ng</button></div><div class="gis-gps-grid"><span>\u0110\u1ed9 ch\u00ednh x\u00e1c</span><b data-gis-gps-accuracy>\u0110ang ch\u1edd...</b><span>Tr\u1ea1ng th\u00e1i</span><b data-gis-gps-status>\u0110ang t\u00ecm t\u00edn hi\u1ec7u</b></div><div class="d-flex gap-2"><button class="btn btn-primary btn-sm" type="button" data-gis-gps-save disabled>L\u01b0u cho h\u1ed9 \u0111ang ch\u1ecdn</button><button class="btn btn-outline-success btn-sm" type="button" data-gis-gps-retry>\u0110\u1ecbnh v\u1ecb l\u1ea1i</button></div>';
   panel.querySelector('[data-gis-gps-close]').addEventListener('click', stopGisGps);
   panel.querySelector('[data-gis-gps-retry]').addEventListener('click', startGisGps);
   panel.querySelector('[data-gis-gps-save]').addEventListener('click', saveGisGpsForSelectedHousehold);
@@ -2296,12 +2327,12 @@ function updateGisGps(position) {
   const latLng = [position.coords.latitude, position.coords.longitude];
   const accuracy = Number(position.coords.accuracy || 0);
   watch.latest = { latitude: latLng[0], longitude: latLng[1], accuracy };
-  if (!watch.marker) watch.marker = L.marker(latLng, { title: 'V? tr? hi?n t?i' }).addTo(App.gis.map);
+  if (!watch.marker) watch.marker = L.marker(latLng, { title: 'V\u1ecb tr\u00ed hi\u1ec7n t\u1ea1i' }).addTo(App.gis.map);
   if (!watch.circle) watch.circle = L.circle(latLng, { radius: accuracy || 10, color: '#2563eb', fillColor: '#2563eb', fillOpacity: .12, weight: 1 }).addTo(App.gis.map);
   watch.marker.setLatLng(latLng); watch.circle.setLatLng(latLng); watch.circle.setRadius(accuracy || 10); App.gis.map.panTo(latLng);
   const ok = accuracy <= 10;
   watch.panel.querySelector('[data-gis-gps-accuracy]').textContent = accuracy.toFixed(1) + ' m';
-  watch.panel.querySelector('[data-gis-gps-status]').textContent = ok ? '??t y?u c?u l?u' : 'C?n sai s? ? 10 m';
+  watch.panel.querySelector('[data-gis-gps-status]').textContent = ok ? '\u0110\u1ea1t y\u00eau c\u1ea7u l\u01b0u' : 'C\u1ea7n sai s\u1ed1 \u2264 10 m';
   watch.panel.querySelector('[data-gis-gps-save]').disabled = !ok || !App.gis.selectedHouseholdId;
 }
 function stopGisGps() {
@@ -2313,10 +2344,10 @@ function stopGisGps() {
 async function saveGisGpsForSelectedHousehold() {
   const watch = App.gis.gpsWatch;
   const id = App.gis.selectedHouseholdId;
-  if (!watch?.latest || !id) return showToast('Vui l?ng m? marker h? c?n l?u GPS tr??c.', 'warning');
-  if (watch.latest.accuracy > 10) return showToast('GPS ch?a ?? ch?nh x?c ?? l?u.', 'warning');
+  if (!watch?.latest || !id) return showToast('Vui l\u00f2ng m\u1edf marker h\u1ed9 c\u1ea7n l\u01b0u GPS tr\u01b0\u1edbc.', 'warning');
+  if (watch.latest.accuracy > 10) return showToast('GPS ch\u01b0a \u0111\u1ee7 ch\u00ednh x\u00e1c \u0111\u1ec3 l\u01b0u.', 'warning');
   await api('/api/gis/households/' + encodeURIComponent(id) + '/location', { method: 'PUT', body: { latitude: watch.latest.latitude, longitude: watch.latest.longitude, source: 'GPS', accuracy: Math.round(watch.latest.accuracy) } });
-  App.gis.viewportCache?.clear(); App.gis.detailCache?.delete(String(id)); showToast('?? l?u GPS h? gia ??nh'); stopGisGps(); loadGisViewportMarkers(true);
+  App.gis.viewportCache?.clear(); App.gis.detailCache?.delete(String(id)); showToast('\u0110\u00e3 l\u01b0u GPS h\u1ed9 gia \u0111\u00ecnh'); stopGisGps(); loadGisViewportMarkers(true);
 }
 window.loadGisMap = loadGisMap;
 window.filterHouseholdsByGisArea = filterHouseholdsByGisArea;

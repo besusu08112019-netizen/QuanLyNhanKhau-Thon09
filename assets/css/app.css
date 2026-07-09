@@ -4907,3 +4907,5 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 @media (max-width: 768px) { .gis-layer-select { width: 100%; flex-basis: 100%; } .gis-map-toolbar { align-items: stretch; } .gis-map-toolbar .btn { min-height: 42px; } .leaflet-popup-content { margin: 14px; } .gis-household-popup { min-width: 250px; } .gis-popup-line { grid-template-columns: 1fr; gap: 2px; } .gis-gps-panel { left: 12px; right: 12px; bottom: 72px; width: auto; } }
 
 .gis-map-toolbar{position:relative;z-index:700}.gis-map{position:relative;z-index:1}
+
+.gis-map,.leaflet-container,.leaflet-control,.leaflet-popup,.leaflet-tooltip{font-family:'Be Vietnam Pro',Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;}
