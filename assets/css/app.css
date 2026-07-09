@@ -5469,3 +5469,46 @@ button, input, select, textarea { font: inherit; min-width: 0; }
     border-radius: 10px;
   }
 }
+/* Household member profile links */
+.household-members-table .household-member-row {
+  cursor: pointer;
+}
+
+.household-member-link {
+  min-height: 44px;
+  padding: 0;
+  color: var(--brand, #0b6b3a);
+  font-weight: 700;
+  text-align: left;
+  text-decoration: none;
+  white-space: normal;
+}
+
+.household-member-link:hover,
+.household-member-link:focus {
+  color: var(--brand-strong, #064e2e);
+  text-decoration: underline;
+}
+
+.household-member-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.household-member-action {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .household-member-action {
+    width: 44px;
+    height: 44px;
+  }
+}
