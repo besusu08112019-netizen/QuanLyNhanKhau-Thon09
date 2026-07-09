@@ -726,25 +726,33 @@
     const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
     const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
-    return '<article class="business-activity-detail ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
-      + '<header class="business-activity-detail-head"><div><span>Hoạt động ' + num(index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-activity-detail-actions">' + edit + del + '</div></header>'
-      + '<div class="business-activity-detail-grid">'
-      + dashboardMiniField('Loại hình', activity.business_type_label || activity.business_type)
-      + dashboardMiniField('Loại hình kinh tế', activity.economic_type)
-      + dashboardMiniField('Ngành nghề', activity.sector_label || activity.production_sector || activity.business_sector)
-      + dashboardMiniField('Quy mô', activity.business_scale)
-      + dashboardMiniField('Sản phẩm chính', (activity.main_products || []).join(', '))
-      + dashboardMiniField('Lao động', num(activity.worker_count || 0) + ' người')
-      + dashboardMiniField('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'Chưa cập nhật')
-      + dashboardMiniField('OCOP', businessTruthy(activity.is_ocop) ? (activity.ocop_product ? 'Có - ' + activity.ocop_product : 'Có') : 'Không')
-      + dashboardMiniField('ATTP', businessTruthy(activity.food_safety_certified) ? 'Có' : 'Không')
-      + dashboardMiniField('BHXH', businessTruthy(activity.social_insurance) ? 'Có' : 'Không')
-      + dashboardMiniField('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS')
-      + dashboardMiniField('Trạng thái', activity.status_label || activity.status || 'Chưa cập nhật')
-      + '</div>'
-      + '<div class="business-activity-detail-media">' + mediaInline('Ảnh', images, activity.id, 'image') + mediaInline('Tài liệu', documents, activity.id, 'document') + '</div>'
-      + '<div class="business-activity-detail-note"><span>Ghi chú</span><strong>' + esc(activity.note || 'Không có ghi chú.') + '</strong></div>'
-      + '</article>';
+    const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'Chưa cập nhật';
+    return '<article class="business-activity-detail business-dashboard-activity-view ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
+      + '<header class="business-dashboard-activity-hero"><div><h3>' + esc(title) + '</h3><p>' + esc(activity.status_label || activity.status || 'Chưa cập nhật') + '</p><p>' + esc(activity.business_type_label || activity.business_type || 'Chưa cập nhật') + ' · ' + esc(sector) + '</p></div><div class="business-dashboard-activity-actions">' + edit + del + '</div></header>'
+      + '<div class="business-dashboard-card-stack">'
+      + businessDashboardSection('Thông tin cơ bản', 'fa-circle-info', [
+        businessDashboardRow('Loại hình', activity.business_type_label || activity.business_type),
+        businessDashboardRow('Loại hình kinh tế', activity.economic_type),
+        businessDashboardRow('Ngành nghề', sector),
+        businessDashboardRow('Quy mô', activity.business_scale),
+        businessDashboardRow('Ngày bắt đầu', date(activity.start_date))
+      ].join(''))
+      + businessDashboardSection('Thông tin sản xuất', 'fa-chart-line', [
+        businessDashboardRow('Sản phẩm chính', (activity.main_products || []).join(', ') || 'Chưa cập nhật'),
+        businessDashboardRow('Lao động', num(activity.worker_count || 0) + ' người'),
+        businessDashboardRow('Doanh thu', activity.annual_revenue ? num(activity.annual_revenue) : 'Chưa cập nhật'),
+        businessDashboardRow('Diện tích / Quy mô', businessActivityValue(activity, ['production_area','area','scale_description','operation_scale','facility_area']) || 'Chưa cập nhật'),
+        businessDashboardRow('Thị trường tiêu thụ', businessActivityValue(activity, ['consumption_market','market','target_market','distribution_market']) || 'Chưa cập nhật')
+      ].join(''))
+      + businessDashboardSection('Chứng nhận', 'fa-certificate', businessCertificationBadges(activity), true)
+      + businessDashboardSection('Vị trí', 'fa-location-dot', [
+        businessDashboardRow('Địa chỉ', activity.address || 'Chưa cập nhật'),
+        businessDashboardRow('GPS', activity.latitude && activity.longitude ? activity.latitude + ', ' + activity.longitude : 'Không GPS'),
+        businessDashboardRow('Ngày cập nhật', date(activity.updated_at || activity.created_at) || 'Chưa cập nhật')
+      ].join(''))
+      + businessDashboardSection('Hồ sơ', 'fa-folder-open', businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id), true)
+      + (activity.note ? businessDashboardSection('Ghi chú', 'fa-note-sticky', '<p class="business-dashboard-note">' + esc(activity.note) + '</p>', true) : '')
+      + '</div></article>';
   }
 
   function selectBusinessActivity(index) {

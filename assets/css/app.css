@@ -4807,3 +4807,64 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
     flex-basis: auto;
   }
 }
+
+/* Active Household Business detail renderer reset */
+.business-activity-detail.business-dashboard-activity-view {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.business-activity-detail.business-dashboard-activity-view.is-active {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+.business-activity-detail.business-dashboard-activity-view .business-dashboard-card-stack {
+  display: grid;
+  gap: 14px;
+}
+.business-activity-detail.business-dashboard-activity-view .business-dashboard-section-body,
+.business-activity-detail.business-dashboard-activity-view .business-dashboard-cert-list {
+  display: block;
+}
+.business-activity-detail.business-dashboard-activity-view .business-dashboard-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 22px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.business-activity-detail.business-dashboard-activity-view .business-dashboard-row + .business-dashboard-row {
+  border-top: 1px solid #edf2ef;
+}
+.business-activity-detail.business-dashboard-activity-view .business-dashboard-row span {
+  flex: 0 0 168px;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.business-activity-detail.business-dashboard-activity-view .business-dashboard-row strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 720px) {
+  .business-activity-detail.business-dashboard-activity-view .business-dashboard-row {
+    display: grid;
+    gap: 3px;
+  }
+  .business-activity-detail.business-dashboard-activity-view .business-dashboard-row span {
+    flex-basis: auto;
+  }
+}
