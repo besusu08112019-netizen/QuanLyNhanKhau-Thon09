@@ -278,12 +278,39 @@
           <div id="businessHouseholdPager" class="pager module-pager"></div>
         </div>
       </section>
-      <section id="livestockScreen" class="screen household-management-screen">
-        <div class="module-action-row"><button id="livestockAddBtn" class="module-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm vật nuôi</button></div>
-        <section id="livestockMiniDashboard" class="dashboard-kpi-grid mb-3" aria-label="Thống kê vật nuôi"></section>
-        <div class="module-filter-panel household-filter-panel"><div class="module-filter-grid household-filter-grid"><div class="module-field household-search-field"><label for="livestockSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="livestockSearch" class="form-control" placeholder="Mã hộ, chủ hộ, loại, giống, địa chỉ..."></div></div><div class="module-field"><label for="livestockAnimalTypeFilter">Loại vật nuôi</label><select id="livestockAnimalTypeFilter" class="form-select"><option value="">Tất cả</option></select></div><div class="module-field"><label for="livestockVaccinatedFilter">Tiêm phòng</label><select id="livestockVaccinatedFilter" class="form-select"><option value="">Tất cả</option><option value="1">Đã tiêm phòng</option><option value="0">Chưa tiêm phòng</option></select></div><div class="module-field"><label for="livestockDiseaseFilter">Dịch bệnh</label><select id="livestockDiseaseFilter" class="form-select"><option value="">Tất cả</option></select></div><div class="module-field"><label for="livestockStatusFilter">Trạng thái</label><select id="livestockStatusFilter" class="form-select"><option value="">Tất cả</option><option value="ACTIVE">Đang nuôi</option><option value="INACTIVE">Ngừng nuôi</option></select></div><div class="module-field module-page-size-field"><label for="livestockPageSize">Hiển thị</label><select id="livestockPageSize" class="form-select"><option>20</option><option>50</option><option>100</option></select></div><button id="livestockFilterReset" class="btn module-reset-btn" type="button"><i class="fa-solid fa-rotate-right"></i> Làm mới</button></div></div>
-        <div class="module-list-card household-list-card"><div class="module-list-head"><div><h3>Danh sách vật nuôi</h3><span id="livestockTotalCount">Tổng số: 0 bản ghi</span></div></div><div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th>STT</th><th data-livestock-sort="household_code">Mã hộ</th><th data-livestock-sort="head_citizen_name">Chủ hộ</th><th data-livestock-sort="animal_type">Loại</th><th data-livestock-sort="breed">Giống</th><th data-livestock-sort="quantity">Số lượng</th><th data-livestock-sort="vaccinated">Tiêm phòng</th><th data-livestock-sort="status">Trạng thái</th><th class="text-end">Thao tác</th></tr></thead><tbody id="livestockRows"></tbody></table></div><div id="livestockPager" class="pager module-pager"></div></div>
-      </section>      <section id="personsScreen" class="screen person-management-screen">
+      <section id="livestockScreen" class="screen household-management-screen livestock-modern-screen">
+        <section id="livestockMiniDashboard" class="livestock-kpi-grid" aria-label="Th&#7889;ng k&#234; v&#7853;t nu&#244;i"></section>
+
+        <section class="livestock-filter-card" aria-label="B&#7897; l&#7885;c v&#7853;t nu&#244;i">
+          <div class="livestock-filter-row">
+            <div class="livestock-filter-field livestock-search-field">
+              <label for="livestockSearch">T&#236;m ki&#7871;m</label>
+              <div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="livestockSearch" class="form-control" placeholder="M&#227; h&#7897;, ch&#7911; h&#7897;, lo&#7841;i, gi&#7889;ng, &#273;&#7883;a ch&#7881;..."></div>
+            </div>
+            <div class="livestock-filter-field"><label for="livestockAreaFilter">Khu v&#7921;c</label><select id="livestockAreaFilter" class="form-select"><option value="">T&#7845;t c&#7843;</option></select></div>
+            <div class="livestock-filter-field"><label for="livestockAnimalTypeFilter">Lo&#7841;i v&#7853;t nu&#244;i</label><select id="livestockAnimalTypeFilter" class="form-select"><option value="">T&#7845;t c&#7843;</option></select></div>
+            <div class="livestock-filter-field"><label for="livestockClassFilter">Ph&#226;n lo&#7841;i</label><input id="livestockClassFilter" class="form-control" placeholder="Khu nu&#244;i, ph&#226;n lo&#7841;i..."></div>
+            <div class="livestock-filter-field"><label for="livestockVaccinatedFilter">Ti&#234;m ph&#242;ng</label><select id="livestockVaccinatedFilter" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="1">&#272;&#227; ti&#234;m</option><option value="0">Ch&#432;a ti&#234;m</option></select></div>
+            <div class="livestock-filter-field"><label for="livestockDiseaseFilter">D&#7883;ch b&#7879;nh</label><select id="livestockDiseaseFilter" class="form-select"><option value="">T&#7845;t c&#7843;</option></select></div>
+            <div class="livestock-filter-actions"><button id="livestockSearchBtn" class="btn btn-primary" type="button"><i class="fa-solid fa-magnifying-glass"></i> T&#236;m ki&#7871;m</button><button id="livestockFilterReset" class="btn btn-outline-secondary" type="button"><i class="fa-solid fa-rotate-right"></i> &#272;&#7863;t l&#7841;i</button></div>
+          </div>
+        </section>
+
+        <section class="livestock-toolbar" aria-label="Thanh c&#244;ng c&#7909; v&#7853;t nu&#244;i">
+          <div class="livestock-toolbar-left">
+            <button id="livestockAddBtn" class="btn btn-success" type="button"><i class="fa-solid fa-plus"></i> Th&#234;m m&#7899;i</button>
+            <button id="livestockExportExcelBtn" class="btn btn-outline-success" type="button"><i class="fa-solid fa-file-excel"></i> Xu&#7845;t Excel</button>
+            <button id="livestockExportPdfBtn" class="btn btn-outline-danger" type="button"><i class="fa-solid fa-file-pdf"></i> Xu&#7845;t PDF</button>
+            <button id="livestockAdvancedFilterBtn" class="btn btn-outline-secondary" type="button"><i class="fa-solid fa-sliders"></i> B&#7897; l&#7885;c n&#226;ng cao</button>
+          </div>
+          <div class="livestock-toolbar-right"><label for="livestockStatusFilter">Tr&#7841;ng th&#225;i</label><select id="livestockStatusFilter" class="form-select"><option value="">T&#7845;t c&#7843; tr&#7841;ng th&#225;i</option><option value="ACTIVE">&#272;ang nu&#244;i</option><option value="INACTIVE">Ng&#7915;ng nu&#244;i</option></select><label for="livestockPageSize">Hi&#7875;n th&#7883;</label><select id="livestockPageSize" class="form-select"><option>20</option><option>50</option><option>100</option></select></div>
+        </section>
+
+        <div class="module-list-card household-list-card livestock-table-card"><div class="module-list-head"><div><h3>Danh s&#225;ch v&#7853;t nu&#244;i</h3><span id="livestockTotalCount">T&#7893;ng s&#7889;: 0 b&#7843;n ghi</span></div></div><div class="table-responsive livestock-table-responsive"><table class="table module-table livestock-data-table align-middle mb-0"><thead><tr><th>STT</th><th data-livestock-sort="household_code">M&#227; h&#7897;</th><th data-livestock-sort="head_citizen_name">Ch&#7911; h&#7897;</th><th>Khu v&#7921;c</th><th data-livestock-sort="animal_type">Lo&#7841;i v&#7853;t nu&#244;i</th><th>Ph&#226;n lo&#7841;i</th><th data-livestock-sort="breed">Gi&#7889;ng</th><th data-livestock-sort="quantity">S&#7889; l&#432;&#7907;ng</th><th>&#272;&#417;n v&#7883;</th><th data-livestock-sort="vaccinated">Ti&#234;m ph&#242;ng</th><th data-livestock-sort="updated_at">Ng&#224;y c&#7853;p nh&#7853;t</th><th class="text-end">Thao t&#225;c</th></tr></thead><tbody id="livestockRows"></tbody></table></div><div id="livestockPager" class="pager module-pager"></div></div>
+      </section>
+      <div id="livestockDrawerBackdrop" class="livestock-drawer-backdrop" aria-hidden="true"></div>
+      <aside id="livestockHouseholdDrawer" class="livestock-drawer" aria-hidden="true" aria-labelledby="livestockDrawerTitle"><div class="livestock-drawer-shell"><header class="livestock-drawer-header"><div><span>H&#7891; s&#417; h&#7897; ch&#259;n nu&#244;i</span><h3 id="livestockDrawerTitle">&#272;ang t&#7843;i...</h3><p id="livestockDrawerSubtitle"></p></div><button id="livestockDrawerClose" class="btn btn-light livestock-drawer-close" type="button" aria-label="&#272;&#243;ng"><i class="fa-solid fa-xmark"></i></button></header><div id="livestockDrawerBody" class="livestock-drawer-body"></div></div></aside>
+      <section id="personsScreen" class="screen person-management-screen">
         <div class="module-action-row person-action-row"><button id="personAddBtn" class="person-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm nhân khẩu</button></div>
 
         <div class="content-card person-search-card mb-4">

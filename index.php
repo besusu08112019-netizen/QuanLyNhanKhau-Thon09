@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-355-encoding-csp');
+define('APP_ASSET_VERSION', 'deploy-356-livestock-ui');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -376,7 +376,7 @@ if (!str_starts_with($request->path(), '/api')) {
     $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);
-        echo 'Kh?ng t?i ???c giao di?n ?ng d?ng.';
+        echo 'Không tải được giao diện ứng dụng.';
         exit;
     }
     $versionedAssets = [
@@ -433,4 +433,4 @@ try {
     }
     throw $e;
 }
-Response::error('Kh?ng t?m th?y ???ng d?n', 404);
+Response::error('Không tìm thấy đường dẫn', 404);

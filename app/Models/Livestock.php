@@ -268,7 +268,7 @@ SQL);
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $keyword = '%' . mb_strtolower($search, 'UTF-8') . '%';
-            foreach (['h.household_code' => 'q_code', 'h.head_citizen_name' => 'q_head', 'h.address' => 'q_address', 'l.animal_type' => 'q_type', 'l.breed' => 'q_breed', 'l.note' => 'q_note'] as $column => $param) {
+            foreach (['h.household_code' => 'q_code', 'h.head_citizen_name' => 'q_head', 'h.address' => 'q_address', 'l.animal_type' => 'q_type', 'l.breed' => 'q_breed', 'l.barn_area' => 'q_barn', 'l.note' => 'q_note'] as $column => $param) {
                 $parts[] = "LOWER($column) LIKE :$param";
                 $params[$param] = $keyword;
             }
@@ -284,6 +284,8 @@ SQL);
         if ($vaccinated === '1' || $vaccinated === '0') $where[] = 'l.vaccinated = ' . (int) $vaccinated;
         $area = trim((string) ($filters['area_code'] ?? $filters['areaCode'] ?? ''));
         if ($area !== '') { $where[] = 'h.area_code = :area_code'; $params['area_code'] = $area; }
+        $barnArea = trim((string) ($filters['barn_area'] ?? $filters['barnArea'] ?? $filters['classification'] ?? ''));
+        if ($barnArea !== '') { $where[] = 'LOWER(l.barn_area) LIKE :barn_area'; $params['barn_area'] = '%' . mb_strtolower($barnArea, 'UTF-8') . '%'; }
         $from = trim((string) ($filters['date_from'] ?? $filters['dateFrom'] ?? ''));
         if ($from !== '') { $where[] = 'DATE(COALESCE(l.updated_at, l.created_at)) >= :date_from'; $params['date_from'] = $from; }
         $to = trim((string) ($filters['date_to'] ?? $filters['dateTo'] ?? ''));

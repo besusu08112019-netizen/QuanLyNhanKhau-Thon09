@@ -27,6 +27,7 @@ final class LivestockController extends BaseController
             'disease_status' => $this->query('disease_status', $this->query('diseaseStatus', '')),
             'status' => $this->query('status', ''),
             'area_code' => $this->query('area_code', $this->query('areaCode', '')),
+            'barn_area' => $this->query('barn_area', $this->query('barnArea', $this->query('classification', ''))),
             'sort' => $this->query('sort', 'household_code'),
             'direction' => $this->query('direction', 'ASC'),
         ]));
@@ -100,6 +101,7 @@ final class LivestockController extends BaseController
             'disease_status' => $this->query('disease_status', $this->query('diseaseStatus', '')),
             'status' => $this->query('status', ''),
             'area_code' => $this->query('area_code', $this->query('areaCode', '')),
+            'barn_area' => $this->query('barn_area', $this->query('barnArea', $this->query('classification', ''))),
         ];
         $this->ok(['metrics' => $this->livestock->dashboard($filters), 'charts' => $this->livestock->charts($filters), 'top' => $this->livestock->topHouseholds($filters)]);
     }
