@@ -364,11 +364,14 @@ function ensureMobileBottomNavigation() {
   }
   const items = [
     { screen: 'dashboard', label: 'Dashboard', icon: 'fa-gauge-high' },
-    { screen: 'operationCenter', label: 'Điều hành', icon: 'fa-tower-broadcast' },
     { screen: 'households', label: 'H\u1ed9', icon: 'fa-house-chimney' },
     { screen: 'persons', label: 'Nh\u00e2n kh\u1ea9u', icon: 'fa-users' },
-    { screen: 'gis', label: 'GIS', icon: 'fa-map-location-dot' },
-    { screen: 'reports', label: 'B\u00e1o c\u00e1o', icon: 'fa-chart-pie' }
+    { screen: 'businessHouseholds', label: 'Kinh doanh', icon: 'fa-store' },
+    { screen: 'vehicles', label: 'Xe c\u1ed9', icon: 'fa-car' },
+    { screen: 'livestock', label: 'V\u1eadt nu\u00f4i', icon: 'fa-paw' },
+    { screen: 'agriculture', label: 'N\u00f4ng nghi\u1ec7p', icon: 'fa-seedling' },
+    { screen: 'contributions', label: '\u0110\u00f3ng g\u00f3p', icon: 'fa-hand-holding-dollar' },
+    { screen: 'gis', label: 'GIS', icon: 'fa-map-location-dot' }
   ];
   const nav = document.createElement('nav');
   nav.className = 'mobile-bottom-nav';
@@ -569,7 +572,10 @@ function normalizeAppHeader(screen) {
     gis: 'B\u1ea3n \u0111\u1ed3 \u0111\u1ecba b\u00e0n',
     households: 'Qu\u1ea3n l\u00fd h\u1ed9 gia \u0111\u00ecnh',
     businessHouseholds: 'H\u1ed9 s\u1ea3n xu\u1ea5t & kinh doanh',
+    vehicles: 'Qu\u1ea3n l\u00fd xe c\u1ed9',
     livestock: 'Qu\u1ea3n l\u00fd v\u1eadt nu\u00f4i',
+    agriculture: 'S\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p',
+    contributions: '\u0110\u00f3ng g\u00f3p h\u1ed9',
     persons: 'Qu\u1ea3n l\u00fd nh\u00e2n kh\u1ea9u',
     temporaryResidence: 'T\u1ea1m tr\u00fa',
     temporaryAbsence: 'T\u1ea1m v\u1eafng',
