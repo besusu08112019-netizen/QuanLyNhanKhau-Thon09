@@ -228,13 +228,13 @@
   }
 
   function personMiniTable(items) {
-    const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.phone || '')}</td></tr>`).join('') || emptyRow(5, 'Không có dữ liệu');
+    const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${window.renderCitizenProfileLink ? window.renderCitizenProfileLink(row, row.full_name || '') : escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.phone || '')}</td></tr>`).join('') || emptyRow(5, 'Không có dữ liệu');
     return `<table class="table table-hover data-table mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Số điện thoại</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   async function loadMovements() {
     const data = await api('/api/movements?' + new URLSearchParams(App.movements));
-    document.querySelector('#movementRows').innerHTML = data.items.map(row => `<tr><td>${formatDate(row.effective_date)}</td><td>${movementLabel(row.type)}</td><td>${escapeHtml(row.full_name)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.reason || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openMovementForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteMovement(${row.id})">Xóa</button></td></tr>`).join('') || emptyRow(7, 'Chưa có biến động');
+    document.querySelector('#movementRows').innerHTML = data.items.map(row => `<tr><td>${formatDate(row.effective_date)}</td><td>${movementLabel(row.type)}</td><td>${window.renderCitizenProfileLink ? window.renderCitizenProfileLink(row, row.full_name || '', { idKeys: ['citizen_id'] }) : escapeHtml(row.full_name)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.reason || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openMovementForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteMovement(${row.id})">Xóa</button></td></tr>`).join('') || emptyRow(7, 'Chưa có biến động');
     renderPager('#movementPager', data, page => { App.movements.page = page; loadMovements(); });
   }
 
