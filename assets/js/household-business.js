@@ -482,7 +482,7 @@
 
   function businessActivityListItem(activity, index) {
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
-    return '<button class="business-person-activity-item business-modern-activity-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')"><strong>' + esc(title) + '</strong><span>' + esc(activity.business_type_label || activity.economic_type || activity.sector_label || 'Chưa cập nhật') + '</span>' + statusBadge(activity.status, activity.status_label) + '</button>';
+    return '<button class="business-person-activity-item business-modern-activity-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')"><strong>' + esc(title) + '</strong><span>' + esc(businessActivityListSubtitle(activity)) + '</span>' + statusBadge(activity.status, activity.status_label) + '</button>';
   }
 
   function businessActivityDetailPanel(activity, index) {
@@ -714,7 +714,7 @@
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     return '<button class="business-activity-list-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')">'
       + '<strong>' + esc(title) + '</strong>'
-      + '<span>' + esc(activity.business_type_label || activity.economic_type || activity.sector_label || 'Chưa cập nhật') + '</span>'
+      + '<span>' + esc(businessActivityListSubtitle(activity)) + '</span>'
       + statusBadge(activity.status, activity.status_label)
       + '</button>';
   }
@@ -753,6 +753,18 @@
       + businessDashboardSection('Hồ sơ', 'fa-folder-open', businessActivityImages(images, activity.id) + businessActivityDocuments(documents, activity.id), true)
       + (activity.note ? businessDashboardSection('Ghi chú', 'fa-note-sticky', '<p class="business-dashboard-note">' + esc(activity.note) + '</p>', true) : '')
       + '</div></article>';
+  }
+
+  function businessActivityListSubtitle(activity) {
+    const type = activity.business_type_label || activity.business_type || '';
+    const sector = activity.sector_label || activity.economic_type || activity.production_sector || activity.business_sector || '';
+    if (type && sector) {
+      const normalizedType = String(type).trim().toLowerCase();
+      const normalizedSector = String(sector).trim().toLowerCase();
+      if (normalizedSector.startsWith(normalizedType)) return sector;
+      return type + ' - ' + sector;
+    }
+    return type || sector || 'Chưa cập nhật';
   }
 
   function selectBusinessActivity(index) {
