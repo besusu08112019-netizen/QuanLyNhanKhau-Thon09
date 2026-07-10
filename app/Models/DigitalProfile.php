@@ -85,6 +85,9 @@ final class DigitalProfile extends BaseModel
                 'residence' => $this->section($citizen, [
                     'household_code' => 'Mã hộ',
                     'relationship' => 'Quan hệ với chủ hộ',
+                    'head_citizen_name' => 'Chủ hộ',
+                    'father_display_name' => 'Họ tên bố',
+                    'mother_display_name' => 'Họ tên mẹ',
                     'household_address' => 'Địa chỉ thường trú',
                     'current_address' => 'Địa chỉ hiện tại',
                     'residency_status' => 'Cư trú',
@@ -303,8 +306,12 @@ final class DigitalProfile extends BaseModel
     private function hasValue(mixed $value): bool
     {
         if ($value === null) return false;
-        if (is_string($value) && trim($value) === '') return false;
-        return true;
+        if (!is_string($value)) return true;
+        $text = trim($value);
+        if ($text === '') return false;
+        $normalized = mb_strtolower($text, 'UTF-8');
+        $normalized = strtr($normalized, ['đ' => 'd', 'Đ' => 'd']);
+        return !in_array($normalized, ['null', 'undefined', 'không có', 'khong co', 'n/a', 'na', '--'], true);
     }
 
     private function formatValue(mixed $value): mixed

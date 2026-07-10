@@ -154,7 +154,7 @@
   }
 
   function importLabel(key) {
-    return ({householdCode:'Mã hộ', citizenCode:'Mã nhân khẩu', fullName:'Họ tên', dateOfBirth:'Ngày sinh', identityNumber:'CCCD', phone:'Số điện thoại', headCitizenName:'Chủ hộ', address:'Địa chỉ', relationship:'Quan hệ'})[key] || key;
+    return ({householdCode:'Mã hộ', citizenCode:'Mã nhân khẩu', fullName:'Họ tên', dateOfBirth:'Ngày sinh', identityNumber:'CCCD', phone:'Số điện thoại', headCitizenName:'Chủ hộ', address:'Địa chỉ', relationship:'Quan hệ', fatherName:'Họ tên bố', motherName:'Họ tên mẹ'})[key] || key;
   }
 
   function setImportStatus(text) {

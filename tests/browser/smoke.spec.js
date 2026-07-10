@@ -82,9 +82,11 @@ test('operation center renders widgets without console errors', async ({ page })
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    window.App.token = 'test-token';
-    window.App.csrfToken = 'test-csrf';
-    window.App.user = user;
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
+    window.__thon09SessionExpired = false;
     localStorage.setItem('thon09_token', 'test-token');
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
@@ -158,9 +160,11 @@ test('smart reporting renders center, filters, BI and export actions', async ({ 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    window.App.token = 'test-token';
-    window.App.csrfToken = 'test-csrf';
-    window.App.user = user;
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
+    window.__thon09SessionExpired = false;
     localStorage.setItem('thon09_token', 'test-token');
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
@@ -195,9 +199,11 @@ test('mobile bottom navigation does not cover module content', async ({ page }) 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    window.App.token = 'test-token';
-    window.App.csrfToken = 'test-csrf';
-    window.App.user = user;
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
+    window.__thon09SessionExpired = false;
     localStorage.setItem('thon09_token', 'test-token');
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
@@ -242,9 +248,11 @@ test('mobile overlays hide bottom navigation and keep actions reachable', async 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    window.App.token = 'test-token';
-    window.App.csrfToken = 'test-csrf';
-    window.App.user = user;
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
+    window.__thon09SessionExpired = false;
     localStorage.setItem('thon09_token', 'test-token');
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
@@ -326,9 +334,11 @@ test('mobile FAB stays above bottom navigation and hides under overlays', async 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    window.App.token = 'test-token';
-    window.App.csrfToken = 'test-csrf';
-    window.App.user = user;
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
+    window.__thon09SessionExpired = false;
     localStorage.setItem('thon09_token', 'test-token');
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
@@ -412,9 +422,11 @@ test('system administration center renders independent operation widgets', async
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    window.App.token = 'test-token';
-    window.App.csrfToken = 'test-csrf';
-    window.App.user = user;
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
+    window.__thon09SessionExpired = false;
     localStorage.setItem('thon09_token', 'test-token');
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
@@ -459,9 +471,11 @@ test('viewer role is read-only across household and citizen modules', async ({ p
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 3, email: 'viewer@example.test', displayName: 'Viewer Test', role: 'VIEWER', status: 'ACTIVE' };
-    window.App.token = 'viewer-token';
-    window.App.csrfToken = 'viewer-csrf';
-    window.App.user = user;
+    App.token = 'viewer-token';
+    App.csrfToken = 'viewer-csrf';
+    App.user = user;
+    window.App = App;
+    window.__thon09SessionExpired = false;
     localStorage.setItem('thon09_token', 'viewer-token');
     localStorage.setItem('thon09_csrf', 'viewer-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
@@ -492,4 +506,105 @@ test('viewer role is read-only across household and citizen modules', async ({ p
   });
   await page.waitForTimeout(100);
   expect(writeRequests).toEqual([]);
+});
+
+
+test('person detail popup shows parent names when available only', async ({ page }) => {
+  let savedPersonPayload = null;
+  await page.route('**/api/**', async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
+    if (url.pathname === '/api/persons/11' && request.method() === 'PUT') { savedPersonPayload = request.postDataJSON(); return payload({ id: 11, ...savedPersonPayload }); }
+    if (url.pathname === '/api/public/login-config') return payload(loginConfig.data);
+    if (url.pathname === '/api/auth/me') return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.pathname === '/api/dashboard/summary') return payload({ metrics: {}, charts: {} });
+    if (url.pathname === '/api/persons/11') return payload({
+      id: 11,
+      household_code: 'HK001',
+      citizen_code: 'NK001',
+      full_name: 'Nguyễn Văn C',
+      relationship: 'Con',
+      head_citizen_name: 'Nguyễn Văn A',
+      ethnicity: 'Kinh',
+      religion: 'Không',
+      occupation: 'Học sinh',
+      education_level: 'Trung học cơ sở',
+      marital_status: 'Chưa kết hôn',
+      father_display_name: 'Nguyễn Văn A Rất Dài Để Kiểm Tra Tự Xuống Dòng Trên Mobile Và Tablet',
+      mother_display_name: 'Không có',
+      household_address: 'Thôn 09',
+      current_address: 'Thôn 09',
+      date_of_birth: '2010-01-01',
+      gender: 'Nam',
+      identity_number: '123456789012',
+      residency_status: 'PERMANENT',
+      presence_status: 'AT_HOME'
+    });
+    if (url.pathname === '/api/persons/12') return payload({
+      id: 12,
+      household_code: 'HK001',
+      citizen_code: 'NK002',
+      full_name: 'Nguyễn Văn D',
+      relationship: 'Con',
+      ethnicity: 'Kinh',
+      religion: 'Không',
+      occupation: 'Học sinh',
+      education_level: 'Tiểu học',
+      marital_status: 'Chưa kết hôn',
+      father_display_name: '',
+      mother_display_name: 'Không có',
+      current_address: 'Thôn 09',
+      date_of_birth: '2015-01-01',
+      gender: 'Nam',
+      identity_number: '123456789013',
+      residency_status: 'PERMANENT',
+      presence_status: 'AT_HOME'
+    });
+    if (url.pathname === '/api/persons') return payload({ items: [], total: 0, page: 1, pageSize: 20 });
+    return payload({});
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof window.showApp === 'function' && typeof window.showPerson === 'function' && window.App?.modals?.detail);
+  await page.evaluate(async () => {
+    const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
+    window.__thon09SessionExpired = false;
+    localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_csrf', 'test-csrf');
+    localStorage.setItem('thon09_user', JSON.stringify(user));
+    window.showApp();
+    await window.showPerson(11);
+  });
+
+  await expect(page.locator('#detailModal')).toContainText('Thông tin gia đình');
+  await expect(page.locator('#detailModal')).toContainText('Họ tên bố');
+  await expect(page.locator('#detailModal')).toContainText('Nguyễn Văn A Rất Dài');
+  await expect(page.locator('#detailModal')).not.toContainText('Họ tên mẹ');
+  await expect(page.locator('#detailModal')).toContainText('Địa chỉ hiện tại');
+
+  const orderedKeys = await page.locator('#detailModal .person-info-field').evaluateAll(nodes => nodes.map(node => Array.from(node.classList).find(name => name.startsWith('person-info-field-'))?.replace('person-info-field-', '') || ''));
+  const keyIndex = (key) => orderedKeys.indexOf(key);
+  expect(keyIndex('displayAddress')).toBeGreaterThanOrEqual(0);
+  expect(keyIndex('fatherName')).toBeGreaterThan(keyIndex('displayAddress'));
+  expect(keyIndex('healthInsuranceParticipationStatus')).toBeGreaterThan(keyIndex('fatherName'));
+
+  await page.evaluate(async () => window.showPerson(12));
+  await expect(page.locator('#detailModal')).not.toContainText('Thông tin gia đình');
+  await expect(page.locator('#detailModal')).not.toContainText('Họ tên bố');
+  await expect(page.locator('#detailModal')).not.toContainText('Họ tên mẹ');
+
+  await page.evaluate(async () => {
+    window.App.modals.detail.hide();
+    await window.openPersonForm(11);
+  });
+  await expect(page.locator('#personForm [name="father_name"]')).toHaveValue(/Nguyễn Văn A Rất Dài/);
+  await page.locator('#personForm [name="mother_name"]').fill('Trần Thị B');
+  await page.locator('#personForm').evaluate(form => form.requestSubmit());
+  await expect.poll(() => savedPersonPayload?.father_name).toContain('Nguyễn Văn A Rất Dài');
+  expect(savedPersonPayload?.mother_name).toBe('Trần Thị B');
 });

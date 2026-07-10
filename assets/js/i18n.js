@@ -2,6 +2,9 @@
   const dictionary = {
     'thong tin': 'Th\u00f4ng tin',
     'thong tin co ban': 'Th\u00f4ng tin c\u01a1 b\u1ea3n',
+    'thong tin cu tru': 'Th\u00f4ng tin c\u01b0 tr\u00fa',
+    'thong tin nhan than va cu tru': 'Th\u00f4ng tin nh\u00e2n th\u00e2n v\u00e0 c\u01b0 tr\u00fa',
+    'thong tin gia dinh': 'Th\u00f4ng tin gia \u0111\u00ecnh',
     'basic information': 'Th\u00f4ng tin c\u01a1 b\u1ea3n',
     'thong tin mo rong': 'Th\u00f4ng tin m\u1edf r\u1ed9ng',
     'extended information': 'Th\u00f4ng tin m\u1edf r\u1ed9ng',
@@ -60,6 +63,8 @@
     'dia chi': '\u0110\u1ecba ch\u1ec9',
     'tinh trang': 'T\u00ecnh tr\u1ea1ng',
     'quan he voi chu ho': 'Quan h\u1ec7 v\u1edbi ch\u1ee7 h\u1ed9',
+    'ho ten bo': 'H\u1ecd t\u00ean b\u1ed1',
+    'ho ten me': 'H\u1ecd t\u00ean m\u1eb9',
     'cu tru': 'C\u01b0 tr\u00fa',
     'hien tai': 'Hi\u1ec7n t\u1ea1i',
     'chu ho': 'Ch\u1ee7 h\u1ed9',
@@ -154,7 +159,7 @@
 
   const personDetailLabels = {
     householdCode: 'M\u00e3 h\u1ed9', citizenCode: 'M\u00e3 nh\u00e2n kh\u1ea9u', fullName: 'H\u1ecd t\u00ean', gender: 'Gi\u1edbi t\u00ednh', dateOfBirth: 'Ng\u00e0y sinh', age: 'Tu\u1ed5i', identityNumber: 'CCCD/S\u1ed1 \u0111\u1ecbnh danh', phone: 'S\u1ed1 \u0111i\u1ec7n tho\u1ea1i', email: 'Th\u01b0 \u0111i\u1ec7n t\u1eed',
-    displayAddress: '\u0110\u1ecba ch\u1ec9', displayStatus: 'T\u00ecnh tr\u1ea1ng', relationship: 'Quan h\u1ec7 v\u1edbi ch\u1ee7 h\u1ed9', residencyStatus: 'C\u01b0 tr\u00fa', presenceStatus: 'Hi\u1ec7n t\u1ea1i',
+    displayAddress: '\u0110\u1ecba ch\u1ec9 hi\u1ec7n t\u1ea1i', displayStatus: 'T\u00ecnh tr\u1ea1ng', relationship: 'Quan h\u1ec7 v\u1edbi ch\u1ee7 h\u1ed9', headCitizenName: 'Ch\u1ee7 h\u1ed9', fatherName: 'H\u1ecd t\u00ean b\u1ed1', motherName: 'H\u1ecd t\u00ean m\u1eb9', residencyStatus: 'C\u01b0 tr\u00fa', presenceStatus: 'Hi\u1ec7n t\u1ea1i',
     occupation: 'Ngh\u1ec1 nghi\u1ec7p', job: 'Ngh\u1ec1 nghi\u1ec7p', workPlace: 'N\u01a1i l\u00e0m vi\u1ec7c', ethnicity: 'D\u00e2n t\u1ed9c', religion: 'T\u00f4n gi\u00e1o', educationLevel: 'Tr\u00ecnh \u0111\u1ed9 h\u1ecdc v\u1ea5n', maritalStatus: 'T\u00ecnh tr\u1ea1ng h\u00f4n nh\u00e2n', nationality: 'Qu\u1ed1c t\u1ecbch', bloodType: 'Nh\u00f3m m\u00e1u',
     partyMember: '\u0110\u1ea3ng vi\u00ean', youthUnionMember: '\u0110o\u00e0n vi\u00ean Thanh ni\u00ean', womenUnionMember: 'H\u1ed9i vi\u00ean H\u1ed9i Ph\u1ee5 n\u1eef', farmersUnionMember: 'H\u1ed9i vi\u00ean H\u1ed9i N\u00f4ng d\u00e2n', veteransUnionMember: 'H\u1ed9i vi\u00ean H\u1ed9i C\u1ef1u chi\u1ebfn binh', elderlyUnionMember: 'H\u1ed9i vi\u00ean H\u1ed9i Ng\u01b0\u1eddi cao tu\u1ed5i',
     meritoriousPerson: 'Ng\u01b0\u1eddi c\u00f3 c\u00f4ng', martyrRelative: 'Th\u00e2n nh\u00e2n li\u1ec7t s\u0129', woundedSoldier: 'Th\u01b0\u01a1ng binh', sickSoldier: 'B\u1ec7nh binh', disabledPerson: 'Ng\u01b0\u1eddi khuy\u1ebft t\u1eadt', disabledHousehold: 'H\u1ed9 c\u00f3 ng\u01b0\u1eddi khuy\u1ebft t\u1eadt', socialAssistance: 'B\u1ea3o tr\u1ee3 x\u00e3 h\u1ed9i', householdType: 'Di\u1ec7n h\u1ed9', poorHousehold: 'H\u1ed9 ngh\u00e8o', nearPoorHousehold: 'H\u1ed9 c\u1eadn ngh\u00e8o', healthInsurance: 'B\u1ea3o hi\u1ec3m y t\u1ebf', hasHealthInsurance: 'C\u00f3 tham gia BHYT', healthInsuranceParticipationStatus: 'Tr\u1ea1ng th\u00e1i', healthInsuranceNumber: 'M\u00e3 BHYT', healthInsuranceGroup: 'Nh\u00f3m \u0111\u1ed1i t\u01b0\u1ee3ng', healthInsuranceStartDate: 'Hi\u1ec7u l\u1ef1c t\u1eeb', healthInsuranceEndDate: 'Hi\u1ec7u l\u1ef1c \u0111\u1ebfn', healthInsuranceFacility: 'N\u01a1i \u0111\u0103ng k\u00fd KCB', socialInsurance: 'B\u1ea3o hi\u1ec3m x\u00e3 h\u1ed9i',

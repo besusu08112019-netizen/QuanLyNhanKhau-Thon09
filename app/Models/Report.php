@@ -243,8 +243,8 @@ final class Report extends BaseModel
     private function citizenListReport(string $title, array $filters): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        $rows = $this->fetchAll("SELECT h.household_code, c.citizen_code, c.full_name, c.gender, c.date_of_birth, c.identity_number, c.relationship, c.residency_status, c.presence_status, c.life_status, c.phone FROM citizens c INNER JOIN households h ON h.id=c.household_id $where ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name", $params);
-        return $this->table($title, ['Mã hộ','Mã nhân khẩu','Họ tên','Giới tính','Ngày sinh','CCCD','Quan hệ','Cư trú','Hiện tại','Trạng thái','Số điện thoại'], array_map(fn($r) => [$r['household_code'], $r['citizen_code'], $r['full_name'], $r['gender'], $this->date($r['date_of_birth']), $r['identity_number'], $r['relationship'], $this->residency($r['residency_status']), $this->presence($r['presence_status']), $this->life($r['life_status']), $r['phone']], $rows), $filters);
+        $rows = $this->fetchAll("SELECT h.household_code, c.citizen_code, c.full_name, c.gender, c.date_of_birth, c.identity_number, c.relationship, c.father_name, c.mother_name, c.residency_status, c.presence_status, c.life_status, c.phone FROM citizens c INNER JOIN households h ON h.id=c.household_id $where ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name", $params);
+        return $this->table($title, ['Mã hộ','Mã nhân khẩu','Họ tên','Giới tính','Ngày sinh','CCCD','Quan hệ','Họ tên bố','Họ tên mẹ','Cư trú','Hiện tại','Trạng thái','Số điện thoại'], array_map(fn($r) => [$r['household_code'], $r['citizen_code'], $r['full_name'], $r['gender'], $this->date($r['date_of_birth']), $r['identity_number'], $r['relationship'], $r['father_name'] ?? '', $r['mother_name'] ?? '', $this->residency($r['residency_status']), $this->presence($r['presence_status']), $this->life($r['life_status']), $r['phone']], $rows), $filters);
     }
 
     private function movementDetailReport(string $title, array $types, array $filters): array
