@@ -8,7 +8,7 @@ Google Sheets database gom cac sheet sau.
 
 ## citizens
 
-`id`, `citizenCode`, `householdId`, `fullName`, `gender`, `dateOfBirth`, `identityNumber`, `identityIssueDate`, `identityIssuePlace`, `relationship`, `ethnicity`, `religion`, `occupation`, `phone`, `permanentAddress`, `currentAddress`, `educationLevel`, `maritalStatus`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`, `presenceStatus`
+`id`, `citizenCode`, `householdId`, `fullName`, `gender`, `dateOfBirth`, `identityNumber`, `identityIssueDate`, `identityIssuePlace`, `relationship`, `fatherName`, `motherName`, `ethnicity`, `religion`, `occupation`, `phone`, `permanentAddress`, `currentAddress`, `educationLevel`, `maritalStatus`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`, `presenceStatus`
 
 ## movements
 

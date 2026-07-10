@@ -1,1 +1,1 @@
-type,householdCode,citizenCode,fullName,gender,dateOfBirth,relationship,address,phone,status,presenceStatus
+type,householdCode,citizenCode,fullName,gender,dateOfBirth,relationship,fatherName,motherName,address,phone,status,presenceStatus

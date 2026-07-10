@@ -88,7 +88,7 @@ final class Citizen extends BaseModel
     public function find(int $id): ?array
     {
         $this->ensureHealthInsuranceSchema();
-        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
+        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url, NULLIF(c.father_name, "") AS father_display_name, NULLIF(c.mother_name, "") AS mother_display_name FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
     }
 
     public function create(array $data, int $userId): array
@@ -98,8 +98,8 @@ final class Citizen extends BaseModel
         if ($params['code'] === '') $params['code'] = $this->nextCode((int) $params['household_id']);
         $this->ensureUniqueIdentity($params['identity']);
         $this->ensureSingleHead((int) $params['household_id'], null, $params['relationship']);
-        $columns = ['citizen_code','household_id','full_name','gender','date_of_birth','identity_number','identity_issue_date','identity_issue_place','relationship','ethnicity','religion','occupation','phone','residency_status','current_address','education_level','marital_status','life_status','presence_status','status','created_by'];
-        $values = [':code',':household_id',':full_name',':gender',':dob',':identity',':issue_date',':issue_place',':relationship',':ethnicity',':religion',':occupation',':phone',':residency',':current_address',':education',':marital',':life',':presence','"ACTIVE"',':user'];
+        $columns = ['citizen_code','household_id','full_name','gender','date_of_birth','identity_number','identity_issue_date','identity_issue_place','relationship','ethnicity','religion','occupation','father_name','mother_name','phone','residency_status','current_address','education_level','marital_status','life_status','presence_status','status','created_by'];
+        $values = [':code',':household_id',':full_name',':gender',':dob',':identity',':issue_date',':issue_place',':relationship',':ethnicity',':religion',':occupation',':father_name',':mother_name',':phone',':residency',':current_address',':education',':marital',':life',':presence','"ACTIVE"',':user'];
         foreach ($this->activeExtendedColumns() as $column) { $columns[] = $column; $values[] = ':' . $column; }
         foreach ($this->activeHealthInsuranceColumns() as $column) { $columns[] = $column; $values[] = ':' . $column; }
         $id = $this->insert('INSERT INTO citizens (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
@@ -116,7 +116,7 @@ final class Citizen extends BaseModel
         if ($params['code'] === '') $params['code'] = (string) $before['citizen_code'];
         $this->ensureUniqueIdentity($params['identity'], $id);
         $this->ensureSingleHead((int) $params['household_id'], $id, $params['relationship']);
-        $sets = ['citizen_code=:code','household_id=:household_id','full_name=:full_name','gender=:gender','date_of_birth=:dob','identity_number=:identity','identity_issue_date=:issue_date','identity_issue_place=:issue_place','relationship=:relationship','ethnicity=:ethnicity','religion=:religion','occupation=:occupation','phone=:phone','residency_status=:residency','current_address=:current_address','education_level=:education','marital_status=:marital','life_status=:life','presence_status=:presence','updated_by=:user'];
+        $sets = ['citizen_code=:code','household_id=:household_id','full_name=:full_name','gender=:gender','date_of_birth=:dob','identity_number=:identity','identity_issue_date=:issue_date','identity_issue_place=:issue_place','relationship=:relationship','ethnicity=:ethnicity','religion=:religion','occupation=:occupation','father_name=:father_name','mother_name=:mother_name','phone=:phone','residency_status=:residency','current_address=:current_address','education_level=:education','marital_status=:marital','life_status=:life','presence_status=:presence','updated_by=:user'];
         foreach ($this->activeExtendedColumns() as $column) $sets[] = $column . '=:' . $column;
         foreach ($this->activeHealthInsuranceColumns() as $column) $sets[] = $column . '=:' . $column;
         $this->execute('UPDATE citizens SET ' . implode(',', $sets) . ' WHERE id=:id', $params);
@@ -220,6 +220,8 @@ final class Citizen extends BaseModel
             'ethnicity' => trim((string) ($data['ethnicity'] ?? $fallback['ethnicity'] ?? '')) ?: null,
             'religion' => trim((string) ($data['religion'] ?? $fallback['religion'] ?? '')) ?: null,
             'occupation' => trim((string) ($data['occupation'] ?? $fallback['occupation'] ?? '')) ?: null,
+            'father_name' => $this->nullableString($data['fatherName'] ?? $data['father_name'] ?? $fallback['father_name'] ?? null, 255),
+            'mother_name' => $this->nullableString($data['motherName'] ?? $data['mother_name'] ?? $fallback['mother_name'] ?? null, 255),
             'phone' => trim((string) ($data['phone'] ?? $fallback['phone'] ?? '')) ?: null,
             'residency' => $this->residency($data['residency_status'] ?? $data['permanentAddress'] ?? $fallback['residency_status'] ?? 'PERMANENT'),
             'current_address' => trim((string) ($data['currentAddress'] ?? $data['current_address'] ?? $fallback['current_address'] ?? '')) ?: null,
@@ -250,6 +252,8 @@ final class Citizen extends BaseModel
     {
         if ($this->healthInsuranceSchemaEnsured) return;
         $columns = [
+            'father_name' => 'VARCHAR(255) NULL',
+            'mother_name' => 'VARCHAR(255) NULL',
             'has_health_insurance' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'health_insurance_number' => 'VARCHAR(20) NULL',
             'health_insurance_group' => 'VARCHAR(100) NULL',

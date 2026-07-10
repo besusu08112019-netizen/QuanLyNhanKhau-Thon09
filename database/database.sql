@@ -97,6 +97,8 @@ CREATE TABLE `citizens` (
   `ethnicity` VARCHAR(100) NULL,
   `religion` VARCHAR(100) NULL,
   `occupation` VARCHAR(120) NULL,
+  `father_name` VARCHAR(255) NULL,
+  `mother_name` VARCHAR(255) NULL,
   `phone` VARCHAR(30) NULL,
   `residency_status` ENUM('PERMANENT','TEMPORARY') NOT NULL DEFAULT 'PERMANENT' COMMENT 'PERMANENT=Thuong tru, TEMPORARY=Tam tru',
   `current_address` VARCHAR(255) NULL,
