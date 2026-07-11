@@ -121,7 +121,7 @@ function leafletStub() {
         return map;
       }
       function tileLayer(url, opts){ return { url, opts: opts || {}, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
-      function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; p.toGeoJSON = function(){ return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [this.points.map(pt => Array.isArray(pt) ? [pt[1], pt[0]] : [pt.lng, pt.lat])] } }; }; p.editing = { enabled: false, enable(){ this.enabled = true; } }; return p; }
+      function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p._path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; p.toGeoJSON = function(){ return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [this.points.map(pt => Array.isArray(pt) ? [pt[1], pt[0]] : [pt.lng, pt.lat])] } }; }; p.editing = { enabled: false, enable(){ this.enabled = true; } }; return p; }
       function circle(latlng, opts){ const c = makeMarker(latlng, opts); c.setRadius = function(radius){ this.radius = radius; return this; }; return c; }
       function divIcon(opts){ return opts || {}; }
       function DrawControl(){ }
@@ -228,7 +228,7 @@ test('leaflet GIS renders GeoJSON area polygon and highlights selected area', as
   await page.locator('#gisAreaList .gis-area-item').click();
   const after = await page.evaluate(() => {
     const layer = window.App.gis.areaLayerMap.get('11');
-    return { selectedAreaId: window.App.gis.selectedAreaId, front: Boolean(layer?.front), style: layer?.style || null };
+    return { selectedAreaId: window.App.gis.selectedAreaId, front: Boolean(layer?.front), style: layer?.style || null, pathStyle: layer?._path ? { stroke: layer._path.style.stroke, strokeWidth: layer._path.style.strokeWidth, fill: layer._path.style.fill, fillOpacity: layer._path.style.fillOpacity, opacity: layer._path.style.opacity } : null, activeClass: Boolean(layer?._path?.classList.contains('gis-area-polygon-active')) };
   });
   expect(after.selectedAreaId).toBe('11');
   expect(after.front).toBe(true);
