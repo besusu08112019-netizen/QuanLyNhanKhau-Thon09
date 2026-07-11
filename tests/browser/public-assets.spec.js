@@ -165,18 +165,21 @@ test('public assets list, dashboard, filters and display format are consistent',
 
   await expect(page.locator('#publicAssetsMiniDashboard')).toContainText('Tổng công trình');
   await expect(page.locator('#publicAssetsMiniDashboard')).toContainText('1.234,5 m²');
+  await expect(page.locator('#publicAssetsMiniDashboard')).toContainText('T\u1ed5ng t\u00e0i s\u1ea3n ki\u1ec3m k\u00ea');
   await expect(page.locator('#publicAssetsTotalCount')).toHaveText('Tổng số: 2 công trình');
 
   const firstCells = page.locator('#publicAssetsRows tr').first().locator('td');
   await expect(firstCells.nth(6)).toContainText('KV: 1.234,5 m²');
   await expect(firstCells.nth(7)).toContainText('UBND xã Hồng Phong');
-  await expect(firstCells.nth(8)).toContainText('Đang sử dụng');
+  await expect(firstCells.nth(8)).toContainText('Nguy\u1ec5n V\u0103n A');
+  await expect(firstCells.nth(9)).toContainText('\u0110ang s\u1eed d\u1ee5ng');
 
   const secondCells = page.locator('#publicAssetsRows tr').nth(1).locator('td');
   await expect(secondCells.nth(3)).toContainText('--');
   await expect(secondCells.nth(6)).toContainText('KV: --');
   await expect(secondCells.nth(7)).toContainText('--');
-  await expect(secondCells.nth(8)).toContainText('Đang sửa chữa');
+  await expect(secondCells.nth(8)).toContainText('--');
+  await expect(secondCells.nth(9)).toContainText('\u0110ang s\u1eeda ch\u1eefa');
 
   await page.locator('[data-public-asset-filter="status:ACTIVE"]').click();
   await expect.poll(() => page.evaluate(() => document.querySelector('#publicAssetsStatusFilter').value)).toBe('ACTIVE');

@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS public_asset_inventory_items (
   group_name VARCHAR(180) NULL,
   quantity DECIMAL(14,2) NOT NULL DEFAULT 1,
   unit VARCHAR(80) NULL,
-  condition_status ENUM('GOOD','IN_USE','LIGHT_DAMAGE','HEAVY_DAMAGE','NEEDS_REPAIR','LIQUIDATED','DELETED') NOT NULL DEFAULT 'IN_USE',
+  condition_status ENUM('NEW','GOOD','IN_USE','MAINTENANCE','LIGHT_DAMAGE','HEAVY_DAMAGE','NEEDS_REPAIR','LIQUIDATED','DELETED') NOT NULL DEFAULT 'IN_USE',
   start_use_date DATE NULL,
   location_in_asset VARCHAR(255) NULL,
   note TEXT NULL,
@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS public_asset_inventory_items (
   CONSTRAINT fk_public_asset_inventory_group FOREIGN KEY (group_id) REFERENCES public_asset_inventory_groups(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        $this->execute("ALTER TABLE public_asset_inventory_items MODIFY condition_status ENUM('NEW','GOOD','IN_USE','MAINTENANCE','LIGHT_DAMAGE','HEAVY_DAMAGE','NEEDS_REPAIR','LIQUIDATED','DELETED') NOT NULL DEFAULT 'IN_USE'");
         $this->seedTypes();
         $this->seedInventoryGroups();
     }
@@ -301,7 +302,7 @@ SQL);
         }
         $sort = preg_replace('/[^a-z_]/', '', (string)($filters['sort'] ?? 'asset_code'));
         $direction = strtoupper((string)($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
-        $sortMap = ['asset_code' => 'pa.asset_code', 'asset_name' => 'pa.asset_name', 'type_name' => 'resolved_type_name', 'area_code' => 'pa.area_code', 'manager_name' => 'pa.manager_name', 'status' => 'pa.status', 'campus_area' => 'pa.campus_area', 'building_area' => 'pa.building_area', 'updated_at' => 'COALESCE(pa.updated_at,pa.created_at)'];
+        $sortMap = ['asset_code' => 'pa.asset_code', 'asset_name' => 'pa.asset_name', 'type_name' => 'resolved_type_name', 'area_code' => 'pa.area_code', 'managing_unit' => 'pa.managing_unit', 'manager_name' => 'pa.manager_name', 'status' => 'pa.status', 'campus_area' => 'pa.campus_area', 'building_area' => 'pa.building_area', 'updated_at' => 'COALESCE(pa.updated_at,pa.created_at)'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
         if ($withOrder) $result[] = 'ORDER BY ' . ($sortMap[$sort] ?? 'pa.asset_code') . ' ' . $direction . ', pa.id DESC';
         return $result;
@@ -404,8 +405,8 @@ SQL);
         $items = [
             ['Nội thất', 'Nội thất'], ['Bàn', 'Nội thất'], ['Ghế', 'Nội thất'], ['Tủ', 'Nội thất'], ['Kệ', 'Nội thất'],
             ['Thiết bị điện', 'Thiết bị điện'], ['Quạt', 'Thiết bị điện'], ['Điều hòa', 'Thiết bị điện'], ['Đèn', 'Thiết bị điện'], ['Bình nóng lạnh', 'Thiết bị điện'],
-            ['Điện tử', 'Điện tử'], ['Máy tính', 'Điện tử'], ['Máy in', 'Điện tử'], ['Máy chiếu', 'Điện tử'], ['Loa', 'Điện tử'], ['Amply', 'Điện tử'], ['Micro', 'Điện tử'], ['Camera', 'Điện tử'],
-            ['PCCC', 'PCCC'], ['Bình chữa cháy', 'PCCC'], ['Tủ PCCC', 'PCCC'], ['Chuông báo cháy', 'PCCC'],
+            ['Thiết bị điện tử', 'Thiết bị điện tử'], ['Điện tử', 'Thiết bị điện tử'], ['Máy tính', 'Thiết bị điện tử'], ['Máy in', 'Thiết bị điện tử'], ['Máy chiếu', 'Thiết bị điện tử'], ['Loa', 'Thiết bị điện tử'], ['Amply', 'Thiết bị điện tử'], ['Micro', 'Thiết bị điện tử'], ['Camera', 'Thiết bị điện tử'],
+            ['Thiết bị PCCC', 'Thiết bị PCCC'], ['PCCC', 'Thiết bị PCCC'], ['Bình chữa cháy', 'Thiết bị PCCC'], ['Tủ PCCC', 'Thiết bị PCCC'], ['Chuông báo cháy', 'Thiết bị PCCC'],
             ['Thiết bị khác', 'Thiết bị khác'], ['Dụng cụ vệ sinh', 'Thiết bị khác'], ['Thiết bị thể thao', 'Thiết bị khác'], ['Thiết bị y tế', 'Thiết bị khác'], ['Thiết bị văn phòng', 'Thiết bị khác'],
         ];
         $order = 10;
@@ -532,6 +533,6 @@ SQL);
     private function inventoryPhotoUrl(array $row): string { $url = (string)($row['photo_url'] ?? ''); return str_starts_with(ltrim($url, '/'), 'uploads/') ? '/api/public-assets/' . (int)$row['public_asset_id'] . '/inventory/' . (int)$row['id'] . '/photo' : $url; }
     private function pairs(array $map): array { return array_map(fn($k, $v) => ['value' => $k, 'label' => $v], array_keys($map), array_values($map)); }
     private function statuses(): array { return ['ACTIVE' => $this->u('\u0110ang s\u1eed d\u1ee5ng'), 'REPAIRING' => $this->u('\u0110ang s\u1eeda ch\u1eefa'), 'SUSPENDED' => $this->u('T\u1ea1m ng\u1eebng'), 'INACTIVE' => $this->u('Kh\u00f4ng c\u00f2n s\u1eed d\u1ee5ng'), 'DELETED' => $this->u('\u0110\u00e3 x\u00f3a')]; }
-    private function inventoryStatuses(): array { return ['GOOD' => $this->u('T\u1ed1t'), 'IN_USE' => $this->u('\u0110ang s\u1eed d\u1ee5ng'), 'LIGHT_DAMAGE' => $this->u('H\u1ecfng nh\u1eb9'), 'HEAVY_DAMAGE' => $this->u('H\u1ecfng n\u1eb7ng'), 'NEEDS_REPAIR' => $this->u('C\u1ea7n s\u1eeda ch\u1eefa'), 'LIQUIDATED' => $this->u('Thanh l\u00fd'), 'DELETED' => $this->u('\u0110\u00e3 x\u00f3a')]; }
+    private function inventoryStatuses(): array { return ['NEW' => $this->u('M\u1edbi'), 'GOOD' => $this->u('T\u1ed1t'), 'IN_USE' => $this->u('\u0110ang s\u1eed d\u1ee5ng'), 'MAINTENANCE' => $this->u('C\u1ea7n b\u1ea3o d\u01b0\u1ee1ng'), 'LIGHT_DAMAGE' => $this->u('H\u1ecfng nh\u1eb9'), 'HEAVY_DAMAGE' => $this->u('H\u1ecfng n\u1eb7ng'), 'NEEDS_REPAIR' => $this->u('C\u1ea7n s\u1eeda ch\u1eefa'), 'LIQUIDATED' => $this->u('Thanh l\u00fd'), 'DELETED' => $this->u('\u0110\u00e3 x\u00f3a')]; }
     private function u(string $value): string { return json_decode('"' . $value . '"') ?: $value; }
 }
