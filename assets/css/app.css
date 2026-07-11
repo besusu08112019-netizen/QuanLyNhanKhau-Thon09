@@ -5534,3 +5534,11 @@ button, input, select, textarea { font: inherit; min-width: 0; }
 .sidebar .dashboard-tree-link.nav-link i { width: 15px; font-size: 12px; }
 body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dashboard-tree-caret, body.sidebar-collapsed .dashboard-tree-children { display: none; }
 @media (prefers-reduced-motion: reduce) { .dashboard-tree-toggle, .dashboard-tree-caret, .dashboard-tree-children { transition: none; } }
+
+/* GIS boundary editing toolbar */
+.gis-boundary-toolbar { grid-template-columns: 1fr; }
+.gis-area-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+.gis-area-main { min-width: 0; border: 0; background: transparent; display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 0; text-align: left; color: inherit; }
+.gis-area-row-actions { display: inline-flex; gap: 6px; align-items: center; }
+.gis-area-row-actions .btn { width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 600px) { .gis-area-item { grid-template-columns: 1fr; align-items: stretch; } .gis-area-main { align-items: flex-start; } .gis-area-row-actions { justify-content: flex-end; } }

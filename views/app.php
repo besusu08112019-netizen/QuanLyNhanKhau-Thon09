@@ -206,10 +206,14 @@
               </div>
               <button id="gisRefreshBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-rotate-right"></i></button>
             </div>
-            <div class="gis-actions">
-              <button id="gisDrawBtn" class="btn btn-success" type="button"><i class="fa-solid fa-draw-polygon"></i> Vẽ ranh giới</button>
-              <button id="gisSaveBtn" class="btn btn-primary" type="button" disabled><i class="fa-solid fa-floppy-disk"></i> Lưu khu vực</button>
-              <button id="gisPdfBtn" class="btn btn-outline-danger" type="button"><i class="fa-solid fa-file-pdf"></i> Xuất PDF</button>
+            <div class="gis-actions gis-boundary-toolbar">
+              <button id="gisDrawBtn" class="btn btn-success" type="button"><i class="fa-solid fa-draw-polygon"></i> V&#7869; ranh gi&#7899;i</button>
+              <button id="gisUndoPointBtn" class="btn btn-outline-secondary d-none" type="button"><i class="fa-solid fa-rotate-left"></i> X&oacute;a &#273;i&#7875;m cu&#7889;i</button>
+              <button id="gisRedoDrawBtn" class="btn btn-outline-warning d-none" type="button"><i class="fa-solid fa-eraser"></i> L&agrave;m l&#7841;i</button>
+              <button id="gisCancelDrawBtn" class="btn btn-outline-dark d-none" type="button"><i class="fa-solid fa-xmark"></i> H&#7911;y v&#7869;</button>
+              <button id="gisSaveBtn" class="btn btn-primary" type="button" disabled><i class="fa-solid fa-floppy-disk"></i> L&#432;u khu v&#7921;c</button>
+              <button id="gisDeleteAreaBtn" class="btn btn-outline-danger d-none" type="button"><i class="fa-solid fa-trash"></i> X&oacute;a khu v&#7921;c</button>
+              <button id="gisPdfBtn" class="btn btn-outline-danger" type="button"><i class="fa-solid fa-file-pdf"></i> Xu&#7845;t PDF</button>
             </div>
             <form id="gisAreaForm" class="gis-area-form">
               <input type="hidden" id="gisAreaId">
