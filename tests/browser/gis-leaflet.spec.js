@@ -121,7 +121,7 @@ function leafletStub() {
         return map;
       }
       function tileLayer(url, opts){ return { url, opts: opts || {}, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
-      function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; return p; }
+      function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; p.toGeoJSON = function(){ return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [this.points.map(pt => Array.isArray(pt) ? [pt[1], pt[0]] : [pt.lng, pt.lat])] } }; }; p.editing = { enabled: false, enable(){ this.enabled = true; } }; return p; }
       function circle(latlng, opts){ const c = makeMarker(latlng, opts); c.setRadius = function(radius){ this.radius = radius; return this; }; return c; }
       function divIcon(opts){ return opts || {}; }
       function DrawControl(){ }
@@ -188,6 +188,31 @@ async function boot(page, apiLog) {
     return window.loadGisMap();
   });
 }
+
+test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  await page.evaluate(() => window.startGisDraw(false));
+  const result = await page.evaluate(() => {
+    const layer = window.L.polygon([[20.251, 105.971], [20.252, 105.972], [20.253, 105.971]]);
+    window.App.gis.map.fire(window.L.Draw.Event.CREATED, { layer });
+    return {
+      isDrawn: window.App.gis.drawnLayer === layer,
+      inGroup: window.App.gis.layerGroup.hasLayer(layer),
+      saveDisabled: document.querySelector('#gisSaveBtn')?.disabled,
+      dirty: window.App.gis.areaDirty,
+      style: layer.style,
+      editingEnabled: Boolean(layer.editing?.enabled)
+    };
+  });
+  expect(result.isDrawn).toBe(true);
+  expect(result.inGroup).toBe(true);
+  expect(result.saveDisabled).toBe(false);
+  expect(result.dirty).toBe(true);
+  expect(result.style).toMatchObject({ color: '#0f8a4b', fillColor: '#0f8a4b', weight: 3 });
+  expect(result.style.fillOpacity).toBeCloseTo(0.35);
+  expect(result.editingEnabled).toBe(true);
+});
 
 test('leaflet GIS renders GeoJSON area polygon and highlights selected area', async ({ page }) => {
   const apiLog = [];
