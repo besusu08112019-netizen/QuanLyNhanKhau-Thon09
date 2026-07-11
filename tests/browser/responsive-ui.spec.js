@@ -1,8 +1,8 @@
 const { test, expect } = require('@playwright/test');
 
 const widths = [320, 360, 375, 390, 414, 480, 600, 768, 820, 1024];
-const mobileScreens = ['dashboard', 'households', 'persons', 'businessHouseholds', 'vehicles', 'livestock', 'agriculture', 'contributions', 'gis'];
-const bottomNavScreens = ['dashboard', 'households', 'persons', 'businessHouseholds', 'vehicles', 'livestock', 'agriculture', 'contributions', 'gis'];
+const mobileScreens = ['dashboard', 'households', 'persons', 'businessHouseholds', 'vehicles', 'livestock', 'agriculture', 'contributions', 'publicAssets', 'gis'];
+const bottomNavScreens = ['dashboard', 'households', 'persons', 'businessHouseholds', 'vehicles', 'livestock', 'agriculture', 'contributions', 'publicAssets', 'gis'];
 
 async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
@@ -21,6 +21,10 @@ async function mockApis(page) {
     if (url.includes('/api/household-business')) return payload({ items: [], total: 0, page: 1, pageSize: 20, dashboard: {} });
     if (url.includes('/api/livestock')) return payload({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
     if (url.includes('/api/agriculture')) return payload({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
+    if (url.includes('/api/public-assets/catalogs')) return payload({ types: [], areas: [], statuses: [] });
+    if (url.includes('/api/public-assets/dashboard')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/public-assets/gis')) return payload({ items: [] });
+    if (url.includes('/api/public-assets')) return payload({ items: [], total: 0, page: 1, pageSize: 20, totalPages: 1 });
     if (url.includes('/api/households')) return payload({ items: [], total: 0, page: 1, pageSize: 20 });
     if (url.includes('/api/persons')) return payload({ items: [], total: 0, page: 1, pageSize: 20 });
     return payload({ items: [], total: 0 });

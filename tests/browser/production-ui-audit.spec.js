@@ -1,6 +1,6 @@
 const { test, expect, chromium } = require('@playwright/test');
 
-const screens = ['dashboard', 'households', 'persons', 'businessHouseholds', 'vehicles', 'livestock', 'agriculture', 'contributions', 'gis', 'reports', 'operationCenter', 'users'];
+const screens = ['dashboard', 'households', 'persons', 'businessHouseholds', 'vehicles', 'livestock', 'agriculture', 'contributions', 'publicAssets', 'gis', 'reports', 'operationCenter', 'users'];
 const viewports = [
   { name: 'desktop', width: 1366, height: 768 },
   { name: 'tablet-portrait', width: 768, height: 1024 },
@@ -8,7 +8,7 @@ const viewports = [
   { name: 'mobile-portrait', width: 390, height: 844 },
   { name: 'mobile-landscape', width: 844, height: 390 }
 ];
-const modalIds = ['householdModal', 'businessHouseholdModal', 'agriFormModal', 'personModal', 'houseFormModal', 'detailModal', 'livestockHouseholdModal'];
+const modalIds = ['householdModal', 'businessHouseholdModal', 'agriFormModal', 'personModal', 'houseFormModal', 'detailModal', 'livestockHouseholdModal', 'publicAssetDetailModal', 'publicAssetFormModal'];
 const mojibakePattern = /(?:\u00e1[\u00bb\u00ba]|\u00c4\u2018|\u00c6[\u00b0\u00a1]|\u00c3[\u00a1\u00a0\u00a2\u00aa\u00b4\u00b9\u00ba\u00b3\u00b2\u00b5\u00a8\u00a9]|\uFFFD|\? d\?|\?n kh|\?o c)/i;
 
 function ok(data) {
@@ -29,6 +29,10 @@ async function mockApis(page) {
     if (url.includes('/api/household-business')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20, dashboard: {} });
     if (url.includes('/api/livestock')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
     if (url.includes('/api/agriculture')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
+    if (url.includes('/api/public-assets/catalogs')) return fulfill({ types: [], areas: [], statuses: [] });
+    if (url.includes('/api/public-assets/dashboard')) return fulfill({ metrics: {}, charts: {} });
+    if (url.includes('/api/public-assets/gis')) return fulfill({ items: [] });
+    if (url.includes('/api/public-assets')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20, totalPages: 1 });
     if (url.includes('/api/households')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20 });
     if (url.includes('/api/persons')) return fulfill({ items: [], total: 0, page: 1, pageSize: 20 });
     return fulfill({ items: [], total: 0 });
