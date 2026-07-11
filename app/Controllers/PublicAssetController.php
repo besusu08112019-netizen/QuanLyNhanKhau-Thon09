@@ -66,6 +66,8 @@ final class PublicAssetController extends BaseController
             'area_code' => $this->query('area_code', $this->query('areaCode', '')),
             'status' => $this->query('status', ''),
             'located' => $this->query('located', ''),
+            'area_min' => $this->query('area_min', $this->query('areaMin', '')),
+            'area_max' => $this->query('area_max', $this->query('areaMax', '')),
             'sort' => $this->query('sort', 'asset_code'),
             'direction' => $this->query('direction', 'ASC'),
         ];

@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS public_assets (
   type_name VARCHAR(180) NULL,
   category VARCHAR(120) NULL,
   area_code VARCHAR(80) NULL,
+  campus_area DECIMAL(14,2) NULL,
+  building_area DECIMAL(14,2) NULL,
   address VARCHAR(500) NULL,
   latitude DECIMAL(11,8) NULL,
   longitude DECIMAL(11,8) NULL,
@@ -51,11 +53,14 @@ CREATE TABLE IF NOT EXISTS public_assets (
   deleted_by BIGINT UNSIGNED NULL,
   KEY idx_public_assets_type (type_id),
   KEY idx_public_assets_area (area_code),
+  KEY idx_public_assets_campus_area (campus_area),
   KEY idx_public_assets_status (status),
   KEY idx_public_assets_location (latitude, longitude),
   CONSTRAINT fk_public_assets_type FOREIGN KEY (type_id) REFERENCES public_asset_types(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        $this->ensureColumn('public_assets', 'campus_area', 'DECIMAL(14,2) NULL AFTER area_code');
+        $this->ensureColumn('public_assets', 'building_area', 'DECIMAL(14,2) NULL AFTER campus_area');
         $this->seedTypes();
     }
 
@@ -95,11 +100,11 @@ SQL);
         $params = $this->params($data, $userId);
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE public_assets SET asset_name=:asset_name, type_id=:type_id, type_name=:type_name, category=:category, area_code=:area_code, address=:address, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, cover_photo_url=:cover_photo_url, description=:description, managing_unit=:managing_unit, manager_name=:manager_name, manager_phone=:manager_phone, note=:note, status=:status, updated_by=:updated_by WHERE id=:id', $params);
+            $this->execute('UPDATE public_assets SET asset_name=:asset_name, type_id=:type_id, type_name=:type_name, category=:category, area_code=:area_code, campus_area=:campus_area, building_area=:building_area, address=:address, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, cover_photo_url=:cover_photo_url, description=:description, managing_unit=:managing_unit, manager_name=:manager_name, manager_phone=:manager_phone, note=:note, status=:status, updated_by=:updated_by WHERE id=:id', $params);
             return $this->find($id);
         }
         $params['asset_code'] = $this->nextCode();
-        $newId = $this->insert('INSERT INTO public_assets (asset_code, asset_name, type_id, type_name, category, area_code, address, latitude, longitude, gps_accuracy, cover_photo_url, description, managing_unit, manager_name, manager_phone, note, status, created_by, updated_by) VALUES (:asset_code, :asset_name, :type_id, :type_name, :category, :area_code, :address, :latitude, :longitude, :gps_accuracy, :cover_photo_url, :description, :managing_unit, :manager_name, :manager_phone, :note, :status, :created_by, :updated_by)', $params);
+        $newId = $this->insert('INSERT INTO public_assets (asset_code, asset_name, type_id, type_name, category, area_code, campus_area, building_area, address, latitude, longitude, gps_accuracy, cover_photo_url, description, managing_unit, manager_name, manager_phone, note, status, created_by, updated_by) VALUES (:asset_code, :asset_name, :type_id, :type_name, :category, :area_code, :campus_area, :building_area, :address, :latitude, :longitude, :gps_accuracy, :cover_photo_url, :description, :managing_unit, :manager_name, :manager_phone, :note, :status, :created_by, :updated_by)', $params);
         return $this->find($newId);
     }
 
@@ -114,13 +119,15 @@ SQL);
     {
         $this->ensureSchema();
         [$where, $params] = $this->where($filters, false);
-        $metrics = $this->fetchOne("SELECT COUNT(*) AS total_assets, COALESCE(SUM(pa.status='ACTIVE'),0) AS active_assets, COALESCE(SUM(pa.status='REPAIRING'),0) AS repairing_assets, COALESCE(SUM(pa.status='SUSPENDED'),0) AS suspended_assets, COALESCE(SUM(pa.status='INACTIVE'),0) AS inactive_assets, COALESCE(SUM(pa.latitude IS NOT NULL AND pa.longitude IS NOT NULL),0) AS located_assets FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where", $params) ?: [];
+        $metrics = $this->fetchOne("SELECT COUNT(*) AS total_assets, COALESCE(SUM(pa.status='ACTIVE'),0) AS active_assets, COALESCE(SUM(pa.status='REPAIRING'),0) AS repairing_assets, COALESCE(SUM(pa.status='SUSPENDED'),0) AS suspended_assets, COALESCE(SUM(pa.status='INACTIVE'),0) AS inactive_assets, COALESCE(SUM(pa.latitude IS NOT NULL AND pa.longitude IS NOT NULL),0) AS located_assets, COALESCE(SUM(pa.campus_area),0) AS total_campus_area, COALESCE(SUM(pa.building_area),0) AS total_building_area FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where", $params) ?: [];
         return [
-            'metrics' => array_map('intval', $metrics),
+            'metrics' => array_map('floatval', $metrics),
             'charts' => [
                 'types' => $this->fetchAll("SELECT COALESCE(pat.name, pa.type_name, :unknown) AS label, COUNT(*) AS value FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where GROUP BY label ORDER BY value DESC LIMIT 12", $params + ['unknown' => $this->u('Ch\u01b0a c\u1eadp nh\u1eadt')]),
                 'statuses' => $this->fetchAll("SELECT pa.status AS label, COUNT(*) AS value FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where GROUP BY pa.status ORDER BY value DESC", $params),
                 'areas' => $this->fetchAll("SELECT COALESCE(NULLIF(pa.area_code,''), :unknown) AS label, COUNT(*) AS value FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where GROUP BY label ORDER BY value DESC LIMIT 12", $params + ['unknown' => $this->u('Ch\u01b0a c\u1eadp nh\u1eadt')]),
+                'area_by_type' => $this->fetchAll("SELECT COALESCE(pat.name, pa.type_name, :unknown) AS label, COUNT(*) AS value, COALESCE(SUM(pa.campus_area),0) AS campus_area, COALESCE(SUM(pa.building_area),0) AS building_area FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where GROUP BY label HAVING campus_area > 0 OR building_area > 0 ORDER BY campus_area DESC LIMIT 12", $params + ['unknown' => $this->u('Ch\u01b0a c\u1eadp nh\u1eadt')]),
+                'area_by_category' => $this->fetchAll("SELECT COALESCE(pat.category, pa.category, :unknown) AS label, COUNT(*) AS value, COALESCE(SUM(pa.campus_area),0) AS campus_area, COALESCE(SUM(pa.building_area),0) AS building_area FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where GROUP BY label HAVING campus_area > 0 OR building_area > 0 ORDER BY campus_area DESC LIMIT 12", $params + ['unknown' => $this->u('Ch\u01b0a c\u1eadp nh\u1eadt')]),
             ],
         ];
     }
@@ -150,9 +157,16 @@ SQL);
         $located = trim((string)($filters['located'] ?? ''));
         if ($located === '1') $where[] = 'pa.latitude IS NOT NULL AND pa.longitude IS NOT NULL';
         if ($located === '0') $where[] = '(pa.latitude IS NULL OR pa.longitude IS NULL)';
+        foreach (['area_min' => ['pa.campus_area', '>='], 'area_max' => ['pa.campus_area', '<=']] as $key => $rule) {
+            $value = trim((string)($filters[$key] ?? ''));
+            if ($value !== '' && is_numeric(str_replace(',', '.', $value))) {
+                $where[] = $rule[0] . ' ' . $rule[1] . ' :' . $key;
+                $params[$key] = (float)str_replace(',', '.', $value);
+            }
+        }
         $sort = preg_replace('/[^a-z_]/', '', (string)($filters['sort'] ?? 'asset_code'));
         $direction = strtoupper((string)($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
-        $sortMap = ['asset_code' => 'pa.asset_code', 'asset_name' => 'pa.asset_name', 'type_name' => 'resolved_type_name', 'area_code' => 'pa.area_code', 'manager_name' => 'pa.manager_name', 'status' => 'pa.status', 'updated_at' => 'COALESCE(pa.updated_at,pa.created_at)'];
+        $sortMap = ['asset_code' => 'pa.asset_code', 'asset_name' => 'pa.asset_name', 'type_name' => 'resolved_type_name', 'area_code' => 'pa.area_code', 'manager_name' => 'pa.manager_name', 'status' => 'pa.status', 'campus_area' => 'pa.campus_area', 'building_area' => 'pa.building_area', 'updated_at' => 'COALESCE(pa.updated_at,pa.created_at)'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
         if ($withOrder) $result[] = 'ORDER BY ' . ($sortMap[$sort] ?? 'pa.asset_code') . ' ' . $direction . ', pa.id DESC';
         return $result;
@@ -172,6 +186,8 @@ SQL);
             'type_name' => $type ? (string)$type['name'] : $this->nullable($data['type_name'] ?? $data['typeName'] ?? ''),
             'category' => $type ? (string)$type['category'] : $this->nullable($data['category'] ?? ''),
             'area_code' => $this->nullable($data['area_code'] ?? $data['areaCode'] ?? ''),
+            'campus_area' => $this->positiveNumber($data['campus_area'] ?? $data['campusArea'] ?? null, true, $this->u('Di\u1ec7n t\u00edch khu\u00f4n vi\u00ean ph\u1ea3i l\u00e0 s\u1ed1 d\u01b0\u01a1ng')),
+            'building_area' => $this->positiveNumber($data['building_area'] ?? $data['buildingArea'] ?? null, false, $this->u('Di\u1ec7n t\u00edch x\u00e2y d\u1ef1ng ph\u1ea3i l\u00e0 s\u1ed1 d\u01b0\u01a1ng')),
             'address' => $this->nullable($data['address'] ?? ''),
             'latitude' => $this->coord($data['latitude'] ?? null),
             'longitude' => $this->coord($data['longitude'] ?? null),
@@ -200,6 +216,8 @@ SQL);
             'category' => (string)($row['resolved_category'] ?? $row['category'] ?? ''),
             'type_icon' => (string)($row['type_icon'] ?? 'fa-building-columns'),
             'area_code' => (string)($row['area_code'] ?? ''),
+            'campus_area' => $row['campus_area'] !== null && $row['campus_area'] !== '' ? (float)$row['campus_area'] : null,
+            'building_area' => $row['building_area'] !== null && $row['building_area'] !== '' ? (float)$row['building_area'] : null,
             'address' => (string)($row['address'] ?? ''),
             'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float)$row['latitude'] : null,
             'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float)$row['longitude'] : null,
@@ -238,7 +256,10 @@ SQL);
     private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM public_assets'); return 'CT09-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableNumber(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
+    private function positiveNumber(mixed $value, bool $required, string $message): ?float { $value = trim((string)($value ?? '')); if ($value === '') { if ($required) throw new \RuntimeException($message); return null; } $number = (float)str_replace(',', '.', $value); if ($number <= 0) throw new \RuntimeException($message); return $number; }
     private function coord(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
+    private function ensureColumn(string $table, string $column, string $definition): void { if ($this->columnExists($table, $column)) return; $this->execute('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition); }
+    private function columnExists(string $table, string $column): bool { return (bool)$this->fetchOne('SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME=:table AND COLUMN_NAME=:column', ['table' => $table, 'column' => $column]); }
     private function pairs(array $map): array { return array_map(fn($k, $v) => ['value' => $k, 'label' => $v], array_keys($map), array_values($map)); }
     private function statuses(): array { return ['ACTIVE' => $this->u('\u0110ang s\u1eed d\u1ee5ng'), 'REPAIRING' => $this->u('\u0110ang s\u1eeda ch\u1eefa'), 'SUSPENDED' => $this->u('T\u1ea1m ng\u1eebng'), 'INACTIVE' => $this->u('Kh\u00f4ng c\u00f2n s\u1eed d\u1ee5ng'), 'DELETED' => $this->u('\u0110\u00e3 x\u00f3a')]; }
     private function u(string $value): string { return json_decode('"' . $value . '"') ?: $value; }

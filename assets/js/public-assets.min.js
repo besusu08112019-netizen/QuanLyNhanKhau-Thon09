@@ -10,6 +10,8 @@ const state = {
   area_code: '',
   status: '',
   located: '',
+  area_min: '',
+  area_max: '',
   sort: 'asset_code',
   direction: 'ASC',
   catalogs: null,
@@ -36,7 +38,7 @@ function bindEvents() {
   $('#publicAssetsSearchBtn')?.addEventListener('click', () => { state.page = 1; readFilters(); loadPublicAssets(); });
   $('#publicAssetsResetBtn')?.addEventListener('click', resetFilters);
   $('#publicAssetsSearch')?.addEventListener('input', debounce(() => { state.page = 1; readFilters(); loadPublicAssets(); }, 350));
-  ['publicAssetsTypeFilter','publicAssetsAreaFilter','publicAssetsStatusFilter','publicAssetsLocatedFilter'].forEach(id => $('#'+id)?.addEventListener('change', () => { state.page = 1; readFilters(); loadPublicAssets(); }));
+  ['publicAssetsTypeFilter','publicAssetsAreaFilter','publicAssetsStatusFilter','publicAssetsLocatedFilter','publicAssetsAreaMin','publicAssetsAreaMax'].forEach(id => $('#'+id)?.addEventListener('change', () => { state.page = 1; readFilters(); loadPublicAssets(); }));
   $('#publicAssetsPageSize')?.addEventListener('change', event => { state.pageSize = Number(event.target.value || 20); state.page = 1; loadPublicAssets(); });
   $('#publicAssetsAddBtn')?.addEventListener('click', () => openPublicAssetForm());
   $('#publicAssetForm')?.addEventListener('submit', savePublicAsset);
@@ -64,12 +66,14 @@ function readFilters() {
   state.area_code = $('#publicAssetsAreaFilter')?.value || '';
   state.status = $('#publicAssetsStatusFilter')?.value || '';
   state.located = $('#publicAssetsLocatedFilter')?.value || '';
+  state.area_min = $('#publicAssetsAreaMin')?.value.trim() || '';
+  state.area_max = $('#publicAssetsAreaMax')?.value.trim() || '';
   state.pageSize = Number($('#publicAssetsPageSize')?.value || state.pageSize || 20);
 }
 
 function resetFilters() {
-  ['publicAssetsSearch','publicAssetsTypeFilter','publicAssetsAreaFilter','publicAssetsStatusFilter','publicAssetsLocatedFilter'].forEach(id => { const el = $('#'+id); if (el) el.value = ''; });
-  Object.assign(state, { page: 1, search: '', type_id: '', area_code: '', status: '', located: '', sort: 'asset_code', direction: 'ASC' });
+  ['publicAssetsSearch','publicAssetsTypeFilter','publicAssetsAreaFilter','publicAssetsStatusFilter','publicAssetsLocatedFilter','publicAssetsAreaMin','publicAssetsAreaMax'].forEach(id => { const el = $('#'+id); if (el) el.value = ''; });
+  Object.assign(state, { page: 1, search: '', type_id: '', area_code: '', status: '', located: '', area_min: '', area_max: '', sort: 'asset_code', direction: 'ASC' });
   loadPublicAssets();
 }
 
@@ -101,7 +105,7 @@ async function loadPublicAssets() {
   if (!$('#publicAssetsScreen')) return;
   await ensureCatalogs();
   readFilters();
-  const params = new URLSearchParams({ page: state.page, pageSize: state.pageSize, search: state.search, type_id: state.type_id, area_code: state.area_code, status: state.status, located: state.located, sort: state.sort, direction: state.direction });
+  const params = new URLSearchParams({ page: state.page, pageSize: state.pageSize, search: state.search, type_id: state.type_id, area_code: state.area_code, status: state.status, located: state.located, area_min: state.area_min, area_max: state.area_max, sort: state.sort, direction: state.direction });
   const [list, dashboard] = await Promise.all([
     request(API + '?' + params.toString()),
     request(API + '/dashboard?' + params.toString(), { cacheTtl: 15000 })
@@ -118,19 +122,20 @@ function renderDashboard(data = {}) {
   if (!host) return;
   const m = data.metrics || {};
   const cards = [
-    ['total_assets', 'Tổng công trình', 'fa-building-columns', m.total_assets || 0, ''],
-    ['active_assets', 'Đang sử dụng', 'fa-circle-check', m.active_assets || 0, 'status:ACTIVE'],
-    ['repairing_assets', 'Đang sửa chữa', 'fa-screwdriver-wrench', m.repairing_assets || 0, 'status:REPAIRING'],
-    ['located_assets', 'Đã định vị GPS', 'fa-location-dot', m.located_assets || 0, 'located:1']
+    ['total_assets', 'Tổng công trình', 'fa-building-columns', number(m.total_assets || 0), ''],
+    ['active_assets', 'Đang sử dụng', 'fa-circle-check', number(m.active_assets || 0), 'status:ACTIVE'],
+    ['located_assets', 'Đã định vị GPS', 'fa-location-dot', number(m.located_assets || 0), 'located:1'],
+    ['total_campus_area', 'Tổng diện tích khuôn viên', 'fa-ruler-combined', formatArea(m.total_campus_area || 0), '']
   ];
-  host.innerHTML = cards.map(card => `<article class="agri-kpi-card" ${card[4] ? `data-public-asset-filter="${card[4]}"` : ''}><span><i class="fa-solid ${card[2]}"></i></span><div><strong>${number(card[3])}</strong><small>${safe(card[1])}</small></div></article>`).join('') + renderMiniBreakdown(data.charts || {});
+  host.innerHTML = cards.map(card => `<article class="agri-kpi-card" ${card[4] ? `data-public-asset-filter="${card[4]}"` : ''}><span><i class="fa-solid ${card[2]}"></i></span><div><strong>${card[3]}</strong><small>${safe(card[1])}</small></div></article>`).join('') + renderMiniBreakdown(data.charts || {});
 }
 
 function renderMiniBreakdown(charts) {
+  const areaGroups = (charts.area_by_category || charts.area_by_type || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(row.label)}: ${formatArea(row.campus_area)}</span>`).join('');
   const types = (charts.types || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(row.label)}: ${number(row.value)}</span>`).join('');
   const areas = (charts.areas || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(row.label)}: ${number(row.value)}</span>`).join('');
-  if (!types && !areas) return '';
-  return `<article class="agri-kpi-card" style="grid-column:span 2"><span><i class="fa-solid fa-chart-pie"></i></span><div><strong>Phân bổ</strong><small>${types || areas}</small></div></article>`;
+  if (!areaGroups && !types && !areas) return '';
+  return `<article class="agri-kpi-card" style="grid-column:span 2"><span><i class="fa-solid fa-chart-pie"></i></span><div><strong>Phân bổ</strong><small>${areaGroups || types || areas}</small></div></article>`;
 }
 
 function renderRows(data = {}) {
@@ -139,7 +144,7 @@ function renderRows(data = {}) {
   if (!tbody) return;
   $('#publicAssetsTotalCount') && ($('#publicAssetsTotalCount').textContent = `Tổng số: ${number(data.total || 0)} công trình`);
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có công trình công cộng phù hợp bộ lọc.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">Chưa có công trình công cộng phù hợp bộ lọc.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((item, index) => {
@@ -149,8 +154,19 @@ function renderRows(data = {}) {
       can('update') ? `<button class="btn btn-sm btn-outline-secondary" type="button" data-action="edit" data-id="${item.id}"><i class="fa-solid fa-pen"></i></button>` : '',
       can('delete') ? `<button class="btn btn-sm btn-outline-danger" type="button" data-action="delete" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>` : ''
     ].filter(Boolean).join(' ');
-    return `<tr><td>${(state.page - 1) * state.pageSize + index + 1}</td><td>${photo}</td><td><strong>${safe(item.asset_code)}</strong></td><td><div class="fw-semibold">${safe(item.asset_name)}</div><small class="text-muted">${safe(item.address || '')}</small></td><td>${safe(item.type_name || 'Chưa cập nhật')}<br><small class="text-muted">${safe(item.category || '')}</small></td><td>${safe(item.area_code || 'Chưa cập nhật')}</td><td>${safe(item.manager_name || item.managing_unit || 'Chưa cập nhật')}<br><small class="text-muted">${safe(item.manager_phone || '')}</small></td><td>${statusBadge(item)}</td><td class="text-end">${actions}</td></tr>`;
+    return `<tr><td>${(state.page - 1) * state.pageSize + index + 1}</td><td>${photo}</td><td><strong>${safe(item.asset_code)}</strong></td><td><div class="fw-semibold">${safe(item.asset_name)}</div><small class="text-muted">${safe(item.address || '')}</small></td><td>${safe(item.type_name || 'Chưa cập nhật')}<br><small class="text-muted">${safe(item.category || '')}</small></td><td>${safe(item.area_code || 'Chưa cập nhật')}</td><td>${formatAssetAreas(item)}</td><td>${safe(item.manager_name || item.managing_unit || 'Chưa cập nhật')}<br><small class="text-muted">${safe(item.manager_phone || '')}</small></td><td>${statusBadge(item)}</td><td class="text-end">${actions}</td></tr>`;
   }).join('');
+}
+
+function formatArea(value) {
+  const num = Number(value || 0);
+  return num > 0 ? `${number(num)} m²` : 'Chưa cập nhật';
+}
+
+function formatAssetAreas(item) {
+  const campus = item.campus_area ? `KV: ${formatArea(item.campus_area)}` : 'KV: Chưa cập nhật';
+  const building = item.building_area ? `XD: ${formatArea(item.building_area)}` : 'XD: Chưa cập nhật';
+  return `${campus}<br><small class="text-muted">${building}</small>`;
 }
 
 function statusBadge(item) {
@@ -222,7 +238,7 @@ async function openPublicAssetDetail(id) {
 function detailHtml(item) {
   const image = item.cover_photo_url ? `<img src="${safe(item.cover_photo_url)}" alt="" class="img-fluid rounded border mb-3" style="max-height:260px;object-fit:cover;width:100%">` : '<div class="bg-light border rounded d-flex align-items-center justify-content-center mb-3" style="height:180px"><i class="fa-solid fa-building-columns fa-3x text-secondary"></i></div>';
   const map = item.latitude && item.longitude ? `<iframe title="Vị trí công trình" src="https://www.openstreetmap.org/export/embed.html?bbox=${item.longitude - 0.002}%2C${item.latitude - 0.002}%2C${item.longitude + 0.002}%2C${item.latitude + 0.002}&marker=${item.latitude}%2C${item.longitude}" style="width:100%;height:260px;border:1px solid #d1d5db;border-radius:8px"></iframe>` : '<div class="text-muted border rounded p-4 text-center">Chưa có tọa độ GPS</div>';
-  return `<div class="row g-4"><div class="col-lg-4">${image}${statusBadge(item)}</div><div class="col-lg-8"><div class="row g-3"><div class="col-md-6"><strong>Mã công trình</strong><div>${safe(item.asset_code)}</div></div><div class="col-md-6"><strong>Loại công trình</strong><div>${safe(item.type_name || '')}</div></div><div class="col-md-6"><strong>Khu vực</strong><div>${safe(item.area_code || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Địa chỉ</strong><div>${safe(item.address || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Đơn vị quản lý</strong><div>${safe(item.managing_unit || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Người phụ trách</strong><div>${safe(item.manager_name || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Số điện thoại</strong><div>${safe(item.manager_phone || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Tọa độ GPS</strong><div>${item.latitude && item.longitude ? `${item.latitude}, ${item.longitude}` : 'Chưa cập nhật'}</div></div><div class="col-12"><strong>Mô tả</strong><p class="mb-0">${safe(item.description || 'Chưa cập nhật')}</p></div><div class="col-12"><strong>Ghi chú</strong><p class="mb-0">${safe(item.note || 'Không có')}</p></div><div class="col-12"><strong>Bản đồ vị trí</strong><div class="mt-2">${map}</div></div></div></div></div>`;
+  return `<div class="row g-4"><div class="col-lg-4">${image}${statusBadge(item)}</div><div class="col-lg-8"><div class="row g-3"><div class="col-md-6"><strong>Mã công trình</strong><div>${safe(item.asset_code)}</div></div><div class="col-md-6"><strong>Loại công trình</strong><div>${safe(item.type_name || '')}</div></div><div class="col-md-6"><strong>Khu vực</strong><div>${safe(item.area_code || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Địa chỉ</strong><div>${safe(item.address || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Diện tích khuôn viên</strong><div>${formatArea(item.campus_area)}</div></div><div class="col-md-6"><strong>Diện tích xây dựng</strong><div>${formatArea(item.building_area)}</div></div><div class="col-md-6"><strong>Đơn vị quản lý</strong><div>${safe(item.managing_unit || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Người phụ trách</strong><div>${safe(item.manager_name || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Số điện thoại</strong><div>${safe(item.manager_phone || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Tọa độ GPS</strong><div>${item.latitude && item.longitude ? `${item.latitude}, ${item.longitude}` : 'Chưa cập nhật'}</div></div><div class="col-12"><strong>Mô tả</strong><p class="mb-0">${safe(item.description || 'Chưa cập nhật')}</p></div><div class="col-12"><strong>Ghi chú</strong><p class="mb-0">${safe(item.note || 'Không có')}</p></div><div class="col-12"><strong>Bản đồ vị trí</strong><div class="mt-2">${map}</div></div></div></div></div>`;
 }
 
 async function openPublicAssetForm(id = null) {
@@ -323,7 +339,7 @@ function statusColor(status) {
 function gisPopup(item) {
   const photo = item.cover_photo_url ? `<img src="${safe(item.cover_photo_url)}" alt="" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px">` : '';
   const directions = item.latitude && item.longitude ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}` : '#';
-  return `<div style="min-width:240px">${photo}<strong>${safe(item.asset_name)}</strong><div style="font-size:12px;color:#64748b;margin:4px 0">${safe(item.type_name || '')} · ${safe(item.status_label || '')}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-location-dot"></i> ${safe(item.address || 'Chưa cập nhật địa chỉ')}</div><div style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-user"></i> ${safe(item.manager_name || 'Chưa cập nhật')} ${item.manager_phone ? ' · ' + safe(item.manager_phone) : ''}</div><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-primary" onclick="window.openPublicAssetDetail(${item.id})">Chi tiết</button><a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${directions}">Chỉ đường</a></div></div>`;
+  return `<div style="min-width:240px">${photo}<strong>${safe(item.asset_name)}</strong><div style="font-size:12px;color:#64748b;margin:4px 0">${safe(item.type_name || '')} · ${safe(item.status_label || '')}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-location-dot"></i> ${safe(item.address || 'Chưa cập nhật địa chỉ')}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-ruler-combined"></i> ${formatArea(item.campus_area)}</div><div style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-user"></i> ${safe(item.manager_name || 'Chưa cập nhật')} ${item.manager_phone ? ' · ' + safe(item.manager_phone) : ''}</div><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-primary" onclick="window.openPublicAssetDetail(${item.id})">Chi tiết</button><a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${directions}">Chỉ đường</a></div></div>`;
 }
 
 window.loadPublicAssets = loadPublicAssets;
