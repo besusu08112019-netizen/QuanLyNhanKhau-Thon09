@@ -5513,3 +5513,24 @@ button, input, select, textarea { font: inherit; min-width: 0; }
     height: 44px;
   }
 }
+
+/* Dashboard sidebar tree */
+.dashboard-tree { display: grid; gap: 6px; }
+.dashboard-tree-toggle {
+  width: 100%; min-height: 44px; border: 0; border-radius: 13px; padding: 10px 12px;
+  display: grid; grid-template-columns: 18px minmax(0, 1fr) 18px; align-items: center; gap: 10px;
+  background: transparent; color: #3d4757; font-size: 14px; font-weight: 700; text-align: left;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.dashboard-tree-toggle i { color: #667085; text-align: center; }
+.dashboard-tree-toggle:hover, .dashboard-tree.is-open > .dashboard-tree-toggle { color: var(--dashboard-green); background: #e9f6ef; }
+.dashboard-tree.is-active > .dashboard-tree-toggle { color: #fff; background: linear-gradient(135deg,var(--dashboard-green),#078246); box-shadow: 0 12px 24px rgba(11,107,58,.18); }
+.dashboard-tree.is-active > .dashboard-tree-toggle i { color: #fff; }
+.dashboard-tree-caret { justify-self: end; font-size: 12px; line-height: 1; transition: color .18s ease; }
+.dashboard-tree-children { display: grid; gap: 4px; max-height: 0; overflow: hidden; opacity: 0; padding-left: 13px; transition: max-height .22s ease, opacity .18s ease, margin .18s ease; }
+.dashboard-tree.is-open .dashboard-tree-children { max-height: 460px; opacity: 1; margin-top: 2px; }
+.sidebar .dashboard-tree-link.nav-link { min-height: 36px; padding: 8px 10px 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 650; gap: 9px; position: relative; }
+.sidebar .dashboard-tree-link.nav-link::before { content: ''; position: absolute; left: 4px; top: 50%; width: 6px; height: 1px; background: #9aa8ba; }
+.sidebar .dashboard-tree-link.nav-link i { width: 15px; font-size: 12px; }
+body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dashboard-tree-caret, body.sidebar-collapsed .dashboard-tree-children { display: none; }
+@media (prefers-reduced-motion: reduce) { .dashboard-tree-toggle, .dashboard-tree-caret, .dashboard-tree-children { transition: none; } }
