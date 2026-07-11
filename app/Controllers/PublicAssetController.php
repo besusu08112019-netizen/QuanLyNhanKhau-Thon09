@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Models\PublicAsset;
+use App\Services\FileStorageService;
 
 final class PublicAssetController extends BaseController
 {
@@ -46,6 +47,32 @@ final class PublicAssetController extends BaseController
         $this->ok($row);
     }
 
+    public function uploadPhoto(string $id): void
+    {
+        $user = $this->requirePermission('public_assets', 'update');
+        $assetId = (int)$id;
+        if (!$this->assets->find($assetId)) $this->fail('Khong tim thay cong trinh', 404);
+        $file = $_FILES['file'] ?? null;
+        if (!is_array($file)) $this->fail('Vui long chon anh cong trinh', 422);
+        $storage = new FileStorageService();
+        $info = $storage->inspectUpload($file, 'IMAGE', 'public_asset');
+        if (!in_array($info['mime'], ['image/jpeg','image/png','image/webp'], true)) throw new \RuntimeException('Anh cong trinh chi ho tro JPG, PNG hoac WEBP');
+        $stored = $storage->storeUpload($file, 'public_asset', 'images', $info['extension']);
+        $url = '/' . ltrim(str_replace('\\', '/', $stored['file_path']), '/');
+        $row = $this->assets->setCoverPhoto($assetId, $url, (int)$user['id']);
+        $this->audit($user, 'public_assets', 'upload_photo', 'Upload anh cong trinh cong cong', $assetId, ['file' => $stored]);
+        $this->ok(['item' => $row, 'url' => $url]);
+    }
+
+    public function deletePhoto(string $id): void
+    {
+        $user = $this->requirePermission('public_assets', 'update');
+        $assetId = (int)$id;
+        if (!$this->assets->find($assetId)) $this->fail('Khong tim thay cong trinh', 404);
+        $row = $this->assets->setCoverPhoto($assetId, null, (int)$user['id']);
+        $this->audit($user, 'public_assets', 'delete_photo', 'Xoa anh cong trinh cong cong', $assetId);
+        $this->ok(['item' => $row]);
+    }
     public function destroy(string $id): void
     {
         $user = $this->requirePermission('public_assets', 'delete');

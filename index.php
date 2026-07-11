@@ -115,7 +115,7 @@ function api_exception_payload(Throwable $e, int $status = 500): array
         }
     }
 
-    return ['ok' => false, 'success' => false, 'error' => $error, 'status' => $status];
+    return ['ok' => false, 'success' => false, 'message' => $error['message'], 'errors' => [], 'error' => $error, 'status' => $status];
 }
 $request = Request::capture();
 set_exception_handler(function (Throwable $e) use ($request): void {
@@ -137,6 +137,8 @@ register_shutdown_function(function () use ($request): void {
     $payload = [
         'ok' => false,
         'success' => false,
+        'message' => 'Internal Server Error',
+        'errors' => [],
         'error' => [
             'message' => 'Internal Server Error',
             'type' => 'FatalError',
@@ -250,6 +252,8 @@ $router->post('/api/public-assets', [PublicAssetController::class, 'store']);
 $router->get('/api/public-assets/dashboard', [PublicAssetController::class, 'dashboard']);
 $router->get('/api/public-assets/catalogs', [PublicAssetController::class, 'catalogs']);
 $router->get('/api/public-assets/gis', [PublicAssetController::class, 'gis']);
+$router->post('/api/public-assets/{id}/photo', [PublicAssetController::class, 'uploadPhoto']);
+$router->delete('/api/public-assets/{id}/photo', [PublicAssetController::class, 'deletePhoto']);
 $router->get('/api/public-assets/{id}', [PublicAssetController::class, 'show']);
 $router->put('/api/public-assets/{id}', [PublicAssetController::class, 'update']);
 $router->delete('/api/public-assets/{id}', [PublicAssetController::class, 'destroy']);

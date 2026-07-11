@@ -1,351 +1,72 @@
-(function () {
+(function(){
 'use strict';
-
-const API = '/api/public-assets';
-const state = {
-  page: 1,
-  pageSize: 20,
-  search: '',
-  type_id: '',
-  area_code: '',
-  status: '',
-  located: '',
-  area_min: '',
-  area_max: '',
-  sort: 'asset_code',
-  direction: 'ASC',
-  catalogs: null,
-  current: null,
-  loaded: false
-};
-
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-const safe = value => String(value ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c]));
-const number = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
-const toast = (message, type = 'info') => typeof window.showToast === 'function' ? window.showToast(message, type) : console[type === 'danger' ? 'error' : 'log'](message);
-const can = action => typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('public_assets', action) : true;
-const request = (url, options = {}) => typeof window.api === 'function' ? window.api(url, options) : fetch(url, options).then(r => r.json()).then(p => p.data || p);
-
-function init() {
-  bindEvents();
-  wrapGisLoader();
-  if (window.App?.screen === 'publicAssets') loadPublicAssets();
-  if (window.App?.screen === 'gis') scheduleGisLayer();
+const API='/api/public-assets';
+const state={page:1,pageSize:20,search:'',type_id:'',area_code:'',status:'',located:'',area_min:'',area_max:'',sort:'asset_code',direction:'ASC',catalogs:null,current:null};
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const safe=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));
+const num=v=>new Intl.NumberFormat('vi-VN').format(Number(v||0));
+const toast=(m,t='info')=>typeof window.showToast==='function'?window.showToast(m,t):console[t==='danger'?'error':'log'](m);
+const can=a=>typeof window.thon09CanAccess==='function'?window.thon09CanAccess('public_assets',a):true;
+const request=(url,opt={})=>typeof window.api==='function'?window.api(url,opt):fetch(url,opt).then(r=>r.json()).then(p=>{if(p?.ok===false||p?.success===false)throw new Error(p?.error?.message||p?.message||'Request failed');return p?.data??p;});
+function run(fn){Promise.resolve().then(fn).catch(e=>toast(e.message||'Thao tac khong thanh cong','danger'));}
+function area(v){const n=Number(v||0);return n>0?num(n)+' m²':'Chua cap nhat';}
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+function init(){bind();wrapGisLoader();if(window.App?.screen==='publicAssets')run(load);if(window.App?.screen==='gis')scheduleGisLayer();}
+function bind(){
+ $('#publicAssetsSearchBtn')?.addEventListener('click',()=>run(()=>{state.page=1;readFilters();return load();}));
+ $('#publicAssetsResetBtn')?.addEventListener('click',()=>run(reset));
+ $('#publicAssetsSearch')?.addEventListener('input',debounce(()=>run(()=>{state.page=1;readFilters();return load();}),350));
+ ['publicAssetsTypeFilter','publicAssetsAreaFilter','publicAssetsStatusFilter','publicAssetsLocatedFilter','publicAssetsAreaMin','publicAssetsAreaMax'].forEach(id=>$('#'+id)?.addEventListener('change',()=>run(()=>{state.page=1;readFilters();return load();})));
+ $('#publicAssetsPageSize')?.addEventListener('change',e=>run(()=>{state.pageSize=Number(e.target.value||20);state.page=1;return load();}));
+ $('#publicAssetsAddBtn')?.addEventListener('click',()=>run(()=>openForm()));
+ $('#publicAssetForm')?.addEventListener('submit',e=>run(()=>save(e)));
+ $('#publicAssetUseGpsBtn')?.addEventListener('click',useGps);
+ $('#publicAssetPickMapBtn')?.addEventListener('click',pickMap);
+ $('#publicAssetPhotoFile')?.addEventListener('change',previewFile);
+ $('#publicAssetDeletePhotoBtn')?.addEventListener('click',()=>run(deletePhoto));
+ $('#publicAssetDetailEditBtn')?.addEventListener('click',()=>state.current?.id&&run(()=>openForm(state.current.id)));
+ $('#publicAssetsRows')?.addEventListener('click',rowAction);
+ $('#publicAssetsPager')?.addEventListener('click',pagerAction);
+ $('#publicAssetsMiniDashboard')?.addEventListener('click',dashboardAction);
+ $$('[data-public-asset-sort]').forEach(th=>th.addEventListener('click',()=>run(()=>sortBy(th.dataset.publicAssetSort))));
+ document.addEventListener('thon09:screen-change',e=>{if(e.detail?.screen==='publicAssets')run(load);if(e.detail?.screen==='gis')scheduleGisLayer();});
 }
-
-function bindEvents() {
-  $('#publicAssetsSearchBtn')?.addEventListener('click', () => { state.page = 1; readFilters(); loadPublicAssets(); });
-  $('#publicAssetsResetBtn')?.addEventListener('click', resetFilters);
-  $('#publicAssetsSearch')?.addEventListener('input', debounce(() => { state.page = 1; readFilters(); loadPublicAssets(); }, 350));
-  ['publicAssetsTypeFilter','publicAssetsAreaFilter','publicAssetsStatusFilter','publicAssetsLocatedFilter','publicAssetsAreaMin','publicAssetsAreaMax'].forEach(id => $('#'+id)?.addEventListener('change', () => { state.page = 1; readFilters(); loadPublicAssets(); }));
-  $('#publicAssetsPageSize')?.addEventListener('change', event => { state.pageSize = Number(event.target.value || 20); state.page = 1; loadPublicAssets(); });
-  $('#publicAssetsAddBtn')?.addEventListener('click', () => openPublicAssetForm());
-  $('#publicAssetForm')?.addEventListener('submit', savePublicAsset);
-  $('#publicAssetUseGpsBtn')?.addEventListener('click', useCurrentGps);
-  $('#publicAssetDetailEditBtn')?.addEventListener('click', () => state.current?.id && openPublicAssetForm(state.current.id));
-  $('#publicAssetsRows')?.addEventListener('click', handleRowClick);
-  $('#publicAssetsPager')?.addEventListener('click', handlePagerClick);
-  $('#publicAssetsMiniDashboard')?.addEventListener('click', handleDashboardClick);
-  $$('[data-public-asset-sort]').forEach(th => th.addEventListener('click', () => sortBy(th.dataset.publicAssetSort)));
-  document.addEventListener('thon09:screen-change', event => {
-    const screen = event.detail?.screen;
-    if (screen === 'publicAssets') loadPublicAssets();
-    if (screen === 'gis') scheduleGisLayer();
-  });
-}
-
-function debounce(fn, wait) {
-  let timer;
-  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), wait); };
-}
-
-function readFilters() {
-  state.search = $('#publicAssetsSearch')?.value.trim() || '';
-  state.type_id = $('#publicAssetsTypeFilter')?.value || '';
-  state.area_code = $('#publicAssetsAreaFilter')?.value || '';
-  state.status = $('#publicAssetsStatusFilter')?.value || '';
-  state.located = $('#publicAssetsLocatedFilter')?.value || '';
-  state.area_min = $('#publicAssetsAreaMin')?.value.trim() || '';
-  state.area_max = $('#publicAssetsAreaMax')?.value.trim() || '';
-  state.pageSize = Number($('#publicAssetsPageSize')?.value || state.pageSize || 20);
-}
-
-function resetFilters() {
-  ['publicAssetsSearch','publicAssetsTypeFilter','publicAssetsAreaFilter','publicAssetsStatusFilter','publicAssetsLocatedFilter','publicAssetsAreaMin','publicAssetsAreaMax'].forEach(id => { const el = $('#'+id); if (el) el.value = ''; });
-  Object.assign(state, { page: 1, search: '', type_id: '', area_code: '', status: '', located: '', area_min: '', area_max: '', sort: 'asset_code', direction: 'ASC' });
-  loadPublicAssets();
-}
-
-async function ensureCatalogs() {
-  if (state.catalogs) return state.catalogs;
-  state.catalogs = await request(API + '/catalogs', { cacheTtl: 60000 });
-  fillSelect($('#publicAssetsTypeFilter'), state.catalogs.types, 'Tất cả');
-  fillSelect($('#publicAssetsAreaFilter'), state.catalogs.areas, 'Tất cả');
-  fillSelect($('#publicAssetsStatusFilter'), state.catalogs.statuses, 'Tất cả');
-  fillSelect($('#publicAssetTypeSelect'), state.catalogs.types, 'Chọn loại');
-  fillSelect($('#publicAssetStatusSelect'), state.catalogs.statuses, 'Chọn trạng thái');
-  return state.catalogs;
-}
-
-function fillSelect(select, items = [], first = '') {
-  if (!select) return;
-  const current = select.value;
-  select.innerHTML = first ? `<option value="">${safe(first)}</option>` : '';
-  items.forEach(item => {
-    const option = document.createElement('option');
-    option.value = item.value;
-    option.textContent = item.category ? `${item.category} - ${item.label}` : item.label;
-    select.appendChild(option);
-  });
-  if ([...select.options].some(option => option.value === current)) select.value = current;
-}
-
-async function loadPublicAssets() {
-  if (!$('#publicAssetsScreen')) return;
-  await ensureCatalogs();
-  readFilters();
-  const params = new URLSearchParams({ page: state.page, pageSize: state.pageSize, search: state.search, type_id: state.type_id, area_code: state.area_code, status: state.status, located: state.located, area_min: state.area_min, area_max: state.area_max, sort: state.sort, direction: state.direction });
-  const [list, dashboard] = await Promise.all([
-    request(API + '?' + params.toString()),
-    request(API + '/dashboard?' + params.toString(), { cacheTtl: 15000 })
-  ]);
-  renderDashboard(dashboard);
-  renderRows(list);
-  renderPager(list);
-  state.loaded = true;
-  if (typeof window.thon09ApplyAccessControls === 'function') window.thon09ApplyAccessControls();
-}
-
-function renderDashboard(data = {}) {
-  const host = $('#publicAssetsMiniDashboard');
-  if (!host) return;
-  const m = data.metrics || {};
-  const cards = [
-    ['total_assets', 'Tổng công trình', 'fa-building-columns', number(m.total_assets || 0), ''],
-    ['active_assets', 'Đang sử dụng', 'fa-circle-check', number(m.active_assets || 0), 'status:ACTIVE'],
-    ['located_assets', 'Đã định vị GPS', 'fa-location-dot', number(m.located_assets || 0), 'located:1'],
-    ['total_campus_area', 'Tổng diện tích khuôn viên', 'fa-ruler-combined', formatArea(m.total_campus_area || 0), '']
-  ];
-  host.innerHTML = cards.map(card => `<article class="agri-kpi-card" ${card[4] ? `data-public-asset-filter="${card[4]}"` : ''}><span><i class="fa-solid ${card[2]}"></i></span><div><strong>${card[3]}</strong><small>${safe(card[1])}</small></div></article>`).join('') + renderMiniBreakdown(data.charts || {});
-}
-
-function renderMiniBreakdown(charts) {
-  const areaGroups = (charts.area_by_category || charts.area_by_type || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(row.label)}: ${formatArea(row.campus_area)}</span>`).join('');
-  const types = (charts.types || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(row.label)}: ${number(row.value)}</span>`).join('');
-  const areas = (charts.areas || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(row.label)}: ${number(row.value)}</span>`).join('');
-  if (!areaGroups && !types && !areas) return '';
-  return `<article class="agri-kpi-card" style="grid-column:span 2"><span><i class="fa-solid fa-chart-pie"></i></span><div><strong>Phân bổ</strong><small>${areaGroups || types || areas}</small></div></article>`;
-}
-
-function renderRows(data = {}) {
-  const rows = data.items || [];
-  const tbody = $('#publicAssetsRows');
-  if (!tbody) return;
-  $('#publicAssetsTotalCount') && ($('#publicAssetsTotalCount').textContent = `Tổng số: ${number(data.total || 0)} công trình`);
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">Chưa có công trình công cộng phù hợp bộ lọc.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = rows.map((item, index) => {
-    const photo = item.cover_photo_url ? `<img src="${safe(item.cover_photo_url)}" alt="" style="width:52px;height:42px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb">` : `<span class="d-inline-flex align-items-center justify-content-center bg-light border rounded" style="width:52px;height:42px"><i class="fa-solid ${safe(item.type_icon || 'fa-building-columns')} text-secondary"></i></span>`;
-    const actions = [
-      `<button class="btn btn-sm btn-outline-primary" type="button" data-action="detail" data-id="${item.id}"><i class="fa-solid fa-eye"></i></button>`,
-      can('update') ? `<button class="btn btn-sm btn-outline-secondary" type="button" data-action="edit" data-id="${item.id}"><i class="fa-solid fa-pen"></i></button>` : '',
-      can('delete') ? `<button class="btn btn-sm btn-outline-danger" type="button" data-action="delete" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>` : ''
-    ].filter(Boolean).join(' ');
-    return `<tr><td>${(state.page - 1) * state.pageSize + index + 1}</td><td>${photo}</td><td><strong>${safe(item.asset_code)}</strong></td><td><div class="fw-semibold">${safe(item.asset_name)}</div><small class="text-muted">${safe(item.address || '')}</small></td><td>${safe(item.type_name || 'Chưa cập nhật')}<br><small class="text-muted">${safe(item.category || '')}</small></td><td>${safe(item.area_code || 'Chưa cập nhật')}</td><td>${formatAssetAreas(item)}</td><td>${safe(item.manager_name || item.managing_unit || 'Chưa cập nhật')}<br><small class="text-muted">${safe(item.manager_phone || '')}</small></td><td>${statusBadge(item)}</td><td class="text-end">${actions}</td></tr>`;
-  }).join('');
-}
-
-function formatArea(value) {
-  const num = Number(value || 0);
-  return num > 0 ? `${number(num)} m²` : 'Chưa cập nhật';
-}
-
-function formatAssetAreas(item) {
-  const campus = item.campus_area ? `KV: ${formatArea(item.campus_area)}` : 'KV: Chưa cập nhật';
-  const building = item.building_area ? `XD: ${formatArea(item.building_area)}` : 'XD: Chưa cập nhật';
-  return `${campus}<br><small class="text-muted">${building}</small>`;
-}
-
-function statusBadge(item) {
-  const map = { ACTIVE: 'success', REPAIRING: 'warning', SUSPENDED: 'secondary', INACTIVE: 'dark' };
-  return `<span class="badge bg-${map[item.status] || 'secondary'}">${safe(item.status_label || item.status)}</span>`;
-}
-
-function renderPager(data = {}) {
-  const host = $('#publicAssetsPager');
-  if (!host) return;
-  const totalPages = Number(data.totalPages || 1);
-  const page = Number(data.page || state.page || 1);
-  state.page = page;
-  if (totalPages <= 1) { host.innerHTML = ''; return; }
-  const buttons = [];
-  buttons.push(`<button class="btn btn-sm btn-outline-secondary" data-page="${Math.max(1, page - 1)}" ${page <= 1 ? 'disabled' : ''}>Trước</button>`);
-  const start = Math.max(1, page - 2);
-  const end = Math.min(totalPages, page + 2);
-  for (let i = start; i <= end; i += 1) buttons.push(`<button class="btn btn-sm ${i === page ? 'btn-primary' : 'btn-outline-secondary'}" data-page="${i}">${i}</button>`);
-  buttons.push(`<button class="btn btn-sm btn-outline-secondary" data-page="${Math.min(totalPages, page + 1)}" ${page >= totalPages ? 'disabled' : ''}>Sau</button>`);
-  host.innerHTML = `<div class="d-flex gap-2 justify-content-end align-items-center mt-3">${buttons.join('')}</div>`;
-}
-
-function handlePagerClick(event) {
-  const button = event.target.closest('[data-page]');
-  if (!button || button.disabled) return;
-  state.page = Number(button.dataset.page || 1);
-  loadPublicAssets();
-}
-
-function handleRowClick(event) {
-  const button = event.target.closest('[data-action]');
-  if (!button) return;
-  const id = Number(button.dataset.id);
-  if (button.dataset.action === 'detail') openPublicAssetDetail(id);
-  if (button.dataset.action === 'edit') openPublicAssetForm(id);
-  if (button.dataset.action === 'delete') deletePublicAsset(id);
-}
-
-function handleDashboardClick(event) {
-  const card = event.target.closest('[data-public-asset-filter]');
-  if (!card) return;
-  const [key, value] = card.dataset.publicAssetFilter.split(':');
-  const target = key === 'status' ? $('#publicAssetsStatusFilter') : $('#publicAssetsLocatedFilter');
-  if (target) target.value = value;
-  state.page = 1;
-  readFilters();
-  loadPublicAssets();
-}
-
-function sortBy(field) {
-  if (state.sort === field) state.direction = state.direction === 'ASC' ? 'DESC' : 'ASC';
-  else Object.assign(state, { sort: field, direction: 'ASC' });
-  loadPublicAssets();
-}
-
-async function openPublicAssetDetail(id) {
-  await ensureCatalogs();
-  const item = await request(`${API}/${id}`);
-  state.current = item;
-  $('#publicAssetDetailTitle') && ($('#publicAssetDetailTitle').textContent = item.asset_name || 'Chi tiết công trình');
-  $('#publicAssetDetailSubtitle') && ($('#publicAssetDetailSubtitle').textContent = `${item.asset_code || ''} · ${item.type_name || 'Chưa cập nhật'} · ${item.status_label || ''}`);
-  const body = $('#publicAssetDetailBody');
-  if (body) body.innerHTML = detailHtml(item);
-  $('#publicAssetDetailEditBtn')?.classList.toggle('d-none', !can('update'));
-  bootstrap.Modal.getOrCreateInstance($('#publicAssetDetailModal')).show();
-}
-
-function detailHtml(item) {
-  const image = item.cover_photo_url ? `<img src="${safe(item.cover_photo_url)}" alt="" class="img-fluid rounded border mb-3" style="max-height:260px;object-fit:cover;width:100%">` : '<div class="bg-light border rounded d-flex align-items-center justify-content-center mb-3" style="height:180px"><i class="fa-solid fa-building-columns fa-3x text-secondary"></i></div>';
-  const map = item.latitude && item.longitude ? `<iframe title="Vị trí công trình" src="https://www.openstreetmap.org/export/embed.html?bbox=${item.longitude - 0.002}%2C${item.latitude - 0.002}%2C${item.longitude + 0.002}%2C${item.latitude + 0.002}&marker=${item.latitude}%2C${item.longitude}" style="width:100%;height:260px;border:1px solid #d1d5db;border-radius:8px"></iframe>` : '<div class="text-muted border rounded p-4 text-center">Chưa có tọa độ GPS</div>';
-  return `<div class="row g-4"><div class="col-lg-4">${image}${statusBadge(item)}</div><div class="col-lg-8"><div class="row g-3"><div class="col-md-6"><strong>Mã công trình</strong><div>${safe(item.asset_code)}</div></div><div class="col-md-6"><strong>Loại công trình</strong><div>${safe(item.type_name || '')}</div></div><div class="col-md-6"><strong>Khu vực</strong><div>${safe(item.area_code || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Địa chỉ</strong><div>${safe(item.address || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Diện tích khuôn viên</strong><div>${formatArea(item.campus_area)}</div></div><div class="col-md-6"><strong>Diện tích xây dựng</strong><div>${formatArea(item.building_area)}</div></div><div class="col-md-6"><strong>Đơn vị quản lý</strong><div>${safe(item.managing_unit || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Người phụ trách</strong><div>${safe(item.manager_name || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Số điện thoại</strong><div>${safe(item.manager_phone || 'Chưa cập nhật')}</div></div><div class="col-md-6"><strong>Tọa độ GPS</strong><div>${item.latitude && item.longitude ? `${item.latitude}, ${item.longitude}` : 'Chưa cập nhật'}</div></div><div class="col-12"><strong>Mô tả</strong><p class="mb-0">${safe(item.description || 'Chưa cập nhật')}</p></div><div class="col-12"><strong>Ghi chú</strong><p class="mb-0">${safe(item.note || 'Không có')}</p></div><div class="col-12"><strong>Bản đồ vị trí</strong><div class="mt-2">${map}</div></div></div></div></div>`;
-}
-
-async function openPublicAssetForm(id = null) {
-  if (id && !can('update')) return toast('Tài khoản hiện tại không có quyền sửa công trình', 'warning');
-  if (!id && !can('create')) return toast('Tài khoản hiện tại không có quyền thêm công trình', 'warning');
-  await ensureCatalogs();
-  const form = $('#publicAssetForm');
-  form?.reset();
-  if (id) {
-    const item = await request(`${API}/${id}`);
-    state.current = item;
-    Object.keys(item).forEach(key => { if (form.elements[key]) form.elements[key].value = item[key] ?? ''; });
-    if (form.elements.type_id) form.elements.type_id.value = item.type_id || '';
-  } else {
-    if (form?.elements.status) form.elements.status.value = 'ACTIVE';
-  }
-  bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).show();
-}
-
-async function savePublicAsset(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const data = Object.fromEntries(new FormData(form).entries());
-  const id = data.id;
-  const method = id ? 'PUT' : 'POST';
-  const url = id ? `${API}/${id}` : API;
-  const item = await request(url, { method, body: data });
-  bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).hide();
-  toast('Đã lưu công trình công cộng', 'success');
-  await loadPublicAssets();
-  refreshGisLayer();
-  state.current = item;
-}
-
-async function deletePublicAsset(id) {
-  if (!can('delete')) return toast('Tài khoản hiện tại không có quyền xóa công trình', 'warning');
-  if (!confirm('Bạn có chắc chắn muốn xóa công trình công cộng này?')) return;
-  await request(`${API}/${id}`, { method: 'DELETE' });
-  toast('Đã xóa công trình công cộng', 'success');
-  await loadPublicAssets();
-  refreshGisLayer();
-}
-
-function useCurrentGps() {
-  if (!navigator.geolocation) return toast('Thiết bị không hỗ trợ định vị GPS', 'warning');
-  navigator.geolocation.getCurrentPosition(pos => {
-    const form = $('#publicAssetForm');
-    if (!form) return;
-    form.elements.latitude.value = pos.coords.latitude.toFixed(8);
-    form.elements.longitude.value = pos.coords.longitude.toFixed(8);
-    form.elements.gps_accuracy.value = pos.coords.accuracy ? pos.coords.accuracy.toFixed(2) : '';
-  }, error => toast(error.message || 'Không lấy được GPS hiện tại', 'danger'), { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
-}
-
-function wrapGisLoader() {
-  if (window.__publicAssetsGisWrapped) return;
-  window.__publicAssetsGisWrapped = true;
-  const original = window.loadGisMap;
-  if (typeof original === 'function') {
-    window.loadGisMap = async function (...args) {
-      const result = await original.apply(this, args);
-      scheduleGisLayer();
-      return result;
-    };
-  }
-}
-
-function scheduleGisLayer() {
-  setTimeout(() => refreshGisLayer(), 250);
-}
-
-async function refreshGisLayer() {
-  const app = window.App;
-  if (!app?.gis?.map || !window.L) return;
-  const map = app.gis.map;
-  if (!app.gis.publicAssetLayer) app.gis.publicAssetLayer = L.layerGroup().addTo(map);
-  const layer = app.gis.publicAssetLayer;
-  layer.clearLayers();
-  if (!can('read')) return;
-  const data = await request(API + '/gis', { cacheTtl: 15000 });
-  (data.items || []).forEach(item => {
-    const marker = L.marker([item.latitude, item.longitude], { icon: markerIcon(item) });
-    marker.bindPopup(gisPopup(item), { maxWidth: 320, closeButton: true, autoPan: true });
-    marker.addTo(layer);
-  });
-}
-
-function markerIcon(item) {
-  const color = statusColor(item.status);
-  const html = `<span style="width:34px;height:34px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.25);border:2px solid #fff"><i class="fa-solid ${safe(item.type_icon || 'fa-building-columns')}"></i></span>`;
-  return L.divIcon({ className: 'public-asset-gis-icon', html, iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -18] });
-}
-
-function statusColor(status) {
-  return { ACTIVE: '#16a34a', REPAIRING: '#f59e0b', SUSPENDED: '#64748b', INACTIVE: '#374151' }[status] || '#1976d2';
-}
-
-function gisPopup(item) {
-  const photo = item.cover_photo_url ? `<img src="${safe(item.cover_photo_url)}" alt="" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px">` : '';
-  const directions = item.latitude && item.longitude ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}` : '#';
-  return `<div style="min-width:240px">${photo}<strong>${safe(item.asset_name)}</strong><div style="font-size:12px;color:#64748b;margin:4px 0">${safe(item.type_name || '')} · ${safe(item.status_label || '')}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-location-dot"></i> ${safe(item.address || 'Chưa cập nhật địa chỉ')}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-ruler-combined"></i> ${formatArea(item.campus_area)}</div><div style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-user"></i> ${safe(item.manager_name || 'Chưa cập nhật')} ${item.manager_phone ? ' · ' + safe(item.manager_phone) : ''}</div><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-primary" onclick="window.openPublicAssetDetail(${item.id})">Chi tiết</button><a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${directions}">Chỉ đường</a></div></div>`;
-}
-
-window.loadPublicAssets = loadPublicAssets;
-window.openPublicAssetDetail = openPublicAssetDetail;
-window.openPublicAssetForm = openPublicAssetForm;
-window.refreshPublicAssetGisLayer = refreshGisLayer;
-
-document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
+function readFilters(){state.search=$('#publicAssetsSearch')?.value.trim()||'';state.type_id=$('#publicAssetsTypeFilter')?.value||'';state.area_code=$('#publicAssetsAreaFilter')?.value||'';state.status=$('#publicAssetsStatusFilter')?.value||'';state.located=$('#publicAssetsLocatedFilter')?.value||'';state.area_min=$('#publicAssetsAreaMin')?.value.trim()||'';state.area_max=$('#publicAssetsAreaMax')?.value.trim()||'';state.pageSize=Number($('#publicAssetsPageSize')?.value||state.pageSize||20);}
+async function reset(){['publicAssetsSearch','publicAssetsTypeFilter','publicAssetsAreaFilter','publicAssetsStatusFilter','publicAssetsLocatedFilter','publicAssetsAreaMin','publicAssetsAreaMax'].forEach(id=>{const el=$('#'+id);if(el)el.value='';});Object.assign(state,{page:1,search:'',type_id:'',area_code:'',status:'',located:'',area_min:'',area_max:'',sort:'asset_code',direction:'ASC'});await load();}
+async function catalogs(){if(state.catalogs)return state.catalogs;state.catalogs=await request(API+'/catalogs',{cacheTtl:60000});fill($('#publicAssetsTypeFilter'),state.catalogs.types,'Tat ca');fill($('#publicAssetsAreaFilter'),state.catalogs.areas,'Tat ca');fill($('#publicAssetsStatusFilter'),state.catalogs.statuses,'Tat ca');fill($('#publicAssetTypeSelect'),state.catalogs.types,'Chon loai');fill($('#publicAssetStatusSelect'),state.catalogs.statuses,'Chon trang thai');return state.catalogs;}
+function fill(sel,items=[],first=''){if(!sel)return;const cur=sel.value;sel.innerHTML=first?`<option value="">${safe(first)}</option>`:'';items.forEach(i=>{const o=document.createElement('option');o.value=i.value;o.textContent=i.category?`${i.category} - ${i.label}`:i.label;sel.appendChild(o);});if([...sel.options].some(o=>o.value===cur))sel.value=cur;}
+function params(){readFilters();return new URLSearchParams({page:state.page,pageSize:state.pageSize,search:state.search,type_id:state.type_id,area_code:state.area_code,status:state.status,located:state.located,area_min:state.area_min,area_max:state.area_max,sort:state.sort,direction:state.direction});}
+async function load(){if(!$('#publicAssetsScreen'))return;await catalogs();const p=params();const [list,dash]=await Promise.all([request(API+'?'+p),request(API+'/dashboard?'+p,{cacheTtl:15000})]);renderDashboard(dash);renderRows(list);renderPager(list);window.thon09ApplyAccessControls?.();}
+function renderDashboard(data={}){const h=$('#publicAssetsMiniDashboard');if(!h)return;const m=data.metrics||{};const cards=[['total_assets','Tong cong trinh','fa-building-columns',num(m.total_assets||0),''],['active_assets','Dang su dung','fa-circle-check',num(m.active_assets||0),'status:ACTIVE'],['located_assets','Da dinh vi GPS','fa-location-dot',num(m.located_assets||0),'located:1'],['total_campus_area','Tong dien tich khuon vien','fa-ruler-combined',area(m.total_campus_area||0),'']];h.innerHTML=cards.map(c=>`<article class="agri-kpi-card" ${c[4]?`data-public-asset-filter="${c[4]}"`:''}><span><i class="fa-solid ${c[2]}"></i></span><div><strong>${c[3]}</strong><small>${safe(c[1])}</small></div></article>`).join('')+breakdown(data.charts||{});}
+function breakdown(ch){const ag=(ch.area_by_category||ch.area_by_type||[]).slice(0,4).map(r=>`<span class="badge bg-light text-dark border me-1 mb-1">${safe(r.label)}: ${area(r.campus_area)}</span>`).join('');const types=(ch.types||[]).slice(0,4).map(r=>`<span class="badge bg-light text-dark border me-1 mb-1">${safe(r.label)}: ${num(r.value)}</span>`).join('');if(!ag&&!types)return'';return`<article class="agri-kpi-card" style="grid-column:span 2"><span><i class="fa-solid fa-chart-pie"></i></span><div><strong>Thong ke</strong><small>${ag||types}</small></div></article>`;}
+function photo(item){return item.cover_photo_url?`<img src="${safe(item.cover_photo_url)}" alt="" style="width:52px;height:42px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb">`:`<span class="d-inline-flex align-items-center justify-content-center bg-light border rounded" style="width:52px;height:42px"><i class="fa-solid ${safe(item.type_icon||'fa-building-columns')} text-secondary"></i></span>`;}
+function areaHtml(i){return`KV: ${area(i.campus_area)}<br><small class="text-muted">XD: ${area(i.building_area)}</small>`;}
+function statusBadge(i){const m={ACTIVE:'success',REPAIRING:'warning',SUSPENDED:'secondary',INACTIVE:'dark'};return`<span class="badge bg-${m[i.status]||'secondary'}">${safe(i.status_label||i.status)}</span>`;}
+function renderRows(data={}){const rows=data.items||[],tb=$('#publicAssetsRows');if(!tb)return;$('#publicAssetsTotalCount')&&($('#publicAssetsTotalCount').textContent=`Tong so: ${num(data.total||0)} cong trinh`);if(!rows.length){tb.innerHTML='<tr><td colspan="10" class="text-center text-muted py-4">Chua co cong trinh phu hop bo loc.</td></tr>';return;}tb.innerHTML=rows.map((i,k)=>{const actions=[`<button class="btn btn-sm btn-outline-primary" data-action="detail" data-id="${i.id}"><i class="fa-solid fa-eye"></i></button>`,can('update')?`<button class="btn btn-sm btn-outline-secondary" data-action="edit" data-id="${i.id}"><i class="fa-solid fa-pen"></i></button>`:'',can('delete')?`<button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${i.id}"><i class="fa-solid fa-trash"></i></button>`:''].filter(Boolean).join(' ');return`<tr><td>${(state.page-1)*state.pageSize+k+1}</td><td>${photo(i)}</td><td><strong>${safe(i.asset_code)}</strong></td><td><div class="fw-semibold">${safe(i.asset_name)}</div><small class="text-muted">${safe(i.address||'')}</small></td><td>${safe(i.type_name||'Chua cap nhat')}<br><small class="text-muted">${safe(i.category||'')}</small></td><td>${safe(i.area_code||'Chua cap nhat')}</td><td>${areaHtml(i)}</td><td>${statusBadge(i)}</td><td>${safe(i.manager_name||i.managing_unit||'Chua cap nhat')}<br><small class="text-muted">${safe(i.manager_position||i.manager_phone||'')}</small></td><td class="text-end">${actions}</td></tr>`;}).join('');}
+function renderPager(d={}){const h=$('#publicAssetsPager'),tp=Number(d.totalPages||1),p=Number(d.page||state.page||1);if(!h)return;state.page=p;if(tp<=1){h.innerHTML='';return;}let b=[`<button class="btn btn-sm btn-outline-secondary" data-page="${Math.max(1,p-1)}" ${p<=1?'disabled':''}>Truoc</button>`];for(let i=Math.max(1,p-2);i<=Math.min(tp,p+2);i++)b.push(`<button class="btn btn-sm ${i===p?'btn-primary':'btn-outline-secondary'}" data-page="${i}">${i}</button>`);b.push(`<button class="btn btn-sm btn-outline-secondary" data-page="${Math.min(tp,p+1)}" ${p>=tp?'disabled':''}>Sau</button>`);h.innerHTML=`<div class="d-flex gap-2 justify-content-end align-items-center mt-3">${b.join('')}</div>`;}
+function pagerAction(e){const b=e.target.closest('[data-page]');if(!b||b.disabled)return;run(()=>{state.page=Number(b.dataset.page||1);return load();});}
+function rowAction(e){const b=e.target.closest('[data-action]');if(!b)return;const id=Number(b.dataset.id);if(b.dataset.action==='detail')run(()=>openDetail(id));if(b.dataset.action==='edit')run(()=>openForm(id));if(b.dataset.action==='delete')run(()=>remove(id));}
+function dashboardAction(e){const c=e.target.closest('[data-public-asset-filter]');if(!c)return;const[k,v]=c.dataset.publicAssetFilter.split(':');const target=k==='status'?$('#publicAssetsStatusFilter'):$('#publicAssetsLocatedFilter');if(target)target.value=v;run(()=>{state.page=1;readFilters();return load();});}
+async function sortBy(f){state.direction=state.sort===f&&state.direction==='ASC'?'DESC':'ASC';state.sort=f;await load();}
+async function openDetail(id){await catalogs();const i=await request(`${API}/${id}`);state.current=i;$('#publicAssetDetailTitle')&&($('#publicAssetDetailTitle').textContent=i.asset_name||'Chi tiet cong trinh');$('#publicAssetDetailSubtitle')&&($('#publicAssetDetailSubtitle').textContent=`${i.asset_code||''} · ${i.type_name||''} · ${i.status_label||''}`);const body=$('#publicAssetDetailBody');if(body)body.innerHTML=detail(i);$('#publicAssetDetailEditBtn')?.classList.toggle('d-none',!can('update'));bootstrap.Modal.getOrCreateInstance($('#publicAssetDetailModal')).show();}
+function detail(i){const img=i.cover_photo_url?`<img src="${safe(i.cover_photo_url)}" class="img-fluid rounded border mb-3" style="max-height:260px;object-fit:cover;width:100%">`:'<div class="bg-light border rounded d-flex align-items-center justify-content-center mb-3" style="height:180px"><i class="fa-solid fa-building-columns fa-3x text-secondary"></i></div>';const map=i.latitude&&i.longitude?`<iframe title="Vi tri cong trinh" src="https://www.openstreetmap.org/export/embed.html?bbox=${i.longitude-0.002}%2C${i.latitude-0.002}%2C${i.longitude+0.002}%2C${i.latitude+0.002}&marker=${i.latitude}%2C${i.longitude}" style="width:100%;height:260px;border:1px solid #d1d5db;border-radius:8px"></iframe>`:'<div class="text-muted border rounded p-4 text-center">Chua co toa do GPS</div>';const f=(l,v)=>`<div class="col-md-6"><strong>${safe(l)}</strong><div>${safe(v||'Chua cap nhat')}</div></div>`;return`<div class="row g-4"><div class="col-lg-4">${img}${statusBadge(i)}</div><div class="col-lg-8"><div class="row g-3">${f('Ma cong trinh',i.asset_code)}${f('Loai',i.type_name)}${f('Khu vuc',i.area_code)}${f('Dia chi',i.address)}${f('Dien tich khuon vien',area(i.campus_area))}${f('Dien tich xay dung',area(i.building_area))}${f('Nam xay dung',i.construction_year)}${f('Nam dua vao su dung',i.operation_year)}${f('GPS',i.latitude&&i.longitude?`${i.latitude}, ${i.longitude}${i.gps_updated_at?' - '+i.gps_updated_at:''}`:'')}${f('Don vi quan ly',i.managing_unit)}${f('Nguoi phu trach',i.manager_name)}${f('Chuc vu',i.manager_position)}${f('Dien thoai',i.manager_phone)}<div class="col-12"><strong>Mo ta</strong><p>${safe(i.description||'Chua cap nhat')}</p></div><div class="col-12"><strong>Ghi chu</strong><p>${safe(i.note||'Khong co')}</p></div><div class="col-12"><strong>Ban do vi tri</strong><div class="mt-2">${map}</div></div></div></div></div>`;}
+async function openForm(id=null){if(id&&!can('update'))return toast('Khong co quyen sua','warning');if(!id&&!can('create'))return toast('Khong co quyen them','warning');await catalogs();const form=$('#publicAssetForm');form?.reset();updatePhoto(null);updateGps(null);if(id){const i=await request(`${API}/${id}`);state.current=i;Object.keys(i).forEach(k=>{if(form.elements[k])form.elements[k].value=i[k]??'';});if(form.elements.type_id)form.elements.type_id.value=i.type_id||'';updatePhoto(i.cover_photo_url);updateGps(i);}else{state.current=null;if(form?.elements.status)form.elements.status.value='ACTIVE';}bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).show();}
+async function save(e){e.preventDefault();const form=e.currentTarget,data=Object.fromEntries(new FormData(form).entries());delete data.asset_code;const id=data.id,item=await request(id?`${API}/${id}`:API,{method:id?'PUT':'POST',body:data});let saved=item;const file=$('#publicAssetPhotoFile')?.files?.[0];if(file)saved=await uploadPhoto(item.id,file);bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).hide();toast('Da luu cong trinh','success');await load();run(refreshGisLayer);state.current=saved;}
+function authHeaders(){const h={};if(window.App?.token)h.Authorization=`Bearer ${window.App.token}`;if(window.App?.csrfToken)h['X-CSRF-Token']=window.App.csrfToken;return h;}
+async function uploadPhoto(id,file){const fd=new FormData();fd.append('file',file);const r=await fetch(`${API}/${id}/photo`,{method:'POST',headers:authHeaders(),body:fd,cache:'no-store'});const p=await r.json().catch(()=>null);if(!r.ok||p?.ok===false||p?.success===false)throw new Error(p?.error?.message||p?.message||'Khong upload duoc anh');return p?.data?.item||p?.item||state.current;}
+async function deletePhoto(){const id=$('#publicAssetForm')?.elements.id.value||state.current?.id;if(!id){updatePhoto(null);return;}if(!confirm('Xoa anh cong trinh nay?'))return;const r=await fetch(`${API}/${id}/photo`,{method:'DELETE',headers:authHeaders(),cache:'no-store'});const p=await r.json().catch(()=>null);if(!r.ok||p?.ok===false||p?.success===false)throw new Error(p?.error?.message||p?.message||'Khong xoa duoc anh');state.current=p?.data?.item||state.current;updatePhoto(null);const file=$('#publicAssetPhotoFile');if(file)file.value='';await load();toast('Da xoa anh','success');}
+function previewFile(e){const f=e.target.files?.[0];if(f)updatePhoto(URL.createObjectURL(f),true);}
+function updatePhoto(url,temp=false){const h=$('#publicAssetPhotoPreview');if(!h)return;h.innerHTML=url?`<img src="${safe(url)}" style="width:100%;max-height:180px;object-fit:cover">`:'<span class="text-muted small">Chua co anh cong trinh</span>';$('#publicAssetDeletePhotoBtn')?.classList.toggle('d-none',!url||temp);if(temp)setTimeout(()=>URL.revokeObjectURL(url),5000);}
+function updateGps(i){const h=$('#publicAssetGpsMeta');if(!h)return;h.textContent=i?.latitude&&i?.longitude?`Vi tri: ${i.latitude}, ${i.longitude}${i.gps_updated_at?' - Cap nhat: '+i.gps_updated_at:''}`:'Chua co vi tri GPS';}
+function useGps(){if(!navigator.geolocation)return toast('Thiet bi khong ho tro GPS','warning');navigator.geolocation.getCurrentPosition(p=>{const f=$('#publicAssetForm');if(!f)return;f.elements.latitude.value=p.coords.latitude.toFixed(8);f.elements.longitude.value=p.coords.longitude.toFixed(8);f.elements.gps_accuracy.value=p.coords.accuracy?p.coords.accuracy.toFixed(2):'';updateGps({latitude:f.elements.latitude.value,longitude:f.elements.longitude.value,gps_updated_at:'se cap nhat khi luu'});},e=>toast(e.message||'Khong lay duoc GPS','danger'),{enableHighAccuracy:true,timeout:15000,maximumAge:30000});}
+function pickMap(){const activate=()=>{const map=window.App?.gis?.map;if(!map)return toast('Ban do GIS chua san sang','warning');toast('Click mot diem tren ban do de chon vi tri','info');map.once('click',ev=>{const f=$('#publicAssetForm');if(!f)return;f.elements.latitude.value=ev.latlng.lat.toFixed(8);f.elements.longitude.value=ev.latlng.lng.toFixed(8);updateGps({latitude:f.elements.latitude.value,longitude:f.elements.longitude.value,gps_updated_at:'se cap nhat khi luu'});window.switchScreen?.('publicAssets');bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).show();});};bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).hide();window.switchScreen?.('gis');setTimeout(activate,700);}
+async function remove(id){if(!can('delete'))return toast('Khong co quyen xoa','warning');if(!confirm('Xoa cong trinh nay?'))return;await request(`${API}/${id}`,{method:'DELETE'});toast('Da xoa cong trinh','success');await load();run(refreshGisLayer);}
+function wrapGisLoader(){if(window.__publicAssetsGisWrapped)return;window.__publicAssetsGisWrapped=true;const orig=window.loadGisMap;if(typeof orig==='function')window.loadGisMap=async function(...a){const r=await orig.apply(this,a);scheduleGisLayer();return r;};}
+function scheduleGisLayer(){setTimeout(()=>run(refreshGisLayer),250);}
+async function refreshGisLayer(){const app=window.App;if(!app?.gis?.map||!window.L)return;const map=app.gis.map;if(!app.gis.publicAssetLayer)app.gis.publicAssetLayer=L.layerGroup().addTo(map);const layer=app.gis.publicAssetLayer;layer.clearLayers();if(!can('read'))return;const data=await request(API+'/gis',{cacheTtl:15000});(data.items||[]).forEach(i=>L.marker([i.latitude,i.longitude],{icon:markerIcon(i)}).bindPopup(gisPopup(i),{maxWidth:320,closeButton:true,autoPan:true}).addTo(layer));}
+function markerIcon(i){const color={ACTIVE:'#16a34a',REPAIRING:'#f59e0b',SUSPENDED:'#64748b',INACTIVE:'#374151'}[i.status]||'#1976d2';return L.divIcon({className:'public-asset-gis-icon',html:`<span style="width:34px;height:34px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.25);border:2px solid #fff"><i class="fa-solid ${safe(i.type_icon||'fa-building-columns')}"></i></span>`,iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-18]});}
+function gisPopup(i){const img=i.cover_photo_url?`<img src="${safe(i.cover_photo_url)}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px">`:'';const dir=i.latitude&&i.longitude?`https://www.google.com/maps/dir/?api=1&destination=${i.latitude},${i.longitude}`:'#';return`<div style="min-width:240px">${img}<strong>${safe(i.asset_name)}</strong><div style="font-size:12px;color:#64748b;margin:4px 0">${safe(i.type_name||'')} · ${safe(i.status_label||'')}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-ruler-combined"></i> ${area(i.campus_area)}</div><div style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-user"></i> ${safe(i.manager_name||i.managing_unit||'Chua cap nhat')}</div><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-primary" onclick="window.openPublicAssetDetail(${i.id})">Chi tiet</button><a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${dir}">Chi duong</a></div></div>`;}
+window.loadPublicAssets=load;window.openPublicAssetDetail=id=>run(()=>openDetail(id));window.openPublicAssetForm=id=>run(()=>openForm(id));window.refreshPublicAssetGisLayer=()=>run(refreshGisLayer);
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 })();

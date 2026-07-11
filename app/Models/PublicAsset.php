@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS public_assets (
 SQL);
         $this->ensureColumn('public_assets', 'campus_area', 'DECIMAL(14,2) NULL AFTER area_code');
         $this->ensureColumn('public_assets', 'building_area', 'DECIMAL(14,2) NULL AFTER campus_area');
+        $this->ensureColumn('public_assets', 'construction_year', 'SMALLINT UNSIGNED NULL AFTER building_area');
+        $this->ensureColumn('public_assets', 'operation_year', 'SMALLINT UNSIGNED NULL AFTER construction_year');
+        $this->ensureColumn('public_assets', 'gps_updated_at', 'DATETIME NULL AFTER gps_accuracy');
+        $this->ensureColumn('public_assets', 'manager_position', 'VARCHAR(255) NULL AFTER manager_name');
         $this->seedTypes();
     }
 
@@ -96,15 +100,19 @@ SQL);
     public function upsert(array $data, int $userId, ?int $id = null): array
     {
         $this->ensureSchema();
-        if ($id && !$this->find($id)) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y c\u00f4ng tr\u00ecnh'));
+        $existing = $id ? $this->find($id) : null;
+        if ($id && !$existing) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y c\u00f4ng tr\u00ecnh'));
         $params = $this->params($data, $userId);
+        if ($id && !array_key_exists('cover_photo_url', $data) && !array_key_exists('coverPhotoUrl', $data)) {
+            $params['cover_photo_url'] = $existing['cover_photo_url'] ?? null;
+        }
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE public_assets SET asset_name=:asset_name, type_id=:type_id, type_name=:type_name, category=:category, area_code=:area_code, campus_area=:campus_area, building_area=:building_area, address=:address, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, cover_photo_url=:cover_photo_url, description=:description, managing_unit=:managing_unit, manager_name=:manager_name, manager_phone=:manager_phone, note=:note, status=:status, updated_by=:updated_by WHERE id=:id', $params);
+            $this->execute('UPDATE public_assets SET asset_name=:asset_name, type_id=:type_id, type_name=:type_name, category=:category, area_code=:area_code, campus_area=:campus_area, building_area=:building_area, construction_year=:construction_year, operation_year=:operation_year, address=:address, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, gps_updated_at=:gps_updated_at, cover_photo_url=:cover_photo_url, description=:description, managing_unit=:managing_unit, manager_name=:manager_name, manager_position=:manager_position, manager_phone=:manager_phone, note=:note, status=:status, updated_by=:updated_by WHERE id=:id', $params);
             return $this->find($id);
         }
         $params['asset_code'] = $this->nextCode();
-        $newId = $this->insert('INSERT INTO public_assets (asset_code, asset_name, type_id, type_name, category, area_code, campus_area, building_area, address, latitude, longitude, gps_accuracy, cover_photo_url, description, managing_unit, manager_name, manager_phone, note, status, created_by, updated_by) VALUES (:asset_code, :asset_name, :type_id, :type_name, :category, :area_code, :campus_area, :building_area, :address, :latitude, :longitude, :gps_accuracy, :cover_photo_url, :description, :managing_unit, :manager_name, :manager_phone, :note, :status, :created_by, :updated_by)', $params);
+        $newId = $this->insert('INSERT INTO public_assets (asset_code, asset_name, type_id, type_name, category, area_code, campus_area, building_area, construction_year, operation_year, address, latitude, longitude, gps_accuracy, gps_updated_at, cover_photo_url, description, managing_unit, manager_name, manager_position, manager_phone, note, status, created_by, updated_by) VALUES (:asset_code, :asset_name, :type_id, :type_name, :category, :area_code, :campus_area, :building_area, :construction_year, :operation_year, :address, :latitude, :longitude, :gps_accuracy, :gps_updated_at, :cover_photo_url, :description, :managing_unit, :manager_name, :manager_position, :manager_phone, :note, :status, :created_by, :updated_by)', $params);
         return $this->find($newId);
     }
 
@@ -188,14 +196,18 @@ SQL);
             'area_code' => $this->nullable($data['area_code'] ?? $data['areaCode'] ?? ''),
             'campus_area' => $this->positiveNumber($data['campus_area'] ?? $data['campusArea'] ?? null, true, $this->u('Di\u1ec7n t\u00edch khu\u00f4n vi\u00ean ph\u1ea3i l\u00e0 s\u1ed1 d\u01b0\u01a1ng')),
             'building_area' => $this->positiveNumber($data['building_area'] ?? $data['buildingArea'] ?? null, false, $this->u('Di\u1ec7n t\u00edch x\u00e2y d\u1ef1ng ph\u1ea3i l\u00e0 s\u1ed1 d\u01b0\u01a1ng')),
+            'construction_year' => $this->year($data['construction_year'] ?? $data['constructionYear'] ?? null, false, $this->u('N\u0103m x\u00e2y d\u1ef1ng kh\u00f4ng h\u1ee3p l\u1ec7')),
+            'operation_year' => $this->year($data['operation_year'] ?? $data['operationYear'] ?? null, false, $this->u('N\u0103m \u0111\u01b0a v\u00e0o s\u1eed d\u1ee5ng kh\u00f4ng h\u1ee3p l\u1ec7')),
             'address' => $this->nullable($data['address'] ?? ''),
-            'latitude' => $this->coord($data['latitude'] ?? null),
-            'longitude' => $this->coord($data['longitude'] ?? null),
+            'latitude' => $latitude = $this->coord($data['latitude'] ?? null),
+            'longitude' => $longitude = $this->coord($data['longitude'] ?? null),
             'gps_accuracy' => $this->nullableNumber($data['gps_accuracy'] ?? $data['gpsAccuracy'] ?? null),
+            'gps_updated_at' => ($latitude !== null && $longitude !== null) ? date('Y-m-d H:i:s') : null,
             'cover_photo_url' => $this->nullable($data['cover_photo_url'] ?? $data['coverPhotoUrl'] ?? ''),
             'description' => $this->nullable($data['description'] ?? ''),
             'managing_unit' => $this->nullable($data['managing_unit'] ?? $data['managingUnit'] ?? ''),
             'manager_name' => $this->nullable($data['manager_name'] ?? $data['managerName'] ?? ''),
+            'manager_position' => $this->nullable($data['manager_position'] ?? $data['managerPosition'] ?? ''),
             'manager_phone' => $this->nullable($data['manager_phone'] ?? $data['managerPhone'] ?? ''),
             'note' => $this->nullable($data['note'] ?? ''),
             'status' => $status,
@@ -218,14 +230,18 @@ SQL);
             'area_code' => (string)($row['area_code'] ?? ''),
             'campus_area' => $row['campus_area'] !== null && $row['campus_area'] !== '' ? (float)$row['campus_area'] : null,
             'building_area' => $row['building_area'] !== null && $row['building_area'] !== '' ? (float)$row['building_area'] : null,
+            'construction_year' => $row['construction_year'] !== null ? (int)$row['construction_year'] : null,
+            'operation_year' => $row['operation_year'] !== null ? (int)$row['operation_year'] : null,
             'address' => (string)($row['address'] ?? ''),
             'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float)$row['latitude'] : null,
             'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float)$row['longitude'] : null,
             'gps_accuracy' => $row['gps_accuracy'] !== null ? (float)$row['gps_accuracy'] : null,
+            'gps_updated_at' => $row['gps_updated_at'] ?? null,
             'cover_photo_url' => (string)($row['cover_photo_url'] ?? ''),
             'description' => (string)($row['description'] ?? ''),
             'managing_unit' => (string)($row['managing_unit'] ?? ''),
             'manager_name' => (string)($row['manager_name'] ?? ''),
+            'manager_position' => (string)($row['manager_position'] ?? ''),
             'manager_phone' => (string)($row['manager_phone'] ?? ''),
             'note' => (string)($row['note'] ?? ''),
             'status' => $status,
@@ -257,6 +273,8 @@ SQL);
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableNumber(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
     private function positiveNumber(mixed $value, bool $required, string $message): ?float { $value = trim((string)($value ?? '')); if ($value === '') { if ($required) throw new \RuntimeException($message); return null; } $number = (float)str_replace(',', '.', $value); if ($number <= 0) throw new \RuntimeException($message); return $number; }
+    private function year(mixed $value, bool $required, string $message): ?int { $value = trim((string)($value ?? '')); if ($value === '') { if ($required) throw new \RuntimeException($message); return null; } $year = (int)$value; $current = (int)date('Y') + 1; if ($year < 1800 || $year > $current) throw new \RuntimeException($message); return $year; }
+    public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED"', ['id' => $id, 'url' => $url, 'user' => $userId]); return $this->find($id); }
     private function coord(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
     private function ensureColumn(string $table, string $column, string $definition): void { if ($this->columnExists($table, $column)) return; $this->execute('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition); }
     private function columnExists(string $table, string $column): bool { return (bool)$this->fetchOne('SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME=:table AND COLUMN_NAME=:column', ['table' => $table, 'column' => $column]); }
