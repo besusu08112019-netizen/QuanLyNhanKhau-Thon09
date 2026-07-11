@@ -187,6 +187,7 @@ class GisController extends BaseController
             echo '<tr><td>' . htmlspecialchars((string) $area['name']) . '</td><td>' . htmlspecialchars((string) $area['area_code']) . '</td><td><span class="sw" style="background:' . htmlspecialchars((string) $area['color']) . '"></span>' . htmlspecialchars((string) $area['color']) . '</td><td>' . number_format((float) ($stats['area_m2'] ?? 0)) . '</td><td>' . (int) ($stats['households'] ?? 0) . '</td><td>' . (int) ($stats['citizens'] ?? 0) . '</td><td>' . htmlspecialchars((string) ($area['note'] ?? '')) . '</td></tr>';
         }
         echo '</tbody></table></body></html>';
+        exit;
     }
 
     private function boundsFromQuery(): ?array
