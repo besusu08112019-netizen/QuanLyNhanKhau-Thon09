@@ -195,7 +195,7 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
   await page.locator('#publicAssetsRows [data-action="detail"]').first().click();
   await expect(page.locator('#publicAssetDetailModal.show')).toBeVisible();
   await expect(page.locator('#publicAssetDetailBody')).toContainText('Đơn vị quản lý');
-  await expect(page.locator('#publicAssetDetailBody')).toContainText('Người quản lý');
+  await expect(page.locator('#publicAssetDetailBody')).toContainText('Người phụ trách');
   await expect(page.locator('#publicAssetDetailBody')).toContainText('1.234,5 m²');
   await expect(page.locator('#publicAssetDetailBody')).toContainText('Kiểm kê tài sản');
   await page.locator('button[data-bs-target="#publicAssetInventoryTab"]').click();
@@ -234,6 +234,7 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
 
   await page.locator('#publicAssetsAddBtn').click();
   await expect(page.locator('#publicAssetFormModal.show')).toBeVisible();
+  await expect(page.locator('#publicAssetFormInventoryMount')).toContainText('Vui lòng lưu công trình trước khi thực hiện kiểm kê tài sản.');
   await page.locator('#publicAssetForm [name="asset_name"]').fill('Công trình kiểm thử');
   await page.locator('#publicAssetForm [name="type_id"]').selectOption('1');
   await page.locator('#publicAssetForm [name="campus_area"]').fill('88.5');
@@ -248,6 +249,8 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
 
   await page.locator('#publicAssetsRows tr').filter({ hasText: 'CT09-00101' }).locator('[data-action="edit"]').click();
   await expect(page.locator('#publicAssetFormModal.show')).toBeVisible();
+  await expect(page.locator('#publicAssetFormInventoryMount')).toContainText('Kiểm kê tài sản');
+  await expect(page.locator('#publicAssetFormInventoryPanel')).toContainText('Bình chữa cháy mới');
   await page.locator('#publicAssetForm [name="manager_name"]').fill('Trần Thị C');
   await page.locator('#publicAssetForm button[type="submit"]').click();
   await expect.poll(() => requests.some(item => item.method === 'PUT' && /^\/api\/public-assets\/\d+$/.test(item.path))).toBeTruthy();
