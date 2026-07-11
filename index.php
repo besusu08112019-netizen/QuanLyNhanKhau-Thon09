@@ -40,6 +40,7 @@ use App\Controllers\OperationCenterController;
 use App\Controllers\PermissionController;
 use App\Controllers\PersonController;
 use App\Controllers\ProfileController;
+use App\Controllers\PublicAssetController;
 use App\Controllers\ReportController;
 use App\Controllers\SettingController;
 use App\Controllers\SystemAdminController;
@@ -244,6 +245,14 @@ $router->delete('/api/houses/{id}/photos/{photoId}', [HouseController::class, 'd
 $router->get('/api/houses/{id}', [HouseController::class, 'show']);
 $router->put('/api/houses/{id}', [HouseController::class, 'update']);
 $router->delete('/api/houses/{id}', [HouseController::class, 'destroy']);
+$router->get('/api/public-assets', [PublicAssetController::class, 'index']);
+$router->post('/api/public-assets', [PublicAssetController::class, 'store']);
+$router->get('/api/public-assets/dashboard', [PublicAssetController::class, 'dashboard']);
+$router->get('/api/public-assets/catalogs', [PublicAssetController::class, 'catalogs']);
+$router->get('/api/public-assets/gis', [PublicAssetController::class, 'gis']);
+$router->get('/api/public-assets/{id}', [PublicAssetController::class, 'show']);
+$router->put('/api/public-assets/{id}', [PublicAssetController::class, 'update']);
+$router->delete('/api/public-assets/{id}', [PublicAssetController::class, 'destroy']);
 $router->get('/api/livestock', [LivestockController::class, 'index']);
 $router->post('/api/livestock', [LivestockController::class, 'store']);
 $router->get('/api/livestock/dashboard', [LivestockController::class, 'dashboard']);
@@ -470,6 +479,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/livestock.min.js',
         'assets/js/agriculture.min.js',
         'assets/js/houses.min.js',
+        'assets/js/public-assets.min.js',
         'assets/js/module-dashboards.min.js',
     ];
 
