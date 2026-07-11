@@ -64,6 +64,13 @@
     ]).then(() => Boolean(window.L && window.L.markerClusterGroup));
   }
 
+  function gisDebugState(extra) {
+    return Object.assign({ openPopupId: state.openPopupId || '', activeMarkerId: state.activeMarkerId || '', markerCount: state.markers.size, loading: state.loading, renderingMarkers: state.renderingMarkers }, extra || {});
+  }
+  function gisDebugTrace(label, extra) {
+    console.trace(label, gisDebugState(extra));
+  }
+
   function debounce(fn, wait) {
     let timer;
     return function () {
@@ -605,6 +612,7 @@
     });
     marker.bindPopup(popup);
     marker.on('click', event => {
+      gisDebugTrace('marker click', { rowId });
       state.lastMarkerTouchAt = Date.now();
       stopLeafletPropagation(event);
       closeOpenHouseholdPopup(rowId);
@@ -613,7 +621,7 @@
       activateMarker(marker, row);
     });
     marker.on('popupopen', event => {
-      console.log('Popup OPEN');
+      console.log('popupopen');
       state.openPopupId = rowId;
       disableMapDraggingForPopup();
       window.thon09GisEnsureHouseholdMarkerLayerVisible && window.thon09GisEnsureHouseholdMarkerLayerVisible();
@@ -622,7 +630,7 @@
       activateMarker(marker, row);
     });
     marker.on('popupclose', () => {
-      console.trace('Popup CLOSE');
+      console.trace('popupclose');
       if (state.renderingMarkers) return;
       if (state.openPopupId !== rowId) return;
       state.openPopupId = '';
@@ -630,6 +638,7 @@
     });
     ['touchstart', 'touchend', 'pointerdown', 'pointerup'].forEach(type => {
       marker.on(type, event => {
+        gisDebugTrace('marker ' + type, { rowId });
         state.lastMarkerTouchAt = Date.now();
         stopLeafletPropagation(event);
       });
@@ -728,6 +737,7 @@
   }
 
   function refreshMarkerClusters() {
+    gisDebugTrace('cluster.refreshClusters()/refreshMarkerClusters()');
     if (state.openPopupId) return;
     if (state.layer && typeof state.layer.refreshClusters === 'function') state.layer.refreshClusters();
   }
@@ -743,6 +753,7 @@
   }
 
   function renderLocatedMarkers(rows) {
+    gisDebugTrace('renderMarkers/renderLocatedMarkers()', { rowCount: (rows || []).length });
     if (!state.layer || state.openPopupId) return;
     const nextMarkers = [];
     state.markers.clear();
@@ -754,13 +765,15 @@
       state.markers.set(normalizeHouseholdId(row), marker);
       hydrateMarkerThumbnail(marker, row);
     });
+    gisDebugTrace('cluster.clearLayers()', { nextMarkerCount: nextMarkers.length });
     state.layer.clearLayers();
-    if (typeof state.layer.addLayers === 'function') state.layer.addLayers(nextMarkers);
+    if (typeof state.layer.addLayers === 'function') { gisDebugTrace('cluster.addLayers()', { nextMarkerCount: nextMarkers.length }); state.layer.addLayers(nextMarkers); }
     else nextMarkers.forEach(marker => marker.addTo(state.layer));
     refreshMarkerClusters();
   }
 
   function restoreMarkersIfMissing() {
+    gisDebugTrace('refreshMarkers/restoreMarkersIfMissing()');
     const m = map();
     if (!m || !window.L || !state.layer || !isTouchViewport() || !state.lastLocatedRows.length) return;
     if (typeof m.hasLayer === 'function' && !m.hasLayer(state.layer)) state.layer.addTo(m);
@@ -771,6 +784,7 @@
   }
 
   async function loadHouseholdMarkers(search, options) {
+    gisDebugTrace('loadMarkers/loadHouseholdMarkers()', { search: search || '', force: Boolean(options && options.force) });
     if (!isAuthenticated()) return;
     if (shouldDeferMarkerReload(search, options)) return;
     const m = map();
@@ -784,7 +798,9 @@
         state.layer.addTo(m);
       }
       const popupIdBeforeRender = state.openPopupId;
-      const data = await request('/api/gis/households?' + markerParams(search || '').toString());
+      const markerUrl = '/api/gis/households?' + markerParams(search || '').toString();
+      gisDebugTrace('GET /api/gis/households helper', { url: markerUrl });
+      const data = await request(markerUrl);
       const popupOpenedDuringRequest = !popupIdBeforeRender && state.openPopupId && !search && !(options && options.force);
       if (popupOpenedDuringRequest) {
         document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer, keptExisting: true, skippedStaleReload: true } }));
@@ -804,8 +820,9 @@
       document.dispatchEvent(new CustomEvent('thon09:gis-markers-loaded', { detail: { rows: state.lastRows, layer: state.layer } }));
       if (search && state.markers.size) {
         const first = state.markers.values().next().value;
-        m.setView(first.getLatLng(), Math.max(m.getZoom(), 17));
         const firstId = String((first.__thon09HouseholdRow || {}).id || '');
+        gisDebugTrace('map.setView() search result', { firstId });
+        m.setView(first.getLatLng(), Math.max(m.getZoom(), 17));
         closeOpenHouseholdPopup(firstId);
         state.openPopupId = firstId;
         first.openPopup();
@@ -855,6 +872,7 @@
     if (!marker) return false;
     state.activeMarkerId = id;
     activateMarker(marker, marker.__thon09HouseholdRow || row || { id });
+    gisDebugTrace('map.setView() focus household marker', { id });
     m.setView(marker.getLatLng(), Math.max(m.getZoom(), 17), { animate: true });
     closeOpenHouseholdPopup(id);
     state.openPopupId = id;
