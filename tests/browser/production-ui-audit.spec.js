@@ -1,6 +1,7 @@
 const { test, expect, chromium } = require('@playwright/test');
 
-const screens = ['dashboard', 'households', 'persons', 'businessHouseholds', 'vehicles', 'livestock', 'agriculture', 'contributions', 'publicAssets', 'gis', 'reports', 'operationCenter', 'users'];
+const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'businessHouseholds', 'livestock', 'houses', 'vehicles', 'agriculture', 'contributions'];
+const screens = ['dashboard', ...moduleOrderScreens, 'gis', 'reports', 'operationCenter', 'users'];
 const viewports = [
   { name: 'desktop', width: 1366, height: 768 },
   { name: 'tablet-portrait', width: 768, height: 1024 },
@@ -65,7 +66,7 @@ test.describe(`Production UI audit (${browserName()})`, () => {
       for (const screen of screens) {
         await page.evaluate((target) => window.switchScreen && window.switchScreen(target), screen);
         await page.waitForTimeout(100);
-        const result = await page.evaluate(({ screen, width }) => {
+        const result = await page.evaluate(({ screen, width, moduleOrderScreens }) => {
           const active = document.querySelector('.screen.active');
           const visible = (el) => {
             if (!el) return false;
@@ -79,6 +80,9 @@ test.describe(`Production UI audit (${browserName()})`, () => {
             .map((el) => el.innerText || '')
             .join('\n');
           const navItems = Array.from(document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen]')).map((btn) => btn.dataset.mobileScreen);
+          const sidebarModuleItems = Array.from(document.querySelectorAll('.sidebar .nav-section .nav-link[data-screen]'))
+            .map((btn) => btn.dataset.screen)
+            .filter((item) => moduleOrderScreens.includes(item));
           const touchFailures = [];
           if (width <= 820 && active) {
             Array.from(active.querySelectorAll('button:not([disabled]), .btn:not([disabled]), input:not([type="hidden"]), select, textarea, a[href]')).filter(visible).forEach((el) => {
@@ -109,17 +113,20 @@ test.describe(`Production UI audit (${browserName()})`, () => {
             bodyScrollWidth: active ? Math.ceil(active.scrollWidth) : Math.ceil(document.body.scrollWidth),
             bodyClientWidth: active ? Math.ceil(active.clientWidth) : Math.ceil(document.body.clientWidth),
             navItems,
+            sidebarModuleItems,
             text: textNodes,
             touchFailures,
             cardStyles,
             focusOk
           };
-        }, { screen, width: viewport.width });
+        }, { screen, width: viewport.width, moduleOrderScreens });
 
         expect(result.activeId).toBe(`${screen}Screen`);
         expect(result.scrollWidth).toBeLessThanOrEqual(result.clientWidth + 2);
         expect(result.bodyScrollWidth).toBeLessThanOrEqual(result.bodyClientWidth + 96);
         expect(result.navItems).not.toContain('operationCenter');
+        expect(result.navItems.filter((item) => moduleOrderScreens.includes(item))).toEqual(moduleOrderScreens);
+        expect(result.sidebarModuleItems).toEqual(moduleOrderScreens);
         expect(result.text).not.toMatch(mojibakePattern);
         expect(result.touchFailures, `${viewport.name}/${screen} touch target failures`).toEqual([]);
         expect(result.focusOk).toBe(true);
