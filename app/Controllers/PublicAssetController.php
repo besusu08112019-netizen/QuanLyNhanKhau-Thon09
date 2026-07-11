@@ -61,7 +61,25 @@ final class PublicAssetController extends BaseController
         $url = '/' . ltrim(str_replace('\\', '/', $stored['file_path']), '/');
         $row = $this->assets->setCoverPhoto($assetId, $url, (int)$user['id']);
         $this->audit($user, 'public_assets', 'upload_photo', 'Upload anh cong trinh cong cong', $assetId, ['file' => $stored]);
-        $this->ok(['item' => $row, 'url' => $url]);
+        $this->ok(['item' => $row, 'url' => $row['cover_photo_url'] ?? null]);
+    }
+
+    public function photo(string $id): void
+    {
+        $this->requirePermission('public_assets', 'read');
+        $path = $this->assets->coverPhotoPath((int)$id);
+        if (!$path) $this->fail('Cong trinh chua co anh', 404);
+        $storage = new FileStorageService();
+        $file = $storage->safeFilePath($path);
+        if (!$file || !is_file($file)) $this->fail('Anh cong trinh khong con ton tai', 404);
+        $mime = mime_content_type($file) ?: 'application/octet-stream';
+        if (!str_starts_with($mime, 'image/')) $this->fail('File khong phai hinh anh', 415);
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($file));
+        header('Cache-Control: private, max-age=300');
+        readfile($file);
+        exit;
     }
 
     public function deletePhoto(string $id): void

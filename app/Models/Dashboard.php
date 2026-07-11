@@ -462,7 +462,8 @@ final class Dashboard extends BaseModel
     {
         if (!$this->columnExists('citizens', $column)) return 0;
         [$where, $params] = $this->citizenWhere($filters);
-        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id $where AND (c.$column IS NULL OR c.$column = '' OR c.$column = '0')", $params) ?: [])['total'] ?? 0);
+        $value = "TRIM(COALESCE(CAST(c.$column AS CHAR), ''))";
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id $where AND ($value = '' OR $value = '0' OR $value = '0000-00-00')", $params) ?: [])['total'] ?? 0);
     }
 
     private function missingCitizenPhotoCount(array $filters): int

@@ -18,7 +18,7 @@ abstract class BaseModel
     {
         self::rememberQuery($sql, $params);
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute(self::paramsForSql($sql, $params));
         $row = $stmt->fetch();
         return $row ?: null;
     }
@@ -27,7 +27,7 @@ abstract class BaseModel
     {
         self::rememberQuery($sql, $params);
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute(self::paramsForSql($sql, $params));
         return $stmt->fetchAll();
     }
 
@@ -35,7 +35,7 @@ abstract class BaseModel
     {
         self::rememberQuery($sql, $params);
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute(self::paramsForSql($sql, $params));
         return $stmt->rowCount();
     }
 
@@ -68,6 +68,21 @@ abstract class BaseModel
     {
         self::$lastQuery = ['sql' => $sql, 'params' => $params];
     }
+
+    private static function paramsForSql(string $sql, array $params): array
+    {
+        if ($params === [] || array_is_list($params)) {
+            return $params;
+        }
+
+        preg_match_all('/(?<!:):([a-zA-Z_][a-zA-Z0-9_]*)/', $sql, $matches);
+        if (empty($matches[1])) {
+            return [];
+        }
+
+        return array_intersect_key($params, array_flip(array_unique($matches[1])));
+    }
+
     protected function page(int $page, int $pageSize): array
     {
         $page = max($page, 1);

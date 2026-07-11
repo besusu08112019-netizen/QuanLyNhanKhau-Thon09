@@ -117,12 +117,25 @@ function api_exception_payload(Throwable $e, int $status = 500): array
 
     return ['ok' => false, 'success' => false, 'message' => $error['message'], 'errors' => [], 'error' => $error, 'status' => $status];
 }
+
+function api_exception_status(Throwable $e): int
+{
+    if ($e instanceof PDOException) {
+        return 500;
+    }
+    if ($e instanceof RuntimeException || $e instanceof InvalidArgumentException) {
+        return 422;
+    }
+    return 500;
+}
+
 $request = Request::capture();
 set_exception_handler(function (Throwable $e) use ($request): void {
     if (str_starts_with($request->path(), '/api')) {
-        $payload = api_exception_payload($e);
+        $status = api_exception_status($e);
+        $payload = api_exception_payload($e, $status);
         api_log_exception($e, $payload);
-        Response::json($payload, 500);
+        Response::json($payload, $status);
     }
     throw $e;
 });
@@ -252,6 +265,7 @@ $router->post('/api/public-assets', [PublicAssetController::class, 'store']);
 $router->get('/api/public-assets/dashboard', [PublicAssetController::class, 'dashboard']);
 $router->get('/api/public-assets/catalogs', [PublicAssetController::class, 'catalogs']);
 $router->get('/api/public-assets/gis', [PublicAssetController::class, 'gis']);
+$router->get('/api/public-assets/{id}/photo', [PublicAssetController::class, 'photo']);
 $router->post('/api/public-assets/{id}/photo', [PublicAssetController::class, 'uploadPhoto']);
 $router->delete('/api/public-assets/{id}/photo', [PublicAssetController::class, 'deletePhoto']);
 $router->get('/api/public-assets/{id}', [PublicAssetController::class, 'show']);
@@ -509,9 +523,10 @@ try {
     $router->dispatch();
 } catch (Throwable $e) {
     if (str_starts_with($request->path(), '/api')) {
-        $payload = api_exception_payload($e);
+        $status = api_exception_status($e);
+        $payload = api_exception_payload($e, $status);
         api_log_exception($e, $payload);
-        Response::json($payload, 500);
+        Response::json($payload, $status);
     }
     throw $e;
 }

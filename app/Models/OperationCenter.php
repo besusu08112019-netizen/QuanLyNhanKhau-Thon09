@@ -260,7 +260,8 @@ final class OperationCenter extends BaseModel
     private function missingCitizenFieldCount(array $filters, string $column): int
     {
         if (!$this->columnExists('citizens', $column)) return 0;
-        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE " . $this->activeCitizenCondition('c') . " AND " . $this->activeHouseholdCondition('h') . " AND (c.$column IS NULL OR c.$column = '' OR c.$column = '0')") ?: [])['total'] ?? 0);
+        $value = "TRIM(COALESCE(CAST(c.$column AS CHAR), ''))";
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE " . $this->activeCitizenCondition('c') . " AND " . $this->activeHouseholdCondition('h') . " AND ($value = '' OR $value = '0' OR $value = '0000-00-00')") ?: [])['total'] ?? 0);
     }
 
     private function missingCitizenPhotoCount(array $filters): int { return $this->missingEntityFileCount('citizen', 'citizens', 'c', 'c.id', true); }

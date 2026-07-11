@@ -155,8 +155,10 @@ SQL);
         $search = trim((string)($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $kw = '%' . mb_strtolower($search, 'UTF-8') . '%';
-            $where[] = '(LOWER(pa.asset_code) LIKE :q OR LOWER(pa.asset_name) LIKE :q OR LOWER(pa.address) LIKE :q OR LOWER(pa.manager_name) LIKE :q OR LOWER(pa.managing_unit) LIKE :q)';
-            $params['q'] = $kw;
+            $where[] = '(LOWER(pa.asset_code) LIKE :q_asset_code OR LOWER(pa.asset_name) LIKE :q_asset_name OR LOWER(pa.address) LIKE :q_address OR LOWER(pa.manager_name) LIKE :q_manager_name OR LOWER(pa.managing_unit) LIKE :q_managing_unit)';
+            foreach (['q_asset_code', 'q_asset_name', 'q_address', 'q_manager_name', 'q_managing_unit'] as $key) {
+                $params[$key] = $kw;
+            }
         }
         foreach (['type_id' => 'pa.type_id', 'area_code' => 'pa.area_code', 'status' => 'pa.status'] as $key => $column) {
             $value = trim((string)($filters[$key] ?? ''));
@@ -237,7 +239,7 @@ SQL);
             'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float)$row['longitude'] : null,
             'gps_accuracy' => $row['gps_accuracy'] !== null ? (float)$row['gps_accuracy'] : null,
             'gps_updated_at' => $row['gps_updated_at'] ?? null,
-            'cover_photo_url' => (string)($row['cover_photo_url'] ?? ''),
+            'cover_photo_url' => $this->coverPhotoUrl($row),
             'description' => (string)($row['description'] ?? ''),
             'managing_unit' => (string)($row['managing_unit'] ?? ''),
             'manager_name' => (string)($row['manager_name'] ?? ''),
@@ -277,7 +279,8 @@ SQL);
     public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED"', ['id' => $id, 'url' => $url, 'user' => $userId]); return $this->find($id); }
     private function coord(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
     private function ensureColumn(string $table, string $column, string $definition): void { if ($this->columnExists($table, $column)) return; $this->execute('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition); }
-    private function columnExists(string $table, string $column): bool { return (bool)$this->fetchOne('SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME=:table AND COLUMN_NAME=:column', ['table' => $table, 'column' => $column]); }
+    public function coverPhotoPath(int $id): ?string { $row = $this->fetchOne('SELECT cover_photo_url FROM public_assets WHERE id=:id AND status <> "DELETED"', ['id' => $id]); return $row ? ($row['cover_photo_url'] ?: null) : null; }
+    private function coverPhotoUrl(array $row): string { $url = (string)($row['cover_photo_url'] ?? ''); return str_starts_with(ltrim($url, '/'), 'uploads/') ? '/api/public-assets/' . (int)$row['id'] . '/photo' : $url; }
     private function pairs(array $map): array { return array_map(fn($k, $v) => ['value' => $k, 'label' => $v], array_keys($map), array_values($map)); }
     private function statuses(): array { return ['ACTIVE' => $this->u('\u0110ang s\u1eed d\u1ee5ng'), 'REPAIRING' => $this->u('\u0110ang s\u1eeda ch\u1eefa'), 'SUSPENDED' => $this->u('T\u1ea1m ng\u1eebng'), 'INACTIVE' => $this->u('Kh\u00f4ng c\u00f2n s\u1eed d\u1ee5ng'), 'DELETED' => $this->u('\u0110\u00e3 x\u00f3a')]; }
     private function u(string $value): string { return json_decode('"' . $value . '"') ?: $value; }
