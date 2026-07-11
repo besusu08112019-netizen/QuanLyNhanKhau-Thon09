@@ -390,12 +390,15 @@
       const rowId = normalizeHouseholdId(row);
       const popupIsOpen = state.openPopupId === rowId && marker.isPopupOpen && marker.isPopupOpen();
       if (!popupIsOpen) marker.setIcon(markerIcon(state.activeMarkerId === rowId, url));
-      marker.setPopupContent(popupHtml(row));
       if (popupIsOpen) {
-        marker.openPopup();
         const popup = marker.getPopup && marker.getPopup();
+        const el = popup && popup.getElement && popup.getElement();
+        const photo = el && el.querySelector('[data-gis-popup-photo="' + Number(row.thumbnail_file_id || 0) + '"]');
+        if (photo) photo.innerHTML = popupImageHtml(row);
         protectPopupElement(popup);
         bindPopupActions(popup, row);
+      } else {
+        marker.setPopupContent(popupHtml(row));
       }
     }).catch(() => {});
   }
@@ -610,6 +613,7 @@
       activateMarker(marker, row);
     });
     marker.on('popupopen', event => {
+      console.log('Popup OPEN');
       state.openPopupId = rowId;
       disableMapDraggingForPopup();
       window.thon09GisEnsureHouseholdMarkerLayerVisible && window.thon09GisEnsureHouseholdMarkerLayerVisible();
@@ -618,6 +622,7 @@
       activateMarker(marker, row);
     });
     marker.on('popupclose', () => {
+      console.trace('Popup CLOSE');
       if (state.renderingMarkers) return;
       if (state.openPopupId !== rowId) return;
       state.openPopupId = '';
@@ -723,6 +728,7 @@
   }
 
   function refreshMarkerClusters() {
+    if (state.openPopupId) return;
     if (state.layer && typeof state.layer.refreshClusters === 'function') state.layer.refreshClusters();
   }
 
@@ -737,7 +743,7 @@
   }
 
   function renderLocatedMarkers(rows) {
-    if (!state.layer) return;
+    if (!state.layer || state.openPopupId) return;
     const nextMarkers = [];
     state.markers.clear();
     rows.forEach(row => {
