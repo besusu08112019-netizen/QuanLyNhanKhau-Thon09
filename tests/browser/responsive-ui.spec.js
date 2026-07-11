@@ -152,4 +152,49 @@ test.describe('responsive system navigation audit', () => {
     await page.mouse.click(385, 450);
     await expect(page.locator('body')).not.toHaveClass(/sidebar-open/);
   });
+
+  test('module navigation clicks activate the requested screens', async ({ page }) => {
+    await openAuthenticatedApp(page, 390);
+    const isMobile = await page.evaluate(() => window.innerWidth <= 820);
+
+    if (isMobile) {
+      await page.locator('#sidebarToggle').click();
+      await expect(page.locator('body')).toHaveClass(/sidebar-open/);
+    }
+    for (const screen of moduleOrderScreens) {
+      await page.locator(`.sidebar .nav-link[data-screen="${screen}"]`).first().click();
+      await page.waitForTimeout(120);
+      const sidebarState = await page.evaluate((target) => ({
+        appScreen: window.App && window.App.screen,
+        activeId: document.querySelector('.screen.active')?.id || '',
+        activeNav: document.querySelector('.sidebar .nav-link.active')?.dataset.screen || ''
+      }), screen);
+      expect(sidebarState.activeId).toBe(`${screen}Screen`);
+      expect(sidebarState.activeNav).toBe(screen);
+      expect(sidebarState.appScreen).toBe(screen);
+      await page.evaluate(() => document.querySelectorAll('.toast').forEach((toast) => toast.remove()));
+      if (isMobile) {
+        await page.locator('#sidebarToggle').click();
+        await expect(page.locator('body')).toHaveClass(/sidebar-open/);
+      }
+    }
+    if (isMobile) {
+      const size = page.viewportSize() || { width: 390, height: 844 };
+      await page.mouse.click(size.width - 8, Math.floor(size.height / 2));
+      await expect(page.locator('body')).not.toHaveClass(/sidebar-open/);
+    }
+
+    for (const screen of moduleOrderScreens) {
+      await page.locator(`.mobile-bottom-nav [data-mobile-screen="${screen}"]`).first().click();
+      await page.waitForTimeout(120);
+      const mobileState = await page.evaluate((target) => ({
+        appScreen: window.App && window.App.screen,
+        activeId: document.querySelector('.screen.active')?.id || '',
+        activeMobile: document.querySelector('.mobile-bottom-nav [data-mobile-screen].active')?.dataset.mobileScreen || ''
+      }), screen);
+      expect(mobileState.activeId).toBe(`${screen}Screen`);
+      expect(mobileState.activeMobile).toBe(screen);
+      expect(mobileState.appScreen).toBe(screen);
+    }
+  });
 });
