@@ -5983,3 +5983,55 @@ body.theme-dark.app-authenticated .modal.common-modal {
     width: 100%;
   }
 }
+
+/* Desktop windows can fall below the tablet breakpoint when zoomed or snapped.
+   Keep mouse/trackpad layouts in the desktop navigation model so sidebar clicks
+   do not target the page behind an off-canvas sidebar. */
+@media (min-width: 821px) and (max-width: 991px) and (hover: hover) and (pointer: fine) {
+  body.app-authenticated {
+    overflow: auto !important;
+    touch-action: auto !important;
+  }
+
+  body.app-authenticated .app-shell {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr) !important;
+  }
+
+  body.app-authenticated .gov-sidebar,
+  body.app-authenticated .sidebar,
+  body.app-authenticated .sidebar.gov-sidebar {
+    position: sticky !important;
+    inset: auto !important;
+    top: 0 !important;
+    width: var(--sidebar-width) !important;
+    max-width: none !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    transform: none !important;
+    transition: none !important;
+    z-index: 30 !important;
+  }
+
+  body.app-authenticated .gov-sidebar.open,
+  body.app-authenticated .sidebar.open,
+  body.app-authenticated .sidebar.gov-sidebar.open,
+  body.app-authenticated:not(.sidebar-open) .sidebar.gov-sidebar {
+    transform: none !important;
+  }
+
+  body.app-authenticated .sidebar-backdrop,
+  body.sidebar-open .sidebar-backdrop {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.sidebar-open .main-content,
+  body.sidebar-open .app-content,
+  body.sidebar-open .content-wrapper,
+  body.sidebar-open .leaflet-container,
+  body.sidebar-open .gis-map,
+  body.sidebar-open .mobile-bottom-nav {
+    pointer-events: auto !important;
+  }
+}

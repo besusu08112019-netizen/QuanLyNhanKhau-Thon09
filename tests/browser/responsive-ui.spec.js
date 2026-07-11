@@ -197,4 +197,58 @@ test.describe('responsive system navigation audit', () => {
       expect(mobileState.appScreen).toBe(screen);
     }
   });
+
+  test('narrow desktop sidebar keeps module clicks inside the viewport', async ({ page }) => {
+    await openAuthenticatedApp(page, 960);
+    await page.setViewportSize({ width: 960, height: 760 });
+    await page.evaluate(() => {
+      localStorage.setItem('thon09_dashboard_tree_open', '1');
+      window.switchScreen && window.switchScreen('gis');
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.scrollTop = 0;
+      window.scrollTo(0, 0);
+    });
+    await page.waitForTimeout(200);
+    await page.evaluate(() => {
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.scrollTop = 0;
+      window.scrollTo(0, 0);
+      document.querySelector('.sidebar .nav-link[data-screen="households"]')?.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+
+    const before = await page.evaluate(() => {
+      const button = document.querySelector('.sidebar .nav-link[data-screen="households"]');
+      const sidebar = document.querySelector('.sidebar');
+      const rect = button.getBoundingClientRect();
+      const sidebarRect = sidebar.getBoundingClientRect();
+      const topElement = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return {
+        appScreen: window.App && window.App.screen,
+        sidebarLeft: Math.round(sidebarRect.left),
+        sidebarTransform: getComputedStyle(sidebar).transform,
+        buttonTop: Math.round(rect.top),
+        buttonLeft: Math.round(rect.left),
+        buttonBottom: Math.round(rect.bottom),
+        topScreen: topElement?.closest?.('[data-screen]')?.getAttribute('data-screen') || ''
+      };
+    });
+
+    expect(before.appScreen).toBe('gis');
+    expect(before.sidebarLeft).toBe(0);
+    expect(before.sidebarTransform).toBe('none');
+    expect(before.buttonLeft).toBeGreaterThanOrEqual(0);
+
+    await page.locator('.sidebar .nav-link[data-screen="households"]').first().click();
+    await page.waitForTimeout(200);
+
+    const after = await page.evaluate(() => ({
+      appScreen: window.App && window.App.screen,
+      activeId: document.querySelector('.screen.active')?.id || '',
+      activeNav: document.querySelector('.sidebar .nav-link.active')?.dataset.screen || ''
+    }));
+
+    expect(after.appScreen).toBe('households');
+    expect(after.activeId).toBe('householdsScreen');
+    expect(after.activeNav).toBe('households');
+  });
 });
