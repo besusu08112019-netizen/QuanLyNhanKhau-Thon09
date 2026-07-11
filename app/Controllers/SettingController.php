@@ -111,6 +111,32 @@ final class SettingController extends BaseController
         $this->ok($settings);
     }
 
+    public function mediaList(): void
+    {
+        $this->requirePermission('settings', 'read');
+        $settings = $this->settings()->all();
+        $items = [];
+        foreach (['logoUrl', 'backgroundUrl', 'introImageUrl'] as $key) {
+            $url = $settings[$key] ?? null;
+            if (is_string($url) && trim($url) !== '') {
+                $items[] = ['key' => $key, 'url' => $url, 'type' => $key];
+            }
+        }
+        $backgrounds = $settings['backgroundImages'] ?? [];
+        if (is_string($backgrounds)) {
+            $decoded = json_decode($backgrounds, true);
+            $backgrounds = is_array($decoded) ? $decoded : [];
+        }
+        if (is_array($backgrounds)) {
+            foreach ($backgrounds as $index => $url) {
+                if (is_string($url) && trim($url) !== '') {
+                    $items[] = ['key' => 'backgroundImages.' . $index, 'url' => $url, 'type' => 'backgroundImages'];
+                }
+            }
+        }
+        $this->ok(['items' => $items, 'total' => count($items)]);
+    }
+
 
     public function media(string $folder, string $kind, string $year, string $month, string $file): void
     {

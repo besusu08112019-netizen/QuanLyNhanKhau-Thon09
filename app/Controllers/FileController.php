@@ -50,7 +50,8 @@ final class FileController extends BaseController
         $entityType = $this->storage->normalizeEntityType($entityType !== '' ? $entityType : (string) $this->query('entity_type', $this->query('module', '')));
         $entityId = $entityId !== '' ? $entityId : (string) $this->query('entity_id', $this->query('entityId', ''));
         if (!in_array($entityType, ['household','citizen'], true) || (int) $entityId <= 0) {
-            $this->fail('Invalid file query', 422);
+            $this->requirePermission('file', 'read');
+            $this->ok(['items' => [], 'total' => 0, 'page' => (int) $this->query('page', 1), 'pageSize' => (int) $this->query('pageSize', 24)]);
         }
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
         $this->requirePermission('file', 'read');

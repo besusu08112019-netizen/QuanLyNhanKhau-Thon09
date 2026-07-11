@@ -144,7 +144,7 @@ final class GisHouseholdLocation extends BaseModel
                            COALESCE(NULLIF(x.production_sector,""), NULLIF(x.business_sector,""), ""),
                            COALESCE(REPLACE(REPLACE(x.owner_name, CHAR(30), " "), CHAR(31), " "), ""),
                            COALESCE(REPLACE(REPLACE(x.phone, CHAR(30), " "), CHAR(31), " "), "")
-                       ) ORDER BY x.id SEPARATOR CHAR(30)) AS business_activities_json,
+                       ) ORDER BY x.id SEPARATOR "|~|") AS business_activities_json,
                        CASE
                            WHEN SUM(x.business_type = "BOTH") > 0 THEN "BOTH"
                            WHEN SUM(x.business_type = "PRODUCTION") > 0 AND SUM(x.business_type = "BUSINESS") > 0 THEN "BOTH"

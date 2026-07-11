@@ -35,7 +35,6 @@ final class FileAttachment extends BaseModel
 
         $sql = 'INSERT INTO file_attachments (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')';
         $bindParams = $this->prepareSqlParams($sql, $params);
-        $this->logSqlBindingDebug($sql, $bindParams);
         $id = $this->insert($sql, $bindParams);
         return $this->find($id) ?: ['id' => $id] + $data;
     }
@@ -263,11 +262,6 @@ final class FileAttachment extends BaseModel
     {
         preg_match_all('/:[a-zA-Z_][a-zA-Z0-9_]*/', $sql, $matches);
         return array_values(array_unique(array_map(static fn(string $placeholder): string => substr($placeholder, 1), $matches[0] ?? [])));
-    }
-
-    private function logSqlBindingDebug(string $sql, array $params): void
-    {
-        error_log('[FileAttachment] SQL=' . $sql . ' placeholders=' . json_encode($this->sqlPlaceholders($sql)) . ' params=' . json_encode(array_keys($params)));
     }
 
     private function tableExists(string $table): bool

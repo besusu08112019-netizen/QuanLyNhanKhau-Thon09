@@ -362,7 +362,7 @@ $router->get('/api/system/interface', [SettingController::class, 'index']);
 $router->put('/api/system/interface', [SettingController::class, 'update']);
 $router->post('/api/system/interface/upload', [SettingController::class, 'uploadMedia']);
 $router->delete('/api/system/interface/asset', [SettingController::class, 'deleteMedia']);
-$router->get('/api/system/interface/media', [SettingController::class, 'media']);
+$router->get('/api/system/interface/media', [SettingController::class, 'mediaList']);
 $router->get('/api/settings', [SettingController::class, 'index']);
 $router->post('/api/settings', [SettingController::class, 'update']);
 $router->put('/api/settings', [SettingController::class, 'update']);
