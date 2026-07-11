@@ -509,12 +509,18 @@
     return fallback || null;
   }
 
-  function openStreetMapDirectionsUrl(row) {
+  function hasDirectionsCoordinates(row) {
     if (!row || row.latitude == null || row.longitude == null) return '';
     const lat = Number(row.latitude);
     const lng = Number(row.longitude);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
-    return 'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=;' + lat + ',' + lng;
+    return Number.isFinite(lat) && Number.isFinite(lng);
+  }
+
+  function googleMapsDirectionsUrl(row) {
+    if (!hasDirectionsCoordinates(row)) return '';
+    const lat = Number(row.latitude);
+    const lng = Number(row.longitude);
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng);
   }
 
   function openHouseholdTab(id, tab) {
@@ -531,10 +537,10 @@
     }).catch(error => toast(error.message || 'Không mở được hồ sơ hộ.', 'danger'));
   }
 
-  function openOpenStreetMapDirections(row) {
-    const url = openStreetMapDirectionsUrl(row);
+  function openGoogleMapsDirections(row) {
+    const url = googleMapsDirectionsUrl(row);
     if (!url) {
-      toast('Hộ này chưa có tọa độ trên bản đồ.', 'warning');
+      toast('Chưa có tọa độ GPS để dẫn đường.', 'warning');
       return;
     }
     window.open(url, '_blank', 'noopener');
@@ -565,7 +571,7 @@
       return;
     }
     if (action === 'open') window.thon09GisOpenHousehold(householdId);
-    if (action === 'route') openOpenStreetMapDirections(activeRow);
+    if (action === 'route') openGoogleMapsDirections(activeRow);
     if (action === 'gallery') window.thon09GisOpenHouseholdGallery(householdId);
     if (action === 'relocate') window.thon09GisRelocateHousehold(householdId, target);
     if (action === 'phone') {
@@ -585,10 +591,27 @@
     });
   }
 
+  function prepareDirectionsAction(el, row) {
+    const routeButton = el.querySelector('[data-gis-popup-action="route"]');
+    if (!routeButton) return;
+    const url = googleMapsDirectionsUrl(row);
+    if (!url) {
+      const message = document.createElement('div');
+      message.className = 'gis-popup-no-directions';
+      message.textContent = 'Chưa có tọa độ GPS để dẫn đường.';
+      routeButton.replaceWith(message);
+      return;
+    }
+    routeButton.innerHTML = '<i class="fa-brands fa-google"></i> Chỉ đường bằng Google Maps';
+    routeButton.setAttribute('data-google-maps-url', url);
+    routeButton.setAttribute('aria-label', 'Chỉ đường bằng Google Maps');
+  }
+
   function bindPopupActions(popup, row) {
     if (!popup || typeof popup.getElement !== 'function') return;
     const el = popup.getElement();
     if (!el) return;
+    prepareDirectionsAction(el, row);
     el.querySelectorAll('[data-gis-popup-action]').forEach(button => {
       if (button.__thon09PopupActionBound) return;
       button.__thon09PopupActionBound = true;
@@ -894,10 +917,10 @@
 
   window.thon09GisOpenHousehold = function (id) { openHouseholdTab(id, 'files'); };
   window.thon09GisOpenHouseholdGallery = function (id) { openHouseholdTab(id, 'gallery'); };
-  window.thon09GisDirectionsUrl = function (row) { return openStreetMapDirectionsUrl(normalizeHouseholdRow(row)); };
-  window.thon09GisOpenDirectionsForRow = function (row) { openOpenStreetMapDirections(normalizeHouseholdRow(row)); };
+  window.thon09GisDirectionsUrl = function (row) { return googleMapsDirectionsUrl(normalizeHouseholdRow(row)); };
+  window.thon09GisOpenDirectionsForRow = function (row) { openGoogleMapsDirections(normalizeHouseholdRow(row)); };
   if (typeof window.thon09GisRouteToHousehold !== 'function') {
-    window.thon09GisRouteToHousehold = function (id) { openOpenStreetMapDirections(popupRowById(id)); };
+    window.thon09GisRouteToHousehold = function (id) { openGoogleMapsDirections(popupRowById(id)); };
     window.thon09GisRouteToHousehold.__thon09Fallback = true;
   }
   window.thon09GisEditHousehold = function (id) {

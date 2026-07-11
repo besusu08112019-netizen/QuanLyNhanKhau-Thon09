@@ -252,6 +252,29 @@ test('leaflet GIS loads viewport markers and lazy popup detail', async ({ page }
   await expect(page.locator('#gisSearchResults')).toContainText('HK001');
 });
 
+test('leaflet GIS routes marker directions through Google Maps', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+
+  await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
+  const route = page.locator('[data-test-popup] [data-gis-popup-action="route"]');
+  await expect(route).toContainText('Chỉ đường bằng Google Maps');
+  await expect(route).toHaveAttribute('href', 'https://www.google.com/maps/dir/?api=1&destination=20.255%2C105.976');
+  await expect(route).toHaveAttribute('target', '_blank');
+  await expect(route).toHaveAttribute('rel', /noopener/);
+  const href = await page.evaluate(() => window.thon09GisDirectionsUrl({ latitude: 20.255, longitude: 105.976 }));
+  expect(href).toBe('https://www.google.com/maps/dir/?api=1&destination=20.255%2C105.976');
+  const missing = await page.evaluate(() => window.thon09GisDirectionsUrl({ latitude: null, longitude: null }));
+  expect(missing).toBe('');
+  const missingPopup = await page.evaluate(() => window.gisHouseholdDetailPopup({
+    household: { id: 8, household_code: 'HK002', head_citizen_name: 'No GPS', address: 'Thon 09' },
+    business: []
+  }));
+  expect(missingPopup).toContain('Chưa có tọa độ GPS để dẫn đường.');
+  expect(missingPopup).not.toContain('data-gis-popup-action="route"');
+  expect(apiLog.some(item => item.path === '/api/gis/households/7/detail')).toBeTruthy();
+});
+
 test('leaflet GIS waits for accurate GPS before saving selected marker', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
