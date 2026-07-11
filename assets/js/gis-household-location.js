@@ -65,7 +65,7 @@
   }
 
   function gisDebugState(extra) {
-    return Object.assign({ openPopupId: state.openPopupId || '', activeMarkerId: state.activeMarkerId || '', markerCount: state.markers.size, loading: state.loading, renderingMarkers: state.renderingMarkers }, extra || {});
+    return Object.assign({ openPopupId: state.openPopupId || '', activeMarkerId: state.activeMarkerId || '', markerCount: state.markers.size, loading: state.loading, renderingMarkers: state.renderingMarkers, popupInteractionUntil: state.popupInteractionUntil || 0 }, extra || {});
   }
   function gisDebugTrace(label, extra) {
     console.trace(label, gisDebugState(extra));
@@ -418,9 +418,18 @@
     );
   }
 
+  function markPopupInteraction(id) {
+    state.popupInteractionUntil = Date.now() + (isTouchViewport() ? 3000 : 900);
+    if (id != null && id !== '') state.openPopupId = String(id);
+  }
+
+  function inPopupInteractionWindow() {
+    return Boolean(state.popupInteractionUntil && Date.now() < state.popupInteractionUntil);
+  }
+
   function shouldDeferMarkerReload(search, options) {
     if (search || (options && options.force)) return false;
-    if (state.openPopupId) return true;
+    if (state.openPopupId || inPopupInteractionWindow()) return true;
     return isTouchViewport() && state.markers.size > 0;
   }
 
@@ -605,13 +614,14 @@
   function bindHouseholdPopup(marker, row) {
     row = normalizeHouseholdRow(row) || {};
     const rowId = normalizeHouseholdId(row);
-    const popup = L.popup({ closeButton: true, autoClose: true, closeOnClick: false, bubblingMouseEvents: false, autoPan: true, keepInView: true }).setContent(popupHtml(row));
+    const popup = L.popup({ closeButton: true, autoClose: true, closeOnClick: false, bubblingMouseEvents: false, autoPan: !isTouchViewport(), keepInView: !isTouchViewport() }).setContent(popupHtml(row));
     popup.on('add', () => {
       protectPopupElement(popup);
       bindPopupActions(popup, row);
     });
     marker.bindPopup(popup);
     marker.on('click', event => {
+      markPopupInteraction(rowId);
       gisDebugTrace('marker click', { rowId });
       state.lastMarkerTouchAt = Date.now();
       stopLeafletPropagation(event);
@@ -622,6 +632,7 @@
     });
     marker.on('popupopen', event => {
       console.log('popupopen');
+      markPopupInteraction(rowId);
       state.openPopupId = rowId;
       disableMapDraggingForPopup();
       window.thon09GisEnsureHouseholdMarkerLayerVisible && window.thon09GisEnsureHouseholdMarkerLayerVisible();
@@ -631,13 +642,14 @@
     });
     marker.on('popupclose', () => {
       console.trace('popupclose');
-      if (state.renderingMarkers) return;
+      if (state.renderingMarkers || inPopupInteractionWindow()) return;
       if (state.openPopupId !== rowId) return;
       state.openPopupId = '';
       restoreMapDraggingAfterPopup();
     });
     ['touchstart', 'touchend', 'pointerdown', 'pointerup'].forEach(type => {
       marker.on(type, event => {
+        markPopupInteraction(rowId);
         gisDebugTrace('marker ' + type, { rowId });
         state.lastMarkerTouchAt = Date.now();
         stopLeafletPropagation(event);
@@ -738,7 +750,7 @@
 
   function refreshMarkerClusters() {
     gisDebugTrace('cluster.refreshClusters()/refreshMarkerClusters()');
-    if (state.openPopupId) return;
+    if (state.openPopupId || inPopupInteractionWindow()) return;
     if (state.layer && typeof state.layer.refreshClusters === 'function') state.layer.refreshClusters();
   }
 
@@ -754,7 +766,7 @@
 
   function renderLocatedMarkers(rows) {
     gisDebugTrace('renderMarkers/renderLocatedMarkers()', { rowCount: (rows || []).length });
-    if (!state.layer || state.openPopupId) return;
+    if (!state.layer || state.openPopupId || inPopupInteractionWindow()) return;
     const nextMarkers = [];
     state.markers.clear();
     rows.forEach(row => {
