@@ -658,6 +658,57 @@
   <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 id="detailTitle" class="modal-title">Chi tiết</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div id="detailBody" class="modal-body"></div></div></div></div>
 
   <div class="modal fade" id="publicAssetInventoryModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><form class="modal-content" id="publicAssetInventoryForm" novalidate><div class="modal-header"><h5 class="modal-title">Kiểm kê tài sản công trình</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><input type="hidden" name="public_asset_id"><div class="row g-3"><div class="col-md-4"><label class="form-label">Mã tài sản</label><input name="inventory_code" class="form-control" readonly placeholder="Tự sinh khi lưu"></div><div class="col-md-8"><label class="form-label">Tên tài sản</label><input name="item_name" class="form-control" required></div><div class="col-md-4"><label class="form-label" for="publicAssetInventoryGroupSelect">Nhóm tài sản</label><select id="publicAssetInventoryGroupSelect" name="group_id" class="form-select"></select></div><div class="col-md-4"><label class="form-label">Số lượng</label><input name="quantity" type="number" min="0.01" step="0.01" class="form-control" value="1" required></div><div class="col-md-4"><label class="form-label">Đơn vị tính</label><input name="unit" class="form-control" placeholder="cái, bộ, chiếc..."></div><div class="col-md-4"><label class="form-label" for="publicAssetInventoryConditionSelect">Tình trạng</label><select id="publicAssetInventoryConditionSelect" name="condition_status" class="form-select"></select></div><div class="col-md-4"><label class="form-label">Ngày đưa vào sử dụng</label><input name="start_use_date" type="date" class="form-control"></div><div class="col-md-4"><label class="form-label">Vị trí trong công trình</label><input name="location_in_asset" class="form-control"></div><div class="col-md-5"><label class="form-label" for="publicAssetInventoryPhotoFile">Ảnh tài sản</label><input id="publicAssetInventoryPhotoFile" type="file" class="form-control" accept="image/jpeg,image/png,image/webp"><div class="form-text">JPG, PNG hoặc WEBP.</div></div><div class="col-md-7"><div id="publicAssetInventoryPhotoPreview" class="border rounded bg-light d-flex align-items-center justify-content-center" style="min-height:120px;overflow:hidden"><span class="text-muted small">Chưa có ảnh tài sản</span></div></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="3"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary">Lưu tài sản</button></div></form></div></div>
+  <script>
+    (function(){
+      'use strict';
+      var labels={dashboard:'Dashboard',operationCenter:'Trung tâm điều hành',gis:'Bản đồ địa bàn',households:'Quản lý hộ gia đình',persons:'Quản lý nhân khẩu',temporaryResidence:'Tạm trú',temporaryAbsence:'Tạm vắng',movements:'Biến động nhân khẩu',publicAssets:'Công trình công cộng',businessHouseholds:'Hộ sản xuất & kinh doanh',livestock:'Quản lý vật nuôi',houses:'Nhà ở & Công trình',vehicles:'Quản lý xe cộ',agriculture:'Sản xuất nông nghiệp',contributions:'Đóng góp hộ',reports:'Báo cáo thống kê',import:'Import dữ liệu',exportExcel:'Xuất Excel',printForms:'In biểu mẫu',users:'Quản lý tài khoản',permissions:'Phân quyền',logs:'Nhật ký hệ thống',backups:'Sao lưu dữ liệu',restore:'Khôi phục dữ liệu',settings:'Cấu hình hệ thống',appearance:'Cấu hình giao diện'};
+      function normalize(screen){return screen==='export'?'exportExcel':(screen||'dashboard');}
+      function hardNavigate(screen,event){
+        screen=normalize(screen);
+        var target=document.getElementById(screen+'Screen')||document.getElementById('dashboardScreen');
+        if(!target)return false;
+        if(event){event.preventDefault();if(event.stopImmediatePropagation)event.stopImmediatePropagation();else if(event.stopPropagation)event.stopPropagation();}
+        if(window.App)window.App.screen=screen;
+        try{localStorage.setItem('thon09_screen',screen);}catch(error){}
+        document.querySelectorAll('.screen').forEach(function(el){
+          var active=el===target;
+          el.classList.toggle('active',active);
+          el.style.display=active?'block':'none';
+          el.setAttribute('aria-hidden',active?'false':'true');
+        });
+        document.querySelectorAll('.sidebar .nav-link[data-screen]').forEach(function(btn){
+          var active=btn.dataset.screen===screen;
+          btn.classList.toggle('active',active);
+          btn.setAttribute('aria-current',active?'page':'false');
+        });
+        document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen]').forEach(function(btn){
+          var active=btn.dataset.mobileScreen===screen;
+          btn.classList.toggle('active',active);
+          btn.setAttribute('aria-current',active?'page':'false');
+        });
+        var title=labels[screen]||'Dashboard';
+        var breadcrumb=document.getElementById('breadcrumbTrail');
+        if(breadcrumb)breadcrumb.textContent='Trang chủ / '+title;
+        document.body.classList.remove('sidebar-open');
+        var sidebar=document.querySelector('.sidebar');
+        if(sidebar)sidebar.classList.remove('open');
+        if(screen==='households'&&typeof window.loadHouseholds==='function')setTimeout(window.loadHouseholds,0);
+        if(screen==='persons'&&typeof window.loadPersons==='function')setTimeout(window.loadPersons,0);
+        if(screen==='dashboard'&&typeof window.loadDashboard==='function')setTimeout(window.loadDashboard,0);
+        try{document.dispatchEvent(new CustomEvent('thon09:screen-change',{detail:{screen:screen,hardNavigation:true}}));}catch(error){}
+        return true;
+      }
+      window.thon09HardNavigate=hardNavigate;
+      document.addEventListener('click',function(event){
+        var toggle=event.target.closest&&event.target.closest('[data-dashboard-toggle],#sidebarCollapse,#sidebarLogoutBtn');
+        if(toggle)return;
+        var desktop=event.target.closest&&event.target.closest('.sidebar .nav-link[data-screen]');
+        if(desktop&&!desktop.classList.contains('gov-logout')){hardNavigate(desktop.dataset.screen,event);return;}
+        var mobile=event.target.closest&&event.target.closest('.mobile-bottom-nav [data-mobile-screen]');
+        if(mobile)hardNavigate(mobile.dataset.mobileScreen,event);
+      },true);
+    })();
+  </script>
   <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="assets/js/i18n.min.js"></script>
   <script src="assets/js/app.utf8.min.js"></script>
