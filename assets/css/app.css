@@ -5549,3 +5549,6 @@ body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dash
 .gis-area-item.is-active em, .gis-area-item[aria-selected="true"] em { color: #0d47a1; }
 .gis-area-tooltip-active { background: #1976D2 !important; color: #fff !important; border: 2px solid #fff !important; box-shadow: 0 10px 24px rgba(25, 118, 210, .35) !important; }
 .gis-area-tooltip-active::before { border-top-color: #1976D2 !important; }
+
+.gis-area-polygon-active { stroke: #1976D2 !important; stroke-width: 4px !important; fill: #1976D2 !important; fill-opacity: .45 !important; }
+.gis-area-item.is-active, .gis-area-item[aria-selected="true"] { outline: 2px solid rgba(25, 118, 210, .22); }
