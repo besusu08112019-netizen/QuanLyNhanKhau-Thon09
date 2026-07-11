@@ -288,6 +288,8 @@ final class FileStorageService
             'citizen' => 'persons',
             'settings' => 'settings',
             'house' => 'houses',
+            'public_asset' => 'public-assets',
+            'public_asset_inventory' => 'public-assets/inventory',
             default => 'documents',
         };
     }

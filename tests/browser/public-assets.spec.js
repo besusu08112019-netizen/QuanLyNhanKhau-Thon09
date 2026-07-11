@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 const type = { value: '1', label: 'Nhà văn hóa', category: 'Hành chính', icon: 'fa-building-columns' };
 let items;
 let requests;
+let inventoryItems;
 
 function asset(overrides = {}) {
   return {
@@ -32,6 +33,8 @@ function asset(overrides = {}) {
     status: 'ACTIVE',
     status_label: 'Đang sử dụng',
     cover_photo_url: '',
+    inventory_enabled: true,
+    inventory_allowed: true,
     ...overrides
   };
 }
@@ -67,6 +70,9 @@ async function mockApis(page) {
     })
   ];
   requests = [];
+  inventoryItems = [
+    { id: 501, public_asset_id: 101, inventory_code: 'TS001', item_name: 'Loa hội trường', group_id: 15, group_name: 'Loa', quantity: 2, unit: 'cái', condition_status: 'IN_USE', condition_label: 'Đang sử dụng', start_use_date: '2024-01-15', location_in_asset: 'Sân khấu', note: '', photo_url: '' }
+  ];
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -77,6 +83,8 @@ async function mockApis(page) {
     if (url.pathname === '/api/auth/me') return fulfill({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
     if (url.pathname === '/api/dashboard/summary') return fulfill({ metrics: {}, charts: {} });
     if (url.pathname === '/api/public-assets/catalogs') return fulfill({ types: [type], areas: [{ value: 'Thôn 09', label: 'Thôn 09' }], statuses: [{ value: 'ACTIVE', label: 'Đang sử dụng' }, { value: 'REPAIRING', label: 'Đang sửa chữa' }] });
+    if (url.pathname === '/api/public-assets/inventory/catalogs') return fulfill({ groups: [{ value: '15', label: 'Loa', parent: 'Điện tử' }, { value: '20', label: 'Bình chữa cháy', parent: 'PCCC' }], conditions: [{ value: 'IN_USE', label: 'Đang sử dụng' }, { value: 'NEEDS_REPAIR', label: 'Cần sửa chữa' }] });
+    if (url.pathname === '/api/public-assets/inventory/dashboard') return fulfill({ total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Đang sử dụng', value: 1 }], by_asset: [{ label: 'Nhà văn hóa thôn 09', value: 1 }] });
     if (url.pathname === '/api/public-assets/dashboard') return fulfill({
       metrics: { total_assets: items.length, active_assets: 1, located_assets: 1, total_campus_area: 1234.5, total_building_area: 456.75 },
       charts: { types: [{ label: 'Nhà văn hóa', value: 1 }], area_by_category: [{ label: 'Hành chính', campus_area: 1234.5, building_area: 456.75 }] }
@@ -100,6 +108,25 @@ async function mockApis(page) {
     if (match && request.method() === 'DELETE') {
       items = items.filter(item => String(item.id) !== match[1]);
       return fulfill({ id: Number(match[1]) });
+    }
+    const inventoryMatch = /^\/api\/public-assets\/(\d+)\/inventory$/.exec(url.pathname);
+    if (inventoryMatch && request.method() === 'GET') return fulfill({ enabled: true, items: inventoryItems.filter(item => String(item.public_asset_id) === inventoryMatch[1]), summary: { total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Đang sử dụng', value: 1 }] } });
+    if (inventoryMatch && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      const created = { id: 777, public_asset_id: Number(inventoryMatch[1]), inventory_code: body.inventory_code || 'TS777', item_name: body.item_name, group_id: Number(body.group_id || 0) || null, group_name: body.group_id === '20' ? 'Bình chữa cháy' : 'Loa', quantity: Number(body.quantity || 1), unit: body.unit || '', condition_status: body.condition_status || 'IN_USE', condition_label: body.condition_status === 'NEEDS_REPAIR' ? 'Cần sửa chữa' : 'Đang sử dụng', start_use_date: body.start_use_date || '', location_in_asset: body.location_in_asset || '', note: body.note || '', photo_url: '' };
+      inventoryItems.push(created);
+      return fulfill(created);
+    }
+    const inventoryItemMatch = /^\/api\/public-assets\/(\d+)\/inventory\/(\d+)$/.exec(url.pathname);
+    if (inventoryItemMatch && request.method() === 'PUT') {
+      const body = request.postDataJSON();
+      const existing = inventoryItems.find(item => String(item.id) === inventoryItemMatch[2]);
+      Object.assign(existing, body, { group_id: Number(body.group_id || existing.group_id), group_name: body.group_id === '20' ? 'Bình chữa cháy' : existing.group_name, condition_label: body.condition_status === 'NEEDS_REPAIR' ? 'Cần sửa chữa' : existing.condition_label });
+      return fulfill(existing);
+    }
+    if (inventoryItemMatch && request.method() === 'DELETE') {
+      inventoryItems = inventoryItems.filter(item => String(item.id) !== inventoryItemMatch[2]);
+      return fulfill({ id: Number(inventoryItemMatch[2]) });
     }
     if (url.pathname.includes('/api/gis/households')) return fulfill({ items: [], total: 0 });
     if (url.pathname.includes('/api/gis/summary')) return fulfill({ total: 0, located: 0, missing: 0, areas: [] });
@@ -167,6 +194,27 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
   await expect(page.locator('#publicAssetDetailBody')).toContainText('Đơn vị quản lý');
   await expect(page.locator('#publicAssetDetailBody')).toContainText('Người quản lý');
   await expect(page.locator('#publicAssetDetailBody')).toContainText('1.234,5 m²');
+  await expect(page.locator('#publicAssetDetailBody')).toContainText('Kiểm kê tài sản');
+  await page.locator('button[data-bs-target="#publicAssetInventoryTab"]').click();
+  await expect(page.locator('#publicAssetInventoryPanel')).toContainText('Loa hội trường');
+  await expect(page.locator('#publicAssetInventoryPanel')).toContainText('Tổng số tài sản: 1');
+  await page.locator('[data-inventory-action="add"]').click();
+  await expect(page.locator('#publicAssetInventoryModal.show')).toBeVisible();
+  await page.locator('#publicAssetInventoryForm [name="item_name"]').fill('Bình chữa cháy mới');
+  await page.locator('#publicAssetInventoryForm [name="group_id"]').selectOption('20');
+  await page.locator('#publicAssetInventoryForm [name="quantity"]').fill('3');
+  await page.locator('#publicAssetInventoryForm [name="unit"]').fill('bình');
+  await page.locator('#publicAssetInventoryForm [name="condition_status"]').selectOption('NEEDS_REPAIR');
+  await page.locator('#publicAssetInventoryForm button[type="submit"]').click();
+  await expect.poll(() => requests.some(item => item.method === 'POST' && item.path === '/api/public-assets/101/inventory')).toBeTruthy();
+  await page.locator('#publicAssetInventoryPanel [data-inventory-action="edit"]').first().click();
+  await expect(page.locator('#publicAssetInventoryModal.show')).toBeVisible();
+  await page.locator('#publicAssetInventoryForm [name="quantity"]').fill('4');
+  await page.locator('#publicAssetInventoryForm button[type="submit"]').click();
+  await expect.poll(() => requests.some(item => item.method === 'PUT' && item.path === '/api/public-assets/101/inventory/501')).toBeTruthy();
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#publicAssetInventoryPanel [data-inventory-action="delete"]').first().click();
+  await expect.poll(() => requests.some(item => item.method === 'DELETE' && item.path === '/api/public-assets/101/inventory/501')).toBeTruthy();
   await page.evaluate(() => {
     const modal = document.querySelector('#publicAssetDetailModal');
     bootstrap.Modal.getOrCreateInstance(modal).hide();
@@ -199,12 +247,11 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
   await expect(page.locator('#publicAssetFormModal.show')).toBeVisible();
   await page.locator('#publicAssetForm [name="manager_name"]').fill('Trần Thị C');
   await page.locator('#publicAssetForm button[type="submit"]').click();
-  await expect(page.locator('#publicAssetFormModal.show')).toHaveCount(0);
-  await expect.poll(() => requests.some(item => item.method === 'PUT' && item.path.startsWith('/api/public-assets/'))).toBeTruthy();
-  const putRequest = requests.find(item => item.method === 'PUT' && item.path.startsWith('/api/public-assets/'));
+  await expect.poll(() => requests.some(item => item.method === 'PUT' && /^\/api\/public-assets\/\d+$/.test(item.path))).toBeTruthy();
+  await expect(page.locator('#publicAssetFormModal.show')).toHaveCount(0, { timeout: 10000 });
+  const putRequest = requests.find(item => item.method === 'PUT' && /^\/api\/public-assets\/\d+$/.test(item.path));
   expect(putRequest.body.manager_name).toBe('Trần Thị C');
 
-  page.on('dialog', dialog => dialog.accept());
   await page.locator('#publicAssetsRows tr').filter({ hasText: 'CT09-00102' }).locator('[data-action="delete"]').click();
   await expect.poll(() => requests.some(item => item.method === 'DELETE' && item.path.startsWith('/api/public-assets/'))).toBeTruthy();
 
@@ -256,6 +303,17 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
   expect(gisResult.count).toBe(1);
   expect(gisResult.popup).toContain('https://www.google.com/maps/dir/?api=1&destination=20.255%2C105.976');
   expect(gisResult.popup).toContain('UBND xã Hồng Phong');
+});
+
+test('religious public assets do not expose inventory tab', async ({ page }) => {
+  await openApp(page);
+  await page.route('**/api/public-assets/999', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify(ok(asset({ id: 999, asset_code: 'CT09-00999', asset_name: 'Chùa thôn 09', type_name: 'Chùa', category: 'Tôn giáo, tín ngưỡng', inventory_enabled: false, inventory_allowed: false })))
+  }));
+  await page.evaluate(() => window.openPublicAssetDetail(999));
+  await expect(page.locator('#publicAssetDetailModal.show')).toBeVisible();
+  await expect(page.locator('#publicAssetDetailBody')).not.toContainText('Kiểm kê tài sản');
 });
 
 for (const viewport of [
