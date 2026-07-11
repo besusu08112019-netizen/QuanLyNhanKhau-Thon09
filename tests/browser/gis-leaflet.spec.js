@@ -14,11 +14,15 @@ const area = {
   area_code: 'A',
   color: '#2563eb',
   note: 'old',
-  polygon: [
-    { lat: 20.25, lng: 105.97 },
-    { lat: 20.26, lng: 105.97 },
-    { lat: 20.26, lng: 105.98 }
-  ],
+  geometry: {
+    type: 'Polygon',
+    coordinates: [[
+      [105.97, 20.25],
+      [105.97, 20.26],
+      [105.98, 20.26],
+      [105.97, 20.25]
+    ]]
+  },
   stats: { households: 1, citizens: 3, area_m2: 1200 }
 };
 
@@ -117,7 +121,7 @@ function leafletStub() {
         return map;
       }
       function tileLayer(url, opts){ return { url, opts: opts || {}, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
-      function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(){ return this; }; return p; }
+      function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; return p; }
       function circle(latlng, opts){ const c = makeMarker(latlng, opts); c.setRadius = function(radius){ this.radius = radius; return this; }; return c; }
       function divIcon(opts){ return opts || {}; }
       function DrawControl(){ }
@@ -184,6 +188,28 @@ async function boot(page, apiLog) {
     return window.loadGisMap();
   });
 }
+
+test('leaflet GIS renders GeoJSON area polygon and highlights selected area', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  const before = await page.evaluate(() => {
+    const layer = window.App.gis.areaLayerMap.get('11');
+    return { count: window.App.gis.areaLayerMap.size, points: layer?.points?.length || 0, style: layer?.style || null };
+  });
+  expect(before.count).toBe(1);
+  expect(before.points).toBeGreaterThanOrEqual(3);
+  expect(before.style.fillOpacity).toBeCloseTo(0.2);
+
+  await page.locator('#gisAreaList .gis-area-item').click();
+  const after = await page.evaluate(() => {
+    const layer = window.App.gis.areaLayerMap.get('11');
+    return { selectedAreaId: window.App.gis.selectedAreaId, front: Boolean(layer?.front), style: layer?.style || null };
+  });
+  expect(after.selectedAreaId).toBe('11');
+  expect(after.front).toBe(true);
+  expect(after.style).toMatchObject({ color: '#1976D2', fillColor: '#1976D2', weight: 5, opacity: 1 });
+  expect(after.style.fillOpacity).toBeCloseTo(0.45);
+});
 
 test('leaflet GIS loads viewport markers and lazy popup detail', async ({ page }) => {
   const apiLog = [];
