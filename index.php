@@ -475,6 +475,9 @@ function versioned_asset(string $path): string
 
 if (!str_starts_with($request->path(), '/api')) {
     header('Content-Type: text/html; charset=UTF-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
     $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);
