@@ -540,7 +540,9 @@ body { background: var(--surface); font-size: 14px; line-height: 1.55; }
 body.sidebar-collapsed { --sidebar-width: 76px; }
 body.sidebar-collapsed .gov-brand div, body.sidebar-collapsed .nav-section-title, body.sidebar-collapsed .gov-nav .nav-link span, body.sidebar-collapsed .gov-logout span { display: none; }
 body.sidebar-collapsed .gov-brand .state-mark { width:48px; height:48px; font-size:16px; }
-body.sidebar-collapsed .gov-nav .nav-link, body.sidebar-collapsed .gov-logout { justify-content: center; padding:0; }
+body.sidebar-collapsed .gov-sidebar { padding-inline: 8px; }
+body.sidebar-collapsed .gov-nav { padding-right: 0; }
+body.sidebar-collapsed .gov-nav .nav-link, body.sidebar-collapsed .gov-logout { justify-content: center; padding:0; min-width: 58px; }
 body.sidebar-collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
 .content-card, .dashboard-kpi, .dashboard-panel { border-color: var(--line); border-radius: 16px; box-shadow: 0 12px 28px rgba(16,36,28,.08); }
 .screen, .dashboard-overview-screen, .person-management-screen, .report-screen { background: var(--surface); padding: 26px; }
