@@ -8,7 +8,7 @@ const viewports = [
   { name: 'mobile-portrait', width: 390, height: 844 },
   { name: 'mobile-landscape', width: 844, height: 390 }
 ];
-const modalIds = ['householdModal', 'businessHouseholdModal', 'agriFormModal', 'personModal', 'houseFormModal', 'detailModal', 'livestockHouseholdModal', 'publicAssetDetailModal', 'publicAssetFormModal'];
+const modalIds = ['householdModal', 'businessHouseholdModal', 'agriDetailModal', 'agriFormModal', 'personModal', 'houseDetailModal', 'houseFormModal', 'detailModal', 'livestockHouseholdModal', 'publicAssetDetailModal', 'publicAssetFormModal', 'publicAssetInventoryModal'];
 const mojibakePattern = /(?:\u00e1[\u00bb\u00ba]|\u00c4\u2018|\u00c6[\u00b0\u00a1]|\u00c3[\u00a1\u00a0\u00a2\u00aa\u00b4\u00b9\u00ba\u00b3\u00b2\u00b5\u00a8\u00a9]|\uFFFD|\? d\?|\?n kh|\?o c)/i;
 
 function ok(data) {
@@ -157,6 +157,10 @@ test.describe(`Production UI audit (${browserName()})`, () => {
           const contentRect = content ? content.getBoundingClientRect() : null;
           const headerRect = header ? header.getBoundingClientRect() : null;
           const footerRect = footer ? footer.getBoundingClientRect() : null;
+          const contentStyle = content ? getComputedStyle(content) : null;
+          const headerStyle = header ? getComputedStyle(header) : null;
+          const bodyStyle = body ? getComputedStyle(body) : null;
+          const footerStyle = footer ? getComputedStyle(footer) : null;
           const controls = Array.from(el.querySelectorAll('input:not([type="hidden"]), select, textarea')).filter((control) => getComputedStyle(control).display !== 'none');
           const unlabeled = controls.filter((control) => {
             const id = control.id;
@@ -165,13 +169,39 @@ test.describe(`Production UI audit (${browserName()})`, () => {
           return {
             rect, contentRect, headerRect, footerRect,
             bodyScrollable: body ? body.scrollHeight >= body.clientHeight : true,
+            commonModal: el.classList.contains('common-modal') && el.dataset.commonModal === 'true',
+            dialogScrollable: dialog ? dialog.classList.contains('modal-dialog-scrollable') : false,
+            contentDisplay: contentStyle ? contentStyle.display : '',
+            contentRows: contentStyle ? contentStyle.gridTemplateRows : '',
+            contentRadius: contentStyle ? parseFloat(contentStyle.borderTopLeftRadius) || 0 : 0,
+            contentShadow: contentStyle ? contentStyle.boxShadow : '',
+            headerPaddingTop: headerStyle ? parseFloat(headerStyle.paddingTop) || 0 : null,
+            bodyPaddingTop: bodyStyle ? parseFloat(bodyStyle.paddingTop) || 0 : null,
+            bodyOverflowY: bodyStyle ? bodyStyle.overflowY : '',
+            footerPaddingTop: footerStyle ? parseFloat(footerStyle.paddingTop) || 0 : null,
             unlabeled
           };
         }, id);
+        const expectedWidth = Math.min(1200, viewport.width - (viewport.width <= 820 ? 16 : 32));
         expect(modal.rect, id).toBeTruthy();
         expect(modal.rect.left).toBeGreaterThanOrEqual(-2);
         expect(modal.rect.right).toBeLessThanOrEqual(viewport.width + 2);
-        expect(modal.contentRect.height).toBeLessThanOrEqual(viewport.height * 0.96 + 2);
+        expect(Math.abs((modal.rect.left + modal.rect.width / 2) - viewport.width / 2), `${id} centered`).toBeLessThanOrEqual(3);
+        expect(modal.rect.width, `${id} common width`).toBeGreaterThanOrEqual(expectedWidth - 3);
+        expect(modal.rect.width, `${id} common width`).toBeLessThanOrEqual(expectedWidth + 3);
+        expect(modal.contentRect.height).toBeLessThanOrEqual(viewport.height - (viewport.width <= 820 ? 16 : 32) + 2);
+        expect(modal.commonModal, `${id} uses CommonModal`).toBe(true);
+        expect(modal.dialogScrollable, `${id} scrollable dialog`).toBe(true);
+        expect(modal.contentDisplay, `${id} content grid`).toBe('grid');
+        expect(modal.contentRows, `${id} content rows`).not.toBe('');
+        expect(modal.contentRadius, `${id} radius`).toBeGreaterThanOrEqual(viewport.width <= 820 ? 16 : 18);
+        expect(modal.contentShadow, `${id} shadow`).not.toBe('none');
+        expect(modal.headerPaddingTop, `${id} header padding`).toBeGreaterThanOrEqual(viewport.width <= 820 ? 12 : 18);
+        expect(modal.bodyPaddingTop, `${id} body padding`).toBeGreaterThanOrEqual(viewport.width <= 820 ? 14 : 22);
+        expect(modal.bodyOverflowY, `${id} body scroll`).toMatch(/auto|scroll/);
+        if (modal.footerPaddingTop !== null) {
+          expect(modal.footerPaddingTop, `${id} footer padding`).toBeGreaterThanOrEqual(viewport.width <= 820 ? 12 : 16);
+        }
         if (modal.headerRect) {
           expect(modal.headerRect.top).toBeGreaterThanOrEqual(-2);
           expect(modal.headerRect.bottom).toBeLessThanOrEqual(viewport.height + 2);

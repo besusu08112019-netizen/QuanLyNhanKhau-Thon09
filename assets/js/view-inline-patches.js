@@ -102,9 +102,37 @@
     }
   }
 
+  function commonModalModule(){
+    function normalize(){
+      document.querySelectorAll('.modal').forEach(function(modal){
+        modal.classList.add('common-modal');
+        modal.dataset.commonModal='true';
+        modal.setAttribute('role',modal.getAttribute('role')||'dialog');
+        modal.setAttribute('aria-modal','true');
+        var dialog=modal.querySelector('.modal-dialog');
+        if(dialog)dialog.classList.add('modal-dialog-scrollable');
+        var content=modal.querySelector('.modal-content');
+        if(content)content.classList.add('common-modal-content');
+      });
+    }
+    normalize();
+    if(window.MutationObserver){
+      var observer=new MutationObserver(function(records){
+        var shouldNormalize=records.some(function(record){
+          return Array.prototype.some.call(record.addedNodes||[],function(node){
+            return node.nodeType===1&&((node.matches&&node.matches('.modal'))||(node.querySelector&&node.querySelector('.modal')));
+          });
+        });
+        if(shouldNormalize)normalize();
+      });
+      observer.observe(document.body,{childList:true,subtree:true});
+    }
+  }
+
   try{reportModule();}catch(error){console.error('report inline module failed',error);}
   try{personFilterModule();}catch(error){console.error('person filter module failed',error);}
   try{headerGuardModule();}catch(error){console.error('header guard module failed',error);}
   try{navigationRepairModule();}catch(error){console.error('navigation repair module failed',error);}
   try{accessibilityRepairModule();}catch(error){console.error('accessibility repair module failed',error);}
+  try{commonModalModule();}catch(error){console.error('common modal module failed',error);}
 })();
