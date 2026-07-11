@@ -58,6 +58,19 @@ test.describe('responsive system navigation audit', () => {
           const active = document.querySelector('.screen.active');
           const navItems = Array.from(document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen]')).map((btn) => btn.dataset.mobileScreen);
           const nav = document.querySelector('.mobile-bottom-nav');
+          const navStyle = nav ? getComputedStyle(nav) : null;
+          const buttons = nav ? Array.from(nav.querySelectorAll('[data-mobile-screen]')) : [];
+          const navRect = nav ? nav.getBoundingClientRect() : null;
+          const activeButton = nav ? nav.querySelector('[data-mobile-screen].active') : null;
+          const activeRect = activeButton ? activeButton.getBoundingClientRect() : null;
+          const touchFailures = buttons
+            .map((btn) => {
+              const rect = btn.getBoundingClientRect();
+              return { screen: btn.dataset.mobileScreen, width: Math.round(rect.width), height: Math.round(rect.height), top: Math.round(rect.top) };
+            })
+            .filter((item) => item.width < 48 || item.height < 48);
+          const rowTops = buttons.map((btn) => Math.round(btn.offsetTop || btn.getBoundingClientRect().top));
+          const rowSpread = rowTops.length ? Math.max(...rowTops) - Math.min(...rowTops) : 0;
           return {
             activeId: active ? active.id : '',
             scrollWidth: Math.ceil(document.documentElement.scrollWidth),
@@ -65,6 +78,12 @@ test.describe('responsive system navigation audit', () => {
             bodyScrollWidth: Math.ceil(document.body.scrollWidth),
             bodyClientWidth: Math.ceil(document.body.clientWidth),
             navVisible: !!nav && getComputedStyle(nav).display !== 'none',
+            navDisplay: navStyle ? navStyle.display : '',
+            navScrollWidth: nav ? Math.ceil(nav.scrollWidth) : 0,
+            navClientWidth: nav ? Math.ceil(nav.clientWidth) : 0,
+            activeCenterOffset: navRect && activeRect ? Math.abs((activeRect.left + activeRect.width / 2) - (navRect.left + navRect.width / 2)) : 0,
+            touchFailures,
+            rowSpread,
             navItems
           };
         });
@@ -75,9 +94,61 @@ test.describe('responsive system navigation audit', () => {
         expect(metrics.navItems).not.toContain('operationCenter');
         if (width <= 820) {
           expect(metrics.navVisible).toBe(true);
+          expect(metrics.navDisplay).toBe('flex');
+          expect(metrics.navScrollWidth).toBeGreaterThan(metrics.navClientWidth);
+          expect(metrics.touchFailures).toEqual([]);
+          expect(metrics.rowSpread).toBeLessThanOrEqual(2);
+          expect(metrics.activeCenterOffset).toBeLessThanOrEqual(Math.max(120, metrics.navClientWidth * 0.42));
           expect(metrics.navItems).toEqual(bottomNavScreens);
         }
       }
     });
   }
+
+  test('mobile sidebar masks GIS controls and keeps navigation layers below it', async ({ page }) => {
+    await openAuthenticatedApp(page, 390);
+    await page.evaluate(() => window.switchScreen && window.switchScreen('gis'));
+    await page.waitForTimeout(200);
+
+    await page.locator('#sidebarToggle').click();
+    await expect(page.locator('body')).toHaveClass(/sidebar-open/);
+
+    const layerMetrics = await page.evaluate(() => {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.querySelector('.sidebar-backdrop');
+      const nav = document.querySelector('.mobile-bottom-nav');
+      const leafletControl = document.querySelector('.leaflet-control-container');
+      const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : null;
+      const backdropRect = backdrop ? backdrop.getBoundingClientRect() : null;
+      const sidebarStyle = sidebar ? getComputedStyle(sidebar) : null;
+      const backdropStyle = backdrop ? getComputedStyle(backdrop) : null;
+      const navStyle = nav ? getComputedStyle(nav) : null;
+      const leafletStyle = leafletControl ? getComputedStyle(leafletControl) : null;
+      return {
+        sidebarWidth: sidebarRect ? Math.round(sidebarRect.width) : 0,
+        viewportWidth: window.innerWidth,
+        backdropCoversViewport: !!backdropRect && Math.round(backdropRect.left) <= 0 && Math.round(backdropRect.top) <= 0 && Math.round(backdropRect.width) >= window.innerWidth && Math.round(backdropRect.height) >= window.innerHeight,
+        sidebarZ: sidebarStyle ? Number(sidebarStyle.zIndex) : 0,
+        backdropZ: backdropStyle ? Number(backdropStyle.zIndex) : 0,
+        navZ: navStyle ? Number(navStyle.zIndex) : 0,
+        navPointerEvents: navStyle ? navStyle.pointerEvents : '',
+        leafletOpacity: leafletStyle ? leafletStyle.opacity : '',
+        leafletVisibility: leafletStyle ? leafletStyle.visibility : '',
+        leafletPointerEvents: leafletStyle ? leafletStyle.pointerEvents : ''
+      };
+    });
+
+    expect(layerMetrics.sidebarWidth).toBeGreaterThanOrEqual(Math.floor(layerMetrics.viewportWidth * 0.8));
+    expect(layerMetrics.sidebarWidth).toBeLessThanOrEqual(Math.ceil(layerMetrics.viewportWidth * 0.85));
+    expect(layerMetrics.backdropCoversViewport).toBe(true);
+    expect(layerMetrics.sidebarZ).toBeGreaterThan(layerMetrics.backdropZ);
+    expect(layerMetrics.backdropZ).toBeGreaterThan(layerMetrics.navZ);
+    expect(layerMetrics.navPointerEvents).toBe('none');
+    expect(layerMetrics.leafletOpacity).toBe('0');
+    expect(layerMetrics.leafletVisibility).toBe('hidden');
+    expect(layerMetrics.leafletPointerEvents).toBe('none');
+
+    await page.mouse.click(385, 450);
+    await expect(page.locator('body')).not.toHaveClass(/sidebar-open/);
+  });
 });
