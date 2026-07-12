@@ -35,7 +35,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.permissionView` da duoc them lam PermissionViewService cho state/attrs/button/action filtering dua tren PermissionService.
 - `Thon09Platform.routes` da co metadata CRUD chuan cho cac module nghiep vu: list, create, detail, edit. Vi du `/persons/create`, `/persons/:id`, `/persons/:id/edit`.
 - `Thon09Platform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
-- `Thon09Platform.formView` da duoc them lam renderer form chung cho field, section va form node dua tren FormRegistry/ComponentService.
+- `Thon09Platform.formView` da duoc them lam renderer form chung cho field, section, action footer va form node dua tren FormRegistry/ComponentService.
 - `Thon09Platform.lists` da duoc them lam ListRegistry chung cho metadata table/list: columns, filters, search, pagination, rowActions, bulkActions va query defaults.
 - `Thon09Platform.listView` da duoc them lam renderer list chung cho toolbar, table, pagination, row/bulk actions va list container dua tren ListRegistry/ComponentService.
 - `Thon09Platform.crud` da duoc them lam CrudRegistry chung cho workflow list/detail/create/edit/delete/import/export/log, gan route/list/form/action/permission metadata ma chua tu goi API hay thay luong module cu.
@@ -342,7 +342,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Cung cap helper serialize form DOM, chua thay the global opener cu khi chua migrate module.
 
 14. `FormViewService`
-   - Render field, section va form node tu FormRegistry bang ComponentService chung.
+   - Render field, section, action footer va form node tu FormRegistry bang ComponentService chung.
    - La lop dung chung cho ModalService va cac man hinh detail/create/edit sau nay.
    - Chua thay form DOM cu cho den khi migrate tung module.
 

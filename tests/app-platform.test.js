@@ -845,7 +845,8 @@ function screenNode(screenId) {
       linked: [{ key: 'householdId', name: 'householdId', label: 'Ho gia dinh', defaultValue: '' }],
       extended: [{ key: 'gender', name: 'gender', label: 'Gioi tinh', type: 'select', options: [{ value: 'M', label: 'Nam' }] }],
       attachments: [{ key: 'files', name: 'files', label: 'Ho so', type: 'upload' }]
-    }
+    },
+    actions: [{ key: 'save', label: 'Luu', icon: 'fa-save' }]
   });
   const field = platform.formView.field({ key: 'fullName', name: 'fullName', label: 'Ho ten' }, { fullName: 'Nguyen Van A' });
   assert.strictEqual(field.className, 'platform-form-field');
@@ -859,8 +860,16 @@ function screenNode(screenId) {
   const form = platform.formView.form('personForm', { gender: 'M' }, { sections: ['basic', 'extended'] });
   assert.strictEqual(form.className, 'platform-form');
   assert.strictEqual(form.dataset.formKey, 'personForm');
-  assert.strictEqual(form.children.length, 2);
+  assert.strictEqual(form.children.length, 3);
   assert.strictEqual(form.children[1].dataset.sectionKey, 'extended');
+  assert.strictEqual(form.children[2].className, 'platform-form-actions');
+  assert.strictEqual(form.children[2].children[0].dataset.platformAction, 'persons.save');
+  assert.strictEqual(form.children[2].children[0].dataset.formKey, 'personForm');
+  assert.strictEqual(form.children[2].children[0].children[0].className, 'fa-solid fa-save');
+
+  const actions = platform.formView.actions('personForm');
+  assert.strictEqual(actions.dataset.moduleKey, 'persons');
+  assert.strictEqual(actions.children[0].dataset.actionKey, 'save');
 }
 
 {

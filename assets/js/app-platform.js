@@ -1253,6 +1253,33 @@
       }, children);
     }
 
+    function actions(formKey, options) {
+      var form = formService.get(formKey);
+      var config = options || {};
+      if (!form) throw new Error('Form not registered: ' + formKey);
+      var nodes = toArray(form.actions).map(function (item) {
+        var record = typeof item === 'string' ? { key: item, label: item } : (item || {});
+        var key = record.key || record.action;
+        return componentService.button({
+          label: record.label || key || '',
+          icon: record.icon || null,
+          variant: record.variant || 'primary',
+          className: record.className || 'btn btn-primary',
+          action: record.platformAction || (form.moduleKey ? form.moduleKey + '.' + key : key),
+          dataset: Object.assign({
+            formKey: formKey,
+            moduleKey: form.moduleKey || '',
+            actionKey: key || ''
+          }, record.dataset || {}),
+          attrs: record.attrs || {}
+        });
+      });
+      return componentService.element('div', {
+        className: config.className || 'platform-form-actions',
+        dataset: { formKey: formKey, moduleKey: form.moduleKey || '' }
+      }, nodes);
+    }
+
     function formNode(formKey, values, options) {
       var form = formService.get(formKey);
       if (!form) throw new Error('Form not registered: ' + formKey);
@@ -1261,6 +1288,9 @@
       var children = sections.map(function (sectionKey) {
         return section(formKey, sectionKey, values || {}, { title: config.sectionTitle !== false });
       });
+      if (config.actions !== false && toArray(form.actions).length) {
+        children.push(actions(formKey, config.actionsOptions || {}));
+      }
       return componentService.element('form', {
         className: config.className || 'platform-form',
         attrs: Object.assign({ novalidate: 'novalidate' }, config.attrs || {}),
@@ -1271,6 +1301,7 @@
     return {
       field: field,
       section: section,
+      actions: actions,
       form: formNode,
       serialize: formService.serialize
     };
