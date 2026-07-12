@@ -997,6 +997,115 @@
     return api;
   }
 
+  function createCrudService(routeRegistry, listRegistry, formRegistry, permissionService) {
+    var registry = createRegistry('crud', 'moduleKey');
+    var defaultOperations = {
+      list: true,
+      detail: true,
+      create: true,
+      edit: true,
+      delete: true,
+      import: false,
+      export: false,
+      log: false
+    };
+    var permissionActions = {
+      list: ACTION.VIEW,
+      detail: ACTION.VIEW,
+      create: ACTION.CREATE,
+      edit: ACTION.EDIT,
+      delete: ACTION.DELETE,
+      import: ACTION.IMPORT,
+      export: ACTION.EXPORT,
+      log: ACTION.VIEW
+    };
+
+    function normalize(record) {
+      ensureKey(record, 'moduleKey');
+      var operations = Object.assign({}, defaultOperations, record.operations || {});
+      return Object.assign({}, record, {
+        screenId: record.screenId || record.moduleKey,
+        listKey: record.listKey || (record.moduleKey + 'List'),
+        formKey: record.formKey || (record.moduleKey + 'Form'),
+        detailFormKey: record.detailFormKey || record.formKey || (record.moduleKey + 'Form'),
+        operations: operations,
+        rowActions: toArray(record.rowActions),
+        bulkActions: toArray(record.bulkActions)
+      });
+    }
+
+    function register(record) {
+      registry.upsert(normalize(record));
+      return api;
+    }
+
+    function getConfig(moduleKey) {
+      return registry.get(moduleKey) || normalize({ moduleKey: moduleKey });
+    }
+
+    function routeFor(moduleKey, operation) {
+      return routeRegistry.list().find(function (route) {
+        return route.moduleKey === moduleKey && route.action === operation;
+      }) || null;
+    }
+
+    function can(moduleKey, operation, context) {
+      var config = getConfig(moduleKey);
+      if (!config.operations[operation]) return false;
+      return permissionService.can(moduleKey, permissionActions[operation] || ACTION.VIEW, context || {});
+    }
+
+    function actionKey(moduleKey, operation) {
+      return moduleKey + '.' + operation;
+    }
+
+    function operationFor(moduleKey, operation, context) {
+      var config = getConfig(moduleKey);
+      var formOperation = operation === 'create' || operation === 'edit' ? operation : 'detail';
+      var formKey = formOperation === 'detail' ? config.detailFormKey : config.formKey;
+      return {
+        moduleKey: moduleKey,
+        operation: operation,
+        enabled: Boolean(config.operations[operation]),
+        allowed: can(moduleKey, operation, context),
+        route: routeFor(moduleKey, operation),
+        list: operation === 'list' ? listRegistry.get(config.listKey) : null,
+        form: formRegistry.get(formKey),
+        actionKey: actionKey(moduleKey, operation),
+        permissionAction: permissionActions[operation] || ACTION.VIEW
+      };
+    }
+
+    function workflowFor(moduleKey, context) {
+      var config = getConfig(moduleKey);
+      var workflow = {};
+      Object.keys(defaultOperations).forEach(function (operation) {
+        workflow[operation] = operationFor(moduleKey, operation, context);
+      });
+      workflow.config = clone(config);
+      return workflow;
+    }
+
+    function enabledOperations(moduleKey) {
+      var config = getConfig(moduleKey);
+      return Object.keys(defaultOperations).filter(function (operation) {
+        return Boolean(config.operations[operation]);
+      });
+    }
+
+    var api = {
+      register: register,
+      upsert: register,
+      get: registry.get,
+      list: registry.list,
+      can: can,
+      operationFor: operationFor,
+      workflowFor: workflowFor,
+      enabledOperations: enabledOperations
+    };
+    return api;
+  }
+
   function createModalService() {
     var registry = createRegistry('modal', 'key');
     var active = null;
@@ -1389,6 +1498,7 @@
   var components = createComponentService(actions, state);
   var forms = createFormService();
   var lists = createListService();
+  var crud = createCrudService(routes, lists, forms, permissions);
   var modals = createModalService();
   var api = createApiClient();
   var navigation = createNavigationService(routes, modules);
@@ -1408,6 +1518,7 @@
     components: components,
     forms: forms,
     lists: lists,
+    crud: crud,
     modals: modals,
     api: api,
     navigation: navigation,

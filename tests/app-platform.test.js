@@ -467,6 +467,52 @@ function loadPlatform() {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  platform.forms.register({
+    key: 'householdsForm',
+    moduleKey: 'households',
+    sections: {
+      basic: [{ name: 'code', label: 'Ma ho' }]
+    }
+  });
+  platform.lists.register({
+    key: 'householdsList',
+    moduleKey: 'households',
+    columns: [{ key: 'code', label: 'Ma ho' }]
+  });
+  platform.crud.register({
+    moduleKey: 'households',
+    formKey: 'householdsForm',
+    listKey: 'householdsList',
+    operations: { import: true, export: true, log: true },
+    rowActions: ['detail', 'edit'],
+    bulkActions: ['export']
+  });
+  assert.strictEqual(platform.crud.enabledOperations('households').join(','), 'list,detail,create,edit,delete,import,export,log');
+  const listOperation = platform.crud.operationFor('households', 'list', { role: 'SUPER_ADMIN' });
+  assert.strictEqual(listOperation.enabled, true);
+  assert.strictEqual(listOperation.allowed, true);
+  assert.strictEqual(listOperation.route.path, '/households');
+  assert.strictEqual(listOperation.list.columns[0].key, 'code');
+  assert.strictEqual(listOperation.actionKey, 'households.list');
+
+  const createOperation = platform.crud.operationFor('households', 'create');
+  assert.strictEqual(createOperation.route.path, '/households/create');
+  assert.strictEqual(createOperation.form.moduleKey, 'households');
+  assert.strictEqual(createOperation.permissionAction, platform.ACTION.CREATE);
+
+  platform.permissions.set('households', platform.ACTION.DELETE, false);
+  const deleteOperation = platform.crud.operationFor('households', 'delete', { role: 'SUPER_ADMIN' });
+  assert.strictEqual(deleteOperation.enabled, true);
+  assert.strictEqual(deleteOperation.allowed, false);
+
+  const workflow = platform.crud.workflowFor('households');
+  assert.strictEqual(workflow.config.rowActions.join(','), 'detail,edit');
+  assert.strictEqual(workflow.export.permissionAction, platform.ACTION.EXPORT);
+  assert.strictEqual(workflow.log.permissionAction, platform.ACTION.VIEW);
+}
+
+{
   const sandbox = loadPlatform();
   const elementEvents = [];
   const element = {
