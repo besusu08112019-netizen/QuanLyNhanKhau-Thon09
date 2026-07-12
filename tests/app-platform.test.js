@@ -513,6 +513,24 @@ function loadPlatform() {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  assert.strictEqual(platform.layout.modeFor(1280).key, 'desktop');
+  assert.strictEqual(platform.layout.modeFor(900).key, 'tablet');
+  assert.strictEqual(platform.layout.modeFor(390).key, 'mobile');
+  assert.strictEqual(platform.layout.summary(390).navigation, 'bottomNavigation');
+  assert.strictEqual(platform.layout.summary(390).modal, 'fullscreen');
+  assert.strictEqual(platform.layout.summary(1280).regions.join(','), 'sidebar,content,modal');
+  assert.strictEqual(platform.layout.regionsFor('mobile').map((region) => region.key).join(','), 'content,bottomNavigation,modal');
+  platform.layout
+    .registerRegion({ key: 'breadcrumb', selector: '[data-platform-breadcrumb]', role: 'navigation' })
+    .registerMode({ key: 'wide', navigation: 'sidebar', modal: 'dialog', regions: ['sidebar', 'breadcrumb', 'content', 'modal'] });
+  assert.strictEqual(platform.layout.regionsFor('wide').map((region) => region.key).join(','), 'sidebar,breadcrumb,content,modal');
+  platform.layout.setBreakpoints({ mobileMax: 600, tabletMax: 1100 });
+  assert.strictEqual(platform.layout.breakpoints().tabletMax, 1100);
+  assert.strictEqual(platform.layout.modeFor(700).key, 'tablet');
+}
+
+{
   const sandbox = loadPlatform();
   const elementEvents = [];
   const element = {
