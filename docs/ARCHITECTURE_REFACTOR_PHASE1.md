@@ -39,7 +39,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.lists` da duoc them lam ListRegistry chung cho metadata table/list: columns, filters, search, pagination, rowActions, bulkActions va query defaults.
 - `Thon09Platform.listView` da duoc them lam renderer list chung cho toolbar, table, pagination va list container dua tren ListRegistry/ComponentService.
 - `Thon09Platform.crud` da duoc them lam CrudRegistry chung cho workflow list/detail/create/edit/delete/import/export/log, gan route/list/form/action/permission metadata ma chua tu goi API hay thay luong module cu.
-- `Thon09Platform.crudView` da duoc them lam renderer CRUD chung cho list/form/modal dua tren CrudRegistry/ListView/FormView/ModalService.
+- `Thon09Platform.crudView` da duoc them lam renderer CRUD chung cho list/detail/form/modal dua tren CrudRegistry/ListView/FormView/ModalService.
 - `Thon09Platform.layout` da duoc them lam LayoutRegistry chung cho desktop/tablet/mobile modes, shared regions, navigation mode va modal presentation.
 - `Thon09Platform.breadcrumbs` da duoc them lam BreadcrumbService chung, tao breadcrumb tu route/module/action va co render helper cho `[data-platform-breadcrumb]`.
 - `Thon09Platform.appState` da duoc them lam AppStateService chung cho route/module/screen/action/params/layout/breadcrumb snapshot va event `thon09:app-state-change`.

@@ -1011,6 +1011,11 @@ function screenNode(screenId) {
   assert.strictEqual(form.dataset.operation, 'edit');
   assert.strictEqual(form.children[1].dataset.formKey, 'vehiclesForm');
 
+  const detail = platform.crudView.detail('vehicles', { plate: '30C' }, { header: { title: 'Chi tiet xe' } });
+  assert.strictEqual(detail.dataset.operation, 'detail');
+  assert.strictEqual(detail.children[0].children[0].textContent, 'Chi tiet xe');
+  assert.strictEqual(detail.children[1].dataset.formKey, 'vehiclesForm');
+
   const modal = platform.crudView.modal('vehicles', 'create', { plate: '30B' }, { title: 'Them xe' });
   assert.strictEqual(modal.dataset.modalKey, 'vehiclesModal');
   assert.strictEqual(modal.children[0].children[0].textContent, 'Them xe');

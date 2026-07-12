@@ -1620,6 +1620,10 @@
       ]);
     }
 
+    function detail(moduleKey, values, options) {
+      return form(moduleKey, 'detail', values || {}, options || {});
+    }
+
     function modal(moduleKey, action, values, options) {
       var op = operation(moduleKey, action || 'detail', options && options.permissionContext || {});
       if (!op.form) throw new Error('Form not registered for module: ' + moduleKey);
@@ -1638,6 +1642,7 @@
       operation: operation,
       header: header,
       list: list,
+      detail: detail,
       form: form,
       modal: modal,
       workflow: workflow
