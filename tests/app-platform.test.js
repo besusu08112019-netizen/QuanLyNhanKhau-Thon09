@@ -334,6 +334,15 @@ function screenNode(screenId) {
 {
   const platform = loadPlatform().window.Thon09Platform;
   const mockResources = {
+    inspect(moduleKey, action, options) {
+      return {
+        moduleKey,
+        action,
+        operation: action,
+        method: action === 'delete' ? 'DELETE' : 'GET',
+        endpoint: '/' + moduleKey + (options && options.params && options.params.id ? '/' + options.params.id : '')
+      };
+    },
     list(moduleKey, query) {
       assert.strictEqual(moduleKey, 'households');
       assert.strictEqual(query.page, 1);
@@ -353,9 +362,17 @@ function screenNode(screenId) {
     }
   };
   const data = platform.createCrudDataService(mockResources, platform.state);
+  const beforeInspect = data.inspect('households', 'detail', { params: { id: 2 } });
+  assert.strictEqual(beforeInspect.moduleKey, 'households');
+  assert.strictEqual(beforeInspect.action, 'detail');
+  assert.strictEqual(beforeInspect.endpoint, '/households/2');
+  assert.strictEqual(beforeInspect.stateStatus, platform.STATE.EMPTY);
+  assert.strictEqual(beforeInspect.state, null);
   assert.strictEqual(data.list('households', { page: 1 }).success, true);
   assert.strictEqual(platform.state.get('households').status, platform.STATE.LOADED);
   assert.strictEqual(platform.state.get('households').data[0].id, 1);
+  assert.strictEqual(data.inspect('households').stateStatus, platform.STATE.LOADED);
+  assert.strictEqual(data.inspect('households').state.data[0].id, 1);
   assert.strictEqual(data.detail('households', 2).data.id, 2);
   assert.strictEqual(data.create('households', { code: 'H1' }).data.code, 'H1');
   assert.strictEqual(data.update('households', 3, { code: 'H3' }).data.id, 3);

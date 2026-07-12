@@ -28,7 +28,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `status`, `card`, `form`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; button/form/pagination/tabs moi co the gan truc tiep `data-platform-action`, state view co dataset status/module va hien error tu store.
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
 - `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata, gom `methodFor()` va `inspect()` read-only cho endpoint/method/permission.
-- `Thon09Platform.crudData` da duoc them lam CrudDataService cho list/detail/create/update/delete, dung ApiResourceService va cap nhat Module State Store.
+- `Thon09Platform.crudData` da duoc them lam CrudDataService cho inspect/list/detail/create/update/delete, dung ApiResourceService va cap nhat Module State Store.
 - `Thon09Platform.moduleLoader` da duoc them lam ModuleLoaderService chuan hoa resolve module, inspect loader availability, goi loaderName va cap nhat Loading/Loaded/Error state.
 - `Thon09Platform.modals` da co standard modal schema/render contract cho Header, Tabs, Basic, Linked, Extended, History, Attachments, Footer dua tren FormRegistry/ComponentService/ModalLayout.
 - `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
@@ -309,7 +309,8 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Chua doi route backend hoac bat module cu dung service nay khi chua migrate tung module.
 
 7. `CrudDataService`
-   - Chuan hoa CRUD data calls `list/detail/create/update/delete` qua ApiResourceService.
+   - Chuan hoa CRUD data calls `inspect/list/detail/create/update/delete` qua ApiResourceService.
+   - `inspect()` tra ve endpoint/method/operation metadata kem state hien tai, khong goi API.
    - Cap nhat Module State Store theo `Loading`, `Loaded`, `Empty`, `Error` quanh moi request.
    - Chua doi endpoint backend hoac bat module cu dung service nay khi chua migrate tung module.
 

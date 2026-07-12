@@ -297,6 +297,19 @@
   }
 
   function createCrudDataService(apiResourceService, stateService) {
+    function inspect(moduleKey, action, options) {
+      var operation = action || 'list';
+      var info = apiResourceService.inspect ? apiResourceService.inspect(moduleKey, operation, options || {}) : {
+        moduleKey: moduleKey,
+        action: operation,
+        operation: operation
+      };
+      return Object.assign({}, info, {
+        stateStatus: stateService.statusFor(moduleKey),
+        state: stateService.get(moduleKey)
+      });
+    }
+
     function settle(moduleKey, request, options) {
       var config = options || {};
       stateService.loading(moduleKey, { operation: config.operation || null });
@@ -353,6 +366,7 @@
     }
 
     return {
+      inspect: inspect,
       list: list,
       detail: detail,
       create: create,
