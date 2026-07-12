@@ -446,6 +446,12 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
+  const stateChanges = [];
+  const unsubscribe = platform.appState.subscribe((state) => {
+    stateChanges.push(state.moduleKey + ':' + state.action);
+  }, { moduleKey: 'households' });
+  assert.strictEqual(platform.appState.subscriberCount(), 1);
+
   const next = platform.appState.set({ route: '/households/42/edit', width: 390 });
   assert.strictEqual(next.route, '/households/42/edit');
   assert.strictEqual(next.moduleKey, 'households');
@@ -460,10 +466,15 @@ function screenNode(screenId) {
   assert.strictEqual(patched.action, 'detail');
   assert.strictEqual(patched.params.id, '99');
   assert.strictEqual(patched.layout.mode, 'desktop');
+  assert.deepStrictEqual(stateChanges, ['households:edit', 'households:detail']);
+  assert.strictEqual(unsubscribe(), true);
+  assert.strictEqual(unsubscribe(), false);
+  assert.strictEqual(platform.appState.subscriberCount(), 0);
 
   const reset = platform.appState.reset();
   assert.strictEqual(reset.moduleKey, 'dashboard');
   assert.strictEqual(platform.appState.get().screenId, 'dashboard');
+  assert.deepStrictEqual(stateChanges, ['households:edit', 'households:detail']);
 }
 
 {

@@ -42,7 +42,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.crudView` da duoc them lam renderer CRUD chung cho list/detail/form/modal dua tren CrudRegistry/ListView/FormView/ModalService.
 - `Thon09Platform.layout` da duoc them lam LayoutRegistry chung cho desktop/tablet/mobile modes, shared regions, navigation mode va modal presentation.
 - `Thon09Platform.breadcrumbs` da duoc them lam BreadcrumbService chung, tao breadcrumb tu route/module/action va co render helper cho `[data-platform-breadcrumb]`.
-- `Thon09Platform.appState` da duoc them lam AppStateService chung cho route/module/screen/action/params/layout/breadcrumb snapshot va event `thon09:app-state-change`.
+- `Thon09Platform.appState` da duoc them lam AppStateService chung cho route/module/screen/action/params/layout/breadcrumb snapshot, event `thon09:app-state-change`, va `subscribe/onChange`.
 - `Thon09Platform.router` da duoc them lam RouterService chung cho `pathFor`, `resolve`, `route -> module -> screen -> action -> params`, va sync vao AppState; chua thay controller runtime khi chua migrate tung module.
 - `Thon09Platform.history` da duoc them lam RouteHistoryService chung cho push/replace/popstate sync vao AppState; service nay khong tu goi NavigationController.
 - `Thon09Platform.navigation` da delegate sang RouterService/AppState; `Thon09NavigationController` chi con la executor doi screen va `window.App` chi la mirror legacy state.
@@ -383,6 +383,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 21. `AppStateService`
    - Luu snapshot route/module/screen/action/params/layout/breadcrumb hien tai.
    - Phat event `thon09:app-state-change` de layout/controller sau nay dong bo tu mot nguon.
+   - Co `subscribe/onChange` loc theo module de layout/controller sau nay khong tu gan listener rieng.
    - Chua thay `window.App.screen` hoac controller runtime khi chua migrate navigation controller.
 
 22. `RouterService`

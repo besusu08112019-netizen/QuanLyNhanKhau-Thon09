@@ -2418,6 +2418,7 @@
   }
 
   function createAppStateService(routeRegistry, moduleRegistry, layoutService, breadcrumbService) {
+    var subscribers = [];
     var current = {
       route: '/dashboard',
       moduleKey: 'dashboard',
@@ -2434,7 +2435,32 @@
       if (document && document.dispatchEvent) {
         document.dispatchEvent(new CustomEvent('thon09:app-state-change', { detail: snapshot }));
       }
+      subscribers.slice().forEach(function (subscriber) {
+        if (!subscriber.moduleKey || subscriber.moduleKey === snapshot.moduleKey) {
+          subscriber.callback(clone(snapshot));
+        }
+      });
       return snapshot;
+    }
+
+    function subscribe(callback, options) {
+      if (typeof callback !== 'function') {
+        throw new Error('AppState subscriber callback is required');
+      }
+      var config = options || {};
+      var subscriber = {
+        callback: callback,
+        moduleKey: config.moduleKey || null
+      };
+      subscribers.push(subscriber);
+      return function unsubscribe() {
+        var index = subscribers.indexOf(subscriber);
+        if (index !== -1) {
+          subscribers.splice(index, 1);
+          return true;
+        }
+        return false;
+      };
     }
 
     function normalize(update) {
@@ -2483,7 +2509,12 @@
       get: get,
       set: set,
       patch: patch,
-      reset: reset
+      reset: reset,
+      subscribe: subscribe,
+      onChange: subscribe,
+      subscriberCount: function () {
+        return subscribers.length;
+      }
     };
   }
 
