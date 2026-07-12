@@ -2803,7 +2803,92 @@
     };
   }
 
-  function createNavigationViewService(appStateService, breadcrumbService) {
+  function createDomRootService(defaultSelectors) {
+    var selectors = Object.assign({
+      sidebar: '.gov-nav',
+      bottomNavigation: '.mobile-bottom-nav',
+      breadcrumb: '[data-platform-breadcrumb]',
+      screenRoot: '[data-platform-screen-root]',
+      screens: '[data-screen-id], .screen'
+    }, defaultSelectors || {});
+
+    function rootDocument(options) {
+      return options && options.document || document;
+    }
+
+    function selectorFor(key) {
+      return selectors[key] || null;
+    }
+
+    function query(selector, options) {
+      var host = rootDocument(options || {});
+      if (!selector || !host || !host.querySelector) return null;
+      return host.querySelector(selector);
+    }
+
+    function queryAll(selector, options) {
+      var host = rootDocument(options || {});
+      if (!selector || !host || !host.querySelectorAll) return [];
+      return Array.prototype.slice.call(host.querySelectorAll(selector));
+    }
+
+    function resolve(key, options) {
+      var config = options || {};
+      if (config[key]) return config[key];
+      return query(config.selector || selectorFor(key), config);
+    }
+
+    function screens(options) {
+      var config = options || {};
+      if (config.screens) return Array.prototype.slice.call(config.screens);
+      var root = config.screenRoot || config.root || resolve('screenRoot', config) || rootDocument(config);
+      if (!root || !root.querySelectorAll) return [];
+      return Array.prototype.slice.call(root.querySelectorAll(config.selector || selectorFor('screens')));
+    }
+
+    function navigationRoots(options) {
+      var config = options || {};
+      var roots = [];
+      function add(root) {
+        if (root && roots.indexOf(root) === -1) roots.push(root);
+      }
+      toArray(config.navigationRoots).forEach(add);
+      add(config.navigationRoot);
+      add(config.sidebarRoot || resolve('sidebar', config));
+      add(config.bottomRoot || config.mobileRoot || resolve('bottomNavigation', config));
+      return roots;
+    }
+
+    function shellOptions(options) {
+      var config = options || {};
+      return Object.assign({}, config, {
+        sidebarRoot: config.sidebarRoot || resolve('sidebar', config),
+        bottomRoot: config.bottomRoot || config.mobileRoot || resolve('bottomNavigation', config),
+        breadcrumbRoot: config.breadcrumbRoot || resolve('breadcrumb', config),
+        screenRoot: config.screenRoot || resolve('screenRoot', config),
+        screens: config.screens || screens(config)
+      });
+    }
+
+    return {
+      selectorFor: selectorFor,
+      selectors: function () {
+        return clone(selectors);
+      },
+      configure: function (nextSelectors) {
+        selectors = Object.assign({}, selectors, nextSelectors || {});
+        return clone(selectors);
+      },
+      query: query,
+      queryAll: queryAll,
+      resolve: resolve,
+      screens: screens,
+      navigationRoots: navigationRoots,
+      shellOptions: shellOptions
+    };
+  }
+
+  function createNavigationViewService(appStateService, breadcrumbService, domRootService) {
     function hasClass(node, className) {
       return (' ' + (node.className || '') + ' ').indexOf(' ' + className + ' ') !== -1;
     }
@@ -2824,7 +2909,7 @@
     }
 
     function updateGroup(root, attribute, screenId) {
-      var target = root || (document && document.querySelector && document.querySelector(attribute === 'data-mobile-screen' ? '.mobile-bottom-nav' : '.gov-nav'));
+      var target = root || (domRootService && domRootService.resolve(attribute === 'data-mobile-screen' ? 'bottomNavigation' : 'sidebar'));
       if (!target || !target.querySelectorAll) return { total: 0, active: 0 };
       var nodes = Array.prototype.slice.call(target.querySelectorAll('[' + attribute + ']'));
       var activeCount = 0;
@@ -2872,7 +2957,7 @@
     };
   }
 
-  function createScreenViewService(appStateService) {
+  function createScreenViewService(appStateService, domRootService) {
     function hasClass(node, className) {
       return (' ' + (node.className || '') + ' ').indexOf(' ' + className + ' ') !== -1;
     }
@@ -2895,6 +2980,7 @@
 
     function collectScreens(root, screens) {
       if (screens) return Array.prototype.slice.call(screens);
+      if (domRootService) return domRootService.screens({ root: root });
       var target = root || document;
       if (!target || !target.querySelectorAll) return [];
       return Array.prototype.slice.call(target.querySelectorAll('[data-screen-id], .screen'));
@@ -3009,7 +3095,7 @@
     };
   }
 
-  function createNavigationRuntimeService(navigationDelegationService, navigationService, historyService, shellViewService) {
+  function createNavigationRuntimeService(navigationDelegationService, navigationService, historyService, shellViewService, domRootService) {
     var active = false;
     var cleanups = [];
 
@@ -3033,6 +3119,9 @@
     function start(options) {
       if (active) return false;
       var config = options || {};
+      if (domRootService && config.resolveRoots !== false) {
+        config = domRootService.shellOptions(config);
+      }
       active = true;
       cleanups = [];
 
@@ -3255,10 +3344,11 @@
   var history = createRouteHistoryService(router);
   var navigation = createNavigationService(router);
   var navigationDelegation = createNavigationDelegationService(navigationIntent, navigation);
-  var navigationView = createNavigationViewService(appState, breadcrumbs);
-  var screens = createScreenViewService(appState);
+  var domRoots = createDomRootService();
+  var navigationView = createNavigationViewService(appState, breadcrumbs, domRoots);
+  var screens = createScreenViewService(appState, domRoots);
   var shellView = createAppShellViewService(appState, screens, navigationView);
-  var navigationRuntime = createNavigationRuntimeService(navigationDelegation, navigation, history, shellView);
+  var navigationRuntime = createNavigationRuntimeService(navigationDelegation, navigation, history, shellView, domRoots);
   var menuRenderer = createMenuRenderer(menus, modules, menu);
 
   var platform = {
@@ -3294,6 +3384,7 @@
     appState: appState,
     router: router,
     history: history,
+    domRoots: domRoots,
     navigationView: navigationView,
     screens: screens,
     shellView: shellView,

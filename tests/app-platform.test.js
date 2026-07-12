@@ -790,6 +790,52 @@ function screenNode(screenId) {
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  const breadcrumbRoot = {
+    textContent: '',
+    dataset: {},
+    children: [],
+    appendChild(child) {
+      this.children.push(child);
+      return child;
+    }
+  };
+  const screenRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return screens;
+    }
+  };
+  const domDocument = {
+    querySelector(selector) {
+      return {
+        '.gov-nav': sidebarRoot,
+        '.mobile-bottom-nav': bottomRoot,
+        '[data-platform-breadcrumb]': breadcrumbRoot,
+        '[data-platform-screen-root]': screenRoot
+      }[selector] || null;
+    },
+    querySelectorAll(selector) {
+      if (selector === '[data-screen-id], .screen') return screens;
+      return [];
+    }
+  };
+
+  assert.strictEqual(platform.domRoots.resolve('sidebar', { document: domDocument }), sidebarRoot);
+  assert.strictEqual(platform.domRoots.resolve('bottomNavigation', { document: domDocument }), bottomRoot);
+  assert.strictEqual(platform.domRoots.resolve('breadcrumb', { document: domDocument }), breadcrumbRoot);
+  assert.strictEqual(platform.domRoots.screens({ document: domDocument }).length, 3);
+  assert.strictEqual(platform.domRoots.navigationRoots({ document: domDocument }).length, 2);
+  assert.strictEqual(platform.domRoots.shellOptions({ document: domDocument }).screens[1].dataset.screenId, 'persons');
+  platform.domRoots.configure({ sidebar: '[data-main-nav]' });
+  assert.strictEqual(platform.domRoots.selectorFor('sidebar'), '[data-main-nav]');
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
   sidebarRoot.listeners = {};
   sidebarRoot.addEventListener = function addEventListener(name, handler) {
     this.listeners[name] = handler;
@@ -822,6 +868,51 @@ function screenNode(screenId) {
   assert.strictEqual(platform.navigationRuntime.active(), false);
   assert.strictEqual(platform.navigationRuntime.inspect().delegatedBindings, 0);
   assert.strictEqual(platform.appState.subscriberCount(), 0);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  const screenRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return screens;
+    }
+  };
+  sidebarRoot.listeners = {};
+  sidebarRoot.addEventListener = function addEventListener(name, handler) {
+    this.listeners[name] = handler;
+  };
+  sidebarRoot.removeEventListener = function removeEventListener(name, handler) {
+    if (this.listeners[name] === handler) delete this.listeners[name];
+  };
+  bottomRoot.listeners = {};
+  bottomRoot.addEventListener = function addEventListener(name, handler) {
+    this.listeners[name] = handler;
+  };
+  bottomRoot.removeEventListener = function removeEventListener(name, handler) {
+    if (this.listeners[name] === handler) delete this.listeners[name];
+  };
+  const domDocument = {
+    querySelector(selector) {
+      return {
+        '.gov-nav': sidebarRoot,
+        '.mobile-bottom-nav': bottomRoot,
+        '[data-platform-screen-root]': screenRoot
+      }[selector] || null;
+    }
+  };
+
+  assert.strictEqual(platform.navigationRuntime.start({ document: domDocument }), true);
+  assert.strictEqual(platform.navigationRuntime.inspect().delegatedBindings, 2);
+  sidebarRoot.listeners.click({ target: sidebarRoot.nodes[2], preventDefault() {} });
+  assert.strictEqual(platform.navigation.current().screenId, 'vehicles');
+  assert.strictEqual(screens[2].style.display, 'block');
+  assert.strictEqual(bottomRoot.nodes[2].attributes['aria-current'], 'page');
+  assert.strictEqual(platform.navigationRuntime.stop(), true);
 }
 
 {

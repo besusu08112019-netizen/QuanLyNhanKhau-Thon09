@@ -53,6 +53,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.screens` da duoc them lam ScreenViewService chung de hide tat ca screen va chi show screen theo AppState.
 - `Thon09Platform.shellView` da duoc them lam AppShellViewService de render/bind screen, sidebar, bottom navigation va breadcrumb tu cung mot AppState snapshot.
 - `Thon09Platform.navigationRuntime` da duoc them lam coordinator start/stop cho delegation, history va shell render tu mot noi; chua auto-start tren production.
+- `Thon09Platform.domRoots` da duoc them lam DomRootService de gom selector sidebar, bottom navigation, breadcrumb, screen root va screen list vao mot contract chung cho navigation runtime.
 - `Thon09Platform.modalLayout` da duoc them lam ModalLayoutService de chuan hoa dialog/fullscreen presentation theo Layout/AppState.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
@@ -443,13 +444,18 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Co helper apply class cho `.modal-dialog`, dua theo LayoutRegistry/AppState.
    - Chua tu dong mo/dong modal hay thay flow popup cu.
 
-32. Component library
+32. `DomRootService`
+   - Tap trung selector shell runtime: sidebar, bottom navigation, breadcrumb, screen root va screen list.
+   - Cung cap `resolve`, `screens`, `navigationRoots` va `shellOptions` de runtime khong tu query selector rai rac.
+   - Chua auto-start navigation runtime tren production; service chi tao contract DOM chung cho cac phase migrate sau.
+
+33. Component library
    - Table, Card, Form, Input, Select, Button, Badge, Status, Search, Filter, Modal, Tabs, Upload, Pagination.
    - Cac component phai co loading/empty/error state chuan.
    - Nen tang hien co gom `element`, `button`, `badge`, `status`, `card`, `form`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; cac component phuc tap hon se them khi migrate tung module.
    - `stateView/moduleState` co dataset status/module va hien error message tu StateService.
 
-33. `ActionRegistry`
+34. `ActionRegistry`
    - Chuan hoa cac lenh UI bang `Thon09Platform.actions.register(key, handler)`.
    - Markup moi dung `data-platform-action`, khong dung `data-action` vi `data-action` dang co nghia cu trong permission va mot so module.
    - Co contract delegation `contextFor/handleClick/bind/unbind` de thay inline `onclick` theo tung module ma khong tao nhieu listener chong cheo.
