@@ -529,6 +529,21 @@
   }
 
   function createPermissionViewService(permissionService, componentService) {
+    function setAttr(node, name, value) {
+      if (!node) return;
+      if (node.setAttribute) node.setAttribute(name, value);
+      else {
+        node.attributes = node.attributes || {};
+        node.attributes[name] = value;
+      }
+    }
+
+    function removeAttr(node, name) {
+      if (!node) return;
+      if (node.removeAttribute) node.removeAttribute(name);
+      else if (node.attributes) delete node.attributes[name];
+    }
+
     function state(moduleKey, action, context) {
       var allowed = permissionService.can(moduleKey, action, context || {});
       return {
@@ -543,6 +558,35 @@
     function attrs(moduleKey, action, context) {
       var info = state(moduleKey, action, context || {});
       return info.allowed ? {} : { hidden: 'hidden', disabled: 'disabled', 'aria-disabled': 'true' };
+    }
+
+    function apply(node, moduleKey, action, context, options) {
+      if (!node) return null;
+      var config = options || {};
+      var info = state(moduleKey, action, context || {});
+      node.dataset = node.dataset || {};
+      node.dataset.permissionModule = info.moduleKey;
+      node.dataset.permissionAction = info.action;
+      node.dataset.permissionAllowed = String(info.allowed);
+
+      if (info.allowed) {
+        removeAttr(node, 'hidden');
+        removeAttr(node, 'disabled');
+        removeAttr(node, 'aria-disabled');
+        node.hidden = false;
+        node.disabled = false;
+      } else {
+        if (config.hide !== false) {
+          setAttr(node, 'hidden', 'hidden');
+          node.hidden = true;
+        }
+        if (config.disable !== false) {
+          setAttr(node, 'disabled', 'disabled');
+          node.disabled = true;
+        }
+        setAttr(node, 'aria-disabled', 'true');
+      }
+      return info;
     }
 
     function button(config) {
@@ -570,6 +614,7 @@
     return {
       state: state,
       attrs: attrs,
+      apply: apply,
       button: button,
       filterActions: filterActions
     };

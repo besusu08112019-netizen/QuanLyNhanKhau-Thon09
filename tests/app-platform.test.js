@@ -591,8 +591,35 @@ function screenNode(screenId) {
   assert.strictEqual(button.dataset.permissionAllowed, 'false');
   assert.strictEqual(button.dataset.platformAction, 'vehicles.delete');
 
+  const node = {
+    dataset: {},
+    attributes: {},
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+    removeAttribute(name) {
+      delete this.attributes[name];
+    }
+  };
+  const appliedDenied = platform.permissionView.apply(node, 'vehicle', 'delete');
+  assert.strictEqual(appliedDenied.allowed, false);
+  assert.strictEqual(node.dataset.permissionModule, 'vehicles');
+  assert.strictEqual(node.dataset.permissionAction, platform.ACTION.DELETE);
+  assert.strictEqual(node.dataset.permissionAllowed, 'false');
+  assert.strictEqual(node.attributes.hidden, 'hidden');
+  assert.strictEqual(node.attributes.disabled, 'disabled');
+  assert.strictEqual(node.attributes['aria-disabled'], 'true');
+
+  platform.permissions.set('vehicles', platform.ACTION.DELETE, true);
+  const appliedAllowed = platform.permissionView.apply(node, 'vehicles', 'delete');
+  assert.strictEqual(appliedAllowed.allowed, true);
+  assert.strictEqual(node.dataset.permissionAllowed, 'true');
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(node.attributes, 'hidden'), false);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(node.attributes, 'disabled'), false);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(node.attributes, 'aria-disabled'), false);
+
   const allowed = platform.permissionView.filterActions('vehicles', ['edit', 'delete']);
-  assert.deepStrictEqual(allowed, ['edit']);
+  assert.deepStrictEqual(allowed, ['edit', 'delete']);
 }
 
 {

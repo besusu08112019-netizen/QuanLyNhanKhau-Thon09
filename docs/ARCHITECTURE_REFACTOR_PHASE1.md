@@ -32,7 +32,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.moduleLoader` da duoc them lam ModuleLoaderService chuan hoa resolve module, goi loaderName va cap nhat Loading/Loaded/Error state.
 - `Thon09Platform.modals` da co standard modal schema/render contract cho Header, Tabs, Basic, Linked, Extended, History, Attachments, Footer dua tren FormRegistry/ComponentService/ModalLayout.
 - `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
-- `Thon09Platform.permissionView` da duoc them lam PermissionViewService cho state/attrs/button/action filtering dua tren PermissionService.
+- `Thon09Platform.permissionView` da duoc them lam PermissionViewService cho state/attrs/apply/button/action filtering dua tren PermissionService.
 - `Thon09Platform.routes` da co metadata CRUD chuan cho cac module nghiep vu: list, create, detail, edit. Vi du `/persons/create`, `/persons/:id`, `/persons/:id/edit`.
 - `Thon09Platform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
 - `Thon09Platform.formView` da duoc them lam renderer form chung cho field, section, action footer va form node dua tren FormRegistry/ComponentService.
@@ -323,8 +323,8 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Chap nhan alias module/action cu trong qua trinh migrate tung module.
 
 10. `PermissionViewService`
-   - Tao state/attrs/button/action filtering dua tren PermissionService chung.
-   - Module UI sau nay chi dung service nay de an/disable action theo quyen.
+   - Tao state/attrs/apply/button/action filtering dua tren PermissionService chung.
+   - Module UI sau nay chi dung service nay de an/disable action theo quyen; `apply()` chuan hoa dataset `permissionModule`, `permissionAction`, `permissionAllowed` tren DOM hien co.
    - Chua thay permission DOM cu cho den khi migrate tung module.
 
 11. `StateService`
