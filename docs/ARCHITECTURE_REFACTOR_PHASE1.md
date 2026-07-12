@@ -26,9 +26,10 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.actions` da duoc them lam Action Registry chuan cho lenh UI/CRUD sau nay. Selector moi la `data-platform-action` de khong va cham voi `data-action` hien dang dung cho permission/module cu.
 - `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error` va event `thon09:module-state-change`.
 - `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `stateView`, `moduleState`; button moi co the gan truc tiep `data-platform-action`.
+- `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
-- `tests/app-platform.test.js` da bao phu route/menu/API/permission/state/navigation facade, Action Registry, Component Factory, va modal bridge legacy `App.modals.*`.
+- `tests/app-platform.test.js` da bao phu route/menu/API client/permission/state/navigation facade, Action Registry, Component Factory, va modal bridge legacy `App.modals.*`.
 - Browser navigation spec xac minh cac modal tinh quan trong (`householdModal`, `personModal`, `businessHouseholdModal`, `detailModal`) da duoc dang ky trong platform modal registry.
 - Kiem thu hien tai: `npm run check:js`, `npm run test:platform`, `npm run test:navigation-cleanup`, va `npx playwright test tests/browser/navigation-controller.spec.js --reporter=line` deu PASS o lan chay gan nhat. Playwright xac minh desktop/tablet/mobile dung chung platform menu/controller, click doi noi dung that va chi mot screen hien thi.
 
@@ -184,6 +185,8 @@ Nhung mot so controller tra ve response nested hoac custom:
 
 Chuan moi can la `{ success, message, data, meta }`, nhung de khong pha production, giai doan dau phai them adapter frontend va contract tests truoc, chua doi tat ca controller ngay.
 
+Tinh trang hien tai: `Thon09Platform.api` da co adapter response va JSON request helpers cho cac method CRUD chuan. Backend controllers chua bi doi shape response dong loat.
+
 ### Permission
 
 Backend da co `requirePermission(module, action)`. Frontend van kiem tra phan tan:
@@ -265,6 +268,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 5. `ApiClient`
    - Chuan hoa output frontend thanh `{ success, message, data, meta }`.
    - Van chap nhan legacy `{ ok, success, data }` trong giai doan qua do.
+   - Cung cap method CRUD chung: `get`, `post`, `put`, `patch`, `delete/del`.
 
 6. `PermissionService`
    - Chuan action: `View`, `Create`, `Edit`, `Delete`, `Import`, `Export`, `Manage`.

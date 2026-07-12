@@ -152,6 +152,16 @@
   function createApiClient(options) {
     var config = Object.assign({ fetch: window.fetch && window.fetch.bind(window), baseUrl: '' }, options || {});
 
+    function jsonOptions(method, body, options) {
+      var requestOptions = Object.assign({
+        method: method,
+        headers: { 'Content-Type': 'application/json' }
+      }, options || {});
+      requestOptions.headers = Object.assign({ 'Content-Type': 'application/json' }, options && options.headers || {});
+      if (body !== undefined) requestOptions.body = JSON.stringify(body || {});
+      return requestOptions;
+    }
+
     function request(path, requestOptions) {
       if (typeof config.fetch !== 'function') {
         return Promise.reject(new Error('Fetch is not available'));
@@ -176,11 +186,19 @@
         return request(path, Object.assign({}, options || {}, { method: 'GET' }));
       },
       post: function (path, body, options) {
-        return request(path, Object.assign({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body || {})
-        }, options || {}));
+        return request(path, jsonOptions('POST', body, options));
+      },
+      put: function (path, body, options) {
+        return request(path, jsonOptions('PUT', body, options));
+      },
+      patch: function (path, body, options) {
+        return request(path, jsonOptions('PATCH', body, options));
+      },
+      delete: function (path, options) {
+        return request(path, Object.assign({ method: 'DELETE' }, options || {}));
+      },
+      del: function (path, options) {
+        return request(path, Object.assign({ method: 'DELETE' }, options || {}));
       }
     };
   }

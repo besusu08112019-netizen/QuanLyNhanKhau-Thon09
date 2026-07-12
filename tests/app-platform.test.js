@@ -129,6 +129,47 @@ function loadPlatform() {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  const requests = [];
+  function syncThen(value) {
+    return {
+      then(fn) {
+        const result = fn(value);
+        return result && typeof result.then === 'function' ? result : syncThen(result);
+      }
+    };
+  }
+  const client = platform.createApiClient({
+    baseUrl: '/base',
+    fetch(url, options) {
+      requests.push({ url, options });
+      return syncThen({
+        ok: true,
+        status: 200,
+        json() {
+          return syncThen({ success: true, message: 'OK', data: { saved: true }, meta: { page: 1 } });
+        }
+      });
+    }
+  });
+
+  let apiResponse = null;
+  client.put('/households/1', { name: 'A' }).then((response) => {
+    apiResponse = response;
+  });
+  assert.strictEqual(apiResponse.success, true);
+  assert.strictEqual(apiResponse.data.saved, true);
+  assert.strictEqual(apiResponse.meta.page, 1);
+  assert.strictEqual(requests[0].url, '/base/households/1');
+  assert.strictEqual(requests[0].options.method, 'PUT');
+  assert.strictEqual(requests[0].options.headers['Content-Type'], 'application/json');
+  assert.strictEqual(requests[0].options.body, JSON.stringify({ name: 'A' }));
+
+  client.delete('/households/1');
+  assert.strictEqual(requests[1].options.method, 'DELETE');
+}
+
+{
   const sandbox = loadPlatform();
   const result = sandbox.window.Thon09Platform.navigation.navigate('/persons');
   assert.strictEqual(result.moduleKey, 'persons');
