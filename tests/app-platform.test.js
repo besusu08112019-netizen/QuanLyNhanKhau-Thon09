@@ -657,6 +657,11 @@ function screenNode(screenId) {
   assert.strictEqual(badge.className, 'badge text-bg-success');
   assert.strictEqual(badge.textContent, 'Active');
 
+  const status = platform.components.status({ status: 'pending' });
+  assert.strictEqual(status.className, 'platform-status badge text-bg-warning');
+  assert.strictEqual(status.dataset.statusKey, 'pending');
+  assert.strictEqual(status.textContent, 'Cho xu ly');
+
   const input = platform.components.input({
     name: 'headName',
     value: 'Nguyen Van A',

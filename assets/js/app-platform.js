@@ -759,6 +759,32 @@
       });
     }
 
+    function status(config) {
+      var options = config || {};
+      var key = options.key || options.status || 'unknown';
+      var tones = Object.assign({
+        active: 'success',
+        inactive: 'secondary',
+        pending: 'warning',
+        error: 'danger',
+        deleted: 'danger',
+        archived: 'secondary'
+      }, options.tones || {});
+      var labels = Object.assign({
+        active: 'Dang hoat dong',
+        inactive: 'Tam dung',
+        pending: 'Cho xu ly',
+        error: 'Loi',
+        deleted: 'Da xoa',
+        archived: 'Luu tru'
+      }, options.labels || {});
+      return element('span', {
+        className: options.className || ('platform-status badge text-bg-' + (tones[key] || options.tone || 'secondary')),
+        text: options.label || labels[key] || String(key),
+        dataset: Object.assign({ statusKey: key }, options.dataset || {})
+      });
+    }
+
     function card(config, children) {
       var options = config || {};
       var body = element('div', { className: options.bodyClassName || 'card-body' }, children || []);
@@ -1033,6 +1059,7 @@
       element: element,
       button: button,
       badge: badge,
+      status: status,
       card: card,
       input: input,
       select: select,
