@@ -8,6 +8,8 @@ const source = fs.readFileSync(path.join(root, 'assets/js/app-platform.js'), 'ut
 
 function createSandbox() {
   const listeners = [];
+  const windowListeners = {};
+  const historyCalls = [];
   const sandbox = {
     console,
     CustomEvent: function CustomEvent(type, options) {
@@ -47,6 +49,22 @@ function createSandbox() {
     window: {
       fetch: null,
       App: {},
+      location: { pathname: '/dashboard', search: '', hash: '' },
+      history: {
+        calls: historyCalls,
+        pushState(state, title, url) {
+          historyCalls.push({ method: 'pushState', state, title, url });
+        },
+        replaceState(state, title, url) {
+          historyCalls.push({ method: 'replaceState', state, title, url });
+        }
+      },
+      addEventListener(name, handler) {
+        windowListeners[name] = handler;
+      },
+      removeEventListener(name, handler) {
+        if (windowListeners[name] === handler) delete windowListeners[name];
+      },
       Thon09NavigationController: {
         calls: [],
         navigate(screen, options) {
@@ -59,6 +77,8 @@ function createSandbox() {
   sandbox.window.document = sandbox.document;
   sandbox.window.CustomEvent = sandbox.CustomEvent;
   sandbox.listeners = listeners;
+  sandbox.windowListeners = windowListeners;
+  sandbox.historyCalls = historyCalls;
   return sandbox;
 }
 
@@ -269,6 +289,31 @@ function loadPlatform() {
   assert.strictEqual(synced.moduleKey, 'temporaryResidence');
   assert.strictEqual(synced.layout.mode, 'mobile');
   assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:app-state-change'));
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const pushed = platform.history.push('/households/42/edit', { width: 390 });
+  assert.strictEqual(pushed.route, '/households/42/edit');
+  assert.strictEqual(pushed.moduleKey, 'households');
+  assert.strictEqual(pushed.action, 'edit');
+  assert.strictEqual(sandbox.historyCalls[0].method, 'pushState');
+  assert.strictEqual(sandbox.historyCalls[0].url, '/households/42/edit');
+  assert.strictEqual(sandbox.window.Thon09NavigationController.calls.length, 0);
+
+  const replaced = platform.history.replace({ moduleKey: 'vehicles', action: 'detail', params: { id: 7 } });
+  assert.strictEqual(replaced.route, '/vehicles/7');
+  assert.strictEqual(sandbox.historyCalls[1].method, 'replaceState');
+
+  assert.strictEqual(platform.history.start((state) => {
+    assert.strictEqual(state.moduleKey, 'persons');
+  }), true);
+  sandbox.window.location.pathname = '/persons';
+  sandbox.windowListeners.popstate({ state: { route: '/persons' } });
+  assert.strictEqual(platform.history.active(), true);
+  assert.strictEqual(platform.history.stop(), true);
+  assert.strictEqual(platform.history.active(), false);
 }
 
 {
