@@ -1061,6 +1061,21 @@ function screenNode(screenId) {
   assert.strictEqual(dashboardBlockers.blockedCount, 0);
   assert.strictEqual(dashboardBlockers.blockerCount, 0);
 
+  const dashboardMatrix = platform.moduleMigration.matrix({
+    document: domDocument,
+    scopes: ['migrationDashboard'],
+    stages: ['navigation', 'runtime']
+  });
+  assert.strictEqual(dashboardMatrix.ready, true);
+  assert.strictEqual(dashboardMatrix.scopeCount, 1);
+  assert.strictEqual(dashboardMatrix.stageCount, 2);
+  assert.strictEqual(dashboardMatrix.rows[0].scope, 'migrationDashboard');
+  assert.strictEqual(dashboardMatrix.rows[0].stages[0].completedCount, 2);
+  assert.strictEqual(dashboardMatrix.rows[0].stages[0].nextModuleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardMatrix.rows[0].stages[1].nextModuleKey, 'dashboard');
+  assert.strictEqual(dashboardMatrix.next.scope, 'migrationDashboard');
+  assert.strictEqual(dashboardMatrix.next.stage, 'navigation');
+
   const outOfOrderComplete = platform.moduleMigration.completeHandoff('dashboardVehicles', {
     document: domDocument,
     navigationScope: 'migrationDashboard',
@@ -1109,6 +1124,15 @@ function screenNode(screenId) {
   assert.strictEqual(crudBlockers.codes.some((item) => item.code === 'crud-form-missing'), true);
   assert.strictEqual(crudBlockers.modules[0].moduleKey, 'households');
   assert.ok(crudBlockers.modules[0].issueCount > 0);
+  const crudMatrix = platform.moduleMigration.matrix({
+    scopes: ['requiredBusinessModules'],
+    stages: ['crud'],
+    require: { dom: false }
+  });
+  assert.strictEqual(crudMatrix.ready, false);
+  assert.strictEqual(crudMatrix.blockedRows.length, 1);
+  assert.strictEqual(crudMatrix.rows[0].stages[0].blockedCount, 12);
+  assert.ok(crudMatrix.rows[0].stages[0].blockerCount > 12);
   assert.throws(() => platform.moduleMigration.assertReady({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }), /Module migration blocked/);
 }
 

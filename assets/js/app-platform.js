@@ -3294,6 +3294,73 @@
       };
     }
 
+    function matrix(options) {
+      var config = options || {};
+      var scopes = toArray(config.scopes || config.navigationScopes);
+      if (!scopes.length && (config.navigationScope || config.rolloutScope || config.scope)) {
+        scopes = [config.navigationScope || config.rolloutScope || config.scope];
+      }
+      if (!scopes.length && navigationScopeService && navigationScopeService.keys) {
+        scopes = navigationScopeService.keys();
+      }
+      var stages = toArray(config.stages).length ? toArray(config.stages) : [config.stage || 'navigation'];
+      var rows = scopes.map(function (scope) {
+        var cells = stages.map(function (stage) {
+          var stageConfig = Object.assign({}, config, { navigationScope: scope, stage: stage });
+          delete stageConfig.scopes;
+          delete stageConfig.navigationScopes;
+          delete stageConfig.stages;
+          var snapshot = queue(stageConfig);
+          var blocked = blockers(stageConfig);
+          return {
+            stage: stage,
+            progressKey: snapshot.progressKey,
+            ready: snapshot.ready,
+            moduleCount: snapshot.moduleCount,
+            completedCount: snapshot.completedCount,
+            remainingCount: snapshot.remainingCount,
+            readyCount: snapshot.readyCount,
+            blockedCount: snapshot.blockedCount,
+            percentComplete: snapshot.percentComplete,
+            nextModuleKey: snapshot.nextModuleKey,
+            blockerCount: blocked.blockerCount,
+            issueCount: snapshot.issues.length
+          };
+        });
+        return {
+          scope: cells[0] ? cells[0].progressKey.split(':').slice(1).join(':') : String(scope),
+          scopeRecord: cells[0] ? queue(Object.assign({}, config, { navigationScope: scope, stage: stages[0] })).scope : null,
+          ready: cells.every(function (cell) {
+            return cell.ready;
+          }),
+          stages: cells
+        };
+      });
+      var nextCell = null;
+      rows.some(function (row) {
+        return row.stages.some(function (cell) {
+          if (cell.nextModuleKey) {
+            nextCell = { scope: row.scope, stage: cell.stage, moduleKey: cell.nextModuleKey };
+            return true;
+          }
+          return false;
+        });
+      });
+      return {
+        ready: rows.every(function (row) {
+          return row.ready;
+        }),
+        scopeCount: rows.length,
+        stageCount: stages.length,
+        stages: stages,
+        rows: rows,
+        blockedRows: rows.filter(function (row) {
+          return !row.ready;
+        }),
+        next: nextCell
+      };
+    }
+
     function report(options) {
       var config = options || {};
       var stages = toArray(config.stages).length ? toArray(config.stages) : [config.stage || 'navigation'];
@@ -3495,6 +3562,7 @@
       resetProgress: resetProgress,
       queue: queue,
       blockers: blockers,
+      matrix: matrix,
       report: report,
       reports: reports,
       handoff: handoff,
