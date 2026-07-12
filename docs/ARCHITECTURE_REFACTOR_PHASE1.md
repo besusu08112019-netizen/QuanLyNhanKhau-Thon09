@@ -52,7 +52,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.navigationDiagnostics` da duoc them de doc mot report chung ve AppState, transition, executor, visible screens, active screens, z-index va active sidebar/bottom navigation.
 - `Thon09Platform.navigationGuard` da duoc them de validate invariant dieu huong: dung mot screen visible, active screen/menu khop AppState va executor khop target screen.
 - `Thon09Platform.navigationReadiness` da duoc them de kiem tra controller, `window.App`, DOM roots, screen count va platform-rendered menu truoc khi bat runtime moi.
-- `Thon09Platform.navigationRuntimePlan` da duoc them de tao dry-run plan truoc khi start runtime moi, gom readiness, guard, roots va binding contract.
+- `Thon09Platform.navigationRuntimePlan` da duoc them de tao dry-run plan truoc khi start runtime moi, gom readiness, mapping audit, guard, roots va binding contract.
 - `Thon09Platform.navigationActivation` da duoc them lam contract `prepare/activate/deactivate` co gate bang runtime plan; khong auto-start tren production.
 - `Thon09Platform.navigationMapping` da duoc them de audit mapping `menu -> module -> route -> screen` truoc khi rollout runtime moi.
 - `Thon09Platform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
@@ -437,7 +437,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 
 29. `NavigationRuntimePlanService`
    - Lap dry-run plan truoc khi start runtime moi.
-   - Tong hop `NavigationReadinessService`, `NavigationGuardService`, DOM roots va binding options thanh `canStart/issues`.
+   - Tong hop `NavigationReadinessService`, `NavigationMappingService`, `NavigationGuardService`, DOM roots va binding options thanh `canStart/issues`.
    - Khong gan listener, khong render, khong doi screen; chi cung cap contract de gate rollout sau nay.
 
 30. `NavigationActivationService`

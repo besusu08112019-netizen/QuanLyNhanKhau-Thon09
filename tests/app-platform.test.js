@@ -1001,6 +1001,7 @@ function screenNode(screenId) {
   const plan = platform.navigationRuntimePlan.plan({ document: domDocument });
   assert.strictEqual(plan.canStart, true);
   assert.strictEqual(plan.readiness.ready, true);
+  assert.strictEqual(plan.mapping.ok, true);
   assert.strictEqual(plan.guard.ok, true);
   assert.strictEqual(plan.roots.navigation.length, 2);
   assert.strictEqual(plan.roots.navigation[0].itemCount, 3);
@@ -1008,6 +1009,12 @@ function screenNode(screenId) {
   assert.strictEqual(plan.bindings.navigation, true);
   assert.strictEqual(plan.bindings.history, false);
   assert.strictEqual(platform.navigationRuntimePlan.canStart({ document: domDocument }), true);
+
+  platform.menus.upsert({ key: 'broken', label: 'Broken', items: ['missingModule'] });
+  const mappingBlocked = platform.navigationRuntimePlan.plan({ document: domDocument });
+  assert.strictEqual(mappingBlocked.canStart, false);
+  assert.strictEqual(mappingBlocked.mapping.ok, false);
+  assert.strictEqual(mappingBlocked.issues.some((item) => item.code === 'mapping-menu-module-missing'), true);
 
   delete bottomRoot.dataset.platformMenu;
   const blocked = platform.navigationRuntimePlan.plan({ document: domDocument });
