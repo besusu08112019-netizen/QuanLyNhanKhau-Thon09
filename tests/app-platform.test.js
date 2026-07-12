@@ -472,6 +472,61 @@ function screenNode(screenId) {
 }
 
 {
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const moduleNode = {
+    dataset: { module: 'vehicles', action: 'detail', route: '/vehicles/7' },
+    getAttribute() {
+      return null;
+    }
+  };
+  const event = {
+    target: moduleNode,
+    prevented: false,
+    stopped: false,
+    preventDefault() {
+      this.prevented = true;
+    },
+    stopPropagation() {
+      this.stopped = true;
+    }
+  };
+  const handled = platform.navigationDelegation.handleClick(event, { stopPropagation: true });
+  assert.strictEqual(handled.moduleKey, 'vehicles');
+  assert.strictEqual(handled.action, 'detail');
+  assert.strictEqual(event.prevented, true);
+  assert.strictEqual(event.stopped, true);
+  assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'vehicles');
+  assert.strictEqual(sandbox.window.App.screen, 'vehicles');
+
+  const root = {
+    listeners: {},
+    addEventListener(name, handler) {
+      this.listeners[name] = handler;
+    },
+    removeEventListener(name, handler) {
+      if (this.listeners[name] === handler) delete this.listeners[name];
+    }
+  };
+  const unbind = platform.navigationDelegation.bind(root);
+  assert.strictEqual(platform.navigationDelegation.bindingCount(), 1);
+  root.listeners.click({ target: { dataset: { screen: 'persons' }, getAttribute() { return null; }, preventDefault() {} } });
+  assert.strictEqual(platform.navigation.current().screenId, 'persons');
+  assert.strictEqual(unbind(), true);
+  assert.strictEqual(unbind(), false);
+  assert.strictEqual(platform.navigationDelegation.bindingCount(), 0);
+
+  const ignored = platform.navigationDelegation.handleClick({
+    defaultPrevented: true,
+    target: moduleNode,
+    preventDefault() {
+      throw new Error('should not prevent already prevented event');
+    }
+  });
+  assert.strictEqual(ignored, null);
+}
+
+{
   const platform = loadPlatform().window.Thon09Platform;
   const crumbs = platform.breadcrumbs.fromRoute('/households/42/edit');
   assert.strictEqual(crumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quan ly dan cu>Ho gia dinh>Chinh sua');

@@ -2439,6 +2439,51 @@
     };
   }
 
+  function createNavigationDelegationService(navigationIntentService, navigationService) {
+    var bindings = [];
+
+    function handleClick(event, options) {
+      var config = options || {};
+      if (event && event.defaultPrevented && !config.allowDefaultPrevented) return null;
+      var intent = navigationIntentService.fromEvent(event, config);
+      if (!intent) return null;
+      if (event && typeof event.preventDefault === 'function') event.preventDefault();
+      if (config.stopPropagation && event && typeof event.stopPropagation === 'function') event.stopPropagation();
+      return navigationService.navigate(intent, Object.assign({}, config, {
+        source: intent.source,
+        intent: intent
+      }));
+    }
+
+    function bind(root, options) {
+      if (!root || typeof root.addEventListener !== 'function') {
+        throw new Error('Navigation delegation root is required');
+      }
+      var config = options || {};
+      var handler = function (event) {
+        return handleClick(event, config);
+      };
+      root.addEventListener('click', handler);
+      var binding = { root: root, handler: handler };
+      bindings.push(binding);
+      return function unbind() {
+        var index = bindings.indexOf(binding);
+        if (index === -1) return false;
+        if (typeof root.removeEventListener === 'function') root.removeEventListener('click', handler);
+        bindings.splice(index, 1);
+        return true;
+      };
+    }
+
+    return {
+      handleClick: handleClick,
+      bind: bind,
+      bindingCount: function () {
+        return bindings.length;
+      }
+    };
+  }
+
   function createBreadcrumbService(routeRegistry, moduleRegistry, menuService) {
     var labels = {
       list: 'Danh sach',
@@ -3130,6 +3175,7 @@
   var crudData = createCrudDataService(apiResources, state);
   var history = createRouteHistoryService(router);
   var navigation = createNavigationService(router);
+  var navigationDelegation = createNavigationDelegationService(navigationIntent, navigation);
   var navigationView = createNavigationViewService(appState, breadcrumbs);
   var screens = createScreenViewService(appState);
   var shellView = createAppShellViewService(appState, screens, navigationView);
@@ -3162,6 +3208,7 @@
     apiResources: apiResources,
     navigation: navigation,
     navigationIntent: navigationIntent,
+    navigationDelegation: navigationDelegation,
     menu: menu,
     breadcrumbs: breadcrumbs,
     appState: appState,
