@@ -3673,7 +3673,7 @@
     };
   }
 
-  function createNavigationRuntimePlanService(navigationReadinessService, navigationGuardService, domRootService, navigationMappingService) {
+  function createNavigationRuntimePlanService(navigationReadinessService, navigationGuardService, domRootService, navigationMappingService, navigationDomCoverageService) {
     function issue(code, message, detail) {
       return {
         code: code,
@@ -3696,6 +3696,9 @@
       var config = domRootService && input.resolveRoots !== false ? domRootService.shellOptions(input) : input;
       var readiness = navigationReadinessService.inspect(config);
       var mapping = navigationMappingService && input.mapping !== false ? navigationMappingService.audit(input.mappingOptions || {}) : null;
+      var domCoverage = navigationDomCoverageService && input.domCoverage !== false
+        ? navigationDomCoverageService.audit(Object.assign({}, config, input.domCoverageOptions || {}))
+        : null;
       var navigationRoots = domRootService.navigationRoots(config);
       var guard = readiness.ready && input.validate !== false ? navigationGuardService.validate(config) : null;
       var issues = readiness.issues.slice();
@@ -3703,6 +3706,11 @@
       if (mapping && !mapping.ok) {
         mapping.issues.forEach(function (mappingIssue) {
           issues.push(issue('mapping-' + mappingIssue.code, mappingIssue.message, mappingIssue.detail || {}));
+        });
+      }
+      if (domCoverage && !domCoverage.ok) {
+        domCoverage.issues.forEach(function (coverageIssue) {
+          issues.push(issue('dom-coverage-' + coverageIssue.code, coverageIssue.message, coverageIssue.detail || {}));
         });
       }
       if (input.bindNavigation !== false && navigationRoots.length === 0) {
@@ -3719,6 +3727,7 @@
         issues: issues,
         readiness: readiness,
         mapping: mapping,
+        domCoverage: domCoverage,
         guard: guard,
         roots: {
           sidebar: readiness.roots.sidebar,
@@ -4161,7 +4170,7 @@
   var navigationDiagnostics = createNavigationDiagnosticsService(appState, navigationTransitions, navigationExecutor, domRoots, screens);
   var navigationGuard = createNavigationGuardService(navigationDiagnostics);
   var navigationReadiness = createNavigationReadinessService(domRoots, navigationExecutor);
-  var navigationRuntimePlan = createNavigationRuntimePlanService(navigationReadiness, navigationGuard, domRoots, navigationMapping);
+  var navigationRuntimePlan = createNavigationRuntimePlanService(navigationReadiness, navigationGuard, domRoots, navigationMapping, navigationDomCoverage);
   var shellView = createAppShellViewService(appState, screens, navigationView);
   var navigationRuntime = createNavigationRuntimeService(navigationDelegation, navigation, history, shellView, domRoots);
   var navigationActivation = createNavigationActivationService(navigationRuntimePlan, navigationRuntime);
