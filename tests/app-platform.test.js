@@ -285,6 +285,45 @@ function loadPlatform() {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  platform.forms.register({
+    key: 'householdForm',
+    moduleKey: 'households',
+    modalKey: 'householdModal',
+    sections: {
+      basic: [
+        { name: 'code', label: 'Ma ho', defaultValue: 'H001' },
+        { name: 'headName', label: 'Chu ho' }
+      ],
+      linked: [
+        { name: 'areaId', label: 'Dia ban', defaultValue: 'A1' }
+      ]
+    },
+    actions: ['save', 'cancel']
+  });
+  assert.strictEqual(platform.forms.get('householdForm').moduleKey, 'households');
+  assert.strictEqual(platform.forms.fieldsFor('householdForm', 'basic').length, 2);
+  assert.strictEqual(platform.forms.fieldsFor('householdForm').length, 3);
+  assert.strictEqual(platform.forms.defaultsFor('householdForm').code, 'H001');
+  assert.strictEqual(platform.forms.defaultsFor('householdForm').headName, '');
+  assert.strictEqual(platform.forms.sectionOrder().join(','), 'basic,linked,extended,attachments');
+
+  const form = {
+    elements: [
+      { name: 'code', value: 'H002' },
+      { name: 'active', type: 'checkbox', checked: true, value: '1' },
+      { name: 'ignore', type: 'checkbox', checked: false, value: '1' },
+      { name: 'disabled', disabled: true, value: 'x' }
+    ]
+  };
+  const serialized = platform.forms.serialize(form);
+  assert.strictEqual(serialized.code, 'H002');
+  assert.strictEqual(serialized.active, '1');
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(serialized, 'ignore'), false);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(serialized, 'disabled'), false);
+}
+
+{
   const sandbox = loadPlatform();
   const elementEvents = [];
   const element = {

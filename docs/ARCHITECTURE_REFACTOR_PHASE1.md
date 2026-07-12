@@ -29,9 +29,10 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
 - `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
 - `Thon09Platform.routes` da co metadata CRUD chuan cho cac module nghiep vu: list, create, detail, edit. Vi du `/persons/create`, `/persons/:id`, `/persons/:id/edit`.
+- `Thon09Platform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
-- `tests/app-platform.test.js` da bao phu route CRUD/menu/API client/permission aliases/state/navigation facade, Action Registry, Component Factory, va modal bridge legacy `App.modals.*`.
+- `tests/app-platform.test.js` da bao phu route CRUD/menu/API client/permission aliases/state/navigation facade, Action Registry, Component Factory, FormRegistry, va modal bridge legacy `App.modals.*`.
 - Browser navigation spec xac minh cac modal tinh quan trong (`householdModal`, `personModal`, `businessHouseholdModal`, `detailModal`) da duoc dang ky trong platform modal registry.
 - Kiem thu hien tai: `npm run check:js`, `npm run test:platform`, `npm run test:navigation-cleanup`, va `npx playwright test tests/browser/navigation-controller.spec.js --reporter=line` deu PASS o lan chay gan nhat. Playwright xac minh desktop/tablet/mobile dung chung platform menu/controller, click doi noi dung that va chi mot screen hien thi.
 
@@ -129,7 +130,7 @@ Mot so helper nen giu tam thoi trong giai doan migrate:
 
 Sau do can dong goi lai thanh component/service chung.
 
-Tinh trang hien tai: `Thon09Platform.components` da co factory nho cho cac primitive an toan. Chua migrate table/form/pagination cua module cu de tranh thay doi layout va CRUD dong loat.
+Tinh trang hien tai: `Thon09Platform.components` da co factory nho cho cac primitive an toan. `Thon09Platform.forms` da co FormRegistry cho schema/sections/serialize. Chua migrate table/form/pagination cua module cu de tranh thay doi layout va CRUD dong loat.
 
 ### Modal/Popup
 
@@ -153,7 +154,7 @@ Ngoai ra con nhieu global opener nhu `openHouseholdForm`, `openPersonForm`, `ope
 
 Day la khu vuc can thay bang `ModalService` va `FormRegistry`. Khong nen xoa tung modal khi chua migrate module tuong ung.
 
-Tinh trang hien tai: `Thon09Platform.modals` da la service tap trung cho modal registry va Bootstrap adapter. Cac static modal trong DOM duoc auto-register, va `App.modals.*` legacy duoc bridge vao registry de giam trung lap ma chua can sua tung flow CRUD. Viec migrate schema/form/tabs cua tung module van phai lam tuan tu sau khi co FormRegistry.
+Tinh trang hien tai: `Thon09Platform.modals` da la service tap trung cho modal registry va Bootstrap adapter. Cac static modal trong DOM duoc auto-register, va `App.modals.*` legacy duoc bridge vao registry de giam trung lap ma chua can sua tung flow CRUD. `Thon09Platform.forms` da co contract schema/form/tabs nen viec migrate tung module co the lam tuan tu sau.
 
 ### State
 
@@ -290,12 +291,17 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Mot component modal chung: Header, Tabs, Basic, Extended, History, Attachments, Footer.
    - Module dang ky form schema/action, khong tu tao popup rieng.
 
-9. Component library
+9. `FormRegistry`
+   - Dang ky form theo module, modalKey, sections, fields va actions.
+   - Sections chuan: `basic`, `linked`, `extended`, `attachments`.
+   - Cung cap helper serialize form DOM, chua thay the global opener cu khi chua migrate module.
+
+10. Component library
    - Table, Card, Form, Input, Select, Button, Badge, Status, Search, Filter, Modal, Tabs, Upload, Pagination.
    - Cac component phai co loading/empty/error state chuan.
    - Nen tang hien co bat dau tu `element`, `button`, `badge`, `stateView`, `moduleState`; cac component phuc tap hon se them khi migrate tung module.
 
-10. `ActionRegistry`
+11. `ActionRegistry`
    - Chuan hoa cac lenh UI bang `Thon09Platform.actions.register(key, handler)`.
    - Markup moi dung `data-platform-action`, khong dung `data-action` vi `data-action` dang co nghia cu trong permission va mot so module.
    - Giai doan sau se thay inline `onclick` theo tung module, khong thay dong loat khi chua co test module.

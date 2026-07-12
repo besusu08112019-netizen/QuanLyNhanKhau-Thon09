@@ -542,6 +542,95 @@
     };
   }
 
+  function createFormService() {
+    var registry = createRegistry('form', 'key');
+    var sectionOrder = ['basic', 'linked', 'extended', 'attachments'];
+
+    function normalize(record) {
+      ensureKey(record, 'key');
+      var sections = Object.assign({
+        basic: [],
+        linked: [],
+        extended: [],
+        attachments: []
+      }, record.sections || {});
+      return Object.assign({}, record, {
+        moduleKey: record.moduleKey || record.key,
+        modalKey: record.modalKey || null,
+        fields: toArray(record.fields),
+        actions: toArray(record.actions),
+        sections: sections
+      });
+    }
+
+    function register(record) {
+      registry.upsert(normalize(record));
+      return api;
+    }
+
+    function fieldsFor(key, section) {
+      var form = registry.get(key);
+      if (!form) return [];
+      if (section) return toArray(form.sections && form.sections[section]);
+      var seen = {};
+      var fields = [];
+      sectionOrder.forEach(function (sectionKey) {
+        toArray(form.sections && form.sections[sectionKey]).forEach(function (field) {
+          var name = field && (field.name || field.key);
+          if (!name || seen[name]) return;
+          seen[name] = true;
+          fields.push(field);
+        });
+      });
+      toArray(form.fields).forEach(function (field) {
+        var name = field && (field.name || field.key);
+        if (!name || seen[name]) return;
+        seen[name] = true;
+        fields.push(field);
+      });
+      return fields;
+    }
+
+    function serialize(form) {
+      var data = {};
+      var elements = form && form.elements ? Array.prototype.slice.call(form.elements) : [];
+      elements.forEach(function (element) {
+        if (!element || !element.name || element.disabled) return;
+        if ((element.type === 'checkbox' || element.type === 'radio') && !element.checked) return;
+        if (element.type === 'file') {
+          data[element.name] = element.files || [];
+          return;
+        }
+        data[element.name] = element.value;
+      });
+      return data;
+    }
+
+    function defaultsFor(key) {
+      var data = {};
+      fieldsFor(key).forEach(function (field) {
+        var name = field && (field.name || field.key);
+        if (!name) return;
+        data[name] = field.defaultValue !== undefined ? field.defaultValue : '';
+      });
+      return data;
+    }
+
+    var api = {
+      register: register,
+      upsert: register,
+      get: registry.get,
+      list: registry.list,
+      fieldsFor: fieldsFor,
+      serialize: serialize,
+      defaultsFor: defaultsFor,
+      sectionOrder: function () {
+        return sectionOrder.slice();
+      }
+    };
+    return api;
+  }
+
   function createModalService() {
     var registry = createRegistry('modal', 'key');
     var active = null;
@@ -932,6 +1021,7 @@
   var state = createStateService();
   var actions = createActionService();
   var components = createComponentService(actions, state);
+  var forms = createFormService();
   var modals = createModalService();
   var api = createApiClient();
   var navigation = createNavigationService(routes, modules);
@@ -949,6 +1039,7 @@
     state: state,
     actions: actions,
     components: components,
+    forms: forms,
     modals: modals,
     api: api,
     navigation: navigation,
