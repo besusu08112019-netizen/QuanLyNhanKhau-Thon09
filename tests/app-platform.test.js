@@ -843,6 +843,38 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
+  const required = platform.navigationScopes.resolve('requiredBusinessModules');
+  assert.strictEqual(required.ok, true);
+  assert.strictEqual(required.moduleKeys.join(','), [
+    'households',
+    'persons',
+    'temporaryResidence',
+    'temporaryAbsence',
+    'movements',
+    'publicAssets',
+    'businessHouseholds',
+    'livestock',
+    'houses',
+    'vehicles',
+    'agriculture',
+    'contributions'
+  ].join(','));
+  assert.strictEqual(platform.navigationScopes.resolve('desktopModules').moduleKeys.length, 12);
+  assert.strictEqual(platform.navigationScopes.resolve('population').moduleKeys.join(','), [
+    'households',
+    'persons',
+    'temporaryResidence',
+    'temporaryAbsence',
+    'movements'
+  ].join(','));
+  const missing = platform.navigationScopes.resolve(['households', 'missingModule']);
+  assert.strictEqual(missing.ok, false);
+  assert.strictEqual(missing.issues.some((item) => item.code === 'scope-module-missing'), true);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1052,36 +1084,38 @@ function screenNode(screenId) {
   };
   platform.appState.set({ route: '/households', moduleKey: 'households', screenId: 'households', action: 'list' });
 
-  const scopedCoverage = { moduleKeys: ['households', 'persons', 'vehicles'] };
-  const plan = platform.navigationRuntimePlan.plan({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const navigationScope = ['households', 'persons', 'vehicles'];
+  const plan = platform.navigationRuntimePlan.plan({ document: domDocument, navigationScope });
   assert.strictEqual(plan.canStart, true);
   assert.strictEqual(plan.readiness.ready, true);
   assert.strictEqual(plan.mapping.ok, true);
   assert.strictEqual(plan.domCoverage.ok, true);
+  assert.strictEqual(plan.scope.ok, true);
+  assert.strictEqual(plan.scope.moduleKeys.join(','), navigationScope.join(','));
   assert.strictEqual(plan.guard.ok, true);
   assert.strictEqual(plan.roots.navigation.length, 2);
   assert.strictEqual(plan.roots.navigation[0].itemCount, 3);
   assert.strictEqual(plan.bindings.shell, true);
   assert.strictEqual(plan.bindings.navigation, true);
   assert.strictEqual(plan.bindings.history, false);
-  assert.strictEqual(platform.navigationRuntimePlan.canStart({ document: domDocument, domCoverageOptions: scopedCoverage }), true);
+  assert.strictEqual(platform.navigationRuntimePlan.canStart({ document: domDocument, navigationScope }), true);
 
   const domBlocked = platform.navigationRuntimePlan.plan({
     document: domDocument,
-    domCoverageOptions: { moduleKeys: ['households', 'livestock'] }
+    navigationScope: ['households', 'livestock']
   });
   assert.strictEqual(domBlocked.canStart, false);
   assert.strictEqual(domBlocked.domCoverage.ok, false);
   assert.strictEqual(domBlocked.issues.some((item) => item.code === 'dom-coverage-screen-dom-missing'), true);
 
   platform.menus.upsert({ key: 'broken', label: 'Broken', items: ['missingModule'] });
-  const mappingBlocked = platform.navigationRuntimePlan.plan({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const mappingBlocked = platform.navigationRuntimePlan.plan({ document: domDocument, navigationScope });
   assert.strictEqual(mappingBlocked.canStart, false);
   assert.strictEqual(mappingBlocked.mapping.ok, false);
   assert.strictEqual(mappingBlocked.issues.some((item) => item.code === 'mapping-menu-module-missing'), true);
 
   delete bottomRoot.dataset.platformMenu;
-  const blocked = platform.navigationRuntimePlan.plan({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const blocked = platform.navigationRuntimePlan.plan({ document: domDocument, navigationScope });
   assert.strictEqual(blocked.canStart, false);
   assert.strictEqual(blocked.guard, null);
   assert.strictEqual(blocked.issues.some((item) => item.code === 'bottom-navigation-menu-not-rendered'), true);
@@ -1135,20 +1169,21 @@ function screenNode(screenId) {
     }
   };
   platform.appState.set({ route: '/households', moduleKey: 'households', screenId: 'households', action: 'list' });
-  const scopedCoverage = { moduleKeys: ['households', 'persons', 'vehicles'] };
+  const navigationScope = ['households', 'persons', 'vehicles'];
 
-  const prepared = platform.navigationActivation.prepare({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const prepared = platform.navigationActivation.prepare({ document: domDocument, navigationScope });
   assert.strictEqual(prepared.canStart, true);
+  assert.strictEqual(prepared.scope.moduleKeys.join(','), navigationScope.join(','));
   assert.strictEqual(platform.navigationActivation.currentPlan(), prepared);
   assert.strictEqual(platform.navigationRuntime.active(), false);
 
-  const activated = platform.navigationActivation.activate({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const activated = platform.navigationActivation.activate({ document: domDocument, navigationScope });
   assert.strictEqual(activated.started, true);
   assert.strictEqual(activated.active, true);
   assert.strictEqual(activated.reason, null);
   assert.strictEqual(platform.navigationRuntime.inspect().delegatedBindings, 2);
 
-  const repeated = platform.navigationActivation.activate({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const repeated = platform.navigationActivation.activate({ document: domDocument, navigationScope });
   assert.strictEqual(repeated.started, false);
   assert.strictEqual(repeated.active, true);
   assert.strictEqual(repeated.reason, 'already-active');
@@ -1156,7 +1191,7 @@ function screenNode(screenId) {
   assert.strictEqual(platform.navigationRuntime.active(), false);
 
   delete bottomRoot.dataset.platformMenu;
-  const blocked = platform.navigationActivation.activate({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const blocked = platform.navigationActivation.activate({ document: domDocument, navigationScope });
   assert.strictEqual(blocked.started, false);
   assert.strictEqual(blocked.active, false);
   assert.strictEqual(blocked.reason, 'plan-blocked');
@@ -1211,36 +1246,38 @@ function screenNode(screenId) {
     }
   };
   platform.appState.set({ route: '/households', moduleKey: 'households', screenId: 'households', action: 'list' });
-  const scopedCoverage = { moduleKeys: ['households', 'persons', 'vehicles'] };
+  const navigationScope = ['households', 'persons', 'vehicles'];
 
-  const initial = platform.navigationRollout.inspect({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const initial = platform.navigationRollout.inspect({ document: domDocument, navigationScope });
   assert.strictEqual(initial.ready, true);
   assert.strictEqual(initial.canActivate, true);
   assert.strictEqual(initial.active, false);
   assert.strictEqual(initial.issueCount, 0);
   assert.strictEqual(initial.prepared, false);
-  assert.strictEqual(platform.navigationRollout.ready({ document: domDocument, domCoverageOptions: scopedCoverage }), true);
-  assert.strictEqual(platform.navigationRollout.canActivate({ document: domDocument, domCoverageOptions: scopedCoverage }), true);
-  assert.strictEqual(platform.navigationRollout.assertReady({ document: domDocument, domCoverageOptions: scopedCoverage }).ready, true);
+  assert.strictEqual(initial.plan.scope.moduleKeys.join(','), navigationScope.join(','));
+  assert.strictEqual(platform.navigationRollout.ready({ document: domDocument, navigationScope }), true);
+  assert.strictEqual(platform.navigationRollout.canActivate({ document: domDocument, navigationScope }), true);
+  assert.strictEqual(platform.navigationRollout.assertReady({ document: domDocument, navigationScope }).ready, true);
 
-  platform.navigationActivation.prepare({ document: domDocument, domCoverageOptions: scopedCoverage });
-  const prepared = platform.navigationRollout.inspect({ document: domDocument, domCoverageOptions: scopedCoverage });
+  platform.navigationActivation.prepare({ document: domDocument, navigationScope });
+  const prepared = platform.navigationRollout.inspect({ document: domDocument, navigationScope });
   assert.strictEqual(prepared.prepared, true);
   assert.strictEqual(prepared.lastPlan.canStart, true);
+  assert.strictEqual(prepared.lastPlan.scope.moduleKeys.join(','), navigationScope.join(','));
 
-  platform.navigationActivation.activate({ document: domDocument, domCoverageOptions: scopedCoverage });
-  const active = platform.navigationRollout.inspect({ document: domDocument, domCoverageOptions: scopedCoverage });
+  platform.navigationActivation.activate({ document: domDocument, navigationScope });
+  const active = platform.navigationRollout.inspect({ document: domDocument, navigationScope });
   assert.strictEqual(active.active, true);
   assert.strictEqual(active.canActivate, false);
   assert.strictEqual(active.runtime.delegatedBindings, 2);
   assert.strictEqual(platform.navigationActivation.deactivate(), true);
 
   delete sidebarRoot.dataset.platformMenu;
-  const blocked = platform.navigationRollout.inspect({ document: domDocument, domCoverageOptions: scopedCoverage });
+  const blocked = platform.navigationRollout.inspect({ document: domDocument, navigationScope });
   assert.strictEqual(blocked.ready, false);
   assert.strictEqual(blocked.blocked, true);
   assert.strictEqual(blocked.issues.some((item) => item.code === 'sidebar-menu-not-rendered'), true);
-  assert.throws(() => platform.navigationRollout.assertReady({ document: domDocument, domCoverageOptions: scopedCoverage }), /Navigation rollout blocked/);
+  assert.throws(() => platform.navigationRollout.assertReady({ document: domDocument, navigationScope }), /Navigation rollout blocked/);
 }
 
 {
