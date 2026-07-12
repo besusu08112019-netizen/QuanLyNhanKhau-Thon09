@@ -14,6 +14,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 
 - Da them `assets/js/app-platform.js` lam registry tap trung cho module, menu, route metadata, API response adapter, permission service va modal/navigation facade.
 - `views/app.php` khong con hard-code sidebar menu chinh; `.gov-nav` va `.mobile-bottom-nav` duoc render tu `Thon09Platform.menuRenderer`.
+- `Thon09Platform.menuRenderer` giu `data-screen/data-mobile-screen` cho controller hien tai va bo sung `data-module/data-route/data-action` cho NavigationIntentService.
 - `view-inline-patches.js` van la noi khoi tao `window.Thon09NavigationController`, nhung controller da doc label, loader, dashboard mapping tu platform metadata thay vi hard-code mapping rieng.
 - `app.utf8.min.js` khong con tu tao mobile bottom navigation va khong con wrapper `openScreen()`. Quick actions goi truc tiep `window.Thon09NavigationController.navigate(screen)`.
 - `sprint10.js` khong con gan click listener len `.sidebar .nav-link`; cac loader bo sung chuyen sang nghe `thon09:screen-change` do NavigationController phat ra.
@@ -403,6 +404,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 24. `NavigationIntentService`
    - Chuan hoa target tu menu item, DOM element hoac click event thanh `{ moduleKey, screenId, route, action, source }`.
    - Ho tro `data-module`, `data-module-key`, `data-screen`, `data-mobile-screen`, `data-route` va `href`.
+   - MenuRenderer da xuat metadata `data-module/data-route/data-action` de migrate click menu khong can doan mapping rieng.
    - Chua tu gan listener runtime; giai doan sau se dung service nay de thay the cac selector click phan tan.
 
 25. `NavigationDelegationService`

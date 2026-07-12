@@ -3111,10 +3111,14 @@
       var config = options || {};
       var button = document.createElement('button');
       var label = config.label || module.mobileLabel || module.label || module.moduleKey;
+      var intent = menuService.resolveMenuItem(module.moduleKey, config.action || 'list') || {};
       button.type = 'button';
       button.className = config.className || 'nav-link';
       if (config.mobile) button.dataset.mobileScreen = module.screenId;
       else button.dataset.screen = module.screenId;
+      button.dataset.module = module.moduleKey;
+      button.dataset.route = intent.route || module.path || '';
+      button.dataset.action = intent.action || 'list';
       button.appendChild(icon(config.icon || module.icon || 'fa-circle'));
       var span = document.createElement('span');
       span.textContent = label;

@@ -173,6 +173,26 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const nav = {
+    textContent: 'old',
+    dataset: {},
+    children: [],
+    appendChild(child) {
+      this.children.push(child);
+      return child;
+    }
+  };
+  assert.strictEqual(platform.menuRenderer.renderMobile(nav), true);
+  assert.strictEqual(nav.dataset.platformMenu, 'true');
+  assert.strictEqual(nav.children[0].dataset.mobileScreen, 'households');
+  assert.strictEqual(nav.children[0].dataset.module, 'households');
+  assert.strictEqual(nav.children[0].dataset.route, '/households');
+  assert.strictEqual(nav.children[0].dataset.action, 'list');
+  assert.strictEqual(platform.navigationIntent.fromElement(nav.children[0]).moduleKey, 'households');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   const legacy = platform.normalizeApiResponse({ ok: true, data: { items: [] }, pagination: { page: 1 } });
   assert.strictEqual(legacy.success, true);
   assert.strictEqual(legacy.message, '');
