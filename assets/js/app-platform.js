@@ -212,6 +212,69 @@
     };
   }
 
+  function createStateService() {
+    var records = new Map();
+    var allowedStatuses = Object.keys(STATE).map(function (key) {
+      return STATE[key];
+    });
+
+    function normalize(moduleKey, status, options) {
+      if (!moduleKey) throw new Error('Module key is required');
+      if (allowedStatuses.indexOf(status) === -1) {
+        throw new Error('Invalid module state: ' + status);
+      }
+      var config = options || {};
+      return {
+        moduleKey: moduleKey,
+        status: status,
+        data: config.data === undefined ? null : config.data,
+        error: config.error || null,
+        meta: config.meta || null,
+        updatedAt: Date.now()
+      };
+    }
+
+    function emit(record) {
+      if (document && document.dispatchEvent) {
+        document.dispatchEvent(new CustomEvent('thon09:module-state-change', { detail: clone(record) }));
+      }
+      return clone(record);
+    }
+
+    function set(moduleKey, status, options) {
+      var record = normalize(moduleKey, status, options || {});
+      records.set(moduleKey, record);
+      return emit(record);
+    }
+
+    return {
+      set: set,
+      loading: function (moduleKey, meta) {
+        return set(moduleKey, STATE.LOADING, { meta: meta || null });
+      },
+      loaded: function (moduleKey, data, meta) {
+        return set(moduleKey, STATE.LOADED, { data: data === undefined ? null : data, meta: meta || null });
+      },
+      empty: function (moduleKey, meta) {
+        return set(moduleKey, STATE.EMPTY, { meta: meta || null });
+      },
+      error: function (moduleKey, error, meta) {
+        return set(moduleKey, STATE.ERROR, { error: error || null, meta: meta || null });
+      },
+      get: function (moduleKey) {
+        return records.has(moduleKey) ? clone(records.get(moduleKey)) : null;
+      },
+      list: function () {
+        return Array.from(records.values()).map(clone);
+      },
+      clear: function (moduleKey) {
+        if (moduleKey) records.delete(moduleKey);
+        else records.clear();
+        return this;
+      }
+    };
+  }
+
   function createActionService() {
     var registry = createRegistry('action', 'key');
     var boundRoots = [];
@@ -659,6 +722,7 @@
   var menus = createRegistry('menu', 'key');
   var modules = createRegistry('module', 'moduleKey');
   var permissions = createPermissionService();
+  var state = createStateService();
   var actions = createActionService();
   var modals = createModalService();
   var api = createApiClient();
@@ -674,6 +738,7 @@
     menus: menus,
     modules: modules,
     permissions: permissions,
+    state: state,
     actions: actions,
     modals: modals,
     api: api,
@@ -812,6 +877,7 @@
   if (document && typeof document.createElement === 'function' && document.body) {
     menuRenderer.renderAll();
     modals.registerBootstrapAll(document);
+    actions.bind(document);
   }
 
   window.Thon09Platform = platform;

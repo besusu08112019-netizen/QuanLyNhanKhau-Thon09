@@ -121,6 +121,20 @@ function loadPlatform() {
 }
 
 {
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const loading = platform.state.loading('households', { source: 'test' });
+  assert.strictEqual(loading.status, platform.STATE.LOADING);
+  assert.strictEqual(platform.state.loaded('households', [{ id: 1 }]).status, platform.STATE.LOADED);
+  assert.strictEqual(platform.state.get('households').data[0].id, 1);
+  assert.strictEqual(platform.state.empty('persons').status, platform.STATE.EMPTY);
+  assert.strictEqual(platform.state.error('reports', 'Network').error, 'Network');
+  assert.ok(platform.state.list().length >= 3);
+  assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:module-state-change'));
+  assert.throws(() => platform.state.set('households', 'Done'), /Invalid module state/);
+}
+
+{
   const platform = loadPlatform().window.Thon09Platform;
   const calls = [];
   platform.actions.register('households.create', (context) => {
