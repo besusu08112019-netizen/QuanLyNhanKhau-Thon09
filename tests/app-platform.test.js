@@ -765,6 +765,46 @@ function screenNode(screenId) {
 }
 
 {
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  sidebarRoot.listeners = {};
+  sidebarRoot.addEventListener = function addEventListener(name, handler) {
+    this.listeners[name] = handler;
+  };
+  sidebarRoot.removeEventListener = function removeEventListener(name, handler) {
+    if (this.listeners[name] === handler) delete this.listeners[name];
+  };
+  bottomRoot.listeners = {};
+  bottomRoot.addEventListener = function addEventListener(name, handler) {
+    this.listeners[name] = handler;
+  };
+  bottomRoot.removeEventListener = function removeEventListener(name, handler) {
+    if (this.listeners[name] === handler) delete this.listeners[name];
+  };
+
+  assert.strictEqual(platform.navigationRuntime.start({ screens, sidebarRoot, bottomRoot }), true);
+  assert.strictEqual(platform.navigationRuntime.start({ screens, sidebarRoot, bottomRoot }), false);
+  assert.strictEqual(platform.navigationRuntime.inspect().delegatedBindings, 2);
+  assert.strictEqual(platform.appState.subscriberCount(), 1);
+
+  sidebarRoot.listeners.click({ target: sidebarRoot.nodes[1], preventDefault() {} });
+  assert.strictEqual(platform.navigation.current().screenId, 'persons');
+  assert.strictEqual(screens[1].style.display, 'block');
+  assert.strictEqual(sidebarRoot.nodes[1].attributes['aria-current'], 'page');
+  assert.strictEqual(bottomRoot.nodes[1].attributes['aria-current'], 'page');
+  assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'persons');
+
+  assert.strictEqual(platform.navigationRuntime.stop(), true);
+  assert.strictEqual(platform.navigationRuntime.stop(), false);
+  assert.strictEqual(platform.navigationRuntime.active(), false);
+  assert.strictEqual(platform.navigationRuntime.inspect().delegatedBindings, 0);
+  assert.strictEqual(platform.appState.subscriberCount(), 0);
+}
+
+{
   const platform = loadPlatform().window.Thon09Platform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);

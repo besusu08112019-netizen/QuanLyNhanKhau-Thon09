@@ -3009,6 +3009,81 @@
     };
   }
 
+  function createNavigationRuntimeService(navigationDelegationService, navigationService, historyService, shellViewService) {
+    var active = false;
+    var cleanups = [];
+
+    function addCleanup(cleanup) {
+      if (typeof cleanup === 'function') cleanups.push(cleanup);
+    }
+
+    function navigationRoots(config) {
+      var roots = [];
+      function add(root) {
+        if (root && roots.indexOf(root) === -1) roots.push(root);
+      }
+      toArray(config.navigationRoots).forEach(add);
+      if (config.navigationRoot) add(config.navigationRoot);
+      if (config.sidebarRoot) add(config.sidebarRoot);
+      if (config.bottomRoot) add(config.bottomRoot);
+      if (config.mobileRoot) add(config.mobileRoot);
+      return roots;
+    }
+
+    function start(options) {
+      if (active) return false;
+      var config = options || {};
+      active = true;
+      cleanups = [];
+
+      if (config.shell !== false) {
+        var shellBinding = shellViewService.bind(config.shellOptions ? Object.assign({}, config, config.shellOptions) : config);
+        addCleanup(shellBinding.destroy);
+      }
+
+      if (config.bindNavigation !== false) {
+        navigationRoots(config).forEach(function (root) {
+          addCleanup(navigationDelegationService.bind(root, config.delegation || {}));
+        });
+      }
+
+      if (config.history === true) {
+        var historyBinding = navigationService.bindHistory(historyService, config.historyOptions || {});
+        historyBinding.start();
+        addCleanup(historyBinding.stop);
+      }
+
+      return true;
+    }
+
+    function stop() {
+      if (!active) return false;
+      cleanups.slice().reverse().forEach(function (cleanup) {
+        cleanup();
+      });
+      cleanups = [];
+      active = false;
+      return true;
+    }
+
+    function inspect() {
+      return {
+        active: active,
+        delegatedBindings: navigationDelegationService.bindingCount(),
+        historyActive: historyService.active()
+      };
+    }
+
+    return {
+      start: start,
+      stop: stop,
+      active: function () {
+        return active;
+      },
+      inspect: inspect
+    };
+  }
+
   function createMenuRenderer(menuRegistry, moduleRegistry, menuService) {
     var mobileScreens = [
       'households',
@@ -3179,6 +3254,7 @@
   var navigationView = createNavigationViewService(appState, breadcrumbs);
   var screens = createScreenViewService(appState);
   var shellView = createAppShellViewService(appState, screens, navigationView);
+  var navigationRuntime = createNavigationRuntimeService(navigationDelegation, navigation, history, shellView);
   var menuRenderer = createMenuRenderer(menus, modules, menu);
 
   var platform = {
@@ -3217,6 +3293,7 @@
     navigationView: navigationView,
     screens: screens,
     shellView: shellView,
+    navigationRuntime: navigationRuntime,
     menuRenderer: menuRenderer,
     normalizeApiResponse: normalizeApiResponse,
     createRegistry: createRegistry,
