@@ -60,7 +60,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.navigationScopes` da co them `dashboardModules` va `migrationDashboard` de co lap 8 dashboard screen cho module migrate dau tien.
 - `Thon09Platform.navigationRouteCoverage` da duoc them de audit route CRUD bat buoc trong tung navigation scope truoc khi rollout runtime moi.
 - `Thon09Platform.navigationDomCoverage` da duoc them de audit `module.screenId -> DOM screen` va phat hien screen thieu/trung truoc khi rollout.
-- `Thon09Platform.moduleMigration` da duoc them de audit readiness theo module/scope truoc khi migrate tung module, gom route, DOM screen, loader va CRUD metadata.
+- `Thon09Platform.moduleMigration` da duoc them de audit readiness va lap migration plan theo module/scope truoc khi migrate tung module, gom route, DOM screen, loader va CRUD metadata.
 - `Thon09Platform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
 - `Thon09Platform.navigationDelegation` da duoc them de chuan hoa mot listener click chung: event -> navigation intent -> NavigationService.
 - `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
@@ -481,6 +481,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 36. `ModuleMigrationService`
    - Audit readiness theo module hoac navigation scope truoc khi migrate tung module.
    - Stage `navigation` kiem tra route list, DOM screen va loader metadata; stage `crud` kiem tra route CRUD va list/form metadata.
+   - `plan()` tra `nextModuleKey`, ready/blocked/completed modules de khoa thu tu migrate va tiep tuc duoc sau moi commit.
    - Ket qua hien tai: dashboard co the qua navigation contract khi co DOM screen; CRUD scope cua 12 module nghiep vu con bi chan cho toi khi migrate list/form metadata theo tung module.
    - Service chi doc registry/DOM va khong goi API, khong render, khong ghi du lieu.
 

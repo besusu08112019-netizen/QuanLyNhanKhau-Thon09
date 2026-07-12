@@ -3124,6 +3124,58 @@
       };
     }
 
+    function plan(options) {
+      var config = options || {};
+      var report = inspect(config);
+      var completed = {};
+      toArray(config.completedModules).forEach(function (moduleKey) {
+        completed[moduleKey] = true;
+      });
+      var order = toArray(config.order).length ? toArray(config.order) : report.records.map(function (record) {
+        return record.moduleKey;
+      });
+      var orderedRecords = order.map(function (moduleKey) {
+        return report.records.find(function (record) {
+          return record.moduleKey === moduleKey;
+        });
+      }).filter(Boolean);
+      report.records.forEach(function (record) {
+        if (order.indexOf(record.moduleKey) === -1) orderedRecords.push(record);
+      });
+      var ready = orderedRecords.filter(function (record) {
+        return record.ready && !completed[record.moduleKey];
+      });
+      var blocked = orderedRecords.filter(function (record) {
+        return !record.ready && !completed[record.moduleKey];
+      });
+      var completedRecords = orderedRecords.filter(function (record) {
+        return completed[record.moduleKey];
+      });
+      var next = ready.length ? ready[0] : null;
+      return {
+        ready: report.ready,
+        stage: report.stage,
+        scope: report.scope,
+        moduleCount: orderedRecords.length,
+        readyCount: ready.length,
+        blockedCount: blocked.length,
+        completedCount: completedRecords.length,
+        nextModuleKey: next ? next.moduleKey : null,
+        next: next,
+        readyModules: ready.map(function (record) {
+          return record.moduleKey;
+        }),
+        blockedModules: blocked.map(function (record) {
+          return record.moduleKey;
+        }),
+        completedModules: completedRecords.map(function (record) {
+          return record.moduleKey;
+        }),
+        records: orderedRecords,
+        issues: report.issues
+      };
+    }
+
     function assertReady(options) {
       var report = inspect(options || {});
       if (!report.ready) {
@@ -3137,6 +3189,7 @@
     return {
       inspectModule: inspectModule,
       inspect: inspect,
+      plan: plan,
       ready: function (options) {
         return inspect(options || {}).ready;
       },
