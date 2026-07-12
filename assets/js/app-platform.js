@@ -349,6 +349,22 @@
       return typeof window[module.loaderName] === 'function' ? window[module.loaderName] : null;
     }
 
+    function inspect(target, options) {
+      var module = resolveModule(target);
+      var loader = module ? loaderFor(module.moduleKey, options || {}) : null;
+      var loaderName = module && module.loaderName || null;
+      return {
+        registered: !!module,
+        moduleKey: module ? module.moduleKey : null,
+        screenId: module ? module.screenId : null,
+        route: module ? module.path || null : null,
+        loaderName: loaderName,
+        available: !!loader,
+        stateStatus: module ? stateService.statusFor(module.moduleKey) : null,
+        missingReason: module ? (loaderName ? (loader ? null : 'loaderUnavailable') : 'loaderNotConfigured') : 'moduleNotRegistered'
+      };
+    }
+
     function load(target, context) {
       var module = resolveModule(target);
       var config = context || {};
@@ -397,6 +413,7 @@
     return {
       resolveModule: resolveModule,
       loaderFor: loaderFor,
+      inspect: inspect,
       load: load,
       preload: preload
     };

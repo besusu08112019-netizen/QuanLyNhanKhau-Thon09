@@ -270,6 +270,22 @@ function screenNode(screenId) {
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
   const calls = [];
+  const beforeLoad = platform.moduleLoader.inspect('households', {
+    loaders: {
+      loadHouseholds() {
+        calls.push('inspect-should-not-load');
+      }
+    }
+  });
+  assert.strictEqual(beforeLoad.registered, true);
+  assert.strictEqual(beforeLoad.moduleKey, 'households');
+  assert.strictEqual(beforeLoad.screenId, 'households');
+  assert.strictEqual(beforeLoad.loaderName, 'loadHouseholds');
+  assert.strictEqual(beforeLoad.available, true);
+  assert.strictEqual(beforeLoad.stateStatus, platform.STATE.EMPTY);
+  assert.strictEqual(beforeLoad.missingReason, null);
+  assert.deepStrictEqual(calls, []);
+
   const result = platform.moduleLoader.load('households', {
     route: '/households',
     loaders: {
@@ -284,10 +300,15 @@ function screenNode(screenId) {
   assert.deepStrictEqual(calls, ['households:households:/households']);
   assert.strictEqual(platform.state.get('households').status, platform.STATE.LOADED);
   assert.strictEqual(platform.state.get('households').data.rows.length, 1);
+  assert.strictEqual(platform.moduleLoader.inspect('households').stateStatus, platform.STATE.LOADED);
 
   const skipped = platform.moduleLoader.load('vehicles');
   assert.strictEqual(skipped.skipped, true);
   assert.strictEqual(skipped.loaderName, null);
+  const missingLoader = platform.moduleLoader.inspect('vehicles');
+  assert.strictEqual(missingLoader.available, false);
+  assert.strictEqual(missingLoader.missingReason, 'loaderNotConfigured');
+  assert.strictEqual(platform.moduleLoader.inspect('missing').missingReason, 'moduleNotRegistered');
 
   assert.throws(() => platform.moduleLoader.load('persons', {
     loaders: {

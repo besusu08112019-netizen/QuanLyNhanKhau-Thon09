@@ -29,7 +29,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
 - `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata.
 - `Thon09Platform.crudData` da duoc them lam CrudDataService cho list/detail/create/update/delete, dung ApiResourceService va cap nhat Module State Store.
-- `Thon09Platform.moduleLoader` da duoc them lam ModuleLoaderService chuan hoa resolve module, goi loaderName va cap nhat Loading/Loaded/Error state.
+- `Thon09Platform.moduleLoader` da duoc them lam ModuleLoaderService chuan hoa resolve module, inspect loader availability, goi loaderName va cap nhat Loading/Loaded/Error state.
 - `Thon09Platform.modals` da co standard modal schema/render contract cho Header, Tabs, Basic, Linked, Extended, History, Attachments, Footer dua tren FormRegistry/ComponentService/ModalLayout.
 - `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
 - `Thon09Platform.permissionView` da duoc them lam PermissionViewService cho state/attrs/apply/button/action filtering dua tren PermissionService.
@@ -313,8 +313,9 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Chua doi endpoint backend hoac bat module cu dung service nay khi chua migrate tung module.
 
 8. `ModuleLoaderService`
-   - Resolve module tu moduleKey/screenId/state va goi loaderName da dang ky trong ModuleRegistry.
+   - Resolve module tu moduleKey/screenId/state, inspect loader availability va goi loaderName da dang ky trong ModuleRegistry.
    - Cap nhat Module State Store theo `Loading`, `Loaded`, `Error` quanh moi lan load.
+   - `inspect()` chi doc metadata loader/screen/state, khong thuc thi loader; dung de migrate tung module co kiem soat.
    - Chua ep NavigationController production goi service nay cho den khi migrate tung module co test.
 
 9. `PermissionService`
