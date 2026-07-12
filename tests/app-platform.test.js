@@ -300,6 +300,46 @@ function screenNode(screenId) {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  const mockResources = {
+    list(moduleKey, query) {
+      assert.strictEqual(moduleKey, 'households');
+      assert.strictEqual(query.page, 1);
+      return { success: true, data: [{ id: 1 }], meta: { total: 1 } };
+    },
+    detail(moduleKey, id) {
+      return { success: true, data: { id: id } };
+    },
+    create(moduleKey, body) {
+      return { success: true, data: body };
+    },
+    update(moduleKey, id, body) {
+      return { success: true, data: Object.assign({ id: id }, body) };
+    },
+    delete() {
+      return { success: true, data: [] };
+    }
+  };
+  const data = platform.createCrudDataService(mockResources, platform.state);
+  assert.strictEqual(data.list('households', { page: 1 }).success, true);
+  assert.strictEqual(platform.state.get('households').status, platform.STATE.LOADED);
+  assert.strictEqual(platform.state.get('households').data[0].id, 1);
+  assert.strictEqual(data.detail('households', 2).data.id, 2);
+  assert.strictEqual(data.create('households', { code: 'H1' }).data.code, 'H1');
+  assert.strictEqual(data.update('households', 3, { code: 'H3' }).data.id, 3);
+  assert.strictEqual(data.delete('households', 3).success, true);
+  assert.strictEqual(platform.state.get('households').status, platform.STATE.EMPTY);
+
+  const failing = platform.createCrudDataService({
+    list() {
+      throw new Error('Network down');
+    }
+  }, platform.state);
+  assert.throws(() => failing.list('persons'), /Network down/);
+  assert.strictEqual(platform.state.get('persons').status, platform.STATE.ERROR);
+}
+
+{
   const sandbox = loadPlatform();
   const result = sandbox.window.Thon09Platform.navigation.navigate('/persons');
   assert.strictEqual(result.moduleKey, 'persons');
