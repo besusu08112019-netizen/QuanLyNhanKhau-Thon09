@@ -27,9 +27,10 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error` va event `thon09:module-state-change`.
 - `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `stateView`, `moduleState`; button moi co the gan truc tiep `data-platform-action`.
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
+- `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
-- `tests/app-platform.test.js` da bao phu route/menu/API client/permission/state/navigation facade, Action Registry, Component Factory, va modal bridge legacy `App.modals.*`.
+- `tests/app-platform.test.js` da bao phu route/menu/API client/permission aliases/state/navigation facade, Action Registry, Component Factory, va modal bridge legacy `App.modals.*`.
 - Browser navigation spec xac minh cac modal tinh quan trong (`householdModal`, `personModal`, `businessHouseholdModal`, `detailModal`) da duoc dang ky trong platform modal registry.
 - Kiem thu hien tai: `npm run check:js`, `npm run test:platform`, `npm run test:navigation-cleanup`, va `npx playwright test tests/browser/navigation-controller.spec.js --reporter=line` deu PASS o lan chay gan nhat. Playwright xac minh desktop/tablet/mobile dung chung platform menu/controller, click doi noi dung that va chi mot screen hien thi.
 
@@ -199,6 +200,8 @@ Backend da co `requirePermission(module, action)`. Frontend van kiem tra phan ta
 
 Can thay bang `PermissionService` dung action chuan: `View`, `Create`, `Edit`, `Delete`, `Import`, `Export`, `Manage`.
 
+Tinh trang hien tai: `Thon09Platform.permissions` da co contract chung va alias cho cac ten cu nhu `citizen`, `household`, `public_assets`, `update`. Chua thay the `window.thon09CanAccess` dong loat trong runtime de tranh thay doi hanh vi khi chua migrate module.
+
 ### GIS
 
 GIS hien dang vua hien thi ban do/marker/polygon/GPS, vua lien ket truc tiep den popup/household. Theo kien truc moi, GIS chi giu nhiem vu ban do va phat event dieu huong toi module tuong ung khi click marker.
@@ -273,6 +276,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 6. `PermissionService`
    - Chuan action: `View`, `Create`, `Edit`, `Delete`, `Import`, `Export`, `Manage`.
    - UI chi hoi service, khong doc role truc tiep.
+   - Chap nhan alias module/action cu trong qua trinh migrate tung module.
 
 7. `StateService`
    - Moi module chi ghi nhan mot trong bon trang thai `Loading`, `Loaded`, `Empty`, `Error`.

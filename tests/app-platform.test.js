@@ -184,6 +184,23 @@ function loadPlatform() {
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'SUPER_ADMIN' }), false);
+  assert.strictEqual(platform.permissions.normalizeModule('public-assets'), 'publicAssets');
+  assert.strictEqual(platform.permissions.normalizeAction('update'), platform.ACTION.EDIT);
+  platform.permissions.setMany({
+    citizen: { update: true },
+    public_assets: { create: true },
+    household: { manage: true }
+  });
+  assert.strictEqual(platform.permissions.can('persons', platform.ACTION.EDIT), true);
+  assert.strictEqual(platform.permissions.can('publicAssets', platform.ACTION.CREATE), true);
+  assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE), false);
+  assert.strictEqual(platform.permissions.can('households', platform.ACTION.EDIT), true);
+  assert.strictEqual(platform.permissions.canAll([{ module: 'citizen', action: 'update' }, { module: 'public_assets', action: 'create' }]), true);
+  assert.strictEqual(platform.permissions.canAny([{ module: 'reports', action: 'export' }, { module: 'citizen', action: 'update' }]), true);
+  platform.permissions.clear().loadUser({ permissions: { vehicle: { view: true } } });
+  assert.strictEqual(platform.permissions.can('vehicles', platform.ACTION.VIEW), true);
+  platform.permissions.loadMatrix({ roles: [{ permissions: { house: { edit: true } } }] });
+  assert.strictEqual(platform.permissions.can('houses', 'update'), true);
 }
 
 {
