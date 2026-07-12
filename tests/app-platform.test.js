@@ -244,6 +244,30 @@ function loadPlatform() {
 }
 
 {
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  assert.strictEqual(platform.router.pathFor('households', 'edit', { id: 42 }), '/households/42/edit');
+
+  const resolved = platform.router.resolve('/vehicles/7');
+  assert.strictEqual(resolved.route, '/vehicles/7');
+  assert.strictEqual(resolved.routePattern, '/vehicles/:id');
+  assert.strictEqual(resolved.moduleKey, 'vehicles');
+  assert.strictEqual(resolved.screenId, 'vehicles');
+  assert.strictEqual(resolved.action, 'detail');
+  assert.strictEqual(resolved.params.id, '7');
+
+  const byModule = platform.router.resolve({ moduleKey: 'persons', action: 'create' });
+  assert.strictEqual(byModule.route, '/persons/create');
+  assert.strictEqual(byModule.action, 'create');
+
+  const synced = platform.router.sync({ moduleKey: 'temporaryResidence', action: 'list', width: 420 });
+  assert.strictEqual(synced.route, '/temporary-residence');
+  assert.strictEqual(synced.moduleKey, 'temporaryResidence');
+  assert.strictEqual(synced.layout.mode, 'mobile');
+  assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:app-state-change'));
+}
+
+{
   const platform = loadPlatform().window.Thon09Platform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
