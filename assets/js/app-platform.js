@@ -3508,6 +3508,33 @@
       };
     }
 
+    function gate(options) {
+      var config = options || {};
+      var snapshot = queue(config);
+      var blocked = blockers(config);
+      var packet = snapshot.nextModuleKey ? handoff(config) : null;
+      var canAdvance = Boolean(packet && packet.canMigrate);
+      var reason = null;
+      if (!snapshot.nextModuleKey && blocked.blockedCount > 0) reason = 'blocked';
+      else if (!snapshot.nextModuleKey) reason = 'complete';
+      else if (!canAdvance) reason = 'handoff-blocked';
+      return {
+        canAdvance: canAdvance,
+        reason: reason,
+        stage: snapshot.stage,
+        scope: snapshot.scope,
+        progressKey: snapshot.progressKey,
+        nextModuleKey: snapshot.nextModuleKey,
+        completedCount: snapshot.completedCount,
+        remainingCount: snapshot.remainingCount,
+        blockedCount: blocked.blockedCount,
+        blockerCount: blocked.blockerCount,
+        queue: snapshot,
+        blockers: blocked,
+        handoff: packet
+      };
+    }
+
     function completeHandoff(moduleKey, options) {
       var config = options || {};
       var targetModuleKey = moduleKey || config.moduleKey || null;
@@ -3566,6 +3593,7 @@
       report: report,
       reports: reports,
       handoff: handoff,
+      gate: gate,
       completeHandoff: completeHandoff,
       advance: advance,
       ready: function (options) {
