@@ -1112,7 +1112,28 @@ function screenNode(screenId) {
   assert.strictEqual(blockedComplete.completed, false);
   assert.strictEqual(blockedComplete.reason, 'handoff-blocked');
   assert.strictEqual(blockedComplete.handoff.canMigrate, false);
+  const migrationTimeline = platform.moduleMigration.timeline({
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(migrationTimeline.eventCount, 6);
+  assert.strictEqual(migrationTimeline.events[0].type, 'markComplete');
+  assert.strictEqual(migrationTimeline.events[0].moduleKey, 'dashboard');
+  assert.strictEqual(migrationTimeline.events[4].type, 'completeHandoff');
+  assert.strictEqual(migrationTimeline.events[4].moduleKey, 'dashboardHouseholds');
+  assert.strictEqual(migrationTimeline.events[5].reason, 'out-of-order');
+  const handoffTimeline = platform.moduleMigration.timeline({
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation',
+    type: 'completeHandoff'
+  });
+  assert.strictEqual(handoffTimeline.eventCount, 2);
+  assert.strictEqual(handoffTimeline.events[0].completed, true);
+  assert.strictEqual(handoffTimeline.events[1].completed, false);
   platform.moduleMigration.resetProgress({ all: true });
+  const allTimeline = platform.moduleMigration.timeline({ all: true });
+  assert.strictEqual(allTimeline.events[allTimeline.events.length - 1].type, 'resetProgress');
+  assert.strictEqual(allTimeline.events[allTimeline.events.length - 1].reason, 'all');
 
   const loaderBlocked = platform.moduleMigration.inspectModule('vehicles', {
     stage: 'navigation',

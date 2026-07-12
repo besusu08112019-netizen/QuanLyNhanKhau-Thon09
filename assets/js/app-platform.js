@@ -2919,6 +2919,9 @@
 
   function createModuleMigrationService(moduleRegistry, routeRegistry, moduleLoaderService, crudService, navigationDomCoverageService, navigationScopeService) {
     var completions = new Map();
+    var events = [];
+    var eventSequence = 0;
+    var eventLimit = 200;
     var stageDefaults = {
       navigation: {
         routes: ['list'],
@@ -3119,6 +3122,42 @@
       });
     }
 
+    function recordEvent(type, options, detail) {
+      var config = options || {};
+      var target = targetKeys(config);
+      var event = {
+        id: ++eventSequence,
+        type: type,
+        at: Date.now(),
+        stage: config.stage || 'navigation',
+        scope: target.scope ? target.scope.key : null,
+        progressKey: progressKey(config),
+        moduleKey: detail && detail.moduleKey || null,
+        completed: detail && detail.completed !== undefined ? Boolean(detail.completed) : null,
+        reason: detail && detail.reason || null
+      };
+      events.push(event);
+      if (events.length > eventLimit) events.shift();
+      return Object.assign({}, event);
+    }
+
+    function timeline(options) {
+      var config = options || {};
+      var hasFilter = config.progressKey || config.navigationScope || config.rolloutScope || config.scope || config.moduleKey || config.moduleKeys || config.stage;
+      var key = config.progressKey || (config.all === true || !hasFilter ? null : progressKey(config));
+      var records = events.filter(function (event) {
+        if (key && event.progressKey !== key) return false;
+        if (config.type && event.type !== config.type) return false;
+        return true;
+      });
+      return {
+        eventCount: records.length,
+        events: records.map(function (event) {
+          return Object.assign({}, event);
+        })
+      };
+    }
+
     function inspect(options) {
       var config = options || {};
       var target = targetKeys(config);
@@ -3205,6 +3244,7 @@
       var current = storedCompleted(config);
       if (current.indexOf(moduleKey) === -1) current.push(moduleKey);
       completions.set(key, current);
+      recordEvent('markComplete', config, { moduleKey: moduleKey, completed: true });
       return progress(config);
     }
 
@@ -3221,6 +3261,7 @@
       var config = options || {};
       if (config.all === true) completions.clear();
       else completions.delete(progressKey(config));
+      recordEvent('resetProgress', config, { completed: false, reason: config.all === true ? 'all' : 'scope' });
       return progress(config);
     }
 
@@ -3551,6 +3592,11 @@
       var targetModuleKey = moduleKey || config.moduleKey || null;
       var packet = handoff(Object.assign({}, config, targetModuleKey ? { moduleKey: targetModuleKey } : {}));
       if (!packet.canMigrate) {
+        recordEvent('completeHandoff', config, {
+          moduleKey: packet.moduleKey,
+          completed: false,
+          reason: 'handoff-blocked'
+        });
         return {
           completed: false,
           reason: 'handoff-blocked',
@@ -3560,6 +3606,11 @@
         };
       }
       if (!packet.isNext && config.allowOutOfOrder !== true) {
+        recordEvent('completeHandoff', config, {
+          moduleKey: packet.moduleKey,
+          completed: false,
+          reason: 'out-of-order'
+        });
         return {
           completed: false,
           reason: 'out-of-order',
@@ -3568,12 +3619,17 @@
           progress: progress(config)
         };
       }
+      var nextProgress = markComplete(packet.moduleKey, config);
+      recordEvent('completeHandoff', config, {
+        moduleKey: packet.moduleKey,
+        completed: true
+      });
       return {
         completed: true,
         reason: null,
         moduleKey: packet.moduleKey,
         handoff: packet,
-        progress: markComplete(packet.moduleKey, config)
+        progress: nextProgress
       };
     }
 
@@ -3603,6 +3659,7 @@
       matrix: matrix,
       report: report,
       reports: reports,
+      timeline: timeline,
       handoff: handoff,
       gate: gate,
       assertGate: assertGate,
