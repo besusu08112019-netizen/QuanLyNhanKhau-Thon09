@@ -112,6 +112,19 @@ function navRoot(items, datasetKey) {
   };
 }
 
+function screenNode(screenId) {
+  return {
+    id: screenId + '-screen',
+    className: 'screen',
+    dataset: { screenId },
+    style: { display: 'block', zIndex: '5' },
+    attributes: {},
+    setAttribute(name, attrValue) {
+      this.attributes[name] = attrValue;
+    }
+  };
+}
+
 {
   const sandbox = loadPlatform();
   assert.ok(sandbox.window.Thon09Platform, 'platform is exposed');
@@ -371,6 +384,28 @@ function navRoot(items, datasetKey) {
   assert.strictEqual(sidebarRoot.nodes[1].className, 'nav-link active');
   assert.strictEqual(sidebarRoot.nodes[2].className, 'nav-link');
   assert.strictEqual(bottomRoot.nodes[1].attributes['aria-current'], 'page');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const state = platform.appState.set({ route: '/persons', width: 1280 });
+  const result = platform.screens.sync({ screens, state });
+  assert.strictEqual(result.total, 3);
+  assert.strictEqual(result.shown, 'persons');
+  assert.strictEqual(result.hidden, 2);
+  assert.strictEqual(screens[1].style.display, 'block');
+  assert.strictEqual(screens[1].style.zIndex, '1');
+  assert.strictEqual(screens[1].className, 'screen active');
+  assert.strictEqual(screens[1].attributes['aria-hidden'], 'false');
+  assert.strictEqual(screens[0].style.display, 'none');
+  assert.strictEqual(screens[0].className, 'screen');
+  assert.strictEqual(screens[0].attributes['aria-hidden'], 'true');
+
+  const next = platform.screens.sync({ screens, screenId: 'vehicles' });
+  assert.strictEqual(next.shown, 'vehicles');
+  assert.strictEqual(screens.filter((node) => node.style.display === 'block').length, 1);
+  assert.strictEqual(platform.screens.screenIdFor({ id: 'reports-screen', className: 'screen' }), 'reports');
 }
 
 {

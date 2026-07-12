@@ -1784,6 +1784,83 @@
     };
   }
 
+  function createScreenViewService(appStateService) {
+    function hasClass(node, className) {
+      return (' ' + (node.className || '') + ' ').indexOf(' ' + className + ' ') !== -1;
+    }
+
+    function addClass(node, className) {
+      if (!hasClass(node, className)) node.className = (node.className ? node.className + ' ' : '') + className;
+    }
+
+    function removeClass(node, className) {
+      node.className = (' ' + (node.className || '') + ' ').replace(' ' + className + ' ', ' ').replace(/^\s+|\s+$/g, '');
+    }
+
+    function screenIdFor(node) {
+      if (!node) return null;
+      if (node.dataset && node.dataset.screenId) return node.dataset.screenId;
+      if (node.dataset && node.dataset.screen) return node.dataset.screen;
+      if (node.id) return String(node.id).replace(/-screen$/, '');
+      return null;
+    }
+
+    function collectScreens(root, screens) {
+      if (screens) return Array.prototype.slice.call(screens);
+      var target = root || document;
+      if (!target || !target.querySelectorAll) return [];
+      return Array.prototype.slice.call(target.querySelectorAll('[data-screen-id], .screen'));
+    }
+
+    function hide(node) {
+      if (!node) return;
+      if (!node.style) node.style = {};
+      node.style.display = 'none';
+      node.style.zIndex = '';
+      removeClass(node, 'active');
+      if (node.setAttribute) node.setAttribute('aria-hidden', 'true');
+    }
+
+    function show(node) {
+      if (!node) return;
+      if (!node.style) node.style = {};
+      node.style.display = 'block';
+      node.style.zIndex = '1';
+      addClass(node, 'active');
+      if (node.setAttribute) node.setAttribute('aria-hidden', 'false');
+    }
+
+    function sync(options) {
+      var config = options || {};
+      var state = config.state || appStateService.get();
+      var targetScreen = config.screenId || state.screenId || state.moduleKey;
+      var nodes = collectScreens(config.root, config.screens);
+      var shown = null;
+      nodes.forEach(function (node) {
+        if (screenIdFor(node) === targetScreen) {
+          shown = node;
+          show(node);
+        } else {
+          hide(node);
+        }
+      });
+      return {
+        screenId: targetScreen,
+        total: nodes.length,
+        shown: shown ? screenIdFor(shown) : null,
+        hidden: shown ? nodes.length - 1 : nodes.length
+      };
+    }
+
+    return {
+      sync: sync,
+      hide: hide,
+      show: show,
+      screenIdFor: screenIdFor,
+      collectScreens: collectScreens
+    };
+  }
+
   function createMenuRenderer(menuRegistry, moduleRegistry, menuService) {
     var mobileScreens = [
       'households',
@@ -1942,6 +2019,7 @@
   var history = createRouteHistoryService(router);
   var navigation = createNavigationService(router);
   var navigationView = createNavigationViewService(appState, breadcrumbs);
+  var screens = createScreenViewService(appState);
   var menuRenderer = createMenuRenderer(menus, modules, menu);
 
   var platform = {
@@ -1968,6 +2046,7 @@
     router: router,
     history: history,
     navigationView: navigationView,
+    screens: screens,
     menuRenderer: menuRenderer,
     normalizeApiResponse: normalizeApiResponse,
     createRegistry: createRegistry,
