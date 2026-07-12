@@ -983,6 +983,81 @@ function screenNode(screenId) {
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  screens[0].className = 'screen active';
+  screens[0].style.zIndex = '10';
+  screens[1].style.display = 'none';
+  screens[1].attributes['aria-hidden'] = 'true';
+  screens[2].style.display = 'none';
+  screens[2].attributes['aria-hidden'] = 'true';
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  sidebarRoot.dataset = { platformMenu: 'true' };
+  bottomRoot.dataset = { platformMenu: 'true' };
+  sidebarRoot.nodes[0].className = 'nav-link active';
+  sidebarRoot.nodes[0].attributes['aria-current'] = 'page';
+  bottomRoot.nodes[0].className = 'nav-link active';
+  bottomRoot.nodes[0].attributes['aria-current'] = 'page';
+  sidebarRoot.listeners = {};
+  sidebarRoot.addEventListener = function addEventListener(name, handler) {
+    this.listeners[name] = handler;
+  };
+  sidebarRoot.removeEventListener = function removeEventListener(name, handler) {
+    if (this.listeners[name] === handler) delete this.listeners[name];
+  };
+  bottomRoot.listeners = {};
+  bottomRoot.addEventListener = function addEventListener(name, handler) {
+    this.listeners[name] = handler;
+  };
+  bottomRoot.removeEventListener = function removeEventListener(name, handler) {
+    if (this.listeners[name] === handler) delete this.listeners[name];
+  };
+  const screenRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return screens;
+    }
+  };
+  const domDocument = {
+    querySelector(selector) {
+      return {
+        '.gov-nav': sidebarRoot,
+        '.mobile-bottom-nav': bottomRoot,
+        '[data-platform-screen-root]': screenRoot
+      }[selector] || null;
+    }
+  };
+  platform.appState.set({ route: '/households', moduleKey: 'households', screenId: 'households', action: 'list' });
+
+  const prepared = platform.navigationActivation.prepare({ document: domDocument });
+  assert.strictEqual(prepared.canStart, true);
+  assert.strictEqual(platform.navigationActivation.currentPlan(), prepared);
+  assert.strictEqual(platform.navigationRuntime.active(), false);
+
+  const activated = platform.navigationActivation.activate({ document: domDocument });
+  assert.strictEqual(activated.started, true);
+  assert.strictEqual(activated.active, true);
+  assert.strictEqual(activated.reason, null);
+  assert.strictEqual(platform.navigationRuntime.inspect().delegatedBindings, 2);
+
+  const repeated = platform.navigationActivation.activate({ document: domDocument });
+  assert.strictEqual(repeated.started, false);
+  assert.strictEqual(repeated.active, true);
+  assert.strictEqual(repeated.reason, 'already-active');
+  assert.strictEqual(platform.navigationActivation.deactivate(), true);
+  assert.strictEqual(platform.navigationRuntime.active(), false);
+
+  delete bottomRoot.dataset.platformMenu;
+  const blocked = platform.navigationActivation.activate({ document: domDocument });
+  assert.strictEqual(blocked.started, false);
+  assert.strictEqual(blocked.active, false);
+  assert.strictEqual(blocked.reason, 'plan-blocked');
+  assert.strictEqual(platform.navigationRuntime.active(), false);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
   sidebarRoot.listeners = {};

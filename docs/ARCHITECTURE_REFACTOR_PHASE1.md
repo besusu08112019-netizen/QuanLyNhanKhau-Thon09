@@ -53,6 +53,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.navigationGuard` da duoc them de validate invariant dieu huong: dung mot screen visible, active screen/menu khop AppState va executor khop target screen.
 - `Thon09Platform.navigationReadiness` da duoc them de kiem tra controller, `window.App`, DOM roots, screen count va platform-rendered menu truoc khi bat runtime moi.
 - `Thon09Platform.navigationRuntimePlan` da duoc them de tao dry-run plan truoc khi start runtime moi, gom readiness, guard, roots va binding contract.
+- `Thon09Platform.navigationActivation` da duoc them lam contract `prepare/activate/deactivate` co gate bang runtime plan; khong auto-start tren production.
 - `Thon09Platform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
 - `Thon09Platform.navigationDelegation` da duoc them de chuan hoa mot listener click chung: event -> navigation intent -> NavigationService.
 - `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
@@ -438,33 +439,38 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Tong hop `NavigationReadinessService`, `NavigationGuardService`, DOM roots va binding options thanh `canStart/issues`.
    - Khong gan listener, khong render, khong doi screen; chi cung cap contract de gate rollout sau nay.
 
-30. `NavigationIntentService`
+30. `NavigationActivationService`
+   - Cung cap `prepare()`, `activate()` va `deactivate()` cho runtime moi.
+   - `activate()` chi goi `NavigationRuntimeService.start()` khi `NavigationRuntimePlanService` tra ve `canStart=true`.
+   - Khong auto-start tren production va khong tao fallback; rollout sau nay phai di qua contract nay.
+
+31. `NavigationIntentService`
    - Chuan hoa target tu menu item, DOM element hoac click event thanh `{ moduleKey, screenId, route, action, source }`.
    - Ho tro `data-module`, `data-module-key`, `data-screen`, `data-mobile-screen`, `data-route` va `href`.
    - MenuRenderer da xuat metadata `data-module/data-route/data-action` de migrate click menu khong can doan mapping rieng.
    - Chua tu gan listener runtime; giai doan sau se dung service nay de thay the cac selector click phan tan.
 
-31. `NavigationDelegationService`
+32. `NavigationDelegationService`
    - Cung cap `handleClick(event)` va `bind(root)` de mot listener click chung di qua NavigationIntentService roi NavigationService.
    - Tu `preventDefault` khi click co navigation intent va co `unbind` de thao listener ro rang.
    - Chua auto-bind vao `.gov-nav`, `.mobile-bottom-nav` hay document trong production.
 
-32. `NavigationRuntimeService`
+33. `NavigationRuntimeService`
    - Gom `NavigationDelegationService`, `NavigationService.bindHistory`, va `AppShellViewService.bind` vao mot `start/stop` contract.
    - Dam bao runtime sau nay co mot noi bat/tat listener, history va render shell.
    - Chua auto-start tren production; controller runtime hien tai van giu nguyen cho den khi migrate co test.
 
-33. `RouteHistoryService`
+34. `RouteHistoryService`
    - Chuan hoa `pushState`, `replaceState`, va `popstate` de router URL sau nay co mot contract duy nhat.
    - Sync route vao AppState, khong tu goi NavigationController va khong tu bat listener neu chua goi `start`.
    - Popstate co the noi vao NavigationService qua `navigation.bindHistory(history)`, nhung chua auto-start tren production.
 
-34. `NavigationViewService`
+35. `NavigationViewService`
    - Cap nhat active sidebar va bottom navigation bang AppState, khong dua vao logic rieng desktop/mobile.
    - Render breadcrumb tu BreadcrumbService bang cung snapshot state.
    - Chua tu dong quet DOM runtime khi chua migrate controller de tranh thay doi hang loat.
 
-35. `ScreenViewService`
+36. `ScreenViewService`
    - Hide tat ca screen va show dung screen hien tai tu AppState.
    - Dam bao contract "mot screen hien thi tai mot thoi diem" co test rieng.
    - Chua tu dong thay controller runtime de tranh pha luong cu khi chua migrate module.

@@ -3622,6 +3622,55 @@
     };
   }
 
+  function createNavigationActivationService(navigationRuntimePlanService, navigationRuntimeService) {
+    var lastPlan = null;
+
+    function prepare(options) {
+      lastPlan = Object.assign({
+        preparedAt: Date.now()
+      }, navigationRuntimePlanService.plan(options || {}));
+      return lastPlan;
+    }
+
+    function activate(options) {
+      var config = options || {};
+      var plan = prepare(config);
+      if (!plan.canStart) {
+        return {
+          started: false,
+          active: navigationRuntimeService.active(),
+          reason: 'plan-blocked',
+          plan: plan
+        };
+      }
+      if (navigationRuntimeService.active()) {
+        return {
+          started: false,
+          active: true,
+          reason: 'already-active',
+          plan: plan
+        };
+      }
+      return {
+        started: navigationRuntimeService.start(config),
+        active: navigationRuntimeService.active(),
+        reason: null,
+        plan: plan
+      };
+    }
+
+    return {
+      prepare: prepare,
+      activate: activate,
+      deactivate: function () {
+        return navigationRuntimeService.stop();
+      },
+      currentPlan: function () {
+        return lastPlan;
+      }
+    };
+  }
+
   function createMenuRenderer(menuRegistry, moduleRegistry, menuService) {
     var mobileScreens = [
       'households',
@@ -3804,6 +3853,7 @@
   var navigationRuntimePlan = createNavigationRuntimePlanService(navigationReadiness, navigationGuard, domRoots);
   var shellView = createAppShellViewService(appState, screens, navigationView);
   var navigationRuntime = createNavigationRuntimeService(navigationDelegation, navigation, history, shellView, domRoots);
+  var navigationActivation = createNavigationActivationService(navigationRuntimePlan, navigationRuntime);
   var menuRenderer = createMenuRenderer(menus, modules, menu);
 
   var platform = {
@@ -3838,6 +3888,7 @@
     navigationGuard: navigationGuard,
     navigationReadiness: navigationReadiness,
     navigationRuntimePlan: navigationRuntimePlan,
+    navigationActivation: navigationActivation,
     navigationIntent: navigationIntent,
     navigationDelegation: navigationDelegation,
     menu: menu,
