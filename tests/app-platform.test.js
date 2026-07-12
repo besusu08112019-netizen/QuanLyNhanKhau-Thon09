@@ -15,6 +15,31 @@ function createSandbox() {
       this.detail = options && options.detail;
     },
     document: {
+      createTextNode(text) {
+        return { nodeType: 3, textContent: String(text) };
+      },
+      createElement(tagName) {
+        return {
+          tagName: String(tagName).toUpperCase(),
+          className: '',
+          textContent: '',
+          innerHTML: '',
+          dataset: {},
+          attributes: {},
+          children: [],
+          listeners: {},
+          setAttribute(name, value) {
+            this.attributes[name] = value;
+          },
+          addEventListener(name, handler) {
+            this.listeners[name] = handler;
+          },
+          appendChild(child) {
+            this.children.push(child);
+            return child;
+          }
+        };
+      },
       dispatchEvent(event) {
         listeners.push(event);
       }
@@ -160,6 +185,31 @@ function loadPlatform() {
   }), 'created');
   assert.strictEqual(prevented, true);
   assert.strictEqual(calls[1].dataset.id, '9');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
+  const createButton = platform.components.button({
+    label: 'Them',
+    icon: 'fa-plus',
+    action: 'households.create',
+    variant: 'success',
+    dataset: { id: '12' }
+  });
+  assert.strictEqual(createButton.tagName, 'BUTTON');
+  assert.strictEqual(createButton.className, 'btn btn-success');
+  assert.strictEqual(createButton.dataset.platformAction, 'households.create');
+  assert.strictEqual(createButton.dataset.id, '12');
+  assert.strictEqual(createButton.children[0].tagName, 'I');
+  assert.strictEqual(createButton.children[1].textContent, 'Them');
+
+  const badge = platform.components.badge({ label: 'Active', tone: 'success' });
+  assert.strictEqual(badge.className, 'badge text-bg-success');
+  assert.strictEqual(badge.textContent, 'Active');
+
+  platform.state.loading('households');
+  const stateNode = platform.components.moduleState('households');
+  assert.strictEqual(stateNode.className, 'platform-state platform-state-loading');
 }
 
 {
