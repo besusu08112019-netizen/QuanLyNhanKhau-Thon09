@@ -233,6 +233,17 @@ function screenNode(screenId) {
   assert.strictEqual(platform.apiResources.endpoint('households', 'update', { params: { id: 42 } }), '/households/42/edit');
   assert.strictEqual(platform.apiResources.endpoint('households', 'delete', { params: { id: 42 } }), '/households/42');
   assert.strictEqual(platform.apiResources.operation('households', 'list').route.path, '/households');
+  assert.strictEqual(platform.apiResources.methodFor('list'), 'GET');
+  assert.strictEqual(platform.apiResources.methodFor('edit'), 'PUT');
+  assert.strictEqual(platform.apiResources.methodFor('delete'), 'DELETE');
+  const inspectedEdit = platform.apiResources.inspect('households', 'edit', { params: { id: 42 } });
+  assert.strictEqual(inspectedEdit.moduleKey, 'households');
+  assert.strictEqual(inspectedEdit.action, 'edit');
+  assert.strictEqual(inspectedEdit.operation, 'update');
+  assert.strictEqual(inspectedEdit.method, 'PUT');
+  assert.strictEqual(inspectedEdit.endpoint, '/households/42/edit');
+  assert.strictEqual(inspectedEdit.route.path, '/households/:id/edit');
+  assert.strictEqual(inspectedEdit.permissionAction, platform.ACTION.EDIT);
 
   const calls = [];
   const mockClient = {

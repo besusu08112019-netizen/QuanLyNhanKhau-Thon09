@@ -27,7 +27,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error`, helper `statusFor/is/summary` va event `thon09:module-state-change`.
 - `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `status`, `card`, `form`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; button/form/pagination/tabs moi co the gan truc tiep `data-platform-action`, state view co dataset status/module va hien error tu store.
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
-- `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata.
+- `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata, gom `methodFor()` va `inspect()` read-only cho endpoint/method/permission.
 - `Thon09Platform.crudData` da duoc them lam CrudDataService cho list/detail/create/update/delete, dung ApiResourceService va cap nhat Module State Store.
 - `Thon09Platform.moduleLoader` da duoc them lam ModuleLoaderService chuan hoa resolve module, inspect loader availability, goi loaderName va cap nhat Loading/Loaded/Error state.
 - `Thon09Platform.modals` da co standard modal schema/render contract cho Header, Tabs, Basic, Linked, Extended, History, Attachments, Footer dua tren FormRegistry/ComponentService/ModalLayout.
@@ -304,6 +304,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 
 6. `ApiResourceService`
    - Tao endpoint CRUD theo module/action/params/query dua tren RouterService va CrudRegistry.
+   - `inspect()` tra ve endpoint, HTTP method, route, permission/action metadata ma khong goi API.
    - Goi qua ApiClient chung de response tiep tuc duoc normalize.
    - Chua doi route backend hoac bat module cu dung service nay khi chua migrate tung module.
 
