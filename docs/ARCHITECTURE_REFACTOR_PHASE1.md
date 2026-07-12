@@ -45,7 +45,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.appState` da duoc them lam AppStateService chung cho route/module/screen/action/params/layout/breadcrumb snapshot, event `thon09:app-state-change`, va `subscribe/onChange`.
 - `Thon09Platform.router` da duoc them lam RouterService chung cho `pathFor`, `resolve`, `route -> module -> screen -> action -> params`, va sync vao AppState; chua thay controller runtime khi chua migrate tung module.
 - `Thon09Platform.history` da duoc them lam RouteHistoryService chung cho push/replace/popstate sync vao AppState; service nay khong tu goi NavigationController.
-- `Thon09Platform.navigation` da delegate sang RouterService/AppState; `Thon09NavigationController` chi con la executor doi screen va `window.App` chi la mirror legacy state.
+- `Thon09Platform.navigation` da delegate sang RouterService/AppState; co `activate/bindHistory` de history/popstate di qua cung executor; `Thon09NavigationController` chi con la executor doi screen va `window.App` chi la mirror legacy state.
 - `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
 - `Thon09Platform.screens` da duoc them lam ScreenViewService chung de hide tat ca screen va chi show screen theo AppState.
 - `Thon09Platform.shellView` da duoc them lam AppShellViewService de render/bind screen, sidebar, bottom navigation va breadcrumb tu cung mot AppState snapshot.
@@ -394,12 +394,13 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 23. `NavigationService`
    - Delegate resolve/sync state qua RouterService/AppState.
    - Chi goi `Thon09NavigationController.navigate(screen)` de thuc thi viec doi screen.
+   - Co `activate(state)` va `bindHistory(history)` de URL popstate sau nay khong tao luong dieu huong rieng.
    - Dong bo `window.App.route/moduleKey/screen/action/params` nhu legacy mirror, khong xem `window.App` la source of truth.
 
 24. `RouteHistoryService`
    - Chuan hoa `pushState`, `replaceState`, va `popstate` de router URL sau nay co mot contract duy nhat.
    - Sync route vao AppState, khong tu goi NavigationController va khong tu bat listener neu chua goi `start`.
-   - Giai doan migrate sau se noi popstate vao NavigationService khi test module da san sang.
+   - Popstate co the noi vao NavigationService qua `navigation.bindHistory(history)`, nhung chua auto-start tren production.
 
 25. `NavigationViewService`
    - Cap nhat active sidebar va bottom navigation bang AppState, khong dua vao logic rieng desktop/mobile.

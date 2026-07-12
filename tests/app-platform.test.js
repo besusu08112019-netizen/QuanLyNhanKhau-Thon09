@@ -529,6 +529,25 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
+  const binding = platform.navigation.bindHistory(platform.history, { width: 390 });
+  assert.strictEqual(binding.start(), true);
+  assert.strictEqual(binding.start(), false);
+
+  sandbox.window.location.pathname = '/vehicles/7';
+  sandbox.windowListeners.popstate({ state: { route: '/vehicles/7' } });
+  assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'vehicles');
+  assert.strictEqual(platform.navigation.current().moduleKey, 'vehicles');
+  assert.strictEqual(platform.navigation.current().options.source, 'popstate');
+  assert.strictEqual(platform.navigation.current().options.historyState.route, '/vehicles/7');
+  assert.strictEqual(sandbox.window.App.screen, 'vehicles');
+  assert.strictEqual(binding.active(), true);
+  assert.strictEqual(binding.stop(), true);
+  assert.strictEqual(binding.active(), false);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
   const breadcrumbRoot = {

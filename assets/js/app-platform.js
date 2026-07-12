@@ -2268,8 +2268,8 @@
       return routerService.resolve(target, options || {});
     }
 
-    function navigate(target, options) {
-      current = Object.assign({}, routerService.sync(target, options || {}), { options: options || {} });
+    function activate(state, options) {
+      current = Object.assign({}, state || routerService.current(), { options: options || {} });
       var screen = current.screenId || current.moduleKey;
 
       if (window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') {
@@ -2287,9 +2287,37 @@
       return clone(current);
     }
 
+    function navigate(target, options) {
+      return activate(routerService.sync(target, options || {}), options || {});
+    }
+
+    function bindHistory(historyService, options) {
+      if (!historyService || typeof historyService.start !== 'function' || typeof historyService.stop !== 'function') {
+        throw new Error('RouteHistoryService is required');
+      }
+      var config = options || {};
+      function start() {
+        return historyService.start(function (state, event) {
+          activate(state, Object.assign({}, config, {
+            source: 'popstate',
+            historyState: event && event.state || null
+          }));
+        });
+      }
+      return {
+        start: start,
+        stop: historyService.stop,
+        active: historyService.active || function () {
+          return false;
+        }
+      };
+    }
+
     return {
       resolve: resolve,
       navigate: navigate,
+      activate: activate,
+      bindHistory: bindHistory,
       current: function () {
         return current ? clone(current) : null;
       }
