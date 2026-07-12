@@ -1008,6 +1008,26 @@ function screenNode(screenId) {
   assert.strictEqual(dashboardReports.length, 1);
   assert.strictEqual(dashboardReports[0].scope.key, 'migrationDashboard');
   assert.strictEqual(dashboardReports[0].stages[0].moduleCount, 8);
+
+  const nextHandoff = platform.moduleMigration.handoff({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(nextHandoff.moduleKey, 'dashboardHouseholds');
+  assert.strictEqual(nextHandoff.isNext, true);
+  assert.strictEqual(nextHandoff.canMigrate, true);
+  assert.strictEqual(nextHandoff.checklist.some((item) => item.key === 'routes' && item.ready), true);
+  assert.strictEqual(nextHandoff.checklist.some((item) => item.key === 'dom' && item.ready), true);
+
+  const blockedHandoff = platform.moduleMigration.handoff({
+    moduleKey: 'vehicles',
+    stage: 'navigation',
+    require: { dom: false, loaderConfigured: true }
+  });
+  assert.strictEqual(blockedHandoff.moduleKey, 'vehicles');
+  assert.strictEqual(blockedHandoff.canMigrate, false);
+  assert.strictEqual(blockedHandoff.checklist.some((item) => item.key === 'loaderConfigured' && !item.ready), true);
   platform.moduleMigration.resetProgress({ all: true });
 
   const loaderBlocked = platform.moduleMigration.inspectModule('vehicles', {
