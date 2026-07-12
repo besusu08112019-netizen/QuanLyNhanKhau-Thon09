@@ -2832,8 +2832,38 @@
       };
     }
 
+    function bind(options) {
+      var config = options || {};
+      var active = true;
+      var last = null;
+      var subscription = config.subscription || config.subscribe || (config.moduleKey ? { moduleKey: config.moduleKey } : {});
+      function renderState(state) {
+        if (!active) return last;
+        last = render(Object.assign({}, config, { state: state || appStateService.get() }));
+        return last;
+      }
+      var unsubscribe = appStateService.subscribe(function (state) {
+        renderState(state);
+      }, subscription);
+      function destroy() {
+        if (!active) return false;
+        active = false;
+        return unsubscribe();
+      }
+      renderState(config.state || appStateService.get());
+      return {
+        render: renderState,
+        current: function () {
+          return last;
+        },
+        destroy: destroy,
+        unsubscribe: destroy
+      };
+    }
+
     return {
-      render: render
+      render: render,
+      bind: bind
     };
   }
 

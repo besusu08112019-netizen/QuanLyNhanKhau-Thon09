@@ -609,6 +609,34 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  const binding = platform.shellView.bind({ screens, sidebarRoot, bottomRoot, moduleKey: 'vehicles' });
+  assert.strictEqual(platform.appState.subscriberCount(), 1);
+  assert.strictEqual(binding.current().state.moduleKey, 'dashboard');
+
+  platform.appState.set({ route: '/persons', width: 1280 });
+  assert.strictEqual(binding.current().state.moduleKey, 'dashboard');
+  assert.strictEqual(screens.filter((node) => node.style.display === 'block').length, 0);
+
+  platform.appState.set({ route: '/vehicles/7', width: 1280 });
+  assert.strictEqual(binding.current().state.moduleKey, 'vehicles');
+  assert.strictEqual(binding.current().screen.shown, 'vehicles');
+  assert.strictEqual(sidebarRoot.nodes[2].attributes['aria-current'], 'page');
+  assert.strictEqual(bottomRoot.nodes[2].attributes['aria-current'], 'page');
+  assert.strictEqual(screens.filter((node) => node.style.display === 'block').length, 1);
+
+  assert.strictEqual(binding.destroy(), true);
+  assert.strictEqual(binding.destroy(), false);
+  assert.strictEqual(platform.appState.subscriberCount(), 0);
+  platform.appState.set({ route: '/households', width: 390 });
+  assert.strictEqual(binding.current().state.moduleKey, 'vehicles');
+  assert.strictEqual(screens[2].style.display, 'block');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'SUPER_ADMIN' }), false);

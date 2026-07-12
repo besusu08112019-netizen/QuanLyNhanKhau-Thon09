@@ -48,7 +48,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.navigation` da delegate sang RouterService/AppState; `Thon09NavigationController` chi con la executor doi screen va `window.App` chi la mirror legacy state.
 - `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
 - `Thon09Platform.screens` da duoc them lam ScreenViewService chung de hide tat ca screen va chi show screen theo AppState.
-- `Thon09Platform.shellView` da duoc them lam AppShellViewService de render screen, sidebar, bottom navigation va breadcrumb tu cung mot AppState snapshot.
+- `Thon09Platform.shellView` da duoc them lam AppShellViewService de render/bind screen, sidebar, bottom navigation va breadcrumb tu cung mot AppState snapshot.
 - `Thon09Platform.modalLayout` da duoc them lam ModalLayoutService de chuan hoa dialog/fullscreen presentation theo Layout/AppState.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
@@ -414,6 +414,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 27. `AppShellViewService`
    - Gom ScreenViewService va NavigationViewService vao mot render contract duy nhat.
    - Dam bao controller sau nay chi can render tu AppState, khong cap nhat sidebar/bottom/breadcrumb rieng le.
+   - Co `bind` de subscribe AppState va render shell tu mot noi, ho tro loc theo module trong qua trinh migrate.
    - Chua auto-run tren DOM production cho den khi migrate NavigationController.
 
 28. `ModalLayoutService`
