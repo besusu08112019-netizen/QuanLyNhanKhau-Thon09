@@ -893,6 +893,45 @@ function screenNode(screenId) {
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  sidebarRoot.dataset = { platformMenu: 'true' };
+  bottomRoot.dataset = { platformMenu: 'true' };
+  const screenRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return screens;
+    }
+  };
+  const domDocument = {
+    querySelector(selector) {
+      return {
+        '.gov-nav': sidebarRoot,
+        '.mobile-bottom-nav': bottomRoot,
+        '[data-platform-screen-root]': screenRoot
+      }[selector] || null;
+    }
+  };
+
+  const ready = platform.navigationReadiness.inspect({ document: domDocument });
+  assert.strictEqual(ready.ready, true);
+  assert.strictEqual(ready.controllerAvailable, true);
+  assert.strictEqual(ready.appAvailable, true);
+  assert.strictEqual(ready.roots.sidebar.present, true);
+  assert.strictEqual(ready.menuRendered.bottomNavigation, true);
+  assert.strictEqual(ready.screenCount, 3);
+  assert.strictEqual(platform.navigationReadiness.ready({ document: domDocument }), true);
+
+  delete sidebarRoot.dataset.platformMenu;
+  const blocked = platform.navigationReadiness.inspect({ document: domDocument });
+  assert.strictEqual(blocked.ready, false);
+  assert.strictEqual(blocked.issues.some((item) => item.code === 'sidebar-menu-not-rendered'), true);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
   sidebarRoot.listeners = {};
   sidebarRoot.addEventListener = function addEventListener(name, handler) {
     this.listeners[name] = handler;
