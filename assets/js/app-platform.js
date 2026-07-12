@@ -2632,6 +2632,104 @@
     };
   }
 
+  function createNavigationDomCoverageService(moduleRegistry, domRootService, navigationMappingService) {
+    function issue(code, message, detail) {
+      return {
+        code: code,
+        message: message,
+        detail: detail || {}
+      };
+    }
+
+    function screenIdFor(node) {
+      if (!node) return null;
+      if (node.dataset && node.dataset.screenId) return node.dataset.screenId;
+      if (node.getAttribute && node.getAttribute('data-screen-id')) return node.getAttribute('data-screen-id');
+      if (node.id && /-screen$/.test(node.id)) return node.id.replace(/-screen$/, '');
+      return node.id || null;
+    }
+
+    function targetModules(options) {
+      var config = options || {};
+      if (config.moduleKeys) {
+        return toArray(config.moduleKeys).map(function (moduleKey) {
+          return moduleRegistry.get(moduleKey);
+        }).filter(Boolean);
+      }
+      return navigationMappingService.audit(config.mappingOptions || {}).records
+        .filter(function (record) {
+          return record.exists;
+        })
+        .map(function (record) {
+          return moduleRegistry.get(record.moduleKey);
+        })
+        .filter(Boolean);
+    }
+
+    function audit(options) {
+      var config = options || {};
+      var screens = domRootService.screens(config);
+      var screenMap = {};
+      var issues = [];
+      var records = [];
+
+      screens.forEach(function (node) {
+        var screenId = screenIdFor(node);
+        if (!screenId) {
+          issues.push(issue('screen-id-missing', 'Screen DOM node does not expose a screenId'));
+          return;
+        }
+        if (!screenMap[screenId]) screenMap[screenId] = [];
+        screenMap[screenId].push(node);
+      });
+
+      Object.keys(screenMap).forEach(function (screenId) {
+        if (screenMap[screenId].length > 1) {
+          issues.push(issue('screen-dom-duplicate', 'More than one DOM node maps to the same screenId', {
+            screenId: screenId,
+            count: screenMap[screenId].length
+          }));
+        }
+      });
+
+      targetModules(config).forEach(function (module) {
+        var screenId = module.screenId || module.moduleKey;
+        var count = screenMap[screenId] ? screenMap[screenId].length : 0;
+        var record = {
+          moduleKey: module.moduleKey,
+          screenId: screenId,
+          present: count > 0,
+          count: count
+        };
+        if (!record.present) {
+          issues.push(issue('screen-dom-missing', 'Module screenId does not have a matching DOM screen', {
+            moduleKey: module.moduleKey,
+            screenId: screenId
+          }));
+        }
+        records.push(record);
+      });
+
+      return {
+        ok: issues.length === 0,
+        issues: issues,
+        records: records,
+        screenCount: screens.length,
+        coveredCount: records.filter(function (record) {
+          return record.present;
+        }).length,
+        targetCount: records.length
+      };
+    }
+
+    return {
+      audit: audit,
+      ok: function (options) {
+        return audit(options || {}).ok;
+      }
+    };
+  }
+
   function createNavigationIntentService(menuService, routerService) {
     function datasetValue(node, key) {
       if (!node) return null;
@@ -4057,6 +4155,7 @@
   var navigation = createNavigationService(router, navigationExecutor, navigationTransitions);
   var navigationDelegation = createNavigationDelegationService(navigationIntent, navigation);
   var domRoots = createDomRootService();
+  var navigationDomCoverage = createNavigationDomCoverageService(modules, domRoots, navigationMapping);
   var navigationView = createNavigationViewService(appState, breadcrumbs, domRoots);
   var screens = createScreenViewService(appState, domRoots);
   var navigationDiagnostics = createNavigationDiagnosticsService(appState, navigationTransitions, navigationExecutor, domRoots, screens);
@@ -4104,6 +4203,7 @@
     navigationActivation: navigationActivation,
     navigationRollout: navigationRollout,
     navigationMapping: navigationMapping,
+    navigationDomCoverage: navigationDomCoverage,
     navigationIntent: navigationIntent,
     navigationDelegation: navigationDelegation,
     menu: menu,

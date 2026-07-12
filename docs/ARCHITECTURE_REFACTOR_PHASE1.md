@@ -56,6 +56,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.navigationActivation` da duoc them lam contract `prepare/activate/deactivate` co gate bang runtime plan; khong auto-start tren production.
 - `Thon09Platform.navigationRollout` da duoc them lam status read-only cho rollout runtime moi: ready/blocked/canActivate/active/issues.
 - `Thon09Platform.navigationMapping` da duoc them de audit mapping `menu -> module -> route -> screen` truoc khi rollout runtime moi.
+- `Thon09Platform.navigationDomCoverage` da duoc them de audit `module.screenId -> DOM screen` va phat hien screen thieu/trung truoc khi rollout.
 - `Thon09Platform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
 - `Thon09Platform.navigationDelegation` da duoc them de chuan hoa mot listener click chung: event -> navigation intent -> NavigationService.
 - `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
@@ -456,33 +457,38 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Phat hien menu item thieu module, module thieu list route, route tro sai screen/module, route thieu action va module nam ngoai menu.
    - Chi doc metadata va tra `ok/issues`; khong render menu va khong doi screen.
 
-33. `NavigationIntentService`
+33. `NavigationDomCoverageService`
+   - Audit mapping `module.screenId -> DOM screen` theo cung `DomRootService` cua runtime.
+   - Phat hien screen DOM thieu, screenId trung lap va DOM node khong co screenId.
+   - Chi inspect DOM va tra `ok/issues`; khong hide/show screen va khong gan listener.
+
+34. `NavigationIntentService`
    - Chuan hoa target tu menu item, DOM element hoac click event thanh `{ moduleKey, screenId, route, action, source }`.
    - Ho tro `data-module`, `data-module-key`, `data-screen`, `data-mobile-screen`, `data-route` va `href`.
    - MenuRenderer da xuat metadata `data-module/data-route/data-action` de migrate click menu khong can doan mapping rieng.
    - Chua tu gan listener runtime; giai doan sau se dung service nay de thay the cac selector click phan tan.
 
-34. `NavigationDelegationService`
+35. `NavigationDelegationService`
    - Cung cap `handleClick(event)` va `bind(root)` de mot listener click chung di qua NavigationIntentService roi NavigationService.
    - Tu `preventDefault` khi click co navigation intent va co `unbind` de thao listener ro rang.
    - Chua auto-bind vao `.gov-nav`, `.mobile-bottom-nav` hay document trong production.
 
-35. `NavigationRuntimeService`
+36. `NavigationRuntimeService`
    - Gom `NavigationDelegationService`, `NavigationService.bindHistory`, va `AppShellViewService.bind` vao mot `start/stop` contract.
    - Dam bao runtime sau nay co mot noi bat/tat listener, history va render shell.
    - Chua auto-start tren production; controller runtime hien tai van giu nguyen cho den khi migrate co test.
 
-36. `RouteHistoryService`
+37. `RouteHistoryService`
    - Chuan hoa `pushState`, `replaceState`, va `popstate` de router URL sau nay co mot contract duy nhat.
    - Sync route vao AppState, khong tu goi NavigationController va khong tu bat listener neu chua goi `start`.
    - Popstate co the noi vao NavigationService qua `navigation.bindHistory(history)`, nhung chua auto-start tren production.
 
-37. `NavigationViewService`
+38. `NavigationViewService`
    - Cap nhat active sidebar va bottom navigation bang AppState, khong dua vao logic rieng desktop/mobile.
    - Render breadcrumb tu BreadcrumbService bang cung snapshot state.
    - Chua tu dong quet DOM runtime khi chua migrate controller de tranh thay doi hang loat.
 
-38. `ScreenViewService`
+39. `ScreenViewService`
    - Hide tat ca screen va show dung screen hien tai tu AppState.
    - Dam bao contract "mot screen hien thi tai mot thoi diem" co test rieng.
    - Chua tu dong thay controller runtime de tranh pha luong cu khi chua migrate module.

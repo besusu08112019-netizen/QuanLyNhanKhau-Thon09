@@ -210,6 +210,60 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const screenRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return screens;
+    }
+  };
+  const domDocument = {
+    querySelector(selector) {
+      return {
+        '[data-platform-screen-root]': screenRoot
+      }[selector] || null;
+    }
+  };
+
+  const coverage = platform.navigationDomCoverage.audit({
+    document: domDocument,
+    moduleKeys: ['households', 'persons', 'vehicles']
+  });
+  assert.strictEqual(coverage.ok, true);
+  assert.strictEqual(coverage.screenCount, 3);
+  assert.strictEqual(coverage.coveredCount, 3);
+  assert.strictEqual(coverage.records[0].screenId, 'households');
+
+  const missing = platform.navigationDomCoverage.audit({
+    document: domDocument,
+    moduleKeys: ['households', 'livestock']
+  });
+  assert.strictEqual(missing.ok, false);
+  assert.strictEqual(missing.issues.some((item) => item.code === 'screen-dom-missing'), true);
+
+  const duplicateRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return [screenNode('households'), screenNode('households')];
+    }
+  };
+  const duplicateDocument = {
+    querySelector(selector) {
+      return {
+        '[data-platform-screen-root]': duplicateRoot
+      }[selector] || null;
+    }
+  };
+  const duplicate = platform.navigationDomCoverage.audit({
+    document: duplicateDocument,
+    moduleKeys: ['households']
+  });
+  assert.strictEqual(duplicate.ok, false);
+  assert.strictEqual(duplicate.issues.some((item) => item.code === 'screen-dom-duplicate'), true);
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   const nav = {
     textContent: 'old',
     dataset: {},
