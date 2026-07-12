@@ -410,6 +410,32 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  const breadcrumbRoot = {
+    textContent: '',
+    dataset: {},
+    children: [],
+    appendChild(child) {
+      this.children.push(child);
+      return child;
+    }
+  };
+  const state = platform.appState.set({ route: '/households/42/edit', width: 390 });
+  const result = platform.shellView.render({ screens, sidebarRoot, bottomRoot, breadcrumbRoot, state });
+  assert.strictEqual(result.state.moduleKey, 'households');
+  assert.strictEqual(result.screen.shown, 'households');
+  assert.strictEqual(result.navigation.sidebar.active, 1);
+  assert.strictEqual(result.navigation.bottomNavigation.active, 1);
+  assert.strictEqual(screens.filter((node) => node.style.display === 'block').length, 1);
+  assert.strictEqual(sidebarRoot.nodes[0].attributes['aria-current'], 'page');
+  assert.strictEqual(bottomRoot.nodes[0].attributes['aria-current'], 'page');
+  assert.strictEqual(breadcrumbRoot.children.map((child) => child.textContent).join('>'), 'Dashboard>Quan ly dan cu>Ho gia dinh>Chinh sua');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'SUPER_ADMIN' }), false);

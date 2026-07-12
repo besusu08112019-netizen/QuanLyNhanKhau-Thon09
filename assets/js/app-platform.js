@@ -1861,6 +1861,36 @@
     };
   }
 
+  function createAppShellViewService(appStateService, screenViewService, navigationViewService) {
+    function render(options) {
+      var config = options || {};
+      var state = config.state || appStateService.get();
+      var screenResult = screenViewService.sync({
+        root: config.screenRoot,
+        screens: config.screens,
+        state: state,
+        screenId: config.screenId
+      });
+      var navigationResult = navigationViewService.sync({
+        sidebarRoot: config.sidebarRoot,
+        bottomRoot: config.bottomRoot,
+        mobileRoot: config.mobileRoot,
+        breadcrumbRoot: config.breadcrumbRoot,
+        renderBreadcrumb: config.renderBreadcrumb,
+        state: state
+      });
+      return {
+        state: clone(state),
+        screen: screenResult,
+        navigation: navigationResult
+      };
+    }
+
+    return {
+      render: render
+    };
+  }
+
   function createMenuRenderer(menuRegistry, moduleRegistry, menuService) {
     var mobileScreens = [
       'households',
@@ -2020,6 +2050,7 @@
   var navigation = createNavigationService(router);
   var navigationView = createNavigationViewService(appState, breadcrumbs);
   var screens = createScreenViewService(appState);
+  var shellView = createAppShellViewService(appState, screens, navigationView);
   var menuRenderer = createMenuRenderer(menus, modules, menu);
 
   var platform = {
@@ -2047,6 +2078,7 @@
     history: history,
     navigationView: navigationView,
     screens: screens,
+    shellView: shellView,
     menuRenderer: menuRenderer,
     normalizeApiResponse: normalizeApiResponse,
     createRegistry: createRegistry,
