@@ -418,6 +418,61 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const fromMenu = platform.navigationIntent.fromMenu('households');
+  assert.strictEqual(fromMenu.moduleKey, 'households');
+  assert.strictEqual(fromMenu.screenId, 'households');
+  assert.strictEqual(fromMenu.route, '/households');
+  assert.strictEqual(fromMenu.source, 'menu');
+
+  const moduleNode = {
+    dataset: { module: 'vehicles', action: 'detail', route: '/vehicles/7' },
+    getAttribute() {
+      return null;
+    }
+  };
+  const fromModuleNode = platform.navigationIntent.fromElement(moduleNode);
+  assert.strictEqual(fromModuleNode.moduleKey, 'vehicles');
+  assert.strictEqual(fromModuleNode.action, 'detail');
+  assert.strictEqual(fromModuleNode.route, '/vehicles/7');
+  assert.strictEqual(fromModuleNode.source, 'element');
+
+  const screenNode = {
+    dataset: { screen: 'persons' },
+    getAttribute() {
+      return null;
+    }
+  };
+  assert.strictEqual(platform.navigationIntent.fromElement(screenNode).moduleKey, 'persons');
+
+  const routeNode = {
+    dataset: {},
+    getAttribute(name) {
+      return name === 'href' ? '/temporary-absence' : null;
+    }
+  };
+  assert.strictEqual(platform.navigationIntent.fromElement(routeNode).moduleKey, 'temporaryAbsence');
+
+  const childNode = {
+    dataset: {},
+    parentNode: moduleNode,
+    getAttribute() {
+      return null;
+    }
+  };
+  assert.strictEqual(platform.navigationIntent.closestElement(childNode), moduleNode);
+  assert.strictEqual(platform.navigationIntent.fromEvent({ target: childNode }).source, 'event');
+
+  const emptyNode = {
+    dataset: {},
+    getAttribute(name) {
+      return name === 'href' ? '#' : null;
+    }
+  };
+  assert.strictEqual(platform.navigationIntent.fromElement(emptyNode), null);
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   const crumbs = platform.breadcrumbs.fromRoute('/households/42/edit');
   assert.strictEqual(crumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quan ly dan cu>Ho gia dinh>Chinh sua');
   assert.strictEqual(crumbs[2].moduleKey, 'households');
