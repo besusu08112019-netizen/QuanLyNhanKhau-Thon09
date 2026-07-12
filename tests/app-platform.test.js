@@ -890,6 +890,45 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  platform.forms.register({
+    key: 'vehiclesForm',
+    moduleKey: 'vehicles',
+    modalKey: 'vehiclesModal',
+    sections: {
+      basic: [{ key: 'plate', name: 'plate', label: 'Bien so' }]
+    },
+    actions: [{ key: 'vehicles.save', label: 'Luu' }]
+  });
+  platform.lists.register({
+    key: 'vehiclesList',
+    moduleKey: 'vehicles',
+    screenId: 'vehicles',
+    columns: [{ key: 'plate', label: 'Bien so' }]
+  });
+  platform.crud.register({
+    moduleKey: 'vehicles',
+    formKey: 'vehiclesForm',
+    listKey: 'vehiclesList'
+  });
+
+  const list = platform.crudView.list('vehicles', [{ id: 1, plate: '30A' }], { meta: { total: 1 } }, { header: { title: 'Xe co' } });
+  assert.strictEqual(list.dataset.moduleKey, 'vehicles');
+  assert.strictEqual(list.dataset.operation, 'list');
+  assert.strictEqual(list.children[0].children[0].textContent, 'Xe co');
+  assert.strictEqual(list.children[1].dataset.listKey, 'vehiclesList');
+
+  const form = platform.crudView.form('vehicles', 'edit', { plate: '30A' }, { header: { title: 'Sua xe' } });
+  assert.strictEqual(form.dataset.operation, 'edit');
+  assert.strictEqual(form.children[1].dataset.formKey, 'vehiclesForm');
+
+  const modal = platform.crudView.modal('vehicles', 'create', { plate: '30B' }, { title: 'Them xe' });
+  assert.strictEqual(modal.dataset.modalKey, 'vehiclesModal');
+  assert.strictEqual(modal.children[0].children[0].textContent, 'Them xe');
+  assert.strictEqual(platform.crudView.workflow('vehicles').list.moduleKey, 'vehicles');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   assert.strictEqual(platform.layout.modeFor(1280).key, 'desktop');
   assert.strictEqual(platform.layout.modeFor(900).key, 'tablet');
   assert.strictEqual(platform.layout.modeFor(390).key, 'mobile');
