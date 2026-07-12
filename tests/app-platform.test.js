@@ -227,6 +227,46 @@ function screenNode(screenId) {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  assert.strictEqual(platform.apiResources.endpoint('households', 'list', { query: { page: 2, search: 'A B' } }), '/households?page=2&search=A%20B');
+  assert.strictEqual(platform.apiResources.endpoint('households', 'detail', { params: { id: 42 } }), '/households/42');
+  assert.strictEqual(platform.apiResources.endpoint('households', 'update', { params: { id: 42 } }), '/households/42/edit');
+  assert.strictEqual(platform.apiResources.endpoint('households', 'delete', { params: { id: 42 } }), '/households/42');
+  assert.strictEqual(platform.apiResources.operation('households', 'list').route.path, '/households');
+
+  const calls = [];
+  const mockClient = {
+    get(path) {
+      calls.push(['get', path]);
+      return { success: true, data: [] };
+    },
+    post(path, body) {
+      calls.push(['post', path, body]);
+      return { success: true, data: body };
+    },
+    put(path, body) {
+      calls.push(['put', path, body]);
+      return { success: true, data: body };
+    },
+    delete(path) {
+      calls.push(['delete', path]);
+      return { success: true, data: null };
+    }
+  };
+  const resources = platform.createApiResourceService(mockClient, platform.router, platform.crud);
+  assert.strictEqual(resources.list('persons', { page: 1 }).success, true);
+  resources.create('persons', { name: 'A' });
+  resources.update('persons', 9, { name: 'B' });
+  resources.delete('persons', 9);
+  assert.deepStrictEqual(calls.map((call) => call[0] + ':' + call[1]), [
+    'get:/persons?page=1',
+    'post:/persons/create',
+    'put:/persons/9/edit',
+    'delete:/persons/9'
+  ]);
+}
+
+{
   const sandbox = loadPlatform();
   const result = sandbox.window.Thon09Platform.navigation.navigate('/persons');
   assert.strictEqual(result.moduleKey, 'persons');

@@ -203,6 +203,65 @@
     };
   }
 
+  function createApiResourceService(apiClient, routerService, crudService) {
+    function encodeQuery(query) {
+      var parts = [];
+      Object.keys(query || {}).forEach(function (key) {
+        var value = query[key];
+        if (value === undefined || value === null || value === '') return;
+        if (Array.isArray(value)) {
+          value.forEach(function (item) {
+            if (item !== undefined && item !== null && item !== '') parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(item));
+          });
+          return;
+        }
+        parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+      });
+      return parts.length ? '?' + parts.join('&') : '';
+    }
+
+    function endpoint(moduleKey, operation, options) {
+      var config = options || {};
+      var action = operation || 'list';
+      var params = config.params || {};
+      var query = config.query || {};
+      var route = routerService.pathFor(moduleKey, action === 'update' ? 'edit' : action, params);
+      if (action === 'delete' && params.id) route = routerService.pathFor(moduleKey, 'detail', params);
+      return route + encodeQuery(query);
+    }
+
+    function operation(moduleKey, action, options) {
+      var config = options || {};
+      var workflow = crudService.operationFor(moduleKey, action === 'update' ? 'edit' : action, config.permissionContext || {});
+      return Object.assign({}, workflow || {}, {
+        endpoint: endpoint(moduleKey, action, config)
+      });
+    }
+
+    return {
+      endpoint: endpoint,
+      operation: operation,
+      list: function (moduleKey, query, options) {
+        return apiClient.get(endpoint(moduleKey, 'list', Object.assign({}, options || {}, { query: query || {} })), options || {});
+      },
+      detail: function (moduleKey, id, options) {
+        return apiClient.get(endpoint(moduleKey, 'detail', Object.assign({}, options || {}, { params: { id: id } })), options || {});
+      },
+      create: function (moduleKey, body, options) {
+        return apiClient.post(endpoint(moduleKey, 'create', options || {}), body || {}, options || {});
+      },
+      update: function (moduleKey, id, body, options) {
+        return apiClient.put(endpoint(moduleKey, 'update', Object.assign({}, options || {}, { params: { id: id } })), body || {}, options || {});
+      },
+      delete: function (moduleKey, id, options) {
+        return apiClient.delete(endpoint(moduleKey, 'delete', Object.assign({}, options || {}, { params: { id: id } })), options || {});
+      },
+      del: function (moduleKey, id, options) {
+        return this.delete(moduleKey, id, options || {});
+      }
+    };
+  }
+
   function createPermissionService() {
     var rules = new Map();
     var moduleAliases = {
@@ -2084,6 +2143,7 @@
   var appState = createAppStateService(routes, modules, layout, breadcrumbs);
   var modalLayout = createModalLayoutService(layout, appState);
   var router = createRouterService(routes, modules, appState);
+  var apiResources = createApiResourceService(api, router, crud);
   var history = createRouteHistoryService(router);
   var navigation = createNavigationService(router);
   var navigationView = createNavigationViewService(appState, breadcrumbs);
@@ -2109,6 +2169,7 @@
     modalLayout: modalLayout,
     modals: modals,
     api: api,
+    apiResources: apiResources,
     navigation: navigation,
     menu: menu,
     breadcrumbs: breadcrumbs,
@@ -2121,7 +2182,8 @@
     menuRenderer: menuRenderer,
     normalizeApiResponse: normalizeApiResponse,
     createRegistry: createRegistry,
-    createApiClient: createApiClient
+    createApiClient: createApiClient,
+    createApiResourceService: createApiResourceService
   };
 
   function registerDefaults() {

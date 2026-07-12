@@ -27,6 +27,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error` va event `thon09:module-state-change`.
 - `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `card`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; button/pagination/tabs moi co the gan truc tiep `data-platform-action`.
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
+- `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata.
 - `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
 - `Thon09Platform.routes` da co metadata CRUD chuan cho cac module nghiep vu: list, create, detail, edit. Vi du `/persons/create`, `/persons/:id`, `/persons/:id/edit`.
 - `Thon09Platform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
@@ -294,90 +295,95 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Van chap nhan legacy `{ ok, success, data }` trong giai doan qua do.
    - Cung cap method CRUD chung: `get`, `post`, `put`, `patch`, `delete/del`.
 
-6. `PermissionService`
+6. `ApiResourceService`
+   - Tao endpoint CRUD theo module/action/params/query dua tren RouterService va CrudRegistry.
+   - Goi qua ApiClient chung de response tiep tuc duoc normalize.
+   - Chua doi route backend hoac bat module cu dung service nay khi chua migrate tung module.
+
+7. `PermissionService`
    - Chuan action: `View`, `Create`, `Edit`, `Delete`, `Import`, `Export`, `Manage`.
    - UI chi hoi service, khong doc role truc tiep.
    - Chap nhan alias module/action cu trong qua trinh migrate tung module.
 
-7. `StateService`
+8. `StateService`
    - Moi module chi ghi nhan mot trong bon trang thai `Loading`, `Loaded`, `Empty`, `Error`.
    - State thay doi phat `thon09:module-state-change` de layout/component co the render theo contract chung.
 
-8. `ModalService`
+9. `ModalService`
    - Mot component modal chung: Header, Tabs, Basic, Extended, History, Attachments, Footer.
    - Module dang ky form schema/action, khong tu tao popup rieng.
 
-9. `FormRegistry`
+10. `FormRegistry`
    - Dang ky form theo module, modalKey, sections, fields va actions.
    - Sections chuan: `basic`, `linked`, `extended`, `attachments`.
    - Cung cap helper serialize form DOM, chua thay the global opener cu khi chua migrate module.
 
-10. `ListRegistry`
+11. `ListRegistry`
    - Dang ky list/table theo module, screenId, columns, filters, search, pagination, rowActions va bulkActions.
    - Cung cap query defaults chuan cho page, pageSize, search, sort va filters.
    - Chua thay renderer table cu khi chua migrate tung module.
 
-11. `CrudRegistry`
+12. `CrudRegistry`
    - Dang ky workflow CRUD chuan theo module: list, detail, create, edit, delete, import, export, log.
    - Noi metadata route/list/form/action/permission de UI sau nay khong tu hard-code tung module.
    - Chua goi API hay thay flow CRUD cu khi chua migrate tung module.
 
-12. `LayoutRegistry`
+13. `LayoutRegistry`
    - Khai bao mot layout model chung cho desktop, tablet va mobile.
    - Quan ly regions dung chung: sidebar, content, bottomNavigation, modal.
    - Chuan hoa navigation mode va modal presentation, chua thay CSS/DOM runtime khi chua migrate layout.
 
-13. `BreadcrumbService`
+14. `BreadcrumbService`
    - Tao breadcrumb tu route hoac module/action bang Platform metadata.
    - Chuan hoa labels list/detail/create/edit/import/export/log.
    - Co render helper cho vung `[data-platform-breadcrumb]`, chua ep controller runtime doi render khi chua migrate layout.
 
-14. `AppStateService`
+15. `AppStateService`
    - Luu snapshot route/module/screen/action/params/layout/breadcrumb hien tai.
    - Phat event `thon09:app-state-change` de layout/controller sau nay dong bo tu mot nguon.
    - Chua thay `window.App.screen` hoac controller runtime khi chua migrate navigation controller.
 
-15. `RouterService`
+16. `RouterService`
    - Resolve route/module/action ve mot state chuan duy nhat.
    - Tao path tu module/action/params de module sau nay khong hard-code URL.
    - Sync vao AppState, chua tu push browser history hoac goi NavigationController trong giai doan nen.
 
-16. `NavigationService`
+17. `NavigationService`
    - Delegate resolve/sync state qua RouterService/AppState.
    - Chi goi `Thon09NavigationController.navigate(screen)` de thuc thi viec doi screen.
    - Dong bo `window.App.route/moduleKey/screen/action/params` nhu legacy mirror, khong xem `window.App` la source of truth.
 
-17. `RouteHistoryService`
+18. `RouteHistoryService`
    - Chuan hoa `pushState`, `replaceState`, va `popstate` de router URL sau nay co mot contract duy nhat.
    - Sync route vao AppState, khong tu goi NavigationController va khong tu bat listener neu chua goi `start`.
    - Giai doan migrate sau se noi popstate vao NavigationService khi test module da san sang.
 
-18. `NavigationViewService`
+19. `NavigationViewService`
    - Cap nhat active sidebar va bottom navigation bang AppState, khong dua vao logic rieng desktop/mobile.
    - Render breadcrumb tu BreadcrumbService bang cung snapshot state.
    - Chua tu dong quet DOM runtime khi chua migrate controller de tranh thay doi hang loat.
 
-19. `ScreenViewService`
+20. `ScreenViewService`
    - Hide tat ca screen va show dung screen hien tai tu AppState.
    - Dam bao contract "mot screen hien thi tai mot thoi diem" co test rieng.
    - Chua tu dong thay controller runtime de tranh pha luong cu khi chua migrate module.
 
-20. `AppShellViewService`
+21. `AppShellViewService`
    - Gom ScreenViewService va NavigationViewService vao mot render contract duy nhat.
    - Dam bao controller sau nay chi can render tu AppState, khong cap nhat sidebar/bottom/breadcrumb rieng le.
    - Chua auto-run tren DOM production cho den khi migrate NavigationController.
 
-21. `ModalLayoutService`
+22. `ModalLayoutService`
    - Chuan hoa presentation `dialog` tren desktop/tablet va `fullscreen` tren mobile.
    - Co helper apply class cho `.modal-dialog`, dua theo LayoutRegistry/AppState.
    - Chua tu dong mo/dong modal hay thay flow popup cu.
 
-22. Component library
+23. Component library
    - Table, Card, Form, Input, Select, Button, Badge, Status, Search, Filter, Modal, Tabs, Upload, Pagination.
    - Cac component phai co loading/empty/error state chuan.
    - Nen tang hien co gom `element`, `button`, `badge`, `card`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; cac component phuc tap hon se them khi migrate tung module.
 
-23. `ActionRegistry`
+24. `ActionRegistry`
    - Chuan hoa cac lenh UI bang `Thon09Platform.actions.register(key, handler)`.
    - Markup moi dung `data-platform-action`, khong dung `data-action` vi `data-action` dang co nghia cu trong permission va mot so module.
    - Giai doan sau se thay inline `onclick` theo tung module, khong thay dong loat khi chua co test module.
