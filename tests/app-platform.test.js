@@ -982,6 +982,34 @@ function screenNode(screenId) {
   assert.strictEqual(resetProgress.nextModuleKey, 'dashboard');
   assert.strictEqual(resetProgress.storedCompletedModules.length, 0);
 
+  platform.moduleMigration.markComplete('dashboard', {
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  const migrationReport = platform.moduleMigration.report({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stages: ['navigation', 'runtime']
+  });
+  assert.strictEqual(migrationReport.ready, true);
+  assert.strictEqual(migrationReport.stageCount, 2);
+  assert.strictEqual(migrationReport.nextStage, 'navigation');
+  assert.strictEqual(migrationReport.nextModuleKey, 'dashboardHouseholds');
+  assert.strictEqual(migrationReport.stages[0].progressKey, 'navigation:migrationDashboard');
+  assert.strictEqual(migrationReport.stages[0].completedModules.join(','), 'dashboard');
+  assert.strictEqual(migrationReport.stages[1].nextModuleKey, 'dashboard');
+
+  const dashboardReports = platform.moduleMigration.reports({
+    document: domDocument,
+    scopes: ['migrationDashboard'],
+    stages: ['navigation']
+  });
+  assert.strictEqual(dashboardReports.length, 1);
+  assert.strictEqual(dashboardReports[0].scope.key, 'migrationDashboard');
+  assert.strictEqual(dashboardReports[0].stages[0].moduleCount, 8);
+  platform.moduleMigration.resetProgress({ all: true });
+
   const loaderBlocked = platform.moduleMigration.inspectModule('vehicles', {
     stage: 'navigation',
     require: { dom: false, loaderConfigured: true }

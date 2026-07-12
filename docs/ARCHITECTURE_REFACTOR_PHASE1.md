@@ -62,6 +62,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.navigationDomCoverage` da duoc them de audit `module.screenId -> DOM screen` va phat hien screen thieu/trung truoc khi rollout.
 - `Thon09Platform.moduleMigration` da duoc them de audit readiness va lap migration plan theo module/scope truoc khi migrate tung module, gom route, DOM screen, loader va CRUD metadata.
 - `Thon09Platform.moduleMigration` da co progress runtime `progress/markComplete/resetProgress` de theo doi module tiep theo trong tung scope ma khong ghi database hay localStorage.
+- `Thon09Platform.moduleMigration` da co report read-only `report/reports` de gom readiness, progress, next module va issue theo tung stage/scope truoc khi tiep tuc migrate module.
 - `Thon09Platform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
 - `Thon09Platform.navigationDelegation` da duoc them de chuan hoa mot listener click chung: event -> navigation intent -> NavigationService.
 - `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
@@ -175,6 +176,8 @@ Sau do can dong goi lai thanh component/service chung.
 Tinh trang hien tai: `Thon09Platform.components` da co factory nho cho cac primitive an toan, gom card, form controls, filter bar, tabs, upload, table va pagination. `Thon09Platform.forms` da co FormRegistry cho schema/sections/serialize. `Thon09Platform.lists` da co ListRegistry cho columns/filters/search/pagination/actions/query defaults. Chua migrate table/form/pagination cua module cu de tranh thay doi layout va CRUD dong loat.
 
 Tinh trang hien tai cua CRUD: `Thon09Platform.crud` da co workflow metadata list/detail/create/edit/delete/import/export/log va biet noi route, list schema, form schema, action key, permission action. Service nay chua tu goi API, chua submit form va chua thay event handler cu; module migration se dung contract nay theo tung module.
+
+Tinh trang hien tai cua migration: `Thon09Platform.moduleMigration.report()` va `reports()` chi doc registry/DOM/runtime memory de lap bao cao readiness theo scope/stage. Cac API nay khong auto-start navigation runtime, khong goi API, khong ghi localStorage va khong thay doi database.
 
 ### Modal/Popup
 
