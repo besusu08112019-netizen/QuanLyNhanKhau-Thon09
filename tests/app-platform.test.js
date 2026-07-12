@@ -1028,6 +1028,34 @@ function screenNode(screenId) {
   assert.strictEqual(blockedHandoff.moduleKey, 'vehicles');
   assert.strictEqual(blockedHandoff.canMigrate, false);
   assert.strictEqual(blockedHandoff.checklist.some((item) => item.key === 'loaderConfigured' && !item.ready), true);
+
+  const advanced = platform.moduleMigration.advance({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(advanced.completed, true);
+  assert.strictEqual(advanced.moduleKey, 'dashboardHouseholds');
+  assert.strictEqual(advanced.progress.nextModuleKey, 'dashboardPopulation');
+  assert.strictEqual(advanced.progress.storedCompletedModules.join(','), 'dashboard,dashboardHouseholds');
+
+  const outOfOrderComplete = platform.moduleMigration.completeHandoff('dashboardVehicles', {
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(outOfOrderComplete.completed, false);
+  assert.strictEqual(outOfOrderComplete.reason, 'out-of-order');
+  assert.strictEqual(outOfOrderComplete.progress.storedCompletedModules.join(','), 'dashboard,dashboardHouseholds');
+
+  const blockedComplete = platform.moduleMigration.completeHandoff('vehicles', {
+    stage: 'navigation',
+    require: { dom: false, loaderConfigured: true },
+    allowOutOfOrder: true
+  });
+  assert.strictEqual(blockedComplete.completed, false);
+  assert.strictEqual(blockedComplete.reason, 'handoff-blocked');
+  assert.strictEqual(blockedComplete.handoff.canMigrate, false);
   platform.moduleMigration.resetProgress({ all: true });
 
   const loaderBlocked = platform.moduleMigration.inspectModule('vehicles', {

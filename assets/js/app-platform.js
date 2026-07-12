@@ -3371,6 +3371,41 @@
       };
     }
 
+    function completeHandoff(moduleKey, options) {
+      var config = options || {};
+      var targetModuleKey = moduleKey || config.moduleKey || null;
+      var packet = handoff(Object.assign({}, config, targetModuleKey ? { moduleKey: targetModuleKey } : {}));
+      if (!packet.canMigrate) {
+        return {
+          completed: false,
+          reason: 'handoff-blocked',
+          moduleKey: packet.moduleKey,
+          handoff: packet,
+          progress: progress(config)
+        };
+      }
+      if (!packet.isNext && config.allowOutOfOrder !== true) {
+        return {
+          completed: false,
+          reason: 'out-of-order',
+          moduleKey: packet.moduleKey,
+          handoff: packet,
+          progress: progress(config)
+        };
+      }
+      return {
+        completed: true,
+        reason: null,
+        moduleKey: packet.moduleKey,
+        handoff: packet,
+        progress: markComplete(packet.moduleKey, config)
+      };
+    }
+
+    function advance(options) {
+      return completeHandoff(null, options || {});
+    }
+
     function assertReady(options) {
       var report = inspect(options || {});
       if (!report.ready) {
@@ -3391,6 +3426,8 @@
       report: report,
       reports: reports,
       handoff: handoff,
+      completeHandoff: completeHandoff,
+      advance: advance,
       ready: function (options) {
         return inspect(options || {}).ready;
       },
