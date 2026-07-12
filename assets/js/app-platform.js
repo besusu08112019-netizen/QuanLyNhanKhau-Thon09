@@ -2918,6 +2918,7 @@
   }
 
   function createModuleMigrationService(moduleRegistry, routeRegistry, moduleLoaderService, crudService, navigationDomCoverageService, navigationScopeService) {
+    var completions = new Map();
     var stageDefaults = {
       navigation: {
         routes: ['list'],
@@ -3096,6 +3097,28 @@
       };
     }
 
+    function progressKey(options) {
+      var config = options || {};
+      var target = targetKeys(config);
+      var stage = config.stage || 'navigation';
+      var scopeKey = target.scope ? target.scope.key : target.moduleKeys.join(',');
+      return stage + ':' + scopeKey;
+    }
+
+    function storedCompleted(options) {
+      var values = completions.get(progressKey(options || {})) || [];
+      return values.slice();
+    }
+
+    function completedModules(options) {
+      var seen = {};
+      return storedCompleted(options).concat(toArray(options && options.completedModules)).filter(function (moduleKey) {
+        if (!moduleKey || seen[moduleKey]) return false;
+        seen[moduleKey] = true;
+        return true;
+      });
+    }
+
     function inspect(options) {
       var config = options || {};
       var target = targetKeys(config);
@@ -3128,7 +3151,7 @@
       var config = options || {};
       var report = inspect(config);
       var completed = {};
-      toArray(config.completedModules).forEach(function (moduleKey) {
+      completedModules(config).forEach(function (moduleKey) {
         completed[moduleKey] = true;
       });
       var order = toArray(config.order).length ? toArray(config.order) : report.records.map(function (record) {
@@ -3176,6 +3199,31 @@
       };
     }
 
+    function markComplete(moduleKey, options) {
+      var config = options || {};
+      var key = progressKey(config);
+      var current = storedCompleted(config);
+      if (current.indexOf(moduleKey) === -1) current.push(moduleKey);
+      completions.set(key, current);
+      return progress(config);
+    }
+
+    function progress(options) {
+      var config = options || {};
+      var current = completedModules(config);
+      return Object.assign({}, plan(Object.assign({}, config, { completedModules: current })), {
+        progressKey: progressKey(config),
+        storedCompletedModules: storedCompleted(config)
+      });
+    }
+
+    function resetProgress(options) {
+      var config = options || {};
+      if (config.all === true) completions.clear();
+      else completions.delete(progressKey(config));
+      return progress(config);
+    }
+
     function assertReady(options) {
       var report = inspect(options || {});
       if (!report.ready) {
@@ -3190,6 +3238,9 @@
       inspectModule: inspectModule,
       inspect: inspect,
       plan: plan,
+      progress: progress,
+      markComplete: markComplete,
+      resetProgress: resetProgress,
       ready: function (options) {
         return inspect(options || {}).ready;
       },

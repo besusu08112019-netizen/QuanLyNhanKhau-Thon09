@@ -957,6 +957,31 @@ function screenNode(screenId) {
   assert.strictEqual(dashboardPlanAfterFirst.nextModuleKey, 'dashboardHouseholds');
   assert.strictEqual(dashboardPlanAfterFirst.completedCount, 1);
 
+  const initialProgress = platform.moduleMigration.progress({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(initialProgress.nextModuleKey, 'dashboard');
+  assert.strictEqual(initialProgress.storedCompletedModules.length, 0);
+
+  const afterDashboard = platform.moduleMigration.markComplete('dashboard', {
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(afterDashboard.nextModuleKey, 'dashboardHouseholds');
+  assert.strictEqual(afterDashboard.completedModules.join(','), 'dashboard');
+  assert.strictEqual(afterDashboard.storedCompletedModules.join(','), 'dashboard');
+
+  const resetProgress = platform.moduleMigration.resetProgress({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(resetProgress.nextModuleKey, 'dashboard');
+  assert.strictEqual(resetProgress.storedCompletedModules.length, 0);
+
   const loaderBlocked = platform.moduleMigration.inspectModule('vehicles', {
     stage: 'navigation',
     require: { dom: false, loaderConfigured: true }
