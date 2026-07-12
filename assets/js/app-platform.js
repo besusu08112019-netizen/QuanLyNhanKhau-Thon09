@@ -3635,6 +3635,17 @@
       };
     }
 
+    function assertCheckpoint(options) {
+      var snapshot = checkpoint(options || {});
+      if (!snapshot.canAdvance) {
+        var blockerCodes = snapshot.blockers.codes.map(function (item) {
+          return item.code;
+        }).join(', ');
+        throw new Error('Module migration checkpoint blocked: ' + (snapshot.reason || 'unknown') + (blockerCodes ? ' (' + blockerCodes + ')' : ''));
+      }
+      return snapshot;
+    }
+
     function assertGate(options) {
       var result = gate(options || {});
       if (!result.canAdvance) {
@@ -3724,6 +3735,7 @@
       current: current,
       next: current,
       checkpoint: checkpoint,
+      assertCheckpoint: assertCheckpoint,
       assertGate: assertGate,
       assertCanAdvance: assertGate,
       completeHandoff: completeHandoff,

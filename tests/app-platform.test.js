@@ -1130,6 +1130,13 @@ function screenNode(screenId) {
   assert.strictEqual(dashboardCheckpoint.queue.percentComplete, 25);
   assert.strictEqual(dashboardCheckpoint.blockers.blockedCount, 0);
   assert.strictEqual(dashboardCheckpoint.timeline.eventCount, 5);
+  const dashboardAssertCheckpoint = platform.moduleMigration.assertCheckpoint({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(dashboardAssertCheckpoint.moduleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardAssertCheckpoint.nextAction, 'advance');
 
   const outOfOrderComplete = platform.moduleMigration.completeHandoff('dashboardVehicles', {
     document: domDocument,
@@ -1217,6 +1224,7 @@ function screenNode(screenId) {
   assert.strictEqual(crudGate.blockedCount, 12);
   assert.throws(() => platform.moduleMigration.assertGate({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }), /Module migration gate blocked: blocked/);
   assert.throws(() => platform.moduleMigration.assertCanAdvance({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }), /Module migration gate blocked/);
+  assert.throws(() => platform.moduleMigration.assertCheckpoint({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }), /Module migration checkpoint blocked: blocked/);
   assert.throws(() => platform.moduleMigration.assertReady({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }), /Module migration blocked/);
 }
 
