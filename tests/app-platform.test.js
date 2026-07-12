@@ -410,7 +410,8 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const result = sandbox.window.Thon09Platform.navigation.navigate('/persons');
+  const platform = sandbox.window.Thon09Platform;
+  const result = platform.navigation.navigate('/persons', { source: 'menu' });
   assert.strictEqual(result.moduleKey, 'persons');
   assert.strictEqual(result.screenId, 'persons');
   assert.strictEqual(result.route, '/persons');
@@ -419,10 +420,21 @@ function screenNode(screenId) {
   assert.strictEqual(sandbox.window.App.moduleKey, 'persons');
   assert.strictEqual(sandbox.window.App.screen, 'persons');
   assert.strictEqual(sandbox.window.App.action, 'list');
-  assert.strictEqual(sandbox.window.Thon09Platform.appState.get().moduleKey, 'persons');
-  assert.strictEqual(sandbox.window.Thon09Platform.navigationExecutor.inspect().screen, 'persons');
-  assert.strictEqual(sandbox.window.Thon09Platform.navigationExecutor.inspect().controllerAvailable, true);
-  assert.strictEqual(sandbox.window.Thon09Platform.navigationExecutor.inspect().appMirrored, true);
+  assert.strictEqual(platform.appState.get().moduleKey, 'persons');
+  assert.strictEqual(platform.navigationExecutor.inspect().screen, 'persons');
+  assert.strictEqual(platform.navigationExecutor.inspect().controllerAvailable, true);
+  assert.strictEqual(platform.navigationExecutor.inspect().appMirrored, true);
+  assert.strictEqual(result.transition.source, 'menu');
+  assert.strictEqual(result.transition.screenId, 'persons');
+  assert.strictEqual(result.transition.previous, null);
+  assert.strictEqual(platform.navigationTransitions.current().executor.controllerAvailable, true);
+
+  const next = platform.navigation.navigate('/vehicles/7', { source: 'detail-link' });
+  assert.strictEqual(next.transition.previous.screenId, 'persons');
+  assert.strictEqual(platform.navigationTransitions.history().length, 2);
+  assert.strictEqual(platform.navigationTransitions.current().source, 'detail-link');
+  assert.strictEqual(platform.navigationTransitions.clear(), true);
+  assert.strictEqual(platform.navigationTransitions.count(), 0);
 }
 
 {
@@ -521,6 +533,9 @@ function screenNode(screenId) {
   assert.strictEqual(event.stopped, true);
   assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'vehicles');
   assert.strictEqual(sandbox.window.App.screen, 'vehicles');
+  assert.strictEqual(handled.transition.source, 'event');
+  assert.strictEqual(handled.transition.intent.moduleKey, 'vehicles');
+  assert.strictEqual(platform.navigationTransitions.current().screenId, 'vehicles');
 
   const root = {
     listeners: {},
@@ -535,6 +550,7 @@ function screenNode(screenId) {
   assert.strictEqual(platform.navigationDelegation.bindingCount(), 1);
   root.listeners.click({ target: { dataset: { screen: 'persons' }, getAttribute() { return null; }, preventDefault() {} } });
   assert.strictEqual(platform.navigation.current().screenId, 'persons');
+  assert.strictEqual(platform.navigationTransitions.current().previous.screenId, 'vehicles');
   assert.strictEqual(unbind(), true);
   assert.strictEqual(unbind(), false);
   assert.strictEqual(platform.navigationDelegation.bindingCount(), 0);
