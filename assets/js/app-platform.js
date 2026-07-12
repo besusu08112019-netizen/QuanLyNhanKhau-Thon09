@@ -532,12 +532,94 @@
       return stateView(record ? record.status : STATE.EMPTY, options || {});
     }
 
+    function table(config) {
+      var options = config || {};
+      var columns = toArray(options.columns).filter(function (column) {
+        return column && column.visible !== false;
+      });
+      var rows = toArray(options.rows);
+      var node = element('table', {
+        className: options.className || 'table platform-table',
+        attrs: options.attrs || {}
+      });
+      var thead = element('thead');
+      var headRow = element('tr');
+      columns.forEach(function (column) {
+        headRow.appendChild(element('th', {
+          text: column.label || column.key,
+          attrs: column.sortable ? { 'data-sortable': 'true', 'data-sort-key': column.key } : {}
+        }));
+      });
+      thead.appendChild(headRow);
+      node.appendChild(thead);
+
+      var tbody = element('tbody');
+      if (!rows.length) {
+        var emptyRow = element('tr', { className: 'platform-table-empty-row' });
+        emptyRow.appendChild(element('td', {
+          className: 'platform-table-empty',
+          text: options.emptyText || 'Khong co du lieu',
+          attrs: { colspan: String(Math.max(columns.length, 1)) }
+        }));
+        tbody.appendChild(emptyRow);
+      } else {
+        rows.forEach(function (row, rowIndex) {
+          var tr = element('tr', {
+            dataset: options.rowKey ? { rowKey: row && row[options.rowKey] } : {}
+          });
+          columns.forEach(function (column) {
+            var value = typeof column.render === 'function'
+              ? column.render(row, rowIndex)
+              : row && row[column.key];
+            tr.appendChild(element('td', {}, value === undefined || value === null ? '' : value));
+          });
+          tbody.appendChild(tr);
+        });
+      }
+      node.appendChild(tbody);
+      return node;
+    }
+
+    function pagination(config) {
+      var options = Object.assign({ page: 1, pageSize: 20, total: 0 }, config || {});
+      var totalPages = Math.max(1, Math.ceil(Number(options.total || 0) / Number(options.pageSize || 20)));
+      var currentPage = Math.min(Math.max(1, Number(options.page || 1)), totalPages);
+      var container = element('nav', {
+        className: options.className || 'platform-pagination',
+        attrs: { 'aria-label': options.label || 'Phan trang' }
+      });
+      var previous = button({
+        label: options.previousLabel || 'Truoc',
+        variant: options.variant || 'light',
+        className: options.buttonClassName || 'btn btn-light',
+        attrs: currentPage <= 1 ? { disabled: 'disabled' } : {},
+        dataset: { page: String(Math.max(1, currentPage - 1)) },
+        action: options.action
+      });
+      var status = element('span', {
+        className: 'platform-pagination-status',
+        text: currentPage + '/' + totalPages
+      });
+      var next = button({
+        label: options.nextLabel || 'Sau',
+        variant: options.variant || 'light',
+        className: options.buttonClassName || 'btn btn-light',
+        attrs: currentPage >= totalPages ? { disabled: 'disabled' } : {},
+        dataset: { page: String(Math.min(totalPages, currentPage + 1)) },
+        action: options.action
+      });
+      append(container, [previous, status, next]);
+      return container;
+    }
+
     return {
       element: element,
       button: button,
       badge: badge,
       stateView: stateView,
       moduleState: moduleState,
+      table: table,
+      pagination: pagination,
       actionSelector: actionService.selector
     };
   }

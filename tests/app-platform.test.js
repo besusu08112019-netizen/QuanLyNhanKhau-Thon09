@@ -282,6 +282,42 @@ function loadPlatform() {
   platform.state.loading('households');
   const stateNode = platform.components.moduleState('households');
   assert.strictEqual(stateNode.className, 'platform-state platform-state-loading');
+
+  const table = platform.components.table({
+    columns: [
+      { key: 'code', label: 'Ma ho', sortable: true },
+      { key: 'headName', label: 'Chu ho' },
+      { key: 'hidden', label: 'An', visible: false }
+    ],
+    rows: [{ id: 1, code: 'H001', headName: 'Nguyen Van A' }],
+    rowKey: 'id'
+  });
+  assert.strictEqual(table.tagName, 'TABLE');
+  assert.strictEqual(table.children[0].tagName, 'THEAD');
+  assert.strictEqual(table.children[0].children[0].children.length, 2);
+  assert.strictEqual(table.children[0].children[0].children[0].attributes['data-sortable'], 'true');
+  assert.strictEqual(table.children[1].children[0].dataset.rowKey, 1);
+  assert.strictEqual(table.children[1].children[0].children[0].children[0].textContent, 'H001');
+
+  const emptyTable = platform.components.table({
+    columns: [{ key: 'code', label: 'Ma ho' }],
+    rows: [],
+    emptyText: 'Trong'
+  });
+  assert.strictEqual(emptyTable.children[1].children[0].children[0].attributes.colspan, '1');
+  assert.strictEqual(emptyTable.children[1].children[0].children[0].textContent, 'Trong');
+
+  const pager = platform.components.pagination({
+    page: 2,
+    pageSize: 10,
+    total: 31,
+    action: 'households.page'
+  });
+  assert.strictEqual(pager.tagName, 'NAV');
+  assert.strictEqual(pager.children[0].dataset.platformAction, 'households.page');
+  assert.strictEqual(pager.children[0].dataset.page, '1');
+  assert.strictEqual(pager.children[1].textContent, '2/4');
+  assert.strictEqual(pager.children[2].dataset.page, '3');
 }
 
 {
