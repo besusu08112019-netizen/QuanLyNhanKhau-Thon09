@@ -195,6 +195,33 @@ function loadPlatform() {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const crumbs = platform.breadcrumbs.fromRoute('/households/42/edit');
+  assert.strictEqual(crumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quan ly dan cu>Ho gia dinh>Chinh sua');
+  assert.strictEqual(crumbs[2].moduleKey, 'households');
+  assert.strictEqual(crumbs[3].params.id, '42');
+
+  const createCrumbs = platform.breadcrumbs.fromModuleAction('persons', 'create');
+  assert.strictEqual(createCrumbs[createCrumbs.length - 1].label, 'Them moi');
+
+  const root = {
+    textContent: 'old',
+    dataset: {},
+    children: [],
+    appendChild(child) {
+      this.children.push(child);
+      return child;
+    }
+  };
+  assert.strictEqual(platform.breadcrumbs.render(root, { route: '/vehicles/7' }), true);
+  assert.strictEqual(root.textContent, '');
+  assert.strictEqual(root.dataset.platformBreadcrumb, 'true');
+  assert.strictEqual(root.children.map((child) => child.textContent).join('>'), 'Dashboard>Quan ly phuong tien>Quan ly xe co>Chi tiet');
+  assert.strictEqual(root.children[0].tagName, 'A');
+  assert.strictEqual(root.children[root.children.length - 1].className, 'breadcrumb-item active');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'SUPER_ADMIN' }), false);
