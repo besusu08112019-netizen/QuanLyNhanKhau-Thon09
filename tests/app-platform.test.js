@@ -572,6 +572,30 @@ function screenNode(screenId) {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  platform.permissions.set('vehicles', platform.ACTION.DELETE, false);
+  platform.permissions.set('vehicles', platform.ACTION.EDIT, true);
+  const denied = platform.permissionView.state('vehicle', 'delete');
+  assert.strictEqual(denied.moduleKey, 'vehicles');
+  assert.strictEqual(denied.action, platform.ACTION.DELETE);
+  assert.strictEqual(denied.allowed, false);
+  assert.strictEqual(platform.permissionView.attrs('vehicles', 'delete').disabled, 'disabled');
+
+  const button = platform.permissionView.button({
+    moduleKey: 'vehicles',
+    permissionAction: 'delete',
+    action: 'vehicles.delete',
+    label: 'Xoa'
+  });
+  assert.strictEqual(button.attributes.disabled, 'disabled');
+  assert.strictEqual(button.dataset.permissionAllowed, 'false');
+  assert.strictEqual(button.dataset.platformAction, 'vehicles.delete');
+
+  const allowed = platform.permissionView.filterActions('vehicles', ['edit', 'delete']);
+  assert.deepStrictEqual(allowed, ['edit']);
+}
+
+{
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
   const loading = platform.state.loading('households', { source: 'test' });

@@ -528,6 +528,53 @@
     return api;
   }
 
+  function createPermissionViewService(permissionService, componentService) {
+    function state(moduleKey, action, context) {
+      var allowed = permissionService.can(moduleKey, action, context || {});
+      return {
+        moduleKey: permissionService.normalizeModule(moduleKey),
+        action: permissionService.normalizeAction(action),
+        allowed: allowed,
+        hidden: !allowed,
+        disabled: !allowed
+      };
+    }
+
+    function attrs(moduleKey, action, context) {
+      var info = state(moduleKey, action, context || {});
+      return info.allowed ? {} : { hidden: 'hidden', disabled: 'disabled', 'aria-disabled': 'true' };
+    }
+
+    function button(config) {
+      var options = config || {};
+      var info = state(options.moduleKey, options.permissionAction || options.action || ACTION.VIEW, options.permissionContext || {});
+      var attrsConfig = Object.assign({}, options.attrs || {}, info.allowed ? {} : { disabled: 'disabled', 'aria-disabled': 'true' });
+      var dataset = Object.assign({}, options.dataset || {}, {
+        permissionModule: info.moduleKey,
+        permissionAction: info.action,
+        permissionAllowed: String(info.allowed)
+      });
+      return componentService.button(Object.assign({}, options, {
+        attrs: attrsConfig,
+        dataset: dataset
+      }));
+    }
+
+    function filterActions(moduleKey, actions, context) {
+      return toArray(actions).filter(function (action) {
+        var key = action && (action.permissionAction || action.action || action.key) || action;
+        return permissionService.can(moduleKey, key, context || {});
+      });
+    }
+
+    return {
+      state: state,
+      attrs: attrs,
+      button: button,
+      filterActions: filterActions
+    };
+  }
+
   function createStateService() {
     var records = new Map();
     var allowedStatuses = Object.keys(STATE).map(function (key) {
@@ -2575,6 +2622,7 @@
   var moduleLoader = createModuleLoaderService(modules, state);
   var actions = createActionService();
   var components = createComponentService(actions, state);
+  var permissionView = createPermissionViewService(permissions, components);
   var forms = createFormService();
   var formView = createFormViewService(components, forms);
   var lists = createListService();
@@ -2607,6 +2655,7 @@
     modules: modules,
     moduleLoader: moduleLoader,
     permissions: permissions,
+    permissionView: permissionView,
     state: state,
     actions: actions,
     components: components,
@@ -2638,6 +2687,7 @@
     createApiResourceService: createApiResourceService,
     createCrudDataService: createCrudDataService,
     createModuleLoaderService: createModuleLoaderService,
+    createPermissionViewService: createPermissionViewService,
     createFormViewService: createFormViewService,
     createListViewService: createListViewService,
     createCrudViewService: createCrudViewService,
