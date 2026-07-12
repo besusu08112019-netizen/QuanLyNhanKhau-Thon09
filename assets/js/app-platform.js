@@ -687,6 +687,7 @@
 
   function createStateService() {
     var records = new Map();
+    var subscribers = [];
     var allowedStatuses = Object.keys(STATE).map(function (key) {
       return STATE[key];
     });
@@ -708,10 +709,16 @@
     }
 
     function emit(record) {
+      var snapshot = clone(record);
       if (document && document.dispatchEvent) {
-        document.dispatchEvent(new CustomEvent('thon09:module-state-change', { detail: clone(record) }));
+        document.dispatchEvent(new CustomEvent('thon09:module-state-change', { detail: snapshot }));
       }
-      return clone(record);
+      subscribers.slice().forEach(function (subscriber) {
+        if (!subscriber.moduleKey || subscriber.moduleKey === record.moduleKey) {
+          subscriber.callback(clone(record));
+        }
+      });
+      return snapshot;
     }
 
     function set(moduleKey, status, options) {
@@ -720,8 +727,24 @@
       return emit(record);
     }
 
+    function subscribe(callback, options) {
+      if (typeof callback !== 'function') throw new Error('State subscriber callback is required');
+      var subscriber = {
+        callback: callback,
+        moduleKey: options && options.moduleKey || null
+      };
+      subscribers.push(subscriber);
+      return function unsubscribe() {
+        var index = subscribers.indexOf(subscriber);
+        if (index !== -1) subscribers.splice(index, 1);
+        return index !== -1;
+      };
+    }
+
     return {
       set: set,
+      subscribe: subscribe,
+      onChange: subscribe,
       loading: function (moduleKey, meta) {
         return set(moduleKey, STATE.LOADING, { meta: meta || null });
       },
@@ -760,6 +783,9 @@
         if (moduleKey) records.delete(moduleKey);
         else records.clear();
         return this;
+      },
+      subscriberCount: function () {
+        return subscribers.length;
       }
     };
   }

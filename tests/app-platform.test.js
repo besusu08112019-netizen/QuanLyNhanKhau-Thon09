@@ -674,6 +674,11 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
+  const stateChanges = [];
+  const unsubscribe = platform.state.subscribe((record) => {
+    stateChanges.push(record.moduleKey + ':' + record.status);
+  }, { moduleKey: 'households' });
+  assert.strictEqual(platform.state.subscriberCount(), 1);
   const loading = platform.state.loading('households', { source: 'test' });
   assert.strictEqual(loading.status, platform.STATE.LOADING);
   assert.strictEqual(platform.state.loaded('households', [{ id: 1 }]).status, platform.STATE.LOADED);
@@ -687,6 +692,12 @@ function screenNode(screenId) {
   assert.strictEqual(platform.state.summary().Error, 1);
   assert.ok(platform.state.list().length >= 3);
   assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:module-state-change'));
+  assert.deepStrictEqual(stateChanges, ['households:Loading', 'households:Loaded']);
+  assert.strictEqual(unsubscribe(), true);
+  assert.strictEqual(unsubscribe(), false);
+  assert.strictEqual(platform.state.subscriberCount(), 0);
+  platform.state.loading('households');
+  assert.deepStrictEqual(stateChanges, ['households:Loading', 'households:Loaded']);
   assert.throws(() => platform.state.set('households', 'Done'), /Invalid module state/);
 }
 

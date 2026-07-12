@@ -24,7 +24,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.modals` da co Bootstrap adapter (`registerBootstrap`, `registerBootstrapAll`) va tu dong dang ky cac `.modal[id]` tinh trong DOM.
 - `Thon09Platform.modals.attachApp()` da bridge `App.modals.*` legacy vao modal registry chung. Cac module cu van co the goi `App.modals.user.show()`, nhung platform da co the quan sat/mo/dong cung modal qua mot service duy nhat.
 - `Thon09Platform.actions` da duoc them lam Action Registry chuan cho lenh UI/CRUD sau nay. Selector moi la `data-platform-action` de khong va cham voi `data-action` hien dang dung cho permission/module cu; service co `contextFor`, `bind`, `unbind`, `isBound`, `boundCount` de delegation duoc kiem soat.
-- `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error`, helper `statusFor/is/summary` va event `thon09:module-state-change`.
+- `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error`, helper `statusFor/is/summary`, `subscribe/onChange` va event `thon09:module-state-change`.
 - `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `status`, `card`, `form`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; button/form/pagination/tabs moi co the gan truc tiep `data-platform-action`, state view co dataset status/module va hien error tu store.
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
 - `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata, gom `methodFor()` va `inspect()` read-only cho endpoint/method/permission.
@@ -196,7 +196,7 @@ State hien tai nam rai rac:
 
 Chua co state machine chuan `Loading`, `Loaded`, `Empty`, `Error`. Nhieu module tu gan `loaded`, `dataset.loaded`, text loading/empty/error rieng.
 
-Tinh trang hien tai: `Thon09Platform.state` da co contract chung cho module state va phat event khi thay doi. Cac module cu chua bi ep migrate ngay de tranh thay doi UI/CRUD dong loat.
+Tinh trang hien tai: `Thon09Platform.state` da co contract chung cho module state, phat event khi thay doi va co subscriber noi bo co the loc theo module. Cac module cu chua bi ep migrate ngay de tranh thay doi UI/CRUD dong loat.
 
 ### API
 
@@ -333,7 +333,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 11. `StateService`
    - Moi module chi ghi nhan mot trong bon trang thai `Loading`, `Loaded`, `Empty`, `Error`.
    - State thay doi phat `thon09:module-state-change` de layout/component co the render theo contract chung.
-   - Co helper `statusFor`, `is` va `summary` de module sau nay khong tu doc local flags rieng.
+   - Co helper `statusFor`, `is`, `summary`, `subscribe/onChange` de module sau nay khong tu doc local flags rieng hoac tu gan listener rieng.
 
 12. `ModalService`
    - Mot component modal chung: Header, Tabs, Basic, Extended, History, Attachments, Footer.
