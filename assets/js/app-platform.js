@@ -950,6 +950,75 @@
     return api;
   }
 
+  function createFormViewService(componentService, formService) {
+    function field(fieldConfig, values) {
+      var config = fieldConfig || {};
+      var payload = values || {};
+      var fieldKey = config.name || config.key;
+      var value = payload[fieldKey];
+      var control;
+      if (config.type === 'select') {
+        control = componentService.select(Object.assign({}, config, { value: value !== undefined ? value : config.defaultValue }));
+      } else if (config.type === 'file' || config.type === 'upload') {
+        control = componentService.upload(Object.assign({}, config, { label: null }));
+      } else {
+        control = componentService.input(Object.assign({}, config, { value: value !== undefined ? value : config.defaultValue }));
+      }
+      var children = [];
+      if (config.label) children.push(componentService.element('label', { className: 'form-label', text: config.label }));
+      children.push(control);
+      if (config.helpText) children.push(componentService.element('div', { className: 'form-text', text: config.helpText }));
+      return componentService.element('div', {
+        className: config.wrapperClassName || 'platform-form-field',
+        dataset: { fieldKey: fieldKey || '' }
+      }, children);
+    }
+
+    function section(formKey, sectionKey, values, options) {
+      var form = formService.get(formKey);
+      var config = options || {};
+      var fields = config.fields || formService.fieldsFor(formKey, sectionKey);
+      var labels = {
+        basic: 'Thong tin co ban',
+        linked: 'Thong tin lien ket',
+        extended: 'Thong tin mo rong',
+        history: 'Lich su',
+        attachments: 'Tep dinh kem'
+      };
+      var children = [];
+      if (config.title !== false) children.push(componentService.element('h3', { className: 'platform-form-section-title', text: config.title || labels[sectionKey] || sectionKey }));
+      toArray(fields).forEach(function (item) {
+        children.push(field(item, values || {}));
+      });
+      return componentService.element('section', {
+        className: config.className || 'platform-form-section',
+        dataset: { formKey: formKey || '', sectionKey: sectionKey || '', moduleKey: form && form.moduleKey || '' }
+      }, children);
+    }
+
+    function formNode(formKey, values, options) {
+      var form = formService.get(formKey);
+      if (!form) throw new Error('Form not registered: ' + formKey);
+      var config = options || {};
+      var sections = toArray(config.sections).length ? toArray(config.sections) : formService.sectionOrder();
+      var children = sections.map(function (sectionKey) {
+        return section(formKey, sectionKey, values || {}, { title: config.sectionTitle !== false });
+      });
+      return componentService.element('form', {
+        className: config.className || 'platform-form',
+        attrs: Object.assign({ novalidate: 'novalidate' }, config.attrs || {}),
+        dataset: { formKey: form.key, moduleKey: form.moduleKey || '' }
+      }, children);
+    }
+
+    return {
+      field: field,
+      section: section,
+      form: formNode,
+      serialize: formService.serialize
+    };
+  }
+
   function createListService() {
     var registry = createRegistry('list', 'key');
     var defaultPageSize = 20;
@@ -1288,7 +1357,7 @@
     };
   }
 
-  function createModalService(componentService, formService, modalLayoutService) {
+  function createModalService(componentService, formService, modalLayoutService, formViewService) {
     var registry = createRegistry('modal', 'key');
     var active = null;
     var bridgedApps = [];
@@ -1388,24 +1457,11 @@
     }
 
     function fieldNode(field, payload) {
-      var config = field || {};
-      var value = payload && payload[config.name || config.key];
-      var control;
-      if (config.type === 'select') {
-        control = componentService.select(Object.assign({}, config, { value: value !== undefined ? value : config.defaultValue }));
-      } else if (config.type === 'file' || config.type === 'upload') {
-        control = componentService.upload(Object.assign({}, config, { label: null }));
-      } else {
-        control = componentService.input(Object.assign({}, config, { value: value !== undefined ? value : config.defaultValue }));
-      }
-      var children = [];
-      if (config.label) children.push(componentService.element('label', { className: 'form-label', text: config.label }));
-      children.push(control);
-      if (config.helpText) children.push(componentService.element('div', { className: 'form-text', text: config.helpText }));
-      return componentService.element('div', {
-        className: config.wrapperClassName || 'platform-modal-field',
-        dataset: { fieldKey: config.key || config.name || '' }
-      }, children);
+      var node = formViewService
+        ? formViewService.field(field, payload || {})
+        : componentService.element('div', { className: 'platform-form-field' });
+      node.className = (node.className || 'platform-form-field').replace('platform-form-field', 'platform-modal-field');
+      return node;
     }
 
     function renderStandard(config, payload) {
@@ -2226,6 +2282,7 @@
   var actions = createActionService();
   var components = createComponentService(actions, state);
   var forms = createFormService();
+  var formView = createFormViewService(components, forms);
   var lists = createListService();
   var crud = createCrudService(routes, lists, forms, permissions);
   var layout = createLayoutService();
@@ -2234,7 +2291,7 @@
   var breadcrumbs = createBreadcrumbService(routes, modules, menu);
   var appState = createAppStateService(routes, modules, layout, breadcrumbs);
   var modalLayout = createModalLayoutService(layout, appState);
-  var modals = createModalService(components, forms, modalLayout);
+  var modals = createModalService(components, forms, modalLayout, formView);
   var router = createRouterService(routes, modules, appState);
   var apiResources = createApiResourceService(api, router, crud);
   var history = createRouteHistoryService(router);
@@ -2256,6 +2313,7 @@
     actions: actions,
     components: components,
     forms: forms,
+    formView: formView,
     lists: lists,
     crud: crud,
     layout: layout,
@@ -2277,6 +2335,7 @@
     createRegistry: createRegistry,
     createApiClient: createApiClient,
     createApiResourceService: createApiResourceService,
+    createFormViewService: createFormViewService,
     createModalService: createModalService
   };
 

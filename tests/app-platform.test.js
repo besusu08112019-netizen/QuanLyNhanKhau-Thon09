@@ -714,6 +714,34 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  platform.forms.register({
+    key: 'personForm',
+    moduleKey: 'persons',
+    sections: {
+      basic: [{ key: 'fullName', name: 'fullName', label: 'Ho ten', defaultValue: '' }],
+      linked: [{ key: 'householdId', name: 'householdId', label: 'Ho gia dinh', defaultValue: '' }],
+      extended: [{ key: 'gender', name: 'gender', label: 'Gioi tinh', type: 'select', options: [{ value: 'M', label: 'Nam' }] }],
+      attachments: [{ key: 'files', name: 'files', label: 'Ho so', type: 'upload' }]
+    }
+  });
+  const field = platform.formView.field({ key: 'fullName', name: 'fullName', label: 'Ho ten' }, { fullName: 'Nguyen Van A' });
+  assert.strictEqual(field.className, 'platform-form-field');
+  assert.strictEqual(field.dataset.fieldKey, 'fullName');
+  assert.strictEqual(field.children[1].attributes.value, 'Nguyen Van A');
+
+  const section = platform.formView.section('personForm', 'basic', { fullName: 'Tran B' });
+  assert.strictEqual(section.dataset.sectionKey, 'basic');
+  assert.strictEqual(section.children[1].dataset.fieldKey, 'fullName');
+
+  const form = platform.formView.form('personForm', { gender: 'M' }, { sections: ['basic', 'extended'] });
+  assert.strictEqual(form.className, 'platform-form');
+  assert.strictEqual(form.dataset.formKey, 'personForm');
+  assert.strictEqual(form.children.length, 2);
+  assert.strictEqual(form.children[1].dataset.sectionKey, 'extended');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   platform.lists.register({
     key: 'householdList',
     moduleKey: 'households',
