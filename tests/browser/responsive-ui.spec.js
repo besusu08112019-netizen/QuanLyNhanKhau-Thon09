@@ -198,7 +198,8 @@ test.describe('responsive system navigation audit', () => {
     }
   });
 
-  test('narrow desktop sidebar keeps module clicks inside the viewport', async ({ page }) => {
+  test('narrow desktop sidebar keeps module clicks inside the viewport', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chromium', 'Desktop sidebar geometry only applies to the desktop project.');
     await openAuthenticatedApp(page, 960);
     await page.setViewportSize({ width: 960, height: 760 });
     await page.evaluate(() => {

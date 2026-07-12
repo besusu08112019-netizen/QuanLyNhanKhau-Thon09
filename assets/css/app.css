@@ -5649,6 +5649,10 @@ body.app-authenticated {
     padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
+  body.app-authenticated #gisScreen .gis-area-list {
+    padding-bottom: calc(var(--mobile-bottom-nav-clearance, 112px) + 24px);
+  }
+
   body.app-authenticated .mobile-bottom-nav {
     position: fixed;
     left: max(8px, env(safe-area-inset-left, 0px)) !important;

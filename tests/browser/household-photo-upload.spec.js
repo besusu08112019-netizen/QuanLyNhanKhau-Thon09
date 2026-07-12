@@ -17,6 +17,15 @@ function pngFile(name) {
   return file;
 }
 
+async function expectHouseholdModalOpen(page) {
+  await expect.poll(() => page.locator('#householdModal').evaluate(modal => {
+    const style = getComputedStyle(modal);
+    return modal.classList.contains('show')
+      && style.display !== 'none'
+      && modal.getAttribute('aria-hidden') !== 'true';
+  })).toBe(true);
+}
+
 test('household photo is uploaded, read back and replaced from library/camera inputs', async ({ page }) => {
   const consoleErrors = [];
   page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
@@ -114,9 +123,10 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    window.App.token = 'test-token';
-    window.App.csrfToken = 'test-csrf';
-    window.App.user = user;
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
     localStorage.setItem('thon09_token', 'test-token');
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
@@ -126,7 +136,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   });
 
   await page.evaluate(() => window.openHouseholdForm());
-  await expect(page.locator('#householdModal')).toHaveClass(/show/);
+  await expectHouseholdModalOpen(page);
   await page.evaluate(() => window.thon09EnhanceHouseholdPhotoCapture && window.thon09EnhanceHouseholdPhotoCapture());
   await expect(page.locator('#householdPhotoLibraryBtn')).toBeVisible();
   await page.locator('#householdModal input[name="householdCode"]').fill('QA-PHOTO-001');
@@ -162,7 +172,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   });
 
   await page.evaluate(() => window.openHouseholdForm(123));
-  await expect(page.locator('#householdModal')).toHaveClass(/show/);
+  await expectHouseholdModalOpen(page);
   await expect(page.locator('#householdPhotoViewBtn')).toBeVisible();
   await expect(page.locator('#householdForm input[name="id"]')).toHaveValue('123');
   await page.locator('#householdModal .household-photo-widget input[type="file"]').last().setInputFiles(pngFile('thon09-camera.png'));
