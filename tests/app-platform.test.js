@@ -1117,6 +1117,20 @@ function screenNode(screenId) {
   });
   assert.strictEqual(dashboardNext.moduleKey, dashboardCurrent.moduleKey);
 
+  const dashboardCheckpoint = platform.moduleMigration.checkpoint({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(dashboardCheckpoint.nextAction, 'advance');
+  assert.strictEqual(dashboardCheckpoint.moduleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardCheckpoint.canAdvance, true);
+  assert.strictEqual(dashboardCheckpoint.current.moduleKey, dashboardCurrent.moduleKey);
+  assert.strictEqual(dashboardCheckpoint.report.nextModuleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardCheckpoint.queue.percentComplete, 25);
+  assert.strictEqual(dashboardCheckpoint.blockers.blockedCount, 0);
+  assert.strictEqual(dashboardCheckpoint.timeline.eventCount, 5);
+
   const outOfOrderComplete = platform.moduleMigration.completeHandoff('dashboardVehicles', {
     document: domDocument,
     navigationScope: 'migrationDashboard',

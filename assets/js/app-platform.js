@@ -3609,6 +3609,32 @@
       };
     }
 
+    function checkpoint(options) {
+      var config = options || {};
+      var snapshot = current(config);
+      var summary = report(config);
+      var history = timeline(config);
+      var nextAction = 'complete';
+      if (snapshot.canAdvance) nextAction = 'advance';
+      else if (snapshot.reason === 'blocked' || snapshot.reason === 'handoff-blocked') nextAction = 'resolve-blockers';
+      return {
+        generatedAt: Date.now(),
+        nextAction: nextAction,
+        stage: snapshot.stage,
+        scope: snapshot.scope,
+        progressKey: snapshot.progressKey,
+        moduleKey: snapshot.moduleKey,
+        canAdvance: snapshot.canAdvance,
+        reason: snapshot.reason,
+        current: snapshot,
+        report: summary,
+        blockers: snapshot.blockers,
+        queue: snapshot.queue,
+        handoff: snapshot.handoff,
+        timeline: history
+      };
+    }
+
     function assertGate(options) {
       var result = gate(options || {});
       if (!result.canAdvance) {
@@ -3697,6 +3723,7 @@
       gate: gate,
       current: current,
       next: current,
+      checkpoint: checkpoint,
       assertGate: assertGate,
       assertCanAdvance: assertGate,
       completeHandoff: completeHandoff,

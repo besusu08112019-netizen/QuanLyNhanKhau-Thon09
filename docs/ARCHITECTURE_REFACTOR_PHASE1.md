@@ -71,6 +71,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.moduleMigration.gate()` da co check read-only truoc khi advance, tra ve `canAdvance`, `reason`, next module, queue, blockers va handoff.
 - `Thon09Platform.moduleMigration.assertGate()`/`assertCanAdvance()` da co guard throw ro rang khi gate bi chan, de caller khong the advance migration neu con blocker.
 - `Thon09Platform.moduleMigration.timeline()` da co event log runtime-memory cho `markComplete`, `completeHandoff` va `resetProgress`, co filter theo scope/stage/type de audit migration.
+- `Thon09Platform.moduleMigration.current()`/`next()` va `checkpoint()` da co snapshot read-only de noi phien migrate, gom module ke tiep, gate, handoff, blockers, queue, report va timeline.
 - `Thon09Platform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
 - `Thon09Platform.navigationDelegation` da duoc them de chuan hoa mot listener click chung: event -> navigation intent -> NavigationService.
 - `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
@@ -185,7 +186,7 @@ Tinh trang hien tai: `Thon09Platform.components` da co factory nho cho cac primi
 
 Tinh trang hien tai cua CRUD: `Thon09Platform.crud` da co workflow metadata list/detail/create/edit/delete/import/export/log va biet noi route, list schema, form schema, action key, permission action. Service nay chua tu goi API, chua submit form va chua thay event handler cu; module migration se dung contract nay theo tung module.
 
-Tinh trang hien tai cua migration: `Thon09Platform.moduleMigration.report()`, `reports()`, `queue()`, `blockers()`, `matrix()`, `gate()`, `assertGate()`, `timeline()` va `handoff()` chi doc registry/DOM/runtime memory de lap bao cao readiness va audit theo scope/stage/module. `advance()` va `completeHandoff()` chi cap nhat progress trong memory sau khi checklist san sang; cac API nay khong auto-start navigation runtime, khong goi API, khong ghi localStorage va khong thay doi database.
+Tinh trang hien tai cua migration: `Thon09Platform.moduleMigration.report()`, `reports()`, `queue()`, `blockers()`, `matrix()`, `gate()`, `assertGate()`, `current()`, `next()`, `checkpoint()`, `timeline()` va `handoff()` chi doc registry/DOM/runtime memory de lap bao cao readiness va audit theo scope/stage/module. `advance()` va `completeHandoff()` chi cap nhat progress trong memory sau khi checklist san sang; cac API nay khong auto-start navigation runtime, khong goi API, khong ghi localStorage va khong thay doi database.
 
 ### Modal/Popup
 
@@ -497,6 +498,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - `progress()`, `markComplete()` va `resetProgress()` chi luu tien do trong runtime memory, phuc vu test/rollout noi bo va khong ghi du lieu he thong.
    - `gate()` va `assertGate()` chan advance khi scope/stage khong co next module san sang hoac con blocker, truoc khi caller danh dau module hoan tat.
    - `current()` va alias `next()` tra dung module hanh dong ke tiep kem gate, handoff, blockers, queue position va timeline summary de tiep tuc migration ma khong ghi event moi.
+   - `checkpoint()` gom current, report, queue, blockers, handoff va timeline day du vao mot snapshot de handoff phien migration ma khong ghi localStorage/database.
    - `timeline()` tra event log runtime-memory cua cac buoc complete/reset/handoff de trace migration ma khong ghi localStorage/database.
    - Ket qua hien tai: dashboard co the qua navigation contract khi co DOM screen; CRUD scope cua 12 module nghiep vu con bi chan cho toi khi migrate list/form metadata theo tung module.
    - Service chi doc registry/DOM va khong goi API, khong render, khong ghi du lieu.
