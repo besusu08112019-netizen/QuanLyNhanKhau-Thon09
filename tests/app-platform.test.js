@@ -173,6 +173,43 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const audit = platform.navigationMapping.audit();
+  assert.strictEqual(audit.ok, true);
+  assert.strictEqual(audit.issues.length, 0);
+  assert.strictEqual(audit.menuItemCount, platform.modules.list().length);
+  assert.ok(audit.routeCount >= audit.moduleCount);
+
+  const requiredModules = [
+    'households',
+    'persons',
+    'temporaryResidence',
+    'temporaryAbsence',
+    'movements',
+    'publicAssets',
+    'businessHouseholds',
+    'livestock',
+    'houses',
+    'vehicles',
+    'agriculture',
+    'contributions'
+  ];
+  requiredModules.forEach((moduleKey) => {
+    const record = audit.records.find((item) => item.moduleKey === moduleKey);
+    assert.ok(record, moduleKey + ' should be present in navigation mapping');
+    assert.strictEqual(record.exists, true);
+    assert.ok(record.screenId);
+    assert.ok(record.route);
+  });
+  assert.strictEqual(platform.navigationMapping.routesForModule('households').some((route) => route.action === 'edit'), true);
+
+  platform.menus.upsert({ key: 'broken', label: 'Broken', items: ['missingModule'] });
+  const broken = platform.navigationMapping.audit();
+  assert.strictEqual(broken.ok, false);
+  assert.strictEqual(broken.issues.some((item) => item.code === 'menu-module-missing'), true);
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   const nav = {
     textContent: 'old',
     dataset: {},
