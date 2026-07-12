@@ -54,99 +54,40 @@
   }
 
   function moduleDisplayOrderModule(){
-    var orderedModules=[
-      {screen:'households',mobileLabel:'Há»™',icon:'fa-house-chimney'},
-      {screen:'persons',mobileLabel:'NhÃ¢n kháº©u',icon:'fa-users'},
-      {screen:'temporaryResidence',mobileLabel:'Táº¡m trÃº',icon:'fa-location-dot'},
-      {screen:'temporaryAbsence',mobileLabel:'Táº¡m váº¯ng',icon:'fa-person-walking-arrow-right'},
-      {screen:'movements',mobileLabel:'Biáº¿n Ä‘á»™ng',icon:'fa-right-left'},
-      {screen:'publicAssets',mobileLabel:'CÃ´ng trÃ¬nh',icon:'fa-building-columns'},
-      {screen:'businessHouseholds',mobileLabel:'Kinh doanh',icon:'fa-store'},
-      {screen:'livestock',mobileLabel:'Váº­t nuÃ´i',icon:'fa-paw'},
-      {screen:'houses',mobileLabel:'NhÃ  á»Ÿ',icon:'fa-building-user'},
-      {screen:'vehicles',mobileLabel:'Xe cá»™',icon:'fa-car'},
-      {screen:'agriculture',mobileLabel:'NÃ´ng nghiá»‡p',icon:'fa-seedling'},
-      {screen:'contributions',mobileLabel:'ÄÃ³ng gÃ³p',icon:'fa-hand-holding-dollar'}
-    ];
+    var platform=window.Thon09Platform;
+    var orderedModules=(platform&&platform.menuRenderer&&platform.menuRenderer.mobileModules?platform.menuRenderer.mobileModules():[]).map(function(module){
+      return {screen:module.screenId,mobileLabel:module.mobileLabel||module.label,icon:module.icon};
+    });
     var moduleScreens=orderedModules.map(function(item){return item.screen;});
     var moduleRank=Object.create(null);
     orderedModules.forEach(function(item,index){moduleRank[item.screen]=index;});
-    var dashboardOrder=['dashboardHouseholds','dashboardPopulation','dashboardBusiness','dashboardLivestock','dashboardVehicles','dashboardGis','dashboardReports'];
+    var dashboardMenu=platform&&platform.menus&&platform.menus.get?platform.menus.get('dashboard'):null;
+    var dashboardOrder=(dashboardMenu&&dashboardMenu.items||[]).map(function(moduleKey){
+      var module=platform.modules.get(moduleKey);
+      return module&&module.screenId;
+    }).filter(function(screen){return screen&&screen!=='dashboard';});
     var dashboardRank=Object.create(null);
     dashboardOrder.forEach(function(screen,index){dashboardRank[screen]=index;});
     window.Thon09ModuleOrder=orderedModules.slice();
     window.Thon09ModuleScreenOrder=moduleScreens.slice();
-    function screenOf(el){return el&&(el.dataset.screen||el.dataset.mobileScreen)||'';}
-    function sortChildren(parent,selector,rank){
-      if(!parent)return;
-      var items=Array.prototype.slice.call(parent.querySelectorAll(selector)).filter(function(item){return rank[screenOf(item)]!==undefined;});
-      if(items.length<2)return;
-      items.sort(function(a,b){return rank[screenOf(a)]-rank[screenOf(b)];});
-      var anchor=items[0];
-      items.forEach(function(item){parent.insertBefore(item,anchor);anchor=item.nextSibling;});
-    }
-    function makeMobileButton(item){
-      var button=document.createElement('button');
-      button.type='button';
-      button.dataset.mobileScreen=item.screen;
-      button.setAttribute('aria-label',item.mobileLabel);
-      button.innerHTML='<i class="fa-solid '+item.icon+'" aria-hidden="true"></i><span class="mobile-bottom-label">'+item.mobileLabel+'</span>';
-      return button;
-    }
-    function syncMobileNav(){
-      var nav=document.querySelector('.mobile-bottom-nav');
-      if(!nav)return;
-      orderedModules.forEach(function(item){
-        if(!nav.querySelector('[data-mobile-screen="'+item.screen+'"]'))nav.appendChild(makeMobileButton(item));
-      });
-      sortChildren(nav,'[data-mobile-screen]',moduleRank);
-    }
-    function syncSidebar(){
-      document.querySelectorAll('.sidebar .nav-section').forEach(function(section){
-        sortChildren(section,'.nav-link[data-screen]',moduleRank);
-      });
-    }
-    function syncDashboardTree(){
-      var tree=document.querySelector('[data-dashboard-children]');
-      sortChildren(tree,'.dashboard-tree-link[data-screen]',dashboardRank);
-    }
-    function syncAll(){
-      syncSidebar();
-      syncMobileNav();
-      syncDashboardTree();
-    }
+    function syncAll(){}
     window.thon09ApplyModuleDisplayOrder=syncAll;
-    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncAll);else syncAll();
-    if(window.MutationObserver){
-      var timer=0;
-      var observer=new MutationObserver(function(records){
-        var relevant=records.some(function(record){
-          return Array.prototype.some.call(record.addedNodes||[],function(node){
-            return node.nodeType===1&&((node.matches&&node.matches('.mobile-bottom-nav,.nav-link,[data-dashboard-children]'))||(node.querySelector&&node.querySelector('.mobile-bottom-nav,.nav-link,[data-dashboard-children]')));
-          });
-        });
-        if(!relevant)return;
-        clearTimeout(timer);
-        timer=setTimeout(syncAll,0);
-      });
-      observer.observe(document.body,{childList:true,subtree:true});
-    }
-    setTimeout(syncAll,0);
-    setTimeout(syncAll,250);
   }
 
   function headerGuardModule(){
-    var labels={dashboard:'Dashboard',dashboardHouseholds:'Dashboard Há»™ dÃ¢n',dashboardPopulation:'Dashboard NhÃ¢n kháº©u',dashboardBusiness:'Dashboard Kinh doanh',dashboardVehicles:'Dashboard Xe cá»™',dashboardLivestock:'Dashboard ChÄƒn nuÃ´i',dashboardGis:'Dashboard GIS',dashboardReports:'Dashboard BÃ¡o cÃ¡o',operationCenter:'Trung tÃ¢m Ä‘iá»u hÃ nh',gis:'Báº£n Ä‘á»“ Ä‘á»‹a bÃ n',businessHouseholds:'Há»™ sáº£n xuáº¥t & kinh doanh',vehicles:'Quáº£n lÃ½ xe cá»™',livestock:'Quáº£n lÃ½ váº­t nuÃ´i',agriculture:'Sáº£n xuáº¥t nÃ´ng nghiá»‡p',contributions:'ÄÃ³ng gÃ³p há»™',publicAssets:'CÃ´ng trÃ¬nh cÃ´ng cá»™ng',households:'Quáº£n lÃ½ há»™ gia Ä‘Ã¬nh',persons:'Quáº£n lÃ½ nhÃ¢n kháº©u',reports:'BÃ¡o cÃ¡o thá»‘ng kÃª',temporaryResidence:'Táº¡m trÃº',temporaryAbsence:'Táº¡m váº¯ng',movements:'Biáº¿n Ä‘á»™ng nhÃ¢n kháº©u',import:'Import dá»¯ liá»‡u',export:'Xuáº¥t Excel',exportExcel:'Xuáº¥t Excel',printForms:'In biá»ƒu máº«u',users:'Quáº£n lÃ½ tÃ i khoáº£n',permissions:'PhÃ¢n quyá»n',logs:'Nháº­t kÃ½ há»‡ thá»‘ng',backups:'Sao lÆ°u dá»¯ liá»‡u',restore:'KhÃ´i phá»¥c dá»¯ liá»‡u',settings:'Cáº¥u hÃ¬nh há»‡ thá»‘ng',appearance:'Cáº¥u hÃ¬nh giao diá»‡n'};
     function activeScreen(){var active=document.querySelector('.screen.active');if(active&&active.id)return active.id.replace(/Screen$/,'');return(window.App&&window.App.screen)||localStorage.getItem('thon09_screen')||'dashboard';}
-    function cleanHeader(){var screen=activeScreen();var label=labels[screen]||'Dashboard';var title=document.querySelector('#screenTitle');var crumb=document.querySelector('#breadcrumbTrail');if(title)title.textContent=label;if(crumb)crumb.textContent='Trang chá»§ / '+label;document.querySelectorAll('.topbar-title-block small:not(#breadcrumbTrail), .topbar-title-block .text-muted:not(#breadcrumbTrail), .topbar > div:first-of-type small:not(#breadcrumbTrail), .topbar > div:first-of-type .text-muted:not(#breadcrumbTrail)').forEach(function(el){el.remove();});document.querySelectorAll('.dashboard-hero-row, .module-page-head > div, .person-page-head > div, .report-page-head, .screen > .admin-heading > div').forEach(function(el){el.remove();});}
+    function platformModule(screen){var platform=window.Thon09Platform;if(!platform||!platform.modules||!platform.modules.list)return null;return platform.modules.list().find(function(module){return module.screenId===screen||module.moduleKey===screen;})||null;}
+    function labelFor(screen){var module=platformModule(screen);return module&&module.label||'Dashboard';}
+    function cleanHeader(){var screen=activeScreen();var label=labelFor(screen);var title=document.querySelector('#screenTitle');var crumb=document.querySelector('#breadcrumbTrail');if(title)title.textContent=label;if(crumb)crumb.textContent='Trang chá»§ / '+label;document.querySelectorAll('.topbar-title-block small:not(#breadcrumbTrail), .topbar-title-block .text-muted:not(#breadcrumbTrail), .topbar > div:first-of-type small:not(#breadcrumbTrail), .topbar > div:first-of-type .text-muted:not(#breadcrumbTrail)').forEach(function(el){el.remove();});document.querySelectorAll('.dashboard-hero-row, .module-page-head > div, .person-page-head > div, .report-page-head, .screen > .admin-heading > div').forEach(function(el){el.remove();});}
     window.thon09CleanHeader=cleanHeader;document.addEventListener('DOMContentLoaded',cleanHeader);document.addEventListener('thon09:screen-change',function(){setTimeout(cleanHeader,0);});setTimeout(cleanHeader,120);setTimeout(cleanHeader,500);
   }
 
   function navigationControllerModule(){
-    var labels={dashboard:'Dashboard',dashboardHouseholds:'Dashboard H\u1ed9 d\u00e2n',dashboardPopulation:'Dashboard Nh\u00e2n kh\u1ea9u',dashboardBusiness:'Dashboard Kinh doanh',dashboardVehicles:'Dashboard Xe c\u1ed9',dashboardLivestock:'Dashboard Ch\u0103n nu\u00f4i',dashboardGis:'Dashboard GIS',dashboardReports:'Dashboard B\u00e1o c\u00e1o',operationCenter:'Trung t\u00e2m \u0111i\u1ec1u h\u00e0nh',gis:'B\u1ea3n \u0111\u1ed3 \u0111\u1ecba b\u00e0n',businessHouseholds:'H\u1ed9 s\u1ea3n xu\u1ea5t & kinh doanh',vehicles:'Qu\u1ea3n l\u00fd xe c\u1ed9',livestock:'Qu\u1ea3n l\u00fd v\u1eadt nu\u00f4i',agriculture:'S\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p',contributions:'\u0110\u00f3ng g\u00f3p h\u1ed9',publicAssets:'C\u00f4ng tr\u00ecnh c\u00f4ng c\u1ed9ng',households:'Qu\u1ea3n l\u00fd h\u1ed9 gia \u0111\u00ecnh',persons:'Qu\u1ea3n l\u00fd nh\u00e2n kh\u1ea9u',reports:'B\u00e1o c\u00e1o th\u1ed1ng k\u00ea',temporaryResidence:'T\u1ea1m tr\u00fa',temporaryAbsence:'T\u1ea1m v\u1eafng',movements:'Bi\u1ebfn \u0111\u1ed9ng nh\u00e2n kh\u1ea9u',import:'Import d\u1eef li\u1ec7u',export:'Xu\u1ea5t Excel',exportExcel:'Xu\u1ea5t Excel',printForms:'In bi\u1ec3u m\u1eabu',users:'Qu\u1ea3n l\u00fd t\u00e0i kho\u1ea3n',permissions:'Ph\u00e2n quy\u1ec1n',logs:'Nh\u1eadt k\u00fd h\u1ec7 th\u1ed1ng',backups:'Sao l\u01b0u d\u1eef li\u1ec7u',restore:'Kh\u00f4i ph\u1ee5c d\u1eef li\u1ec7u',settings:'C\u1ea5u h\u00ecnh h\u1ec7 th\u1ed1ng',appearance:'C\u1ea5u h\u00ecnh giao di\u1ec7n'};
-    var dashboardScreens={dashboard:true,dashboardHouseholds:true,dashboardPopulation:true,dashboardBusiness:true,dashboardVehicles:true,dashboardLivestock:true,dashboardGis:true,dashboardReports:true};
-    var loaderNames={dashboard:'loadDashboard',households:'loadHouseholds',businessHouseholds:'loadHouseholdBusiness',persons:'loadPersons',operationCenter:'loadOperationCenter',publicAssets:'loadPublicAssets',livestock:'loadLivestock',agriculture:'loadAgriculture',houses:'loadHouses',temporaryResidence:'loadTemporaryResidence',temporaryAbsence:'loadTemporaryAbsence',movements:'loadMovements',permissions:'loadPermissions',settings:'loadSettings',appearance:'loadAppearanceSettings',users:'loadAdminUsers',logs:'loadAdminLogs',backups:'loadAdminBackups',reports:'thon09ViewReport'};
     var log=[];
+    function platformModule(screen){var platform=window.Thon09Platform;if(!platform||!platform.modules||!platform.modules.list)return null;return platform.modules.list().find(function(module){return module.screenId===screen||module.moduleKey===screen;})||null;}
+    function platformDashboardScreens(){var platform=window.Thon09Platform,menu=platform&&platform.menus&&platform.menus.get&&platform.menus.get('dashboard'),screens={};if(menu&&platform.modules&&platform.modules.get){(menu.items||[]).forEach(function(moduleKey){var module=platform.modules.get(moduleKey);if(module)screens[module.screenId]=true;});}return screens;}
+    function labelFor(screen,requested){var module=platformModule(screen)||platformModule(requested);return module&&module.label||'Dashboard';}
+    function loaderFor(screen){var module=platformModule(screen);return module&&module.loaderName||'';}
     function normalize(screen){return screen==='export'?'exportExcel':(screen||'dashboard');}
     function targetFor(screen){return document.getElementById(screen+'Screen')||document.getElementById('dashboardScreen');}
     function domState(){
@@ -158,13 +99,13 @@
     function writeLog(step,data){var entry=Object.assign({step:step,time:Date.now()},data||{});log.push(entry);window.__thon09NavigationLog=log.slice();if(window.THON09_NAV_DEBUG)console.debug('[NavigationController]',step,entry);}
     function centerMobile(button){if(!button)return;try{button.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}catch(error){}}
     function setDashboardTreeOpen(open,persist){var tree=document.querySelector('[data-dashboard-tree]');if(!tree)return;var toggle=tree.querySelector('[data-dashboard-toggle]');var caret=tree.querySelector('.dashboard-tree-caret');tree.classList.toggle('is-open',!!open);tree.classList.toggle('is-active',!!open);if(toggle)toggle.setAttribute('aria-expanded',open?'true':'false');if(caret)caret.innerHTML=open?'&#9662;':'&#9656;';if(persist){try{localStorage.setItem('thon09_dashboard_tree_open',open?'1':'0');}catch(error){}}}
-    function syncDashboardTree(screen,requested){var active=!!(dashboardScreens[screen]||dashboardScreens[requested]);setDashboardTreeOpen(active,false);document.querySelectorAll('[data-dashboard-tree] .dashboard-tree-link[data-screen]').forEach(function(btn){var current=btn.dataset.screen===screen||btn.dataset.screen===requested;btn.classList.toggle('active',current);btn.setAttribute('aria-current',current?'page':'false');});}
+    function syncDashboardTree(screen,requested){var platformScreens=platformDashboardScreens();var active=!!(platformScreens[screen]||platformScreens[requested]);setDashboardTreeOpen(active,false);document.querySelectorAll('[data-dashboard-tree] .dashboard-tree-link[data-screen]').forEach(function(btn){var current=btn.dataset.screen===screen||btn.dataset.screen===requested;btn.classList.toggle('active',current);btn.setAttribute('aria-current',current?'page':'false');});}
     function setAppState(screen,requested){var previous=window.App&&window.App.screen;if(window.App)window.App.screen=screen;try{localStorage.setItem('thon09_screen',screen);}catch(error){}writeLog('setActiveScreen',{previousScreen:previous,currentScreen:screen,requestedScreen:requested});try{document.dispatchEvent(new CustomEvent('thon09:screen-change',{detail:{screen:screen,requestedScreen:requested,previousScreen:previous}}));}catch(error){}}
     function hideOtherScreens(target){document.querySelectorAll('.screen').forEach(function(el){var active=el===target;el.classList.toggle('active',active);el.style.display=active?'block':'none';el.setAttribute('aria-hidden',active?'false':'true');});writeLog('hideOtherScreens',domState());}
     function syncActiveNavigation(screen,requested){document.querySelectorAll('.sidebar .nav-link[data-screen]').forEach(function(btn){var active=btn.dataset.screen===screen||btn.dataset.screen===requested;btn.classList.toggle('active',active);btn.setAttribute('aria-current',active?'page':'false');});syncDashboardTree(screen,requested);document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen]').forEach(function(btn){var active=btn.dataset.mobileScreen===screen||btn.dataset.mobileScreen===requested;btn.classList.toggle('active',active);btn.setAttribute('aria-current',active?'page':'false');if(active)centerMobile(btn);});}
-    function updateHeader(screen,requested){var label=labels[screen]||labels[requested]||'Dashboard';var title=document.getElementById('screenTitle');var breadcrumb=document.getElementById('breadcrumbTrail');if(title)title.textContent=label;if(breadcrumb)breadcrumb.textContent='Trang ch\u1ee7 / '+label;}
+    function updateHeader(screen,requested){var label=labelFor(screen,requested);var title=document.getElementById('screenTitle');var breadcrumb=document.getElementById('breadcrumbTrail');if(title)title.textContent=label;if(breadcrumb)breadcrumb.textContent='Trang ch\u1ee7 / '+label;}
     function closeMobileShell(){document.body.classList.remove('sidebar-open');var sidebar=document.querySelector('.sidebar');if(sidebar)sidebar.classList.remove('open');}
-    function render(screen){if(screen==='gis'&&typeof window.ensureGisAssets==='function'&&typeof window.loadGisMap==='function'){window.ensureGisAssets().then(function(){window.loadGisMap();}).catch(function(error){if(typeof window.showToast==='function')window.showToast('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c th\u01b0 vi\u1ec7n b\u1ea3n \u0111\u1ed3: '+error.message,'danger');});writeLog('render',{screen:screen,loader:'ensureGisAssets/loadGisMap'});return;}var loader=loaderNames[screen];if(loader&&typeof window[loader]==='function'){setTimeout(function(){window[loader]();},0);writeLog('render',{screen:screen,loader:loader});}else writeLog('render',{screen:screen,loader:''});}
+    function render(screen){if(screen==='gis'&&typeof window.ensureGisAssets==='function'&&typeof window.loadGisMap==='function'){window.ensureGisAssets().then(function(){window.loadGisMap();}).catch(function(error){if(typeof window.showToast==='function')window.showToast('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c th\u01b0 vi\u1ec7n b\u1ea3n \u0111\u1ed3: '+error.message,'danger');});writeLog('render',{screen:screen,loader:'ensureGisAssets/loadGisMap'});return;}var loader=loaderFor(screen);if(loader&&typeof window[loader]==='function'){setTimeout(function(){window[loader]();},0);writeLog('render',{screen:screen,loader:loader});}else writeLog('render',{screen:screen,loader:''});}
     function displayScreen(screen,requested){var target=targetFor(screen);if(!target){writeLog('displayScreen',{screen:screen,found:false});return false;}if(typeof window.thon09ApplyModuleDisplayOrder==='function')window.thon09ApplyModuleDisplayOrder();setAppState(screen,requested);hideOtherScreens(target);syncActiveNavigation(screen,requested);updateHeader(screen,requested);closeMobileShell();render(screen);writeLog('displayScreen',Object.assign({screen:screen,targetScreen:target.id,currentScreen:window.App&&window.App.screen},domState()));return true;}
     function navigate(screen,event){if(event&&event.defaultPrevented)return false;log=[];var requested=screen;var normalized=normalize(screen);if(!targetFor(normalized))normalized='dashboard';if(event&&typeof event.preventDefault==='function')event.preventDefault();if(event&&typeof event.stopPropagation==='function')event.stopPropagation();writeLog('Click menu',{menuKey:requested,moduleKey:normalized,targetScreen:normalized+'Screen',currentScreen:window.App&&window.App.screen,eventTarget:event&&event.target&&event.target.tagName,eventCurrentTarget:event&&event.currentTarget&&event.currentTarget.tagName});displayScreen(normalized,requested);return true;}
     window.Thon09NavigationController={navigate:navigate,hideOtherScreens:hideOtherScreens,render:render,inspect:domState,getLog:function(){return log.slice();}};

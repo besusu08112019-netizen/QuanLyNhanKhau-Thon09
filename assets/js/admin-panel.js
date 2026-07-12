@@ -1,42 +1,23 @@
 (() => {
-  const menu = [
-    ['dashboard','fa-gauge-high','Dashboard'],
-    ['households','fa-house-chimney','Quản lý hộ gia đình'],
-    ['persons','fa-users','Quản lý nhân khẩu'],
-    ['temporaryResidence','fa-location-dot','Tạm trú'],
-    ['temporaryAbsence','fa-person-walking-arrow-right','Tạm vắng'],
-    ['movements','fa-right-left','Biến động nhân khẩu'],
-    ['reports','fa-chart-pie','Báo cáo thống kê'],
-    ['import','fa-file-import','Import Excel'],
-    ['exportExcel','fa-file-export','Export Excel'],
-    ['printForms','fa-print','In biểu mẫu'],
-    ['users','fa-user-shield','Quản lý tài khoản'],
-    ['permissions','fa-key','Phân quyền'],
-    ['logs','fa-clock-rotate-left','Nhật ký hệ thống'],
-    ['settings','fa-gears','Cấu hình hệ thống'],
-    ['appearance','fa-palette','Cấu hình giao diện'],
-    ['backups','fa-database','Sao lưu dữ liệu'],
-    ['restore','fa-rotate-left','Khôi phục dữ liệu'],
-    ['logout','fa-arrow-right-from-bracket','Đăng xuất'],
-  ];
-  const titles = Object.fromEntries(menu.map(([screen,,label]) => [screen, label]));
+  function labelForScreen(screen) {
+    return window.Thon09Platform?.modules?.get(screen)?.label || 'Dashboard';
+  }
   const charts = {};
 
   document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add(localStorage.getItem('thon09_theme') || 'theme-light');
     enhanceShell();
     injectScreens();
-    const previousShowApp = window.showApp;
-    window.showApp = function adminShowApp() {
-      previousShowApp();
-      enhanceShell();
-      renderRoleAwareMenu();
-    };
+    renderRoleAwareMenu();
+  });
+  document.addEventListener('thon09:auth-state', event => {
+    if (!event.detail?.authenticated) return;
+    enhanceShell();
     renderRoleAwareMenu();
   });
 
   function cleanDuplicateHeaders(screen) {
-    const label = titles[screen || App.screen || 'dashboard'] || 'Dashboard';
+    const label = labelForScreen(screen || App.screen || 'dashboard');
     const title = document.querySelector('#screenTitle');
     const breadcrumb = document.querySelector('#breadcrumbTrail');
     if (title) title.textContent = label;
@@ -49,9 +30,6 @@
     const nav = document.querySelector('.sidebar .nav');
     if (nav && !nav.dataset.adminPanel) {
       nav.dataset.adminPanel = '1';
-      if (!nav.querySelector('.nav-section')) {
-        nav.innerHTML = menu.filter(([screen]) => screen !== 'logout').map(([screen, icon, label]) => `<button class="nav-link" data-screen="${screen}"><i class="fa-solid ${icon}"></i><span>${label}</span></button>`).join('');
-      }
     }
     const topbar = document.querySelector('.topbar');
     cleanDuplicateHeaders(App.screen);
@@ -436,7 +414,7 @@
     const role = App.user?.role || '';
     document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
       const screen = btn.dataset.screen;
-      const adminOnly = ['users','permissions','logs','settings','appearance','backups','restore'];
+      const adminOnly = ['systemAdmin','users','permissions','logs','settings','appearance','backups','restore'];
       btn.classList.toggle('d-none', adminOnly.includes(screen) && !['SUPER_ADMIN','ADMIN'].includes(role));
     });
   }

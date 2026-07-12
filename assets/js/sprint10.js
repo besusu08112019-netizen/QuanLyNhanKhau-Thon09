@@ -1,9 +1,6 @@
 (() => {
   document.addEventListener('DOMContentLoaded', bootSprint10);
-  const previousShowApp = window.showApp;
-  if (typeof previousShowApp === 'function') {
-    window.showApp = function sprint10ShowApp() { previousShowApp(); bootSprint10(); };
-  }
+  document.addEventListener('thon09:auth-state', event => { if (event.detail?.authenticated) bootSprint10(); });
 
   function bootSprint10() {
     injectSprint10Screens();
@@ -29,13 +26,12 @@
   }
 
   function bindSprint10Menu() {
-    document.querySelectorAll('.sidebar .nav-link').forEach(button => {
-      if (button.dataset.sprint10) return;
-      button.dataset.sprint10 = '1';
-      button.addEventListener('click', () => {
-        setTimeout(() => loadSprint10Screen(button.dataset.screen), 0);
+    if (!window.__thon09Sprint10ScreenChangeBound) {
+      window.__thon09Sprint10ScreenChangeBound = true;
+      document.addEventListener('thon09:screen-change', event => {
+        loadSprint10Screen(event.detail?.screen);
       });
-    });
+    }
     bindOnce('#logSearch', 'input', debounce(() => { App.logs.search = document.querySelector('#logSearch').value.trim(); App.logs.page = 1; loadLogs10(); }, 300));
     bindOnce('#logAction', 'change', () => { App.logs.action = document.querySelector('#logAction').value; App.logs.page = 1; loadLogs10(); });
     bindOnce('#backupCreateBtn', 'click', createBackup10);

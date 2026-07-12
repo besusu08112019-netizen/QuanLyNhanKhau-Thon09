@@ -14,30 +14,26 @@
     return ({ SUPER_ADMIN:'Super Admin', ADMIN:'Admin', OFFICER:'CÃ¡n bá»™', VIEWER:'KhÃ¡ch' })[role] || role || '';
   };
 
-  document.addEventListener('DOMContentLoaded', () => {
+  function bootBridgeUi() {
     enforceSuperAdminMenu();
     setupHouseholdCategoryFilters();
     setupDigitalGovernmentFeatures();
     setTimeout(setupHouseholdCategoryFilters, 800);
     setTimeout(setupDigitalGovernmentFeatures, 900);
-    setTimeout(setupReportCategoryFilter, 1800);
-    const previousShowApp = window.showApp;
-    if (typeof previousShowApp === 'function') {
-      window.showApp = function bridgeShowApp() {
-        previousShowApp();
-        enforceSuperAdminMenu();
-        setupHouseholdCategoryFilters();
-        setupDigitalGovernmentFeatures();
-        setTimeout(setupReportCategoryFilter, 500);
-        setTimeout(setupDigitalGovernmentFeatures, 900);
-      };
-    }
+    setTimeout(setupReportCategoryFilter, 500);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    bootBridgeUi();
     document.addEventListener('thon09:screen-change', event => {
       const screen = event.detail?.screen;
       if (screen === 'users') { ensureRoleOptions(); loadAdminUsers(); }
       if (screen === 'logs') loadAdminLogs();
       if (screen === 'backups') loadAdminBackups();
     });
+  });
+  document.addEventListener('thon09:auth-state', event => {
+    if (event.detail?.authenticated) bootBridgeUi();
   });
 
 
@@ -399,7 +395,7 @@ function scheduleCategoryFilterSetup() {
   function enforceSuperAdminMenu() {
     setTimeout(() => {
       const role = App.user?.role || '';
-      const adminOnly = ['users','permissions','logs','settings','appearance','backups','restore'];
+      const adminOnly = ['systemAdmin','users','permissions','logs','settings','appearance','backups','restore'];
       document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
         btn.classList.toggle('d-none', adminOnly.includes(btn.dataset.screen) && !['SUPER_ADMIN','ADMIN'].includes(role));
       });

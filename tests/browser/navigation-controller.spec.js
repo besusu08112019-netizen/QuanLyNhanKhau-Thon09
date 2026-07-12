@@ -20,6 +20,7 @@ const desktopScreens = [
   'import',
   'exportExcel',
   'printForms',
+  'systemAdmin',
   'users',
   'permissions',
   'logs',
@@ -80,6 +81,38 @@ async function openAuthenticatedApp(page) {
   await expect(page.locator('#appView')).not.toHaveClass(/d-none/);
 }
 
+async function expectPlatformMenus(page) {
+  const state = await page.evaluate(() => {
+    const platform = window.Thon09Platform;
+    return {
+      hasPlatform: Boolean(platform),
+      sidebarRendered: document.querySelector('.gov-nav')?.dataset.platformMenu === 'true',
+      mobileRendered: document.querySelector('.mobile-bottom-nav')?.dataset.platformMenu === 'true',
+      sidebarItems: document.querySelectorAll('.gov-nav .nav-link[data-screen]').length,
+      mobileItems: document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen]').length,
+      platformDesktopItems: platform
+        ? platform.menus.list().reduce((count, menu) => count + (Array.isArray(menu.items) ? menu.items.length : 0), 0)
+        : 0,
+      platformMobileItems: platform && platform.menuRenderer ? platform.menuRenderer.mobileScreens().length : 0,
+      registeredStaticModals: platform && platform.modals
+        ? ['householdModal', 'personModal', 'businessHouseholdModal', 'detailModal'].filter((key) => Boolean(platform.modals.get(key)))
+        : []
+    };
+  });
+
+  expect(state.hasPlatform, 'Thon09Platform is loaded').toBe(true);
+  expect(state.sidebarRendered, 'sidebar is rendered by platform menu renderer').toBe(true);
+  expect(state.mobileRendered, 'mobile nav is rendered by platform menu renderer').toBe(true);
+  expect(state.sidebarItems, 'sidebar item count follows platform menus').toBe(state.platformDesktopItems);
+  expect(state.mobileItems, 'mobile item count follows platform menu renderer').toBe(state.platformMobileItems);
+  expect(state.registeredStaticModals, 'static Bootstrap modals are registered in platform').toEqual([
+    'householdModal',
+    'personModal',
+    'businessHouseholdModal',
+    'detailModal'
+  ]);
+}
+
 async function inspectNavigation(page, requestedScreen) {
   return page.evaluate((screen) => {
     const screenRows = Array.from(document.querySelectorAll('.screen')).map((el) => {
@@ -122,6 +155,7 @@ async function inspectNavigation(page, requestedScreen) {
 test('desktop sidebar clicks switch both active menu and visible screen content', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await openAuthenticatedApp(page);
+  await expectPlatformMenus(page);
 
   for (const screen of desktopScreens) {
     const button = page.locator(`.sidebar .nav-link[data-screen="${screen}"]`).first();
@@ -148,6 +182,7 @@ test('desktop sidebar clicks switch both active menu and visible screen content'
 test('mobile and tablet module clicks use the same controller and change content', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'desktop-chromium', 'Covered by desktop sidebar test.');
   await openAuthenticatedApp(page);
+  await expectPlatformMenus(page);
 
   for (const screen of moduleScreens) {
     const button = page.locator(`.mobile-bottom-nav [data-mobile-screen="${screen}"]`).first();

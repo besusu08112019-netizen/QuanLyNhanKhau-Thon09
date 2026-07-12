@@ -34,6 +34,7 @@ function compactJs(source) {
 const assets = [
   ['assets/css/app.css', 'assets/css/app.min.css', minifyCss],
   ['assets/js/i18n.js', 'assets/js/i18n.min.js', compactJs],
+  ['assets/js/app-platform.js', 'assets/js/app-platform.min.js', compactJs],
   ['assets/js/app.utf8.js', 'assets/js/app.utf8.min.js', compactJs],
   ['assets/js/admin.utf8.js', 'assets/js/admin.utf8.min.js', compactJs],
   ['assets/js/admin-panel.js', 'assets/js/admin-panel.min.js', compactJs],

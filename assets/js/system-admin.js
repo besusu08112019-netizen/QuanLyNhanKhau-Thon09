@@ -31,14 +31,6 @@
   function ensureNav() {
     const existing = $('[data-screen="systemAdmin"]');
     if (existing) { syncAdminNavVisibility(existing); return; }
-    const systemSection = Array.from(document.querySelectorAll('.nav-section')).find(section => (section.textContent || '').includes('Hệ thống'));
-    if (!systemSection) return;
-    const btn = document.createElement('button');
-    btn.className = 'nav-link';
-    btn.dataset.screen = 'systemAdmin';
-    btn.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i><span>Quản trị hệ thống</span>';
-    syncAdminNavVisibility(btn);
-    systemSection.insertBefore(btn, systemSection.firstElementChild?.nextSibling || null);
   }
 
   function syncAdminNavVisibility(btn) {

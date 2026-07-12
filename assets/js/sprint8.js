@@ -8,15 +8,12 @@
     patchUserManagementUi();
   });
 
-  const oldShowApp = window.showApp;
-  if (typeof oldShowApp === 'function') {
-    window.showApp = function sprint8ShowApp() {
-      oldShowApp();
-      ensureSprint8Modals();
-      patchImportGuide();
-      patchUserManagementUi();
-    };
-  }
+  document.addEventListener('thon09:auth-state', event => {
+    if (!event.detail?.authenticated) return;
+    ensureSprint8Modals();
+    patchImportGuide();
+    patchUserManagementUi();
+  });
 
   window.showHousehold = async function showHousehold(id) {
     try {

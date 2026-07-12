@@ -5,29 +5,18 @@
     bindImportNavigation();
   };
 
-  const originalShowApp = window.showApp;
-  if (typeof originalShowApp === 'function') {
-    window.showApp = function patchedShowApp() {
-      originalShowApp();
-      start();
-    };
-  }
-
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+  document.addEventListener('thon09:auth-state', event => {
+    if (event.detail?.authenticated) start();
+  });
 
   function canImport() {
     return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('import', 'import') : false;
   }
 
   function injectImportScreen() {
-    const nav = document.querySelector('.sidebar .nav');
     const main = document.querySelector('.main-area');
-    if (!nav || !main || document.querySelector('#importScreen')) return;
-    const reportsButton = document.querySelector('[data-screen="reports"]');
-    const button = '<button class="nav-link" data-screen="import">Import dá»¯ liá»‡u</button>';
-    if (!document.querySelector('[data-screen="import"]')) {
-      reportsButton ? reportsButton.insertAdjacentHTML('beforebegin', button) : nav.insertAdjacentHTML('beforeend', button);
-    }
+    if (!main || document.querySelector('#importScreen')) return;
     main.insertAdjacentHTML('beforeend', '<section id="importScreen" class="screen import-screen">' +
       '<div class="content-card import-guide-card mb-3"><div class="import-card-head"><h3 class="section-title">HÆ°á»›ng dáº«n Import Excel</h3><span>Card 1</span></div><ul class="mb-3"><li>Chá»n Ä‘Ãºng loáº¡i dá»¯ liá»‡u trÆ°á»›c khi import.</li><li>KhÃ´ng Ä‘á»•i tÃªn Sheet vÃ  khÃ´ng Ä‘á»•i tÃªn cá»™t trong file máº«u.</li><li>NgÃ y sinh dÃ¹ng Ä‘á»‹nh dáº¡ng dd/MM/yyyy hoáº·c yyyy-MM-dd.</li><li>CCCD vÃ  sá»‘ Ä‘iá»‡n thoáº¡i Ä‘á»ƒ dáº¡ng Text Ä‘á»ƒ khÃ´ng máº¥t sá»‘ 0 Ä‘áº§u.</li><li>Kiá»ƒm tra dá»¯ liá»‡u trÆ°á»›c, chá»‰ báº¥m Báº¯t Ä‘áº§u Import khi khÃ´ng cÃ²n lá»—i.</li></ul><div class="d-flex flex-wrap gap-2"><button class="btn btn-success" type="button" data-import-template="person"><i class="fa-solid fa-file-excel"></i> Máº«u nhÃ¢n kháº©u</button><button class="btn btn-outline-success" type="button" data-import-template="household"><i class="fa-solid fa-file-excel"></i> Máº«u há»™ dÃ¢n</button></div></div>' +
       '<form id="importForm" class="content-card import-form-card mb-3"><div class="import-card-head"><h3 class="section-title">ThÃ´ng tin Import</h3><span>Card 2</span></div><div class="row g-3 align-items-end"><div class="col-lg-3 col-md-6"><label class="form-label">Loáº¡i dá»¯ liá»‡u</label><select name="type" class="form-select"><option value="person">NhÃ¢n kháº©u</option><option value="household">Há»™ dÃ¢n</option></select></div><div class="col-lg-3 col-md-6"><label class="form-label">Khi trÃ¹ng mÃ£ há»™</label><select name="mode" class="form-select"><option value="skip">Bá» qua</option><option value="update">Cáº­p nháº­t</option></select></div><div class="col-lg-4 col-md-12"><label class="form-label">File dá»¯ liá»‡u</label><input name="file" type="file" class="form-control" accept=".csv,.xlsx" required></div><div class="col-lg-2 col-md-12 d-grid gap-2"><button id="importPreviewBtn" class="btn btn-outline-primary" type="button"><i class="fa-solid fa-magnifying-glass"></i> Kiá»ƒm tra</button><button id="importRunBtn" class="btn btn-primary" type="button"><i class="fa-solid fa-file-import"></i> Báº¯t Ä‘áº§u Import</button></div></div></form>' +
