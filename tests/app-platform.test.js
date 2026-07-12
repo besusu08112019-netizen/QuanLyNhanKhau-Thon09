@@ -860,6 +860,16 @@ function screenNode(screenId) {
     'contributions'
   ].join(','));
   assert.strictEqual(platform.navigationScopes.resolve('desktopModules').moduleKeys.length, 12);
+  assert.strictEqual(platform.navigationScopes.resolve('dashboardModules').moduleKeys.join(','), [
+    'dashboard',
+    'dashboardHouseholds',
+    'dashboardPopulation',
+    'dashboardBusiness',
+    'dashboardVehicles',
+    'dashboardLivestock',
+    'dashboardGis',
+    'dashboardReports'
+  ].join(','));
   assert.strictEqual(platform.navigationScopes.resolve('population').moduleKeys.join(','), [
     'households',
     'persons',
@@ -880,14 +890,32 @@ function screenNode(screenId) {
   const routeBlocked = platform.navigationRouteCoverage.audit({ navigationScope: ['gis'] });
   assert.strictEqual(routeBlocked.ok, false);
   assert.strictEqual(routeBlocked.issues.some((item) => item.code === 'route-action-missing'), true);
+
+  const dashboardRoutes = platform.navigationRouteCoverage.audit({
+    navigationScope: 'dashboardModules',
+    actions: ['list']
+  });
+  assert.strictEqual(dashboardRoutes.ok, true);
+  assert.strictEqual(dashboardRoutes.moduleCount, 8);
+  assert.strictEqual(dashboardRoutes.coveredCount, 8);
 }
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const dashboardScreens = [
+    'dashboard',
+    'dashboardHouseholds',
+    'dashboardPopulation',
+    'dashboardBusiness',
+    'dashboardVehicles',
+    'dashboardLivestock',
+    'dashboardGis',
+    'dashboardReports'
+  ];
   const screenRoot = {
     querySelectorAll(selector) {
       assert.strictEqual(selector, '[data-screen-id], .screen');
-      return [screenNode('dashboard')];
+      return dashboardScreens.map(screenNode);
     }
   };
   const domDocument = {
@@ -901,6 +929,15 @@ function screenNode(screenId) {
   assert.strictEqual(dashboard.routeActions.indexOf('list') !== -1, true);
   assert.strictEqual(dashboard.domCoverage.ok, true);
   assert.strictEqual(dashboard.loader.loaderName, 'loadDashboard');
+
+  const dashboardScope = platform.moduleMigration.inspect({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(dashboardScope.ready, true);
+  assert.strictEqual(dashboardScope.moduleCount, 8);
+  assert.strictEqual(dashboardScope.readyCount, 8);
 
   const loaderBlocked = platform.moduleMigration.inspectModule('vehicles', {
     stage: 'navigation',

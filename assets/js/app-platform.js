@@ -4828,7 +4828,19 @@
       'agriculture',
       'contributions'
     ];
+    var dashboardModules = [
+      'dashboard',
+      'dashboardHouseholds',
+      'dashboardPopulation',
+      'dashboardBusiness',
+      'dashboardVehicles',
+      'dashboardLivestock',
+      'dashboardGis',
+      'dashboardReports'
+    ];
     [
+      { key: 'dashboardModules', label: 'Dashboard modules', moduleKeys: dashboardModules },
+      { key: 'migrationDashboard', label: 'Dashboard migration modules', moduleKeys: dashboardModules },
       { key: 'requiredBusinessModules', label: 'Required business modules', moduleKeys: requiredBusinessModules },
       { key: 'desktopModules', label: 'Desktop navigation modules', moduleKeys: requiredBusinessModules },
       { key: 'tabletModules', label: 'Tablet navigation modules', moduleKeys: requiredBusinessModules },

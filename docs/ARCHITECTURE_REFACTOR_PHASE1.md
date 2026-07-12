@@ -57,6 +57,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.navigationRollout` da duoc them lam status read-only cho rollout runtime moi: ready/blocked/canActivate/active/issues.
 - `Thon09Platform.navigationMapping` da duoc them de audit mapping `menu -> module -> route -> screen` truoc khi rollout runtime moi.
 - `Thon09Platform.navigationScopes` da duoc them de quan ly scope rollout theo ten, gom `requiredBusinessModules`, `desktopModules`, `tabletModules`, `mobileModules` va `navigationRollout` cho 12 module nghiep vu can kiem thu.
+- `Thon09Platform.navigationScopes` da co them `dashboardModules` va `migrationDashboard` de co lap 8 dashboard screen cho module migrate dau tien.
 - `Thon09Platform.navigationRouteCoverage` da duoc them de audit route CRUD bat buoc trong tung navigation scope truoc khi rollout runtime moi.
 - `Thon09Platform.navigationDomCoverage` da duoc them de audit `module.screenId -> DOM screen` va phat hien screen thieu/trung truoc khi rollout.
 - `Thon09Platform.moduleMigration` da duoc them de audit readiness theo module/scope truoc khi migrate tung module, gom route, DOM screen, loader va CRUD metadata.
@@ -469,6 +470,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 34. `NavigationScopeService`
    - Quan ly scope rollout theo ten thay vi truyen tay danh sach module trong tung test/activation.
    - Cac scope mac dinh `requiredBusinessModules`, `desktopModules`, `tabletModules`, `mobileModules`, `navigationRollout` deu tro den 12 module nghiep vu can kiem thu.
+   - Scope `dashboardModules`/`migrationDashboard` tro den 8 dashboard screen va chi yeu cau route `list`, tach rieng khoi CRUD scope.
    - `NavigationRuntimePlanService` tu ap `navigationScope` vao DOM coverage gate va bao loi neu scope thieu module; service chi doc metadata, khong start runtime.
 
 35. `NavigationRouteCoverageService`
