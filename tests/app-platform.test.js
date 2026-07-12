@@ -604,6 +604,11 @@ function screenNode(screenId) {
   assert.strictEqual(platform.state.get('households').data[0].id, 1);
   assert.strictEqual(platform.state.empty('persons').status, platform.STATE.EMPTY);
   assert.strictEqual(platform.state.error('reports', 'Network').error, 'Network');
+  assert.strictEqual(platform.state.statusFor('missing'), platform.STATE.EMPTY);
+  assert.strictEqual(platform.state.statusFor('households'), platform.STATE.LOADED);
+  assert.strictEqual(platform.state.is('reports', platform.STATE.ERROR), true);
+  assert.strictEqual(platform.state.summary().Loaded, 1);
+  assert.strictEqual(platform.state.summary().Error, 1);
   assert.ok(platform.state.list().length >= 3);
   assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:module-state-change'));
   assert.throws(() => platform.state.set('households', 'Done'), /Invalid module state/);

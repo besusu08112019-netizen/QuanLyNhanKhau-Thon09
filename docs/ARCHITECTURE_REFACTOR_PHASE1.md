@@ -24,7 +24,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.modals` da co Bootstrap adapter (`registerBootstrap`, `registerBootstrapAll`) va tu dong dang ky cac `.modal[id]` tinh trong DOM.
 - `Thon09Platform.modals.attachApp()` da bridge `App.modals.*` legacy vao modal registry chung. Cac module cu van co the goi `App.modals.user.show()`, nhung platform da co the quan sat/mo/dong cung modal qua mot service duy nhat.
 - `Thon09Platform.actions` da duoc them lam Action Registry chuan cho lenh UI/CRUD sau nay. Selector moi la `data-platform-action` de khong va cham voi `data-action` hien dang dung cho permission/module cu.
-- `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error` va event `thon09:module-state-change`.
+- `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error`, helper `statusFor/is/summary` va event `thon09:module-state-change`.
 - `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `status`, `card`, `form`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; button/form/pagination/tabs moi co the gan truc tiep `data-platform-action`.
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
 - `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata.
@@ -330,6 +330,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 11. `StateService`
    - Moi module chi ghi nhan mot trong bon trang thai `Loading`, `Loaded`, `Empty`, `Error`.
    - State thay doi phat `thon09:module-state-change` de layout/component co the render theo contract chung.
+   - Co helper `statusFor`, `is` va `summary` de module sau nay khong tu doc local flags rieng.
 
 12. `ModalService`
    - Mot component modal chung: Header, Tabs, Basic, Extended, History, Attachments, Footer.
