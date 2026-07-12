@@ -3420,6 +3420,70 @@
     };
   }
 
+  function createNavigationRuntimePlanService(navigationReadinessService, navigationGuardService, domRootService) {
+    function issue(code, message, detail) {
+      return {
+        code: code,
+        message: message,
+        detail: detail || {}
+      };
+    }
+
+    function navigationRootSummary(root, index) {
+      return {
+        index: index,
+        present: Boolean(root),
+        platformMenu: Boolean(root && root.dataset && root.dataset.platformMenu === 'true'),
+        itemCount: root && root.querySelectorAll ? root.querySelectorAll('[data-screen], [data-mobile-screen], [data-route], [data-module], [data-module-key]').length : 0
+      };
+    }
+
+    function plan(options) {
+      var input = options || {};
+      var config = domRootService && input.resolveRoots !== false ? domRootService.shellOptions(input) : input;
+      var readiness = navigationReadinessService.inspect(config);
+      var navigationRoots = domRootService.navigationRoots(config);
+      var guard = readiness.ready && input.validate !== false ? navigationGuardService.validate(config) : null;
+      var issues = readiness.issues.slice();
+
+      if (input.bindNavigation !== false && navigationRoots.length === 0) {
+        issues.push(issue('navigation-roots-missing', 'No navigation roots are available for runtime binding'));
+      }
+      if (guard && !guard.ok) {
+        guard.issues.forEach(function (guardIssue) {
+          issues.push(issue('guard-' + guardIssue.code, guardIssue.message, guardIssue.detail || {}));
+        });
+      }
+
+      return {
+        canStart: issues.length === 0,
+        issues: issues,
+        readiness: readiness,
+        guard: guard,
+        roots: {
+          sidebar: readiness.roots.sidebar,
+          bottomNavigation: readiness.roots.bottomNavigation,
+          breadcrumb: readiness.roots.breadcrumb,
+          screenRoot: readiness.roots.screenRoot,
+          navigation: navigationRoots.map(navigationRootSummary)
+        },
+        bindings: {
+          shell: input.shell !== false,
+          navigation: input.bindNavigation !== false,
+          history: input.history === true
+        },
+        screenCount: readiness.screenCount
+      };
+    }
+
+    return {
+      plan: plan,
+      canStart: function (options) {
+        return plan(options || {}).canStart;
+      }
+    };
+  }
+
   function createAppShellViewService(appStateService, screenViewService, navigationViewService) {
     function render(options) {
       var config = options || {};
@@ -3737,6 +3801,7 @@
   var navigationDiagnostics = createNavigationDiagnosticsService(appState, navigationTransitions, navigationExecutor, domRoots, screens);
   var navigationGuard = createNavigationGuardService(navigationDiagnostics);
   var navigationReadiness = createNavigationReadinessService(domRoots, navigationExecutor);
+  var navigationRuntimePlan = createNavigationRuntimePlanService(navigationReadiness, navigationGuard, domRoots);
   var shellView = createAppShellViewService(appState, screens, navigationView);
   var navigationRuntime = createNavigationRuntimeService(navigationDelegation, navigation, history, shellView, domRoots);
   var menuRenderer = createMenuRenderer(menus, modules, menu);
@@ -3772,6 +3837,7 @@
     navigationDiagnostics: navigationDiagnostics,
     navigationGuard: navigationGuard,
     navigationReadiness: navigationReadiness,
+    navigationRuntimePlan: navigationRuntimePlan,
     navigationIntent: navigationIntent,
     navigationDelegation: navigationDelegation,
     menu: menu,

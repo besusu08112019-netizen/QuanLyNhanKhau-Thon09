@@ -106,7 +106,7 @@ function navRoot(items, datasetKey) {
   return {
     nodes,
     querySelectorAll(selector) {
-      if (selector === '[data-screen]' || selector === '[data-mobile-screen]') return nodes;
+      if (selector === '[data-screen]' || selector === '[data-mobile-screen]' || selector.indexOf('data-screen') !== -1 || selector.indexOf('data-mobile-screen') !== -1) return nodes;
       return [];
     }
   };
@@ -924,6 +924,59 @@ function screenNode(screenId) {
   const blocked = platform.navigationReadiness.inspect({ document: domDocument });
   assert.strictEqual(blocked.ready, false);
   assert.strictEqual(blocked.issues.some((item) => item.code === 'sidebar-menu-not-rendered'), true);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  screens[0].className = 'screen active';
+  screens[0].style.zIndex = '10';
+  screens[1].style.display = 'none';
+  screens[1].attributes['aria-hidden'] = 'true';
+  screens[2].style.display = 'none';
+  screens[2].attributes['aria-hidden'] = 'true';
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  sidebarRoot.dataset = { platformMenu: 'true' };
+  bottomRoot.dataset = { platformMenu: 'true' };
+  sidebarRoot.nodes[0].className = 'nav-link active';
+  sidebarRoot.nodes[0].attributes['aria-current'] = 'page';
+  bottomRoot.nodes[0].className = 'nav-link active';
+  bottomRoot.nodes[0].attributes['aria-current'] = 'page';
+  const screenRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return screens;
+    }
+  };
+  const domDocument = {
+    querySelector(selector) {
+      return {
+        '.gov-nav': sidebarRoot,
+        '.mobile-bottom-nav': bottomRoot,
+        '[data-platform-screen-root]': screenRoot
+      }[selector] || null;
+    }
+  };
+  platform.appState.set({ route: '/households', moduleKey: 'households', screenId: 'households', action: 'list' });
+
+  const plan = platform.navigationRuntimePlan.plan({ document: domDocument });
+  assert.strictEqual(plan.canStart, true);
+  assert.strictEqual(plan.readiness.ready, true);
+  assert.strictEqual(plan.guard.ok, true);
+  assert.strictEqual(plan.roots.navigation.length, 2);
+  assert.strictEqual(plan.roots.navigation[0].itemCount, 3);
+  assert.strictEqual(plan.bindings.shell, true);
+  assert.strictEqual(plan.bindings.navigation, true);
+  assert.strictEqual(plan.bindings.history, false);
+  assert.strictEqual(platform.navigationRuntimePlan.canStart({ document: domDocument }), true);
+
+  delete bottomRoot.dataset.platformMenu;
+  const blocked = platform.navigationRuntimePlan.plan({ document: domDocument });
+  assert.strictEqual(blocked.canStart, false);
+  assert.strictEqual(blocked.guard, null);
+  assert.strictEqual(blocked.issues.some((item) => item.code === 'bottom-navigation-menu-not-rendered'), true);
 }
 
 {
