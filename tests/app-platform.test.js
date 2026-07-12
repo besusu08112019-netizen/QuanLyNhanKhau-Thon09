@@ -777,6 +777,40 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  platform.lists.register({
+    key: 'vehicleList',
+    moduleKey: 'vehicles',
+    screenId: 'vehicles',
+    columns: [
+      { key: 'plate', label: 'Bien so' },
+      { key: 'owner', label: 'Chu so huu' },
+      { key: 'internal', label: 'Noi bo', visible: false }
+    ],
+    filters: [{ key: 'type', label: 'Loai xe', type: 'select', defaultValue: 'car', options: [{ value: 'car', label: 'O to' }] }],
+    pagination: { pageSize: 25 },
+    states: { empty: 'Chua co xe' }
+  });
+  const toolbar = platform.listView.toolbar('vehicleList', { search: '30A', filters: { type: 'car' } });
+  assert.strictEqual(toolbar.className, 'platform-list-toolbar');
+  assert.strictEqual(toolbar.children[0].attributes.value, '30A');
+  assert.strictEqual(toolbar.children[1].dataset.listKey, 'vehicleList');
+
+  const table = platform.listView.table('vehicleList', [{ id: 1, plate: '30A-12345', owner: 'A' }]);
+  assert.strictEqual(table.children[0].children[0].children.length, 2);
+  assert.strictEqual(table.children[1].children[0].dataset.rowKey, 1);
+
+  const pager = platform.listView.pagination('vehicleList', { page: 2, pageSize: 25, total: 80 });
+  assert.strictEqual(pager.children[0].dataset.platformAction, 'vehicles.page');
+  assert.strictEqual(pager.children[1].textContent, '2/4');
+
+  const list = platform.listView.list('vehicleList', [{ id: 2, plate: '30B-67890', owner: 'B' }], { meta: { total: 1 } });
+  assert.strictEqual(list.dataset.moduleKey, 'vehicles');
+  assert.strictEqual(list.children[0].className, 'platform-list-toolbar');
+  assert.strictEqual(list.children[1].children[1].children.length, 1);
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   platform.forms.register({
     key: 'householdsForm',
     moduleKey: 'households',
