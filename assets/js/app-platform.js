@@ -1016,21 +1016,27 @@
 
     function stateView(status, options) {
       var config = options || {};
+      var error = config.error || null;
       var labels = {
         Loading: config.loadingText || 'Dang tai...',
         Loaded: config.loadedText || '',
         Empty: config.emptyText || 'Khong co du lieu',
-        Error: config.errorText || 'Khong the tai du lieu'
+        Error: config.errorText || error || 'Khong the tai du lieu'
       };
       return element('div', {
         className: config.className || ('platform-state platform-state-' + String(status || '').toLowerCase()),
-        text: labels[status] || ''
+        text: labels[status] || '',
+        dataset: Object.assign({ stateStatus: status || '' }, config.dataset || {})
       });
     }
 
     function moduleState(moduleKey, options) {
       var record = stateService.get(moduleKey);
-      return stateView(record ? record.status : STATE.EMPTY, options || {});
+      var config = Object.assign({}, options || {}, {
+        error: record && record.error || options && options.error || null,
+        dataset: Object.assign({ moduleKey: moduleKey || '' }, options && options.dataset || {})
+      });
+      return stateView(record ? record.status : STATE.EMPTY, config);
     }
 
     function table(config) {

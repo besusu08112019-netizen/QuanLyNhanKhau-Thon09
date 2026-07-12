@@ -763,6 +763,13 @@ function screenNode(screenId) {
   platform.state.loading('households');
   const stateNode = platform.components.moduleState('households');
   assert.strictEqual(stateNode.className, 'platform-state platform-state-loading');
+  assert.strictEqual(stateNode.dataset.moduleKey, 'households');
+  assert.strictEqual(stateNode.dataset.stateStatus, platform.STATE.LOADING);
+
+  platform.state.error('households', 'Mat ket noi');
+  const errorNode = platform.components.moduleState('households');
+  assert.strictEqual(errorNode.textContent, 'Mat ket noi');
+  assert.strictEqual(errorNode.dataset.stateStatus, platform.STATE.ERROR);
 
   const table = platform.components.table({
     columns: [
