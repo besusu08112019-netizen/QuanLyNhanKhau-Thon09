@@ -703,6 +703,27 @@ function screenNode(screenId) {
   assert.strictEqual(card.children[0].className, 'card-header');
   assert.strictEqual(card.children[1].className, 'card-body');
 
+  const form = platform.components.form({
+    id: 'household-form',
+    formKey: 'householdForm',
+    moduleKey: 'households',
+    title: 'Ho gia dinh',
+    noValidate: true,
+    on: { submit() {} },
+    actions: [{ label: 'Luu', action: 'households.save', variant: 'success' }]
+  }, [platform.components.input({ name: 'code', value: 'H001' })]);
+  assert.strictEqual(form.tagName, 'FORM');
+  assert.strictEqual(form.className, 'platform-form');
+  assert.strictEqual(form.attributes.id, 'household-form');
+  assert.strictEqual(form.attributes.method, 'post');
+  assert.strictEqual(form.attributes.novalidate, 'novalidate');
+  assert.strictEqual(form.dataset.formKey, 'householdForm');
+  assert.strictEqual(form.dataset.moduleKey, 'households');
+  assert.strictEqual(form.children[0].className, 'platform-form-header');
+  assert.strictEqual(form.children[1].attributes.name, 'code');
+  assert.strictEqual(form.children[2].children[0].dataset.platformAction, 'households.save');
+  assert.strictEqual(typeof form.listeners.submit, 'function');
+
   const tabs = platform.components.tabs({
     activeKey: 'extended',
     action: 'households.tab',
