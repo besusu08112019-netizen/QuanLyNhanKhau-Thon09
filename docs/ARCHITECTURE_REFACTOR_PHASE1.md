@@ -30,9 +30,10 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
 - `Thon09Platform.routes` da co metadata CRUD chuan cho cac module nghiep vu: list, create, detail, edit. Vi du `/persons/create`, `/persons/:id`, `/persons/:id/edit`.
 - `Thon09Platform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
+- `Thon09Platform.lists` da duoc them lam ListRegistry chung cho metadata table/list: columns, filters, search, pagination, rowActions, bulkActions va query defaults.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
-- `tests/app-platform.test.js` da bao phu route CRUD/menu/API client/permission aliases/state/navigation facade, Action Registry, Component Factory, FormRegistry, va modal bridge legacy `App.modals.*`.
+- `tests/app-platform.test.js` da bao phu route CRUD/menu/API client/permission aliases/state/navigation facade, Action Registry, Component Factory, FormRegistry, ListRegistry, va modal bridge legacy `App.modals.*`.
 - Browser navigation spec xac minh cac modal tinh quan trong (`householdModal`, `personModal`, `businessHouseholdModal`, `detailModal`) da duoc dang ky trong platform modal registry.
 - Kiem thu hien tai: `npm run check:js`, `npm run test:platform`, `npm run test:navigation-cleanup`, va `npx playwright test tests/browser/navigation-controller.spec.js --reporter=line` deu PASS o lan chay gan nhat. Playwright xac minh desktop/tablet/mobile dung chung platform menu/controller, click doi noi dung that va chi mot screen hien thi.
 
@@ -130,7 +131,7 @@ Mot so helper nen giu tam thoi trong giai doan migrate:
 
 Sau do can dong goi lai thanh component/service chung.
 
-Tinh trang hien tai: `Thon09Platform.components` da co factory nho cho cac primitive an toan. `Thon09Platform.forms` da co FormRegistry cho schema/sections/serialize. Chua migrate table/form/pagination cua module cu de tranh thay doi layout va CRUD dong loat.
+Tinh trang hien tai: `Thon09Platform.components` da co factory nho cho cac primitive an toan. `Thon09Platform.forms` da co FormRegistry cho schema/sections/serialize. `Thon09Platform.lists` da co ListRegistry cho columns/filters/search/pagination/actions/query defaults. Chua migrate table/form/pagination cua module cu de tranh thay doi layout va CRUD dong loat.
 
 ### Modal/Popup
 
@@ -296,12 +297,17 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Sections chuan: `basic`, `linked`, `extended`, `attachments`.
    - Cung cap helper serialize form DOM, chua thay the global opener cu khi chua migrate module.
 
-10. Component library
+10. `ListRegistry`
+   - Dang ky list/table theo module, screenId, columns, filters, search, pagination, rowActions va bulkActions.
+   - Cung cap query defaults chuan cho page, pageSize, search, sort va filters.
+   - Chua thay renderer table cu khi chua migrate tung module.
+
+11. Component library
    - Table, Card, Form, Input, Select, Button, Badge, Status, Search, Filter, Modal, Tabs, Upload, Pagination.
    - Cac component phai co loading/empty/error state chuan.
    - Nen tang hien co bat dau tu `element`, `button`, `badge`, `stateView`, `moduleState`; cac component phuc tap hon se them khi migrate tung module.
 
-11. `ActionRegistry`
+12. `ActionRegistry`
    - Chuan hoa cac lenh UI bang `Thon09Platform.actions.register(key, handler)`.
    - Markup moi dung `data-platform-action`, khong dung `data-action` vi `data-action` dang co nghia cu trong permission va mot so module.
    - Giai doan sau se thay inline `onclick` theo tung module, khong thay dong loat khi chua co test module.

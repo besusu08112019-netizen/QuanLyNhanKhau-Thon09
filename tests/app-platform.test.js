@@ -324,6 +324,41 @@ function loadPlatform() {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  platform.lists.register({
+    key: 'householdList',
+    moduleKey: 'households',
+    screenId: 'households',
+    columns: [
+      { key: 'code', label: 'Ma ho', sortable: true },
+      { key: 'headName', label: 'Chu ho' },
+      { key: 'internalNote', label: 'Ghi chu noi bo', visible: false }
+    ],
+    filters: [
+      { key: 'areaId', label: 'Dia ban', defaultValue: 'A1' }
+    ],
+    pagination: { pageSize: 50 },
+    rowActions: ['view', 'edit'],
+    bulkActions: ['export']
+  });
+  const list = platform.lists.get('householdList');
+  assert.strictEqual(list.moduleKey, 'households');
+  assert.strictEqual(list.screenId, 'households');
+  assert.strictEqual(platform.lists.columnsFor('householdList').length, 2);
+  assert.strictEqual(platform.lists.columnsFor('householdList', { includeHidden: true }).length, 3);
+  assert.strictEqual(platform.lists.columnsFor('householdList')[0].sortable, true);
+  assert.strictEqual(platform.lists.filtersFor('householdList')[0].defaultValue, 'A1');
+  assert.strictEqual(platform.lists.actionsFor('householdList').join(','), 'view,edit');
+  assert.strictEqual(platform.lists.actionsFor('householdList', 'bulk').join(','), 'export');
+  assert.strictEqual(platform.lists.paginationFor('householdList').pageSize, 50);
+  const query = platform.lists.queryDefaults('householdList');
+  assert.strictEqual(query.page, 1);
+  assert.strictEqual(query.pageSize, 50);
+  assert.strictEqual(query.filters.areaId, 'A1');
+  assert.strictEqual(query.search, '');
+}
+
+{
   const sandbox = loadPlatform();
   const elementEvents = [];
   const element = {

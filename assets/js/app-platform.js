@@ -631,6 +631,112 @@
     return api;
   }
 
+  function createListService() {
+    var registry = createRegistry('list', 'key');
+    var defaultPageSize = 20;
+
+    function normalizeColumn(column) {
+      var source = column || {};
+      return Object.assign({
+        key: source.key || source.name,
+        label: source.label || source.key || source.name || '',
+        sortable: Boolean(source.sortable),
+        visible: source.visible !== false
+      }, source);
+    }
+
+    function normalize(record) {
+      ensureKey(record, 'key');
+      var columns = toArray(record.columns).map(normalizeColumn).filter(function (column) {
+        return column.key;
+      });
+      return Object.assign({}, record, {
+        moduleKey: record.moduleKey || record.key,
+        screenId: record.screenId || record.moduleKey || record.key,
+        columns: columns,
+        filters: toArray(record.filters),
+        search: Object.assign({
+          enabled: true,
+          fields: columns.map(function (column) {
+            return column.key;
+          })
+        }, record.search || {}),
+        pagination: Object.assign({
+          enabled: true,
+          pageSize: defaultPageSize,
+          pageSizeOptions: [10, 20, 50, 100]
+        }, record.pagination || {}),
+        rowActions: toArray(record.rowActions),
+        bulkActions: toArray(record.bulkActions),
+        states: Object.assign({
+          loading: 'Dang tai...',
+          empty: 'Khong co du lieu',
+          error: 'Khong the tai du lieu'
+        }, record.states || {})
+      });
+    }
+
+    function register(record) {
+      registry.upsert(normalize(record));
+      return api;
+    }
+
+    function columnsFor(key, options) {
+      var list = registry.get(key);
+      if (!list) return [];
+      var config = options || {};
+      return toArray(list.columns).filter(function (column) {
+        return config.includeHidden || column.visible !== false;
+      });
+    }
+
+    function filtersFor(key) {
+      var list = registry.get(key);
+      return list ? toArray(list.filters) : [];
+    }
+
+    function actionsFor(key, scope) {
+      var list = registry.get(key);
+      if (!list) return [];
+      return scope === 'bulk' ? toArray(list.bulkActions) : toArray(list.rowActions);
+    }
+
+    function paginationFor(key) {
+      var list = registry.get(key);
+      return list ? Object.assign({}, list.pagination) : null;
+    }
+
+    function queryDefaults(key) {
+      var pagination = paginationFor(key) || { pageSize: defaultPageSize };
+      var filters = {};
+      filtersFor(key).forEach(function (filter) {
+        var filterKey = filter && (filter.key || filter.name);
+        if (!filterKey) return;
+        filters[filterKey] = filter.defaultValue !== undefined ? filter.defaultValue : '';
+      });
+      return {
+        page: 1,
+        pageSize: pagination.pageSize || defaultPageSize,
+        search: '',
+        sort: null,
+        filters: filters
+      };
+    }
+
+    var api = {
+      register: register,
+      upsert: register,
+      get: registry.get,
+      list: registry.list,
+      columnsFor: columnsFor,
+      filtersFor: filtersFor,
+      actionsFor: actionsFor,
+      paginationFor: paginationFor,
+      queryDefaults: queryDefaults
+    };
+    return api;
+  }
+
   function createModalService() {
     var registry = createRegistry('modal', 'key');
     var active = null;
@@ -1022,6 +1128,7 @@
   var actions = createActionService();
   var components = createComponentService(actions, state);
   var forms = createFormService();
+  var lists = createListService();
   var modals = createModalService();
   var api = createApiClient();
   var navigation = createNavigationService(routes, modules);
@@ -1040,6 +1147,7 @@
     actions: actions,
     components: components,
     forms: forms,
+    lists: lists,
     modals: modals,
     api: api,
     navigation: navigation,
