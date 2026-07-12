@@ -279,6 +279,47 @@ function loadPlatform() {
   assert.strictEqual(badge.className, 'badge text-bg-success');
   assert.strictEqual(badge.textContent, 'Active');
 
+  const input = platform.components.input({
+    name: 'headName',
+    value: 'Nguyen Van A',
+    placeholder: 'Chu ho',
+    required: true
+  });
+  assert.strictEqual(input.tagName, 'INPUT');
+  assert.strictEqual(input.attributes.name, 'headName');
+  assert.strictEqual(input.attributes.value, 'Nguyen Van A');
+  assert.strictEqual(input.attributes.required, 'required');
+
+  const select = platform.components.select({
+    name: 'areaId',
+    value: 'A2',
+    options: [
+      { value: 'A1', label: 'Khu 1' },
+      { value: 'A2', label: 'Khu 2' }
+    ]
+  });
+  assert.strictEqual(select.tagName, 'SELECT');
+  assert.strictEqual(select.children.length, 2);
+  assert.strictEqual(select.children[1].attributes.selected, 'selected');
+
+  const filterBar = platform.components.filterBar({
+    search: { placeholder: 'Tim ho' },
+    filters: [
+      { key: 'areaId', type: 'select', defaultValue: 'A1', options: [{ value: 'A1', label: 'Khu 1' }] },
+      { key: 'status', label: 'Trang thai', defaultValue: 'active' }
+    ]
+  });
+  assert.strictEqual(filterBar.className, 'platform-filter-bar');
+  assert.strictEqual(filterBar.children.length, 3);
+  assert.strictEqual(filterBar.children[0].attributes.type, 'search');
+  assert.strictEqual(filterBar.children[1].dataset.filterKey, 'areaId');
+  assert.strictEqual(filterBar.children[2].dataset.filterKey, 'status');
+
+  const card = platform.components.card({ title: 'Ho gia dinh', subtitle: 'Danh sach' }, ['Noi dung']);
+  assert.strictEqual(card.tagName, 'SECTION');
+  assert.strictEqual(card.children[0].className, 'card-header');
+  assert.strictEqual(card.children[1].className, 'card-body');
+
   platform.state.loading('households');
   const stateNode = platform.components.moduleState('households');
   assert.strictEqual(stateNode.className, 'platform-state platform-state-loading');
