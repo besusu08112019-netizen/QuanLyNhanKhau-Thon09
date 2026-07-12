@@ -320,6 +320,37 @@ function loadPlatform() {
   assert.strictEqual(card.children[0].className, 'card-header');
   assert.strictEqual(card.children[1].className, 'card-body');
 
+  const tabs = platform.components.tabs({
+    activeKey: 'extended',
+    action: 'households.tab',
+    tabs: [
+      { key: 'basic', label: 'Co ban', content: ['A'] },
+      { key: 'extended', label: 'Mo rong', content: ['B'] }
+    ]
+  });
+  assert.strictEqual(tabs.tagName, 'DIV');
+  assert.strictEqual(tabs.children[0].attributes.role, 'tablist');
+  assert.strictEqual(tabs.children[0].children[0].dataset.platformAction, 'households.tab');
+  assert.strictEqual(tabs.children[0].children[0].dataset.tabKey, 'basic');
+  assert.strictEqual(tabs.children[0].children[1].className, 'platform-tab-button active');
+  assert.strictEqual(tabs.children[1].children[0].attributes.hidden, 'hidden');
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(tabs.children[1].children[1].attributes, 'hidden'), false);
+
+  const upload = platform.components.upload({
+    id: 'attachments',
+    name: 'files',
+    label: 'Tep dinh kem',
+    accept: 'image/*,.pdf',
+    helpText: 'Chon tep'
+  });
+  assert.strictEqual(upload.className, 'platform-upload');
+  assert.strictEqual(upload.children[0].tagName, 'LABEL');
+  assert.strictEqual(upload.children[0].attributes.for, 'attachments');
+  assert.strictEqual(upload.children[1].attributes.type, 'file');
+  assert.strictEqual(upload.children[1].attributes.name, 'files');
+  assert.strictEqual(upload.children[1].attributes.multiple, 'multiple');
+  assert.strictEqual(upload.children[2].textContent, 'Chon tep');
+
   platform.state.loading('households');
   const stateNode = platform.components.moduleState('households');
   assert.strictEqual(stateNode.className, 'platform-state platform-state-loading');
