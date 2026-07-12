@@ -750,6 +750,32 @@ function screenNode(screenId) {
 }
 
 {
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  const state = platform.navigation.navigate('/vehicles', { source: 'diagnostic-test' });
+  platform.screens.sync({ screens, state });
+  platform.navigationView.sync({ sidebarRoot, bottomRoot, state });
+  screens[2].style.zIndex = '7';
+
+  const report = platform.navigationDiagnostics.inspect({ screens, sidebarRoot, bottomRoot, state });
+  assert.strictEqual(report.state.screenId, 'vehicles');
+  assert.strictEqual(report.transition.source, 'diagnostic-test');
+  assert.strictEqual(report.executor.screen, 'vehicles');
+  assert.strictEqual(report.screens.total, 3);
+  assert.strictEqual(report.screens.visibleCount, 1);
+  assert.strictEqual(report.screens.visibleScreens.join(','), 'vehicles');
+  assert.strictEqual(report.screens.activeScreens.join(','), 'vehicles');
+  assert.strictEqual(report.screens.highestZIndexScreen, 'vehicles');
+  assert.strictEqual(report.screens.highestZIndex, 7);
+  assert.strictEqual(report.sidebar.active, 1);
+  assert.strictEqual(report.sidebar.activeScreens.join(','), 'vehicles');
+  assert.strictEqual(report.bottomNavigation.activeScreens.join(','), 'vehicles');
+}
+
+{
   const platform = loadPlatform().window.Thon09Platform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
