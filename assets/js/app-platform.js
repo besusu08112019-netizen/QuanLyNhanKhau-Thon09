@@ -1192,6 +1192,43 @@
     return api;
   }
 
+  function createModalLayoutService(layoutService, appStateService) {
+    function presentation(options) {
+      var config = options || {};
+      var layout = config.layout || (config.width ? layoutService.summary(config.width) : null) || (appStateService && appStateService.get().layout) || layoutService.summary(window.innerWidth || 0);
+      var mode = layout && layout.mode || 'desktop';
+      var modal = layout && layout.modal || 'dialog';
+      return {
+        mode: mode,
+        modal: modal,
+        fullscreen: modal === 'fullscreen',
+        dialog: modal !== 'fullscreen',
+        className: modal === 'fullscreen' ? 'modal-fullscreen' : 'modal-dialog'
+      };
+    }
+
+    function apply(element, options) {
+      if (!element) return null;
+      var info = presentation(options || {});
+      var target = element;
+      if (element.querySelector && !/(^|\s)modal-dialog(\s|$)/.test(element.className || '')) {
+        target = element.querySelector('.modal-dialog') || element;
+      }
+      target.className = (' ' + (target.className || '') + ' ')
+        .replace(' modal-fullscreen ', ' ')
+        .replace(' modal-dialog ', ' ')
+        .replace(/^\s+|\s+$/g, '');
+      target.className = (target.className ? target.className + ' ' : '') + info.className;
+      if (target.dataset) target.dataset.modalPresentation = info.modal;
+      return info;
+    }
+
+    return {
+      presentation: presentation,
+      apply: apply
+    };
+  }
+
   function createModalService() {
     var registry = createRegistry('modal', 'key');
     var active = null;
@@ -2045,6 +2082,7 @@
   var menu = createMenuService(menus, modules, routes);
   var breadcrumbs = createBreadcrumbService(routes, modules, menu);
   var appState = createAppStateService(routes, modules, layout, breadcrumbs);
+  var modalLayout = createModalLayoutService(layout, appState);
   var router = createRouterService(routes, modules, appState);
   var history = createRouteHistoryService(router);
   var navigation = createNavigationService(router);
@@ -2068,6 +2106,7 @@
     lists: lists,
     crud: crud,
     layout: layout,
+    modalLayout: modalLayout,
     modals: modals,
     api: api,
     navigation: navigation,

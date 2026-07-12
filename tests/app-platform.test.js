@@ -772,6 +772,30 @@ function screenNode(screenId) {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  assert.strictEqual(platform.modalLayout.presentation({ width: 1280 }).modal, 'dialog');
+  assert.strictEqual(platform.modalLayout.presentation({ width: 390 }).fullscreen, true);
+  platform.appState.set({ route: '/households', width: 390 });
+  assert.strictEqual(platform.modalLayout.presentation().className, 'modal-fullscreen');
+
+  const dialog = { className: 'modal-dialog existing modal-fullscreen', dataset: {} };
+  const modal = {
+    className: 'modal',
+    querySelector(selector) {
+      assert.strictEqual(selector, '.modal-dialog');
+      return dialog;
+    }
+  };
+  const applied = platform.modalLayout.apply(modal, { width: 1280 });
+  assert.strictEqual(applied.className, 'modal-dialog');
+  assert.strictEqual(dialog.className, 'existing modal-dialog');
+  assert.strictEqual(dialog.dataset.modalPresentation, 'dialog');
+  platform.modalLayout.apply(dialog, { width: 390 });
+  assert.strictEqual(dialog.className, 'existing modal-fullscreen');
+  assert.strictEqual(dialog.dataset.modalPresentation, 'fullscreen');
+}
+
+{
   const sandbox = loadPlatform();
   const elementEvents = [];
   const element = {
