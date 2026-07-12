@@ -3833,6 +3833,55 @@
     };
   }
 
+  function createNavigationRolloutService(navigationRuntimePlanService, navigationActivationService, navigationRuntimeService) {
+    function planSummary(plan) {
+      return plan ? {
+        canStart: Boolean(plan.canStart),
+        issueCount: toArray(plan.issues).length,
+        preparedAt: plan.preparedAt || null
+      } : null;
+    }
+
+    function inspect(options) {
+      var plan = navigationRuntimePlanService.plan(options || {});
+      var runtime = navigationRuntimeService.inspect();
+      var lastPlan = navigationActivationService.currentPlan();
+      return {
+        ready: Boolean(plan.canStart),
+        blocked: !plan.canStart,
+        canActivate: Boolean(plan.canStart && !runtime.active),
+        active: Boolean(runtime.active),
+        issues: plan.issues.slice(),
+        issueCount: plan.issues.length,
+        plan: plan,
+        runtime: runtime,
+        prepared: Boolean(lastPlan),
+        lastPlan: planSummary(lastPlan)
+      };
+    }
+
+    function assertReady(options) {
+      var status = inspect(options || {});
+      if (!status.ready) {
+        throw new Error('Navigation rollout blocked: ' + status.issues.map(function (item) {
+          return item.code;
+        }).join(', '));
+      }
+      return status;
+    }
+
+    return {
+      inspect: inspect,
+      ready: function (options) {
+        return inspect(options || {}).ready;
+      },
+      canActivate: function (options) {
+        return inspect(options || {}).canActivate;
+      },
+      assertReady: assertReady
+    };
+  }
+
   function createMenuRenderer(menuRegistry, moduleRegistry, menuService) {
     var mobileScreens = [
       'households',
@@ -4017,6 +4066,7 @@
   var shellView = createAppShellViewService(appState, screens, navigationView);
   var navigationRuntime = createNavigationRuntimeService(navigationDelegation, navigation, history, shellView, domRoots);
   var navigationActivation = createNavigationActivationService(navigationRuntimePlan, navigationRuntime);
+  var navigationRollout = createNavigationRolloutService(navigationRuntimePlan, navigationActivation, navigationRuntime);
   var menuRenderer = createMenuRenderer(menus, modules, menu);
 
   var platform = {
@@ -4052,6 +4102,7 @@
     navigationReadiness: navigationReadiness,
     navigationRuntimePlan: navigationRuntimePlan,
     navigationActivation: navigationActivation,
+    navigationRollout: navigationRollout,
     navigationMapping: navigationMapping,
     navigationIntent: navigationIntent,
     navigationDelegation: navigationDelegation,

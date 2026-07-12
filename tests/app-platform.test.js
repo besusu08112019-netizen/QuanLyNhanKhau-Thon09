@@ -1102,6 +1102,85 @@ function screenNode(screenId) {
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
+  screens[0].className = 'screen active';
+  screens[0].style.zIndex = '10';
+  screens[1].style.display = 'none';
+  screens[1].attributes['aria-hidden'] = 'true';
+  screens[2].style.display = 'none';
+  screens[2].attributes['aria-hidden'] = 'true';
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  sidebarRoot.dataset = { platformMenu: 'true' };
+  bottomRoot.dataset = { platformMenu: 'true' };
+  sidebarRoot.nodes[0].className = 'nav-link active';
+  sidebarRoot.nodes[0].attributes['aria-current'] = 'page';
+  bottomRoot.nodes[0].className = 'nav-link active';
+  bottomRoot.nodes[0].attributes['aria-current'] = 'page';
+  sidebarRoot.listeners = {};
+  sidebarRoot.addEventListener = function addEventListener(name, handler) {
+    this.listeners[name] = handler;
+  };
+  sidebarRoot.removeEventListener = function removeEventListener(name, handler) {
+    if (this.listeners[name] === handler) delete this.listeners[name];
+  };
+  bottomRoot.listeners = {};
+  bottomRoot.addEventListener = function addEventListener(name, handler) {
+    this.listeners[name] = handler;
+  };
+  bottomRoot.removeEventListener = function removeEventListener(name, handler) {
+    if (this.listeners[name] === handler) delete this.listeners[name];
+  };
+  const screenRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return screens;
+    }
+  };
+  const domDocument = {
+    querySelector(selector) {
+      return {
+        '.gov-nav': sidebarRoot,
+        '.mobile-bottom-nav': bottomRoot,
+        '[data-platform-screen-root]': screenRoot
+      }[selector] || null;
+    }
+  };
+  platform.appState.set({ route: '/households', moduleKey: 'households', screenId: 'households', action: 'list' });
+
+  const initial = platform.navigationRollout.inspect({ document: domDocument });
+  assert.strictEqual(initial.ready, true);
+  assert.strictEqual(initial.canActivate, true);
+  assert.strictEqual(initial.active, false);
+  assert.strictEqual(initial.issueCount, 0);
+  assert.strictEqual(initial.prepared, false);
+  assert.strictEqual(platform.navigationRollout.ready({ document: domDocument }), true);
+  assert.strictEqual(platform.navigationRollout.canActivate({ document: domDocument }), true);
+  assert.strictEqual(platform.navigationRollout.assertReady({ document: domDocument }).ready, true);
+
+  platform.navigationActivation.prepare({ document: domDocument });
+  const prepared = platform.navigationRollout.inspect({ document: domDocument });
+  assert.strictEqual(prepared.prepared, true);
+  assert.strictEqual(prepared.lastPlan.canStart, true);
+
+  platform.navigationActivation.activate({ document: domDocument });
+  const active = platform.navigationRollout.inspect({ document: domDocument });
+  assert.strictEqual(active.active, true);
+  assert.strictEqual(active.canActivate, false);
+  assert.strictEqual(active.runtime.delegatedBindings, 2);
+  assert.strictEqual(platform.navigationActivation.deactivate(), true);
+
+  delete sidebarRoot.dataset.platformMenu;
+  const blocked = platform.navigationRollout.inspect({ document: domDocument });
+  assert.strictEqual(blocked.ready, false);
+  assert.strictEqual(blocked.blocked, true);
+  assert.strictEqual(blocked.issues.some((item) => item.code === 'sidebar-menu-not-rendered'), true);
+  assert.throws(() => platform.navigationRollout.assertReady({ document: domDocument }), /Navigation rollout blocked/);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
   sidebarRoot.listeners = {};
