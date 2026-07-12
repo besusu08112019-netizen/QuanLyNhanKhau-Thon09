@@ -268,6 +268,39 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const calls = [];
+  const result = platform.moduleLoader.load('households', {
+    route: '/households',
+    loaders: {
+      loadHouseholds(context) {
+        calls.push(context.moduleKey + ':' + context.screenId + ':' + context.route);
+        return { rows: [1] };
+      }
+    }
+  });
+  assert.strictEqual(result.loaded, true);
+  assert.strictEqual(result.moduleKey, 'households');
+  assert.deepStrictEqual(calls, ['households:households:/households']);
+  assert.strictEqual(platform.state.get('households').status, platform.STATE.LOADED);
+  assert.strictEqual(platform.state.get('households').data.rows.length, 1);
+
+  const skipped = platform.moduleLoader.load('vehicles');
+  assert.strictEqual(skipped.skipped, true);
+  assert.strictEqual(skipped.loaderName, null);
+
+  assert.throws(() => platform.moduleLoader.load('persons', {
+    loaders: {
+      loadPersons() {
+        throw new Error('Loader failed');
+      }
+    }
+  }), /Loader failed/);
+  assert.strictEqual(platform.state.get('persons').status, platform.STATE.ERROR);
+}
+
+{
+  const sandbox = loadPlatform();
   const result = sandbox.window.Thon09Platform.navigation.navigate('/persons');
   assert.strictEqual(result.moduleKey, 'persons');
   assert.strictEqual(result.screenId, 'persons');

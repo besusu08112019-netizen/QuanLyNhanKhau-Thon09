@@ -262,6 +262,80 @@
     };
   }
 
+  function createModuleLoaderService(moduleRegistry, stateService) {
+    function resolveModule(target) {
+      if (!target) return null;
+      if (typeof target === 'string') return moduleRegistry.get(target);
+      if (target.moduleKey) return moduleRegistry.get(target.moduleKey);
+      if (target.screenId) {
+        return moduleRegistry.list().find(function (module) {
+          return module.screenId === target.screenId;
+        }) || null;
+      }
+      return null;
+    }
+
+    function loaderFor(moduleKey, options) {
+      var module = resolveModule(moduleKey);
+      var config = options || {};
+      if (!module || !module.loaderName) return null;
+      if (config.loaders && typeof config.loaders[module.loaderName] === 'function') return config.loaders[module.loaderName];
+      return typeof window[module.loaderName] === 'function' ? window[module.loaderName] : null;
+    }
+
+    function load(target, context) {
+      var module = resolveModule(target);
+      var config = context || {};
+      if (!module) throw new Error('Module not registered: ' + (target && target.moduleKey || target));
+      var loader = loaderFor(module.moduleKey, config);
+      if (!loader) {
+        return {
+          moduleKey: module.moduleKey,
+          loaderName: module.loaderName || null,
+          loaded: false,
+          skipped: true
+        };
+      }
+      stateService.loading(module.moduleKey, { loaderName: module.loaderName });
+      try {
+        var result = loader({
+          module: clone(module),
+          moduleKey: module.moduleKey,
+          screenId: module.screenId,
+          route: config.route || module.path || null,
+          params: clone(config.params || {})
+        });
+        if (result && typeof result.then === 'function') {
+          return result.then(function (value) {
+            stateService.loaded(module.moduleKey, value || null, { loaderName: module.loaderName });
+            return { moduleKey: module.moduleKey, loaderName: module.loaderName, loaded: true, result: value };
+          }).catch(function (error) {
+            stateService.error(module.moduleKey, error && error.message || String(error), { loaderName: module.loaderName });
+            throw error;
+          });
+        }
+        stateService.loaded(module.moduleKey, result || null, { loaderName: module.loaderName });
+        return { moduleKey: module.moduleKey, loaderName: module.loaderName, loaded: true, result: result };
+      } catch (error) {
+        stateService.error(module.moduleKey, error && error.message || String(error), { loaderName: module.loaderName });
+        throw error;
+      }
+    }
+
+    function preload(keys, context) {
+      return toArray(keys).map(function (moduleKey) {
+        return load(moduleKey, context || {});
+      });
+    }
+
+    return {
+      resolveModule: resolveModule,
+      loaderFor: loaderFor,
+      load: load,
+      preload: preload
+    };
+  }
+
   function createPermissionService() {
     var rules = new Map();
     var moduleAliases = {
@@ -2366,6 +2440,7 @@
   var modules = createRegistry('module', 'moduleKey');
   var permissions = createPermissionService();
   var state = createStateService();
+  var moduleLoader = createModuleLoaderService(modules, state);
   var actions = createActionService();
   var components = createComponentService(actions, state);
   var forms = createFormService();
@@ -2396,6 +2471,7 @@
     routes: routes,
     menus: menus,
     modules: modules,
+    moduleLoader: moduleLoader,
     permissions: permissions,
     state: state,
     actions: actions,
@@ -2424,6 +2500,7 @@
     createRegistry: createRegistry,
     createApiClient: createApiClient,
     createApiResourceService: createApiResourceService,
+    createModuleLoaderService: createModuleLoaderService,
     createFormViewService: createFormViewService,
     createListViewService: createListViewService,
     createModalService: createModalService
