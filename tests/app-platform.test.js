@@ -181,6 +181,20 @@ function loadPlatform() {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const personEdit = platform.routes.match('/persons/9/edit');
+  assert.strictEqual(personEdit.moduleKey, 'persons');
+  assert.strictEqual(personEdit.action, 'edit');
+  assert.strictEqual(personEdit.params.id, '9');
+  const publicAssetCreate = platform.routes.match('/public-assets/create');
+  assert.strictEqual(publicAssetCreate.moduleKey, 'publicAssets');
+  assert.strictEqual(publicAssetCreate.action, 'create');
+  const contributionDetail = platform.routes.match('/contributions/15');
+  assert.strictEqual(contributionDetail.action, 'detail');
+  assert.strictEqual(platform.menu.routeForModuleAction('vehicles', 'edit').path, '/vehicles/:id/edit');
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'SUPER_ADMIN' }), false);

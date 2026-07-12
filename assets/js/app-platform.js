@@ -960,6 +960,19 @@
   };
 
   function registerDefaults() {
+    function registerCrudRoutes(moduleKey, path) {
+      var module = modules.get(moduleKey);
+      if (!module || !path) return;
+      [
+        { path: path, moduleKey: moduleKey, screenId: module.screenId, action: 'list' },
+        { path: path + '/create', moduleKey: moduleKey, screenId: module.screenId, action: 'create' },
+        { path: path + '/:id', moduleKey: moduleKey, screenId: module.screenId, action: 'detail' },
+        { path: path + '/:id/edit', moduleKey: moduleKey, screenId: module.screenId, action: 'edit' }
+      ].forEach(function (route) {
+        routes.upsert(route);
+      });
+    }
+
     [
       { moduleKey: 'dashboard', screenId: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: 'fa-gauge-high', permissionScope: 'dashboard', loaderName: 'loadDashboard' },
       { moduleKey: 'dashboardHouseholds', screenId: 'dashboardHouseholds', path: '/dashboard/households', label: 'Ho dan', icon: 'fa-house-chimney', permissionScope: 'dashboard' },
@@ -1040,6 +1053,24 @@
       { path: '/system/appearance', moduleKey: 'appearance', screenId: 'appearance', action: 'list' }
     ].forEach(function (route) {
       routes.register(route);
+    });
+
+    [
+      'households',
+      'persons',
+      'temporaryResidence',
+      'temporaryAbsence',
+      'movements',
+      'publicAssets',
+      'businessHouseholds',
+      'livestock',
+      'houses',
+      'vehicles',
+      'agriculture',
+      'contributions'
+    ].forEach(function (moduleKey) {
+      var module = modules.get(moduleKey);
+      if (module) registerCrudRoutes(module.moduleKey, module.path);
     });
 
     [
