@@ -496,6 +496,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - `plan()` tra `nextModuleKey`, ready/blocked/completed modules de khoa thu tu migrate va tiep tuc duoc sau moi commit.
    - `progress()`, `markComplete()` va `resetProgress()` chi luu tien do trong runtime memory, phuc vu test/rollout noi bo va khong ghi du lieu he thong.
    - `gate()` va `assertGate()` chan advance khi scope/stage khong co next module san sang hoac con blocker, truoc khi caller danh dau module hoan tat.
+   - `current()` va alias `next()` tra dung module hanh dong ke tiep kem gate, handoff, blockers, queue position va timeline summary de tiep tuc migration ma khong ghi event moi.
    - `timeline()` tra event log runtime-memory cua cac buoc complete/reset/handoff de trace migration ma khong ghi localStorage/database.
    - Ket qua hien tai: dashboard co the qua navigation contract khi co DOM screen; CRUD scope cua 12 module nghiep vu con bi chan cho toi khi migrate list/form metadata theo tung module.
    - Service chi doc registry/DOM va khong goi API, khong render, khong ghi du lieu.

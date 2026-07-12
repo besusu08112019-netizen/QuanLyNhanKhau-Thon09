@@ -3576,6 +3576,39 @@
       };
     }
 
+    function current(options) {
+      var config = options || {};
+      var gateResult = gate(config);
+      var history = timeline(config);
+      var modules = gateResult.queue.modules || [];
+      var moduleIndex = modules.findIndex(function (record) {
+        return record.moduleKey === gateResult.nextModuleKey;
+      });
+      return {
+        canAdvance: gateResult.canAdvance,
+        reason: gateResult.reason,
+        stage: gateResult.stage,
+        scope: gateResult.scope,
+        progressKey: gateResult.progressKey,
+        moduleKey: gateResult.nextModuleKey,
+        nextModuleKey: gateResult.nextModuleKey,
+        queuePosition: moduleIndex === -1 ? null : moduleIndex + 1,
+        completedCount: gateResult.completedCount,
+        remainingCount: gateResult.remainingCount,
+        percentComplete: gateResult.queue.percentComplete,
+        blockedCount: gateResult.blockedCount,
+        blockerCount: gateResult.blockerCount,
+        gate: gateResult,
+        handoff: gateResult.handoff,
+        blockers: gateResult.blockers,
+        queue: gateResult.queue,
+        timeline: {
+          eventCount: history.eventCount,
+          latest: history.events.slice(-5)
+        }
+      };
+    }
+
     function assertGate(options) {
       var result = gate(options || {});
       if (!result.canAdvance) {
@@ -3662,6 +3695,8 @@
       timeline: timeline,
       handoff: handoff,
       gate: gate,
+      current: current,
+      next: current,
       assertGate: assertGate,
       assertCanAdvance: assertGate,
       completeHandoff: completeHandoff,

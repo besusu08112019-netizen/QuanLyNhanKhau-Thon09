@@ -1095,6 +1095,28 @@ function screenNode(screenId) {
   assert.strictEqual(dashboardAssertGate.canAdvance, true);
   assert.strictEqual(dashboardAssertGate.nextModuleKey, 'dashboardPopulation');
 
+  const dashboardCurrent = platform.moduleMigration.current({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(dashboardCurrent.moduleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardCurrent.nextModuleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardCurrent.queuePosition, 3);
+  assert.strictEqual(dashboardCurrent.percentComplete, 25);
+  assert.strictEqual(dashboardCurrent.gate.canAdvance, true);
+  assert.strictEqual(dashboardCurrent.handoff.moduleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardCurrent.blockers.blockedCount, 0);
+  assert.strictEqual(dashboardCurrent.timeline.eventCount, 5);
+  assert.strictEqual(dashboardCurrent.timeline.latest.length, 5);
+
+  const dashboardNext = platform.moduleMigration.next({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(dashboardNext.moduleKey, dashboardCurrent.moduleKey);
+
   const outOfOrderComplete = platform.moduleMigration.completeHandoff('dashboardVehicles', {
     document: domDocument,
     navigationScope: 'migrationDashboard',
