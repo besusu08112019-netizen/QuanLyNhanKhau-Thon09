@@ -773,6 +773,18 @@ function screenNode(screenId) {
   assert.strictEqual(report.sidebar.active, 1);
   assert.strictEqual(report.sidebar.activeScreens.join(','), 'vehicles');
   assert.strictEqual(report.bottomNavigation.activeScreens.join(','), 'vehicles');
+
+  const guarded = platform.navigationGuard.validate({ screens, sidebarRoot, bottomRoot, state });
+  assert.strictEqual(guarded.ok, true);
+  assert.strictEqual(guarded.expectedScreen, 'vehicles');
+  assert.strictEqual(platform.navigationGuard.assert({ screens, sidebarRoot, bottomRoot, state }).ok, true);
+
+  screens[0].style.display = 'block';
+  screens[0].attributes['aria-hidden'] = 'false';
+  const failed = platform.navigationGuard.validate({ screens, sidebarRoot, bottomRoot, state });
+  assert.strictEqual(failed.ok, false);
+  assert.strictEqual(failed.issues.some((item) => item.code === 'visible-screen-count'), true);
+  assert.throws(() => platform.navigationGuard.assert({ screens, sidebarRoot, bottomRoot, state }), /Navigation guard failed/);
 }
 
 {
