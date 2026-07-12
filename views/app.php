@@ -665,6 +665,9 @@
       function normalize(screen){return screen==='export'?'exportExcel':(screen||'dashboard');}
       function hardNavigate(screen,event){
         screen=normalize(screen);
+        if(window.Thon09NavigationController&&typeof window.Thon09NavigationController.navigate==='function'){
+          return window.Thon09NavigationController.navigate(screen,event);
+        }
         var target=document.getElementById(screen+'Screen')||document.getElementById('dashboardScreen');
         if(!target)return false;
         if(event){event.preventDefault();if(event.stopImmediatePropagation)event.stopImmediatePropagation();else if(event.stopPropagation)event.stopPropagation();}

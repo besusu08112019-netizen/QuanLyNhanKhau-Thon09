@@ -150,6 +150,7 @@
 
   function navigationRepairModule(){
     var labels={dashboard:'Dashboard',dashboardHouseholds:'Dashboard Hộ dân',dashboardPopulation:'Dashboard Nhân khẩu',dashboardBusiness:'Dashboard Kinh doanh',dashboardVehicles:'Dashboard Xe cộ',dashboardLivestock:'Dashboard Chăn nuôi',dashboardGis:'Dashboard GIS',dashboardReports:'Dashboard Báo cáo',operationCenter:'Trung tâm điều hành',gis:'Bản đồ địa bàn',businessHouseholds:'Hộ sản xuất & kinh doanh',vehicles:'Quản lý xe cộ',livestock:'Quản lý vật nuôi',agriculture:'Sản xuất nông nghiệp',contributions:'Đóng góp hộ',households:'Quản lý hộ gia đình',persons:'Quản lý nhân khẩu',reports:'Báo cáo thống kê',temporaryResidence:'Tạm trú',temporaryAbsence:'Tạm vắng',movements:'Biến động nhân khẩu',import:'Import dữ liệu',export:'Xuất Excel',exportExcel:'Xuất Excel',printForms:'In biểu mẫu',users:'Quản lý tài khoản',permissions:'Phân quyền',logs:'Nhật ký hệ thống',backups:'Sao lưu dữ liệu',restore:'Khôi phục dữ liệu',settings:'Cấu hình hệ thống',appearance:'Cấu hình giao diện'};
+    labels={dashboard:'Dashboard',dashboardHouseholds:'Dashboard H\u1ed9 d\u00e2n',dashboardPopulation:'Dashboard Nh\u00e2n kh\u1ea9u',dashboardBusiness:'Dashboard Kinh doanh',dashboardVehicles:'Dashboard Xe c\u1ed9',dashboardLivestock:'Dashboard Ch\u0103n nu\u00f4i',dashboardGis:'Dashboard GIS',dashboardReports:'Dashboard B\u00e1o c\u00e1o',operationCenter:'Trung t\u00e2m \u0111i\u1ec1u h\u00e0nh',gis:'B\u1ea3n \u0111\u1ed3 \u0111\u1ecba b\u00e0n',businessHouseholds:'H\u1ed9 s\u1ea3n xu\u1ea5t & kinh doanh',vehicles:'Qu\u1ea3n l\u00fd xe c\u1ed9',livestock:'Qu\u1ea3n l\u00fd v\u1eadt nu\u00f4i',agriculture:'S\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p',contributions:'\u0110\u00f3ng g\u00f3p h\u1ed9',publicAssets:'C\u00f4ng tr\u00ecnh c\u00f4ng c\u1ed9ng',households:'Qu\u1ea3n l\u00fd h\u1ed9 gia \u0111\u00ecnh',persons:'Qu\u1ea3n l\u00fd nh\u00e2n kh\u1ea9u',reports:'B\u00e1o c\u00e1o th\u1ed1ng k\u00ea',temporaryResidence:'T\u1ea1m tr\u00fa',temporaryAbsence:'T\u1ea1m v\u1eafng',movements:'Bi\u1ebfn \u0111\u1ed9ng nh\u00e2n kh\u1ea9u',import:'Import d\u1eef li\u1ec7u',export:'Xu\u1ea5t Excel',exportExcel:'Xu\u1ea5t Excel',printForms:'In bi\u1ec3u m\u1eabu',users:'Qu\u1ea3n l\u00fd t\u00e0i kho\u1ea3n',permissions:'Ph\u00e2n quy\u1ec1n',logs:'Nh\u1eadt k\u00fd h\u1ec7 th\u1ed1ng',backups:'Sao l\u01b0u d\u1eef li\u1ec7u',restore:'Kh\u00f4i ph\u1ee5c d\u1eef li\u1ec7u',settings:'C\u1ea5u h\u00ecnh h\u1ec7 th\u1ed1ng',appearance:'C\u1ea5u h\u00ecnh giao di\u1ec7n'};
     var dashboardScreens={dashboard:true,dashboardHouseholds:true,dashboardPopulation:true,dashboardBusiness:true,dashboardVehicles:true,dashboardLivestock:true,dashboardGis:true,dashboardReports:true};
     var originalSwitchScreen=typeof window.switchScreen==='function'?window.switchScreen:null;
     function normalizeScreen(screen){return screen==='export'?'exportExcel':(screen||'dashboard');}
@@ -182,6 +183,149 @@
     window.switchScreen=function(screen){var requested=screen;var normalized=normalizeScreen(screen);var ranOriginal=false;if(originalSwitchScreen&&originalSwitchScreen!==window.switchScreen){try{originalSwitchScreen(normalized);ranOriginal=true;}catch(error){console.error('switchScreen original failed',error);}}if(!ranOriginal)repairScreenState(normalized,requested);setTimeout(function(){repairScreenState(normalized,requested);},0);};
     document.addEventListener('click',function(event){var toggle=event.target.closest&&event.target.closest('[data-dashboard-toggle]');if(toggle){event.preventDefault();var tree=toggle.closest('[data-dashboard-tree]');setDashboardTreeOpen(!(tree&&tree.classList.contains('is-open')),true);return;}var desktopButton=event.target.closest&&event.target.closest('.sidebar .nav-link[data-screen]');if(desktopButton&&!desktopButton.classList.contains('gov-logout')){navigateToScreen(desktopButton.dataset.screen,event);return;}var mobileButton=event.target.closest&&event.target.closest('.mobile-bottom-nav [data-mobile-screen]');if(mobileButton){navigateToScreen(mobileButton.dataset.mobileScreen,event);}},true);
     setTimeout(function(){var screen='dashboard';try{screen=localStorage.getItem('thon09_screen')||'dashboard';}catch(error){}repairScreenState(screen,'');},0);
+  }
+
+  function navigationControllerModule(){
+    var labels={dashboard:'Dashboard',dashboardHouseholds:'Dashboard Há»™ dÃ¢n',dashboardPopulation:'Dashboard NhÃ¢n kháº©u',dashboardBusiness:'Dashboard Kinh doanh',dashboardVehicles:'Dashboard Xe cá»™',dashboardLivestock:'Dashboard ChÄƒn nuÃ´i',dashboardGis:'Dashboard GIS',dashboardReports:'Dashboard BÃ¡o cÃ¡o',operationCenter:'Trung tÃ¢m Ä‘iá»u hÃ nh',gis:'Báº£n Ä‘á»“ Ä‘á»‹a bÃ n',businessHouseholds:'Há»™ sáº£n xuáº¥t & kinh doanh',vehicles:'Quáº£n lÃ½ xe cá»™',livestock:'Quáº£n lÃ½ váº­t nuÃ´i',agriculture:'Sáº£n xuáº¥t nÃ´ng nghiá»‡p',contributions:'ÄÃ³ng gÃ³p há»™',publicAssets:'CÃ´ng trÃ¬nh cÃ´ng cá»™ng',households:'Quáº£n lÃ½ há»™ gia Ä‘Ã¬nh',persons:'Quáº£n lÃ½ nhÃ¢n kháº©u',reports:'BÃ¡o cÃ¡o thá»‘ng kÃª',temporaryResidence:'Táº¡m trÃº',temporaryAbsence:'Táº¡m váº¯ng',movements:'Biáº¿n Ä‘á»™ng nhÃ¢n kháº©u',import:'Import dá»¯ liá»‡u',export:'Xuáº¥t Excel',exportExcel:'Xuáº¥t Excel',printForms:'In biá»ƒu máº«u',users:'Quáº£n lÃ½ tÃ i khoáº£n',permissions:'PhÃ¢n quyá»n',logs:'Nháº­t kÃ½ há»‡ thá»‘ng',backups:'Sao lÆ°u dá»¯ liá»‡u',restore:'KhÃ´i phá»¥c dá»¯ liá»‡u',settings:'Cáº¥u hÃ¬nh há»‡ thá»‘ng',appearance:'Cáº¥u hÃ¬nh giao diá»‡n'};
+    labels={dashboard:'Dashboard',dashboardHouseholds:'Dashboard H\u1ed9 d\u00e2n',dashboardPopulation:'Dashboard Nh\u00e2n kh\u1ea9u',dashboardBusiness:'Dashboard Kinh doanh',dashboardVehicles:'Dashboard Xe c\u1ed9',dashboardLivestock:'Dashboard Ch\u0103n nu\u00f4i',dashboardGis:'Dashboard GIS',dashboardReports:'Dashboard B\u00e1o c\u00e1o',operationCenter:'Trung t\u00e2m \u0111i\u1ec1u h\u00e0nh',gis:'B\u1ea3n \u0111\u1ed3 \u0111\u1ecba b\u00e0n',businessHouseholds:'H\u1ed9 s\u1ea3n xu\u1ea5t & kinh doanh',vehicles:'Qu\u1ea3n l\u00fd xe c\u1ed9',livestock:'Qu\u1ea3n l\u00fd v\u1eadt nu\u00f4i',agriculture:'S\u1ea3n xu\u1ea5t n\u00f4ng nghi\u1ec7p',contributions:'\u0110\u00f3ng g\u00f3p h\u1ed9',publicAssets:'C\u00f4ng tr\u00ecnh c\u00f4ng c\u1ed9ng',households:'Qu\u1ea3n l\u00fd h\u1ed9 gia \u0111\u00ecnh',persons:'Qu\u1ea3n l\u00fd nh\u00e2n kh\u1ea9u',reports:'B\u00e1o c\u00e1o th\u1ed1ng k\u00ea',temporaryResidence:'T\u1ea1m tr\u00fa',temporaryAbsence:'T\u1ea1m v\u1eafng',movements:'Bi\u1ebfn \u0111\u1ed9ng nh\u00e2n kh\u1ea9u',import:'Import d\u1eef li\u1ec7u',export:'Xu\u1ea5t Excel',exportExcel:'Xu\u1ea5t Excel',printForms:'In bi\u1ec3u m\u1eabu',users:'Qu\u1ea3n l\u00fd t\u00e0i kho\u1ea3n',permissions:'Ph\u00e2n quy\u1ec1n',logs:'Nh\u1eadt k\u00fd h\u1ec7 th\u1ed1ng',backups:'Sao l\u01b0u d\u1eef li\u1ec7u',restore:'Kh\u00f4i ph\u1ee5c d\u1eef li\u1ec7u',settings:'C\u1ea5u h\u00ecnh h\u1ec7 th\u1ed1ng',appearance:'C\u1ea5u h\u00ecnh giao di\u1ec7n'};
+    var dashboardScreens={dashboard:true,dashboardHouseholds:true,dashboardPopulation:true,dashboardBusiness:true,dashboardVehicles:true,dashboardLivestock:true,dashboardGis:true,dashboardReports:true};
+    var loaderNames={dashboard:'loadDashboard',households:'loadHouseholds',businessHouseholds:'loadHouseholdBusiness',persons:'loadPersons',operationCenter:'loadOperationCenter',publicAssets:'loadPublicAssets',livestock:'loadLivestock',agriculture:'loadAgriculture',houses:'loadHouses'};
+    var previousSwitchScreen=typeof window.switchScreen==='function'?window.switchScreen:null;
+    var inController=false;
+    var log=[];
+    function normalize(screen){return screen==='export'?'exportExcel':(screen||'dashboard');}
+    function targetFor(screen){return document.getElementById(screen+'Screen')||document.getElementById('dashboardScreen');}
+    function domState(){
+      var rows=Array.prototype.slice.call(document.querySelectorAll('.screen')).map(function(el){
+        var style=getComputedStyle(el),rect=el.getBoundingClientRect();
+        return {id:el.id,active:el.classList.contains('active'),inlineDisplay:el.style.display||'',computedDisplay:style.display,visibility:style.visibility,zIndex:style.zIndex,width:Math.round(rect.width),height:Math.round(rect.height)};
+      });
+      var visible=rows.filter(function(row){return row.computedDisplay!=='none'&&row.visibility!=='hidden'&&row.width>0&&row.height>0;});
+      var top=visible.map(function(row){return {id:row.id,z:Number.parseInt(row.zIndex,10)||0};}).sort(function(a,b){return b.z-a.z;})[0]||null;
+      return {screens:rows,activeScreens:rows.filter(function(row){return row.active;}),visibleScreens:visible,displayBlockCount:rows.filter(function(row){return row.computedDisplay==='block';}).length,highestZIndexScreen:top};
+    }
+    function writeLog(step,data){
+      var entry=Object.assign({step:step,time:Date.now()},data||{});
+      log.push(entry);
+      window.__thon09NavigationLog=log.slice();
+      if(window.THON09_NAV_DEBUG)console.debug('[NavigationController]',step,entry);
+    }
+    function centerMobile(button){
+      if(!button)return;
+      try{button.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}catch(error){}
+    }
+    function setDashboardTree(screen,requested){
+      var active=!!(dashboardScreens[screen]||dashboardScreens[requested]);
+      var tree=document.querySelector('[data-dashboard-tree]');
+      if(tree)tree.classList.toggle('is-active',active);
+      var toggle=tree&&tree.querySelector('[data-dashboard-toggle]');
+      if(toggle)toggle.setAttribute('aria-expanded',active?'true':'false');
+      if(tree)tree.classList.toggle('is-open',active);
+      document.querySelectorAll('[data-dashboard-tree] .dashboard-tree-link[data-screen]').forEach(function(btn){
+        var current=btn.dataset.screen===screen||btn.dataset.screen===requested;
+        btn.classList.toggle('active',current);
+        btn.setAttribute('aria-current',current?'page':'false');
+      });
+    }
+    function setActiveScreen(screen,requested){
+      var previous=window.App&&window.App.screen;
+      if(window.App)window.App.screen=screen;
+      try{localStorage.setItem('thon09_screen',screen);}catch(error){}
+      writeLog('setActiveScreen',{previousScreen:previous,currentScreen:screen,requestedScreen:requested});
+      try{document.dispatchEvent(new CustomEvent('thon09:screen-change',{detail:{screen:screen,requestedScreen:requested}}));}catch(error){}
+    }
+    function hideOtherScreens(target){
+      document.querySelectorAll('.screen').forEach(function(el){
+        var active=el===target;
+        el.classList.toggle('active',active);
+        el.style.display=active?'block':'none';
+        el.setAttribute('aria-hidden',active?'false':'true');
+      });
+      writeLog('hideOtherScreens',domState());
+    }
+    function syncActiveNav(screen,requested){
+      document.querySelectorAll('.sidebar .nav-link[data-screen]').forEach(function(btn){
+        var active=btn.dataset.screen===screen||btn.dataset.screen===requested;
+        btn.classList.toggle('active',active);
+        btn.setAttribute('aria-current',active?'page':'false');
+      });
+      setDashboardTree(screen,requested);
+      document.querySelectorAll('.mobile-bottom-nav [data-mobile-screen]').forEach(function(btn){
+        var active=btn.dataset.mobileScreen===screen||btn.dataset.mobileScreen===requested;
+        btn.classList.toggle('active',active);
+        btn.setAttribute('aria-current',active?'page':'false');
+        if(active)centerMobile(btn);
+      });
+    }
+    function render(screen){
+      if(screen==='gis'&&typeof window.ensureGisAssets==='function'&&typeof window.loadGisMap==='function'){
+        window.ensureGisAssets().then(function(){window.loadGisMap();}).catch(function(error){if(typeof window.showToast==='function')window.showToast('KhÃ´ng táº£i Ä‘Æ°á»£c thÆ° viá»‡n báº£n Ä‘á»“: '+error.message,'danger');});
+        writeLog('render',{screen:screen,loader:'ensureGisAssets/loadGisMap'});
+        return;
+      }
+      var loader=loaderNames[screen];
+      if(loader&&typeof window[loader]==='function'){setTimeout(function(){window[loader]();},0);writeLog('render',{screen:screen,loader:loader});}
+      else writeLog('render',{screen:screen,loader:''});
+    }
+    function showScreen(screen,requested){
+      screen=normalize(screen);
+      var target=targetFor(screen);
+      if(!target){writeLog('showScreen',{screen:screen,found:false});return false;}
+      if(typeof window.thon09ApplyModuleDisplayOrder==='function')window.thon09ApplyModuleDisplayOrder();
+      setActiveScreen(screen,requested);
+      hideOtherScreens(target);
+      syncActiveNav(screen,requested);
+      var label=labels[screen]||labels[requested]||'Dashboard';
+      var title=document.getElementById('screenTitle');
+      var breadcrumb=document.getElementById('breadcrumbTrail');
+      if(title)title.textContent=label;
+      if(breadcrumb)breadcrumb.textContent='Trang ch\u1ee7 / '+label;
+      document.body.classList.remove('sidebar-open');
+      var sidebar=document.querySelector('.sidebar');
+      if(sidebar)sidebar.classList.remove('open');
+      render(screen);
+      writeLog('showScreen',Object.assign({screen:screen,targetScreen:target.id,currentScreen:window.App&&window.App.screen},domState()));
+      return true;
+    }
+    function switchScreen(screen){
+      if(inController)return showScreen(screen,screen);
+      log=[];
+      var requested=screen;
+      var normalized=normalize(screen);
+      if(!targetFor(normalized))normalized='dashboard';
+      writeLog('Click menu',{menuKey:requested,moduleKey:normalized,targetScreen:normalized+'Screen',currentScreen:window.App&&window.App.screen});
+      inController=true;
+      try{
+        if(previousSwitchScreen&&previousSwitchScreen!==switchScreen)previousSwitchScreen(normalized);
+      }catch(error){
+        console.error('switchScreen original failed',error);
+        writeLog('switchScreen original failed',{message:error&&error.message});
+      }finally{
+        inController=false;
+      }
+      writeLog('switchScreen',{requestedScreen:requested,screen:normalized});
+      showScreen(normalized,requested);
+      setTimeout(function(){showScreen(normalized,requested);},0);
+    }
+    function navigate(screen,event){
+      screen=normalize(screen);
+      if(event&&typeof event.preventDefault==='function')event.preventDefault();
+      if(event&&typeof event.stopPropagation==='function')event.stopPropagation();
+      switchScreen(screen);
+      return true;
+    }
+    window.Thon09NavigationController={navigate:navigate,switchScreen:switchScreen,showScreen:showScreen,hideOtherScreens:hideOtherScreens,render:render,inspect:domState,getLog:function(){return log.slice();}};
+    window.thon09NavigateToScreen=navigate;
+    window.switchScreen=switchScreen;
+    document.addEventListener('click',function(event){
+      var toggle=event.target.closest&&event.target.closest('[data-dashboard-toggle]');
+      if(toggle)return;
+      var desktop=event.target.closest&&event.target.closest('.sidebar .nav-link[data-screen]');
+      if(desktop&&!desktop.classList.contains('gov-logout')){navigate(desktop.dataset.screen,event);return;}
+      var mobile=event.target.closest&&event.target.closest('.mobile-bottom-nav [data-mobile-screen]');
+      if(mobile)navigate(mobile.dataset.mobileScreen,event);
+    },true);
+    setTimeout(function(){var screen='dashboard';try{screen=localStorage.getItem('thon09_screen')||'dashboard';}catch(error){}showScreen(screen,'');},0);
   }
 
   function accessibilityRepairModule(){
@@ -225,6 +369,7 @@
   try{moduleDisplayOrderModule();}catch(error){console.error('module display order module failed',error);}
   try{headerGuardModule();}catch(error){console.error('header guard module failed',error);}
   try{navigationRepairModule();}catch(error){console.error('navigation repair module failed',error);}
+  try{navigationControllerModule();}catch(error){console.error('navigation controller module failed',error);}
   try{accessibilityRepairModule();}catch(error){console.error('accessibility repair module failed',error);}
   try{commonModalModule();}catch(error){console.error('common modal module failed',error);}
 })();

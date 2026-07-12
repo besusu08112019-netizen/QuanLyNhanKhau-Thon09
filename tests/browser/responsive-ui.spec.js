@@ -38,9 +38,12 @@ async function openAuthenticatedApp(page, width) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    window.App.token = 'test-token';
-    window.App.user = user;
+    App.token = 'test-token';
+    App.csrfToken = 'test-csrf';
+    App.user = user;
+    window.App = App;
     localStorage.setItem('thon09_token', 'test-token');
+    localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
     if (typeof window.showApp === 'function') window.showApp();
   });
@@ -185,6 +188,7 @@ test.describe('responsive system navigation audit', () => {
     }
 
     for (const screen of moduleOrderScreens) {
+      await page.evaluate(() => document.querySelectorAll('.toast').forEach((toast) => toast.remove()));
       await page.locator(`.mobile-bottom-nav [data-mobile-screen="${screen}"]`).first().click();
       await page.waitForTimeout(120);
       const mobileState = await page.evaluate((target) => ({
@@ -195,6 +199,7 @@ test.describe('responsive system navigation audit', () => {
       expect(mobileState.activeId).toBe(`${screen}Screen`);
       expect(mobileState.activeMobile).toBe(screen);
       expect(mobileState.appScreen).toBe(screen);
+      await page.evaluate(() => document.querySelectorAll('.toast').forEach((toast) => toast.remove()));
     }
   });
 
