@@ -28,6 +28,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `card`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; button/pagination/tabs moi co the gan truc tiep `data-platform-action`.
 - `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
 - `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata.
+- `Thon09Platform.modals` da co standard modal schema/render contract cho Header, Tabs, Basic, Linked, Extended, History, Attachments, Footer dua tren FormRegistry/ComponentService/ModalLayout.
 - `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
 - `Thon09Platform.routes` da co metadata CRUD chuan cho cac module nghiep vu: list, create, detail, edit. Vi du `/persons/create`, `/persons/:id`, `/persons/:id/edit`.
 - `Thon09Platform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
@@ -312,6 +313,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 9. `ModalService`
    - Mot component modal chung: Header, Tabs, Basic, Extended, History, Attachments, Footer.
    - Module dang ky form schema/action, khong tu tao popup rieng.
+   - Da co `schema()` va `renderStandard()` lam contract moi; chua ep cac popup cu dung contract nay truoc khi migrate tung module.
 
 10. `FormRegistry`
    - Dang ky form theo module, modalKey, sections, fields va actions.

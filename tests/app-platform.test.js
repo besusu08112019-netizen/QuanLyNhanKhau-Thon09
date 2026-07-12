@@ -867,6 +867,37 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  platform.forms.register({
+    key: 'vehicleForm',
+    moduleKey: 'vehicles',
+    modalKey: 'vehicleModal',
+    title: 'Quan ly xe co',
+    sections: {
+      basic: [{ key: 'plate', name: 'plate', label: 'Bien so', defaultValue: '' }],
+      linked: [{ key: 'owner', name: 'owner', label: 'Chu so huu', defaultValue: '' }],
+      extended: [{ key: 'status', name: 'status', label: 'Trang thai', type: 'select', options: [{ value: 'active', label: 'Dang dung' }] }],
+      attachments: [{ key: 'files', name: 'files', label: 'Tep dinh kem', type: 'upload' }]
+    },
+    actions: [{ key: 'vehicles.save', label: 'Luu' }, { key: 'vehicles.cancel', label: 'Huy', variant: 'light' }]
+  });
+  platform.appState.set({ route: '/vehicles', width: 390 });
+  const schema = platform.modals.schema({ formKey: 'vehicleForm' });
+  assert.strictEqual(schema.key, 'vehicleModal');
+  assert.strictEqual(schema.tabs.map((tab) => tab.key).join(','), 'basic,linked,extended,history,attachments');
+  assert.strictEqual(schema.footerActions.length, 2);
+
+  const node = platform.modals.renderStandard({ formKey: 'vehicleForm', subtitle: 'Chi tiet' }, { plate: '30A-12345', status: 'active' });
+  assert.strictEqual(node.className, 'platform-modal modal-fullscreen');
+  assert.strictEqual(node.dataset.modalKey, 'vehicleModal');
+  assert.strictEqual(node.children[0].className, 'platform-modal-header');
+  assert.strictEqual(node.children[1].className, 'platform-modal-tabs');
+  assert.strictEqual(node.children[2].className, 'platform-modal-footer');
+  assert.strictEqual(node.children[2].children[0].dataset.platformAction, 'vehicles.save');
+}
+
+{
+  const sandbox = loadPlatform();
   const calls = [];
   sandbox.window.App.modals.user = {
     show() { calls.push('legacy-show'); },

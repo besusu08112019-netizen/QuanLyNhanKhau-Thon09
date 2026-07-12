@@ -1288,10 +1288,11 @@
     };
   }
 
-  function createModalService() {
+  function createModalService(componentService, formService, modalLayoutService) {
     var registry = createRegistry('modal', 'key');
     var active = null;
     var bridgedApps = [];
+    var standardSectionOrder = ['basic', 'linked', 'extended', 'history', 'attachments'];
 
     function resolveElement(target) {
       if (!target) return null;
@@ -1351,6 +1352,96 @@
           return { key: key };
         }
       };
+    }
+
+    function standardSchema(config) {
+      var options = config || {};
+      var form = options.formKey && formService ? formService.get(options.formKey) : null;
+      var title = options.title || (form && form.title) || options.key || '';
+      var sections = Object.assign({
+        basic: form && form.sections && form.sections.basic || [],
+        linked: form && form.sections && form.sections.linked || [],
+        extended: form && form.sections && form.sections.extended || [],
+        history: [],
+        attachments: form && form.sections && form.sections.attachments || []
+      }, options.sections || {});
+      var tabs = toArray(options.tabs).length ? toArray(options.tabs) : standardSectionOrder.map(function (key) {
+        var labels = {
+          basic: 'Thong tin co ban',
+          linked: 'Thong tin lien ket',
+          extended: 'Thong tin mo rong',
+          history: 'Lich su',
+          attachments: 'Tep dinh kem'
+        };
+        return { key: key, label: labels[key], fields: sections[key] || [] };
+      });
+      return {
+        key: options.key || (form && form.modalKey) || (form && form.key) || 'platformModal',
+        title: title,
+        subtitle: options.subtitle || '',
+        formKey: options.formKey || (form && form.key) || null,
+        moduleKey: options.moduleKey || (form && form.moduleKey) || null,
+        tabs: tabs,
+        footerActions: toArray(options.footerActions).length ? toArray(options.footerActions) : toArray(form && form.actions),
+        payload: clone(options.payload || {})
+      };
+    }
+
+    function fieldNode(field, payload) {
+      var config = field || {};
+      var value = payload && payload[config.name || config.key];
+      var control;
+      if (config.type === 'select') {
+        control = componentService.select(Object.assign({}, config, { value: value !== undefined ? value : config.defaultValue }));
+      } else if (config.type === 'file' || config.type === 'upload') {
+        control = componentService.upload(Object.assign({}, config, { label: null }));
+      } else {
+        control = componentService.input(Object.assign({}, config, { value: value !== undefined ? value : config.defaultValue }));
+      }
+      var children = [];
+      if (config.label) children.push(componentService.element('label', { className: 'form-label', text: config.label }));
+      children.push(control);
+      if (config.helpText) children.push(componentService.element('div', { className: 'form-text', text: config.helpText }));
+      return componentService.element('div', {
+        className: config.wrapperClassName || 'platform-modal-field',
+        dataset: { fieldKey: config.key || config.name || '' }
+      }, children);
+    }
+
+    function renderStandard(config, payload) {
+      if (!componentService) throw new Error('Component service is not available');
+      var schema = standardSchema(Object.assign({}, config || {}, { payload: payload || config && config.payload || {} }));
+      var bodyTabs = schema.tabs.map(function (tab) {
+        return Object.assign({}, tab, {
+          content: toArray(tab.content).length ? tab.content : toArray(tab.fields).map(function (field) {
+            return fieldNode(field, schema.payload);
+          })
+        });
+      });
+      var header = componentService.element('header', { className: 'platform-modal-header' }, [
+        componentService.element('h2', { className: 'platform-modal-title', text: schema.title }),
+        schema.subtitle ? componentService.element('p', { className: 'platform-modal-subtitle', text: schema.subtitle }) : null
+      ]);
+      var body = componentService.tabs({
+        className: 'platform-modal-tabs',
+        activeKey: bodyTabs[0] && bodyTabs[0].key,
+        tabs: bodyTabs
+      });
+      var footer = componentService.element('footer', { className: 'platform-modal-footer' }, schema.footerActions.map(function (action) {
+        return componentService.button({
+          label: action.label || action.key || action,
+          variant: action.variant || 'primary',
+          action: action.action || action.key || action,
+          dataset: { modalKey: schema.key }
+        });
+      }));
+      var node = componentService.element('section', {
+        className: 'platform-modal',
+        attrs: { role: 'dialog', 'aria-modal': 'true' },
+        dataset: { modalKey: schema.key, moduleKey: schema.moduleKey || '' }
+      }, [header, body, footer]);
+      if (modalLayoutService) modalLayoutService.apply(node);
+      return node;
     }
 
     function registerBootstrapAll(root) {
@@ -1421,6 +1512,8 @@
       },
       registerBootstrapAll: registerBootstrapAll,
       attachApp: attachApp,
+      schema: standardSchema,
+      renderStandard: renderStandard,
       open: function (key, payload) {
         var modal = registry.get(key);
         if (!modal) throw new Error('Modal not registered: ' + key);
@@ -2136,12 +2229,12 @@
   var lists = createListService();
   var crud = createCrudService(routes, lists, forms, permissions);
   var layout = createLayoutService();
-  var modals = createModalService();
   var api = createApiClient();
   var menu = createMenuService(menus, modules, routes);
   var breadcrumbs = createBreadcrumbService(routes, modules, menu);
   var appState = createAppStateService(routes, modules, layout, breadcrumbs);
   var modalLayout = createModalLayoutService(layout, appState);
+  var modals = createModalService(components, forms, modalLayout);
   var router = createRouterService(routes, modules, appState);
   var apiResources = createApiResourceService(api, router, crud);
   var history = createRouteHistoryService(router);
@@ -2183,7 +2276,8 @@
     normalizeApiResponse: normalizeApiResponse,
     createRegistry: createRegistry,
     createApiClient: createApiClient,
-    createApiResourceService: createApiResourceService
+    createApiResourceService: createApiResourceService,
+    createModalService: createModalService
   };
 
   function registerDefaults() {
