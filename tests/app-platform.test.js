@@ -883,6 +883,41 @@ function screenNode(screenId) {
 }
 
 {
+  const platform = loadPlatform().window.Thon09Platform;
+  const screenRoot = {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-screen-id], .screen');
+      return [screenNode('dashboard')];
+    }
+  };
+  const domDocument = {
+    querySelector(selector) {
+      return selector === '[data-platform-screen-root]' ? screenRoot : null;
+    }
+  };
+
+  const dashboard = platform.moduleMigration.inspectModule('dashboard', { document: domDocument, stage: 'navigation' });
+  assert.strictEqual(dashboard.ready, true);
+  assert.strictEqual(dashboard.routeActions.indexOf('list') !== -1, true);
+  assert.strictEqual(dashboard.domCoverage.ok, true);
+  assert.strictEqual(dashboard.loader.loaderName, 'loadDashboard');
+
+  const loaderBlocked = platform.moduleMigration.inspectModule('vehicles', {
+    stage: 'navigation',
+    require: { dom: false, loaderConfigured: true }
+  });
+  assert.strictEqual(loaderBlocked.ready, false);
+  assert.strictEqual(loaderBlocked.issues.some((item) => item.code === 'loader-not-configured'), true);
+
+  const crudBlocked = platform.moduleMigration.inspect({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
+  assert.strictEqual(crudBlocked.ready, false);
+  assert.strictEqual(crudBlocked.moduleCount, 12);
+  assert.strictEqual(crudBlocked.issues.some((item) => item.code === 'crud-list-missing'), true);
+  assert.strictEqual(crudBlocked.issues.some((item) => item.code === 'crud-form-missing'), true);
+  assert.throws(() => platform.moduleMigration.assertReady({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }), /Module migration blocked/);
+}
+
+{
   const sandbox = loadPlatform();
   const platform = sandbox.window.Thon09Platform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];

@@ -2917,6 +2917,233 @@
     };
   }
 
+  function createModuleMigrationService(moduleRegistry, routeRegistry, moduleLoaderService, crudService, navigationDomCoverageService, navigationScopeService) {
+    var stageDefaults = {
+      navigation: {
+        routes: ['list'],
+        dom: true,
+        loaderConfigured: false,
+        loaderAvailable: false,
+        crud: false
+      },
+      crud: {
+        routes: ['list', 'create', 'detail', 'edit'],
+        dom: true,
+        loaderConfigured: false,
+        loaderAvailable: false,
+        crud: true,
+        crudOperations: ['list', 'detail', 'create', 'edit', 'delete']
+      },
+      runtime: {
+        routes: ['list'],
+        dom: true,
+        loaderConfigured: false,
+        loaderAvailable: false,
+        crud: false
+      }
+    };
+
+    function issue(code, message, detail) {
+      return {
+        code: code,
+        message: message,
+        detail: detail || {}
+      };
+    }
+
+    function requirements(options) {
+      var config = options || {};
+      var stage = config.stage || 'navigation';
+      var defaults = stageDefaults[stage] || stageDefaults.navigation;
+      return Object.assign({}, defaults, config.require || {}, {
+        stage: stage,
+        routes: config.routes || (config.require && config.require.routes) || defaults.routes,
+        crudOperations: config.crudOperations || (config.require && config.require.crudOperations) || defaults.crudOperations || []
+      });
+    }
+
+    function routeActions(moduleKey) {
+      return routeRegistry.list().filter(function (route) {
+        return route.moduleKey === moduleKey;
+      }).map(function (route) {
+        return route.action || 'list';
+      });
+    }
+
+    function crudReport(moduleKey, requiredOperations) {
+      var workflow = crudService.workflowFor(moduleKey, {});
+      var operations = toArray(requiredOperations).map(function (operation) {
+        var record = workflow[operation] || {};
+        return {
+          operation: operation,
+          enabled: Boolean(record.enabled),
+          hasRoute: Boolean(record.route),
+          hasList: operation === 'list' ? Boolean(record.list) : null,
+          hasForm: operation === 'list' || operation === 'delete' ? null : Boolean(record.form),
+          permissionAction: record.permissionAction || null
+        };
+      });
+      return {
+        config: workflow.config,
+        operations: operations
+      };
+    }
+
+    function inspectModule(moduleKey, options) {
+      var config = options || {};
+      var req = requirements(config);
+      var module = moduleRegistry.get(moduleKey);
+      var issues = [];
+      if (!module) {
+        return {
+          ready: false,
+          moduleKey: moduleKey,
+          stage: req.stage,
+          registered: false,
+          issues: [issue('module-missing', 'Module is not registered', { moduleKey: moduleKey })]
+        };
+      }
+
+      var actions = routeActions(moduleKey);
+      var missingRoutes = toArray(req.routes).filter(function (action) {
+        return actions.indexOf(action) === -1;
+      });
+      missingRoutes.forEach(function (action) {
+        issues.push(issue('route-missing', 'Module is missing a required route action', { moduleKey: moduleKey, action: action }));
+      });
+
+      var loader = moduleLoaderService.inspect(moduleKey, config.loaderOptions || config);
+      if (req.loaderConfigured && !loader.loaderName) {
+        issues.push(issue('loader-not-configured', 'Module loaderName is not configured', { moduleKey: moduleKey }));
+      }
+      if (req.loaderAvailable && !loader.available) {
+        issues.push(issue(loader.missingReason || 'loader-unavailable', 'Module loader is not available', {
+          moduleKey: moduleKey,
+          loaderName: loader.loaderName
+        }));
+      }
+
+      var domCoverage = null;
+      if (req.dom && navigationDomCoverageService && config.document) {
+        domCoverage = navigationDomCoverageService.audit(Object.assign({}, config, { moduleKeys: [moduleKey] }));
+        if (!domCoverage.ok) {
+          domCoverage.issues.forEach(function (domIssue) {
+            issues.push(issue('dom-' + domIssue.code, domIssue.message, domIssue.detail || {}));
+          });
+        }
+      }
+
+      var crud = null;
+      if (req.crud) {
+        crud = crudReport(moduleKey, req.crudOperations);
+        crud.operations.forEach(function (operation) {
+          if (!operation.enabled) {
+            issues.push(issue('crud-operation-disabled', 'Required CRUD operation is disabled', {
+              moduleKey: moduleKey,
+              operation: operation.operation
+            }));
+          }
+          if (!operation.hasRoute) {
+            issues.push(issue('crud-route-missing', 'Required CRUD operation route is missing', {
+              moduleKey: moduleKey,
+              operation: operation.operation
+            }));
+          }
+          if (operation.hasList === false) {
+            issues.push(issue('crud-list-missing', 'Required CRUD list metadata is missing', {
+              moduleKey: moduleKey,
+              operation: operation.operation
+            }));
+          }
+          if (operation.hasForm === false) {
+            issues.push(issue('crud-form-missing', 'Required CRUD form metadata is missing', {
+              moduleKey: moduleKey,
+              operation: operation.operation
+            }));
+          }
+        });
+      }
+
+      return {
+        ready: issues.length === 0,
+        moduleKey: moduleKey,
+        stage: req.stage,
+        registered: true,
+        screenId: module.screenId || null,
+        path: module.path || null,
+        routeActions: actions,
+        requiredRoutes: toArray(req.routes),
+        missingRoutes: missingRoutes,
+        loader: loader,
+        domCoverage: domCoverage,
+        crud: crud,
+        issues: issues
+      };
+    }
+
+    function targetKeys(options) {
+      var config = options || {};
+      var scope = navigationScopeService && navigationScopeService.resolve(config.navigationScope || config.rolloutScope || config.scope);
+      if (scope) return { scope: scope, moduleKeys: scope.moduleKeys.slice(), issues: scope.issues.slice() };
+      if (config.moduleKeys) return { scope: null, moduleKeys: toArray(config.moduleKeys), issues: [] };
+      if (config.moduleKey) return { scope: null, moduleKeys: [config.moduleKey], issues: [] };
+      return {
+        scope: null,
+        moduleKeys: moduleRegistry.list().map(function (module) {
+          return module.moduleKey;
+        }),
+        issues: []
+      };
+    }
+
+    function inspect(options) {
+      var config = options || {};
+      var target = targetKeys(config);
+      var records = target.moduleKeys.map(function (moduleKey) {
+        return inspectModule(moduleKey, config);
+      });
+      var issues = target.issues.slice();
+      records.forEach(function (record) {
+        record.issues.forEach(function (recordIssue) {
+          issues.push(recordIssue);
+        });
+      });
+      return {
+        ready: issues.length === 0,
+        stage: (options && options.stage) || 'navigation',
+        scope: target.scope,
+        moduleCount: records.length,
+        readyCount: records.filter(function (record) {
+          return record.ready;
+        }).length,
+        blockedCount: records.filter(function (record) {
+          return !record.ready;
+        }).length,
+        records: records,
+        issues: issues
+      };
+    }
+
+    function assertReady(options) {
+      var report = inspect(options || {});
+      if (!report.ready) {
+        throw new Error('Module migration blocked: ' + report.issues.map(function (item) {
+          return item.code;
+        }).join(', '));
+      }
+      return report;
+    }
+
+    return {
+      inspectModule: inspectModule,
+      inspect: inspect,
+      ready: function (options) {
+        return inspect(options || {}).ready;
+      },
+      assertReady: assertReady
+    };
+  }
+
   function createNavigationIntentService(menuService, routerService) {
     function datasetValue(node, key) {
       if (!node) return null;
@@ -4379,6 +4606,7 @@
   var navigationScopes = createNavigationScopeService(modules, menus);
   var navigationRouteCoverage = createNavigationRouteCoverageService(routes, modules, navigationScopes);
   var navigationDomCoverage = createNavigationDomCoverageService(modules, domRoots, navigationMapping);
+  var moduleMigration = createModuleMigrationService(modules, routes, moduleLoader, crud, navigationDomCoverage, navigationScopes);
   var navigationView = createNavigationViewService(appState, breadcrumbs, domRoots);
   var screens = createScreenViewService(appState, domRoots);
   var navigationDiagnostics = createNavigationDiagnosticsService(appState, navigationTransitions, navigationExecutor, domRoots, screens);
@@ -4429,6 +4657,7 @@
     navigationScopes: navigationScopes,
     navigationRouteCoverage: navigationRouteCoverage,
     navigationDomCoverage: navigationDomCoverage,
+    moduleMigration: moduleMigration,
     navigationIntent: navigationIntent,
     navigationDelegation: navigationDelegation,
     menu: menu,
