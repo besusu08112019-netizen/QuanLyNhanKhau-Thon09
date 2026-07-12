@@ -658,6 +658,11 @@ function screenNode(screenId) {
       return this;
     }
   };
+  const context = platform.actions.contextFor(target);
+  assert.strictEqual(context.key, 'households.create');
+  assert.strictEqual(context.target, target);
+  assert.strictEqual(context.dataset.id, '9');
+
   let prevented = false;
   assert.strictEqual(platform.actions.handleClick({
     target,
@@ -667,6 +672,26 @@ function screenNode(screenId) {
   }), 'created');
   assert.strictEqual(prevented, true);
   assert.strictEqual(calls[1].dataset.id, '9');
+
+  const root = {
+    listeners: {},
+    addEventListener(name, handler) {
+      this.listeners[name] = handler;
+    },
+    removeEventListener(name, handler) {
+      if (this.listeners[name] === handler) delete this.listeners[name];
+    }
+  };
+  assert.strictEqual(platform.actions.boundCount(), 0);
+  assert.strictEqual(platform.actions.bind(root), true);
+  assert.strictEqual(platform.actions.bind(root), false);
+  assert.strictEqual(platform.actions.isBound(root), true);
+  assert.strictEqual(platform.actions.boundCount(), 1);
+  assert.strictEqual(root.listeners.click({ target, preventDefault() {} }), 'created');
+  assert.strictEqual(platform.actions.unbind(root), true);
+  assert.strictEqual(platform.actions.unbind(root), false);
+  assert.strictEqual(platform.actions.isBound(root), false);
+  assert.strictEqual(platform.actions.boundCount(), 0);
 }
 
 {
