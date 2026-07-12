@@ -221,6 +221,29 @@ function loadPlatform() {
 }
 
 {
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const next = platform.appState.set({ route: '/households/42/edit', width: 390 });
+  assert.strictEqual(next.route, '/households/42/edit');
+  assert.strictEqual(next.moduleKey, 'households');
+  assert.strictEqual(next.screenId, 'households');
+  assert.strictEqual(next.action, 'edit');
+  assert.strictEqual(next.params.id, '42');
+  assert.strictEqual(next.layout.mode, 'mobile');
+  assert.strictEqual(next.breadcrumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quan ly dan cu>Ho gia dinh>Chinh sua');
+  assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:app-state-change'));
+
+  const patched = platform.appState.patch({ action: 'detail', params: { id: '99' }, width: 1280 });
+  assert.strictEqual(patched.action, 'detail');
+  assert.strictEqual(patched.params.id, '99');
+  assert.strictEqual(patched.layout.mode, 'desktop');
+
+  const reset = platform.appState.reset();
+  assert.strictEqual(reset.moduleKey, 'dashboard');
+  assert.strictEqual(platform.appState.get().screenId, 'dashboard');
+}
+
+{
   const platform = loadPlatform().window.Thon09Platform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
