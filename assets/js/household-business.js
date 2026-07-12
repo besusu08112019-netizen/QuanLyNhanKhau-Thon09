@@ -407,7 +407,7 @@
     }
     if (action === 'map') {
       window.App?.modals?.businessHousehold?.hide();
-      if (typeof window.switchScreen === 'function') window.switchScreen('gis');
+      if (window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') window.Thon09NavigationController.navigate('gis');
       show('\u0110\u00e3 m\u1edf GIS Google. H\u00e3y ch\u1ecdn h\u1ed9 v\u00e0 \u0111\u1eb7t marker tr\u00ean b\u1ea3n \u0111\u1ed3, h\u1ec7 th\u1ed1ng s\u1ebd d\u00f9ng GPS h\u1ed9 gia \u0111\u00ecnh.', 'info');
       return;
     }

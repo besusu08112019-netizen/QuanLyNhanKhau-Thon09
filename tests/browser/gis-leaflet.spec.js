@@ -184,7 +184,7 @@ async function boot(page, apiLog) {
     localStorage.setItem('thon09_csrf', 'test-csrf');
     localStorage.setItem('thon09_user', JSON.stringify(user));
     window.showApp();
-    window.switchScreen('gis');
+    window.Thon09NavigationController?.navigate('gis');
     return window.loadGisMap();
   });
 }
@@ -318,3 +318,4 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   const requestCountAfterMove = apiLog.filter(item => item.path === '/api/gis/households').length;
   expect(requestCountAfterMove).toBe(requestCountBeforeMove);
 });
+

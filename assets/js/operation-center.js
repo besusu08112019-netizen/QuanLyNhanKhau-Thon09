@@ -40,22 +40,9 @@
 
   function boot() {
     installStyles();
-    wrapSwitchScreen();
     bindStaticEvents();
     document.addEventListener('thon09:auth-state', event => { if (event.detail && event.detail.authenticated && isActive()) loadAll(); });
     if (isActive()) loadAll();
-  }
-
-  function wrapSwitchScreen() {
-    if (window.__thon09OperationSwitchWrapped) return;
-    window.__thon09OperationSwitchWrapped = true;
-    const original = typeof window.switchScreen === 'function' ? window.switchScreen : null;
-    window.switchScreen = function (screen) {
-      const result = original ? original.apply(this, arguments) : undefined;
-      normalizeHeader(screen);
-      if (screen === 'operationCenter') setTimeout(loadAll, 0);
-      return result;
-    };
   }
 
   function normalizeHeader(screen) {
@@ -196,7 +183,7 @@
     } catch (error) { widgetError(host, error); }
   }
 
-  function bindOpenButtons(root) { qsa('[data-operation-screen]', root).forEach(btn => btn.addEventListener('click', () => { if (typeof window.switchScreen === 'function') window.switchScreen(btn.dataset.operationScreen || 'dashboard'); })); }
+  function bindOpenButtons(root) { qsa('[data-operation-screen]', root).forEach(btn => btn.addEventListener('click', () => window.Thon09NavigationController?.navigate(btn.dataset.operationScreen || 'dashboard'))); }
   function exportParams(format) { return { format, range: value('#operationReportRange') || 'today' }; }
   function exportReport(format) { download(API + '/export-report', exportParams(format), 'bao_cao_dieu_hanh.' + (format === 'excel' ? 'xls' : format === 'word' ? 'doc' : 'pdf')); }
   function exportLogsFile() { download(API + '/export-logs', { search: value('#operationLogSearch'), dateFrom: value('#operationLogDateFrom'), dateTo: value('#operationLogDateTo') }, 'nhat_ky_he_thong.xls'); }

@@ -434,10 +434,10 @@
   }
 
   function openLink(link) {
-    if (link === 'gis' && typeof window.switchScreen === 'function') return window.switchScreen('gis');
+    if (link === 'gis' && window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') return window.Thon09NavigationController.navigate('gis');
     if (link === 'members') return document.getElementById('digitalProfileMembers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (link === 'files') return document.getElementById('digitalProfileFiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (link === 'movements' && typeof window.switchScreen === 'function') return window.switchScreen('movements');
+    if (link === 'movements' && window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') return window.Thon09NavigationController.navigate('movements');
     if (link.startsWith('household:')) return window.showHousehold(link.split(':')[1]);
   }
 
@@ -767,9 +767,9 @@
     });
   }
   function handleGpsAction(action, row) {
-    if (action === 'gis' && typeof window.switchScreen === 'function') {
+    if (action === 'gis' && window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') {
       App.modals.detail.hide();
-      window.switchScreen('gis');
+      window.Thon09NavigationController.navigate('gis');
       if (window.focusHouseholdMarker) setTimeout(() => window.focusHouseholdMarker(row.id), 400);
     }
   }

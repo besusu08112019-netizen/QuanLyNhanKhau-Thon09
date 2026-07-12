@@ -26,12 +26,10 @@
     document.body.classList.add(localStorage.getItem('thon09_theme') || 'theme-light');
     enhanceShell();
     injectScreens();
-    bindAdminPanelMenu();
     const previousShowApp = window.showApp;
     window.showApp = function adminShowApp() {
       previousShowApp();
       enhanceShell();
-      bindAdminPanelMenu();
       renderRoleAwareMenu();
     };
     renderRoleAwareMenu();
@@ -94,19 +92,7 @@
     document.querySelectorAll('[data-print]').forEach(btn => btn.addEventListener('click', () => printAdminReport(btn.dataset.print)));
   }
 
-  function bindAdminPanelMenu() {
-    document.querySelectorAll('.sidebar .nav-link').forEach(button => {
-      button.onclick = () => {
-        const screen = button.dataset.screen;
-        if (screen === 'logout') return logout();
-        if (screen === 'backups' && typeof loadBackups === 'function') loadBackups();
-        openScreen(screen);
-      };
-    });
-  }
-
-  function openScreen(screen) {
-    switchScreen(screen);
+  function loadAdminScreen(screen) {
     cleanDuplicateHeaders(screen);
     if (screen === 'temporaryResidence') loadPresenceList('TEMPORARY', '#temporaryResidenceRows');
     if (screen === 'temporaryAbsence') loadPresenceList('AWAY', '#temporaryAbsenceRows');
@@ -115,6 +101,14 @@
     if (screen === 'settings') loadSettings();
     if (screen === 'appearance') loadAppearanceSettings();
   }
+
+  window.loadTemporaryResidence = () => loadPresenceList('TEMPORARY', '#temporaryResidenceRows');
+  window.loadTemporaryAbsence = () => loadPresenceList('AWAY', '#temporaryAbsenceRows');
+  window.loadMovements = loadMovements;
+  window.loadPermissions = loadPermissions;
+  window.loadSettings = loadSettings;
+  window.loadAppearanceSettings = loadAppearanceSettings;
+  document.addEventListener('thon09:screen-change', event => loadAdminScreen(event.detail?.screen));
 
   function formatChartPercent(value, total) {
     if (!total) return '0%';

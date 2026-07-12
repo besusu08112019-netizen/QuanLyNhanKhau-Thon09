@@ -20,7 +20,6 @@
       debug('Module initialized');
       ensureNav();
       ensureScreen();
-      wrapSwitchScreen();
       bindEvents();
       if (isActive()) loadAll();
     } catch (error) {
@@ -38,7 +37,6 @@
     btn.className = 'nav-link';
     btn.dataset.screen = 'systemAdmin';
     btn.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i><span>Quản trị hệ thống</span>';
-    btn.addEventListener('click', () => window.switchScreen && window.switchScreen('systemAdmin'));
     syncAdminNavVisibility(btn);
     systemSection.insertBefore(btn, systemSection.firstElementChild?.nextSibling || null);
   }
@@ -82,21 +80,6 @@
 
   function panel(id, title, icon, tools = '') {
     return '<article class="content-card system-admin-panel"><div class="system-admin-panel-head"><h4><i class="fa-solid ' + icon + '"></i> ' + title + '</h4><div class="system-admin-tools">' + tools + '</div></div><div id="' + id + '"></div></article>';
-  }
-
-  function wrapSwitchScreen() {
-    if (window.__thon09SystemAdminSwitchWrapped) return;
-    window.__thon09SystemAdminSwitchWrapped = true;
-    const original = typeof window.switchScreen === 'function' ? window.switchScreen : null;
-    window.switchScreen = function (screen) {
-      if (screen === 'systemAdmin') ensureScreen();
-      const result = original ? original.apply(this, arguments) : undefined;
-      if (screen === 'systemAdmin') {
-        normalizeHeader();
-        setTimeout(loadAll, 0);
-      }
-      return result;
-    };
   }
 
   function normalizeHeader() {
@@ -265,7 +248,7 @@
       const settings = data.settings || {};
       const keys = ['systemName','hamletName','communeName','email','phone','address','timezone','language'];
       setHtml('#systemAdminConfig', '<div class="system-admin-config">' + keys.map(key => '<div><span>' + esc(key) + '</span><strong>' + esc(settings[key] || data[key] || '') + '</strong></div>').join('') + '</div><button class="btn btn-sm btn-outline-primary mt-2" type="button" data-open-settings>Mở cấu hình</button>');
-      $('[data-open-settings]')?.addEventListener('click', () => window.switchScreen && window.switchScreen('settings'));
+      $('[data-open-settings]')?.addEventListener('click', () => window.Thon09NavigationController?.navigate('settings'));
     } catch (error) { errorBox('#systemAdminConfig', error); }
   }
 

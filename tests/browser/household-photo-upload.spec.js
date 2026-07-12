@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -132,7 +132,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
     localStorage.setItem('thon09_user', JSON.stringify(user));
     if (typeof window.syncAuthCookie === 'function') window.syncAuthCookie();
     window.showApp();
-    window.switchScreen('households');
+    window.Thon09NavigationController?.navigate('households');
   });
 
   await page.evaluate(() => window.openHouseholdForm());
@@ -140,8 +140,8 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await page.evaluate(() => window.thon09EnhanceHouseholdPhotoCapture && window.thon09EnhanceHouseholdPhotoCapture());
   await expect(page.locator('#householdPhotoLibraryBtn')).toBeVisible();
   await page.locator('#householdModal input[name="householdCode"]').fill('QA-PHOTO-001');
-  await page.locator('#householdModal input[name="headCitizenName"]').fill('Nguyễn Văn Test');
-  await page.locator('#householdModal input[name="address"]').fill('Thôn 09');
+  await page.locator('#householdModal input[name="headCitizenName"]').fill('Nguyá»…n VÄƒn Test');
+  await page.locator('#householdModal input[name="address"]').fill('ThÃ´n 09');
   await page.locator('#householdModal input[name="householdPhoto"]').setInputFiles(pngFile('thon09-library.png'));
   await expect.poll(() => page.locator('#householdPhotoPreview img').count()).toBe(1);
   await page.locator('#householdForm button[type="submit"]').click();
@@ -182,3 +182,4 @@ test('household photo is uploaded, read back and replaced from library/camera in
   expect(deleteCount).toBeGreaterThanOrEqual(1);
   expect(consoleErrors).toEqual([]);
 });
+

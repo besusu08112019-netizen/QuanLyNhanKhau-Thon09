@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 const widths = [320, 360, 375, 390, 414, 480, 600, 768, 820, 1024];
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'businessHouseholds', 'livestock', 'houses', 'vehicles', 'agriculture', 'contributions'];
@@ -56,7 +56,7 @@ test.describe('responsive system navigation audit', () => {
       await openAuthenticatedApp(page, width);
 
       for (const screen of mobileScreens) {
-        await page.evaluate((target) => window.switchScreen && window.switchScreen(target), screen);
+        await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
         await page.waitForTimeout(120);
         const metrics = await page.evaluate(() => {
           const active = document.querySelector('.screen.active');
@@ -111,7 +111,7 @@ test.describe('responsive system navigation audit', () => {
 
   test('mobile sidebar masks GIS controls and keeps navigation layers below it', async ({ page }) => {
     await openAuthenticatedApp(page, 390);
-    await page.evaluate(() => window.switchScreen && window.switchScreen('gis'));
+    await page.evaluate(() => window.Thon09NavigationController?.navigate('gis'));
     await page.waitForTimeout(200);
 
     await page.locator('#sidebarToggle').click();
@@ -209,7 +209,7 @@ test.describe('responsive system navigation audit', () => {
     await page.setViewportSize({ width: 960, height: 760 });
     await page.evaluate(() => {
       localStorage.setItem('thon09_dashboard_tree_open', '1');
-      window.switchScreen && window.switchScreen('gis');
+      window.Thon09NavigationController?.navigate('gis');
       const sidebar = document.querySelector('.sidebar');
       if (sidebar) sidebar.scrollTop = 0;
       window.scrollTo(0, 0);
@@ -258,3 +258,5 @@ test.describe('responsive system navigation audit', () => {
     expect(after.activeNav).toBe('households');
   });
 });
+
+

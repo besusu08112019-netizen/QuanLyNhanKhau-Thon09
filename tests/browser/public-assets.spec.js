@@ -1,6 +1,6 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
-const type = { value: '1', label: 'Nhà văn hóa', category: 'Hành chính', icon: 'fa-building-columns' };
+const type = { value: '1', label: 'NhÃ  vÄƒn hÃ³a', category: 'HÃ nh chÃ­nh', icon: 'fa-building-columns' };
 let items;
 let requests;
 let inventoryItems;
@@ -9,29 +9,29 @@ function asset(overrides = {}) {
   return {
     id: 101,
     asset_code: 'CT09-00101',
-    asset_name: 'Nhà văn hóa thôn 09',
+    asset_name: 'NhÃ  vÄƒn hÃ³a thÃ´n 09',
     type_id: 1,
-    type_name: 'Nhà văn hóa',
-    category: 'Hành chính',
+    type_name: 'NhÃ  vÄƒn hÃ³a',
+    category: 'HÃ nh chÃ­nh',
     type_icon: 'fa-building-columns',
-    area_code: 'Thôn 09',
+    area_code: 'ThÃ´n 09',
     campus_area: 1234.5,
     building_area: 456.75,
     construction_year: 2020,
     operation_year: 2021,
-    address: 'Thôn 09, Xã Hồng Phong',
+    address: 'ThÃ´n 09, XÃ£ Há»“ng Phong',
     latitude: 20.255,
     longitude: 105.976,
     gps_accuracy: 4.5,
     gps_updated_at: '2026-07-11 10:00:00',
-    managing_unit: 'UBND xã Hồng Phong',
-    manager_name: 'Nguyễn Văn A',
-    manager_position: 'Cán bộ phụ trách',
+    managing_unit: 'UBND xÃ£ Há»“ng Phong',
+    manager_name: 'Nguyá»…n VÄƒn A',
+    manager_position: 'CÃ¡n bá»™ phá»¥ trÃ¡ch',
     manager_phone: '0900000000',
-    description: 'Công trình sinh hoạt cộng đồng',
+    description: 'CÃ´ng trÃ¬nh sinh hoáº¡t cá»™ng Ä‘á»“ng',
     note: '',
     status: 'ACTIVE',
-    status_label: 'Đang sử dụng',
+    status_label: 'Äang sá»­ dá»¥ng',
     cover_photo_url: '',
     inventory_enabled: true,
     inventory_allowed: true,
@@ -49,7 +49,7 @@ async function mockApis(page) {
     asset({
       id: 102,
       asset_code: 'CT09-00102',
-      asset_name: 'Sân thể thao',
+      asset_name: 'SÃ¢n thá»ƒ thao',
       type_name: '',
       category: '',
       area_code: '',
@@ -66,12 +66,12 @@ async function mockApis(page) {
       manager_phone: '',
       description: '',
       status: 'REPAIRING',
-      status_label: 'Đang sửa chữa'
+      status_label: 'Äang sá»­a chá»¯a'
     })
   ];
   requests = [];
   inventoryItems = [
-    { id: 501, public_asset_id: 101, inventory_code: 'TS001', item_name: 'Loa hội trường', group_id: 15, group_name: 'Loa', quantity: 2, unit: 'cái', condition_status: 'IN_USE', condition_label: 'Đang sử dụng', start_use_date: '2024-01-15', location_in_asset: 'Sân khấu', note: '', photo_url: '' }
+    { id: 501, public_asset_id: 101, inventory_code: 'TS001', item_name: 'Loa há»™i trÆ°á»ng', group_id: 15, group_name: 'Loa', quantity: 2, unit: 'cÃ¡i', condition_status: 'IN_USE', condition_label: 'Äang sá»­ dá»¥ng', start_use_date: '2024-01-15', location_in_asset: 'SÃ¢n kháº¥u', note: '', photo_url: '' }
   ];
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -79,21 +79,21 @@ async function mockApis(page) {
     requests.push({ method: request.method(), path: url.pathname, query: url.searchParams.toString(), body: request.postDataJSON?.() || null });
     const fulfill = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(ok(data)) });
 
-    if (url.pathname === '/api/public/login-config') return fulfill({ settings: { systemName: 'Thôn 09', hamletName: 'Thôn 09', communeName: 'Hồng Phong', version: 'v2.0' }, metrics: {} });
+    if (url.pathname === '/api/public/login-config') return fulfill({ settings: { systemName: 'ThÃ´n 09', hamletName: 'ThÃ´n 09', communeName: 'Há»“ng Phong', version: 'v2.0' }, metrics: {} });
     if (url.pathname === '/api/auth/me') return fulfill({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
     if (url.pathname === '/api/dashboard/summary') return fulfill({ metrics: {}, charts: {} });
-    if (url.pathname === '/api/public-assets/catalogs') return fulfill({ types: [type], areas: [{ value: 'Thôn 09', label: 'Thôn 09' }], statuses: [{ value: 'ACTIVE', label: 'Đang sử dụng' }, { value: 'REPAIRING', label: 'Đang sửa chữa' }] });
-    if (url.pathname === '/api/public-assets/inventory/catalogs') return fulfill({ groups: [{ value: '15', label: 'Loa', parent: 'Điện tử' }, { value: '20', label: 'Bình chữa cháy', parent: 'PCCC' }], conditions: [{ value: 'IN_USE', label: 'Đang sử dụng' }, { value: 'NEEDS_REPAIR', label: 'Cần sửa chữa' }] });
-    if (url.pathname === '/api/public-assets/inventory/dashboard') return fulfill({ total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Đang sử dụng', value: 1 }], by_asset: [{ label: 'Nhà văn hóa thôn 09', value: 1 }] });
+    if (url.pathname === '/api/public-assets/catalogs') return fulfill({ types: [type], areas: [{ value: 'ThÃ´n 09', label: 'ThÃ´n 09' }], statuses: [{ value: 'ACTIVE', label: 'Äang sá»­ dá»¥ng' }, { value: 'REPAIRING', label: 'Äang sá»­a chá»¯a' }] });
+    if (url.pathname === '/api/public-assets/inventory/catalogs') return fulfill({ groups: [{ value: '15', label: 'Loa', parent: 'Äiá»‡n tá»­' }, { value: '20', label: 'BÃ¬nh chá»¯a chÃ¡y', parent: 'PCCC' }], conditions: [{ value: 'IN_USE', label: 'Äang sá»­ dá»¥ng' }, { value: 'NEEDS_REPAIR', label: 'Cáº§n sá»­a chá»¯a' }] });
+    if (url.pathname === '/api/public-assets/inventory/dashboard') return fulfill({ total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Äang sá»­ dá»¥ng', value: 1 }], by_asset: [{ label: 'NhÃ  vÄƒn hÃ³a thÃ´n 09', value: 1 }] });
     if (url.pathname === '/api/public-assets/dashboard') return fulfill({
       metrics: { total_assets: items.length, active_assets: 1, located_assets: 1, total_campus_area: 1234.5, total_building_area: 456.75 },
-      charts: { types: [{ label: 'Nhà văn hóa', value: 1 }], area_by_category: [{ label: 'Hành chính', campus_area: 1234.5, building_area: 456.75 }] }
+      charts: { types: [{ label: 'NhÃ  vÄƒn hÃ³a', value: 1 }], area_by_category: [{ label: 'HÃ nh chÃ­nh', campus_area: 1234.5, building_area: 456.75 }] }
     });
     if (url.pathname === '/api/public-assets/gis') return fulfill({ items: items.filter(item => item.latitude && item.longitude) });
     if (url.pathname === '/api/public-assets' && request.method() === 'GET') return fulfill({ items, total: items.length, page: Number(url.searchParams.get('page') || 1), pageSize: 20, totalPages: 1 });
     if (url.pathname === '/api/public-assets' && request.method() === 'POST') {
       const body = request.postDataJSON();
-      const created = asset({ ...body, id: 201, asset_code: 'CT09-00201', type_name: 'Nhà văn hóa', category: 'Hành chính', status_label: 'Đang sử dụng' });
+      const created = asset({ ...body, id: 201, asset_code: 'CT09-00201', type_name: 'NhÃ  vÄƒn hÃ³a', category: 'HÃ nh chÃ­nh', status_label: 'Äang sá»­ dá»¥ng' });
       items = [created, ...items];
       return fulfill(created);
     }
@@ -110,10 +110,10 @@ async function mockApis(page) {
       return fulfill({ id: Number(match[1]) });
     }
     const inventoryMatch = /^\/api\/public-assets\/(\d+)\/inventory$/.exec(url.pathname);
-    if (inventoryMatch && request.method() === 'GET') return fulfill({ enabled: true, items: inventoryItems.filter(item => String(item.public_asset_id) === inventoryMatch[1]), summary: { total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Đang sử dụng', value: 1 }] } });
+    if (inventoryMatch && request.method() === 'GET') return fulfill({ enabled: true, items: inventoryItems.filter(item => String(item.public_asset_id) === inventoryMatch[1]), summary: { total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Äang sá»­ dá»¥ng', value: 1 }] } });
     if (inventoryMatch && request.method() === 'POST') {
       const body = request.postDataJSON();
-      const created = { id: 777, public_asset_id: Number(inventoryMatch[1]), inventory_code: body.inventory_code || 'TS777', item_name: body.item_name, group_id: Number(body.group_id || 0) || null, group_name: body.group_id === '20' ? 'Bình chữa cháy' : 'Loa', quantity: Number(body.quantity || 1), unit: body.unit || '', condition_status: body.condition_status || 'IN_USE', condition_label: body.condition_status === 'NEEDS_REPAIR' ? 'Cần sửa chữa' : 'Đang sử dụng', start_use_date: body.start_use_date || '', location_in_asset: body.location_in_asset || '', note: body.note || '', photo_url: '' };
+      const created = { id: 777, public_asset_id: Number(inventoryMatch[1]), inventory_code: body.inventory_code || 'TS777', item_name: body.item_name, group_id: Number(body.group_id || 0) || null, group_name: body.group_id === '20' ? 'BÃ¬nh chá»¯a chÃ¡y' : 'Loa', quantity: Number(body.quantity || 1), unit: body.unit || '', condition_status: body.condition_status || 'IN_USE', condition_label: body.condition_status === 'NEEDS_REPAIR' ? 'Cáº§n sá»­a chá»¯a' : 'Äang sá»­ dá»¥ng', start_use_date: body.start_use_date || '', location_in_asset: body.location_in_asset || '', note: body.note || '', photo_url: '' };
       inventoryItems.push(created);
       return fulfill(created);
     }
@@ -121,7 +121,7 @@ async function mockApis(page) {
     if (inventoryItemMatch && request.method() === 'PUT') {
       const body = request.postDataJSON();
       const existing = inventoryItems.find(item => String(item.id) === inventoryItemMatch[2]);
-      Object.assign(existing, body, { group_id: Number(body.group_id || existing.group_id), group_name: body.group_id === '20' ? 'Bình chữa cháy' : existing.group_name, condition_label: body.condition_status === 'NEEDS_REPAIR' ? 'Cần sửa chữa' : existing.condition_label });
+      Object.assign(existing, body, { group_id: Number(body.group_id || existing.group_id), group_name: body.group_id === '20' ? 'BÃ¬nh chá»¯a chÃ¡y' : existing.group_name, condition_label: body.condition_status === 'NEEDS_REPAIR' ? 'Cáº§n sá»­a chá»¯a' : existing.condition_label });
       return fulfill(existing);
     }
     if (inventoryItemMatch && request.method() === 'DELETE') {
@@ -154,7 +154,7 @@ async function openApp(page, viewport = { width: 1366, height: 768 }) {
     if (typeof window.showApp === 'function') window.showApp();
   });
   await page.waitForFunction(() => typeof window.loadPublicAssets === 'function');
-  await page.evaluate(() => window.switchScreen && window.switchScreen('publicAssets'));
+  await page.evaluate(() => window.Thon09NavigationController?.navigate('publicAssets'));
   await page.evaluate(() => window.loadPublicAssets());
   await expect(page.locator('#publicAssetsScreen')).toHaveClass(/active/);
   await expect(page.locator('#publicAssetsRows tr')).toHaveCount(2);
@@ -163,14 +163,14 @@ async function openApp(page, viewport = { width: 1366, height: 768 }) {
 test('public assets list, dashboard, filters and display format are consistent', async ({ page }) => {
   await openApp(page);
 
-  await expect(page.locator('#publicAssetsMiniDashboard')).toContainText('Tổng công trình');
-  await expect(page.locator('#publicAssetsMiniDashboard')).toContainText('1.234,5 m²');
+  await expect(page.locator('#publicAssetsMiniDashboard')).toContainText('Tá»•ng cÃ´ng trÃ¬nh');
+  await expect(page.locator('#publicAssetsMiniDashboard')).toContainText('1.234,5 mÂ²');
   await expect(page.locator('#publicAssetsMiniDashboard')).toContainText('T\u1ed5ng t\u00e0i s\u1ea3n ki\u1ec3m k\u00ea');
-  await expect(page.locator('#publicAssetsTotalCount')).toHaveText('Tổng số: 2 công trình');
+  await expect(page.locator('#publicAssetsTotalCount')).toHaveText('Tá»•ng sá»‘: 2 cÃ´ng trÃ¬nh');
 
   const firstCells = page.locator('#publicAssetsRows tr').first().locator('td');
-  await expect(firstCells.nth(6)).toContainText('KV: 1.234,5 m²');
-  await expect(firstCells.nth(7)).toContainText('UBND xã Hồng Phong');
+  await expect(firstCells.nth(6)).toContainText('KV: 1.234,5 mÂ²');
+  await expect(firstCells.nth(7)).toContainText('UBND xÃ£ Há»“ng Phong');
   await expect(firstCells.nth(8)).toContainText('Nguy\u1ec5n V\u0103n A');
   await expect(firstCells.nth(9)).toContainText('\u0110ang s\u1eed d\u1ee5ng');
 
@@ -194,19 +194,19 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
 
   await page.locator('#publicAssetsRows [data-action="detail"]').first().click();
   await expect(page.locator('#publicAssetDetailModal.show')).toBeVisible();
-  await expect(page.locator('#publicAssetDetailBody')).toContainText('Đơn vị quản lý');
-  await expect(page.locator('#publicAssetDetailBody')).toContainText('Người phụ trách');
-  await expect(page.locator('#publicAssetDetailBody')).toContainText('1.234,5 m²');
-  await expect(page.locator('#publicAssetDetailBody')).toContainText('Kiểm kê tài sản');
+  await expect(page.locator('#publicAssetDetailBody')).toContainText('ÄÆ¡n vá»‹ quáº£n lÃ½');
+  await expect(page.locator('#publicAssetDetailBody')).toContainText('NgÆ°á»i phá»¥ trÃ¡ch');
+  await expect(page.locator('#publicAssetDetailBody')).toContainText('1.234,5 mÂ²');
+  await expect(page.locator('#publicAssetDetailBody')).toContainText('Kiá»ƒm kÃª tÃ i sáº£n');
   await page.locator('button[data-bs-target="#publicAssetInventoryTab"]').click();
-  await expect(page.locator('#publicAssetInventoryPanel')).toContainText('Loa hội trường');
-  await expect(page.locator('#publicAssetInventoryPanel')).toContainText('Tổng số tài sản: 1');
+  await expect(page.locator('#publicAssetInventoryPanel')).toContainText('Loa há»™i trÆ°á»ng');
+  await expect(page.locator('#publicAssetInventoryPanel')).toContainText('Tá»•ng sá»‘ tÃ i sáº£n: 1');
   await page.locator('[data-inventory-action="add"]').click();
   await expect(page.locator('#publicAssetInventoryModal.show')).toBeVisible();
-  await page.locator('#publicAssetInventoryForm [name="item_name"]').fill('Bình chữa cháy mới');
+  await page.locator('#publicAssetInventoryForm [name="item_name"]').fill('BÃ¬nh chá»¯a chÃ¡y má»›i');
   await page.locator('#publicAssetInventoryForm [name="group_id"]').selectOption('20');
   await page.locator('#publicAssetInventoryForm [name="quantity"]').fill('3');
-  await page.locator('#publicAssetInventoryForm [name="unit"]').fill('bình');
+  await page.locator('#publicAssetInventoryForm [name="unit"]').fill('bÃ¬nh');
   await page.locator('#publicAssetInventoryForm [name="condition_status"]').selectOption('NEEDS_REPAIR');
   await page.locator('#publicAssetInventoryForm button[type="submit"]').click();
   await expect.poll(() => requests.some(item => item.method === 'POST' && item.path === '/api/public-assets/101/inventory')).toBeTruthy();
@@ -234,29 +234,29 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
 
   await page.locator('#publicAssetsAddBtn').click();
   await expect(page.locator('#publicAssetFormModal.show')).toBeVisible();
-  await expect(page.locator('#publicAssetFormInventoryMount')).toContainText('Vui lòng lưu công trình trước khi thực hiện kiểm kê tài sản.');
-  await page.locator('#publicAssetForm [name="asset_name"]').fill('Công trình kiểm thử');
+  await expect(page.locator('#publicAssetFormInventoryMount')).toContainText('Vui lÃ²ng lÆ°u cÃ´ng trÃ¬nh trÆ°á»›c khi thá»±c hiá»‡n kiá»ƒm kÃª tÃ i sáº£n.');
+  await page.locator('#publicAssetForm [name="asset_name"]').fill('CÃ´ng trÃ¬nh kiá»ƒm thá»­');
   await page.locator('#publicAssetForm [name="type_id"]').selectOption('1');
   await page.locator('#publicAssetForm [name="campus_area"]').fill('88.5');
-  await page.locator('#publicAssetForm [name="address"]').fill('Thôn 09, Xã Hồng Phong');
-  await page.locator('#publicAssetForm [name="managing_unit"]').fill('Ban quản lý thôn');
-  await page.locator('#publicAssetForm [name="manager_name"]').fill('Trần Thị B');
+  await page.locator('#publicAssetForm [name="address"]').fill('ThÃ´n 09, XÃ£ Há»“ng Phong');
+  await page.locator('#publicAssetForm [name="managing_unit"]').fill('Ban quáº£n lÃ½ thÃ´n');
+  await page.locator('#publicAssetForm [name="manager_name"]').fill('Tráº§n Thá»‹ B');
   await page.locator('#publicAssetForm button[type="submit"]').click();
   await expect.poll(() => requests.some(item => item.method === 'POST' && item.path === '/api/public-assets')).toBeTruthy();
   await expect(page.locator('#publicAssetFormModal.show')).toHaveCount(0);
   const postRequest = requests.find(item => item.method === 'POST' && item.path === '/api/public-assets');
-  expect(postRequest.body.asset_name).toBe('Công trình kiểm thử');
+  expect(postRequest.body.asset_name).toBe('CÃ´ng trÃ¬nh kiá»ƒm thá»­');
 
   await page.locator('#publicAssetsRows tr').filter({ hasText: 'CT09-00101' }).locator('[data-action="edit"]').click();
   await expect(page.locator('#publicAssetFormModal.show')).toBeVisible();
-  await expect(page.locator('#publicAssetFormInventoryMount')).toContainText('Kiểm kê tài sản');
-  await expect(page.locator('#publicAssetFormInventoryPanel')).toContainText('Bình chữa cháy mới');
-  await page.locator('#publicAssetForm [name="manager_name"]').fill('Trần Thị C');
+  await expect(page.locator('#publicAssetFormInventoryMount')).toContainText('Kiá»ƒm kÃª tÃ i sáº£n');
+  await expect(page.locator('#publicAssetFormInventoryPanel')).toContainText('BÃ¬nh chá»¯a chÃ¡y má»›i');
+  await page.locator('#publicAssetForm [name="manager_name"]').fill('Tráº§n Thá»‹ C');
   await page.locator('#publicAssetForm button[type="submit"]').click();
   await expect.poll(() => requests.some(item => item.method === 'PUT' && /^\/api\/public-assets\/\d+$/.test(item.path))).toBeTruthy();
   await expect(page.locator('#publicAssetFormModal.show')).toHaveCount(0, { timeout: 10000 });
   const putRequest = requests.find(item => item.method === 'PUT' && /^\/api\/public-assets\/\d+$/.test(item.path));
-  expect(putRequest.body.manager_name).toBe('Trần Thị C');
+  expect(putRequest.body.manager_name).toBe('Tráº§n Thá»‹ C');
 
   await page.locator('#publicAssetsRows tr').filter({ hasText: 'CT09-00102' }).locator('[data-action="delete"]').click();
   await expect.poll(() => requests.some(item => item.method === 'DELETE' && item.path.startsWith('/api/public-assets/'))).toBeTruthy();
@@ -275,15 +275,15 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
         return Promise.resolve({
           items: [{
             id: 101,
-            asset_name: 'Nhà văn hóa thôn 09',
-            type_name: 'Nhà văn hóa',
-            status_label: 'Đang sử dụng',
-            address: 'Thôn 09, Xã Hồng Phong',
+            asset_name: 'NhÃ  vÄƒn hÃ³a thÃ´n 09',
+            type_name: 'NhÃ  vÄƒn hÃ³a',
+            status_label: 'Äang sá»­ dá»¥ng',
+            address: 'ThÃ´n 09, XÃ£ Há»“ng Phong',
             campus_area: 1234.5,
             latitude: 20.255,
             longitude: 105.976,
-            managing_unit: 'UBND xã Hồng Phong',
-            manager_name: 'Nguyễn Văn A',
+            managing_unit: 'UBND xÃ£ Há»“ng Phong',
+            manager_name: 'Nguyá»…n VÄƒn A',
             type_icon: 'fa-building-columns',
             status: 'ACTIVE'
           }]
@@ -308,18 +308,18 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
   });
   expect(gisResult.count).toBe(1);
   expect(gisResult.popup).toContain('https://www.google.com/maps/dir/?api=1&destination=20.255%2C105.976');
-  expect(gisResult.popup).toContain('UBND xã Hồng Phong');
+  expect(gisResult.popup).toContain('UBND xÃ£ Há»“ng Phong');
 });
 
 test('religious public assets do not expose inventory tab', async ({ page }) => {
   await openApp(page);
   await page.route('**/api/public-assets/999', route => route.fulfill({
     contentType: 'application/json',
-    body: JSON.stringify(ok(asset({ id: 999, asset_code: 'CT09-00999', asset_name: 'Chùa thôn 09', type_name: 'Chùa', category: 'Tôn giáo, tín ngưỡng', inventory_enabled: false, inventory_allowed: false })))
+    body: JSON.stringify(ok(asset({ id: 999, asset_code: 'CT09-00999', asset_name: 'ChÃ¹a thÃ´n 09', type_name: 'ChÃ¹a', category: 'TÃ´n giÃ¡o, tÃ­n ngÆ°á»¡ng', inventory_enabled: false, inventory_allowed: false })))
   }));
   await page.evaluate(() => window.openPublicAssetDetail(999));
   await expect(page.locator('#publicAssetDetailModal.show')).toBeVisible();
-  await expect(page.locator('#publicAssetDetailBody')).not.toContainText('Kiểm kê tài sản');
+  await expect(page.locator('#publicAssetDetailBody')).not.toContainText('Kiá»ƒm kÃª tÃ i sáº£n');
 });
 
 for (const viewport of [
@@ -339,3 +339,5 @@ for (const viewport of [
     expect(metrics.activeScrollWidth).toBeLessThanOrEqual(metrics.activeClientWidth + 96);
   });
 }
+
+

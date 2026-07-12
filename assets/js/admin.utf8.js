@@ -76,7 +76,7 @@
   const start = () => {
     if (!isAdminUser()) return;
     injectAdminScreens();
-    bindAdminNavigation();
+    bindAdminLoaders();
   };
   window.ensureAdminScreens = start;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
@@ -102,7 +102,7 @@
     document.querySelector('#backupCreateBtn').addEventListener('click', createBackup);
   }
 
-  function bindAdminNavigation() { document.querySelectorAll('[data-screen="users"],[data-screen="logs"],[data-screen="backups"]').forEach(button => { button.addEventListener('click', () => { switchScreen(button.dataset.screen); document.querySelector('#screenTitle').textContent = { users: 'Người dùng', logs: 'Nhật ký', backups: 'Sao lưu' }[button.dataset.screen]; if (button.dataset.screen === 'users') loadUsers(); if (button.dataset.screen === 'logs') loadLogs(); if (button.dataset.screen === 'backups') loadBackups(); }); }); }
+  function bindAdminLoaders() { document.addEventListener('thon09:screen-change', event => { const screen = event.detail?.screen; if (screen === 'users') loadUsers(); if (screen === 'logs') loadLogs(); if (screen === 'backups') loadBackups(); }); }
 
   async function loadUsers() { try { const data = await api('/api/users?' + new URLSearchParams(App.users).toString()); if (typeof window.renderUserRowsSprint8 === 'function') window.renderUserRowsSprint8(data); else document.querySelector('#userRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.email)}</td><td>${escapeHtml(row.display_name)}</td><td>${roleLabel(row.role)}</td><td>${statusLabel(row.status)}</td><td>${escapeHtml(row.last_login_at || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openUserForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-warning" onclick="toggleUser(${row.id}, '${row.status === 'ACTIVE' ? 'lock' : 'unlock'}')">${row.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${row.id})">Xóa</button></td></tr>`).join('') || emptyRow(6, 'Chưa có người dùng'); renderPager('#userPager', data, page => { App.users.page = page; loadUsers(); }); } catch (error) { showToast(error.message, 'danger'); } }
 
