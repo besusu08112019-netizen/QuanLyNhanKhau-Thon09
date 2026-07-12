@@ -420,6 +420,9 @@ function screenNode(screenId) {
   assert.strictEqual(sandbox.window.App.screen, 'persons');
   assert.strictEqual(sandbox.window.App.action, 'list');
   assert.strictEqual(sandbox.window.Thon09Platform.appState.get().moduleKey, 'persons');
+  assert.strictEqual(sandbox.window.Thon09Platform.navigationExecutor.inspect().screen, 'persons');
+  assert.strictEqual(sandbox.window.Thon09Platform.navigationExecutor.inspect().controllerAvailable, true);
+  assert.strictEqual(sandbox.window.Thon09Platform.navigationExecutor.inspect().appMirrored, true);
 }
 
 {

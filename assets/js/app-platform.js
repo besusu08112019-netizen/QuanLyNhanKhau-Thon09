@@ -2261,7 +2261,60 @@
     };
   }
 
-  function createNavigationService(routerService) {
+  function createNavigationExecutorService() {
+    var last = null;
+
+    function controller() {
+      return window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function'
+        ? window.Thon09NavigationController
+        : null;
+    }
+
+    function mirrorApp(state) {
+      if (!window.App) return false;
+      window.App.route = state.route;
+      window.App.moduleKey = state.moduleKey;
+      window.App.screen = state.screenId;
+      window.App.action = state.action;
+      window.App.params = clone(state.params || {});
+      return true;
+    }
+
+    function execute(state, options) {
+      var current = Object.assign({}, state || {}, { options: options || {} });
+      var screen = current.screenId || current.moduleKey;
+      var targetController = controller();
+      var controllerResult = null;
+      if (targetController) {
+        controllerResult = targetController.navigate(screen, options || {});
+      }
+      last = {
+        screen: screen,
+        route: current.route,
+        moduleKey: current.moduleKey,
+        action: current.action,
+        controllerAvailable: Boolean(targetController),
+        controllerResult: controllerResult || null,
+        appMirrored: mirrorApp(current)
+      };
+      return clone(current);
+    }
+
+    return {
+      execute: execute,
+      mirrorApp: mirrorApp,
+      controller: controller,
+      inspect: function () {
+        return last ? clone(last) : {
+          screen: null,
+          controllerAvailable: Boolean(controller()),
+          appMirrored: Boolean(window.App)
+        };
+      }
+    };
+  }
+
+  function createNavigationService(routerService, navigationExecutorService) {
     var current = null;
 
     function resolve(target, options) {
@@ -2269,21 +2322,7 @@
     }
 
     function activate(state, options) {
-      current = Object.assign({}, state || routerService.current(), { options: options || {} });
-      var screen = current.screenId || current.moduleKey;
-
-      if (window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') {
-        window.Thon09NavigationController.navigate(screen, options || {});
-      }
-
-      if (window.App) {
-        window.App.route = current.route;
-        window.App.moduleKey = current.moduleKey;
-        window.App.screen = current.screenId;
-        window.App.action = current.action;
-        window.App.params = clone(current.params || {});
-      }
-
+      current = navigationExecutorService.execute(state || routerService.current(), options || {});
       return clone(current);
     }
 
@@ -3342,7 +3381,8 @@
   var apiResources = createApiResourceService(api, router, crud);
   var crudData = createCrudDataService(apiResources, state);
   var history = createRouteHistoryService(router);
-  var navigation = createNavigationService(router);
+  var navigationExecutor = createNavigationExecutorService();
+  var navigation = createNavigationService(router, navigationExecutor);
   var navigationDelegation = createNavigationDelegationService(navigationIntent, navigation);
   var domRoots = createDomRootService();
   var navigationView = createNavigationViewService(appState, breadcrumbs, domRoots);
@@ -3377,6 +3417,7 @@
     api: api,
     apiResources: apiResources,
     navigation: navigation,
+    navigationExecutor: navigationExecutor,
     navigationIntent: navigationIntent,
     navigationDelegation: navigationDelegation,
     menu: menu,

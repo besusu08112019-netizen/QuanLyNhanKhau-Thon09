@@ -47,6 +47,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.router` da duoc them lam RouterService chung cho `pathFor`, `resolve`, `route -> module -> screen -> action -> params`, va sync vao AppState; chua thay controller runtime khi chua migrate tung module.
 - `Thon09Platform.history` da duoc them lam RouteHistoryService chung cho push/replace/popstate sync vao AppState; service nay khong tu goi NavigationController.
 - `Thon09Platform.navigation` da delegate sang RouterService/AppState; co `activate/bindHistory` de history/popstate di qua cung executor; `Thon09NavigationController` chi con la executor doi screen va `window.App` chi la mirror legacy state.
+- `Thon09Platform.navigationExecutor` da tach viec goi `Thon09NavigationController.navigate()` va mirror `window.App` ra mot adapter duy nhat co `inspect()`.
 - `Thon09Platform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
 - `Thon09Platform.navigationDelegation` da duoc them de chuan hoa mot listener click chung: event -> navigation intent -> NavigationService.
 - `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
@@ -398,64 +399,69 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 
 23. `NavigationService`
    - Delegate resolve/sync state qua RouterService/AppState.
-   - Chi goi `Thon09NavigationController.navigate(screen)` de thuc thi viec doi screen.
+   - Chi goi `NavigationExecutorService.execute(state)` de thuc thi viec doi screen.
    - Co `activate(state)` va `bindHistory(history)` de URL popstate sau nay khong tao luong dieu huong rieng.
-   - Dong bo `window.App.route/moduleKey/screen/action/params` nhu legacy mirror, khong xem `window.App` la source of truth.
+   - Khong doc `window.App` nhu source of truth; legacy mirror duoc tach sang NavigationExecutorService.
 
-24. `NavigationIntentService`
+24. `NavigationExecutorService`
+   - La adapter duy nhat goi `Thon09NavigationController.navigate(screen)` trong platform navigation layer.
+   - Mirror `window.App.route/moduleKey/screen/action/params` de giu module cu chay trong giai doan qua do.
+   - Co `inspect()` de xac minh controller availability, screen vua execute va trang thai mirror legacy.
+
+25. `NavigationIntentService`
    - Chuan hoa target tu menu item, DOM element hoac click event thanh `{ moduleKey, screenId, route, action, source }`.
    - Ho tro `data-module`, `data-module-key`, `data-screen`, `data-mobile-screen`, `data-route` va `href`.
    - MenuRenderer da xuat metadata `data-module/data-route/data-action` de migrate click menu khong can doan mapping rieng.
    - Chua tu gan listener runtime; giai doan sau se dung service nay de thay the cac selector click phan tan.
 
-25. `NavigationDelegationService`
+26. `NavigationDelegationService`
    - Cung cap `handleClick(event)` va `bind(root)` de mot listener click chung di qua NavigationIntentService roi NavigationService.
    - Tu `preventDefault` khi click co navigation intent va co `unbind` de thao listener ro rang.
    - Chua auto-bind vao `.gov-nav`, `.mobile-bottom-nav` hay document trong production.
 
-26. `NavigationRuntimeService`
+27. `NavigationRuntimeService`
    - Gom `NavigationDelegationService`, `NavigationService.bindHistory`, va `AppShellViewService.bind` vao mot `start/stop` contract.
    - Dam bao runtime sau nay co mot noi bat/tat listener, history va render shell.
    - Chua auto-start tren production; controller runtime hien tai van giu nguyen cho den khi migrate co test.
 
-27. `RouteHistoryService`
+28. `RouteHistoryService`
    - Chuan hoa `pushState`, `replaceState`, va `popstate` de router URL sau nay co mot contract duy nhat.
    - Sync route vao AppState, khong tu goi NavigationController va khong tu bat listener neu chua goi `start`.
    - Popstate co the noi vao NavigationService qua `navigation.bindHistory(history)`, nhung chua auto-start tren production.
 
-28. `NavigationViewService`
+29. `NavigationViewService`
    - Cap nhat active sidebar va bottom navigation bang AppState, khong dua vao logic rieng desktop/mobile.
    - Render breadcrumb tu BreadcrumbService bang cung snapshot state.
    - Chua tu dong quet DOM runtime khi chua migrate controller de tranh thay doi hang loat.
 
-29. `ScreenViewService`
+30. `ScreenViewService`
    - Hide tat ca screen va show dung screen hien tai tu AppState.
    - Dam bao contract "mot screen hien thi tai mot thoi diem" co test rieng.
    - Chua tu dong thay controller runtime de tranh pha luong cu khi chua migrate module.
 
-30. `AppShellViewService`
+31. `AppShellViewService`
    - Gom ScreenViewService va NavigationViewService vao mot render contract duy nhat.
    - Dam bao controller sau nay chi can render tu AppState, khong cap nhat sidebar/bottom/breadcrumb rieng le.
    - Co `bind` de subscribe AppState va render shell tu mot noi, ho tro loc theo module trong qua trinh migrate.
    - Chua auto-run tren DOM production cho den khi migrate NavigationController.
 
-31. `ModalLayoutService`
+32. `ModalLayoutService`
    - Chuan hoa presentation `dialog` tren desktop/tablet va `fullscreen` tren mobile.
    - Co helper apply class cho `.modal-dialog`, dua theo LayoutRegistry/AppState.
    - Chua tu dong mo/dong modal hay thay flow popup cu.
 
-32. `DomRootService`
+33. `DomRootService`
    - Tap trung selector shell runtime: sidebar, bottom navigation, breadcrumb, screen root va screen list.
    - Cung cap `resolve`, `screens`, `navigationRoots` va `shellOptions` de runtime khong tu query selector rai rac.
    - Chua auto-start navigation runtime tren production; service chi tao contract DOM chung cho cac phase migrate sau.
 
-33. Component library
+34. Component library
    - Table, Card, Form, Input, Select, Button, Badge, Status, Search, Filter, Modal, Tabs, Upload, Pagination.
    - Cac component phai co loading/empty/error state chuan.
    - Nen tang hien co gom `element`, `button`, `badge`, `status`, `card`, `form`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; cac component phuc tap hon se them khi migrate tung module.
    - `stateView/moduleState` co dataset status/module va hien error message tu StateService.
 
-34. `ActionRegistry`
+35. `ActionRegistry`
    - Chuan hoa cac lenh UI bang `Thon09Platform.actions.register(key, handler)`.
    - Markup moi dung `data-platform-action`, khong dung `data-action` vi `data-action` dang co nghia cu trong permission va mot so module.
    - Co contract delegation `contextFor/handleClick/bind/unbind` de thay inline `onclick` theo tung module ma khong tao nhieu listener chong cheo.
