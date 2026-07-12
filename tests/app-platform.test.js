@@ -911,6 +911,8 @@ function screenNode(screenId) {
     ],
     filters: [{ key: 'type', label: 'Loai xe', type: 'select', defaultValue: 'car', options: [{ value: 'car', label: 'O to' }] }],
     pagination: { pageSize: 25 },
+    rowActions: [{ key: 'detail', label: 'Chi tiet', icon: 'fa-eye' }],
+    bulkActions: ['export'],
     states: { empty: 'Chua co xe' }
   });
   const toolbar = platform.listView.toolbar('vehicleList', { search: '30A', filters: { type: 'car' } });
@@ -925,6 +927,16 @@ function screenNode(screenId) {
   const pager = platform.listView.pagination('vehicleList', { page: 2, pageSize: 25, total: 80 });
   assert.strictEqual(pager.children[0].dataset.platformAction, 'vehicles.page');
   assert.strictEqual(pager.children[1].textContent, '2/4');
+
+  const rowActions = platform.listView.actions('vehicleList', 'row', { row: { id: 7 } });
+  assert.strictEqual(rowActions.dataset.actionScope, 'row');
+  assert.strictEqual(rowActions.children[0].dataset.platformAction, 'vehicles.detail');
+  assert.strictEqual(rowActions.children[0].dataset.rowId, 7);
+  assert.strictEqual(rowActions.children[0].children[0].className, 'fa-solid fa-eye');
+
+  const bulkActions = platform.listView.actions('vehicleList', 'bulk');
+  assert.strictEqual(bulkActions.children[0].dataset.platformAction, 'vehicles.export');
+  assert.strictEqual(bulkActions.children[0].dataset.actionScope, 'bulk');
 
   const list = platform.listView.list('vehicleList', [{ id: 2, plate: '30B-67890', owner: 'B' }], { meta: { total: 1 } });
   assert.strictEqual(list.dataset.moduleKey, 'vehicles');

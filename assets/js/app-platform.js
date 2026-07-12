@@ -1446,6 +1446,39 @@
       });
     }
 
+    function actions(listKey, scope, context, options) {
+      var list = listService.get(listKey);
+      var config = options || {};
+      var actionScope = scope || 'row';
+      var current = context || {};
+      if (!list) throw new Error('List not registered: ' + listKey);
+      var nodes = listService.actionsFor(listKey, actionScope).map(function (item) {
+        var record = typeof item === 'string' ? { key: item, label: item } : (item || {});
+        var key = record.key || record.action;
+        var row = current.row || {};
+        var dataset = Object.assign({
+          listKey: listKey,
+          moduleKey: list.moduleKey || '',
+          actionKey: key || '',
+          actionScope: actionScope
+        }, record.dataset || {});
+        if (row && row.id !== undefined) dataset.rowId = row.id;
+        return componentService.button({
+          label: record.label || key || '',
+          icon: record.icon || null,
+          variant: record.variant || (actionScope === 'bulk' ? 'light' : 'secondary'),
+          className: record.className || (actionScope === 'bulk' ? 'btn btn-light' : 'btn btn-sm btn-light'),
+          action: record.platformAction || (list.moduleKey ? list.moduleKey + '.' + key : key),
+          dataset: dataset,
+          attrs: record.attrs || {}
+        });
+      });
+      return componentService.element('div', {
+        className: config.className || ('platform-list-actions platform-list-' + actionScope + '-actions'),
+        dataset: { listKey: listKey, moduleKey: list.moduleKey || '', actionScope: actionScope }
+      }, nodes);
+    }
+
     function listNode(listKey, rows, state, options) {
       var list = listService.get(listKey);
       var config = options || {};
@@ -1465,6 +1498,7 @@
       toolbar: toolbar,
       table: table,
       pagination: pagination,
+      actions: actions,
       list: listNode
     };
   }

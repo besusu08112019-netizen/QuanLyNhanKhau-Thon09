@@ -37,7 +37,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
 - `Thon09Platform.formView` da duoc them lam renderer form chung cho field, section va form node dua tren FormRegistry/ComponentService.
 - `Thon09Platform.lists` da duoc them lam ListRegistry chung cho metadata table/list: columns, filters, search, pagination, rowActions, bulkActions va query defaults.
-- `Thon09Platform.listView` da duoc them lam renderer list chung cho toolbar, table, pagination va list container dua tren ListRegistry/ComponentService.
+- `Thon09Platform.listView` da duoc them lam renderer list chung cho toolbar, table, pagination, row/bulk actions va list container dua tren ListRegistry/ComponentService.
 - `Thon09Platform.crud` da duoc them lam CrudRegistry chung cho workflow list/detail/create/edit/delete/import/export/log, gan route/list/form/action/permission metadata ma chua tu goi API hay thay luong module cu.
 - `Thon09Platform.crudView` da duoc them lam renderer CRUD chung cho list/detail/form/modal dua tren CrudRegistry/ListView/FormView/ModalService.
 - `Thon09Platform.layout` da duoc them lam LayoutRegistry chung cho desktop/tablet/mobile modes, shared regions, navigation mode va modal presentation.
@@ -52,7 +52,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.modalLayout` da duoc them lam ModalLayoutService de chuan hoa dialog/fullscreen presentation theo Layout/AppState.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
-- `tests/app-platform.test.js` da bao phu route CRUD/menu/API client/permission aliases/state/navigation facade, BreadcrumbService, AppStateService, RouterService, Action Registry, Component Factory, Card/Form/Filter/Tabs/Upload primitives, Table/Pagination primitives, FormRegistry, ListRegistry, CrudRegistry, LayoutRegistry, va modal bridge legacy `App.modals.*`.
+- `tests/app-platform.test.js` da bao phu route CRUD/menu/API client/permission aliases/state/navigation facade, BreadcrumbService, AppStateService, RouterService, Action Registry, Component Factory, Card/Form/Filter/Tabs/Upload primitives, Table/Pagination primitives, FormRegistry, ListRegistry/ListView actions, CrudRegistry, LayoutRegistry, va modal bridge legacy `App.modals.*`.
 - Browser navigation spec xac minh cac modal tinh quan trong (`householdModal`, `personModal`, `businessHouseholdModal`, `detailModal`) da duoc dang ky trong platform modal registry.
 - Kiem thu hien tai: `npm run check:js`, `npm run test:platform`, `npm run test:navigation-cleanup`, va `npx playwright test tests/browser/navigation-controller.spec.js --reporter=line` deu PASS o lan chay gan nhat. Playwright xac minh desktop/tablet/mobile dung chung platform menu/controller, click doi noi dung that va chi mot screen hien thi.
 
@@ -352,7 +352,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Chua thay renderer table cu khi chua migrate tung module.
 
 16. `ListViewService`
-   - Render toolbar, table, pagination va list container tu ListRegistry bang ComponentService chung.
+   - Render toolbar, table, pagination, row/bulk actions va list container tu ListRegistry bang ComponentService chung.
    - La lop dung chung cho man hinh danh sach sau nay, thay cho table/filter/pagination copy theo module.
    - Chua thay list DOM cu cho den khi migrate tung module.
 
