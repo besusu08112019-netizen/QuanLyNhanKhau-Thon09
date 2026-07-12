@@ -174,9 +174,13 @@ function loadPlatform() {
   const result = sandbox.window.Thon09Platform.navigation.navigate('/persons');
   assert.strictEqual(result.moduleKey, 'persons');
   assert.strictEqual(result.screenId, 'persons');
+  assert.strictEqual(result.route, '/persons');
   assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'persons');
   assert.strictEqual(sandbox.window.App.route, '/persons');
   assert.strictEqual(sandbox.window.App.moduleKey, 'persons');
+  assert.strictEqual(sandbox.window.App.screen, 'persons');
+  assert.strictEqual(sandbox.window.App.action, 'list');
+  assert.strictEqual(sandbox.window.Thon09Platform.appState.get().moduleKey, 'persons');
 }
 
 {

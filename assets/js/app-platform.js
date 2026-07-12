@@ -1346,37 +1346,27 @@
     };
   }
 
-  function createNavigationService(routeRegistry, moduleRegistry) {
+  function createNavigationService(routerService) {
     var current = null;
 
-    function resolve(target) {
-      var route = routeRegistry.match(target);
-      if (route) return route;
-      var module = moduleRegistry.get(target);
-      if (module) {
-        return {
-          path: module.path || '/' + module.moduleKey,
-          moduleKey: module.moduleKey,
-          screenId: module.screenId,
-          action: 'list',
-          params: {}
-        };
-      }
-      return { path: target, moduleKey: target, screenId: target, action: 'list', params: {} };
+    function resolve(target, options) {
+      return routerService.resolve(target, options || {});
     }
 
     function navigate(target, options) {
-      var resolved = resolve(target);
-      var screen = resolved.screenId || resolved.moduleKey;
-      current = Object.assign({}, resolved, { options: options || {} });
+      current = Object.assign({}, routerService.sync(target, options || {}), { options: options || {} });
+      var screen = current.screenId || current.moduleKey;
 
       if (window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') {
         window.Thon09NavigationController.navigate(screen, options || {});
       }
 
       if (window.App) {
-        window.App.route = current.path;
+        window.App.route = current.route;
         window.App.moduleKey = current.moduleKey;
+        window.App.screen = current.screenId;
+        window.App.action = current.action;
+        window.App.params = clone(current.params || {});
       }
 
       return clone(current);
@@ -1814,11 +1804,11 @@
   var layout = createLayoutService();
   var modals = createModalService();
   var api = createApiClient();
-  var navigation = createNavigationService(routes, modules);
   var menu = createMenuService(menus, modules, routes);
   var breadcrumbs = createBreadcrumbService(routes, modules, menu);
   var appState = createAppStateService(routes, modules, layout, breadcrumbs);
   var router = createRouterService(routes, modules, appState);
+  var navigation = createNavigationService(router);
   var menuRenderer = createMenuRenderer(menus, modules, menu);
 
   var platform = {
