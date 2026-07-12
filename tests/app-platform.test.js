@@ -33,6 +33,9 @@ function createSandbox() {
           setAttribute(name, value) {
             this.attributes[name] = value;
           },
+          removeAttribute(name) {
+            delete this.attributes[name];
+          },
           addEventListener(name, handler) {
             this.listeners[name] = handler;
           },
@@ -86,6 +89,27 @@ function loadPlatform() {
   const sandbox = createSandbox();
   vm.runInNewContext(source, sandbox, { filename: 'app-platform.js' });
   return sandbox;
+}
+
+function navRoot(items, datasetKey) {
+  const nodes = items.map((value) => ({
+    className: 'nav-link',
+    dataset: { [datasetKey]: value },
+    attributes: {},
+    setAttribute(name, attrValue) {
+      this.attributes[name] = attrValue;
+    },
+    removeAttribute(name) {
+      delete this.attributes[name];
+    }
+  }));
+  return {
+    nodes,
+    querySelectorAll(selector) {
+      if (selector === '[data-screen]' || selector === '[data-mobile-screen]') return nodes;
+      return [];
+    }
+  };
 }
 
 {
@@ -314,6 +338,39 @@ function loadPlatform() {
   assert.strictEqual(platform.history.active(), true);
   assert.strictEqual(platform.history.stop(), true);
   assert.strictEqual(platform.history.active(), false);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
+  const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
+  const breadcrumbRoot = {
+    textContent: '',
+    dataset: {},
+    children: [],
+    appendChild(child) {
+      this.children.push(child);
+      return child;
+    }
+  };
+
+  const state = platform.appState.set({ route: '/vehicles/7', width: 1280 });
+  const result = platform.navigationView.sync({ sidebarRoot, bottomRoot, breadcrumbRoot, state });
+  assert.strictEqual(result.screenId, 'vehicles');
+  assert.strictEqual(result.sidebar.active, 1);
+  assert.strictEqual(result.bottomNavigation.active, 1);
+  assert.strictEqual(sidebarRoot.nodes[2].className, 'nav-link active');
+  assert.strictEqual(sidebarRoot.nodes[2].attributes['aria-current'], 'page');
+  assert.strictEqual(sidebarRoot.nodes[0].className, 'nav-link');
+  assert.strictEqual(bottomRoot.nodes[2].className, 'nav-link active');
+  assert.strictEqual(breadcrumbRoot.children.map((child) => child.textContent).join('>'), 'Dashboard>Quan ly phuong tien>Quan ly xe co>Chi tiet');
+
+  platform.appState.set({ route: '/persons', width: 390 });
+  platform.navigationView.sync({ sidebarRoot, bottomRoot });
+  assert.strictEqual(sidebarRoot.nodes[1].className, 'nav-link active');
+  assert.strictEqual(sidebarRoot.nodes[2].className, 'nav-link');
+  assert.strictEqual(bottomRoot.nodes[1].attributes['aria-current'], 'page');
 }
 
 {

@@ -38,6 +38,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.router` da duoc them lam RouterService chung cho `pathFor`, `resolve`, `route -> module -> screen -> action -> params`, va sync vao AppState; chua thay controller runtime khi chua migrate tung module.
 - `Thon09Platform.history` da duoc them lam RouteHistoryService chung cho push/replace/popstate sync vao AppState; service nay khong tu goi NavigationController.
 - `Thon09Platform.navigation` da delegate sang RouterService/AppState; `Thon09NavigationController` chi con la executor doi screen va `window.App` chi la mirror legacy state.
+- `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
 - `tests/app-platform.test.js` da bao phu route CRUD/menu/API client/permission aliases/state/navigation facade, BreadcrumbService, AppStateService, RouterService, Action Registry, Component Factory, Card/Form/Filter/Tabs/Upload primitives, Table/Pagination primitives, FormRegistry, ListRegistry, CrudRegistry, LayoutRegistry, va modal bridge legacy `App.modals.*`.
@@ -348,12 +349,17 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Sync route vao AppState, khong tu goi NavigationController va khong tu bat listener neu chua goi `start`.
    - Giai doan migrate sau se noi popstate vao NavigationService khi test module da san sang.
 
-18. Component library
+18. `NavigationViewService`
+   - Cap nhat active sidebar va bottom navigation bang AppState, khong dua vao logic rieng desktop/mobile.
+   - Render breadcrumb tu BreadcrumbService bang cung snapshot state.
+   - Chua tu dong quet DOM runtime khi chua migrate controller de tranh thay doi hang loat.
+
+19. Component library
    - Table, Card, Form, Input, Select, Button, Badge, Status, Search, Filter, Modal, Tabs, Upload, Pagination.
    - Cac component phai co loading/empty/error state chuan.
    - Nen tang hien co gom `element`, `button`, `badge`, `card`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; cac component phuc tap hon se them khi migrate tung module.
 
-19. `ActionRegistry`
+20. `ActionRegistry`
    - Chuan hoa cac lenh UI bang `Thon09Platform.actions.register(key, handler)`.
    - Markup moi dung `data-platform-action`, khong dung `data-action` vi `data-action` dang co nghia cu trong permission va mot so module.
    - Giai doan sau se thay inline `onclick` theo tung module, khong thay dong loat khi chua co test module.
