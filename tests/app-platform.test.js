@@ -870,6 +870,16 @@ function screenNode(screenId) {
   const missing = platform.navigationScopes.resolve(['households', 'missingModule']);
   assert.strictEqual(missing.ok, false);
   assert.strictEqual(missing.issues.some((item) => item.code === 'scope-module-missing'), true);
+
+  const routeCoverage = platform.navigationRouteCoverage.audit({ navigationScope: 'requiredBusinessModules' });
+  assert.strictEqual(routeCoverage.ok, true);
+  assert.strictEqual(routeCoverage.moduleCount, 12);
+  assert.strictEqual(routeCoverage.coveredCount, 12);
+  assert.strictEqual(routeCoverage.requiredActions.join(','), 'list,create,detail,edit');
+
+  const routeBlocked = platform.navigationRouteCoverage.audit({ navigationScope: ['gis'] });
+  assert.strictEqual(routeBlocked.ok, false);
+  assert.strictEqual(routeBlocked.issues.some((item) => item.code === 'route-action-missing'), true);
 }
 
 {
@@ -1090,6 +1100,7 @@ function screenNode(screenId) {
   assert.strictEqual(plan.readiness.ready, true);
   assert.strictEqual(plan.mapping.ok, true);
   assert.strictEqual(plan.domCoverage.ok, true);
+  assert.strictEqual(plan.routeCoverage.ok, true);
   assert.strictEqual(plan.scope.ok, true);
   assert.strictEqual(plan.scope.moduleKeys.join(','), navigationScope.join(','));
   assert.strictEqual(plan.guard.ok, true);

@@ -2828,6 +2828,95 @@
     return service;
   }
 
+  function createNavigationRouteCoverageService(routeRegistry, moduleRegistry, navigationScopeService) {
+    var defaultActions = ['list', 'create', 'detail', 'edit'];
+
+    function issue(code, message, detail) {
+      return {
+        code: code,
+        message: message,
+        detail: detail || {}
+      };
+    }
+
+    function routeActionsFor(moduleKey) {
+      return routeRegistry.list().filter(function (route) {
+        return route.moduleKey === moduleKey;
+      }).map(function (route) {
+        return route.action || 'list';
+      });
+    }
+
+    function targetModuleKeys(options) {
+      var config = options || {};
+      var scope = navigationScopeService && navigationScopeService.resolve(config.navigationScope || config.rolloutScope || config.scope);
+      if (scope) {
+        return {
+          scope: scope,
+          moduleKeys: scope.moduleKeys.slice(),
+          issues: scope.issues.slice()
+        };
+      }
+      return {
+        scope: null,
+        moduleKeys: moduleRegistry.list().map(function (module) {
+          return module.moduleKey;
+        }),
+        issues: []
+      };
+    }
+
+    function audit(options) {
+      var config = options || {};
+      var actions = toArray(config.actions).length ? toArray(config.actions) : defaultActions;
+      var target = targetModuleKeys(config);
+      var issues = target.issues.slice();
+      var records = target.moduleKeys.map(function (moduleKey) {
+        var module = moduleRegistry.get(moduleKey);
+        var routeActions = routeActionsFor(moduleKey);
+        var missingActions = actions.filter(function (action) {
+          return routeActions.indexOf(action) === -1;
+        });
+        if (!module) {
+          issues.push(issue('route-module-missing', 'Route coverage target module is not registered', { moduleKey: moduleKey }));
+        }
+        missingActions.forEach(function (action) {
+          issues.push(issue('route-action-missing', 'Module is missing a required navigation route action', {
+            moduleKey: moduleKey,
+            action: action
+          }));
+        });
+        return {
+          moduleKey: moduleKey,
+          screenId: module && module.screenId || null,
+          routeActions: routeActions,
+          requiredActions: actions.slice(),
+          missingActions: missingActions
+        };
+      });
+
+      return {
+        ok: issues.length === 0,
+        scope: target.scope,
+        moduleCount: records.length,
+        actionCount: actions.length,
+        coveredCount: records.filter(function (record) {
+          return record.missingActions.length === 0;
+        }).length,
+        requiredActions: actions.slice(),
+        records: records,
+        issues: issues
+      };
+    }
+
+    return {
+      audit: audit,
+      ok: function (options) {
+        return audit(options || {}).ok;
+      }
+    };
+  }
+
   function createNavigationIntentService(menuService, routerService) {
     function datasetValue(node, key) {
       if (!node) return null;
@@ -3771,7 +3860,7 @@
     };
   }
 
-  function createNavigationRuntimePlanService(navigationReadinessService, navigationGuardService, domRootService, navigationMappingService, navigationDomCoverageService, navigationScopeService) {
+  function createNavigationRuntimePlanService(navigationReadinessService, navigationGuardService, domRootService, navigationMappingService, navigationDomCoverageService, navigationScopeService, navigationRouteCoverageService) {
     function issue(code, message, detail) {
       return {
         code: code,
@@ -3802,6 +3891,9 @@
       var domCoverage = navigationDomCoverageService && input.domCoverage !== false
         ? navigationDomCoverageService.audit(Object.assign({}, config, domCoverageOptions))
         : null;
+      var routeCoverage = navigationRouteCoverageService && input.routeCoverage !== false && scope
+        ? navigationRouteCoverageService.audit(Object.assign({}, input.routeCoverageOptions || {}, { navigationScope: scope }))
+        : null;
       var navigationRoots = domRootService.navigationRoots(config);
       var guard = readiness.ready && input.validate !== false ? navigationGuardService.validate(config) : null;
       var issues = readiness.issues.slice();
@@ -3821,6 +3913,11 @@
           issues.push(issue('dom-coverage-' + coverageIssue.code, coverageIssue.message, coverageIssue.detail || {}));
         });
       }
+      if (routeCoverage && !routeCoverage.ok) {
+        routeCoverage.issues.forEach(function (coverageIssue) {
+          issues.push(issue('route-coverage-' + coverageIssue.code, coverageIssue.message, coverageIssue.detail || {}));
+        });
+      }
       if (input.bindNavigation !== false && navigationRoots.length === 0) {
         issues.push(issue('navigation-roots-missing', 'No navigation roots are available for runtime binding'));
       }
@@ -3836,6 +3933,7 @@
         readiness: readiness,
         mapping: mapping,
         domCoverage: domCoverage,
+        routeCoverage: routeCoverage,
         scope: scope,
         guard: guard,
         roots: {
@@ -4279,13 +4377,14 @@
   var navigationDelegation = createNavigationDelegationService(navigationIntent, navigation);
   var domRoots = createDomRootService();
   var navigationScopes = createNavigationScopeService(modules, menus);
+  var navigationRouteCoverage = createNavigationRouteCoverageService(routes, modules, navigationScopes);
   var navigationDomCoverage = createNavigationDomCoverageService(modules, domRoots, navigationMapping);
   var navigationView = createNavigationViewService(appState, breadcrumbs, domRoots);
   var screens = createScreenViewService(appState, domRoots);
   var navigationDiagnostics = createNavigationDiagnosticsService(appState, navigationTransitions, navigationExecutor, domRoots, screens);
   var navigationGuard = createNavigationGuardService(navigationDiagnostics);
   var navigationReadiness = createNavigationReadinessService(domRoots, navigationExecutor);
-  var navigationRuntimePlan = createNavigationRuntimePlanService(navigationReadiness, navigationGuard, domRoots, navigationMapping, navigationDomCoverage, navigationScopes);
+  var navigationRuntimePlan = createNavigationRuntimePlanService(navigationReadiness, navigationGuard, domRoots, navigationMapping, navigationDomCoverage, navigationScopes, navigationRouteCoverage);
   var shellView = createAppShellViewService(appState, screens, navigationView);
   var navigationRuntime = createNavigationRuntimeService(navigationDelegation, navigation, history, shellView, domRoots);
   var navigationActivation = createNavigationActivationService(navigationRuntimePlan, navigationRuntime);
@@ -4328,6 +4427,7 @@
     navigationRollout: navigationRollout,
     navigationMapping: navigationMapping,
     navigationScopes: navigationScopes,
+    navigationRouteCoverage: navigationRouteCoverage,
     navigationDomCoverage: navigationDomCoverage,
     navigationIntent: navigationIntent,
     navigationDelegation: navigationDelegation,
