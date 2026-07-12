@@ -1039,6 +1039,20 @@ function screenNode(screenId) {
   assert.strictEqual(advanced.progress.nextModuleKey, 'dashboardPopulation');
   assert.strictEqual(advanced.progress.storedCompletedModules.join(','), 'dashboard,dashboardHouseholds');
 
+  const dashboardQueue = platform.moduleMigration.queue({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stage: 'navigation'
+  });
+  assert.strictEqual(dashboardQueue.completedCount, 2);
+  assert.strictEqual(dashboardQueue.remainingCount, 6);
+  assert.strictEqual(dashboardQueue.percentComplete, 25);
+  assert.strictEqual(dashboardQueue.nextModuleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardQueue.modules[0].status, 'completed');
+  assert.strictEqual(dashboardQueue.modules[2].isNext, true);
+  assert.strictEqual(dashboardQueue.upcomingModules[0], 'dashboardPopulation');
+  assert.strictEqual(dashboardQueue.blockedQueue.length, 0);
+
   const outOfOrderComplete = platform.moduleMigration.completeHandoff('dashboardVehicles', {
     document: domDocument,
     navigationScope: 'migrationDashboard',
@@ -1074,6 +1088,11 @@ function screenNode(screenId) {
   assert.strictEqual(crudPlan.nextModuleKey, null);
   assert.strictEqual(crudPlan.readyModules.length, 0);
   assert.strictEqual(crudPlan.blockedModules.length, 12);
+  const crudQueue = platform.moduleMigration.queue({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
+  assert.strictEqual(crudQueue.percentComplete, 0);
+  assert.strictEqual(crudQueue.remainingCount, 12);
+  assert.strictEqual(crudQueue.upcomingModules.length, 0);
+  assert.strictEqual(crudQueue.blockedQueue.length, 12);
   assert.throws(() => platform.moduleMigration.assertReady({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }), /Module migration blocked/);
 }
 

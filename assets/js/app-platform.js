@@ -3224,6 +3224,41 @@
       return progress(config);
     }
 
+    function queue(options) {
+      var state = progress(options || {});
+      var modules = state.records.map(function (record) {
+        var completed = state.completedModules.indexOf(record.moduleKey) !== -1;
+        var blocked = state.blockedModules.indexOf(record.moduleKey) !== -1;
+        return {
+          moduleKey: record.moduleKey,
+          screenId: record.screenId || null,
+          path: record.path || null,
+          status: completed ? 'completed' : blocked ? 'blocked' : 'ready',
+          isNext: record.moduleKey === state.nextModuleKey,
+          ready: record.ready,
+          issueCount: record.issues.length,
+          issues: record.issues
+        };
+      });
+      var remainingCount = Math.max(0, state.moduleCount - state.completedCount);
+      return Object.assign({}, state, {
+        remainingCount: remainingCount,
+        percentComplete: state.moduleCount ? Math.round((state.completedCount / state.moduleCount) * 100) : 100,
+        modules: modules,
+        upcomingModules: modules.filter(function (record) {
+          return record.status === 'ready';
+        }).map(function (record) {
+          return record.moduleKey;
+        }),
+        blockedQueue: modules.filter(function (record) {
+          return record.status === 'blocked';
+        }),
+        completedQueue: modules.filter(function (record) {
+          return record.status === 'completed';
+        })
+      });
+    }
+
     function report(options) {
       var config = options || {};
       var stages = toArray(config.stages).length ? toArray(config.stages) : [config.stage || 'navigation'];
@@ -3423,6 +3458,7 @@
       progress: progress,
       markComplete: markComplete,
       resetProgress: resetProgress,
+      queue: queue,
       report: report,
       reports: reports,
       handoff: handoff,
