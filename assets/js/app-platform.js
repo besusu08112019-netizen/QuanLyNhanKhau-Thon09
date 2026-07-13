@@ -2936,7 +2936,7 @@
         loaderConfigured: false,
         loaderAvailable: false,
         crud: true,
-        crudOperations: ['list', 'detail', 'create', 'edit', 'delete']
+        crudOperations: ['list', 'detail', 'create', 'edit']
       },
       runtime: {
         routes: ['list'],
@@ -5496,6 +5496,56 @@
     ].forEach(function (moduleKey) {
       var module = modules.get(moduleKey);
       if (module) registerCrudRoutes(module.moduleKey, module.path);
+    });
+
+    forms.register({
+      key: 'householdsForm',
+      moduleKey: 'households',
+      modalKey: 'householdModal',
+      sections: {
+        basic: [
+          { name: 'code', label: 'Ma ho', required: true },
+          { name: 'headName', label: 'Chu ho' },
+          { name: 'address', label: 'Dia chi' }
+        ],
+        linked: [
+          { name: 'areaName', label: 'Dia ban' }
+        ],
+        extended: [
+          { name: 'memberCount', label: 'So nhan khau', type: 'number', defaultValue: 0 },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      actions: [
+        { key: 'save', label: 'Luu', variant: 'success' },
+        { key: 'cancel', label: 'Huy', variant: 'light' }
+      ]
+    });
+    lists.register({
+      key: 'householdsList',
+      moduleKey: 'households',
+      screenId: 'households',
+      columns: [
+        { key: 'code', label: 'Ma ho', sortable: true },
+        { key: 'headName', label: 'Chu ho', sortable: true },
+        { key: 'address', label: 'Dia chi' },
+        { key: 'memberCount', label: 'Nhan khau', sortable: true },
+        { key: 'status', label: 'Trang thai' }
+      ],
+      filters: [
+        { key: 'areaId', label: 'Dia ban', type: 'select', defaultValue: '' },
+        { key: 'status', label: 'Trang thai', type: 'select', defaultValue: '' }
+      ],
+      rowActions: ['detail', 'edit'],
+      bulkActions: ['export']
+    });
+    crud.register({
+      moduleKey: 'households',
+      formKey: 'householdsForm',
+      detailFormKey: 'householdsForm',
+      listKey: 'householdsList',
+      rowActions: ['detail', 'edit'],
+      bulkActions: ['export']
     });
 
     [
