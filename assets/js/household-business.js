@@ -1,5 +1,5 @@
 (() => {
-  const state = { page: 1, pageSize: 20, search: '', business_type: '', economic_type: '', business_scale: '', sector: '', status: '', ocop: '', food_safety: '', social_insurance: '', located: '', sort: 'updated_at', direction: 'DESC', catalogs: null, selectedHousehold: null, currentDetailHouseholdId: null };
+  const state = { page: 1, pageSize: 20, search: '', business_type: '', economic_type: '', business_scale: '', sector: '', status: '', ocop: '', food_safety: '', social_insurance: '', located: '', sort: 'updated_at', direction: 'DESC', catalogs: null, selectedHousehold: null, householdSuggestions: [], currentDetailHouseholdId: null };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
@@ -9,7 +9,17 @@
     const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
     return match ? match[3] + '/' + match[2] + '/' + match[1] : String(value);
   };
+  const hasPlatformPermissionRule = (module, action) => {
+    const service = window.Thon09Platform?.permissions;
+    if (!service?.list) return false;
+    const normalizedModule = service.normalizeModule ? service.normalizeModule(module) : module;
+    const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
+    const keys = new Set(service.list().map(item => item.key));
+    return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
+  };
   const can = (module, action) => {
+    const service = window.Thon09Platform?.permissions;
+    if (service?.can && hasPlatformPermissionRule(module, action)) return service.can(module, action, window.App?.user);
     if (typeof window.thon09CanAccess === 'function') return window.thon09CanAccess(module, action);
     const role = String(window.App?.user?.role || '').toUpperCase();
     if (['SUPER_ADMIN', 'ADMIN'].includes(role)) return true;
@@ -19,6 +29,22 @@
   };
   const show = (message, type = 'success') => typeof window.showToast === 'function' ? window.showToast(message, type) : console.log(message);
   const request = (url, options = {}) => (window.api || window.thon09Api)(url, options);
+  const registerModal = id => {
+    const modal = $('#' + id);
+    const service = window.Thon09Platform?.modals;
+    if (modal && service?.registerBootstrap) service.registerBootstrap(id, '#' + id);
+    return modal;
+  };
+  const openModal = id => {
+    const service = window.Thon09Platform?.modals;
+    if (service?.open && service.open(id)) return;
+    window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
+  };
+  const closeModal = id => {
+    const service = window.Thon09Platform?.modals;
+    if (service?.close && service.close(id)) return;
+    window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
+  };
 
   function setValue(selector, value) { const el = $(selector); if (el) el.value = value ?? ''; }
   function setText(selector, value) { const el = $(selector); if (el) el.textContent = value ?? ''; }
@@ -26,15 +52,12 @@
   function setFormValue(form, name, value) { if (form?.elements?.[name]) form.elements[name].value = value ?? ''; }
 
   function bind() {
-    const businessModal = $('#businessHouseholdModal');
-    if (businessModal && window.bootstrap && window.App?.modals) window.App.modals.businessHousehold = new bootstrap.Modal(businessModal);
-    $('#businessHouseholdAddBtn')?.addEventListener('click', () => openForm());
+    registerModal('businessHouseholdModal');
     $('#businessHouseholdForm')?.addEventListener('submit', save);
     $('#businessHouseholdAutocomplete')?.addEventListener('input', debounce(searchHouseholds, 250));
-    document.addEventListener('click', event => { if (!event.target.closest('#businessHouseholdSuggestions') && event.target.id !== 'businessHouseholdAutocomplete') hideSuggestions(); });
+    document.addEventListener('pointerdown', event => { if (!event.target.closest('#businessHouseholdSuggestions') && event.target.id !== 'businessHouseholdAutocomplete') hideSuggestions(); });
     ['businessOcopCheck', 'businessSocialInsuranceCheck', 'businessFoodSafetyCheck'].forEach(id => $('#' + id)?.addEventListener('change', toggleConditionalFields));
     $('#businessActivityOwnGps')?.addEventListener('change', syncBusinessGpsSource);
-    $$('[data-business-gps-action]').forEach(btn => btn.addEventListener('click', () => handleBusinessGpsAction(btn.dataset.businessGpsAction)));
     $('#businessHouseholdSearch')?.addEventListener('input', debounce(() => { state.search = $('#businessHouseholdSearch').value.trim(); state.page = 1; load(); }, 300));
     [
       ['businessHouseholdTypeFilter', 'business_type'], ['businessEconomicTypeFilter', 'economic_type'], ['businessScaleFilter', 'business_scale'],
@@ -45,8 +68,7 @@
       if (el) el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', debounce(() => { state[key] = el.value.trim(); state.page = 1; load(); }, 250));
     });
     $('#businessHouseholdPageSize')?.addEventListener('change', event => { state.pageSize = Number(event.target.value || 20); state.page = 1; load(); });
-    $('#businessHouseholdFilterReset')?.addEventListener('click', resetFilters);
-    $$('[data-business-sort]').forEach(th => th.addEventListener('click', () => sortBy(th.dataset.businessSort)));
+    registerBusinessPlatformActions();
     document.addEventListener('thon09:screen-change', event => {
       if (event.detail?.screen === 'businessHouseholds') load();
       if (event.detail?.screen === 'dashboard') setTimeout(renderDashboard, 120);
@@ -56,6 +78,25 @@
     applyAccess();
     ensureCatalogs().catch(() => {});
     if ($('#businessHouseholdsScreen')?.classList.contains('active')) load();
+  }
+
+  function registerBusinessPlatformActions() {
+    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    if (!actions || typeof actions.register !== 'function') return;
+    actions.register('businessHouseholds.openCreate', () => openForm());
+    actions.register('businessHouseholds.reset', () => resetFilters());
+    actions.register('businessHouseholds.sort', context => sortBy(context.dataset.businessSort));
+    actions.register('businessHouseholds.page', context => { state.page = Number(context.dataset.businessPage || context.dataset.page || 1); load(); });
+    actions.register('businessHouseholds.gps', context => handleBusinessGpsAction(context.dataset.businessGpsAction || context.dataset.action || ''));
+    actions.register('businessHouseholds.selectHousehold', context => selectHousehold(state.householdSuggestions.find(item => String(item.id) === context.dataset.householdChoice)));
+    actions.register('businessHouseholds.detail', context => showDetail(Number(context.dataset.householdId || context.dataset.id || 0)));
+    actions.register('businessHouseholds.edit', context => openForm(Number(context.dataset.id || context.dataset.businessId || 0)));
+    actions.register('businessHouseholds.create', context => openFormForHousehold(Number(context.dataset.householdId || context.dataset.id || 0)));
+    actions.register('businessHouseholds.delete', context => remove(Number(context.dataset.id || context.dataset.businessId || 0)));
+    actions.register('businessHouseholds.tab', context => selectBusinessDetailTab(context.dataset.tab || context.dataset.businessTab || ''));
+    actions.register('businessHouseholds.activity', context => selectBusinessActivity(Number(context.dataset.index || context.dataset.activityIndex || 0)));
+    actions.register('businessHouseholds.fileDelete', context => deleteBusinessFile(Number(context.dataset.businessId || 0), Number(context.dataset.fileId || 0)));
+    if (typeof actions.bind === 'function') actions.bind(document);
   }
 
   async function ensureCatalogs() {
@@ -126,7 +167,7 @@
     let html = '<div class="business-sector-cell" title="' + esc(items.join('\n')) + '">'
       + shown.map(item => '<span class="business-sector-badge">' + esc(item) + '</span>').join('');
     if (remaining > 0) {
-      html += '<button class="business-more-badge" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">Còn ' + remaining + ' hoạt động khác</button>';
+      html += '<button class="business-more-badge" type="button" data-platform-action="businessHouseholds.detail" data-household-id="' + householdId + '">Còn ' + remaining + ' hoạt động khác</button>';
     }
     return html + '</div>';
   }
@@ -182,7 +223,7 @@
     const secondaryName = names.length > 1 ? names.slice(1, 3).join(', ') : '';
     return '<tr class="business-list-row">'
       + '<td data-label="STT">' + index + '</td>'
-      + '<td data-label="Mã hộ"><button class="btn btn-link p-0 fw-semibold" type="button" onclick="window.showHouseholdBusiness(' + householdId + ')">' + esc(row.household_code) + '</button></td>'
+      + '<td data-label="Mã hộ"><button class="btn btn-link p-0 fw-semibold" type="button" data-platform-action="businessHouseholds.detail" data-household-id="' + householdId + '">' + esc(row.household_code) + '</button></td>'
       + '<td data-label="Chủ hộ"><div class="business-main-person"><strong>' + esc(row.head_citizen_name || '') + '</strong><span>' + esc(row.household_code || '') + '</span></div></td>'
       + '<td data-label="Tên cơ sở"><div class="business-establishment-cell"><strong>' + esc(primaryName) + '</strong>' + (secondaryName ? '<span>' + esc(secondaryName) + '</span>' : '') + '</div></td>'
       + '<td data-label="Loại hình">' + typeCell(activities) + '</td>'
@@ -198,10 +239,10 @@
     const activities = activitiesOf(row);
     const firstActivityId = Number((activities[0] || {}).id || row.business_id || row.id || 0);
     const buttons = [
-      '<button class="btn btn-sm btn-outline-secondary business-icon-btn" type="button" title="Xem chi tiết" aria-label="Xem chi tiết" onclick="window.showHouseholdBusiness(' + householdId + ')"><i class="fa-solid fa-eye"></i></button>',
-      can('household_business', 'update') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Sửa hoạt động" aria-label="Sửa hoạt động" onclick="window.openHouseholdBusinessForm(' + firstActivityId + ')"><i class="fa-solid fa-pen-to-square"></i></button>' : '',
-      can('household_business', 'create') ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Thêm hoạt động" aria-label="Thêm hoạt động" onclick="window.addHouseholdBusinessActivity(' + householdId + ')"><i class="fa-solid fa-plus"></i></button>' : '',
-      can('household_business', 'delete') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-danger business-icon-btn" type="button" title="Xóa hoạt động" aria-label="Xóa hoạt động" onclick="window.deleteHouseholdBusiness(' + firstActivityId + ')"><i class="fa-solid fa-trash"></i></button>' : ''
+      '<button class="btn btn-sm btn-outline-secondary business-icon-btn" type="button" title="Xem chi tiết" aria-label="Xem chi tiết" data-platform-action="businessHouseholds.detail" data-household-id="' + householdId + '"><i class="fa-solid fa-eye"></i></button>',
+      can('household_business', 'update') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Sửa hoạt động" aria-label="Sửa hoạt động" data-platform-action="businessHouseholds.edit" data-id="' + firstActivityId + '"><i class="fa-solid fa-pen-to-square"></i></button>' : '',
+      can('household_business', 'create') ? '<button class="btn btn-sm btn-outline-primary business-icon-btn" type="button" title="Thêm hoạt động" aria-label="Thêm hoạt động" data-platform-action="businessHouseholds.create" data-household-id="' + householdId + '"><i class="fa-solid fa-plus"></i></button>' : '',
+      can('household_business', 'delete') && activities.length === 1 && firstActivityId ? '<button class="btn btn-sm btn-outline-danger business-icon-btn" type="button" title="Xóa hoạt động" aria-label="Xóa hoạt động" data-platform-action="businessHouseholds.delete" data-id="' + firstActivityId + '"><i class="fa-solid fa-trash"></i></button>' : ''
     ];
     return '<div class="business-row-actions">' + buttons.filter(Boolean).join('') + '</div>';
   }
@@ -213,10 +254,9 @@
     const page = Number(data.page || state.page);
     const pages = [];
     for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) pages.push(i);
-    host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" ' + (page <= 1 ? 'disabled' : '') + ' data-business-page="' + (page - 1) + '">Trước</button>'
-      + pages.map(item => '<button class="btn btn-sm ' + (item === page ? 'btn-primary' : 'btn-outline-secondary') + '" data-business-page="' + item + '">' + item + '</button>').join('')
-      + '<button class="btn btn-sm btn-outline-secondary" ' + (page >= totalPages ? 'disabled' : '') + ' data-business-page="' + (page + 1) + '">Sau</button>';
-    host.querySelectorAll('[data-business-page]').forEach(btn => btn.addEventListener('click', () => { state.page = Number(btn.dataset.businessPage); load(); }));
+    host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" ' + (page <= 1 ? 'disabled' : '') + ' data-platform-action="businessHouseholds.page" data-business-page="' + (page - 1) + '">Trước</button>'
+      + pages.map(item => '<button class="btn btn-sm ' + (item === page ? 'btn-primary' : 'btn-outline-secondary') + '" data-platform-action="businessHouseholds.page" data-business-page="' + item + '">' + item + '</button>').join('')
+      + '<button class="btn btn-sm btn-outline-secondary" ' + (page >= totalPages ? 'disabled' : '') + ' data-platform-action="businessHouseholds.page" data-business-page="' + (page + 1) + '">Sau</button>';
   }
 
   function sortBy(key) { state.direction = state.sort === key && state.direction === 'ASC' ? 'DESC' : 'ASC'; state.sort = key; state.page = 1; load(); }
@@ -254,8 +294,7 @@
       const row = await request('/api/household-business/' + encodeURIComponent(id));
       setForm(form, row);
     }
-    if (!window.App?.modals?.businessHousehold && $('#businessHouseholdModal') && window.bootstrap && window.App?.modals) window.App.modals.businessHousehold = new bootstrap.Modal($('#businessHouseholdModal'));
-    window.App?.modals?.businessHousehold?.show();
+    openModal('businessHouseholdModal');
   }
 
   async function searchHouseholds() {
@@ -264,18 +303,19 @@
     if (!input || !host) return;
     const q = input.value.trim();
     state.selectedHousehold = null;
+    state.householdSuggestions = [];
     setValue('#businessHouseholdId', '');
     setText('#businessHouseholdSelected', '');
     if (q.length < 2) { hideSuggestions(); return; }
     const data = await request('/api/household-business/household-search?q=' + encodeURIComponent(q), { cacheTtl: 3000 });
     const items = data.items || [];
+    state.householdSuggestions = items;
     host.innerHTML = items.length ? items.map(item => suggestionHtml(item)).join('') : '<div class="list-group-item text-muted">Không tìm thấy hộ phù hợp</div>';
     host.classList.remove('d-none');
-    host.querySelectorAll('[data-household-choice]').forEach(btn => btn.addEventListener('click', () => selectHousehold(items.find(item => String(item.id) === btn.dataset.householdChoice))));
   }
 
   function suggestionHtml(item) {
-    return '<button type="button" class="list-group-item list-group-item-action" data-household-choice="' + Number(item.id) + '">'
+    return '<button type="button" class="list-group-item list-group-item-action" data-platform-action="businessHouseholds.selectHousehold" data-household-choice="' + Number(item.id) + '">'
       + '<div class="d-flex justify-content-between gap-2"><strong>' + esc(item.household_code) + '</strong>' + (Number(item.business_count || 0) > 0 ? '<span class="badge text-bg-light">' + num(item.business_count) + ' hoạt động</span>' : '') + '</div>'
       + '<div>' + esc(item.head_citizen_name || '') + '</div><small class="text-muted">' + esc(item.address || '') + '</small></button>';
   }
@@ -406,7 +446,7 @@
       return;
     }
     if (action === 'map') {
-      window.App?.modals?.businessHousehold?.hide();
+      closeModal('businessHouseholdModal');
       if (window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') window.Thon09NavigationController.navigate('gis');
       show('\u0110\u00e3 m\u1edf GIS Google. H\u00e3y ch\u1ecdn h\u1ed9 v\u00e0 \u0111\u1eb7t marker tr\u00ean b\u1ea3n \u0111\u1ed3, h\u1ec7 th\u1ed1ng s\u1ebd d\u00f9ng GPS h\u1ed9 gia \u0111\u00ecnh.', 'info');
       return;
@@ -471,7 +511,7 @@
     try {
       const saved = await request(id ? '/api/household-business/' + encodeURIComponent(id) : '/api/household-business', { method: id ? 'PUT' : 'POST', body: payload });
       await uploadPendingFiles(saved.id || id);
-      window.App.modals.businessHousehold?.hide();
+      closeModal('businessHouseholdModal');
       show('Đã lưu thông tin hộ sản xuất/kinh doanh');
       load();
       if (state.currentDetailHouseholdId && Number(saved.household_id || payload.household_id || 0) === state.currentDetailHouseholdId) showDetail(state.currentDetailHouseholdId);
@@ -512,20 +552,20 @@
         state.currentDetailHouseholdId = Number(id || 0) || null;
         $('#detailTitle').textContent = 'Chi tiết hộ sản xuất & kinh doanh';
         $('#detailBody').innerHTML = '<div class="text-muted p-3">Hộ này không còn hoạt động sản xuất/kinh doanh.</div>';
-        window.App.modals.detail?.show();
+        openModal('detailModal');
         return;
       }
       state.currentDetailHouseholdId = Number(row.household_id || row.id || id || 0) || null;
       $('#detailTitle').textContent = 'Chi tiết hộ sản xuất & kinh doanh';
       $('#detailBody').innerHTML = detailHtml(row);
-      window.App.modals.detail?.show();
+      openModal('detailModal');
     } catch (error) { show(error.message, 'danger'); }
   }
 
   function detailHtml(row) {
     const activities = activitiesOf(row);
     const householdId = Number(row.household_id || row.id || 0);
-    const addButton = can('household_business', 'create') ? '<button class="btn btn-primary btn-sm" type="button" onclick="window.addHouseholdBusinessActivity(' + householdId + ')"><i class="fa-solid fa-plus"></i> Thêm hoạt động</button>' : '';
+    const addButton = can('household_business', 'create') ? '<button class="btn btn-primary btn-sm" type="button" data-platform-action="businessHouseholds.create" data-household-id="' + householdId + '"><i class="fa-solid fa-plus"></i> Thêm hoạt động</button>' : '';
     const hasOcop = activities.some(activity => businessTruthy(activity.is_ocop));
     const hasFoodSafety = activities.some(activity => businessTruthy(activity.food_safety_certified));
     const hasSocialInsurance = activities.some(activity => businessTruthy(activity.social_insurance));
@@ -552,7 +592,7 @@
   }
 
   function businessDetailTabs(tabs) {
-    const nav = tabs.map((tab, index) => '<button class="business-person-tab ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-detail-tab="' + esc(tab[0]) + '" onclick="window.selectHouseholdBusinessDetailTab(\'' + esc(tab[0]) + '\')"><i class="fa-solid ' + esc(tab[2]) + '"></i>' + esc(tab[1]) + '</button>').join('');
+    const nav = tabs.map((tab, index) => '<button class="business-person-tab ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-detail-tab="' + esc(tab[0]) + '" data-platform-action="businessHouseholds.tab" data-tab="' + esc(tab[0]) + '"><i class="fa-solid ' + esc(tab[2]) + '"></i>' + esc(tab[1]) + '</button>').join('');
     const panels = tabs.map((tab, index) => '<section class="business-person-tab-panel ' + (index === 0 ? 'is-active' : '') + '" data-business-detail-panel="' + esc(tab[0]) + '">' + tab[3] + '</section>').join('');
     return '<div class="business-person-tabs"><div class="business-person-tabbar">' + nav + '</div><div class="business-person-tab-content">' + panels + '</div></div>';
   }
@@ -599,15 +639,15 @@
 
   function businessActivityListItem(activity, index) {
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
-    return '<button class="business-person-activity-item business-modern-activity-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')"><strong>' + esc(title) + '</strong><span>' + esc(businessActivityListSubtitle(activity)) + '</span>' + statusBadge(activity.status, activity.status_label) + '</button>';
+    return '<button class="business-person-activity-item business-modern-activity-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" data-platform-action="businessHouseholds.activity" data-index="' + index + '"><strong>' + esc(title) + '</strong><span>' + esc(businessActivityListSubtitle(activity)) + '</span>' + statusBadge(activity.status, activity.status_label) + '</button>';
   }
 
   function businessActivityDetailPanel(activity, index) {
     const files = activity.files || [];
     const images = files.filter(file => file.file_kind === 'IMAGE');
     const documents = files.filter(file => file.file_kind === 'DOCUMENT');
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="businessHouseholds.edit" data-id="' + Number(activity.id || 0) + '"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="businessHouseholds.delete" data-id="' + Number(activity.id || 0) + '"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'Chưa cập nhật';
     return '<article class="business-person-activity-panel business-dashboard-activity-view ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
@@ -661,7 +701,7 @@
   }
 
   function businessActivityImages(images, businessId) {
-    const add = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(businessId || 0) + ')"><i class="fa-solid fa-plus"></i> Thêm ảnh</button>' : '';
+    const add = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="businessHouseholds.edit" data-id="' + Number(businessId || 0) + '"><i class="fa-solid fa-plus"></i> Thêm ảnh</button>' : '';
     if (!images.length) return '<div class="business-dashboard-media-line"><div><span><i class="fa-solid fa-images"></i>Ảnh</span><strong><i class="fa-regular fa-image"></i> Chưa có ảnh</strong></div>' + add + '</div>';
     return '<div class="business-dashboard-media-line"><div><span><i class="fa-solid fa-images"></i>Ảnh</span><div class="business-dashboard-thumbs">' + images.slice(0, 6).map(file => mediaThumb(file, businessId)).join('') + (images.length > 6 ? '<span class="business-economic-more">+' + (images.length - 6) + '</span>' : '') + '</div></div>' + add + '</div>';
   }
@@ -774,8 +814,8 @@
   }
 
   function dashboardActivityRow(activity, index) {
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" title="Sửa" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i></button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="Xóa" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i></button>' : '';
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" title="Sửa" data-platform-action="businessHouseholds.edit" data-id="' + Number(activity.id || 0) + '"><i class="fa-solid fa-pen-to-square"></i></button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="Xóa" data-platform-action="businessHouseholds.delete" data-id="' + Number(activity.id || 0) + '"><i class="fa-solid fa-trash"></i></button>' : '';
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     return '<article class="business-detail-activity">'
       + '<div class="business-detail-activity-head"><div><span>Hoạt động ' + num(index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-detail-activity-actions">' + edit + del + '</div></div>'
@@ -829,7 +869,7 @@
 
   function businessActivityListItem(activity, index) {
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
-    return '<button class="business-activity-list-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" onclick="window.selectHouseholdBusinessActivity(' + index + ')">'
+    return '<button class="business-activity-list-item ' + (index === 0 ? 'is-active' : '') + '" type="button" data-business-activity-tab="' + index + '" data-platform-action="businessHouseholds.activity" data-index="' + index + '">'
       + '<strong>' + esc(title) + '</strong>'
       + '<span>' + esc(businessActivityListSubtitle(activity)) + '</span>'
       + statusBadge(activity.status, activity.status_label)
@@ -840,8 +880,8 @@
     const files = activity.files || [];
     const images = files.filter(file => file.file_kind === 'IMAGE');
     const documents = files.filter(file => file.file_kind === 'DOCUMENT');
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="businessHouseholds.edit" data-id="' + Number(activity.id || 0) + '"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="businessHouseholds.delete" data-id="' + Number(activity.id || 0) + '"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     const sector = activity.sector_label || activity.production_sector || activity.business_sector || activity.economic_type || 'Chưa cập nhật';
     return '<article class="business-activity-detail business-dashboard-activity-view ' + (index === 0 ? 'is-active' : '') + '" data-business-activity-panel="' + index + '">'
@@ -923,8 +963,8 @@
     const files = activity.files || [];
     const images = files.filter(file => file.file_kind === 'IMAGE');
     const documents = files.filter(file => file.file_kind === 'DOCUMENT');
-    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" onclick="window.openHouseholdBusinessForm(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
-    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" onclick="window.deleteHouseholdBusiness(' + Number(activity.id || 0) + ')"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
+    const edit = can('household_business', 'update') ? '<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="businessHouseholds.edit" data-id="' + Number(activity.id || 0) + '"><i class="fa-solid fa-pen-to-square"></i> Sửa</button>' : '';
+    const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="businessHouseholds.delete" data-id="' + Number(activity.id || 0) + '"><i class="fa-solid fa-trash"></i> Xóa</button>' : '';
     const title = activity.business_name || activity.economic_type || activity.sector_label || 'Hoạt động số ' + (index + 1);
     return '<article class="business-dashboard-activity-card">'
       + '<header class="business-activity-dashboard-head"><div><span>Hoạt động số ' + (index + 1) + '</span><h5>' + esc(title) + '</h5></div><div class="business-activity-head-actions">' + statusBadge(activity.status, activity.status_label) + edit + del + '</div></header>'
@@ -1004,7 +1044,7 @@
       const preview = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/preview';
       const download = '/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(file.id) + '/download';
       const thumb = file.file_kind === 'IMAGE' ? '<a href="' + preview + '" target="_blank" rel="noopener"><img src="' + preview + '" alt=""></a>' : '<i class="fa-solid fa-file-lines business-file-icon"></i>';
-      const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="Xóa" onclick="window.deleteHouseholdBusinessFile(' + Number(businessId) + ',' + Number(file.id) + ')"><i class="fa-solid fa-trash"></i></button>' : '';
+      const del = can('household_business', 'delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" title="Xóa" data-platform-action="businessHouseholds.fileDelete" data-business-id="' + Number(businessId) + '" data-file-id="' + Number(file.id) + '"><i class="fa-solid fa-trash"></i></button>' : '';
       return '<div class="business-file-row">' + thumb + '<div class="business-file-meta"><strong>' + esc(file.original_name || '') + '</strong><span>' + esc(file.category || '') + ' - ' + date(file.created_at) + ' - ' + esc(file.uploaded_by || '') + '</span></div><div class="business-file-actions"><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + preview + '" title="Xem"><i class="fa-solid fa-magnifying-glass-plus"></i></a><a class="btn btn-sm btn-outline-secondary" href="' + download + '" title="Tải xuống"><i class="fa-solid fa-download"></i></a>' + del + '</div></div>';
     }).join('');
     return '<details class="business-media-panel"><summary><span><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</span><strong>' + countText + '</strong></summary><div class="business-file-list">' + cards + '</div></details>';

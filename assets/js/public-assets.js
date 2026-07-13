@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   'use strict';
 
   const API = '/api/public-assets';
@@ -11,7 +11,48 @@
   const safe = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[char]));
   const number = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
   const toast = (message, type = 'info') => typeof window.showToast === 'function' ? window.showToast(message, type) : console[type === 'danger' ? 'error' : 'log'](message);
-  const can = action => typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('public_assets', action) : true;
+  const hasPlatformPermissionRule = (moduleKey, action) => {
+    const service = window.Thon09Platform?.permissions;
+    if (!service?.list) return false;
+    const normalizedModule = service.normalizeModule ? service.normalizeModule(moduleKey) : moduleKey;
+    const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
+    const keys = new Set(service.list().map(item => item.key));
+    return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
+  };
+  const can = action => {
+    const service = window.Thon09Platform?.permissions;
+    if (service?.can && hasPlatformPermissionRule('public_assets', action)) return service.can('public_assets', action, window.App?.user);
+    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('public_assets', action) : true;
+  };
+  const openModal = id => {
+    if (window.Thon09Platform?.modals?.open) {
+      const result = window.Thon09Platform.modals.open(id);
+      if (result) return result;
+    }
+    return window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
+  };
+  const closeModal = id => {
+    if (window.Thon09Platform?.modals?.close) {
+      const result = window.Thon09Platform.modals.close(id);
+      if (result) return result;
+    }
+    return window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
+  };
+  const closeModalImmediately = id => {
+    closeModal(id);
+    const modal = $('#' + id);
+    if (!modal) return;
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.removeAttribute('aria-modal');
+    window.bootstrap?.Modal?.getInstance?.(modal)?.dispose?.();
+    if (!document.querySelector('.modal.show')) {
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('padding-right');
+      $$('.modal-backdrop').forEach(backdrop => backdrop.remove());
+    }
+  };
 
   const request = (url, options = {}) => {
     if (typeof window.api === 'function') return window.api(url, options);
@@ -45,38 +86,48 @@
   function debounce(fn, delay) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; }
 
   function init() {
+    registerPublicAssetPlatformActions();
     bind();
     wrapGisLoader();
     if (window.App?.screen === 'publicAssets') run(load);
     if (window.App?.screen === 'gis') scheduleGisLayer();
   }
 
+  function registerPublicAssetPlatformActions() {
+    if (window.__thon09PublicAssetActionsRegistered || !window.Thon09Platform?.actions) return;
+    window.__thon09PublicAssetActionsRegistered = true;
+    window.Thon09Platform.actions
+      .register({ key: 'publicAssets.detail', handler: ({ dataset }) => run(() => openDetail(Number(dataset.id || 0))) })
+      .register({ key: 'publicAssets.edit', handler: ({ dataset }) => run(() => openForm(Number(dataset.id || 0))) })
+      .register({ key: 'publicAssets.delete', handler: ({ dataset }) => run(() => remove(Number(dataset.id || 0))) })
+      .register({ key: 'publicAssets.search', handler: () => run(() => { state.page = 1; readFilters(); return load(); }) })
+      .register({ key: 'publicAssets.reset', handler: () => run(reset) })
+      .register({ key: 'publicAssets.create', handler: () => run(() => openForm()) })
+      .register({ key: 'publicAssets.gps.use', handler: useGps })
+      .register({ key: 'publicAssets.map.pick', handler: pickMap })
+      .register({ key: 'publicAssets.photo.delete', handler: () => run(deletePhoto) })
+      .register({ key: 'publicAssets.detail.edit', handler: () => state.current?.id && run(() => openForm(state.current.id)) })
+      .register({ key: 'publicAssets.page', handler: ({ dataset, target }) => !target.disabled && run(() => { state.page = Number(dataset.page || 1); return load(); }) })
+      .register({ key: 'publicAssets.dashboard.filter', handler: ({ target }) => dashboardFilter(target) })
+      .register({ key: 'publicAssets.sort', handler: ({ dataset }) => run(() => sortBy(dataset.publicAssetSort)) })
+      .register({ key: 'publicAssets.inventory.add', handler: () => run(() => openInventoryForm()) })
+      .register({ key: 'publicAssets.inventory.edit', handler: ({ dataset }) => run(() => openInventoryForm(Number(dataset.id || 0))) })
+      .register({ key: 'publicAssets.inventory.delete', handler: ({ dataset }) => run(() => deleteInventory(Number(dataset.id || 0))) });
+  }
+
   function bind() {
-    $('#publicAssetsSearchBtn')?.addEventListener('click', () => run(() => { state.page = 1; readFilters(); return load(); }));
-    $('#publicAssetsResetBtn')?.addEventListener('click', () => run(reset));
     $('#publicAssetsSearch')?.addEventListener('input', debounce(() => run(() => { state.page = 1; readFilters(); return load(); }), 350));
     ['publicAssetsTypeFilter', 'publicAssetsAreaFilter', 'publicAssetsStatusFilter', 'publicAssetsLocatedFilter', 'publicAssetsAreaMin', 'publicAssetsAreaMax'].forEach(id => $('#' + id)?.addEventListener('change', () => run(() => { state.page = 1; readFilters(); return load(); })));
     $('#publicAssetsPageSize')?.addEventListener('change', event => run(() => { state.pageSize = Number(event.target.value || 20); state.page = 1; return load(); }));
-    $('#publicAssetsAddBtn')?.addEventListener('click', () => run(() => openForm()));
     $('#publicAssetForm')?.addEventListener('submit', event => {
       event.preventDefault();
       run(() => save(event.currentTarget));
     });
-    $('#publicAssetUseGpsBtn')?.addEventListener('click', useGps);
-    $('#publicAssetPickMapBtn')?.addEventListener('click', pickMap);
     $('#publicAssetPhotoFile')?.addEventListener('change', previewFile);
-    $('#publicAssetDeletePhotoBtn')?.addEventListener('click', () => run(deletePhoto));
-    $('#publicAssetDetailEditBtn')?.addEventListener('click', () => state.current?.id && run(() => openForm(state.current.id)));
-    $('#publicAssetDetailBody')?.addEventListener('click', detailAction);
-    $('#publicAssetFormModal')?.addEventListener('click', detailAction);
     $('#publicAssetInventoryForm')?.addEventListener('submit', event => {
       event.preventDefault();
       run(() => saveInventory(event.currentTarget));
     });
-    $('#publicAssetsRows')?.addEventListener('click', rowAction);
-    $('#publicAssetsPager')?.addEventListener('click', pagerAction);
-    $('#publicAssetsMiniDashboard')?.addEventListener('click', dashboardAction);
-    $$('[data-public-asset-sort]').forEach(th => th.addEventListener('click', () => run(() => sortBy(th.dataset.publicAssetSort))));
     document.addEventListener('thon09:screen-change', event => {
       if (event.detail?.screen === 'publicAssets') run(load);
       if (event.detail?.screen === 'gis') scheduleGisLayer();
@@ -159,7 +210,7 @@
       ['Tổng diện tích khuôn viên', 'fa-ruler-combined', area(metrics.total_campus_area || 0, '0 m²'), ''],
       ['Tổng tài sản kiểm kê', 'fa-boxes-stacked', number(inventory.total_items || 0), '']
     ];
-    host.innerHTML = cards.map(card => `<article class="agri-kpi-card" ${card[3] ? `data-public-asset-filter="${card[3]}"` : ''}><span><i class="fa-solid ${card[1]}"></i></span><div><strong>${card[2]}</strong><small>${safe(card[0])}</small></div></article>`).join('') + breakdown(data.charts || {}) + inventoryBreakdown(inventory);
+    host.innerHTML = cards.map(card => `<article class="agri-kpi-card" ${card[3] ? `data-platform-action="publicAssets.dashboard.filter" data-public-asset-filter="${card[3]}"` : ''}><span><i class="fa-solid ${card[1]}"></i></span><div><strong>${card[2]}</strong><small>${safe(card[0])}</small></div></article>`).join('') + breakdown(data.charts || {}) + inventoryBreakdown(inventory);
   }
 
   function breakdown(charts) {
@@ -195,7 +246,7 @@
       return;
     }
     tbody.innerHTML = rows.map((item, index) => {
-      const actions = [`<button class="btn btn-sm btn-outline-primary" data-action="detail" data-id="${item.id}" title="Chi tiết"><i class="fa-solid fa-eye"></i></button>`, can('update') ? `<button class="btn btn-sm btn-outline-secondary" data-action="edit" data-id="${item.id}" title="Sửa"><i class="fa-solid fa-pen"></i></button>` : '', can('delete') ? `<button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${item.id}" title="Xóa"><i class="fa-solid fa-trash"></i></button>` : ''].filter(Boolean).join(' ');
+      const actions = [`<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="publicAssets.detail" data-id="${item.id}" title="Chi tiết"><i class="fa-solid fa-eye"></i></button>`, can('update') ? `<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="publicAssets.edit" data-id="${item.id}" title="Sửa"><i class="fa-solid fa-pen"></i></button>` : '', can('delete') ? `<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="publicAssets.delete" data-id="${item.id}" title="Xóa"><i class="fa-solid fa-trash"></i></button>` : ''].filter(Boolean).join(' ');
       const personMeta = [text(item.manager_position, ''), text(item.manager_phone, '')].filter(Boolean).join(' - ');
       return `<tr><td>${(state.page - 1) * state.pageSize + index + 1}</td><td>${photo(item)}</td><td><strong>${safe(text(item.asset_code))}</strong></td><td><div class="fw-semibold">${safe(text(item.asset_name))}</div><small class="text-muted">${safe(address(item.address))}</small></td><td>${safe(text(item.type_name))}<br><small class="text-muted">${safe(text(item.category))}</small></td><td>${safe(text(item.area_code))}</td><td>${areaHtml(item)}</td><td>${safe(text(item.managing_unit))}</td><td>${safe(text(item.manager_name))}${personMeta ? `<br><small class="text-muted">${safe(personMeta)}</small>` : ''}</td><td>${statusBadge(item)}</td><td class="text-end">${actions}</td></tr>`;
     }).join('');
@@ -208,15 +259,14 @@
     if (!host) return;
     state.page = page;
     if (totalPages <= 1) { host.innerHTML = ''; return; }
-    const buttons = [`<button class="btn btn-sm btn-outline-secondary" data-page="${Math.max(1, page - 1)}" ${page <= 1 ? 'disabled' : ''}>Trước</button>`];
-    for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) buttons.push(`<button class="btn btn-sm ${i === page ? 'btn-primary' : 'btn-outline-secondary'}" data-page="${i}">${i}</button>`);
-    buttons.push(`<button class="btn btn-sm btn-outline-secondary" data-page="${Math.min(totalPages, page + 1)}" ${page >= totalPages ? 'disabled' : ''}>Sau</button>`);
+    const buttons = [`<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="publicAssets.page" data-page="${Math.max(1, page - 1)}" ${page <= 1 ? 'disabled' : ''}>Trước</button>`];
+    for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) buttons.push(`<button class="btn btn-sm ${i === page ? 'btn-primary' : 'btn-outline-secondary'}" type="button" data-platform-action="publicAssets.page" data-page="${i}">${i}</button>`);
+    buttons.push(`<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="publicAssets.page" data-page="${Math.min(totalPages, page + 1)}" ${page >= totalPages ? 'disabled' : ''}>Sau</button>`);
     host.innerHTML = `<div class="d-flex gap-2 justify-content-end align-items-center mt-3">${buttons.join('')}</div>`;
   }
 
   function pagerAction(event) { const button = event.target.closest('[data-page]'); if (!button || button.disabled) return; run(() => { state.page = Number(button.dataset.page || 1); return load(); }); }
-  function rowAction(event) { const button = event.target.closest('[data-action]'); if (!button) return; const id = Number(button.dataset.id); if (button.dataset.action === 'detail') run(() => openDetail(id)); if (button.dataset.action === 'edit') run(() => openForm(id)); if (button.dataset.action === 'delete') run(() => remove(id)); }
-  function dashboardAction(event) { const card = event.target.closest('[data-public-asset-filter]'); if (!card) return; const [key, value] = card.dataset.publicAssetFilter.split(':'); const target = key === 'status' ? $('#publicAssetsStatusFilter') : $('#publicAssetsLocatedFilter'); if (target) target.value = value; run(() => { state.page = 1; readFilters(); return load(); }); }
+  function dashboardFilter(card) { if (!card) return; const [key, value] = card.dataset.publicAssetFilter.split(':'); const target = key === 'status' ? $('#publicAssetsStatusFilter') : $('#publicAssetsLocatedFilter'); if (target) target.value = value; run(() => { state.page = 1; readFilters(); return load(); }); }
   async function sortBy(field) { state.direction = state.sort === field && state.direction === 'ASC' ? 'DESC' : 'ASC'; state.sort = field; await load(); }
 
   async function openDetail(id) {
@@ -228,7 +278,7 @@
     const body = $('#publicAssetDetailBody');
     if (body) body.innerHTML = detail(item);
     $('#publicAssetDetailEditBtn')?.classList.toggle('d-none', !can('update'));
-    bootstrap.Modal.getOrCreateInstance($('#publicAssetDetailModal')).show();
+    openModal('publicAssetDetailModal');
     if (inventoryAllowed(item)) run(() => loadInventory(item.id));
   }
 
@@ -262,22 +312,14 @@
     const rows = data.items || [];
     const groupBadges = (summary.by_group || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(text(row.label, NO_DATA))}: ${number(row.value)}</span>`).join('');
     const conditionBadges = (summary.by_condition || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(text(row.label, NO_DATA))}: ${number(row.value)}</span>`).join('');
-    const addButton = can('update') ? `<button type="button" class="btn btn-sm btn-success" data-inventory-action="add"><i class="fa-solid fa-plus"></i> Thêm tài sản</button>` : '';
+    const addButton = can('update') ? `<button type="button" class="btn btn-sm btn-success" data-platform-action="publicAssets.inventory.add"><i class="fa-solid fa-plus"></i> Thêm tài sản</button>` : '';
     const body = rows.length ? rows.map((item, index) => {
-      const actions = can('update') ? `<button type="button" class="btn btn-sm btn-outline-secondary" data-inventory-action="edit" data-id="${item.id}"><i class="fa-solid fa-pen"></i></button> <button type="button" class="btn btn-sm btn-outline-danger" data-inventory-action="delete" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>` : '';
+      const actions = can('update') ? `<button type="button" class="btn btn-sm btn-outline-secondary" data-platform-action="publicAssets.inventory.edit" data-id="${item.id}"><i class="fa-solid fa-pen"></i></button> <button type="button" class="btn btn-sm btn-outline-danger" data-platform-action="publicAssets.inventory.delete" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>` : '';
       return `<tr><td>${index + 1}</td><td><strong>${safe(text(item.inventory_code))}</strong></td><td>${safe(text(item.item_name))}</td><td>${safe(text(item.group_name))}</td><td>${number(item.quantity)}</td><td>${safe(text(item.unit, ''))}</td><td>${safe(text(item.condition_label || item.condition_status))}</td><td>${safe(text(item.start_use_date))}</td><td class="text-end">${actions}</td></tr>`;
     }).join('') : '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có tài sản kiểm kê.</td></tr>';
     host.innerHTML = `<div class="d-flex flex-wrap justify-content-between gap-2 align-items-start mb-3"><div><div class="fw-semibold">Tổng số tài sản: ${number(summary.total_items || 0)}</div><div class="small text-muted">Tổng số lượng: ${number(summary.total_quantity || 0)}</div></div>${addButton}</div><div class="mb-3">${groupBadges}${conditionBadges}</div><div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th>STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th>Nhóm tài sản</th><th>Số lượng</th><th>Đơn vị tính</th><th>Tình trạng</th><th>Ngày đưa vào sử dụng</th><th class="text-end">Thao tác</th></tr></thead><tbody>${body}</tbody></table></div>`;
   }
 
-  function detailAction(event) {
-    const button = event.target.closest('[data-inventory-action]');
-    if (!button) return;
-    const action = button.dataset.inventoryAction;
-    if (action === 'add') run(() => openInventoryForm());
-    if (action === 'edit') run(() => openInventoryForm(Number(button.dataset.id)));
-    if (action === 'delete') run(() => deleteInventory(Number(button.dataset.id)));
-  }
   async function openInventoryForm(id = null) {
     if (!can('update')) return toast('Không có quyền cập nhật kiểm kê tài sản', 'warning');
     if (!state.current?.id) return toast('Chưa chọn công trình', 'warning');
@@ -300,7 +342,7 @@
       if (form.elements.quantity) form.elements.quantity.value = '1';
       if (form.elements.condition_status) form.elements.condition_status.value = 'IN_USE';
     }
-    bootstrap.Modal.getOrCreateInstance($('#publicAssetInventoryModal')).show();
+    openModal('publicAssetInventoryModal');
   }
 
   async function saveInventory(form) {
@@ -312,7 +354,7 @@
     const item = await request(id ? `${API}/${state.current.id}/inventory/${id}` : `${API}/${state.current.id}/inventory`, { method: id ? 'PUT' : 'POST', body: data });
     const file = $('#publicAssetInventoryPhotoFile')?.files?.[0];
     if (file) await uploadInventoryPhoto(state.current.id, item.id, file);
-    bootstrap.Modal.getOrCreateInstance($('#publicAssetInventoryModal')).hide();
+    closeModalImmediately('publicAssetInventoryModal');
     toast('Đã lưu tài sản kiểm kê', 'success');
     await loadInventory(state.current.id);
   }
@@ -356,7 +398,7 @@
       if (form?.elements.status) form.elements.status.value = 'ACTIVE';
       renderFormInventoryMount(null);
     }
-    bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).show();
+    openModal('publicAssetFormModal');
     if (id && inventoryAllowed(state.current)) run(() => loadInventory(state.current.id, '#publicAssetFormInventoryPanel'));
   }
 
@@ -368,7 +410,7 @@
     let saved = item;
     const file = $('#publicAssetPhotoFile')?.files?.[0];
     if (file) saved = await uploadPhoto(item.id, file);
-    bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).hide();
+    closeModal('publicAssetFormModal');
     toast('Đã lưu công trình', 'success');
     await load();
     run(refreshGisLayer);
@@ -382,13 +424,13 @@
   function updatePhoto(url, temp = false) { const host = $('#publicAssetPhotoPreview'); if (!host) return; host.innerHTML = url ? `<img src="${safe(url)}" style="width:100%;max-height:180px;object-fit:cover" alt="Ảnh công trình">` : '<span class="text-muted small">Chưa có ảnh công trình</span>'; $('#publicAssetDeletePhotoBtn')?.classList.toggle('d-none', !url || temp); if (temp) setTimeout(() => URL.revokeObjectURL(url), 5000); }
   function updateGps(item) { const host = $('#publicAssetGpsMeta'); if (!host) return; host.textContent = gpsText(item) !== EMPTY ? `Vị trí: ${gpsText(item)}` : 'Chưa có vị trí GPS'; }
   function useGps() { if (!navigator.geolocation) return toast('Thiết bị không hỗ trợ GPS', 'warning'); navigator.geolocation.getCurrentPosition(position => { const form = $('#publicAssetForm'); if (!form) return; form.elements.latitude.value = position.coords.latitude.toFixed(8); form.elements.longitude.value = position.coords.longitude.toFixed(8); form.elements.gps_accuracy.value = position.coords.accuracy ? position.coords.accuracy.toFixed(2) : ''; updateGps({ latitude: form.elements.latitude.value, longitude: form.elements.longitude.value, gps_updated_at: 'sẽ cập nhật khi lưu' }); }, error => toast(error.message || 'Không lấy được GPS', 'danger'), { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }); }
-  function pickMap() { const activate = () => { const map = window.App?.gis?.map; if (!map) return toast('Bản đồ GIS chưa sẵn sàng', 'warning'); toast('Click một điểm trên bản đồ để chọn vị trí', 'info'); map.once('click', event => { const form = $('#publicAssetForm'); if (!form) return; form.elements.latitude.value = event.latlng.lat.toFixed(8); form.elements.longitude.value = event.latlng.lng.toFixed(8); updateGps({ latitude: form.elements.latitude.value, longitude: form.elements.longitude.value, gps_updated_at: 'sẽ cập nhật khi lưu' }); window.Thon09NavigationController?.navigate('publicAssets'); bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).show(); }); }; bootstrap.Modal.getOrCreateInstance($('#publicAssetFormModal')).hide(); window.Thon09NavigationController?.navigate('gis'); setTimeout(activate, 700); }
+  function pickMap() { const activate = () => { const map = window.App?.gis?.map; if (!map) return toast('Bản đồ GIS chưa sẵn sàng', 'warning'); toast('Click một điểm trên bản đồ để chọn vị trí', 'info'); map.once('click', event => { const form = $('#publicAssetForm'); if (!form) return; form.elements.latitude.value = event.latlng.lat.toFixed(8); form.elements.longitude.value = event.latlng.lng.toFixed(8); updateGps({ latitude: form.elements.latitude.value, longitude: form.elements.longitude.value, gps_updated_at: 'sẽ cập nhật khi lưu' }); window.Thon09NavigationController?.navigate('publicAssets'); openModal('publicAssetFormModal'); }); }; closeModal('publicAssetFormModal'); window.Thon09NavigationController?.navigate('gis'); setTimeout(activate, 700); }
   async function remove(id) { if (!can('delete')) return toast('Không có quyền xóa', 'warning'); if (!confirm('Xóa công trình này?')) return; await request(`${API}/${id}`, { method: 'DELETE' }); toast('Đã xóa công trình', 'success'); await load(); run(refreshGisLayer); }
   function wrapGisLoader() { if (window.__publicAssetsGisWrapped) return; window.__publicAssetsGisWrapped = true; const original = window.loadGisMap; if (typeof original === 'function') window.loadGisMap = async function (...args) { const result = await original.apply(this, args); scheduleGisLayer(); return result; }; }
   function scheduleGisLayer() { setTimeout(() => run(refreshGisLayer), 250); }
   async function refreshGisLayer() { const app = window.App; if (!app?.gis?.map || !window.L) return; const map = app.gis.map; if (!app.gis.publicAssetLayer) app.gis.publicAssetLayer = L.layerGroup().addTo(map); const layer = app.gis.publicAssetLayer; layer.clearLayers(); if (!can('read')) return; const data = await request(API + '/gis', { cacheTtl: 15000 }); (data.items || []).forEach(item => L.marker([item.latitude, item.longitude], { icon: markerIcon(item) }).bindPopup(gisPopup(item), { maxWidth: 320, closeButton: true, autoPan: true }).addTo(layer)); }
   function markerIcon(item) { const color = { ACTIVE: '#16a34a', REPAIRING: '#f59e0b', SUSPENDED: '#64748b', INACTIVE: '#374151' }[item.status] || '#1976d2'; return L.divIcon({ className: 'public-asset-gis-icon', html: `<span style="width:34px;height:34px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.25);border:2px solid #fff"><i class="fa-solid ${safe(item.type_icon || 'fa-building-columns')}"></i></span>`, iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -18] }); }
-  function gisPopup(item) { const image = item.cover_photo_url ? `<img src="${safe(item.cover_photo_url)}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px" alt="Ảnh công trình">` : ''; const directions = Number.isFinite(Number(item.latitude)) && Number.isFinite(Number(item.longitude)) ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(Number(item.latitude) + ',' + Number(item.longitude))}` : ''; const manager = managerSummary(item); return `<div style="min-width:240px">${image}<strong>${safe(text(item.asset_name))}</strong><div style="font-size:12px;color:#64748b;margin:4px 0">${safe(text(item.type_name))} · ${safe(text(item.status_label))}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-location-dot"></i> ${safe(address(item.address))}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-ruler-combined"></i> ${area(item.campus_area)}</div><div style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-building-user"></i> ${safe(manager.primary)}</div><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-primary" onclick="window.openPublicAssetDetail(${item.id})">Chi tiết</button>${directions ? `<a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${directions}">Chỉ đường</a>` : ''}</div></div>`; }
+  function gisPopup(item) { const image = item.cover_photo_url ? `<img src="${safe(item.cover_photo_url)}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px" alt="Ảnh công trình">` : ''; const directions = Number.isFinite(Number(item.latitude)) && Number.isFinite(Number(item.longitude)) ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(Number(item.latitude) + ',' + Number(item.longitude))}` : ''; const manager = managerSummary(item); return `<div style="min-width:240px">${image}<strong>${safe(text(item.asset_name))}</strong><div style="font-size:12px;color:#64748b;margin:4px 0">${safe(text(item.type_name))} · ${safe(text(item.status_label))}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-location-dot"></i> ${safe(address(item.address))}</div><div style="font-size:13px;margin-bottom:4px"><i class="fa-solid fa-ruler-combined"></i> ${area(item.campus_area)}</div><div style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-building-user"></i> ${safe(manager.primary)}</div><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-primary" data-platform-action="publicAssets.detail" data-id="${safe(item.id)}">Chi tiết</button>${directions ? `<a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${directions}">Chỉ đường</a>` : ''}</div></div>`; }
 
   function detail(item) {
     const image = item.cover_photo_url ? `<img src="${safe(item.cover_photo_url)}" class="img-fluid rounded border mb-3" style="max-height:260px;object-fit:cover;width:100%" alt="Ảnh công trình">` : '<div class="bg-light border rounded d-flex align-items-center justify-content-center mb-3" style="height:180px"><i class="fa-solid fa-building-columns fa-3x text-secondary"></i></div>';
@@ -426,9 +468,9 @@
     const rows = data.items || [];
     const groupBadges = (summary.by_group || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(text(row.label, NO_DATA))}: ${number(row.value)}</span>`).join('');
     const conditionBadges = (summary.by_condition || []).slice(0, 4).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(text(row.label, NO_DATA))}: ${number(row.value)}</span>`).join('');
-    const addButton = can('update') ? `<button type="button" class="btn btn-sm btn-success" data-inventory-action="add"><i class="fa-solid fa-plus"></i> Thêm tài sản</button>` : '';
+    const addButton = can('update') ? `<button type="button" class="btn btn-sm btn-success" data-platform-action="publicAssets.inventory.add"><i class="fa-solid fa-plus"></i> Thêm tài sản</button>` : '';
     const body = rows.length ? rows.map((item, index) => {
-      const actions = can('update') ? `<button type="button" class="btn btn-sm btn-outline-secondary" data-inventory-action="edit" data-id="${item.id}"><i class="fa-solid fa-pen"></i></button> <button type="button" class="btn btn-sm btn-outline-danger" data-inventory-action="delete" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>` : '';
+      const actions = can('update') ? `<button type="button" class="btn btn-sm btn-outline-secondary" data-platform-action="publicAssets.inventory.edit" data-id="${item.id}"><i class="fa-solid fa-pen"></i></button> <button type="button" class="btn btn-sm btn-outline-danger" data-platform-action="publicAssets.inventory.delete" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>` : '';
       return `<tr><td>${index + 1}</td><td><strong>${safe(text(item.inventory_code))}</strong></td><td>${safe(text(item.item_name))}</td><td>${safe(text(item.group_name))}</td><td>${number(item.quantity)}</td><td>${safe(text(item.unit, ''))}</td><td>${safe(text(item.condition_label || item.condition_status))}</td><td class="text-end">${actions}</td></tr>`;
     }).join('') : '<tr><td colspan="8" class="text-center text-muted py-4">Chưa có tài sản kiểm kê.</td></tr>';
     host.innerHTML = `<div class="d-flex flex-wrap justify-content-between gap-2 align-items-start mb-3"><div><div class="fw-semibold">Tổng số tài sản: ${number(summary.total_items || 0)}</div><div class="small text-muted">Tổng số lượng: ${number(summary.total_quantity || 0)}</div></div>${addButton}</div><div class="mb-3">${groupBadges}${conditionBadges}</div><div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th>STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th>Nhóm</th><th>Số lượng</th><th>Đơn vị</th><th>Tình trạng</th><th class="text-end">Thao tác</th></tr></thead><tbody>${body}</tbody></table></div>`;

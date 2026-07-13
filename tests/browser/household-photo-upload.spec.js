@@ -150,9 +150,9 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await page.evaluate(() => window.showHousehold(123));
   await expect(page.locator('#detailModal')).toHaveClass(/show/);
   await expect(page.locator('#detailModal .household-detail-photo img')).toBeVisible();
-  const detailPreviewButton = page.locator('#detailModal .household-detail-photo [data-preview-file]');
+  const detailPreviewButton = page.locator('#detailModal .household-detail-photo [data-platform-action="digitalProfile.file.preview"]');
   await expect(detailPreviewButton).toBeVisible();
-  await expect(detailPreviewButton).toHaveAttribute('data-preview-file', '901');
+  await expect(detailPreviewButton).toHaveAttribute('data-file-id', '901');
   const previewsBeforeClick = previewIds.length;
   await detailPreviewButton.click();
   await expect.poll(() => previewIds.length).toBeGreaterThan(previewsBeforeClick);

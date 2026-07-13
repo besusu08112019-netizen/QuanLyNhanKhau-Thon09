@@ -187,6 +187,7 @@ async function boot(page, apiLog) {
     window.Thon09NavigationController?.navigate('gis');
     return window.loadGisMap();
   });
+  await page.waitForFunction(() => Boolean(window.App?.gis?.markerCache?.get('7')?.marker));
 }
 
 test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page }) => {

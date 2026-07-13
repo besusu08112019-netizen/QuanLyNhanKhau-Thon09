@@ -42,17 +42,28 @@
       }
       scheduleBiRefresh();
     });
-    $('#reportRefreshBtn')?.addEventListener('click', event => { event.preventDefault(); initSmartReporting(true); });
-    $('#reportPrintBtn')?.addEventListener('click', capture(printReport), true);
-    $('#reportExcelBtn')?.addEventListener('click', capture(() => downloadReport(REPORT_ENDPOINTS.exportExcel, 'xls', 'Đã xuất Excel')), true);
-    $('#reportPdfBtn')?.addEventListener('click', capture(() => downloadReport(REPORT_ENDPOINTS.exportPdf, 'pdf', 'Đã xuất PDF')), true);
-    $('#reportWordBtn')?.addEventListener('click', capture(() => downloadReport(REPORT_ENDPOINTS.exportWord, 'doc', 'Đã xuất Word')), true);
-    $('#reportSaveTemplateBtn')?.addEventListener('click', event => { event.preventDefault(); saveTemplate(); });
+    registerReportPlatformActions();
     initSmartReporting();
   }
 
   function capture(fn) {
     return event => { event.preventDefault(); event.stopImmediatePropagation(); fn(); };
+  }
+
+  function registerReportPlatformActions() {
+    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    if (!actions || typeof actions.register !== 'function') return;
+    actions.register('reports.refresh', () => initSmartReporting(true));
+    actions.register('reports.template.save', saveTemplate);
+    actions.register('reports.template.open', context => openTemplate(context.target));
+    actions.register('reports.template.delete', context => deleteTemplate(context.dataset.templateDelete));
+    actions.register('reports.template.default', context => defaultTemplate(context.dataset.templateDefault));
+    actions.register('reports.type.select', context => selectReportType(context.dataset.reportType));
+    actions.register('reports.type.open', context => selectReportType(context.dataset.reportType, true));
+    actions.register('reports.print', printReport);
+    actions.register('reports.export.excel', () => downloadReport(REPORT_ENDPOINTS.exportExcel, 'xls', 'Đã xuất Excel'));
+    actions.register('reports.export.pdf', () => downloadReport(REPORT_ENDPOINTS.exportPdf, 'pdf', 'Đã xuất PDF'));
+    actions.register('reports.export.word', () => downloadReport(REPORT_ENDPOINTS.exportWord, 'doc', 'Đã xuất Word'));
   }
 
   function ensureReportTypes() {
@@ -170,24 +181,19 @@
   };
 
   function renderGroups(groups) {
-    renderBox('#reportGroupGrid', groups.map(group => '<button class="report-group-item" type="button" data-report-type="' + esc(group.types?.[0] || 'summary') + '"><i class="fa-solid ' + esc(group.icon || 'fa-chart-pie') + '"></i><strong>' + esc(group.title) + '</strong><span>' + esc(group.description) + '</span></button>').join(''));
-    $$('#reportGroupGrid [data-report-type]').forEach(btn => btn.addEventListener('click', () => selectReportType(btn.dataset.reportType)));
+    renderBox('#reportGroupGrid', groups.map(group => '<button class="report-group-item" type="button" data-platform-action="reports.type.select" data-report-type="' + esc(group.types?.[0] || 'summary') + '"><i class="fa-solid ' + esc(group.icon || 'fa-chart-pie') + '"></i><strong>' + esc(group.title) + '</strong><span>' + esc(group.description) + '</span></button>').join(''));
   }
 
   function renderTemplateLibrary(items) {
-    renderBox('#reportTemplateLibrary', items.map(item => '<button type="button" data-report-type="' + esc(item.type) + '"><i class="fa-solid fa-file-lines"></i><span>' + esc(item.title) + '</span></button>').join(''));
-    $$('#reportTemplateLibrary [data-report-type]').forEach(btn => btn.addEventListener('click', () => selectReportType(btn.dataset.reportType, true)));
+    renderBox('#reportTemplateLibrary', items.map(item => '<button type="button" data-platform-action="reports.type.open" data-report-type="' + esc(item.type) + '"><i class="fa-solid fa-file-lines"></i><span>' + esc(item.title) + '</span></button>').join(''));
   }
 
   function renderSavedTemplates(items) {
     if (!items.length) return renderBox('#reportSavedTemplates', '<div class="report-template-empty">Chưa có mẫu đã lưu</div>');
     renderBox('#reportSavedTemplates', items.map(item => {
       const filters = esc(item.filters_json || '{}');
-      return '<article class="report-saved-template"><button type="button" data-template-open="' + item.id + '" data-filters="' + filters + '" data-type="' + esc(item.type) + '"><strong>' + esc(item.name) + '</strong><span>' + esc(item.type) + (Number(item.is_default) ? ' - Mặc định' : '') + '</span></button><div><button type="button" title="Đặt mặc định" data-template-default="' + item.id + '"><i class="fa-solid fa-star"></i></button><button type="button" title="Xóa" data-template-delete="' + item.id + '"><i class="fa-solid fa-trash"></i></button></div></article>';
+      return '<article class="report-saved-template"><button type="button" data-platform-action="reports.template.open" data-template-open="' + item.id + '" data-filters="' + filters + '" data-type="' + esc(item.type) + '"><strong>' + esc(item.name) + '</strong><span>' + esc(item.type) + (Number(item.is_default) ? ' - Mặc định' : '') + '</span></button><div><button type="button" title="Đặt mặc định" data-platform-action="reports.template.default" data-template-default="' + item.id + '"><i class="fa-solid fa-star"></i></button><button type="button" title="Xóa" data-platform-action="reports.template.delete" data-template-delete="' + item.id + '"><i class="fa-solid fa-trash"></i></button></div></article>';
     }).join(''));
-    $$('[data-template-open]').forEach(btn => btn.addEventListener('click', () => openTemplate(btn)));
-    $$('[data-template-delete]').forEach(btn => btn.addEventListener('click', () => deleteTemplate(btn.dataset.templateDelete)));
-    $$('[data-template-default]').forEach(btn => btn.addEventListener('click', () => defaultTemplate(btn.dataset.templateDefault)));
   }
 
   function renderBi(data) {

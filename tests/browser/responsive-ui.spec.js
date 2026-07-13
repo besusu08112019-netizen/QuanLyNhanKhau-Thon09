@@ -1,9 +1,9 @@
 ﻿const { test, expect } = require('@playwright/test');
 
 const widths = [320, 360, 375, 390, 414, 480, 600, 768, 820, 1024];
-const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'businessHouseholds', 'livestock', 'houses', 'vehicles', 'agriculture', 'contributions'];
-const mobileScreens = ['dashboard', ...moduleOrderScreens, 'gis'];
-const bottomNavScreens = ['dashboard', ...moduleOrderScreens, 'gis'];
+const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
+const mobileScreens = moduleOrderScreens;
+const bottomNavScreens = moduleOrderScreens;
 
 async function mockApis(page) {
   await page.route('**/api/**', async (route) => {

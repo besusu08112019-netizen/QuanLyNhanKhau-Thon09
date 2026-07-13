@@ -166,7 +166,7 @@ function screenNode(screenId) {
   const mobileScreens = platform.menuRenderer.mobileScreens();
   assert.strictEqual(
     mobileScreens.join(','),
-    'households,persons,temporaryResidence,temporaryAbsence,movements,publicAssets,businessHouseholds,livestock,houses,vehicles,agriculture,contributions'
+    'households,persons,temporaryResidence,temporaryAbsence,movements,publicAssets,houses,businessHouseholds,agriculture,livestock,vehicles,contributions'
   );
   assert.strictEqual(platform.menuRenderer.mobileModules()[0].mobileLabel, 'Ho');
 }
@@ -852,11 +852,11 @@ function screenNode(screenId) {
     'temporaryAbsence',
     'movements',
     'publicAssets',
-    'businessHouseholds',
-    'livestock',
     'houses',
-    'vehicles',
+    'businessHouseholds',
     'agriculture',
+    'livestock',
+    'vehicles',
     'contributions'
   ].join(','));
   assert.strictEqual(platform.navigationScopes.resolve('desktopModules').moduleKeys.length, 12);

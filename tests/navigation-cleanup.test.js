@@ -20,6 +20,25 @@ const forbidden = [
   { pattern: /data-screen=["']users["'][\s\S]{0,180}data-screen=["']logs["'][\s\S]{0,180}data-screen=["']backups["']/, reason: 'admin menu items must come from Thon09Platform' }
 ];
 
+const allowedClickListeners = new Map([
+  ['assets/js/app-platform.js', [
+    "host.addEventListener('click', handleClick);",
+    "root.addEventListener('click', handler);"
+  ]],
+  ['assets/js/gis-household-location.js', [
+    "document.addEventListener('click', event => {",
+    "button.addEventListener('click', event => {"
+  ]],
+  ['assets/js/view-inline-patches.js', [
+    "document.addEventListener('click',function(event){var item=event.target.closest&&event.target.closest('[data-screen],[data-mobile-screen]');if(!item||item.classList.contains('gov-logout'))return;var delegation=window.Thon09Platform&&window.Thon09Platform.navigationDelegation;"
+  ]]
+]);
+
+function isAllowedClickListener(relative, line) {
+  const allowed = allowedClickListeners.get(relative) || [];
+  return allowed.some(snippet => line.includes(snippet));
+}
+
 function filesUnder(relativeDir) {
   const absoluteDir = path.join(root, relativeDir);
   const result = [];
@@ -42,6 +61,14 @@ for (const file of scanPaths.flatMap(filesUnder)) {
     if (rule.pattern.test(text)) {
       failures.push(`${relative}: ${rule.reason}`);
     }
+  }
+  if ((/^assets\/js\/.+\.js$/.test(relative) && !relative.endsWith('.min.js')) || /^views\/.+\.php$/.test(relative)) {
+    text.split(/\r?\n/).forEach((line, index) => {
+      if (!/addEventListener\((['"])click\1|\.onclick\s*=|onclick=/.test(line)) return;
+      if (!isAllowedClickListener(relative, line)) {
+        failures.push(`${relative}:${index + 1}: unexpected direct click handler; use platform actions or add an explicit whitelist reason`);
+      }
+    });
   }
 }
 

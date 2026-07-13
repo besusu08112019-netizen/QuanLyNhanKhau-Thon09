@@ -1,6 +1,6 @@
 ﻿const { test, expect, chromium } = require('@playwright/test');
 
-const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'businessHouseholds', 'livestock', 'houses', 'vehicles', 'agriculture', 'contributions'];
+const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 const screens = ['dashboard', ...moduleOrderScreens, 'gis', 'reports', 'operationCenter', 'users'];
 const viewports = [
   { name: 'desktop', width: 1366, height: 768 },

@@ -10,6 +10,16 @@
   function num(value) { return new Intl.NumberFormat('vi-VN').format(Number(value || 0)); }
   function pct(value) { return Math.max(0, Math.min(100, Number(value || 0))); }
   function toast(message, type) { if (typeof window.showToast === 'function') window.showToast(message, type || 'info'); }
+  function openModal(id) {
+    const service = window.Thon09Platform?.modals;
+    if (service?.open && service.open(id)) return;
+    window.bootstrap?.Modal?.getOrCreateInstance?.(qs('#' + id))?.show();
+  }
+  function closeModal(id) {
+    const service = window.Thon09Platform?.modals;
+    if (service?.close && service.close(id)) return;
+    window.bootstrap?.Modal?.getOrCreateInstance?.(qs('#' + id))?.hide();
+  }
   function apiGet(path, params, ttl) {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
     if (typeof window.api === 'function') return window.api(path + query, { cacheTtl: ttl || 0 });
@@ -40,9 +50,31 @@
 
   function boot() {
     installStyles();
+    registerOperationPlatformActions();
     bindStaticEvents();
     document.addEventListener('thon09:auth-state', event => { if (event.detail && event.detail.authenticated && isActive()) loadAll(); });
     if (isActive()) loadAll();
+  }
+
+  function registerOperationPlatformActions() {
+    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    if (!actions || typeof actions.register !== 'function') return;
+    actions
+      .register('operationCenter.refresh', context => context.dataset.operationRefresh === 'progress' ? loadProgress() : loadNotifications())
+      .register('operationCenter.export', context => exportReport(context.dataset.operationExport))
+      .register('operationCenter.exportLogs', exportLogsFile)
+      .register('operationCenter.taskStatus', context => {
+        state.taskStatus[context.dataset.operationTask] = context.dataset.status;
+        saveTaskStatus();
+        renderTasks();
+      })
+      .register('operationCenter.openScreen', context => window.Thon09NavigationController?.navigate(context.dataset.operationScreen || 'dashboard'))
+      .register('operationCenter.quickProfile', context => openQuickProfile(context.dataset.profileType, Number(context.dataset.profileId || 0)))
+      .register('operationCenter.openDetail', context => {
+        closeModal('detailModal');
+        if (context.dataset.operationDetail === 'citizen' && typeof window.showPerson === 'function') window.showPerson(Number(context.dataset.id));
+        else if (typeof window.showHousehold === 'function') window.showHousehold(Number(context.dataset.id));
+      });
   }
 
   function normalizeHeader(screen) {
@@ -65,10 +97,6 @@
       const el = qs(pair[0]);
       if (el && el.dataset.boundOperation !== '1') { el.dataset.boundOperation = '1'; el.addEventListener('input', debounce(pair[1], 250)); el.addEventListener('change', pair[1]); }
     });
-    qsa('[data-operation-refresh]').forEach(btn => btn.addEventListener('click', () => btn.dataset.operationRefresh === 'progress' ? loadProgress() : loadNotifications()));
-    qsa('[data-operation-export]').forEach(btn => btn.addEventListener('click', () => exportReport(btn.dataset.operationExport)));
-    const exportLogs = qs('[data-operation-export-logs]');
-    if (exportLogs && exportLogs.dataset.boundOperation !== '1') { exportLogs.dataset.boundOperation = '1'; exportLogs.addEventListener('click', exportLogsFile); }
   }
 
   function loadAll() {
@@ -82,8 +110,7 @@
   }
   function renderNotifications(items) {
     const host = qs('#operationNotifications'); if (!host) return;
-    host.innerHTML = items.length ? '<div class="operation-list">' + items.map(item => '<div class="operation-item operation-priority-' + esc(item.priority || 'low') + '"><span><strong>' + esc(item.label) + '</strong><small>' + esc(priorityLabel(item.priority)) + ' · ' + esc(item.status || 'new') + ' · ' + esc(formatTime(item.createdAt)) + '</small></span><div class="operation-actions"><span class="operation-badge">' + num(item.count) + '</span><button class="btn btn-sm btn-outline-primary" type="button" data-operation-screen="' + esc(item.screen || 'dashboard') + '">' + esc(item.action || 'Mở') + '</button></div></div>').join('') + '</div>' : empty('Không có cảnh báo nổi bật');
-    bindOpenButtons(host);
+    host.innerHTML = items.length ? '<div class="operation-list">' + items.map(item => '<div class="operation-item operation-priority-' + esc(item.priority || 'low') + '"><span><strong>' + esc(item.label) + '</strong><small>' + esc(priorityLabel(item.priority)) + ' · ' + esc(item.status || 'new') + ' · ' + esc(formatTime(item.createdAt)) + '</small></span><div class="operation-actions"><span class="operation-badge">' + num(item.count) + '</span><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="operationCenter.openScreen" data-operation-screen="' + esc(item.screen || 'dashboard') + '">' + esc(item.action || 'Mở') + '</button></div></div>').join('') + '</div>' : empty('Không có cảnh báo nổi bật');
   }
 
   let latestTasks = [];
@@ -97,10 +124,8 @@
     const rows = latestTasks.filter(item => !priority || item.priority === priority);
     host.innerHTML = rows.length ? '<div class="operation-list">' + rows.map(item => {
       const status = state.taskStatus[item.key] || item.status || 'open';
-      return '<div class="operation-item operation-priority-' + esc(item.priority || 'low') + '"><span><strong>' + esc(item.label) + '</strong><small>' + esc(priorityLabel(item.priority)) + ' · ' + esc(statusLabel(status)) + '</small></span><div class="operation-actions"><span class="operation-badge">' + num(item.count) + '</span><button class="btn btn-sm btn-outline-warning" data-operation-task="' + esc(item.key) + '" data-status="doing">Đang xử lý</button><button class="btn btn-sm btn-outline-success" data-operation-task="' + esc(item.key) + '" data-status="done">Hoàn thành</button><button class="btn btn-sm btn-outline-primary" data-operation-screen="' + esc(item.screen || 'dashboard') + '">Mở</button></div></div>';
+      return '<div class="operation-item operation-priority-' + esc(item.priority || 'low') + '"><span><strong>' + esc(item.label) + '</strong><small>' + esc(priorityLabel(item.priority)) + ' · ' + esc(statusLabel(status)) + '</small></span><div class="operation-actions"><span class="operation-badge">' + num(item.count) + '</span><button class="btn btn-sm btn-outline-warning" data-platform-action="operationCenter.taskStatus" data-operation-task="' + esc(item.key) + '" data-status="doing">Đang xử lý</button><button class="btn btn-sm btn-outline-success" data-platform-action="operationCenter.taskStatus" data-operation-task="' + esc(item.key) + '" data-status="done">Hoàn thành</button><button class="btn btn-sm btn-outline-primary" data-platform-action="operationCenter.openScreen" data-operation-screen="' + esc(item.screen || 'dashboard') + '">Mở</button></div></div>';
     }).join('') + '</div>' : empty('Không có công việc phù hợp');
-    qsa('[data-operation-task]', host).forEach(btn => btn.addEventListener('click', () => { state.taskStatus[btn.dataset.operationTask] = btn.dataset.status; saveTaskStatus(); renderTasks(); }));
-    bindOpenButtons(host);
   }
 
   async function runSearch(query) {
@@ -109,9 +134,8 @@
     try {
       const data = unwrap(await apiGet(API + '/search', { q: query, limit: 12 }, 4000));
       const items = data.items || [];
-      host.innerHTML = items.length ? items.map(item => '<button type="button" data-profile-type="' + esc(item.type) + '" data-profile-id="' + Number(item.id || 0) + '"><strong>' + esc(item.title) + '</strong><span>' + esc(item.subtitle || item.meta || '') + '</span></button>').join('') : '<div class="operation-empty">Không tìm thấy kết quả</div>';
+      host.innerHTML = items.length ? items.map(item => '<button type="button" data-platform-action="operationCenter.quickProfile" data-profile-type="' + esc(item.type) + '" data-profile-id="' + Number(item.id || 0) + '"><strong>' + esc(item.title) + '</strong><span>' + esc(item.subtitle || item.meta || '') + '</span></button>').join('') : '<div class="operation-empty">Không tìm thấy kết quả</div>';
       host.classList.remove('d-none');
-      qsa('[data-profile-id]', host).forEach(btn => btn.addEventListener('click', () => openQuickProfile(btn.dataset.profileType, Number(btn.dataset.profileId || 0))));
     } catch (error) { host.innerHTML = '<div class="operation-error">Không tải được kết quả</div>'; host.classList.remove('d-none'); }
   }
 
@@ -125,7 +149,7 @@
 
   function renderQuickProfile(data) {
     const body = qs('#detailBody'); const title = qs('#detailTitle');
-    if (!body || !window.App || !App.modals || !App.modals.detail) return;
+    if (!body || !title) return;
     const p = data.profile || {};
     title.textContent = data.type === 'citizen' ? 'Hồ sơ nhanh nhân khẩu' : 'Hồ sơ nhanh hộ gia đình';
     body.innerHTML = '<div class="operation-profile-grid"><section><dl>'
@@ -134,9 +158,8 @@
       + detailLine('Điện thoại', p.phone)
       + detailLine('Địa chỉ', p.current_address || p.address || p.household_address)
       + detailLine('GPS', data.gps && data.gps.latitude ? data.gps.latitude + ', ' + data.gps.longitude : '')
-      + '</dl></section><section><h6>Thành viên hộ</h6><div class="operation-member-list">' + ((data.members || []).slice(0, 8).map(m => '<span>' + esc(m.full_name || '') + ' <small>' + esc(m.relationship || '') + '</small></span>').join('') || '<span>Chưa có dữ liệu</span>') + '</div></section><section><h6>Hồ sơ số</h6><div class="operation-file-list">' + ((data.files || []).slice(0, 8).map(f => '<span>' + esc(f.original_name || f.file_name || 'Tệp đính kèm') + '</span>').join('') || '<span>Chưa có hồ sơ số</span>') + '</div></section><section><h6>Nhật ký</h6><div class="operation-file-list">' + ((data.timeline || []).slice(0, 6).map(t => '<span>' + esc(t.created_at || '') + ' · ' + esc(t.message || t.action || '') + '</span>').join('') || '<span>Chưa có nhật ký</span>') + '</div></section></div><div class="mt-3"><button class="btn btn-primary" type="button" data-operation-detail="' + esc(data.type) + '" data-id="' + Number(data.id || 0) + '">Mở chi tiết</button></div>';
-    qsa('[data-operation-detail]', body).forEach(btn => btn.addEventListener('click', () => { App.modals.detail.hide(); if (btn.dataset.operationDetail === 'citizen' && typeof window.showPerson === 'function') window.showPerson(Number(btn.dataset.id)); else if (typeof window.showHousehold === 'function') window.showHousehold(Number(btn.dataset.id)); }));
-    App.modals.detail.show();
+      + '</dl></section><section><h6>Thành viên hộ</h6><div class="operation-member-list">' + ((data.members || []).slice(0, 8).map(m => '<span>' + esc(m.full_name || '') + ' <small>' + esc(m.relationship || '') + '</small></span>').join('') || '<span>Chưa có dữ liệu</span>') + '</div></section><section><h6>Hồ sơ số</h6><div class="operation-file-list">' + ((data.files || []).slice(0, 8).map(f => '<span>' + esc(f.original_name || f.file_name || 'Tệp đính kèm') + '</span>').join('') || '<span>Chưa có hồ sơ số</span>') + '</div></section><section><h6>Nhật ký</h6><div class="operation-file-list">' + ((data.timeline || []).slice(0, 6).map(t => '<span>' + esc(t.created_at || '') + ' · ' + esc(t.message || t.action || '') + '</span>').join('') || '<span>Chưa có nhật ký</span>') + '</div></section></div><div class="mt-3"><button class="btn btn-primary" type="button" data-platform-action="operationCenter.openDetail" data-operation-detail="' + esc(data.type) + '" data-id="' + Number(data.id || 0) + '">Mở chi tiết</button></div>';
+    openModal('detailModal');
   }
 
   async function loadTimeline() {
@@ -183,7 +206,6 @@
     } catch (error) { widgetError(host, error); }
   }
 
-  function bindOpenButtons(root) { qsa('[data-operation-screen]', root).forEach(btn => btn.addEventListener('click', () => window.Thon09NavigationController?.navigate(btn.dataset.operationScreen || 'dashboard'))); }
   function exportParams(format) { return { format, range: value('#operationReportRange') || 'today' }; }
   function exportReport(format) { download(API + '/export-report', exportParams(format), 'bao_cao_dieu_hanh.' + (format === 'excel' ? 'xls' : format === 'word' ? 'doc' : 'pdf')); }
   function exportLogsFile() { download(API + '/export-logs', { search: value('#operationLogSearch'), dateFrom: value('#operationLogDateFrom'), dateTo: value('#operationLogDateTo') }, 'nhat_ky_he_thong.xls'); }

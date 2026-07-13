@@ -48,15 +48,15 @@
           <div class="system-admin-head">
             <div><h3>Quản trị hệ thống</h3><span id="systemAdminGeneratedAt">Đang tải trạng thái vận hành</span></div>
             <div class="system-admin-actions">
-              <button class="btn btn-outline-success" type="button" data-system-refresh><i class="fa-solid fa-rotate"></i> Làm mới</button>
-              <button class="btn btn-primary" type="button" data-system-backup="database"><i class="fa-solid fa-database"></i> Backup Database</button>
-              <button class="btn btn-outline-primary" type="button" data-system-backup="full"><i class="fa-solid fa-box-archive"></i> Backup toàn hệ thống</button>
+              <button class="btn btn-outline-success" type="button" data-platform-action="systemAdmin.refresh" data-system-refresh><i class="fa-solid fa-rotate"></i> Làm mới</button>
+              <button class="btn btn-primary" type="button" data-platform-action="systemAdmin.backup" data-system-backup="database"><i class="fa-solid fa-database"></i> Backup Database</button>
+              <button class="btn btn-outline-primary" type="button" data-platform-action="systemAdmin.backup" data-system-backup="full"><i class="fa-solid fa-box-archive"></i> Backup toàn hệ thống</button>
             </div>
           </div>
           <div id="systemAdminOverview" class="system-admin-kpis"></div>
           <div class="system-admin-grid">
             ${panel('systemAdminHealth', 'Kiểm tra sức khỏe hệ thống', 'fa-heart-pulse')}
-            ${panel('systemAdminSessions', 'Quản lý phiên đăng nhập', 'fa-user-clock', '<input id="systemSessionSearch" class="form-control form-control-sm" placeholder="Tìm phiên"><select id="systemSessionStatus" class="form-select form-select-sm"><option value="active">Đang hoạt động</option><option value="">Tất cả</option><option value="revoked">Đã thu hồi</option></select><button class="btn btn-sm btn-outline-danger" type="button" data-revoke-all>Đăng xuất tất cả</button>')}
+            ${panel('systemAdminSessions', 'Quản lý phiên đăng nhập', 'fa-user-clock', '<input id="systemSessionSearch" class="form-control form-control-sm" placeholder="Tìm phiên"><select id="systemSessionStatus" class="form-select form-select-sm"><option value="active">Đang hoạt động</option><option value="">Tất cả</option><option value="revoked">Đã thu hồi</option></select><button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="systemAdmin.sessions.revokeAll" data-revoke-all>Đăng xuất tất cả</button>')}
             ${panel('systemAdminMemory', 'Quản lý bộ nhớ', 'fa-broom')}
             ${panel('systemAdminPerformance', 'Hiệu năng', 'fa-gauge-high')}
             ${panel('systemAdminSecurity', 'Bảo mật', 'fa-shield-halved')}
@@ -82,15 +82,20 @@
   }
 
   function bindEvents() {
-    $('[data-system-refresh]')?.addEventListener('click', () => loadAll(true));
-    $$('[data-system-backup]').forEach(btn => {
-      if (btn.dataset.boundSystemBackup === '1') return;
-      btn.dataset.boundSystemBackup = '1';
-      btn.addEventListener('click', () => createBackup(btn.dataset.systemBackup || 'database'));
-    });
+    registerSystemAdminPlatformActions();
     $('#systemSessionSearch')?.addEventListener('input', debounce(loadSessions, 300));
     $('#systemSessionStatus')?.addEventListener('change', loadSessions);
-    $('[data-revoke-all]')?.addEventListener('click', revokeAllSessions);
+  }
+
+  function registerSystemAdminPlatformActions() {
+    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    if (!actions || typeof actions.register !== 'function') return;
+    actions.register('systemAdmin.refresh', () => loadAll(true));
+    actions.register('systemAdmin.backup', context => createBackup(context.dataset.systemBackup || 'database'));
+    actions.register('systemAdmin.sessions.revokeAll', revokeAllSessions);
+    actions.register('systemAdmin.sessions.revoke', context => revokeSession(context.dataset.revokeSession));
+    actions.register('systemAdmin.cleanup', context => cleanup(context.dataset.cleanup));
+    actions.register('systemAdmin.settings.open', () => window.Thon09NavigationController?.navigate('settings'));
   }
 
   function isActive() { return !!$('#systemAdminScreen.active'); }
@@ -203,8 +208,7 @@
     try {
       const data = await apiGet(API + '/sessions', { search: value('#systemSessionSearch'), status: value('#systemSessionStatus') || 'active', pageSize: 30 });
       const rows = data.items || [];
-      setHtml('#systemAdminSessions', rows.length ? '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Người dùng</th><th>Thiết bị</th><th>IP</th><th>Hoạt động</th><th></th></tr></thead><tbody>' + rows.map(row => '<tr><td><strong>' + esc(row.display_name || row.email || '') + '</strong><small>' + esc(row.email || '') + '</small></td><td>' + esc(row.device) + ' / ' + esc(row.browser) + '</td><td>' + esc(row.ip_address || '') + '</td><td><span class="system-admin-status is-' + esc((row.status || '').toLowerCase()) + '">' + esc(row.status) + '</span><small>' + esc(formatTime(row.created_at)) + '</small></td><td>' + (row.status === 'ACTIVE' ? '<button class="btn btn-sm btn-outline-danger" data-revoke-session="' + Number(row.id) + '">Đăng xuất</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>' : empty('Không có phiên phù hợp'));
-      $$('[data-revoke-session]').forEach(btn => btn.addEventListener('click', () => revokeSession(btn.dataset.revokeSession)));
+      setHtml('#systemAdminSessions', rows.length ? '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Người dùng</th><th>Thiết bị</th><th>IP</th><th>Hoạt động</th><th></th></tr></thead><tbody>' + rows.map(row => '<tr><td><strong>' + esc(row.display_name || row.email || '') + '</strong><small>' + esc(row.email || '') + '</small></td><td>' + esc(row.device) + ' / ' + esc(row.browser) + '</td><td>' + esc(row.ip_address || '') + '</td><td><span class="system-admin-status is-' + esc((row.status || '').toLowerCase()) + '">' + esc(row.status) + '</span><small>' + esc(formatTime(row.created_at)) + '</small></td><td>' + (row.status === 'ACTIVE' ? '<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="systemAdmin.sessions.revoke" data-revoke-session="' + Number(row.id) + '">Đăng xuất</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>' : empty('Không có phiên phù hợp'));
     } catch (error) { errorBox('#systemAdminSessions', error); }
   }
 
@@ -213,7 +217,6 @@
     try {
       const data = await apiGet(API + '/memory');
       setHtml('#systemAdminMemory', '<div class="system-admin-memory">' + (data.items || []).map(item => '<div><span><strong>' + esc(item.label) + '</strong><small>' + esc(item.stats?.label || '0 B') + ' · ' + fmt(item.stats?.files || item.stats?.expired || 0) + '</small></span>' + cleanupButton(item.key) + '</div>').join('') + '</div>');
-      $$('[data-cleanup]').forEach(btn => btn.addEventListener('click', () => cleanup(btn.dataset.cleanup)));
     } catch (error) { errorBox('#systemAdminMemory', error); }
   }
 
@@ -239,8 +242,7 @@
       const data = await apiGet(API + '/configuration');
       const settings = data.settings || {};
       const keys = ['systemName','hamletName','communeName','email','phone','address','timezone','language'];
-      setHtml('#systemAdminConfig', '<div class="system-admin-config">' + keys.map(key => '<div><span>' + esc(key) + '</span><strong>' + esc(settings[key] || data[key] || '') + '</strong></div>').join('') + '</div><button class="btn btn-sm btn-outline-primary mt-2" type="button" data-open-settings>Mở cấu hình</button>');
-      $('[data-open-settings]')?.addEventListener('click', () => window.Thon09NavigationController?.navigate('settings'));
+      setHtml('#systemAdminConfig', '<div class="system-admin-config">' + keys.map(key => '<div><span>' + esc(key) + '</span><strong>' + esc(settings[key] || data[key] || '') + '</strong></div>').join('') + '</div><button class="btn btn-sm btn-outline-primary mt-2" type="button" data-platform-action="systemAdmin.settings.open" data-open-settings>Mở cấu hình</button>');
     } catch (error) { errorBox('#systemAdminConfig', error); }
   }
 
@@ -259,7 +261,7 @@
 
   function kpi(label, value) { return '<div class="system-admin-kpi"><span>' + esc(label) + '</span><strong>' + value + '</strong></div>'; }
   function checkRow(check) { return '<div class="system-admin-check is-' + esc(check.status || 'ok') + '"><span></span><div><strong>' + esc(check.label) + '</strong><small>' + esc(check.message) + '</small></div></div>'; }
-  function cleanupButton(key) { return ['cache','sessions','tmp'].includes(key) ? '<button class="btn btn-sm btn-outline-danger" data-cleanup="' + esc(key) + '">Dọn</button>' : '<span class="text-muted small">Chỉ xem</span>'; }
+  function cleanupButton(key) { return ['cache','sessions','tmp'].includes(key) ? '<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="systemAdmin.cleanup" data-cleanup="' + esc(key) + '">Dọn</button>' : '<span class="text-muted small">Chỉ xem</span>'; }
   function empty(text) { return '<div class="system-admin-empty">' + esc(text) + '</div>'; }
   function value(selector) { return String($(selector)?.value || '').trim(); }
   function formatTime(value) { if (!value) return ''; try { return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)); } catch (_) { return String(value); } }

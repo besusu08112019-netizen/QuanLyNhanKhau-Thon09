@@ -9,12 +9,8 @@ module.exports = defineConfig({
     baseURL: 'http://127.0.0.1:8080',
     trace: 'retain-on-failure'
   },
-  webServer: {
-    command: 'php -S 127.0.0.1:8080',
-    url: 'http://127.0.0.1:8080',
-    reuseExistingServer: !process.env.CI,
-    timeout: 15000
-  },
+  globalSetup: './tests/browser/global-setup.js',
+  globalTeardown: './tests/browser/global-teardown.js',
   projects: [
     {
       name: 'desktop-chromium',

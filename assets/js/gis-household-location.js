@@ -24,7 +24,19 @@
     if (typeof window.showToast === 'function') window.showToast(message, type || 'info');
     else console[type === 'danger' ? 'error' : 'log'](message);
   }
-  function can(module, action) { return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess(module, action) : false; }
+  function hasPlatformPermissionRule(module, action) {
+    const service = window.Thon09Platform?.permissions;
+    if (!service?.list) return false;
+    const normalizedModule = service.normalizeModule ? service.normalizeModule(module) : module;
+    const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
+    const keys = new Set(service.list().map(item => item.key));
+    return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
+  }
+  function can(module, action) {
+    const service = window.Thon09Platform?.permissions;
+    if (service?.can && hasPlatformPermissionRule(module, action)) return service.can(module, action, window.App?.user);
+    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess(module, action) : false;
+  }
   async function request(path, options) {
     if (typeof window.api === 'function') return window.api(path, options || {});
     const token = localStorage.getItem('thon09_token') || (window.App && window.App.token) || '';
@@ -99,9 +111,9 @@
         '<div class="col-md-3"><label class="form-label">Độ chính xác</label><input name="locationAccuracy" class="form-control" readonly></div>' +
       '</div>' +
       '<div class="household-location-actions">' +
-        '<button class="btn btn-outline-success" type="button" data-household-location-action="pick"><i class="fa-solid fa-map-location-dot"></i> Chọn trên bản đồ</button>' +
-        '<button class="btn btn-outline-primary" type="button" data-household-location-action="gps"><i class="fa-solid fa-satellite-dish"></i> Lấy GPS</button>' +
-        '<button class="btn btn-outline-danger" type="button" data-household-location-action="clear"><i class="fa-solid fa-trash"></i> Xóa vị trí</button>' +
+        '<button class="btn btn-outline-success" type="button" data-household-location-action="pick" data-platform-action="householdLocation.pick"><i class="fa-solid fa-map-location-dot"></i> Chọn trên bản đồ</button>' +
+        '<button class="btn btn-outline-primary" type="button" data-household-location-action="gps" data-platform-action="householdLocation.gps"><i class="fa-solid fa-satellite-dish"></i> Lấy GPS</button>' +
+        '<button class="btn btn-outline-danger" type="button" data-household-location-action="clear" data-platform-action="householdLocation.clear"><i class="fa-solid fa-trash"></i> Xóa vị trí</button>' +
       '</div>';
     row.appendChild(section);
   }
@@ -183,10 +195,9 @@
   }
 
   function closeHouseholdModal() {
-    const modal = $('#householdModal');
-    if (!modal || !window.bootstrap) return;
-    const instance = window.bootstrap.Modal.getInstance(modal);
-    if (instance) instance.hide();
+    const service = window.Thon09Platform?.modals;
+    if (service?.close && service.close('householdModal')) return;
+    window.bootstrap?.Modal?.getOrCreateInstance?.($('#householdModal'))?.hide();
   }
 
   function getMapWhenReady(callback, tries) {
@@ -349,21 +360,30 @@
     }, { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 });
   }
 
-  function bindLocationButtons() {
-    document.addEventListener('click', async event => {
-      const button = event.target.closest('[data-household-location-action]');
-      if (!button) return;
-      event.preventDefault();
-      const householdId = currentHouseholdId();
-      const action = button.dataset.householdLocationAction;
-      if (action === 'pick') startPicker(householdId);
-      if (action === 'gps') useGps(householdId, button);
-      if (action === 'clear') {
+  function prepareLocationButtons(root) {
+    (root || document).querySelectorAll('[data-household-location-action]').forEach(button => {
+      if (!button.dataset.platformAction) button.dataset.platformAction = 'householdLocation.' + button.dataset.householdLocationAction;
+    });
+  }
+
+  function registerLocationActions() {
+    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    if (window.__thon09HouseholdLocationActionsRegistered || !actions || typeof actions.register !== 'function') return;
+    window.__thon09HouseholdLocationActionsRegistered = true;
+    actions
+      .register('householdLocation.pick', () => startPicker(currentHouseholdId()))
+      .register('householdLocation.gps', context => useGps(currentHouseholdId(), context.target))
+      .register('householdLocation.clear', async () => {
+        const householdId = currentHouseholdId();
         if (!householdId) return;
         if (!window.confirm('Xóa vị trí hiện tại của hộ gia đình này?')) return;
         try { await clearLocation(householdId); } catch (error) { toast(error.message || 'Không xóa được vị trí.', 'danger'); }
-      }
-    });
+      });
+  }
+
+  function bindLocationButtons() {
+    registerLocationActions();
+    prepareLocationButtons();
   }
 
   function previewUrl(id) { return id ? '/api/files/' + encodeURIComponent(id) + '/preview' : ''; }
@@ -580,14 +600,39 @@
     }
   }
 
+  function registerPopupActions() {
+    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    if (window.__thon09GisPopupActionsRegistered || !actions || typeof actions.register !== 'function') return;
+    window.__thon09GisPopupActionsRegistered = true;
+    actions.register('gis.popup.action', context => {
+      const action = context.dataset.gisPopupAction || context.dataset.action || '';
+      const householdId = context.dataset.householdId || '';
+      return runPopupAction(action, popupRowById(householdId), context.event);
+    });
+  }
+
+  function dispatchPopupAction(action, row, event) {
+    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    if (actions && typeof actions.dispatch === 'function') {
+      const target = popupActionElement(event);
+      return actions.dispatch('gis.popup.action', {
+        event,
+        target,
+        dataset: Object.assign({}, target?.dataset || {}, { gisPopupAction: action })
+      });
+    }
+    return runPopupAction(action, row, event);
+  }
+
   function bindPopupDelegation() {
+    registerPopupActions();
     if (document.__thon09GisPopupDelegationBound) return;
     document.__thon09GisPopupDelegationBound = true;
     document.addEventListener('click', event => {
       const button = event.target && event.target.closest ? event.target.closest('.leaflet-popup [data-gis-popup-action]') : null;
       if (!button || button.__thon09PopupActionBound) return;
       const householdId = button.getAttribute('data-household-id') || '';
-      runPopupAction(button.dataset.gisPopupAction, popupRowById(householdId), event);
+      dispatchPopupAction(button.dataset.gisPopupAction, popupRowById(householdId), event);
     });
   }
 
@@ -622,14 +667,14 @@
       });
       button.addEventListener('touchend', event => {
         button.__thon09LastTouchActionAt = Date.now();
-        runPopupAction(button.dataset.gisPopupAction, row, event);
+        dispatchPopupAction(button.dataset.gisPopupAction, row, event);
       }, { passive: false });
       button.addEventListener('click', event => {
         if (button.__thon09LastTouchActionAt && Date.now() - button.__thon09LastTouchActionAt < 700) {
           stopNativeEvent(event, true);
           return;
         }
-        runPopupAction(button.dataset.gisPopupAction, row, event);
+        dispatchPopupAction(button.dataset.gisPopupAction, row, event);
       });
     });
   }

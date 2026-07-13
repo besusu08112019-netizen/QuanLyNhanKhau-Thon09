@@ -141,15 +141,13 @@
     );
   }
 
+  window.thon09RequestHouseholdPhotoGps = function thon09RequestHouseholdPhotoGps(target) {
+    requestCurrentPosition(formOf(target));
+  };
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', observeHouseholdPhotoInput);
   } else {
     observeHouseholdPhotoInput();
   }
-
-  document.addEventListener('click', (event) => {
-    const captureButton = event.target.closest('#householdPhotoCaptureBtn, [data-household-photo-capture]');
-    if (!captureButton) return;
-    requestCurrentPosition(formOf(captureButton));
-  }, true);
 })();

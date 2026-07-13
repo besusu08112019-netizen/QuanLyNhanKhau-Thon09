@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   installPersonTableRenderFix();
 
   function installPersonTableRenderFix() {
@@ -9,6 +9,33 @@
     const safe = value => typeof escapeHtml === 'function' ? escapeHtml(value) : text(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     const fmtDate = value => typeof formatDate === 'function' ? formatDate(value) : text(value);
     const normalize = value => typeof normalizeSearchText === 'function' ? normalizeSearchText(value) : text(value).toLowerCase();
+    const hasPlatformPermissionRule = (moduleKey, action) => {
+      const service = window.Thon09Platform?.permissions;
+      if (!service?.list) return false;
+      const normalizedModule = service.normalizeModule ? service.normalizeModule(moduleKey) : moduleKey;
+      const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
+      const keys = new Set(service.list().map(item => item.key));
+      return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
+    };
+    const canAccess = (moduleKey, action) => {
+      const service = window.Thon09Platform?.permissions;
+      if (service?.can && hasPlatformPermissionRule(moduleKey, action)) return service.can(moduleKey, action, window.App?.user);
+      return typeof window.thon09CanAccess === 'function' && window.thon09CanAccess(moduleKey, action);
+    };
+    const registerPersonTableActions = () => {
+      const actions = window.Thon09Platform?.actions;
+      if (window.__thon09PersonTableActionsRegistered || !actions?.register) return;
+      window.__thon09PersonTableActionsRegistered = true;
+      actions
+        .register({ key: 'persons.edit', handler: ({ dataset }) => {
+          const id = Number(dataset.id || dataset.personId || 0);
+          if (id && typeof window.openPersonForm === 'function') window.openPersonForm(id);
+        } })
+        .register({ key: 'persons.delete', handler: ({ dataset }) => {
+          const id = Number(dataset.id || dataset.personId || 0);
+          if (id && typeof window.deletePerson === 'function') window.deletePerson(id);
+        } });
+    };
     const ageExact = value => {
       const raw = text(value);
       if (!raw) return null;
@@ -32,13 +59,13 @@
       const residenceClass = row.presence_status === 'AWAY' ? 'person-badge-away' : (row.residency_status === 'TEMPORARY' ? 'person-badge-temp' : 'person-badge-home');
       const residenceText = row.presence_status === 'AWAY' ? 'Tạm vắng' : (typeof residencyLabel === 'function' ? residencyLabel(row.residency_status) : (row.residency_status || 'Thường trú'));
       const age = ageExact(row.date_of_birth);
-      const canDeleteCitizen = typeof window.thon09CanAccess === 'function' && window.thon09CanAccess('citizen', 'delete');
-      const canUpdateCitizen = typeof window.thon09CanAccess === 'function' && window.thon09CanAccess('citizen', 'update');
+      const canDeleteCitizen = canAccess('citizen', 'delete');
+      const canUpdateCitizen = canAccess('citizen', 'update');
       return '<tr>'
         + '<td>' + (canDeleteCitizen ? '<input type="checkbox" class="person-check" value="' + safe(row.id || '') + '">' : '') + '</td>'
         + '<td>' + safe(row.household_code || '') + '</td>'
         + '<td>' + safe(row.person_code || row.citizen_code || '') + '</td>'
-        + '<td><button class="btn btn-link person-name-link" onclick="showPerson(' + Number(row.id || 0) + ')">' + safe(row.full_name || '') + '</button></td>'
+        + '<td><button class="btn btn-link person-name-link" type="button" data-platform-action="persons.detail" data-id="' + Number(row.id || 0) + '">' + safe(row.full_name || '') + '</button></td>'
         + '<td>' + safe(relationshipOf(row)) + '</td>'
         + '<td>' + fmtDate(row.date_of_birth) + '</td>'
         + '<td>' + (age === null ? '' : safe(age + ' tuổi')) + '</td>'
@@ -47,9 +74,10 @@
         + '<td><span class="person-badge ' + residenceClass + '">' + safe(residenceText) + '</span></td>'
         + '<td><span class="person-badge ' + (party ? 'person-badge-party' : 'person-badge-muted') + '">' + (party ? 'Có' : 'Không') + '</span></td>'
         + '<td><span class="person-badge ' + bhyt.className + '" title="' + safe(bhyt.tooltip) + '">' + safe(bhyt.label) + '</span></td>'
-        + '<td class="text-end"><button class="btn btn-sm person-row-btn" onclick="showPerson(' + Number(row.id || 0) + ')">Xem</button>' + (canUpdateCitizen ? ' <button class="btn btn-sm person-row-btn person-row-edit" onclick="openPersonForm(' + Number(row.id || 0) + ')">Sửa</button>' : '') + (canDeleteCitizen ? ' <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(' + Number(row.id || 0) + ')">Xóa</button>' : '') + '</td>'
+        + '<td class="text-end"><button class="btn btn-sm person-row-btn" type="button" data-platform-action="persons.detail" data-id="' + Number(row.id || 0) + '">Xem</button>' + (canUpdateCitizen ? ' <button class="btn btn-sm person-row-btn person-row-edit" type="button" data-platform-action="persons.edit" data-id="' + Number(row.id || 0) + '">Sửa</button>' : '') + (canDeleteCitizen ? ' <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="persons.delete" data-id="' + Number(row.id || 0) + '">Xóa</button>' : '') + '</td>'
         + '</tr>';
     };
+    registerPersonTableActions();
 
     window.loadPersons = async function loadPersons() {
       try {
@@ -75,6 +103,7 @@
 
   const start = () => {
     if (!isAdminUser()) return;
+    registerUserPlatformActions();
     injectAdminScreens();
     bindAdminLoaders();
   };
@@ -86,26 +115,55 @@
     return role === 'SUPER_ADMIN';
   }
 
+  function registerModal(id) {
+    const modal = document.querySelector('#' + id);
+    const service = window.Thon09Platform?.modals;
+    if (modal && service?.registerBootstrap) service.registerBootstrap(id, '#' + id);
+    return modal;
+  }
+
+  function openModal(id) {
+    const service = window.Thon09Platform?.modals;
+    if (service?.open && service.open(id)) return;
+    window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.show();
+  }
+
+  function closeModal(id) {
+    const service = window.Thon09Platform?.modals;
+    if (service?.close && service.close(id)) return;
+    window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.hide();
+  }
+
   function injectAdminScreens() {
     const main = document.querySelector('.main-area');
     if (!main || document.querySelector('#usersScreen')) return;
-    main.insertAdjacentHTML('beforeend', `<section id="usersScreen" class="screen"><div class="toolbar"><input id="userSearch" class="form-control" placeholder="Tìm email, tên người dùng"><button id="userAddBtn" class="btn btn-primary">Thêm người dùng</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th><th>Đăng nhập cuối</th><th></th></tr></thead><tbody id="userRows"></tbody></table></div><div id="userPager" class="pager"></div></section><section id="logsScreen" class="screen"><div class="toolbar"><input id="logSearch" class="form-control" placeholder="Tìm người thực hiện, nội dung, mã dữ liệu"><select id="logPageSize" class="form-select w-auto"><option>50</option><option>100</option></select></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Module</th><th>Thao tác</th><th>Nội dung</th></tr></thead><tbody id="logRows"></tbody></table></div><div id="logPager" class="pager"></div></section><section id="backupsScreen" class="screen"><div class="toolbar"><button id="backupCreateBtn" class="btn btn-primary">Tạo và tải bản sao lưu SQL</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Thời gian</th><th>Tên file</th><th>Dung lượng</th><th>Trạng thái</th><th>Người tạo</th></tr></thead><tbody id="backupRows"></tbody></table></div><div id="backupPager" class="pager"></div></section><div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><form class="modal-content" id="userForm"><div class="modal-header"><h5 class="modal-title">Người dùng</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="mb-3"><label class="form-label">Email</label><input name="email" type="email" class="form-control" required></div><div class="mb-3"><label class="form-label">Họ tên</label><input name="displayName" class="form-control" required></div><div class="mb-3"><label class="form-label">Vai trò</label><select name="role" class="form-select"><option value="ADMIN">Quản trị</option><option value="OFFICER">Cán bộ</option><option value="VIEWER">Chỉ xem</option></select></div><div class="mb-3"><label class="form-label">Mật khẩu</label><input name="password" type="password" class="form-control" minlength="8"><div class="form-text">Bắt buộc khi tạo mới, để trống nếu không đổi.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>`);
+    main.insertAdjacentHTML('beforeend', `<section id="usersScreen" class="screen"><div class="toolbar"><input id="userSearch" class="form-control" placeholder="Tìm email, tên người dùng"><button id="userAddBtn" class="btn btn-primary" type="button" data-platform-action="users.create">Thêm người dùng</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th><th>Đăng nhập cuối</th><th></th></tr></thead><tbody id="userRows"></tbody></table></div><div id="userPager" class="pager"></div></section><section id="logsScreen" class="screen"><div class="toolbar"><input id="logSearch" class="form-control" placeholder="Tìm người thực hiện, nội dung, mã dữ liệu"><select id="logPageSize" class="form-select w-auto"><option>50</option><option>100</option></select></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Module</th><th>Thao tác</th><th>Nội dung</th></tr></thead><tbody id="logRows"></tbody></table></div><div id="logPager" class="pager"></div></section><section id="backupsScreen" class="screen"><div class="toolbar"><button id="backupCreateBtn" class="btn btn-primary" type="button" data-platform-action="backups.create">Tạo và tải bản sao lưu SQL</button></div><div class="content-card table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Thời gian</th><th>Tên file</th><th>Dung lượng</th><th>Trạng thái</th><th>Người tạo</th></tr></thead><tbody id="backupRows"></tbody></table></div><div id="backupPager" class="pager"></div></section><div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><form class="modal-content" id="userForm"><div class="modal-header"><h5 class="modal-title">Người dùng</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="mb-3"><label class="form-label">Email</label><input name="email" type="email" class="form-control" required></div><div class="mb-3"><label class="form-label">Họ tên</label><input name="displayName" class="form-control" required></div><div class="mb-3"><label class="form-label">Vai trò</label><select name="role" class="form-select"><option value="ADMIN">Quản trị</option><option value="OFFICER">Cán bộ</option><option value="VIEWER">Chỉ xem</option></select></div><div class="mb-3"><label class="form-label">Mật khẩu</label><input name="password" type="password" class="form-control" minlength="8"><div class="form-text">Bắt buộc khi tạo mới, để trống nếu không đổi.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>`);
     App.users = { page: 1, pageSize: 20, search: '' }; App.logs = { page: 1, pageSize: 50, search: '' }; App.backups = { page: 1, pageSize: 20 };
-    App.modals.user = new bootstrap.Modal(document.querySelector('#userModal'));
+    registerModal('userModal');
     document.querySelector('#userSearch').addEventListener('input', debounce(() => { App.users.search = document.querySelector('#userSearch').value.trim(); App.users.page = 1; loadUsers(); }, 350));
     document.querySelector('#logSearch').addEventListener('input', debounce(() => { App.logs.search = document.querySelector('#logSearch').value.trim(); App.logs.page = 1; loadLogs(); }, 350));
     document.querySelector('#logPageSize').addEventListener('change', () => { App.logs.pageSize = Number(document.querySelector('#logPageSize').value); App.logs.page = 1; loadLogs(); });
-    document.querySelector('#userAddBtn').addEventListener('click', () => openUserForm());
     document.querySelector('#userForm').addEventListener('submit', saveUser);
-    document.querySelector('#backupCreateBtn').addEventListener('click', createBackup);
   }
 
   function bindAdminLoaders() { document.addEventListener('thon09:screen-change', event => { const screen = event.detail?.screen; if (screen === 'users') loadUsers(); if (screen === 'logs') loadLogs(); if (screen === 'backups') loadBackups(); }); }
 
-  async function loadUsers() { try { const data = await api('/api/users?' + new URLSearchParams(App.users).toString()); if (typeof window.renderUserRowsSprint8 === 'function') window.renderUserRowsSprint8(data); else document.querySelector('#userRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.email)}</td><td>${escapeHtml(row.display_name)}</td><td>${roleLabel(row.role)}</td><td>${statusLabel(row.status)}</td><td>${escapeHtml(row.last_login_at || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="openUserForm(${row.id})">Sửa</button> <button class="btn btn-sm btn-outline-warning" onclick="toggleUser(${row.id}, '${row.status === 'ACTIVE' ? 'lock' : 'unlock'}')">${row.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}</button> <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${row.id})">Xóa</button></td></tr>`).join('') || emptyRow(6, 'Chưa có người dùng'); renderPager('#userPager', data, page => { App.users.page = page; loadUsers(); }); } catch (error) { showToast(error.message, 'danger'); } }
+  function registerUserPlatformActions() {
+    if (window.__thon09UserActionsRegistered || !window.Thon09Platform?.actions) return;
+    window.__thon09UserActionsRegistered = true;
+    window.Thon09Platform.actions
+      .register({ key: 'users.create', handler: () => window.openUserForm?.() })
+      .register({ key: 'users.edit', handler: ({ dataset }) => window.openUserForm?.(Number(dataset.id || 0)) })
+      .register({ key: 'users.toggle', handler: ({ dataset }) => window.toggleUser?.(Number(dataset.id || 0), dataset.action) })
+      .register({ key: 'users.resetPassword', handler: ({ dataset }) => window.resetUserPassword?.(Number(dataset.id || 0)) })
+      .register({ key: 'users.delete', handler: ({ dataset }) => window.deleteUser?.(Number(dataset.id || 0)) })
+      .register({ key: 'backups.create', handler: () => createBackup() });
+  }
 
-  window.openUserForm = async function openUserForm(id = null) { const form = document.querySelector('#userForm'); form.reset(); form.elements.id.value = ''; form.elements.email.disabled = false; if (form.elements.username) form.elements.username.disabled = false; if (id) { const row = await api('/api/users/' + id); setForm(form, { id: row.id, username: row.username, email: row.email, displayName: row.displayName, phone: row.phone, position: row.position, role: row.role === 'SUPER_ADMIN' ? 'ADMIN' : row.role }); form.elements.email.disabled = true; if (form.elements.username) form.elements.username.disabled = true; } App.modals.user.show(); };
-  async function saveUser(event) { event.preventDefault(); const data = formData(event.currentTarget); const id = data.id; delete data.id; try { await api(id ? '/api/users/' + id : '/api/users', { method: id ? 'PUT' : 'POST', body: data }); App.modals.user.hide(); showToast('Đã lưu người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); } }
+  async function loadUsers() { try { const data = await api('/api/users?' + new URLSearchParams(App.users).toString()); if (typeof window.renderUserRowsSprint8 === 'function') window.renderUserRowsSprint8(data); else document.querySelector('#userRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.email)}</td><td>${escapeHtml(row.display_name)}</td><td>${roleLabel(row.role)}</td><td>${statusLabel(row.status)}</td><td>${escapeHtml(row.last_login_at || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="users.edit" data-id="${row.id}">Sửa</button> <button class="btn btn-sm btn-outline-warning" type="button" data-platform-action="users.toggle" data-id="${row.id}" data-action="${row.status === 'ACTIVE' ? 'lock' : 'unlock'}">${row.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}</button> <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="users.delete" data-id="${row.id}">Xóa</button></td></tr>`).join('') || emptyRow(6, 'Chưa có người dùng'); renderPager('#userPager', data, page => { App.users.page = page; loadUsers(); }); } catch (error) { showToast(error.message, 'danger'); } }
+
+  window.openUserForm = async function openUserForm(id = null) { const form = document.querySelector('#userForm'); form.reset(); form.elements.id.value = ''; form.elements.email.disabled = false; if (form.elements.username) form.elements.username.disabled = false; if (id) { const row = await api('/api/users/' + id); setForm(form, { id: row.id, username: row.username, email: row.email, displayName: row.displayName, phone: row.phone, position: row.position, role: row.role === 'SUPER_ADMIN' ? 'ADMIN' : row.role }); form.elements.email.disabled = true; if (form.elements.username) form.elements.username.disabled = true; } openModal('userModal'); };
+  async function saveUser(event) { event.preventDefault(); const data = formData(event.currentTarget); const id = data.id; delete data.id; try { await api(id ? '/api/users/' + id : '/api/users', { method: id ? 'PUT' : 'POST', body: data }); closeModal('userModal'); showToast('Đã lưu người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); } }
   window.toggleUser = async function toggleUser(id, action) { try { await api(`/api/users/${id}/${action}`, { method: 'POST' }); showToast(action === 'lock' ? 'Đã khóa người dùng' : 'Đã mở khóa người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); } };
   window.deleteUser = async function deleteUser(id) { if (!confirm('Xóa người dùng này?')) return; try { await api('/api/users/' + id, { method: 'DELETE' }); showToast('Đã xóa người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); } };
   async function loadLogs() { try { const data = await api('/api/logs?' + new URLSearchParams(App.logs).toString()); document.querySelector('#logRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.created_at)}</td><td>${escapeHtml(row.actor_email || '')}</td><td>${escapeHtml(row.module)}</td><td>${escapeHtml(row.action)}</td><td>${escapeHtml(row.message)}</td></tr>`).join('') || emptyRow(5, 'Chưa có nhật ký'); renderPager('#logPager', data, page => { App.logs.page = page; loadLogs(); }); } catch (error) { showToast(error.message, 'danger'); } }

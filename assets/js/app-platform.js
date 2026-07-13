@@ -5136,11 +5136,11 @@
       'temporaryAbsence',
       'movements',
       'publicAssets',
-      'businessHouseholds',
-      'livestock',
       'houses',
-      'vehicles',
+      'businessHouseholds',
       'agriculture',
+      'livestock',
+      'vehicles',
       'contributions'
     ];
 
@@ -5801,11 +5801,11 @@
       'temporaryAbsence',
       'movements',
       'publicAssets',
-      'businessHouseholds',
-      'livestock',
       'houses',
-      'vehicles',
+      'businessHouseholds',
       'agriculture',
+      'livestock',
+      'vehicles',
       'contributions'
     ];
     var dashboardModules = [
