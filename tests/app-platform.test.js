@@ -168,7 +168,19 @@ function screenNode(screenId) {
     mobileScreens.join(','),
     'households,persons,temporaryResidence,temporaryAbsence,movements,publicAssets,houses,businessHouseholds,agriculture,livestock,vehicles,contributions'
   );
-  assert.strictEqual(platform.menuRenderer.mobileModules()[0].mobileLabel, 'Ho');
+  assert.strictEqual(platform.menuRenderer.mobileModules()[0].mobileLabel, 'Hộ');
+  assert.strictEqual(platform.modules.get('households').label, 'Hộ gia đình');
+  assert.strictEqual(platform.modules.get('persons').label, 'Nhân khẩu');
+  assert.strictEqual(platform.modules.get('temporaryResidence').label, 'Tạm trú');
+  assert.strictEqual(platform.modules.get('temporaryAbsence').label, 'Tạm vắng');
+  assert.strictEqual(platform.modules.get('movements').mobileLabel, 'Biến động');
+  assert.strictEqual(platform.modules.get('publicAssets').mobileLabel, 'Công trình');
+  assert.strictEqual(platform.modules.get('houses').mobileLabel, 'Nhà ở');
+  assert.strictEqual(platform.modules.get('agriculture').mobileLabel, 'Nông nghiệp');
+  assert.strictEqual(platform.modules.get('livestock').mobileLabel, 'Vật nuôi');
+  assert.strictEqual(platform.menus.get('population').label, 'Quản lý dân cư');
+  assert.strictEqual(platform.menus.get('assets').label, 'Quản lý tài sản');
+  assert.strictEqual(platform.menus.get('production').label, 'Quản lý sản xuất');
 }
 
 {
@@ -659,7 +671,7 @@ function screenNode(screenId) {
 {
   const platform = loadPlatform().window.Thon09Platform;
   const crumbs = platform.breadcrumbs.fromRoute('/households/42/edit');
-  assert.strictEqual(crumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quan ly dan cu>Ho gia dinh>Chinh sua');
+  assert.strictEqual(crumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quản lý dân cư>Hộ gia đình>Chinh sua');
   assert.strictEqual(crumbs[2].moduleKey, 'households');
   assert.strictEqual(crumbs[3].params.id, '42');
 
@@ -678,7 +690,7 @@ function screenNode(screenId) {
   assert.strictEqual(platform.breadcrumbs.render(root, { route: '/vehicles/7' }), true);
   assert.strictEqual(root.textContent, '');
   assert.strictEqual(root.dataset.platformBreadcrumb, 'true');
-  assert.strictEqual(root.children.map((child) => child.textContent).join('>'), 'Dashboard>Quan ly phuong tien>Quan ly xe co>Chi tiet');
+  assert.strictEqual(root.children.map((child) => child.textContent).join('>'), 'Dashboard>Quản lý phương tiện>Quản lý xe cộ>Chi tiet');
   assert.strictEqual(root.children[0].tagName, 'A');
   assert.strictEqual(root.children[root.children.length - 1].className, 'breadcrumb-item active');
 }
@@ -699,7 +711,7 @@ function screenNode(screenId) {
   assert.strictEqual(next.action, 'edit');
   assert.strictEqual(next.params.id, '42');
   assert.strictEqual(next.layout.mode, 'mobile');
-  assert.strictEqual(next.breadcrumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quan ly dan cu>Ho gia dinh>Chinh sua');
+  assert.strictEqual(next.breadcrumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quản lý dân cư>Hộ gia đình>Chinh sua');
   assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:app-state-change'));
 
   const patched = platform.appState.patch({ action: 'detail', params: { id: '99' }, width: 1280 });
@@ -809,7 +821,7 @@ function screenNode(screenId) {
   assert.strictEqual(sidebarRoot.nodes[2].attributes['aria-current'], 'page');
   assert.strictEqual(sidebarRoot.nodes[0].className, 'nav-link');
   assert.strictEqual(bottomRoot.nodes[2].className, 'nav-link active');
-  assert.strictEqual(breadcrumbRoot.children.map((child) => child.textContent).join('>'), 'Dashboard>Quan ly phuong tien>Quan ly xe co>Chi tiet');
+  assert.strictEqual(breadcrumbRoot.children.map((child) => child.textContent).join('>'), 'Dashboard>Quản lý phương tiện>Quản lý xe cộ>Chi tiet');
 
   platform.appState.set({ route: '/persons', width: 390 });
   platform.navigationView.sync({ sidebarRoot, bottomRoot });
@@ -1362,7 +1374,7 @@ function screenNode(screenId) {
   assert.strictEqual(screens.filter((node) => node.style.display === 'block').length, 1);
   assert.strictEqual(sidebarRoot.nodes[0].attributes['aria-current'], 'page');
   assert.strictEqual(bottomRoot.nodes[0].attributes['aria-current'], 'page');
-  assert.strictEqual(breadcrumbRoot.children.map((child) => child.textContent).join('>'), 'Dashboard>Quan ly dan cu>Ho gia dinh>Chinh sua');
+  assert.strictEqual(breadcrumbRoot.children.map((child) => child.textContent).join('>'), 'Dashboard>Quản lý dân cư>Hộ gia đình>Chinh sua');
 }
 
 {
