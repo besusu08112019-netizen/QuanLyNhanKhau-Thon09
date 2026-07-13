@@ -3467,6 +3467,14 @@
       };
     }
 
+    function assertReport(options) {
+      var snapshot = report(options || {});
+      if (!snapshot.ready) {
+        throw new Error('Module migration report blocked: ' + snapshot.blockedStages.join(', '));
+      }
+      return snapshot;
+    }
+
     function reports(options) {
       var config = options || {};
       var scopes = toArray(config.scopes || config.navigationScopes);
@@ -3743,6 +3751,7 @@
       matrix: matrix,
       assertMatrix: assertMatrix,
       report: report,
+      assertReport: assertReport,
       reports: reports,
       timeline: timeline,
       handoff: handoff,
