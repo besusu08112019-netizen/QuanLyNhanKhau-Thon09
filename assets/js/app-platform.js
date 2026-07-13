@@ -3402,6 +3402,20 @@
       };
     }
 
+    function assertMatrix(options) {
+      var snapshot = matrix(options || {});
+      if (!snapshot.ready) {
+        var blocked = [];
+        snapshot.rows.forEach(function (row) {
+          row.stages.forEach(function (stage) {
+            if (!stage.ready) blocked.push(row.scope + ':' + stage.stage);
+          });
+        });
+        throw new Error('Module migration matrix blocked: ' + blocked.join(', '));
+      }
+      return snapshot;
+    }
+
     function report(options) {
       var config = options || {};
       var stages = toArray(config.stages).length ? toArray(config.stages) : [config.stage || 'navigation'];
@@ -3727,6 +3741,7 @@
       queue: queue,
       blockers: blockers,
       matrix: matrix,
+      assertMatrix: assertMatrix,
       report: report,
       reports: reports,
       timeline: timeline,

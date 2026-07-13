@@ -67,7 +67,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 - `Thon09Platform.moduleMigration.advance()` va `completeHandoff()` da them guard runtime-memory de chi danh dau module hoan tat khi handoff san sang va dung thu tu migration, tru khi chu dong cho phep out-of-order.
 - `Thon09Platform.moduleMigration.queue()` da co snapshot read-only cho completed/remaining/next/upcoming/blocked/percent theo scope va stage de theo doi tien do migrate tung module.
 - `Thon09Platform.moduleMigration.blockers()` da co report read-only gom module bi chan, issue count va ma loi theo scope/stage de triage truoc khi migrate tiep.
-- `Thon09Platform.moduleMigration.matrix()` da co bang read-only theo nhieu scope/stage de xem completed/remaining/blocked/next/blocker count trong mot snapshot.
+- `Thon09Platform.moduleMigration.matrix()` va `assertMatrix()` da co bang/guard theo nhieu scope/stage de xem va chan khi con completed/remaining/blocked/next/blocker count chua dat.
 - `Thon09Platform.moduleMigration.gate()` da co check read-only truoc khi advance, tra ve `canAdvance`, `reason`, next module, queue, blockers va handoff.
 - `Thon09Platform.moduleMigration.assertGate()`/`assertCanAdvance()` da co guard throw ro rang khi gate bi chan, de caller khong the advance migration neu con blocker.
 - `Thon09Platform.moduleMigration.timeline()` da co event log runtime-memory cho `markComplete`, `completeHandoff` va `resetProgress`, co filter theo scope/stage/type de audit migration.
@@ -186,7 +186,7 @@ Tinh trang hien tai: `Thon09Platform.components` da co factory nho cho cac primi
 
 Tinh trang hien tai cua CRUD: `Thon09Platform.crud` da co workflow metadata list/detail/create/edit/delete/import/export/log va biet noi route, list schema, form schema, action key, permission action. Service nay chua tu goi API, chua submit form va chua thay event handler cu; module migration se dung contract nay theo tung module.
 
-Tinh trang hien tai cua migration: `Thon09Platform.moduleMigration.report()`, `reports()`, `queue()`, `blockers()`, `matrix()`, `gate()`, `assertGate()`, `current()`, `next()`, `checkpoint()`, `assertCheckpoint()`, `timeline()` va `handoff()` chi doc registry/DOM/runtime memory de lap bao cao readiness va audit theo scope/stage/module. `advance()` va `completeHandoff()` chi cap nhat progress trong memory sau khi checklist san sang; cac API nay khong auto-start navigation runtime, khong goi API, khong ghi localStorage va khong thay doi database.
+Tinh trang hien tai cua migration: `Thon09Platform.moduleMigration.report()`, `reports()`, `queue()`, `blockers()`, `matrix()`, `assertMatrix()`, `gate()`, `assertGate()`, `current()`, `next()`, `checkpoint()`, `assertCheckpoint()`, `timeline()` va `handoff()` chi doc registry/DOM/runtime memory de lap bao cao readiness va audit theo scope/stage/module. `advance()` va `completeHandoff()` chi cap nhat progress trong memory sau khi checklist san sang; cac API nay khong auto-start navigation runtime, khong goi API, khong ghi localStorage va khong thay doi database.
 
 ### Modal/Popup
 
@@ -497,6 +497,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - `plan()` tra `nextModuleKey`, ready/blocked/completed modules de khoa thu tu migrate va tiep tuc duoc sau moi commit.
    - `progress()`, `markComplete()` va `resetProgress()` chi luu tien do trong runtime memory, phuc vu test/rollout noi bo va khong ghi du lieu he thong.
    - `gate()` va `assertGate()` chan advance khi scope/stage khong co next module san sang hoac con blocker, truoc khi caller danh dau module hoan tat.
+   - `assertMatrix()` chan rollout khi bat ky scope/stage trong matrix con blocked, dung duoc cho CI gate nhieu scope.
    - `current()` va alias `next()` tra dung module hanh dong ke tiep kem gate, handoff, blockers, queue position va timeline summary de tiep tuc migration ma khong ghi event moi.
    - `checkpoint()` gom current, report, queue, blockers, handoff va timeline day du vao mot snapshot de handoff phien migration; `assertCheckpoint()` fail nhanh khi snapshot khong the advance.
    - `timeline()` tra event log runtime-memory cua cac buoc complete/reset/handoff de trace migration ma khong ghi localStorage/database.
