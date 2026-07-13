@@ -5599,6 +5599,184 @@
       rowActions: ['detail', 'edit'],
       bulkActions: ['export']
     });
+    [
+      {
+        moduleKey: 'temporaryResidence',
+        formKey: 'temporaryResidenceForm',
+        listKey: 'temporaryResidenceList',
+        modalKey: 'temporaryResidenceModal',
+        fields: [
+          { name: 'personName', label: 'Nhan khau', required: true },
+          { name: 'householdCode', label: 'Ma ho' },
+          { name: 'fromDate', label: 'Tu ngay', type: 'date' },
+          { name: 'toDate', label: 'Den ngay', type: 'date' },
+          { name: 'temporaryAddress', label: 'Dia chi tam tru' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      {
+        moduleKey: 'temporaryAbsence',
+        formKey: 'temporaryAbsenceForm',
+        listKey: 'temporaryAbsenceList',
+        modalKey: 'temporaryAbsenceModal',
+        fields: [
+          { name: 'personName', label: 'Nhan khau', required: true },
+          { name: 'householdCode', label: 'Ma ho' },
+          { name: 'fromDate', label: 'Tu ngay', type: 'date' },
+          { name: 'toDate', label: 'Den ngay', type: 'date' },
+          { name: 'destination', label: 'Noi den' },
+          { name: 'reason', label: 'Ly do' }
+        ]
+      },
+      {
+        moduleKey: 'movements',
+        formKey: 'movementsForm',
+        listKey: 'movementsList',
+        modalKey: 'movementModal',
+        fields: [
+          { name: 'personName', label: 'Nhan khau', required: true },
+          { name: 'movementType', label: 'Loai bien dong' },
+          { name: 'movementDate', label: 'Ngay bien dong', type: 'date' },
+          { name: 'fromAddress', label: 'Noi di' },
+          { name: 'toAddress', label: 'Noi den' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      {
+        moduleKey: 'publicAssets',
+        formKey: 'publicAssetsForm',
+        listKey: 'publicAssetsList',
+        modalKey: 'publicAssetModal',
+        fields: [
+          { name: 'assetCode', label: 'Ma cong trinh', required: true },
+          { name: 'assetName', label: 'Ten cong trinh', required: true },
+          { name: 'category', label: 'Loai cong trinh' },
+          { name: 'location', label: 'Vi tri' },
+          { name: 'managedBy', label: 'Don vi quan ly' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      {
+        moduleKey: 'businessHouseholds',
+        formKey: 'businessHouseholdsForm',
+        listKey: 'businessHouseholdsList',
+        modalKey: 'businessHouseholdModal',
+        fields: [
+          { name: 'householdCode', label: 'Ma ho', required: true },
+          { name: 'ownerName', label: 'Chu ho' },
+          { name: 'businessName', label: 'Ten co so' },
+          { name: 'sector', label: 'Nganh nghe' },
+          { name: 'workerCount', label: 'Lao dong', type: 'number', defaultValue: 0 },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      {
+        moduleKey: 'livestock',
+        formKey: 'livestockForm',
+        listKey: 'livestockList',
+        modalKey: 'livestockModal',
+        fields: [
+          { name: 'householdCode', label: 'Ma ho', required: true },
+          { name: 'ownerName', label: 'Chu ho' },
+          { name: 'animalType', label: 'Loai vat nuoi' },
+          { name: 'quantity', label: 'So luong', type: 'number', defaultValue: 0 },
+          { name: 'scale', label: 'Quy mo' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      {
+        moduleKey: 'houses',
+        formKey: 'housesForm',
+        listKey: 'housesList',
+        modalKey: 'houseModal',
+        fields: [
+          { name: 'householdCode', label: 'Ma ho', required: true },
+          { name: 'ownerName', label: 'Chu ho' },
+          { name: 'houseType', label: 'Loai nha' },
+          { name: 'area', label: 'Dien tich', type: 'number', defaultValue: 0 },
+          { name: 'address', label: 'Dia chi' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      {
+        moduleKey: 'vehicles',
+        formKey: 'vehiclesForm',
+        listKey: 'vehiclesList',
+        modalKey: 'vehicleModal',
+        fields: [
+          { name: 'plateNumber', label: 'Bien so', required: true },
+          { name: 'ownerName', label: 'Chu so huu' },
+          { name: 'vehicleType', label: 'Loai xe' },
+          { name: 'brand', label: 'Nhan hieu' },
+          { name: 'registrationStatus', label: 'Dang ky' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      {
+        moduleKey: 'agriculture',
+        formKey: 'agricultureForm',
+        listKey: 'agricultureList',
+        modalKey: 'agricultureModal',
+        fields: [
+          { name: 'householdCode', label: 'Ma ho', required: true },
+          { name: 'ownerName', label: 'Chu ho' },
+          { name: 'cropType', label: 'Loai cay trong' },
+          { name: 'area', label: 'Dien tich', type: 'number', defaultValue: 0 },
+          { name: 'season', label: 'Mua vu' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      {
+        moduleKey: 'contributions',
+        formKey: 'contributionsForm',
+        listKey: 'contributionsList',
+        modalKey: 'contributionModal',
+        fields: [
+          { name: 'householdCode', label: 'Ma ho', required: true },
+          { name: 'payerName', label: 'Nguoi dong' },
+          { name: 'contributionType', label: 'Khoan dong' },
+          { name: 'amount', label: 'So tien', type: 'number', defaultValue: 0 },
+          { name: 'period', label: 'Ky dong' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      }
+    ].forEach(function (record) {
+      forms.register({
+        key: record.formKey,
+        moduleKey: record.moduleKey,
+        modalKey: record.modalKey,
+        sections: {
+          basic: record.fields.slice(0, 4),
+          linked: record.fields.slice(4, 5),
+          extended: record.fields.slice(5)
+        },
+        actions: [
+          { key: 'save', label: 'Luu', variant: 'success' },
+          { key: 'cancel', label: 'Huy', variant: 'light' }
+        ]
+      });
+      lists.register({
+        key: record.listKey,
+        moduleKey: record.moduleKey,
+        screenId: record.moduleKey,
+        columns: record.fields.map(function (field) {
+          return { key: field.name, label: field.label, sortable: field.required === true || field.name === 'status' };
+        }),
+        filters: [
+          { key: 'status', label: 'Trang thai', type: 'select', defaultValue: '' }
+        ],
+        rowActions: ['detail', 'edit'],
+        bulkActions: ['export']
+      });
+      crud.register({
+        moduleKey: record.moduleKey,
+        formKey: record.formKey,
+        detailFormKey: record.formKey,
+        listKey: record.listKey,
+        rowActions: ['detail', 'edit'],
+        bulkActions: ['export']
+      });
+    });
 
     [
       { key: 'dashboard', label: 'Dashboard', icon: 'fa-gauge-high', dashboardTree: true, items: ['dashboard', 'dashboardHouseholds', 'dashboardPopulation', 'dashboardBusiness', 'dashboardVehicles', 'dashboardLivestock', 'dashboardGis', 'dashboardReports'] },

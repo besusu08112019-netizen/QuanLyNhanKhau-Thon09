@@ -1226,11 +1226,10 @@ function screenNode(screenId) {
   assert.strictEqual(loaderBlocked.ready, false);
   assert.strictEqual(loaderBlocked.issues.some((item) => item.code === 'loader-not-configured'), true);
 
-  const crudBlocked = platform.moduleMigration.inspect({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
-  assert.strictEqual(crudBlocked.ready, false);
-  assert.strictEqual(crudBlocked.moduleCount, 12);
-  assert.strictEqual(crudBlocked.issues.some((item) => item.code === 'crud-list-missing'), true);
-  assert.strictEqual(crudBlocked.issues.some((item) => item.code === 'crud-form-missing'), true);
+  const crudReady = platform.moduleMigration.inspect({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
+  assert.strictEqual(crudReady.ready, true);
+  assert.strictEqual(crudReady.moduleCount, 12);
+  assert.strictEqual(crudReady.issues.length, 0);
   const householdCrudReady = platform.moduleMigration.inspectModule('households', { stage: 'crud', require: { dom: false } });
   assert.strictEqual(householdCrudReady.ready, true);
   assert.strictEqual(householdCrudReady.crud.operations.length, 4);
@@ -1239,67 +1238,67 @@ function screenNode(screenId) {
   assert.strictEqual(personCrudReady.ready, true);
   assert.strictEqual(personCrudReady.crud.operations.length, 4);
   assert.strictEqual(personCrudReady.crud.operations.every((operation) => operation.hasRoute && operation.hasList !== false && operation.hasForm !== false), true);
-  assert.throws(() => platform.moduleMigration.assertReport({ navigationScope: 'requiredBusinessModules', stages: ['crud'], require: { dom: false } }), /Module migration report blocked: crud/);
-  assert.throws(() => platform.moduleMigration.assertReports({ scopes: ['requiredBusinessModules'], stages: ['crud'], require: { dom: false } }), /Module migration reports blocked: requiredBusinessModules:crud/);
+  const crudReportReady = platform.moduleMigration.assertReport({ navigationScope: 'requiredBusinessModules', stages: ['crud'], require: { dom: false } });
+  assert.strictEqual(crudReportReady.ready, true);
+  const crudReportsReady = platform.moduleMigration.assertReports({ scopes: ['requiredBusinessModules'], stages: ['crud'], require: { dom: false } });
+  assert.strictEqual(crudReportsReady[0].ready, true);
   const crudPlan = platform.moduleMigration.plan({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudPlan.nextModuleKey, 'households');
-  assert.strictEqual(crudPlan.readyModules.join(','), 'households,persons');
-  assert.strictEqual(crudPlan.blockedModules.length, 10);
+  assert.strictEqual(crudPlan.readyModules.length, 12);
+  assert.strictEqual(crudPlan.blockedModules.length, 0);
   const crudQueue = platform.moduleMigration.queue({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudQueue.percentComplete, 0);
   assert.strictEqual(crudQueue.remainingCount, 12);
-  assert.strictEqual(crudQueue.upcomingModules.join(','), 'households,persons');
-  assert.strictEqual(crudQueue.blockedQueue.length, 10);
+  assert.strictEqual(crudQueue.upcomingModules.length, 12);
+  assert.strictEqual(crudQueue.blockedQueue.length, 0);
   const crudBlockers = platform.moduleMigration.blockers({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
-  assert.strictEqual(crudBlockers.ready, false);
-  assert.strictEqual(crudBlockers.blockedCount, 10);
-  assert.ok(crudBlockers.blockerCount > 10);
-  assert.strictEqual(crudBlockers.codes.some((item) => item.code === 'crud-list-missing'), true);
-  assert.strictEqual(crudBlockers.codes.some((item) => item.code === 'crud-form-missing'), true);
-  assert.strictEqual(crudBlockers.modules[0].moduleKey, 'temporaryResidence');
-  assert.ok(crudBlockers.modules[0].issueCount > 0);
+  assert.strictEqual(crudBlockers.ready, true);
+  assert.strictEqual(crudBlockers.blockedCount, 0);
+  assert.strictEqual(crudBlockers.blockerCount, 0);
+  assert.strictEqual(crudBlockers.codes.length, 0);
+  assert.strictEqual(crudBlockers.modules.length, 0);
   const crudMatrix = platform.moduleMigration.matrix({
     scopes: ['requiredBusinessModules'],
     stages: ['crud'],
     require: { dom: false }
   });
-  assert.strictEqual(crudMatrix.ready, false);
-  assert.strictEqual(crudMatrix.blockedRows.length, 1);
-  assert.strictEqual(crudMatrix.rows[0].stages[0].blockedCount, 10);
+  assert.strictEqual(crudMatrix.ready, true);
+  assert.strictEqual(crudMatrix.blockedRows.length, 0);
+  assert.strictEqual(crudMatrix.rows[0].stages[0].blockedCount, 0);
   assert.strictEqual(crudMatrix.rows[0].stages[0].nextModuleKey, 'households');
-  assert.ok(crudMatrix.rows[0].stages[0].blockerCount > 10);
-  assert.throws(() => platform.moduleMigration.assertMatrix({
+  assert.strictEqual(crudMatrix.rows[0].stages[0].blockerCount, 0);
+  assert.strictEqual(platform.moduleMigration.assertMatrix({
     scopes: ['requiredBusinessModules'],
     stages: ['crud'],
     require: { dom: false }
-  }), /Module migration matrix blocked: requiredBusinessModules:crud/);
+  }).ready, true);
   const crudStatus = platform.moduleMigration.status({
     navigationScope: 'requiredBusinessModules',
     stages: ['crud'],
     require: { dom: false }
   });
-  assert.strictEqual(crudStatus.ready, false);
-  assert.strictEqual(crudStatus.blocked, true);
+  assert.strictEqual(crudStatus.ready, true);
+  assert.strictEqual(crudStatus.blocked, false);
   assert.strictEqual(crudStatus.nextAction, 'advance');
   assert.strictEqual(crudStatus.moduleKey, 'households');
-  assert.strictEqual(crudStatus.report.blockedStages.join(','), 'crud');
-  assert.strictEqual(crudStatus.matrix.ready, false);
-  assert.strictEqual(crudStatus.blockedRows.length, 1);
-  assert.throws(() => platform.moduleMigration.assertStatus({
+  assert.strictEqual(crudStatus.report.blockedStages.length, 0);
+  assert.strictEqual(crudStatus.matrix.ready, true);
+  assert.strictEqual(crudStatus.blockedRows.length, 0);
+  assert.strictEqual(platform.moduleMigration.assertStatus({
     navigationScope: 'requiredBusinessModules',
     stages: ['crud'],
     require: { dom: false }
-  }), /Module migration status blocked: requiredBusinessModules:crud/);
+  }).ready, true);
   const crudGate = platform.moduleMigration.gate({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudGate.canAdvance, true);
   assert.strictEqual(crudGate.reason, null);
   assert.strictEqual(crudGate.nextModuleKey, 'households');
   assert.strictEqual(crudGate.handoff.moduleKey, 'households');
-  assert.strictEqual(crudGate.blockedCount, 10);
+  assert.strictEqual(crudGate.blockedCount, 0);
   assert.strictEqual(platform.moduleMigration.assertGate({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }).nextModuleKey, 'households');
   assert.strictEqual(platform.moduleMigration.assertCanAdvance({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }).canAdvance, true);
   assert.strictEqual(platform.moduleMigration.assertCheckpoint({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }).moduleKey, 'households');
-  assert.throws(() => platform.moduleMigration.assertReady({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }), /Module migration blocked/);
+  assert.strictEqual(platform.moduleMigration.assertReady({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }).ready, true);
 }
 
 {
