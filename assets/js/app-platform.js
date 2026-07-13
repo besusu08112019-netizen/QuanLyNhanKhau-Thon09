@@ -5547,6 +5547,58 @@
       rowActions: ['detail', 'edit'],
       bulkActions: ['export']
     });
+    forms.register({
+      key: 'personsForm',
+      moduleKey: 'persons',
+      modalKey: 'personModal',
+      sections: {
+        basic: [
+          { name: 'citizenCode', label: 'Ma nhan khau', required: true },
+          { name: 'fullName', label: 'Ho ten', required: true },
+          { name: 'gender', label: 'Gioi tinh' },
+          { name: 'birthDate', label: 'Ngay sinh', type: 'date' }
+        ],
+        linked: [
+          { name: 'householdCode', label: 'Ma ho' },
+          { name: 'relationship', label: 'Quan he voi chu ho' }
+        ],
+        extended: [
+          { name: 'phone', label: 'Dien thoai' },
+          { name: 'status', label: 'Trang thai' }
+        ]
+      },
+      actions: [
+        { key: 'save', label: 'Luu', variant: 'success' },
+        { key: 'cancel', label: 'Huy', variant: 'light' }
+      ]
+    });
+    lists.register({
+      key: 'personsList',
+      moduleKey: 'persons',
+      screenId: 'persons',
+      columns: [
+        { key: 'citizenCode', label: 'Ma nhan khau', sortable: true },
+        { key: 'fullName', label: 'Ho ten', sortable: true },
+        { key: 'gender', label: 'Gioi tinh' },
+        { key: 'birthDate', label: 'Ngay sinh', sortable: true },
+        { key: 'householdCode', label: 'Ma ho' },
+        { key: 'status', label: 'Trang thai' }
+      ],
+      filters: [
+        { key: 'gender', label: 'Gioi tinh', type: 'select', defaultValue: '' },
+        { key: 'status', label: 'Trang thai', type: 'select', defaultValue: '' }
+      ],
+      rowActions: ['detail', 'edit'],
+      bulkActions: ['export']
+    });
+    crud.register({
+      moduleKey: 'persons',
+      formKey: 'personsForm',
+      detailFormKey: 'personsForm',
+      listKey: 'personsList',
+      rowActions: ['detail', 'edit'],
+      bulkActions: ['export']
+    });
 
     [
       { key: 'dashboard', label: 'Dashboard', icon: 'fa-gauge-high', dashboardTree: true, items: ['dashboard', 'dashboardHouseholds', 'dashboardPopulation', 'dashboardBusiness', 'dashboardVehicles', 'dashboardLivestock', 'dashboardGis', 'dashboardReports'] },

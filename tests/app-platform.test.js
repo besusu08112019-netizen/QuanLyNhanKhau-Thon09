@@ -1235,24 +1235,28 @@ function screenNode(screenId) {
   assert.strictEqual(householdCrudReady.ready, true);
   assert.strictEqual(householdCrudReady.crud.operations.length, 4);
   assert.strictEqual(householdCrudReady.crud.operations.every((operation) => operation.hasRoute && operation.hasList !== false && operation.hasForm !== false), true);
+  const personCrudReady = platform.moduleMigration.inspectModule('persons', { stage: 'crud', require: { dom: false } });
+  assert.strictEqual(personCrudReady.ready, true);
+  assert.strictEqual(personCrudReady.crud.operations.length, 4);
+  assert.strictEqual(personCrudReady.crud.operations.every((operation) => operation.hasRoute && operation.hasList !== false && operation.hasForm !== false), true);
   assert.throws(() => platform.moduleMigration.assertReport({ navigationScope: 'requiredBusinessModules', stages: ['crud'], require: { dom: false } }), /Module migration report blocked: crud/);
   assert.throws(() => platform.moduleMigration.assertReports({ scopes: ['requiredBusinessModules'], stages: ['crud'], require: { dom: false } }), /Module migration reports blocked: requiredBusinessModules:crud/);
   const crudPlan = platform.moduleMigration.plan({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudPlan.nextModuleKey, 'households');
-  assert.strictEqual(crudPlan.readyModules.join(','), 'households');
-  assert.strictEqual(crudPlan.blockedModules.length, 11);
+  assert.strictEqual(crudPlan.readyModules.join(','), 'households,persons');
+  assert.strictEqual(crudPlan.blockedModules.length, 10);
   const crudQueue = platform.moduleMigration.queue({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudQueue.percentComplete, 0);
   assert.strictEqual(crudQueue.remainingCount, 12);
-  assert.strictEqual(crudQueue.upcomingModules.join(','), 'households');
-  assert.strictEqual(crudQueue.blockedQueue.length, 11);
+  assert.strictEqual(crudQueue.upcomingModules.join(','), 'households,persons');
+  assert.strictEqual(crudQueue.blockedQueue.length, 10);
   const crudBlockers = platform.moduleMigration.blockers({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudBlockers.ready, false);
-  assert.strictEqual(crudBlockers.blockedCount, 11);
-  assert.ok(crudBlockers.blockerCount > 11);
+  assert.strictEqual(crudBlockers.blockedCount, 10);
+  assert.ok(crudBlockers.blockerCount > 10);
   assert.strictEqual(crudBlockers.codes.some((item) => item.code === 'crud-list-missing'), true);
   assert.strictEqual(crudBlockers.codes.some((item) => item.code === 'crud-form-missing'), true);
-  assert.strictEqual(crudBlockers.modules[0].moduleKey, 'persons');
+  assert.strictEqual(crudBlockers.modules[0].moduleKey, 'temporaryResidence');
   assert.ok(crudBlockers.modules[0].issueCount > 0);
   const crudMatrix = platform.moduleMigration.matrix({
     scopes: ['requiredBusinessModules'],
@@ -1261,9 +1265,9 @@ function screenNode(screenId) {
   });
   assert.strictEqual(crudMatrix.ready, false);
   assert.strictEqual(crudMatrix.blockedRows.length, 1);
-  assert.strictEqual(crudMatrix.rows[0].stages[0].blockedCount, 11);
+  assert.strictEqual(crudMatrix.rows[0].stages[0].blockedCount, 10);
   assert.strictEqual(crudMatrix.rows[0].stages[0].nextModuleKey, 'households');
-  assert.ok(crudMatrix.rows[0].stages[0].blockerCount > 11);
+  assert.ok(crudMatrix.rows[0].stages[0].blockerCount > 10);
   assert.throws(() => platform.moduleMigration.assertMatrix({
     scopes: ['requiredBusinessModules'],
     stages: ['crud'],
@@ -1291,7 +1295,7 @@ function screenNode(screenId) {
   assert.strictEqual(crudGate.reason, null);
   assert.strictEqual(crudGate.nextModuleKey, 'households');
   assert.strictEqual(crudGate.handoff.moduleKey, 'households');
-  assert.strictEqual(crudGate.blockedCount, 11);
+  assert.strictEqual(crudGate.blockedCount, 10);
   assert.strictEqual(platform.moduleMigration.assertGate({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }).nextModuleKey, 'households');
   assert.strictEqual(platform.moduleMigration.assertCanAdvance({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }).canAdvance, true);
   assert.strictEqual(platform.moduleMigration.assertCheckpoint({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } }).moduleKey, 'households');
