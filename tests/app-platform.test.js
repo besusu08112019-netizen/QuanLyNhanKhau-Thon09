@@ -1015,6 +1015,13 @@ function screenNode(screenId) {
   assert.strictEqual(dashboardReports.length, 1);
   assert.strictEqual(dashboardReports[0].scope.key, 'migrationDashboard');
   assert.strictEqual(dashboardReports[0].stages[0].moduleCount, 8);
+  const dashboardAssertReports = platform.moduleMigration.assertReports({
+    document: domDocument,
+    scopes: ['migrationDashboard'],
+    stages: ['navigation']
+  });
+  assert.strictEqual(dashboardAssertReports.length, 1);
+  assert.strictEqual(dashboardAssertReports[0].ready, true);
 
   const nextHandoff = platform.moduleMigration.handoff({
     document: domDocument,
@@ -1205,6 +1212,7 @@ function screenNode(screenId) {
   assert.strictEqual(crudBlocked.issues.some((item) => item.code === 'crud-list-missing'), true);
   assert.strictEqual(crudBlocked.issues.some((item) => item.code === 'crud-form-missing'), true);
   assert.throws(() => platform.moduleMigration.assertReport({ navigationScope: 'requiredBusinessModules', stages: ['crud'], require: { dom: false } }), /Module migration report blocked: crud/);
+  assert.throws(() => platform.moduleMigration.assertReports({ scopes: ['requiredBusinessModules'], stages: ['crud'], require: { dom: false } }), /Module migration reports blocked: requiredBusinessModules:crud/);
   const crudPlan = platform.moduleMigration.plan({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudPlan.nextModuleKey, null);
   assert.strictEqual(crudPlan.readyModules.length, 0);

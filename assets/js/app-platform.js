@@ -3489,6 +3489,21 @@
       });
     }
 
+    function assertReports(options) {
+      var snapshots = reports(options || {});
+      var blocked = [];
+      snapshots.forEach(function (snapshot) {
+        if (!snapshot.ready) {
+          var scopeKey = snapshot.scope && snapshot.scope.key || 'unscoped';
+          snapshot.blockedStages.forEach(function (stage) {
+            blocked.push(scopeKey + ':' + stage);
+          });
+        }
+      });
+      if (blocked.length) throw new Error('Module migration reports blocked: ' + blocked.join(', '));
+      return snapshots;
+    }
+
     function handoffChecklist(record, req) {
       if (!record) return [];
       var checks = [];
@@ -3753,6 +3768,7 @@
       report: report,
       assertReport: assertReport,
       reports: reports,
+      assertReports: assertReports,
       timeline: timeline,
       handoff: handoff,
       gate: gate,
