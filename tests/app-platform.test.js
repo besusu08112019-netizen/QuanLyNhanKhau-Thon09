@@ -1171,6 +1171,13 @@ function screenNode(screenId) {
   assert.strictEqual(dashboardStatus.report.nextModuleKey, 'dashboardPopulation');
   assert.strictEqual(dashboardStatus.matrix.next.moduleKey, 'dashboardPopulation');
   assert.strictEqual(dashboardStatus.timeline.eventCount, 5);
+  const dashboardAssertStatus = platform.moduleMigration.assertStatus({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stages: ['navigation', 'runtime']
+  });
+  assert.strictEqual(dashboardAssertStatus.ready, true);
+  assert.strictEqual(dashboardAssertStatus.moduleKey, 'dashboardPopulation');
 
   const outOfOrderComplete = platform.moduleMigration.completeHandoff('dashboardVehicles', {
     document: domDocument,
@@ -1269,6 +1276,11 @@ function screenNode(screenId) {
   assert.strictEqual(crudStatus.report.blockedStages.join(','), 'crud');
   assert.strictEqual(crudStatus.matrix.ready, false);
   assert.strictEqual(crudStatus.blockedRows.length, 1);
+  assert.throws(() => platform.moduleMigration.assertStatus({
+    navigationScope: 'requiredBusinessModules',
+    stages: ['crud'],
+    require: { dom: false }
+  }), /Module migration status blocked: requiredBusinessModules:crud/);
   const crudGate = platform.moduleMigration.gate({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudGate.canAdvance, false);
   assert.strictEqual(crudGate.reason, 'blocked');

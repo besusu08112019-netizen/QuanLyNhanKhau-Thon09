@@ -3713,6 +3713,20 @@
       };
     }
 
+    function assertStatus(options) {
+      var snapshot = status(options || {});
+      if (!snapshot.ready) {
+        var blocked = [];
+        snapshot.matrix.rows.forEach(function (row) {
+          row.stages.forEach(function (stage) {
+            if (!stage.ready) blocked.push(row.scope + ':' + stage.stage);
+          });
+        });
+        throw new Error('Module migration status blocked: ' + (blocked.length ? blocked.join(', ') : (snapshot.reason || 'unknown')));
+      }
+      return snapshot;
+    }
+
     function assertCheckpoint(options) {
       var snapshot = checkpoint(options || {});
       if (!snapshot.canAdvance) {
@@ -3817,6 +3831,7 @@
       next: current,
       checkpoint: checkpoint,
       status: status,
+      assertStatus: assertStatus,
       assertCheckpoint: assertCheckpoint,
       assertGate: assertGate,
       assertCanAdvance: assertGate,
