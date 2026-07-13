@@ -1158,6 +1158,19 @@ function screenNode(screenId) {
   });
   assert.strictEqual(dashboardAssertCheckpoint.moduleKey, 'dashboardPopulation');
   assert.strictEqual(dashboardAssertCheckpoint.nextAction, 'advance');
+  const dashboardStatus = platform.moduleMigration.status({
+    document: domDocument,
+    navigationScope: 'migrationDashboard',
+    stages: ['navigation', 'runtime']
+  });
+  assert.strictEqual(dashboardStatus.ready, true);
+  assert.strictEqual(dashboardStatus.blocked, false);
+  assert.strictEqual(dashboardStatus.nextAction, 'advance');
+  assert.strictEqual(dashboardStatus.moduleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardStatus.checkpoint.moduleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardStatus.report.nextModuleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardStatus.matrix.next.moduleKey, 'dashboardPopulation');
+  assert.strictEqual(dashboardStatus.timeline.eventCount, 5);
 
   const outOfOrderComplete = platform.moduleMigration.completeHandoff('dashboardVehicles', {
     document: domDocument,
@@ -1244,6 +1257,18 @@ function screenNode(screenId) {
     stages: ['crud'],
     require: { dom: false }
   }), /Module migration matrix blocked: requiredBusinessModules:crud/);
+  const crudStatus = platform.moduleMigration.status({
+    navigationScope: 'requiredBusinessModules',
+    stages: ['crud'],
+    require: { dom: false }
+  });
+  assert.strictEqual(crudStatus.ready, false);
+  assert.strictEqual(crudStatus.blocked, true);
+  assert.strictEqual(crudStatus.nextAction, 'resolve-blockers');
+  assert.strictEqual(crudStatus.moduleKey, null);
+  assert.strictEqual(crudStatus.report.blockedStages.join(','), 'crud');
+  assert.strictEqual(crudStatus.matrix.ready, false);
+  assert.strictEqual(crudStatus.blockedRows.length, 1);
   const crudGate = platform.moduleMigration.gate({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudGate.canAdvance, false);
   assert.strictEqual(crudGate.reason, 'blocked');
