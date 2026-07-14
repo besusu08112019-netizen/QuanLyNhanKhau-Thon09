@@ -10,6 +10,7 @@ function createSandbox() {
   const listeners = [];
   const windowListeners = {};
   const historyCalls = [];
+  const confirmCalls = [];
   const sandbox = {
     console,
     CustomEvent: function CustomEvent(type, options) {
@@ -73,6 +74,10 @@ function createSandbox() {
         navigate(screen, options) {
           this.calls.push({ screen, options });
         }
+      },
+      confirm(message) {
+        confirmCalls.push(message);
+        return true;
       }
     }
   };
@@ -82,6 +87,7 @@ function createSandbox() {
   sandbox.listeners = listeners;
   sandbox.windowListeners = windowListeners;
   sandbox.historyCalls = historyCalls;
+  sandbox.confirmCalls = confirmCalls;
   return sandbox;
 }
 
@@ -2538,6 +2544,19 @@ function screenNode(screenId) {
   assert.strictEqual(sandbox.window.Thon09Platform.modals.open('movement').key, 'movement');
   assert.strictEqual(sandbox.window.Thon09Platform.modals.close('movement').key, 'movement');
   assert.deepStrictEqual(calls, ['legacy-show', 'legacy-hide', 'setter-show', 'setter-hide']);
+}
+
+{
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.Thon09Platform;
+  let resolved = null;
+  platform.confirmDialog.ask({ message: 'Xác nhận thao tác quản trị?' }).then((value) => {
+    resolved = value;
+  });
+  setImmediate(() => {
+    assert.strictEqual(resolved, true);
+    assert.deepStrictEqual(sandbox.confirmCalls, ['Xác nhận thao tác quản trị?']);
+  });
 }
 
 console.log('app-platform tests passed');

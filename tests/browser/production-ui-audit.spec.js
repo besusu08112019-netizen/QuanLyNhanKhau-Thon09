@@ -239,6 +239,18 @@ test.describe(`Production UI audit (${browserName()})`, () => {
       await page.evaluate(() => { document.querySelectorAll('.modal.show').forEach((el) => { el.classList.remove('show'); el.style.display = 'none'; }); document.body.classList.remove('modal-open'); });
     });
   }
+
+  test('system admin destructive actions use the shared confirm dialog on mobile', async ({ page }) => {
+    await openApp(page, { name: 'mobile-portrait', width: 390, height: 844 });
+    await page.evaluate(() => window.Thon09NavigationController?.navigate('systemAdmin'));
+    await page.waitForTimeout(200);
+    await page.locator('[data-platform-action="systemAdmin.backup"][data-system-backup="database"]').click();
+    const dialog = page.locator('.platform-confirm-dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('Xác nhận tạo backup');
+    await expect(dialog).toContainText('Tạo backup database ngay bây giờ?');
+    await expect(page.locator('.platform-confirm-footer .btn-danger')).toContainText('Tạo backup');
+  });
 });
 
 
