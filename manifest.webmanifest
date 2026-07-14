@@ -1,21 +1,78 @@
 {
+  "id": "/?source=pwa",
   "name": "Quản lý Nhân khẩu Thôn 09",
   "short_name": "Thôn 09",
-  "description": "Hệ thống quản lý dân cư và điều hành Thôn 09.",
+  "description": "Hệ thống quản lý nhân khẩu, hộ gia đình, GIS và báo cáo Thôn 09.",
   "lang": "vi",
-  "start_url": "/",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#eef3f8",
   "theme_color": "#0b6b3a",
-  "categories": ["productivity", "utilities"],
+  "categories": ["productivity", "utilities", "government"],
+  "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/assets/icons/app-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/?screen=dashboard",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Nhân khẩu",
+      "short_name": "Nhân khẩu",
+      "url": "/?screen=persons",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "GIS",
+      "short_name": "GIS",
+      "url": "/?screen=gis",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/icons/splash-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Quản lý Nhân khẩu Thôn 09"
     }
   ]
 }
