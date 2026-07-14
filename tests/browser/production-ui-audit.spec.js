@@ -283,9 +283,9 @@ test.describe(`Production UI audit (${browserName()})`, () => {
     await page.locator('[data-platform-action="systemAdmin.backup"][data-system-backup="database"]').click();
     const dialog = page.locator('.platform-confirm-dialog');
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText('X�c nh?n t?o backup');
-    await expect(dialog).toContainText('T?o backup database ngay b�y gi??');
-    await expect(page.locator('.platform-confirm-footer .btn-danger')).toContainText('T?o backup');
+    await expect(dialog).toContainText('Xác nhận tạo backup');
+    await expect(dialog).toContainText('Tạo backup database ngay bây giờ?');
+    await expect(page.locator('.platform-confirm-footer .btn-danger')).toContainText('Tạo backup');
     expect(runtimeErrors).toEqual([]);
   });
 });
