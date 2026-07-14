@@ -5,11 +5,13 @@ namespace App\Controllers;
 use App\Core\BaseController;
 use App\Core\SimplePdf;
 use App\Models\Report;
+use App\Models\SystemSetting;
 use Throwable;
 
 final class ReportController extends BaseController
 {
     private Report $reports;
+    private ?SystemSetting $settings = null;
 
     public function __construct($request)
     {
@@ -70,7 +72,7 @@ final class ReportController extends BaseController
         $user = $this->requirePermission('report', 'export');
         $type = $this->reportType();
         $report = $this->reports->build($type, $this->filters());
-        $this->audit($user, 'report', 'export', 'Xuất Excel báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
+        $this->audit($user, 'report', 'export', 'Xuáº¥t Excel bÃ¡o cÃ¡o ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadExcel($report);
     }
 
@@ -79,7 +81,7 @@ final class ReportController extends BaseController
         $user = $this->requirePermission('report', 'print');
         $type = $this->reportType();
         $report = $this->reports->build($type, $this->filters());
-        $this->audit($user, 'report', 'print', 'In báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
+        $this->audit($user, 'report', 'print', 'In bÃ¡o cÃ¡o ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->ok($report);
     }
 
@@ -88,7 +90,7 @@ final class ReportController extends BaseController
         $user = $this->requirePermission('report', 'export');
         $type = $this->reportType();
         $report = $this->reports->build($type, $this->filters());
-        $this->audit($user, 'report', 'export', 'Xuất PDF báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
+        $this->audit($user, 'report', 'export', 'Xuáº¥t PDF bÃ¡o cÃ¡o ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadPdf($report);
     }
 
@@ -131,7 +133,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'delete');
         $this->reports->deleteTemplate((int) ($user['id'] ?? 0), (int) $id);
-        $this->audit($user, 'report', 'delete_template', 'Xóa mẫu báo cáo', $id);
+        $this->audit($user, 'report', 'delete_template', 'XÃ³a máº«u bÃ¡o cÃ¡o', $id);
         $this->ok(['deleted' => true, 'id' => (int) $id]);
     }
 
@@ -249,10 +251,10 @@ final class ReportController extends BaseController
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         echo "\xEF\xBB\xBF";
-        echo '<html><head><meta charset="utf-8"><style>table{border-collapse:collapse}td,th{border:1px solid #999;padding:6px}th{font-weight:bold;background:#eef2f7}</style></head><body>';
-        echo '<h2>' . htmlspecialchars($report['title'], ENT_QUOTES, 'UTF-8') . '</h2>';
+        echo '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;color:#111}.report-print-unit{text-align:center;font-weight:700;margin:0 0 6px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10px}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{border-collapse:collapse}td,th{border:1px solid #999;padding:6px}th{font-weight:bold;background:#eef2f7}</style></head><body>';
+        $this->echoReportHeaderHtml($report);
         $this->echoReportMetaHtml($report);
-        echo '<p>Thời gian xuất: ' . date('d/m/Y H:i:s') . '</p>';
+        echo '<p>Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s') . '</p>';
         echo '<table><thead><tr>';
         foreach ($report['headers'] as $header) echo '<th>' . htmlspecialchars((string) $header, ENT_QUOTES, 'UTF-8') . '</th>';
         echo '</tr></thead><tbody>';
@@ -269,9 +271,8 @@ final class ReportController extends BaseController
     {
         $fileName = $this->slug($report['title']) . '_' . date('Ymd_His') . '.pdf';
         $pdf = new SimplePdf();
-        $pdf->addTitle($report['title']);
+        $pdf->addPrintHeader($this->reportUnitName($report), $report['title']);
         foreach ($this->reportMetaLines($report) as $line) $pdf->addMeta($line);
-        $pdf->addMeta('Quan Ly Nhan Khau Thon 09 xa Hong Phong');
         $pdf->addMeta('Thoi gian xuat: ' . date('d/m/Y H:i:s'));
         $pdf->addMeta('Tong so dong: ' . (int) $report['totalRows']);
         $pdf->addTable($report['headers'], $report['rows']);
@@ -287,9 +288,9 @@ final class ReportController extends BaseController
         $fileName = $this->slug($report['title']) . '_' . date('Ymd_His') . '.doc';
         header('Content-Type: application/msword; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
-        echo "ï»¿";
-        echo '<html><head><meta charset="utf-8"><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#111}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}h1{text-align:center;font-size:20px}</style></head><body>';
-        echo '<h1>' . htmlspecialchars($report['title'], ENT_QUOTES, 'UTF-8') . '</h1>';
+        echo "Ã¯Â»Â¿";
+        echo '<html><head><meta charset="utf-8"><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#111}.report-print-unit{text-align:center;font-weight:700;margin:0 0 6px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10px}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}</style></head><body>';
+        $this->echoReportHeaderHtml($report);
         $this->echoReportMetaHtml($report);
         echo '<p>Th?i gian xu?t: ' . date('d/m/Y H:i:s') . '</p><table><thead><tr>';
         foreach ($report['headers'] as $header) echo '<th>' . htmlspecialchars((string) $header, ENT_QUOTES, 'UTF-8') . '</th>';
@@ -325,18 +326,44 @@ final class ReportController extends BaseController
     {
         $meta = is_array($report['meta'] ?? null) ? $report['meta'] : [];
         $lines = [];
-        foreach (['national_header', 'unit_name', 'period_label', 'prepared_by', 'approved_by', 'report_date'] as $key) {
+        foreach (['period_label', 'prepared_by', 'approved_by', 'report_date'] as $key) {
             $value = trim((string) ($meta[$key] ?? ''));
             if ($value !== '') $lines[] = $value;
         }
         return $lines;
     }
 
+    private function reportUnitName(array $report): string
+    {
+        $meta = is_array($report['meta'] ?? null) ? $report['meta'] : [];
+        $unit = trim((string) ($meta['unit_name'] ?? ''));
+        if ($unit !== '') return $unit;
+
+        try {
+            $settings = ($this->settings ??= new SystemSetting())->all();
+            $configured = trim((string) ($settings['unitName'] ?? ''));
+            if ($configured !== '') return $configured;
+            $hamlet = trim((string) ($settings['hamletName'] ?? ''));
+            $commune = trim((string) ($settings['communeName'] ?? ''));
+            $combined = trim($hamlet . ($hamlet !== '' && $commune !== '' ? ' - ' : '') . $commune);
+            if ($combined !== '') return $combined;
+        } catch (Throwable) {
+        }
+
+        return 'ThÃ´n 09 - XÃ£ Há»“ng Phong';
+    }
+
+    private function echoReportHeaderHtml(array $report): void
+    {
+        echo '<div class="report-print-unit">' . htmlspecialchars($this->reportUnitName($report), ENT_QUOTES, 'UTF-8') . '</div>';
+        echo '<div class="report-print-title">' . htmlspecialchars((string) ($report['title'] ?? 'BÃ¡o cÃ¡o'), ENT_QUOTES, 'UTF-8') . '</div>';
+    }
+
     private function echoReportMetaHtml(array $report): void
     {
         $lines = $this->reportMetaLines($report);
         if (!$lines) return;
-        echo '<div style="margin:8px 0 12px">';
+        echo '<div class="report-print-meta">';
         foreach ($lines as $line) echo '<div>' . htmlspecialchars($line, ENT_QUOTES, 'UTF-8') . '</div>';
         echo '</div>';
     }
