@@ -5504,21 +5504,21 @@
       modalKey: 'householdModal',
       sections: {
         basic: [
-          { name: 'code', label: 'Ma ho', required: true },
-          { name: 'headName', label: 'Chu ho' },
-          { name: 'address', label: 'Dia chi' }
+          { name: 'code', label: 'Mã hộ', required: true },
+          { name: 'headName', label: 'Chủ hộ' },
+          { name: 'address', label: 'Địa chỉ' }
         ],
         linked: [
-          { name: 'areaName', label: 'Dia ban' }
+          { name: 'areaName', label: 'Địa bàn' }
         ],
         extended: [
-          { name: 'memberCount', label: 'So nhan khau', type: 'number', defaultValue: 0 },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'memberCount', label: 'Số nhân khẩu', type: 'number', defaultValue: 0 },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       actions: [
-        { key: 'save', label: 'Luu', variant: 'success' },
-        { key: 'cancel', label: 'Huy', variant: 'light' }
+        { key: 'save', label: 'Lưu', variant: 'success' },
+        { key: 'cancel', label: 'Hủy', variant: 'light' }
       ]
     });
     lists.register({
@@ -5526,15 +5526,15 @@
       moduleKey: 'households',
       screenId: 'households',
       columns: [
-        { key: 'code', label: 'Ma ho', sortable: true },
-        { key: 'headName', label: 'Chu ho', sortable: true },
-        { key: 'address', label: 'Dia chi' },
-        { key: 'memberCount', label: 'Nhan khau', sortable: true },
-        { key: 'status', label: 'Trang thai' }
+        { key: 'code', label: 'Mã hộ', sortable: true },
+        { key: 'headName', label: 'Chủ hộ', sortable: true },
+        { key: 'address', label: 'Địa chỉ' },
+        { key: 'memberCount', label: 'Nhân khẩu', sortable: true },
+        { key: 'status', label: 'Trạng thái' }
       ],
       filters: [
-        { key: 'areaId', label: 'Dia ban', type: 'select', defaultValue: '' },
-        { key: 'status', label: 'Trang thai', type: 'select', defaultValue: '' }
+        { key: 'areaId', label: 'Địa bàn', type: 'select', defaultValue: '' },
+        { key: 'status', label: 'Trạng thái', type: 'select', defaultValue: '' }
       ],
       rowActions: ['detail', 'edit'],
       bulkActions: ['export']
@@ -5553,23 +5553,23 @@
       modalKey: 'personModal',
       sections: {
         basic: [
-          { name: 'citizenCode', label: 'Ma nhan khau', required: true },
-          { name: 'fullName', label: 'Ho ten', required: true },
-          { name: 'gender', label: 'Gioi tinh' },
-          { name: 'birthDate', label: 'Ngay sinh', type: 'date' }
+          { name: 'citizenCode', label: 'Mã nhân khẩu', required: true },
+          { name: 'fullName', label: 'Họ tên', required: true },
+          { name: 'gender', label: 'Giới tính' },
+          { name: 'birthDate', label: 'Ngày sinh', type: 'date' }
         ],
         linked: [
-          { name: 'householdCode', label: 'Ma ho' },
-          { name: 'relationship', label: 'Quan he voi chu ho' }
+          { name: 'householdCode', label: 'Mã hộ' },
+          { name: 'relationship', label: 'Quan hệ với chủ hộ' }
         ],
         extended: [
-          { name: 'phone', label: 'Dien thoai' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'phone', label: 'Điện thoại' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       actions: [
-        { key: 'save', label: 'Luu', variant: 'success' },
-        { key: 'cancel', label: 'Huy', variant: 'light' }
+        { key: 'save', label: 'Lưu', variant: 'success' },
+        { key: 'cancel', label: 'Hủy', variant: 'light' }
       ]
     });
     lists.register({
@@ -5577,16 +5577,16 @@
       moduleKey: 'persons',
       screenId: 'persons',
       columns: [
-        { key: 'citizenCode', label: 'Ma nhan khau', sortable: true },
-        { key: 'fullName', label: 'Ho ten', sortable: true },
-        { key: 'gender', label: 'Gioi tinh' },
-        { key: 'birthDate', label: 'Ngay sinh', sortable: true },
-        { key: 'householdCode', label: 'Ma ho' },
-        { key: 'status', label: 'Trang thai' }
+        { key: 'citizenCode', label: 'Mã nhân khẩu', sortable: true },
+        { key: 'fullName', label: 'Họ tên', sortable: true },
+        { key: 'gender', label: 'Giới tính' },
+        { key: 'birthDate', label: 'Ngày sinh', sortable: true },
+        { key: 'householdCode', label: 'Mã hộ' },
+        { key: 'status', label: 'Trạng thái' }
       ],
       filters: [
-        { key: 'gender', label: 'Gioi tinh', type: 'select', defaultValue: '' },
-        { key: 'status', label: 'Trang thai', type: 'select', defaultValue: '' }
+        { key: 'gender', label: 'Giới tính', type: 'select', defaultValue: '' },
+        { key: 'status', label: 'Trạng thái', type: 'select', defaultValue: '' }
       ],
       rowActions: ['detail', 'edit'],
       bulkActions: ['export']
@@ -5606,12 +5606,12 @@
         listKey: 'temporaryResidenceList',
         modalKey: 'temporaryResidenceModal',
         fields: [
-          { name: 'personName', label: 'Nhan khau', required: true },
-          { name: 'householdCode', label: 'Ma ho' },
-          { name: 'fromDate', label: 'Tu ngay', type: 'date' },
-          { name: 'toDate', label: 'Den ngay', type: 'date' },
-          { name: 'temporaryAddress', label: 'Dia chi tam tru' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'personName', label: 'Nhân khẩu', required: true },
+          { name: 'householdCode', label: 'Mã hộ' },
+          { name: 'fromDate', label: 'Từ ngày', type: 'date' },
+          { name: 'toDate', label: 'Đến ngày', type: 'date' },
+          { name: 'temporaryAddress', label: 'Địa chỉ tạm trú' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       {
@@ -5620,12 +5620,12 @@
         listKey: 'temporaryAbsenceList',
         modalKey: 'temporaryAbsenceModal',
         fields: [
-          { name: 'personName', label: 'Nhan khau', required: true },
-          { name: 'householdCode', label: 'Ma ho' },
-          { name: 'fromDate', label: 'Tu ngay', type: 'date' },
-          { name: 'toDate', label: 'Den ngay', type: 'date' },
-          { name: 'destination', label: 'Noi den' },
-          { name: 'reason', label: 'Ly do' }
+          { name: 'personName', label: 'Nhân khẩu', required: true },
+          { name: 'householdCode', label: 'Mã hộ' },
+          { name: 'fromDate', label: 'Từ ngày', type: 'date' },
+          { name: 'toDate', label: 'Đến ngày', type: 'date' },
+          { name: 'destination', label: 'Nơi đến' },
+          { name: 'reason', label: 'Lý do' }
         ]
       },
       {
@@ -5634,12 +5634,12 @@
         listKey: 'movementsList',
         modalKey: 'movementModal',
         fields: [
-          { name: 'personName', label: 'Nhan khau', required: true },
-          { name: 'movementType', label: 'Loai bien dong' },
-          { name: 'movementDate', label: 'Ngay bien dong', type: 'date' },
-          { name: 'fromAddress', label: 'Noi di' },
-          { name: 'toAddress', label: 'Noi den' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'personName', label: 'Nhân khẩu', required: true },
+          { name: 'movementType', label: 'Loại biến động' },
+          { name: 'movementDate', label: 'Ngày biến động', type: 'date' },
+          { name: 'fromAddress', label: 'Nơi đi' },
+          { name: 'toAddress', label: 'Nơi đến' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       {
@@ -5648,12 +5648,12 @@
         listKey: 'publicAssetsList',
         modalKey: 'publicAssetModal',
         fields: [
-          { name: 'assetCode', label: 'Ma cong trinh', required: true },
-          { name: 'assetName', label: 'Ten cong trinh', required: true },
-          { name: 'category', label: 'Loai cong trinh' },
-          { name: 'location', label: 'Vi tri' },
-          { name: 'managedBy', label: 'Don vi quan ly' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'assetCode', label: 'Mã công trình', required: true },
+          { name: 'assetName', label: 'Tên công trình', required: true },
+          { name: 'category', label: 'Loại công trình' },
+          { name: 'location', label: 'Vị trí' },
+          { name: 'managedBy', label: 'Đơn vị quản lý' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       {
@@ -5662,12 +5662,12 @@
         listKey: 'businessHouseholdsList',
         modalKey: 'businessHouseholdModal',
         fields: [
-          { name: 'householdCode', label: 'Ma ho', required: true },
-          { name: 'ownerName', label: 'Chu ho' },
-          { name: 'businessName', label: 'Ten co so' },
-          { name: 'sector', label: 'Nganh nghe' },
-          { name: 'workerCount', label: 'Lao dong', type: 'number', defaultValue: 0 },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'householdCode', label: 'Mã hộ', required: true },
+          { name: 'ownerName', label: 'Chủ hộ' },
+          { name: 'businessName', label: 'Tên cơ sở' },
+          { name: 'sector', label: 'Ngành nghề' },
+          { name: 'workerCount', label: 'Lao động', type: 'number', defaultValue: 0 },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       {
@@ -5676,12 +5676,12 @@
         listKey: 'livestockList',
         modalKey: 'livestockModal',
         fields: [
-          { name: 'householdCode', label: 'Ma ho', required: true },
-          { name: 'ownerName', label: 'Chu ho' },
-          { name: 'animalType', label: 'Loai vat nuoi' },
-          { name: 'quantity', label: 'So luong', type: 'number', defaultValue: 0 },
-          { name: 'scale', label: 'Quy mo' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'householdCode', label: 'Mã hộ', required: true },
+          { name: 'ownerName', label: 'Chủ hộ' },
+          { name: 'animalType', label: 'Loại vật nuôi' },
+          { name: 'quantity', label: 'Số lượng', type: 'number', defaultValue: 0 },
+          { name: 'scale', label: 'Quy mô' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       {
@@ -5690,12 +5690,12 @@
         listKey: 'housesList',
         modalKey: 'houseModal',
         fields: [
-          { name: 'householdCode', label: 'Ma ho', required: true },
-          { name: 'ownerName', label: 'Chu ho' },
-          { name: 'houseType', label: 'Loai nha' },
-          { name: 'area', label: 'Dien tich', type: 'number', defaultValue: 0 },
-          { name: 'address', label: 'Dia chi' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'householdCode', label: 'Mã hộ', required: true },
+          { name: 'ownerName', label: 'Chủ hộ' },
+          { name: 'houseType', label: 'Loại nhà' },
+          { name: 'area', label: 'Diện tích', type: 'number', defaultValue: 0 },
+          { name: 'address', label: 'Địa chỉ' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       {
@@ -5704,12 +5704,12 @@
         listKey: 'vehiclesList',
         modalKey: 'vehicleModal',
         fields: [
-          { name: 'plateNumber', label: 'Bien so', required: true },
-          { name: 'ownerName', label: 'Chu so huu' },
-          { name: 'vehicleType', label: 'Loai xe' },
-          { name: 'brand', label: 'Nhan hieu' },
-          { name: 'registrationStatus', label: 'Dang ky' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'plateNumber', label: 'Biển số', required: true },
+          { name: 'ownerName', label: 'Chủ sở hữu' },
+          { name: 'vehicleType', label: 'Loại xe' },
+          { name: 'brand', label: 'Nhãn hiệu' },
+          { name: 'registrationStatus', label: 'Đăng ký' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       {
@@ -5718,12 +5718,12 @@
         listKey: 'agricultureList',
         modalKey: 'agricultureModal',
         fields: [
-          { name: 'householdCode', label: 'Ma ho', required: true },
-          { name: 'ownerName', label: 'Chu ho' },
-          { name: 'cropType', label: 'Loai cay trong' },
-          { name: 'area', label: 'Dien tich', type: 'number', defaultValue: 0 },
-          { name: 'season', label: 'Mua vu' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'householdCode', label: 'Mã hộ', required: true },
+          { name: 'ownerName', label: 'Chủ hộ' },
+          { name: 'cropType', label: 'Loại cây trồng' },
+          { name: 'area', label: 'Diện tích', type: 'number', defaultValue: 0 },
+          { name: 'season', label: 'Mùa vụ' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       },
       {
@@ -5732,12 +5732,12 @@
         listKey: 'contributionsList',
         modalKey: 'contributionModal',
         fields: [
-          { name: 'householdCode', label: 'Ma ho', required: true },
-          { name: 'payerName', label: 'Nguoi dong' },
-          { name: 'contributionType', label: 'Khoan dong' },
-          { name: 'amount', label: 'So tien', type: 'number', defaultValue: 0 },
-          { name: 'period', label: 'Ky dong' },
-          { name: 'status', label: 'Trang thai' }
+          { name: 'householdCode', label: 'Mã hộ', required: true },
+          { name: 'payerName', label: 'Người đóng' },
+          { name: 'contributionType', label: 'Khoản đóng' },
+          { name: 'amount', label: 'Số tiền', type: 'number', defaultValue: 0 },
+          { name: 'period', label: 'Kỳ đóng' },
+          { name: 'status', label: 'Trạng thái' }
         ]
       }
     ].forEach(function (record) {
@@ -5751,8 +5751,8 @@
           extended: record.fields.slice(5)
         },
         actions: [
-          { key: 'save', label: 'Luu', variant: 'success' },
-          { key: 'cancel', label: 'Huy', variant: 'light' }
+          { key: 'save', label: 'Lưu', variant: 'success' },
+          { key: 'cancel', label: 'Hủy', variant: 'light' }
         ]
       });
       lists.register({
@@ -5763,7 +5763,7 @@
           return { key: field.name, label: field.label, sortable: field.required === true || field.name === 'status' };
         }),
         filters: [
-          { key: 'status', label: 'Trang thai', type: 'select', defaultValue: '' }
+          { key: 'status', label: 'Trạng thái', type: 'select', defaultValue: '' }
         ],
         rowActions: ['detail', 'edit'],
         bulkActions: ['export']

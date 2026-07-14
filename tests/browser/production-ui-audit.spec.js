@@ -1,7 +1,24 @@
 ﻿const { test, expect, chromium } = require('@playwright/test');
 
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
-const screens = ['dashboard', ...moduleOrderScreens, 'gis', 'reports', 'operationCenter', 'users'];
+const screens = [
+  'dashboard',
+  ...moduleOrderScreens,
+  'gis',
+  'reports',
+  'import',
+  'exportExcel',
+  'printForms',
+  'operationCenter',
+  'systemAdmin',
+  'users',
+  'permissions',
+  'logs',
+  'backups',
+  'restore',
+  'settings',
+  'appearance'
+];
 const viewports = [
   { name: 'desktop', width: 1366, height: 768 },
   { name: 'tablet-portrait', width: 768, height: 1024 },

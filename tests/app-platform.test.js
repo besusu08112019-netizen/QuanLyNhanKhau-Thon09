@@ -185,6 +185,44 @@ function screenNode(screenId) {
 
 {
   const platform = loadPlatform().window.Thon09Platform;
+  const visibleLabels = [];
+  platform.forms.list().forEach((form) => {
+    Object.keys(form.sections || {}).forEach((sectionKey) => {
+      (form.sections[sectionKey] || []).forEach((field) => {
+        if (field && field.label) visibleLabels.push(field.label);
+      });
+    });
+    (form.actions || []).forEach((action) => {
+      if (action && action.label) visibleLabels.push(action.label);
+    });
+  });
+  platform.lists.list().forEach((list) => {
+    (list.columns || []).forEach((column) => {
+      if (column && column.label) visibleLabels.push(column.label);
+    });
+    (list.filters || []).forEach((filter) => {
+      if (filter && filter.label) visibleLabels.push(filter.label);
+    });
+  });
+  const unaccentedUiLabels = [
+    'Ma ho',
+    'Chu ho',
+    'Dia chi',
+    'Nhan khau',
+    'Trang thai',
+    'Luu',
+    'Huy',
+    'Gioi tinh',
+    'Ngay sinh',
+    'Dien thoai',
+    'Bien so',
+    'Loai xe'
+  ];
+  assert.deepStrictEqual(visibleLabels.filter((label) => unaccentedUiLabels.includes(label)), []);
+}
+
+{
+  const platform = loadPlatform().window.Thon09Platform;
   const audit = platform.navigationMapping.audit();
   assert.strictEqual(audit.ok, true);
   assert.strictEqual(audit.issues.length, 0);
