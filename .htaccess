@@ -5,6 +5,10 @@ RewriteRule ^(app|config|database|docs|uploads|vendor|controllers|models)(/|$) -
 RewriteRule ^(README|composer|package|appsscript|\.clasp|\.gitignore) - [F,L]
 RewriteRule \.(sql|log|bak|env|ini|md)$ - [F,L]
 
+AddType application/manifest+json .webmanifest
+AddType application/javascript .js
+AddType image/png .png
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
@@ -35,6 +39,20 @@ RewriteRule ^ index.php [QSA,L]
   <FilesMatch "\.(css|js|png|jpe?g|webp|svg|ico)$">
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
+  <FilesMatch "^(service-worker\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+  <FilesMatch "^(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512|thon09-logo)\.png$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+  SetEnvIf Request_URI "^/assets/icons/(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512|thon09-logo)\.png$" thon09_pwa_icon=1
+  Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=thon09_pwa_icon
+  Header set Pragma "no-cache" env=thon09_pwa_icon
+  Header set Expires "0" env=thon09_pwa_icon
 </IfModule>
 <IfModule mod_headers.c>
   SetEnvIf Request_URI "^/api/" thon09_api_request=1
