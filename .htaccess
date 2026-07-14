@@ -6,6 +6,7 @@ RewriteRule ^(README|composer|package|appsscript|\.clasp|\.gitignore) - [F,L]
 RewriteRule \.(sql|log|bak|env|ini|md)$ - [F,L]
 
 AddType application/manifest+json .webmanifest
+AddType application/manifest+json .json
 AddType application/javascript .js
 AddType image/png .png
 
@@ -39,7 +40,7 @@ RewriteRule ^ index.php [QSA,L]
   <FilesMatch "\.(css|js|png|jpe?g|webp|svg|ico)$">
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
-  <FilesMatch "^(service-worker\.js|manifest\.webmanifest)$">
+  <FilesMatch "^(service-worker\.js|manifest\.webmanifest|manifest\.json)$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"

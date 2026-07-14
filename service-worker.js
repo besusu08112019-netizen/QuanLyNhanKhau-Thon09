@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260714-10';
+const PWA_VERSION = 'thon09-pwa-v20260714-11';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
@@ -7,6 +7,7 @@ const STATIC_ASSETS = [
   '/',
   '/pwa/thon09',
   OFFLINE_URL,
+  '/manifest.json',
   '/manifest.webmanifest',
   '/favicon.ico?v=20260714-6',
   '/assets/icons/thon09-logo.png?v=20260714-6',
@@ -155,7 +156,7 @@ async function cacheAssets(cache, assets) {
     const sameOrigin = String(url).startsWith('/');
     const request = sameOrigin ? new Request(url, { cache: 'reload' }) : new Request(url, { mode: 'no-cors', cache: 'reload' });
     return fetch(request).then(response => {
-      if (response && (response.ok || response.type === 'opaque')) return cache.put(request, response);
+      if (response && (response.ok || response.type === 'opaque') && isCacheableStaticResponse(request, response)) return cache.put(request, response);
       throw new Error(`Cannot cache ${url}`);
     });
   }));
@@ -165,7 +166,7 @@ async function staleWhileRevalidate(request) {
   const cache = await caches.open(RUNTIME_CACHE);
   const cached = await matchStatic(request);
   const refresh = fetch(request).then(response => {
-    if (response && (response.ok || response.type === 'opaque')) cache.put(request, response.clone());
+    if (response && (response.ok || response.type === 'opaque') && isCacheableStaticResponse(request, response)) cache.put(request, response.clone());
     return response;
   }).catch(() => cached);
   return cached || refresh;
@@ -177,7 +178,7 @@ async function cacheFirst(request) {
   const cache = await caches.open(RUNTIME_CACHE);
   try {
     const response = await fetch(request);
-    if (response && (response.ok || response.type === 'opaque')) await cache.put(request, response.clone());
+    if (response && (response.ok || response.type === 'opaque') && isCacheableStaticResponse(request, response)) await cache.put(request, response.clone());
     return response;
   } catch (_) {
     return (await caches.match(OFFLINE_URL)) || Response.error();
@@ -186,12 +187,25 @@ async function cacheFirst(request) {
 
 async function matchStatic(request) {
   const cached = await caches.match(request);
-  if (cached) return cached;
+  if (cached && isCacheableStaticResponse(request, cached)) return cached;
   const url = new URL(request.url);
   if (url.origin === self.location.origin && url.search) {
-    return caches.match(new Request(url.pathname, { method: 'GET' }));
+    const fallback = await caches.match(new Request(url.pathname, { method: 'GET' }));
+    if (fallback && isCacheableStaticResponse(request, fallback)) return fallback;
   }
   return null;
+}
+
+function isCacheableStaticResponse(request, response) {
+  if (!response || response.type === 'opaque') return true;
+  const url = new URL(request.url);
+  const type = (response.headers.get('content-type') || '').toLowerCase();
+  if (url.pathname.endsWith('.css')) return type.includes('text/css');
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.mjs')) return type.includes('javascript') || type.includes('ecmascript');
+  if (url.pathname.endsWith('.webmanifest') || url.pathname.endsWith('/manifest.json')) return type.includes('manifest+json') || type.includes('application/json');
+  if (/\.(?:png|jpg|jpeg|webp|svg|ico)$/i.test(url.pathname)) return type.startsWith('image/');
+  if (/\.(?:woff2?|ttf|otf)$/i.test(url.pathname)) return type.includes('font') || type.includes('octet-stream');
+  return true;
 }
 
 async function broadcast(message) {

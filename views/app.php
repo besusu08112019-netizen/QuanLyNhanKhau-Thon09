@@ -12,7 +12,7 @@
   <meta name="application-name" content="Quản lý Nhân khẩu Thôn 09">
   <meta name="msapplication-TileColor" content="#0b6b3a">
   <title>Quản Lý Nhân Khẩu Thôn 09</title>
-  <link rel="manifest" href="/manifest.webmanifest?v=20260714-9">
+  <link rel="manifest" href="/manifest.json?v=20260714-10">
   <link rel="icon" href="/favicon.ico?v=20260714-6" type="image/x-icon">
   <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png?v=20260714-6">
   <link rel="apple-touch-startup-image" href="/assets/icons/splash-512.png?v=20260714-6">
