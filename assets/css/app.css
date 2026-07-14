@@ -290,6 +290,10 @@ body.theme-dark .advanced-filter-panel { background: #111827; }
 .dashboard-hero-row p { margin: 0; color: var(--dashboard-muted); font-size: 14px; line-height: 1.6; }
 .dashboard-sync-note { padding: 10px 14px; border-radius: 999px; background: #e9f6ef; color: var(--dashboard-green); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .dashboard-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; margin-bottom: 24px; }
+.module-check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; padding: 10px 12px; border: 1px solid var(--border-color, #d9e2ec); border-radius: 8px; background: #fff; max-height: 220px; overflow: auto; }
+.module-check-grid .form-check { margin: 0; min-height: 24px; display: flex; align-items: center; gap: 8px; }
+.module-check-grid .form-check-input { flex: 0 0 auto; margin: 0; }
+.module-check-grid .form-check-label { line-height: 1.35; }
 .dashboard-kpi { min-height: 150px; padding: 18px; border: 1px solid var(--dashboard-line); border-radius: 18px; background: #fff; box-shadow: 0 14px 34px rgba(20,35,54,.08); display: grid; gap: 12px; align-content: start; transition: transform .16s ease, box-shadow .16s ease; }
 .dashboard-kpi:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(20,35,54,.11); }
 .dashboard-kpi-head { display: flex; align-items: center; gap: 12px; }
@@ -344,6 +348,7 @@ body.theme-dark .dashboard-hero-row p, body.theme-dark .dashboard-side-stat smal
 @media (max-width: 1360px) { .dashboard-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dashboard-chart-grid { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .dashboard-overview-screen { padding: 20px 16px 28px; } .dashboard-hero-row { align-items: flex-start; flex-direction: column; } .dashboard-sync-note { border-radius: 12px; white-space: normal; } .dashboard-age-layout, .dashboard-party-layout, .dashboard-gender-layout { grid-template-columns: 1fr; } .dashboard-panel { min-height: auto; } .dashboard-line-months { grid-template-columns: repeat(3, 1fr); row-gap: 4px; } }
 @media (max-width: 620px) { .dashboard-kpi-grid { grid-template-columns: 1fr; } .dashboard-kpi-value { margin-left: 0; } .dashboard-panel-head { align-items: flex-start; flex-direction: column; } .dashboard-donut { width: 200px; height: 200px; } .dashboard-donut::after { inset: 54px; } .dashboard-donut-center { inset: 62px; } .topbar { padding: 12px 16px; } }
+@media (max-width: 620px) { .module-check-grid { grid-template-columns: 1fr; max-height: 260px; } }
 
 
 /* Person management streamlined interface */
