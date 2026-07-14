@@ -32,7 +32,7 @@ final class UserController extends BaseController
     public function update(string $id): void
     {
         $actor = $this->requirePermission('user', 'update');
-        $user = $this->users()->updateUser((int) $id, $this->input(), (int) $actor['id']);
+        $user = $this->users()->updateUser((int) $id, (array) $this->input(), (int) $actor['id']);
         $this->audit($actor, 'user', 'update', 'Cập nhật người dùng', $id);
         $this->ok($this->users()->publicUser($user));
     }
@@ -42,6 +42,15 @@ final class UserController extends BaseController
         $actor = $this->requirePermission('user', 'delete');
         $this->users()->deleteUser((int) $id, (int) $actor['id']);
         $this->audit($actor, 'user', 'delete', 'Xóa người dùng', $id);
+        $this->ok(['id' => (int) $id]);
+    }
+
+    public function resetPassword(string $id): void
+    {
+        $actor = $this->requirePermission('user', 'update');
+        $password = (string) $this->input('password', '');
+        $this->users()->changePassword((int) $id, $password, (int) $actor['id']);
+        $this->audit($actor, 'user', 'reset_password', 'Đổi mật khẩu người dùng', $id);
         $this->ok(['id' => (int) $id]);
     }
 

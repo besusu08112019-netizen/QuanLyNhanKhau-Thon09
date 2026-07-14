@@ -356,6 +356,7 @@ $router->post('/api/users', [UserController::class, 'store']);
 $router->get('/api/users/{id}', [UserController::class, 'show']);
 $router->put('/api/users/{id}', [UserController::class, 'update']);
 $router->delete('/api/users/{id}', [UserController::class, 'destroy']);
+$router->post('/api/users/{id}/reset-password', [UserController::class, 'resetPassword']);
 $router->post('/api/users/{id}/lock', [UserController::class, 'lock']);
 $router->post('/api/users/{id}/unlock', [UserController::class, 'unlock']);
 $router->get('/api/roles', [UserController::class, 'roles']);

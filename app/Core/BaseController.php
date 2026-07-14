@@ -4,6 +4,7 @@ namespace App\Core;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use Throwable;
 
 abstract class BaseController
 {
@@ -14,12 +15,32 @@ abstract class BaseController
     {
     }
 
-    protected function input(?string $key = null, mixed $default = null): mixed { return $this->request->input($key, $default); }
-    protected function query(?string $key = null, mixed $default = null): mixed { return $this->request->query($key, $default); }
-    protected function ok(mixed $data = null): void { Response::ok($data); }
-    protected function fail(string $message, int $status = 400): void { Response::error($message, $status); }
-    protected function debugEnabled(): bool { return filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN); }
-    protected function safeExceptionMessage(string $message, \Throwable $exception): string
+    protected function input(?string $key = null, mixed $default = null): mixed
+    {
+        return $this->request->input($key, $default);
+    }
+
+    protected function query(?string $key = null, mixed $default = null): mixed
+    {
+        return $this->request->query($key, $default);
+    }
+
+    protected function ok(mixed $data = null): void
+    {
+        Response::ok($data);
+    }
+
+    protected function fail(string $message, int $status = 400): void
+    {
+        Response::error($message, $status);
+    }
+
+    protected function debugEnabled(): bool
+    {
+        return filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    protected function safeExceptionMessage(string $message, Throwable $exception): string
     {
         return $this->debugEnabled() ? $message . ': ' . $exception->getMessage() : $message;
     }
@@ -33,10 +54,12 @@ abstract class BaseController
                 $missing[$field] = $label;
             }
         }
+
         if ($missing) {
             Response::json(['ok' => false, 'error' => ['message' => 'Dữ liệu không hợp lệ', 'details' => ['missing' => $missing]]], 422);
         }
     }
+
     protected function users(): User
     {
         return $this->usersModel ??= new User();
@@ -85,17 +108,18 @@ abstract class BaseController
     protected function auditPermissionDenied(?array $user, string $module, string $action): void
     {
         try {
-            $this->audit($user, $module, 'permission_denied', json_decode('"T\u1eeb ch\u1ed1i thao t\u00e1c kh\u00f4ng \u0111\u1ee7 quy\u1ec1n"', true), null, [
+            $this->audit($user, $module, 'permission_denied', 'Từ chối thao tác không đủ quyền', null, [
                 'role' => $user['role'] ?? null,
                 'denied_action' => $action,
                 'endpoint' => $this->request->method() . ' ' . $this->request->path(),
                 'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
                 'time' => date('c'),
             ], 'WARN');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             error_log('[RBAC_DENIED_AUDIT_ERROR] ' . $e->getMessage());
         }
     }
+
     protected function audit(?array $user, string $module, string $action, string $message, mixed $entityId = null, array $metadata = [], string $level = 'INFO'): void
     {
         $this->logs()->write($user['id'] ?? null, $user['email'] ?? null, $module, $action, $message, $entityId === null ? null : (string) $entityId, $metadata, $level);
