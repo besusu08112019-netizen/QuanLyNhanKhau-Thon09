@@ -9,7 +9,7 @@ final class HouseholdContribution extends BaseModel
     public const CATEGORIES = ['Quỹ vệ sinh','Quỹ an ninh','Quỹ khuyến học','Đóng góp làm đường','Điện chiếu sáng','Nghĩa trang','Nhà văn hóa','Đóng góp khác'];
     public const REQUIRED_TYPES = ['REQUIRED' => 'Bắt buộc', 'VOLUNTARY' => 'Tự nguyện'];
     public const CAMPAIGN_STATUS = ['ACTIVE' => 'Đang thu', 'CLOSED' => 'Đã kết thúc', 'INACTIVE' => 'Tạm dừng', 'DELETED' => 'Đã xóa'];
-    public const PAYMENT_STATUS = ['UNPAID' => 'Chưa nộp', 'PAID' => 'Đã nộp', 'PARTIAL' => 'Nộp một phần', 'EXEMPT' => 'Miễn', 'REDUCED' => 'Giảm'];
+    public const PAYMENT_STATUS = ['UNPAID' => 'Chưa nộp', 'PAID' => 'Đã nộp', 'PARTIAL' => 'Nộp một phần', 'EXEMPT' => 'Được miễn', 'REDUCED' => 'Giảm'];
     public const PAYMENT_METHODS = ['CASH' => 'Tiền mặt', 'TRANSFER' => 'Chuyển khoản', 'OTHER' => 'Khác'];
     public const UNIT_TYPES = ['HOUSEHOLD' => 'Theo ho', 'PERSON' => 'Theo nhan khau', 'AREA' => 'Theo dien tich', 'VEHICLE' => 'Theo phuong tien', 'TIME' => 'Theo lan', 'OTHER' => 'Khac'];
     public const TARGET_OPTIONS = ['ALL_HOUSEHOLDS' => 'Thu toan bo ho', 'ALL_PERSONS' => 'Thu toan bo nhan khau', 'LABOR_AGE' => 'Nguoi trong do tuoi lao dong', 'NON_LABOR_AGE' => 'Nguoi ngoai do tuoi lao dong', 'AGE_RANGE' => 'Nguoi tu ... den ... tuoi', 'AGE_FROM' => 'Nguoi tu ... tuoi tro len', 'CHILDREN' => 'Tre em', 'ELDERLY' => 'Nguoi cao tuoi', 'OTHER' => 'Khac'];
@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS household_contributions (
   expected_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
   paid_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
   discount_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  exempt_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
   debt_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
   amount DECIMAL(14,2) NOT NULL DEFAULT 0,
   paid_at DATE NULL,
@@ -120,13 +121,15 @@ SQL);
         $rows = $this->fetchAll(
             "SELECT c.*,
                 COUNT(hc.id) AS tracking_count,
-                COALESCE(SUM(CASE WHEN hc.payment_status='PAID' AND hc.status='ACTIVE' THEN 1 ELSE 0 END),0) AS paid_households,
+                COALESCE(SUM(CASE WHEN hc.payment_status IN ('PAID','REDUCED') AND hc.status='ACTIVE' THEN 1 ELSE 0 END),0) AS paid_households,
                 COALESCE(SUM(CASE WHEN hc.payment_status='PARTIAL' AND hc.status='ACTIVE' THEN 1 ELSE 0 END),0) AS partial_households,
-                COALESCE(SUM(CASE WHEN hc.payment_status IN ('EXEMPT','REDUCED') AND hc.status='ACTIVE' THEN 1 ELSE 0 END),0) AS exempt_households,
+                COALESCE(SUM(CASE WHEN hc.payment_status='EXEMPT' AND hc.status='ACTIVE' THEN 1 ELSE 0 END),0) AS exempt_households,
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.eligible_count ELSE 0 END),0) AS eligible_count,
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.exempt_count ELSE 0 END),0) AS exempt_count,
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.chargeable_count ELSE 0 END),0) AS chargeable_count,
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.expected_amount ELSE 0 END),0) AS expected_total,
+                COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.exempt_amount + hc.discount_amount ELSE 0 END),0) AS exempt_total,
+                COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.expected_amount + hc.exempt_amount + hc.discount_amount ELSE 0 END),0) AS gross_total,
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.paid_amount ELSE 0 END),0) AS collected_amount,
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.debt_amount ELSE 0 END),0) AS debt_amount
              FROM contribution_campaigns c
@@ -182,7 +185,7 @@ SQL);
             "SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
                 hc.id, hc.campaign_id, COALESCE(hc.payment_status,'UNPAID') AS payment_status,
                 COALESCE(hc.expected_amount, 0) AS expected_amount,
-                COALESCE(hc.paid_amount,0) AS paid_amount, COALESCE(hc.discount_amount,0) AS discount_amount,
+                COALESCE(hc.paid_amount,0) AS paid_amount, COALESCE(hc.discount_amount,0) AS discount_amount, COALESCE(hc.exempt_amount,0) AS exempt_amount,
                 GREATEST(COALESCE(hc.debt_amount, 0),0) AS debt_amount,
                 COALESCE(hc.amount,0) AS amount, hc.paid_at, hc.collector_name, COALESCE(hc.payment_method,'CASH') AS payment_method,
                 hc.receipt_number, hc.note, COALESCE(hc.eligible_count,0) AS eligible_count, COALESCE(hc.exempt_count,0) AS exempt_count, COALESCE(hc.chargeable_count,0) AS chargeable_count, hc.calculation_note, hc.created_at, hc.updated_at
@@ -233,8 +236,8 @@ SQL);
             'user' => $userId,
         ];
         $this->execute(
-            'INSERT INTO household_contributions (campaign_id, household_id, payment_status, expected_amount, paid_amount, discount_amount, debt_amount, amount, paid_at, collector_name, payment_method, receipt_number, note, created_by, updated_by)
-             VALUES (:campaign_id,:household_id,:payment_status,:expected_amount,:paid_amount,:discount_amount,:debt_amount,:amount,:paid_at,:collector_name,:payment_method,:receipt_number,:note,:user,:user)
+            'INSERT INTO household_contributions (campaign_id, household_id, payment_status, expected_amount, paid_amount, discount_amount, exempt_amount, debt_amount, amount, paid_at, collector_name, payment_method, receipt_number, note, created_by, updated_by)
+             VALUES (:campaign_id,:household_id,:payment_status,:expected_amount,:paid_amount,:discount_amount,0,:debt_amount,:amount,:paid_at,:collector_name,:payment_method,:receipt_number,:note,:user,:user)
              ON DUPLICATE KEY UPDATE payment_status=VALUES(payment_status), expected_amount=VALUES(expected_amount), paid_amount=VALUES(paid_amount), discount_amount=VALUES(discount_amount), debt_amount=VALUES(debt_amount), amount=VALUES(amount), paid_at=VALUES(paid_at), collector_name=VALUES(collector_name), payment_method=VALUES(payment_method), receipt_number=VALUES(receipt_number), note=VALUES(note), status="ACTIVE", updated_by=VALUES(updated_by), deleted_at=NULL, deleted_by=NULL',
             $params
         );
@@ -253,36 +256,29 @@ SQL);
     {
         $this->ensureSchema();
         $this->syncActiveCampaigns();
-        $households = (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM households WHERE status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")') ?: [])['total'] ?? 0);
-        $citizens = (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.status="ACTIVE" AND COALESCE(c.life_status,"ALIVE") <> "DECEASED" AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")') ?: [])['total'] ?? 0);
-        $pay = $this->fetchOne(
-            "SELECT COUNT(*) AS records,
-                COALESCE(SUM(CASE WHEN hc.payment_status='PAID' THEN 1 ELSE 0 END),0) AS paid,
-                COALESCE(SUM(CASE WHEN hc.payment_status='UNPAID' THEN 1 ELSE 0 END),0) AS unpaid,
-                COALESCE(SUM(CASE WHEN hc.payment_status='PARTIAL' THEN 1 ELSE 0 END),0) AS partial,
-                COALESCE(SUM(hc.eligible_count),0) AS eligible_count,
-                COALESCE(SUM(hc.exempt_count),0) AS exempt_count,
-                COALESCE(SUM(hc.chargeable_count),0) AS chargeable_count,
-                COALESCE(SUM(hc.expected_amount),0) AS expected_total,
-                COALESCE(SUM(hc.paid_amount),0) AS collected,
-                COALESCE(SUM(hc.debt_amount),0) AS debt
-             FROM household_contributions hc INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id
-             WHERE hc.status='ACTIVE' AND c.status <> 'DELETED'",
-            []
-        ) ?: [];
-        $expected = (float) ($pay['expected_total'] ?? 0);
-        $collected = (float) ($pay['collected'] ?? 0);
-        return ['households' => $households, 'citizens' => $citizens, 'eligible_count' => (int) ($pay['eligible_count'] ?? 0), 'exempt_count' => (int) ($pay['exempt_count'] ?? 0), 'chargeable_count' => (int) ($pay['chargeable_count'] ?? 0), 'paid' => (int) ($pay['paid'] ?? 0), 'unpaid' => (int) ($pay['unpaid'] ?? 0), 'partial' => (int) ($pay['partial'] ?? 0), 'expected_total' => $expected, 'collected' => $collected, 'debt' => (float) ($pay['debt'] ?? 0), 'completion_rate' => $expected > 0 ? round($collected * 100 / $expected, 2) : 0];
+        return $this->contributionSummary($filters);
     }
 
     public function charts(array $filters = []): array
     {
         $this->ensureSchema();
+        $summary = $this->contributionSummary($filters);
         return [
-            'by_status' => $this->fetchAll("SELECT hc.payment_status AS label, COUNT(*) AS value FROM household_contributions hc INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id WHERE hc.status='ACTIVE' AND c.status <> 'DELETED' GROUP BY hc.payment_status ORDER BY value DESC"),
+            'by_status' => [
+                ['label' => 'Đã nộp', 'value' => $summary['paid'], 'status' => 'PAID'],
+                ['label' => 'Nộp một phần', 'value' => $summary['partial'], 'status' => 'PARTIAL'],
+                ['label' => 'Chưa nộp', 'value' => $summary['unpaid'], 'status' => 'UNPAID'],
+                ['label' => 'Được miễn', 'value' => $summary['exempt'], 'status' => 'EXEMPT'],
+            ],
+            'financial' => [
+                ['label' => 'Phải thu', 'value' => $summary['gross_total']],
+                ['label' => 'Được miễn', 'value' => $summary['exempt_total']],
+                ['label' => 'Đã thu', 'value' => $summary['collected']],
+                ['label' => 'Còn phải thu', 'value' => $summary['debt']],
+            ],
             'by_year' => $this->fetchAll("SELECT c.year AS label, COALESCE(SUM(hc.paid_amount),0) AS value FROM contribution_campaigns c LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' WHERE c.status <> 'DELETED' GROUP BY c.year ORDER BY c.year DESC LIMIT 10"),
             'by_campaign' => $this->fetchAll("SELECT c.contribution_name AS label, COALESCE(SUM(hc.paid_amount),0) AS value FROM contribution_campaigns c LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' WHERE c.status <> 'DELETED' GROUP BY c.id, c.contribution_name ORDER BY value DESC LIMIT 10"),
-            'by_period' => $this->fetchAll("SELECT COALESCE(NULLIF(c.period_name,''),'Chưa phân đợt') AS label, COALESCE(SUM(hc.paid_amount),0) AS value FROM contribution_campaigns c LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' WHERE c.status <> 'DELETED' GROUP BY label ORDER BY value DESC LIMIT 10"),
+            'by_period' => $this->fetchAll("SELECT COALESCE(NULLIF(c.period_name,''),'Ch?a ph?n ??t') AS label, COALESCE(SUM(hc.paid_amount),0) AS value FROM contribution_campaigns c LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' WHERE c.status <> 'DELETED' GROUP BY label ORDER BY value DESC LIMIT 10"),
         ];
     }
 
@@ -299,13 +295,39 @@ SQL);
     {
         if ($mode === 'paid') $filters['payment_status'] = 'PAID';
         if ($mode === 'unpaid' || $mode === 'debt') $filters['payment_status'] = 'UNPAID';
-        $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
-        if ($campaignId > 0) {
-            $rows = $this->tracking($campaignId, $filters + ['pageSize' => 100])['items'];
-            return $this->table('Báo cáo đóng góp hộ', ['Mã hộ','Chủ hộ','Khoản thu','Phải nộp','Đã nộp','Còn nợ','Trạng thái','Ngày thu','Người thu','Hình thức','Biên lai','Ghi chú'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['contribution_name'], $r['expected_amount'], $r['paid_amount'], $r['debt_amount'], $r['payment_status_label'], $r['paid_at'], $r['collector_name'], $r['payment_method_label'], $r['receipt_number'], $r['note']], $rows), $filters);
+        if ($mode === 'exempt' || $mode === 'exemptions') $filters['payment_status'] = 'EXEMPT';
+        $summary = $this->contributionSummary($filters);
+        if ($mode === 'summary') {
+            return $this->table('Báo cáo tổng hợp đóng góp hộ', ['Chỉ tiêu','Giá trị','Đơn vị'], [
+                ['Tổng số hộ', $summary['total_households'], 'hộ'],
+                ['Tổng số hộ phải đóng', $summary['due_households'], 'hộ'],
+                ['Tổng số hộ được miễn', $summary['exempt'], 'hộ'],
+                ['Đã nộp', $summary['paid'], 'hộ'],
+                ['Nộp một phần', $summary['partial'], 'hộ'],
+                ['Chưa nộp', $summary['unpaid'], 'hộ'],
+            ], $filters);
         }
-        $rows = $this->campaigns($filters + ['pageSize' => 100])['items'];
-        return $this->table('Danh sách đợt thu', ['Mã khoản','Khoản thu','Loại','Tính chất','Năm','Đợt','Mức thu','Đơn vị','Bắt đầu','Hạn thu','Phải thu','Đã thu','Còn nợ','Trạng thái'], array_map(fn($r) => [$r['campaign_code'], $r['contribution_name'], $r['contribution_type'], $r['required_type_label'], $r['year'], $r['period_name'], $r['amount'], $r['unit'], $r['start_date'], $r['due_date'], $r['expected_total'], $r['collected_amount'], $r['debt_amount'], $r['status_label']], $rows), $filters);
+        if ($mode === 'finance' || $mode === 'financial') {
+            return $this->table('Báo cáo tài chính đóng góp hộ', ['Chỉ tiêu','Số tiền'], [
+                ['Tổng số tiền phải thu', $summary['gross_total']],
+                ['Tổng số tiền được miễn', $summary['exempt_total']],
+                ['Tổng phải thu thực tế', $summary['expected_total']],
+                ['Tổng số tiền đã thu', $summary['collected']],
+                ['Tổng số tiền còn phải thu', $summary['debt']],
+                ['Tỷ lệ hoàn thành (%)', $summary['completion_rate']],
+            ], $filters);
+        }
+        $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
+        if ($mode === 'exempt' || $mode === 'exemptions') {
+            $rows = $campaignId > 0 ? $this->tracking($campaignId, $filters + ['payment_status' => 'EXEMPT', 'pageSize' => 500])['items'] : $this->exemptionRows($filters);
+            return $this->table('Báo cáo miễn giảm đóng góp hộ', ['Chủ hộ','Mã hộ','Lý do miễn','Đối tượng miễn','Số khẩu được miễn','Mức miễn','Người phê duyệt','Ngày phê duyệt','Ghi chú'], array_map(fn($r) => [$r['head_citizen_name'], $r['household_code'], $r['exemption_reason'] ?? $r['note'] ?? '', $r['exemption_subject'] ?? '', $r['exempt_count'] ?? 0, $r['total_exempt_amount'] ?? $r['discount_amount'] ?? 0, $r['collector_name'] ?? '', $r['paid_at'] ?? '', $r['note'] ?? ''], $rows), $filters);
+        }
+        if ($campaignId > 0) {
+            $rows = $this->tracking($campaignId, $filters + ['pageSize' => 500])['items'];
+            return $this->table('Báo cáo đóng góp hộ', ['Mã hộ','Chủ hộ','Khoản thu','Phải nộp','Được miễn','Đã nộp','Còn nợ','Trạng thái','Ngày thu','Người thu','Hình thức','Biên lai','Ghi chú'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['contribution_name'], $r['expected_amount'], $r['total_exempt_amount'], $r['paid_amount'], $r['debt_amount'], $r['payment_status_label'], $r['paid_at'], $r['collector_name'], $r['payment_method_label'], $r['receipt_number'], $r['note']], $rows), $filters);
+        }
+        $rows = $this->campaigns($filters + ['pageSize' => 500])['items'];
+        return $this->table('Danh sách đợt thu', ['Mã khoản','Khoản thu','Loại','Tính chất','Năm','Đợt','Mức thu','Đơn vị','Bắt đầu','Hạn thu','Tổng mức thu','Được miễn','Phải thu thực tế','Đã thu','Còn nợ','Hộ được miễn','Trạng thái'], array_map(fn($r) => [$r['campaign_code'], $r['contribution_name'], $r['contribution_type'], $r['required_type_label'], $r['year'], $r['period_name'], $r['amount'], $r['unit'], $r['start_date'], $r['due_date'], $r['gross_total'], $r['exempt_total'], $r['expected_total'], $r['collected_amount'], $r['debt_amount'], $r['exempt_households'], $r['status_label']], $rows), $filters);
     }
 
     private function campaignWhere(array $filters, bool $withOrder = true): array
@@ -365,19 +387,80 @@ SQL);
         $unitType = (string) ($row['unit_type'] ?? 'HOUSEHOLD');
         $targetConfig = $this->decodeConfig($row['target_config_json'] ?? null, ['mode' => 'ALL_HOUSEHOLDS', 'age_from' => null, 'age_to' => null, 'note' => '']);
         $exemptionConfig = $this->decodeConfig($row['exemption_config_json'] ?? null, ['conditions' => [], 'note' => '']);
-        return ['id' => (int) $row['id'], 'campaign_code' => (string) ($row['campaign_code'] ?? ''), 'contribution_name' => (string) $row['contribution_name'], 'contribution_type' => (string) ($row['contribution_type'] ?? ''), 'required_type' => $required, 'required_type_label' => self::REQUIRED_TYPES[$required] ?? $required, 'year' => (int) $row['year'], 'period_name' => (string) ($row['period_name'] ?? ''), 'amount' => (float) ($row['amount'] ?? 0), 'unit' => (string) ($row['unit'] ?? 'VND/ho'), 'unit_type' => $unitType, 'unit_type_label' => self::UNIT_TYPES[$unitType] ?? $unitType, 'target_config' => $targetConfig, 'exemption_config' => $exemptionConfig, 'target_config_json' => json_encode($targetConfig, JSON_UNESCAPED_UNICODE), 'exemption_config_json' => json_encode($exemptionConfig, JSON_UNESCAPED_UNICODE), 'start_date' => $row['start_date'] ?? null, 'due_date' => $row['due_date'] ?? null, 'note' => (string) ($row['note'] ?? ''), 'status' => $status, 'status_label' => self::CAMPAIGN_STATUS[$status] ?? $status, 'tracking_count' => (int) ($row['tracking_count'] ?? 0), 'paid_households' => (int) ($row['paid_households'] ?? 0), 'partial_households' => (int) ($row['partial_households'] ?? 0), 'exempt_households' => (int) ($row['exempt_households'] ?? 0), 'eligible_count' => (int) ($row['eligible_count'] ?? 0), 'exempt_count' => (int) ($row['exempt_count'] ?? 0), 'chargeable_count' => (int) ($row['chargeable_count'] ?? 0), 'expected_total' => (float) ($row['expected_total'] ?? 0), 'collected_amount' => (float) ($row['collected_amount'] ?? 0), 'debt_amount' => (float) ($row['debt_amount'] ?? 0), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null];
+        return ['id' => (int) $row['id'], 'campaign_code' => (string) ($row['campaign_code'] ?? ''), 'contribution_name' => (string) $row['contribution_name'], 'contribution_type' => (string) ($row['contribution_type'] ?? ''), 'required_type' => $required, 'required_type_label' => self::REQUIRED_TYPES[$required] ?? $required, 'year' => (int) $row['year'], 'period_name' => (string) ($row['period_name'] ?? ''), 'amount' => (float) ($row['amount'] ?? 0), 'unit' => (string) ($row['unit'] ?? 'VND/ho'), 'unit_type' => $unitType, 'unit_type_label' => self::UNIT_TYPES[$unitType] ?? $unitType, 'target_config' => $targetConfig, 'exemption_config' => $exemptionConfig, 'target_config_json' => json_encode($targetConfig, JSON_UNESCAPED_UNICODE), 'exemption_config_json' => json_encode($exemptionConfig, JSON_UNESCAPED_UNICODE), 'start_date' => $row['start_date'] ?? null, 'due_date' => $row['due_date'] ?? null, 'note' => (string) ($row['note'] ?? ''), 'status' => $status, 'status_label' => self::CAMPAIGN_STATUS[$status] ?? $status, 'tracking_count' => (int) ($row['tracking_count'] ?? 0), 'paid_households' => (int) ($row['paid_households'] ?? 0), 'partial_households' => (int) ($row['partial_households'] ?? 0), 'exempt_households' => (int) ($row['exempt_households'] ?? 0), 'eligible_count' => (int) ($row['eligible_count'] ?? 0), 'exempt_count' => (int) ($row['exempt_count'] ?? 0), 'chargeable_count' => (int) ($row['chargeable_count'] ?? 0), 'gross_total' => (float) ($row['gross_total'] ?? 0), 'exempt_total' => (float) ($row['exempt_total'] ?? 0), 'expected_total' => (float) ($row['expected_total'] ?? 0), 'collected_amount' => (float) ($row['collected_amount'] ?? 0), 'debt_amount' => (float) ($row['debt_amount'] ?? 0), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null];
     }
 
     private function normalizeTracking(array $row, array $campaign): array
     {
         $payment = (string) ($row['payment_status'] ?? 'UNPAID');
         $method = (string) ($row['payment_method'] ?? 'CASH');
-        return ['id' => isset($row['id']) ? (int) $row['id'] : null, 'campaign_id' => (int) ($row['campaign_id'] ?? $campaign['id']), 'campaign_code' => (string) ($campaign['campaign_code'] ?? ''), 'contribution_name' => (string) ($campaign['contribution_name'] ?? ''), 'household_id' => (int) $row['household_id'], 'household_code' => (string) $row['household_code'], 'head_citizen_name' => (string) $row['head_citizen_name'], 'address' => (string) ($row['address'] ?? ''), 'phone' => (string) ($row['phone'] ?? ''), 'area_code' => (string) ($row['area_code'] ?? ''), 'eligible_count' => (int) ($row['eligible_count'] ?? 0), 'exempt_count' => (int) ($row['exempt_count'] ?? 0), 'chargeable_count' => (int) ($row['chargeable_count'] ?? 0), 'calculation_note' => (string) ($row['calculation_note'] ?? ''), 'expected_amount' => (float) ($row['expected_amount'] ?? 0), 'paid_amount' => (float) ($row['paid_amount'] ?? 0), 'discount_amount' => (float) ($row['discount_amount'] ?? 0), 'debt_amount' => (float) ($row['debt_amount'] ?? 0), 'amount' => (float) ($row['amount'] ?? 0), 'payment_status' => $payment, 'payment_status_label' => self::PAYMENT_STATUS[$payment] ?? $payment, 'paid_at' => $row['paid_at'] ?? null, 'collector_name' => (string) ($row['collector_name'] ?? ''), 'payment_method' => $method, 'payment_method_label' => self::PAYMENT_METHODS[$method] ?? $method, 'receipt_number' => (string) ($row['receipt_number'] ?? ''), 'note' => (string) ($row['note'] ?? ''), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null];
+        return ['id' => isset($row['id']) ? (int) $row['id'] : null, 'campaign_id' => (int) ($row['campaign_id'] ?? $campaign['id']), 'campaign_code' => (string) ($campaign['campaign_code'] ?? ''), 'contribution_name' => (string) ($campaign['contribution_name'] ?? ''), 'household_id' => (int) $row['household_id'], 'household_code' => (string) $row['household_code'], 'head_citizen_name' => (string) $row['head_citizen_name'], 'address' => (string) ($row['address'] ?? ''), 'phone' => (string) ($row['phone'] ?? ''), 'area_code' => (string) ($row['area_code'] ?? ''), 'eligible_count' => (int) ($row['eligible_count'] ?? 0), 'exempt_count' => (int) ($row['exempt_count'] ?? 0), 'chargeable_count' => (int) ($row['chargeable_count'] ?? 0), 'calculation_note' => (string) ($row['calculation_note'] ?? ''), 'expected_amount' => (float) ($row['expected_amount'] ?? 0), 'paid_amount' => (float) ($row['paid_amount'] ?? 0), 'discount_amount' => (float) ($row['discount_amount'] ?? 0), 'exempt_amount' => (float) ($row['exempt_amount'] ?? 0), 'total_exempt_amount' => (float) (($row['exempt_amount'] ?? 0) + ($row['discount_amount'] ?? 0)), 'debt_amount' => (float) ($row['debt_amount'] ?? 0), 'amount' => (float) ($row['amount'] ?? 0), 'payment_status' => $payment, 'payment_status_label' => self::PAYMENT_STATUS[$payment] ?? $payment, 'paid_at' => $row['paid_at'] ?? null, 'collector_name' => (string) ($row['collector_name'] ?? ''), 'payment_method' => $method, 'payment_method_label' => self::PAYMENT_METHODS[$method] ?? $method, 'receipt_number' => (string) ($row['receipt_number'] ?? ''), 'note' => (string) ($row['note'] ?? ''), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null];
     }
 
     private function writeHistory(?int $contributionId, int $campaignId, int $householdId, array $params, int $userId): void
     {
         $this->execute('INSERT INTO contribution_payment_history (contribution_id, campaign_id, household_id, paid_at, actor_id, collector_name, amount, payment_status, payment_method, receipt_number, content) VALUES (:contribution_id,:campaign_id,:household_id,:paid_at,:actor_id,:collector_name,:amount,:payment_status,:payment_method,:receipt_number,:content)', ['contribution_id' => $contributionId, 'campaign_id' => $campaignId, 'household_id' => $householdId, 'paid_at' => $params['paid_at'], 'actor_id' => $userId, 'collector_name' => $params['collector_name'], 'amount' => $params['paid_amount'], 'payment_status' => $params['payment_status'], 'payment_method' => $params['payment_method'], 'receipt_number' => $params['receipt_number'], 'content' => $params['note']]);
+    }
+
+    private function contributionSummary(array $filters = []): array
+    {
+        $this->syncActiveCampaigns();
+        $pay = $this->fetchOne(
+            "SELECT COUNT(*) AS total_households,
+                COALESCE(SUM(CASE WHEN hc.payment_status IN ('PAID','REDUCED') THEN 1 ELSE 0 END),0) AS paid,
+                COALESCE(SUM(CASE WHEN hc.payment_status='UNPAID' THEN 1 ELSE 0 END),0) AS unpaid,
+                COALESCE(SUM(CASE WHEN hc.payment_status='PARTIAL' THEN 1 ELSE 0 END),0) AS partial,
+                COALESCE(SUM(CASE WHEN hc.payment_status='EXEMPT' THEN 1 ELSE 0 END),0) AS exempt,
+                COALESCE(SUM(hc.eligible_count),0) AS eligible_count,
+                COALESCE(SUM(hc.exempt_count),0) AS exempt_count,
+                COALESCE(SUM(hc.chargeable_count),0) AS chargeable_count,
+                COALESCE(SUM(hc.expected_amount),0) AS expected_total,
+                COALESCE(SUM(hc.exempt_amount + hc.discount_amount),0) AS exempt_total,
+                COALESCE(SUM(hc.expected_amount + hc.exempt_amount + hc.discount_amount),0) AS gross_total,
+                COALESCE(SUM(hc.paid_amount),0) AS collected,
+                COALESCE(SUM(hc.debt_amount),0) AS debt
+             FROM household_contributions hc INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id
+             WHERE hc.status='ACTIVE' AND c.status <> 'DELETED'",
+            []
+        ) ?: [];
+        $paid = (int) ($pay['paid'] ?? 0);
+        $unpaid = (int) ($pay['unpaid'] ?? 0);
+        $partial = (int) ($pay['partial'] ?? 0);
+        $exempt = (int) ($pay['exempt'] ?? 0);
+        $expected = (float) ($pay['expected_total'] ?? 0);
+        $collected = (float) ($pay['collected'] ?? 0);
+        return [
+            'households' => $paid + $unpaid + $partial + $exempt,
+            'total_households' => $paid + $unpaid + $partial + $exempt,
+            'due_households' => $paid + $unpaid + $partial,
+            'paid' => $paid,
+            'unpaid' => $unpaid,
+            'partial' => $partial,
+            'exempt' => $exempt,
+            'eligible_count' => (int) ($pay['eligible_count'] ?? 0),
+            'exempt_count' => (int) ($pay['exempt_count'] ?? 0),
+            'chargeable_count' => (int) ($pay['chargeable_count'] ?? 0),
+            'gross_total' => (float) ($pay['gross_total'] ?? 0),
+            'exempt_total' => (float) ($pay['exempt_total'] ?? 0),
+            'expected_total' => $expected,
+            'collected' => $collected,
+            'debt' => (float) ($pay['debt'] ?? 0),
+            'completion_rate' => $expected > 0 ? round($collected * 100 / $expected, 2) : 0,
+        ];
+    }
+
+    private function exemptionRows(array $filters = []): array
+    {
+        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, hc.exempt_count, hc.exempt_amount, hc.discount_amount, hc.collector_name, hc.paid_at, hc.note, hc.calculation_note, c.contribution_name FROM household_contributions hc INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id INNER JOIN households h ON h.id=hc.household_id WHERE hc.status='ACTIVE' AND c.status <> 'DELETED' AND hc.payment_status='EXEMPT' ORDER BY c.year DESC, c.id DESC, h.household_code ASC");
+        return array_map(function ($row) {
+            $calc = $this->decodeConfig($row['calculation_note'] ?? null, ['exemption' => ['conditions' => []]]);
+            $conditions = $calc['exemption']['conditions'] ?? [];
+            return $row + [
+                'exemption_subject' => implode(', ', (array) $conditions),
+                'exemption_reason' => $row['note'] ?: ($row['contribution_name'] . ' - ' . implode(', ', (array) $conditions)),
+                'total_exempt_amount' => (float) ($row['exempt_amount'] ?? 0) + (float) ($row['discount_amount'] ?? 0),
+            ];
+        }, $rows);
     }
 
     private function syncActiveCampaigns(): void
@@ -394,19 +477,21 @@ SQL);
         $households = $this->fetchAll('SELECT h.* FROM households h WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE") ORDER BY h.household_code');
         foreach ($households as $household) {
             $calc = $this->calculateHousehold((array) $campaign, $household);
-            $existing = $this->fetchOne('SELECT id, paid_amount, discount_amount, payment_status FROM household_contributions WHERE campaign_id=:campaign_id AND household_id=:household_id AND status="ACTIVE"', ['campaign_id' => $campaignId, 'household_id' => (int) $household['id']]) ?: [];
+            $existing = $this->fetchOne('SELECT id, paid_amount, discount_amount, exempt_amount, payment_status FROM household_contributions WHERE campaign_id=:campaign_id AND household_id=:household_id AND status="ACTIVE"', ['campaign_id' => $campaignId, 'household_id' => (int) $household['id']]) ?: [];
             $paid = (float) ($existing['paid_amount'] ?? 0);
             $discount = (float) ($existing['discount_amount'] ?? 0);
+            $autoExempt = (float) ($calc['exempt_amount'] ?? 0);
             $status = (string) ($existing['payment_status'] ?? 'UNPAID');
             if ($calc['expected_amount'] <= 0) { $status = 'EXEMPT'; $discount = 0; $paid = 0; }
-            elseif ($paid > 0 && $paid < $calc['expected_amount']) $status = 'PARTIAL';
-            elseif ($paid >= $calc['expected_amount']) $status = 'PAID';
-            $debt = max(0, $calc['expected_amount'] - $paid - $discount);
-            if ($status === 'PAID') $debt = 0;
-            $params = ['campaign_id' => $campaignId, 'household_id' => (int) $household['id'], 'payment_status' => $status, 'expected_amount' => $calc['expected_amount'], 'paid_amount' => $paid, 'discount_amount' => min($discount, $calc['expected_amount']), 'debt_amount' => $debt, 'eligible_count' => $calc['eligible_count'], 'exempt_count' => $calc['exempt_count'], 'chargeable_count' => $calc['chargeable_count'], 'calculation_note' => $calc['calculation_note']];
-            $this->execute('INSERT INTO household_contributions (campaign_id, household_id, payment_status, expected_amount, paid_amount, discount_amount, debt_amount, amount, eligible_count, exempt_count, chargeable_count, calculation_note)
-                VALUES (:campaign_id,:household_id,:payment_status,:expected_amount,:paid_amount,:discount_amount,:debt_amount,0,:eligible_count,:exempt_count,:chargeable_count,:calculation_note)
-                ON DUPLICATE KEY UPDATE expected_amount=VALUES(expected_amount), discount_amount=LEAST(discount_amount, VALUES(expected_amount)), debt_amount=GREATEST(VALUES(expected_amount)-paid_amount-discount_amount,0), eligible_count=VALUES(eligible_count), exempt_count=VALUES(exempt_count), chargeable_count=VALUES(chargeable_count), calculation_note=VALUES(calculation_note), payment_status=IF(VALUES(expected_amount)=0,"EXEMPT",IF(discount_amount>=VALUES(expected_amount),"EXEMPT",IF(paid_amount+discount_amount>=VALUES(expected_amount),IF(discount_amount>0,"REDUCED","PAID"),IF(paid_amount>0,"PARTIAL","UNPAID")))), updated_at=NOW()', $params);
+            elseif ($discount >= $calc['expected_amount'] && $paid <= 0) $status = 'EXEMPT';
+            elseif ($paid > 0 && $paid < max(0, $calc['expected_amount'] - $discount)) $status = 'PARTIAL';
+            elseif ($paid >= max(0, $calc['expected_amount'] - $discount)) $status = 'PAID';
+            $debt = $status === 'EXEMPT' ? 0 : max(0, $calc['expected_amount'] - $paid - $discount);
+            if ($status === 'PAID' || $status === 'REDUCED') $debt = 0;
+            $params = ['campaign_id' => $campaignId, 'household_id' => (int) $household['id'], 'payment_status' => $status, 'expected_amount' => $calc['expected_amount'], 'paid_amount' => $paid, 'discount_amount' => min($discount, $calc['expected_amount']), 'exempt_amount' => $autoExempt, 'debt_amount' => $debt, 'eligible_count' => $calc['eligible_count'], 'exempt_count' => $calc['exempt_count'], 'chargeable_count' => $calc['chargeable_count'], 'calculation_note' => $calc['calculation_note']];
+            $this->execute('INSERT INTO household_contributions (campaign_id, household_id, payment_status, expected_amount, paid_amount, discount_amount, exempt_amount, debt_amount, amount, eligible_count, exempt_count, chargeable_count, calculation_note)
+                VALUES (:campaign_id,:household_id,:payment_status,:expected_amount,:paid_amount,:discount_amount,:exempt_amount,:debt_amount,0,:eligible_count,:exempt_count,:chargeable_count,:calculation_note)
+                ON DUPLICATE KEY UPDATE expected_amount=VALUES(expected_amount), exempt_amount=VALUES(exempt_amount), debt_amount=IF(VALUES(expected_amount)=0,0,GREATEST(VALUES(expected_amount)-paid_amount-discount_amount,0)), eligible_count=VALUES(eligible_count), exempt_count=VALUES(exempt_count), chargeable_count=VALUES(chargeable_count), calculation_note=VALUES(calculation_note), payment_status=IF(VALUES(expected_amount)=0,"EXEMPT",IF(discount_amount>=VALUES(expected_amount) AND paid_amount=0,"EXEMPT",IF(paid_amount+discount_amount>=VALUES(expected_amount),"PAID",IF(paid_amount>0,"PARTIAL","UNPAID")))), updated_at=NOW()', $params);
         }
     }
 
@@ -425,17 +510,28 @@ SQL);
         }
         $unitType = (string) ($campaign['unit_type'] ?? 'HOUSEHOLD');
         $baseAmount = (float) ($campaign['amount'] ?? 0);
+        $gross = match ($unitType) {
+            'PERSON' => $baseAmount * $eligible,
+            default => ($eligible > 0 || ($target['mode'] ?? '') === 'ALL_HOUSEHOLDS') ? $baseAmount : 0,
+        };
+        $exemptAmount = match ($unitType) {
+            'PERSON' => $baseAmount * $exempt,
+            default => 0,
+        };
         $expected = match ($unitType) {
             'PERSON' => $baseAmount * $chargeable,
             default => $chargeable > 0 || (($target['mode'] ?? '') === 'ALL_HOUSEHOLDS' && !$this->householdExempt($household, $exemption)) ? $baseAmount : 0,
         };
         if (($target['mode'] ?? '') === 'ALL_HOUSEHOLDS') {
+            $isHouseholdExempt = $this->householdExempt($household, $exemption);
             $eligible = count($members);
-            $exempt = $this->householdExempt($household, $exemption) ? $eligible : $exempt;
-            $chargeable = $this->householdExempt($household, $exemption) ? 0 : max(1, $eligible);
-            $expected = $this->householdExempt($household, $exemption) ? 0 : $baseAmount;
+            $exempt = $isHouseholdExempt ? $eligible : $exempt;
+            $chargeable = $isHouseholdExempt ? 0 : max(1, $eligible);
+            $gross = $baseAmount;
+            $exemptAmount = $isHouseholdExempt ? $baseAmount : 0;
+            $expected = $isHouseholdExempt ? 0 : $baseAmount;
         }
-        return ['eligible_count' => $eligible, 'exempt_count' => $exempt, 'chargeable_count' => $chargeable, 'expected_amount' => round($expected, 2), 'calculation_note' => json_encode(['target' => $target, 'exemption' => $exemption], JSON_UNESCAPED_UNICODE)];
+        return ['eligible_count' => $eligible, 'exempt_count' => $exempt, 'chargeable_count' => $chargeable, 'gross_amount' => round($gross, 2), 'exempt_amount' => round($exemptAmount, 2), 'expected_amount' => round($expected, 2), 'calculation_note' => json_encode(['target' => $target, 'exemption' => $exemption], JSON_UNESCAPED_UNICODE)];
     }
 
     private function householdMembers(int $householdId): array
@@ -490,9 +586,9 @@ SQL);
         foreach ($conditions as $condition) {
             if ($condition === 'POOR_HOUSEHOLD' && (int) ($household['poor_household'] ?? 0) === 1) return true;
             if ($condition === 'NEAR_POOR_HOUSEHOLD' && (int) ($household['near_poor_household'] ?? 0) === 1) return true;
-            if ($condition === 'POLICY' && ((int) ($household['meritorious_family'] ?? 0) === 1 || str_contains($note, 'chinh sach') || str_contains($note, 'ch????nh s????ch'))) return true;
-            if ($condition === 'UBND_DECISION' && (str_contains($note, 'ubnd') || str_contains($note, 'uy ban') || str_contains($note, '?y ban'))) return true;
-            if ($condition === 'HAMLET_DECISION' && (str_contains($note, 'truong thon') || str_contains($note, 'tr??ng th?n'))) return true;
+            if ($condition === 'POLICY' && ((int) ($household['meritorious_family'] ?? 0) === 1 || str_contains($note, 'chinh sach') || str_contains($note, 'chính sách'))) return true;
+            if ($condition === 'UBND_DECISION' && (str_contains($note, 'ubnd') || str_contains($note, 'uy ban') || str_contains($note, 'ủy ban'))) return true;
+            if ($condition === 'HAMLET_DECISION' && (str_contains($note, 'truong thon') || str_contains($note, 'trưởng thôn'))) return true;
             if ($condition === 'OTHER' && str_contains($note, 'mien')) return true;
         }
         return false;
@@ -550,7 +646,7 @@ SQL);
     {
         $campaignColumns = ['campaign_code' => 'VARCHAR(40) NULL', 'contribution_type' => 'VARCHAR(120) NULL', 'required_type' => "ENUM('REQUIRED','VOLUNTARY') NOT NULL DEFAULT 'REQUIRED'", 'unit_type' => "VARCHAR(30) NOT NULL DEFAULT 'HOUSEHOLD'", 'target_config_json' => 'JSON NULL', 'exemption_config_json' => 'JSON NULL', 'start_date' => 'DATE NULL'];
         foreach ($campaignColumns as $column => $definition) if (!$this->columnExists('contribution_campaigns', $column)) $this->execute("ALTER TABLE contribution_campaigns ADD COLUMN $column $definition");
-        $trackingColumns = ['expected_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'paid_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'discount_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'debt_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'eligible_count' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'exempt_count' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'chargeable_count' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'calculation_note' => 'TEXT NULL', 'payment_method' => "ENUM('CASH','TRANSFER','OTHER') NOT NULL DEFAULT 'CASH'"];
+        $trackingColumns = ['expected_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'paid_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'discount_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'exempt_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'debt_amount' => 'DECIMAL(14,2) NOT NULL DEFAULT 0', 'eligible_count' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'exempt_count' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'chargeable_count' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'calculation_note' => 'TEXT NULL', 'payment_method' => "ENUM('CASH','TRANSFER','OTHER') NOT NULL DEFAULT 'CASH'"];
         foreach ($trackingColumns as $column => $definition) if (!$this->columnExists('household_contributions', $column)) $this->execute("ALTER TABLE household_contributions ADD COLUMN $column $definition");
         $this->execute("ALTER TABLE household_contributions MODIFY payment_status ENUM('UNPAID','PAID','PARTIAL','EXEMPT','REDUCED') NOT NULL DEFAULT 'UNPAID'");
         $this->execute("UPDATE contribution_campaigns SET campaign_code=CONCAT('KT-', LPAD(id, 6, '0')) WHERE campaign_code IS NULL OR campaign_code=''");
