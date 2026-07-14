@@ -37,6 +37,7 @@
     measurePoints: [],
     measureLayers: [],
     searchTimer: null,
+    syncTimer: null,
     selectedAreaId: ''
   };
 
@@ -336,10 +337,13 @@
     }).filter(item => item.weight > 0);
   }
   function renderHeatmaps() {
+    if (!state.heatmap.size) {
+      state.heatLayer?.clearLayers?.();
+      return;
+    }
     const group = heatLayerGroup();
     if (!group) return;
     group.clearLayers?.();
-    if (!state.heatmap.size) return;
     heatmapDefinitions.filter(def => state.heatmap.has(def.key)).forEach(def => {
       heatSources(def.key).forEach(item => {
         const point = coordinates(item.row);
@@ -536,17 +540,21 @@
     m.__gisPlatformHooksBound = true;
     m.on?.('click', event => addMeasurePoint(event.latlng));
     m.on?.('moveend zoomend', () => {
-      renderHeatmaps();
-      setTimeout(enableMarkerDrag, 40);
+      schedulePlatformSync(40);
     });
   }
-  function installWatchdog() {
-    if (state.watchdog) return;
-    state.watchdog = setInterval(() => {
-      updateAreaDashboard();
-      enableMarkerDrag();
-      renderHeatmaps();
-    }, 900);
+  function runPlatformSync() {
+    state.syncTimer = null;
+    updateAreaDashboard();
+    enableMarkerDrag();
+    renderHeatmaps();
+  }
+  function schedulePlatformSync(delay) {
+    if (state.syncTimer) clearTimeout(state.syncTimer);
+    state.syncTimer = setTimeout(runPlatformSync, delay || 0);
+  }
+  function installStartupSync() {
+    [0, 300, 900, 1800, 3200].forEach(delay => setTimeout(() => schedulePlatformSync(0), delay));
   }
   function install() {
     if (state.installed || !map() || !window.L) return;
@@ -555,7 +563,7 @@
     installPanel();
     installUnifiedSearch();
     installMapHooks();
-    installWatchdog();
+    installStartupSync();
     window.Thon09GisPlatform = {
       definitions: layerDefinitions.slice(),
       heatmaps: heatmapDefinitions.slice(),

@@ -1,4 +1,4 @@
-﻿const { test, expect, chromium } = require('@playwright/test');
+const { test, expect, chromium } = require('@playwright/test');
 
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 const screens = [
@@ -37,7 +37,7 @@ async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
     const url = route.request().url();
     const fulfill = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(ok(data)) });
-    if (url.includes('/api/public/login-config')) return fulfill({ settings: { systemName: 'Hệ thống quản lý hành chính', hamletName: 'Thôn 09', communeName: 'Xã Hồng Phong', version: 'v2.0' }, metrics: {} });
+    if (url.includes('/api/public/login-config')) return fulfill({ settings: { systemName: 'H? th?ng qu?n l� h�nh ch�nh', hamletName: 'Th�n 09', communeName: 'X� H?ng Phong', version: 'v2.0' }, metrics: {} });
     if (url.includes('/api/auth/me')) return fulfill({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
     if (url.includes('/api/dashboard/summary')) return fulfill({ metrics: {}, charts: {}, generatedAt: new Date().toISOString() });
     if (url.includes('/api/dashboard/')) return fulfill({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() });
@@ -76,9 +76,41 @@ function browserName() {
   return process.env.PW_BROWSER_LABEL || 'chromium';
 }
 
+function attachRuntimeErrorAudit(page) {
+  const errors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') errors.push('console: ' + message.text());
+  });
+  page.on('pageerror', error => errors.push('pageerror: ' + error.message));
+  page.on('requestfailed', request => {
+    let url;
+    try {
+      url = new URL(request.url());
+    } catch (error) {
+      return;
+    }
+    if (['127.0.0.1', 'localhost'].includes(url.hostname)) {
+      errors.push('requestfailed: ' + request.method() + ' ' + url.pathname + ' ' + (request.failure()?.errorText || 'failed'));
+    }
+  });
+  page.on('response', response => {
+    let url;
+    try {
+      url = new URL(response.url());
+    } catch (error) {
+      return;
+    }
+    if (['127.0.0.1', 'localhost'].includes(url.hostname) && url.pathname.startsWith('/api/') && response.status() >= 400) {
+      errors.push('response: ' + response.status() + ' ' + url.pathname);
+    }
+  });
+  return errors;
+}
+
 test.describe(`Production UI audit (${browserName()})`, () => {
   for (const viewport of viewports) {
     test(`module layout, text and controls: ${viewport.name}`, async ({ page }) => {
+      const runtimeErrors = attachRuntimeErrorAudit(page);
       await openApp(page, viewport);
       for (const screen of screens) {
         await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
@@ -152,11 +184,13 @@ test.describe(`Production UI audit (${browserName()})`, () => {
           expect(card.padding).toBeGreaterThanOrEqual(12);
         }
       }
+      expect(runtimeErrors).toEqual([]);
     });
   }
 
   for (const viewport of viewports.filter((item) => item.name !== 'desktop' || true)) {
     test(`popup, form and table baseline: ${viewport.name}`, async ({ page }) => {
+      const runtimeErrors = attachRuntimeErrorAudit(page);
       await openApp(page, viewport);
       for (const id of modalIds) {
         const exists = await page.locator(`#${id}`).count();
@@ -237,19 +271,22 @@ test.describe(`Production UI audit (${browserName()})`, () => {
         expect(modal.unlabeled, `${id} unlabeled controls`).toEqual([]);
       }
       await page.evaluate(() => { document.querySelectorAll('.modal.show').forEach((el) => { el.classList.remove('show'); el.style.display = 'none'; }); document.body.classList.remove('modal-open'); });
+      expect(runtimeErrors).toEqual([]);
     });
   }
 
   test('system admin destructive actions use the shared confirm dialog on mobile', async ({ page }) => {
+    const runtimeErrors = attachRuntimeErrorAudit(page);
     await openApp(page, { name: 'mobile-portrait', width: 390, height: 844 });
     await page.evaluate(() => window.Thon09NavigationController?.navigate('systemAdmin'));
     await page.waitForTimeout(200);
     await page.locator('[data-platform-action="systemAdmin.backup"][data-system-backup="database"]').click();
     const dialog = page.locator('.platform-confirm-dialog');
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText('Xác nhận tạo backup');
-    await expect(dialog).toContainText('Tạo backup database ngay bây giờ?');
-    await expect(page.locator('.platform-confirm-footer .btn-danger')).toContainText('Tạo backup');
+    await expect(dialog).toContainText('X�c nh?n t?o backup');
+    await expect(dialog).toContainText('T?o backup database ngay b�y gi??');
+    await expect(page.locator('.platform-confirm-footer .btn-danger')).toContainText('T?o backup');
+    expect(runtimeErrors).toEqual([]);
   });
 });
 

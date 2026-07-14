@@ -425,14 +425,12 @@ function scheduleCategoryFilterSetup() {
     if (screen === 'reports') { setTimeout(setupReportCategoryFilter, 250); setTimeout(setupDigitalGovernmentFeatures, 350); }
     if (screen === 'persons' || screen === 'dashboard') setTimeout(setupDigitalGovernmentFeatures, 300);
   });
-  let categorySetupTicks = 0;
-  const categorySetupTimer = setInterval(() => {
-    categorySetupTicks += 1;
-    scheduleCategoryFilterSetup();
-    if (categorySetupTicks >= 12 || (document.querySelector('#householdCategoryFilter') && document.querySelector('#reportForm [name="householdType"]'))) {
-      clearInterval(categorySetupTimer);
-    }
-  }, 1000);
+  [1000, 2000, 3000, 5000, 8000, 12000].forEach(delay => {
+    setTimeout(() => {
+      if (document.querySelector('#householdCategoryFilter') && document.querySelector('#reportForm [name="householdType"]')) return;
+      scheduleCategoryFilterSetup();
+    }, delay);
+  });
 
   function enforceSuperAdminMenu() {
     setTimeout(() => {
