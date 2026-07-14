@@ -9,6 +9,7 @@ const STATIC_ASSETS = [
   '/manifest.webmanifest',
   '/favicon.ico',
   '/assets/icons/app-icon.svg',
+  '/assets/icons/thon09-logo.png',
   '/assets/icons/icon-192.png',
   '/assets/icons/icon-512.png',
   '/assets/icons/maskable-192.png',

@@ -13,7 +13,7 @@
   <meta name="msapplication-TileColor" content="#0b6b3a">
   <title>Quản Lý Nhân Khẩu Thôn 09</title>
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/assets/icons/app-icon.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/icons/thon09-logo.png" type="image/png">
   <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
   <link rel="apple-touch-startup-image" href="/assets/icons/splash-512.png">
   <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
