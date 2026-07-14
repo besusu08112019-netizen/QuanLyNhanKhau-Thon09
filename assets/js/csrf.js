@@ -32,6 +32,9 @@
         redirectToLoginOnAuthFailure();
         throw new Error(AUTH_REQUIRED_MESSAGE);
       }
+      if (!options.public && typeof shouldCallApi === 'function' && !shouldCallApi(url, method)) {
+        return typeof accessDeniedPayload === 'function' ? accessDeniedPayload(url) : null;
+      }
       if (App.token && !options.public) {
         headers.Authorization = `Bearer ${App.token}`;
       }
@@ -58,6 +61,10 @@
       if (response.status === 401 && !options.public && !String(url).includes('/api/auth/logout')) {
         redirectToLoginOnAuthFailure();
         throw new Error(AUTH_REQUIRED_MESSAGE);
+      }
+      if (response.status === 403 && !options.public) {
+        if (typeof renderAccessDeniedForCurrentScreen === 'function') renderAccessDeniedForCurrentScreen(payload?.error?.message || 'Bạn không có quyền truy cập');
+        return typeof accessDeniedPayload === 'function' ? accessDeniedPayload(url) : null;
       }
       if (!response.ok || !payload?.ok) {
         throw new Error(payload?.error?.message || 'Không nhận được phản hồi từ hệ thống');

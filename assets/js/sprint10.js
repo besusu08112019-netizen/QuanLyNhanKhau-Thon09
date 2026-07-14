@@ -131,8 +131,11 @@
   function patchSprint10Users() { window.openUserForm = openUserForm10; window.resetUserPassword = resetUserPassword10; }
 
   async function loadUsers10() {
+    if (typeof window.thon09CanAccess === 'function' && !window.thon09CanAccess('users', 'read')) return;
+    const rows = document.querySelector('#userRows');
+    if (!rows) return;
     const data = await api('/api/users?' + new URLSearchParams(App.users));
-    document.querySelector('#userRows').innerHTML = (data.items || []).map(row => {
+    rows.innerHTML = (data.items || []).map(row => {
       const action = row.status === 'ACTIVE' ? 'lock' : 'unlock';
       const actionLabel = action === 'lock' ? 'Khóa' : 'Mở khóa';
       return '<tr><td>' + escapeHtml(row.username || '') + '</td><td>' + escapeHtml(row.display_name || '') + '</td><td>' + escapeHtml(row.email || '') + '</td><td>' + escapeHtml(row.phone || '') + '</td><td>' + escapeHtml(row.position || '') + '</td><td>' + roleLabel(row.role) + '</td><td>' + escapeHtml(row.status || '') + '</td><td>' + escapeHtml(row.created_at || '') + '</td><td>' + escapeHtml(row.last_login_at || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="users.edit" data-id="' + row.id + '">Sửa</button> <button class="btn btn-sm btn-outline-warning" type="button" data-platform-action="users.toggle" data-id="' + row.id + '" data-action="' + action + '">' + actionLabel + '</button> <button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="users.resetPassword" data-id="' + row.id + '">Đặt lại mật khẩu</button> <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="users.delete" data-id="' + row.id + '">Xóa</button></td></tr>';

@@ -89,6 +89,16 @@
 
   function loadAdminScreen(screen) {
     cleanDuplicateHeaders(screen);
+    if (screen && typeof window.thon09CanAccess === 'function' && !window.thon09CanAccess(screen, 'read')) {
+      const host = document.querySelector('#' + screen + 'Screen');
+      if (host && !host.dataset.accessDeniedRendered) {
+        host.dataset.accessDeniedRendered = '1';
+        const target = host.querySelector('tbody, [id$="Rows"], .content-card') || host;
+        if (target.tagName === 'TBODY') target.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-4">Bạn không có quyền truy cập</td></tr>';
+        else target.innerHTML = '<div class="empty-state text-muted py-4 text-center">Bạn không có quyền truy cập</div>';
+      }
+      return;
+    }
     if (screen === 'temporaryResidence') loadPresenceList('TEMPORARY', '#temporaryResidenceRows');
     if (screen === 'temporaryAbsence') loadPresenceList('AWAY', '#temporaryAbsenceRows');
     if (screen === 'movements') loadMovements();
@@ -456,11 +466,10 @@
   }
 
   function renderRoleAwareMenu() {
-    const role = App.user?.role || '';
     document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
       const screen = btn.dataset.screen;
-      const adminOnly = ['systemAdmin','users','permissions','logs','settings','appearance','backups','restore'];
-      btn.classList.toggle('d-none', adminOnly.includes(screen) && !['SUPER_ADMIN','ADMIN'].includes(role));
+      const canRead = typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess(screen, 'read') : true;
+      btn.classList.toggle('d-none', !canRead);
     });
   }
 

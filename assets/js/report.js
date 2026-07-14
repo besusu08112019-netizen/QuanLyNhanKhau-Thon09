@@ -26,6 +26,10 @@
     if (event.detail?.screen === 'reports') initSmartReporting(true);
   });
 
+  function isReportsActive() {
+    return (window.Thon09Platform?.navigation?.current?.()?.screenId || window.App?.screen || document.querySelector('.screen.active')?.id?.replace(/Screen$/, '')) === 'reports';
+  }
+
   function bindSmartReporting() {
     if (window.__thon09SmartReportingBound) return;
     window.__thon09SmartReportingBound = true;
@@ -43,7 +47,7 @@
       scheduleBiRefresh();
     });
     registerReportPlatformActions();
-    initSmartReporting();
+    if (isReportsActive()) initSmartReporting();
   }
 
   function capture(fn) {
@@ -81,6 +85,8 @@
   }
 
   async function initSmartReporting(force = false) {
+    if (!isReportsActive()) return;
+    if (typeof window.thon09CanAccess === 'function' && !window.thon09CanAccess('reports', 'read')) return;
     ensureReportTypes();
     if (!token()) return;
     if (state.loaded && !force) return;

@@ -29,6 +29,7 @@
   };
   const show = (message, type = 'success') => typeof window.showToast === 'function' ? window.showToast(message, type) : console.log(message);
   const request = (url, options = {}) => (window.api || window.thon09Api)(url, options);
+  const isActive = () => (window.Thon09Platform?.navigation?.current?.()?.screenId || window.App?.screen || document.querySelector('.screen.active')?.id?.replace(/Screen$/, '')) === 'businessHouseholds';
   const confirmAction = options => {
     const dialog = window.Thon09Platform?.confirmDialog;
     if (dialog?.ask) return dialog.ask(options);
@@ -78,10 +79,10 @@
       if (event.detail?.screen === 'businessHouseholds') load();
       if (event.detail?.screen === 'dashboard') setTimeout(renderDashboard, 120);
     });
-    document.addEventListener('thon09:auth-state', () => { applyAccess(); addReportOptions(); ensureCatalogs().catch(() => {}); renderDashboard(); });
+    document.addEventListener('thon09:auth-state', () => { applyAccess(); addReportOptions(); if (isActive()) ensureCatalogs().catch(() => {}); renderDashboard(); });
     addReportOptions();
     applyAccess();
-    ensureCatalogs().catch(() => {});
+    if (isActive()) ensureCatalogs().catch(() => {});
     if ($('#businessHouseholdsScreen')?.classList.contains('active')) load();
   }
 
