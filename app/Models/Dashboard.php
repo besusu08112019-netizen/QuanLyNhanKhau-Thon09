@@ -631,7 +631,19 @@ final class Dashboard extends BaseModel
 
     public function vehicleDashboard(array $filters = []): array
     {
-        return $this->emptyDomainDashboard('vehicles','Dashboard Xe cộ',[['Tổng phương tiện','fa-car'],['Ô tô','fa-car-side'],['Xe máy','fa-motorcycle'],['Xe tải','fa-truck'],['Máy cày','fa-tractor'],['Máy gặt','fa-gears'],['Công nông','fa-truck-pickup'],['Thuyền','fa-ship'],['Khác','fa-circle-dot']],['types','households','areas']);
+        $model = new \App\Models\Vehicle();
+        $stats = $model->dashboard($filters);
+        $charts = $model->charts($filters);
+        return ['module'=>'vehicles','title'=>'Dashboard Xe cộ','kpis'=>[
+            $this->kpi('Tổng phương tiện',$stats['total']??0,'xe','fa-car','green'),
+            $this->kpi('Hộ có phương tiện',$stats['households']??0,'hộ','fa-house-user','blue'),
+            $this->kpi('Ô tô',$stats['cars']??0,'xe','fa-car-side','orange'),
+            $this->kpi('Xe máy',$stats['motorbikes']??0,'xe','fa-motorcycle','cyan'),
+            $this->kpi('Xe điện',$stats['electric']??0,'xe','fa-bolt','purple'),
+            $this->kpi('Xe vận tải',$stats['transport']??0,'xe','fa-truck','pink'),
+            $this->kpi('Máy nông nghiệp',$stats['farm']??0,'xe','fa-tractor','green'),
+            $this->kpi('Có biển số',$stats['with_plate']??0,'xe','fa-id-card','blue'),
+        ],'charts'=>['types'=>$charts['types']??[],'households'=>$charts['households']??[],'areas'=>$charts['areas']??[],'usage'=>$charts['usage']??[]],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
     }
 
     public function livestockDashboard(array $filters = []): array

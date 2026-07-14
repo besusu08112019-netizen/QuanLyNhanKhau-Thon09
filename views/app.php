@@ -686,6 +686,8 @@
   <script charset="utf-8" src="assets/js/digital-profile.min.js"></script>
   <script charset="utf-8" src="assets/js/household-business.min.js"></script>
   <script charset="utf-8" src="assets/js/livestock.min.js"></script>
+  <script charset="utf-8" src="assets/js/vehicles.min.js"></script>
+  <script charset="utf-8" src="assets/js/contributions.min.js"></script>
   <script charset="utf-8" src="assets/js/agriculture.min.js"></script>
   <script charset="utf-8" src="assets/js/houses.min.js"></script>
   <script charset="utf-8" src="assets/js/public-assets.min.js"></script>

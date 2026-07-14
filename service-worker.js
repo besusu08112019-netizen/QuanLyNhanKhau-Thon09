@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260714-6';
+const PWA_VERSION = 'thon09-pwa-v20260714-7';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
@@ -19,6 +19,8 @@ const STATIC_ASSETS = [
   '/assets/vendor/bootstrap/bootstrap.min.css',
   '/assets/vendor/bootstrap/bootstrap.bundle.min.js',
   '/assets/css/app.min.css',
+  '/assets/js/vehicles.min.js',
+  '/assets/js/contributions.min.js',
   '/assets/js/pwa.min.js'
 ];
 

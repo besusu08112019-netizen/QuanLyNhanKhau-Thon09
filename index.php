@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-360-houses-module');
+define('APP_ASSET_VERSION', 'deploy-370-vehicles-contributions');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -25,6 +25,7 @@ use App\Core\Response;
 use App\Controllers\AgricultureProductionController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
+use App\Controllers\ContributionController;
 use App\Controllers\DashboardController;
 use App\Controllers\FileController;
 use App\Controllers\GisController;
@@ -45,6 +46,7 @@ use App\Controllers\ReportController;
 use App\Controllers\SettingController;
 use App\Controllers\SystemAdminController;
 use App\Controllers\UserController;
+use App\Controllers\VehicleController;
 
 Autoloader::register();
 
@@ -285,6 +287,26 @@ $router->delete('/api/public-assets/{id}/inventory/{itemId}', [PublicAssetContro
 $router->get('/api/public-assets/{id}', [PublicAssetController::class, 'show']);
 $router->put('/api/public-assets/{id}', [PublicAssetController::class, 'update']);
 $router->delete('/api/public-assets/{id}', [PublicAssetController::class, 'destroy']);
+$router->get('/api/vehicles', [VehicleController::class, 'index']);
+$router->post('/api/vehicles', [VehicleController::class, 'store']);
+$router->get('/api/vehicles/dashboard', [VehicleController::class, 'dashboard']);
+$router->get('/api/vehicles/catalogs', [VehicleController::class, 'catalogs']);
+$router->get('/api/vehicles/household-search', [VehicleController::class, 'householdSearch']);
+$router->get('/api/vehicles/household/{householdId}', [VehicleController::class, 'byHousehold']);
+$router->get('/api/vehicles/{id}', [VehicleController::class, 'show']);
+$router->put('/api/vehicles/{id}', [VehicleController::class, 'update']);
+$router->delete('/api/vehicles/{id}', [VehicleController::class, 'destroy']);
+$router->get('/api/contributions', [ContributionController::class, 'index']);
+$router->post('/api/contributions', [ContributionController::class, 'store']);
+$router->get('/api/contributions/dashboard', [ContributionController::class, 'dashboard']);
+$router->get('/api/contributions/catalogs', [ContributionController::class, 'catalogs']);
+$router->get('/api/contributions/household-search', [ContributionController::class, 'householdSearch']);
+$router->get('/api/contributions/{id}', [ContributionController::class, 'show']);
+$router->put('/api/contributions/{id}', [ContributionController::class, 'update']);
+$router->delete('/api/contributions/{id}', [ContributionController::class, 'destroy']);
+$router->get('/api/contributions/{campaignId}/households', [ContributionController::class, 'tracking']);
+$router->post('/api/contributions/{campaignId}/households/{householdId}', [ContributionController::class, 'updateTracking']);
+$router->put('/api/contributions/{campaignId}/households/{householdId}', [ContributionController::class, 'updateTracking']);
 $router->get('/api/livestock', [LivestockController::class, 'index']);
 $router->post('/api/livestock', [LivestockController::class, 'store']);
 $router->get('/api/livestock/dashboard', [LivestockController::class, 'dashboard']);
@@ -518,6 +540,8 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/digital-profile.min.js',
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
+        'assets/js/vehicles.min.js',
+        'assets/js/contributions.min.js',
         'assets/js/agriculture.min.js',
         'assets/js/houses.min.js',
         'assets/js/public-assets.min.js',
