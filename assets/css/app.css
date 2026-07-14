@@ -9,7 +9,7 @@
   --card: #ffffff;
   --sidebar: #111827;
   --sidebar-soft: #1f2937;
-  --app-font-family: "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+  --app-font-family: Arial, Roboto, "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
   --bs-body-font-family: var(--app-font-family);
 }
 
@@ -6118,4 +6118,58 @@ body.theme-dark .platform-confirm-body { color: #cbd5e1; }
   .platform-confirm-body { padding: 0 16px 16px; }
   .platform-confirm-footer { display: grid; grid-template-columns: 1fr; padding: 12px 16px 16px; }
   .platform-confirm-footer .btn { width: 100%; }
+}
+
+/* System font contract: every text UI surface must inherit one Vietnamese-safe stack. */
+:where(
+  html,
+  body,
+  .app-shell,
+  .main-area,
+  .screen,
+  .content-card,
+  .modal,
+  .modal-dialog,
+  .modal-content,
+  .modal-header,
+  .modal-body,
+  .modal-footer,
+  .sidebar,
+  .gov-sidebar,
+  .topbar,
+  .gov-topbar,
+  .mobile-bottom-nav,
+  .dropdown-menu,
+  .dropdown-item,
+  .toast,
+  .alert,
+  .popover,
+  .tooltip,
+  .table,
+  .data-table,
+  .card,
+  .btn,
+  button,
+  input,
+  select,
+  textarea,
+  label,
+  legend,
+  output
+) {
+  font-family: var(--app-font-family) !important;
+  letter-spacing: 0;
+}
+
+:where(.screen, .content-card, .modal, .sidebar, .gov-sidebar, .mobile-bottom-nav, .table, .data-table, .dropdown-menu, .toast, .alert) :where(:not(i):not(.fa):not(.fa-solid):not(.fa-regular):not(.fa-brands):not(.fab):not(.far):not(.fas):not(svg):not(path):not(code):not(pre):not(kbd):not(samp):not(.font-monospace):not(.person-info-value-code)) {
+  font-family: inherit;
+}
+
+:where(button, input, select, textarea, .btn, .form-control, .form-select) {
+  font: inherit;
+  min-width: 0;
+}
+
+:where(.font-monospace, code, pre, kbd, samp, .person-info-value-code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
 }

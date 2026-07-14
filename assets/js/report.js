@@ -294,7 +294,7 @@
     const report = state.report || await loadReport();
     const popup = window.open('', '_blank', 'width=1024,height=768');
     if (!popup) return toast('Trình duyệt đang chặn cửa sổ in', 'warning');
-    popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(report.title || 'Báo cáo') + '</title><style>@page{size:A4;margin:14mm}body{font-family:"Segoe UI",Roboto,Arial,"Noto Sans",sans-serif;color:#111}h1{text-align:center;font-size:20px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}</style></head><body><h1>' + esc(report.title || 'Báo cáo') + '</h1><p>Ngày in: ' + new Date().toLocaleString('vi-VN') + '</p>' + reportTable(report) + '<script>window.onload=function(){window.print();};</script></body></html>');
+    popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(report.title || 'Báo cáo') + '</title><style>@page{size:A4;margin:14mm}:root{--app-font-family:Arial,Roboto,"Segoe UI","Helvetica Neue","Noto Sans",sans-serif}body,button,input,select,textarea,table{font-family:var(--app-font-family)}body{color:#111}h1{text-align:center;font-size:20px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}</style></head><body><h1>' + esc(report.title || 'Báo cáo') + '</h1><p>Ngày in: ' + new Date().toLocaleString('vi-VN') + '</p>' + reportTable(report) + '<script>window.onload=function(){window.print();};</script></body></html>');
     popup.document.close();
   }
 

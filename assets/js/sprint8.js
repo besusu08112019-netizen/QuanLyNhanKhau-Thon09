@@ -213,7 +213,7 @@
 
   function printPersonDetail(row) {
     const win = window.open('', '_blank', 'width=1024,height=768');
-    win.document.write('<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>' + escapeHtml(row.full_name || 'Nhân khẩu') + '</title><style>@page{size:A4;margin:14mm}body{font-family:"Segoe UI",Roboto,Arial,"Noto Sans",sans-serif;color:#111}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}.detail-item{border-bottom:1px solid #ddd;padding:6px 0}.detail-label{font-size:12px;color:#555}.detail-value{font-weight:700}</style></head><body><h2>Phiếu thông tin nhân khẩu</h2>' + personDetailHtml(row) + '<script>window.print();<\\/script></body></html>');
+    win.document.write('<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>' + escapeHtml(row.full_name || 'Nhân khẩu') + '</title><style>@page{size:A4;margin:14mm}:root{--app-font-family:Arial,Roboto,"Segoe UI","Helvetica Neue","Noto Sans",sans-serif}body,button,input,select,textarea,table{font-family:var(--app-font-family)}body{color:#111}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}.detail-item{border-bottom:1px solid #ddd;padding:6px 0}.detail-label{font-size:12px;color:#555}.detail-value{font-weight:700}</style></head><body><h2>Phiếu thông tin nhân khẩu</h2>' + personDetailHtml(row) + '<script>window.print();<\\/script></body></html>');
     win.document.close();
   }
 
