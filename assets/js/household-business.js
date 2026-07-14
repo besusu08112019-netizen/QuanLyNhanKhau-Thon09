@@ -29,6 +29,11 @@
   };
   const show = (message, type = 'success') => typeof window.showToast === 'function' ? window.showToast(message, type) : console.log(message);
   const request = (url, options = {}) => (window.api || window.thon09Api)(url, options);
+  const confirmAction = options => {
+    const dialog = window.Thon09Platform?.confirmDialog;
+    if (dialog?.ask) return dialog.ask(options);
+    return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
+  };
   const registerModal = id => {
     const modal = $('#' + id);
     const service = window.Thon09Platform?.modals;
@@ -1057,7 +1062,7 @@
 
   async function deleteBusinessFile(businessId, fileId) {
     if (!can('household_business', 'delete')) return show('Tài khoản hiện tại không có quyền xóa file', 'warning');
-    if (!confirm('Xóa file đính kèm này?')) return;
+    if (!await confirmAction({ title: 'Xác nhận xóa file', message: 'Xóa file đính kèm này?', confirmLabel: 'Xóa file', tone: 'danger' })) return;
     await request('/api/household-business/' + encodeURIComponent(businessId) + '/files/' + encodeURIComponent(fileId), { method: 'DELETE' });
     show('Đã xóa file đính kèm');
     if (state.currentDetailHouseholdId) showDetail(state.currentDetailHouseholdId);
@@ -1065,7 +1070,7 @@
 
   async function remove(id) {
     if (!can('household_business', 'delete')) return show('Tài khoản hiện tại không có quyền xóa', 'warning');
-    if (!confirm('Xóa hoạt động sản xuất/kinh doanh này? Dữ liệu hộ gia đình và nhân khẩu không bị xóa.')) return;
+    if (!await confirmAction({ title: 'Xác nhận xóa hoạt động', message: 'Xóa hoạt động sản xuất/kinh doanh này? Dữ liệu hộ gia đình và nhân khẩu không bị xóa.', confirmLabel: 'Xóa hoạt động', tone: 'danger' })) return;
     let householdId = state.currentDetailHouseholdId;
     try {
       const before = await request('/api/household-business/' + encodeURIComponent(id), { cacheTtl: 0 });

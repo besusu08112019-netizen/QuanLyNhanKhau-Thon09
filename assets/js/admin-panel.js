@@ -22,6 +22,11 @@
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.hide();
   }
+  function confirmAction(options) {
+    const dialog = window.Thon09Platform?.confirmDialog;
+    if (dialog?.ask) return dialog.ask(options);
+    return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add(localStorage.getItem('thon09_theme') || 'theme-light');
@@ -273,7 +278,7 @@
   }
 
   window.deleteMovement = async function deleteMovement(id) {
-    if (!confirm('Xóa biến động này?')) return;
+    if (!await confirmAction({ title: 'Xác nhận xóa biến động', message: 'Xóa biến động này?', confirmLabel: 'Xóa', tone: 'danger' })) return;
     await api('/api/movements/' + id, { method: 'DELETE' });
     showToast('Đã xóa biến động'); loadMovements(); loadDashboard();
   };
@@ -416,7 +421,7 @@
 
   async function restoreSql(event) {
     event.preventDefault();
-    if (!confirm('Khôi phục dữ liệu sẽ thay đổi database. Tiếp tục?')) return;
+    if (!await confirmAction({ title: 'Xác nhận khôi phục dữ liệu', message: 'Khôi phục dữ liệu sẽ thay đổi database. Tiếp tục?', confirmLabel: 'Khôi phục', tone: 'danger' })) return;
     const form = event.currentTarget;
     const file = form.elements.file?.files?.[0];
     if (file) {

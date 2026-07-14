@@ -25,6 +25,12 @@
     return typeof window.thon09CanAccess === 'function' && window.thon09CanAccess(moduleKey, action);
   }
 
+  function confirmAction(options) {
+    const dialog = window.Thon09Platform?.confirmDialog;
+    if (dialog?.ask) return dialog.ask(options);
+    return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
+  }
+
   window.roleLabel = function roleLabel(role) {
     return ({ SUPER_ADMIN:'Super Admin', ADMIN:'Admin', OFFICER:'Cán bộ', VIEWER:'Khách' })[role] || role || '';
   };
@@ -239,7 +245,7 @@
   }
 
   async function deletePersonProfileFile(form, fileId, id) {
-    if (!confirm('Xóa file này?')) return;
+    if (!await confirmAction({ title: 'Xác nhận xóa file', message: 'Xóa file này?', confirmLabel: 'Xóa file', tone: 'danger' })) return;
     try {
       await api('/api/files/' + encodeURIComponent(fileId), { method: 'DELETE' });
       showToast('Đã xóa file');

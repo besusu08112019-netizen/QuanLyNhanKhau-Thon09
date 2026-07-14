@@ -37,7 +37,7 @@ async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
     const url = route.request().url();
     const fulfill = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(ok(data)) });
-    if (url.includes('/api/public/login-config')) return fulfill({ settings: { systemName: 'Há»‡ thá»‘ng quáº£n lÃ½ hÃ nh chÃ­nh', hamletName: 'ThÃ´n 09', communeName: 'XÃ£ Há»“ng Phong', version: 'v2.0' }, metrics: {} });
+    if (url.includes('/api/public/login-config')) return fulfill({ settings: { systemName: 'Hệ thống quản lý hành chính', hamletName: 'Thôn 09', communeName: 'Xã Hồng Phong', version: 'v2.0' }, metrics: {} });
     if (url.includes('/api/auth/me')) return fulfill({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
     if (url.includes('/api/dashboard/summary')) return fulfill({ metrics: {}, charts: {}, generatedAt: new Date().toISOString() });
     if (url.includes('/api/dashboard/')) return fulfill({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() });

@@ -215,8 +215,9 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
   await page.locator('#publicAssetInventoryForm [name="quantity"]').fill('4');
   await page.locator('#publicAssetInventoryForm button[type="submit"]').click();
   await expect.poll(() => requests.some(item => item.method === 'PUT' && item.path === '/api/public-assets/101/inventory/501')).toBeTruthy();
-  page.on('dialog', dialog => dialog.accept());
   await page.locator('#publicAssetInventoryPanel [data-platform-action="publicAssets.inventory.delete"]').first().click();
+  await expect(page.locator('.platform-confirm-dialog')).toBeVisible();
+  await page.locator('.platform-confirm-dialog .platform-confirm-footer .btn-danger').click();
   await expect.poll(() => requests.some(item => item.method === 'DELETE' && item.path === '/api/public-assets/101/inventory/501')).toBeTruthy();
   await page.evaluate(() => {
     const modal = document.querySelector('#publicAssetDetailModal');
