@@ -264,6 +264,8 @@ test('leaflet GIS loads viewport markers and lazy popup detail', async ({ page }
   await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
   await expect(page.locator('[data-test-popup]')).toContainText('Cua hang vat tu');
+  await expect(page.locator('[data-test-popup]')).toContainText('Kinh doanh');
+  await expect(page.locator('[data-test-popup]')).not.toContainText('Ho?t');
   expect(apiLog.some(item => item.path === '/api/gis/households/7/detail')).toBeTruthy();
 
   await page.locator('#gisSearch').fill('Nguyen');

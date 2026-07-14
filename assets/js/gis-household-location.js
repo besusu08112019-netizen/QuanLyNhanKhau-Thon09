@@ -24,6 +24,11 @@
     if (typeof window.showToast === 'function') window.showToast(message, type || 'info');
     else console[type === 'danger' ? 'error' : 'log'](message);
   }
+  function confirmAction(options) {
+    const service = window.Thon09Platform && window.Thon09Platform.confirmDialog;
+    if (service && typeof service.ask === 'function') return service.ask(options);
+    return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
+  }
   function hasPlatformPermissionRule(module, action) {
     const service = window.Thon09Platform?.permissions;
     if (!service?.list) return false;
@@ -217,7 +222,11 @@
       document.body.classList.add('gis-location-picking');
       showPickBanner('Bấm vào vị trí ngôi nhà trên bản đồ để lưu tọa độ.');
       m.once('click', async event => {
-        const ok = window.confirm('Lưu vị trí này cho hộ gia đình?\nLatitude: ' + event.latlng.lat.toFixed(8) + '\nLongitude: ' + event.latlng.lng.toFixed(8));
+        const ok = await confirmAction({
+          title: 'Xác nhận lưu vị trí',
+          message: 'Lưu vị trí này cho hộ gia đình?\nLatitude: ' + event.latlng.lat.toFixed(8) + '\nLongitude: ' + event.latlng.lng.toFixed(8),
+          confirmLabel: 'Lưu vị trí'
+        });
         hidePickBanner();
         document.body.classList.remove('gis-location-picking');
         if (!ok) return;
@@ -376,7 +385,7 @@
       .register('householdLocation.clear', async () => {
         const householdId = currentHouseholdId();
         if (!householdId) return;
-        if (!window.confirm('Xóa vị trí hiện tại của hộ gia đình này?')) return;
+        if (!(await confirmAction({ title: 'Xác nhận xóa vị trí', message: 'Xóa vị trí hiện tại của hộ gia đình này?', confirmLabel: 'Xóa vị trí', tone: 'danger' }))) return;
         try { await clearLocation(householdId); } catch (error) { toast(error.message || 'Không xóa được vị trí.', 'danger'); }
       });
   }
@@ -752,14 +761,14 @@
   function businessPopupRows(row) {
     const activities = Array.isArray(row?.business_activities) ? row.business_activities : [];
     if (activities.length) {
-      return '<dt>Ho?t ??ng kinh t?</dt><dd><ul class="mb-0 ps-3">' + activities.map(item => {
-        const title = item.business_name || item.sector || 'Ch?a ??t t?n';
+      return '<dt>Hoạt động kinh tế</dt><dd><ul class="mb-0 ps-3">' + activities.map(item => {
+        const title = item.business_name || item.sector || 'Chưa đặt tên';
         const meta = [item.business_type_label, item.sector, item.owner_name, item.phone].filter(Boolean).join(' - ');
         return '<li><strong>' + escapeHtml(title) + '</strong>' + (meta ? '<br><small>' + escapeHtml(meta) + '</small>' : '') + '</li>';
       }).join('') + '</ul></dd>';
     }
     if (!row || !row.business_name) return '';
-    return '<dt>Ho?t ??ng kinh t?</dt><dd>' + escapeHtml(row.business_name || '') + '</dd>';
+    return '<dt>Hoạt động kinh tế</dt><dd>' + escapeHtml(row.business_name || '') + '</dd>';
   }
   function popupHtml(row) {
     row = normalizeHouseholdRow(row) || {};
