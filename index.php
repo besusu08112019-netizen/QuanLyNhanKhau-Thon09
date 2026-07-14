@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-372-pwa-absolute-assets');
+define('APP_ASSET_VERSION', 'deploy-373-visible-module-actions');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
