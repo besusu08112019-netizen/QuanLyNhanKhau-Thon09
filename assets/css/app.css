@@ -4899,9 +4899,22 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 .gis-v2-layer-copy b, .gis-v2-heat-row b { font-size: .84rem; color: #172033; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gis-v2-layer-copy small { color: #64748b; font-size: .74rem; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gis-v2-heatmap-title { padding-top: 2px; border-top: 1px solid #e5edf6; }
+.gis-v2-tools-title { padding-top: 2px; border-top: 1px solid #e5edf6; }
+.gis-v2-tools { display: grid; grid-template-columns: 1fr; gap: 7px; }
+.gis-v2-tools .btn { min-height: 44px; justify-content: flex-start; display: inline-flex; align-items: center; gap: 8px; }
+.gis-v2-area-dashboard { display: grid; gap: 8px; border-top: 1px solid #e5edf6; padding-top: 10px; }
+.gis-v2-area-dashboard h4 { margin: 0; font-size: .92rem; font-weight: 700; color: #0f172a; overflow-wrap: anywhere; }
+.gis-v2-dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.gis-v2-dashboard-grid div { min-height: 54px; border: 1px solid #e5edf6; border-radius: 8px; background: #fff; padding: 8px; display: grid; align-content: center; gap: 2px; }
+.gis-v2-dashboard-grid span { color: #64748b; font-size: .72rem; font-weight: 650; line-height: 1.2; }
+.gis-v2-dashboard-grid b { color: #0f172a; font-size: .95rem; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
 .gis-v2-marker { background: transparent; border: 0; }
 .gis-v2-marker span { width: 34px; height: 34px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: var(--gis-layer-color); color: #fff; box-shadow: 0 8px 18px rgba(15,23,42,.24); border: 2px solid #fff; }
 .gis-v2-polygon { transition: stroke-width .15s ease, fill-opacity .15s ease; }
+.gis-v2-measuring { cursor: crosshair; }
+.gis-v2-measure-result { position: absolute; left: 16px; bottom: 16px; z-index: 720; max-width: min(320px, calc(100% - 32px)); border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; box-shadow: 0 16px 32px rgba(15,23,42,.18); padding: 10px 12px; display: grid; gap: 2px; color: #0f172a; }
+.gis-v2-measure-result strong { font-size: .86rem; }
+.gis-v2-measure-result span { font-size: .82rem; color: #475569; }
 .gis-v2-popup { min-width: 220px; max-width: min(320px, calc(100vw - 52px)); display: grid; gap: 8px; color: #0f172a; }
 .gis-v2-popup-head { display: grid; grid-template-columns: 38px minmax(0,1fr); gap: 8px; align-items: center; }
 .gis-v2-popup-head > span { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--gis-layer-color) 16%, white); color: var(--gis-layer-color); border: 1px solid color-mix(in srgb, var(--gis-layer-color) 28%, white); }

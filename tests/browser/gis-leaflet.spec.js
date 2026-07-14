@@ -372,3 +372,52 @@ test('GIS platform layer registry toggles module overlays independently', async 
   })).toBe(false);
 });
 
+test('GIS v3 dashboard, heatmap, drag marker, measure tools and unified search work', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+
+  await page.locator('#gisAreaList .gis-area-item').click();
+  await expect(page.locator('#gisV2AreaDashboard')).toContainText('Khu A');
+  await expect(page.locator('#gisV2AreaDashboard')).toContainText('Tổng hộ');
+  await expect(page.locator('#gisV2AreaDashboard')).toContainText('Nhân khẩu');
+
+  await page.locator('[data-gis-v2-heat="population"]').check();
+  await expect.poll(() => page.evaluate(() => window.Thon09GisPlatform.state.heatLayer?.getLayers().length || 0)).toBeGreaterThan(0);
+  const heatState = await page.evaluate(() => window.Thon09GisPlatform.state.heatLayer.getLayers().map(layer => layer.__gisHeatmap));
+  expect(heatState).toContain('population');
+
+  await expect.poll(() => page.evaluate(() => Boolean(window.App.gis.markerCache.get('7')?.marker.__gisDragEnabled))).toBe(true);
+  await page.evaluate(() => {
+    const marker = window.App.gis.markerCache.get('7').marker;
+    marker.setLatLng({ lat: 20.257, lng: 105.979 });
+    marker.fire('dragend');
+  });
+  await expect.poll(() => apiLog.find(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location')?.body.latitude).toBe(20.257);
+  await expect.poll(() => apiLog.find(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location')?.body.longitude).toBe(105.979);
+
+  await page.evaluate(() => {
+    window.Thon09GisPlatform.startMeasure('distance');
+    window.App.gis.map.fire('click', { latlng: { lat: 20.250, lng: 105.970 } });
+    window.App.gis.map.fire('click', { latlng: { lat: 20.251, lng: 105.971 } });
+  });
+  await expect(page.locator('#gisV2MeasureResult')).toContainText('Đo khoảng cách');
+  await expect(page.locator('#gisV2MeasureResult')).toContainText(/m|km/);
+
+  await page.evaluate(() => {
+    window.Thon09GisPlatform.startMeasure('area');
+    window.App.gis.map.fire('click', { latlng: { lat: 20.250, lng: 105.970 } });
+    window.App.gis.map.fire('click', { latlng: { lat: 20.251, lng: 105.970 } });
+    window.App.gis.map.fire('click', { latlng: { lat: 20.251, lng: 105.971 } });
+  });
+  await expect(page.locator('#gisV2MeasureResult')).toContainText('Đo diện tích');
+  await expect(page.locator('#gisV2MeasureResult')).toContainText(/m²|ha/);
+
+  await page.locator('#gisSearch').fill('CT001');
+  await expect(page.locator('#gisSearchResults')).toContainText('Nhà văn hóa thôn');
+  await expect(page.locator('#gisSearchResults')).toContainText('Công trình công cộng');
+  await page.locator('#gisSearchResults [data-gis-v2-result="0"]').click();
+  const focused = await page.evaluate(() => window.App.gis.map.center);
+  expect(Number(focused.lat)).toBeCloseTo(20.256, 3);
+  expect(Number(focused.lng)).toBeCloseTo(105.977, 3);
+});
+
