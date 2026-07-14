@@ -467,7 +467,11 @@ function versioned_asset(string $path): string
     $file = BASE_PATH . '/' . $normalized;
     $version = defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1';
     if (is_file($file)) {
-        $version .= '-' . filemtime($file);
+        $hash = hash_file('xxh3', $file);
+        if ($hash === false) {
+            $hash = hash_file('sha1', $file);
+        }
+        $version .= '-' . substr((string) $hash, 0, 12);
     }
     $separator = str_contains($normalized, '?') ? '&' : '?';
     return $normalized . $separator . 'v=' . rawurlencode($version);
