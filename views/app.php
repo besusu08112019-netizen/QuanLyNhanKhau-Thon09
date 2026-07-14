@@ -12,13 +12,13 @@
   <meta name="application-name" content="Quản lý Nhân khẩu Thôn 09">
   <meta name="msapplication-TileColor" content="#0b6b3a">
   <title>Quản Lý Nhân Khẩu Thôn 09</title>
-  <link rel="manifest" href="/manifest.webmanifest?v=20260714-6">
+  <link rel="manifest" href="/manifest.webmanifest?v=20260714-9">
   <link rel="icon" href="/favicon.ico?v=20260714-6" type="image/x-icon">
   <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png?v=20260714-6">
   <link rel="apple-touch-startup-image" href="/assets/icons/splash-512.png?v=20260714-6">
-  <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.min.css">
+  <link rel="stylesheet" href="/assets/css/app.min.css">
 </head>
 <body>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3"></div>
@@ -661,37 +661,37 @@
   <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 id="detailTitle" class="modal-title">Chi tiết</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div id="detailBody" class="modal-body"></div></div></div></div>
 
   <div class="modal fade" id="publicAssetInventoryModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><form class="modal-content" id="publicAssetInventoryForm" novalidate><div class="modal-header"><h5 class="modal-title">Kiểm kê tài sản công trình</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><input type="hidden" name="public_asset_id"><div class="row g-3"><div class="col-md-4"><label class="form-label">Mã tài sản</label><input name="inventory_code" class="form-control" readonly placeholder="Tự sinh khi lưu"></div><div class="col-md-8"><label class="form-label">Tên tài sản</label><input name="item_name" class="form-control" required></div><div class="col-md-4"><label class="form-label" for="publicAssetInventoryGroupSelect">Nhóm tài sản</label><select id="publicAssetInventoryGroupSelect" name="group_id" class="form-select"></select></div><div class="col-md-4"><label class="form-label">Số lượng</label><input name="quantity" type="number" min="0.01" step="0.01" class="form-control" value="1" required></div><div class="col-md-4"><label class="form-label">Đơn vị tính</label><input name="unit" class="form-control" placeholder="cái, bộ, chiếc..."></div><div class="col-md-4"><label class="form-label" for="publicAssetInventoryConditionSelect">Tình trạng</label><select id="publicAssetInventoryConditionSelect" name="condition_status" class="form-select"></select></div><div class="col-md-4"><label class="form-label">Ngày đưa vào sử dụng</label><input name="start_use_date" type="date" class="form-control"></div><div class="col-md-4"><label class="form-label">Vị trí trong công trình</label><input name="location_in_asset" class="form-control"></div><div class="col-md-5"><label class="form-label" for="publicAssetInventoryPhotoFile">Ảnh tài sản</label><input id="publicAssetInventoryPhotoFile" type="file" class="form-control" accept="image/jpeg,image/png,image/webp"><div class="form-text">JPG, PNG hoặc WEBP.</div></div><div class="col-md-7"><div id="publicAssetInventoryPhotoPreview" class="border rounded bg-light d-flex align-items-center justify-content-center" style="min-height:120px;overflow:hidden"><span class="text-muted small">Chưa có ảnh tài sản</span></div></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="3"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary">Lưu tài sản</button></div></form></div></div>
-  <script charset="utf-8" src="assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
-  <script charset="utf-8" src="assets/js/i18n.min.js"></script>
-  <script charset="utf-8" src="assets/js/app-platform.min.js"></script>
-  <script charset="utf-8" src="assets/js/app.utf8.min.js"></script>
-  <script charset="utf-8" src="assets/js/csrf.min.js"></script>
-  <script charset="utf-8" src="assets/js/session.min.js"></script>
-  <script charset="utf-8" src="assets/js/admin.utf8.min.js"></script>
-  <script charset="utf-8" src="assets/js/import.min.js"></script>
-  <script charset="utf-8" src="assets/js/admin-panel.min.js"></script>
-  <script charset="utf-8" src="assets/js/admin-panel-bridge.min.js"></script>
-  <script charset="utf-8" src="assets/js/sprint8.min.js"></script>
-  <script charset="utf-8" src="assets/js/sprint9.min.js"></script>
-  <script charset="utf-8" src="assets/js/sprint10.min.js"></script>
-  <script charset="utf-8" src="assets/js/view-inline-patches.min.js"></script>
-  <script charset="utf-8" src="assets/js/operation-center.min.js"></script>
-  <script charset="utf-8" src="assets/js/system-admin.min.js"></script>
-  <script charset="utf-8" src="assets/js/report.min.js"></script>
-  <script charset="utf-8" src="assets/js/gis-household-location.min.js"></script>
-  <script charset="utf-8" src="assets/js/gis-platform.min.js"></script>
-  <script charset="utf-8" src="assets/js/household-photo-capture.min.js"></script>
-  <script charset="utf-8" src="assets/js/household-photo-camera-fix.min.js"></script>
-  <script charset="utf-8" src="assets/js/household-photo-gps.min.js"></script>
-  <script charset="utf-8" src="assets/js/digital-profile.min.js"></script>
-  <script charset="utf-8" src="assets/js/household-business.min.js"></script>
-  <script charset="utf-8" src="assets/js/livestock.min.js"></script>
-  <script charset="utf-8" src="assets/js/vehicles.min.js"></script>
-  <script charset="utf-8" src="assets/js/contributions.min.js"></script>
-  <script charset="utf-8" src="assets/js/agriculture.min.js"></script>
-  <script charset="utf-8" src="assets/js/houses.min.js"></script>
-  <script charset="utf-8" src="assets/js/public-assets.min.js"></script>
-  <script charset="utf-8" src="assets/js/module-dashboards.min.js"></script>
-  <script charset="utf-8" src="assets/js/pwa.min.js"></script>
+  <script charset="utf-8" src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script charset="utf-8" src="/assets/js/i18n.min.js"></script>
+  <script charset="utf-8" src="/assets/js/app-platform.min.js"></script>
+  <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>
+  <script charset="utf-8" src="/assets/js/csrf.min.js"></script>
+  <script charset="utf-8" src="/assets/js/session.min.js"></script>
+  <script charset="utf-8" src="/assets/js/admin.utf8.min.js"></script>
+  <script charset="utf-8" src="/assets/js/import.min.js"></script>
+  <script charset="utf-8" src="/assets/js/admin-panel.min.js"></script>
+  <script charset="utf-8" src="/assets/js/admin-panel-bridge.min.js"></script>
+  <script charset="utf-8" src="/assets/js/sprint8.min.js"></script>
+  <script charset="utf-8" src="/assets/js/sprint9.min.js"></script>
+  <script charset="utf-8" src="/assets/js/sprint10.min.js"></script>
+  <script charset="utf-8" src="/assets/js/view-inline-patches.min.js"></script>
+  <script charset="utf-8" src="/assets/js/operation-center.min.js"></script>
+  <script charset="utf-8" src="/assets/js/system-admin.min.js"></script>
+  <script charset="utf-8" src="/assets/js/report.min.js"></script>
+  <script charset="utf-8" src="/assets/js/gis-household-location.min.js"></script>
+  <script charset="utf-8" src="/assets/js/gis-platform.min.js"></script>
+  <script charset="utf-8" src="/assets/js/household-photo-capture.min.js"></script>
+  <script charset="utf-8" src="/assets/js/household-photo-camera-fix.min.js"></script>
+  <script charset="utf-8" src="/assets/js/household-photo-gps.min.js"></script>
+  <script charset="utf-8" src="/assets/js/digital-profile.min.js"></script>
+  <script charset="utf-8" src="/assets/js/household-business.min.js"></script>
+  <script charset="utf-8" src="/assets/js/livestock.min.js"></script>
+  <script charset="utf-8" src="/assets/js/vehicles.min.js"></script>
+  <script charset="utf-8" src="/assets/js/contributions.min.js"></script>
+  <script charset="utf-8" src="/assets/js/agriculture.min.js"></script>
+  <script charset="utf-8" src="/assets/js/houses.min.js"></script>
+  <script charset="utf-8" src="/assets/js/public-assets.min.js"></script>
+  <script charset="utf-8" src="/assets/js/module-dashboards.min.js"></script>
+  <script charset="utf-8" src="/assets/js/pwa.min.js"></script>
 </body>
 </html>
