@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260714-4';
+const PWA_VERSION = 'thon09-pwa-v20260714-6';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
@@ -8,14 +8,14 @@ const STATIC_ASSETS = [
   '/pwa/thon09',
   OFFLINE_URL,
   '/manifest.webmanifest',
-  '/favicon.ico',
-  '/assets/icons/thon09-logo.png',
-  '/assets/icons/icon-192.png',
-  '/assets/icons/icon-512.png',
-  '/assets/icons/maskable-192.png',
-  '/assets/icons/maskable-512.png',
-  '/assets/icons/apple-touch-icon.png',
-  '/assets/icons/splash-512.png',
+  '/favicon.ico?v=20260714-6',
+  '/assets/icons/thon09-logo.png?v=20260714-6',
+  '/assets/icons/icon-192.png?v=20260714-6',
+  '/assets/icons/icon-512.png?v=20260714-6',
+  '/assets/icons/maskable-192.png?v=20260714-6',
+  '/assets/icons/maskable-512.png?v=20260714-6',
+  '/assets/icons/apple-touch-icon.png?v=20260714-6',
+  '/assets/icons/splash-512.png?v=20260714-6',
   '/assets/vendor/bootstrap/bootstrap.min.css',
   '/assets/vendor/bootstrap/bootstrap.bundle.min.js',
   '/assets/css/app.min.css',
@@ -68,8 +68,8 @@ self.addEventListener('push', event => {
   })();
   event.waitUntil(self.registration.showNotification(payload.title || fallback.title, {
     body: payload.body || fallback.body,
-    icon: '/assets/icons/icon-192.png',
-    badge: '/assets/icons/maskable-192.png',
+    icon: '/assets/icons/icon-192.png?v=20260714-6',
+    badge: '/assets/icons/maskable-192.png?v=20260714-6',
     tag: payload.tag || 'thon09-system',
     data: payload.data || fallback.data
   }));
