@@ -59,43 +59,46 @@ final class ContributionRuleEngine
         $unitType = strtoupper((string) ($campaign['unit_type'] ?? 'HOUSEHOLD'));
         $amount = max(0.0, (float) ($campaign['amount'] ?? 0));
 
-        $eligibleMembers = [];
+        $totalMembers = count($members);
+        $targetMembers = [];
         foreach ($members as $member) {
             if ($this->matchesTarget($member, $target)) {
-                $eligibleMembers[] = $member;
+                $targetMembers[] = $member;
             }
         }
 
-        if ($unitType === 'HOUSEHOLD' && $eligibleMembers === [] && $this->householdMatchesTarget($target)) {
-            $eligibleMembers = $members ?: [['id' => null, 'full_name' => (string) ($household['head_citizen_name'] ?? 'Chủ hộ')]];
+        if ($unitType === 'HOUSEHOLD' && $targetMembers === [] && $this->householdMatchesTarget($target)) {
+            $targetMembers = $members ?: [['id' => null, 'full_name' => (string) ($household['head_citizen_name'] ?? 'Chủ hộ')]];
+            $totalMembers = max(1, $totalMembers);
         }
 
         $exemptMembers = [];
-        foreach ($eligibleMembers as $member) {
+        foreach ($targetMembers as $member) {
             if ($this->matchesExemption($member, $household, $exemption)) {
                 $exemptMembers[] = $member;
             }
         }
 
         $householdExempt = $this->householdExempt($household, $exemption);
-        $eligibleCount = count($eligibleMembers);
-        $exemptCount = $householdExempt ? $eligibleCount : count($exemptMembers);
-        $chargeableCount = max(0, $eligibleCount - $exemptCount);
+        $targetCount = count($targetMembers);
+        $policyExemptCount = $householdExempt ? $targetCount : count($exemptMembers);
+        $chargeableCount = max(0, $targetCount - $policyExemptCount);
+        $exemptCount = max(0, $totalMembers - $chargeableCount);
 
         $grossAmount = match ($unitType) {
-            'PERSON' => $eligibleCount * $amount,
-            default => $eligibleCount > 0 ? $amount : 0.0,
+            'PERSON' => $totalMembers * $amount,
+            default => $totalMembers > 0 ? $amount : 0.0,
         };
         $exemptAmount = $householdExempt
             ? $grossAmount
             : (match ($unitType) {
                 'PERSON' => $exemptCount * $amount,
-                default => $exemptCount >= $eligibleCount && $eligibleCount > 0 ? $amount : 0.0,
+                default => $chargeableCount <= 0 && $totalMembers > 0 ? $amount : 0.0,
             });
         $expectedAmount = max(0.0, $grossAmount - $exemptAmount);
 
         return [
-            'eligible_count' => $eligibleCount,
+            'eligible_count' => $totalMembers,
             'exempt_count' => $exemptCount,
             'chargeable_count' => $chargeableCount,
             'gross_amount' => $grossAmount,
@@ -104,15 +107,35 @@ final class ContributionRuleEngine
             'exempt_subjects' => array_map(fn($m) => [
                 'citizen_id' => $m['id'] ?? null,
                 'full_name' => (string) ($m['full_name'] ?? ''),
-                'reason' => $this->exemptionReason($m, $household, $exemption),
-            ], $householdExempt ? $eligibleMembers : $exemptMembers),
+                'reason' => (string) ($m['_exemption_reason'] ?? $this->exemptionReason($m, $household, $exemption)),
+            ], $this->exemptSubjects($members, $targetMembers, $householdExempt ? $targetMembers : $exemptMembers, $household, $exemption)),
             'note' => json_encode([
                 'unit_type' => $unitType,
                 'target' => $target,
                 'exemption' => $exemption,
                 'household_exempt' => $householdExempt,
+                'target_count' => $targetCount,
+                'policy_exempt_count' => $policyExemptCount,
             ], JSON_UNESCAPED_UNICODE),
         ];
+    }
+
+    private function exemptSubjects(array $members, array $targetMembers, array $policyExemptMembers, array $household, array $exemption): array
+    {
+        $targetIds = array_flip(array_map(fn($m) => (string) ($m['id'] ?? spl_object_id((object) $m)), $targetMembers));
+        $policyIds = array_flip(array_map(fn($m) => (string) ($m['id'] ?? spl_object_id((object) $m)), $policyExemptMembers));
+        $subjects = [];
+        foreach ($members as $member) {
+            $key = (string) ($member['id'] ?? spl_object_id((object) $member));
+            if (isset($policyIds[$key])) {
+                $subjects[] = $member + ['_exemption_reason' => $this->exemptionReason($member, $household, $exemption)];
+                continue;
+            }
+            if (!isset($targetIds[$key])) {
+                $subjects[] = $member + ['_exemption_reason' => 'Không thuộc đối tượng phải đóng góp'];
+            }
+        }
+        return $subjects;
     }
 
     private function householdMatchesTarget(array $config): bool

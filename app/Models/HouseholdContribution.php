@@ -280,9 +280,11 @@ SQL);
         $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM household_contributions hc INNER JOIN households h ON h.id=hc.household_id $where", $params) ?: [])['total'] ?? 0);
         $rows = $this->fetchAll(
             "SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
+                c.contribution_name, c.due_date,
                 hc.*
              FROM household_contributions hc
              INNER JOIN households h ON h.id=hc.household_id
+             INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id
              $where $order LIMIT $pageSize OFFSET $offset",
             $params
         );
@@ -378,11 +380,14 @@ SQL);
     public function report(string $mode, array $filters = []): array
     {
         $mode = strtolower($mode);
-        if (in_array($mode, ['summary', 'finance', 'financial', 'population', 'exempt', 'exemptions'], true)) {
+        if (in_array($mode, ['summary', 'household', 'households', 'finance', 'financial', 'population', 'exempt', 'exemptions', 'detail', 'campaign-detail', 'by-contribution', 'by_contribution'], true)) {
             return match ($mode) {
+                'household', 'households' => $this->householdReport($filters),
                 'finance', 'financial' => $this->financialReport($filters),
                 'population' => $this->populationReport($filters),
                 'exempt', 'exemptions' => $this->exemptionReport($filters),
+                'detail', 'campaign-detail' => $this->campaignDetailReport($filters),
+                'by-contribution', 'by_contribution' => $this->byContributionReport($filters),
                 default => $this->summaryReport($filters),
             };
         }
@@ -397,6 +402,33 @@ SQL);
         return $this->table('Danh sách đợt thu', ['Khoản thu','Năm','Đợt','Mức thu','Đơn vị','Hạn đóng','Đã nộp','Nộp một phần','Chưa nộp','Được miễn','Tổng phải thu','Đã thu','Còn nợ','Trạng thái'], array_map(fn($r) => [$r['contribution_name'], $r['year'], $r['period_name'], $r['amount'], $r['unit'], $r['due_date'], $r['paid_households'], $r['partial_households'], $r['unpaid_households'], $r['exempt_households'], $r['expected_total'], $r['collected_amount'], $r['debt_amount'], $r['status_label']], $rows), $filters);
     }
 
+    private function householdReport(array $filters): array
+    {
+        $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
+        if ($campaignId <= 0) $campaignId = $this->latestCampaignId($filters);
+        if ($campaignId <= 0) return $this->table('Báo cáo theo hộ', ['Mã hộ','Chủ hộ','Trạng thái'], [], $filters);
+        $rows = $this->tracking($campaignId, $filters + ['pageSize' => 100])['items'];
+        return $this->table('Báo cáo theo hộ', ['Mã hộ','Chủ hộ','Địa chỉ','Trạng thái','Phải thu','Đã thu','Còn nợ','Khẩu phải đóng','Khẩu miễn','Quá hạn'], array_map(function ($r) {
+            $overdue = ((float) $r['debt_amount'] > 0 && !empty($r['due_date']) && strtotime((string) $r['due_date']) < strtotime('today')) ? 'Có' : '';
+            return [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['payment_status_label'], $r['expected_amount'], $r['paid_amount'], $r['debt_amount'], $r['chargeable_count'], $r['exempt_count'], $overdue];
+        }, $rows), $filters + ['campaign_id' => $campaignId]);
+    }
+
+    private function campaignDetailReport(array $filters): array
+    {
+        return $this->householdReport($filters);
+    }
+
+    private function byContributionReport(array $filters): array
+    {
+        $rows = $this->campaigns($filters + ['pageSize' => 100])['items'];
+        return $this->table('Báo cáo theo từng khoản đóng góp', ['Khoản đóng góp','Năm','Đợt','Tổng hộ','Hộ phải đóng','Hộ miễn','Đã nộp','Nộp một phần','Chưa nộp','Tổng mức thu','Tổng miễn','Phải thu thực tế','Đã thu','Còn phải thu'], array_map(function ($r) {
+            $totalHouseholds = (int) $r['paid_households'] + (int) $r['partial_households'] + (int) $r['unpaid_households'] + (int) $r['exempt_households'];
+            $dueHouseholds = (int) $r['paid_households'] + (int) $r['partial_households'] + (int) $r['unpaid_households'];
+            return [$r['contribution_name'], $r['year'], $r['period_name'], $totalHouseholds, $dueHouseholds, $r['exempt_households'], $r['paid_households'], $r['partial_households'], $r['unpaid_households'], $r['gross_total'], $r['exempt_total'], $r['expected_total'], $r['collected_amount'], $r['debt_amount']];
+        }, $rows), $filters);
+    }
+
     private function summary(array $filters): array
     {
         [$where, $params] = $this->summaryWhere($filters);
@@ -408,17 +440,15 @@ SQL);
                 COALESCE(SUM(CASE WHEN hc.payment_status='PARTIAL' THEN 1 ELSE 0 END),0) AS partial_households,
                 COALESCE(SUM(CASE WHEN hc.payment_status='UNPAID' THEN 1 ELSE 0 END),0) AS unpaid_households,
                 COALESCE(SUM(CASE WHEN c.due_date IS NOT NULL AND c.due_date < CURDATE() AND hc.payment_status IN ('UNPAID','PARTIAL') THEN 1 ELSE 0 END),0) AS overdue_households,
-                COALESCE(SUM(hc.eligible_count),0) AS eligible_population,
+                COALESCE(SUM(hc.eligible_count),0) AS total_population,
                 COALESCE(SUM(hc.exempt_count),0) AS exempt_population,
                 COALESCE(SUM(hc.chargeable_count),0) AS chargeable_population,
-                COALESCE(SUM(CASE WHEN hc.payment_status IN ('PAID','REDUCED') THEN hc.chargeable_count ELSE 0 END),0) AS completed_chargeable_population,
-                COALESCE(SUM(CASE WHEN hc.payment_status='EXEMPT' THEN hc.exempt_count ELSE 0 END),0) AS completed_exempt_population,
-                COALESCE(SUM(CASE WHEN hc.payment_status IN ('UNPAID','PARTIAL') THEN hc.chargeable_count ELSE 0 END),0) AS incomplete_population,
+                COALESCE(SUM(CASE WHEN GREATEST(hc.gross_amount - hc.exempt_amount - hc.discount_amount, 0) > 0 AND hc.paid_amount >= GREATEST(hc.gross_amount - hc.exempt_amount - hc.discount_amount, 0) THEN hc.chargeable_count ELSE 0 END),0) AS completed_population,
                 COALESCE(SUM(hc.gross_amount),0) AS gross_total,
                 COALESCE(SUM(hc.exempt_amount + hc.discount_amount),0) AS exempt_total,
-                COALESCE(SUM(hc.expected_amount),0) AS expected_total,
+                COALESCE(SUM(GREATEST(hc.gross_amount - hc.exempt_amount - hc.discount_amount, 0)),0) AS expected_total,
                 COALESCE(SUM(hc.paid_amount),0) AS collected_amount,
-                COALESCE(SUM(hc.debt_amount),0) AS debt_amount
+                COALESCE(SUM(GREATEST(hc.gross_amount - hc.exempt_amount - hc.discount_amount - hc.paid_amount, 0)),0) AS debt_amount
              FROM household_contributions hc
              INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id
              INNER JOIN households h ON h.id=hc.household_id
@@ -434,11 +464,11 @@ SQL);
             'partial_households' => (int) ($row['partial_households'] ?? 0),
             'unpaid_households' => max(0, $totalHouseholds - (int) ($row['paid_households'] ?? 0) - (int) ($row['partial_households'] ?? 0) - (int) ($row['exempt_households'] ?? 0)),
             'overdue_households' => (int) ($row['overdue_households'] ?? 0),
-            'total_population' => $this->activeCitizenCount(),
+            'total_population' => (int) ($row['total_population'] ?? 0),
             'eligible_population' => (int) ($row['chargeable_population'] ?? 0),
             'exempt_population' => (int) ($row['exempt_population'] ?? 0),
-            'completed_population' => (int) ($row['completed_chargeable_population'] ?? 0) + (int) ($row['completed_exempt_population'] ?? 0),
-            'incomplete_population' => (int) ($row['incomplete_population'] ?? 0),
+            'completed_population' => (int) ($row['completed_population'] ?? 0),
+            'incomplete_population' => max(0, (int) ($row['chargeable_population'] ?? 0) - (int) ($row['completed_population'] ?? 0)),
             'gross_total' => (float) ($row['gross_total'] ?? 0),
             'exempt_total' => (float) ($row['exempt_total'] ?? 0),
             'expected_total' => (float) ($row['expected_total'] ?? 0),
@@ -694,6 +724,8 @@ SQL);
         return [
             'id' => isset($row['id']) ? (int) $row['id'] : null,
             'campaign_id' => isset($row['campaign_id']) ? (int) $row['campaign_id'] : null,
+            'contribution_name' => (string) ($row['contribution_name'] ?? ''),
+            'due_date' => $row['due_date'] ?? null,
             'household_id' => (int) $row['household_id'],
             'household_code' => (string) $row['household_code'],
             'head_citizen_name' => (string) $row['head_citizen_name'],
@@ -789,6 +821,13 @@ SQL);
     private function activeCitizenCount(): int
     {
         return (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE ' . self::ACTIVE_CITIZEN . ' AND ' . self::ACTIVE_HOUSEHOLD) ?: [])['total'] ?? 0);
+    }
+
+    private function latestCampaignId(array $filters = []): int
+    {
+        [$where, $params] = $this->campaignWhere($filters, false);
+        $row = $this->fetchOne("SELECT c.id FROM contribution_campaigns c $where ORDER BY c.year DESC, c.id DESC LIMIT 1", $params);
+        return (int) ($row['id'] ?? 0);
     }
 
     private function options(array $map): array
