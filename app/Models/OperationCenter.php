@@ -6,6 +6,8 @@ use App\Core\BaseModel;
 
 final class OperationCenter extends BaseModel
 {
+    private ?PopulationStatistics $statistics = null;
+
     public function notifications(array $filters = []): array
     {
         return $this->safePayload('notifications', function () use ($filters) {
@@ -360,8 +362,9 @@ final class OperationCenter extends BaseModel
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
-    private function activeHouseholdCondition(string $alias): string { return $alias . ".status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')"; }
-    private function activeCitizenCondition(string $alias): string { return $alias . ".status <> 'DELETED' AND COALESCE(" . $alias . ".life_status,'ALIVE') <> 'DECEASED' AND COALESCE(" . $alias . ".residency_status,'PERMANENT') <> 'TRANSFERRED_OUT'"; }
+    private function activeHouseholdCondition(string $alias): string { return $this->statistics()->householdCondition($alias); }
+    private function activeCitizenCondition(string $alias): string { return $this->statistics()->citizenCondition($alias); }
+    private function statistics(): PopulationStatistics { return $this->statistics ??= new PopulationStatistics(); }
     private function movementLabel(string $type): string { return ['BIRTH' => 'Thêm nhân khẩu', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi', 'TEMPORARY_RESIDENCE' => 'Tạm trú', 'TEMPORARY_ABSENCE' => 'Tạm vắng', 'DEATH' => 'Qua đời'][$type] ?? $type; }
 
     private function tableExists(string $table): bool

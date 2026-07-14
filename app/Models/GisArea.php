@@ -6,6 +6,8 @@ use App\Core\BaseModel;
 
 final class GisArea extends BaseModel
 {
+    private ?PopulationStatistics $statistics = null;
+
     private ?string $lastSql = null;
     private array $lastParams = [];
 
@@ -164,13 +166,18 @@ final class GisArea extends BaseModel
             COALESCE(v.total_members, 0) AS citizens,
             COALESCE(v.at_home_count, 0) AS at_home,
             COALESCE(v.away_count, 0) AS away,
-            COALESCE(SUM(CASE WHEN c.residency_status = "TEMPORARY" AND c.status <> "DELETED" AND COALESCE(c.life_status, "ALIVE") <> "DECEASED" AND COALESCE(c.residency_status, "PERMANENT") <> "TRANSFERRED_OUT" THEN 1 ELSE 0 END), 0) AS temporary,
-            COALESCE(SUM(CASE WHEN c.party_member = 1 AND c.status <> "DELETED" AND COALESCE(c.life_status, "ALIVE") <> "DECEASED" AND COALESCE(c.residency_status, "PERMANENT") <> "TRANSFERRED_OUT" THEN 1 ELSE 0 END), 0) AS party_members
+            COALESCE(SUM(CASE WHEN c.residency_status = "TEMPORARY" AND ' . $this->statistics()->citizenCondition('c') . ' THEN 1 ELSE 0 END), 0) AS temporary,
+            COALESCE(SUM(CASE WHEN c.party_member = 1 AND ' . $this->statistics()->citizenCondition('c') . ' THEN 1 ELSE 0 END), 0) AS party_members
             FROM households h
             LEFT JOIN v_household_member_counts v ON v.household_id = h.id
             LEFT JOIN citizens c ON c.household_id = h.id
-            WHERE (h.status IS NULL OR h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE"))
+            WHERE ' . $this->statistics()->householdCondition('h') . '
             GROUP BY h.id, h.household_code, h.latitude, h.longitude, h.poor_household, h.near_poor_household, h.meritorious_family, h.disabled_household, v.total_members, v.at_home_count, v.away_count');
+    }
+
+    private function statistics(): PopulationStatistics
+    {
+        return $this->statistics ??= new PopulationStatistics();
     }
 
     private function statsForPolygon(array $polygon, array $households): array

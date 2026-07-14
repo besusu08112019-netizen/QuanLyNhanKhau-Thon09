@@ -6,6 +6,8 @@ use App\Core\BaseModel;
 
 final class Household extends BaseModel
 {
+    private ?PopulationStatistics $statistics = null;
+
     public const CATEGORY_OPTIONS = [
         'poor' => 'Hộ nghèo',
         'near_poor' => 'Hộ cận nghèo',
@@ -111,7 +113,12 @@ final class Household extends BaseModel
 
     private function activeHouseholdCondition(string $alias): string
     {
-        return $alias . ".status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')";
+        return $this->statistics()->householdCondition($alias);
+    }
+
+    private function statistics(): PopulationStatistics
+    {
+        return $this->statistics ??= new PopulationStatistics();
     }
 
     private function filterCategory(array $filters): string

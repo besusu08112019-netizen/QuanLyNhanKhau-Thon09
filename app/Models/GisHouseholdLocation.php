@@ -6,6 +6,8 @@ use App\Core\BaseModel;
 
 final class GisHouseholdLocation extends BaseModel
 {
+    private ?PopulationStatistics $statistics = null;
+
     public function ensureSchema(): void
     {
         $columns = [
@@ -46,10 +48,10 @@ final class GisHouseholdLocation extends BaseModel
                     SUM(CASE WHEN c.residency_status = "TEMPORARY" THEN 1 ELSE 0 END) AS temporary_count,
                     SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count
                 FROM citizens c
-                WHERE c.status <> "DELETED"
+                WHERE ' . $this->statistics()->citizenCondition('c') . '
                 GROUP BY c.household_id
              ) cm ON cm.household_id = h.id
-             WHERE h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")' . $where . '
+             WHERE ' . $this->statistics()->householdCondition('h') . $where . '
                AND h.latitude IS NOT NULL AND h.latitude <> "" AND h.longitude IS NOT NULL AND h.longitude <> ""
              ORDER BY h.id ASC
              LIMIT 2000',
@@ -81,7 +83,7 @@ final class GisHouseholdLocation extends BaseModel
                     COALESCE(v.total_members,0) AS total_members, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count
              FROM households h
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             WHERE h.id = :id AND h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")',
+             WHERE h.id = :id AND ' . $this->statistics()->householdCondition('h'),
             ['id' => $householdId]
         );
         if (!$row) throw new \RuntimeException('Không tìm thấy hộ gia đình');
@@ -188,10 +190,10 @@ final class GisHouseholdLocation extends BaseModel
                     SUM(CASE WHEN c.residency_status = "TEMPORARY" THEN 1 ELSE 0 END) AS temporary_count,
                     SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count
                 FROM citizens c
-                WHERE c.status <> "DELETED"
+                WHERE ' . $this->statistics()->citizenCondition('c') . '
                 GROUP BY c.household_id
              ) cm ON cm.household_id = h.id
-             WHERE h.status NOT IN ("DELETED", "ENDED", "MERGED", "TRANSFERRED_OUT", "MOVED_OUT", "INACTIVE")' . $where . '
+             WHERE ' . $this->statistics()->householdCondition('h') . $where . '
              ORDER BY h.household_code ASC
              LIMIT 1000',
             $params
@@ -320,10 +322,10 @@ final class GisHouseholdLocation extends BaseModel
                     SUM(CASE WHEN c.residency_status = \"TEMPORARY\" THEN 1 ELSE 0 END) AS temporary_count,
                     SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count
                 FROM citizens c
-                WHERE c.status <> \"DELETED\"
+                WHERE " . $this->statistics()->citizenCondition('c') . "
                 GROUP BY c.household_id
              ) cm ON cm.household_id = h.id
-             WHERE h.status NOT IN (\"DELETED\", \"ENDED\", \"MERGED\", \"TRANSFERRED_OUT\", \"MOVED_OUT\", \"INACTIVE\")" . $where,
+             WHERE " . $this->statistics()->householdCondition('h') . $where,
             $params
         ) ?: [];
         $households = (int) ($row['households'] ?? 0);
@@ -399,6 +401,11 @@ final class GisHouseholdLocation extends BaseModel
     {
         $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
         return (int) ($row['total'] ?? 0) > 0;
+    }
+
+    private function statistics(): PopulationStatistics
+    {
+        return $this->statistics ??= new PopulationStatistics();
     }
     private function findMarker(int $householdId): ?array
     {

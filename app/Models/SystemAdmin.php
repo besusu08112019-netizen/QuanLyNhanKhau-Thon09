@@ -10,6 +10,7 @@ final class SystemAdmin extends BaseModel
     public function overview(): array
     {
         $app = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
+        $population = (new PopulationStatistics())->counts();
         return [
             'system' => [
                 'name' => $app['name'] ?? 'Thon 09',
@@ -21,8 +22,8 @@ final class SystemAdmin extends BaseModel
             ],
             'counts' => [
                 'users' => $this->countTable('users', 'status <> "DELETED"'),
-                'households' => $this->countTable('households', 'deleted_at IS NULL'),
-                'citizens' => $this->countTable('citizens', 'deleted_at IS NULL'),
+                'households' => $population['total_households'],
+                'citizens' => $population['total_citizens'],
                 'digitalProfiles' => $this->countTable('file_attachments', 'deleted_at IS NULL'),
                 'documents' => $this->countFiles(['pdf','doc','docx','xls','xlsx','txt','csv']),
                 'images' => $this->countFiles(['jpg','jpeg','png','gif','webp']),

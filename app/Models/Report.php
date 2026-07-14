@@ -6,6 +6,8 @@ use App\Core\BaseModel;
 
 final class Report extends BaseModel
 {
+    private ?PopulationStatistics $statistics = null;
+
     public function build(string $type, array $filters = []): array
     {
         return match ($type) {
@@ -308,12 +310,17 @@ final class Report extends BaseModel
 
     private function activeHouseholdCondition(string $alias): string
     {
-        return $alias . ".status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')";
+        return $this->statistics()->householdCondition($alias);
     }
 
     private function activeCitizenCondition(string $alias): string
     {
-        return $alias . ".status <> 'DELETED' AND COALESCE(" . $alias . ".life_status,'ALIVE') <> 'DECEASED' AND COALESCE(" . $alias . ".residency_status,'PERMANENT') <> 'TRANSFERRED_OUT'";
+        return $this->statistics()->citizenCondition($alias);
+    }
+
+    private function statistics(): PopulationStatistics
+    {
+        return $this->statistics ??= new PopulationStatistics();
     }
     private function addTextCategoryWhere(array &$where, array &$params, string $category): void
     {
