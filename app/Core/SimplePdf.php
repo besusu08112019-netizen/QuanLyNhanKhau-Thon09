@@ -14,6 +14,13 @@ final class SimplePdf
         $this->y = 790;
     }
 
+    public function addPrintHeader(string $unit, string $title): void
+    {
+        $this->text($unit, 205, 820, 11, true);
+        $this->text(mb_strtoupper($title, 'UTF-8'), 135, 798, 16, true);
+        $this->y = 770;
+    }
+
     public function addMeta(string $text): void
     {
         $this->text($text, 42, $this->y, 10);
