@@ -117,6 +117,7 @@ CREATE TABLE IF NOT EXISTS household_contributions (
   chargeable_count INT UNSIGNED NOT NULL DEFAULT 0,
   paid_at DATE NULL,
   collector_name VARCHAR(180) NULL,
+  payment_method VARCHAR(40) NULL,
   receipt_number VARCHAR(80) NULL,
   calculation_note JSON NULL,
   note TEXT NULL,
@@ -320,12 +321,14 @@ SQL);
             'debt_amount' => $debt,
             'paid_at' => trim((string) ($data['paid_at'] ?? $data['paidAt'] ?? '')) ?: null,
             'collector_name' => trim((string) ($data['collector_name'] ?? $data['collectorName'] ?? '')) ?: null,
+            'payment_method' => strtoupper(trim((string) ($data['payment_method'] ?? $data['paymentMethod'] ?? 'CASH'))) ?: 'CASH',
             'receipt_number' => trim((string) ($data['receipt_number'] ?? $data['receiptNumber'] ?? '')) ?: null,
             'note' => trim((string) ($data['note'] ?? '')) ?: null,
             'user' => $userId,
         ];
+        if (!in_array($params['payment_method'], ['CASH', 'TRANSFER', 'OTHER'], true)) $params['payment_method'] = 'CASH';
         $this->execute(
-            'UPDATE household_contributions SET payment_status=:payment_status, paid_amount=:paid_amount, amount=:amount, discount_amount=:discount_amount, debt_amount=:debt_amount, paid_at=:paid_at, collector_name=:collector_name, receipt_number=:receipt_number, note=:note, status="ACTIVE", updated_by=:user, deleted_at=NULL, deleted_by=NULL WHERE campaign_id=:campaign_id AND household_id=:household_id',
+            'UPDATE household_contributions SET payment_status=:payment_status, paid_amount=:paid_amount, amount=:amount, discount_amount=:discount_amount, debt_amount=:debt_amount, paid_at=:paid_at, collector_name=:collector_name, payment_method=:payment_method, receipt_number=:receipt_number, note=:note, status="ACTIVE", updated_by=:user, deleted_at=NULL, deleted_by=NULL WHERE campaign_id=:campaign_id AND household_id=:household_id',
             $params
         );
         $row = $this->tracking($campaignId, ['household_id' => $householdId, 'pageSize' => 1])['items'][0] ?? [];
@@ -380,14 +383,18 @@ SQL);
     public function report(string $mode, array $filters = []): array
     {
         $mode = strtolower($mode);
-        if (in_array($mode, ['summary', 'household', 'households', 'finance', 'financial', 'population', 'exempt', 'exemptions', 'detail', 'campaign-detail', 'by-contribution', 'by_contribution'], true)) {
+        if (in_array($mode, ['summary', 'household', 'households', 'list', 'collection', 'collection-list', 'finance', 'financial', 'population', 'exempt', 'exemptions', 'detail', 'campaign-detail', 'by-contribution', 'by_contribution', 'partial', 'unpaid-list', 'signature', 'signatures', 'year-summary'], true)) {
             return match ($mode) {
-                'household', 'households' => $this->householdReport($filters),
+                'household', 'households', 'list' => $this->householdContributionReport($filters),
+                'collection', 'collection-list', 'signature', 'signatures' => $this->collectionReport($filters),
                 'finance', 'financial' => $this->financialReport($filters),
                 'population' => $this->populationReport($filters),
                 'exempt', 'exemptions' => $this->exemptionReport($filters),
                 'detail', 'campaign-detail' => $this->campaignDetailReport($filters),
                 'by-contribution', 'by_contribution' => $this->byContributionReport($filters),
+                'partial' => $this->partialReport($filters),
+                'unpaid-list' => $this->unpaidReport($filters),
+                'year-summary' => $this->yearSummaryReport($filters),
                 default => $this->summaryReport($filters),
             };
         }
@@ -402,31 +409,69 @@ SQL);
         return $this->table('Danh sách đợt thu', ['Khoản thu','Năm','Đợt','Mức thu','Đơn vị','Hạn đóng','Đã nộp','Nộp một phần','Chưa nộp','Được miễn','Tổng phải thu','Đã thu','Còn nợ','Trạng thái'], array_map(fn($r) => [$r['contribution_name'], $r['year'], $r['period_name'], $r['amount'], $r['unit'], $r['due_date'], $r['paid_households'], $r['partial_households'], $r['unpaid_households'], $r['exempt_households'], $r['expected_total'], $r['collected_amount'], $r['debt_amount'], $r['status_label']], $rows), $filters);
     }
 
-    private function householdReport(array $filters): array
+    private function householdContributionReport(array $filters): array
     {
         $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
         if ($campaignId <= 0) $campaignId = $this->latestCampaignId($filters);
-        if ($campaignId <= 0) return $this->table('Báo cáo theo hộ', ['Mã hộ','Chủ hộ','Trạng thái'], [], $filters);
-        $rows = $this->tracking($campaignId, $filters + ['pageSize' => 100])['items'];
-        return $this->table('Báo cáo theo hộ', ['Mã hộ','Chủ hộ','Địa chỉ','Trạng thái','Phải thu','Đã thu','Còn nợ','Khẩu phải đóng','Khẩu miễn','Quá hạn'], array_map(function ($r) {
-            $overdue = ((float) $r['debt_amount'] > 0 && !empty($r['due_date']) && strtotime((string) $r['due_date']) < strtotime('today')) ? 'Có' : '';
-            return [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['payment_status_label'], $r['expected_amount'], $r['paid_amount'], $r['debt_amount'], $r['chargeable_count'], $r['exempt_count'], $overdue];
-        }, $rows), $filters + ['campaign_id' => $campaignId]);
+        if ($campaignId <= 0) return $this->reportTable('Danh sách hộ đóng góp', ['STT','Mã hộ','Chủ hộ','Địa chỉ/Tổ dân cư','Số khẩu','Khẩu phải đóng góp','Khẩu được miễn','Mức thu','Số tiền được miễn','Số tiền phải thu','Đã thu','Còn phải thu','Trạng thái','Ghi chú'], [], $filters);
+        $rows = $this->contributionRows($campaignId, $filters);
+        return $this->reportTable('Danh sách hộ đóng góp', ['STT','Mã hộ','Chủ hộ','Địa chỉ/Tổ dân cư','Số khẩu','Khẩu phải đóng góp','Khẩu được miễn','Mức thu','Số tiền được miễn','Số tiền phải thu','Đã thu','Còn phải thu','Trạng thái','Ghi chú'], array_map(function ($r, $i) {
+            return [$i + 1, $r['household_code'], $r['head_citizen_name'], $r['address'] ?: $r['area_code'], $r['eligible_count'], $r['chargeable_count'], $r['exempt_count'], $r['gross_amount'], $r['exempt_amount'] + $r['discount_amount'], $r['expected_amount'], $r['paid_amount'], $r['debt_amount'], $r['payment_status_label'], $r['note']];
+        }, $rows, array_keys($rows)), $filters + ['campaign_id' => $campaignId], $campaignId);
     }
 
     private function campaignDetailReport(array $filters): array
     {
-        return $this->householdReport($filters);
+        return $this->householdContributionReport($filters);
+    }
+
+    private function collectionReport(array $filters): array
+    {
+        $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
+        if ($campaignId <= 0) $campaignId = $this->latestCampaignId($filters);
+        $rows = $campaignId > 0 ? $this->contributionRows($campaignId, $filters) : [];
+        return $this->reportTable('Danh sách thu tiền đóng góp', ['STT','Chủ hộ','Số tiền phải thu','Đã thu','Còn phải thu','Người thu','Ngày thu','Hình thức thanh toán','Ký nhận'], array_map(function ($r, $i) {
+            return [$i + 1, $r['head_citizen_name'], $r['expected_amount'], $r['paid_amount'], $r['debt_amount'], $r['collector_name'], $r['paid_at'], $r['payment_method_label'], ''];
+        }, $rows, array_keys($rows)), $filters + ['campaign_id' => $campaignId], $campaignId);
+    }
+
+    private function unpaidReport(array $filters): array
+    {
+        $filters['payment_status'] = 'UNPAID';
+        $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
+        if ($campaignId <= 0) $campaignId = $this->latestCampaignId($filters);
+        $rows = $campaignId > 0 ? $this->contributionRows($campaignId, $filters) : [];
+        return $this->reportTable('Danh sách hộ chưa nộp đóng góp', ['STT','Chủ hộ','Địa chỉ','Số khẩu','Số tiền còn phải thu','Ghi chú'], array_map(function ($r, $i) {
+            return [$i + 1, $r['head_citizen_name'], $r['address'], $r['eligible_count'], $r['debt_amount'], $r['note']];
+        }, $rows, array_keys($rows)), $filters + ['campaign_id' => $campaignId], $campaignId);
+    }
+
+    private function partialReport(array $filters): array
+    {
+        $filters['payment_status'] = 'PARTIAL';
+        $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
+        if ($campaignId <= 0) $campaignId = $this->latestCampaignId($filters);
+        $rows = $campaignId > 0 ? $this->contributionRows($campaignId, $filters) : [];
+        return $this->reportTable('Danh sách hộ nộp một phần', ['STT','Chủ hộ','Phải thu','Đã thu','Còn thiếu','Tỷ lệ hoàn thành'], array_map(function ($r, $i) {
+            $rate = (float) $r['expected_amount'] > 0 ? round((float) $r['paid_amount'] * 100 / (float) $r['expected_amount'], 2) . '%' : '0%';
+            return [$i + 1, $r['head_citizen_name'], $r['expected_amount'], $r['paid_amount'], $r['debt_amount'], $rate];
+        }, $rows, array_keys($rows)), $filters + ['campaign_id' => $campaignId], $campaignId);
     }
 
     private function byContributionReport(array $filters): array
     {
         $rows = $this->campaigns($filters + ['pageSize' => 100])['items'];
-        return $this->table('Báo cáo theo từng khoản đóng góp', ['Khoản đóng góp','Năm','Đợt','Tổng hộ','Hộ phải đóng','Hộ miễn','Đã nộp','Nộp một phần','Chưa nộp','Tổng mức thu','Tổng miễn','Phải thu thực tế','Đã thu','Còn phải thu'], array_map(function ($r) {
+        return $this->reportTable('Báo cáo theo từng khoản đóng góp', ['Khoản đóng góp','Năm','Đợt','Tổng hộ','Hộ phải đóng','Hộ miễn','Đã nộp','Nộp một phần','Chưa nộp','Tổng mức thu','Tổng miễn','Phải thu thực tế','Đã thu','Còn phải thu'], array_map(function ($r) {
             $totalHouseholds = (int) $r['paid_households'] + (int) $r['partial_households'] + (int) $r['unpaid_households'] + (int) $r['exempt_households'];
             $dueHouseholds = (int) $r['paid_households'] + (int) $r['partial_households'] + (int) $r['unpaid_households'];
             return [$r['contribution_name'], $r['year'], $r['period_name'], $totalHouseholds, $dueHouseholds, $r['exempt_households'], $r['paid_households'], $r['partial_households'], $r['unpaid_households'], $r['gross_total'], $r['exempt_total'], $r['expected_total'], $r['collected_amount'], $r['debt_amount']];
         }, $rows), $filters);
+    }
+
+    private function yearSummaryReport(array $filters): array
+    {
+        $year = (int) ($filters['year'] ?? date('Y'));
+        return $this->summaryReport($filters + ['year' => $year]);
     }
 
     private function summary(array $filters): array
@@ -482,7 +527,7 @@ SQL);
     private function summaryReport(array $filters): array
     {
         $s = $this->summary($filters);
-        return $this->table('Báo cáo tổng hợp đóng góp hộ', ['Chỉ tiêu','Giá trị'], [
+        return $this->reportTable('Báo cáo tổng hợp đóng góp hộ', ['Chỉ tiêu','Giá trị'], [
             ['Tổng số hộ', $s['total_households']],
             ['Hộ phải đóng', $s['due_households']],
             ['Hộ được miễn', $s['exempt_households']],
@@ -490,39 +535,39 @@ SQL);
             ['Hộ nộp một phần', $s['partial_households']],
             ['Hộ chưa nộp', $s['unpaid_households']],
             ['Hộ quá hạn', $s['overdue_households']],
-        ], $filters);
+        ], $filters, (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0) ?: null);
     }
 
     private function populationReport(array $filters): array
     {
         $s = $this->summary($filters);
-        return $this->table('Báo cáo theo nhân khẩu', ['Chỉ tiêu','Giá trị'], [
+        return $this->reportTable('Báo cáo theo nhân khẩu', ['Chỉ tiêu','Giá trị'], [
             ['Tổng số nhân khẩu', $s['total_population']],
             ['Khẩu phải thu', $s['eligible_population']],
             ['Khẩu được miễn', $s['exempt_population']],
             ['Khẩu đã hoàn thành nghĩa vụ', $s['completed_population']],
             ['Khẩu chưa hoàn thành', $s['incomplete_population']],
-        ], $filters);
+        ], $filters, (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0) ?: null);
     }
 
     private function financialReport(array $filters): array
     {
         $s = $this->summary($filters);
-        return $this->table('Báo cáo tài chính đóng góp hộ', ['Chỉ tiêu','Giá trị'], [
+        return $this->reportTable('Báo cáo tài chính đóng góp hộ', ['Chỉ tiêu','Giá trị'], [
             ['Tổng số tiền theo quy định', $s['gross_total']],
             ['Tổng số tiền được miễn', $s['exempt_total']],
             ['Tổng phải thu thực tế', $s['expected_total']],
             ['Tổng số tiền đã thu', $s['collected_amount']],
             ['Tổng số tiền còn phải thu', $s['debt_amount']],
             ['Tỷ lệ hoàn thành (%)', $s['completion_rate']],
-        ], $filters);
+        ], $filters, (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0) ?: null);
     }
 
     private function exemptionReport(array $filters): array
     {
         [$where, $params] = $this->summaryWhere($filters);
         $rows = $this->fetchAll(
-            "SELECT h.household_code, h.head_citizen_name, hc.exempt_count, hc.exempt_amount, hc.calculation_note, hc.note, hc.updated_at
+            "SELECT h.household_code, h.head_citizen_name, hc.eligible_count, hc.exempt_count, hc.exempt_amount, hc.calculation_note, hc.note, hc.updated_at
              FROM household_contributions hc
              INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id
              INNER JOIN households h ON h.id=hc.household_id
@@ -530,22 +575,21 @@ SQL);
              ORDER BY h.household_code ASC",
             $params
         );
-        return $this->table('Báo cáo miễn giảm đóng góp hộ', ['Chủ hộ','Mã hộ','Nhân khẩu được miễn','Số khẩu miễn','Lý do miễn','Loại miễn','Mức miễn','Người phê duyệt','Ngày phê duyệt','Ghi chú'], array_map(function ($r) {
+        return $this->reportTable('Danh sách hộ được miễn đóng góp', ['STT','Chủ hộ','Số khẩu','Số khẩu miễn','Lý do miễn','Đối tượng miễn','Số tiền miễn','Người phê duyệt','Ngày phê duyệt'], array_map(function ($r, $i) {
             $note = json_decode((string) ($r['calculation_note'] ?? ''), true);
             $subjects = is_array($note['exempt_subjects'] ?? null) ? $note['exempt_subjects'] : [];
             return [
+                $i + 1,
                 $r['head_citizen_name'],
-                $r['household_code'],
-                implode(', ', array_filter(array_map(fn($s) => $s['full_name'] ?? '', $subjects))),
+                (int) ($r['eligible_count'] ?? 0),
                 (int) ($r['exempt_count'] ?? 0),
                 implode(', ', array_unique(array_filter(array_map(fn($s) => $s['reason'] ?? '', $subjects)))) ?: 'Theo cấu hình miễn giảm',
-                'Miễn theo đối tượng',
+                implode(', ', array_filter(array_map(fn($s) => $s['full_name'] ?? '', $subjects))),
                 (float) ($r['exempt_amount'] ?? 0),
                 '',
                 $r['updated_at'] ?? '',
-                $r['note'] ?? '',
             ];
-        }, $rows), $filters);
+        }, $rows, array_keys($rows)), $filters, (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0) ?: null);
     }
 
     private function syncActiveCampaigns(): void
@@ -610,6 +654,8 @@ SQL);
         if ($campaignId > 0) { $where[] = 'c.id = :campaign_id'; $params['campaign_id'] = $campaignId; }
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') { $where[] = '(LOWER(c.contribution_name) LIKE :search OR LOWER(c.period_name) LIKE :search OR LOWER(c.note) LIKE :search)'; $params['search'] = '%' . mb_strtolower($search, 'UTF-8') . '%'; }
+        $contributionName = trim((string) ($filters['contribution_name'] ?? $filters['contributionName'] ?? ''));
+        if ($contributionName !== '') { $where[] = 'LOWER(c.contribution_name) LIKE :contribution_name'; $params['contribution_name'] = '%' . mb_strtolower($contributionName, 'UTF-8') . '%'; }
         $year = (int) ($filters['year'] ?? 0);
         if ($year > 0) { $where[] = 'c.year = :year'; $params['year'] = $year; }
         $status = strtoupper(trim((string) ($filters['status'] ?? '')));
@@ -746,6 +792,8 @@ SQL);
             'chargeable_count' => (int) ($row['chargeable_count'] ?? 0),
             'paid_at' => $row['paid_at'] ?? null,
             'collector_name' => (string) ($row['collector_name'] ?? ''),
+            'payment_method' => (string) ($row['payment_method'] ?? 'CASH'),
+            'payment_method_label' => ['CASH' => 'Tiền mặt', 'TRANSFER' => 'Chuyển khoản', 'OTHER' => 'Khác'][(string) ($row['payment_method'] ?? 'CASH')] ?? (string) ($row['payment_method'] ?? ''),
             'receipt_number' => (string) ($row['receipt_number'] ?? ''),
             'note' => (string) ($row['note'] ?? ''),
             'created_at' => $row['created_at'] ?? null,
@@ -774,6 +822,7 @@ SQL);
                 'exempt_count' => 'ALTER TABLE household_contributions ADD COLUMN exempt_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER eligible_count',
                 'chargeable_count' => 'ALTER TABLE household_contributions ADD COLUMN chargeable_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER exempt_count',
                 'calculation_note' => 'ALTER TABLE household_contributions ADD COLUMN calculation_note JSON NULL AFTER receipt_number',
+                'payment_method' => 'ALTER TABLE household_contributions ADD COLUMN payment_method VARCHAR(40) NULL AFTER collector_name',
             ],
         ];
         foreach ($columns as $table => $defs) {
@@ -805,7 +854,7 @@ SQL);
     private function writeReceipt(int $contributionId, array $params, int $userId): void
     {
         if ($contributionId <= 0) return;
-        $this->execute('INSERT INTO contribution_receipts (contribution_id, campaign_id, household_id, receipt_number, amount, paid_at, collector_name, payment_method, note, created_by) VALUES (:contribution_id,:campaign_id,:household_id,:receipt_number,:amount,:paid_at,:collector_name,:payment_method,:note,:created_by)', ['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'receipt_number' => $params['receipt_number'], 'amount' => $params['paid_amount'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'payment_method' => 'CASH', 'note' => $params['note'], 'created_by' => $userId]);
+        $this->execute('INSERT INTO contribution_receipts (contribution_id, campaign_id, household_id, receipt_number, amount, paid_at, collector_name, payment_method, note, created_by) VALUES (:contribution_id,:campaign_id,:household_id,:receipt_number,:amount,:paid_at,:collector_name,:payment_method,:note,:created_by)', ['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'receipt_number' => $params['receipt_number'], 'amount' => $params['paid_amount'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'payment_method' => $params['payment_method'] ?? 'CASH', 'note' => $params['note'], 'created_by' => $userId]);
     }
 
     private function writeAdjustment(int $campaignId, ?int $householdId, mixed $before, mixed $after, int $userId, string $reason): void
@@ -823,6 +872,23 @@ SQL);
         return (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE ' . self::ACTIVE_CITIZEN . ' AND ' . self::ACTIVE_HOUSEHOLD) ?: [])['total'] ?? 0);
     }
 
+    private function contributionRows(int $campaignId, array $filters): array
+    {
+        $this->syncCampaign($campaignId);
+        [$where, $params, $order] = $this->trackingWhere($campaignId, $filters);
+        $rows = $this->fetchAll(
+            "SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
+                c.contribution_name, c.year, c.period_name, c.amount AS campaign_amount, c.unit, c.due_date,
+                hc.*
+             FROM household_contributions hc
+             INNER JOIN households h ON h.id=hc.household_id
+             INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id
+             $where $order",
+            $params
+        );
+        return array_map(fn($row) => $this->normalizeTracking($row), $rows);
+    }
+
     private function latestCampaignId(array $filters = []): int
     {
         [$where, $params] = $this->campaignWhere($filters, false);
@@ -833,6 +899,25 @@ SQL);
     private function options(array $map): array
     {
         return array_map(fn($k, $v) => ['value' => $k, 'label' => $v], array_keys($map), array_values($map));
+    }
+
+    private function reportTable(string $title, array $headers, array $rows, array $filters, ?int $campaignId = null): array
+    {
+        $report = $this->table($title, $headers, $rows, $filters);
+        $campaign = $campaignId ? $this->findCampaign($campaignId) : null;
+        $period = $campaign
+            ? trim(($campaign['contribution_name'] ?? '') . ' - ' . ($campaign['period_name'] ?? '') . ' - Năm ' . ($campaign['year'] ?? ''))
+            : ('Năm ' . (string) ($filters['year'] ?? date('Y')));
+        $report['meta'] = [
+            'national_header' => 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM - Độc lập - Tự do - Hạnh phúc',
+            'unit_name' => 'Thôn 09 - Xã Hồng Phong',
+            'period_label' => 'Thời gian thống kê: ' . $period,
+            'prepared_by' => 'Người lập biểu: ................................',
+            'approved_by' => 'Trưởng thôn ký xác nhận: ................................',
+            'report_date' => 'Ngày lập báo cáo: ' . date('d/m/Y'),
+            'page_footer' => 'Trang {PAGE}/{PAGES}',
+        ];
+        return $report;
     }
 
     private function table(string $title, array $headers, array $rows, array $filters): array

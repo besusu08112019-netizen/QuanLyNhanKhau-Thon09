@@ -76,6 +76,7 @@
     const value = select.value || 'summary';
     const types = [
       ['summary', 'Báo cáo tổng hợp'], ['population', 'Báo cáo nhân khẩu'], ['household', 'Báo cáo hộ gia đình'], ['migration', 'Báo cáo biến động'],
+      ['contributions-list', 'Đóng góp - Danh sách hộ'], ['contributions-collection', 'Đóng góp - Danh sách thu tiền'], ['contributions-unpaid-list', 'Đóng góp - Hộ chưa nộp'], ['contributions-partial', 'Đóng góp - Hộ nộp một phần'], ['contributions-exempt', 'Đóng góp - Hộ được miễn'], ['contributions-summary', 'Đóng góp - Tổng hợp cuối đợt'], ['contributions-year-summary', 'Đóng góp - Tổng hợp theo năm'], ['contributions-by-contribution', 'Đóng góp - Theo khoản thu'],
       ['gis', 'Báo cáo GIS'], ['gis-located', 'Hộ đã định vị GPS'], ['gis-unlocated', 'Hộ chưa định vị GPS'],
       ['digital-profile', 'Báo cáo Hồ sơ số'], ['profile-complete', 'Hồ sơ hoàn chỉnh'], ['profile-missing-photo', 'Hồ sơ thiếu ảnh'], ['profile-missing-documents', 'Hồ sơ thiếu giấy tờ'], ['profile-incomplete', 'Hồ sơ chưa hoàn thiện'],
       ['health_insurance', 'Thống kê Bảo hiểm y tế'], ['health-insurance-missing', 'Danh sách chưa tham gia BHYT'], ['health-insurance-expiring', 'Danh sách BHYT sắp hết hạn (30 ngày)'], ['health-insurance-expired', 'Danh sách BHYT đã hết hạn'], ['health-insurance-household', 'Thống kê BHYT theo hộ'], ['health-insurance-area', 'Thống kê BHYT theo khu vực'], ['temporary_residence', 'Danh sách tạm trú'], ['temporary_absence', 'Danh sách tạm vắng'], ['children', 'Danh sách trẻ em'], ['elderly', 'Danh sách người cao tuổi'], ['labor', 'Danh sách lao động'], ['party_member', 'Danh sách Đảng viên'], ['youth_union', 'Danh sách Đoàn viên'], ['poor-households', 'Danh sách hộ nghèo'], ['near-poor-households', 'Danh sách hộ cận nghèo'], ['age', 'Thống kê theo độ tuổi'], ['gender', 'Thống kê theo giới tính']
@@ -176,7 +177,7 @@
       state.report = report;
       setTitle(report.title || 'Báo cáo');
       setCount(fmt(report.totalRows || 0) + ' dòng');
-      renderBox('#reportPreview', '<div class="report-preview-title">' + esc(report.title || 'Báo cáo') + '</div>' + reportTable(report));
+      renderBox('#reportPreview', '<div class="report-preview-title">' + esc(report.title || 'Báo cáo') + '</div>' + reportMeta(report) + reportTable(report));
       setActions(true);
       return report;
     } catch (error) {
@@ -294,7 +295,7 @@
     const report = state.report || await loadReport();
     const popup = window.open('', '_blank', 'width=1024,height=768');
     if (!popup) return toast('Trình duyệt đang chặn cửa sổ in', 'warning');
-    popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(report.title || 'Báo cáo') + '</title><style>@page{size:A4;margin:14mm}:root{--app-font-family:Arial,Roboto,"Segoe UI","Helvetica Neue","Noto Sans",sans-serif}body,button,input,select,textarea,table{font-family:var(--app-font-family)}body{color:#111}h1{text-align:center;font-size:20px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}</style></head><body><h1>' + esc(report.title || 'Báo cáo') + '</h1><p>Ngày in: ' + new Date().toLocaleString('vi-VN') + '</p>' + reportTable(report) + '<script>window.onload=function(){window.print();};</script></body></html>');
+    popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(report.title || 'Báo cáo') + '</title><style>@page{size:A4;margin:14mm}:root{--app-font-family:Arial,Roboto,"Segoe UI","Helvetica Neue","Noto Sans",sans-serif}body,button,input,select,textarea,table{font-family:var(--app-font-family)}body{color:#111}h1{text-align:center;font-size:20px}.report-print-meta{margin:8px 0 14px;font-size:13px;line-height:1.5}.report-signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px;text-align:center;font-weight:700}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}</style></head><body><h1>' + esc(report.title || 'Báo cáo') + '</h1>' + reportMeta(report) + '<p>Ngày in: ' + new Date().toLocaleString('vi-VN') + '</p>' + reportTable(report) + reportSignatures(report) + '<script>window.onload=function(){window.print();};</script></body></html>');
     popup.document.close();
   }
 
@@ -302,6 +303,18 @@
     const headers = (report.headers || []).map(header => '<th>' + esc(header) + '</th>').join('');
     const rows = (report.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + esc(cell) + '</td>').join('') + '</tr>').join('') || '<tr><td colspan="' + Math.max(1, (report.headers || []).length) + '" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
     return '<table class="table report-table align-middle mb-0"><thead><tr>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function reportMeta(report) {
+    const meta = report.meta || {};
+    const lines = ['national_header','unit_name','period_label','report_date'].map(key => meta[key]).filter(Boolean);
+    return lines.length ? '<div class="report-print-meta">' + lines.map(line => '<div>' + esc(line) + '</div>').join('') + '</div>' : '';
+  }
+
+  function reportSignatures(report) {
+    const meta = report.meta || {};
+    if (!meta.prepared_by && !meta.approved_by) return '';
+    return '<div class="report-signatures"><div>' + esc(meta.prepared_by || 'Người lập biểu') + '</div><div>' + esc(meta.approved_by || 'Trưởng thôn ký xác nhận') + '</div></div>';
   }
 
   function setTitle(text) { const el = $('#reportTitle'); if (el) el.textContent = text; }

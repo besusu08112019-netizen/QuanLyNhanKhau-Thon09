@@ -175,6 +175,15 @@ final class ReportController extends BaseController
             'crop' => $this->nullableQuery('crop'),
             'season' => $this->nullableQuery('season'),
             'status' => $this->nullableQuery('status'),
+            'year' => $this->nullableQuery('year'),
+            'campaign_id' => $this->nullableQueryAny('campaign_id', ['campaignId']),
+            'campaignId' => $this->nullableQueryAny('campaignId', ['campaign_id']),
+            'payment_status' => $this->nullableQueryAny('payment_status', ['paymentStatus']),
+            'paymentStatus' => $this->nullableQueryAny('paymentStatus', ['payment_status']),
+            'area_code' => $this->nullableQueryAny('area_code', ['areaCode', 'area']),
+            'areaCode' => $this->nullableQueryAny('areaCode', ['area_code', 'area']),
+            'contribution_name' => $this->nullableQueryAny('contribution_name', ['contributionName']),
+            'contributionName' => $this->nullableQueryAny('contributionName', ['contribution_name']),
         ];
 
         foreach ($this->flagFilterAliases() as $field => $aliases) {
@@ -242,6 +251,7 @@ final class ReportController extends BaseController
         echo "\xEF\xBB\xBF";
         echo '<html><head><meta charset="utf-8"><style>table{border-collapse:collapse}td,th{border:1px solid #999;padding:6px}th{font-weight:bold;background:#eef2f7}</style></head><body>';
         echo '<h2>' . htmlspecialchars($report['title'], ENT_QUOTES, 'UTF-8') . '</h2>';
+        $this->echoReportMetaHtml($report);
         echo '<p>Thời gian xuất: ' . date('d/m/Y H:i:s') . '</p>';
         echo '<table><thead><tr>';
         foreach ($report['headers'] as $header) echo '<th>' . htmlspecialchars((string) $header, ENT_QUOTES, 'UTF-8') . '</th>';
@@ -260,6 +270,7 @@ final class ReportController extends BaseController
         $fileName = $this->slug($report['title']) . '_' . date('Ymd_His') . '.pdf';
         $pdf = new SimplePdf();
         $pdf->addTitle($report['title']);
+        foreach ($this->reportMetaLines($report) as $line) $pdf->addMeta($line);
         $pdf->addMeta('Quan Ly Nhan Khau Thon 09 xa Hong Phong');
         $pdf->addMeta('Thoi gian xuat: ' . date('d/m/Y H:i:s'));
         $pdf->addMeta('Tong so dong: ' . (int) $report['totalRows']);
@@ -279,6 +290,7 @@ final class ReportController extends BaseController
         echo "ï»¿";
         echo '<html><head><meta charset="utf-8"><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#111}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}h1{text-align:center;font-size:20px}</style></head><body>';
         echo '<h1>' . htmlspecialchars($report['title'], ENT_QUOTES, 'UTF-8') . '</h1>';
+        $this->echoReportMetaHtml($report);
         echo '<p>Th?i gian xu?t: ' . date('d/m/Y H:i:s') . '</p><table><thead><tr>';
         foreach ($report['headers'] as $header) echo '<th>' . htmlspecialchars((string) $header, ENT_QUOTES, 'UTF-8') . '</th>';
         echo '</tr></thead><tbody>';
@@ -308,5 +320,24 @@ final class ReportController extends BaseController
         $text = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text) ?: $text;
         $text = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '_', $text));
         return trim($text, '_') ?: 'bao_cao';
+    }
+    private function reportMetaLines(array $report): array
+    {
+        $meta = is_array($report['meta'] ?? null) ? $report['meta'] : [];
+        $lines = [];
+        foreach (['national_header', 'unit_name', 'period_label', 'prepared_by', 'approved_by', 'report_date'] as $key) {
+            $value = trim((string) ($meta[$key] ?? ''));
+            if ($value !== '') $lines[] = $value;
+        }
+        return $lines;
+    }
+
+    private function echoReportMetaHtml(array $report): void
+    {
+        $lines = $this->reportMetaLines($report);
+        if (!$lines) return;
+        echo '<div style="margin:8px 0 12px">';
+        foreach ($lines as $line) echo '<div>' . htmlspecialchars($line, ENT_QUOTES, 'UTF-8') . '</div>';
+        echo '</div>';
     }
 }
