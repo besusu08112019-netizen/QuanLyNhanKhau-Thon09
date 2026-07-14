@@ -59,6 +59,18 @@ const detail = {
   timeline: [{ message: 'Cap nhat GPS', created_at: '2026-07-09' }]
 };
 
+const publicAssetFeature = {
+  id: 31,
+  asset_code: 'CT001',
+  asset_name: 'Nhà văn hóa thôn',
+  type_name: 'Công trình công cộng',
+  category: 'Văn hóa',
+  area_code: 'A',
+  latitude: 20.256,
+  longitude: 105.977,
+  status: 'ACTIVE'
+};
+
 function leafletStub() {
   return `
     (function(){
@@ -169,6 +181,11 @@ async function boot(page, apiLog) {
     if (url.pathname === '/api/gis/households' && method === 'GET') { apiLog.push({ method, path: url.pathname, query: Object.fromEntries(url.searchParams.entries()) }); return payload({ items: [marker], summary: { households: 1, located: 1, unlocated: 0 } }); }
     if (url.pathname === '/api/gis/households/7/detail' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ ...detail, household: { ...detail.household, latitude: savedGps.latitude, longitude: savedGps.longitude, location_accuracy: savedGps.accuracy } }); }
     if (url.pathname === '/api/gis/households/7/location' && method === 'PUT') { const body = request.postDataJSON(); savedGps.latitude = body.latitude; savedGps.longitude = body.longitude; savedGps.accuracy = body.accuracy; apiLog.push({ method, path: url.pathname, body }); return payload({ id: 7, latitude: savedGps.latitude, longitude: savedGps.longitude, location_accuracy: savedGps.accuracy }); }
+    if (url.pathname === '/api/public-assets/gis' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: [publicAssetFeature] }); }
+    if (url.pathname === '/api/houses/gis' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: [] }); }
+    if (url.pathname === '/api/agriculture/gis' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: [] }); }
+    if (url.pathname === '/api/household-business' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: [] }); }
+    if (url.pathname === '/api/livestock' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: [] }); }
     return payload({});
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -318,5 +335,40 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
   const requestCountAfterMove = apiLog.filter(item => item.path === '/api/gis/households').length;
   expect(requestCountAfterMove).toBe(requestCountBeforeMove);
+});
+
+test('GIS platform layer registry toggles module overlays independently', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+
+  await expect(page.locator('#gisV2LayerPanel')).toBeVisible();
+  await expect(page.locator('#gisV2LayerPanel')).toContainText('Hộ gia đình');
+  await expect(page.locator('#gisV2LayerPanel')).toContainText('Công trình công cộng');
+  await expect(page.locator('#gisV2LayerPanel')).toContainText('Sản xuất nông nghiệp');
+  await expect(page.locator('#gisV2LayerPanel')).toContainText('Heatmap');
+
+  await page.locator('[data-gis-v2-layer="publicAssets"]').check();
+  await expect(page.locator('[data-gis-v2-layer-status="publicAssets"]')).toContainText('1 đối tượng');
+
+  const layerState = await page.evaluate(() => {
+    const group = window.Thon09GisPlatform.state.layerGroups.get('publicAssets');
+    return {
+      definitions: window.Thon09GisPlatform.definitions.map(item => item.label),
+      count: group ? group.getLayers().length : 0,
+      visible: window.App.gis.map.hasLayer(group)
+    };
+  });
+  expect(layerState.definitions).toContain('Nhân khẩu');
+  expect(layerState.definitions).toContain('Cơ sở tín ngưỡng, tôn giáo');
+  expect(layerState.definitions).toContain('Ranh giới hành chính');
+  expect(layerState.count).toBe(1);
+  expect(layerState.visible).toBe(true);
+  expect(apiLog.some(item => item.path === '/api/public-assets/gis')).toBeTruthy();
+
+  await page.locator('[data-gis-v2-layer="publicAssets"]').uncheck();
+  await expect.poll(() => page.evaluate(() => {
+    const group = window.Thon09GisPlatform.state.layerGroups.get('publicAssets');
+    return window.App.gis.map.hasLayer(group);
+  })).toBe(false);
 });
 

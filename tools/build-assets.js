@@ -50,6 +50,7 @@ const assets = [
   ['assets/js/system-admin.js', 'assets/js/system-admin.min.js', compactJs],
   ['assets/js/report.js', 'assets/js/report.min.js', compactJs],
   ['assets/js/gis-household-location.js', 'assets/js/gis-household-location.min.js', compactJs],
+  ['assets/js/gis-platform.js', 'assets/js/gis-platform.min.js', compactJs],
   ['assets/js/household-photo-capture.js', 'assets/js/household-photo-capture.min.js', compactJs],
   ['assets/js/household-photo-camera-fix.js', 'assets/js/household-photo-camera-fix.min.js', compactJs],
   ['assets/js/household-photo-gps.js', 'assets/js/household-photo-gps.min.js', compactJs],

@@ -670,6 +670,7 @@
   <script charset="utf-8" src="assets/js/system-admin.min.js"></script>
   <script charset="utf-8" src="assets/js/report.min.js"></script>
   <script charset="utf-8" src="assets/js/gis-household-location.min.js"></script>
+  <script charset="utf-8" src="assets/js/gis-platform.min.js"></script>
   <script charset="utf-8" src="assets/js/household-photo-capture.min.js"></script>
   <script charset="utf-8" src="assets/js/household-photo-camera-fix.min.js"></script>
   <script charset="utf-8" src="assets/js/household-photo-gps.min.js"></script>

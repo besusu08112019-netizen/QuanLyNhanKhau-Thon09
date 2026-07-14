@@ -501,6 +501,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/operation-center.min.js',
         'assets/js/system-admin.min.js',
         'assets/js/gis-household-location.min.js',
+        'assets/js/gis-platform.min.js',
         'assets/js/household-photo-capture.min.js',
         'assets/js/household-photo-camera-fix.min.js',
         'assets/js/household-photo-gps.min.js',
