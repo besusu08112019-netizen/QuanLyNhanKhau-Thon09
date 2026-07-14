@@ -1,11 +1,11 @@
-const PWA_VERSION = 'thon09-pwa-v20260714-11';
+const PWA_VERSION = 'thon09-pwa-v20260714-12';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
+const PRECACHE_TIMEOUT_MS = 8000;
 
 const STATIC_ASSETS = [
   '/',
-  '/pwa/thon09',
   OFFLINE_URL,
   '/manifest.json',
   '/manifest.webmanifest',
@@ -25,31 +25,6 @@ const STATIC_ASSETS = [
   '/assets/js/app.utf8.min.js',
   '/assets/js/csrf.min.js',
   '/assets/js/session.min.js',
-  '/assets/js/admin.utf8.min.js',
-  '/assets/js/import.min.js',
-  '/assets/js/admin-panel.min.js',
-  '/assets/js/admin-panel-bridge.min.js',
-  '/assets/js/sprint8.min.js',
-  '/assets/js/sprint9.min.js',
-  '/assets/js/sprint10.min.js',
-  '/assets/js/view-inline-patches.min.js',
-  '/assets/js/operation-center.min.js',
-  '/assets/js/system-admin.min.js',
-  '/assets/js/report.min.js',
-  '/assets/js/gis-household-location.min.js',
-  '/assets/js/gis-platform.min.js',
-  '/assets/js/household-photo-capture.min.js',
-  '/assets/js/household-photo-camera-fix.min.js',
-  '/assets/js/household-photo-gps.min.js',
-  '/assets/js/digital-profile.min.js',
-  '/assets/js/household-business.min.js',
-  '/assets/js/livestock.min.js',
-  '/assets/js/vehicles.min.js',
-  '/assets/js/contributions.min.js',
-  '/assets/js/agriculture.min.js',
-  '/assets/js/houses.min.js',
-  '/assets/js/public-assets.min.js',
-  '/assets/js/module-dashboards.min.js',
   '/assets/js/pwa.min.js'
 ];
 
@@ -155,7 +130,7 @@ async function cacheAssets(cache, assets) {
   await Promise.allSettled(assets.map(url => {
     const sameOrigin = String(url).startsWith('/');
     const request = sameOrigin ? new Request(url, { cache: 'reload' }) : new Request(url, { mode: 'no-cors', cache: 'reload' });
-    return fetch(request).then(response => {
+    return fetchWithTimeout(request, PRECACHE_TIMEOUT_MS).then(response => {
       if (response && (response.ok || response.type === 'opaque') && isCacheableStaticResponse(request, response)) return cache.put(request, response);
       throw new Error(`Cannot cache ${url}`);
     });
@@ -194,6 +169,12 @@ async function matchStatic(request) {
     if (fallback && isCacheableStaticResponse(request, fallback)) return fallback;
   }
   return null;
+}
+
+function fetchWithTimeout(request, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
 function isCacheableStaticResponse(request, response) {
