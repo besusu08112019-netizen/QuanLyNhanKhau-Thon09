@@ -3,7 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b6b3a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Thôn 09">
   <title>Quản Lý Nhân Khẩu Thôn 09</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/assets/icons/app-icon.svg" type="image/svg+xml">
   <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -681,5 +687,6 @@
   <script charset="utf-8" src="assets/js/houses.min.js"></script>
   <script charset="utf-8" src="assets/js/public-assets.min.js"></script>
   <script charset="utf-8" src="assets/js/module-dashboards.min.js"></script>
+  <script charset="utf-8" src="assets/js/pwa.min.js"></script>
 </body>
 </html>

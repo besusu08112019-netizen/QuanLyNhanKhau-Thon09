@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Thôn 09">
+  <rect width="512" height="512" rx="96" fill="#0b6b3a"/>
+  <circle cx="256" cy="188" r="120" fill="#f4bf31"/>
+  <circle cx="256" cy="188" r="92" fill="#ffffff"/>
+  <path fill="#0b6b3a" d="M149 268h214v126H149z"/>
+  <path fill="#ffffff" d="m128 275 128-104 128 104-28 34-100-82-100 82z"/>
+  <path fill="#f4bf31" d="M232 288h48v106h-48z"/>
+  <text x="256" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="700" fill="#c62828">09</text>
+  <text x="256" y="447" text-anchor="middle" font-family="Arial, sans-serif" font-size="46" font-weight="700" fill="#ffffff">THON 09</text>
+</svg>
