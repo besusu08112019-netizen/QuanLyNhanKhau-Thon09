@@ -9,11 +9,34 @@
   --card: #ffffff;
   --sidebar: #111827;
   --sidebar-soft: #1f2937;
+  --app-font-family: "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+  --bs-body-font-family: var(--app-font-family);
 }
 
 * { box-sizing: border-box; }
-html, body { max-width: 100%; overflow-x: hidden; }
-body { margin: 0; color: var(--ink); background: var(--surface); font-family: 'Be Vietnam Pro', Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+html, body { max-width: 100%; overflow-x: hidden; font-family: var(--app-font-family); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { margin: 0; color: var(--ink); background: var(--surface); font-family: var(--app-font-family); }
+body,
+button,
+input,
+select,
+textarea,
+.btn,
+.form-control,
+.form-select,
+.dropdown-menu,
+.modal,
+.modal-content,
+.table,
+.toast,
+.popover,
+.tooltip,
+.mobile-bottom-nav,
+.sidebar,
+.topbar {
+  font-family: var(--app-font-family);
+  letter-spacing: 0;
+}
 body.theme-dark { --ink:#e5e7eb; --muted:#aeb8c6; --line:#344155; --surface:#111827; --card:#1f2937; --sidebar:#060b14; --sidebar-soft:#111827; }
 body.theme-dark .text-muted { color: #aeb8c6 !important; }
 body.theme-dark .form-control, body.theme-dark .form-select, body.theme-dark .modal-content { background: #111827; color: #e5e7eb; border-color: #3b4658; }
@@ -34,7 +57,7 @@ body.theme-dark .table th { background: #111827; color: #cbd5e1; }
   min-height: 100vh;
   overflow: hidden;
   color: var(--login-text);
-  font-family: 'Be Vietnam Pro', Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--app-font-family);
   background: #eef6ef;
 }
 .login-view::before {
@@ -575,7 +598,7 @@ body.sidebar-collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
   #personsScreen .btn,
   #householdsScreen .badge-soft,
   #personsScreen .person-badge {
-    font-family: 'Be Vietnam Pro', Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-family: var(--app-font-family);
     letter-spacing: 0;
   }
 
@@ -4947,7 +4970,7 @@ body.theme-dark .report-preview-title { color: #e5e7eb; }
 
 .gis-map-toolbar{position:relative;z-index:700}.gis-map{position:relative;z-index:1}
 
-.gis-map,.leaflet-container,.leaflet-control,.leaflet-popup,.leaflet-tooltip{font-family:'Be Vietnam Pro',Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;}
+.gis-map,.leaflet-container,.leaflet-control,.leaflet-popup,.leaflet-tooltip{font-family:var(--app-font-family);}
 
 
 .leaflet-popup,.leaflet-popup-content-wrapper,.leaflet-popup-content,.gis-smart-popup,.gis-smart-popup button,.gis-smart-popup a{pointer-events:auto;touch-action:manipulation;}

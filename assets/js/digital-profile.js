@@ -38,8 +38,23 @@
     ],
   };
 
-  function $(selector, root = document) { return root.querySelector(selector); }
-  function $$(selector, root = document) { return Array.from(root.querySelectorAll(selector)); }
+  function $(selector, root = document) { return root?.querySelector?.(selector) || null; }
+  function toList(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if ((typeof NodeList !== 'undefined' && value instanceof NodeList) || (typeof HTMLCollection !== 'undefined' && value instanceof HTMLCollection)) return Array.from(value);
+    if (typeof value[Symbol.iterator] === 'function' && typeof value !== 'string') return Array.from(value);
+    if (typeof value === 'object') return Object.values(value);
+    return [];
+  }
+  function $$(selector, root = document) { return root?.querySelectorAll ? toList(root.querySelectorAll(selector)) : []; }
+  function dataItems(value) {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.items)) return value.items;
+    if (Array.isArray(value?.data)) return value.data;
+    if (value && typeof value === 'object') return Object.values(value);
+    return [];
+  }
   function esc(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char])); }
   function t(value, fallback) { return window.AppI18n && typeof window.AppI18n.text === 'function' ? window.AppI18n.text(value, fallback) : (fallback || String(value || '')); }
   function hasValue(value) { return value !== null && value !== undefined && String(value).trim() !== ''; }
@@ -60,7 +75,7 @@
     if (!service?.list) return false;
     const normalizedModule = service.normalizeModule ? service.normalizeModule(module) : module;
     const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
-    const keys = new Set(service.list().map(item => item.key));
+    const keys = new Set(dataItems(service.list()).map(item => item.key));
     return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
   }
   function can(module, action) {
@@ -269,8 +284,8 @@
     const root = button?.closest?.('[data-citizen-profile]');
     if (!root) return;
     const id = Number(root.dataset.citizenProfile || 0);
-    $('[data-profile-tab]', root).forEach(item => item.classList.toggle('active', item === button));
-    $('[data-profile-pane]', root).forEach(pane => pane.classList.toggle('d-none', pane.dataset.profilePane !== tab));
+    $$('[data-profile-tab]', root).forEach(item => item.classList.toggle('active', item === button));
+    $$('[data-profile-pane]', root).forEach(pane => pane.classList.toggle('d-none', pane.dataset.profilePane !== tab));
     if (tab === 'files') loadCitizenFileManager(id, root);
     if (tab === 'timeline') loadCitizenTimeline(id, root);
   }
@@ -280,7 +295,7 @@
     pane.innerHTML = '<div class="text-muted small py-3">Đang tải hồ sơ số...</div>';
     try {
       const files = await api('/api/files?' + new URLSearchParams({ module: 'citizen', entityId: String(id) }).toString());
-      pane.innerHTML = renderCitizenFileManager(Array.isArray(files) ? files : []);
+      pane.innerHTML = renderCitizenFileManager(dataItems(files));
       pane.dataset.loaded = '1';
       bindFileManagerActions(pane, id, root);
     } catch (error) {
@@ -296,6 +311,7 @@
   }
 
   function renderFileGroup(section, fileType, label, files) {
+    files = dataItems(files);
     return '<section class="border rounded mb-2 p-2" data-file-group="' + esc(section) + '">'
       + '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">'
       + '<h6 class="mb-0">' + esc(label) + '</h6>'
@@ -311,7 +327,7 @@
   }
 
   function groupFiles(files) {
-    return files.reduce((acc, file) => {
+    return dataItems(files).reduce((acc, file) => {
       const section = file.profile_section || file.category || file.file_type || 'citizen_document';
       (acc[section] ||= []).push(file);
       return acc;
@@ -397,11 +413,11 @@
       + renderHeader(profile)
       + renderQuickLinks(profile)
       + renderSections(profile.sections || {})
-      + (type === 'household' ? renderMembers(profile.members || []) : renderFamily(profile.family || []))
-      + renderFiles(type, profile.files || [])
-      + renderNotes(profile.notes || [])
-      + renderTimeline(profile.timeline || [])
-      + renderAuditLogs(profile.logs || [])
+      + (type === 'household' ? renderMembers(profile.members) : renderFamily(profile.family))
+      + renderFiles(type, profile.files)
+      + renderNotes(profile.notes)
+      + renderTimeline(profile.timeline)
+      + renderAuditLogs(profile.logs)
       + '</div>';
   }
 
@@ -428,8 +444,9 @@
   }
 
   function renderSections(sections) {
-    return Object.entries(sections).map(([key, rows]) => {
-      if (!Array.isArray(rows) || !rows.length) return '';
+    return Object.entries(sections && typeof sections === 'object' ? sections : {}).map(([key, rows]) => {
+      rows = dataItems(rows);
+      if (!rows.length) return '';
       return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">' + sectionTitle(key) + '</h6><div class="row g-2">'
         + rows.map(item => '<div class="col-md-6"><div class="border rounded p-2 h-100"><div class="text-muted small">' + esc(item.label) + '</div><div class="fw-semibold">' + esc(item.value) + '</div></div></div>').join('')
         + '</div></section>';
@@ -437,6 +454,7 @@
   }
 
   function renderMembers(members) {
+    members = dataItems(members);
     if (!members.length) return '';
     return '<section class="mb-3" id="digitalProfileMembers"><h6 class="border-bottom pb-2 mb-2">Danh sách nhân khẩu</h6><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Mã NK</th><th>Họ tên</th><th>Ngày sinh</th><th>Quan hệ</th><th></th></tr></thead><tbody>'
       + members.map(row => '<tr><td>' + esc(row.citizen_code || '') + '</td><td>' + esc(row.full_name || '') + '</td><td>' + esc(row.date_of_birth || '') + '</td><td>' + esc(row.relationship || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="digitalProfile.citizen.open" data-citizen-id="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
@@ -444,6 +462,7 @@
   }
 
   function renderFamily(family) {
+    family = dataItems(family);
     if (!family.length) return '';
     return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Người cùng hộ</h6><div class="table-responsive"><table class="table table-sm align-middle"><tbody>'
       + family.map(row => '<tr><td>' + esc(row.full_name || '') + '</td><td>' + esc(row.relationship || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="digitalProfile.citizen.open" data-citizen-id="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
@@ -451,6 +470,7 @@
   }
 
   function renderFiles(type, files) {
+    files = dataItems(files);
     const options = (sectionOptions[type] || []).map(([section, fileType, label]) => '<option value="' + section + '" data-file-type="' + fileType + '">' + esc(label) + '</option>').join('');
     return '<section class="mb-3" id="digitalProfileFiles"><h6 class="border-bottom pb-2 mb-2">Tài liệu đính kèm</h6>'
       + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">Loại tài liệu</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">Mô tả</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" multiple required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> Tải lên</button></div></form>'
@@ -459,6 +479,7 @@
   }
 
   function renderNotes(notes) {
+    notes = dataItems(notes);
     return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Ghi chú nghiệp vụ</h6>'
       + '<form class="row g-2 mb-2" data-profile-note><div class="col-md-3"><input name="title" class="form-control form-control-sm" placeholder="Tiêu đề"></div><div class="col-md-7"><input name="content" class="form-control form-control-sm" placeholder="Nội dung ghi chú" required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">Thêm</button></div></form>'
       + (notes.length ? '<div class="list-group list-group-flush border rounded">' + notes.map(note => '<div class="list-group-item d-flex justify-content-between gap-2"><div><div class="fw-semibold">' + esc(note.title || 'Ghi chú') + '</div><div>' + esc(note.content || '') + '</div><div class="small text-muted">' + esc(note.created_by_name || note.created_by_email || '') + ' - ' + dateText(note.created_at) + '</div></div><div class="btn-group btn-group-sm align-self-start"><button class="btn btn-outline-primary" type="button" data-platform-action="digitalProfile.note.edit" data-note-id="' + Number(note.id || 0) + '" data-note-title="' + esc(note.title || '') + '" data-note-content="' + esc(note.content || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-platform-action="digitalProfile.note.delete" data-note-id="' + Number(note.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">Chưa có ghi chú nghiệp vụ.</div>')
@@ -466,12 +487,14 @@
   }
 
   function renderTimeline(items) {
+    items = dataItems(items);
     return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Timeline lịch sử</h6>'
       + (items.length ? '<div class="list-group list-group-flush border rounded">' + items.map(item => '<div class="list-group-item"><div class="d-flex justify-content-between gap-2"><strong>' + esc(item.title || item.type || '') + '</strong><span class="small text-muted">' + dateText(item.time) + '</span></div><div class="small text-muted">' + esc(timelineActor(item)) + '</div>' + (item.description ? '<div>' + esc(item.description) + '</div>' : '') + '</div>').join('') + '</div>' : '<div class="text-muted small">Chưa có lịch sử.</div>')
       + '</section>';
   }
 
   function renderAuditLogs(logs) {
+    logs = dataItems(logs);
     if (!logs.length) return '';
     return '<section class="mb-1"><h6 class="border-bottom pb-2 mb-2">Nhật ký thao tác</h6><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Thao tác</th><th>Nội dung</th></tr></thead><tbody>'
       + logs.map(log => '<tr><td>' + dateText(log.created_at) + '</td><td>' + esc(log.actor_email || '') + '</td><td>' + esc(log.action || '') + '</td><td>' + esc(log.message || '') + '</td></tr>').join('')
@@ -635,13 +658,13 @@
       + '<section data-household-pane="video" class="d-none"><div class="text-muted small py-3">' + t('Chon tab de tai video') + '</div></section>'
       + '<section data-household-pane="gps" class="d-none">' + renderHouseholdGps(profile) + '</section>'
       + '<section data-household-pane="timeline" class="d-none"><div class="text-muted small py-3">' + t('Chon tab de tai timeline') + '</div></section>'
-      + '<section data-household-pane="logs" class="d-none">' + renderAuditLogs(profile.logs || []) + '</section>'
+      + '<section data-household-pane="logs" class="d-none">' + renderAuditLogs(profile.logs) + '</section>'
       + '</div>';
   }
 
   function householdPrimaryPhoto(profile) {
     const row = profile?.profile || {};
-    const files = Array.isArray(profile?.files) ? profile.files : [];
+    const files = dataItems(profile?.files);
     const photo = files.find(file => {
       const type = String(file.file_type || file.fileType || '').toUpperCase();
       const mime = String(file.mime_type || file.mimeType || '').toLowerCase();
@@ -702,8 +725,8 @@
     const root = button?.closest?.('[data-household-profile]');
     if (!root) return;
     const id = Number(root.dataset.householdProfile || 0);
-    $('[data-household-tab]', root).forEach(item => item.classList.toggle('active', item === button));
-    $('[data-household-pane]', root).forEach(pane => pane.classList.toggle('d-none', pane.dataset.householdPane !== tab));
+    $$('[data-household-tab]', root).forEach(item => item.classList.toggle('active', item === button));
+    $$('[data-household-pane]', root).forEach(pane => pane.classList.toggle('d-none', pane.dataset.householdPane !== tab));
     if (tab === 'files') loadHouseholdFiles(id, root);
     if (tab === 'gallery') loadHouseholdGallery(id, root);
     if (tab === 'video') loadHouseholdVideos(id, root);
@@ -715,7 +738,7 @@
     if (extra.fileType) params.set('fileType', extra.fileType);
     if (extra.category) params.set('category', extra.category);
     const result = await api('/api/files?' + params.toString());
-    return Array.isArray(result) ? { items: result, total: result.length, page: 1, pageSize: result.length || 24 } : result;
+    return Array.isArray(result) ? { items: result, total: result.length, page: 1, pageSize: result.length || 24 } : (result && typeof result === 'object' ? result : { items: [], total: 0, page: 1, pageSize: 24 });
   }
 
   async function loadHouseholdFiles(id, root, page = 1) {
@@ -733,7 +756,8 @@
   }
 
   function renderHouseholdFilesPanel(data, search) {
-    const files = data.items || [];
+    data = data && typeof data === 'object' ? data : {};
+    const files = dataItems(data.items);
     const options = sectionOptions.household.map(([section, fileType, label]) => '<option value="' + esc(section) + '" data-file-type="' + esc(fileType) + '">' + esc(label) + '</option>').join('');
     return '<section class="mb-3" id="digitalProfileFiles"><div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-2 mb-2"><h6 class="mb-0">' + t('Tai lieu dinh kem') + '</h6><div class="input-group input-group-sm" style="max-width:280px"><input class="form-control" data-household-file-search value="' + esc(search) + '" placeholder="' + t('Tim theo ten hoac loai') + '"><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.householdFiles.search" data-household-file-search-btn><i class="fa-solid fa-magnifying-glass"></i></button></div></div>'
       + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">' + t('Loai tai lieu') + '</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">' + t('Mo ta') + '</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" multiple required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> ' + t('Tai len') + '</button></div></form>'
@@ -743,6 +767,7 @@
   }
 
   function renderFileTable(files) {
+    files = dataItems(files);
     if (!files.length) return '<div class="text-muted small">' + t('Chua co tai lieu dinh kem') + '</div>';
     return '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>' + t('Ten hien thi') + '</th><th>' + t('Loai') + '</th><th>' + t('Mo ta') + '</th><th>' + t('Phien ban') + '</th><th>' + t('Ngay tai len') + '</th><th>' + t('Nguoi tai len') + '</th><th>' + t('Dung luong') + '</th><th class="text-end">' + t('Thao tac') + '</th></tr></thead><tbody>'
       + files.map(file => '<tr><td>' + esc(file.display_name || file.original_name || file.file_name || '') + '</td><td>' + esc(sectionLabel(file.profile_section || file.category || file.file_type)) + '</td><td>' + esc(file.description || '') + '</td><td>' + esc(file.version || '') + '</td><td>' + esc(dateText(file.created_at)) + '</td><td>' + esc(file.created_by_name || file.created_by_email || file.created_by || '') + '</td><td>' + esc(formatSize(file.file_size)) + '</td><td class="text-end"><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-platform-action="digitalProfile.file.preview" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.file.download" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-primary" type="button" data-platform-action="digitalProfile.file.edit" data-file-id="' + Number(file.id || 0) + '" data-file-name="' + esc(file.file_name || file.original_name || '') + '" data-file-description="' + esc(file.description || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-platform-action="digitalProfile.file.delete" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></td></tr>').join('')
@@ -779,7 +804,7 @@
     try {
       const search = pane.dataset.search || '';
       const data = await fetchHouseholdFiles(id, { page, pageSize: 12, search, fileType: 'PHOTO' });
-      const imageItems = (data.items || []).filter(isImageFile);
+      const imageItems = dataItems(data.items).filter(isImageFile);
       pane.innerHTML = renderGalleryPanel(data, imageItems, search);
       pane.__thon09GalleryItems = imageItems;
       pane.dataset.loaded = '1';
@@ -790,6 +815,8 @@
   }
 
   function renderGalleryPanel(data, files, search) {
+    data = data && typeof data === 'object' ? data : {};
+    files = dataItems(files);
     return '<section class="mb-3"><div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-2 mb-2"><h6 class="mb-0">' + t('Thu vien anh') + '</h6><div class="input-group input-group-sm" style="max-width:280px"><input class="form-control" data-gallery-search value="' + esc(search) + '" placeholder="' + t('Tim theo ten hoac loai anh') + '"><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.gallery.search" data-gallery-search-btn><i class="fa-solid fa-magnifying-glass"></i></button></div></div>'
       + (files.length ? '<div class="row g-2">' + files.map((file, index) => '<div class="col-6 col-md-4 col-lg-3"><button class="border rounded p-0 w-100 bg-white text-start" type="button" data-platform-action="digitalProfile.gallery.open" data-gallery-index="' + index + '"><img data-auth-preview="' + Number(file.id || 0) + '" class="img-fluid w-100" style="aspect-ratio:4/3;object-fit:cover" loading="lazy" alt="' + esc(file.display_name || file.original_name || '') + '"><span class="d-block small p-2 text-truncate">' + esc(file.display_name || file.original_name || '') + '</span></button><div class="btn-group btn-group-sm w-100 mt-1"><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.file.download" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-danger" type="button" data-platform-action="digitalProfile.file.delete" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div>').join('') + '</div>' : '<div class="text-muted small">' + t('Chua co anh') + '</div>')
       + renderSimplePager(data, 'household-gallery') + '</section>';
@@ -801,7 +828,7 @@
     pane.innerHTML = '<div class="text-muted small py-3">' + t('Dang tai video') + '</div>';
     try {
       const data = await fetchHouseholdFiles(id, { page, pageSize: 8, fileType: 'VIDEO' });
-      const videos = data.items || [];
+      const videos = dataItems(data.items);
       pane.innerHTML = '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Video</h6>' + (videos.length ? '<div class="row g-2">' + videos.map(file => '<div class="col-md-6"><div class="border rounded p-2"><video class="w-100" controls preload="metadata" data-auth-preview="' + Number(file.id || 0) + '"></video><div class="fw-semibold mt-2">' + esc(file.display_name || file.original_name || '') + '</div><div class="small text-muted">' + t('Dung luong') + ': ' + esc(formatSize(file.file_size)) + ' <span data-video-duration></span></div><div class="btn-group btn-group-sm mt-2"><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.file.download" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-danger" type="button" data-platform-action="digitalProfile.file.delete" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div></div>').join('') + '</div>' : '<div class="text-muted small">' + t('Chua co video') + '</div>') + renderSimplePager(data, 'household-video') + '</section>';
       pane.dataset.loaded = '1';
       pane.dataset.page = String(data.page || page);
@@ -848,6 +875,8 @@
   }
 
   function openMediaLightbox(items, index) {
+    items = dataItems(items);
+    if (!items.length) return;
     let current = Math.max(0, Math.min(index, items.length - 1));
     let zoom = 1;
     const modal = document.createElement('div');
