@@ -8,12 +8,23 @@ final class PopulationStatistics extends BaseModel
 {
     public function householdCondition(string $alias = 'h'): string
     {
-        return $this->notDeletedCondition('households', $alias);
+        $conditions = [$this->notDeletedCondition('households', $alias)];
+        if ($this->columnExists('households', 'status')) {
+            $conditions[] = $alias . ".status NOT IN ('ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')";
+        }
+        return implode(' AND ', $conditions);
     }
 
     public function citizenCondition(string $alias = 'c'): string
     {
-        return $this->notDeletedCondition('citizens', $alias);
+        $conditions = [$this->notDeletedCondition('citizens', $alias)];
+        if ($this->columnExists('citizens', 'life_status')) {
+            $conditions[] = "COALESCE(" . $alias . ".life_status,'ALIVE') <> 'DECEASED'";
+        }
+        if ($this->columnExists('citizens', 'residency_status')) {
+            $conditions[] = "COALESCE(" . $alias . ".residency_status,'PERMANENT') <> 'TRANSFERRED_OUT'";
+        }
+        return implode(' AND ', $conditions);
     }
 
     public function counts(): array
