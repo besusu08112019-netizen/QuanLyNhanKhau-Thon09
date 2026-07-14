@@ -46,6 +46,12 @@ final class VehicleController extends BaseController
         $this->ok(['items' => $this->vehicles->searchHouseholds((string) $this->query('q', $this->query('search', '')))]);
     }
 
+    public function citizenSearch(string $householdId): void
+    {
+        $this->requirePermission('vehicles', 'read');
+        $this->ok(['items' => $this->vehicles->searchCitizens((int) $householdId, (string) $this->query('q', $this->query('search', '')))]);
+    }
+
     public function byHousehold(string $householdId): void
     {
         $this->requirePermission('vehicles', 'read');
@@ -107,8 +113,12 @@ final class VehicleController extends BaseController
         $filters = [
             'search' => $this->query('search', $this->query('q', '')),
             'vehicle_type' => $this->query('vehicle_type', $this->query('vehicleType', '')),
+            'detail_type' => $this->query('detail_type', $this->query('detailType', '')),
             'usage_status' => $this->query('usage_status', $this->query('usageStatus', '')),
             'area_code' => $this->query('area_code', $this->query('areaCode', '')),
+            'missing_plate' => $this->query('missing_plate', $this->query('missingPlate', '')),
+            'expired_insurance' => $this->query('expired_insurance', $this->query('expiredInsurance', '')),
+            'expired_inspection' => $this->query('expired_inspection', $this->query('expiredInspection', '')),
         ];
         $this->ok(['metrics' => $this->vehicles->dashboard($filters), 'charts' => $this->vehicles->charts($filters), 'top' => $this->vehicles->topHouseholds($filters)]);
     }

@@ -28,6 +28,8 @@ final class Report extends BaseModel
             'vehicles', 'vehicles-list', 'vehicle-list' => (new \App\Models\Vehicle())->report('all', $filters),
             'vehicles-by-type', 'vehicle-type' => (new \App\Models\Vehicle())->report('by_type', $filters),
             'vehicles-missing-plate', 'vehicle-missing-plate' => (new \App\Models\Vehicle())->report('missing_plate', $filters),
+            'vehicles-expired-inspection', 'vehicle-expired-inspection' => (new \App\Models\Vehicle())->report('expired_inspection', $filters),
+            'vehicles-expired-insurance', 'vehicle-expired-insurance' => (new \App\Models\Vehicle())->report('expired_insurance', $filters),
             'contributions', 'contribution-campaigns', 'household-contributions' => (new \App\Models\HouseholdContribution())->report('all', $filters),
             'contributions-paid' => (new \App\Models\HouseholdContribution())->report('paid', $filters),
             'contributions-unpaid', 'contributions-debt' => (new \App\Models\HouseholdContribution())->report('unpaid', $filters),

@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-370-vehicles-contributions');
+define('APP_ASSET_VERSION', 'deploy-371-vehicles-contributions-fields');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -292,6 +292,7 @@ $router->post('/api/vehicles', [VehicleController::class, 'store']);
 $router->get('/api/vehicles/dashboard', [VehicleController::class, 'dashboard']);
 $router->get('/api/vehicles/catalogs', [VehicleController::class, 'catalogs']);
 $router->get('/api/vehicles/household-search', [VehicleController::class, 'householdSearch']);
+$router->get('/api/vehicles/household/{householdId}/citizens', [VehicleController::class, 'citizenSearch']);
 $router->get('/api/vehicles/household/{householdId}', [VehicleController::class, 'byHousehold']);
 $router->get('/api/vehicles/{id}', [VehicleController::class, 'show']);
 $router->put('/api/vehicles/{id}', [VehicleController::class, 'update']);
@@ -305,6 +306,7 @@ $router->get('/api/contributions/{id}', [ContributionController::class, 'show'])
 $router->put('/api/contributions/{id}', [ContributionController::class, 'update']);
 $router->delete('/api/contributions/{id}', [ContributionController::class, 'destroy']);
 $router->get('/api/contributions/{campaignId}/households', [ContributionController::class, 'tracking']);
+$router->get('/api/contributions/{campaignId}/households/{householdId}/history', [ContributionController::class, 'history']);
 $router->post('/api/contributions/{campaignId}/households/{householdId}', [ContributionController::class, 'updateTracking']);
 $router->put('/api/contributions/{campaignId}/households/{householdId}', [ContributionController::class, 'updateTracking']);
 $router->get('/api/livestock', [LivestockController::class, 'index']);

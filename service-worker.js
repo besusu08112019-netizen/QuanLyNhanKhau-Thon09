@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260714-7';
+const PWA_VERSION = 'thon09-pwa-v20260714-8';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';

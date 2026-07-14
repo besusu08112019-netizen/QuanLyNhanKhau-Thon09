@@ -640,10 +640,11 @@ final class Dashboard extends BaseModel
             $this->kpi('Ô tô',$stats['cars']??0,'xe','fa-car-side','orange'),
             $this->kpi('Xe máy',$stats['motorbikes']??0,'xe','fa-motorcycle','cyan'),
             $this->kpi('Xe điện',$stats['electric']??0,'xe','fa-bolt','purple'),
-            $this->kpi('Xe vận tải',$stats['transport']??0,'xe','fa-truck','pink'),
-            $this->kpi('Máy nông nghiệp',$stats['farm']??0,'xe','fa-tractor','green'),
             $this->kpi('Có biển số',$stats['with_plate']??0,'xe','fa-id-card','blue'),
-        ],'charts'=>['types'=>$charts['types']??[],'households'=>$charts['households']??[],'areas'=>$charts['areas']??[],'usage'=>$charts['usage']??[]],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
+            $this->kpi('Không biển số',$stats['without_plate']??0,'xe','fa-circle-question','orange'),
+            $this->kpi('Hết hạn kiểm định',$stats['expired_inspection']??0,'xe','fa-triangle-exclamation','pink'),
+            $this->kpi('Hết hạn bảo hiểm',$stats['expired_insurance']??0,'xe','fa-shield-halved','green'),
+        ],'charts'=>['types'=>$charts['types']??[],'households'=>$charts['households']??[],'areas'=>$charts['areas']??[],'details'=>$charts['details']??[]],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
     }
 
     public function livestockDashboard(array $filters = []): array

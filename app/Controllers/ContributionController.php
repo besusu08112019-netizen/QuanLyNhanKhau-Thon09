@@ -117,6 +117,12 @@ final class ContributionController extends BaseController
         }
     }
 
+    public function history(string $campaignId, string $householdId): void
+    {
+        $this->requirePermission('contributions', 'read');
+        $this->ok(['items' => $this->contributions->history((int) $campaignId, (int) $householdId)]);
+    }
+
     public function dashboard(): void
     {
         $this->requirePermission('contributions', 'read');
