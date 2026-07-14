@@ -3,6 +3,7 @@
 
   const APP_NAME = 'Quản lý Nhân khẩu Thôn 09';
   const DB_NAME = 'thon09-pwa';
+  const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
   const DB_VERSION = 1;
   const SYNC_TAG = 'thon09-background-sync';
   const CACHEABLE_API = [
@@ -16,7 +17,7 @@
     [/^\/api\/permissions(?:\/|\?|$)/, 'lookups']
   ];
   const QUEUEABLE_API = /^\/api\/(?:households|persons|gis|files|public-assets|reports|household-business|livestock|agriculture|houses)(?:\/|\?|$)/;
-  const state = { db: null, deferredInstall: null, registration: null, refreshing: false, syncing: false };
+  const state = { db: null, deferredInstall: null, registration: null, refreshing: false, syncing: false, updateWorker: null, updateTimer: null };
 
   if (!('serviceWorker' in navigator)) {
     initUi();
@@ -53,18 +54,22 @@
       const type = event.data && event.data.type;
       if (type === 'PWA_SYNC_REQUESTED') flushQueueSoon();
       if (type === 'PWA_READY') document.dispatchEvent(new CustomEvent('thon09:pwa-ready', { detail: event.data }));
+      if (type === 'PWA_UPDATED') document.dispatchEvent(new CustomEvent('thon09:pwa-updated', { detail: event.data }));
       if (type === 'PWA_CACHE_CLEARED') document.dispatchEvent(new CustomEvent('thon09:pwa-cache-cleared'));
     });
     document.addEventListener('thon09:auth-state', event => {
       if (!event.detail || event.detail.authenticated === false) clearUserData();
     });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForServiceWorkerUpdate(); });
+    window.addEventListener('focus', checkForServiceWorkerUpdate);
   }
 
   async function registerServiceWorker() {
     const isSupportedContext = window.isSecureContext || ['localhost', '127.0.0.1'].includes(location.hostname);
     if (!isSupportedContext) return;
     try {
-      state.registration = await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+      state.registration = await navigator.serviceWorker.register('/service-worker.js', { scope: '/', updateViaCache: 'none' });
+      if (state.registration.waiting && navigator.serviceWorker.controller) showUpdateBanner(state.registration.waiting);
       state.registration.addEventListener('updatefound', () => {
         const worker = state.registration.installing;
         if (!worker) return;
@@ -77,8 +82,20 @@
         state.refreshing = true;
         location.reload();
       });
+      await checkForServiceWorkerUpdate();
+      state.updateTimer = window.setInterval(checkForServiceWorkerUpdate, UPDATE_CHECK_INTERVAL_MS);
     } catch (error) {
       warn('Service worker registration failed', error);
+    }
+  }
+
+  async function checkForServiceWorkerUpdate() {
+    if (!state.registration || document.hidden) return;
+    try {
+      await state.registration.update();
+      if (state.registration.waiting && navigator.serviceWorker.controller) showUpdateBanner(state.registration.waiting);
+    } catch (error) {
+      warn('Service worker update check failed', error);
     }
   }
 
@@ -291,13 +308,24 @@
   }
 
   function showUpdateBanner(worker) {
+    state.updateWorker = worker;
     if (document.querySelector('#pwaUpdateBanner')) return;
     const banner = document.createElement('div');
     banner.id = 'pwaUpdateBanner';
     banner.className = 'pwa-update-banner';
-    banner.innerHTML = '<p>Đã có phiên bản mới. Cập nhật ngay để sử dụng bản mới nhất.</p><button class="btn btn-success btn-sm" type="button">Cập nhật</button>';
-    banner.querySelector('button').addEventListener('click', () => worker.postMessage({ type: 'SKIP_WAITING' }));
+    banner.innerHTML = '<p>?? c? phi?n b?n m?i c?a ?ng d?ng Th?n 09. C?p nh?t ngay?</p><button class="btn btn-success btn-sm" type="button">C?p nh?t</button>';
+    banner.querySelector('button').addEventListener('click', applyServiceWorkerUpdate);
     document.body.appendChild(banner);
+  }
+
+  function applyServiceWorkerUpdate() {
+    const worker = state.updateWorker || (state.registration && state.registration.waiting);
+    if (!worker) {
+      checkForServiceWorkerUpdate();
+      return;
+    }
+    document.querySelector('#pwaUpdateBanner button')?.setAttribute('disabled', 'disabled');
+    worker.postMessage({ type: 'SKIP_WAITING' });
   }
 
   async function updateNetworkStatus(forceSyncing) {
@@ -325,6 +353,8 @@
     window.Thon09PWA = {
       flushQueue: flushQueueSoon,
       clearUserData,
+      checkForUpdate: checkForServiceWorkerUpdate,
+      applyUpdate: applyServiceWorkerUpdate,
       queueCount: async () => (await getQueueEntries()).length,
       readApiCache: readApiResponse
     };

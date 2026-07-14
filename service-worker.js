@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260714-12';
+const PWA_VERSION = 'thon09-pwa-v20260714-14';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
@@ -9,14 +9,14 @@ const STATIC_ASSETS = [
   OFFLINE_URL,
   '/manifest.json',
   '/manifest.webmanifest',
-  '/favicon.ico?v=20260714-6',
-  '/assets/icons/thon09-logo.png?v=20260714-6',
-  '/assets/icons/icon-192.png?v=20260714-6',
-  '/assets/icons/icon-512.png?v=20260714-6',
-  '/assets/icons/maskable-192.png?v=20260714-6',
-  '/assets/icons/maskable-512.png?v=20260714-6',
-  '/assets/icons/apple-touch-icon.png?v=20260714-6',
-  '/assets/icons/splash-512.png?v=20260714-6',
+  '/favicon.ico?v=20260714-7',
+  '/assets/icons/thon09-logo.png?v=20260714-7',
+  '/assets/icons/icon-192.png?v=20260714-7',
+  '/assets/icons/icon-512.png?v=20260714-7',
+  '/assets/icons/maskable-192.png?v=20260714-7',
+  '/assets/icons/maskable-512.png?v=20260714-7',
+  '/assets/icons/apple-touch-icon.png?v=20260714-7',
+  '/assets/icons/splash-512.png?v=20260714-7',
   '/assets/vendor/bootstrap/bootstrap.min.css',
   '/assets/vendor/bootstrap/bootstrap.bundle.min.js',
   '/assets/css/app.min.css',
@@ -29,33 +29,39 @@ const STATIC_ASSETS = [
 ];
 
 const isApiRequest = url => url.origin === self.location.origin && url.pathname.startsWith('/api/');
+const isManifestRequest = url => url.origin === self.location.origin && (url.pathname === '/manifest.json' || url.pathname === '/manifest.webmanifest');
 const isStaticRequest = url => /\.(?:css|js|mjs|json|webmanifest|png|jpg|jpeg|webp|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname);
 const isHtmlNavigation = request => request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then(cache => cacheAssets(cache, STATIC_ASSETS))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(STATIC_CACHE);
+    const summary = await cacheAssets(cache, STATIC_ASSETS);
+    if (summary.failed.length) console.warn('[Thon09 PWA] Precache skipped assets', summary.failed);
+  })());
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => ![STATIC_CACHE, RUNTIME_CACHE].includes(key)).map(key => caches.delete(key)));
+    const staleKeys = keys.filter(key => key !== STATIC_CACHE && key !== RUNTIME_CACHE);
+    await Promise.allSettled(staleKeys.map(key => caches.delete(key)));
     await self.clients.claim();
+    await broadcast({ type: 'PWA_UPDATED', version: PWA_VERSION, deletedCaches: staleKeys });
     await broadcast({ type: 'PWA_READY', version: PWA_VERSION });
   })());
 });
 
 self.addEventListener('message', event => {
   const type = event.data && event.data.type;
-  if (type === 'SKIP_WAITING') self.skipWaiting();
+  if (type === 'SKIP_WAITING') {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
   if (type === 'CLEAR_PWA_DATA') {
     event.waitUntil((async () => {
       const keys = await caches.keys();
-      await Promise.all(keys.map(key => caches.delete(key)));
+      await Promise.allSettled(keys.map(key => caches.delete(key)));
       await broadcast({ type: 'PWA_CACHE_CLEARED' });
     })());
   }
@@ -74,8 +80,8 @@ self.addEventListener('push', event => {
   })();
   event.waitUntil(self.registration.showNotification(payload.title || fallback.title, {
     body: payload.body || fallback.body,
-    icon: '/assets/icons/icon-192.png?v=20260714-6',
-    badge: '/assets/icons/maskable-192.png?v=20260714-6',
+    icon: '/assets/icons/icon-192.png?v=20260714-7',
+    badge: '/assets/icons/maskable-192.png?v=20260714-7',
     tag: payload.tag || 'thon09-system',
     data: payload.data || fallback.data
   }));
@@ -107,6 +113,11 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  if (isManifestRequest(url)) {
+    event.respondWith(networkFirstFresh(request));
+    return;
+  }
+
   if (isStaticRequest(url)) {
     event.respondWith(staleWhileRevalidate(request));
     return;
@@ -118,30 +129,57 @@ self.addEventListener('fetch', event => {
 async function networkFirstHtml(request) {
   const cache = await caches.open(RUNTIME_CACHE);
   try {
-    const response = await fetch(request);
+    const response = await fetch(new Request(request, { cache: 'no-store' }));
     if (response && response.ok) await cache.put(request, response.clone());
     return response;
   } catch (_) {
-    return (await cache.match(request)) || (await caches.match('/')) || (await caches.match(OFFLINE_URL));
+    return (await cache.match(request)) || (await caches.match('/')) || (await caches.match(OFFLINE_URL)) || Response.error();
+  }
+}
+
+async function networkFirstFresh(request) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  try {
+    const response = await fetch(new Request(request, { cache: 'reload' }));
+    if (response && response.ok && isCacheableStaticResponse(request, response)) await cache.put(request, response.clone());
+    return response;
+  } catch (_) {
+    return (await cache.match(request)) || (await caches.match(request)) || Response.error();
   }
 }
 
 async function cacheAssets(cache, assets) {
-  await Promise.allSettled(assets.map(url => {
+  const results = await Promise.allSettled(assets.map(async url => {
     const sameOrigin = String(url).startsWith('/');
     const request = sameOrigin ? new Request(url, { cache: 'reload' }) : new Request(url, { mode: 'no-cors', cache: 'reload' });
-    return fetchWithTimeout(request, PRECACHE_TIMEOUT_MS).then(response => {
-      if (response && (response.ok || response.type === 'opaque') && isCacheableStaticResponse(request, response)) return cache.put(request, response);
-      throw new Error(`Cannot cache ${url}`);
-    });
+    try {
+      const response = await fetchWithTimeout(request, PRECACHE_TIMEOUT_MS);
+      const status = response ? response.status : 0;
+      const contentType = response ? response.headers.get('content-type') || '' : '';
+      if (response && (response.ok || response.type === 'opaque') && isCacheableStaticResponse(request, response)) {
+        await cache.put(request, response);
+        return { url, ok: true, status, contentType };
+      }
+      return { url, ok: false, status, contentType, reason: response && response.ok ? 'content-type' : `http-${status}` };
+    } catch (error) {
+      return { url, ok: false, reason: error && error.name === 'AbortError' ? 'timeout' : 'exception', error: error && error.message ? error.message : String(error) };
+    }
   }));
+  return results.reduce((summary, item) => {
+    const value = item.value || { ok: false, reason: 'settled-rejection', error: item.reason };
+    if (value.ok) summary.ok += 1;
+    else summary.failed.push(value);
+    return summary;
+  }, { version: PWA_VERSION, total: assets.length, ok: 0, failed: [] });
 }
 
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(RUNTIME_CACHE);
   const cached = await matchStatic(request);
-  const refresh = fetch(request).then(response => {
-    if (response && (response.ok || response.type === 'opaque') && isCacheableStaticResponse(request, response)) cache.put(request, response.clone());
+  const refresh = fetch(new Request(request, { cache: 'no-cache' })).then(response => {
+    if (response && (response.ok || response.type === 'opaque') && isCacheableStaticResponse(request, response)) {
+      cache.put(request, response.clone()).catch(() => {});
+    }
     return response;
   }).catch(() => cached);
   return cached || refresh;
