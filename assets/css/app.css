@@ -5624,6 +5624,89 @@ body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dash
 .gis-area-polygon-active { stroke: #1976D2 !important; stroke-width: 5px !important; fill: #1976D2 !important; fill-opacity: .45 !important; opacity: 1 !important; }
 .gis-area-item.is-active, .gis-area-item[aria-selected="true"] { outline: 2px solid rgba(25, 118, 210, .22); }
 
+/* Household contributions polish */
+#contributionsScreen .dashboard-kpi-grid { gap: 12px; margin-bottom: 16px; }
+#contributionsScreen .dashboard-kpi-card { min-height: 92px; padding: 14px; border: 1px solid var(--line, #dfe7e2); border-radius: 14px; background: var(--card, #fff); box-shadow: 0 10px 24px rgba(15,23,42,.055); }
+#contributionsScreen .content-card, #contributionsScreen .contribution-list-card { border-radius: 16px; }
+#contributionsScreen .module-page-head { margin-bottom: 14px; }
+#contributionsScreen .module-page-head + .row { row-gap: 10px; }
+#contributionsScreen .contribution-list-head { min-height: 58px; padding: 14px 18px; }
+#contributionsScreen .contribution-list-head h3 { font-size: 16px; }
+#contributionsScreen .contribution-table { min-width: 900px; }
+#contributionsScreen .contribution-category-table { min-width: 860px; }
+#contributionsScreen .contribution-table th { padding: 10px 14px; color: #526071; font-size: 11px; line-height: 1.25; background: #f8faf9; }
+#contributionsScreen .contribution-table td { padding: 10px 14px; color: #1f2937; font-size: 13px; line-height: 1.35; }
+#contributionsScreen .contribution-table tbody tr:hover { background: #fbfdfb; }
+.contribution-name-cell { display: grid; gap: 3px; min-width: 0; }
+.contribution-name-cell strong { color: #0f172a; font-size: 14px; font-weight: 850; line-height: 1.25; }
+.contribution-name-cell span { color: #667085; font-size: 12px; line-height: 1.35; }
+.contribution-code { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; border-radius: 999px; color: #475467; background: #eef2f6; font-size: 12px; font-weight: 800; }
+.contribution-money-cell { display: inline-flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
+.contribution-money-cell strong { color: #0f172a; font-weight: 850; }
+.contribution-muted-value { color: #98a2b3; font-size: 12px; font-weight: 700; }
+.contribution-count-pill, .contribution-status { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; border-radius: 999px; white-space: nowrap; font-size: 12px; font-weight: 850; }
+.contribution-count-pill { min-width: 34px; padding: 0 10px; color: #0b6b3a; background: #e9f6ef; }
+.contribution-count-pill.is-soft { color: #1d4ed8; background: #e8f0ff; }
+.contribution-status { padding: 0 10px; color: #475467; background: #eef2f6; }
+.contribution-status.is-active { color: #0b6b3a; background: #e9f6ef; }
+.contribution-status.is-warning { color: #b45309; background: #fff4df; }
+.contribution-status.is-muted { color: #667085; background: #f2f4f7; }
+.contribution-row-actions { display: inline-flex; justify-content: flex-end; gap: 4px; }
+.contribution-icon-action { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #475467; background: transparent; }
+.contribution-icon-action:hover, .contribution-icon-action:focus { background: #eef2f6; outline: none; }
+.contribution-icon-action.is-success { color: #0b6b3a; }
+.contribution-icon-action.is-primary { color: #2563eb; }
+.contribution-icon-action.is-danger { color: #dc2626; }
+.contribution-icon-action.is-neutral { color: #475467; }
+body.theme-dark #contributionsScreen .dashboard-kpi-card, body.theme-dark #contributionsScreen .content-card, body.theme-dark #contributionsScreen .contribution-list-card { background: #1f2937; border-color: #344155; }
+body.theme-dark #contributionsScreen .contribution-table th { background: #111827; color: #cbd5e1; }
+body.theme-dark #contributionsScreen .contribution-table td, body.theme-dark .contribution-name-cell strong, body.theme-dark .contribution-money-cell strong { color: #e5e7eb; }
+body.theme-dark #contributionsScreen .contribution-table tbody tr:hover { background: rgba(255,255,255,.03); }
+@media (max-width: 768px) {
+  #contributionsScreen .contribution-table-wrap { overflow-x: visible; }
+  #contributionsScreen .contribution-table { display: block; min-width: 0 !important; }
+  #contributionsScreen .contribution-table thead { display: none; }
+  #contributionsScreen .contribution-table tbody { display: grid; gap: 12px; padding: 12px; }
+  #contributionsScreen .contribution-table tbody tr { display: grid; padding: 12px; border: 1px solid var(--line, #dfe7e2); border-radius: 14px; background: var(--card, #fff); box-shadow: 0 10px 24px rgba(15,23,42,.055); }
+  #contributionsScreen .contribution-table tbody td { display: grid; grid-template-columns: minmax(96px, 36%) minmax(0, 1fr); gap: 10px; align-items: start; padding: 7px 0; border: 0; border-bottom: 1px dashed #e5eaf0; text-align: left !important; }
+  #contributionsScreen .contribution-table tbody td:last-child { border-bottom: 0; }
+  #contributionsScreen .contribution-table tbody td::before { color: #667085; font-size: 12px; font-weight: 850; line-height: 1.35; }
+  #contributionsScreen .contribution-category-table tbody td:nth-child(1)::before { content: 'Mã'; }
+  #contributionsScreen .contribution-category-table tbody td:nth-child(2)::before { content: 'Khoản thu'; }
+  #contributionsScreen .contribution-category-table tbody td:nth-child(3)::before { content: 'Hình thức'; }
+  #contributionsScreen .contribution-category-table tbody td:nth-child(4)::before { content: 'Đơn giá'; }
+  #contributionsScreen .contribution-category-table tbody td:nth-child(5)::before { content: 'Chu kỳ'; }
+  #contributionsScreen .contribution-category-table tbody td:nth-child(6)::before { content: 'Số đợt'; }
+  #contributionsScreen .contribution-category-table tbody td:nth-child(7)::before { content: 'Trạng thái'; }
+  #contributionsScreen .contribution-category-table tbody td:nth-child(8)::before { content: 'Thao tác'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(1)::before { content: 'STT'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(2)::before { content: 'Khoản thu'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(3)::before { content: 'Đợt thu'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(4)::before { content: 'Năm'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(5)::before { content: 'Đơn vị'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(6)::before { content: 'Hộ đã nộp'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(7)::before { content: 'Chưa nộp'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(8)::before { content: 'Phải thu'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(9)::before { content: 'Đã thu'; }
+  #contributionsScreen .contribution-campaign-table tbody td:nth-child(10)::before { content: 'Thao tác'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(1)::before { content: 'Mã hộ'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(2)::before { content: 'Chủ hộ'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(3)::before { content: 'Trạng thái'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(4)::before { content: 'Khẩu thu'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(5)::before { content: 'Khẩu miễn'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(6)::before { content: 'Phải thu'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(7)::before { content: 'Đã thu'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(8)::before { content: 'Còn nợ'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(9)::before { content: 'Biên lai'; }
+  #contributionsScreen .contribution-tracking-table tbody td:nth-child(10)::before { content: 'Thao tác'; }
+  #contributionsScreen .contribution-row-actions { justify-content: flex-start; }
+}
+@media (max-width: 420px) {
+  #contributionsScreen .contribution-table tbody td { grid-template-columns: 1fr; gap: 3px; }
+  #contributionsScreen .contribution-list-head { align-items: flex-start; }
+  #contributionsScreen .contribution-list-head .form-select { width: 100% !important; }
+}
+
 /* Mobile/tablet navigation and GIS layer hardening */
 body.app-authenticated {
   --mobile-nav-z: 760;
