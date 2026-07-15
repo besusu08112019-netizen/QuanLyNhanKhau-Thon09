@@ -194,7 +194,7 @@
   }
 
   async function refreshAfterLocationChange() {
-    await loadHouseholdMarkers();
+    await refreshMainGisHouseholdMarkers(true);
     if (typeof window.loadDashboard === 'function') setTimeout(() => window.loadDashboard(), 160);
     if (typeof window.loadHouseholds === 'function') setTimeout(() => window.loadHouseholds(), 180);
   }
@@ -874,6 +874,10 @@
 
   async function loadHouseholdMarkers(search, options) {
     gisDebugTrace('loadMarkers/loadHouseholdMarkers()', { search: search || '', force: Boolean(options && options.force) });
+    // Marker rendering is owned by the main GIS marker cluster manager. Keep this
+    // legacy entrypoint as a delegate so older integrations cannot create a
+    // second MarkerClusterGroup.
+    return refreshMainGisHouseholdMarkers(Boolean(options && options.force));
     if (!isAuthenticated()) return;
     if (shouldDeferMarkerReload(search, options)) return;
     const m = map();
@@ -929,17 +933,20 @@
   }
 
   window.thon09GisHasOpenHouseholdPopup = function () {
-    return Boolean(state.openPopupId);
+    return Boolean(state.openPopupId || window.App?.gis?.openPopupId);
   };
 
   window.thon09GisEnsureHouseholdMarkerLayerVisible = function () {
     const m = map();
-    if (!m || !state.layer) return false;
-    if (typeof m.hasLayer === 'function' && !m.hasLayer(state.layer)) state.layer.addTo(m);
+    const layer = window.App?.gis?.markerGroup || null;
+    if (!m || !layer) return false;
+    if (typeof m.hasLayer === 'function' && !m.hasLayer(layer)) layer.addTo(m);
     return true;
   };
 
   window.thon09GisGetHouseholdMarkerRow = function (id) {
+    const cached = window.App?.gis?.markerCache?.get(String(id || ''));
+    if (cached?.data) return cached.data;
     const marker = state.markers.get(String(id || ''));
     return marker ? marker.__thon09HouseholdRow || null : null;
   };
@@ -948,19 +955,15 @@
     const m = map();
     if (!m || !row) return false;
     const id = normalizeHouseholdId(row);
-    let marker = id ? state.markers.get(id) : null;
-    if (!marker && row.latitude != null && row.longitude != null) {
-      const normalized = Object.assign({}, row, { head_citizen_name: row.head_citizen_name || row.head_name || '' });
-      marker = L.marker([row.latitude, row.longitude], { icon: markerIcon(true), title: normalized.head_citizen_name || normalized.household_code });
-      marker.__thon09HouseholdRow = normalized;
-      bindHouseholdPopup(marker, normalized);
-      if (!state.layer) state.layer = createHouseholdMarkerLayer().addTo(m);
-      marker.addTo(state.layer);
-      state.markers.set(id, marker);
+    const mainFocus = window.App?.gis?.manager?.markers?.focus;
+    if (typeof mainFocus === 'function' && id) {
+      mainFocus(id);
+      return Boolean(window.App?.gis?.markerCache?.get(id)?.marker);
     }
+    const marker = id ? window.App?.gis?.markerCache?.get(id)?.marker : null;
     if (!marker) return false;
     state.activeMarkerId = id;
-    activateMarker(marker, marker.__thon09HouseholdRow || row || { id });
+    activateMarker(marker, row || { id });
     gisDebugTrace('map.setView() focus household marker', { id });
     m.setView(marker.getLatLng(), Math.max(m.getZoom(), 17), { animate: true });
     closeOpenHouseholdPopup(id);
@@ -981,7 +984,15 @@
     if (typeof window.openHouseholdForm === 'function') window.openHouseholdForm(id);
   };
   window.thon09GisRelocateHousehold = function (id, triggerButton) { useGps(id, triggerButton); };
-  window.thon09LoadGisHouseholdMarkers = loadHouseholdMarkers;
+  async function refreshMainGisHouseholdMarkers(force) {
+    const loader = window.App?.gis?.manager?.markers?.loadViewport;
+    if (typeof loader === 'function') return loader(Boolean(force));
+    if (typeof window.loadGisMap === 'function') return window.loadGisMap();
+    return null;
+  }
+  window.thon09LoadGisHouseholdMarkers = function (search, options) {
+    return refreshMainGisHouseholdMarkers(Boolean(options && options.force));
+  };
 
   function start() {
     ensureLocationFields();

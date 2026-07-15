@@ -370,6 +370,19 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(rebuiltState.state.duplicateCoordinateBuckets).toBe(1);
   expect(rebuiltState.state.listenerCount).toBe(1);
 
+  const legacyDelegateState = await page.evaluate(async () => {
+    const firstGroup = window.App.gis.markerGroup;
+    await window.thon09LoadGisHouseholdMarkers?.('', { force: true });
+    return {
+      sameGroup: firstGroup === window.App.gis.markerGroup,
+      created: window.__markerClusterGroupCreated,
+      managerState: window.App.gis.markerClusterManager.debugState()
+    };
+  });
+  expect(legacyDelegateState.sameGroup).toBe(true);
+  expect(legacyDelegateState.created).toBe(1);
+  expect(legacyDelegateState.managerState.listenerCount).toBe(1);
+
   await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
   await page.waitForTimeout(320);
