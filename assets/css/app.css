@@ -5644,6 +5644,8 @@ body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dash
 .contribution-money-cell { display: inline-flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
 .contribution-money-cell strong { color: #0f172a; font-weight: 850; }
 .contribution-muted-value { color: #98a2b3; font-size: 12px; font-weight: 700; }
+.contribution-config-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 999px; color: #b45309; background: #fff4df; font-size: 12px; font-weight: 850; }
+.contribution-cycle { display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 999px; color: #344054; background: #f2f4f7; font-size: 12px; font-weight: 850; }
 .contribution-count-pill, .contribution-status { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; border-radius: 999px; white-space: nowrap; font-size: 12px; font-weight: 850; }
 .contribution-count-pill { min-width: 34px; padding: 0 10px; color: #0b6b3a; background: #e9f6ef; }
 .contribution-count-pill.is-soft { color: #1d4ed8; background: #e8f0ff; }
@@ -5658,10 +5660,19 @@ body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dash
 .contribution-icon-action.is-primary { color: #2563eb; }
 .contribution-icon-action.is-danger { color: #dc2626; }
 .contribution-icon-action.is-neutral { color: #475467; }
+.contribution-category-actions { align-items: center; gap: 6px; }
+.contribution-manage-btn { min-height: 32px; border-radius: 999px; font-size: 12px; font-weight: 850; white-space: nowrap; }
+.contribution-more-btn { width: 32px; height: 32px; padding: 0; border-radius: 999px; }
+.contribution-action-menu .dropdown-menu { min-width: 210px; padding: 6px; border-radius: 10px; }
+.contribution-action-menu .dropdown-item { min-height: 34px; display: flex; align-items: center; gap: 9px; border-radius: 8px; font-size: 13px; font-weight: 750; }
+.contribution-action-menu .dropdown-item i { width: 16px; text-align: center; color: #667085; }
+.contribution-action-menu .dropdown-item.text-danger i { color: #dc2626; }
 body.theme-dark #contributionsScreen .dashboard-kpi-card, body.theme-dark #contributionsScreen .content-card, body.theme-dark #contributionsScreen .contribution-list-card { background: #1f2937; border-color: #344155; }
 body.theme-dark #contributionsScreen .contribution-table th { background: #111827; color: #cbd5e1; }
 body.theme-dark #contributionsScreen .contribution-table td, body.theme-dark .contribution-name-cell strong, body.theme-dark .contribution-money-cell strong { color: #e5e7eb; }
 body.theme-dark #contributionsScreen .contribution-table tbody tr:hover { background: rgba(255,255,255,.03); }
+body.theme-dark .contribution-cycle { color: #cbd5e1; background: #344155; }
+body.theme-dark .contribution-action-menu .dropdown-menu { background: #1f2937; border-color: #344155; }
 @media (max-width: 768px) {
   #contributionsScreen .contribution-table-wrap { overflow-x: visible; }
   #contributionsScreen .contribution-table { display: block; min-width: 0 !important; }
