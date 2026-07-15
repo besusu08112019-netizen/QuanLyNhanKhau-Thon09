@@ -38,11 +38,14 @@ final class ContributionRuleEngine
     ];
 
     public const EXEMPTION_OPTIONS = [
+        'PRESENCE_AWAY' => 'Người đi vắng',
+        'AGE_FROM_CONFIG' => 'Người từ độ tuổi cấu hình trở lên',
         'NON_LABOR_AGE' => 'Người ngoài độ tuổi lao động',
         'CHILDREN' => 'Trẻ em',
         'ELDERLY' => 'Người cao tuổi',
         'DISABLED' => 'Người khuyết tật',
         'MERITORIOUS' => 'Người có công',
+        'ACTIVE_SOLDIER' => 'Bộ đội đang phục vụ',
         'POOR_HOUSEHOLD' => 'Hộ nghèo',
         'NEAR_POOR_HOUSEHOLD' => 'Hộ cận nghèo',
         'SOCIAL_ASSISTANCE' => 'Người thuộc diện bảo trợ xã hội',
@@ -95,7 +98,8 @@ final class ContributionRuleEngine
                 'PERSON' => $exemptCount * $amount,
                 default => $chargeableCount <= 0 && $totalMembers > 0 ? $amount : 0.0,
             });
-        $expectedAmount = max(0.0, $grossAmount - $exemptAmount);
+        $discount = $this->householdDiscount($household, $exemption, max(0.0, $grossAmount - $exemptAmount));
+        $expectedAmount = max(0.0, $grossAmount - $exemptAmount - $discount['amount']);
 
         return [
             'eligible_count' => $totalMembers,
@@ -103,6 +107,10 @@ final class ContributionRuleEngine
             'chargeable_count' => $chargeableCount,
             'gross_amount' => $grossAmount,
             'exempt_amount' => $exemptAmount,
+            'discount_amount' => $discount['amount'],
+            'discount_percent' => $discount['percent'],
+            'discount_reason' => $discount['reason'],
+            'has_auto_discount' => $discount['amount'] > 0,
             'expected_amount' => $expectedAmount,
             'exempt_subjects' => array_map(fn($m) => [
                 'citizen_id' => $m['id'] ?? null,
@@ -116,6 +124,8 @@ final class ContributionRuleEngine
                 'household_exempt' => $householdExempt,
                 'target_count' => $targetCount,
                 'policy_exempt_count' => $policyExemptCount,
+                'unit_price' => $amount,
+                'discount' => $discount,
             ], JSON_UNESCAPED_UNICODE),
         ];
     }
@@ -163,13 +173,19 @@ final class ContributionRuleEngine
 
     private function matchesExemption(array $member, array $household, array $config): bool
     {
+        foreach ($this->personRules($config) as $rule) {
+            if ($this->evaluateRule($member, $household, $rule)) return true;
+        }
         $conditions = $this->conditions($config, []);
         foreach ($conditions as $condition) {
+            if ($condition === 'PRESENCE_AWAY' && $this->evaluateRule($member, $household, ['rule' => 'FIELD_EQUALS', 'scope' => 'person', 'field' => 'presence_status', 'value' => 'AWAY'])) return true;
+            if ($condition === 'AGE_FROM_CONFIG' && $this->evaluateRule($member, $household, ['rule' => 'AGE_GTE', 'value' => (int) ($config['age_from'] ?? 0)])) return true;
             if ($condition === 'NON_LABOR_AGE' && !$this->isLaborAge($member)) return true;
             if ($condition === 'CHILDREN' && (($this->age($member['date_of_birth'] ?? null) ?? 999) < 16)) return true;
             if ($condition === 'ELDERLY' && (($this->age($member['date_of_birth'] ?? null) ?? 0) >= 60)) return true;
             if ($condition === 'DISABLED' && (int) ($member['disabled_person'] ?? 0) === 1) return true;
             if ($condition === 'MERITORIOUS' && ((int) ($member['meritorious_person'] ?? 0) === 1 || (int) ($household['meritorious_family'] ?? 0) === 1)) return true;
+            if ($condition === 'ACTIVE_SOLDIER' && $this->textHas($member, ['bộ đội', 'bo doi', 'quân nhân', 'quan nhan', 'military', 'soldier'])) return true;
             if ($condition === 'SOCIAL_ASSISTANCE' && (int) ($member['social_assistance'] ?? 0) === 1) return true;
             if ($condition === 'POOR_HOUSEHOLD' && (int) ($household['poor_household'] ?? 0) === 1) return true;
             if ($condition === 'NEAR_POOR_HOUSEHOLD' && (int) ($household['near_poor_household'] ?? 0) === 1) return true;
@@ -177,6 +193,23 @@ final class ContributionRuleEngine
             if (in_array($condition, ['COMMUNE_DECISION', 'HAMLET_DECISION', 'OTHER'], true) && $this->noteHas($household, ['miễn', 'mien', 'quyết định', 'quyet dinh'])) return true;
         }
         return false;
+    }
+
+    private function householdDiscount(array $household, array $config, float $baseAmount): array
+    {
+        foreach ($this->householdDiscountRules($config) as $rule) {
+            if (!$this->evaluateRule([], $household, $rule + ['scope' => 'household'])) continue;
+            $percent = max(0.0, min(100.0, (float) ($rule['percent'] ?? 0)));
+            $amount = max(0.0, (float) ($rule['amount'] ?? 0));
+            if ($percent > 0) $amount = round($baseAmount * $percent / 100, 2);
+            if ($amount <= 0) continue;
+            return [
+                'amount' => min($baseAmount, $amount),
+                'percent' => $percent,
+                'reason' => (string) ($rule['label'] ?? $rule['rule'] ?? 'Giảm theo cấu hình khoản thu'),
+            ];
+        }
+        return ['amount' => 0.0, 'percent' => 0.0, 'reason' => ''];
     }
 
     private function householdExempt(array $household, array $config): bool
@@ -193,12 +226,53 @@ final class ContributionRuleEngine
 
     private function exemptionReason(array $member, array $household, array $config): string
     {
+        foreach ($this->personRules($config) as $rule) {
+            if ($this->evaluateRule($member, $household, $rule)) return (string) ($rule['label'] ?? 'Miễn theo cấu hình khoản thu');
+        }
         foreach ($this->conditions($config, []) as $condition) {
             if ($this->matchesExemption($member, $household, ['conditions' => [$condition]])) {
                 return self::EXEMPTION_OPTIONS[$condition] ?? $condition;
             }
         }
         return 'Miễn theo cấu hình khoản thu';
+    }
+
+    private function personRules(array $config): array
+    {
+        return $this->rulesFrom($config, ['person_exemptions', 'personRules', 'person_rules']);
+    }
+
+    private function householdDiscountRules(array $config): array
+    {
+        return $this->rulesFrom($config, ['household_discounts', 'householdDiscounts', 'discount_rules', 'discountRules']);
+    }
+
+    private function rulesFrom(array $config, array $keys): array
+    {
+        foreach ($keys as $key) {
+            $rules = $config[$key] ?? null;
+            if (is_string($rules)) $rules = json_decode($rules, true);
+            if (is_array($rules)) return array_values(array_filter($rules, 'is_array'));
+        }
+        return [];
+    }
+
+    private function evaluateRule(array $member, array $household, array $rule): bool
+    {
+        $name = strtoupper(trim((string) ($rule['rule'] ?? $rule['type'] ?? '')));
+        $scope = strtolower(trim((string) ($rule['scope'] ?? 'person')));
+        $source = $scope === 'household' ? $household : $member;
+        $field = (string) ($rule['field'] ?? '');
+        $actual = $field !== '' ? ($source[$field] ?? null) : null;
+        return match ($name) {
+            'AGE_GTE' => (($this->age($member['date_of_birth'] ?? null) ?? -1) >= (int) ($rule['value'] ?? $rule['age'] ?? 0)),
+            'AGE_LT' => (($this->age($member['date_of_birth'] ?? null) ?? 999) < (int) ($rule['value'] ?? $rule['age'] ?? 0)),
+            'BOOLEAN_TRUE' => $field !== '' && (int) ($actual ?? 0) === 1,
+            'FIELD_EQUALS' => $field !== '' && strtoupper((string) $actual) === strtoupper((string) ($rule['value'] ?? '')),
+            'TEXT_CONTAINS' => $field !== '' && $this->containsAny((string) ($actual ?? ''), (array) ($rule['values'] ?? [$rule['value'] ?? ''])),
+            'TEXT_ANY_CONTAINS' => $this->textHas($source, (array) ($rule['values'] ?? [$rule['value'] ?? ''])),
+            default => false,
+        };
     }
 
     private function isLaborAge(array $member): bool
@@ -262,9 +336,19 @@ final class ContributionRuleEngine
 
     private function noteHas(array $household, array $needles): bool
     {
-        $note = mb_strtolower((string) ($household['note'] ?? ''), 'UTF-8');
+        return $this->containsAny((string) ($household['note'] ?? ''), $needles);
+    }
+
+    private function textHas(array $row, array $needles): bool
+    {
+        return $this->containsAny(implode(' ', array_map(fn($value) => is_scalar($value) ? (string) $value : '', $row)), $needles);
+    }
+
+    private function containsAny(string $text, array $needles): bool
+    {
+        $text = mb_strtolower($text, 'UTF-8');
         foreach ($needles as $needle) {
-            if ($needle !== '' && str_contains($note, mb_strtolower($needle, 'UTF-8'))) return true;
+            if ($needle !== '' && str_contains($text, mb_strtolower((string) $needle, 'UTF-8'))) return true;
         }
         return false;
     }

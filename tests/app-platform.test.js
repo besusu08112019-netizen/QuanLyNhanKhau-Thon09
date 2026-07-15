@@ -52,7 +52,7 @@ function createSandbox() {
     },
     window: {
       fetch: null,
-      App: {},
+      App: { user: { role: 'SUPER_ADMIN' } },
       location: { pathname: '/dashboard', search: '', hash: '' },
       history: {
         calls: historyCalls,

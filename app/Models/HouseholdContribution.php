@@ -7,9 +7,9 @@ use App\Services\ContributionRuleEngine;
 
 final class HouseholdContribution extends BaseModel
 {
-    public const CATEGORIES = ['Quỹ vệ sinh', 'Quỹ an ninh', 'Quỹ khuyến học', 'Đóng góp làm đường', 'Điện chiếu sáng', 'Nghĩa trang', 'Nhà văn hóa', 'Đóng góp khác'];
+    public const CATEGORIES = ['Quỹ vệ sinh', 'Quỹ rác thải', 'Quỹ an ninh', 'Quỹ khuyến học', 'Đóng góp làm đường', 'Điện chiếu sáng', 'Nghĩa trang', 'Nhà văn hóa', 'Đóng góp khác'];
     public const CAMPAIGN_STATUS = ['ACTIVE' => 'Đang thu', 'CLOSED' => 'Đã kết thúc', 'INACTIVE' => 'Tạm dừng', 'DELETED' => 'Đã xóa'];
-    public const PAYMENT_STATUS = ['UNPAID' => 'Chưa nộp', 'PAID' => 'Đã nộp', 'PARTIAL' => 'Nộp một phần', 'EXEMPT' => 'Được miễn', 'REDUCED' => 'Miễn một phần'];
+    public const PAYMENT_STATUS = ['UNPAID' => 'Chưa thu', 'PAID' => 'Đã thu', 'PARTIAL' => 'Thu một phần', 'EXEMPT' => 'Được miễn', 'REDUCED' => 'Miễn một phần'];
     private const ACTIVE_HOUSEHOLD = 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")';
     private const ACTIVE_CITIZEN = 'c.status <> "DELETED" AND COALESCE(c.life_status,"ALIVE") <> "DECEASED" AND COALESCE(c.residency_status,"PERMANENT") <> "TRANSFERRED_OUT"';
 
@@ -78,6 +78,22 @@ CREATE TABLE IF NOT EXISTS contribution_rate_rules (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_contribution_rate_campaign (campaign_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL);
+        $this->execute(<<<SQL
+CREATE TABLE IF NOT EXISTS contribution_rule_templates (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  template_code VARCHAR(80) NOT NULL UNIQUE,
+  category_name VARCHAR(180) NOT NULL,
+  contribution_name VARCHAR(180) NULL,
+  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  unit VARCHAR(40) NOT NULL DEFAULT 'VNĐ/hộ',
+  target_config_json JSON NULL,
+  exemption_config_json JSON NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
         $this->execute(<<<SQL
@@ -190,6 +206,7 @@ CREATE TABLE IF NOT EXISTS contribution_adjustment_history (
 SQL);
         $this->ensureColumns();
         $this->seedCategories();
+        $this->seedRuleTemplates();
     }
 
     public function catalogs(): array
@@ -281,7 +298,7 @@ SQL);
         $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM household_contributions hc INNER JOIN households h ON h.id=hc.household_id $where", $params) ?: [])['total'] ?? 0);
         $rows = $this->fetchAll(
             "SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
-                c.contribution_name, c.due_date,
+                c.contribution_name, c.amount AS unit_amount, c.unit, c.due_date,
                 hc.*
              FROM household_contributions hc
              INNER JOIN households h ON h.id=hc.household_id
@@ -608,10 +625,12 @@ SQL);
             $calc = $this->rules->calculateHousehold($campaign, $household, $members);
             $existing = $this->fetchOne('SELECT * FROM household_contributions WHERE campaign_id=:campaign_id AND household_id=:household_id AND status="ACTIVE"', ['campaign_id' => $campaignId, 'household_id' => (int) $household['id']]);
             $paid = (float) ($existing['paid_amount'] ?? $existing['amount'] ?? 0);
-            $discount = (float) ($existing['discount_amount'] ?? 0);
+            $hasAutoDiscount = !empty($calc['has_auto_discount']);
+            $discount = $hasAutoDiscount ? (float) ($calc['discount_amount'] ?? 0) : (float) ($existing['discount_amount'] ?? 0);
+            $expected = max(0, (float) $calc['expected_amount'] - ($hasAutoDiscount ? 0 : $discount));
             $status = (string) ($existing['payment_status'] ?? 'UNPAID');
-            $debt = max(0, (float) $calc['expected_amount'] - $paid - $discount);
-            if ((float) $calc['expected_amount'] <= 0) $status = 'EXEMPT';
+            $debt = max(0, $expected - $paid);
+            if ($expected <= 0) $status = 'EXEMPT';
             elseif ($paid <= 0 && $discount <= 0) $status = 'UNPAID';
             elseif ($debt > 0) $status = 'PARTIAL';
             elseif ($discount > 0) $status = 'REDUCED';
@@ -620,7 +639,7 @@ SQL);
                 'campaign_id' => $campaignId,
                 'household_id' => (int) $household['id'],
                 'payment_status' => $status,
-                'expected_amount' => (float) $calc['expected_amount'],
+                'expected_amount' => $expected,
                 'gross_amount' => (float) $calc['gross_amount'],
                 'exempt_amount' => (float) $calc['exempt_amount'],
                 'discount_amount' => $discount,
@@ -630,7 +649,7 @@ SQL);
                 'eligible_count' => (int) $calc['eligible_count'],
                 'exempt_count' => (int) $calc['exempt_count'],
                 'chargeable_count' => (int) $calc['chargeable_count'],
-                'calculation_note' => json_encode(['engine' => $calc['note'], 'exempt_subjects' => $calc['exempt_subjects']], JSON_UNESCAPED_UNICODE),
+                'calculation_note' => json_encode(['engine' => $calc['note'], 'exempt_subjects' => $calc['exempt_subjects'], 'discount_percent' => (float) ($calc['discount_percent'] ?? 0), 'discount_reason' => (string) ($calc['discount_reason'] ?? '')], JSON_UNESCAPED_UNICODE),
             ];
             $this->execute(
                 'INSERT INTO household_contributions (campaign_id, household_id, payment_status, expected_amount, gross_amount, exempt_amount, discount_amount, paid_amount, amount, debt_amount, eligible_count, exempt_count, chargeable_count, calculation_note)
@@ -698,7 +717,7 @@ SQL);
         if (!isset(self::CAMPAIGN_STATUS[$status]) || $status === 'DELETED') $status = 'ACTIVE';
         $unitType = strtoupper(trim((string) ($data['unit_type'] ?? $data['unitType'] ?? 'HOUSEHOLD')));
         if (!isset(ContributionRuleEngine::UNIT_TYPES[$unitType])) $unitType = 'HOUSEHOLD';
-        return [
+        $params = [
             'contribution_name' => $name,
             'contribution_type' => trim((string) ($data['contribution_type'] ?? $data['contributionType'] ?? '')) ?: null,
             'year' => $year,
@@ -714,6 +733,7 @@ SQL);
             'status' => $status,
             'user' => $userId,
         ];
+        return $this->applyRuleTemplate($params, $data);
     }
 
     private function configJson(array $data, string $prefix): string
@@ -772,6 +792,8 @@ SQL);
             'campaign_id' => isset($row['campaign_id']) ? (int) $row['campaign_id'] : null,
             'contribution_name' => (string) ($row['contribution_name'] ?? ''),
             'due_date' => $row['due_date'] ?? null,
+            'unit_amount' => (float) ($row['unit_amount'] ?? 0),
+            'unit' => (string) ($row['unit'] ?? ''),
             'household_id' => (int) $row['household_id'],
             'household_code' => (string) $row['household_code'],
             'head_citizen_name' => (string) $row['head_citizen_name'],
@@ -795,6 +817,7 @@ SQL);
             'payment_method' => (string) ($row['payment_method'] ?? 'CASH'),
             'payment_method_label' => ['CASH' => 'Tiền mặt', 'TRANSFER' => 'Chuyển khoản', 'OTHER' => 'Khác'][(string) ($row['payment_method'] ?? 'CASH')] ?? (string) ($row['payment_method'] ?? ''),
             'receipt_number' => (string) ($row['receipt_number'] ?? ''),
+            'calculation_note' => $row['calculation_note'] ?? null,
             'note' => (string) ($row['note'] ?? ''),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
@@ -838,6 +861,74 @@ SQL);
         foreach (self::CATEGORIES as $index => $name) {
             $this->execute('INSERT IGNORE INTO contribution_categories (code, name, contribution_type) VALUES (:code,:name,:type)', ['code' => 'CAT' . str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT), 'name' => $name, 'type' => $name]);
         }
+    }
+
+    private function seedRuleTemplates(): void
+    {
+        $target = json_encode(['conditions' => ['ALL_PEOPLE']], JSON_UNESCAPED_UNICODE);
+        $exemption = json_encode([
+            'person_exemptions' => [
+                ['rule' => 'FIELD_EQUALS', 'scope' => 'person', 'field' => 'presence_status', 'value' => 'AWAY', 'label' => 'Người đi vắng'],
+                ['rule' => 'AGE_GTE', 'value' => 80, 'label' => 'Người từ 80 tuổi trở lên'],
+                ['rule' => 'BOOLEAN_TRUE', 'scope' => 'person', 'field' => 'disabled_person', 'label' => 'Người khuyết tật'],
+                ['rule' => 'BOOLEAN_TRUE', 'scope' => 'person', 'field' => 'meritorious_person', 'label' => 'Người thuộc diện chính sách/người có công'],
+                ['rule' => 'TEXT_ANY_CONTAINS', 'scope' => 'person', 'values' => ['bộ đội', 'bo doi', 'quân nhân', 'quan nhan', 'military', 'soldier'], 'label' => 'Bộ đội đang phục vụ'],
+            ],
+            'household_discounts' => [
+                ['rule' => 'BOOLEAN_TRUE', 'scope' => 'household', 'field' => 'poor_household', 'percent' => 50, 'label' => 'Hộ nghèo'],
+                ['rule' => 'BOOLEAN_TRUE', 'scope' => 'household', 'field' => 'near_poor_household', 'percent' => 50, 'label' => 'Hộ cận nghèo'],
+            ],
+        ], JSON_UNESCAPED_UNICODE);
+        $this->execute(
+            'INSERT INTO contribution_rule_templates (template_code, category_name, contribution_name, unit_type, amount, unit, target_config_json, exemption_config_json)
+             VALUES ("WASTE_COLLECTION", "Quỹ rác thải", "Quỹ rác thải", "PERSON", 0, "VNĐ/khẩu", :target, :exemption)
+             ON DUPLICATE KEY UPDATE category_name=VALUES(category_name), contribution_name=VALUES(contribution_name), unit_type=VALUES(unit_type), unit=VALUES(unit), target_config_json=VALUES(target_config_json), exemption_config_json=VALUES(exemption_config_json), status="ACTIVE"',
+            ['target' => $target, 'exemption' => $exemption]
+        );
+    }
+
+    private function applyRuleTemplate(array $params, array $data): array
+    {
+        $template = $this->findRuleTemplate((string) $params['contribution_name'], (string) ($params['contribution_type'] ?? ''));
+        if (!$template) return $params;
+        if (!$this->hasConfigInput($data, 'target')) $params['target_config_json'] = (string) ($template['target_config_json'] ?? $params['target_config_json']);
+        if (!$this->hasConfigInput($data, 'exemption')) $params['exemption_config_json'] = (string) ($template['exemption_config_json'] ?? $params['exemption_config_json']);
+        $submittedUnitType = strtoupper(trim((string) ($data['unit_type'] ?? $data['unitType'] ?? '')));
+        if ($submittedUnitType === '' || $submittedUnitType === 'HOUSEHOLD') $params['unit_type'] = (string) ($template['unit_type'] ?? $params['unit_type']);
+        $submittedUnit = trim((string) ($data['unit'] ?? ''));
+        if ($submittedUnit === '' || $submittedUnit === 'VNĐ/hộ') $params['unit'] = (string) ($template['unit'] ?? $params['unit']);
+        return $params;
+    }
+
+    private function findRuleTemplate(string $name, string $type): ?array
+    {
+        $normalized = $this->normalizeText($name . ' ' . $type);
+        foreach ($this->fetchAll('SELECT * FROM contribution_rule_templates WHERE status="ACTIVE"') as $template) {
+            $needle = $this->normalizeText((string) ($template['contribution_name'] ?? $template['category_name'] ?? ''));
+            if ($needle !== '' && str_contains($normalized, $needle)) return $template;
+        }
+        return null;
+    }
+
+    private function hasConfigInput(array $data, string $prefix): bool
+    {
+        foreach ([$prefix . '_config_json', $prefix . 'ConfigJson', $prefix . '_config', $prefix . 'Config', $prefix . '_conditions', $prefix . 'Conditions'] as $key) {
+            if (!array_key_exists($key, $data) || $data[$key] === '' || $data[$key] === []) continue;
+            if ($prefix === 'target' && in_array($key, [$prefix . '_conditions', $prefix . 'Conditions'], true)) {
+                $values = is_array($data[$key]) ? $data[$key] : array_filter(array_map('trim', explode(',', (string) $data[$key])));
+                if ($values === ['ALL_HOUSEHOLDS']) continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private function normalizeText(string $value): string
+    {
+        $value = mb_strtolower(trim($value), 'UTF-8');
+        $from = ['ỹ','á','à','ả','ã','ạ','ă','ắ','ằ','ẳ','ẵ','ặ','â','ấ','ầ','ẩ','ẫ','ậ','đ','é','è','ẻ','ẽ','ẹ','ê','ế','ề','ể','ễ','ệ','í','ì','ỉ','ĩ','ị','ó','ò','ỏ','õ','ọ','ô','ố','ồ','ổ','ỗ','ộ','ơ','ớ','ờ','ở','ỡ','ợ','ú','ù','ủ','ũ','ụ','ư','ứ','ừ','ử','ữ','ự','ý','ỳ','ỷ','ỹ','ỵ'];
+        $to = ['y','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','d','e','e','e','e','e','e','e','e','e','e','e','i','i','i','i','i','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','u','u','u','u','u','u','u','u','u','u','u','y','y','y','y','y'];
+        return str_replace($from, $to, $value);
     }
 
     private function upsertRateRule(int $campaignId, array $params): void

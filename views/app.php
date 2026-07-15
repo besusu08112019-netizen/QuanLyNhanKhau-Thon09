@@ -17,7 +17,7 @@
   <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png?v=20260714-6">
   <link rel="apple-touch-startup-image" href="/assets/icons/splash-512.png?v=20260714-6">
   <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link href="/assets/vendor/fontawesome-local.css" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/app.min.css">
 </head>
 <body>

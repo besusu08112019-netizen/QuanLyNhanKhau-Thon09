@@ -1,0 +1,13 @@
+.fa-solid,
+.fas {
+  display: inline-block;
+  width: 1em;
+  min-width: 1em;
+  text-align: center;
+  line-height: 1;
+}
+
+.fa-solid::before,
+.fas::before {
+  content: "";
+}

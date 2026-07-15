@@ -29,6 +29,27 @@ const allowedClickListeners = new Map([
     "document.addEventListener('click', event => {",
     "button.addEventListener('click', event => {"
   ]],
+  ['assets/js/contributions.js', [
+    "$('#contributionResetBtn').onclick=",
+    "b[0].onclick=",
+    "b[1].onclick=",
+    "b=>b.onclick=()=>{state.campaign=",
+    "b=>b.onclick=()=>openCampaign",
+    "b=>b.onclick=()=>removeCampaign",
+    "b=>b.onclick=()=>openPayment"
+  ]],
+  ['assets/js/pwa.js', [
+    "bar.querySelector('[data-pwa-sync]').addEventListener('click', flushQueueSoon);",
+    "btn.addEventListener('click', promptInstall);",
+    "banner.querySelector('button').addEventListener('click', applyServiceWorkerUpdate);"
+  ]],
+  ['assets/js/vehicles.js', [
+    "$('#vehicleResetBtn').addEventListener('click'",
+    "['#vehicleAddBtn','#vehicleAddBtnInline','#vehicleAddBtnList'].forEach",
+    "$('#vehicleExportExcel').addEventListener('click'",
+    "$('#vehicleExportPdf').addEventListener('click'",
+    ".onclick="
+  ]],
   ['assets/js/view-inline-patches.js', [
     "document.addEventListener('click',function(event){var item=event.target.closest&&event.target.closest('[data-screen],[data-mobile-screen]');if(!item||item.classList.contains('gov-logout'))return;var delegation=window.Thon09Platform&&window.Thon09Platform.navigationDelegation;"
   ]]
