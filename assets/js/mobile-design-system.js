@@ -95,6 +95,39 @@
     return ['text', 'search', ''].indexOf(type) >= 0;
   }
 
+  function isFilterButton(control, text) {
+    if (!control.matches('button, .btn, a[href]')) return false;
+    return text.indexOf('loc') >= 0
+      || text.indexOf('filter') >= 0
+      || text.indexOf('reset') >= 0
+      || text.indexOf('lam moi') >= 0
+      || text.indexOf('dat lai') >= 0
+      || text.indexOf('tim') >= 0
+      || text.indexOf('search') >= 0;
+  }
+
+  function isPrimaryAction(control, text) {
+    if (!control.matches('button, .btn, a[href]')) return false;
+    return text.indexOf('them') >= 0
+      || text.indexOf('tao') >= 0
+      || text.indexOf('luu') >= 0
+      || text.indexOf('excel') >= 0
+      || text.indexOf('pdf') >= 0
+      || text.indexOf('bao cao') >= 0
+      || text.indexOf('xuat') >= 0
+      || text.indexOf('import') >= 0
+      || text.indexOf('upload') >= 0;
+  }
+
+  function isPageSizeControl(control, text) {
+    if (!control.matches('select')) return false;
+    return text.indexOf('hien thi') >= 0
+      || text.indexOf('page size') >= 0
+      || text.indexOf('pagesize') >= 0
+      || text.indexOf('so dong') >= 0
+      || text.indexOf('moi trang') >= 0;
+  }
+
   function ensureMobileLabels(table) {
     var headers = Array.from(table.querySelectorAll('thead th')).map(function (th) { return textOf(th); });
     if (!headers.length) return;
@@ -164,7 +197,10 @@
     var colspan = cells.find(function (cell) { return cell.hasAttribute('colspan'); });
     row.classList.add(colspan ? 'mobile-source-empty' : 'mobile-source-card');
     row.dataset.mobileSourceRow = ensureId(row);
-    if (colspan) return;
+    if (colspan) {
+      row.dataset.mobileEmptyMessage = textOf(colspan) || 'Chua co du lieu.';
+      return;
+    }
 
     var title = pickTitle(cells);
     var meta = pickMeta(cells, title);
@@ -221,38 +257,72 @@
     if (scope.matches && scope.matches(selectors)) nodes.push(scope);
     scope.querySelectorAll(selectors).forEach(function (node) { nodes.push(node); });
     nodes.forEach(function (container) {
-      container.classList.add('mobile-filter-system');
+      var oldGeneratedTriggers = Array.from(container.querySelectorAll(':scope > .mobile-filter-trigger[data-mobile-generated-filter="true"]'));
+      oldGeneratedTriggers.forEach(function (trigger) { trigger.remove(); });
+      container.classList.remove('mobile-filter-system', 'mobile-action-system', 'mobile-filter-expanded');
+      container.querySelectorAll('.mobile-filter-search, .mobile-filter-extra, .mobile-filter-action-wrap, .mobile-filter-action').forEach(function (node) {
+        node.classList.remove('mobile-filter-search', 'mobile-filter-extra', 'mobile-filter-action-wrap', 'mobile-filter-action');
+      });
+      container.querySelectorAll('.mobile-search-control').forEach(function (node) { node.classList.remove('mobile-search-control'); });
       var hasExtra = false;
+      var hasFilterControl = false;
+      var hasActionControl = false;
       var entries = Array.from(container.querySelectorAll('input, select, button')).map(function (control) {
+        var holder = control.closest('.module-field, .person-field, .agri-field, .houses-field, .col-md-3, .col-md-4, .col-md-6, .col-12, .d-flex') || control.parentElement;
+        if (holder && holder.matches('.d-flex') && holder.querySelectorAll('input, select, button').length > 1) holder = control;
         return {
           control: control,
-          holder: control.closest('.module-field, .person-field, .agri-field, .houses-field, .col-md-3, .col-md-4, .col-md-6, .col-12, .d-flex') || control.parentElement
+          holder: holder
         };
       });
       var searchEntry = entries.find(function (entry) { return isSearchInput(entry.control, entry.holder); })
         || entries.find(function (entry) { return isTextInput(entry.control); });
       entries.forEach(function (entry) {
         var control = entry.control;
-        if (control.matches('[data-mobile-filter-toggle]')) return;
+        if (control.matches('[data-mobile-filter-toggle], .mobile-filter-toggle, .mobile-filter-close')) return;
         var holder = entry.holder;
         var text = searchSignals(control, holder);
         if (entry === searchEntry) {
           control.classList.add('mobile-search-control');
           if (!control.getAttribute('placeholder')) control.setAttribute('placeholder', 'Tim kiem...');
           if (holder) holder.classList.add('mobile-filter-search');
-        } else if (control.matches('button') && (text.indexOf('loc') >= 0 || text.indexOf('tim') >= 0 || text.indexOf('search') >= 0 || text.indexOf('reset') >= 0 || text.indexOf('lam moi') >= 0)) {
+        } else if (isPageSizeControl(control, text)) {
+          if (holder) holder.classList.add('mobile-filter-action-wrap');
+          control.classList.add('mobile-filter-action');
+          hasActionControl = true;
+        } else if (isPrimaryAction(control, text)) {
+          if (holder) holder.classList.add('mobile-filter-action-wrap');
+          control.classList.add('mobile-filter-action');
+          hasActionControl = true;
+        } else if (control.matches('select') || (control.matches('input') && !isTextInput(control))) {
           if (holder) holder.classList.add('mobile-filter-extra');
           hasExtra = true;
-        } else if (holder) {
-          holder.classList.add('mobile-filter-extra');
+          hasFilterControl = true;
+        } else if (isFilterButton(control, text)) {
+          if (holder) holder.classList.add('mobile-filter-extra');
           hasExtra = true;
+          hasFilterControl = true;
+        } else if (holder) {
+          if (control.matches('button, .btn, a[href]')) {
+            if (holder) holder.classList.add('mobile-filter-action-wrap');
+            control.classList.add('mobile-filter-action');
+            hasActionControl = true;
+          } else {
+            holder.classList.add('mobile-filter-extra');
+            hasExtra = true;
+            hasFilterControl = true;
+          }
         }
       });
-      if (hasExtra && !container.querySelector(':scope > [data-mobile-filter-toggle]')) {
+      if (searchEntry || hasFilterControl) container.classList.add('mobile-filter-system');
+      else if (hasActionControl) container.classList.add('mobile-action-system');
+      var existingToggle = container.querySelector(':scope > [data-mobile-filter-toggle], :scope > .mobile-filter-toggle, :scope > .mobile-filter-shell, :scope > .mobile-filter-trigger');
+      if (hasExtra && hasFilterControl && !existingToggle) {
         var toggle = document.createElement('button');
         toggle.type = 'button';
         toggle.className = 'mobile-filter-trigger';
         toggle.dataset.mobileFilterToggle = 'true';
+        toggle.dataset.mobileGeneratedFilter = 'true';
         toggle.setAttribute('aria-label', 'Bo loc');
         toggle.innerHTML = '<i class="fa-solid fa-sliders"></i>';
         container.appendChild(toggle);

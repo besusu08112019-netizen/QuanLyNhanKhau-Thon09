@@ -164,3 +164,58 @@ test('mobile render keeps one source row for business households and contributio
   expect(contributionDashboard.columns).toBe(2);
   expect(contributionDashboard.cellHeight).toBeLessThanOrEqual(64);
 });
+
+test('mobile shared filters do not render duplicate icon-only controls and empty lists stay informative', async ({ page }) => {
+  await openAuthenticatedApp(page);
+
+  for (const screen of ['households', 'persons', 'movements', 'agriculture', 'livestock', 'businessHouseholds', 'contributions']) {
+    await page.evaluate((name) => window.Thon09NavigationController?.navigate(name), screen);
+    await page.waitForTimeout(150);
+    const metrics = await page.evaluate(() => {
+      const active = document.querySelector('.screen.active');
+      const filters = Array.from(active?.querySelectorAll('.mobile-filter-system') || []);
+      const generatedTriggers = Array.from(active?.querySelectorAll('.mobile-filter-trigger[data-mobile-generated-filter="true"]') || []);
+      const orphanTriggers = generatedTriggers.filter((trigger) => !trigger.closest('.mobile-filter-system'));
+      const emptyFilterBoxes = filters.filter((filter) => {
+        const visibleChildren = Array.from(filter.children).filter((child) => {
+          const style = getComputedStyle(child);
+          const rect = child.getBoundingClientRect();
+          return style.visibility !== 'hidden' && style.display !== 'none' && rect.width > 1 && rect.height > 1;
+        });
+        return visibleChildren.length === 1 && visibleChildren[0].matches('.mobile-filter-trigger');
+      });
+      const searchControls = Array.from(active?.querySelectorAll('.mobile-filter-system .mobile-search-control') || []);
+      return {
+        activeId: active?.id || '',
+        generatedTriggerCount: generatedTriggers.length,
+        orphanTriggerCount: orphanTriggers.length,
+        emptyFilterBoxCount: emptyFilterBoxes.length,
+        missingSearchPlaceholder: searchControls.filter((input) => !input.getAttribute('placeholder')).length
+      };
+    });
+    expect(metrics.orphanTriggerCount, `${screen} orphan filter trigger`).toBe(0);
+    expect(metrics.emptyFilterBoxCount, `${screen} empty icon-only filter box`).toBe(0);
+    expect(metrics.missingSearchPlaceholder, `${screen} search placeholder`).toBe(0);
+    expect(metrics.generatedTriggerCount, `${screen} duplicate generated filter trigger`).toBeLessThanOrEqual(1);
+  }
+
+  await page.evaluate(() => window.Thon09NavigationController?.navigate('temporaryResidence'));
+  await expect(page.locator('#temporaryResidenceRows table')).toHaveCount(1);
+  await expect.poll(() => page.evaluate(() => {
+    window.thon09EnhanceDesignSystem?.(document);
+    const row = document.querySelector('#temporaryResidenceRows .mobile-source-empty');
+    return {
+      exists: !!row,
+      message: row?.dataset.mobileEmptyMessage || '',
+      height: row ? Math.round(row.getBoundingClientRect().height) : 0
+    };
+  })).toMatchObject({
+    exists: true
+  });
+  const emptyState = await page.evaluate(() => {
+    const row = document.querySelector('#temporaryResidenceRows .mobile-source-empty');
+    return { message: row?.dataset.mobileEmptyMessage || '', height: row ? Math.round(row.getBoundingClientRect().height) : 0 };
+  });
+  expect(emptyState.message.length).toBeGreaterThan(0);
+  expect(emptyState.height).toBeGreaterThanOrEqual(100);
+});
