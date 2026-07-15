@@ -139,7 +139,13 @@ function leafletStub() {
       function DrawControl(){ }
       function DrawPolygon(map, opts){ this.map = map; this.opts = opts; }
       DrawPolygon.prototype.enable = function(){ return this; };
-      window.L = { map: makeMap, tileLayer, featureGroup: layerGroup, layerGroup, markerClusterGroup: layerGroup, popup: makePopup, marker: makeMarker, circle, polygon, divIcon, Control: { Draw: DrawControl }, Draw: { Polygon: DrawPolygon, Event: { CREATED: 'draw:created', EDITED: 'draw:edited' } }, DomEvent: { disableClickPropagation(){}, disableScrollPropagation(){}, stopPropagation(){} } };
+      function markerClusterGroup(opts){
+        window.__markerClusterGroupCreated = (window.__markerClusterGroupCreated || 0) + 1;
+        const group = layerGroup(opts);
+        group.__isMarkerClusterGroup = true;
+        return group;
+      }
+      window.L = { map: makeMap, tileLayer, featureGroup: layerGroup, layerGroup, markerClusterGroup, popup: makePopup, marker: makeMarker, circle, polygon, divIcon, Control: { Draw: DrawControl }, Draw: { Polygon: DrawPolygon, Event: { CREATED: 'draw:created', EDITED: 'draw:edited' } }, DomEvent: { disableClickPropagation(){}, disableScrollPropagation(){}, stopPropagation(){} } };
     })();
   `;
 }
@@ -314,15 +320,55 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   const apiLog = [];
   await boot(page, apiLog);
   const clusterState = await page.evaluate(() => ({
+    created: window.__markerClusterGroupCreated,
     spiderfyOnMaxZoom: window.App.gis.markerGroup.options.spiderfyOnMaxZoom,
+    zoomToBoundsOnClick: window.App.gis.markerGroup.options.zoomToBoundsOnClick,
+    removeOutsideVisibleBounds: window.App.gis.markerGroup.options.removeOutsideVisibleBounds,
+    chunkedLoading: window.App.gis.markerGroup.options.chunkedLoading,
+    animate: window.App.gis.markerGroup.options.animate,
+    animateAddingMarkers: window.App.gis.markerGroup.options.animateAddingMarkers,
+    disableClusteringAtZoom: window.App.gis.markerGroup.options.disableClusteringAtZoom,
+    maxZoom: window.App.gis.markerGroup.options.maxZoom,
+    maxNativeZoom: window.App.gis.markerGroup.options.maxNativeZoom,
     maxRadiusAtMaxZoom: window.App.gis.markerGroup.options.maxClusterRadius(window.App.gis.map.getMaxZoom()),
     layerCount: window.App.gis.markerGroup.getLayers().length,
-    refreshCount: window.App.gis.markerGroup.refreshCount
+    refreshCount: window.App.gis.markerGroup.refreshCount,
+    managerState: window.App.gis.markerClusterManager.debugState()
   }));
+  expect(clusterState.created).toBe(1);
   expect(clusterState.spiderfyOnMaxZoom).toBe(true);
+  expect(clusterState.zoomToBoundsOnClick).toBe(true);
+  expect(clusterState.removeOutsideVisibleBounds).toBe(true);
+  expect(clusterState.chunkedLoading).toBe(true);
+  expect(clusterState.animate).toBe(true);
+  expect(clusterState.animateAddingMarkers).toBe(true);
+  expect(clusterState.disableClusteringAtZoom).toBe(20);
+  expect(clusterState.maxZoom).toBe(20);
+  expect(clusterState.maxNativeZoom).toBe(19);
   expect(clusterState.maxRadiusAtMaxZoom).toBe(1);
   expect(clusterState.layerCount).toBe(1);
   expect(clusterState.refreshCount).toBeGreaterThan(0);
+  expect(clusterState.managerState.markerCount).toBe(1);
+  expect(clusterState.managerState.listenerCount).toBe(1);
+
+  const rebuiltState = await page.evaluate(async () => {
+    const firstGroup = window.App.gis.markerGroup;
+    await window.loadGisMap();
+    const a = window.L.marker([20.255, 105.976]); a.__thon09GisHouseholdId = 'same-a';
+    const b = window.L.marker([20.255, 105.976]); b.__thon09GisHouseholdId = 'same-b';
+    window.App.gis.markerClusterManager.replace([a, b]);
+    return {
+      sameGroup: firstGroup === window.App.gis.markerGroup,
+      created: window.__markerClusterGroupCreated,
+      state: window.App.gis.markerClusterManager.debugState()
+    };
+  });
+  expect(rebuiltState.sameGroup).toBe(true);
+  expect(rebuiltState.created).toBe(1);
+  expect(rebuiltState.state.markerCount).toBe(2);
+  expect(rebuiltState.state.coordinateBucketCount).toBe(1);
+  expect(rebuiltState.state.duplicateCoordinateBuckets).toBe(1);
+  expect(rebuiltState.state.listenerCount).toBe(1);
 
   await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
