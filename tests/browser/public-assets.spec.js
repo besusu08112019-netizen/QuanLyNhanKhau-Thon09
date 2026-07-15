@@ -200,14 +200,26 @@ test('mobile design system renders compact independent cards instead of desktop 
     const dashboard = document.querySelector('#publicAssetsMiniDashboard');
     const dashboardCard = dashboard?.querySelector(':scope > *');
     const actions = firstCard ? Array.from(firstCard.querySelectorAll('.mobile-card-action')) : [];
+    const actionBox = firstCard?.querySelector('.mobile-card-actions');
+    const body = firstCard?.querySelector('.mobile-card-body');
+    const head = firstCard?.querySelector('.mobile-list-card-head');
+    const filterTrigger = document.querySelector('#publicAssetsScreen .mobile-filter-trigger');
     const rect = firstCard?.getBoundingClientRect();
+    const actionRect = actionBox?.getBoundingClientRect();
+    const bodyRect = body?.getBoundingClientRect();
+    const headRect = head?.getBoundingClientRect();
     const dashRect = dashboardCard?.getBoundingClientRect();
+    const intersects = (a, b) => !!a && !!b && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
     return {
       tableDisplay: table ? getComputedStyle(table).display : '',
       surfaceDisplay: surface ? getComputedStyle(surface).display : '',
       cardHeight: rect ? Math.round(rect.height) : 0,
       cardText: firstCard?.innerText || '',
       actionCount: actions.length,
+      actionPosition: actionBox ? getComputedStyle(actionBox).position : '',
+      actionOverlapsBody: intersects(actionRect, bodyRect),
+      actionOverlapsHead: intersects(actionRect, headRect),
+      filterTriggerVisible: !!filterTrigger && getComputedStyle(filterTrigger).display !== 'none',
       actionWidths: actions.map((button) => Math.round(button.getBoundingClientRect().width)),
       dashboardColumns: dashboard ? getComputedStyle(dashboard).gridTemplateColumns.split(' ').length : 0,
       dashboardCardHeight: dashRect ? Math.round(dashRect.height) : 0
@@ -225,6 +237,10 @@ test('mobile design system renders compact independent cards instead of desktop 
   expect(metrics.cardText).toContain('Thôn 09');
   expect(metrics.actionCount).toBeGreaterThanOrEqual(1);
   expect(metrics.actionCount).toBeLessThanOrEqual(3);
+  expect(metrics.actionPosition).toBe('static');
+  expect(metrics.actionOverlapsBody).toBe(false);
+  expect(metrics.actionOverlapsHead).toBe(false);
+  expect(metrics.filterTriggerVisible).toBe(true);
   expect(metrics.actionWidths.every((width) => width <= 44)).toBe(true);
 });
 

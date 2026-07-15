@@ -11,7 +11,10 @@
     'status',
     'household-type',
     'residence',
-    'party'
+    'party',
+    'time',
+    'content',
+    'identity'
   ]);
 
   var uid = 0;
@@ -38,9 +41,12 @@
   }
 
   function inferField(label) {
-    if (label.indexOf('ten') >= 0 || label.indexOf('chu ho') >= 0 || label.indexOf('chu so huu') >= 0 || label.indexOf('nguoi quan ly') >= 0) return 'name';
+    if (label.indexOf('ten') >= 0 || label.indexOf('chu ho') >= 0 || label.indexOf('chu so huu') >= 0 || label.indexOf('nguoi quan ly') >= 0 || label.indexOf('nhan khau') >= 0 || label.indexOf('cong dan') >= 0 || label === 'nguoi') return 'name';
+    if (label.indexOf('cccd') >= 0 || label.indexOf('cmnd') >= 0) return 'identity';
     if (label.indexOf('ma') >= 0 || label.indexOf('bien so') >= 0) return 'code';
     if (label.indexOf('dia chi') >= 0 || label.indexOf('khu vuc') >= 0 || label.indexOf('thon') >= 0) return 'area';
+    if (label.indexOf('ngay') >= 0 || label.indexOf('thoi gian') >= 0) return 'time';
+    if (label.indexOf('ly do') >= 0 || label.indexOf('noi dung') >= 0 || label.indexOf('ghi chu') >= 0) return 'content';
     if (label.indexOf('dien tich') >= 0 || label.indexOf('so luong') >= 0 || label.indexOf('da nop') >= 0 || label.indexOf('chua nop') >= 0 || label.indexOf('phai thu') >= 0 || label.indexOf('da thu') >= 0) return 'metric';
     if (label.indexOf('loai') >= 0) return 'type';
     if (label.indexOf('trang thai') >= 0 || label.indexOf('tinh trang') >= 0 || label.indexOf('dien ho') >= 0) return 'status';
@@ -50,11 +56,12 @@
   function inferRole(label, index, cell) {
     if (cell.querySelector('input[type="checkbox"]') && index === 0) return 'select';
     if (label.indexOf('thao tac') >= 0 || (cell.matches('.text-end') && cell.querySelector('button, .btn, a[href]'))) return 'actions';
-    if (label.indexOf('ten') >= 0 || label.indexOf('chu ho') >= 0 || label.indexOf('chu so huu') >= 0 || label.indexOf('nguoi quan ly') >= 0) return 'title';
+    if (label.indexOf('ten') >= 0 || label.indexOf('chu ho') >= 0 || label.indexOf('chu so huu') >= 0 || label.indexOf('nguoi quan ly') >= 0 || label.indexOf('nhan khau') >= 0 || label.indexOf('cong dan') >= 0 || label === 'nguoi') return 'title';
     if (label.indexOf('ma') >= 0 || label.indexOf('bien so') >= 0) return 'header-meta';
     if (label.indexOf('dia chi') >= 0 || label.indexOf('khu vuc') >= 0 || label.indexOf('thon') >= 0) return 'address';
     if (label.indexOf('trang thai') >= 0 || label.indexOf('tinh trang') >= 0 || label.indexOf('dien ho') >= 0 || label.indexOf('loai') >= 0) return 'badge';
     if (label.indexOf('dien tich') >= 0 || label.indexOf('so luong') >= 0 || label.indexOf('da nop') >= 0 || label.indexOf('chua nop') >= 0 || label.indexOf('phai thu') >= 0 || label.indexOf('da thu') >= 0) return 'stat';
+    if (label.indexOf('ngay') >= 0 || label.indexOf('thoi gian') >= 0 || label.indexOf('ly do') >= 0 || label.indexOf('noi dung') >= 0) return 'stat';
     return '';
   }
 
@@ -226,14 +233,75 @@
       var role = cell.dataset.mobileRole || '';
       var field = cell.dataset.mobileField || '';
       return role === 'address' || role === 'stat' || role === 'badge' || importantFields.has(field);
-    }).slice(0, 5);
+    }).slice(0, 4);
 
     if (status && summary.indexOf(status) < 0 && status !== title && status !== meta) summary.unshift(status);
-    summary.slice(0, 5).forEach(function (cell) { body.appendChild(cloneSummaryCell(cell)); });
+    summary.slice(0, 4).forEach(function (cell) { body.appendChild(cloneSummaryCell(cell)); });
     card.appendChild(body);
 
     if (action) card.appendChild(cloneInteractiveCell(action));
     return card;
+  }
+
+  function enhanceFilters(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    var selectors = [
+      '.module-filter-card',
+      '.module-filter-panel',
+      '.person-search-card',
+      '.report-filter-card',
+      '.livestock-filter-card',
+      '.agri-filter-card',
+      '.houses-filter-card',
+      '.dashboard-filter',
+      '.toolbar',
+      '.agri-toolbar',
+      '.houses-toolbar',
+      '.livestock-toolbar'
+    ].join(',');
+    var nodes = [];
+    if (scope.matches && scope.matches(selectors)) nodes.push(scope);
+    scope.querySelectorAll(selectors).forEach(function (node) { nodes.push(node); });
+    nodes.forEach(function (container) {
+      container.classList.add('mobile-filter-system');
+      var hasExtra = false;
+      Array.from(container.querySelectorAll('input, select, button')).forEach(function (control) {
+        if (control.matches('[data-mobile-filter-toggle]')) return;
+        var holder = control.closest('.module-field, .person-field, .agri-field, .houses-field, .col-md-3, .col-md-4, .col-md-6, .col-12, .d-flex') || control.parentElement;
+        var text = normalizeLabel(control.getAttribute('placeholder') || control.getAttribute('aria-label') || control.id || textOf(holder));
+        if (control.matches('input') && (control.type === 'search' || text.indexOf('tim') >= 0 || text.indexOf('search') >= 0)) {
+          control.classList.add('mobile-search-control');
+          if (holder) holder.classList.add('mobile-filter-search');
+        } else if (control.matches('button') && (text.indexOf('loc') >= 0 || text.indexOf('tim') >= 0 || text.indexOf('search') >= 0 || text.indexOf('reset') >= 0 || text.indexOf('lam moi') >= 0)) {
+          if (holder) holder.classList.add('mobile-filter-extra');
+          hasExtra = true;
+        } else if (holder) {
+          holder.classList.add('mobile-filter-extra');
+          hasExtra = true;
+        }
+      });
+      if (hasExtra && !container.querySelector(':scope > [data-mobile-filter-toggle]')) {
+        var toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'mobile-filter-trigger';
+        toggle.dataset.mobileFilterToggle = 'true';
+        toggle.setAttribute('aria-label', 'Bo loc');
+        toggle.innerHTML = '<i class="fa-solid fa-sliders"></i>';
+        container.appendChild(toggle);
+      }
+    });
+  }
+
+  function enhanceFloating(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    var selectors = '.module-action-row, .floating-action-row, .fab-row, .online-status, .online-badge, [data-online-status]';
+    var nodes = [];
+    if (scope.matches && scope.matches(selectors)) nodes.push(scope);
+    scope.querySelectorAll(selectors).forEach(function (node) { nodes.push(node); });
+    nodes.forEach(function (node) {
+      if (node.matches('.module-action-row, .floating-action-row, .fab-row')) node.classList.add('mobile-floating-primary');
+      else node.classList.add('mobile-online-badge');
+    });
   }
 
   function enhanceTable(wrapper) {
@@ -261,6 +329,8 @@
     var scope = root && root.querySelectorAll ? root : document;
     if (scope.matches && scope.matches('.table-responsive')) enhanceTable(scope);
     scope.querySelectorAll('.table-responsive').forEach(enhanceTable);
+    enhanceFilters(scope);
+    enhanceFloating(scope);
   }
 
   var scheduled = false;
@@ -274,6 +344,12 @@
   }
 
   document.addEventListener('click', function (event) {
+    var toggle = event.target.closest('[data-mobile-filter-toggle]');
+    if (toggle) {
+      var filter = toggle.closest('.mobile-filter-system');
+      if (filter) filter.classList.toggle('mobile-filter-expanded');
+      return;
+    }
     var proxy = event.target.closest('[data-mobile-proxy-target]');
     if (!proxy || proxy.matches('input')) return;
     var target = document.querySelector('[data-mobile-source-id="' + proxy.dataset.mobileProxyTarget + '"]');
@@ -286,8 +362,8 @@
         if (mutation.target && mutation.target.closest && mutation.target.closest('.mobile-list-surface')) return false;
         return Array.from(mutation.addedNodes || []).some(function (node) {
           return node.nodeType === 1 && (
-            (node.matches && node.matches('tr, table, .table-responsive'))
-            || (node.querySelector && node.querySelector('tr, table, .table-responsive'))
+            (node.matches && node.matches('tr, table, .table-responsive, .module-filter-card, .module-filter-panel, .toolbar'))
+            || (node.querySelector && node.querySelector('tr, table, .table-responsive, .module-filter-card, .module-filter-panel, .toolbar'))
           );
         });
       });

@@ -7711,6 +7711,10 @@ body.app-authenticated {
 @media (max-width: 1024px) {
   body.app-authenticated {
     --mf-action: 44px;
+    --mf-gap: 8px;
+    --mf-radius: 12px;
+    --mf-line: #e4ece7;
+    --mf-muted: #667085;
   }
 
   body.app-authenticated .mobile-list-ready > table {
@@ -7731,14 +7735,18 @@ body.app-authenticated {
     width: 100%;
     min-width: 0;
     padding: 9px 10px;
-    border: 1px solid #e4ece7;
-    border-radius: 12px;
+    border: 1px solid var(--mf-line);
+    border-radius: var(--mf-radius);
     background: #fff;
     box-shadow: 0 5px 14px rgba(15, 23, 42, .052);
   }
 
   body.app-authenticated .mobile-list-card {
-    position: relative;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "head head"
+      "body actions";
+    align-items: end;
   }
 
   body.app-authenticated .mobile-list-empty {
@@ -7748,6 +7756,7 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-list-card-head {
+    grid-area: head;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 7px;
@@ -7782,6 +7791,7 @@ body.app-authenticated {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    align-self: center;
   }
 
   body.app-authenticated .mobile-list-card-head input[type="checkbox"] {
@@ -7791,12 +7801,12 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-card-body {
+    grid-area: body;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 4px 9px;
     min-width: 0;
-    padding-right: 48px;
   }
 
   body.app-authenticated .mobile-card-info {
@@ -7837,6 +7847,7 @@ body.app-authenticated {
     color: #334155;
     font-size: 11px;
     font-weight: 800;
+    max-width: 100%;
   }
 
   body.app-authenticated .mobile-card-info[data-mobile-role="badge"] .mobile-card-info-label,
@@ -7859,17 +7870,17 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-card-actions {
-    position: absolute;
-    right: 8px;
-    bottom: 8px;
+    grid-area: actions;
+    position: static;
     display: inline-flex;
     justify-content: flex-end;
     align-items: center;
     gap: 5px;
     min-height: 44px;
-    margin: 0;
+    margin: 0 0 0 8px;
     padding: 0;
     border: 0;
+    align-self: end;
   }
 
   body.app-authenticated .mobile-card-action {
@@ -7886,6 +7897,7 @@ body.app-authenticated {
     color: #0f5132;
     font-size: 14px;
     line-height: 1;
+    flex: 0 0 var(--mf-action);
   }
 
   body.app-authenticated .mobile-card-action:hover,
@@ -7976,11 +7988,115 @@ body.app-authenticated {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
   }
+
+  body.app-authenticated :where(.dashboard-kpi-grid, .dashboard-metric-grid, .module-placeholder-grid, .houses-kpi-grid, .livestock-kpi-grid, .agri-kpi-grid, .gis-summary-grid, #publicAssetsMiniDashboard) {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: var(--mf-gap) !important;
+  }
+
+  body.app-authenticated .mobile-filter-system {
+    --mf-filter-icon: 44px;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) var(--mf-filter-icon) !important;
+    align-items: end !important;
+    gap: 8px !important;
+  }
+
+  body.app-authenticated .mobile-filter-system :where(.mobile-filter-search, .module-search-input-wrap, .person-search-input-wrap, .gis-search-wrap, .operation-search-wrap) {
+    min-width: 0 !important;
+  }
+
+  body.app-authenticated .mobile-filter-system .mobile-filter-search {
+    grid-column: 1 !important;
+  }
+
+  body.app-authenticated .mobile-filter-system .mobile-filter-extra {
+    display: none !important;
+  }
+
+  body.app-authenticated .mobile-filter-system.mobile-filter-expanded .mobile-filter-extra {
+    display: block !important;
+    grid-column: 1 / -1 !important;
+  }
+
+  body.app-authenticated .mobile-filter-system .mobile-filter-action-wrap,
+  body.app-authenticated .mobile-filter-system .mobile-filter-action,
+  body.app-authenticated .mobile-filter-system .mobile-filter-trigger {
+    grid-column: 2 !important;
+  }
+
+  body.app-authenticated .mobile-filter-system .mobile-filter-action,
+  body.app-authenticated .mobile-filter-system .mobile-filter-trigger {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    font-size: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.app-authenticated .mobile-filter-system .mobile-filter-action i,
+  body.app-authenticated .mobile-filter-system .mobile-filter-trigger i {
+    margin: 0 !important;
+    font-size: 15px !important;
+  }
+
+  body.app-authenticated .mobile-filter-system .mobile-filter-trigger {
+    border: 1px solid #cfe4d7 !important;
+    background: #eef8f1 !important;
+    color: #075f35 !important;
+  }
+
+  body.app-authenticated .mobile-filter-system.mobile-filter-expanded .mobile-filter-trigger {
+    border-color: #0b6b3a !important;
+    background: #0b6b3a !important;
+    color: #fff !important;
+  }
+
+  body.app-authenticated .mobile-filter-system .mobile-search-control,
+  body.app-authenticated .mobile-filter-system .form-control,
+  body.app-authenticated .mobile-filter-system .form-select {
+    min-height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  body.app-authenticated .mobile-floating-primary {
+    right: max(14px, env(safe-area-inset-right, 0px)) !important;
+    bottom: calc(var(--mobile-bottom-nav-clearance, 96px) + 14px + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 44 !important;
+  }
+
+  body.app-authenticated .mobile-online-badge {
+    position: fixed !important;
+    right: max(14px, env(safe-area-inset-right, 0px)) !important;
+    bottom: calc(var(--mobile-bottom-nav-clearance, 96px) + 72px + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 42 !important;
+    width: auto !important;
+    max-width: min(160px, calc(100vw - 28px)) !important;
+    min-height: 28px !important;
+    padding: 4px 9px !important;
+    border-radius: 999px !important;
+    font-size: 11px !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .12) !important;
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
   body.app-authenticated .mobile-list-ready .mobile-list-surface {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.app-authenticated :where(.dashboard-kpi-grid, .dashboard-metric-grid, .module-placeholder-grid, .houses-kpi-grid, .livestock-kpi-grid, .agri-kpi-grid, .gis-summary-grid, #publicAssetsMiniDashboard) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  body.app-authenticated .mobile-filter-system {
+    grid-template-columns: minmax(0, 1fr) 44px !important;
   }
 }
 
@@ -7995,6 +8111,8 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-card-actions {
-    justify-content: flex-start;
+    justify-content: flex-end;
+    gap: 4px;
   }
+
 }
