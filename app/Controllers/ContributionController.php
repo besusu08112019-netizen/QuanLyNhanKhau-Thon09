@@ -23,6 +23,7 @@ final class ContributionController extends BaseController
             'page' => $this->query('page', 1),
             'pageSize' => $this->query('pageSize', 20),
             'search' => $this->query('search', $this->query('q', '')),
+            'category_id' => $this->query('category_id', $this->query('categoryId', '')),
             'year' => $this->query('year', ''),
             'status' => $this->query('status', ''),
         ]));

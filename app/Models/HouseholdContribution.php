@@ -219,6 +219,7 @@ CREATE TABLE IF NOT EXISTS contribution_adjustment_history (
 SQL);
         $this->ensureColumns();
         $this->seedCategories();
+        $this->backfillCategoriesFromLegacyCampaigns();
         $this->syncLegacyCampaignCategories();
         $this->seedRuleTemplates();
     }
@@ -980,7 +981,49 @@ SQL);
 
     private function syncLegacyCampaignCategories(): void
     {
-        $this->execute('UPDATE contribution_campaigns c INNER JOIN contribution_categories cc ON LOWER(cc.name)=LOWER(c.contribution_name) AND cc.status <> "DELETED" SET c.category_id=cc.id WHERE c.category_id IS NULL');
+        $this->execute('UPDATE contribution_campaigns c INNER JOIN contribution_categories cc ON LOWER(TRIM(cc.name))=LOWER(TRIM(c.contribution_name)) AND cc.status <> "DELETED" SET c.category_id=cc.id WHERE c.category_id IS NULL OR c.category_id=0');
+    }
+
+    private function backfillCategoriesFromLegacyCampaigns(): void
+    {
+        $rows = $this->fetchAll(
+            "SELECT x.*
+             FROM (
+                SELECT c.*
+                FROM contribution_campaigns c
+                INNER JOIN (
+                    SELECT LOWER(TRIM(contribution_name)) AS name_key, MAX(id) AS latest_id
+                    FROM contribution_campaigns
+                    WHERE status <> 'DELETED' AND TRIM(COALESCE(contribution_name,'')) <> ''
+                    GROUP BY LOWER(TRIM(contribution_name))
+                ) latest ON latest.latest_id=c.id
+             ) x
+             LEFT JOIN contribution_categories cc ON LOWER(TRIM(cc.name))=LOWER(TRIM(x.contribution_name)) AND cc.status <> 'DELETED'
+             WHERE cc.id IS NULL"
+        );
+        foreach ($rows as $row) {
+            $name = trim((string) ($row['contribution_name'] ?? ''));
+            if ($name === '') continue;
+            $this->execute(
+                'INSERT INTO contribution_categories (code, name, contribution_type, unit_type, amount, unit, collection_cycle, target_config_json, exemption_config_json, status, note, created_by, updated_by)
+                 VALUES (:code,:name,:contribution_type,:unit_type,:amount,:unit,:collection_cycle,:target_config_json,:exemption_config_json,:status,:note,:created_by,:updated_by)',
+                [
+                    'code' => $this->categoryCodeFromName($name),
+                    'name' => $name,
+                    'contribution_type' => trim((string) ($row['contribution_type'] ?? '')) ?: $name,
+                    'unit_type' => trim((string) ($row['unit_type'] ?? '')) ?: 'HOUSEHOLD',
+                    'amount' => (float) ($row['amount'] ?? 0),
+                    'unit' => trim((string) ($row['unit'] ?? '')) ?: 'VNĐ/hộ',
+                    'collection_cycle' => 'YEARLY',
+                    'target_config_json' => $row['target_config_json'] ?? null,
+                    'exemption_config_json' => $row['exemption_config_json'] ?? null,
+                    'status' => 'ACTIVE',
+                    'note' => 'Tự động chuyển đổi từ dữ liệu đợt thu cũ.',
+                    'created_by' => $row['created_by'] ?? null,
+                    'updated_by' => $row['updated_by'] ?? null,
+                ]
+            );
+        }
     }
 
     private function categoryCodeFromName(string $name): string
@@ -989,7 +1032,7 @@ SQL);
         $base = trim($base, '_') ?: 'KHOAN_THU';
         $code = substr($base, 0, 32);
         $suffix = 1;
-        while ($this->fetchOne('SELECT id FROM contribution_categories WHERE code=:code AND status <> "DELETED"', ['code' => $code])) {
+        while ($this->fetchOne('SELECT id FROM contribution_categories WHERE code=:code', ['code' => $code])) {
             $tail = '_' . (++$suffix);
             $code = substr($base, 0, 40 - strlen($tail)) . $tail;
         }
@@ -1124,6 +1167,7 @@ SQL);
             }
         }
         $this->execute("ALTER TABLE household_contributions MODIFY payment_status ENUM('UNPAID','PAID','PARTIAL','EXEMPT','REDUCED') NOT NULL DEFAULT 'UNPAID'");
+        $this->backfillCategoriesFromLegacyCampaigns();
         $this->syncLegacyCampaignCategories();
     }
 
