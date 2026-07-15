@@ -212,9 +212,46 @@
   }
 
   function printPersonDetail(row) {
-    const win = window.open('', '_blank', 'width=1024,height=768');
-    win.document.write('<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>' + escapeHtml(row.full_name || 'Nhân khẩu') + '</title><style>@page{size:A4;margin:14mm}:root{--app-font-family:Arial,Roboto,"Segoe UI","Helvetica Neue","Noto Sans",sans-serif}body,button,input,select,textarea,table{font-family:var(--app-font-family)}body{color:#111}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}.detail-item{border-bottom:1px solid #ddd;padding:6px 0}.detail-label{font-size:12px;color:#555}.detail-value{font-weight:700}</style></head><body><h2>Phiếu thông tin nhân khẩu</h2>' + personDetailHtml(row) + '<script>window.print();<\\/script></body></html>');
-    win.document.close();
+    if (!window.Thon09Print) return showToast('Print Framework is not ready', 'warning');
+    window.Thon09Print.render({
+      title: 'Phi?u th?ng tin nh?n kh?u',
+      type: 'citizen-detail',
+      orientation: 'portrait',
+      paperSize: 'A4',
+      headers: ['Th?ng tin', 'Gi? tr?'],
+      rows: personPrintRows(row),
+      filters: { 'Nh?n kh?u': row.full_name || '', 'M? nh?n kh?u': row.citizen_code || '', 'M? h?': row.household_code || '' },
+      repeatHeader: true,
+      showFooter: true,
+      showSummary: false,
+      showSignature: true
+    });
+  }
+
+  function personPrintRows(row) {
+    return [
+      ['M? h?', row.household_code],
+      ['M? nh?n kh?u', row.citizen_code],
+      ['H? v? t?n', row.full_name],
+      ['Ng?y sinh', formatDate(row.date_of_birth)],
+      ['Tu?i', ageText(row.date_of_birth)],
+      ['Gi?i t?nh', row.gender],
+      ['CCCD/S? ??nh danh', row.identity_number || row.personal_id || row.national_id],
+      ['S? ?i?n tho?i', row.phone],
+      ['Quan h? v?i ch? h?', row.relationship],
+      ['D?n t?c', row.ethnicity],
+      ['Ngh? nghi?p', row.occupation],
+      ['H?c v?n', row.education_level],
+      ['H?n nh?n', row.marital_status],
+      ['C? tr?', residencyLabel(row.residency_status)],
+      ['Hi?n t?i', presenceLabel(row.presence_status)],
+      ['Ch? h?', row.head_citizen_name],
+      ['H? t?n b?', row.father_name || row.father_display_name],
+      ['H? t?n m?', row.mother_name || row.mother_display_name],
+      ['??ng vi?n', Number(row.party_member) === 1 ? 'C?' : ''],
+      ['??i t??ng ch?nh s?ch', policyLabels(row).join(', ')],
+      ['Ghi ch?', row.note]
+    ].filter(item => hasValue(item[1]));
   }
 
   function patchImportGuide() {

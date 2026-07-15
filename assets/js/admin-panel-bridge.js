@@ -88,7 +88,7 @@
         const id = Number(dataset.id || dataset.householdId || 0);
         if (id && typeof window.deleteHousehold === 'function') window.deleteHousehold(id);
       } })
-      .register({ key: 'household.print', handler: () => window.print() })
+      .register({ key: 'household.print', handler: () => window.Thon09Print?.currentScreen({ title: 'Phiếu hộ gia đình', orientation: 'portrait', showSummary: false }) || showToast('Print Framework is not ready', 'warning') })
       .register({ key: 'reports.view', handler: () => viewReportFromApi() });
   }
 
@@ -391,7 +391,7 @@
       if (titleEl) titleEl.textContent = data.title || 'Báo cáo';
       if (countEl) countEl.textContent = number(data.totalRows || 0) + ' dòng';
       preview.innerHTML = reportTable(data.headers || [], data.rows || []);
-      if (printAfter) window.print();
+      if (printAfter) window.Thon09Print?.fromTable(preview.querySelector('table'), { title: data.title || 'Báo cáo', type: params.get('type') || '', filters: Object.fromEntries(params.entries()), totalRows: data.totalRows, showSummary: true }) || showToast('Print Framework is not ready', 'warning');
     } catch (error) {
       preview.innerHTML = '<div class="alert alert-danger mb-0">' + escapeHtml(error.message) + '</div>';
     }

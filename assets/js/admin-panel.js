@@ -456,9 +456,21 @@
 
   async function printAdminReport(type) {
     const report = await api('/api/reports/print?' + new URLSearchParams({ type }));
-    const win = window.open('', '_blank', 'width=1024,height=768');
-    win.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(report.title)}</title><style>@page{size:A4;margin:14mm}:root{--app-font-family:Arial,Roboto,"Segoe UI","Helvetica Neue","Noto Sans",sans-serif}body,button,input,select,textarea,table{font-family:var(--app-font-family)}table{width:100%;border-collapse:collapse}th,td{border:1px solid #555;padding:6px;font-size:12px}</style></head><body><h2>${escapeHtml(report.title)}</h2>${reportTableHtml(report)}<script>window.print();<\/script></body></html>`);
-    win.document.close();
+    if (!window.Thon09Print) throw new Error('Print Framework is not ready');
+    window.Thon09Print.render({
+      title: report.title || 'Báo cáo',
+      type,
+      paperSize: 'A4',
+      headers: report.headers || [],
+      rows: report.rows || [],
+      totalRows: report.totalRows,
+      filters: report.filters || { type },
+      meta: report.meta || {},
+      repeatHeader: true,
+      showFooter: true,
+      showSummary: true,
+      showSignature: true
+    });
   }
 
   function reportTableHtml(report) {
