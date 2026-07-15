@@ -189,6 +189,45 @@ test('public assets list, dashboard, filters and display format are consistent',
   await expect.poll(() => page.evaluate(() => document.querySelector('#publicAssetsStatusFilter').value)).toBe('');
 });
 
+test('mobile design system renders compact independent cards instead of desktop table', async ({ page }) => {
+  await openApp(page, { width: 390, height: 844 });
+
+  const metrics = await page.evaluate(() => {
+    const wrapper = document.querySelector('#publicAssetsRows')?.closest('.table-responsive');
+    const table = wrapper?.querySelector('table');
+    const surface = wrapper?.querySelector('.mobile-list-surface');
+    const firstCard = surface?.querySelector('.mobile-list-card');
+    const dashboard = document.querySelector('#publicAssetsMiniDashboard');
+    const dashboardCard = dashboard?.querySelector(':scope > *');
+    const actions = firstCard ? Array.from(firstCard.querySelectorAll('.mobile-card-action')) : [];
+    const rect = firstCard?.getBoundingClientRect();
+    const dashRect = dashboardCard?.getBoundingClientRect();
+    return {
+      tableDisplay: table ? getComputedStyle(table).display : '',
+      surfaceDisplay: surface ? getComputedStyle(surface).display : '',
+      cardHeight: rect ? Math.round(rect.height) : 0,
+      cardText: firstCard?.innerText || '',
+      actionCount: actions.length,
+      actionWidths: actions.map((button) => Math.round(button.getBoundingClientRect().width)),
+      dashboardColumns: dashboard ? getComputedStyle(dashboard).gridTemplateColumns.split(' ').length : 0,
+      dashboardCardHeight: dashRect ? Math.round(dashRect.height) : 0
+    };
+  });
+
+  expect(metrics.tableDisplay).toBe('none');
+  expect(metrics.surfaceDisplay).toBe('grid');
+  expect(metrics.dashboardColumns).toBe(2);
+  expect(metrics.dashboardCardHeight).toBeLessThanOrEqual(70);
+  expect(metrics.cardHeight).toBeGreaterThan(0);
+  expect(metrics.cardHeight).toBeLessThanOrEqual(150);
+  expect(metrics.cardText.toLocaleLowerCase('vi-VN')).toContain('nhà văn hóa thôn 09');
+  expect(metrics.cardText).toContain('CT09-00101');
+  expect(metrics.cardText).toContain('Thôn 09');
+  expect(metrics.actionCount).toBeGreaterThanOrEqual(1);
+  expect(metrics.actionCount).toBeLessThanOrEqual(3);
+  expect(metrics.actionWidths.every((width) => width <= 44)).toBe(true);
+});
+
 test('public assets detail, create, update, delete and GIS layer work', async ({ page }) => {
   await openApp(page);
 

@@ -52,6 +52,9 @@ const allowedClickListeners = new Map([
   ]],
   ['assets/js/view-inline-patches.js', [
     "document.addEventListener('click',function(event){var item=event.target.closest&&event.target.closest('[data-screen],[data-mobile-screen]');if(!item||item.classList.contains('gov-logout'))return;var delegation=window.Thon09Platform&&window.Thon09Platform.navigationDelegation;"
+  ]],
+  ['assets/js/mobile-design-system.js', [
+    "document.addEventListener('click', function (event) {"
   ]]
 ]);
 
