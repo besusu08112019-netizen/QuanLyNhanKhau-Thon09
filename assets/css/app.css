@@ -5639,6 +5639,7 @@ body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dash
 #contributionsScreen .contribution-table tbody tr:hover { background: #fbfdfb; }
 .contribution-category-panel { margin-bottom: 14px; }
 .contribution-category-summary { border-top: 1px solid var(--line, #dfe7e2); padding-top: 14px; }
+.contribution-category-summary:empty { display: none; }
 .contribution-category-detail { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(360px, 2fr) auto; gap: 14px; align-items: center; }
 .contribution-category-main { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
 .contribution-category-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
