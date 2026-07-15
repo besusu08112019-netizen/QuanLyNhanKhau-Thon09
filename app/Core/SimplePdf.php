@@ -10,15 +10,18 @@ final class SimplePdf
 
     public function addTitle(string $text): void
     {
-        $this->text($text, 42, 820, 16, true);
-        $this->y = 790;
+        $this->addPrintHeader('', $text);
     }
 
     public function addPrintHeader(string $unit, string $title): void
     {
-        $this->text($unit, 205, 820, 11, true);
-        $this->text(mb_strtoupper($title, 'UTF-8'), 135, 798, 16, true);
-        $this->y = 770;
+        $this->text('TINH NINH BINH', 42, 820, 11, true);
+        $this->text('Thon 09, xa Hong Phong', 42, 804, 9);
+        $this->text('CONG HOA XA HOI CHU NGHIA VIET NAM', 210, 820, 11, true);
+        $this->text('Doc lap - Tu do - Hanh phuc', 252, 804, 10, true);
+        $this->line(270, 799, 415, 799);
+        $this->text(mb_strtoupper($title, 'UTF-8'), 120, 770, 16, true);
+        $this->y = 740;
     }
 
     public function addMeta(string $text): void
@@ -41,6 +44,17 @@ final class SimplePdf
             }
         }
         $this->line(42, $this->y + 8, 552, $this->y + 8);
+    }
+
+    public function addSignatureBlock(string $title = 'Truong thon'): void
+    {
+        if ($this->y < 150) $this->newPage();
+        $this->y -= 36;
+        $this->text('................................, ngay ..... thang ..... nam ......', 330, $this->y, 10);
+        $this->y -= 24;
+        $this->text($this->signatureTitle($title), 390, $this->y, 11, true);
+        $this->y -= 86;
+        $this->text('................................', 390, $this->y, 10);
     }
 
     public function output(): string
@@ -115,5 +129,13 @@ final class SimplePdf
     {
         $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
         return trim(preg_replace('/\s+/', ' ', $ascii ?: $text));
+    }
+
+    private function signatureTitle(string $text): string
+    {
+        $plain = preg_replace('/[:：].*$/u', '', $text);
+        $plain = preg_replace('/\.{2,}.*/u', '', (string) $plain);
+        $plain = trim((string) $plain);
+        return $plain !== '' ? $plain : 'Truong thon';
     }
 }

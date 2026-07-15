@@ -114,6 +114,7 @@ final class OperationCenterController extends BaseController
         $pdf->addTitle((string) ($report['title'] ?? 'Báo cáo điều hành'));
         $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
         $pdf->addTable($report['headers'] ?? [], $report['rows'] ?? []);
+        $pdf->addSignatureBlock('Truong thon');
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         echo $pdf->output();

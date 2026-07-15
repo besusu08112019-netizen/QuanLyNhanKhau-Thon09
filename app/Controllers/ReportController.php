@@ -251,7 +251,7 @@ final class ReportController extends BaseController
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         echo "\xEF\xBB\xBF";
-        echo '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;color:#111}.report-print-unit{text-align:center;font-weight:700;margin:0 0 6px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10px}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{border-collapse:collapse}td,th{border:1px solid #999;padding:6px}th{font-weight:bold;background:#eef2f7}</style></head><body>';
+        echo '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{border-collapse:collapse;table-layout:fixed}td,th{border:1px solid #999;padding:6px;word-break:break-word}th{font-weight:bold;background:#eef2f7}</style></head><body>';
         $this->echoReportHeaderHtml($report);
         $this->echoReportMetaHtml($report);
         echo '<p>Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s') . '</p>';
@@ -276,6 +276,7 @@ final class ReportController extends BaseController
         $pdf->addMeta('Thoi gian xuat: ' . date('d/m/Y H:i:s'));
         $pdf->addMeta('Tong so dong: ' . (int) $report['totalRows']);
         $pdf->addTable($report['headers'], $report['rows']);
+        $pdf->addSignatureBlock((string) ($report['meta']['approved_by'] ?? 'Truong thon'));
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         echo $pdf->output();
@@ -289,7 +290,7 @@ final class ReportController extends BaseController
         header('Content-Type: application/msword; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         echo "Ã¯Â»Â¿";
-        echo '<html><head><meta charset="utf-8"><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#111}.report-print-unit{text-align:center;font-weight:700;margin:0 0 6px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10px}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #555;padding:6px;vertical-align:top}th{background:#eef2f7}</style></head><body>';
+        echo '<html><head><meta charset="utf-8"><style>@page{size:A4;margin:16mm 14mm 20mm}body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}td,th{border:1px solid #555;padding:6px;vertical-align:top;word-break:break-word}th{background:#eef2f7}</style></head><body>';
         $this->echoReportHeaderHtml($report);
         $this->echoReportMetaHtml($report);
         echo '<p>Th?i gian xu?t: ' . date('d/m/Y H:i:s') . '</p><table><thead><tr>';
@@ -355,7 +356,10 @@ final class ReportController extends BaseController
 
     private function echoReportHeaderHtml(array $report): void
     {
-        echo '<div class="report-print-unit">' . htmlspecialchars($this->reportUnitName($report), ENT_QUOTES, 'UTF-8') . '</div>';
+        echo '<div class="report-print-masthead">';
+        echo '<div class="report-print-agency"><div class="report-print-agency-primary">T&#7880;NH NINH B&#204;NH</div><div class="report-print-agency-secondary">Th&#244;n 09, x&#227; H&#7891;ng Phong</div></div>';
+        echo '<div class="report-print-national"><div class="report-print-national-title">C&#7896;NG H&#210;A X&#195; H&#7896;I CH&#7910; NGH&#296;A VI&#7878;T NAM</div><div class="report-print-national-subtitle">&#272;&#7897;c l&#7853;p - T&#7921; do - H&#7841;nh ph&#250;c</div></div>';
+        echo '<div></div></div>';
         echo '<div class="report-print-title">' . htmlspecialchars((string) ($report['title'] ?? 'BÃ¡o cÃ¡o'), ENT_QUOTES, 'UTF-8') . '</div>';
     }
 

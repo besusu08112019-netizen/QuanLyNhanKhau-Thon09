@@ -1,17 +1,18 @@
 @page {
   size: A4 portrait;
-  margin: 14mm 10mm 18mm;
+  margin: 16mm 14mm 20mm;
 }
 
 @page landscape {
   size: A4 landscape;
-  margin: 10mm 8mm 16mm;
+  margin: 12mm 10mm 18mm;
 }
 
 :root {
   --print-font-family: Arial, Roboto, "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
   --print-font-size: 12px;
   --print-cell-padding: 5px;
+  --print-border-color: #374151;
 }
 
 html,
@@ -30,12 +31,33 @@ body.print-landscape {
 
 .print-document {
   width: 100%;
+  max-width: 100%;
 }
 
-.print-national-title,
-.print-national-subtitle,
-.print-unit,
-.print-title {
+.print-masthead {
+  display: grid;
+  grid-template-columns: minmax(42mm, 1fr) minmax(76mm, 1.2fr) minmax(20mm, 1fr);
+  align-items: start;
+  gap: 8mm;
+  margin-bottom: 12mm;
+}
+
+.print-agency {
+  text-align: left;
+}
+
+.print-agency-primary {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.print-agency-secondary {
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.print-national {
   text-align: center;
 }
 
@@ -47,28 +69,26 @@ body.print-landscape {
 }
 
 .print-national-subtitle {
-  margin: 2px 0 12px;
+  display: inline-block;
+  margin: 2px 0 0;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #111827;
   font-size: 12px;
   font-weight: 700;
 }
 
-.print-unit {
-  margin: 0 0 6px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
 .print-title {
-  margin: 0 0 10px;
+  margin: 0 0 9mm;
   font-size: 18px;
   font-weight: 700;
   text-transform: uppercase;
+  text-align: center;
 }
 
 .print-meta,
 .print-filter-list,
 .print-summary-list {
-  margin: 8px 0 12px;
+  margin: 6px 0 10px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px 16px;
@@ -82,8 +102,9 @@ body.print-landscape {
 .print-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
   page-break-inside: auto;
+  margin-top: 4mm;
 }
 
 .print-table thead {
@@ -102,26 +123,18 @@ body.print-landscape {
 
 .print-table th,
 .print-table td {
-  border: 1px solid #4b5563;
+  border: 1px solid var(--print-border-color);
   padding: var(--print-cell-padding);
   text-align: left;
   vertical-align: top;
   overflow-wrap: anywhere;
-  word-break: normal;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .print-table th {
   background: #eef2f7;
   font-weight: 700;
-}
-
-.print-repeat-title th {
-  border: 0;
-  background: #fff;
-  padding: 0 0 6px;
-  text-align: center;
-  text-transform: uppercase;
-  font-size: 13px;
 }
 
 .print-empty {
@@ -130,19 +143,40 @@ body.print-landscape {
   padding: 18px !important;
 }
 
-.print-signatures {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40mm;
-  margin-top: 18mm;
-  text-align: center;
-  font-weight: 700;
+.print-signature-block {
+  margin-top: 12mm;
   page-break-inside: avoid;
   break-inside: avoid;
 }
 
+.print-date-line {
+  margin: 0 0 4mm auto;
+  width: 82mm;
+  text-align: right;
+  font-style: italic;
+}
+
+.print-signatures {
+  display: flex;
+  justify-content: flex-end;
+  text-align: center;
+  font-weight: 700;
+}
+
+.print-signature-box {
+  width: 70mm;
+}
+
+.print-sign-title {
+  text-transform: uppercase;
+}
+
 .print-sign-space {
-  height: 24mm;
+  height: 28mm;
+}
+
+.print-sign-name {
+  font-weight: 400;
 }
 
 .print-footer {
@@ -172,6 +206,11 @@ body.print-landscape {
 }
 
 @media print {
+  html,
+  body {
+    width: 100%;
+  }
+
   thead {
     display: table-header-group;
   }
