@@ -8268,9 +8268,9 @@ body.app-authenticated {
 
   body.app-authenticated .mobile-filter-system {
     --mf-filter-icon: 44px;
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) var(--mf-filter-icon) !important;
-    align-items: end !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
     gap: 8px !important;
     min-height: 0 !important;
     margin-bottom: 8px !important;
@@ -8282,7 +8282,8 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-filter-system .mobile-filter-search {
-    grid-column: 1 !important;
+    flex: 1 1 min(240px, calc(100% - 104px)) !important;
+    min-width: min(190px, 100%) !important;
   }
 
   body.app-authenticated .mobile-filter-system .mobile-filter-extra {
@@ -8303,13 +8304,13 @@ body.app-authenticated {
     clip-path: none !important;
     white-space: normal !important;
     visibility: visible !important;
-    grid-column: 1 / -1 !important;
+    flex: 1 1 100% !important;
   }
 
   body.app-authenticated .mobile-filter-system .mobile-filter-action-wrap,
   body.app-authenticated .mobile-filter-system .mobile-filter-action,
   body.app-authenticated .mobile-filter-system .mobile-filter-trigger {
-    grid-column: 2 !important;
+    flex: 0 0 var(--mf-filter-icon) !important;
   }
 
   body.app-authenticated .mobile-action-system,
@@ -8320,6 +8321,58 @@ body.app-authenticated {
     justify-content: flex-end !important;
     gap: 8px !important;
     min-width: 0 !important;
+  }
+
+  body.app-authenticated .mobile-action-system {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    padding: 8px 2px !important;
+  }
+
+  body.app-authenticated .mobile-action-system > * {
+    display: flex !important;
+    flex: 0 1 auto !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  body.app-authenticated .mobile-action-system > *:last-child:not(:only-child) {
+    margin-left: auto !important;
+    justify-content: flex-end !important;
+  }
+
+  body.app-authenticated .mobile-action-system :where(button, a[href], .btn) {
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+  }
+
+  body.app-authenticated .mobile-action-system :where(button, a[href], .btn) i {
+    margin: 0 !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+  }
+
+  body.app-authenticated .mobile-action-system :where(select, .form-select) {
+    width: auto !important;
+    min-width: 86px !important;
+    max-width: 118px !important;
+    min-height: 44px !important;
+    border-radius: 12px !important;
   }
 
   body.app-authenticated .mobile-filter-system .mobile-filter-action,
@@ -8477,4 +8530,18 @@ body.app-authenticated {
     gap: 4px;
   }
 
+}
+
+@media (max-width: 1024px) {
+  body.app-authenticated .content-card,
+  body.app-authenticated .module-filter-card,
+  body.app-authenticated .person-search-card,
+  body.app-authenticated .report-filter-card,
+  body.app-authenticated .dashboard-panel,
+  body.app-authenticated .livestock-filter-card,
+  body.app-authenticated .agri-filter-card,
+  body.app-authenticated .houses-filter-card {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
 }

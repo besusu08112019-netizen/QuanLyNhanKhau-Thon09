@@ -219,3 +219,53 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
   expect(emptyState.message.length).toBeGreaterThan(0);
   expect(emptyState.height).toBeGreaterThanOrEqual(100);
 });
+
+test('mobile shared component shells avoid blank panels, vertical toolbars and oversized whitespace', async ({ page }) => {
+  await openAuthenticatedApp(page);
+
+  const screens = ['households', 'persons', 'movements', 'vehicles', 'businessHouseholds', 'agriculture', 'livestock', 'contributions'];
+  for (const screen of screens) {
+    await page.evaluate((name) => window.Thon09NavigationController?.navigate(name), screen);
+    await page.waitForTimeout(180);
+    const metrics = await page.evaluate(() => {
+      window.thon09EnhanceDesignSystem?.(document);
+      const active = document.querySelector('.screen.active');
+      const visible = (el) => {
+        const style = getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
+        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 1 && rect.height > 1;
+      };
+      const shells = Array.from(active?.querySelectorAll('.mobile-filter-system, .mobile-action-system') || []).filter(visible);
+      const shellIssues = shells.map((shell) => {
+        const rect = shell.getBoundingClientRect();
+        const controls = Array.from(shell.querySelectorAll('input, select, button, a[href], .btn')).filter(visible);
+        const textLength = shell.innerText.replace(/\s+/g, ' ').trim().length;
+        const onlyIcon = controls.length === 1 && textLength <= 3;
+        return {
+          className: shell.className,
+          height: Math.round(rect.height),
+          controls: controls.length,
+          textLength,
+          onlyIcon,
+          blankTall: rect.height > 96 && controls.length <= 1
+        };
+      });
+      const actionGroups = Array.from(active?.querySelectorAll('.mobile-action-system, .mobile-filter-action-wrap, .module-action-row, .floating-action-row, .fab-row') || []).filter(visible).map((group) => {
+        const buttons = Array.from(group.querySelectorAll('button, a[href], .btn, select')).filter(visible);
+        const rects = buttons.map((button) => button.getBoundingClientRect());
+        const columns = rects.length ? new Set(rects.map((rect) => Math.round(rect.left))).size : 0;
+        const rows = rects.length ? new Set(rects.map((rect) => Math.round(rect.top))).size : 0;
+        return { buttons: buttons.length, columns, rows, height: Math.round(group.getBoundingClientRect().height) };
+      });
+      return {
+        activeId: active?.id || '',
+        shellIssues,
+        verticalActionGroups: actionGroups.filter((group) => group.buttons >= 3 && group.columns <= 1 && group.rows >= 3)
+      };
+    });
+
+    expect(metrics.shellIssues.filter((item) => item.onlyIcon), `${screen} icon-only filter/action shell`).toEqual([]);
+    expect(metrics.shellIssues.filter((item) => item.blankTall), `${screen} blank tall filter/action shell`).toEqual([]);
+    expect(metrics.verticalActionGroups, `${screen} vertical toolbar`).toEqual([]);
+  }
+});

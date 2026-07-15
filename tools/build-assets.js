@@ -15,7 +15,8 @@ function minifyCss(source) {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\s+/g, ' ')
-    .replace(/\s*([{}:;,>+~])\s*/g, '$1')
+    .replace(/\s*([{};,>+~])\s*/g, '$1')
+    .replace(/([;{])\s*([-\w]+)\s*:\s*/g, '$1$2:')
     .replace(/calc\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g, (_, value) => 'calc(' + value.replace(/\s*\+\s*/g, ' + ').replace(/(?<=[0-9)%])\s*-\s*(?=[0-9.])/g, ' - ') + ')')
     .replace(/;}/g, '}')
     .trim();
