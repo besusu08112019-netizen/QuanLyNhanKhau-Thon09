@@ -7,6 +7,8 @@ use App\Services\ContributionRuleEngine;
 
 final class HouseholdContribution extends BaseModel
 {
+    public const CATEGORY_STATUS = ['ACTIVE' => 'Dang ap dung', 'INACTIVE' => 'Tam dung', 'DELETED' => 'Da xoa'];
+    public const COLLECTION_CYCLES = ['MONTHLY' => 'Thang', 'QUARTERLY' => 'Quy', 'YEARLY' => 'Nam', 'CUSTOM' => 'Tuy chinh'];
     public const CATEGORIES = ['Quỹ vệ sinh', 'Quỹ rác thải', 'Quỹ an ninh', 'Quỹ khuyến học', 'Đóng góp làm đường', 'Điện chiếu sáng', 'Nghĩa trang', 'Nhà văn hóa', 'Đóng góp khác'];
     public const CAMPAIGN_STATUS = ['ACTIVE' => 'Đang thu', 'CLOSED' => 'Đã kết thúc', 'INACTIVE' => 'Tạm dừng', 'DELETED' => 'Đã xóa'];
     public const PAYMENT_STATUS = ['UNPAID' => 'Chưa thu', 'PAID' => 'Đã thu', 'PARTIAL' => 'Thu một phần', 'EXEMPT' => 'Được miễn', 'REDUCED' => 'Miễn một phần'];
@@ -29,11 +31,22 @@ CREATE TABLE IF NOT EXISTS contribution_categories (
   code VARCHAR(40) NOT NULL UNIQUE,
   name VARCHAR(180) NOT NULL,
   contribution_type VARCHAR(80) NULL,
+  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  unit VARCHAR(40) NOT NULL DEFAULT 'VND/ho',
+  collection_cycle VARCHAR(40) NOT NULL DEFAULT 'YEARLY',
+  custom_cycle VARCHAR(180) NULL,
+  target_config_json JSON NULL,
+  exemption_config_json JSON NULL,
   is_required TINYINT(1) NOT NULL DEFAULT 0,
   status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
   note TEXT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
         $this->execute(<<<SQL
@@ -206,6 +219,7 @@ CREATE TABLE IF NOT EXISTS contribution_adjustment_history (
 SQL);
         $this->ensureColumns();
         $this->seedCategories();
+        $this->syncLegacyCampaignCategories();
         $this->seedRuleTemplates();
     }
 
@@ -213,7 +227,9 @@ SQL);
     {
         $this->ensureSchema();
         return [
-            'categories' => array_map(fn($v) => ['value' => $v, 'label' => $v], self::CATEGORIES),
+            'categories' => $this->categoryOptions(),
+            'category_statuses' => $this->options(self::CATEGORY_STATUS),
+            'collection_cycles' => $this->options(self::COLLECTION_CYCLES),
             'campaign_statuses' => $this->options(self::CAMPAIGN_STATUS),
             'payment_statuses' => $this->options(self::PAYMENT_STATUS),
             'unit_types' => $this->options(ContributionRuleEngine::UNIT_TYPES),
@@ -223,15 +239,75 @@ SQL);
         ];
     }
 
+    public function categories(array $filters = []): array
+    {
+        $this->ensureSchema();
+        [$where, $params] = $this->categoryWhere($filters);
+        $rows = $this->fetchAll(
+            "SELECT cc.*,
+                COALESCE(COUNT(c.id),0) AS campaign_count,
+                COALESCE(SUM(CASE WHEN c.status='ACTIVE' THEN 1 ELSE 0 END),0) AS active_campaign_count
+             FROM contribution_categories cc
+             LEFT JOIN contribution_campaigns c ON c.category_id=cc.id AND c.status <> 'DELETED'
+             $where
+             GROUP BY cc.id
+             ORDER BY cc.status ASC, cc.name ASC",
+            $params
+        );
+        return ['items' => array_map(fn($row) => $this->normalizeCategory($row), $rows), 'total' => count($rows)];
+    }
+
+    public function findCategory(int $id): ?array
+    {
+        $this->ensureSchema();
+        $row = $this->fetchOne(
+            "SELECT cc.*,
+                COALESCE(COUNT(c.id),0) AS campaign_count,
+                COALESCE(SUM(CASE WHEN c.status='ACTIVE' THEN 1 ELSE 0 END),0) AS active_campaign_count
+             FROM contribution_categories cc
+             LEFT JOIN contribution_campaigns c ON c.category_id=cc.id AND c.status <> 'DELETED'
+             WHERE cc.id=:id AND cc.status <> 'DELETED'
+             GROUP BY cc.id",
+            ['id' => $id]
+        );
+        return $row ? $this->normalizeCategory($row) : null;
+    }
+
+    public function upsertCategory(array $data, int $userId, ?int $id = null): array
+    {
+        $this->ensureSchema();
+        $params = $this->categoryParams($data, $userId, $id);
+        if ($id) {
+            if (!$this->findCategory($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu');
+            $params['id'] = $id;
+            $this->execute('UPDATE contribution_categories SET code=:code, name=:name, contribution_type=:contribution_type, unit_type=:unit_type, amount=:amount, unit=:unit, collection_cycle=:collection_cycle, custom_cycle=:custom_cycle, target_config_json=:target_config_json, exemption_config_json=:exemption_config_json, status=:status, note=:note, updated_by=:user WHERE id=:id', $params);
+            $this->refreshCampaignsFromCategory($id);
+            return $this->findCategory($id);
+        }
+        $insertParams = $params + ['created_by' => $userId, 'updated_by' => $userId];
+        unset($insertParams['user']);
+        $newId = $this->insert('INSERT INTO contribution_categories (code, name, contribution_type, unit_type, amount, unit, collection_cycle, custom_cycle, target_config_json, exemption_config_json, status, note, created_by, updated_by) VALUES (:code,:name,:contribution_type,:unit_type,:amount,:unit,:collection_cycle,:custom_cycle,:target_config_json,:exemption_config_json,:status,:note,:created_by,:updated_by)', $insertParams);
+        return $this->findCategory($newId);
+    }
+
+    public function deleteCategory(int $id, int $userId): void
+    {
+        $this->ensureSchema();
+        if (!$this->findCategory($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu');
+        $active = (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM contribution_campaigns WHERE category_id=:id AND status <> "DELETED"', ['id' => $id]) ?: [])['total'] ?? 0);
+        if ($active > 0) throw new \RuntimeException('Khoáº£n thu Ä‘ang cÃ³ Ä‘á»£t thu, khÃ´ng thá»ƒ xÃ³a');
+        $this->execute('UPDATE contribution_categories SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
+    }
+
     public function campaigns(array $filters): array
     {
         $this->ensureSchema();
         $this->syncActiveCampaigns();
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$where, $params, $order] = $this->campaignWhere($filters);
-        $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM contribution_campaigns c $where", $params) ?: [])['total'] ?? 0);
+        $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM contribution_campaigns c LEFT JOIN contribution_categories cc ON cc.id=c.category_id $where", $params) ?: [])['total'] ?? 0);
         $rows = $this->fetchAll(
-            "SELECT c.*,
+            "SELECT c.*, cc.code AS category_code, cc.name AS category_name, cc.collection_cycle AS category_cycle,
                 COALESCE(SUM(CASE WHEN hc.payment_status IN ('PAID','REDUCED') AND hc.status='ACTIVE' THEN 1 ELSE 0 END),0) AS paid_households,
                 COALESCE(SUM(CASE WHEN hc.payment_status='PARTIAL' AND hc.status='ACTIVE' THEN 1 ELSE 0 END),0) AS partial_households,
                 COALESCE(SUM(CASE WHEN hc.payment_status='UNPAID' AND hc.status='ACTIVE' THEN 1 ELSE 0 END),0) AS unpaid_households,
@@ -242,6 +318,7 @@ SQL);
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.paid_amount ELSE 0 END),0) AS collected_amount,
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.debt_amount ELSE 0 END),0) AS debt_amount
              FROM contribution_campaigns c
+             LEFT JOIN contribution_categories cc ON cc.id=c.category_id
              LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE'
              $where
              GROUP BY c.id
@@ -254,26 +331,27 @@ SQL);
     public function findCampaign(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT c.* FROM contribution_campaigns c WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT c.*, cc.code AS category_code, cc.name AS category_name, cc.collection_cycle AS category_cycle FROM contribution_campaigns c LEFT JOIN contribution_categories cc ON cc.id=c.category_id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
         return $row ? $this->normalizeCampaign($row) : null;
     }
 
     public function upsertCampaign(array $data, int $userId, ?int $id = null): array
     {
         $this->ensureSchema();
-        $params = $this->campaignParams($data, $userId);
+        $params = $this->campaignParamsV2($data, $userId);
         $before = $id ? $this->findCampaign($id) : null;
+        if (!$id && empty($params['category_id'])) throw new \RuntimeException('Vui long tao/chon khoan thu truoc khi tao dot thu');
         if ($id && !$before) throw new \RuntimeException('Không tìm thấy đợt thu');
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE contribution_campaigns SET contribution_name=:contribution_name, contribution_type=:contribution_type, year=:year, period_name=:period_name, amount=:amount, unit=:unit, unit_type=:unit_type, start_date=:start_date, due_date=:due_date, target_config_json=:target_config_json, exemption_config_json=:exemption_config_json, note=:note, status=:status, updated_by=:user WHERE id=:id', $params);
+            $this->execute('UPDATE contribution_campaigns SET category_id=:category_id, contribution_name=:contribution_name, contribution_type=:contribution_type, year=:year, period_name=:period_name, amount=:amount, unit=:unit, unit_type=:unit_type, start_date=:start_date, due_date=:due_date, target_config_json=:target_config_json, exemption_config_json=:exemption_config_json, note=:note, status=:status, updated_by=:user WHERE id=:id', $params);
             $this->writeAdjustment($id, null, $before, $params, $userId, 'Cập nhật quy định đợt thu');
             $this->syncCampaign($id);
             return $this->findCampaign($id);
         }
         $insertParams = $params + ['created_by' => $userId, 'updated_by' => $userId];
         unset($insertParams['user']);
-        $newId = $this->insert('INSERT INTO contribution_campaigns (contribution_name, contribution_type, year, period_name, amount, unit, unit_type, start_date, due_date, target_config_json, exemption_config_json, note, status, created_by, updated_by) VALUES (:contribution_name,:contribution_type,:year,:period_name,:amount,:unit,:unit_type,:start_date,:due_date,:target_config_json,:exemption_config_json,:note,:status,:created_by,:updated_by)', $insertParams);
+        $newId = $this->insert('INSERT INTO contribution_campaigns (category_id, contribution_name, contribution_type, year, period_name, amount, unit, unit_type, start_date, due_date, target_config_json, exemption_config_json, note, status, created_by, updated_by) VALUES (:category_id,:contribution_name,:contribution_type,:year,:period_name,:amount,:unit,:unit_type,:start_date,:due_date,:target_config_json,:exemption_config_json,:note,:status,:created_by,:updated_by)', $insertParams);
         $this->upsertRateRule($newId, $params);
         $this->syncCampaign($newId);
         return $this->findCampaign($newId);
@@ -513,6 +591,7 @@ SQL);
                 COALESCE(SUM(GREATEST(hc.gross_amount - hc.exempt_amount - hc.discount_amount - hc.paid_amount, 0)),0) AS debt_amount
              FROM household_contributions hc
              INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id
+             LEFT JOIN contribution_categories cc ON cc.id=c.category_id
              INNER JOIN households h ON h.id=hc.household_id
              $where",
             $params
@@ -587,6 +666,7 @@ SQL);
             "SELECT h.household_code, h.head_citizen_name, hc.eligible_count, hc.exempt_count, hc.exempt_amount, hc.calculation_note, hc.note, hc.updated_at
              FROM household_contributions hc
              INNER JOIN contribution_campaigns c ON c.id=hc.campaign_id
+             LEFT JOIN contribution_categories cc ON cc.id=c.category_id
              INNER JOIN households h ON h.id=hc.household_id
              $where AND (hc.payment_status='EXEMPT' OR hc.exempt_count > 0 OR hc.exempt_amount > 0)
              ORDER BY h.household_code ASC",
@@ -671,8 +751,10 @@ SQL);
         $params = [];
         $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
         if ($campaignId > 0) { $where[] = 'c.id = :campaign_id'; $params['campaign_id'] = $campaignId; }
+        $categoryId = (int) ($filters['category_id'] ?? $filters['categoryId'] ?? 0);
+        if ($categoryId > 0) { $where[] = 'c.category_id = :category_id'; $params['category_id'] = $categoryId; }
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
-        if ($search !== '') { $where[] = '(LOWER(c.contribution_name) LIKE :search OR LOWER(c.period_name) LIKE :search OR LOWER(c.note) LIKE :search)'; $params['search'] = '%' . mb_strtolower($search, 'UTF-8') . '%'; }
+        if ($search !== '') { $where[] = '(LOWER(c.contribution_name) LIKE :search OR LOWER(c.period_name) LIKE :search OR LOWER(c.note) LIKE :search OR LOWER(cc.name) LIKE :search OR LOWER(cc.code) LIKE :search)'; $params['search'] = '%' . mb_strtolower($search, 'UTF-8') . '%'; }
         $contributionName = trim((string) ($filters['contribution_name'] ?? $filters['contributionName'] ?? ''));
         if ($contributionName !== '') { $where[] = 'LOWER(c.contribution_name) LIKE :contribution_name'; $params['contribution_name'] = '%' . mb_strtolower($contributionName, 'UTF-8') . '%'; }
         $year = (int) ($filters['year'] ?? 0);
@@ -750,11 +832,185 @@ SQL);
         return json_encode(['conditions' => array_values($conditions), 'age_from' => (int) ($data['age_from'] ?? $data['ageFrom'] ?? 0), 'age_to' => (int) ($data['age_to'] ?? $data['ageTo'] ?? 0)], JSON_UNESCAPED_UNICODE);
     }
 
+    private function campaignParamsV2(array $data, int $userId): array
+    {
+        $categoryId = (int) ($data['category_id'] ?? $data['categoryId'] ?? 0);
+        $category = $categoryId > 0 ? $this->findCategory($categoryId) : null;
+        if ($categoryId > 0 && !$category) throw new \RuntimeException('Khong tim thay khoan thu');
+        $name = trim((string) ($data['contribution_name'] ?? $data['contributionName'] ?? ($category['name'] ?? '')));
+        if ($name === '') throw new \RuntimeException('Vui long chon khoan thu truoc khi tao dot thu');
+        $year = (int) ($data['year'] ?? date('Y'));
+        if ($year < 2000 || $year > (int) date('Y') + 5) throw new \RuntimeException('Nam thu khong hop le');
+        $status = strtoupper(trim((string) ($data['status'] ?? 'ACTIVE')));
+        if (!isset(self::CAMPAIGN_STATUS[$status]) || $status === 'DELETED') $status = 'ACTIVE';
+        $unitType = strtoupper(trim((string) ($data['unit_type'] ?? $data['unitType'] ?? ($category['unit_type'] ?? 'HOUSEHOLD'))));
+        if (!isset(ContributionRuleEngine::UNIT_TYPES[$unitType])) $unitType = 'HOUSEHOLD';
+        $params = [
+            'category_id' => $categoryId > 0 ? $categoryId : null,
+            'contribution_name' => $name,
+            'contribution_type' => trim((string) ($data['contribution_type'] ?? $data['contributionType'] ?? ($category['contribution_type'] ?? ''))) ?: null,
+            'year' => $year,
+            'period_name' => trim((string) ($data['period_name'] ?? $data['periodName'] ?? '')) ?: null,
+            'amount' => max(0, (float) ($data['amount'] ?? ($category['amount'] ?? 0))),
+            'unit' => trim((string) ($data['unit'] ?? ($category['unit'] ?? 'VNÄ/há»™'))) ?: 'VNÄ/há»™',
+            'unit_type' => $unitType,
+            'start_date' => trim((string) ($data['start_date'] ?? $data['startDate'] ?? '')) ?: null,
+            'due_date' => trim((string) ($data['due_date'] ?? $data['dueDate'] ?? '')) ?: null,
+            'target_config_json' => $this->configJson($data, 'target'),
+            'exemption_config_json' => $this->configJson($data, 'exemption'),
+            'note' => trim((string) ($data['note'] ?? '')) ?: null,
+            'status' => $status,
+            'user' => $userId,
+        ];
+        if ($category) $params = $this->inheritCategoryDefaults($params, $data, $category);
+        return $this->applyRuleTemplate($params, $data);
+    }
+
+    private function categoryParams(array $data, int $userId, ?int $id = null): array
+    {
+        $name = trim((string) ($data['name'] ?? $data['contribution_name'] ?? $data['contributionName'] ?? ''));
+        if ($name === '') throw new \RuntimeException('Ten khoan thu la bat buoc');
+        $code = strtoupper(trim((string) ($data['code'] ?? $data['category_code'] ?? $data['categoryCode'] ?? '')));
+        if ($code === '') $code = $this->categoryCodeFromName($name);
+        $duplicateSql = 'SELECT id FROM contribution_categories WHERE code=:code AND status <> "DELETED"';
+        $duplicateParams = ['code' => $code];
+        if ($id) {
+            $duplicateSql .= ' AND id <> :id';
+            $duplicateParams['id'] = $id;
+        }
+        $duplicate = $this->fetchOne($duplicateSql, $duplicateParams);
+        if ($duplicate) throw new \RuntimeException('Ma khoan thu da ton tai');
+        $unitType = strtoupper(trim((string) ($data['unit_type'] ?? $data['unitType'] ?? 'HOUSEHOLD')));
+        if (!isset(ContributionRuleEngine::UNIT_TYPES[$unitType])) $unitType = 'HOUSEHOLD';
+        $cycle = strtoupper(trim((string) ($data['collection_cycle'] ?? $data['collectionCycle'] ?? 'YEARLY')));
+        if (!isset(self::COLLECTION_CYCLES[$cycle])) $cycle = 'YEARLY';
+        $status = strtoupper(trim((string) ($data['status'] ?? 'ACTIVE')));
+        if (!isset(self::CATEGORY_STATUS[$status]) || $status === 'DELETED') $status = 'ACTIVE';
+        return [
+            'code' => $code,
+            'name' => $name,
+            'contribution_type' => trim((string) ($data['contribution_type'] ?? $data['contributionType'] ?? $name)) ?: $name,
+            'unit_type' => $unitType,
+            'amount' => max(0, (float) ($data['amount'] ?? 0)),
+            'unit' => trim((string) ($data['unit'] ?? 'VNÄ/há»™')) ?: 'VNÄ/há»™',
+            'collection_cycle' => $cycle,
+            'custom_cycle' => trim((string) ($data['custom_cycle'] ?? $data['customCycle'] ?? '')) ?: null,
+            'target_config_json' => $this->configJson($data, 'target'),
+            'exemption_config_json' => $this->configJson($data, 'exemption'),
+            'status' => $status,
+            'note' => trim((string) ($data['note'] ?? '')) ?: null,
+            'user' => $userId,
+        ];
+    }
+
+    private function inheritCategoryDefaults(array $params, array $data, array $category): array
+    {
+        if (!$this->hasConfigInput($data, 'target')) $params['target_config_json'] = (string) ($category['target_config_json'] ?? $params['target_config_json']);
+        if (!$this->hasConfigInput($data, 'exemption')) $params['exemption_config_json'] = (string) ($category['exemption_config_json'] ?? $params['exemption_config_json']);
+        if (!array_key_exists('amount', $data)) $params['amount'] = (float) ($category['amount'] ?? $params['amount']);
+        if (!array_key_exists('unit', $data)) $params['unit'] = (string) ($category['unit'] ?? $params['unit']);
+        if (!array_key_exists('unit_type', $data) && !array_key_exists('unitType', $data)) $params['unit_type'] = (string) ($category['unit_type'] ?? $params['unit_type']);
+        return $params;
+    }
+
+    private function categoryWhere(array $filters): array
+    {
+        $where = ['cc.status <> "DELETED"'];
+        $params = [];
+        $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
+        if ($search !== '') {
+            $where[] = '(LOWER(cc.name) LIKE :search OR LOWER(cc.code) LIKE :search OR LOWER(cc.note) LIKE :search)';
+            $params['search'] = '%' . mb_strtolower($search, 'UTF-8') . '%';
+        }
+        $status = strtoupper(trim((string) ($filters['status'] ?? '')));
+        if ($status !== '' && isset(self::CATEGORY_STATUS[$status])) {
+            $where[] = 'cc.status = :status';
+            $params['status'] = $status;
+        }
+        return ['WHERE ' . implode(' AND ', $where), $params];
+    }
+
+    private function categoryOptions(): array
+    {
+        return array_map(fn($row) => $this->normalizeCategoryOption($row), $this->fetchAll('SELECT * FROM contribution_categories WHERE status="ACTIVE" ORDER BY name ASC'));
+    }
+
+    private function normalizeCategoryOption(array $row): array
+    {
+        $category = $this->normalizeCategory($row);
+        return $category + ['value' => $category['id'], 'label' => $category['name']];
+    }
+
+    private function normalizeCategory(array $row): array
+    {
+        $status = (string) ($row['status'] ?? 'ACTIVE');
+        $cycle = (string) ($row['collection_cycle'] ?? 'YEARLY');
+        $unitType = (string) ($row['unit_type'] ?? 'HOUSEHOLD');
+        return [
+            'id' => (int) $row['id'],
+            'code' => (string) ($row['code'] ?? ''),
+            'name' => (string) ($row['name'] ?? ''),
+            'contribution_name' => (string) ($row['name'] ?? ''),
+            'contribution_type' => (string) ($row['contribution_type'] ?? ''),
+            'unit_type' => $unitType,
+            'unit_type_label' => ContributionRuleEngine::UNIT_TYPES[$unitType] ?? $unitType,
+            'amount' => (float) ($row['amount'] ?? 0),
+            'unit' => (string) ($row['unit'] ?? 'VNÄ/há»™'),
+            'collection_cycle' => $cycle,
+            'collection_cycle_label' => self::COLLECTION_CYCLES[$cycle] ?? $cycle,
+            'custom_cycle' => (string) ($row['custom_cycle'] ?? ''),
+            'target_config_json' => $row['target_config_json'] ?? null,
+            'exemption_config_json' => $row['exemption_config_json'] ?? null,
+            'status' => $status,
+            'status_label' => self::CATEGORY_STATUS[$status] ?? $status,
+            'note' => (string) ($row['note'] ?? ''),
+            'campaign_count' => (int) ($row['campaign_count'] ?? 0),
+            'active_campaign_count' => (int) ($row['active_campaign_count'] ?? 0),
+            'created_at' => $row['created_at'] ?? null,
+            'updated_at' => $row['updated_at'] ?? null,
+        ];
+    }
+
+    private function refreshCampaignsFromCategory(int $categoryId): void
+    {
+        foreach ($this->fetchAll('SELECT id FROM contribution_campaigns WHERE category_id=:id AND status="ACTIVE"', ['id' => $categoryId]) as $row) {
+            $this->syncCampaign((int) $row['id']);
+        }
+    }
+
+    private function syncLegacyCampaignCategories(): void
+    {
+        $this->execute('UPDATE contribution_campaigns c INNER JOIN contribution_categories cc ON LOWER(cc.name)=LOWER(c.contribution_name) AND cc.status <> "DELETED" SET c.category_id=cc.id WHERE c.category_id IS NULL');
+    }
+
+    private function categoryCodeFromName(string $name): string
+    {
+        $base = strtoupper(preg_replace('/[^A-Z0-9]+/', '_', $this->asciiText($name)) ?: 'KHOAN_THU');
+        $base = trim($base, '_') ?: 'KHOAN_THU';
+        $code = substr($base, 0, 32);
+        $suffix = 1;
+        while ($this->fetchOne('SELECT id FROM contribution_categories WHERE code=:code AND status <> "DELETED"', ['code' => $code])) {
+            $tail = '_' . (++$suffix);
+            $code = substr($base, 0, 40 - strlen($tail)) . $tail;
+        }
+        return $code;
+    }
+
+    private function asciiText(string $value): string
+    {
+        $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        return is_string($converted) && $converted !== '' ? $converted : $value;
+    }
+
     private function normalizeCampaign(array $row): array
     {
         $status = (string) ($row['status'] ?? 'ACTIVE');
         return [
             'id' => (int) $row['id'],
+            'category_id' => isset($row['category_id']) ? (int) $row['category_id'] : null,
+            'category_code' => (string) ($row['category_code'] ?? ''),
+            'category_name' => (string) ($row['category_name'] ?? ''),
+            'category_cycle' => (string) ($row['category_cycle'] ?? ''),
             'contribution_name' => (string) $row['contribution_name'],
             'contribution_type' => (string) ($row['contribution_type'] ?? ''),
             'year' => (int) $row['year'],
@@ -828,11 +1084,25 @@ SQL);
     {
         $columns = [
             'contribution_campaigns' => [
+                'category_id' => 'ALTER TABLE contribution_campaigns ADD COLUMN category_id BIGINT UNSIGNED NULL AFTER id',
                 'contribution_type' => 'ALTER TABLE contribution_campaigns ADD COLUMN contribution_type VARCHAR(80) NULL AFTER contribution_name',
                 'unit_type' => 'ALTER TABLE contribution_campaigns ADD COLUMN unit_type VARCHAR(40) NOT NULL DEFAULT "HOUSEHOLD" AFTER unit',
                 'start_date' => 'ALTER TABLE contribution_campaigns ADD COLUMN start_date DATE NULL AFTER unit_type',
                 'target_config_json' => 'ALTER TABLE contribution_campaigns ADD COLUMN target_config_json JSON NULL AFTER due_date',
                 'exemption_config_json' => 'ALTER TABLE contribution_campaigns ADD COLUMN exemption_config_json JSON NULL AFTER target_config_json',
+            ],
+            'contribution_categories' => [
+                'unit_type' => 'ALTER TABLE contribution_categories ADD COLUMN unit_type VARCHAR(40) NOT NULL DEFAULT "HOUSEHOLD" AFTER contribution_type',
+                'amount' => 'ALTER TABLE contribution_categories ADD COLUMN amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER unit_type',
+                'unit' => 'ALTER TABLE contribution_categories ADD COLUMN unit VARCHAR(40) NOT NULL DEFAULT "VND/ho" AFTER amount',
+                'collection_cycle' => 'ALTER TABLE contribution_categories ADD COLUMN collection_cycle VARCHAR(40) NOT NULL DEFAULT "YEARLY" AFTER unit',
+                'custom_cycle' => 'ALTER TABLE contribution_categories ADD COLUMN custom_cycle VARCHAR(180) NULL AFTER collection_cycle',
+                'target_config_json' => 'ALTER TABLE contribution_categories ADD COLUMN target_config_json JSON NULL AFTER custom_cycle',
+                'exemption_config_json' => 'ALTER TABLE contribution_categories ADD COLUMN exemption_config_json JSON NULL AFTER target_config_json',
+                'created_by' => 'ALTER TABLE contribution_categories ADD COLUMN created_by BIGINT UNSIGNED NULL AFTER updated_at',
+                'updated_by' => 'ALTER TABLE contribution_categories ADD COLUMN updated_by BIGINT UNSIGNED NULL AFTER created_by',
+                'deleted_at' => 'ALTER TABLE contribution_categories ADD COLUMN deleted_at DATETIME NULL AFTER updated_by',
+                'deleted_by' => 'ALTER TABLE contribution_categories ADD COLUMN deleted_by BIGINT UNSIGNED NULL AFTER deleted_at',
             ],
             'household_contributions' => [
                 'expected_amount' => 'ALTER TABLE household_contributions ADD COLUMN expected_amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER payment_status',
@@ -854,6 +1124,7 @@ SQL);
             }
         }
         $this->execute("ALTER TABLE household_contributions MODIFY payment_status ENUM('UNPAID','PAID','PARTIAL','EXEMPT','REDUCED') NOT NULL DEFAULT 'UNPAID'");
+        $this->syncLegacyCampaignCategories();
     }
 
     private function seedCategories(): void
@@ -983,7 +1254,7 @@ SQL);
     private function latestCampaignId(array $filters = []): int
     {
         [$where, $params] = $this->campaignWhere($filters, false);
-        $row = $this->fetchOne("SELECT c.id FROM contribution_campaigns c $where ORDER BY c.year DESC, c.id DESC LIMIT 1", $params);
+        $row = $this->fetchOne("SELECT c.id FROM contribution_campaigns c LEFT JOIN contribution_categories cc ON cc.id=c.category_id $where ORDER BY c.year DESC, c.id DESC LIMIT 1", $params);
         return (int) ($row['id'] ?? 0);
     }
 

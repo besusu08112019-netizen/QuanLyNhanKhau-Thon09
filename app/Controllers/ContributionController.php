@@ -34,6 +34,63 @@ final class ContributionController extends BaseController
         $this->ok($this->contributions->catalogs());
     }
 
+    public function categories(): void
+    {
+        $this->requirePermission('contributions', 'read');
+        $this->ok($this->contributions->categories([
+            'search' => $this->query('search', $this->query('q', '')),
+            'status' => $this->query('status', ''),
+        ]));
+    }
+
+    public function showCategory(string $id): void
+    {
+        $this->requirePermission('contributions', 'read');
+        $row = $this->contributions->findCategory((int) $id);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu', 404);
+        $this->ok($row);
+    }
+
+    public function storeCategory(): void
+    {
+        $user = $this->requirePermission('contributions', 'create');
+        try {
+            $row = $this->contributions->upsertCategory((array) $this->input(), (int) $user['id']);
+            $this->audit($user, 'contributions', 'create_category', 'ThÃªm khoáº£n thu', $row['id'], ['before' => null, 'after' => $row]);
+            $this->ok($row);
+        } catch (Throwable $exception) {
+            $this->fail($exception->getMessage(), 422);
+        }
+    }
+
+    public function updateCategory(string $id): void
+    {
+        $user = $this->requirePermission('contributions', 'update');
+        try {
+            $before = $this->contributions->findCategory((int) $id);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu', 404);
+            $row = $this->contributions->upsertCategory((array) $this->input(), (int) $user['id'], (int) $id);
+            $this->audit($user, 'contributions', 'update_category', 'Chá»‰nh sá»­a khoáº£n thu', $id, ['before' => $before, 'after' => $row]);
+            $this->ok($row);
+        } catch (Throwable $exception) {
+            $this->fail($exception->getMessage(), 422);
+        }
+    }
+
+    public function destroyCategory(string $id): void
+    {
+        $user = $this->requirePermission('contributions', 'delete');
+        try {
+            $before = $this->contributions->findCategory((int) $id);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu', 404);
+            $this->contributions->deleteCategory((int) $id, (int) $user['id']);
+            $this->audit($user, 'contributions', 'delete_category', 'XÃ³a khoáº£n thu', $id, ['before' => $before, 'after' => null]);
+            $this->ok(['id' => (int) $id]);
+        } catch (Throwable $exception) {
+            $this->fail($exception->getMessage(), 422);
+        }
+    }
+
     public function householdSearch(): void
     {
         $this->requirePermission('contributions', 'read');
