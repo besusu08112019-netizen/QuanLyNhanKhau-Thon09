@@ -5637,6 +5637,18 @@ body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dash
 #contributionsScreen .contribution-table th { padding: 10px 14px; color: #526071; font-size: 11px; line-height: 1.25; background: #f8faf9; }
 #contributionsScreen .contribution-table td { padding: 10px 14px; color: #1f2937; font-size: 13px; line-height: 1.35; }
 #contributionsScreen .contribution-table tbody tr:hover { background: #fbfdfb; }
+.contribution-category-panel { margin-bottom: 14px; }
+.contribution-category-summary { border-top: 1px solid var(--line, #dfe7e2); padding-top: 14px; }
+.contribution-category-detail { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(360px, 2fr) auto; gap: 14px; align-items: center; }
+.contribution-category-main { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.contribution-category-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.contribution-category-facts > div { min-height: 58px; padding: 9px 10px; border: 1px solid #e5eaf0; border-radius: 10px; background: #fbfdfb; display: grid; align-content: center; gap: 3px; }
+.contribution-category-facts span { color: #667085; font-size: 11px; font-weight: 800; }
+.contribution-category-facts strong { color: #0f172a; font-size: 13px; font-weight: 850; line-height: 1.25; }
+.contribution-category-facts em { color: #667085; font-size: 12px; font-style: normal; }
+.contribution-category-toolbar { display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.contribution-empty-select { min-height: 72px; display: flex; align-items: center; gap: 10px; color: #667085; font-weight: 750; }
+.contribution-empty-select i { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; color: #0b6b3a; background: #e9f6ef; }
 .contribution-name-cell { display: grid; gap: 3px; min-width: 0; }
 .contribution-name-cell strong { color: #0f172a; font-size: 14px; font-weight: 850; line-height: 1.25; }
 .contribution-name-cell span { color: #667085; font-size: 12px; line-height: 1.35; }
@@ -5671,9 +5683,17 @@ body.theme-dark #contributionsScreen .dashboard-kpi-card, body.theme-dark #contr
 body.theme-dark #contributionsScreen .contribution-table th { background: #111827; color: #cbd5e1; }
 body.theme-dark #contributionsScreen .contribution-table td, body.theme-dark .contribution-name-cell strong, body.theme-dark .contribution-money-cell strong { color: #e5e7eb; }
 body.theme-dark #contributionsScreen .contribution-table tbody tr:hover { background: rgba(255,255,255,.03); }
+body.theme-dark .contribution-category-facts > div { background: #111827; border-color: #344155; }
+body.theme-dark .contribution-category-facts strong { color: #e5e7eb; }
 body.theme-dark .contribution-cycle { color: #cbd5e1; background: #344155; }
 body.theme-dark .contribution-action-menu .dropdown-menu { background: #1f2937; border-color: #344155; }
+@media (max-width: 1100px) {
+  .contribution-category-detail { grid-template-columns: 1fr; align-items: stretch; }
+  .contribution-category-toolbar { justify-content: flex-start; }
+}
 @media (max-width: 768px) {
+  .contribution-category-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contribution-category-toolbar .btn { flex: 1 1 150px; }
   #contributionsScreen .contribution-table-wrap { overflow-x: visible; }
   #contributionsScreen .contribution-table { display: block; min-width: 0 !important; }
   #contributionsScreen .contribution-table thead { display: none; }
@@ -5713,6 +5733,9 @@ body.theme-dark .contribution-action-menu .dropdown-menu { background: #1f2937; 
   #contributionsScreen .contribution-row-actions { justify-content: flex-start; }
 }
 @media (max-width: 420px) {
+  .contribution-category-facts { grid-template-columns: 1fr; }
+  .contribution-category-toolbar { display: grid; grid-template-columns: 1fr; }
+  .contribution-category-toolbar .btn { width: 100%; }
   #contributionsScreen .contribution-table tbody td { grid-template-columns: 1fr; gap: 3px; }
   #contributionsScreen .contribution-list-head { align-items: flex-start; }
   #contributionsScreen .contribution-list-head .form-select { width: 100% !important; }
