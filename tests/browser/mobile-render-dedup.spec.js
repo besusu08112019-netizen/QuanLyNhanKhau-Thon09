@@ -95,6 +95,9 @@ async function dedupMetrics(page, screenId, tbodyId, pagerId) {
     const tbody = document.querySelector('#' + tbodyId);
     const pager = document.querySelector('#' + pagerId);
     const wrapper = tbody?.closest('.table-responsive');
+    const firstCard = tbody?.querySelector(':scope > tr.mobile-source-card');
+    const search = screen?.querySelector('.mobile-filter-system .mobile-search-control');
+    const filterTrigger = screen?.querySelector('.mobile-filter-trigger');
     return {
       sourceRows: tbody ? tbody.querySelectorAll(':scope > tr').length : 0,
       decoratedRows: tbody ? tbody.querySelectorAll(':scope > tr.mobile-source-card').length : 0,
@@ -102,7 +105,13 @@ async function dedupMetrics(page, screenId, tbodyId, pagerId) {
       generatedCards: screen ? screen.querySelectorAll('.mobile-list-surface .mobile-list-card').length : 0,
       nestedTables: wrapper ? wrapper.querySelectorAll(':scope > table').length : 0,
       pagers: screen ? screen.querySelectorAll('#' + pagerId).length : 0,
-      pagerChildren: pager ? pager.children.length : 0
+      pagerChildren: pager ? pager.children.length : 0,
+      pagerSystem: pager ? pager.classList.contains('mobile-pager-system') : false,
+      title: firstCard?.dataset.mobileTitle || '',
+      code: firstCard?.dataset.mobileCode || '',
+      searchPlaceholder: search?.getAttribute('placeholder') || '',
+      searchVisible: search ? getComputedStyle(search).display !== 'none' && search.getBoundingClientRect().width > 0 : false,
+      filterTriggerVisible: filterTrigger ? getComputedStyle(filterTrigger).display !== 'none' : false
     };
   }, { screenId, tbodyId, pagerId });
 }
@@ -118,8 +127,16 @@ test('mobile render keeps one source row for business households and contributio
     generatedSurfaces: 0,
     generatedCards: 0,
     nestedTables: 1,
-    pagers: 1
+    pagers: 1,
+    pagerSystem: true,
+    title: 'PHAM VAN BICH',
+    code: 'H09-0007',
+    searchVisible: true,
+    filterTriggerVisible: true
   });
+  const businessMetrics = await dedupMetrics(page, 'businessHouseholdsScreen', 'businessHouseholdRows', 'businessHouseholdPager');
+  expect(businessMetrics.title).not.toContain(businessMetrics.code);
+  expect(businessMetrics.searchPlaceholder.length).toBeGreaterThan(0);
 
   await page.evaluate(() => window.Thon09NavigationController?.navigate('contributions'));
   await expect(page.locator('#contributionsRows > tr')).toHaveCount(1);
@@ -129,6 +146,21 @@ test('mobile render keeps one source row for business households and contributio
     generatedSurfaces: 0,
     generatedCards: 0,
     nestedTables: 1,
-    pagers: 1
+    pagers: 1,
+    pagerSystem: true
   });
+  await expect.poll(() => page.evaluate(() => document.querySelectorAll('#contributionStats > *').length)).toBeGreaterThanOrEqual(6);
+  const contributionDashboard = await page.evaluate(() => {
+    const grid = document.querySelector('#contributionsScreen .dashboard-kpi-grid');
+    const firstCell = grid?.querySelector(':scope > *');
+    const rect = firstCell?.getBoundingClientRect();
+    return {
+      cells: grid ? grid.children.length : 0,
+      columns: grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').length : 0,
+      cellHeight: rect ? Math.round(rect.height) : 0
+    };
+  });
+  expect(contributionDashboard.cells).toBeGreaterThanOrEqual(6);
+  expect(contributionDashboard.columns).toBe(2);
+  expect(contributionDashboard.cellHeight).toBeLessThanOrEqual(64);
 });
