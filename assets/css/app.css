@@ -5666,19 +5666,25 @@ body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dash
 .contribution-status.is-active { color: #0b6b3a; background: #e9f6ef; }
 .contribution-status.is-warning { color: #b45309; background: #fff4df; }
 .contribution-status.is-muted { color: #667085; background: #f2f4f7; }
-.contribution-row-actions { display: inline-flex; justify-content: flex-end; gap: 4px; }
-.contribution-icon-action { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #475467; background: transparent; }
-.contribution-icon-action:hover, .contribution-icon-action:focus { background: #eef2f6; outline: none; }
-.contribution-icon-action.is-success { color: #0b6b3a; }
-.contribution-icon-action.is-primary { color: #2563eb; }
-.contribution-icon-action.is-danger { color: #dc2626; }
-.contribution-icon-action.is-neutral { color: #475467; }
+.contribution-row-actions { display: inline-flex; justify-content: flex-end; gap: 6px; }
+.contribution-icon-action { width: 32px; height: 32px; padding: 0; border: 1px solid #d7dee8; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; color: #334155; background: #f8fafc; box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.contribution-icon-action:hover { color: #0f172a; background: #e8f0ff; border-color: #b9cdfb; box-shadow: 0 6px 14px rgba(37,99,235,.14); transform: translateY(-1px); }
+.contribution-icon-action:focus-visible { outline: 3px solid rgba(37,99,235,.24); outline-offset: 2px; border-color: #2563eb; box-shadow: 0 0 0 1px rgba(37,99,235,.28); }
+.contribution-icon-action.is-success { color: #047857; background: #ecfdf3; border-color: #b7e4c7; }
+.contribution-icon-action.is-primary { color: #1d4ed8; background: #eff6ff; border-color: #bfd4ff; }
+.contribution-icon-action.is-danger { color: #b42318; background: #fff1f0; border-color: #fecaca; }
+.contribution-icon-action.is-neutral { color: #334155; background: #f8fafc; border-color: #d7dee8; }
 .contribution-category-actions { align-items: center; gap: 6px; }
 .contribution-manage-btn { min-height: 32px; border-radius: 999px; font-size: 12px; font-weight: 850; white-space: nowrap; }
-.contribution-more-btn { width: 32px; height: 32px; padding: 0; border-radius: 999px; }
+.contribution-more-btn { width: 34px; height: 34px; padding: 0; border-radius: 10px; color: #1d4ed8; background: #eff6ff; border-color: #bfd4ff; box-shadow: 0 1px 2px rgba(15,23,42,.06); }
+.contribution-more-btn:hover, .contribution-more-btn:focus { color: #0f172a; background: #dbeafe; border-color: #93b5fd; }
+.contribution-more-btn:focus-visible { outline: 3px solid rgba(37,99,235,.24); outline-offset: 2px; box-shadow: 0 0 0 1px rgba(37,99,235,.28); }
 .contribution-action-menu .dropdown-menu { min-width: 210px; padding: 6px; border-radius: 10px; }
 .contribution-action-menu .dropdown-item { min-height: 34px; display: flex; align-items: center; gap: 9px; border-radius: 8px; font-size: 13px; font-weight: 750; }
+.contribution-action-menu .dropdown-item:hover, .contribution-action-menu .dropdown-item:focus { color: #0f172a; background: #eef4ff; outline: none; }
+.contribution-action-menu .dropdown-item:focus-visible { box-shadow: 0 0 0 2px rgba(37,99,235,.22); }
 .contribution-action-menu .dropdown-item i { width: 16px; text-align: center; color: #667085; }
+.contribution-action-menu .dropdown-item:hover i, .contribution-action-menu .dropdown-item:focus i { color: #1d4ed8; }
 .contribution-action-menu .dropdown-item.text-danger i { color: #dc2626; }
 body.theme-dark #contributionsScreen .dashboard-kpi-card, body.theme-dark #contributionsScreen .content-card, body.theme-dark #contributionsScreen .contribution-list-card { background: #1f2937; border-color: #344155; }
 body.theme-dark #contributionsScreen .contribution-table th { background: #111827; color: #cbd5e1; }
@@ -5687,7 +5693,20 @@ body.theme-dark #contributionsScreen .contribution-table tbody tr:hover { backgr
 body.theme-dark .contribution-category-facts > div { background: #111827; border-color: #344155; }
 body.theme-dark .contribution-category-facts strong { color: #e5e7eb; }
 body.theme-dark .contribution-cycle { color: #cbd5e1; background: #344155; }
+body.theme-dark .contribution-icon-action { color: #d1d5db; background: #263244; border-color: #475569; box-shadow: none; }
+body.theme-dark .contribution-icon-action:hover { color: #f8fafc; background: #334155; border-color: #60a5fa; box-shadow: 0 0 0 1px rgba(96,165,250,.25); }
+body.theme-dark .contribution-icon-action:focus-visible { outline-color: rgba(96,165,250,.34); border-color: #93c5fd; }
+body.theme-dark .contribution-icon-action.is-success { color: #86efac; background: rgba(22,101,52,.22); border-color: rgba(134,239,172,.42); }
+body.theme-dark .contribution-icon-action.is-primary { color: #93c5fd; background: rgba(29,78,216,.24); border-color: rgba(147,197,253,.44); }
+body.theme-dark .contribution-icon-action.is-danger { color: #fca5a5; background: rgba(153,27,27,.24); border-color: rgba(252,165,165,.44); }
+body.theme-dark .contribution-icon-action.is-neutral { color: #d1d5db; background: #263244; border-color: #475569; }
+body.theme-dark .contribution-more-btn { color: #93c5fd; background: rgba(29,78,216,.24); border-color: rgba(147,197,253,.44); }
+body.theme-dark .contribution-more-btn:hover, body.theme-dark .contribution-more-btn:focus { color: #f8fafc; background: #334155; border-color: #93c5fd; }
 body.theme-dark .contribution-action-menu .dropdown-menu { background: #1f2937; border-color: #344155; }
+body.theme-dark .contribution-action-menu .dropdown-item { color: #e5e7eb; }
+body.theme-dark .contribution-action-menu .dropdown-item:hover, body.theme-dark .contribution-action-menu .dropdown-item:focus { color: #f8fafc; background: #334155; }
+body.theme-dark .contribution-action-menu .dropdown-item i { color: #cbd5e1; }
+body.theme-dark .contribution-action-menu .dropdown-item:hover i, body.theme-dark .contribution-action-menu .dropdown-item:focus i { color: #93c5fd; }
 @media (max-width: 1100px) {
   .contribution-category-detail { grid-template-columns: 1fr; align-items: stretch; }
   .contribution-category-toolbar { justify-content: flex-start; }
