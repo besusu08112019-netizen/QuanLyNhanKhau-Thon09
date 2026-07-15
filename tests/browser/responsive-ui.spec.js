@@ -1,6 +1,6 @@
 ﻿const { test, expect } = require('@playwright/test');
 
-const widths = [320, 360, 375, 390, 414, 480, 600, 768, 820, 1024];
+const widths = [320, 360, 375, 390, 412, 480, 600, 768, 820, 1024];
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 const mobileScreens = moduleOrderScreens;
 const bottomNavScreens = moduleOrderScreens;
