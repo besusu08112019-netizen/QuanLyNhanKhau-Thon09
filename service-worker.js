@@ -1,35 +1,55 @@
-const PWA_VERSION = 'thon09-pwa-v20260714-14';
+const PWA_VERSION = 'thon09-pwa-v20260715-01';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
-const OFFLINE_URL = '/offline.html';
+const APP_BASE_PATH = new URL('./', self.location.href).pathname;
+const withBase = path => {
+  const url = new URL(String(path || '').replace(/^\/+/, ''), self.location.origin + APP_BASE_PATH);
+  return url.pathname + url.search;
+};
+const OFFLINE_URL = withBase('offline.html');
 const PRECACHE_TIMEOUT_MS = 8000;
 
 const STATIC_ASSETS = [
-  '/',
+  APP_BASE_PATH,
   OFFLINE_URL,
-  '/manifest.json',
-  '/manifest.webmanifest',
-  '/favicon.ico?v=20260714-7',
-  '/assets/icons/thon09-logo.png?v=20260714-7',
-  '/assets/icons/icon-192.png?v=20260714-7',
-  '/assets/icons/icon-512.png?v=20260714-7',
-  '/assets/icons/maskable-192.png?v=20260714-7',
-  '/assets/icons/maskable-512.png?v=20260714-7',
-  '/assets/icons/apple-touch-icon.png?v=20260714-7',
-  '/assets/icons/splash-512.png?v=20260714-7',
-  '/assets/vendor/bootstrap/bootstrap.min.css',
-  '/assets/vendor/bootstrap/bootstrap.bundle.min.js',
-  '/assets/css/app.min.css',
-  '/assets/js/i18n.min.js',
-  '/assets/js/app-platform.min.js',
-  '/assets/js/app.utf8.min.js',
-  '/assets/js/csrf.min.js',
-  '/assets/js/session.min.js',
-  '/assets/js/pwa.min.js'
+  withBase('manifest.json'),
+  withBase('manifest.webmanifest'),
+  withBase('favicon.ico?v=20260715-1'),
+  withBase('assets/icons/thon09-logo.png?v=20260715-1'),
+  withBase('assets/icons/icon-192.png?v=20260715-1'),
+  withBase('assets/icons/icon-512.png?v=20260715-1'),
+  withBase('assets/icons/maskable-192.png?v=20260715-1'),
+  withBase('assets/icons/maskable-512.png?v=20260715-1'),
+  withBase('assets/icons/apple-touch-icon.png?v=20260715-1'),
+  withBase('assets/icons/splash-512.png?v=20260715-1'),
+  withBase('assets/vendor/bootstrap/bootstrap.min.css'),
+  withBase('assets/vendor/bootstrap/bootstrap.bundle.min.js'),
+  withBase('assets/vendor/leaflet/leaflet.css'),
+  withBase('assets/vendor/leaflet/leaflet.js'),
+  withBase('assets/vendor/leaflet/images/layers.png'),
+  withBase('assets/vendor/leaflet/images/layers-2x.png'),
+  withBase('assets/vendor/leaflet/images/marker-icon.png'),
+  withBase('assets/vendor/leaflet/images/marker-icon-2x.png'),
+  withBase('assets/vendor/leaflet/images/marker-shadow.png'),
+  withBase('assets/vendor/leaflet-draw/leaflet.draw.css'),
+  withBase('assets/vendor/leaflet-draw/leaflet.draw.js'),
+  withBase('assets/vendor/leaflet-draw/images/spritesheet.png'),
+  withBase('assets/vendor/leaflet-draw/images/spritesheet-2x.png'),
+  withBase('assets/vendor/leaflet-draw/images/spritesheet.svg'),
+  withBase('assets/vendor/leaflet.markercluster/MarkerCluster.css'),
+  withBase('assets/vendor/leaflet.markercluster/MarkerCluster.Default.css'),
+  withBase('assets/vendor/leaflet.markercluster/leaflet.markercluster.js'),
+  withBase('assets/css/app.min.css'),
+  withBase('assets/js/i18n.min.js'),
+  withBase('assets/js/app-platform.min.js'),
+  withBase('assets/js/app.utf8.min.js'),
+  withBase('assets/js/csrf.min.js'),
+  withBase('assets/js/session.min.js'),
+  withBase('assets/js/pwa.min.js')
 ];
 
 const isApiRequest = url => url.origin === self.location.origin && url.pathname.startsWith('/api/');
-const isManifestRequest = url => url.origin === self.location.origin && (url.pathname === '/manifest.json' || url.pathname === '/manifest.webmanifest');
+const isManifestRequest = url => url.origin === self.location.origin && (url.pathname === withBase('manifest.json') || url.pathname === withBase('manifest.webmanifest'));
 const isStaticRequest = url => /\.(?:css|js|mjs|json|webmanifest|png|jpg|jpeg|webp|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname);
 const isHtmlNavigation = request => request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
 
@@ -133,7 +153,7 @@ async function networkFirstHtml(request) {
     if (response && response.ok) await cache.put(request, response.clone());
     return response;
   } catch (_) {
-    return (await cache.match(request)) || (await caches.match('/')) || (await caches.match(OFFLINE_URL)) || Response.error();
+    return (await cache.match(request)) || (await caches.match(APP_BASE_PATH)) || (await caches.match(OFFLINE_URL)) || Response.error();
   }
 }
 
