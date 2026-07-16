@@ -7938,16 +7938,20 @@ body.app-authenticated {
 
   body.app-authenticated .mobile-list-card-head {
     grid-area: head;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 7px;
     align-items: flex-start;
+    justify-items: start;
     min-height: 24px;
     min-width: 0;
+    width: 100%;
   }
 
   body.app-authenticated .mobile-card-title {
-    flex: 1 1 180px;
+    display: block;
+    width: 100%;
+    flex: none;
     min-width: 0;
     color: #0f172a;
     font-size: 13.5px;
@@ -7957,7 +7961,7 @@ body.app-authenticated {
     text-transform: uppercase;
     white-space: normal;
     overflow: visible;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-break: normal;
     text-overflow: clip;
   }
@@ -7976,7 +7980,7 @@ body.app-authenticated {
     line-height: 1.1;
     white-space: normal;
     overflow: visible;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     text-overflow: clip;
     align-self: center;
   }
@@ -8663,15 +8667,19 @@ body.app-authenticated {
 
   body.app-authenticated .mobile-list-card-head {
     grid-area: head;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
+    justify-items: start;
     gap: 7px;
     min-width: 0;
+    width: 100%;
   }
 
   body.app-authenticated .mobile-card-title {
-    flex: 1 1 180px;
+    display: block;
+    width: 100%;
+    flex: none;
     min-width: 0;
     color: var(--ds-ink);
     font-size: 14px;
@@ -8680,7 +8688,7 @@ body.app-authenticated {
     letter-spacing: 0;
     white-space: normal;
     overflow: visible;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-break: normal;
     text-overflow: clip;
   }
@@ -8703,7 +8711,7 @@ body.app-authenticated {
     font-weight: 800;
     white-space: normal;
     overflow: visible;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     text-overflow: clip;
   }
 
@@ -8743,7 +8751,7 @@ body.app-authenticated {
   body.app-authenticated .mobile-card-info-value {
     min-width: 0;
     overflow: visible;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-break: normal;
     text-overflow: clip;
   }
@@ -9475,10 +9483,20 @@ body.app-authenticated {
     min-width: 0;
   }
 
+  body.app-authenticated .mobile-list-card-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+    justify-items: start;
+    width: 100%;
+  }
+
   body.app-authenticated .mobile-card-title {
-    flex: 1 1 180px;
+    display: block;
+    flex: none;
+    width: 100%;
     min-width: 0;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     white-space: normal;
     overflow: visible;
     word-break: normal;
@@ -9490,7 +9508,7 @@ body.app-authenticated {
 
   body.app-authenticated .mobile-card-body {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--r-space-2);
   }
 
@@ -9507,7 +9525,7 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-card-info-value {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     color: var(--ink);
     font-size: var(--r-font-sm);
   }
@@ -10067,13 +10085,13 @@ body.sidebar-collapsed.app-authenticated .gov-logout {
   }
 
   body.app-authenticated :where(.screen.active, .modal, .dropdown-menu) {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-break: normal;
   }
 
   body.app-authenticated :where(h1, h2, h3, h4, h5, h6, p, span, strong, small, label, .form-text, .text-muted, .badge, .badge-soft, [class*="badge"], [class*="status"], [class*="pill"], [class*="tag"]) {
     max-width: 100%;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   body.app-authenticated :where(.content-card, .module-filter-card, .module-list-card, .person-search-card, .person-list-card, .report-filter-card, .report-result-card, .dashboard-panel, .dashboard-kpi, .dashboard-kpi-card, .operation-panel, .gis-panel, .gis-map-card, .houses-kpi-card, .livestock-kpi-card, .agri-kpi-card, .house-card, .mobile-list-card) {
@@ -10081,6 +10099,13 @@ body.sidebar-collapsed.app-authenticated .gov-logout {
     max-width: 100%;
     min-width: 0;
     height: auto;
+  }
+
+  body.app-authenticated .screen.active :where(.row) > :where([class*="col-"]):has(.r-icon-text) {
+    width: auto;
+    max-width: 100%;
+    min-width: max-content;
+    flex: 1 1 max-content;
   }
 
   body.app-authenticated :where(.dashboard-kpi-grid, .dashboard-metric-grid, .module-placeholder-grid, .operation-grid, .gis-summary-grid, .houses-kpi-grid, .livestock-kpi-grid, .agri-kpi-grid, #publicAssetsMiniDashboard) {
@@ -10243,6 +10268,13 @@ body.sidebar-collapsed.app-authenticated .gov-logout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  body.app-authenticated :where(.module-filter-card, .person-search-card, .report-filter-card, .dashboard-filter, .livestock-filter-card, .agri-filter-card, .houses-filter-card) :where(.row) > :where([class*="col-"]) {
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+    min-width: 0;
+  }
+
   body.app-authenticated .modal-dialog,
   body.app-authenticated .modal-dialog.modal-sm,
   body.app-authenticated .modal-dialog.modal-lg,
@@ -10264,6 +10296,13 @@ body.sidebar-collapsed.app-authenticated .gov-logout {
   body.app-authenticated :where(.module-filter-card, .person-search-card, .report-filter-card, .dashboard-filter, .livestock-filter-card, .agri-filter-card, .houses-filter-card) :where(.row, .household-filter-grid, .person-quick-filter-grid, .person-advanced-grid, .report-filter-grid, .livestock-filter-row, .agri-filter-row, .houses-filter-row, .operation-log-filters),
   body.app-authenticated :where(.person-detail-sections, .report-center-grid, .report-tools-grid, .house-detail-grid, .agri-detail-grid, .business-detail-popup) {
     grid-template-columns: 1fr;
+  }
+
+  body.app-authenticated :where(.module-filter-card, .person-search-card, .report-filter-card, .dashboard-filter, .livestock-filter-card, .agri-filter-card, .houses-filter-card) :where(.row) > :where([class*="col-"]) {
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+    min-width: 0;
   }
 
   body.app-authenticated :where(.module-action-row, .toolbar, .agri-toolbar, .houses-toolbar, .livestock-toolbar, .report-actions) > :where(.btn, button, .form-control, .form-select, .input-group) {
@@ -10356,7 +10395,7 @@ body.app-authenticated :where(.operation-panel-head, .dashboard-panel-head, .mod
 }
 
 @media (max-width: 1024px) {
-  body.app-authenticated .screen.active :where(button:not(.btn-close), .btn:not(.btn-close), a[href].btn) {
+  body.app-authenticated .screen.active :where(button:not(.btn-close):not(.r-icon-text), .btn:not(.btn-close):not(.r-icon-text), a[href].btn:not(.r-icon-text)) {
     min-width: var(--r-touch, 44px) !important;
     min-height: var(--r-touch, 44px) !important;
   }
@@ -10411,7 +10450,20 @@ body.app-authenticated :where(.btn, button, .nav-link, .dropdown-item, .page-lin
   height: var(--r-icon-md, 18px);
 }
 
-body.app-authenticated :where(.btn, button, .dropdown-item, .page-link):not(.r-icon-only) {
+body.app-authenticated :where(.btn, button, .nav-link, .dropdown-item, .page-link, a[href].btn).r-icon-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto !important;
+  min-width: max-content !important;
+  max-width: 100%;
+  padding-inline: 10px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+body.app-authenticated :where(.btn, button, .dropdown-item, .page-link):not(.r-icon-only):not(.r-icon-text) {
   width: auto !important;
   min-width: 64px !important;
   max-width: 100%;
@@ -10528,6 +10580,10 @@ body.app-authenticated :where(.btn, button, .nav-link, .dropdown-item, .page-lin
   width: var(--r-icon-md, 18px);
   min-width: var(--r-icon-md, 18px);
   height: var(--r-icon-md, 18px);
+}
+
+body.app-authenticated :where(.btn, button, .nav-link, .dropdown-item, .page-link, a[href].btn).r-icon-text > :where(i.fa, i.fa-solid, i.fa-regular, i.fa-brands, i.fas, i.far, i.fab) {
+  flex: 0 0 auto;
 }
 
 body.app-authenticated :where(.pager, .pagination, .mobile-pager) :where(.btn, button, .page-link),
