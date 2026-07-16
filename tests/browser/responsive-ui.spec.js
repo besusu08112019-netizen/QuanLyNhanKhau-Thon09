@@ -1,9 +1,10 @@
 ﻿const { test, expect } = require('@playwright/test');
 
-const widths = [320, 360, 375, 390, 412, 480, 600, 768, 820, 1024];
+const widths = [320, 360, 375, 390, 412, 430, 768, 820, 853, 912, 1024, 1280, 1440, 1920];
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 const mobileScreens = moduleOrderScreens;
 const bottomNavScreens = ['dashboard', 'households', 'persons', 'gis', 'reports'];
+const qaScreens = ['dashboard', 'households', 'persons', 'gis', 'reports', 'contributions', 'vehicles', 'businessHouseholds', 'agriculture', 'livestock', 'publicAssets', 'houses', 'operationCenter', 'import', 'users', 'logs', 'backups', 'settings'];
 
 async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
@@ -352,6 +353,120 @@ test.describe('responsive system navigation audit', () => {
     expect(after.appScreen).toBe('households');
     expect(after.activeId).toBe('householdsScreen');
     expect(after.activeNav).toBe('households');
+  });
+
+  test('full responsive QA contract across requested breakpoints', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chromium', 'Full breakpoint matrix runs once; device projects run the focused responsive suite.');
+    test.setTimeout(180000);
+
+    for (const width of widths) {
+      await openAuthenticatedApp(page, width);
+      await page.setViewportSize({ width, height: width >= 1280 ? 900 : 844 });
+
+      for (const screen of qaScreens) {
+        await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+        await page.waitForTimeout(140);
+
+        const audit = await page.evaluate(({ target, width }) => {
+          const active = document.querySelector('.screen.active');
+          const viewport = {
+            width: Math.ceil(document.documentElement.clientWidth),
+            height: Math.ceil(window.innerHeight)
+          };
+          const isVisible = (node) => {
+            if (!node || node.nodeType !== 1) return false;
+            if (node.closest('.mobile-list-surface[aria-hidden="true"]')) return false;
+            if (node.closest('table.mobile-source-table')) return false;
+            const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 1 && rect.height > 1;
+          };
+          const ignoreHorizontalSpill = (node) => {
+            return Boolean(node.closest('.table-responsive, .person-table-wrap, .report-preview, .import-result-card, .dropdown-menu, .tooltip, .popover'));
+          };
+          const nodes = Array.from((active || document).querySelectorAll('*')).filter(isVisible);
+          const spills = nodes.filter((node) => {
+            if (ignoreHorizontalSpill(node)) return false;
+            const rect = node.getBoundingClientRect();
+            return Math.floor(rect.left) < -2 || Math.ceil(rect.right) > viewport.width + 2;
+          }).map((node) => ({
+            tag: node.tagName,
+            id: node.id || '',
+            className: String(node.className || '').slice(0, 90),
+            text: (node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 70),
+            left: Math.floor(node.getBoundingClientRect().left),
+            right: Math.ceil(node.getBoundingClientRect().right)
+          })).slice(0, 10);
+          const textOverflow = nodes.filter((node) => {
+            if (!node.matches('h1,h2,h3,h4,h5,h6,p,span,strong,small,label,.badge,.badge-soft,[class*="badge"],[class*="status"],[class*="pill"],[class*="tag"],.btn,button')) return false;
+            if (node.closest('.mobile-bottom-nav')) return false;
+            const style = getComputedStyle(node);
+            if (style.overflowX === 'hidden' && style.textOverflow === 'ellipsis') return false;
+            return node.scrollWidth > node.clientWidth + 2;
+          }).map((node) => ({
+            tag: node.tagName,
+            id: node.id || '',
+            className: String(node.className || '').slice(0, 90),
+            text: (node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 70),
+            scrollWidth: node.scrollWidth,
+            clientWidth: node.clientWidth
+          })).slice(0, 10);
+          const controlOverflow = nodes.filter((node) => {
+            if (!node.matches('button,.btn,input:not([type="hidden"]),select,textarea,.input-group')) return false;
+            const parent = node.parentElement;
+            if (!parent || !isVisible(parent)) return false;
+            if (node.closest('.mobile-bottom-nav')) return false;
+            return node.getBoundingClientRect().width > parent.getBoundingClientRect().width + 2;
+          }).map((node) => ({
+            tag: node.tagName,
+            id: node.id || '',
+            className: String(node.className || '').slice(0, 90),
+            text: (node.textContent || node.getAttribute('placeholder') || node.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 70)
+          })).slice(0, 10);
+          const visibleTables = Array.from((active || document).querySelectorAll('table')).filter(isVisible);
+          const nakedTables = visibleTables.filter((table) => {
+            if (width > 1024) return false;
+            return !table.closest('.table-responsive, .person-table-wrap, .report-preview, .import-result-card');
+          }).map((table) => table.className || table.id || table.tagName);
+          const modalOverflow = Array.from(document.querySelectorAll('.modal.show .modal-dialog')).filter(isVisible).filter((dialog) => {
+            const rect = dialog.getBoundingClientRect();
+            return rect.left < -2 || rect.right > viewport.width + 2 || rect.bottom > viewport.height + 2;
+          }).map((dialog) => dialog.closest('.modal')?.id || dialog.className);
+          const compactFilters = Array.from((active || document).querySelectorAll('.mobile-filter-system')).filter(isVisible).map((filter) => {
+            const icon = filter.querySelector('.mobile-filter-trigger, .mobile-filter-toggle');
+            const iconVisible = icon && isVisible(icon);
+            const extraVisible = Array.from(filter.querySelectorAll('.mobile-filter-extra')).some(isVisible);
+            return { iconVisible: Boolean(iconVisible), extraVisible };
+          });
+          return {
+            activeId: active ? active.id : '',
+            docScroll: Math.ceil(document.documentElement.scrollWidth),
+            docClient: Math.ceil(document.documentElement.clientWidth),
+            bodyScroll: Math.ceil(document.body.scrollWidth),
+            bodyClient: Math.ceil(document.body.clientWidth),
+            activeScroll: active ? Math.ceil(active.scrollWidth) : 0,
+            activeClient: active ? Math.ceil(active.clientWidth) : 0,
+            spills,
+            textOverflow,
+            controlOverflow,
+            nakedTables,
+            modalOverflow,
+            compactFilters
+          };
+        }, { target: screen, width });
+
+        expect(audit.activeId, `${width}/${screen} active screen`).toBe(`${screen}Screen`);
+        expect(audit.docScroll, `${width}/${screen} document overflow-x`).toBeLessThanOrEqual(audit.docClient + 2);
+        expect(audit.bodyScroll, `${width}/${screen} body overflow-x`).toBeLessThanOrEqual(audit.bodyClient + 2);
+        expect(audit.activeScroll, `${width}/${screen} active screen overflow-x`).toBeLessThanOrEqual(audit.activeClient + 2);
+        expect(audit.spills, `${width}/${screen} visible element spills`).toEqual([]);
+        expect(audit.textOverflow, `${width}/${screen} text overflow`).toEqual([]);
+        expect(audit.controlOverflow, `${width}/${screen} control overflow`).toEqual([]);
+        expect(audit.nakedTables, `${width}/${screen} mobile/tablet naked tables`).toEqual([]);
+        expect(audit.modalOverflow, `${width}/${screen} modal overflow`).toEqual([]);
+        expect(audit.compactFilters.every((item) => !(item.iconVisible && item.extraVisible)), `${width}/${screen} compact filter state`).toBe(true);
+      }
+    }
   });
 });
 

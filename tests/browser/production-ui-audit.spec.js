@@ -174,7 +174,8 @@ test.describe(`Production UI audit (${browserName()})`, () => {
         expect(result.scrollWidth).toBeLessThanOrEqual(result.clientWidth + 2);
         expect(result.bodyScrollWidth).toBeLessThanOrEqual(result.bodyClientWidth + 96);
         expect(result.navItems).not.toContain('operationCenter');
-        expect(result.navItems.filter((item) => moduleOrderScreens.includes(item))).toEqual(moduleOrderScreens);
+        expect(result.navItems.length).toBeLessThanOrEqual(5);
+        expect(result.navItems.filter((item) => moduleOrderScreens.includes(item))).toEqual(['households', 'persons']);
         expect(result.sidebarModuleItems).toEqual(moduleOrderScreens);
         expect(result.text).not.toMatch(mojibakePattern);
         expect(result.touchFailures, `${viewport.name}/${screen} touch target failures`).toEqual([]);

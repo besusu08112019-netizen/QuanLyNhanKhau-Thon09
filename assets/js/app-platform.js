@@ -1959,8 +1959,8 @@
     var modes = createRegistry('layoutMode', 'key');
     var regions = createRegistry('layoutRegion', 'key');
     var breakpoints = {
-      mobileMax: 767,
-      tabletMax: 1023
+      mobileMax: 820,
+      tabletMax: 1024
     };
 
     function normalizeMode(record) {
