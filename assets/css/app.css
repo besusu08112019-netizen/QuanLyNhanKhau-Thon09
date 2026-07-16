@@ -5584,27 +5584,6 @@ button, input, select, textarea { font: inherit; min-width: 0; }
   }
 }
 
-/* Dashboard sidebar tree */
-.dashboard-tree { display: grid; gap: 6px; }
-.dashboard-tree-toggle {
-  width: 100%; min-height: 44px; border: 0; border-radius: 13px; padding: 10px 12px;
-  display: grid; grid-template-columns: 18px minmax(0, 1fr) 18px; align-items: center; gap: 10px;
-  background: transparent; color: #3d4757; font-size: 14px; font-weight: 700; text-align: left;
-  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
-}
-.dashboard-tree-toggle i { color: #667085; text-align: center; }
-.dashboard-tree-toggle:hover, .dashboard-tree.is-open > .dashboard-tree-toggle { color: var(--dashboard-green); background: #e9f6ef; }
-.dashboard-tree.is-active > .dashboard-tree-toggle { color: #fff; background: linear-gradient(135deg,var(--dashboard-green),#078246); box-shadow: 0 12px 24px rgba(11,107,58,.18); }
-.dashboard-tree.is-active > .dashboard-tree-toggle i { color: #fff; }
-.dashboard-tree-caret { justify-self: end; font-size: 12px; line-height: 1; transition: color .18s ease; }
-.dashboard-tree-children { display: grid; gap: 4px; max-height: 0; overflow: hidden; opacity: 0; padding-left: 13px; transition: max-height .22s ease, opacity .18s ease, margin .18s ease; }
-.dashboard-tree.is-open .dashboard-tree-children { max-height: 460px; opacity: 1; margin-top: 2px; }
-.sidebar .dashboard-tree-link.nav-link { min-height: 36px; padding: 8px 10px 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 650; gap: 9px; position: relative; }
-.sidebar .dashboard-tree-link.nav-link::before { content: ''; position: absolute; left: 4px; top: 50%; width: 6px; height: 1px; background: #9aa8ba; }
-.sidebar .dashboard-tree-link.nav-link i { width: 15px; font-size: 12px; }
-body.sidebar-collapsed .dashboard-tree-toggle span, body.sidebar-collapsed .dashboard-tree-caret, body.sidebar-collapsed .dashboard-tree-children { display: none; }
-@media (prefers-reduced-motion: reduce) { .dashboard-tree-toggle, .dashboard-tree-caret, .dashboard-tree-children { transition: none; } }
-
 /* GIS boundary editing toolbar */
 .gis-boundary-toolbar { grid-template-columns: 1fr; }
 .gis-area-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
@@ -9606,7 +9585,7 @@ body.app-authenticated {
   }
 
   body.app-authenticated .nav-section-title,
-  body.app-authenticated .dashboard-tree-toggle {
+  body.app-authenticated .sidebar-accordion-toggle {
     width: 100%;
     min-height: 42px;
     display: flex;
@@ -9623,18 +9602,18 @@ body.app-authenticated {
   }
 
   body.app-authenticated .nav-section-items,
-  body.app-authenticated .dashboard-tree-children {
+  body.app-authenticated .sidebar-accordion-panel {
     display: grid;
     gap: 4px;
   }
 
   body.app-authenticated .nav-section.is-collapsed > .nav-section-items,
-  body.app-authenticated .nav-section.is-collapsed > .dashboard-tree-children {
+  body.app-authenticated .nav-section.is-collapsed > .sidebar-accordion-panel {
     display: none;
   }
 
   body.app-authenticated .nav-section.is-collapsed .nav-section-caret,
-  body.app-authenticated .nav-section.is-collapsed .dashboard-tree-caret {
+  body.app-authenticated .nav-section.is-collapsed .sidebar-accordion-caret {
     transform: rotate(-90deg);
   }
 
@@ -9745,5 +9724,205 @@ body.app-authenticated {
   body.app-authenticated .mobile-filter-system.mobile-filter-expanded .mobile-filter-trigger,
   body.app-authenticated .mobile-filter-system.mobile-filter-expanded .mobile-filter-toggle {
     display: none !important;
+  }
+}
+
+/* Unified sidebar contract: one accordion sidebar for every module. */
+body.app-authenticated {
+  --sidebar-width: 240px;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #314238;
+  --sidebar-muted: #667085;
+  --sidebar-active-bg: linear-gradient(135deg, var(--brand, #0b6b3a), #078246);
+  --sidebar-hover-bg: var(--brand-soft, #e8f5ee);
+  --sidebar-radius: 12px;
+}
+
+body.app-authenticated .app-shell {
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+}
+
+body.app-authenticated .sidebar.gov-sidebar,
+body.app-authenticated .gov-sidebar {
+  width: var(--sidebar-width);
+  padding: 16px 12px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  border-right: 1px solid var(--line, #dfe7e2);
+  box-shadow: 8px 0 30px rgba(15, 23, 42, .04);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+body.app-authenticated .gov-nav {
+  display: grid;
+  gap: 8px;
+  padding: 0 2px 12px 0;
+}
+
+body.app-authenticated .gov-nav .nav-section,
+body.app-authenticated .gov-nav .sidebar-accordion-section {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+body.app-authenticated .gov-nav .nav-section-title,
+body.app-authenticated .gov-nav .sidebar-accordion-toggle {
+  width: 100%;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--sidebar-radius);
+  background: transparent;
+  color: var(--sidebar-text);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+body.app-authenticated .gov-nav .nav-section-title:hover,
+body.app-authenticated .gov-nav .nav-section.is-open > .nav-section-title {
+  color: var(--brand, #0b6b3a);
+  background: var(--sidebar-hover-bg);
+}
+
+body.app-authenticated .gov-nav .nav-section-title i,
+body.app-authenticated .gov-nav .nav-link i,
+body.app-authenticated .gov-logout i {
+  width: 22px;
+  min-width: 22px;
+  color: currentColor;
+  text-align: center;
+}
+
+body.app-authenticated .gov-nav .nav-section-caret,
+body.app-authenticated .gov-nav .sidebar-accordion-caret {
+  justify-self: end;
+  font-size: 12px;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform .18s ease;
+}
+
+body.app-authenticated .gov-nav .nav-section.is-collapsed .nav-section-caret,
+body.app-authenticated .gov-nav .nav-section.is-collapsed .sidebar-accordion-caret {
+  transform: rotate(-90deg);
+}
+
+body.app-authenticated .gov-nav .nav-section-items,
+body.app-authenticated .gov-nav .sidebar-accordion-panel {
+  display: grid;
+  gap: 4px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  padding-left: 12px;
+  transition: max-height .2s ease, opacity .18s ease, margin .18s ease;
+}
+
+body.app-authenticated .gov-nav .nav-section.is-open > .nav-section-items,
+body.app-authenticated .gov-nav .nav-section.is-open > .sidebar-accordion-panel {
+  max-height: 640px;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  margin-top: 2px;
+}
+
+body.app-authenticated .gov-nav .nav-link,
+body.app-authenticated .gov-logout {
+  width: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--sidebar-radius);
+  background: transparent;
+  color: var(--sidebar-text);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+body.app-authenticated .gov-nav .nav-link:hover,
+body.app-authenticated .gov-logout:hover {
+  color: var(--brand, #0b6b3a);
+  background: var(--sidebar-hover-bg);
+}
+
+body.app-authenticated .gov-nav .nav-link.active {
+  color: #fff;
+  background: var(--sidebar-active-bg);
+  box-shadow: 0 10px 20px rgba(11, 107, 58, .18);
+}
+
+body.app-authenticated .gov-nav .nav-link.active i {
+  color: #fff;
+}
+
+body.sidebar-collapsed.app-authenticated {
+  --sidebar-width: 76px;
+}
+
+body.sidebar-collapsed.app-authenticated .gov-nav .nav-section-title span,
+body.sidebar-collapsed.app-authenticated .gov-nav .nav-section-caret,
+body.sidebar-collapsed.app-authenticated .gov-nav .nav-section-items,
+body.sidebar-collapsed.app-authenticated .gov-brand div,
+body.sidebar-collapsed.app-authenticated .gov-nav .nav-link span,
+body.sidebar-collapsed.app-authenticated .gov-logout span {
+  display: none;
+}
+
+body.sidebar-collapsed.app-authenticated .gov-nav .nav-section-title,
+body.sidebar-collapsed.app-authenticated .gov-nav .nav-link,
+body.sidebar-collapsed.app-authenticated .gov-logout {
+  grid-template-columns: 1fr;
+  justify-content: center;
+  justify-items: center;
+  padding: 0;
+}
+
+@media (max-width: 991px) {
+  body.app-authenticated .app-shell {
+    display: block;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.app-authenticated .sidebar.gov-sidebar,
+  body.app-authenticated .gov-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(84vw, 320px);
+    max-width: 84vw;
+    height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform .2s ease;
+    z-index: var(--mobile-sidebar-z, 1190);
+  }
+
+  body.app-authenticated .sidebar.gov-sidebar.open,
+  body.app-authenticated .gov-sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.app-authenticated .gov-nav .nav-section-caret,
+  body.app-authenticated .gov-nav .nav-section-items,
+  body.app-authenticated .sidebar.gov-sidebar,
+  body.app-authenticated .gov-sidebar {
+    transition: none;
   }
 }

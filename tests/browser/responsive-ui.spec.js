@@ -54,7 +54,7 @@ async function clickSidebarModule(page, screen) {
   const item = page.locator(`.sidebar .nav-link[data-screen="${screen}"]`).first();
   await item.evaluate((button) => {
     const section = button.closest('.nav-section');
-    const toggle = section?.querySelector(':scope > .nav-section-title, :scope > .dashboard-tree-toggle');
+    const toggle = section?.querySelector(':scope > .nav-section-title');
     if (section) {
       section.classList.add('is-open');
       section.classList.remove('is-collapsed');
@@ -216,6 +216,42 @@ test.describe('responsive system navigation audit', () => {
     }
   });
 
+  test('sidebar uses one shared accordion architecture across modules', async ({ page }) => {
+    await openAuthenticatedApp(page, 1366);
+    const screens = ['dashboard', 'households', 'persons', 'gis', 'reports', 'publicAssets', 'agriculture', 'livestock', 'vehicles', 'contributions'];
+
+    for (const screen of screens) {
+      await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+      await page.waitForTimeout(120);
+      const sidebar = await page.evaluate((target) => {
+        const sidebars = Array.from(document.querySelectorAll('.sidebar.gov-sidebar'));
+        const navs = Array.from(document.querySelectorAll('.gov-nav'));
+        const sections = Array.from(document.querySelectorAll('.gov-nav > .nav-section'));
+        const activeButton = document.querySelector(`.gov-nav .nav-link[data-screen="${target}"]`);
+        const activeSection = activeButton?.closest('.nav-section');
+        return {
+          sidebarCount: sidebars.length,
+          navCount: navs.length,
+          dashboardTreeCount: document.querySelectorAll('.dashboard-tree, [data-dashboard-tree], .dashboard-tree-toggle, .dashboard-tree-children').length,
+          sectionCount: sections.length,
+          uniformSections: sections.every((section) => section.classList.contains('sidebar-accordion-section') && section.querySelector(':scope > .sidebar-accordion-toggle') && section.querySelector(':scope > .sidebar-accordion-panel')),
+          activeScreen: document.querySelector('.screen.active')?.id || '',
+          activeSectionOpen: !!activeSection && activeSection.classList.contains('is-open'),
+          activeSectionExpanded: activeSection?.querySelector(':scope > .sidebar-accordion-toggle')?.getAttribute('aria-expanded') || ''
+        };
+      }, screen);
+
+      expect(sidebar.sidebarCount).toBe(1);
+      expect(sidebar.navCount).toBe(1);
+      expect(sidebar.dashboardTreeCount).toBe(0);
+      expect(sidebar.sectionCount).toBeGreaterThan(1);
+      expect(sidebar.uniformSections).toBe(true);
+      expect(sidebar.activeScreen).toBe(`${screen}Screen`);
+      expect(sidebar.activeSectionOpen).toBe(true);
+      expect(sidebar.activeSectionExpanded).toBe('true');
+    }
+  });
+
   test('module navigation clicks activate the requested screens', async ({ page }) => {
     await openAuthenticatedApp(page, 390);
     const isMobile = await page.evaluate(() => window.innerWidth <= 820);
@@ -304,7 +340,7 @@ test.describe('responsive system navigation audit', () => {
     expect(before.sidebarTransform).toBe('none');
     expect(before.buttonLeft).toBeGreaterThanOrEqual(0);
 
-    await page.locator('.sidebar .nav-link[data-screen="households"]').first().click();
+    await clickSidebarModule(page, 'households');
     await page.waitForTimeout(200);
 
     const after = await page.evaluate(() => ({

@@ -172,9 +172,9 @@ function screenNode(screenId) {
   const mobileScreens = platform.menuRenderer.mobileScreens();
   assert.strictEqual(
     mobileScreens.join(','),
-    'households,persons,temporaryResidence,temporaryAbsence,movements,publicAssets,houses,businessHouseholds,agriculture,livestock,vehicles,contributions'
+    'dashboard,households,persons,gis,reports'
   );
-  assert.strictEqual(platform.menuRenderer.mobileModules()[0].mobileLabel, 'Hộ');
+  assert.strictEqual(platform.menuRenderer.mobileModules()[1].mobileLabel, 'Hộ');
   assert.strictEqual(platform.modules.get('households').label, 'Hộ gia đình');
   assert.strictEqual(platform.modules.get('persons').label, 'Nhân khẩu');
   assert.strictEqual(platform.modules.get('temporaryResidence').label, 'Tạm trú');
@@ -331,11 +331,11 @@ function screenNode(screenId) {
   };
   assert.strictEqual(platform.menuRenderer.renderMobile(nav), true);
   assert.strictEqual(nav.dataset.platformMenu, 'true');
-  assert.strictEqual(nav.children[0].dataset.mobileScreen, 'households');
-  assert.strictEqual(nav.children[0].dataset.module, 'households');
-  assert.strictEqual(nav.children[0].dataset.route, '/households');
+  assert.strictEqual(nav.children[0].dataset.mobileScreen, 'dashboard');
+  assert.strictEqual(nav.children[0].dataset.module, 'dashboard');
+  assert.strictEqual(nav.children[0].dataset.route, '/');
   assert.strictEqual(nav.children[0].dataset.action, 'list');
-  assert.strictEqual(platform.navigationIntent.fromElement(nav.children[0]).moduleKey, 'households');
+  assert.strictEqual(platform.navigationIntent.fromElement(nav.children[0]).moduleKey, 'dashboard');
 }
 
 {
