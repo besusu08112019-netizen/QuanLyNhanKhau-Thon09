@@ -4,7 +4,7 @@ const widths = [320, 360, 375, 390, 412, 430, 768, 820, 853, 912, 1024, 1280, 14
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 const mobileScreens = moduleOrderScreens;
 const bottomNavScreens = ['dashboard', 'households', 'persons', 'gis', 'reports'];
-const qaScreens = ['dashboard', 'households', 'persons', 'gis', 'reports', 'contributions', 'vehicles', 'businessHouseholds', 'agriculture', 'livestock', 'publicAssets', 'houses', 'operationCenter', 'import', 'users', 'logs', 'backups', 'settings'];
+const qaScreens = ['dashboard', 'households', 'persons', 'gis', 'reports', 'contributions', 'vehicles', 'businessHouseholds', 'agriculture', 'livestock', 'publicAssets', 'houses', 'operationCenter', 'import', 'exportExcel', 'printForms', 'systemAdmin', 'users', 'permissions', 'logs', 'backups', 'restore', 'settings', 'appearance'];
 
 async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
@@ -438,6 +438,41 @@ test.describe('responsive system navigation audit', () => {
             const extraVisible = Array.from(filter.querySelectorAll('.mobile-filter-extra')).some(isVisible);
             return { iconVisible: Boolean(iconVisible), extraVisible };
           });
+          const parseRgb = (value) => {
+            const match = String(value || '').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([.\d]+))?\)/);
+            if (!match) return null;
+            return { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]), a: match[4] === undefined ? 1 : Number(match[4]) };
+          };
+          const bgColorOf = (node) => {
+            var current = node;
+            while (current && current !== document.documentElement) {
+              const currentStyle = getComputedStyle(current);
+              if (currentStyle.backgroundImage && currentStyle.backgroundImage !== 'none') return null;
+              const color = parseRgb(currentStyle.backgroundColor);
+              if (color && color.a > 0.95) return color;
+              current = current.parentElement;
+            }
+            return parseRgb(getComputedStyle(document.body).backgroundColor) || { r: 255, g: 255, b: 255, a: 1 };
+          };
+          const colorDistance = (a, b) => a && b ? Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) : 255;
+          const iconFailures = Array.from((active || document).querySelectorAll('i.fa, i.fa-solid, i.fa-regular, i.fa-brands, i.fas, i.far, i.fab')).filter(isVisible).filter((icon) => {
+            const rect = icon.getBoundingClientRect();
+            const style = getComputedStyle(icon);
+            const parent = icon.closest('button,.btn,.nav-link,.dropdown-item,.page-link,.badge,.badge-soft,[class*="badge"],[class*="status"],[class*="pill"],[class*="tag"]');
+            const parentRect = parent ? parent.getBoundingClientRect() : null;
+            const color = parseRgb(style.color);
+            const background = bgColorOf(parent || icon.parentElement || icon);
+            const clippedByParent = parentRect && (rect.left < parentRect.left - 1 || rect.right > parentRect.right + 1 || rect.top < parentRect.top - 1 || rect.bottom > parentRect.bottom + 1);
+            const missingGlyph = style.fontFamily.toLowerCase().indexOf('font awesome') === -1 && !icon.className.includes('fa-');
+            const tooSmall = Math.ceil(rect.width) < 12 || Math.ceil(rect.height) < 12;
+            const sameAsBackground = colorDistance(color, background) < 18 && !(parent && parent.classList.contains('active'));
+            return missingGlyph || tooSmall || clippedByParent || sameAsBackground;
+          }).map((icon) => ({
+            tag: icon.tagName,
+            id: icon.id || '',
+            className: String(icon.className || '').slice(0, 90),
+            parent: icon.closest('button,.btn,.nav-link,.dropdown-item,.page-link')?.id || icon.closest('button,.btn,.nav-link,.dropdown-item,.page-link')?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 60) || ''
+          })).slice(0, 10);
           return {
             activeId: active ? active.id : '',
             docScroll: Math.ceil(document.documentElement.scrollWidth),
@@ -451,7 +486,8 @@ test.describe('responsive system navigation audit', () => {
             controlOverflow,
             nakedTables,
             modalOverflow,
-            compactFilters
+            compactFilters,
+            iconFailures
           };
         }, { target: screen, width });
 
@@ -465,6 +501,7 @@ test.describe('responsive system navigation audit', () => {
         expect(audit.nakedTables, `${width}/${screen} mobile/tablet naked tables`).toEqual([]);
         expect(audit.modalOverflow, `${width}/${screen} modal overflow`).toEqual([]);
         expect(audit.compactFilters.every((item) => !(item.iconVisible && item.extraVisible)), `${width}/${screen} compact filter state`).toBe(true);
+        expect(audit.iconFailures, `${width}/${screen} icon failures`).toEqual([]);
       }
     }
   });
