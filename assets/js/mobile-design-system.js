@@ -243,6 +243,28 @@
     return aria || text || 'Thao tac';
   }
 
+  function visibleActionText(control) {
+    var clone = control.cloneNode(true);
+    clone.querySelectorAll('i, svg, .fa, .fa-solid, .fa-regular, .fa-brands, .fas, .far, .fab, .sr-only, [aria-hidden="true"]').forEach(function (node) {
+      node.remove();
+    });
+    return textOf(clone);
+  }
+
+  function syncIconOnlyControl(control) {
+    if (!control || !control.matches || !control.matches('button, .btn, a[href].btn, .nav-link, .dropdown-item, .page-link')) return;
+    var hasIcon = Boolean(control.querySelector('i.fa, i.fa-solid, i.fa-regular, i.fa-brands, i.fas, i.far, i.fab, svg'));
+    var hasVisibleText = Boolean(visibleActionText(control));
+    control.classList.toggle('r-icon-only', hasIcon && !hasVisibleText);
+    control.classList.toggle('r-icon-text', hasIcon && hasVisibleText);
+  }
+
+  function enhanceActionIcons(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    if (scope.matches) syncIconOnlyControl(scope);
+    scope.querySelectorAll('button, .btn, a[href].btn, .nav-link, .dropdown-item, .page-link').forEach(syncIconOnlyControl);
+  }
+
   function cloneAction(control) {
     var clone = control.cloneNode(true);
     clone.classList.add('mobile-card-action');
@@ -544,6 +566,7 @@
     enhancePagers(scope);
     enhanceFloating(scope);
     enhanceMobileMenu(scope);
+    enhanceActionIcons(scope);
   }
 
   function enhanceMobileMenu(root) {
@@ -625,6 +648,7 @@
   window.thon09EnhanceDesignSystem = enhance;
   window.Thon09MobileDesignSystem = {
     enhance: enhance,
-    decorateRow: decorateRow
+    decorateRow: decorateRow,
+    syncIconOnlyControl: syncIconOnlyControl
   };
 })(window, document);
