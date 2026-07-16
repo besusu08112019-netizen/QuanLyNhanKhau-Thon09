@@ -214,7 +214,11 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
   });
   const emptyState = await page.evaluate(() => {
     const row = document.querySelector('#temporaryResidenceRows .mobile-source-empty');
-    return { message: row?.dataset.mobileEmptyMessage || '', height: row ? Math.round(row.getBoundingClientRect().height) : 0 };
+    const visibleEmpty = row?.closest('.table-responsive')?.querySelector('.mobile-list-surface .mobile-list-empty');
+    return {
+      message: row?.dataset.mobileEmptyMessage || visibleEmpty?.textContent || '',
+      height: visibleEmpty ? Math.round(visibleEmpty.getBoundingClientRect().height) : 0
+    };
   });
   expect(emptyState.message.length).toBeGreaterThan(0);
   expect(emptyState.height).toBeGreaterThanOrEqual(100);

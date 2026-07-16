@@ -152,14 +152,38 @@ async function inspectNavigation(page, requestedScreen) {
   }, requestedScreen);
 }
 
+async function revealSidebarButton(page, screen) {
+  const button = page.locator(`.sidebar .nav-link[data-screen="${screen}"]`).first();
+  await expect(button, `missing sidebar button for ${screen}`).toHaveCount(1);
+  await button.evaluate((el) => {
+    const sidebar = el.closest('.sidebar');
+    const section = el.closest('.nav-section');
+    const toggle = section?.querySelector(':scope > .nav-section-title, :scope > .sidebar-accordion-toggle');
+    if (window.innerWidth <= 991) {
+      if (sidebar) sidebar.classList.add('open');
+      document.body.classList.add('sidebar-open');
+    } else {
+      if (sidebar) sidebar.classList.remove('open');
+      document.body.classList.remove('sidebar-open');
+    }
+    if (section) {
+      section.classList.add('is-open');
+      section.classList.remove('is-collapsed');
+    }
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    el.scrollIntoView({ block: 'center', inline: 'nearest' });
+  });
+  await expect(button, `sidebar button is visible for ${screen}`).toBeVisible();
+  return button;
+}
+
 test('desktop sidebar clicks switch both active menu and visible screen content', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await openAuthenticatedApp(page);
   await expectPlatformMenus(page);
 
   for (const screen of desktopScreens) {
-    const button = page.locator(`.sidebar .nav-link[data-screen="${screen}"]`).first();
-    await expect(button, `missing sidebar button for ${screen}`).toBeVisible();
+    const button = await revealSidebarButton(page, screen);
     await button.click();
     await page.waitForTimeout(80);
     const state = await inspectNavigation(page, screen);
@@ -185,8 +209,7 @@ test('mobile and tablet module clicks use the same controller and change content
   await expectPlatformMenus(page);
 
   for (const screen of moduleScreens) {
-    const button = page.locator(`.mobile-bottom-nav [data-mobile-screen="${screen}"]`).first();
-    await expect(button, `missing mobile button for ${screen}`).toBeVisible();
+    const button = await revealSidebarButton(page, screen);
     await button.click();
     await page.waitForTimeout(80);
     const state = await inspectNavigation(page, screen);

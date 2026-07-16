@@ -357,28 +357,37 @@
         node.classList.remove('mobile-filter-search', 'mobile-filter-extra', 'mobile-filter-action-wrap', 'mobile-filter-action');
       });
       container.querySelectorAll('.mobile-search-control').forEach(function (node) { node.classList.remove('mobile-search-control'); });
+      if (!isFilterCompactViewport()) return;
       var hasExtra = false;
       var hasFilterControl = false;
       var hasActionControl = false;
       var entries = Array.from(container.querySelectorAll('input, select, button')).map(function (control) {
         var holder = control.closest('.module-field, .person-field, .agri-field, .houses-field, .col-md-3, .col-md-4, .col-md-6, .col-12, .d-flex') || control.parentElement;
         if (holder && holder.matches('.d-flex') && holder.querySelectorAll('input, select, button').length > 1) holder = control;
+        if (holder && holder !== control && holder.querySelectorAll('input, select, button').length > 1 && !holder.matches('.module-field, .person-field, .agri-field, .houses-field, .col-md-3, .col-md-4, .col-md-6, .col-12')) holder = control;
         return {
           control: control,
           holder: holder
         };
       });
+      var structuredFilterEntry = entries.find(function (entry) {
+        var control = entry.control;
+        return control.matches('select') || (control.matches('input') && !isTextInput(control));
+      });
       var searchEntry = entries.find(function (entry) { return isSearchInput(entry.control, entry.holder); })
         || entries.find(function (entry) { return isTextInput(entry.control); });
+      var primaryFilterEntry = searchEntry || structuredFilterEntry;
       entries.forEach(function (entry) {
         var control = entry.control;
         if (control.matches('[data-mobile-filter-toggle], .mobile-filter-toggle, .mobile-filter-close')) return;
         var holder = entry.holder;
         var roleHolder = holder === container ? control : holder;
         var text = searchSignals(control, holder);
-        if (entry === searchEntry) {
-          control.classList.add('mobile-search-control');
-          if (!control.getAttribute('placeholder')) control.setAttribute('placeholder', 'Tim kiem...');
+        if (entry === primaryFilterEntry) {
+          if (entry === searchEntry) {
+            control.classList.add('mobile-search-control');
+            if (!control.getAttribute('placeholder')) control.setAttribute('placeholder', 'Tim kiem...');
+          }
           if (roleHolder) roleHolder.classList.add('mobile-filter-search');
         } else if (isPageSizeControl(control, text)) {
           if (roleHolder) roleHolder.classList.add('mobile-filter-action-wrap');
@@ -408,10 +417,12 @@
           }
         }
       });
-      if (searchEntry || hasFilterControl) container.classList.add('mobile-filter-system');
-      else if (hasActionControl) container.classList.add('mobile-action-system');
+      var toolbarWithoutSearch = !searchEntry && container.matches('.toolbar, .agri-toolbar, .houses-toolbar, .livestock-toolbar');
+      var hasStructuredFilter = Boolean(structuredFilterEntry);
+      if (searchEntry || (hasStructuredFilter && hasFilterControl && !toolbarWithoutSearch)) container.classList.add('mobile-filter-system');
+      else if (hasActionControl || toolbarWithoutSearch) container.classList.add('mobile-action-system');
       var existingToggle = container.querySelector(':scope > [data-mobile-filter-toggle], :scope > .mobile-filter-toggle, :scope > .mobile-filter-shell, :scope > .mobile-filter-trigger');
-      if (hasExtra && hasFilterControl && isFilterCompactViewport() && !existingToggle) {
+      if (container.classList.contains('mobile-filter-system') && hasExtra && hasFilterControl && isFilterCompactViewport() && !existingToggle) {
         var toggle = document.createElement('button');
         toggle.type = 'button';
         toggle.className = 'mobile-filter-trigger';
