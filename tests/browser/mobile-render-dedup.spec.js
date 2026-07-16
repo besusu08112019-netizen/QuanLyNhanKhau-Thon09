@@ -101,8 +101,8 @@ async function dedupMetrics(page, screenId, tbodyId, pagerId) {
     return {
       sourceRows: tbody ? tbody.querySelectorAll(':scope > tr').length : 0,
       decoratedRows: tbody ? tbody.querySelectorAll(':scope > tr.mobile-source-card').length : 0,
-      generatedSurfaces: screen ? screen.querySelectorAll('.mobile-list-surface').length : 0,
-      generatedCards: screen ? screen.querySelectorAll('.mobile-list-surface .mobile-list-card').length : 0,
+      generatedSurfaces: wrapper ? wrapper.querySelectorAll(':scope > .mobile-list-surface').length : 0,
+      generatedCards: wrapper ? wrapper.querySelectorAll(':scope > .mobile-list-surface .mobile-list-card').length : 0,
       nestedTables: wrapper ? wrapper.querySelectorAll(':scope > table').length : 0,
       pagers: screen ? screen.querySelectorAll('#' + pagerId).length : 0,
       pagerChildren: pager ? pager.children.length : 0,
@@ -124,8 +124,8 @@ test('mobile render keeps one source row for business households and contributio
   await expect.poll(() => dedupMetrics(page, 'businessHouseholdsScreen', 'businessHouseholdRows', 'businessHouseholdPager')).toMatchObject({
     sourceRows: 1,
     decoratedRows: 1,
-    generatedSurfaces: 0,
-    generatedCards: 0,
+    generatedSurfaces: 1,
+    generatedCards: 1,
     nestedTables: 1,
     pagers: 1,
     pagerSystem: true,
@@ -143,8 +143,8 @@ test('mobile render keeps one source row for business households and contributio
   await expect.poll(() => dedupMetrics(page, 'contributionsScreen', 'contributionsRows', 'contributionsPager')).toMatchObject({
     sourceRows: 1,
     decoratedRows: 1,
-    generatedSurfaces: 0,
-    generatedCards: 0,
+    generatedSurfaces: 1,
+    generatedCards: 1,
     nestedTables: 1,
     pagers: 1,
     pagerSystem: true

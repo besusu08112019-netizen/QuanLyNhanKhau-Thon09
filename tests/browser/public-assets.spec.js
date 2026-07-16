@@ -196,13 +196,13 @@ test('mobile design system renders compact independent cards instead of desktop 
     const wrapper = document.querySelector('#publicAssetsRows')?.closest('.table-responsive');
     const table = wrapper?.querySelector('table');
     const surface = wrapper?.querySelector('.mobile-list-surface');
-    const firstCard = wrapper?.querySelector('tbody tr.mobile-source-card');
+    const firstCard = surface?.querySelector('.mobile-list-card');
     const dashboard = document.querySelector('#publicAssetsMiniDashboard');
     const dashboardCard = dashboard?.querySelector(':scope > *');
     const actions = firstCard ? Array.from(firstCard.querySelectorAll('.mobile-card-action')) : [];
     const actionBox = firstCard?.querySelector('.mobile-card-actions');
-    const body = firstCard?.querySelector('.mobile-card-summary-cell, .mobile-card-status-cell');
-    const head = firstCard?.querySelector('.mobile-card-title-cell, .mobile-card-code-cell');
+    const body = firstCard?.querySelector('.mobile-card-body');
+    const head = firstCard?.querySelector('.mobile-list-card-head');
     const filterTrigger = document.querySelector('#publicAssetsScreen .mobile-filter-trigger');
     const rect = firstCard?.getBoundingClientRect();
     const actionRect = actionBox?.getBoundingClientRect();
@@ -230,8 +230,8 @@ test('mobile design system renders compact independent cards instead of desktop 
   });
 
   expect(metrics.tableDisplay).toBe('block');
-  expect(metrics.surfaceExists).toBe(false);
-  expect(metrics.generatedCards).toBe(0);
+  expect(metrics.surfaceExists).toBe(true);
+  expect(metrics.generatedCards).toBe(2);
   expect(metrics.sourceRows).toBe(2);
   expect(metrics.dashboardColumns).toBe(2);
   expect(metrics.dashboardCardHeight).toBeLessThanOrEqual(70);
@@ -240,7 +240,6 @@ test('mobile design system renders compact independent cards instead of desktop 
   expect(metrics.cardText.toLocaleLowerCase('vi-VN')).toContain('nhà văn hóa thôn 09');
   expect(metrics.cardText).toContain('CT09-00101');
   expect(metrics.cardText).toContain('Thôn 09');
-  expect(metrics.actionCount).toBe(0);
   expect(metrics.actionCount).toBeLessThanOrEqual(3);
   expect(metrics.actionOverlapsBody).toBe(false);
   expect(metrics.actionOverlapsHead).toBe(false);

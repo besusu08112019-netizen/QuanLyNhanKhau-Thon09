@@ -237,6 +237,99 @@
     });
   }
 
+  function actionLabel(control) {
+    var aria = control.getAttribute('aria-label') || control.title || '';
+    var text = textOf(control);
+    return aria || text || 'Thao tac';
+  }
+
+  function cloneAction(control) {
+    var clone = control.cloneNode(true);
+    clone.classList.add('mobile-card-action');
+    clone.setAttribute('aria-label', actionLabel(control));
+    if (!clone.querySelector('i')) {
+      clone.textContent = actionLabel(control);
+    }
+    return clone;
+  }
+
+  function renderCard(row) {
+    var cells = Array.from(row.children).filter(function (cell) { return cell.tagName === 'TD'; });
+    if (!cells.length || cells.some(function (cell) { return cell.hasAttribute('colspan'); })) {
+      var empty = document.createElement('article');
+      empty.className = 'mobile-list-empty';
+      empty.textContent = cells.length ? textOf(cells[0]) : 'Chua co du lieu.';
+      return empty;
+    }
+
+    var title = pickTitle(cells);
+    var meta = pickMeta(cells, title);
+    var status = pickStatus(cells, title, meta);
+    var actionCell = cells.find(function (cell) {
+      return cell.dataset.mobileRole === 'actions' || (cell.matches('.text-end') && cell.querySelector('button, .btn, a[href]'));
+    });
+    var select = cells.find(function (cell) { return cell.dataset.mobileRole === 'select' && cell.querySelector('input'); });
+    var summary = cells.filter(function (cell) {
+      if (cell === title || cell === meta || cell === actionCell || cell === select || isEmpty(cell)) return false;
+      var role = cell.dataset.mobileRole || '';
+      var field = cell.dataset.mobileField || '';
+      return role === 'address' || role === 'stat' || role === 'badge' || importantFields.has(field);
+    }).slice(0, 5);
+
+    var card = document.createElement('article');
+    card.className = 'mobile-list-card';
+    card.dataset.mobileSourceRow = row.dataset.mobileSourceRow || ensureId(row);
+
+    var head = document.createElement('div');
+    head.className = 'mobile-list-card-head';
+    var titleNode = document.createElement('strong');
+    titleNode.className = 'mobile-card-title';
+    titleNode.textContent = titleTextOf(title, meta);
+    head.appendChild(titleNode);
+    if (meta && !isEmpty(meta)) {
+      var code = document.createElement('span');
+      code.className = 'mobile-card-code';
+      code.textContent = textOf(meta);
+      head.appendChild(code);
+    }
+    if (select) {
+      var checkbox = select.querySelector('input[type="checkbox"]');
+      if (checkbox) head.appendChild(checkbox.cloneNode(true));
+    }
+
+    var body = document.createElement('div');
+    body.className = 'mobile-card-body';
+    if (status && summary.indexOf(status) < 0 && status !== title && status !== meta) summary.unshift(status);
+    summary.forEach(function (cell) {
+      var info = document.createElement('span');
+      info.className = 'mobile-card-info';
+      info.dataset.mobileRole = cell.dataset.mobileRole || '';
+      info.dataset.mobileField = cell.dataset.mobileField || '';
+      var label = document.createElement('span');
+      label.className = 'mobile-card-info-label';
+      label.textContent = cell.getAttribute('data-label') || '';
+      var value = document.createElement('span');
+      value.className = 'mobile-card-info-value';
+      value.textContent = textOf(cell);
+      if (label.textContent) info.appendChild(label);
+      info.appendChild(value);
+      body.appendChild(info);
+    });
+
+    var actions = document.createElement('div');
+    actions.className = 'mobile-card-actions';
+    if (actionCell) {
+      Array.from(actionCell.querySelectorAll('button, .btn, a[href]')).slice(0, 4).forEach(function (control) {
+        actions.appendChild(cloneAction(control));
+      });
+    }
+
+    card.appendChild(head);
+    if (body.children.length) card.appendChild(body);
+    if (actions.children.length) card.appendChild(actions);
+    return card;
+  }
+
   function enhanceFilters(root) {
     var scope = root && root.querySelectorAll ? root : document;
     var selectors = [
@@ -281,34 +374,35 @@
         var control = entry.control;
         if (control.matches('[data-mobile-filter-toggle], .mobile-filter-toggle, .mobile-filter-close')) return;
         var holder = entry.holder;
+        var roleHolder = holder === container ? control : holder;
         var text = searchSignals(control, holder);
         if (entry === searchEntry) {
           control.classList.add('mobile-search-control');
           if (!control.getAttribute('placeholder')) control.setAttribute('placeholder', 'Tim kiem...');
-          if (holder) holder.classList.add('mobile-filter-search');
+          if (roleHolder) roleHolder.classList.add('mobile-filter-search');
         } else if (isPageSizeControl(control, text)) {
-          if (holder) holder.classList.add('mobile-filter-action-wrap');
+          if (roleHolder) roleHolder.classList.add('mobile-filter-action-wrap');
           control.classList.add('mobile-filter-action');
           hasActionControl = true;
         } else if (isPrimaryAction(control, text)) {
-          if (holder) holder.classList.add('mobile-filter-action-wrap');
+          if (roleHolder) roleHolder.classList.add('mobile-filter-action-wrap');
           control.classList.add('mobile-filter-action');
           hasActionControl = true;
         } else if (control.matches('select') || (control.matches('input') && !isTextInput(control))) {
-          if (holder) holder.classList.add('mobile-filter-extra');
+          if (roleHolder) roleHolder.classList.add('mobile-filter-extra');
           hasExtra = true;
           hasFilterControl = true;
         } else if (isFilterButton(control, text)) {
-          if (holder) holder.classList.add('mobile-filter-extra');
+          if (roleHolder) roleHolder.classList.add('mobile-filter-extra');
           hasExtra = true;
           hasFilterControl = true;
         } else if (holder) {
           if (control.matches('button, .btn, a[href]')) {
-            if (holder) holder.classList.add('mobile-filter-action-wrap');
+            if (roleHolder) roleHolder.classList.add('mobile-filter-action-wrap');
             control.classList.add('mobile-filter-action');
             hasActionControl = true;
           } else {
-            holder.classList.add('mobile-filter-extra');
+            roleHolder.classList.add('mobile-filter-extra');
             hasExtra = true;
             hasFilterControl = true;
           }
@@ -383,18 +477,46 @@
     });
   }
 
+  function isCardViewport() {
+    return !window.matchMedia || window.matchMedia('(max-width: 1024px)').matches;
+  }
+
+  function setSourceTableMode(table, active) {
+    table.classList.toggle('mobile-source-table', active);
+    if (active) {
+      table.setAttribute('aria-hidden', 'true');
+      table.setAttribute('inert', '');
+    } else {
+      table.removeAttribute('aria-hidden');
+      table.removeAttribute('inert');
+    }
+  }
+
   function enhanceTable(wrapper) {
     var table = wrapper.querySelector('table');
     var tbody = table && table.querySelector('tbody');
     if (!table || !tbody) return;
     ensureMobileLabels(table);
-    table.classList.add('mobile-source-table');
-    wrapper.classList.add('mobile-list-ready');
     var surface = wrapper.querySelector(':scope > .mobile-list-surface');
-    if (surface) surface.remove();
+    if (!isCardViewport()) {
+      setSourceTableMode(table, false);
+      wrapper.classList.remove('mobile-list-ready');
+      if (surface) surface.remove();
+      return;
+    }
+    setSourceTableMode(table, true);
+    wrapper.classList.add('mobile-list-ready');
+    if (!surface) {
+      surface = document.createElement('div');
+      surface.className = 'mobile-list-surface';
+      surface.setAttribute('aria-hidden', 'true');
+      wrapper.insertBefore(surface, table);
+    }
+    surface.innerHTML = '';
     Array.from(tbody.children).forEach(function (row) {
       if (row.classList.contains('group-row')) return;
       decorateRow(row);
+      surface.appendChild(renderCard(row));
     });
   }
 
@@ -441,6 +563,13 @@
       if (shouldEnhance) scheduleEnhance();
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
+
+  if (window.matchMedia) {
+    var cardViewportQuery = window.matchMedia('(max-width: 1024px)');
+    if (cardViewportQuery.addEventListener) cardViewportQuery.addEventListener('change', scheduleEnhance);
+    else if (cardViewportQuery.addListener) cardViewportQuery.addListener(scheduleEnhance);
+  }
+  window.addEventListener('resize', scheduleEnhance, { passive: true });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleEnhance);
   else scheduleEnhance();
