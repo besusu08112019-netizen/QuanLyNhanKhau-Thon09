@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260715-01';
+const PWA_VERSION = 'thon09-pwa-v20260716-01';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
@@ -41,7 +41,9 @@ const STATIC_ASSETS = [
   withBase('assets/vendor/leaflet.markercluster/leaflet.markercluster.js'),
   withBase('assets/css/app.min.css'),
   withBase('assets/js/i18n.min.js'),
+  withBase('assets/js/print-framework.min.js'),
   withBase('assets/js/app-platform.min.js'),
+  withBase('assets/js/mobile-design-system.min.js'),
   withBase('assets/js/app.utf8.min.js'),
   withBase('assets/js/csrf.min.js'),
   withBase('assets/js/session.min.js'),
@@ -223,6 +225,7 @@ async function matchStatic(request) {
   if (cached && isCacheableStaticResponse(request, cached)) return cached;
   const url = new URL(request.url);
   if (url.origin === self.location.origin && url.search) {
+    if (/\.(?:css|js|mjs)$/i.test(url.pathname)) return null;
     const fallback = await caches.match(new Request(url.pathname, { method: 'GET' }));
     if (fallback && isCacheableStaticResponse(request, fallback)) return fallback;
   }

@@ -526,6 +526,9 @@ if (!str_starts_with($request->path(), '/api')) {
     $versionedAssets = [
         'assets/css/app.min.css',
         'assets/js/i18n.min.js',
+        'assets/js/print-framework.min.js',
+        'assets/js/app-platform.min.js',
+        'assets/js/mobile-design-system.min.js',
         'assets/js/app.utf8.min.js',
         'assets/js/csrf.min.js',
         'assets/js/session.min.js',
@@ -553,6 +556,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/houses.min.js',
         'assets/js/public-assets.min.js',
         'assets/js/module-dashboards.min.js',
+        'assets/js/pwa.min.js',
     ];
 
     foreach ($versionedAssets as $asset) {
