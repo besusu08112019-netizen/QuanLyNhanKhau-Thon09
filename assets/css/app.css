@@ -8824,6 +8824,68 @@ body.app-authenticated {
     overflow: hidden;
   }
 
+  body.app-authenticated .mobile-filter-system:not(.mobile-filter-expanded) :where(.mobile-filter-action-wrap, .mobile-filter-action, .mobile-filter-extra) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.app-authenticated .mobile-filter-system.mobile-filter-expanded :where(.mobile-filter-action, .mobile-filter-action-wrap > :where(button, a[href], .btn)).r-icon-text {
+    width: auto;
+    min-width: var(--ds-touch);
+    max-width: min(220px, 100%);
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  body.app-authenticated .mobile-action-system :where(label, .form-label) {
+    width: auto;
+    min-width: max-content;
+    max-width: 100%;
+    height: auto;
+    white-space: nowrap;
+  }
+
+  body.app-authenticated .mobile-action-system :where(.mobile-filter-extra) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.app-authenticated .mobile-action-system :where(.livestock-toolbar-right, .agri-toolbar-right, .houses-toolbar-right) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
   body.app-authenticated .mobile-filter-action i,
   body.app-authenticated .mobile-filter-trigger i,
   body.app-authenticated .mobile-action-system :where(button, a[href], .btn) i {
@@ -8862,6 +8924,26 @@ body.app-authenticated {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--ds-gap);
+  }
+
+  @media (max-width: 430px) {
+    body.app-authenticated .mobile-kpi-system,
+    body.app-authenticated .dashboard-kpi-grid,
+    body.app-authenticated .dashboard-metric-grid,
+    body.app-authenticated .module-placeholder-grid,
+    body.app-authenticated .houses-kpi-grid,
+    body.app-authenticated .livestock-kpi-grid,
+    body.app-authenticated .agri-kpi-grid,
+    body.app-authenticated .gis-summary-grid,
+    body.app-authenticated #publicAssetsMiniDashboard {
+      grid-template-columns: 1fr;
+    }
+
+    body.app-authenticated :where(.mobile-kpi-cell, .dashboard-kpi, .dashboard-kpi-card, .houses-kpi-card, .livestock-kpi-card, .agri-kpi-card, #publicAssetsMiniDashboard > *) {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
   }
 
   body.app-authenticated .mobile-kpi-cell,
@@ -8937,6 +9019,15 @@ body.app-authenticated {
     padding: 0;
     border-radius: var(--ds-radius);
     font-size: 0;
+  }
+
+  body.app-authenticated .mobile-pager-system [data-mobile-pager-nav] {
+    width: auto;
+    min-width: 56px;
+    padding: 0 10px;
+    font-size: 12px;
+    line-height: 1.1;
+    white-space: nowrap;
   }
 
   body.app-authenticated .mobile-pager-system [data-mobile-pager-nav="prev"] {
@@ -10393,8 +10484,17 @@ body.app-authenticated :where(.btn, button, .nav-link, .dropdown-item, .page-lin
   padding: 0 !important;
   gap: 0;
   overflow: visible;
-  line-height: 1;
-}
+    line-height: 1;
+  }
+
+  body.app-authenticated .mobile-pager-system [data-mobile-pager-nav] {
+    width: auto;
+    min-width: 56px;
+    padding: 0 10px;
+    font-size: 12px;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
 
 body.app-authenticated :where(.btn, button, .nav-link, .dropdown-item, .page-link, a[href].btn).r-icon-only > :where(i.fa, i.fa-solid, i.fa-regular, i.fa-brands, i.fas, i.far, i.fab) {
   width: var(--r-icon-md, 18px);
@@ -10461,5 +10561,11 @@ body.app-authenticated :where(.module-filter-card, .person-search-card, .report-
 
   body.app-authenticated :where(.mobile-filter-system:not(.mobile-filter-expanded)) :where(.mobile-filter-action-wrap, .mobile-filter-action, .mobile-filter-extra) * {
     visibility: hidden !important;
+  }
+}
+
+@media (max-width: 820px) {
+  body.app-authenticated #contributionsScreen .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

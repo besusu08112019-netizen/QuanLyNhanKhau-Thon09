@@ -384,7 +384,10 @@
       var hasFilterControl = false;
       var hasActionControl = false;
       var entries = Array.from(container.querySelectorAll('input, select, button')).map(function (control) {
-        var holder = control.closest('.module-field, .person-field, .agri-field, .houses-field, .col-md-3, .col-md-4, .col-md-6, .col-12, .d-flex') || control.parentElement;
+        var actionGroup = control.closest('.module-filter-actions, .person-filter-actions, .livestock-filter-actions, .agri-filter-actions, .houses-filter-actions, .report-actions, .module-placeholder-actions');
+        var holder = actionGroup && actionGroup !== container
+          ? actionGroup
+          : control.closest('.module-field, .person-field, .agri-field, .houses-field, .livestock-filter-field, .col-md-3, .col-md-4, .col-md-6, .col-12, .d-flex') || control.parentElement;
         if (holder && holder.matches('.d-flex') && holder.querySelectorAll('input, select, button').length > 1) holder = control;
         if (holder && holder !== control && holder.querySelectorAll('input, select, button').length > 1 && !holder.matches('.module-field, .person-field, .agri-field, .houses-field, .col-md-3, .col-md-4, .col-md-6, .col-12')) holder = control;
         return {
