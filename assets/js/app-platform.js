@@ -5275,18 +5275,11 @@
 
   function createMenuRenderer(menuRegistry, moduleRegistry, menuService) {
     var mobileScreens = [
+      'dashboard',
       'households',
       'persons',
-      'temporaryResidence',
-      'temporaryAbsence',
-      'movements',
-      'publicAssets',
-      'houses',
-      'businessHouseholds',
-      'agriculture',
-      'livestock',
-      'vehicles',
-      'contributions'
+      'gis',
+      'reports'
     ];
 
     function icon(className) {
@@ -5351,13 +5344,25 @@
       if (menu.dashboardTree) return renderDashboardTree(menu);
       var section = document.createElement('div');
       section.className = 'nav-section';
-      var title = document.createElement('div');
+      section.classList.add('is-open');
+      var title = document.createElement('button');
+      title.type = 'button';
       title.className = 'nav-section-title';
+      title.dataset.mobileMenuGroupToggle = '';
+      title.setAttribute('aria-expanded', 'true');
       title.textContent = menu.label;
+      var caret = document.createElement('b');
+      caret.className = 'nav-section-caret';
+      caret.setAttribute('aria-hidden', 'true');
+      caret.textContent = '\u25be';
+      title.appendChild(caret);
       section.appendChild(title);
+      var list = document.createElement('div');
+      list.className = 'nav-section-items';
       menuService.modulesForMenu(menu.key).forEach(function (module) {
-        section.appendChild(buttonFor(module));
+        list.appendChild(buttonFor(module));
       });
+      section.appendChild(list);
       return section;
     }
 

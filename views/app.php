@@ -76,6 +76,7 @@
     <section class="main-area">
       <header class="topbar gov-topbar">
         <button id="sidebarToggle" class="btn btn-outline-secondary btn-sm d-lg-none" type="button"><i class="fa-solid fa-bars"></i></button>
+        <span class="mobile-topbar-logo state-mark small-mark" aria-hidden="true">09</span>
         <div class="topbar-title-block gov-breadcrumb-block">
           <small id="breadcrumbTrail" class="breadcrumb-trail">Trang chủ / Dashboard</small>
         </div>

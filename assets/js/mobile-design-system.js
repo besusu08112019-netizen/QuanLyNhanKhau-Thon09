@@ -481,6 +481,10 @@
     return !window.matchMedia || window.matchMedia('(max-width: 1024px)').matches;
   }
 
+  function isMobileViewport() {
+    return !window.matchMedia || window.matchMedia('(max-width: 820px)').matches;
+  }
+
   function setSourceTableMode(table, active) {
     table.classList.toggle('mobile-source-table', active);
     if (active) {
@@ -528,6 +532,29 @@
     enhanceFilters(scope);
     enhancePagers(scope);
     enhanceFloating(scope);
+    enhanceMobileMenu(scope);
+  }
+
+  function enhanceMobileMenu(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    var nav = scope.matches && scope.matches('.gov-nav') ? scope : document.querySelector('.gov-nav');
+    if (!nav) return;
+    nav.classList.add('mobile-menu-system');
+    nav.querySelectorAll('.nav-section').forEach(function (section, index) {
+      var title = section.querySelector(':scope > .nav-section-title, :scope > .dashboard-tree-toggle');
+      var items = section.querySelector(':scope > .nav-section-items, :scope > .dashboard-tree-children');
+      if (!title || !items) return;
+      if (!items.id) items.id = 'mobile-menu-group-' + index;
+      title.setAttribute('aria-controls', items.id);
+      if (!title.hasAttribute('aria-expanded')) title.setAttribute('aria-expanded', 'true');
+      if (!section.classList.contains('is-open') && !section.classList.contains('is-collapsed')) section.classList.add('is-open');
+      if (isMobileViewport() && index > 0 && !section.dataset.mobileMenuTouched) {
+        section.classList.add('is-collapsed');
+        section.classList.remove('is-open');
+        title.setAttribute('aria-expanded', 'false');
+      }
+      section.dataset.mobileMenuTouched = 'true';
+    });
   }
 
   var scheduled = false;
@@ -546,6 +573,16 @@
       var filter = toggle.closest('.mobile-filter-system');
       if (filter) filter.classList.toggle('mobile-filter-expanded');
       return;
+    }
+    var menuToggle = event.target.closest('[data-mobile-menu-group-toggle], .dashboard-tree-toggle');
+    if (menuToggle && menuToggle.closest('.gov-nav')) {
+      var section = menuToggle.closest('.nav-section');
+      if (section) {
+        var nextOpen = !section.classList.contains('is-open');
+        section.classList.toggle('is-open', nextOpen);
+        section.classList.toggle('is-collapsed', !nextOpen);
+        menuToggle.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+      }
     }
   });
 

@@ -3,7 +3,7 @@
 const widths = [320, 360, 375, 390, 412, 480, 600, 768, 820, 1024];
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 const mobileScreens = moduleOrderScreens;
-const bottomNavScreens = moduleOrderScreens;
+const bottomNavScreens = ['dashboard', 'households', 'persons', 'gis', 'reports'];
 
 async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
@@ -50,6 +50,21 @@ async function openAuthenticatedApp(page, width) {
   await expect(page.locator('#appView')).not.toHaveClass(/d-none/);
 }
 
+async function clickSidebarModule(page, screen) {
+  const item = page.locator(`.sidebar .nav-link[data-screen="${screen}"]`).first();
+  await item.evaluate((button) => {
+    const section = button.closest('.nav-section');
+    const toggle = section?.querySelector(':scope > .nav-section-title, :scope > .dashboard-tree-toggle');
+    if (section) {
+      section.classList.add('is-open');
+      section.classList.remove('is-collapsed');
+    }
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    button.scrollIntoView({ block: 'center', inline: 'nearest' });
+  });
+  await item.click();
+}
+
 test.describe('responsive system navigation audit', () => {
   for (const width of widths) {
     test(`main modules do not overflow at ${width}px`, async ({ page }) => {
@@ -75,6 +90,11 @@ test.describe('responsive system navigation audit', () => {
             .filter((item) => item.width < 48 || item.height < 48);
           const rowTops = buttons.map((btn) => Math.round(btn.offsetTop || btn.getBoundingClientRect().top));
           const rowSpread = rowTops.length ? Math.max(...rowTops) - Math.min(...rowTops) : 0;
+          const mobileTables = Array.from((active || document).querySelectorAll('.mobile-list-ready > table.mobile-source-table')).map((table) => {
+            const rect = table.getBoundingClientRect();
+            const style = getComputedStyle(table);
+            return { width: Math.round(rect.width), height: Math.round(rect.height), position: style.position };
+          });
           return {
             activeId: active ? active.id : '',
             scrollWidth: Math.ceil(document.documentElement.scrollWidth),
@@ -88,7 +108,8 @@ test.describe('responsive system navigation audit', () => {
             activeCenterOffset: navRect && activeRect ? Math.abs((activeRect.left + activeRect.width / 2) - (navRect.left + navRect.width / 2)) : 0,
             touchFailures,
             rowSpread,
-            navItems
+            navItems,
+            mobileTables
           };
         });
 
@@ -99,11 +120,13 @@ test.describe('responsive system navigation audit', () => {
         if (width <= 820) {
           expect(metrics.navVisible).toBe(true);
           expect(metrics.navDisplay).toBe('flex');
-          expect(metrics.navScrollWidth).toBeGreaterThan(metrics.navClientWidth);
+          expect(metrics.navItems.length).toBeLessThanOrEqual(5);
+          expect(metrics.navScrollWidth).toBeLessThanOrEqual(metrics.navClientWidth + 2);
           expect(metrics.touchFailures).toEqual([]);
           expect(metrics.rowSpread).toBeLessThanOrEqual(2);
           expect(metrics.activeCenterOffset).toBeLessThanOrEqual(Math.max(120, metrics.navClientWidth * 0.42));
           expect(metrics.navItems).toEqual(bottomNavScreens);
+          expect(metrics.mobileTables.every((table) => table.width <= 1 && table.height <= 1 && table.position === 'absolute')).toBe(true);
         }
       }
     });
@@ -165,7 +188,7 @@ test.describe('responsive system navigation audit', () => {
       await expect(page.locator('body')).toHaveClass(/sidebar-open/);
     }
     for (const screen of moduleOrderScreens) {
-      await page.locator(`.sidebar .nav-link[data-screen="${screen}"]`).first().click();
+      await clickSidebarModule(page, screen);
       await page.waitForTimeout(120);
       const sidebarState = await page.evaluate((target) => ({
         appScreen: window.App && window.App.screen,
@@ -187,7 +210,7 @@ test.describe('responsive system navigation audit', () => {
       await expect(page.locator('body')).not.toHaveClass(/sidebar-open/);
     }
 
-    for (const screen of moduleOrderScreens) {
+    for (const screen of bottomNavScreens) {
       await page.evaluate(() => document.querySelectorAll('.toast').forEach((toast) => toast.remove()));
       await page.locator(`.mobile-bottom-nav [data-mobile-screen="${screen}"]`).first().click();
       await page.waitForTimeout(120);
