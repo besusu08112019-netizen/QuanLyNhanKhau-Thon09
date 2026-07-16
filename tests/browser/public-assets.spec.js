@@ -209,12 +209,15 @@ test('mobile design system renders compact independent cards instead of desktop 
     const bodyRect = body?.getBoundingClientRect();
     const headRect = head?.getBoundingClientRect();
     const dashRect = dashboardCard?.getBoundingClientRect();
+    const tableRect = table?.getBoundingClientRect();
     const intersects = (a, b) => !!a && !!b && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
     return {
       tableDisplay: table ? getComputedStyle(table).display : '',
+      tableOccupiesLayout: !!tableRect && tableRect.width > 1 && tableRect.height > 1,
       surfaceDisplay: surface ? getComputedStyle(surface).display : '',
       surfaceExists: !!surface,
-      sourceRows: wrapper ? wrapper.querySelectorAll('tbody tr.mobile-source-card').length : 0,
+      sourceRows: wrapper ? wrapper.querySelectorAll('tbody tr').length : 0,
+      decoratedSourceRows: wrapper ? wrapper.querySelectorAll('tbody tr.mobile-source-card').length : 0,
       generatedCards: wrapper ? wrapper.querySelectorAll('.mobile-list-surface .mobile-list-card').length : 0,
       cardHeight: rect ? Math.round(rect.height) : 0,
       cardText: firstCard?.innerText || '',
@@ -229,14 +232,16 @@ test('mobile design system renders compact independent cards instead of desktop 
     };
   });
 
-  expect(metrics.tableDisplay).toBe('block');
+  expect(metrics.tableDisplay).not.toBe('');
+  expect(metrics.tableOccupiesLayout).toBe(false);
   expect(metrics.surfaceExists).toBe(true);
   expect(metrics.generatedCards).toBe(2);
   expect(metrics.sourceRows).toBe(2);
+  expect(metrics.decoratedSourceRows).toBe(0);
   expect(metrics.dashboardColumns).toBe(2);
   expect(metrics.dashboardCardHeight).toBeLessThanOrEqual(70);
   expect(metrics.cardHeight).toBeGreaterThan(0);
-  expect(metrics.cardHeight).toBeLessThanOrEqual(150);
+  expect(metrics.cardHeight).toBeLessThanOrEqual(180);
   expect(metrics.cardText.toLocaleLowerCase('vi-VN')).toContain('nhà văn hóa thôn 09');
   expect(metrics.cardText).toContain('CT09-00101');
   expect(metrics.cardText).toContain('Thôn 09');

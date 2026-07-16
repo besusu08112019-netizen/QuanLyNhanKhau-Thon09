@@ -261,13 +261,13 @@
       var role = cell.dataset.mobileRole || '';
       var field = cell.dataset.mobileField || '';
       return role === 'address' || role === 'stat' || role === 'badge' || importantFields.has(field);
-    }).slice(0, 4);
+    }).slice(0, 3);
 
     if (status && summary.indexOf(status) < 0 && status !== title && status !== meta) summary.unshift(status);
     row.dataset.mobileTitle = titleTextOf(title, meta);
     row.dataset.mobileCode = meta && !isEmpty(meta) ? textOf(meta) : '';
     row.dataset.mobileStatus = status && !isEmpty(status) ? textOf(status) : '';
-    row.dataset.mobileSummary = summary.slice(0, 4).map(function (cell) {
+    row.dataset.mobileSummary = summary.slice(0, 3).map(function (cell) {
       var label = cell.getAttribute('data-label') || '';
       var value = textOf(cell);
       return label ? label + ': ' + value : value;
@@ -281,6 +281,17 @@
       else if (cell === select) cell.classList.add('mobile-card-select-cell');
       else if (summary.indexOf(cell) >= 0) cell.classList.add('mobile-card-summary-cell');
       else cell.classList.add('mobile-card-hidden-cell');
+    });
+  }
+
+  function clearSourceRowDecoration(row) {
+    row.classList.remove('mobile-source-card', 'mobile-source-empty');
+    delete row.dataset.mobileTitle;
+    delete row.dataset.mobileCode;
+    delete row.dataset.mobileStatus;
+    delete row.dataset.mobileSummary;
+    Array.from(row.children).forEach(function (cell) {
+      cell.classList.remove('mobile-card-title-cell', 'mobile-card-code-cell', 'mobile-card-status-cell', 'mobile-card-action-cell', 'mobile-card-select-cell', 'mobile-card-summary-cell', 'mobile-card-hidden-cell');
     });
   }
 
@@ -343,7 +354,7 @@
       var role = cell.dataset.mobileRole || '';
       var field = cell.dataset.mobileField || '';
       return role === 'address' || role === 'stat' || role === 'badge' || importantFields.has(field);
-    }).slice(0, 5);
+    }).slice(0, 3);
 
     var card = document.createElement('article');
     card.className = 'mobile-list-card';
@@ -596,13 +607,15 @@
     if (!surface) {
       surface = document.createElement('div');
       surface.className = 'mobile-list-surface';
-      surface.setAttribute('aria-hidden', 'true');
       wrapper.insertBefore(surface, table);
     }
+    surface.removeAttribute('aria-hidden');
+    surface.removeAttribute('hidden');
+    surface.hidden = false;
     surface.innerHTML = '';
     Array.from(tbody.children).forEach(function (row) {
       if (row.classList.contains('group-row')) return;
-      decorateRow(row);
+      clearSourceRowDecoration(row);
       surface.appendChild(renderCard(row));
     });
   }
@@ -699,6 +712,7 @@
   window.Thon09MobileDesignSystem = {
     enhance: enhance,
     decorateRow: decorateRow,
+    clearSourceRowDecoration: clearSourceRowDecoration,
     syncIconOnlyControl: syncIconOnlyControl
   };
 })(window, document);

@@ -95,7 +95,7 @@ async function dedupMetrics(page, screenId, tbodyId, pagerId) {
     const tbody = document.querySelector('#' + tbodyId);
     const pager = document.querySelector('#' + pagerId);
     const wrapper = tbody?.closest('.table-responsive');
-    const firstCard = tbody?.querySelector(':scope > tr.mobile-source-card');
+    const firstCard = wrapper?.querySelector(':scope > .mobile-list-surface .mobile-list-card');
     const search = screen?.querySelector('.mobile-filter-system .mobile-search-control');
     const filterTrigger = screen?.querySelector('.mobile-filter-trigger');
     return {
@@ -107,8 +107,8 @@ async function dedupMetrics(page, screenId, tbodyId, pagerId) {
       pagers: screen ? screen.querySelectorAll('#' + pagerId).length : 0,
       pagerChildren: pager ? pager.children.length : 0,
       pagerSystem: pager ? pager.classList.contains('mobile-pager-system') : false,
-      title: firstCard?.dataset.mobileTitle || '',
-      code: firstCard?.dataset.mobileCode || '',
+      title: firstCard?.querySelector('.mobile-card-title')?.textContent?.trim() || '',
+      code: firstCard?.querySelector('.mobile-card-code')?.textContent?.trim() || '',
       searchPlaceholder: search?.getAttribute('placeholder') || '',
       searchVisible: search ? getComputedStyle(search).display !== 'none' && search.getBoundingClientRect().width > 0 : false,
       filterTriggerVisible: filterTrigger ? getComputedStyle(filterTrigger).display !== 'none' : false
@@ -123,7 +123,7 @@ test('mobile render keeps one source row for business households and contributio
   await expect(page.locator('#businessHouseholdRows > tr')).toHaveCount(1);
   await expect.poll(() => dedupMetrics(page, 'businessHouseholdsScreen', 'businessHouseholdRows', 'businessHouseholdPager')).toMatchObject({
     sourceRows: 1,
-    decoratedRows: 1,
+    decoratedRows: 0,
     generatedSurfaces: 1,
     generatedCards: 1,
     nestedTables: 1,
@@ -142,7 +142,7 @@ test('mobile render keeps one source row for business households and contributio
   await expect(page.locator('#contributionsRows > tr')).toHaveCount(1);
   await expect.poll(() => dedupMetrics(page, 'contributionsScreen', 'contributionsRows', 'contributionsPager')).toMatchObject({
     sourceRows: 1,
-    decoratedRows: 1,
+    decoratedRows: 0,
     generatedSurfaces: 1,
     generatedCards: 1,
     nestedTables: 1,
@@ -203,20 +203,19 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
   await expect(page.locator('#temporaryResidenceRows table')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     window.thon09EnhanceDesignSystem?.(document);
-    const row = document.querySelector('#temporaryResidenceRows .mobile-source-empty');
+    const row = document.querySelector('#temporaryResidenceRows .mobile-list-surface .mobile-list-empty');
     return {
       exists: !!row,
-      message: row?.dataset.mobileEmptyMessage || '',
+      message: row?.textContent || '',
       height: row ? Math.round(row.getBoundingClientRect().height) : 0
     };
   })).toMatchObject({
     exists: true
   });
   const emptyState = await page.evaluate(() => {
-    const row = document.querySelector('#temporaryResidenceRows .mobile-source-empty');
-    const visibleEmpty = row?.closest('.table-responsive')?.querySelector('.mobile-list-surface .mobile-list-empty');
+    const visibleEmpty = document.querySelector('#temporaryResidenceRows .mobile-list-surface .mobile-list-empty');
     return {
-      message: row?.dataset.mobileEmptyMessage || visibleEmpty?.textContent || '',
+      message: visibleEmpty?.textContent || '',
       height: visibleEmpty ? Math.round(visibleEmpty.getBoundingClientRect().height) : 0
     };
   });

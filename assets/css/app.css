@@ -7693,9 +7693,16 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-list-ready > table.mobile-source-table {
-    display: block;
-    width: 100%;
-    min-width: 0;
+    display: none;
+    position: absolute;
+    width: 1px;
+    min-width: 1px;
+    height: 1px;
+    max-height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    pointer-events: none;
     border: 0;
   }
 
@@ -7710,10 +7717,7 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-list-ready > table.mobile-source-table > tbody {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    width: 100%;
+    display: table-row-group;
   }
 
   body.app-authenticated .mobile-source-card,
@@ -8614,7 +8618,8 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-list-ready > table.mobile-source-table {
-    position: fixed;
+    display: none;
+    position: absolute;
     left: -10000px;
     top: 0;
     width: 1px;
@@ -8629,10 +8634,26 @@ body.app-authenticated {
   }
 
   body.app-authenticated .mobile-list-surface {
+    position: static;
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--ds-gap);
     width: 100%;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+
+  body.app-authenticated .mobile-list-ready > .mobile-list-surface[hidden] {
+    display: grid !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    clip-path: none !important;
+    white-space: normal !important;
+    visibility: visible !important;
   }
 
   body.app-authenticated .mobile-list-card,
@@ -9333,6 +9354,17 @@ body.app-authenticated .mobile-list-ready > table.mobile-source-table * {
   pointer-events: none;
 }
 
+body.app-authenticated .mobile-list-ready > .mobile-list-surface {
+  position: static;
+  display: grid;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  visibility: visible;
+}
+
 /* Responsive-first UI contract v13: one mobile/tablet system for every module. */
 body.app-authenticated {
   --bp-mobile-max: 820px;
@@ -9435,42 +9467,6 @@ body.app-authenticated {
     text-align: center;
   }
 
-  body.app-authenticated .mobile-list-ready {
-    overflow: visible;
-  }
-
-  body.app-authenticated .mobile-list-ready > table.mobile-source-table {
-    display: none !important;
-    position: absolute !important;
-    inline-size: 1px !important;
-    width: 1px !important;
-    block-size: 1px !important;
-    height: 1px !important;
-    overflow: hidden !important;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-  }
-
-  body.app-authenticated .mobile-list-surface {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--r-space-3);
-    width: 100%;
-  }
-
-  body.app-authenticated .mobile-list-card,
-  body.app-authenticated .mobile-list-empty {
-    display: grid;
-    gap: var(--r-space-2);
-    width: 100%;
-    padding: var(--r-space-3);
-    border: 1px solid var(--line);
-    border-radius: var(--r-radius-lg);
-    background: var(--card);
-    box-shadow: var(--r-shadow-card);
-  }
-
-  body.app-authenticated .mobile-list-card-head,
   body.app-authenticated .module-list-head,
   body.app-authenticated .person-list-head,
   body.app-authenticated .report-result-head,
@@ -9481,76 +9477,6 @@ body.app-authenticated {
     justify-content: space-between;
     gap: var(--r-space-2);
     min-width: 0;
-  }
-
-  body.app-authenticated .mobile-list-card-head {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    justify-content: stretch;
-    justify-items: start;
-    width: 100%;
-  }
-
-  body.app-authenticated .mobile-card-title {
-    display: block;
-    flex: none;
-    width: 100%;
-    min-width: 0;
-    overflow-wrap: break-word;
-    white-space: normal;
-    overflow: visible;
-    word-break: normal;
-    text-overflow: clip;
-    color: var(--ink);
-    font-size: var(--r-font-md);
-    line-height: 1.35;
-  }
-
-  body.app-authenticated .mobile-card-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--r-space-2);
-  }
-
-  body.app-authenticated .mobile-card-info {
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  body.app-authenticated .mobile-card-info-label {
-    color: var(--muted);
-    font-size: var(--r-font-xs);
-    font-weight: 700;
-  }
-
-  body.app-authenticated .mobile-card-info-value {
-    overflow-wrap: break-word;
-    color: var(--ink);
-    font-size: var(--r-font-sm);
-  }
-
-  body.app-authenticated .mobile-card-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px;
-    max-width: 100%;
-    margin-left: 0;
-    justify-self: end;
-  }
-
-  body.app-authenticated .mobile-card-action {
-    min-width: var(--r-touch);
-    width: var(--r-touch);
-    height: var(--r-touch);
-    padding: 0;
-    overflow: hidden;
-  }
-
-  body.app-authenticated .mobile-card-action span,
-  body.app-authenticated .mobile-card-action:not(:has(i)) {
-    font-size: 0;
   }
 
   body.app-authenticated .modal-dialog {
