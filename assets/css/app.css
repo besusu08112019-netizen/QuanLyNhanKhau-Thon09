@@ -9709,3 +9709,41 @@ body.app-authenticated {
     font-size: 17px;
   }
 }
+
+/* Filter visibility contract: desktop never shows compact filter icons. */
+@media (min-width: 1024px) {
+  body.app-authenticated :where(.mobile-filter-trigger, .mobile-filter-toggle, .mobile-filter-shell) {
+    display: none !important;
+  }
+
+  body.app-authenticated .mobile-filter-system {
+    position: static !important;
+  }
+
+  body.app-authenticated .mobile-filter-system .mobile-filter-extra {
+    position: static !important;
+    display: revert !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: normal !important;
+    visibility: visible !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.app-authenticated .mobile-filter-system:not(.mobile-filter-expanded) .mobile-filter-extra {
+    display: none !important;
+  }
+
+  body.app-authenticated .mobile-filter-system:not(.mobile-filter-expanded) .mobile-filter-trigger[data-mobile-filter-toggle] {
+    display: inline-grid !important;
+  }
+
+  body.app-authenticated .mobile-filter-system.mobile-filter-expanded .mobile-filter-trigger,
+  body.app-authenticated .mobile-filter-system.mobile-filter-expanded .mobile-filter-toggle {
+    display: none !important;
+  }
+}

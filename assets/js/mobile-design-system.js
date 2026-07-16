@@ -411,7 +411,7 @@
       if (searchEntry || hasFilterControl) container.classList.add('mobile-filter-system');
       else if (hasActionControl) container.classList.add('mobile-action-system');
       var existingToggle = container.querySelector(':scope > [data-mobile-filter-toggle], :scope > .mobile-filter-toggle, :scope > .mobile-filter-shell, :scope > .mobile-filter-trigger');
-      if (hasExtra && hasFilterControl && !existingToggle) {
+      if (hasExtra && hasFilterControl && isFilterCompactViewport() && !existingToggle) {
         var toggle = document.createElement('button');
         toggle.type = 'button';
         toggle.className = 'mobile-filter-trigger';
@@ -483,6 +483,10 @@
 
   function isMobileViewport() {
     return !window.matchMedia || window.matchMedia('(max-width: 820px)').matches;
+  }
+
+  function isFilterCompactViewport() {
+    return !window.matchMedia || window.matchMedia('(max-width: 1023px)').matches;
   }
 
   function setSourceTableMode(table, active) {

@@ -179,6 +179,43 @@ test.describe('responsive system navigation audit', () => {
     await expect(page.locator('body')).not.toHaveClass(/sidebar-open/);
   });
 
+  test('filter icons follow desktop and compact responsive contract', async ({ page }) => {
+    for (const width of [1024, 1366]) {
+      await openAuthenticatedApp(page, width);
+      for (const screen of mobileScreens) {
+        await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+        await page.waitForTimeout(120);
+        const desktopFilterIcons = await page.evaluate(() => Array.from(document.querySelectorAll('.screen.active :is(.mobile-filter-trigger, .mobile-filter-toggle, .mobile-filter-shell)')).filter((node) => {
+          const style = getComputedStyle(node);
+          const rect = node.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 1 && rect.height > 1;
+        }).length);
+        expect(desktopFilterIcons).toBe(0);
+      }
+    }
+
+    await openAuthenticatedApp(page, 390);
+    for (const screen of mobileScreens) {
+      await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+      await page.waitForTimeout(120);
+      const compactState = await page.evaluate(() => Array.from(document.querySelectorAll('.screen.active .mobile-filter-system')).map((filter) => {
+        const icon = filter.querySelector('.mobile-filter-trigger, .mobile-filter-toggle');
+        const iconVisible = !!icon && (() => {
+          const style = getComputedStyle(icon);
+          const rect = icon.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 1 && rect.height > 1;
+        })();
+        const extraVisible = Array.from(filter.querySelectorAll('.mobile-filter-extra')).some((node) => {
+          const style = getComputedStyle(node);
+          const rect = node.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 1 && rect.height > 1;
+        });
+        return { iconVisible, extraVisible };
+      }));
+      expect(compactState.every((item) => !(item.iconVisible && item.extraVisible))).toBe(true);
+    }
+  });
+
   test('module navigation clicks activate the requested screens', async ({ page }) => {
     await openAuthenticatedApp(page, 390);
     const isMobile = await page.evaluate(() => window.innerWidth <= 820);
