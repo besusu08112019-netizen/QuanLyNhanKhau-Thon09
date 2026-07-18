@@ -946,23 +946,15 @@
     var metadata = (moduleMeta && moduleMeta.kpis) || [];
     var kpis = cards.map(function (card, index) {
       var kpiMeta = metadata[index] || {};
-      var label = text(card.querySelector('.dashboard-kpi-label, p, span, small'));
-      var value = text(card.querySelector('.dashboard-kpi-value strong, strong, b'));
-      var note = text(card.querySelector('.dashboard-kpi-value span, em, small'));
+      var label = text(card.getAttribute('data-kpi-label') || (card.querySelector('.dashboard-kpi-label') && card.querySelector('.dashboard-kpi-label').textContent));
+      var value = text(card.getAttribute('data-kpi-value') || (card.querySelector('.dashboard-kpi-value strong') && card.querySelector('.dashboard-kpi-value strong').textContent));
+      var note = text(card.getAttribute('data-kpi-unit') || (card.querySelector('.dashboard-kpi-unit') && card.querySelector('.dashboard-kpi-unit').textContent));
       return {
         label: label || kpiMeta.label || 'Tổng quan ' + (index + 1),
         value: withKpiUnit(value || '0', note || kpiMeta.unit),
         meta: kpiMeta.meta || note || 'Theo dữ liệu ' + ((screen && screen.getAttribute('data-module-dashboard')) || 'dashboard'),
         icon: firstFaIcon(card, kpiMeta.icon || (moduleMeta && moduleMeta.icon))
       };
-    });
-    if (!kpis.length) metadata.forEach(function (item) {
-      kpis.push({
-        label: item.label,
-        value: withKpiUnit('0', item.unit),
-        meta: item.meta || 'Đang cập nhật',
-        icon: item.icon || (moduleMeta && moduleMeta.icon)
-      });
     });
     return kpis.slice(0, 4);
   }
@@ -1011,16 +1003,6 @@
     host.textContent = '';
     var kpis = readKpis(screen, meta);
     var summaryItems = readSummaryItems(screen);
-    if (!kpis.length) {
-      kpis = (meta.kpis || []).map(function (item) {
-        return {
-          label: item.label,
-          value: withKpiUnit('0', item.unit),
-          meta: item.meta || 'Đang cập nhật',
-          icon: item.icon || meta.icon
-        };
-      });
-    }
 
     var primary = el('div', 'app-v2-flow');
     var secondary = el('div', 'app-v2-flow');
@@ -1028,7 +1010,7 @@
     var statSection = AppSection({ title: 'Chỉ số', meta: 'Realtime' });
     var statGrid = el('div', 'app-v2-grid app-v2-dashboard-kpis');
     kpis.forEach(function (item) { statGrid.appendChild(AppStatCard(item)); });
-    append(statSection, [statGrid]);
+    append(statSection, [kpis.length ? statGrid : AppEmptyState({ message: 'Đang tải chỉ số Dashboard', icon: 'fa-chart-simple' })]);
 
     var actionSection = AppSection({ title: 'Truy cập nhanh', meta: 'Module' });
     append(actionSection, [AppList((meta.actions || []).map(function (item) {

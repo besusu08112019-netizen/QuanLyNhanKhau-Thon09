@@ -682,9 +682,16 @@ final class Dashboard extends BaseModel
 
     public function reportsDashboard(array $filters = []): array
     {
+        $reports = ['Báo cáo nhân khẩu','Báo cáo kinh doanh','Báo cáo xe','Báo cáo chăn nuôi','Báo cáo GIS'];
+        $exports = ['PDF','Excel','In trực tiếp'];
+        $populationReports = array_filter($reports, fn($label) => str_contains($label, 'nhân khẩu'));
+        $domainReports = array_filter($reports, fn($label) => !str_contains($label, 'nhân khẩu') && !str_contains($label, 'GIS'));
         return ['module'=>'reports','title'=>'Dashboard Báo cáo','kpis'=>[
-            $this->kpi('Báo cáo nhân khẩu',1,'nhóm','fa-users','blue'),$this->kpi('Báo cáo kinh doanh',1,'nhóm','fa-store','green'),$this->kpi('Báo cáo xe',1,'nhóm','fa-car','orange'),$this->kpi('Báo cáo chăn nuôi',1,'nhóm','fa-paw','purple'),$this->kpi('Báo cáo GIS',1,'nhóm','fa-map-location-dot','cyan'),
-        ],'reports'=>['Báo cáo nhân khẩu','Báo cáo kinh doanh','Báo cáo xe','Báo cáo chăn nuôi','Báo cáo GIS'],'exports'=>['PDF','Excel','In trực tiếp'],'generatedAt'=>date('c')];
+            $this->kpi('Nhóm báo cáo khả dụng', count($reports), 'nhóm', 'fa-layer-group', 'blue'),
+            $this->kpi('Định dạng xuất', count($exports), 'loại', 'fa-file-export', 'green'),
+            $this->kpi('Báo cáo dân cư', count($populationReports), 'nhóm', 'fa-users', 'cyan'),
+            $this->kpi('Báo cáo nghiệp vụ', count($domainReports), 'nhóm', 'fa-chart-pie', 'orange'),
+        ],'reports'=>$reports,'exports'=>$exports,'generatedAt'=>date('c')];
     }
 
     private function kpi(string $label, mixed $value, string $unit, string $icon, string $tone): array
