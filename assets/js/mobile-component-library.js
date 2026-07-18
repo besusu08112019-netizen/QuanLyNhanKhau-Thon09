@@ -368,6 +368,38 @@
       });
       textWrap.appendChild(tags);
     }
+    if (options.details && options.details.length) {
+      var visibleDetails = options.details.slice(0, 1);
+      var extraDetails = options.details.slice(1);
+      var details = el('dl', 'app-v2-record-details');
+      visibleDetails.forEach(function (field) {
+        var item = el('div', 'app-v2-record-field');
+        var term = el('dt');
+        var value = el('dd');
+        term.textContent = field.label || '';
+        value.textContent = field.value || '';
+        append(item, [term, value]);
+        details.appendChild(item);
+      });
+      textWrap.appendChild(details);
+      if (extraDetails.length) {
+        var more = el('details', 'app-v2-record-more');
+        var summary = el('summary');
+        var moreDetails = el('dl', 'app-v2-record-more-details');
+        summary.textContent = 'Thêm thông tin';
+        extraDetails.forEach(function (field) {
+          var item = el('div', 'app-v2-record-field');
+          var term = el('dt');
+          var value = el('dd');
+          term.textContent = field.label || '';
+          value.textContent = field.value || '';
+          append(item, [term, value]);
+          moreDetails.appendChild(item);
+        });
+        append(more, [summary, moreDetails]);
+        textWrap.appendChild(more);
+      }
+    }
     append(card, [iconWrap, textWrap]);
     if (options.action) append(card, [AppIconButton({ icon: 'fa-ellipsis', label: 'Thao tác', action: options.action })]);
     return card;
@@ -856,33 +888,113 @@
   }
 
   function countRecords(screen) {
-    var rows = screen.querySelectorAll('tbody tr');
+    var rows = sourceRows(screen);
     if (rows.length) return rows.length;
     var cards = screen.querySelectorAll('.houses-card-grid > *, .livestock-card-grid > *, .agri-card-grid > *, [id$="Grid"] > *');
     if (cards.length) return cards.length;
     return 0;
   }
 
+  function cleanLabel(value) {
+    return text(value).replace(/\s+/g, ' ').replace(/[:：]+$/, '').trim();
+  }
+
+  function isActionLabel(label) {
+    return /^(thao tác|actions?|chọn|checkbox)$/i.test(cleanLabel(label));
+  }
+
+  function isDataRow(row) {
+    if (!row || !row.children || row.children.length <= 1) return false;
+    var joined = text(row);
+    if (!joined) return false;
+    return true;
+  }
+
+  function tableHeaders(row) {
+    var table = row && row.closest ? row.closest('table') : null;
+    if (!table) return [];
+    return Array.from(table.querySelectorAll('thead th')).map(cleanLabel);
+  }
+
+  function rowFields(row) {
+    var headers = tableHeaders(row);
+    return Array.from(row.children).map(function (cell, index) {
+      var label = cleanLabel(cell.getAttribute('data-label') || headers[index] || '');
+      var value = text(cell);
+      return { label: label, value: value };
+    }).filter(function (field) {
+      return field.value && !isActionLabel(field.label);
+    });
+  }
+
+  function sourceRows(screen) {
+    var tableRows = Array.from(screen.querySelectorAll('tbody tr'));
+    var directRows = Array.from(screen.querySelectorAll('[id$="Rows"] > *')).filter(function (node) {
+      return node.tagName !== 'TR' && !(node.closest && node.closest('tbody'));
+    });
+    return tableRows.concat(directRows).filter(isDataRow);
+  }
+
+  function matchesAny(value, patterns) {
+    var normalized = cleanLabel(value).toLowerCase();
+    return (patterns || []).some(function (pattern) {
+      return normalized.indexOf(cleanLabel(pattern).toLowerCase()) >= 0;
+    });
+  }
+
+  function pickField(fields, labels) {
+    return (fields || []).find(function (field) {
+      return matchesAny(field.label, labels);
+    });
+  }
+
+  function recordTitle(fields, meta, index) {
+    var titleLabels = (meta.titleLabels || []).concat(['Họ tên', 'Họ và tên', 'Tên', 'Chủ hộ', 'Tên hộ', 'Tên công trình', 'Tên tài sản', 'Cơ sở', 'Mã hộ', 'Mã nhân khẩu', 'Mã thửa', 'Biển số']);
+    var titleField = pickField(fields, titleLabels);
+    if (titleField && titleField.value) return titleField.value;
+    var fallback = fields.find(function (field) {
+      return field.value.length > 2 && !/^\d+$/.test(field.value);
+    });
+    return fallback ? fallback.value : meta.title + ' #' + (index + 1);
+  }
+
+  function recordMeta(fields, title, meta) {
+    var metaLabels = (meta.metaLabels || []).concat(['Địa chỉ', 'Mã hộ', 'CCCD', 'Khu', 'Khu vực', 'Trạng thái', 'Loại', 'Diện tích']);
+    var selected = fields.filter(function (field) {
+      return field.value !== title && matchesAny(field.label, metaLabels);
+    }).slice(0, 4);
+    if (!selected.length) {
+      selected = fields.filter(function (field) {
+        return field.value !== title && !/^(stt|#)$/i.test(cleanLabel(field.label));
+      }).slice(0, 4);
+    }
+    return selected.map(function (field) {
+      return field.label ? field.label + ': ' + field.value : field.value;
+    }).join(' - ') || meta.subtitle;
+  }
+
   function sourceRecords(screen, meta) {
-    var rows = Array.from(screen.querySelectorAll('tbody tr')).slice(0, 6);
+    var rows = sourceRows(screen);
     if (rows.length) {
       return rows.map(function (row, index) {
-        var cells = Array.from(row.children).map(function (cell) { return text(cell); }).filter(Boolean);
-        var joined = cells.join(' ');
+        var fields = rowFields(row);
+        var joined = fields.map(function (field) { return field.value; }).join(' ');
         var badges = [];
         if (/Tạm trú/i.test(joined)) badges.push({ label: 'Tạm trú', tone: 'warning' });
         if (/Tạm vắng|Đi vắng/i.test(joined)) badges.push({ label: 'Tạm vắng', tone: 'danger' });
         if (/Thường trú|Ở nhà/i.test(joined) && !badges.length) badges.push({ label: 'Thường trú', tone: 'success' });
+        var title = recordTitle(fields, meta, index);
         return {
-          title: cells.find(function (item) { return item.length > 2 && !/^\d+$/.test(item); }) || meta.title + ' #' + (index + 1),
-          meta: cells.slice(0, 4).join(' - ') || meta.subtitle,
+          title: title,
+          meta: recordMeta(fields, title, meta),
           icon: meta.icon,
           action: screen.id.replace(/Screen$/, ''),
-          badges: badges
+          badges: badges,
+          details: fields.filter(function (field) { return !/^(stt|#)$/i.test(cleanLabel(field.label)); })
         };
       });
     }
-    var cards = Array.from(screen.querySelectorAll('.houses-card-grid > *, .livestock-card-grid > *, .agri-card-grid > *, [id$="Grid"] > *')).slice(0, 6);
+    var cards = Array.from(screen.querySelectorAll('.houses-card-grid > *, .livestock-card-grid > *, .agri-card-grid > *, [id$="Grid"] > *'));
     if (cards.length) {
       return cards.map(function (card, index) {
         var title = text(card.querySelector('h3, h4, strong, .card-title')) || meta.title + ' #' + (index + 1);
@@ -892,7 +1004,8 @@
           meta: body.slice(0, 120) || meta.subtitle,
           icon: meta.icon,
           action: screen.id.replace(/Screen$/, ''),
-          badges: []
+          badges: [],
+          details: body ? [{ label: 'Nội dung', value: body }] : []
         };
       });
     }
@@ -903,7 +1016,7 @@
 
   function scopedCount(screen, scope) {
     if (!scope || !scope.match) return 0;
-    return Array.from(screen.querySelectorAll('tbody tr')).filter(function (row) {
+    return sourceRows(screen).filter(function (row) {
       return text(row).indexOf(scope.match) >= 0;
     }).length;
   }
@@ -1091,6 +1204,27 @@
     });
   }
 
+  function syncAfterDataRequests() {
+    if (typeof window.request !== 'function' || window.request.__appV2Synced) return;
+    var baseRequest = window.request;
+    var syncedRequest = function () {
+      var result = baseRequest.apply(this, arguments);
+      if (result && typeof result.finally === 'function') {
+        return result.finally(function () { schedule(); });
+      }
+      schedule();
+      return result;
+    };
+    syncedRequest.__appV2Synced = true;
+    window.request = syncedRequest;
+  }
+
+  function scheduleDataSync() {
+    schedule();
+    window.setTimeout(schedule, 80);
+    window.setTimeout(schedule, 240);
+  }
+
   document.addEventListener('click', function (event) {
     var target = event.target.closest('.app-v2-button[data-screen], .app-v2-icon-button[data-screen], .app-v2-chip[data-screen], .app-v2-tab[data-screen], .app-v2-fab[data-screen], .app-v2-bottom-nav button[data-screen]');
     var proxy = event.target.closest('[data-app-v2-proxy-click]');
@@ -1112,15 +1246,21 @@
   if (mobileQuery && mobileQuery.addEventListener) mobileQuery.addEventListener('change', schedule);
   else window.addEventListener('resize', schedule, { passive: true });
 
+  syncAfterDataRequests();
+  document.addEventListener('thon09:screen-change', scheduleDataSync);
+  document.addEventListener('thon09:module-state-change', schedule);
+  document.addEventListener('thon09:app-state-change', schedule);
+
   if (window.MutationObserver) {
     new MutationObserver(function (mutations) {
       var shouldRender = mutations.some(function (mutation) {
         if (mutation.target && mutation.target.closest && mutation.target.closest('.app-v2-page')) return false;
         if (mutation.target && mutation.target.id === 'dashboardKpis') return true;
+        if (mutation.target && mutation.target.matches && mutation.target.matches('tbody, [id$="Rows"], [id$="Grid"]')) return true;
         return Array.from(mutation.addedNodes || []).some(function (node) {
           if (!node || node.nodeType !== 1) return false;
           if (node.closest && node.closest('.app-v2-page')) return false;
-          if (node.matches && node.matches('.screen, .module-dashboard-screen')) return true;
+          if (node.matches && node.matches('.screen, .module-dashboard-screen, tbody, tbody tr, tr, [id$="Rows"], [id$="Grid"]')) return true;
           return node.querySelector && Boolean(node.querySelector('.screen, .module-dashboard-screen, tbody tr, [id$="Rows"], [id$="Grid"]'));
         });
       });

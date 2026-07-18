@@ -16,11 +16,19 @@ async function mockApis(page) {
     if (path.includes('/api/dashboard')) return route.fulfill(payload({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() }));
     if (path.includes('/api/gis')) return route.fulfill(payload({ items: [], total: 0, metrics: {}, charts: {} }));
     if (path === '/api/households') return route.fulfill(payload({
-      items: [{ id: 1, code: 'H09-0001', headName: 'NGUYEN VAN AN', address: 'Thon 09, xa Hong Phong', atHome: 4, away: 1, householdType: 'Ho thuong tru' }],
-      total: 1, page: 1, pageSize: 20, totalPages: 1
+      items: Array.from({ length: 8 }, (_, index) => ({
+        id: index + 1,
+        household_code: `H09-000${index + 1}`,
+        head_citizen_name: index === 0 ? 'NGUYEN VAN AN' : `HO TEST ${index + 1}`,
+        address: 'Thon 09, xa Hong Phong',
+        at_home_count: 4,
+        away_count: 1,
+        household_type: 'Ho thuong tru'
+      })),
+      total: 8, page: 1, pageSize: 20, totalPages: 1
     }));
     if (path === '/api/persons') return route.fulfill(payload({
-      items: [{ id: 1, householdCode: 'H09-0001', citizenCode: 'NK-0001', fullName: 'TRAN THI BINH', relationship: 'Chu ho', dateOfBirth: '1985-01-01', gender: 'Nu', identityNumber: '001185000001', residencyStatus: 'Thuong tru' }],
+      items: [{ id: 1, household_code: 'H09-0001', citizen_code: 'NK-0001', full_name: 'TRAN THI BINH', relationship: 'Chu ho', date_of_birth: '1985-01-01', gender: 'Nu', identity_number: '001185000001', residency_status: 'Thuong tru' }],
       total: 1, page: 1, pageSize: 20, totalPages: 1
     }));
     if (path === '/api/household-business') return route.fulfill(payload({
@@ -143,4 +151,27 @@ test.describe('mobile tablet UI redesign contract', () => {
       }
     });
   }
+
+  test('mobile V2 record cards preserve API data from shared module renderers', async ({ page }) => {
+    await openApp(page, 390);
+    const expectations = [
+      { screen: 'households', selector: '#householdRows', text: 'NGUYEN VAN AN' },
+      { screen: 'persons', selector: '#personRows', text: 'TRAN THI BINH' },
+      { screen: 'businessHouseholds', selector: '#businessHouseholdRows', text: 'PHAM VAN BICH' },
+      { screen: 'agriculture', selector: '#agriRows', text: 'DO THI DUNG' },
+      { screen: 'livestock', selector: '#livestockRows', text: 'LE VAN CUONG' },
+      { screen: 'publicAssets', selector: '#publicAssetsRows', text: 'Nha van hoa thon' }
+    ];
+
+    for (const item of expectations) {
+      await navigate(page, item.screen);
+      await expect(page.locator(item.selector)).toContainText(item.text);
+      await expect(page.locator(`#${item.screen}Screen .app-v2-module-screen`)).toContainText(item.text);
+    }
+
+    await navigate(page, 'households');
+    await expect(page.locator('#householdRows > tr')).toHaveCount(8);
+    await expect(page.locator('#householdsScreen .app-v2-record-card')).toHaveCount(8);
+    await expect(page.locator('#householdsScreen .app-v2-record-details')).toHaveCount(8);
+  });
 });

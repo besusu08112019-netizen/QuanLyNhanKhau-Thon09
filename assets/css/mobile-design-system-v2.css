@@ -802,6 +802,58 @@
     margin-top: var(--app-space-2);
   }
 
+  body.app-authenticated .app-v2-record-details {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--app-space-2);
+    margin: var(--app-space-3) 0 0;
+  }
+
+  body.app-authenticated .app-v2-record-field {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  body.app-authenticated .app-v2-record-field dt {
+    color: var(--app-color-muted);
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1.25;
+  }
+
+body.app-authenticated .app-v2-record-field dd {
+  margin: 0;
+  color: var(--app-color-text);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+body.app-authenticated .app-v2-record-more {
+  margin-top: var(--app-space-3);
+  min-width: 0;
+}
+
+body.app-authenticated .app-v2-record-more summary {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--app-color-primary);
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+body.app-authenticated .app-v2-record-more-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--app-space-2);
+  margin: var(--app-space-2) 0 0;
+}
+
   body.app-authenticated .app-v2-action-row {
     display: flex;
     align-items: center;
