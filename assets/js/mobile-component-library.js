@@ -413,21 +413,97 @@
     return metrics && Object.prototype.hasOwnProperty.call(metrics, key) ? metrics[key] : 0;
   }
 
+  function metricValueAny(metrics, keys) {
+    for (var i = 0; i < (keys || []).length; i += 1) {
+      if (metrics && Object.prototype.hasOwnProperty.call(metrics, keys[i])) return metrics[keys[i]];
+    }
+    return 0;
+  }
+
+  function percent(value, total) {
+    var denominator = Number(total || 0);
+    if (!denominator) return '0%';
+    return Math.round(Number(value || 0) * 1000 / denominator) / 10 + '%';
+  }
+
+  function normalizeChartItems(items) {
+    return (Array.isArray(items) ? items : []).map(function (item) {
+      return { label: item.label || 'Khác', value: Number(item.value || 0) };
+    }).filter(function (item) {
+      return item.label && item.value > 0;
+    });
+  }
+
+  function AppDashboardChart(options) {
+    var items = normalizeChartItems(options.items);
+    var max = items.reduce(function (largest, item) { return Math.max(largest, item.value); }, 0);
+    if (!items.length || !max) return null;
+    var list = el('div', 'app-v2-chart-list');
+    items.forEach(function (item) {
+      var row = el('div', 'app-v2-chart-row');
+      var label = el('span', 'app-v2-chart-label');
+      var meter = document.createElement('meter');
+      var value = el('strong', 'app-v2-chart-value');
+      label.textContent = item.label;
+      meter.className = 'app-v2-chart-meter';
+      meter.min = 0;
+      meter.max = max;
+      meter.value = item.value;
+      value.textContent = number(item.value);
+      append(row, [label, meter, value]);
+      list.appendChild(row);
+    });
+    return AppCard({ title: options.title, body: list });
+  }
+
   function dashboardData() {
     var summary = window.App && window.App.dashboardSummary ? window.App.dashboardSummary : {};
     var metrics = summary.metrics || {};
+    var charts = summary.charts || {};
     var generatedAt = summary.generatedAt || text(document.getElementById('dashboardGeneratedAt') && document.getElementById('dashboardGeneratedAt').textContent);
     var alerts = Array.isArray(summary.alerts) ? summary.alerts.slice(0, 4) : [];
     var tasks = Array.isArray(summary.tasks) ? summary.tasks.slice(0, 4) : [];
     var gis = summary.gis || {};
     var profiles = summary.profiles || {};
+    var totalCitizens = Number(metricValueAny(metrics, ['total_citizens', 'population', 'citizens']) || 0);
+    var totalHouseholds = Number(metricValueAny(metrics, ['total_households', 'households']) || 0);
+    var insured = Number(metricValueAny(metrics, ['health_insurance_count', 'insured_count', 'health_insurance']) || 0);
+    var male = Number(metricValue(metrics, 'male_count') || 0);
+    var female = Number(metricValue(metrics, 'female_count') || 0);
+    var temporary = Number(metricValueAny(metrics, ['temporary_count', 'temporary_residence_count']) || 0);
+    var away = Number(metricValueAny(metrics, ['away_count', 'temporary_absence_count']) || 0);
+    var poor = Number(metricValue(metrics, 'poor_households') || 0);
+    var nearPoor = Number(metricValue(metrics, 'near_poor_households') || 0);
+    var partyMembers = Number(metricValue(metrics, 'party_member_count') || 0);
+    var children = Number(metricValue(metrics, 'children_count') || 0);
+    var elderly = Number(metricValue(metrics, 'elderly_count') || 0);
+    var workingAge = Number(metricValue(metrics, 'working_age_count') || 0);
     return {
       generatedAt: generatedAt || 'Đang cập nhật dữ liệu',
       stats: [
-        { label: 'Hộ gia đình', value: number(metricValue(metrics, 'households')), meta: 'Đang quản lý', icon: 'fa-house-chimney' },
-        { label: 'Nhân khẩu', value: number(metricValue(metrics, 'population')), meta: 'Tổng hiện có', icon: 'fa-users' },
-        { label: 'Nam', value: number(metricValue(metrics, 'male_count')), meta: 'Theo giới tính', icon: 'fa-mars' },
-        { label: 'Nữ', value: number(metricValue(metrics, 'female_count')), meta: 'Theo giới tính', icon: 'fa-venus' }
+        { label: 'Hộ gia đình', value: number(totalHouseholds), meta: 'Tổng hộ đang quản lý', icon: 'fa-house-chimney' },
+        { label: 'Nhân khẩu', value: number(totalCitizens), meta: 'Tổng nhân khẩu hiện có', icon: 'fa-users' },
+        { label: 'Nam', value: number(male), meta: percent(male, totalCitizens) + ' tổng nhân khẩu', icon: 'fa-mars' },
+        { label: 'Nữ', value: number(female), meta: percent(female, totalCitizens) + ' tổng nhân khẩu', icon: 'fa-venus' },
+        { label: 'Đảng viên', value: number(partyMembers), meta: 'Theo hồ sơ nhân khẩu', icon: 'fa-star' },
+        { label: 'Trẻ em', value: number(children), meta: percent(children, totalCitizens) + ' tổng nhân khẩu', icon: 'fa-child-reaching' },
+        { label: 'Người cao tuổi', value: number(elderly), meta: percent(elderly, totalCitizens) + ' tổng nhân khẩu', icon: 'fa-person-cane' },
+        { label: 'Lao động', value: number(workingAge), meta: percent(workingAge, totalCitizens) + ' tổng nhân khẩu', icon: 'fa-briefcase' },
+        { label: 'BHYT', value: number(insured) + ' / ' + number(totalCitizens), meta: percent(insured, totalCitizens) + ' đã tham gia', icon: 'fa-notes-medical' },
+        { label: 'Tạm trú', value: number(temporary), meta: 'Nhân khẩu tạm trú', icon: 'fa-location-dot' },
+        { label: 'Tạm vắng', value: number(away), meta: 'Nhân khẩu tạm vắng', icon: 'fa-person-walking-arrow-right' },
+        { label: 'Hộ nghèo', value: number(poor), meta: 'Theo phân loại hộ', icon: 'fa-hand-holding-heart' },
+        { label: 'Hộ cận nghèo', value: number(nearPoor), meta: 'Theo phân loại hộ', icon: 'fa-hands-holding' }
+      ],
+      charts: [
+        { title: 'Cơ cấu Nam / Nữ', items: normalizeChartItems(charts.population).length ? charts.population : [{ label: 'Nam', value: male }, { label: 'Nữ', value: female }] },
+        { title: 'Cơ cấu độ tuổi', items: charts.ages || [] },
+        { title: 'Bảo hiểm y tế', items: [{ label: 'Có BHYT', value: insured }, { label: 'Chưa có BHYT', value: Math.max(totalCitizens - insured, 0) }] },
+        { title: 'Tạm trú / Tạm vắng', items: [{ label: 'Tạm trú', value: temporary }, { label: 'Tạm vắng', value: away }] },
+        { title: 'Biến động', items: charts.monthlyChanges || [] },
+        { title: 'Hộ nghèo / Cận nghèo', items: normalizeChartItems(charts.poverty).length ? charts.poverty : [{ label: 'Hộ nghèo', value: poor }, { label: 'Hộ cận nghèo', value: nearPoor }] },
+        { title: 'Lao động', items: charts.labor || charts.occupations || [] },
+        { title: 'Hộ gia đình', items: charts.households || [] }
       ],
       quickActions: [
         { title: 'Hộ gia đình', subtitle: 'Tra cứu và cập nhật hồ sơ hộ', icon: 'fa-house-user', action: 'households' },
@@ -1247,6 +1323,17 @@
     data.stats.forEach(function (item) { statGrid.appendChild(AppStatCard(item)); });
     append(statSection, [statGrid]);
 
+    var chartCards = (data.charts || []).map(function (item) {
+      return AppDashboardChart(item);
+    }).filter(Boolean);
+    var chartSection = null;
+    if (chartCards.length) {
+      chartSection = AppSection({ title: 'Biểu đồ', meta: number(chartCards.length) + ' nhóm dữ liệu' });
+      var chartGrid = el('div', 'app-v2-grid app-v2-dashboard-charts');
+      chartCards.forEach(function (card) { chartGrid.appendChild(card); });
+      append(chartSection, [chartGrid]);
+    }
+
     var actionSection = AppSection({ title: 'Thao tác nhanh', meta: '4 mục chính' });
     var actionList = el('div', 'app-v2-list');
     data.quickActions.forEach(function (item) { actionList.appendChild(listItem(item)); });
@@ -1255,7 +1342,7 @@
     var layout = el('div', 'app-v2-dashboard-layout');
     var primary = el('div', 'app-v2-section');
     var secondary = el('div', 'app-v2-section');
-    append(primary, [statSection, actionSection]);
+    append(primary, chartSection ? [statSection, chartSection, actionSection] : [statSection, actionSection]);
 
     var panelSection = AppSection({ title: 'Theo dõi', meta: 'Tóm tắt vận hành' });
     var panels = el('div', 'app-v2-grid app-v2-dashboard-panels');

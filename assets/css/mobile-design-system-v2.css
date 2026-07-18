@@ -745,6 +745,67 @@
     gap: var(--app-space-4);
   }
 
+  body.app-authenticated .app-v2-dashboard-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.app-authenticated .app-v2-chart-list {
+    display: grid;
+    gap: var(--app-space-3);
+    min-width: 0;
+  }
+
+  body.app-authenticated .app-v2-chart-row {
+    display: grid;
+    grid-template-columns: minmax(92px, 1fr) minmax(96px, 2fr) auto;
+    align-items: center;
+    gap: var(--app-space-2);
+    min-width: 0;
+  }
+
+  body.app-authenticated .app-v2-chart-label {
+    min-width: 0;
+    color: var(--app-color-muted);
+    font-size: 12px;
+    font-weight: 850;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  body.app-authenticated .app-v2-chart-meter {
+    width: 100%;
+    min-width: 0;
+    height: 12px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--app-color-primary-soft);
+  }
+
+  body.app-authenticated .app-v2-chart-meter::-webkit-meter-bar {
+    border: 0;
+    border-radius: 999px;
+    background: var(--app-color-primary-soft);
+  }
+
+  body.app-authenticated .app-v2-chart-meter::-webkit-meter-optimum-value {
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--app-color-primary), var(--app-color-success));
+  }
+
+  body.app-authenticated .app-v2-chart-meter::-moz-meter-bar {
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--app-color-primary), var(--app-color-success));
+  }
+
+  body.app-authenticated .app-v2-chart-value {
+    color: var(--app-color-text);
+    font-size: 12px;
+    font-weight: 950;
+    line-height: 1.2;
+    text-align: right;
+    white-space: nowrap;
+  }
+
   body.app-authenticated .app-v2-dashboard + .dashboard-status-row,
   body.app-authenticated .app-v2-dashboard + .dashboard-status-row + #dashboardKpis,
   body.app-authenticated .app-v2-dashboard ~ .dashboard-chart-grid,

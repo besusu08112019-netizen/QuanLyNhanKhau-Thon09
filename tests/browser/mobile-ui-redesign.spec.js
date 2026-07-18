@@ -3,6 +3,37 @@ const { test, expect } = require('@playwright/test');
 const widths = [320, 360, 375, 390, 414, 430, 600, 768, 1024, 1280, 1440, 1920];
 const screens = ['dashboard', 'households', 'persons', 'gis', 'reports', 'businessHouseholds', 'agriculture', 'livestock', 'publicAssets', 'houses', 'vehicles', 'contributions'];
 
+const dashboardSummary = {
+  generatedAt: new Date().toISOString(),
+  metrics: {
+    total_households: 148,
+    total_citizens: 529,
+    male_count: 260,
+    female_count: 269,
+    party_member_count: 21,
+    health_insurance_count: 502,
+    temporary_count: 12,
+    away_count: 8,
+    poor_households: 5,
+    near_poor_households: 9,
+    children_count: 96,
+    elderly_count: 48,
+    working_age_count: 342
+  },
+  charts: {
+    population: [{ label: 'Nam', value: 260 }, { label: 'Nữ', value: 269 }],
+    ages: [{ label: '0-5', value: 32 }, { label: '6-17', value: 91 }, { label: '18-59', value: 358 }, { label: '60+', value: 48 }],
+    monthlyChanges: [{ label: 'T1', value: 2 }, { label: 'T2', value: 4 }, { label: 'T3', value: 1 }],
+    poverty: [{ label: 'Hộ nghèo', value: 5 }, { label: 'Hộ cận nghèo', value: 9 }],
+    labor: [{ label: 'Lao động', value: 342 }, { label: 'Ngoài lao động', value: 187 }],
+    households: [{ label: 'Thường trú', value: 140 }, { label: 'Khác', value: 8 }]
+  },
+  alerts: [{ label: 'BHYT sắp hết hạn', count: 3, priority: 'high', screen: 'reports' }],
+  tasks: [{ label: 'Cập nhật GPS', count: 4, screen: 'gis' }],
+  gis: { locatedHouseholds: 130 },
+  profiles: { citizenComplete: { done: 480 } }
+};
+
 function payload(data) {
   return { contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) };
 }
@@ -13,7 +44,7 @@ async function mockApis(page) {
     const path = url.pathname;
     if (path === '/api/public/login-config') return route.fulfill(payload({ settings: {}, metrics: {} }));
     if (path === '/api/auth/me') return route.fulfill(payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' }));
-    if (path.includes('/api/dashboard')) return route.fulfill(payload({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() }));
+    if (path.includes('/api/dashboard')) return route.fulfill(payload(dashboardSummary));
     if (path.includes('/api/gis')) return route.fulfill(payload({ items: [], total: 0, metrics: {}, charts: {} }));
     if (path === '/api/profiles/household/1') return route.fulfill(payload({
       type: 'household',
@@ -223,6 +254,36 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(page.locator('#householdsScreen .app-v2-record-card')).toHaveCount(8);
     await expect(page.locator('#householdsScreen .app-v2-record-details')).toHaveCount(0);
     await expect(page.locator('#householdsScreen .app-v2-record-more')).toHaveCount(8);
+  });
+
+  test('Dashboard Mobile V2 preserves KPI labels and charts from dashboard summary', async ({ page }) => {
+    await openApp(page, 390);
+    await navigate(page, 'dashboard');
+
+    const dashboard = page.locator('#dashboardScreen .app-v2-dashboard');
+    await expect(dashboard).toBeVisible();
+    await expect(dashboard.locator('.app-v2-stat-card')).toHaveCount(13);
+    await expect(dashboard.locator('.app-v2-stat-card').first()).toContainText('Hộ gia đình');
+    await expect(dashboard.locator('.app-v2-stat-card').first()).toContainText('148');
+    await expect(dashboard).toContainText('Nhân khẩu');
+    await expect(dashboard).toContainText('529');
+    await expect(dashboard).toContainText('BHYT');
+    await expect(dashboard).toContainText('502 / 529');
+    await expect(dashboard).toContainText('Đảng viên');
+    await expect(dashboard).toContainText('Trẻ em');
+    await expect(dashboard).toContainText('Người cao tuổi');
+    await expect(dashboard).toContainText('Hộ nghèo');
+    await expect(dashboard).toContainText('Hộ cận nghèo');
+    await expect(dashboard.locator('.app-v2-stat-card i')).toHaveCount(13);
+
+    await expect(dashboard.locator('.app-v2-dashboard-charts .app-v2-card')).toHaveCount(8);
+    await expect(dashboard).toContainText('Cơ cấu Nam / Nữ');
+    await expect(dashboard).toContainText('Cơ cấu độ tuổi');
+    await expect(dashboard).toContainText('Bảo hiểm y tế');
+    await expect(dashboard).toContainText('Tạm trú / Tạm vắng');
+    await expect(dashboard).toContainText('Biến động');
+    await expect(dashboard.locator('.app-v2-chart-meter')).toHaveCount(19);
+    await expect(dashboard).not.toContainText('undefined');
   });
 
   test('mobile V2 record cards bind to real row actions and household members', async ({ page }) => {
