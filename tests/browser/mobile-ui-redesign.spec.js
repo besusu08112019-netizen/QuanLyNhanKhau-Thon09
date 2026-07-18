@@ -298,6 +298,7 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(firstHousehold.locator('.app-v2-record-meta')).toHaveCount(0);
     await expect(firstHousehold.locator('.app-v2-record-summary-chip')).toContainText(['Mã hộ: H09-0001', 'Ở nhà: 4', 'Đi vắng: 1']);
     await expect(firstHousehold.locator('.app-v2-record-more-details')).not.toContainText('Mã hộ');
+    await expect.poll(() => firstHousehold.evaluate((card) => (card.textContent.match(/H09-0001/g) || []).length)).toBe(1);
     await expect(firstHousehold.locator('.app-v2-icon-button')).toHaveCount(3);
     await expect(firstHousehold.locator('.app-v2-icon-button[title="Xem"]')).toHaveCount(1);
     await expect(firstHousehold.locator('.app-v2-icon-button[title="Sửa"]')).toHaveCount(1);
@@ -329,6 +330,8 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(firstPerson.locator('.app-v2-record-meta')).toHaveCount(0);
     await expect(firstPerson.locator('.app-v2-record-summary-chip')).toContainText(['Chủ hộ: NGUYEN VAN AN', 'Mã hộ: H09-0001', 'Quan hệ: Vo', 'Giới tính: Nu']);
     await expect(firstPerson.locator('.app-v2-record-more-details')).not.toContainText('Mã hộ');
+    await expect(firstPerson).not.toContainText('Chủ hộ: Vo');
+    await expect(firstPerson).not.toContainText('Chủ hộ: Chủ hộ');
     await expect(firstPerson.locator('.app-v2-icon-button')).toHaveCount(3);
     await expect(firstPerson.locator('.app-v2-icon-button[title="Xem"]')).toHaveCount(1);
     await expect(firstPerson.locator('.app-v2-icon-button[title="Sửa"]')).toHaveCount(1);
@@ -336,5 +339,10 @@ test.describe('mobile tablet UI redesign contract', () => {
     await firstPerson.locator('.app-v2-icon-button[title="Xem"]').click();
     await expect.poll(() => page.locator('#personDetailModal.show, #detailModal.show').count()).toBeGreaterThan(0);
     await expect(page.locator('body')).toContainText('TRAN THI BINH');
+
+    await navigate(page, 'businessHouseholds');
+    const firstBusiness = page.locator('#businessHouseholdsScreen .app-v2-record-card').first();
+    await expect(firstBusiness).toContainText('PHAM VAN BICH');
+    await expect(firstBusiness.locator('.app-v2-icon-button[title="Xem"]')).toHaveCount(1);
   });
 });

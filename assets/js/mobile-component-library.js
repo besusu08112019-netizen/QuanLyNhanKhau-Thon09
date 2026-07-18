@@ -1070,6 +1070,7 @@
   function actionLabel(button) {
     var label = cleanLabel(button.getAttribute('title') || button.getAttribute('aria-label') || text(button));
     var action = String(button.getAttribute('data-platform-action') || '');
+    if (/detail|xem chi|chi tiet|chi tiết/i.test(action + ' ' + label)) return 'Xem';
     if (label) return label;
     if (/delete/i.test(action)) return 'Xóa';
     if (/edit/i.test(action)) return 'Sửa';
@@ -1079,7 +1080,8 @@
   function actionIdentity(button) {
     var data = button.dataset || {};
     var action = data.platformAction || (button.hasAttribute('data-edit') ? 'edit' : '') || (button.hasAttribute('data-del') ? 'delete' : '');
-    var id = data.id || data.householdId || data.citizenId || data.personId || data.publicAssetId || data.vehicleId || data.target || '';
+    var detailAction = /detail/i.test(action);
+    var id = detailAction ? (data.householdId || data.id || data.citizenId || data.personId || data.publicAssetId || data.vehicleId || data.target || '') : (data.id || data.householdId || data.citizenId || data.personId || data.publicAssetId || data.vehicleId || data.target || '');
     if (action || id) return [action, id].join(':');
     return cleanLabel(actionLabel(button)).toLowerCase();
   }
@@ -1115,11 +1117,34 @@
     });
   }
 
+  function foldedLabel(value) {
+    var normalized = cleanLabel(value).toLowerCase();
+    return normalized.normalize ? normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : normalized;
+  }
+
+  function isExactLabel(value, patterns) {
+    var folded = foldedLabel(value);
+    return (patterns || []).some(function (pattern) {
+      return folded === foldedLabel(pattern);
+    });
+  }
+
   function pickField(fields, labels) {
     var source = fields || [];
     for (var i = 0; i < (labels || []).length; i += 1) {
       var match = source.find(function (field) {
         return matchesAny(field.label, [labels[i]]);
+      });
+      if (match) return match;
+    }
+    return null;
+  }
+
+  function pickExactField(fields, labels) {
+    var source = fields || [];
+    for (var i = 0; i < (labels || []).length; i += 1) {
+      var match = source.find(function (field) {
+        return isExactLabel(field.label, [labels[i]]);
       });
       if (match) return match;
     }
@@ -1166,6 +1191,12 @@
     });
     if (!source) return null;
     var owner = cleanLabel(source.value).replace(householdCode(source.value), '').trim();
+    var separatorIndex = owner.indexOf(':');
+    var fullSeparatorIndex = owner.indexOf('：');
+    if (separatorIndex < 0 || (fullSeparatorIndex >= 0 && fullSeparatorIndex < separatorIndex)) separatorIndex = fullSeparatorIndex;
+    if (separatorIndex > 0 && isExactLabel(owner.slice(0, separatorIndex), ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'])) {
+      owner = owner.slice(separatorIndex + 1).trim();
+    }
     return owner && owner !== title ? { label: 'Chủ hộ', value: owner } : null;
   }
 
@@ -1173,9 +1204,22 @@
     if (!field) return null;
     var label = cleanLabel(requestedLabel || field.label);
     var value = cleanLabel(field.value);
+    var foldedValue = foldedLabel(value);
+    var foldedRequested = foldedLabel(label);
+    if (foldedValue.indexOf(foldedRequested + ':') === 0 || foldedValue.indexOf(foldedRequested + ' ') === 0) {
+      value = value.slice(label.length).replace(/^[:：\s]+/, '').trim();
+    }
     if (matchesAny(label, ['Mã hộ', 'Ma ho'])) value = householdCode(value) || value;
-    if (matchesAny(label, ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'])) value = value.replace(householdCode(value), '').trim();
-    if (!value || value === title) return null;
+    if (matchesAny(label, ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'])) {
+      var separatorIndex = value.indexOf(':');
+      var fullSeparatorIndex = value.indexOf('：');
+      if (separatorIndex < 0 || (fullSeparatorIndex >= 0 && fullSeparatorIndex < separatorIndex)) separatorIndex = fullSeparatorIndex;
+      if (separatorIndex > 0 && isExactLabel(value.slice(0, separatorIndex), ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'])) {
+        value = value.slice(separatorIndex + 1).trim();
+      }
+      value = value.replace(householdCode(value), '').trim();
+    }
+    if (!value || value === title || (title && title.indexOf(value) >= 0)) return null;
     return { label: label, value: value };
   }
 
@@ -1183,11 +1227,13 @@
     var labels = meta.summaryLabels || meta.metaLabels || [];
     var selected = [];
     (labels || []).forEach(function (label) {
-      var match = pickField(fields, [label]);
+      var isOwnerLabel = matchesAny(label, ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho']);
+      var match = isOwnerLabel ? pickExactField(fields, [label]) : pickField(fields, [label]);
       var summaryField = match ? normalizedSummaryField(match, label, title) : null;
-      if (!summaryField && matchesAny(label, ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'])) summaryField = derivedHouseholdOwner(fields, title);
+      if (!summaryField && isOwnerLabel) summaryField = derivedHouseholdOwner(fields, title);
       if (!summaryField || isActionLabel(summaryField.label)) return;
       if (selected.some(function (field) { return fieldIdentity(field) === fieldIdentity(summaryField); })) return;
+      if (selected.some(function (field) { return cleanLabel(field.value).toLowerCase() === cleanLabel(summaryField.value).toLowerCase(); })) return;
       selected.push(summaryField);
     });
     return selected.slice(0, 4);
@@ -1196,12 +1242,17 @@
   function recordDetails(fields, title, summaryFields, meta) {
     var summaryIds = {};
     var summaryLabels = meta.summaryLabels || [];
+    var summaryValues = (summaryFields || []).map(function (field) { return cleanLabel(field.value); }).filter(Boolean);
     (summaryFields || []).forEach(function (field) {
       summaryIds[fieldIdentity(field)] = true;
     });
     return (fields || []).filter(function (field) {
       var label = cleanLabel(field.label);
-      return field.value && field.value !== title && !summaryIds[fieldIdentity(field)] && !matchesAny(label, summaryLabels) && !/^(stt|#)$/i.test(label) && !isActionLabel(label);
+      var value = cleanLabel(field.value);
+      var repeatsSummary = summaryValues.some(function (summaryValue) {
+        return summaryValue && value.indexOf(summaryValue) >= 0;
+      });
+      return field.value && field.value !== title && !repeatsSummary && !summaryIds[fieldIdentity(field)] && !matchesAny(label, summaryLabels) && !/^(stt|#)$/i.test(label) && !isActionLabel(label);
     });
   }
 
