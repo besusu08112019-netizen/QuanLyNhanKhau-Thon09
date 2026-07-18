@@ -19,6 +19,7 @@
   <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/fontawesome-local.css" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/app.min.css">
+  <link rel="stylesheet" href="/assets/css/mobile-design-system-v2.min.css">
   <link rel="stylesheet" href="/assets/css/print.min.css" media="print">
 </head>
 <body>
@@ -667,7 +668,6 @@
   <script charset="utf-8" src="/assets/js/i18n.min.js"></script>
   <script charset="utf-8" src="/assets/js/print-framework.min.js"></script>
   <script charset="utf-8" src="/assets/js/app-platform.min.js"></script>
-  <script charset="utf-8" src="/assets/js/mobile-design-system.min.js"></script>
   <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>
   <script charset="utf-8" src="/assets/js/csrf.min.js"></script>
   <script charset="utf-8" src="/assets/js/session.min.js"></script>
@@ -696,6 +696,7 @@
   <script charset="utf-8" src="/assets/js/houses.min.js"></script>
   <script charset="utf-8" src="/assets/js/public-assets.min.js"></script>
   <script charset="utf-8" src="/assets/js/module-dashboards.min.js"></script>
+  <script charset="utf-8" src="/assets/js/mobile-component-library.min.js"></script>
   <script charset="utf-8" src="/assets/js/pwa.min.js"></script>
 </body>
 </html>

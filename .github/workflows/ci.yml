@@ -50,8 +50,12 @@ jobs:
           curl -fsS http://127.0.0.1:8080/ -o /tmp/thon09-home.html
           grep -q 'assets/js/view-inline-patches.min.js?v=' /tmp/thon09-home.html
           grep -q 'assets/js/gis-household-location.min.js?v=' /tmp/thon09-home.html
-          grep -q 'assets/js/gis-search.min.js?v=' /tmp/thon09-home.html
+          grep -q 'assets/css/mobile-design-system-v2.min.css?v=' /tmp/thon09-home.html
+          grep -q 'assets/js/mobile-component-library.min.js?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/css/mobile-ui.min.css?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/js/mobile-ui-system.min.js?v=' /tmp/thon09-home.html
           ! grep -q 'assets/js/mobile-design-system.js?v=' /tmp/thon09-home.html
+          ! grep -q 'assets/js/mobile-design-system.min.js?v=' /tmp/thon09-home.html
           ! grep -q 'assets/css/person-card-layout.css?v=' /tmp/thon09-home.html
 
       - name: Setup Node.js

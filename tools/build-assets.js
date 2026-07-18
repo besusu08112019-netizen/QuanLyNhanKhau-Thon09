@@ -17,6 +17,7 @@ function minifyCss(source) {
     .replace(/\s+/g, ' ')
     .replace(/\s*([{};,>+~])\s*/g, '$1')
     .replace(/([;{])\s*([-\w]+)\s*:\s*/g, '$1$2:')
+    .replace(/::root(?=\{)/g, ':root')
     .replace(/calc\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g, (_, value) => 'calc(' + value.replace(/\s*\+\s*/g, ' + ').replace(/(?<=[0-9)%])\s*-\s*(?=[0-9.])/g, ' - ') + ')')
     .replace(/;}/g, '}')
     .trim();
@@ -34,12 +35,12 @@ function compactJs(source) {
 
 const assets = [
   ['assets/css/app.css', 'assets/css/app.min.css', minifyCss],
+  ['assets/css/mobile-design-system-v2.css', 'assets/css/mobile-design-system-v2.min.css', minifyCss],
   ['assets/css/print.css', 'assets/css/print.min.css', minifyCss],
   ['assets/js/i18n.js', 'assets/js/i18n.min.js', compactJs],
   ['assets/js/print-framework.js', 'assets/js/print-framework.min.js', compactJs],
   ['assets/js/app-platform.js', 'assets/js/app-platform.min.js', compactJs],
-  ['assets/js/mobile-design-system.js', 'assets/js/mobile-design-system.min.js', compactJs],
-  ['assets/js/app.utf8.js', 'assets/js/app.utf8.min.js', compactJs],
+  ['assets/js/mobile-component-library.js', 'assets/js/mobile-component-library.min.js', compactJs],
   ['assets/js/admin.utf8.js', 'assets/js/admin.utf8.min.js', compactJs],
   ['assets/js/admin-panel.js', 'assets/js/admin-panel.min.js', compactJs],
   ['assets/js/admin-panel-bridge.js', 'assets/js/admin-panel-bridge.min.js', compactJs],

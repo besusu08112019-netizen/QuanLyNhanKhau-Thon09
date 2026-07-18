@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'deploy-373-visible-module-actions');
+define('APP_ASSET_VERSION', 'mobile-tablet-ui-redesign-20260718-10');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 
@@ -525,10 +525,11 @@ if (!str_starts_with($request->path(), '/api')) {
     }
     $versionedAssets = [
         'assets/css/app.min.css',
+        'assets/css/mobile-design-system-v2.min.css',
         'assets/js/i18n.min.js',
         'assets/js/print-framework.min.js',
         'assets/js/app-platform.min.js',
-        'assets/js/mobile-design-system.min.js',
+        'assets/js/mobile-component-library.min.js',
         'assets/js/app.utf8.min.js',
         'assets/js/csrf.min.js',
         'assets/js/session.min.js',
