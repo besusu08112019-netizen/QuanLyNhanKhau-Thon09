@@ -203,6 +203,41 @@ test('desktop sidebar clicks switch both active menu and visible screen content'
   await page.screenshot({ path: 'test-results/navigation-desktop-final.png', fullPage: true });
 });
 
+test('shared sidebar accordion toggles through renderer state', async ({ page }) => {
+  await openAuthenticatedApp(page);
+  await expectPlatformMenus(page);
+  if (page.viewportSize().width <= 991) {
+    await page.locator('#sidebarToggle').click();
+    await expect(page.locator('body')).toHaveClass(/sidebar-open/);
+  }
+
+  const section = page.locator('.gov-nav > .sidebar-accordion-section').nth(1);
+  const toggle = section.locator(':scope > .sidebar-accordion-toggle');
+  const panel = section.locator(':scope > .sidebar-accordion-panel');
+  await expect(toggle).toHaveCount(1);
+  await expect(panel).toHaveCount(1);
+
+  await toggle.click();
+  await expect(section).toHaveClass(/is-open/);
+  await expect(section).not.toHaveClass(/is-collapsed/);
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+  await toggle.click();
+  await expect(section).toHaveClass(/is-collapsed/);
+  await expect(section).not.toHaveClass(/is-open/);
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+  await toggle.press('Enter');
+  await expect(section).toHaveClass(/is-open/);
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+  const groupKey = await toggle.evaluate((el) => el.dataset.sidebarGroupToggle);
+  await page.evaluate(() => window.Thon09Platform?.menuRenderer?.renderSidebar());
+  const rerendered = page.locator(`.gov-nav .nav-section[data-nav-section="${groupKey}"]`);
+  await expect(rerendered).toHaveClass(/is-open/);
+  await expect(page.locator(`.gov-nav [data-sidebar-group-toggle="${groupKey}"]`)).toHaveAttribute('aria-expanded', 'true');
+});
+
 test('mobile and tablet module clicks use the same controller and change content', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'desktop-chromium', 'Covered by desktop sidebar test.');
   await openAuthenticatedApp(page);
