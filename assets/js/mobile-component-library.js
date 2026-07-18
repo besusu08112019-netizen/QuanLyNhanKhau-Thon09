@@ -950,13 +950,13 @@
       var value = text(card.querySelector('.dashboard-kpi-value strong, strong, b'));
       var note = text(card.querySelector('.dashboard-kpi-value span, em, small'));
       return {
-        label: kpiMeta.label || label || 'Tổng quan ' + (index + 1),
-        value: withKpiUnit(value || '0', kpiMeta.unit),
+        label: label || kpiMeta.label || 'Tổng quan ' + (index + 1),
+        value: withKpiUnit(value || '0', note || kpiMeta.unit),
         meta: kpiMeta.meta || note || 'Theo dữ liệu ' + ((screen && screen.getAttribute('data-module-dashboard')) || 'dashboard'),
         icon: firstFaIcon(card, kpiMeta.icon || (moduleMeta && moduleMeta.icon))
       };
     });
-    metadata.slice(kpis.length).forEach(function (item) {
+    if (!kpis.length) metadata.forEach(function (item) {
       kpis.push({
         label: item.label,
         value: withKpiUnit('0', item.unit),
@@ -965,6 +965,28 @@
       });
     });
     return kpis.slice(0, 4);
+  }
+
+  function readSummaryItems(screen) {
+    var items = [];
+    var seen = {};
+    function add(label, value) {
+      label = cleanLabel(label);
+      value = cleanLabel(value);
+      if (!label || !value || value === '0') return;
+      var id = label.toLowerCase() + '|' + value.toLowerCase();
+      if (seen[id]) return;
+      seen[id] = true;
+      items.push({ label: label, value: value });
+    }
+    Array.from(screen.querySelectorAll('.dashboard-chart-grid .chart-line, .dashboard-chart-grid .dashboard-metric-line')).forEach(function (row) {
+      add(text(row.querySelector('span')), text(row.querySelector('strong, b')));
+    });
+    Array.from(screen.querySelectorAll('.dashboard-chart-grid table tbody tr')).forEach(function (row) {
+      var cells = Array.from(row.children).map(function (cell) { return cleanLabel(cell); }).filter(Boolean);
+      if (cells.length >= 2) add(cells[0], cells[cells.length - 1]);
+    });
+    return items.slice(0, 6);
   }
 
   function readPanels(screen) {
@@ -988,7 +1010,7 @@
     }
     host.textContent = '';
     var kpis = readKpis(screen, meta);
-    var panels = readPanels(screen);
+    var summaryItems = readSummaryItems(screen);
     if (!kpis.length) {
       kpis = (meta.kpis || []).map(function (item) {
         return {
@@ -998,12 +1020,6 @@
           icon: item.icon || meta.icon
         };
       });
-    }
-    if (!panels.length) {
-      panels = [
-        { label: 'Trạng thái dữ liệu', value: 'Sẵn sàng' },
-        { label: 'Tác vụ nổi bật', value: 'Mở module để xử lý' }
-      ];
     }
 
     var primary = el('div', 'app-v2-flow');
@@ -1019,8 +1035,11 @@
       return { title: item.label, subtitle: 'Mở ' + item.label.toLowerCase(), icon: item.icon, action: item.action };
     }))]);
 
-    var metricSection = AppSection({ title: 'Tóm tắt', meta: 'Biểu đồ' });
-    append(metricSection, [AppCard({ body: AppList(panels.map(function (item) { return AppMetricRow(item); })) })]);
+    var metricSection = null;
+    if (summaryItems.length) {
+      metricSection = AppSection({ title: 'Tóm tắt', meta: 'Dữ liệu bổ sung' });
+      append(metricSection, [AppCard({ body: AppList(summaryItems.map(function (item) { return AppMetricRow(item); })) })]);
+    }
 
     var filterSection = AppSection({ title: 'Bộ lọc nhanh', meta: 'Adaptive' });
     append(filterSection, [AppFilterSheet({
@@ -1033,7 +1052,7 @@
     })]);
 
     append(primary, [statSection, filterSection, actionSection]);
-    append(secondary, [metricSection]);
+    if (metricSection) append(secondary, [metricSection]);
     append(layout, [primary, secondary]);
     append(host, [
       AppHeader({
@@ -1541,7 +1560,7 @@
     var summarySection = AppSection({ title: 'Tóm tắt', meta: 'Adaptive' });
     var summaryList = el('div', 'app-v2-list');
     data.health.forEach(function (item) { summaryList.appendChild(AppSummaryCard(item)); });
-    append(summarySection, [summaryList, AppInput({ label: 'Ghi chú nhanh', placeholder: 'Nhập ghi chú xử lý...' }), AppSelect({ label: 'Trạng thái theo dõi', options: [{ label: 'Tất cả', value: '' }, { label: 'Cần xử lý', value: 'todo' }, { label: 'Hoàn tất', value: 'done' }] })]);
+    append(summarySection, [summaryList]);
     var alertSection = AppSection({ title: 'Cảnh báo và tác vụ', meta: data.alerts.length + data.tasks.length ? 'Dữ liệu thật' : 'Fallback' });
     append(alertSection, [AppList((data.alerts.length ? data.alerts : [{ title: 'Không có cảnh báo nổi bật', subtitle: 'Dashboard đang ổn định', icon: 'fa-circle-check', action: 'dashboard' }]).concat(data.tasks))]);
     append(secondary, [summarySection, alertSection, panelSection]);

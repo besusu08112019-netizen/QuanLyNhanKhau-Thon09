@@ -564,16 +564,18 @@ final class Dashboard extends BaseModel
         $errors = [];
         $metrics = $this->safeWidget('overview.metrics', fn() => $this->metrics($filters), $this->defaultMetrics(), $errors);
         $business = $this->safeWidget('overview.business', fn() => (new \App\Models\HouseholdBusiness())->dashboard($filters), [], $errors);
+        $vehicles = $this->safeWidget('overview.vehicles', fn() => (new \App\Models\Vehicle())->dashboard($filters), [], $errors);
         $livestock = $this->safeWidget('overview.livestock', fn() => (new \App\Models\Livestock())->dashboard($filters), [], $errors);
         $gis = $this->safeWidget('overview.gis', fn() => $this->gisSummary($filters), [], $errors);
         $businessCharts = $this->safeWidget('overview.businessCharts', fn() => (new \App\Models\HouseholdBusiness())->charts($filters), [], $errors);
+        $vehicleCharts = $this->safeWidget('overview.vehicleCharts', fn() => (new \App\Models\Vehicle())->charts($filters), [], $errors);
         $livestockCharts = $this->safeWidget('overview.livestockCharts', fn() => (new \App\Models\Livestock())->charts($filters), [], $errors);
         $payload = ['module' => 'overview', 'title' => 'Dashboard Tổng quan', 'kpis' => [
             $this->kpi('Tổng số hộ', $metrics['total_households'] ?? 0, 'hộ', 'fa-house-chimney', 'green'),
             $this->kpi('Tổng số nhân khẩu', $metrics['total_citizens'] ?? 0, 'người', 'fa-users', 'blue'),
             $this->kpi('Tổng số hộ kinh doanh', $business['economic_households'] ?? 0, 'hộ', 'fa-store', 'orange'),
             $this->kpi('Tổng số cơ sở kinh doanh', $business['establishment_total'] ?? 0, 'cơ sở', 'fa-briefcase', 'cyan'),
-            $this->kpi('Tổng số phương tiện', 0, 'xe', 'fa-car', 'purple'),
+            $this->kpi('Tổng số phương tiện', $vehicles['total'] ?? 0, 'xe', 'fa-car', 'purple'),
             $this->kpi('Tổng số hộ chăn nuôi', $livestock['livestock_households'] ?? 0, 'hộ', 'fa-warehouse', 'green'),
             $this->kpi('Tổng số vật nuôi', $livestock['livestock_total'] ?? 0, 'con', 'fa-paw', 'orange'),
             $this->kpi('Tổng khu vực GIS', $gis['totalAreas'] ?? 0, 'khu', 'fa-map-location-dot', 'cyan'),
@@ -582,7 +584,7 @@ final class Dashboard extends BaseModel
         ], 'charts' => [
             'households' => $this->safeWidget('overview.households', fn() => $this->householdChart($filters), [], $errors),
             'businessSectors' => $businessCharts['sectors'] ?? [],
-            'vehicles' => [], 'livestock' => $livestockCharts['types'] ?? [],
+            'vehicles' => $vehicleCharts['types'] ?? [], 'livestock' => $livestockCharts['types'] ?? [],
         ], 'generatedAt' => date('c')];
         if ($errors) $payload['widgetErrors'] = $errors;
         return $payload;
