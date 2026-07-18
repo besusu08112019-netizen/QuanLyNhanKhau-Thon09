@@ -275,6 +275,13 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(dashboard).toContainText('Hộ nghèo');
     await expect(dashboard).toContainText('Hộ cận nghèo');
     await expect(dashboard.locator('.app-v2-stat-card i')).toHaveCount(13);
+    await expect(dashboard.locator('.app-v2-hero .app-v2-search')).toHaveCount(0);
+    await expect(dashboard.locator('.app-v2-filter-bar .app-v2-search input')).toHaveCount(1);
+    await expect.poll(() => dashboard.evaluate((root) => {
+      const stat = root.querySelector('.app-v2-stat-card');
+      const filter = root.querySelector('.app-v2-filter-bar');
+      return !!stat && !!filter && stat.compareDocumentPosition(filter) === Node.DOCUMENT_POSITION_FOLLOWING;
+    })).toBe(true);
 
     await expect(dashboard.locator('.app-v2-dashboard-charts .app-v2-card')).toHaveCount(8);
     await expect(dashboard).toContainText('Cơ cấu Nam / Nữ');

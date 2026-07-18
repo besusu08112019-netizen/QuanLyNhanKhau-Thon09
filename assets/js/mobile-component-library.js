@@ -965,8 +965,8 @@
       actions: [{ label: 'Áp dụng', icon: 'fa-filter' }, { label: 'Làm mới', icon: 'fa-rotate-right' }]
     })]);
 
-    append(primary, [statSection, actionSection]);
-    append(secondary, [metricSection, filterSection]);
+    append(primary, [statSection, filterSection, actionSection]);
+    append(secondary, [metricSection]);
     append(layout, [primary, secondary]);
     append(host, [
       AppHeader({
@@ -1370,8 +1370,8 @@
     });
     append(actions, [actionRow]);
 
-    append(primary, [summary, list]);
-    append(secondary, [filters, actions]);
+    append(primary, [summary, filters, list]);
+    append(secondary, [actions]);
     append(layout, [primary, secondary]);
     append(host, [
       AppHeader({
@@ -1433,10 +1433,10 @@
       { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }
     ]);
     host.appendChild(toolbar);
-    host.appendChild(AppFilterBar({
+    var dashboardFilterBar = AppFilterBar({
       label: 'Tìm kiếm Dashboard',
       fields: [{ label: 'Từ khóa', type: 'search', placeholder: 'Tìm hộ, nhân khẩu, CCCD, địa chỉ...' }]
-    }));
+    });
 
     var statSection = AppSection({ title: 'Chỉ số nhanh', meta: 'Mobile UI v2' });
     var statGrid = el('div', 'app-v2-grid app-v2-dashboard-kpis');
@@ -1462,7 +1462,7 @@
     var layout = el('div', 'app-v2-dashboard-layout');
     var primary = el('div', 'app-v2-section');
     var secondary = el('div', 'app-v2-section');
-    append(primary, chartSection ? [statSection, chartSection, actionSection] : [statSection, actionSection]);
+    append(primary, chartSection ? [statSection, dashboardFilterBar, chartSection, actionSection] : [statSection, dashboardFilterBar, actionSection]);
 
     var panelSection = AppSection({ title: 'Theo dõi', meta: 'Tóm tắt vận hành' });
     var panels = el('div', 'app-v2-grid app-v2-dashboard-panels');
