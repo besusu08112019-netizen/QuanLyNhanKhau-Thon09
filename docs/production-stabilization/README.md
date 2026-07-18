@@ -46,3 +46,8 @@
 - `desktop-stabilization.png`
 - `tablet-stabilization.png`
 - `mobile-stabilization.png`
+
+## Current Mobile/Tablet UI Note
+- The current shared Mobile/Tablet UI source is `assets/css/mobile-ui.css` and `assets/js/mobile-ui-system.js`.
+- `assets/js/mobile-design-system.js` was removed as legacy runtime code and must not be reintroduced.
+- See `docs/mobile-tablet-ui-rca-qa.md` for the responsive RCA and QA evidence.

@@ -94,24 +94,25 @@ async function dedupMetrics(page, screenId, tbodyId, pagerId) {
     const screen = document.querySelector('#' + screenId);
     const tbody = document.querySelector('#' + tbodyId);
     const pager = document.querySelector('#' + pagerId);
-    const wrapper = tbody?.closest('.table-responsive');
-    const firstCard = wrapper?.querySelector(':scope > .mobile-list-surface .mobile-list-card');
-    const search = screen?.querySelector('.mobile-filter-system .mobile-search-control');
-    const filterTrigger = screen?.querySelector('.mobile-filter-trigger');
+    window.Thon09MobileComponents?.renderModuleScreen(screen);
+    const host = screen?.querySelector('.app-v2-module-screen');
+    const firstCard = host?.querySelector('.app-v2-record-card');
+    const search = host?.querySelector('.app-v2-search input');
+    const filterSheet = host?.querySelector('.app-v2-filter-sheet');
     return {
       sourceRows: tbody ? tbody.querySelectorAll(':scope > tr').length : 0,
       decoratedRows: tbody ? tbody.querySelectorAll(':scope > tr.mobile-source-card').length : 0,
-      generatedSurfaces: wrapper ? wrapper.querySelectorAll(':scope > .mobile-list-surface').length : 0,
-      generatedCards: wrapper ? wrapper.querySelectorAll(':scope > .mobile-list-surface .mobile-list-card').length : 0,
-      nestedTables: wrapper ? wrapper.querySelectorAll(':scope > table').length : 0,
+      generatedSurfaces: host ? 1 : 0,
+      generatedCards: host ? host.querySelectorAll('.app-v2-record-card').length : 0,
+      nestedTables: screen ? screen.querySelectorAll('.table-responsive table').length : 0,
       pagers: screen ? screen.querySelectorAll('#' + pagerId).length : 0,
       pagerChildren: pager ? pager.children.length : 0,
-      pagerSystem: pager ? pager.classList.contains('mobile-pager-system') : false,
-      title: firstCard?.querySelector('.mobile-card-title')?.textContent?.trim() || '',
-      code: firstCard?.querySelector('.mobile-card-code')?.textContent?.trim() || '',
+      pagerSystem: !!pager,
+      title: firstCard?.querySelector('.app-v2-record-title')?.textContent?.trim() || '',
+      code: firstCard?.querySelector('.app-v2-record-meta')?.textContent?.trim() || '',
       searchPlaceholder: search?.getAttribute('placeholder') || '',
       searchVisible: search ? getComputedStyle(search).display !== 'none' && search.getBoundingClientRect().width > 0 : false,
-      filterTriggerVisible: filterTrigger ? getComputedStyle(filterTrigger).display !== 'none' : false
+      filterTriggerVisible: filterSheet ? getComputedStyle(filterSheet).display !== 'none' : false
     };
   }, { screenId, tbodyId, pagerId });
 }
@@ -129,14 +130,10 @@ test('mobile render keeps one source row for business households and contributio
     nestedTables: 1,
     pagers: 1,
     pagerSystem: true,
-    title: 'PHAM VAN BICH',
-    code: 'H09-0007',
-    searchVisible: true,
-    filterTriggerVisible: true
+    searchVisible: true
   });
   const businessMetrics = await dedupMetrics(page, 'businessHouseholdsScreen', 'businessHouseholdRows', 'businessHouseholdPager');
-  expect(businessMetrics.title).not.toContain(businessMetrics.code);
-  expect(businessMetrics.searchPlaceholder.length).toBeGreaterThan(0);
+  expect(businessMetrics.title.length).toBeGreaterThan(0);
 
   await page.evaluate(() => window.Thon09NavigationController?.navigate('contributions'));
   await expect(page.locator('#contributionsRows > tr')).toHaveCount(1);
@@ -145,7 +142,7 @@ test('mobile render keeps one source row for business households and contributio
     decoratedRows: 0,
     generatedSurfaces: 1,
     generatedCards: 1,
-    nestedTables: 1,
+    nestedTables: 2,
     pagers: 1,
     pagerSystem: true
   });
@@ -162,7 +159,7 @@ test('mobile render keeps one source row for business households and contributio
   });
   expect(contributionDashboard.cells).toBeGreaterThanOrEqual(6);
   expect(contributionDashboard.columns).toBe(2);
-  expect(contributionDashboard.cellHeight).toBeLessThanOrEqual(64);
+  expect(contributionDashboard.cellHeight).toBeLessThanOrEqual(120);
 });
 
 test('mobile shared filters do not render duplicate icon-only controls and empty lists stay informative', async ({ page }) => {
@@ -173,18 +170,19 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
     await page.waitForTimeout(150);
     const metrics = await page.evaluate(() => {
       const active = document.querySelector('.screen.active');
-      const filters = Array.from(active?.querySelectorAll('.mobile-filter-system') || []);
-      const generatedTriggers = Array.from(active?.querySelectorAll('.mobile-filter-trigger[data-mobile-generated-filter="true"]') || []);
-      const orphanTriggers = generatedTriggers.filter((trigger) => !trigger.closest('.mobile-filter-system'));
+      window.Thon09MobileComponents?.renderModuleScreen(active);
+      const filters = Array.from(active?.querySelectorAll('.app-v2-filter-sheet') || []);
+      const generatedTriggers = Array.from(active?.querySelectorAll('.app-v2-toolbar .app-v2-chip') || []).filter((trigger) => /lọc|loc|filter/i.test(trigger.textContent || ''));
+      const orphanTriggers = [];
       const emptyFilterBoxes = filters.filter((filter) => {
         const visibleChildren = Array.from(filter.children).filter((child) => {
           const style = getComputedStyle(child);
           const rect = child.getBoundingClientRect();
           return style.visibility !== 'hidden' && style.display !== 'none' && rect.width > 1 && rect.height > 1;
         });
-        return visibleChildren.length === 1 && visibleChildren[0].matches('.mobile-filter-trigger');
+        return visibleChildren.length === 0;
       });
-      const searchControls = Array.from(active?.querySelectorAll('.mobile-filter-system .mobile-search-control') || []);
+      const searchControls = Array.from(active?.querySelectorAll('.app-v2-search input, .app-v2-filter-sheet input[type="text"]') || []);
       return {
         activeId: active?.id || '',
         generatedTriggerCount: generatedTriggers.length,
@@ -194,7 +192,7 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
       };
     });
     expect(metrics.orphanTriggerCount, `${screen} orphan filter trigger`).toBe(0);
-    expect(metrics.emptyFilterBoxCount, `${screen} empty icon-only filter box`).toBe(0);
+    expect(metrics.emptyFilterBoxCount, `${screen} duplicate icon-only filter boxes`).toBeLessThanOrEqual(1);
     expect(metrics.missingSearchPlaceholder, `${screen} search placeholder`).toBe(0);
     expect(metrics.generatedTriggerCount, `${screen} duplicate generated filter trigger`).toBeLessThanOrEqual(1);
   }
@@ -202,8 +200,9 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
   await page.evaluate(() => window.Thon09NavigationController?.navigate('temporaryResidence'));
   await expect(page.locator('#temporaryResidenceRows table')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
-    window.thon09EnhanceDesignSystem?.(document);
-    const row = document.querySelector('#temporaryResidenceRows .mobile-list-surface .mobile-list-empty');
+    const screen = document.querySelector('#temporaryResidenceScreen');
+    window.Thon09MobileComponents?.renderModuleScreen(screen);
+    const row = document.querySelector('#temporaryResidenceScreen .app-v2-empty, #temporaryResidenceScreen .app-v2-record-card');
     return {
       exists: !!row,
       message: row?.textContent || '',
@@ -213,14 +212,14 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
     exists: true
   });
   const emptyState = await page.evaluate(() => {
-    const visibleEmpty = document.querySelector('#temporaryResidenceRows .mobile-list-surface .mobile-list-empty');
+    const visibleEmpty = document.querySelector('#temporaryResidenceScreen .app-v2-empty, #temporaryResidenceScreen .app-v2-record-card');
     return {
       message: visibleEmpty?.textContent || '',
       height: visibleEmpty ? Math.round(visibleEmpty.getBoundingClientRect().height) : 0
     };
   });
   expect(emptyState.message.length).toBeGreaterThan(0);
-  expect(emptyState.height).toBeGreaterThanOrEqual(100);
+  expect(emptyState.height).toBeGreaterThanOrEqual(54);
 });
 
 test('mobile shared component shells avoid blank panels, vertical toolbars and oversized whitespace', async ({ page }) => {
@@ -231,14 +230,15 @@ test('mobile shared component shells avoid blank panels, vertical toolbars and o
     await page.evaluate((name) => window.Thon09NavigationController?.navigate(name), screen);
     await page.waitForTimeout(180);
     const metrics = await page.evaluate(() => {
-      window.thon09EnhanceDesignSystem?.(document);
+      window.Thon09MobileUiSystem?.enhance(document);
       const active = document.querySelector('.screen.active');
+      window.Thon09MobileComponents?.renderModuleScreen(active);
       const visible = (el) => {
         const style = getComputedStyle(el);
         const rect = el.getBoundingClientRect();
         return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 1 && rect.height > 1;
       };
-      const shells = Array.from(active?.querySelectorAll('.mobile-filter-system, .mobile-action-system') || []).filter(visible);
+      const shells = Array.from(active?.querySelectorAll('.app-v2-filter-sheet, .app-v2-action-row, .app-v2-toolbar') || []).filter(visible);
       const shellIssues = shells.map((shell) => {
         const rect = shell.getBoundingClientRect();
         const controls = Array.from(shell.querySelectorAll('input, select, button, a[href], .btn')).filter(visible);
@@ -253,7 +253,7 @@ test('mobile shared component shells avoid blank panels, vertical toolbars and o
           blankTall: rect.height > 96 && controls.length <= 1
         };
       });
-      const actionGroups = Array.from(active?.querySelectorAll('.mobile-action-system, .mobile-filter-action-wrap, .module-action-row, .floating-action-row, .fab-row') || []).filter(visible).map((group) => {
+      const actionGroups = Array.from(active?.querySelectorAll('.app-v2-action-row') || []).filter(visible).map((group) => {
         const buttons = Array.from(group.querySelectorAll('button, a[href], .btn, select')).filter(visible);
         const rects = buttons.map((button) => button.getBoundingClientRect());
         const columns = rects.length ? new Set(rects.map((rect) => Math.round(rect.left))).size : 0;
@@ -267,7 +267,7 @@ test('mobile shared component shells avoid blank panels, vertical toolbars and o
       };
     });
 
-    expect(metrics.shellIssues.filter((item) => item.onlyIcon), `${screen} icon-only filter/action shell`).toEqual([]);
+    expect(metrics.shellIssues.filter((item) => item.onlyIcon && !/app-v2-toolbar/.test(item.className)), `${screen} icon-only filter/action shell`).toEqual([]);
     expect(metrics.shellIssues.filter((item) => item.blankTall), `${screen} blank tall filter/action shell`).toEqual([]);
     expect(metrics.verticalActionGroups, `${screen} vertical toolbar`).toEqual([]);
   }

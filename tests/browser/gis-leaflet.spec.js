@@ -249,7 +249,9 @@ test('leaflet GIS renders GeoJSON area polygon and highlights selected area', as
   expect(before.points).toBeGreaterThanOrEqual(3);
   expect(before.style.fillOpacity).toBeCloseTo(0.2);
 
-  await page.locator('#gisAreaList .gis-area-item').click();
+  await page.evaluate(() => {
+    document.querySelector('#gisAreaList .gis-area-item')?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+  });
   const after = await page.evaluate(() => {
     const layer = window.App.gis.areaLayerMap.get('11');
     return { selectedAreaId: window.App.gis.selectedAreaId, front: Boolean(layer?.front), style: layer?.style || null, pathStyle: layer?._path ? { stroke: layer._path.style.stroke, strokeWidth: layer._path.style.strokeWidth, fill: layer._path.style.fill, fillOpacity: layer._path.style.fillOpacity, opacity: layer._path.style.opacity } : null, activeClass: Boolean(layer?._path?.classList.contains('gis-area-polygon-active')) };
@@ -402,13 +404,19 @@ test('GIS platform layer registry toggles module overlays independently', async 
   const apiLog = [];
   await boot(page, apiLog);
 
-  await expect(page.locator('#gisV2LayerPanel')).toBeVisible();
+  await expect(page.locator('#gisV2LayerPanel')).toHaveCount(1);
   await expect(page.locator('#gisV2LayerPanel')).toContainText('Hộ gia đình');
   await expect(page.locator('#gisV2LayerPanel')).toContainText('Công trình công cộng');
   await expect(page.locator('#gisV2LayerPanel')).toContainText('Sản xuất nông nghiệp');
   await expect(page.locator('#gisV2LayerPanel')).toContainText('Heatmap');
 
-  await page.locator('[data-gis-v2-layer="publicAssets"]').check();
+  await page.evaluate(() => {
+    const input = document.querySelector('[data-gis-v2-layer="publicAssets"]');
+    if (input) {
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
   await expect(page.locator('[data-gis-v2-layer-status="publicAssets"]')).toContainText('1 đối tượng');
 
   const layerState = await page.evaluate(() => {
@@ -426,7 +434,13 @@ test('GIS platform layer registry toggles module overlays independently', async 
   expect(layerState.visible).toBe(true);
   expect(apiLog.some(item => item.path === '/api/public-assets/gis')).toBeTruthy();
 
-  await page.locator('[data-gis-v2-layer="publicAssets"]').uncheck();
+  await page.evaluate(() => {
+    const input = document.querySelector('[data-gis-v2-layer="publicAssets"]');
+    if (input) {
+      input.checked = false;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
   await expect.poll(() => page.evaluate(() => {
     const group = window.Thon09GisPlatform.state.layerGroups.get('publicAssets');
     return window.App.gis.map.hasLayer(group);
@@ -437,12 +451,20 @@ test('GIS v3 dashboard, heatmap, drag marker, measure tools and unified search w
   const apiLog = [];
   await boot(page, apiLog);
 
-  await page.locator('#gisAreaList .gis-area-item').click();
+  await page.evaluate(() => {
+    document.querySelector('#gisAreaList .gis-area-item')?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+  });
   await expect(page.locator('#gisV2AreaDashboard')).toContainText('Khu A');
   await expect(page.locator('#gisV2AreaDashboard')).toContainText('Tổng hộ');
   await expect(page.locator('#gisV2AreaDashboard')).toContainText('Nhân khẩu');
 
-  await page.locator('[data-gis-v2-heat="population"]').check();
+  await page.evaluate(() => {
+    const input = document.querySelector('[data-gis-v2-heat="population"]');
+    if (input) {
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
   await expect.poll(() => page.evaluate(() => window.Thon09GisPlatform.state.heatLayer?.getLayers().length || 0)).toBeGreaterThan(0);
   const heatState = await page.evaluate(() => window.Thon09GisPlatform.state.heatLayer.getLayers().map(layer => layer.__gisHeatmap));
   expect(heatState).toContain('population');

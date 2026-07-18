@@ -7,6 +7,9 @@ const scanPaths = [
   'assets/js',
   'views'
 ];
+const cssScanFiles = [
+  'assets/css/app.css'
+];
 
 const forbidden = [
   { pattern: /window\.showApp\s*=/, reason: 'showApp monkey-patching is replaced by thon09:auth-state' },
@@ -18,6 +21,14 @@ const forbidden = [
   { pattern: /btn\.dataset\.screen\s*=\s*['"]systemAdmin['"]/, reason: 'systemAdmin menu item must come from Thon09Platform' },
   { pattern: /data-screen=["']import["'][\s\S]{0,120}insertAdjacentHTML|insertAdjacentHTML[\s\S]{0,120}data-screen=["']import["']/, reason: 'import menu item must come from Thon09Platform' },
   { pattern: /data-screen=["']users["'][\s\S]{0,180}data-screen=["']logs["'][\s\S]{0,180}data-screen=["']backups["']/, reason: 'admin menu items must come from Thon09Platform' }
+];
+
+const forbiddenCss = [
+  { pattern: /mobile-filter-active/, reason: 'legacy mobile filter body state is replaced by .mdu-filter-*' },
+  { pattern: /mobile-action-system/, reason: 'legacy mobile action shell is no longer produced by runtime code' },
+  { pattern: /mobile-pager-system/, reason: 'legacy mobile pager shell is no longer produced by runtime code' },
+  { pattern: /#(?:householdsScreen|personsScreen|businessHouseholdsScreen)[^{]+tbody td:nth-child\(/, reason: 'module-specific table-to-card CSS must not replace the shared .mdu-* renderer' },
+  { pattern: /#(?:agricultureScreen|livestockScreen)[^{]+tbody td:nth-child\(/, reason: 'module-specific table-to-card CSS must not replace the shared .mdu-* renderer' }
 ];
 
 const allowedClickListeners = new Map([
@@ -53,7 +64,7 @@ const allowedClickListeners = new Map([
   ['assets/js/view-inline-patches.js', [
     "document.addEventListener('click',function(event){var item=event.target.closest&&event.target.closest('[data-screen],[data-mobile-screen]');if(!item||item.classList.contains('gov-logout'))return;var delegation=window.Thon09Platform&&window.Thon09Platform.navigationDelegation;"
   ]],
-  ['assets/js/mobile-design-system.js', [
+  ['assets/js/mobile-component-library.js', [
     "document.addEventListener('click', function (event) {"
   ]]
 ]);
@@ -93,6 +104,16 @@ for (const file of scanPaths.flatMap(filesUnder)) {
         failures.push(`${relative}:${index + 1}: unexpected direct click handler; use platform actions or add an explicit whitelist reason`);
       }
     });
+  }
+}
+
+for (const relative of cssScanFiles) {
+  const absolute = path.join(root, relative);
+  const text = fs.readFileSync(absolute, 'utf8');
+  for (const rule of forbiddenCss) {
+    if (rule.pattern.test(text)) {
+      failures.push(`${relative}: ${rule.reason}`);
+    }
   }
 }
 

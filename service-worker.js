@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260716-01';
+const PWA_VERSION = 'thon09-pwa-v20260718-mobile-ui-10';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
@@ -40,10 +40,11 @@ const STATIC_ASSETS = [
   withBase('assets/vendor/leaflet.markercluster/MarkerCluster.Default.css'),
   withBase('assets/vendor/leaflet.markercluster/leaflet.markercluster.js'),
   withBase('assets/css/app.min.css'),
+  withBase('assets/css/mobile-design-system-v2.min.css'),
   withBase('assets/js/i18n.min.js'),
   withBase('assets/js/print-framework.min.js'),
   withBase('assets/js/app-platform.min.js'),
-  withBase('assets/js/mobile-design-system.min.js'),
+  withBase('assets/js/mobile-component-library.min.js'),
   withBase('assets/js/app.utf8.min.js'),
   withBase('assets/js/csrf.min.js'),
   withBase('assets/js/session.min.js'),
