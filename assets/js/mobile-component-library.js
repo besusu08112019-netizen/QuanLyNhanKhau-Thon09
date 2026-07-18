@@ -556,6 +556,12 @@
       title: 'Hộ gia đình',
       icon: 'fa-house-user',
       subtitle: 'Theo dõi hồ sơ hộ, GPS và hồ sơ số',
+      kpis: [
+        { key: 'totalHouseholds', label: 'Tổng hộ gia đình', unit: 'hộ', icon: 'fa-house-chimney', meta: 'Hộ đang quản lý' },
+        { key: 'locatedHouseholds', label: 'Hộ đã định vị', unit: 'hộ', icon: 'fa-location-dot', meta: 'Có tọa độ GIS' },
+        { key: 'digitalProfiles', label: 'Hồ sơ số', unit: 'hồ sơ', icon: 'fa-folder-open', meta: 'Đã hoàn thiện dữ liệu' },
+        { key: 'attentionHouseholds', label: 'Cần rà soát', unit: 'hộ', icon: 'fa-triangle-exclamation', meta: 'Hộ cần cập nhật' }
+      ],
       actions: [
         { label: 'Danh sách hộ', icon: 'fa-list', action: 'households' },
         { label: 'GIS', icon: 'fa-map-location-dot', action: 'gis' }
@@ -565,6 +571,12 @@
       title: 'Nhân khẩu',
       icon: 'fa-users',
       subtitle: 'Theo dõi nhân khẩu, độ tuổi và cư trú',
+      kpis: [
+        { key: 'totalCitizens', label: 'Tổng nhân khẩu', unit: 'người', icon: 'fa-users', meta: 'Nhân khẩu hiện có' },
+        { key: 'temporaryResidents', label: 'Tạm trú', unit: 'người', icon: 'fa-location-dot', meta: 'Nhân khẩu tạm trú' },
+        { key: 'temporaryAbsences', label: 'Tạm vắng', unit: 'người', icon: 'fa-person-walking-arrow-right', meta: 'Nhân khẩu tạm vắng' },
+        { key: 'insuredCitizens', label: 'BHYT', unit: 'người', icon: 'fa-notes-medical', meta: 'Đã tham gia bảo hiểm' }
+      ],
       actions: [
         { label: 'Nhân khẩu', icon: 'fa-id-card', action: 'persons' },
         { label: 'Biến động', icon: 'fa-arrows-rotate', action: 'movements' }
@@ -574,6 +586,12 @@
       title: 'Kinh doanh',
       icon: 'fa-store',
       subtitle: 'Tổng quan cơ sở, ngành nghề và quy mô hoạt động',
+      kpis: [
+        { key: 'totalBusinesses', label: 'Cơ sở kinh doanh', unit: 'cơ sở', icon: 'fa-store', meta: 'Đang quản lý' },
+        { key: 'activeBusinesses', label: 'Đang hoạt động', unit: 'cơ sở', icon: 'fa-circle-check', meta: 'Cơ sở còn hoạt động' },
+        { key: 'workers', label: 'Lao động', unit: 'người', icon: 'fa-briefcase', meta: 'Tổng lao động ghi nhận' },
+        { key: 'needsReview', label: 'Cần rà soát', unit: 'cơ sở', icon: 'fa-triangle-exclamation', meta: 'Thiếu hoặc cần cập nhật' }
+      ],
       actions: [
         { label: 'Cơ sở', icon: 'fa-store', action: 'businessHouseholds' },
         { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }
@@ -583,6 +601,12 @@
       title: 'Xe cộ',
       icon: 'fa-car',
       subtitle: 'Theo dõi phương tiện theo hộ và khu vực',
+      kpis: [
+        { key: 'totalVehicles', label: 'Tổng phương tiện', unit: 'xe', icon: 'fa-car', meta: 'Phương tiện đã ghi nhận' },
+        { key: 'motorbikes', label: 'Xe máy', unit: 'xe', icon: 'fa-motorcycle', meta: 'Nhóm xe máy' },
+        { key: 'cars', label: 'Ô tô', unit: 'xe', icon: 'fa-car-side', meta: 'Nhóm ô tô' },
+        { key: 'expired', label: 'Cần kiểm tra', unit: 'xe', icon: 'fa-triangle-exclamation', meta: 'Bảo hiểm/kiểm định' }
+      ],
       actions: [
         { label: 'Xe cộ', icon: 'fa-car', action: 'vehicles' },
         { label: 'GIS', icon: 'fa-map-location-dot', action: 'gis' }
@@ -592,6 +616,12 @@
       title: 'Vật nuôi',
       icon: 'fa-paw',
       subtitle: 'Theo dõi đàn vật nuôi, tiêm phòng và quy mô hộ',
+      kpis: [
+        { key: 'totalAnimals', label: 'Tổng vật nuôi', unit: 'con', icon: 'fa-paw', meta: 'Số lượng vật nuôi' },
+        { key: 'households', label: 'Hộ chăn nuôi', unit: 'hộ', icon: 'fa-house-chimney', meta: 'Hộ có vật nuôi' },
+        { key: 'vaccinated', label: 'Đã tiêm phòng', unit: 'con', icon: 'fa-syringe', meta: 'Theo hồ sơ tiêm phòng' },
+        { key: 'needsCare', label: 'Cần theo dõi', unit: 'con', icon: 'fa-triangle-exclamation', meta: 'Cần cập nhật trạng thái' }
+      ],
       actions: [
         { label: 'Vật nuôi', icon: 'fa-paw', action: 'livestock' },
         { label: 'Nông nghiệp', icon: 'fa-seedling', action: 'agriculture' }
@@ -601,6 +631,12 @@
       title: 'GIS',
       icon: 'fa-map-location-dot',
       subtitle: 'Tiến độ định vị, lớp bản đồ và marker',
+      kpis: [
+        { key: 'locatedHouseholds', label: 'Hộ đã định vị', unit: 'hộ', icon: 'fa-location-dot', meta: 'Có tọa độ bản đồ' },
+        { key: 'missingLocation', label: 'Chưa định vị', unit: 'hộ', icon: 'fa-map-pin', meta: 'Cần bổ sung tọa độ' },
+        { key: 'markers', label: 'Marker bản đồ', unit: 'marker', icon: 'fa-location-crosshairs', meta: 'Điểm đang hiển thị' },
+        { key: 'coverage', label: 'Tỷ lệ phủ GIS', unit: '%', icon: 'fa-chart-pie', meta: 'Mức hoàn thiện định vị' }
+      ],
       actions: [
         { label: 'Mở bản đồ', icon: 'fa-map', action: 'gis' },
         { label: 'Hộ dân', icon: 'fa-house', action: 'households' }
@@ -610,6 +646,12 @@
       title: 'Báo cáo',
       icon: 'fa-chart-pie',
       subtitle: 'Theo dõi nhóm báo cáo và trạng thái xuất dữ liệu',
+      kpis: [
+        { key: 'totalReports', label: 'Mẫu báo cáo', unit: 'mẫu', icon: 'fa-file-lines', meta: 'Báo cáo khả dụng' },
+        { key: 'exports', label: 'Lượt xuất', unit: 'lượt', icon: 'fa-file-export', meta: 'Excel/PDF/In ấn' },
+        { key: 'scheduled', label: 'Lịch báo cáo', unit: 'lịch', icon: 'fa-calendar-check', meta: 'Báo cáo định kỳ' },
+        { key: 'attention', label: 'Cần xử lý', unit: 'mục', icon: 'fa-triangle-exclamation', meta: 'Báo cáo cần rà soát' }
+      ],
       actions: [
         { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' },
         { label: 'In ấn', icon: 'fa-print', action: 'reports' }
@@ -886,20 +928,43 @@
     })[0] || fallback || 'fa-chart-simple';
   }
 
-  function readKpis(screen, fallbackIcon) {
+  function numericOnlyValue(value) {
+    return /^[\d.,\s/%]+$/.test(cleanLabel(value));
+  }
+
+  function withKpiUnit(value, unit) {
+    var cleanValue = cleanLabel(value) || '0';
+    if (!unit || !numericOnlyValue(cleanValue)) return cleanValue;
+    if (unit === '%') return cleanValue.indexOf('%') >= 0 ? cleanValue : cleanValue + '%';
+    if (cleanValue.indexOf('%') >= 0) return cleanValue;
+    return cleanValue + ' ' + unit;
+  }
+
+  function readKpis(screen, moduleMeta) {
     var source = screen.querySelector('.dashboard-kpi-grid');
     var cards = source ? Array.from(source.children).slice(0, 4) : [];
-    return cards.map(function (card) {
+    var metadata = (moduleMeta && moduleMeta.kpis) || [];
+    var kpis = cards.map(function (card, index) {
+      var kpiMeta = metadata[index] || {};
       var label = text(card.querySelector('.dashboard-kpi-label, p, span, small'));
       var value = text(card.querySelector('.dashboard-kpi-value strong, strong, b'));
-      var meta = text(card.querySelector('.dashboard-kpi-value span, em, small'));
+      var note = text(card.querySelector('.dashboard-kpi-value span, em, small'));
       return {
-        label: label || 'Chỉ số',
-        value: value || '0',
-        meta: meta || 'Đang cập nhật',
-        icon: firstFaIcon(card, fallbackIcon)
+        label: kpiMeta.label || label || 'Tổng quan ' + (index + 1),
+        value: withKpiUnit(value || '0', kpiMeta.unit),
+        meta: kpiMeta.meta || note || 'Theo dữ liệu ' + ((screen && screen.getAttribute('data-module-dashboard')) || 'dashboard'),
+        icon: firstFaIcon(card, kpiMeta.icon || (moduleMeta && moduleMeta.icon))
       };
     });
+    metadata.slice(kpis.length).forEach(function (item) {
+      kpis.push({
+        label: item.label,
+        value: withKpiUnit('0', item.unit),
+        meta: item.meta || 'Đang cập nhật',
+        icon: item.icon || (moduleMeta && moduleMeta.icon)
+      });
+    });
+    return kpis.slice(0, 4);
   }
 
   function readPanels(screen) {
@@ -922,15 +987,17 @@
       screen.insertBefore(host, screen.firstChild);
     }
     host.textContent = '';
-    var kpis = readKpis(screen, meta.icon);
+    var kpis = readKpis(screen, meta);
     var panels = readPanels(screen);
     if (!kpis.length) {
-      kpis = [
-        { label: 'Tổng quan', value: '0', meta: 'Đang cập nhật', icon: meta.icon },
-        { label: 'Hồ sơ', value: '0', meta: 'Đang cập nhật', icon: 'fa-folder-open' },
-        { label: 'Khu vực', value: '0', meta: 'Đang cập nhật', icon: 'fa-location-dot' },
-        { label: 'Cảnh báo', value: '0', meta: 'Đang cập nhật', icon: 'fa-bell' }
-      ];
+      kpis = (meta.kpis || []).map(function (item) {
+        return {
+          label: item.label,
+          value: withKpiUnit('0', item.unit),
+          meta: item.meta || 'Đang cập nhật',
+          icon: item.icon || meta.icon
+        };
+      });
     }
     if (!panels.length) {
       panels = [

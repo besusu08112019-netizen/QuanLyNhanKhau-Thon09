@@ -293,6 +293,29 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(dashboard).not.toContainText('undefined');
   });
 
+  test('module dashboards render contextual KPI labels, icons and units', async ({ page }) => {
+    await openApp(page, 390);
+
+    for (const screen of ['dashboardHouseholds', 'dashboardPopulation', 'dashboardBusiness', 'dashboardVehicles', 'dashboardLivestock', 'dashboardGis', 'dashboardReports']) {
+      await navigate(page, screen);
+      const dashboard = page.locator('.screen.active .app-v2-module-dashboard');
+      await expect(dashboard, `${screen} dashboard`).toBeVisible();
+      await expect(dashboard.locator('.app-v2-stat-card')).toHaveCount(4);
+      const cards = await dashboard.locator('.app-v2-stat-card').evaluateAll((nodes) => nodes.map((node) => ({
+        label: node.querySelector('.app-v2-stat-label')?.textContent?.trim() || '',
+        value: node.querySelector('.app-v2-stat-value')?.textContent?.trim() || '',
+        meta: node.querySelector('.app-v2-stat-meta')?.textContent?.trim() || '',
+        icons: node.querySelectorAll('.app-v2-card-icon i').length
+      })));
+      for (const card of cards) {
+        expect(card.label, `${screen} KPI label`).not.toMatch(/^$|^Chỉ số$|^Tổng quan \d+$/);
+        expect(card.value, `${screen} KPI value`).toMatch(/\D/);
+        expect(card.meta, `${screen} KPI meta`).not.toBe('');
+        expect(card.icons, `${screen} KPI icon`).toBeGreaterThan(0);
+      }
+    }
+  });
+
   test('mobile V2 record cards bind to real row actions and household members', async ({ page }) => {
     await openApp(page, 390);
     await navigate(page, 'households');
