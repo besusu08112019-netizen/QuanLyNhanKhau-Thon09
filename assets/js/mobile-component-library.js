@@ -138,13 +138,29 @@
     return tabs;
   }
 
-  function AppFilterSheet(options) {
-    var sheet = el('section', 'app-v2-filter-sheet', { 'aria-label': options.label || 'Bộ lọc' });
+  function AppSearchControl(field) {
+    var search = el('label', 'app-v2-search', { 'aria-label': field.label || 'Tìm kiếm' });
+    var input = el('input', '', {
+      type: 'search',
+      placeholder: field.placeholder || '',
+      autocomplete: 'off',
+      inputmode: 'search'
+    });
+    append(search, [icon(field.icon || 'fa-magnifying-glass'), input]);
+    return search;
+  }
+
+  function AppFilterBar(options) {
+    var sheet = el('section', 'app-v2-filter-sheet app-v2-filter-bar', { 'aria-label': options.label || 'Bộ lọc' });
     (options.fields || []).forEach(function (field) {
-      sheet.appendChild(field.type === 'select' ? AppSelect(field) : AppInput(field));
+      sheet.appendChild(field.type === 'select' ? AppSelect(field) : (field.type === 'search' ? AppSearchControl(field) : AppInput(field)));
     });
     if (options.actions && options.actions.length) sheet.appendChild(AppToolbar(options.actions));
     return sheet;
+  }
+
+  function AppFilterSheet(options) {
+    return AppFilterBar(options);
   }
 
   function AppMapToolbar(items) {
@@ -188,17 +204,6 @@
       AppIconButton({ icon: options.icon || 'fa-bell', label: options.iconLabel || 'Thông báo' })
     ]);
     append(header, [row]);
-    if (options.search) {
-      var search = el('label', 'app-v2-search');
-      var input = el('input', '', {
-        type: 'search',
-        placeholder: options.search,
-        autocomplete: 'off',
-        inputmode: 'search'
-      });
-      append(search, [icon('fa-magnifying-glass'), input]);
-      append(header, [search]);
-    }
     return header;
   }
 
@@ -954,7 +959,7 @@
     append(filterSection, [AppFilterSheet({
       label: 'Bộ lọc nhanh ' + meta.title,
       fields: [
-        { label: 'Từ khóa', placeholder: 'Tìm trong ' + meta.title.toLowerCase() },
+        { label: 'Từ khóa', type: 'search', placeholder: 'Tìm trong ' + meta.title.toLowerCase() },
         { label: 'Trạng thái', type: 'select', options: [{ label: 'Tất cả', value: '' }, { label: 'Cần xử lý', value: 'todo' }, { label: 'Hoàn tất', value: 'done' }] }
       ],
       actions: [{ label: 'Áp dụng', icon: 'fa-filter' }, { label: 'Làm mới', icon: 'fa-rotate-right' }]
@@ -968,7 +973,6 @@
         eyebrow: 'Dashboard module',
         title: meta.title,
         subtitle: meta.subtitle + ' - ' + moduleGeneratedAt(screen),
-        search: 'Tìm nhanh trong ' + meta.title.toLowerCase() + '...',
         icon: meta.icon,
         iconLabel: meta.title
       }),
@@ -1349,7 +1353,7 @@
     append(filters, [AppFilterSheet({
       label: 'Bộ lọc ' + meta.title,
       fields: [
-        { label: 'Từ khóa', placeholder: meta.search || 'Tìm kiếm...' },
+        { label: 'Từ khóa', type: 'search', placeholder: meta.search || 'Tìm kiếm...' },
         { label: 'Trạng thái', type: 'select', options: [{ label: 'Tất cả', value: '' }, { label: 'Đang quản lý', value: 'active' }, { label: 'Cần xử lý', value: 'todo' }] }
       ],
       actions: [{ label: 'Áp dụng', icon: 'fa-filter' }, { label: 'Đặt lại', icon: 'fa-rotate-right' }]
@@ -1374,7 +1378,6 @@
         eyebrow: meta.eyebrow,
         title: meta.title,
         subtitle: meta.subtitle,
-        search: meta.search,
         icon: meta.icon,
         iconLabel: meta.title
       }),
@@ -1418,7 +1421,6 @@
         eyebrow: 'Thôn 09',
         title: 'Dashboard',
         subtitle: data.generatedAt,
-        search: 'Tìm hộ, nhân khẩu, CCCD, địa chỉ...',
         icon: 'fa-bell',
         iconLabel: 'Thông báo'
       })
@@ -1431,6 +1433,10 @@
       { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }
     ]);
     host.appendChild(toolbar);
+    host.appendChild(AppFilterBar({
+      label: 'Tìm kiếm Dashboard',
+      fields: [{ label: 'Từ khóa', type: 'search', placeholder: 'Tìm hộ, nhân khẩu, CCCD, địa chỉ...' }]
+    }));
 
     var statSection = AppSection({ title: 'Chỉ số nhanh', meta: 'Mobile UI v2' });
     var statGrid = el('div', 'app-v2-grid app-v2-dashboard-kpis');
@@ -1597,6 +1603,7 @@
     AppDrawer: AppDrawer,
     AppEmptyState: AppEmptyState,
     AppFAB: AppFAB,
+    AppFilterBar: AppFilterBar,
     AppFilterSheet: AppFilterSheet,
     AppHeader: AppHeader,
     AppIconButton: AppIconButton,

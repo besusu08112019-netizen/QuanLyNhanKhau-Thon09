@@ -182,17 +182,25 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
         });
         return visibleChildren.length === 0;
       });
-      const searchControls = Array.from(active?.querySelectorAll('.app-v2-search input, .app-v2-filter-sheet input[type="text"]') || []);
+      const searchControls = Array.from(active?.querySelectorAll('.app-v2-search input, .app-v2-filter-sheet input[type="text"], .app-v2-filter-sheet input[type="search"]') || []);
+      const headerSearchControls = Array.from(active?.querySelectorAll('.app-v2-hero .app-v2-search input') || []);
+      const filterBarSearchControls = Array.from(active?.querySelectorAll('.app-v2-filter-bar .app-v2-search input') || []);
       return {
         activeId: active?.id || '',
         generatedTriggerCount: generatedTriggers.length,
         orphanTriggerCount: orphanTriggers.length,
         emptyFilterBoxCount: emptyFilterBoxes.length,
+        searchControlCount: searchControls.length,
+        headerSearchCount: headerSearchControls.length,
+        filterBarSearchCount: filterBarSearchControls.length,
         missingSearchPlaceholder: searchControls.filter((input) => !input.getAttribute('placeholder')).length
       };
     });
     expect(metrics.orphanTriggerCount, `${screen} orphan filter trigger`).toBe(0);
     expect(metrics.emptyFilterBoxCount, `${screen} duplicate icon-only filter boxes`).toBeLessThanOrEqual(1);
+    expect(metrics.searchControlCount, `${screen} duplicate search controls`).toBeLessThanOrEqual(1);
+    expect(metrics.headerSearchCount, `${screen} header search should be merged into filter bar`).toBe(0);
+    expect(metrics.filterBarSearchCount, `${screen} filter bar search`).toBe(metrics.searchControlCount);
     expect(metrics.missingSearchPlaceholder, `${screen} search placeholder`).toBe(0);
     expect(metrics.generatedTriggerCount, `${screen} duplicate generated filter trigger`).toBeLessThanOrEqual(1);
   }
