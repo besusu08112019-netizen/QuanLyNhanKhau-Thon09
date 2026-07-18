@@ -15,6 +15,36 @@ async function mockApis(page) {
     if (path === '/api/auth/me') return route.fulfill(payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' }));
     if (path.includes('/api/dashboard')) return route.fulfill(payload({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() }));
     if (path.includes('/api/gis')) return route.fulfill(payload({ items: [], total: 0, metrics: {}, charts: {} }));
+    if (path === '/api/profiles/household/1') return route.fulfill(payload({
+      type: 'household',
+      profile: { id: 1, household_code: 'H09-0001', head_citizen_name: 'NGUYEN VAN AN', address: 'Thon 09, xa Hong Phong', at_home_count: 4, away_count: 1 },
+      sections: {},
+      members: [],
+      files: [],
+      notes: [],
+      logs: [],
+      timeline: []
+    }));
+    if (path === '/api/profiles/citizen/1') return route.fulfill(payload({
+      type: 'citizen',
+      profile: { id: 1, household_code: 'H09-0001', head_citizen_name: 'NGUYEN VAN AN', citizen_code: 'NK-0001', full_name: 'TRAN THI BINH', relationship: 'Vo', date_of_birth: '1985-01-01', gender: 'Nu', identity_number: '001185000001', residency_status: 'Thuong tru' },
+      sections: {},
+      family: [],
+      files: [],
+      notes: [],
+      logs: [],
+      timeline: []
+    }));
+    if (path === '/api/households/1') return route.fulfill(payload({
+      id: 1,
+      household_code: 'H09-0001',
+      head_citizen_name: 'NGUYEN VAN AN',
+      address: 'Thon 09, xa Hong Phong',
+      phone: '0912345678',
+      at_home_count: 4,
+      away_count: 1,
+      household_type: 'Ho thuong tru'
+    }));
     if (path === '/api/households') return route.fulfill(payload({
       items: Array.from({ length: 8 }, (_, index) => ({
         id: index + 1,
@@ -27,9 +57,28 @@ async function mockApis(page) {
       })),
       total: 8, page: 1, pageSize: 20, totalPages: 1
     }));
+    if (path === '/api/persons/1') return route.fulfill(payload({
+      id: 1,
+      household_code: 'H09-0001',
+      head_citizen_name: 'NGUYEN VAN AN',
+      citizen_code: 'NK-0001',
+      full_name: 'TRAN THI BINH',
+      relationship: 'Vo',
+      date_of_birth: '1985-01-01',
+      gender: 'Nu',
+      identity_number: '001185000001',
+      residency_status: 'Thuong tru',
+      presence_status: 'AT_HOME',
+      status: 'ALIVE'
+    }));
     if (path === '/api/persons') return route.fulfill(payload({
-      items: [{ id: 1, household_code: 'H09-0001', citizen_code: 'NK-0001', full_name: 'TRAN THI BINH', relationship: 'Chu ho', date_of_birth: '1985-01-01', gender: 'Nu', identity_number: '001185000001', residency_status: 'Thuong tru' }],
-      total: 1, page: 1, pageSize: 20, totalPages: 1
+      items: url.searchParams.get('householdId') === 'H09-0001'
+        ? [
+          { id: 1, household_code: 'H09-0001', head_citizen_name: 'NGUYEN VAN AN', citizen_code: 'NK-0001', full_name: 'TRAN THI BINH', relationship: 'Vo', date_of_birth: '1985-01-01', gender: 'Nu', identity_number: '001185000001', residency_status: 'Thuong tru', presence_status: 'AT_HOME', status: 'ALIVE' },
+          { id: 2, household_code: 'H09-0001', head_citizen_name: 'NGUYEN VAN AN', citizen_code: 'NK-0002', full_name: 'NGUYEN VAN CUONG', relationship: 'Con', date_of_birth: '2012-02-02', gender: 'Nam', identity_number: '001112000002', residency_status: 'Thuong tru', presence_status: 'AT_HOME', status: 'ALIVE' }
+        ]
+        : [{ id: 1, household_code: 'H09-0001', head_citizen_name: 'NGUYEN VAN AN', citizen_code: 'NK-0001', full_name: 'TRAN THI BINH', relationship: 'Vo', date_of_birth: '1985-01-01', gender: 'Nu', identity_number: '001185000001', residency_status: 'Thuong tru', presence_status: 'AT_HOME', status: 'ALIVE' }],
+      total: url.searchParams.get('householdId') === 'H09-0001' ? 2 : 1, page: 1, pageSize: 20, totalPages: 1
     }));
     if (path === '/api/household-business') return route.fulfill(payload({
       items: [{ id: 1, household_code: 'H09-0002', head_citizen_name: 'PHAM VAN BICH', business_name: 'Co so moc Bich', business_type_label: 'Ho kinh doanh', sector_label: 'Moc dan dung', status_label: 'Dang hoat dong' }],
@@ -173,5 +222,43 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(page.locator('#householdRows > tr')).toHaveCount(8);
     await expect(page.locator('#householdsScreen .app-v2-record-card')).toHaveCount(8);
     await expect(page.locator('#householdsScreen .app-v2-record-details')).toHaveCount(8);
+  });
+
+  test('mobile V2 record cards bind to real row actions and household members', async ({ page }) => {
+    await openApp(page, 390);
+    await navigate(page, 'households');
+
+    const firstHousehold = page.locator('#householdsScreen .app-v2-record-card').first();
+    await expect(firstHousehold).toContainText('NGUYEN VAN AN');
+    await expect(firstHousehold).toContainText('H09-0001');
+    await expect(firstHousehold.locator('.app-v2-record-title')).toContainText('NGUYEN VAN AN');
+    await expect(firstHousehold.locator('.app-v2-icon-button')).toHaveCount(3);
+    await firstHousehold.click();
+
+    await expect.poll(() => page.locator('#householdMembersModal.show, #detailModal.show').count()).toBeGreaterThan(0);
+    await expect(page.locator('body')).toContainText('TRAN THI BINH');
+    await expect(page.locator('body')).toContainText('NGUYEN VAN CUONG');
+
+    const memberDetailButton = page.locator('#householdMemberRows [data-platform-action="persons.detail"], #detailBody [data-platform-action="persons.detail"], #detailBody [data-platform-action="digitalProfile.citizen.open"]').first();
+    await memberDetailButton.click();
+    await expect.poll(() => page.locator('#personDetailModal.show, #detailModal.show').count()).toBeGreaterThan(0);
+    await expect(page.locator('body')).toContainText('TRAN THI BINH');
+    await page.evaluate(() => {
+      ['personDetailModal', 'detailModal', 'householdMembersModal'].forEach((id) => {
+        const modal = document.getElementById(id);
+        window.bootstrap?.Modal?.getOrCreateInstance?.(modal)?.hide();
+      });
+    });
+    await expect.poll(() => page.locator('#personDetailModal.show, #detailModal.show, #householdMembersModal.show').count()).toBe(0);
+
+    await navigate(page, 'persons');
+    const firstPerson = page.locator('#personsScreen .app-v2-record-card').first();
+    await expect(firstPerson).toContainText('TRAN THI BINH');
+    await expect(firstPerson).toContainText('NGUYEN VAN AN');
+    await expect(firstPerson).toContainText('H09-0001');
+    await expect(firstPerson.locator('.app-v2-icon-button')).toHaveCount(3);
+    await firstPerson.locator('.app-v2-icon-button[title="Xem"]').click();
+    await expect.poll(() => page.locator('#personDetailModal.show, #detailModal.show').count()).toBeGreaterThan(0);
+    await expect(page.locator('body')).toContainText('TRAN THI BINH');
   });
 });

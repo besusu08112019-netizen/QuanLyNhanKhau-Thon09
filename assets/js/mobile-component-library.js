@@ -54,6 +54,7 @@
       title: options.title || options.label || ''
     });
     if (options.action) button.setAttribute('data-screen', options.action);
+    if (options.proxy) button.setAttribute('data-app-v2-proxy-click', options.proxy);
     append(button, [icon(options.icon || 'fa-ellipsis')]);
     return button;
   }
@@ -352,7 +353,13 @@
   }
 
   function AppRecordCard(options) {
-    var card = el('article', 'app-v2-card app-v2-record-card');
+    var cardAttrs = {};
+    if (options.primaryProxy) {
+      cardAttrs.role = 'button';
+      cardAttrs.tabindex = '0';
+      cardAttrs['data-app-v2-primary-proxy'] = options.primaryProxy;
+    }
+    var card = el('article', 'app-v2-card app-v2-record-card', cardAttrs);
     var iconWrap = el('span', 'app-v2-card-icon');
     var textWrap = el('div', 'app-v2-title-group');
     var title = el('h3', 'app-v2-record-title');
@@ -401,7 +408,16 @@
       }
     }
     append(card, [iconWrap, textWrap]);
-    if (options.action) append(card, [AppIconButton({ icon: 'fa-ellipsis', label: 'Thao tác', action: options.action })]);
+    var actionList = options.actions || [];
+    if (actionList.length) {
+      var actions = el('div', 'app-v2-record-actions');
+      actionList.slice(0, 3).forEach(function (item) {
+        actions.appendChild(AppIconButton(item));
+      });
+      card.appendChild(actions);
+    } else if (options.action) {
+      append(card, [AppIconButton({ icon: 'fa-ellipsis', label: 'Thao tác', action: options.action })]);
+    }
     return card;
   }
 
@@ -527,6 +543,8 @@
       icon: 'fa-house-user',
       subtitle: 'Tra cứu, cập nhật hồ sơ hộ và định vị GIS',
       search: 'Tìm mã hộ, chủ hộ, địa chỉ...',
+      titleLabels: ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'],
+      metaLabels: ['Mã hộ', 'Địa chỉ', 'Ở nhà', 'Đi vắng', 'Ma ho', 'Dia chi', 'O nha', 'Di vang'],
       primaryAction: { label: 'Thêm hộ', icon: 'fa-plus', proxy: '#addHouseholdBtn, [data-platform-action="households.create"]' },
       nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboardHouseholds' }, { label: 'GIS', icon: 'fa-map-location-dot', action: 'gis' }]
     },
@@ -536,6 +554,8 @@
       icon: 'fa-id-card',
       subtitle: 'Hồ sơ nhân khẩu, cư trú và biến động',
       search: 'Tìm họ tên, CCCD, mã hộ...',
+      titleLabels: ['Họ và tên', 'Họ tên', 'Ho va ten', 'Ho ten'],
+      metaLabels: ['Chủ hộ', 'Tên chủ hộ', 'Mã hộ', 'Quan hệ', 'Tuổi', 'Giới tính', 'Cư trú', 'Chu ho', 'Ten chu ho', 'Ma ho', 'Quan he', 'Tuoi', 'Gioi tinh', 'Cu tru'],
       primaryAction: { label: 'Thêm nhân khẩu', icon: 'fa-plus', proxy: '#addPersonBtn, [data-platform-action="persons.create"]' },
       nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboardPopulation' }, { label: 'Biến động', icon: 'fa-arrows-rotate', action: 'movements' }],
       scopes: [
@@ -935,17 +955,75 @@
     return tableRows.concat(directRows).filter(isDataRow);
   }
 
+  function sourceActionSelector(button) {
+    if (!button) return '';
+    if (!button.getAttribute('data-app-v2-source-action')) {
+      sourceActionSelector.next = (sourceActionSelector.next || 0) + 1;
+      button.setAttribute('data-app-v2-source-action', 'a' + sourceActionSelector.next);
+    }
+    return '[data-app-v2-source-action="' + button.getAttribute('data-app-v2-source-action') + '"]';
+  }
+
+  function actionIcon(button) {
+    var action = String(button.getAttribute('data-platform-action') || '').toLowerCase();
+    var label = cleanLabel(button.getAttribute('title') || button.getAttribute('aria-label') || text(button)).toLowerCase();
+    if (/delete|xóa|xoa/.test(action + ' ' + label)) return 'fa-trash';
+    if (/edit|sửa|sua/.test(action + ' ' + label)) return 'fa-pen';
+    if (/print|in\b/.test(action + ' ' + label)) return 'fa-print';
+    if (/pdf/.test(action + ' ' + label)) return 'fa-file-pdf';
+    if (/excel/.test(action + ' ' + label)) return 'fa-file-excel';
+    if (/map|gis|định vị|dinh vi|location/.test(action + ' ' + label)) return 'fa-location-dot';
+    return 'fa-eye';
+  }
+
+  function actionLabel(button) {
+    var label = cleanLabel(button.getAttribute('title') || button.getAttribute('aria-label') || text(button));
+    var action = String(button.getAttribute('data-platform-action') || '');
+    if (label) return label;
+    if (/delete/i.test(action)) return 'Xóa';
+    if (/edit/i.test(action)) return 'Sửa';
+    return 'Xem';
+  }
+
+  function rowActions(row) {
+    var buttons = Array.from(row.querySelectorAll('button[data-platform-action], a[data-platform-action], button[data-edit], button[data-del]')).filter(function (button) {
+      return !button.matches('input, [disabled]') && sourceActionSelector(button);
+    });
+    var seen = {};
+    return buttons.map(function (button) {
+      var proxy = sourceActionSelector(button);
+      if (seen[proxy]) return null;
+      seen[proxy] = true;
+      return { label: actionLabel(button), icon: actionIcon(button), proxy: proxy };
+    }).filter(Boolean).slice(0, 3);
+  }
+
+  function primaryProxy(actions) {
+    var detail = (actions || []).find(function (item) {
+      return /xem|chi tiết|chi tiet/i.test(item.label || '') || /fa-eye/.test(item.icon || '');
+    });
+    return (detail || actions[0] || {}).proxy || '';
+  }
+
   function matchesAny(value, patterns) {
     var normalized = cleanLabel(value).toLowerCase();
+    var folded = normalized.normalize ? normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : normalized;
     return (patterns || []).some(function (pattern) {
-      return normalized.indexOf(cleanLabel(pattern).toLowerCase()) >= 0;
+      var normalizedPattern = cleanLabel(pattern).toLowerCase();
+      var foldedPattern = normalizedPattern.normalize ? normalizedPattern.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : normalizedPattern;
+      return normalized.indexOf(normalizedPattern) >= 0 || folded.indexOf(foldedPattern) >= 0;
     });
   }
 
   function pickField(fields, labels) {
-    return (fields || []).find(function (field) {
-      return matchesAny(field.label, labels);
-    });
+    var source = fields || [];
+    for (var i = 0; i < (labels || []).length; i += 1) {
+      var match = source.find(function (field) {
+        return matchesAny(field.label, [labels[i]]);
+      });
+      if (match) return match;
+    }
+    return null;
   }
 
   function recordTitle(fields, meta, index) {
@@ -984,12 +1062,15 @@
         if (/Tạm vắng|Đi vắng/i.test(joined)) badges.push({ label: 'Tạm vắng', tone: 'danger' });
         if (/Thường trú|Ở nhà/i.test(joined) && !badges.length) badges.push({ label: 'Thường trú', tone: 'success' });
         var title = recordTitle(fields, meta, index);
+        var actions = rowActions(row);
         return {
           title: title,
           meta: recordMeta(fields, title, meta),
           icon: meta.icon,
           action: screen.id.replace(/Screen$/, ''),
           badges: badges,
+          actions: actions,
+          primaryProxy: primaryProxy(actions),
           details: fields.filter(function (field) { return !/^(stt|#)$/i.test(cleanLabel(field.label)); })
         };
       });
@@ -1225,15 +1306,24 @@
     window.setTimeout(schedule, 240);
   }
 
+  function dispatchProxy(selector) {
+    var proxyTarget = document.querySelector(selector);
+    if (proxyTarget && typeof proxyTarget.dispatchEvent === 'function') {
+      proxyTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      return true;
+    }
+    return false;
+  }
+
   document.addEventListener('click', function (event) {
     var target = event.target.closest('.app-v2-button[data-screen], .app-v2-icon-button[data-screen], .app-v2-chip[data-screen], .app-v2-tab[data-screen], .app-v2-fab[data-screen], .app-v2-bottom-nav button[data-screen]');
     var proxy = event.target.closest('[data-app-v2-proxy-click]');
+    var primary = event.target.closest('[data-app-v2-primary-proxy]');
     if (proxy) {
-      var proxyTarget = document.querySelector(proxy.getAttribute('data-app-v2-proxy-click'));
-      if (proxyTarget && typeof proxyTarget.dispatchEvent === 'function') {
-        proxyTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-        return;
-      }
+      if (dispatchProxy(proxy.getAttribute('data-app-v2-proxy-click'))) return;
+    }
+    if (primary && !event.target.closest('button, a, input, select, textarea, summary, details')) {
+      if (dispatchProxy(primary.getAttribute('data-app-v2-primary-proxy'))) return;
     }
     if (!target) return;
     var screen = target.getAttribute('data-screen');
@@ -1241,6 +1331,14 @@
     if (window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') {
       window.Thon09NavigationController.navigate(screen);
     }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    var primary = event.target.closest('[data-app-v2-primary-proxy]');
+    if (!primary) return;
+    if (event.target.closest('button, a, input, select, textarea, summary, details')) return;
+    if (dispatchProxy(primary.getAttribute('data-app-v2-primary-proxy'))) event.preventDefault();
   });
 
   if (mobileQuery && mobileQuery.addEventListener) mobileQuery.addEventListener('change', schedule);

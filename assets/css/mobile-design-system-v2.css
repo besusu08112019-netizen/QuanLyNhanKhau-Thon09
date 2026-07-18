@@ -773,6 +773,17 @@
     padding: var(--app-space-4);
   }
 
+  body.app-authenticated .app-v2-record-card .app-v2-card-icon,
+  body.app-authenticated .app-v2-record-card .app-v2-title-group,
+  body.app-authenticated .app-v2-record-card .app-v2-record-actions {
+    grid-area: auto;
+  }
+
+  body.app-authenticated .app-v2-record-card .app-v2-title-group {
+    grid-column: 2;
+    min-width: 0;
+  }
+
   body.app-authenticated .app-v2-record-title {
     margin: 0;
     color: var(--app-color-text);
@@ -852,6 +863,25 @@ body.app-authenticated .app-v2-record-more-details {
   grid-template-columns: minmax(0, 1fr);
   gap: var(--app-space-2);
   margin: var(--app-space-2) 0 0;
+}
+
+body.app-authenticated .app-v2-record-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--app-space-2);
+  flex: 0 0 auto;
+  grid-column: 3;
+  align-self: flex-start;
+}
+
+body.app-authenticated .app-v2-record-card[data-app-v2-primary-proxy] {
+  cursor: pointer;
+}
+
+body.app-authenticated .app-v2-record-card[data-app-v2-primary-proxy]:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.25);
+  outline-offset: 3px;
 }
 
   body.app-authenticated .app-v2-action-row {
