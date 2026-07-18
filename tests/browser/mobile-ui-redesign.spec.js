@@ -221,7 +221,8 @@ test.describe('mobile tablet UI redesign contract', () => {
     await navigate(page, 'households');
     await expect(page.locator('#householdRows > tr')).toHaveCount(8);
     await expect(page.locator('#householdsScreen .app-v2-record-card')).toHaveCount(8);
-    await expect(page.locator('#householdsScreen .app-v2-record-details')).toHaveCount(8);
+    await expect(page.locator('#householdsScreen .app-v2-record-details')).toHaveCount(0);
+    await expect(page.locator('#householdsScreen .app-v2-record-more')).toHaveCount(8);
   });
 
   test('mobile V2 record cards bind to real row actions and household members', async ({ page }) => {
@@ -232,7 +233,11 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(firstHousehold).toContainText('NGUYEN VAN AN');
     await expect(firstHousehold).toContainText('H09-0001');
     await expect(firstHousehold.locator('.app-v2-record-title')).toContainText('NGUYEN VAN AN');
+    await expect(firstHousehold.locator('.app-v2-title-group > .app-v2-record-details')).toHaveCount(0);
     await expect(firstHousehold.locator('.app-v2-icon-button')).toHaveCount(3);
+    await expect(firstHousehold.locator('.app-v2-icon-button[title="Xem"]')).toHaveCount(1);
+    await expect(firstHousehold.locator('.app-v2-icon-button[title="Sửa"]')).toHaveCount(1);
+    await expect(firstHousehold.locator('.app-v2-icon-button[title="Xóa"]')).toHaveCount(1);
     await firstHousehold.click();
 
     await expect.poll(() => page.locator('#householdMembersModal.show, #detailModal.show').count()).toBeGreaterThan(0);
@@ -256,7 +261,11 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(firstPerson).toContainText('TRAN THI BINH');
     await expect(firstPerson).toContainText('NGUYEN VAN AN');
     await expect(firstPerson).toContainText('H09-0001');
+    await expect(firstPerson.locator('.app-v2-title-group > .app-v2-record-details')).toHaveCount(0);
     await expect(firstPerson.locator('.app-v2-icon-button')).toHaveCount(3);
+    await expect(firstPerson.locator('.app-v2-icon-button[title="Xem"]')).toHaveCount(1);
+    await expect(firstPerson.locator('.app-v2-icon-button[title="Sửa"]')).toHaveCount(1);
+    await expect(firstPerson.locator('.app-v2-icon-button[title="Xóa"]')).toHaveCount(1);
     await firstPerson.locator('.app-v2-icon-button[title="Xem"]').click();
     await expect.poll(() => page.locator('#personDetailModal.show, #detailModal.show').count()).toBeGreaterThan(0);
     await expect(page.locator('body')).toContainText('TRAN THI BINH');

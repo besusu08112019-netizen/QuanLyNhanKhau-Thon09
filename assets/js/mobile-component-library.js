@@ -376,19 +376,7 @@
       textWrap.appendChild(tags);
     }
     if (options.details && options.details.length) {
-      var visibleDetails = options.details.slice(0, 1);
-      var extraDetails = options.details.slice(1);
-      var details = el('dl', 'app-v2-record-details');
-      visibleDetails.forEach(function (field) {
-        var item = el('div', 'app-v2-record-field');
-        var term = el('dt');
-        var value = el('dd');
-        term.textContent = field.label || '';
-        value.textContent = field.value || '';
-        append(item, [term, value]);
-        details.appendChild(item);
-      });
-      textWrap.appendChild(details);
+      var extraDetails = options.details.slice(0);
       if (extraDetails.length) {
         var more = el('details', 'app-v2-record-more');
         var summary = el('summary');
@@ -947,6 +935,19 @@
     });
   }
 
+  function rowActionButtons(row) {
+    var headers = tableHeaders(row);
+    var cells = Array.from(row.children || []);
+    var actionCells = cells.filter(function (cell, index) {
+      var label = cleanLabel(cell.getAttribute('data-label') || headers[index] || '');
+      return isActionLabel(label);
+    });
+    var roots = actionCells.length ? actionCells : [row];
+    return roots.reduce(function (list, root) {
+      return list.concat(Array.from(root.querySelectorAll('button[data-platform-action], a[data-platform-action], button[data-edit], button[data-del]')));
+    }, []);
+  }
+
   function sourceRows(screen) {
     var tableRows = Array.from(screen.querySelectorAll('tbody tr'));
     var directRows = Array.from(screen.querySelectorAll('[id$="Rows"] > *')).filter(function (node) {
@@ -985,15 +986,24 @@
     return 'Xem';
   }
 
+  function actionIdentity(button) {
+    var data = button.dataset || {};
+    var action = data.platformAction || (button.hasAttribute('data-edit') ? 'edit' : '') || (button.hasAttribute('data-del') ? 'delete' : '');
+    var id = data.id || data.householdId || data.citizenId || data.personId || data.publicAssetId || data.vehicleId || data.target || '';
+    if (action || id) return [action, id].join(':');
+    return cleanLabel(actionLabel(button)).toLowerCase();
+  }
+
   function rowActions(row) {
-    var buttons = Array.from(row.querySelectorAll('button[data-platform-action], a[data-platform-action], button[data-edit], button[data-del]')).filter(function (button) {
-      return !button.matches('input, [disabled]') && sourceActionSelector(button);
+    var buttons = rowActionButtons(row).filter(function (button) {
+      return !button.matches('input, [disabled]');
     });
     var seen = {};
     return buttons.map(function (button) {
+      var identity = actionIdentity(button);
+      if (seen[identity]) return null;
+      seen[identity] = true;
       var proxy = sourceActionSelector(button);
-      if (seen[proxy]) return null;
-      seen[proxy] = true;
       return { label: actionLabel(button), icon: actionIcon(button), proxy: proxy };
     }).filter(Boolean).slice(0, 3);
   }
@@ -1051,6 +1061,13 @@
     }).join(' - ') || meta.subtitle;
   }
 
+  function recordDetails(fields, title) {
+    return (fields || []).filter(function (field) {
+      var label = cleanLabel(field.label);
+      return field.value && field.value !== title && !/^(stt|#)$/i.test(label) && !isActionLabel(label);
+    });
+  }
+
   function sourceRecords(screen, meta) {
     var rows = sourceRows(screen);
     if (rows.length) {
@@ -1071,7 +1088,7 @@
           badges: badges,
           actions: actions,
           primaryProxy: primaryProxy(actions),
-          details: fields.filter(function (field) { return !/^(stt|#)$/i.test(cleanLabel(field.label)); })
+          details: recordDetails(fields, title)
         };
       });
     }
