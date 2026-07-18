@@ -364,10 +364,22 @@
     var textWrap = el('div', 'app-v2-title-group');
     var title = el('h3', 'app-v2-record-title');
     var meta = el('p', 'app-v2-record-meta');
+    var summaryFields = options.summaryFields || [];
     title.textContent = options.title || 'Bản ghi';
     meta.textContent = options.meta || 'Đang cập nhật';
     append(iconWrap, [icon(options.icon || 'fa-file-lines')]);
-    append(textWrap, [title, meta]);
+    append(textWrap, [title]);
+    if (summaryFields.length) {
+      var summary = el('div', 'app-v2-record-summary');
+      summaryFields.forEach(function (field) {
+        var chip = el('span', 'app-v2-record-summary-chip');
+        chip.textContent = field.label ? field.label + ': ' + field.value : field.value;
+        summary.appendChild(chip);
+      });
+      textWrap.appendChild(summary);
+    } else {
+      textWrap.appendChild(meta);
+    }
     if (options.badges && options.badges.length) {
       var tags = el('div', 'app-v2-record-tags');
       options.badges.forEach(function (badge) {
@@ -608,6 +620,7 @@
       subtitle: 'Tra cứu, cập nhật hồ sơ hộ và định vị GIS',
       search: 'Tìm mã hộ, chủ hộ, địa chỉ...',
       titleLabels: ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'],
+      summaryLabels: ['Mã hộ', 'Ở nhà', 'Đi vắng', 'Trạng thái', 'Loại hộ', 'Ma ho', 'O nha', 'Di vang', 'Trang thai', 'Loai ho'],
       metaLabels: ['Mã hộ', 'Địa chỉ', 'Ở nhà', 'Đi vắng', 'Ma ho', 'Dia chi', 'O nha', 'Di vang'],
       primaryAction: { label: 'Thêm hộ', icon: 'fa-plus', proxy: '#addHouseholdBtn, [data-platform-action="households.create"]' },
       nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboardHouseholds' }, { label: 'GIS', icon: 'fa-map-location-dot', action: 'gis' }]
@@ -619,6 +632,7 @@
       subtitle: 'Hồ sơ nhân khẩu, cư trú và biến động',
       search: 'Tìm họ tên, CCCD, mã hộ...',
       titleLabels: ['Họ và tên', 'Họ tên', 'Ho va ten', 'Ho ten'],
+      summaryLabels: ['Chủ hộ', 'Tên chủ hộ', 'Mã hộ', 'Quan hệ', 'Giới tính', 'Tuổi', 'Cư trú', 'Chu ho', 'Ten chu ho', 'Ma ho', 'Quan he', 'Gioi tinh', 'Tuoi', 'Cu tru'],
       metaLabels: ['Chủ hộ', 'Tên chủ hộ', 'Mã hộ', 'Quan hệ', 'Tuổi', 'Giới tính', 'Cư trú', 'Chu ho', 'Ten chu ho', 'Ma ho', 'Quan he', 'Tuoi', 'Gioi tinh', 'Cu tru'],
       primaryAction: { label: 'Thêm nhân khẩu', icon: 'fa-plus', proxy: '#addPersonBtn, [data-platform-action="persons.create"]' },
       nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboardPopulation' }, { label: 'Biến động', icon: 'fa-arrows-rotate', action: 'movements' }],
@@ -1137,10 +1151,57 @@
     }).join(' - ') || meta.subtitle;
   }
 
-  function recordDetails(fields, title) {
+  function fieldIdentity(field) {
+    return cleanLabel(field && field.label).toLowerCase() + ':' + cleanLabel(field && field.value).toLowerCase();
+  }
+
+  function householdCode(value) {
+    var match = cleanLabel(value).match(/H\d{2}-\d+/i);
+    return match ? match[0] : '';
+  }
+
+  function derivedHouseholdOwner(fields, title) {
+    var source = (fields || []).find(function (field) {
+      return householdCode(field.value) && cleanLabel(field.value).replace(householdCode(field.value), '').trim();
+    });
+    if (!source) return null;
+    var owner = cleanLabel(source.value).replace(householdCode(source.value), '').trim();
+    return owner && owner !== title ? { label: 'Chủ hộ', value: owner } : null;
+  }
+
+  function normalizedSummaryField(field, requestedLabel, title) {
+    if (!field) return null;
+    var label = cleanLabel(requestedLabel || field.label);
+    var value = cleanLabel(field.value);
+    if (matchesAny(label, ['Mã hộ', 'Ma ho'])) value = householdCode(value) || value;
+    if (matchesAny(label, ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'])) value = value.replace(householdCode(value), '').trim();
+    if (!value || value === title) return null;
+    return { label: label, value: value };
+  }
+
+  function recordSummaryFields(fields, title, meta) {
+    var labels = meta.summaryLabels || meta.metaLabels || [];
+    var selected = [];
+    (labels || []).forEach(function (label) {
+      var match = pickField(fields, [label]);
+      var summaryField = match ? normalizedSummaryField(match, label, title) : null;
+      if (!summaryField && matchesAny(label, ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'])) summaryField = derivedHouseholdOwner(fields, title);
+      if (!summaryField || isActionLabel(summaryField.label)) return;
+      if (selected.some(function (field) { return fieldIdentity(field) === fieldIdentity(summaryField); })) return;
+      selected.push(summaryField);
+    });
+    return selected.slice(0, 4);
+  }
+
+  function recordDetails(fields, title, summaryFields, meta) {
+    var summaryIds = {};
+    var summaryLabels = meta.summaryLabels || [];
+    (summaryFields || []).forEach(function (field) {
+      summaryIds[fieldIdentity(field)] = true;
+    });
     return (fields || []).filter(function (field) {
       var label = cleanLabel(field.label);
-      return field.value && field.value !== title && !/^(stt|#)$/i.test(label) && !isActionLabel(label);
+      return field.value && field.value !== title && !summaryIds[fieldIdentity(field)] && !matchesAny(label, summaryLabels) && !/^(stt|#)$/i.test(label) && !isActionLabel(label);
     });
   }
 
@@ -1156,15 +1217,17 @@
         if (/Thường trú|Ở nhà/i.test(joined) && !badges.length) badges.push({ label: 'Thường trú', tone: 'success' });
         var title = recordTitle(fields, meta, index);
         var actions = rowActions(row);
+        var summaryFields = recordSummaryFields(fields, title, meta);
         return {
           title: title,
           meta: recordMeta(fields, title, meta),
+          summaryFields: summaryFields,
           icon: meta.icon,
           action: screen.id.replace(/Screen$/, ''),
           badges: badges,
           actions: actions,
           primaryProxy: primaryProxy(actions),
-          details: recordDetails(fields, title)
+          details: recordDetails(fields, title, summaryFields, meta)
         };
       });
     }

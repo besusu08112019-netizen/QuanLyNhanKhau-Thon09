@@ -866,6 +866,31 @@
     overflow-wrap: anywhere;
   }
 
+  body.app-authenticated .app-v2-record-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-1);
+    flex-wrap: wrap;
+    min-width: 0;
+    margin-top: var(--app-space-2);
+  }
+
+  body.app-authenticated .app-v2-record-summary-chip {
+    max-width: 100%;
+    min-height: 28px;
+    padding: 5px 9px;
+    border: 1px solid var(--app-color-line);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    background: var(--app-color-surface-soft);
+    color: var(--app-color-text);
+    font-size: 12px;
+    font-weight: 850;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
   body.app-authenticated .app-v2-record-tags {
     display: flex;
     align-items: center;

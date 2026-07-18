@@ -295,6 +295,9 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(firstHousehold).toContainText('H09-0001');
     await expect(firstHousehold.locator('.app-v2-record-title')).toContainText('NGUYEN VAN AN');
     await expect(firstHousehold.locator('.app-v2-title-group > .app-v2-record-details')).toHaveCount(0);
+    await expect(firstHousehold.locator('.app-v2-record-meta')).toHaveCount(0);
+    await expect(firstHousehold.locator('.app-v2-record-summary-chip')).toContainText(['Mã hộ: H09-0001', 'Ở nhà: 4', 'Đi vắng: 1']);
+    await expect(firstHousehold.locator('.app-v2-record-more-details')).not.toContainText('Mã hộ');
     await expect(firstHousehold.locator('.app-v2-icon-button')).toHaveCount(3);
     await expect(firstHousehold.locator('.app-v2-icon-button[title="Xem"]')).toHaveCount(1);
     await expect(firstHousehold.locator('.app-v2-icon-button[title="Sửa"]')).toHaveCount(1);
@@ -323,6 +326,9 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(firstPerson).toContainText('NGUYEN VAN AN');
     await expect(firstPerson).toContainText('H09-0001');
     await expect(firstPerson.locator('.app-v2-title-group > .app-v2-record-details')).toHaveCount(0);
+    await expect(firstPerson.locator('.app-v2-record-meta')).toHaveCount(0);
+    await expect(firstPerson.locator('.app-v2-record-summary-chip')).toContainText(['Chủ hộ: NGUYEN VAN AN', 'Mã hộ: H09-0001', 'Quan hệ: Vo', 'Giới tính: Nu']);
+    await expect(firstPerson.locator('.app-v2-record-more-details')).not.toContainText('Mã hộ');
     await expect(firstPerson.locator('.app-v2-icon-button')).toHaveCount(3);
     await expect(firstPerson.locator('.app-v2-icon-button[title="Xem"]')).toHaveCount(1);
     await expect(firstPerson.locator('.app-v2-icon-button[title="Sửa"]')).toHaveCount(1);
