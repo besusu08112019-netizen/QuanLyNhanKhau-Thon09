@@ -82,8 +82,8 @@ async function mockApis(page) {
         household_code: `H09-000${index + 1}`,
         head_citizen_name: index === 0 ? 'NGUYEN VAN AN' : `HO TEST ${index + 1}`,
         address: 'Thon 09, xa Hong Phong',
-        at_home_count: 4,
-        away_count: 1,
+        at_home_count: index === 1 ? 1 : 4,
+        away_count: index === 1 ? 0 : 1,
         household_type: 'Ho thuong tru'
       })),
       total: 8, page: 1, pageSize: 20, totalPages: 1
@@ -255,8 +255,14 @@ test.describe('mobile tablet UI redesign contract', () => {
     await navigate(page, 'households');
     await expect(page.locator('#householdRows > tr')).toHaveCount(8);
     await expect(page.locator('#householdsScreen .app-v2-record-card')).toHaveCount(8);
+    await expect(page.locator('#householdsScreen .app-v2-record-card').first().locator('[data-app-v2-summary-key="household-members"]')).toContainText('Nhân khẩu: 5 nhân khẩu');
+    await expect(page.locator('#householdsScreen .app-v2-record-card').nth(1).locator('[data-app-v2-summary-key="household-members"]')).toContainText('Nhân khẩu: 1 nhân khẩu');
     await expect(page.locator('#householdsScreen .app-v2-record-details')).toHaveCount(0);
     await expect(page.locator('#householdsScreen .app-v2-record-more')).toHaveCount(8);
+
+    await page.setViewportSize({ width: 768, height: 900 });
+    await navigate(page, 'households');
+    await expect(page.locator('#householdsScreen .app-v2-record-card').first().locator('[data-app-v2-summary-key="household-members"]')).toContainText('Nhân khẩu: 5 nhân khẩu');
   });
 
   test('mobile and tablet module lists show desktop-aligned record totals', async ({ page }) => {

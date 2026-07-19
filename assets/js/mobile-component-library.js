@@ -452,6 +452,8 @@
       var summary = el('div', 'app-v2-record-summary');
       summaryFields.forEach(function (field) {
         var chip = el('span', 'app-v2-record-summary-chip');
+        if (field.key) chip.setAttribute('data-app-v2-summary-key', field.key);
+        if (field.tone) chip.setAttribute('data-tone', field.tone);
         chip.textContent = field.label ? field.label + ': ' + field.value : field.value;
         summary.appendChild(chip);
       });
@@ -736,6 +738,7 @@
   var MODULE_SCREEN_META = {
     householdsScreen: {
       title: 'Hộ gia đình',
+      listKind: 'households',
       eyebrow: 'Quản lý hộ',
       icon: 'fa-house-user',
       subtitle: 'Tra cứu, cập nhật hồ sơ hộ và định vị GIS',
@@ -1434,9 +1437,34 @@
     return { label: label, value: value };
   }
 
+  function numericFieldValue(fields, labels) {
+    var field = pickField(fields, labels);
+    if (!field) return null;
+    var normalized = cleanLabel(field.value).replace(/\./g, '').replace(',', '.');
+    var parsed = Number(normalized.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function householdMemberSummaryField(fields, meta) {
+    if (!meta || meta.listKind !== 'households') return null;
+    var explicitTotal = numericFieldValue(fields, [
+      'Nhân khẩu', 'Số nhân khẩu', 'Thành viên', 'Số thành viên',
+      'Nhan khau', 'So nhan khau', 'Thanh vien', 'So thanh vien',
+      'member_count', 'member_count_real', 'total_members'
+    ]);
+    var atHome = numericFieldValue(fields, ['Ở nhà', 'O nha', 'at_home_count']);
+    var away = numericFieldValue(fields, ['Đi vắng', 'Di vang', 'away_count']);
+    var total = explicitTotal != null ? explicitTotal : null;
+    if (total == null && (atHome != null || away != null)) total = Number(atHome || 0) + Number(away || 0);
+    if (total == null) return null;
+    return { key: 'household-members', label: 'Nhân khẩu', value: number(total) + ' nhân khẩu', tone: 'population' };
+  }
+
   function recordSummaryFields(fields, title, meta) {
     var labels = meta.summaryLabels || meta.metaLabels || [];
     var selected = [];
+    var memberSummaryField = householdMemberSummaryField(fields, meta);
+    if (memberSummaryField) selected.push(memberSummaryField);
     (labels || []).forEach(function (label) {
       var isOwnerLabel = matchesAny(label, ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho']);
       var match = isOwnerLabel ? pickExactField(fields, [label]) : pickField(fields, [label]);

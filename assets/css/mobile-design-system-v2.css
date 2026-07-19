@@ -905,6 +905,13 @@
     overflow-wrap: anywhere;
   }
 
+  body.app-authenticated .app-v2-record-summary-chip[data-tone="population"] {
+    border-color: rgba(29, 78, 216, 0.24);
+    background: var(--app-color-primary-soft);
+    color: var(--app-color-primary);
+    font-weight: 950;
+  }
+
   body.app-authenticated .app-v2-record-tags {
     display: flex;
     align-items: center;
