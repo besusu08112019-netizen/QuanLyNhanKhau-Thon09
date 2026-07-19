@@ -10,6 +10,26 @@ async function mockApis(page) {
     const path = url.pathname;
     if (path === '/api/public/login-config') return route.fulfill(payload({ settings: {}, metrics: {} }));
     if (path === '/api/auth/me') return route.fulfill(payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' }));
+    if (path === '/api/households') return route.fulfill(payload({
+      items: [
+        { id: 1, household_code: 'H09-001', head_citizen_name: 'Nguyễn Văn A', address: 'Xóm 1 Thôn 09', phone: '0912345678', at_home_count: 4, away_count: 0, household_type: 'normal' },
+        { id: 2, household_code: 'H09-002', head_citizen_name: 'Trần Văn B', address: 'Xóm 2 Thôn 09', phone: '0987654321', at_home_count: 3, away_count: 1, household_type: 'normal' }
+      ],
+      total: 2,
+      page: 1,
+      pageSize: 20,
+      totalPages: 1
+    }));
+    if (path === '/api/persons') return route.fulfill(payload({
+      items: [
+        { id: 101, household_code: 'H09-001', person_code: 'NK001', citizen_code: 'NK001', full_name: 'Nguyễn Văn C', head_citizen_name: 'Nguyễn Văn A', relationship: 'Con', date_of_birth: '2000-01-01', identity_number: '012345678901', gender: 'male', residency_status: 'permanent', presence_status: 'at_home' },
+        { id: 102, household_code: 'H09-002', person_code: 'NK002', citizen_code: 'NK002', full_name: 'Trần Thị D', head_citizen_name: 'Trần Văn B', relationship: 'Chủ hộ', date_of_birth: '1985-01-01', identity_number: '987654321098', gender: 'female', residency_status: 'permanent', presence_status: 'at_home' }
+      ],
+      total: 2,
+      page: 1,
+      pageSize: 20,
+      totalPages: 1
+    }));
     if (path === '/api/household-business/catalogs') return route.fulfill(payload({ economic_type: [], business_scale: [], image_category: [], document_category: [] }));
     if (path === '/api/household-business') return route.fulfill(payload({
       items: [{
@@ -204,6 +224,54 @@ test('mobile shared AppFilterBar search filters records and restores the list', 
   await status.selectOption('');
   await search.fill('');
   await expect(cards).toHaveCount(1);
+});
+
+test('mobile shared search indexes household and person names, codes and addresses', async ({ page }) => {
+  await openAuthenticatedApp(page);
+
+  await page.evaluate(() => window.Thon09NavigationController?.navigate('households'));
+  await expect(page.locator('#householdRows > tr')).toHaveCount(2);
+  await page.evaluate(() => window.Thon09MobileComponents?.renderModuleScreen(document.querySelector('#householdsScreen')));
+  const householdCards = page.locator('#householdsScreen .app-v2-record-card');
+  const householdSearch = page.locator('#householdsScreen .app-v2-filter-bar .app-v2-search input');
+  await expect(householdCards).toHaveCount(2);
+
+  await householdSearch.fill('Nguyễn');
+  await expect(householdCards).toHaveCount(1);
+  await expect(householdCards.first()).toContainText(/Nguy/);
+  await householdSearch.fill('Nguyen');
+  await expect(householdCards).toHaveCount(1);
+  await householdSearch.fill('Văn');
+  await expect(householdCards).toHaveCount(2);
+  await householdSearch.fill('H09-001');
+  await expect(householdCards).toHaveCount(1);
+  await householdSearch.fill('Xóm 2');
+  await expect(householdCards).toHaveCount(1);
+  await expect(householdCards.first()).toContainText(/H09-002|Trần/);
+  await householdSearch.fill('');
+  await expect(householdCards).toHaveCount(2);
+
+  await page.evaluate(() => window.Thon09NavigationController?.navigate('persons'));
+  await expect(page.locator('#personRows > tr:not(.group-row)')).toHaveCount(2);
+  await page.evaluate(() => window.Thon09MobileComponents?.renderModuleScreen(document.querySelector('#personsScreen')));
+  const personCards = page.locator('#personsScreen .app-v2-record-card');
+  const personSearch = page.locator('#personsScreen .app-v2-filter-bar .app-v2-search input');
+  await expect(personCards).toHaveCount(2);
+
+  await personSearch.fill('Nguyễn Văn C');
+  await expect(personCards).toHaveCount(1);
+  await personSearch.fill('Nguyen');
+  await expect(personCards).toHaveCount(1);
+  await personSearch.fill('Văn');
+  await expect(personCards).toHaveCount(2);
+  await personSearch.fill('Nguyễn Văn A');
+  await expect(personCards).toHaveCount(1);
+  await personSearch.fill('H09-001');
+  await expect(personCards).toHaveCount(1);
+  await personSearch.fill('012345');
+  await expect(personCards).toHaveCount(1);
+  await personSearch.fill('');
+  await expect(personCards).toHaveCount(2);
 });
 
 test('mobile shared filters do not render duplicate icon-only controls and empty lists stay informative', async ({ page }) => {

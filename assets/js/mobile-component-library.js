@@ -1425,6 +1425,8 @@
           title: title,
           meta: recordMeta(fields, title, meta),
           summaryFields: summaryFields,
+          searchFields: fields,
+          searchText: text(row),
           icon: meta.icon,
           action: screen.id.replace(/Screen$/, ''),
           badges: badges,
@@ -1442,6 +1444,7 @@
         return {
           title: title,
           meta: body.slice(0, 120) || meta.subtitle,
+          searchText: text(card),
           icon: meta.icon,
           action: screen.id.replace(/Screen$/, ''),
           badges: [],
@@ -1461,8 +1464,12 @@
       item && item.value,
       item && item.meta,
       item && item.subtitle,
-      item && item.unit
+      item && item.unit,
+      item && item.searchText
     ];
+    (item && item.searchFields || []).forEach(function (field) {
+      parts.push(field.label, field.value);
+    });
     (item && item.summaryFields || []).forEach(function (field) {
       parts.push(field.label, field.value);
     });
