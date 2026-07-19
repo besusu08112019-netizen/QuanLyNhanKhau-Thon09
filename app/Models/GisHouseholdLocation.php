@@ -78,11 +78,22 @@ final class GisHouseholdLocation extends BaseModel
     public function detail(int $householdId): array
     {
         $this->ensureSchema();
+        $photoSql = $this->householdPhotoSql();
         $row = $this->fetchOne(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code, h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
-                    COALESCE(v.total_members,0) AS total_members, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count
+                    COALESCE(v.total_members,0) AS total_members, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count,
+                    COALESCE(cm.temporary_count,0) AS temporary_count,
+                    ' . $photoSql['thumbnail'] . ' AS thumbnail_file_id,
+                    ' . $photoSql['count'] . ' AS gallery_count
              FROM households h
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
+             LEFT JOIN (
+                SELECT c.household_id,
+                    SUM(CASE WHEN c.residency_status = "TEMPORARY" THEN 1 ELSE 0 END) AS temporary_count
+                FROM citizens c
+                WHERE ' . $this->statistics()->citizenCondition('c') . '
+                GROUP BY c.household_id
+             ) cm ON cm.household_id = h.id
              WHERE h.id = :id AND ' . $this->statistics()->householdCondition('h'),
             ['id' => $householdId]
         );
@@ -112,6 +123,13 @@ final class GisHouseholdLocation extends BaseModel
                 'total_members' => (int) ($row['total_members'] ?? 0),
                 'at_home_count' => (int) ($row['at_home_count'] ?? 0),
                 'away_count' => (int) ($row['away_count'] ?? 0),
+                'temporary_count' => (int) ($row['temporary_count'] ?? 0),
+                'thumbnail_file_id' => $row['thumbnail_file_id'] !== null ? (int) $row['thumbnail_file_id'] : null,
+                'photo_file_id' => $row['thumbnail_file_id'] !== null ? (int) $row['thumbnail_file_id'] : null,
+                'thumbnail_url' => $row['thumbnail_file_id'] !== null ? '/api/files/' . (int) $row['thumbnail_file_id'] . '/preview' : null,
+                'photo_url' => $row['thumbnail_file_id'] !== null ? '/api/files/' . (int) $row['thumbnail_file_id'] . '/preview' : null,
+                'household_photo_url' => $row['thumbnail_file_id'] !== null ? '/api/files/' . (int) $row['thumbnail_file_id'] . '/preview' : null,
+                'gallery_count' => (int) ($row['gallery_count'] ?? 0),
             ],
             'members' => array_map(fn($m) => [
                 'id' => (int) $m['id'], 'citizen_code' => (string) ($m['citizen_code'] ?? ''), 'full_name' => (string) ($m['full_name'] ?? ''), 'relationship' => (string) ($m['relationship'] ?? ''), 'phone' => (string) ($m['phone'] ?? ''), 'residency_status' => (string) ($m['residency_status'] ?? ''), 'presence_status' => (string) ($m['presence_status'] ?? ''),

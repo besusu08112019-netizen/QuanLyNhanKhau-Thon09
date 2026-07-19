@@ -34,7 +34,8 @@ const marker = {
   longitude: 105.976,
   located: 1,
   location_accuracy: 8,
-  location_source: 'GPS'
+  location_source: 'GPS',
+  thumbnail_file_id: 44
 };
 
 const detail = {
@@ -49,7 +50,11 @@ const detail = {
     away_count: 1,
     latitude: 20.255,
     longitude: 105.976,
-    location_accuracy: 8
+    location_accuracy: 8,
+    temporary_count: 1,
+    thumbnail_file_id: 44,
+    photo_file_id: 44,
+    thumbnail_url: '/api/files/44/preview'
   },
   members: [{ full_name: 'Nguyen Van A', relationship: 'Chu ho' }],
   business: [{ business_name: 'Cua hang vat tu', economic_type: 'Thuong mai', sector: 'Ban le' }],
@@ -193,6 +198,7 @@ async function boot(page, apiLog) {
     if (url.pathname === '/api/gis/areas' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ areas: [area], summary: { households: 1, located: 1, unlocated: 0 } }); }
     if (url.pathname === '/api/gis/households' && method === 'GET') { apiLog.push({ method, path: url.pathname, query: Object.fromEntries(url.searchParams.entries()) }); return payload({ items: [marker], summary: { households: 1, located: 1, unlocated: 0 } }); }
     if (url.pathname === '/api/gis/households/7/detail' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ ...detail, household: { ...detail.household, latitude: savedGps.latitude, longitude: savedGps.longitude, location_accuracy: savedGps.accuracy } }); }
+    if (url.pathname === '/api/files/44/preview' && method === 'GET') return route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgo=', 'base64') });
     if (url.pathname === '/api/gis/households/7/location' && method === 'PUT') { const body = request.postDataJSON(); savedGps.latitude = body.latitude; savedGps.longitude = body.longitude; savedGps.accuracy = body.accuracy; apiLog.push({ method, path: url.pathname, body }); return payload({ id: 7, latitude: savedGps.latitude, longitude: savedGps.longitude, location_accuracy: savedGps.accuracy }); }
     if (url.pathname === '/api/public-assets/gis' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: [publicAssetFeature] }); }
     if (url.pathname === '/api/houses/gis' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: [] }); }
@@ -329,11 +335,26 @@ test('leaflet GIS loads all markers immediately and lazy popup detail', async ({
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
   await expect(page.locator('[data-test-popup]')).toContainText('Cua hang vat tu');
   await expect(page.locator('[data-test-popup]')).toContainText('Kinh doanh');
+  await expect(page.locator('[data-test-popup]')).toContainText('Tạm trú');
+  await expect(page.locator('[data-test-popup]')).toContainText('Tạm vắng');
+  await expect(page.locator('[data-test-popup] img[data-auth-preview="44"]')).toHaveCount(1);
   await expect(page.locator('[data-test-popup]')).not.toContainText('Ho?t');
   expect(apiLog.some(item => item.path === '/api/gis/households/7/detail')).toBeTruthy();
 
   await page.locator('#gisSearch').fill('Nguyen');
   await expect(page.locator('#gisSearchResults')).toContainText('HK001');
+});
+
+test('leaflet GIS popup detail action opens household detail once from dynamic popup', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  await page.evaluate(() => {
+    window.__openedHouseholds = [];
+    window.showHousehold = id => window.__openedHouseholds.push(Number(id));
+  });
+  await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
+  await page.locator('[data-test-popup] [data-platform-action="households.detail"]').click();
+  await expect.poll(() => page.evaluate(() => window.__openedHouseholds)).toEqual([7]);
 });
 
 test('leaflet GIS routes marker directions through Google Maps', async ({ page }) => {
