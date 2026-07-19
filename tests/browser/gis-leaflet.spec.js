@@ -434,6 +434,21 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(rebuiltState.positions[0]).not.toEqual(rebuiltState.positions[1]);
   expect(rebuiltState.addLayerPositions[0]).not.toEqual(rebuiltState.addLayerPositions[1]);
 
+  const maxZoomState = await page.evaluate(() => {
+    window.App.gis.map.zoom = window.App.gis.map.getMaxZoom();
+    window.App.gis.map.fire('zoomend');
+    return {
+      mapHasClusterLayer: window.App.gis.map.hasLayer(window.App.gis.markerGroup),
+      mapHasFlatLayer: window.App.gis.map.hasLayer(window.App.gis.markerClusterManager.getFlatLayer()),
+      state: window.App.gis.markerClusterManager.debugState()
+    };
+  });
+  expect(maxZoomState.mapHasClusterLayer).toBe(false);
+  expect(maxZoomState.mapHasFlatLayer).toBe(true);
+  expect(maxZoomState.state.visibleMode).toBe('flat');
+  expect(maxZoomState.state.clusterLayerCount).toBe(0);
+  expect(maxZoomState.state.flatLayerCount).toBe(2);
+
   const legacyDelegateState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
     await window.thon09LoadGisHouseholdMarkers?.('', { force: true });
