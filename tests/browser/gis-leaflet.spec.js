@@ -426,7 +426,8 @@ test('leaflet GIS keeps popup open and switches cluster to flat markers at max z
   expect(maxZoomState.mapHasFlatLayer).toBe(true);
   expect(maxZoomState.state.visibleMode).toBe('flat');
   expect(maxZoomState.state.useCluster).toBe(true);
-  expect(maxZoomState.state.clusterLayerCount).toBe(0);
+  expect(maxZoomState.state.clusterLayerCount).toBe(2);
+  expect(maxZoomState.state.flatMarkerCount).toBe(2);
   expect(maxZoomState.state.flatLayerCount).toBe(2);
 
   const platformToggleState = await page.evaluate(() => {
@@ -448,7 +449,8 @@ test('leaflet GIS keeps popup open and switches cluster to flat markers at max z
   expect(platformToggleState.mapHasFlatLayer).toBe(true);
   expect(platformToggleState.state.visibleMode).toBe('flat');
   expect(platformToggleState.state.useCluster).toBe(true);
-  expect(platformToggleState.state.clusterLayerCount).toBe(0);
+  expect(platformToggleState.state.clusterLayerCount).toBe(2);
+  expect(platformToggleState.state.flatMarkerCount).toBe(2);
   expect(platformToggleState.state.flatLayerCount).toBe(2);
 
   const legacyDelegateState = await page.evaluate(async () => {
