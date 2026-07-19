@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Core\Database;
+use App\Core\Encoding;
 use App\Models\Citizen;
 use App\Models\Household;
 
@@ -231,16 +232,23 @@ final class ImportController extends BaseController
         $aliases = $this->aliases();
         $data = [];
         foreach ($headers as $index => $header) {
-            $key = $this->headerKey((string) $header);
+            $key = $this->headerKey($this->cleanImportedText((string) $header));
             foreach ($aliases as $field => $names) {
                 if (in_array($key, $names, true)) {
-                    $data[$field] = trim((string) ($values[$index] ?? ''));
+                    $data[$field] = $this->cleanImportedText((string) ($values[$index] ?? ''));
                     break;
                 }
             }
         }
         foreach (['dateOfBirth'] as $dateField) if (!empty($data[$dateField])) $data[$dateField] = $this->dateValue($data[$dateField]);
         return $data;
+    }
+
+    private function cleanImportedText(string $value): string
+    {
+        $value = preg_replace('/^\xEF\xBB\xBF/', '', $value) ?? $value;
+        $value = trim($value);
+        return Encoding::repairMojibake($value);
     }
 
     private function validateRows(string $type, array $rows): array

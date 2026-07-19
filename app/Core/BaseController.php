@@ -105,6 +105,7 @@ abstract class BaseController
             Response::error('Không có quyền ' . $action . ' module ' . $module, 403);
         }
         $this->rejectDevelopmentDataPayload($module);
+        $this->rejectMojibakePayload($module);
         return $user;
     }
 
@@ -127,6 +128,28 @@ abstract class BaseController
                 'ok' => false,
                 'error' => [
                     'message' => 'Du lieu QA/UAT/TEST/DEMO khong duoc phep trong production',
+                    'details' => [
+                        'module' => $module,
+                        'matches' => array_slice($matches, 0, 20),
+                    ],
+                ],
+            ], 422);
+        }
+    }
+
+    protected function rejectMojibakePayload(string $module): void
+    {
+        if (in_array($this->request->method(), ['GET', 'HEAD', 'OPTIONS'], true)) {
+            return;
+        }
+
+        $matches = [];
+        $this->collectMojibakeMatches($this->request->input(), '', $matches);
+        if ($matches) {
+            Response::json([
+                'ok' => false,
+                'error' => [
+                    'message' => 'Du lieu gui len khong dung UTF-8, vui long kiem tra nguon nhap/import',
                     'details' => [
                         'module' => $module,
                         'matches' => array_slice($matches, 0, 20),
@@ -171,6 +194,39 @@ abstract class BaseController
         $matches[] = [
             'field' => $path,
             'marker' => $hit[0],
+        ];
+    }
+
+    private function collectMojibakeMatches(mixed $value, string $path, array &$matches): void
+    {
+        if (count($matches) >= 50) {
+            return;
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                $keyPath = $path === '' ? (string) $key : $path . '.' . $key;
+                $normalizedKey = strtolower(str_replace(['-', ' '], '_', (string) $key));
+                if (in_array($normalizedKey, self::DEVELOPMENT_DATA_SKIP_KEYS, true)) {
+                    continue;
+                }
+                $this->collectMojibakeMatches($item, $keyPath, $matches);
+            }
+            return;
+        }
+
+        if (is_object($value)) {
+            $this->collectMojibakeMatches((array) $value, $path, $matches);
+            return;
+        }
+
+        if (!is_string($value) || $value === '' || !Encoding::looksLikeMojibake($value)) {
+            return;
+        }
+
+        $matches[] = [
+            'field' => $path,
+            'value' => mb_substr($value, 0, 120),
         ];
     }
 

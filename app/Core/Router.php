@@ -105,7 +105,7 @@ final class Router
                     $user['email'] ?? null,
                     'rbac',
                     'permission_denied',
-                    'T? ch?i request ghi d? li?u c?a t?i kho?n Kh?ch',
+                    'Từ chối request ghi dữ liệu của tài khoản Khách',
                     null,
                     [
                         'role' => $user['role'] ?? null,
@@ -119,7 +119,7 @@ final class Router
                 error_log('[RBAC_DENIED_AUDIT_ERROR] ' . $auditError->getMessage());
             }
 
-            Response::error('T?i kho?n Kh?ch ch? ???c ph?p xem d? li?u', 403);
+            Response::error('Tài khoản Khách chỉ được phép xem dữ liệu', 403);
         } catch (\Throwable $e) {
             error_log('[RBAC_VIEWER_GUARD_ERROR] ' . $e->getMessage());
         }

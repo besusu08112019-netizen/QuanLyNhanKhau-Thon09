@@ -279,7 +279,7 @@ SQL);
         $this->ensureSchema();
         $params = $this->categoryParams($data, $userId, $id);
         if ($id) {
-            if (!$this->findCategory($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu');
+            if (!$this->findCategory($id)) throw new \RuntimeException('Không tìm thấy khoản thu');
             $params['id'] = $id;
             $this->execute('UPDATE contribution_categories SET code=:code, name=:name, contribution_type=:contribution_type, unit_type=:unit_type, amount=:amount, unit=:unit, collection_cycle=:collection_cycle, custom_cycle=:custom_cycle, target_config_json=:target_config_json, exemption_config_json=:exemption_config_json, status=:status, note=:note, updated_by=:user WHERE id=:id', $params);
             $this->refreshCampaignsFromCategory($id);
@@ -294,9 +294,9 @@ SQL);
     public function deleteCategory(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->findCategory($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu');
+        if (!$this->findCategory($id)) throw new \RuntimeException('Không tìm thấy khoản thu');
         $active = (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM contribution_campaigns WHERE category_id=:id AND status <> "DELETED"', ['id' => $id]) ?: [])['total'] ?? 0);
-        if ($active > 0) throw new \RuntimeException('Khoáº£n thu Ä‘ang cÃ³ Ä‘á»£t thu, khÃ´ng thá»ƒ xÃ³a');
+        if ($active > 0) throw new \RuntimeException('Khoản thu đang có đợt thu, không thể xóa');
         $this->execute('UPDATE contribution_categories SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
     }
 
@@ -853,7 +853,7 @@ SQL);
             'year' => $year,
             'period_name' => trim((string) ($data['period_name'] ?? $data['periodName'] ?? '')) ?: null,
             'amount' => max(0, (float) ($data['amount'] ?? ($category['amount'] ?? 0))),
-            'unit' => trim((string) ($data['unit'] ?? ($category['unit'] ?? 'VNÄ/há»™'))) ?: 'VNÄ/há»™',
+            'unit' => trim((string) ($data['unit'] ?? ($category['unit'] ?? 'VNĐ/hộ'))) ?: 'VNĐ/hộ',
             'unit_type' => $unitType,
             'start_date' => trim((string) ($data['start_date'] ?? $data['startDate'] ?? '')) ?: null,
             'due_date' => trim((string) ($data['due_date'] ?? $data['dueDate'] ?? '')) ?: null,
@@ -893,7 +893,7 @@ SQL);
             'contribution_type' => trim((string) ($data['contribution_type'] ?? $data['contributionType'] ?? $name)) ?: $name,
             'unit_type' => $unitType,
             'amount' => max(0, (float) ($data['amount'] ?? 0)),
-            'unit' => trim((string) ($data['unit'] ?? 'VNÄ/há»™')) ?: 'VNÄ/há»™',
+            'unit' => trim((string) ($data['unit'] ?? 'VNĐ/hộ')) ?: 'VNĐ/hộ',
             'collection_cycle' => $cycle,
             'custom_cycle' => trim((string) ($data['custom_cycle'] ?? $data['customCycle'] ?? '')) ?: null,
             'target_config_json' => $this->configJson($data, 'target'),
@@ -956,7 +956,7 @@ SQL);
             'unit_type' => $unitType,
             'unit_type_label' => ContributionRuleEngine::UNIT_TYPES[$unitType] ?? $unitType,
             'amount' => (float) ($row['amount'] ?? 0),
-            'unit' => (string) ($row['unit'] ?? 'VNÄ/há»™'),
+            'unit' => (string) ($row['unit'] ?? 'VNĐ/hộ'),
             'collection_cycle' => $cycle,
             'collection_cycle_label' => self::COLLECTION_CYCLES[$cycle] ?? $cycle,
             'custom_cycle' => (string) ($row['custom_cycle'] ?? ''),

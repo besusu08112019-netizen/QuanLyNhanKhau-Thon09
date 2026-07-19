@@ -48,7 +48,7 @@ final class ContributionController extends BaseController
     {
         $this->requirePermission('contributions', 'read');
         $row = $this->contributions->findCategory((int) $id);
-        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu', 404);
+        if (!$row) $this->fail('Không tìm thấy khoản thu', 404);
         $this->ok($row);
     }
 
@@ -57,7 +57,7 @@ final class ContributionController extends BaseController
         $user = $this->requirePermission('contributions', 'create');
         try {
             $row = $this->contributions->upsertCategory((array) $this->input(), (int) $user['id']);
-            $this->audit($user, 'contributions', 'create_category', 'ThÃªm khoáº£n thu', $row['id'], ['before' => null, 'after' => $row]);
+            $this->audit($user, 'contributions', 'create_category', 'Thêm khoản thu', $row['id'], ['before' => null, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $exception) {
             $this->fail($exception->getMessage(), 422);
@@ -69,9 +69,9 @@ final class ContributionController extends BaseController
         $user = $this->requirePermission('contributions', 'update');
         try {
             $before = $this->contributions->findCategory((int) $id);
-            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu', 404);
+            if (!$before) $this->fail('Không tìm thấy khoản thu', 404);
             $row = $this->contributions->upsertCategory((array) $this->input(), (int) $user['id'], (int) $id);
-            $this->audit($user, 'contributions', 'update_category', 'Chá»‰nh sá»­a khoáº£n thu', $id, ['before' => $before, 'after' => $row]);
+            $this->audit($user, 'contributions', 'update_category', 'Chỉnh sửa khoản thu', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $exception) {
             $this->fail($exception->getMessage(), 422);
@@ -83,9 +83,9 @@ final class ContributionController extends BaseController
         $user = $this->requirePermission('contributions', 'delete');
         try {
             $before = $this->contributions->findCategory((int) $id);
-            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y khoáº£n thu', 404);
+            if (!$before) $this->fail('Không tìm thấy khoản thu', 404);
             $this->contributions->deleteCategory((int) $id, (int) $user['id']);
-            $this->audit($user, 'contributions', 'delete_category', 'XÃ³a khoáº£n thu', $id, ['before' => $before, 'after' => null]);
+            $this->audit($user, 'contributions', 'delete_category', 'Xóa khoản thu', $id, ['before' => $before, 'after' => null]);
             $this->ok(['id' => (int) $id]);
         } catch (Throwable $exception) {
             $this->fail($exception->getMessage(), 422);
