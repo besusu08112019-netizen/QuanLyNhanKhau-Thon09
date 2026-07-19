@@ -255,6 +255,33 @@ test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page
   expect(result.editingEnabled).toBe(true);
 });
 
+test('leaflet GIS configures Esri imagery to scale native tiles at max zoom', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  const result = await page.evaluate(() => {
+    const map = window.App.gis.map;
+    const esri = window.App.gis.tiles.esriWorldImagery;
+    document.getElementById('gisBaseLayer').value = 'esriWorldImagery';
+    document.getElementById('gisBaseLayer').dispatchEvent(new Event('change', { bubbles: true }));
+    map.zoom = map.getMaxZoom();
+    return {
+      mapMaxZoom: map.getMaxZoom(),
+      activeUrl: window.App.gis.baseLayer?.url || '',
+      isActive: window.App.gis.baseLayer === esri,
+      opts: esri.opts || esri.options || {},
+      zoom: map.getZoom()
+    };
+  });
+  expect(result.isActive).toBe(true);
+  expect(result.activeUrl === 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=' || result.activeUrl.includes('World_Imagery/MapServer/tile/{z}/{y}/{x}')).toBe(true);
+  expect(result.opts.maxZoom).toBe(result.mapMaxZoom);
+  expect(result.opts.maxNativeZoom).toBeLessThanOrEqual(result.opts.maxZoom);
+  expect(result.opts.tileSize).toBe(256);
+  expect(result.opts.zoomOffset).toBe(0);
+  expect(result.opts.detectRetina).toBe(false);
+  expect(result.zoom).toBe(result.mapMaxZoom);
+});
+
 test('leaflet GIS renders GeoJSON area polygon and highlights selected area', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
