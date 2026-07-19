@@ -82,6 +82,19 @@
     return button;
   }
 
+  function AppFab(options) {
+    var button = el('button', 'app-v2-fab', {
+      type: 'button',
+      'aria-label': options.label || 'Add new',
+      title: options.label || 'Add new'
+    });
+    if (options.action) button.setAttribute('data-screen', options.action);
+    if (options.proxy) button.setAttribute('data-app-v2-proxy-click', options.proxy);
+    append(button, [icon(options.icon || 'fa-plus'), el('span', '', null)]);
+    button.lastChild.textContent = options.label || 'Add new';
+    return button;
+  }
+
   function AppBadge(options) {
     var badge = el('span', 'app-v2-badge', { 'data-tone': options.tone || 'primary' });
     badge.textContent = options.label || '';
@@ -848,7 +861,7 @@
       icon: 'fa-hand-holding-dollar',
       subtitle: 'Theo dõi khoản thu và tiến độ đóng góp',
       search: 'Tìm hộ, khoản thu, trạng thái...',
-      primaryAction: { label: 'Thêm khoản thu', icon: 'fa-plus', proxy: '#contributionAddBtn, [data-platform-action="contributions.create"]' },
+      primaryAction: { label: 'Thêm khoản thu', icon: 'fa-plus', proxy: '#contributionCreateCampaignBtn, [data-platform-action="contributions.create"]' },
       nav: [{ label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }]
     },
     agricultureScreen: {
@@ -1986,7 +1999,6 @@
     append(actions, [actionRow]);
 
     append(primary, summary ? [summary, filters, listSummary, list, paginationHost, AppBackToTop()] : [filters, listSummary, list, paginationHost, AppBackToTop()]);
-    append(secondary, [actions]);
     append(layout, [primary, secondary]);
     append(host, [
       AppHeader({
@@ -2017,6 +2029,63 @@
         ])
       }));
     }
+  }
+
+  function activeScreen() {
+    return document.querySelector('.screen.active');
+  }
+
+  function isCreatePrimaryAction(action) {
+    if (!action) return false;
+    var textValue = [action.label, action.icon, action.proxy, action.action].join(' ').toLowerCase();
+    return /fa-plus|user-plus|create|opencreate|\\.add|add|thêm|them|tạo|tao/.test(textValue);
+  }
+
+  function ensurePrimaryProxy(screen, action) {
+    if (!screen || !action || !action.proxy || document.querySelector(action.proxy)) return;
+    var fallback = null;
+    if (screen.id === 'vehiclesScreen' && typeof window.openVehicleForm === 'function') {
+      fallback = { id: 'vehicleAddBtn', handler: window.openVehicleForm };
+    } else if (screen.id === 'contributionsScreen' && typeof window.openContributionCampaign === 'function') {
+      fallback = { id: 'contributionCreateCampaignBtn', handler: function () { window.openContributionCampaign(); } };
+    }
+    if (!fallback) return;
+    var button = el('button', 'd-none', {
+      id: fallback.id,
+      type: 'button',
+      'aria-hidden': 'true',
+      tabindex: '-1'
+    });
+    button.addEventListener('click', fallback.handler);
+    screen.insertBefore(button, screen.firstChild);
+  }
+
+  function syncGlobalFab() {
+    var fab = document.querySelector('[data-app-v2-global-fab]');
+    var screen = activeScreen();
+    var meta = screen && moduleScreenMeta(screen);
+    var primaryAction = meta && meta.primaryAction;
+    if (!document.body.classList.contains('app-authenticated') || !screen || !isCreatePrimaryAction(primaryAction)) {
+      if (fab) fab.remove();
+      return;
+    }
+    ensurePrimaryProxy(screen, primaryAction);
+    if (!fab) {
+      fab = AppFab(primaryAction);
+      fab.setAttribute('data-app-v2-global-fab', 'true');
+      document.body.appendChild(fab);
+    }
+    fab.className = 'app-v2-fab app-v2-global-fab';
+    fab.setAttribute('aria-label', primaryAction.label || 'Add new');
+    fab.setAttribute('title', primaryAction.label || 'Add new');
+    fab.removeAttribute('data-screen');
+    fab.removeAttribute('data-app-v2-proxy-click');
+    if (primaryAction.action) fab.setAttribute('data-screen', primaryAction.action);
+    if (primaryAction.proxy) fab.setAttribute('data-app-v2-proxy-click', primaryAction.proxy);
+    var iconNode = fab.querySelector('i');
+    if (iconNode) iconNode.className = 'fa-solid ' + (primaryAction.icon || 'fa-plus');
+    var label = fab.querySelector('span');
+    if (label) label.textContent = primaryAction.label || 'Add new';
   }
 
   function renderDashboard() {
@@ -2142,6 +2211,7 @@
         if (screen) renderModuleScreen(screen);
       });
     }
+    syncGlobalFab();
   }
 
   function schedule() {

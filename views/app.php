@@ -245,7 +245,7 @@
         </div>
       </section>
       <section id="householdsScreen" class="screen household-management-screen">
-        <button id="householdAddBtn" class="d-none" type="button" hidden aria-hidden="true" tabindex="-1"></button>
+        <button id="householdAddBtn" class="d-none" type="button" aria-hidden="true" tabindex="-1"></button>
         <div class="content-card module-filter-card household-filter-card">
           <div class="household-filter-grid">
             <div class="module-field household-search-field"><label for="householdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="householdSearch" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ..."></div></div>
@@ -265,7 +265,7 @@
 
 
       <section id="businessHouseholdsScreen" class="screen household-management-screen">
-        <button id="businessHouseholdAddBtn" class="d-none" type="button" data-platform-action="businessHouseholds.openCreate" hidden aria-hidden="true" tabindex="-1"></button>
+        <button id="businessHouseholdAddBtn" class="d-none" type="button" data-platform-action="businessHouseholds.openCreate" aria-hidden="true" tabindex="-1"></button>
         <div class="module-filter-panel household-filter-panel">
           <div class="module-filter-grid household-filter-grid">
             <div class="module-field household-search-field"><label for="businessHouseholdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="businessHouseholdSearch" class="form-control" placeholder="Mã hộ, chủ hộ, tên cơ sở, ngành nghề, điện thoại..."></div></div>
@@ -398,7 +398,7 @@
         </div>
       </div>
       <section id="personsScreen" class="screen person-management-screen">
-        <button id="personAddBtn" class="d-none" type="button" hidden aria-hidden="true" tabindex="-1"></button>
+        <button id="personAddBtn" class="d-none" type="button" aria-hidden="true" tabindex="-1"></button>
 
         <div class="content-card person-search-card mb-4">
           <div class="person-search-row">
