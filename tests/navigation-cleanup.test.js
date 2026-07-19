@@ -34,7 +34,8 @@ const forbiddenCss = [
 const allowedClickListeners = new Map([
   ['assets/js/app-platform.js', [
     "host.addEventListener('click', handleClick);",
-    "root.addEventListener('click', handler);"
+    "root.addEventListener('click', handler);",
+    "root.addEventListener('click', function (event) {"
   ]],
   ['assets/js/gis-household-location.js', [
     "document.addEventListener('click', event => {",
@@ -56,6 +57,7 @@ const allowedClickListeners = new Map([
   ]],
   ['assets/js/vehicles.js', [
     "$('#vehicleResetBtn').addEventListener('click'",
+    "$('#vehicleAddBtn')?.addEventListener('click'",
     "['#vehicleAddBtn','#vehicleAddBtnInline','#vehicleAddBtnList'].forEach",
     "$('#vehicleExportExcel').addEventListener('click'",
     "$('#vehicleExportPdf').addEventListener('click'",
@@ -65,7 +67,10 @@ const allowedClickListeners = new Map([
     "document.addEventListener('click',function(event){var item=event.target.closest&&event.target.closest('[data-screen],[data-mobile-screen]');if(!item||item.classList.contains('gov-logout'))return;var delegation=window.Thon09Platform&&window.Thon09Platform.navigationDelegation;"
   ]],
   ['assets/js/mobile-component-library.js', [
-    "document.addEventListener('click', function (event) {"
+    "document.addEventListener('click', function (event) {",
+    "sheet.addEventListener('click', function (event) {",
+    "paginationHost.addEventListener('click', function (event) {",
+    "button.addEventListener('click', fallback.handler);"
   ]]
 ]);
 

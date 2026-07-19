@@ -75,7 +75,14 @@ final class Citizen extends BaseModel
         $baseColumns[] = 'h.address AS household_address';
         $baseColumns[] = 'h.head_citizen_name';
         $items = $this->fetchAll('SELECT ' . implode(', ', $baseColumns) . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name LIMIT $pageSize OFFSET $offset", $params);
-        return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return [
+            'items' => $items,
+            'page' => $page,
+            'pageSize' => $pageSize,
+            'total' => $total,
+            'totalPages' => max(1, (int) ceil($total / $pageSize)),
+            'metrics' => $this->statistics()->metrics(),
+        ];
     }
 
     public function findByIdentity(string $identity): ?array

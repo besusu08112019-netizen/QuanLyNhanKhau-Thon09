@@ -61,9 +61,35 @@ final class PopulationStatistics extends BaseModel
         return implode(' AND ', $conditions);
     }
 
+    public function temporaryResidenceCitizenCondition(string $alias = 'c'): string
+    {
+        $conditions = [$this->notDeletedCondition('citizens', $alias)];
+        if ($this->columnExists('citizens', 'life_status')) {
+            $conditions[] = "COALESCE(" . $alias . ".life_status,'ALIVE') <> 'DECEASED'";
+        }
+        if ($this->columnExists('citizens', 'residency_status')) {
+            $conditions[] = $alias . ".residency_status = 'TEMPORARY'";
+        } else {
+            $conditions[] = '0=1';
+        }
+        return implode(' AND ', $conditions);
+    }
+
     public function temporaryAbsenceHouseholdCondition(string $alias = 'h'): string
     {
         return $this->notDeletedCondition('households', $alias);
+    }
+
+    public function currentTemporaryStatusCounts(): array
+    {
+        $temporaryResidence = $this->currentTemporaryResidenceCount();
+        $temporaryAbsence = $this->currentTemporaryAbsenceCount();
+        return [
+            'temporary_residence_count' => $temporaryResidence,
+            'temporary_absence_count' => $temporaryAbsence,
+            'temporary_count' => $temporaryResidence,
+            'away_count' => $temporaryAbsence,
+        ];
     }
 
     public function counts(): array
@@ -91,8 +117,9 @@ final class PopulationStatistics extends BaseModel
 
         $totalCitizens = max(1, (int) ($citizens['total_citizens'] ?? 0));
         $totalHouseholds = max(1, (int) ($households['total_households'] ?? 0));
-        $temporaryResidence = (int) ($citizens['temporary_residence_count'] ?? 0);
-        $temporaryAbsence = $this->temporaryAbsenceCount($filters);
+        $temporaryStatusCounts = $this->currentTemporaryStatusCounts();
+        $temporaryResidence = $temporaryStatusCounts['temporary_residence_count'];
+        $temporaryAbsence = $temporaryStatusCounts['temporary_absence_count'];
 
         $metrics = [
             'total_households' => (int) ($households['total_households'] ?? 0),
@@ -231,18 +258,17 @@ final class PopulationStatistics extends BaseModel
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
-    private function temporaryAbsenceCount(array $filters): int
+    private function currentTemporaryResidenceCount(): int
     {
-        $filters = $this->normalizeFilters($filters);
+        $where = [$this->temporaryResidenceCitizenCondition('c'), $this->temporaryAbsenceHouseholdCondition('h')];
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE ' . implode(' AND ', $where)) ?: [];
+        return (int) ($row['total'] ?? 0);
+    }
+
+    private function currentTemporaryAbsenceCount(): int
+    {
         $where = [$this->temporaryAbsenceCitizenCondition('c'), $this->temporaryAbsenceHouseholdCondition('h')];
-        $params = [];
-        if ($filters['householdStatus']) {
-            $where[] = 'h.status = :household_status';
-            $params['household_status'] = $filters['householdStatus'];
-        }
-        $category = $this->categoryKey($filters['householdType']);
-        if ($category) $this->addCategoryWhere($where, $params, $category);
-        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE ' . implode(' AND ', $where), $params) ?: [];
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE ' . implode(' AND ', $where)) ?: [];
         return (int) ($row['total'] ?? 0);
     }
 
