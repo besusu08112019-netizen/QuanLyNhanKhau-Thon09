@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260719-gis-remove-imagery-layer';
+const PWA_VERSION = 'thon09-pwa-v20260719-gis-esri-tilelayer-reset';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;

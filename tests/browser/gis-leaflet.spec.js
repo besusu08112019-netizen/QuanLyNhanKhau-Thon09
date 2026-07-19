@@ -263,22 +263,54 @@ test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page
   expect(result.editingEnabled).toBe(true);
 });
 
-test('leaflet GIS does not expose satellite imagery basemap', async ({ page }) => {
+test('leaflet GIS configures Esri World Imagery as a clean tile basemap', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
   const result = await page.evaluate(() => {
     const select = document.getElementById('gisBaseLayer');
+    const map = window.App.gis.map;
+    const esri = window.App.gis.tiles.esriWorldImagery;
+    const markerCountBefore = window.App.gis.markerCache.size;
+    const areaCountBefore = window.App.gis.areaLayerMap.size;
+    const zoomBefore = map.getZoom();
+    const centerBefore = map.center;
+    select.value = 'esriWorldImagery';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
     return {
-      hasEsriTile: Boolean(window.App.gis.tiles.esriWorldImagery),
+      hasEsriTile: Boolean(esri),
       hasEsriOption: Boolean(select?.querySelector('option[value="esriWorldImagery"]')),
       options: Array.from(select?.options || []).map(option => option.value),
-      baseLayerUrl: window.App.gis.baseLayer?.url || ''
+      isActive: window.App.gis.baseLayer === esri,
+      baseLayerUrl: window.App.gis.baseLayer?.url || '',
+      opts: esri?.opts || esri?.options || {},
+      markerCountBefore,
+      markerCountAfter: window.App.gis.markerCache.size,
+      areaCountBefore,
+      areaCountAfter: window.App.gis.areaLayerMap.size,
+      zoomBefore,
+      zoomAfter: map.getZoom(),
+      centerBefore,
+      centerAfter: map.center
     };
   });
-  expect(result.hasEsriTile).toBe(false);
-  expect(result.hasEsriOption).toBe(false);
-  expect(result.options).toEqual(['osm', 'hot', 'cartoLight', 'cartoDark']);
-  expect(result.baseLayerUrl).not.toContain('World_Imagery');
+  expect(result.hasEsriTile).toBe(true);
+  expect(result.hasEsriOption).toBe(true);
+  expect(result.options).toEqual(['osm', 'hot', 'cartoLight', 'cartoDark', 'esriWorldImagery']);
+  expect(result.isActive).toBe(true);
+  expect(result.baseLayerUrl === 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=' || result.baseLayerUrl.includes('services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')).toBe(true);
+  expect(result.opts.minZoom).toBe(0);
+  expect(result.opts.maxZoom).toBe(20);
+  expect(result.opts.maxNativeZoom).toBe(19);
+  expect(result.opts.detectRetina).toBe(false);
+  expect(result.opts.tileSize).toBe(256);
+  expect(result.opts.zoomOffset).toBe(0);
+  expect(result.opts.updateWhenIdle).toBe(true);
+  expect(result.opts.updateWhenZooming).toBe(false);
+  expect(result.opts.keepBuffer).toBe(4);
+  expect(result.markerCountAfter).toBe(result.markerCountBefore);
+  expect(result.areaCountAfter).toBe(result.areaCountBefore);
+  expect(result.zoomAfter).toBe(result.zoomBefore);
+  expect(result.centerAfter).toEqual(result.centerBefore);
 });
 
 test('leaflet GIS renders GeoJSON area polygon and highlights selected area', async ({ page }) => {
