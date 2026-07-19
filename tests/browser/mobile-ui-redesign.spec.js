@@ -99,22 +99,32 @@ async function mockApis(page) {
       away_count: 1,
       household_type: 'Ho thuong tru'
     }));
-    if (path === '/api/households') return route.fulfill(payload({
-      items: Array.from({ length: 8 }, (_, index) => ({
+    if (path === '/api/households') {
+      const households = Array.from({ length: 8 }, (_, index) => ({
         id: index + 1,
-        household_code: `H09-000${index + 1}`,
-        head_citizen_name: index === 0 ? 'NGUYEN VAN AN' : `HO TEST ${index + 1}`,
-        address: 'Thon 09, xa Hong Phong',
-        at_home_count: index === 1 ? 1 : 4,
-        away_count: index === 1 ? 0 : 1,
+        household_code: index === 1 ? 'H09-0087' : `H09-000${index + 1}`,
+        head_citizen_name: index < 2 ? 'NGUYEN VAN AN' : `HO TEST ${index + 1}`,
+        address: index === 1 ? 'Xom 03 cu, thon 09' : 'Thon 09, xa Hong Phong',
+        area_code: index === 1 ? 'Xom 03 cu' : 'Xom 01 cu',
+        phone: index === 1 ? '0987000000' : '0912345678',
+        member_count_real: index === 1 ? 3 : (index === 2 ? 1 : 5),
+        at_home_count: index === 1 ? 3 : (index === 2 ? 1 : 4),
+        away_count: index === 1 || index === 2 ? 0 : 1,
         household_type: 'Ho thuong tru'
-      })),
-      total: 8, page: 1, pageSize: 20, totalPages: 1
-    }));
+      }));
+      const query = (url.searchParams.get('search') || '').trim().toLowerCase();
+      const items = query
+        ? households.filter((row) => [row.household_code, row.head_citizen_name, row.address, row.area_code, row.phone].some((value) => String(value || '').toLowerCase().includes(query)))
+        : households;
+      return route.fulfill(payload({ items, total: items.length, page: 1, pageSize: 20, totalPages: 1 }));
+    }
     if (path === '/api/persons/1') return route.fulfill(payload({
       id: 1,
+      household_id: 1,
       household_code: 'H09-0001',
+      household_address: 'Thon 09, xa Hong Phong',
       head_citizen_name: 'NGUYEN VAN AN',
+      member_count_real: 5,
       citizen_code: 'NK-0001',
       full_name: 'TRAN THI BINH',
       relationship: 'Vo',
@@ -279,7 +289,7 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(page.locator('#householdRows > tr')).toHaveCount(8);
     await expect(page.locator('#householdsScreen .app-v2-record-card')).toHaveCount(8);
     await expect(page.locator('#householdsScreen .app-v2-record-card').first().locator('[data-app-v2-summary-key="household-members"]')).toContainText('Nhân khẩu: 5 nhân khẩu');
-    await expect(page.locator('#householdsScreen .app-v2-record-card').nth(1).locator('[data-app-v2-summary-key="household-members"]')).toContainText('Nhân khẩu: 1 nhân khẩu');
+    await expect(page.locator('#householdsScreen .app-v2-record-card').nth(2).locator('[data-app-v2-summary-key="household-members"]')).toContainText('Nhân khẩu: 1 nhân khẩu');
     await expect(page.locator('#householdsScreen .app-v2-record-details')).toHaveCount(0);
     await expect(page.locator('#householdsScreen .app-v2-record-more')).toHaveCount(8);
 
@@ -309,6 +319,47 @@ test.describe('mobile tablet UI redesign contract', () => {
     await page.setViewportSize({ width: 768, height: 900 });
     await navigate(page, 'vehicles');
     await expect(page.locator('#vehiclesScreen .app-v2-list-summary')).toContainText('Danh sách xe:');
+  });
+
+  test('shared person form searches and selects households with duplicate head names', async ({ page }) => {
+    for (const width of [390, 768, 1280]) {
+      await openApp(page, width);
+      await page.evaluate(() => window.openPersonForm());
+      await expect(page.locator('#personModal')).toHaveClass(/show/);
+
+      const search = page.locator('#personHouseholdSearch');
+      await expect(search).toBeVisible();
+      await search.fill('NGUYEN VAN AN');
+
+      const options = page.locator('#personHouseholdSuggestions .person-household-option');
+      await expect(options).toHaveCount(2);
+      await expect(options.nth(0)).toContainText('H09-0001');
+      await expect(options.nth(0)).toContainText('Xom 01 cu');
+      await expect(options.nth(0)).toContainText('5 nhân khẩu');
+      await expect(options.nth(1)).toContainText('H09-0087');
+      await expect(options.nth(1)).toContainText('Xom 03 cu');
+      await expect(options.nth(1)).toContainText('3 nhân khẩu');
+
+      await options.nth(1).click();
+      await expect(page.locator('#personForm [name="householdId"]')).toHaveValue('2');
+      await expect(page.locator('#personForm [name="householdCode"]')).toHaveValue('H09-0087');
+      await expect(page.locator('#personForm [name="householdHeadName"]')).toHaveValue('NGUYEN VAN AN');
+      await expect(page.locator('#personForm [name="householdAddress"]')).toHaveValue('Xom 03 cu, thon 09');
+      await expect(page.locator('#personForm [name="householdMemberCount"]')).toHaveValue('3 nhân khẩu');
+      await expect(page.locator('#personForm [name="citizenCode"]')).toBeDisabled();
+      await expect(page.locator('#personForm [name="citizenCode"]')).toHaveValue('Tự sinh khi lưu');
+      await page.evaluate(() => window.bootstrap?.Modal?.getOrCreateInstance(document.getElementById('personModal'))?.hide());
+      await expect(page.locator('#personModal')).not.toHaveClass(/show/);
+    }
+
+    await openApp(page, 390);
+    await page.evaluate(() => window.openPersonForm(1));
+    await expect(page.locator('#personModal')).toHaveClass(/show/);
+    await expect(page.locator('#personForm [name="householdId"]')).toHaveValue('1');
+    await expect(page.locator('#personForm [name="householdCode"]')).toHaveValue('H09-0001');
+    await expect(page.locator('#personHouseholdSearch')).toHaveValue('H09-0001 - NGUYEN VAN AN');
+    await expect(page.locator('#personForm [name="householdMemberCount"]')).toHaveValue('5 nhân khẩu');
+    await expect(page.locator('#personForm [name="citizenCode"]')).toHaveValue('NK-0001');
   });
 
   test('module overview sections follow mobile workflow value rules', async ({ page }) => {

@@ -89,14 +89,14 @@ final class Citizen extends BaseModel
     public function find(int $id): ?array
     {
         $this->ensureHealthInsuranceSchema();
-        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url, NULLIF(c.father_name, "") AS father_display_name, NULLIF(c.mother_name, "") AS mother_display_name FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
+        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url, NULLIF(c.father_name, "") AS father_display_name, NULLIF(c.mother_name, "") AS mother_display_name FROM citizens c INNER JOIN households h ON h.id=c.household_id LEFT JOIN v_household_member_counts v ON v.household_id=h.id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
     }
 
     public function create(array $data, int $userId): array
     {
         $this->ensureHealthInsuranceSchema();
         $params = $this->params($data, $userId);
-        if ($params['code'] === '') $params['code'] = $this->nextCode((int) $params['household_id']);
+        $params['code'] = $this->nextCode((int) $params['household_id']);
         $this->ensureUniqueIdentity($params['identity']);
         $this->ensureSingleHead((int) $params['household_id'], null, $params['relationship']);
         $columns = ['citizen_code','household_id','full_name','gender','date_of_birth','identity_number','identity_issue_date','identity_issue_place','relationship','ethnicity','religion','occupation','father_name','mother_name','phone','residency_status','current_address','education_level','marital_status','life_status','presence_status','status','created_by'];
@@ -114,7 +114,7 @@ final class Citizen extends BaseModel
         $before = $this->find($id);
         if (!$before) throw new \RuntimeException('Không tìm thấy nhân khẩu');
         $params = $this->params($data, $userId, $before); $params['id'] = $id;
-        if ($params['code'] === '') $params['code'] = (string) $before['citizen_code'];
+        $params['code'] = (string) $before['citizen_code'];
         $this->ensureUniqueIdentity($params['identity'], $id);
         $this->ensureSingleHead((int) $params['household_id'], $id, $params['relationship']);
         $sets = ['citizen_code=:code','household_id=:household_id','full_name=:full_name','gender=:gender','date_of_birth=:dob','identity_number=:identity','identity_issue_date=:issue_date','identity_issue_place=:issue_place','relationship=:relationship','ethnicity=:ethnicity','religion=:religion','occupation=:occupation','father_name=:father_name','mother_name=:mother_name','phone=:phone','residency_status=:residency','current_address=:current_address','education_level=:education','marital_status=:marital','life_status=:life','presence_status=:presence','updated_by=:user'];
@@ -398,10 +398,9 @@ final class Citizen extends BaseModel
 
     private function nextCode(int $householdId): string
     {
-        $household = $this->fetchOne('SELECT household_code FROM households WHERE id=:id', ['id' => $householdId]);
-        $prefix = preg_replace('/[^A-Z0-9]/', '', strtoupper((string) ($household['household_code'] ?? 'NK')));
-        $count = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE household_id=:id', ['id' => $householdId])['total'] + 1;
-        do { $code = $prefix . '-NK' . str_pad((string) $count++, 3, '0', STR_PAD_LEFT); }
+        $prefix = 'H09-NK';
+        $count = (int) ($this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE citizen_code LIKE :prefix', ['prefix' => $prefix . '%'])['total'] ?? 0) + 1;
+        do { $code = $prefix . str_pad((string) $count++, 5, '0', STR_PAD_LEFT); }
         while ($this->fetchOne('SELECT id FROM citizens WHERE citizen_code=:code', ['code' => $code]));
         return $code;
     }

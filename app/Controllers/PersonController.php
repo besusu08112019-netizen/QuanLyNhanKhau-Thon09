@@ -75,7 +75,9 @@ final class PersonController extends BaseController
     {
         $user = $this->requirePermission('citizen', 'create');
         $input = $this->input();
-        $this->requireInputFields((array) $input, ['householdCode' => 'Mã hộ', 'fullName' => 'Họ và tên', 'dateOfBirth' => 'Ngày sinh']);
+        $householdKey = trim((string) ($input['householdId'] ?? $input['householdCode'] ?? $input['household_id'] ?? $input['household_code'] ?? ''));
+        if ($householdKey === '') $this->fail('Vui lòng chọn hộ gia đình từ danh sách', 422);
+        $this->requireInputFields((array) $input, ['fullName' => 'Họ và tên', 'dateOfBirth' => 'Ngày sinh']);
         $row = $this->citizens->create($input, (int) $user['id']);
         $this->movementService->afterCitizenCreated($row, $input, (int) $user['id']);
         $row = $this->citizens->find((int) $row['id']) ?: $row;
