@@ -198,6 +198,10 @@ async function boot(page, apiLog) {
     if (url.pathname === '/api/gis/areas' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ areas: [area], summary: { households: 1, located: 1, unlocated: 0 } }); }
     if (url.pathname === '/api/gis/households' && method === 'GET') { apiLog.push({ method, path: url.pathname, query: Object.fromEntries(url.searchParams.entries()) }); return payload({ items: [marker], summary: { households: 1, located: 1, unlocated: 0 } }); }
     if (url.pathname === '/api/gis/households/7/detail' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ ...detail, household: { ...detail.household, latitude: savedGps.latitude, longitude: savedGps.longitude, location_accuracy: savedGps.accuracy } }); }
+    if (url.pathname === '/api/profiles/household/7' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ type: 'household', profile: detail.household, members: detail.members, files: [], notes: [], timeline: [], logs: [], sections: {} }); }
+    if (url.pathname === '/api/households/7' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload(detail.household); }
+    if (url.pathname === '/api/persons' && method === 'GET') { apiLog.push({ method, path: url.pathname, query: Object.fromEntries(url.searchParams.entries()) }); return payload({ items: detail.members }); }
+    if (url.pathname === '/api/household-business/household/7' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: detail.business }); }
     if (url.pathname === '/api/files/44/preview' && method === 'GET') return route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgo=', 'base64') });
     if (url.pathname === '/api/gis/households/7/location' && method === 'PUT') { const body = request.postDataJSON(); savedGps.latitude = body.latitude; savedGps.longitude = body.longitude; savedGps.accuracy = body.accuracy; apiLog.push({ method, path: url.pathname, body }); return payload({ id: 7, latitude: savedGps.latitude, longitude: savedGps.longitude, location_accuracy: savedGps.accuracy }); }
     if (url.pathname === '/api/public-assets/gis' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ items: [publicAssetFeature] }); }
@@ -348,13 +352,12 @@ test('leaflet GIS loads all markers immediately and lazy popup detail', async ({
 test('leaflet GIS popup detail action opens household detail once from dynamic popup', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
-  await page.evaluate(() => {
-    window.__openedHouseholds = [];
-    window.showHousehold = id => window.__openedHouseholds.push(Number(id));
-  });
   await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
   await page.locator('[data-test-popup] [data-platform-action="households.detail"]').click();
-  await expect.poll(() => page.evaluate(() => window.__openedHouseholds)).toEqual([7]);
+  await expect(page.locator('#detailModal')).toHaveClass(/show/);
+  await expect(page.locator('#detailTitle')).toContainText(/hộ gia đình|ho gia dinh/i);
+  await expect(page.locator('#detailBody')).toContainText('HK001');
+  expect(apiLog.some(item => item.path === '/api/profiles/household/7')).toBeTruthy();
 });
 
 test('leaflet GIS routes marker directions through Google Maps', async ({ page }) => {
