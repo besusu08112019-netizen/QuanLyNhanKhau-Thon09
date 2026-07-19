@@ -341,6 +341,22 @@
     }
   }
 
+  function refreshGisAfterHouseholdPhotoChange(entityId) {
+    const id = String(entityId || '').trim();
+    const gis = window.App?.gis;
+    if (gis?.detailCache && id) gis.detailCache.delete(id);
+    if (gis?.viewportCache) gis.viewportCache.clear();
+    if (gis) {
+      gis.lastAllMarkersKey = '';
+      gis.allMarkersLoaded = false;
+    }
+    if (typeof window.thon09LoadGisHouseholdMarkers === 'function') {
+      window.thon09LoadGisHouseholdMarkers('', { force: true });
+    } else if (typeof window.loadGisMap === 'function') {
+      window.loadGisMap();
+    }
+  }
+
   async function uploadPhoto(entityId) {
     if (!currentFile || !entityId) return null;
     const formData = new FormData();
@@ -353,6 +369,7 @@
       body: formData,
     });
     currentFile = null;
+    refreshGisAfterHouseholdPhotoChange(entityId);
     return uploaded;
   }
 
@@ -369,6 +386,7 @@
     }
     removeExisting = false;
     renderCurrentPhoto(null);
+    refreshGisAfterHouseholdPhotoChange(entityId);
   }
 
   function enhancePhotoField() {

@@ -35,8 +35,11 @@ final class GisHouseholdLocation extends BaseModel
     {
         $this->ensureSchema();
         [$where, $params] = $this->markerConditions($filters);
+        $photoSql = $this->householdPhotoSql();
         $rows = $this->fetchAll(
-            'SELECT h.id, h.household_code, h.head_citizen_name, h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at
+            'SELECT h.id, h.household_code, h.head_citizen_name, h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
+                ' . $photoSql['thumbnail'] . ' AS thumbnail_file_id,
+                ' . $photoSql['count'] . ' AS gallery_count
              FROM households h
              LEFT JOIN (
                 SELECT c.household_id,
@@ -68,6 +71,12 @@ final class GisHouseholdLocation extends BaseModel
                 'location_accuracy' => $row['location_accuracy'] !== null ? (int) $row['location_accuracy'] : null,
                 'location_source' => (string) ($row['location_source'] ?? ''),
                 'location_updated_at' => $row['location_updated_at'] ?? null,
+                'thumbnail_file_id' => $row['thumbnail_file_id'] !== null ? (int) $row['thumbnail_file_id'] : null,
+                'photo_file_id' => $row['thumbnail_file_id'] !== null ? (int) $row['thumbnail_file_id'] : null,
+                'thumbnail_url' => $row['thumbnail_file_id'] !== null ? '/api/files/' . (int) $row['thumbnail_file_id'] . '/preview' : null,
+                'photo_url' => $row['thumbnail_file_id'] !== null ? '/api/files/' . (int) $row['thumbnail_file_id'] . '/preview' : null,
+                'household_photo_url' => $row['thumbnail_file_id'] !== null ? '/api/files/' . (int) $row['thumbnail_file_id'] . '/preview' : null,
+                'gallery_count' => (int) ($row['gallery_count'] ?? 0),
             ], $rows),
             'total' => count($rows),
             'summary' => $this->summary($filters),

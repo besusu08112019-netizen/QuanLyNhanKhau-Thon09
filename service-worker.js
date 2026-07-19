@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260719-gis-popup-detail-open';
+const PWA_VERSION = 'thon09-pwa-v20260719-gis-photo-marker-sync';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
