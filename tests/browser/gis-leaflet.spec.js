@@ -100,7 +100,7 @@ function leafletStub() {
         return popup;
       }
       function makeMarker(latlng, opts){
-        const marker = evented({ latlng: Array.isArray(latlng) ? { lat: latlng[0], lng: latlng[1] } : latlng, opts: opts || {}, popup: '', opened: false });
+        const marker = evented({ latlng: Array.isArray(latlng) ? { lat: latlng[0], lng: latlng[1] } : latlng, options: opts || {}, opts: opts || {}, popup: '', opened: false });
         marker.bindPopup = function(html){ this.popup = html; return this; };
         marker.getPopup = function(){ return this.popup; };
         marker.setPopupContent = function(html){ if (this.popup && typeof this.popup.setContent === 'function') this.popup.setContent(html); else this.popup = html; if (this.opened) this.openPopup(); return this; };
@@ -112,7 +112,7 @@ function leafletStub() {
         marker.addTo = function(group){ group && group.addLayer && group.addLayer(this); return this; };
         marker.remove = function(){ this._parent && this._parent.removeLayer(this); return this; };
         marker.getElement = function(){ if (!this.el) this.el = document.createElement('div'); return this.el; };
-        marker.setIcon = function(icon){ this.icon = icon; return this; };
+        marker.setIcon = function(icon){ this.icon = icon; this.options.icon = icon; return this; };
         return marker;
       }
       function makeMap(id, opts){
@@ -137,7 +137,7 @@ function leafletStub() {
       function tileLayer(url, opts){ return { url, opts: opts || {}, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
       function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p._path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; p.toGeoJSON = function(){ return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [this.points.map(pt => Array.isArray(pt) ? [pt[1], pt[0]] : [pt.lng, pt.lat])] } }; }; p.editing = { enabled: false, enable(){ this.enabled = true; } }; return p; }
       function circle(latlng, opts){ const c = makeMarker(latlng, opts); c.setRadius = function(radius){ this.radius = radius; return this; }; return c; }
-      function divIcon(opts){ return opts || {}; }
+      function divIcon(opts){ return Object.assign({ createIcon(){ return document.createElement('div'); }, createShadow(){ return null; } }, opts || {}); }
       function DrawControl(){ }
       function DrawPolygon(map, opts){ this.map = map; this.opts = opts; }
       DrawPolygon.prototype.enable = function(){ return this; };
@@ -381,7 +381,8 @@ test('leaflet GIS keeps popup open and switches cluster to flat markers at max z
     created: window.__markerClusterGroupCreated,
     layerCount: window.App.gis.markerGroup.getLayers().length,
     refreshCount: window.App.gis.markerGroup.refreshCount,
-    managerState: window.App.gis.markerClusterManager.debugState()
+    managerState: window.App.gis.markerClusterManager.debugState(),
+    markerIconValid: Boolean(window.App.gis.markerCache.get('7')?.marker?.options?.icon?.createIcon)
   }));
   expect(clusterState.created).toBe(1);
   expect(clusterState.layerCount).toBe(1);
@@ -391,6 +392,7 @@ test('leaflet GIS keeps popup open and switches cluster to flat markers at max z
   expect(clusterState.managerState.flatLayerCount).toBe(0);
   expect(clusterState.managerState.markerCount).toBe(1);
   expect(clusterState.managerState.listenerCount).toBe(2);
+  expect(clusterState.markerIconValid).toBe(true);
 
   const rebuiltState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
@@ -419,7 +421,8 @@ test('leaflet GIS keeps popup open and switches cluster to flat markers at max z
     return {
       mapHasClusterLayer: window.App.gis.map.hasLayer(window.App.gis.markerGroup),
       mapHasFlatLayer: window.App.gis.map.hasLayer(window.App.gis.markerClusterManager.getFlatLayer()),
-      state: window.App.gis.markerClusterManager.debugState()
+      state: window.App.gis.markerClusterManager.debugState(),
+      flatIconValid: Boolean(window.App.gis.markerClusterManager.getDisplayMarker('same-a')?.options?.icon?.createIcon)
     };
   });
   expect(maxZoomState.mapHasClusterLayer).toBe(false);
@@ -429,6 +432,7 @@ test('leaflet GIS keeps popup open and switches cluster to flat markers at max z
   expect(maxZoomState.state.clusterLayerCount).toBe(2);
   expect(maxZoomState.state.flatMarkerCount).toBe(2);
   expect(maxZoomState.state.flatLayerCount).toBe(2);
+  expect(maxZoomState.flatIconValid).toBe(true);
 
   const platformToggleState = await page.evaluate(() => {
     const input = document.querySelector('[data-gis-v2-layer="households"]');

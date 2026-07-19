@@ -1731,6 +1731,8 @@ body.sidebar-open {
 .gis-search-wrap input { padding-left: 36px; border-radius: 12px; min-height: 42px; }
 .gis-status-pill { flex: 0 0 auto; padding: 8px 11px; border-radius: 999px; background: #eef8f1; color: #075f35; font-size: 12px; font-weight: 800; }
 .gis-map { min-height: 640px; height: calc(100vh - 190px); border-radius: 16px; overflow: hidden; border: 1px solid #dbe7e0; background: #e5efe9; }
+.gis-household-marker-icon { background: transparent; border: 0; }
+.gis-household-marker-icon span { width: 34px; height: 34px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #16a34a; color: #fff; border: 2px solid #fff; box-shadow: 0 8px 18px rgba(15,23,42,.24); }
 .gis-area-tooltip { border: 0; border-radius: 10px; padding: 7px 9px; box-shadow: 0 8px 20px rgba(15,23,42,.16); color: #064e3b; font-size: 12px; text-align: center; }
 .gis-popup h4 { margin: 0 0 4px; font-size: 15px; color: #064e3b; }
 .gis-popup p { margin: 0 0 8px; color: #475467; }
