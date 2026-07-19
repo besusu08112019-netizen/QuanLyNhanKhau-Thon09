@@ -4,32 +4,40 @@ function payload(data) {
   return { contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) };
 }
 
+function normalized(value) {
+  return String(value || '').toLowerCase().replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function matchesSearch(row, keys, query) {
+  const needle = normalized(query).trim();
+  if (!needle) return true;
+  return keys.some((key) => normalized(row[key]).includes(needle));
+}
+
 async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
     if (path === '/api/public/login-config') return route.fulfill(payload({ settings: {}, metrics: {} }));
     if (path === '/api/auth/me') return route.fulfill(payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' }));
-    if (path === '/api/households') return route.fulfill(payload({
-      items: [
+    if (path === '/api/households') {
+      const search = url.searchParams.get('search') || '';
+      const rows = [
         { id: 1, household_code: 'H09-001', head_citizen_name: 'Nguyễn Văn A', address: 'Xóm 1 Thôn 09', phone: '0912345678', at_home_count: 4, away_count: 0, household_type: 'normal' },
         { id: 2, household_code: 'H09-002', head_citizen_name: 'Trần Văn B', address: 'Xóm 2 Thôn 09', phone: '0987654321', at_home_count: 3, away_count: 1, household_type: 'normal' }
-      ],
-      total: 2,
-      page: 1,
-      pageSize: 20,
-      totalPages: 1
-    }));
-    if (path === '/api/persons') return route.fulfill(payload({
-      items: [
+      ];
+      const items = rows.filter((row) => matchesSearch(row, ['household_code', 'head_citizen_name', 'address', 'phone'], search));
+      return route.fulfill(payload({ items, total: items.length, page: 1, pageSize: 20, totalPages: 1 }));
+    }
+    if (path === '/api/persons') {
+      const search = url.searchParams.get('search') || '';
+      const rows = [
         { id: 101, household_code: 'H09-001', person_code: 'NK001', citizen_code: 'NK001', full_name: 'Nguyễn Văn C', head_citizen_name: 'Nguyễn Văn A', relationship: 'Con', date_of_birth: '2000-01-01', identity_number: '012345678901', gender: 'male', residency_status: 'permanent', presence_status: 'at_home' },
         { id: 102, household_code: 'H09-002', person_code: 'NK002', citizen_code: 'NK002', full_name: 'Trần Thị D', head_citizen_name: 'Trần Văn B', relationship: 'Chủ hộ', date_of_birth: '1985-01-01', identity_number: '987654321098', gender: 'female', residency_status: 'permanent', presence_status: 'at_home' }
-      ],
-      total: 2,
-      page: 1,
-      pageSize: 20,
-      totalPages: 1
-    }));
+      ];
+      const items = rows.filter((row) => matchesSearch(row, ['full_name', 'head_citizen_name', 'household_code', 'person_code', 'citizen_code', 'identity_number'], search));
+      return route.fulfill(payload({ items, total: items.length, page: 1, pageSize: 20, totalPages: 1 }));
+    }
     if (path === '/api/household-business/catalogs') return route.fulfill(payload({ economic_type: [], business_scale: [], image_category: [], document_category: [] }));
     if (path === '/api/household-business') return route.fulfill(payload({
       items: [{

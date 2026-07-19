@@ -734,6 +734,7 @@
       titleLabels: ['Chủ hộ', 'Tên chủ hộ', 'Chu ho', 'Ten chu ho'],
       summaryLabels: ['Mã hộ', 'Ở nhà', 'Đi vắng', 'Trạng thái', 'Loại hộ', 'Ma ho', 'O nha', 'Di vang', 'Trang thai', 'Loai ho'],
       metaLabels: ['Mã hộ', 'Địa chỉ', 'Ở nhà', 'Đi vắng', 'Ma ho', 'Dia chi', 'O nha', 'Di vang'],
+      desktopFilter: { searchSelector: '#householdSearch', statusSelector: '#householdStatusFilter', stateKey: 'households', loaderName: 'loadHouseholds' },
       primaryAction: { label: 'Thêm hộ', icon: 'fa-plus', proxy: '#addHouseholdBtn, [data-platform-action="households.create"]' },
       nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboardHouseholds' }, { label: 'GIS', icon: 'fa-map-location-dot', action: 'gis' }]
     },
@@ -746,6 +747,7 @@
       titleLabels: ['Họ và tên', 'Họ tên', 'Ho va ten', 'Ho ten'],
       summaryLabels: ['Chủ hộ', 'Tên chủ hộ', 'Mã hộ', 'Quan hệ', 'Giới tính', 'Tuổi', 'Cư trú', 'Chu ho', 'Ten chu ho', 'Ma ho', 'Quan he', 'Gioi tinh', 'Tuoi', 'Cu tru'],
       metaLabels: ['Chủ hộ', 'Tên chủ hộ', 'Mã hộ', 'Quan hệ', 'Tuổi', 'Giới tính', 'Cư trú', 'Chu ho', 'Ten chu ho', 'Ma ho', 'Quan he', 'Tuoi', 'Gioi tinh', 'Cu tru'],
+      desktopFilter: { searchSelector: '#personSearch', stateKey: 'persons', loaderName: 'loadPersons' },
       primaryAction: { label: 'Thêm nhân khẩu', icon: 'fa-plus', proxy: '#addPersonBtn, [data-platform-action="persons.create"]' },
       nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboardPopulation' }, { label: 'Biến động', icon: 'fa-arrows-rotate', action: 'movements' }],
       scopes: [
@@ -1552,6 +1554,60 @@
     return filteredItems;
   }
 
+  function desktopFilterState(meta) {
+    var config = meta && meta.desktopFilter;
+    if (!config) return {};
+    var appState = window.App && window.App[config.stateKey] ? window.App[config.stateKey] : {};
+    var searchControl = config.searchSelector ? document.querySelector(config.searchSelector) : null;
+    var statusControl = config.statusSelector ? document.querySelector(config.statusSelector) : null;
+    return {
+      search: searchControl ? searchControl.value : (appState.search || ''),
+      status: statusControl ? statusControl.value : (appState.status || '')
+    };
+  }
+
+  function moduleFilterHasFocus(host) {
+    var filter = host && host.querySelector('.app-v2-filter-bar');
+    return !!(filter && document.activeElement && filter.contains(document.activeElement));
+  }
+
+  function renderDesktopFilteredRecords(screen, meta, host, state) {
+    var recordList = host && host.querySelector('[data-app-v2-record-list]');
+    if (!recordList) return false;
+    var clientState = meta && meta.desktopFilter ? { status: state && state.status && !meta.desktopFilter.statusSelector ? state.status : '' } : state;
+    renderFilteredRecords(recordList, sourceRecords(screen, meta), clientState || {});
+    return true;
+  }
+
+  function applyDesktopFilter(screen, meta, host, state, done) {
+    var config = meta && meta.desktopFilter;
+    if (!config) return false;
+    var search = state && (state.search || state.searchText || state.keyword) || '';
+    var status = state && state.status || '';
+    var appState = window.App && config.stateKey ? (window.App[config.stateKey] = window.App[config.stateKey] || {}) : null;
+    var searchControl = config.searchSelector ? document.querySelector(config.searchSelector) : null;
+    var statusControl = config.statusSelector ? document.querySelector(config.statusSelector) : null;
+    if (searchControl && searchControl.value !== search) searchControl.value = search;
+    if (statusControl && statusControl.value !== status) statusControl.value = status;
+    if (appState) {
+      appState.search = search;
+      appState.page = 1;
+      if (config.statusSelector) appState.status = status;
+    }
+    if (host) host.setAttribute('data-app-v2-desktop-filtering', 'true');
+    var loader = config.loaderName && window[config.loaderName];
+    if (typeof loader !== 'function') {
+      if (typeof done === 'function') done();
+      return true;
+    }
+    Promise.resolve(loader()).finally(function () {
+      if (host) host.removeAttribute('data-app-v2-desktop-filtering');
+      if (typeof done === 'function') done();
+      renderDesktopFilteredRecords(screen, meta, host, state);
+    });
+    return true;
+  }
+
   function scopedCount(screen, scope) {
     if (!scope || !scope.match) return 0;
     return sourceRows(screen).filter(function (row) {
@@ -1568,7 +1624,8 @@
       host = el('section', 'app-v2-page app-v2-module-screen', { id: hostId, 'aria-label': meta.title });
       screen.insertBefore(host, screen.firstChild);
     }
-    var filterState = filterStates[hostId] || {};
+    var filterState = filterStates[hostId] || desktopFilterState(meta);
+    if (moduleFilterHasFocus(host) && renderDesktopFilteredRecords(screen, meta, host, filterState)) return;
     host.textContent = '';
     var total = countRecords(screen);
     var records = sourceRecords(screen, meta);
@@ -1593,7 +1650,8 @@
 
     var list = AppSection({ title: 'Danh sách', meta: 'Card List' });
     var recordList = el('div', 'app-v2-list');
-    renderFilteredRecords(recordList, records, filterState);
+    recordList.setAttribute('data-app-v2-record-list', 'true');
+    renderFilteredRecords(recordList, records, meta.desktopFilter ? { status: filterState.status && !meta.desktopFilter.statusSelector ? filterState.status : '' } : filterState);
     append(list, [recordList]);
 
     var filters = AppSection({ title: 'Bộ lọc', meta: 'Bottom Sheet ready' });
@@ -1611,6 +1669,9 @@
     if (statusControl) statusControl.value = filterState.status || '';
     filterSheet.addEventListener('app-v2-filter-change', function (event) {
       filterStates[hostId] = event.detail.state || {};
+      if (applyDesktopFilter(screen, meta, host, filterStates[hostId], function () {
+        records = sourceRecords(screen, meta);
+      })) return;
       renderFilteredRecords(recordList, records, filterStates[hostId]);
     });
     append(filters, [filterSheet]);
