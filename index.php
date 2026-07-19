@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'gis-esri-export-layer-20260719-2');
+define('APP_ASSET_VERSION', 'gis-remove-imagery-layer-20260719-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 

@@ -238,7 +238,7 @@
           <main class="gis-map-card content-card">
             <div class="gis-map-toolbar">
               <div class="gis-search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="gisSearch" class="form-control" placeholder="Tìm mã hộ, chủ hộ, thành viên, địa chỉ, điện thoại, kinh doanh..."><div id="gisSearchResults" class="gis-search-results d-none"></div></div>
-              <select id="gisBaseLayer" class="form-select form-select-sm gis-layer-select" aria-label="Lớp nền bản đồ"><option value="osm">OSM Standard</option><option value="hot">OSM Humanitarian</option><option value="cartoLight">Carto Light</option><option value="cartoDark">Carto Dark</option><option value="esriWorldImagery">Esri World Imagery</option></select><button id="gisCurrentLocationBtn" class="btn btn-outline-success btn-sm" type="button"><i class="fa-solid fa-location-crosshairs"></i> GPS</button><span id="gisMapStatus" class="gis-status-pill">Đang tải bản đồ...</span>
+              <select id="gisBaseLayer" class="form-select form-select-sm gis-layer-select" aria-label="Lớp nền bản đồ"><option value="osm">OSM Standard</option><option value="hot">OSM Humanitarian</option><option value="cartoLight">Carto Light</option><option value="cartoDark">Carto Dark</option></select><button id="gisCurrentLocationBtn" class="btn btn-outline-success btn-sm" type="button"><i class="fa-solid fa-location-crosshairs"></i> GPS</button><span id="gisMapStatus" class="gis-status-pill">Đang tải bản đồ...</span>
             </div>
             <div id="gisMap" class="gis-map" role="application" aria-label="Bản đồ địa bàn"></div>
           </main>

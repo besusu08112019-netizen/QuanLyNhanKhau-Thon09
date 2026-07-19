@@ -263,38 +263,22 @@ test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page
   expect(result.editingEnabled).toBe(true);
 });
 
-test('leaflet GIS uses Esri export imagery layer at max zoom', async ({ page }) => {
+test('leaflet GIS does not expose satellite imagery basemap', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
   const result = await page.evaluate(() => {
-    const map = window.App.gis.map;
-    const esri = window.App.gis.tiles.esriWorldImagery;
-    document.getElementById('gisBaseLayer').value = 'esriWorldImagery';
-    document.getElementById('gisBaseLayer').dispatchEvent(new Event('change', { bubbles: true }));
-    map.zoom = map.getMaxZoom();
+    const select = document.getElementById('gisBaseLayer');
     return {
-      mapMaxZoom: map.getMaxZoom(),
-      activeUrl: window.App.gis.baseLayer?.url || '',
-      isActive: window.App.gis.baseLayer === esri,
-      opts: esri.opts || esri.options || {},
-      exportOverlayUrl: Array.from(esri.layers || [])[0]?.url || '',
-      zoom: map.getZoom()
+      hasEsriTile: Boolean(window.App.gis.tiles.esriWorldImagery),
+      hasEsriOption: Boolean(select?.querySelector('option[value="esriWorldImagery"]')),
+      options: Array.from(select?.options || []).map(option => option.value),
+      baseLayerUrl: window.App.gis.baseLayer?.url || ''
     };
   });
-  expect(result.isActive).toBe(true);
-  expect(result.activeUrl === 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=' || result.activeUrl.includes('World_Imagery/MapServer/tile/{z}/{y}/{x}')).toBe(true);
-  expect(result.opts.maxZoom).toBe(result.mapMaxZoom);
-  expect(result.opts.maxNativeZoom).toBeLessThanOrEqual(result.opts.maxZoom);
-  expect(result.opts.tileSize).toBe(256);
-  expect(result.opts.zoomOffset).toBe(0);
-  expect(result.opts.detectRetina).toBe(false);
-  expect(result.opts.updateWhenIdle).toBe(false);
-  expect(result.opts.keepBuffer).toBe(8);
-  expect(result.exportOverlayUrl.includes('/export?bbox=') || result.exportOverlayUrl.includes('?bbox=')).toBe(true);
-  expect(result.exportOverlayUrl).toContain('bboxSR=4326');
-  expect(result.exportOverlayUrl).toContain('imageSR=3857');
-  expect(result.exportOverlayUrl).toContain('size=1200,800');
-  expect(result.zoom).toBe(result.mapMaxZoom);
+  expect(result.hasEsriTile).toBe(false);
+  expect(result.hasEsriOption).toBe(false);
+  expect(result.options).toEqual(['osm', 'hot', 'cartoLight', 'cartoDark']);
+  expect(result.baseLayerUrl).not.toContain('World_Imagery');
 });
 
 test('leaflet GIS renders GeoJSON area polygon and highlights selected area', async ({ page }) => {
