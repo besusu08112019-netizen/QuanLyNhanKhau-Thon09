@@ -374,7 +374,7 @@ test('leaflet GIS waits for accurate GPS before saving selected marker', async (
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
 });
 
-test('leaflet GIS keeps popup open during map move and renders direct household markers', async ({ page }) => {
+test('leaflet GIS keeps popup open and switches cluster to flat markers at max zoom', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
   const clusterState = await page.evaluate(() => ({
@@ -383,14 +383,14 @@ test('leaflet GIS keeps popup open during map move and renders direct household 
     refreshCount: window.App.gis.markerGroup.refreshCount,
     managerState: window.App.gis.markerClusterManager.debugState()
   }));
-  expect(clusterState.created || 0).toBe(0);
+  expect(clusterState.created).toBe(1);
   expect(clusterState.layerCount).toBe(1);
-  expect(clusterState.managerState.useCluster).toBe(false);
-  expect(clusterState.managerState.visibleMode).toBe('flat');
+  expect(clusterState.managerState.useCluster).toBe(true);
+  expect(clusterState.managerState.visibleMode).toBe('cluster');
   expect(clusterState.managerState.clusterLayerCount).toBe(1);
   expect(clusterState.managerState.flatLayerCount).toBe(0);
   expect(clusterState.managerState.markerCount).toBe(1);
-  expect(clusterState.managerState.listenerCount).toBe(1);
+  expect(clusterState.managerState.listenerCount).toBe(2);
 
   const rebuiltState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
@@ -406,11 +406,11 @@ test('leaflet GIS keeps popup open during map move and renders direct household 
     };
   });
   expect(rebuiltState.sameGroup).toBe(true);
-  expect(rebuiltState.created || 0).toBe(0);
+  expect(rebuiltState.created).toBe(1);
   expect(rebuiltState.state.markerCount).toBe(2);
   expect(rebuiltState.state.coordinateBucketCount).toBe(1);
   expect(rebuiltState.state.duplicateCoordinateBuckets).toBe(1);
-  expect(rebuiltState.state.listenerCount).toBe(1);
+  expect(rebuiltState.state.listenerCount).toBe(2);
   expect(rebuiltState.positions[0]).not.toEqual(rebuiltState.positions[1]);
 
   const maxZoomState = await page.evaluate(() => {
@@ -422,12 +422,12 @@ test('leaflet GIS keeps popup open during map move and renders direct household 
       state: window.App.gis.markerClusterManager.debugState()
     };
   });
-  expect(maxZoomState.mapHasClusterLayer).toBe(true);
-  expect(maxZoomState.mapHasFlatLayer).toBe(false);
+  expect(maxZoomState.mapHasClusterLayer).toBe(false);
+  expect(maxZoomState.mapHasFlatLayer).toBe(true);
   expect(maxZoomState.state.visibleMode).toBe('flat');
-  expect(maxZoomState.state.useCluster).toBe(false);
-  expect(maxZoomState.state.clusterLayerCount).toBe(2);
-  expect(maxZoomState.state.flatLayerCount).toBe(0);
+  expect(maxZoomState.state.useCluster).toBe(true);
+  expect(maxZoomState.state.clusterLayerCount).toBe(0);
+  expect(maxZoomState.state.flatLayerCount).toBe(2);
 
   const platformToggleState = await page.evaluate(() => {
     const input = document.querySelector('[data-gis-v2-layer="households"]');
@@ -444,12 +444,12 @@ test('leaflet GIS keeps popup open during map move and renders direct household 
     };
   });
   expect(platformToggleState.hidden.visibleMode).toBe('hidden');
-  expect(platformToggleState.mapHasClusterLayer).toBe(true);
-  expect(platformToggleState.mapHasFlatLayer).toBe(false);
+  expect(platformToggleState.mapHasClusterLayer).toBe(false);
+  expect(platformToggleState.mapHasFlatLayer).toBe(true);
   expect(platformToggleState.state.visibleMode).toBe('flat');
-  expect(platformToggleState.state.useCluster).toBe(false);
-  expect(platformToggleState.state.clusterLayerCount).toBe(2);
-  expect(platformToggleState.state.flatLayerCount).toBe(0);
+  expect(platformToggleState.state.useCluster).toBe(true);
+  expect(platformToggleState.state.clusterLayerCount).toBe(0);
+  expect(platformToggleState.state.flatLayerCount).toBe(2);
 
   const legacyDelegateState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
@@ -461,8 +461,8 @@ test('leaflet GIS keeps popup open during map move and renders direct household 
     };
   });
   expect(legacyDelegateState.sameGroup).toBe(true);
-  expect(legacyDelegateState.created || 0).toBe(0);
-  expect(legacyDelegateState.managerState.listenerCount).toBe(1);
+  expect(legacyDelegateState.created).toBe(1);
+  expect(legacyDelegateState.managerState.listenerCount).toBe(2);
 
   await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
