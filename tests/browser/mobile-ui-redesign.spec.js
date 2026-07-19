@@ -288,6 +288,33 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(page.locator('#vehiclesScreen .app-v2-list-summary')).toContainText('Danh sách xe:');
   });
 
+  test('module overview sections follow mobile workflow value rules', async ({ page }) => {
+    await openApp(page, 390);
+
+    for (const screen of ['persons', 'gis', 'contributions', 'agriculture', 'reports']) {
+      await navigate(page, screen);
+      const overview = page.locator(`#${screen}Screen .app-v2-module-screen > .app-v2-two-pane .app-v2-section[aria-label="Tổng quan"]`);
+      await expect(overview, `${screen} keeps useful overview`).toHaveCount(1);
+      await expect.poll(() => overview.locator('.app-v2-summary-card').count(), { message: `${screen} overview has real cards` }).toBeGreaterThan(0);
+      await expect(overview).not.toContainText('Trạng thái');
+      await expect(overview).not.toContainText('Có dữ liệu');
+    }
+
+    for (const screen of ['households', 'vehicles', 'houses', 'publicAssets', 'livestock', 'businessHouseholds']) {
+      await navigate(page, screen);
+      await expect(page.locator(`#${screen}Screen .app-v2-module-screen .app-v2-section[aria-label="Tổng quan"]`), `${screen} uses compact list-first layout`).toHaveCount(0);
+      await expect(page.locator(`#${screen}Screen .app-v2-filter-bar`)).toHaveCount(1);
+      await expect(page.locator(`#${screen}Screen .app-v2-list-summary`)).toHaveCount(1);
+    }
+
+    for (const screen of ['temporaryResidence', 'temporaryAbsence', 'movements']) {
+      await navigate(page, screen);
+      await expect(page.locator(`#${screen}Screen .app-v2-module-screen .app-v2-section[aria-label="Tổng quan"]`), `${screen} removes low-value overview`).toHaveCount(0);
+      await expect(page.locator(`#${screen}Screen .app-v2-filter-bar`)).toHaveCount(1);
+      await expect(page.locator(`#${screen}Screen .app-v2-list-summary`)).toHaveCount(1);
+    }
+  });
+
   test('Dashboard Mobile V2 preserves KPI labels and charts from dashboard summary', async ({ page }) => {
     await openApp(page, 390);
     await navigate(page, 'dashboard');

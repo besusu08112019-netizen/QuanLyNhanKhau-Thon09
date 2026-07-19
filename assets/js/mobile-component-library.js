@@ -739,6 +739,7 @@
     householdsScreen: {
       title: 'Hộ gia đình',
       listKind: 'households',
+      overviewMode: 'compact',
       eyebrow: 'Quản lý hộ',
       icon: 'fa-house-user',
       subtitle: 'Tra cứu, cập nhật hồ sơ hộ và định vị GIS',
@@ -752,6 +753,7 @@
     },
     personsScreen: {
       title: 'Nhân khẩu',
+      overviewMode: 'full',
       eyebrow: 'Quản lý công dân',
       icon: 'fa-id-card',
       subtitle: 'Hồ sơ nhân khẩu, cư trú và biến động',
@@ -769,6 +771,7 @@
     },
     gisScreen: {
       title: 'GIS',
+      overviewMode: 'full',
       eyebrow: 'Bản đồ số',
       icon: 'fa-map-location-dot',
       subtitle: 'Bản đồ hộ dân, marker và lớp dữ liệu',
@@ -778,6 +781,7 @@
     },
     businessHouseholdsScreen: {
       title: 'Kinh doanh',
+      overviewMode: 'compact',
       eyebrow: 'Hộ kinh doanh',
       icon: 'fa-store',
       subtitle: 'Cơ sở, ngành nghề và trạng thái hoạt động',
@@ -787,6 +791,7 @@
     },
     vehiclesScreen: {
       title: 'Xe cộ',
+      overviewMode: 'compact',
       eyebrow: 'Phương tiện',
       icon: 'fa-car',
       subtitle: 'Quản lý phương tiện theo hộ dân',
@@ -796,6 +801,7 @@
     },
     contributionsScreen: {
       title: 'Đóng góp',
+      overviewMode: 'full',
       eyebrow: 'Thu đóng góp',
       icon: 'fa-hand-holding-dollar',
       subtitle: 'Theo dõi khoản thu và tiến độ đóng góp',
@@ -805,6 +811,7 @@
     },
     agricultureScreen: {
       title: 'Nông nghiệp',
+      overviewMode: 'full',
       eyebrow: 'Sản xuất',
       icon: 'fa-seedling',
       subtitle: 'Thửa đất, cây trồng và sản xuất nông nghiệp',
@@ -814,6 +821,7 @@
     },
     housesScreen: {
       title: 'Nhà ở',
+      overviewMode: 'compact',
       eyebrow: 'Công trình hộ',
       icon: 'fa-house-chimney-window',
       subtitle: 'Nhà ở, công trình phụ và tình trạng sử dụng',
@@ -823,6 +831,7 @@
     },
     publicAssetsScreen: {
       title: 'Công trình',
+      overviewMode: 'compact',
       eyebrow: 'Tài sản công',
       icon: 'fa-building-columns',
       subtitle: 'Công trình công cộng, tài sản và kiểm kê',
@@ -832,6 +841,7 @@
     },
     livestockScreen: {
       title: 'Vật nuôi',
+      overviewMode: 'compact',
       eyebrow: 'Chăn nuôi',
       icon: 'fa-paw',
       subtitle: 'Đàn vật nuôi, tiêm phòng và dịch bệnh',
@@ -841,6 +851,7 @@
     },
     reportsScreen: {
       title: 'Báo cáo',
+      overviewMode: 'full',
       eyebrow: 'Tổng hợp',
       icon: 'fa-chart-pie',
       subtitle: 'Biểu mẫu, xuất PDF/Excel và thống kê',
@@ -859,6 +870,7 @@
     },
     temporaryResidenceScreen: {
       title: 'Tam tru',
+      overviewMode: 'none',
       eyebrow: 'Cu tru',
       icon: 'fa-location-dot',
       subtitle: 'Danh sach nhan khau co trang thai tam tru',
@@ -868,6 +880,7 @@
     },
     temporaryAbsenceScreen: {
       title: 'Tam vang',
+      overviewMode: 'none',
       eyebrow: 'Cu tru',
       icon: 'fa-person-walking-arrow-right',
       subtitle: 'Danh sach nhan khau dang di vang de theo doi nhanh',
@@ -877,6 +890,7 @@
     },
     movementsScreen: {
       title: 'Bien dong',
+      overviewMode: 'none',
       eyebrow: 'Nhan khau',
       icon: 'fa-arrows-rotate',
       subtitle: 'Sinh, tu, chuyen den, chuyen di, tam tru va tam vang',
@@ -1700,6 +1714,41 @@
     }).length;
   }
 
+  function overviewMode(meta) {
+    return meta && meta.overviewMode ? meta.overviewMode : 'compact';
+  }
+
+  function overviewTotalLabel(listMeta, meta) {
+    var base = cleanLabel(listMeta && listMeta.label);
+    if (base) base = base.replace(/^Danh sách\s+/i, '');
+    return 'Tổng ' + (base || cleanLabel(meta && meta.title) || 'bản ghi');
+  }
+
+  function buildModuleOverview(screen, meta, listMeta, total) {
+    if (overviewMode(meta) !== 'full') return null;
+    var section = AppSection({ title: 'Tổng quan', meta: total ? number(total) + ' ' + ((listMeta && listMeta.unit) || 'bản ghi') : '0 ' + ((listMeta && listMeta.unit) || 'bản ghi') });
+    var grid = el('div', 'app-v2-grid app-v2-module-overview-grid');
+    grid.appendChild(AppSummaryCard({
+      label: overviewTotalLabel(listMeta, meta),
+      value: number(total),
+      note: meta.subtitle,
+      icon: meta.icon
+    }));
+    (meta.scopes || []).forEach(function (scope) {
+      if (!scope || !scope.label) return;
+      var scopeCard = AppSummaryCard({
+        label: scope.label,
+        value: number(scopedCount(screen, scope)),
+        note: 'Theo dữ liệu đang hiển thị',
+        icon: scope.icon || meta.icon
+      });
+      scopeCard.setAttribute('data-app-v2-scope', scope.key || scope.label);
+      grid.appendChild(scopeCard);
+    });
+    append(section, [grid]);
+    return section;
+  }
+
   function renderModuleScreen(screen) {
     var meta = moduleScreenMeta(screen);
     if (!meta) return;
@@ -1719,20 +1768,7 @@
     var secondary = el('div', 'app-v2-flow');
     var layout = el('div', 'app-v2-two-pane');
 
-    var summary = AppSection({ title: 'Tổng quan', meta: total ? number(total) + ' bản ghi' : 'Đang cập nhật' });
-    append(summary, [el('div', 'app-v2-grid')]);
-    summary.lastChild.appendChild(AppSummaryCard({ label: 'Tổng bản ghi', value: number(total), note: meta.subtitle, icon: meta.icon }));
-    summary.lastChild.appendChild(AppSummaryCard({ label: 'Trạng thái', value: total ? 'Có dữ liệu' : 'Chờ dữ liệu', note: 'Đồng bộ từ module hiện có', icon: 'fa-circle-check' }));
-    (meta.scopes || []).forEach(function (scope) {
-      var scopeCard = AppSummaryCard({
-        label: scope.label,
-        value: number(scopedCount(screen, scope)),
-        note: 'Scope dùng chung trong ' + meta.title,
-        icon: scope.icon || meta.icon
-      });
-      scopeCard.setAttribute('data-app-v2-scope', scope.key || scope.label);
-      summary.lastChild.appendChild(scopeCard);
-    });
+    var summary = buildModuleOverview(screen, meta, listMeta, desktopListTotal(screen, listMeta, total));
 
     var list = AppSection({ title: 'Danh sách', meta: 'Card List' });
     var recordList = el('div', 'app-v2-list');
@@ -1775,7 +1811,7 @@
     });
     append(actions, [actionRow]);
 
-    append(primary, [summary, filters, listSummary, list]);
+    append(primary, summary ? [summary, filters, listSummary, list] : [filters, listSummary, list]);
     append(secondary, [actions]);
     append(layout, [primary, secondary]);
     append(host, [
