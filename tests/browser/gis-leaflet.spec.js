@@ -374,48 +374,23 @@ test('leaflet GIS waits for accurate GPS before saving selected marker', async (
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
 });
 
-test('leaflet GIS keeps popup open during map move and uses spiderfy cluster refresh', async ({ page }) => {
+test('leaflet GIS keeps popup open during map move and renders direct household markers', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
   const clusterState = await page.evaluate(() => ({
     created: window.__markerClusterGroupCreated,
-    spiderfyOnMaxZoom: window.App.gis.markerGroup.options.spiderfyOnMaxZoom,
-    zoomToBoundsOnClick: window.App.gis.markerGroup.options.zoomToBoundsOnClick,
-    removeOutsideVisibleBounds: window.App.gis.markerGroup.options.removeOutsideVisibleBounds,
-    chunkedLoading: window.App.gis.markerGroup.options.chunkedLoading,
-    animate: window.App.gis.markerGroup.options.animate,
-    animateAddingMarkers: window.App.gis.markerGroup.options.animateAddingMarkers,
-    singleMarkerMode: window.App.gis.markerGroup.options.singleMarkerMode,
-    disableClusteringAtZoom: window.App.gis.markerGroup.options.disableClusteringAtZoom,
-    maxZoom: window.App.gis.markerGroup.options.maxZoom,
-    maxNativeZoom: window.App.gis.markerGroup.options.maxNativeZoom,
-    maxRadiusAtMaxZoom: window.App.gis.markerGroup.options.maxClusterRadius(window.App.gis.map.getMaxZoom()),
     layerCount: window.App.gis.markerGroup.getLayers().length,
     refreshCount: window.App.gis.markerGroup.refreshCount,
     managerState: window.App.gis.markerClusterManager.debugState()
   }));
-  expect(clusterState.created).toBe(1);
-  expect(clusterState.spiderfyOnMaxZoom).toBe(true);
-  expect(clusterState.zoomToBoundsOnClick).toBe(true);
-  expect(clusterState.removeOutsideVisibleBounds).toBe(true);
-  expect(clusterState.chunkedLoading).toBe(true);
-  expect(clusterState.animate).toBe(true);
-  expect(clusterState.animateAddingMarkers).toBe(true);
-  expect(clusterState.singleMarkerMode).toBe(false);
-  expect(clusterState.disableClusteringAtZoom).toBe(19);
-  expect(clusterState.maxZoom).toBe(20);
-  expect(clusterState.maxNativeZoom).toBe(19);
-  expect(clusterState.maxRadiusAtMaxZoom).toBe(0);
-  if (clusterState.managerState.visibleMode === 'cluster') {
-    expect(clusterState.layerCount).toBe(1);
-    expect(clusterState.refreshCount).toBeGreaterThan(0);
-  } else {
-    expect(clusterState.managerState.visibleMode).toBe('flat');
-    expect(clusterState.managerState.clusterLayerCount).toBe(0);
-    expect(clusterState.managerState.flatLayerCount).toBe(1);
-  }
+  expect(clusterState.created || 0).toBe(0);
+  expect(clusterState.layerCount).toBe(1);
+  expect(clusterState.managerState.useCluster).toBe(false);
+  expect(clusterState.managerState.visibleMode).toBe('flat');
+  expect(clusterState.managerState.clusterLayerCount).toBe(1);
+  expect(clusterState.managerState.flatLayerCount).toBe(0);
   expect(clusterState.managerState.markerCount).toBe(1);
-  expect(clusterState.managerState.listenerCount).toBe(2);
+  expect(clusterState.managerState.listenerCount).toBe(1);
 
   const rebuiltState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
@@ -427,18 +402,16 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
       sameGroup: firstGroup === window.App.gis.markerGroup,
       created: window.__markerClusterGroupCreated,
       state: window.App.gis.markerClusterManager.debugState(),
-      positions: [a.getLatLng(), b.getLatLng()],
-      addLayerPositions: window.__lastClusterAddLayerPositions
+      positions: [a.getLatLng(), b.getLatLng()]
     };
   });
   expect(rebuiltState.sameGroup).toBe(true);
-  expect(rebuiltState.created).toBe(1);
+  expect(rebuiltState.created || 0).toBe(0);
   expect(rebuiltState.state.markerCount).toBe(2);
   expect(rebuiltState.state.coordinateBucketCount).toBe(1);
   expect(rebuiltState.state.duplicateCoordinateBuckets).toBe(1);
-  expect(rebuiltState.state.listenerCount).toBe(2);
+  expect(rebuiltState.state.listenerCount).toBe(1);
   expect(rebuiltState.positions[0]).not.toEqual(rebuiltState.positions[1]);
-  expect(rebuiltState.addLayerPositions[0]).not.toEqual(rebuiltState.addLayerPositions[1]);
 
   const maxZoomState = await page.evaluate(() => {
     window.App.gis.map.zoom = window.App.gis.map.getMaxZoom();
@@ -449,11 +422,12 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
       state: window.App.gis.markerClusterManager.debugState()
     };
   });
-  expect(maxZoomState.mapHasClusterLayer).toBe(false);
-  expect(maxZoomState.mapHasFlatLayer).toBe(true);
+  expect(maxZoomState.mapHasClusterLayer).toBe(true);
+  expect(maxZoomState.mapHasFlatLayer).toBe(false);
   expect(maxZoomState.state.visibleMode).toBe('flat');
-  expect(maxZoomState.state.clusterLayerCount).toBe(0);
-  expect(maxZoomState.state.flatLayerCount).toBe(2);
+  expect(maxZoomState.state.useCluster).toBe(false);
+  expect(maxZoomState.state.clusterLayerCount).toBe(2);
+  expect(maxZoomState.state.flatLayerCount).toBe(0);
 
   const platformToggleState = await page.evaluate(() => {
     const input = document.querySelector('[data-gis-v2-layer="households"]');
@@ -470,11 +444,12 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
     };
   });
   expect(platformToggleState.hidden.visibleMode).toBe('hidden');
-  expect(platformToggleState.mapHasClusterLayer).toBe(false);
-  expect(platformToggleState.mapHasFlatLayer).toBe(true);
+  expect(platformToggleState.mapHasClusterLayer).toBe(true);
+  expect(platformToggleState.mapHasFlatLayer).toBe(false);
   expect(platformToggleState.state.visibleMode).toBe('flat');
-  expect(platformToggleState.state.clusterLayerCount).toBe(0);
-  expect(platformToggleState.state.flatLayerCount).toBe(2);
+  expect(platformToggleState.state.useCluster).toBe(false);
+  expect(platformToggleState.state.clusterLayerCount).toBe(2);
+  expect(platformToggleState.state.flatLayerCount).toBe(0);
 
   const legacyDelegateState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
@@ -486,8 +461,8 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
     };
   });
   expect(legacyDelegateState.sameGroup).toBe(true);
-  expect(legacyDelegateState.created).toBe(1);
-  expect(legacyDelegateState.managerState.listenerCount).toBe(2);
+  expect(legacyDelegateState.created || 0).toBe(0);
+  expect(legacyDelegateState.managerState.listenerCount).toBe(1);
 
   await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
