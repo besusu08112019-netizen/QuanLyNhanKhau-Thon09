@@ -141,6 +141,11 @@
   function setMapLayerVisible(group, visible) {
     const m = map();
     if (!m || !group) return;
+    const gis = appGis();
+    if (gis?.markerClusterManager && group === gis.markerGroup && typeof gis.markerClusterManager.setVisible === 'function') {
+      gis.markerClusterManager.setVisible(visible);
+      return;
+    }
     const has = typeof m.hasLayer === 'function' ? m.hasLayer(group) : false;
     if (visible && !has) group.addTo ? group.addTo(m) : m.addLayer(group);
     if (!visible && has && typeof m.removeLayer === 'function') m.removeLayer(group);
@@ -207,7 +212,7 @@
   function toggleLayer(def, checked) {
     if (def.parentLayer) {
       const parent = layerDefinitions.find(item => item.key === def.parentLayer);
-      if (parent) toggleCheckbox(parent.key, checked);
+      if (checked && parent) toggleCheckbox(parent.key, true);
       updateLayerStatus(def.key, 'Hiển thị theo lớp ' + (parent?.label || 'liên kết'));
       return;
     }

@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260719-restore-fab';
+const PWA_VERSION = 'thon09-pwa-v20260719-gis-flat-marker-manager';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
@@ -65,6 +65,7 @@ self.addEventListener('install', event => {
     const cache = await caches.open(STATIC_CACHE);
     const summary = await cacheAssets(cache, STATIC_ASSETS);
     if (summary.failed.length) console.warn('[Thon09 PWA] Precache skipped assets', summary.failed);
+    await self.skipWaiting();
   })());
 });
 

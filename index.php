@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'mobile-tablet-ui-redesign-20260718-10');
+define('APP_ASSET_VERSION', 'gis-flat-marker-manager-20260719-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 

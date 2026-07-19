@@ -406,8 +406,14 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(clusterState.maxZoom).toBe(20);
   expect(clusterState.maxNativeZoom).toBe(19);
   expect(clusterState.maxRadiusAtMaxZoom).toBe(0);
-  expect(clusterState.layerCount).toBe(1);
-  expect(clusterState.refreshCount).toBeGreaterThan(0);
+  if (clusterState.managerState.visibleMode === 'cluster') {
+    expect(clusterState.layerCount).toBe(1);
+    expect(clusterState.refreshCount).toBeGreaterThan(0);
+  } else {
+    expect(clusterState.managerState.visibleMode).toBe('flat');
+    expect(clusterState.managerState.clusterLayerCount).toBe(0);
+    expect(clusterState.managerState.flatLayerCount).toBe(1);
+  }
   expect(clusterState.managerState.markerCount).toBe(1);
   expect(clusterState.managerState.listenerCount).toBe(2);
 
@@ -448,6 +454,27 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(maxZoomState.state.visibleMode).toBe('flat');
   expect(maxZoomState.state.clusterLayerCount).toBe(0);
   expect(maxZoomState.state.flatLayerCount).toBe(2);
+
+  const platformToggleState = await page.evaluate(() => {
+    const input = document.querySelector('[data-gis-v2-layer="households"]');
+    input.checked = false;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    const hidden = window.App.gis.markerClusterManager.debugState();
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return {
+      mapHasClusterLayer: window.App.gis.map.hasLayer(window.App.gis.markerGroup),
+      mapHasFlatLayer: window.App.gis.map.hasLayer(window.App.gis.markerClusterManager.getFlatLayer()),
+      hidden,
+      state: window.App.gis.markerClusterManager.debugState()
+    };
+  });
+  expect(platformToggleState.hidden.visibleMode).toBe('hidden');
+  expect(platformToggleState.mapHasClusterLayer).toBe(false);
+  expect(platformToggleState.mapHasFlatLayer).toBe(true);
+  expect(platformToggleState.state.visibleMode).toBe('flat');
+  expect(platformToggleState.state.clusterLayerCount).toBe(0);
+  expect(platformToggleState.state.flatLayerCount).toBe(2);
 
   const legacyDelegateState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
