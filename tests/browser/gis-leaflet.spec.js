@@ -182,6 +182,12 @@ async function boot(page, apiLog) {
           samples.forEach((accuracy, index) => setTimeout(() => success({ coords: { latitude: 20.2551 + index * 0.000001, longitude: 105.9761 + index * 0.000001, accuracy } }), 20 + index * 25));
           return 101;
         },
+        getCurrentPosition(success, error, options) {
+          window.__gpsCurrentPositionOptions = options;
+          window.__gpsCurrentPositionCount = (window.__gpsCurrentPositionCount || 0) + 1;
+          setTimeout(() => success({ coords: { latitude: 20.2565, longitude: 105.9775, accuracy: 7.4 } }), 20);
+          return 202;
+        },
         clearWatch(id) { window.__gpsCleared = id; }
       }
     });
@@ -410,19 +416,40 @@ test('leaflet GIS routes marker directions through Google Maps', async ({ page }
   expect(apiLog.some(item => item.path === '/api/gis/households/7/detail')).toBeTruthy();
 });
 
-test('leaflet GIS waits for accurate GPS before saving selected marker', async ({ page }) => {
+test('leaflet GIS shows current user location automatically and GPS button pans to it', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
-  await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
+  await expect.poll(() => page.evaluate(() => Boolean(window.App.gis.userLocationMarker && window.App.gis.userLocationCircle))).toBe(true);
+  const autoState = await page.evaluate(() => ({
+    location: window.App.gis.userLocation,
+    markerPane: window.App.gis.userLocationMarker?.options?.pane,
+    circlePane: window.App.gis.userLocationCircle?.options?.pane,
+    markerInCluster: window.App.gis.markerGroup.hasLayer(window.App.gis.userLocationMarker),
+    householdMarkerCount: window.App.gis.markerCache.size,
+    getCurrentPositionCount: window.__gpsCurrentPositionCount || 0
+  }));
+  expect(autoState.location).toMatchObject({ latitude: 20.2565, longitude: 105.9775, accuracy: 7.4 });
+  expect(autoState.markerPane).toBe('gisUserPane');
+  expect(autoState.circlePane).toBe('gisUserPane');
+  expect(autoState.markerInCluster).toBe(false);
+  expect(autoState.householdMarkerCount).toBe(1);
+  expect(autoState.getCurrentPositionCount).toBeGreaterThanOrEqual(1);
+
   await page.locator('#gisCurrentLocationBtn').click();
-  await expect(page.locator('[data-gis-gps-accuracy]')).toBeVisible();
-  await expect(page.locator('[data-gis-gps-accuracy]')).toContainText(/m$/);
-  await expect.poll(() => apiLog.find(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location')?.body.accuracy).toBe(5);
-  expect(apiLog.filter(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location').map(item => item.body.accuracy)).toEqual([5]);
-  await expect.poll(() => page.evaluate(() => window.__gpsCleared)).toBe(101);
-  const options = await page.evaluate(() => window.__gpsWatchOptions);
-  expect(options).toMatchObject({ enableHighAccuracy: true, timeout: 60000, maximumAge: 0 });
-  await expect(page.locator('[data-test-popup]')).toContainText('HK001');
+  await expect.poll(() => page.evaluate(() => window.__gpsCurrentPositionCount || 0)).toBeGreaterThan(autoState.getCurrentPositionCount);
+  const buttonState = await page.evaluate(() => ({
+    center: window.App.gis.map.center,
+    zoom: window.App.gis.map.zoom,
+    maxZoom: window.App.gis.map.getMaxZoom(),
+    location: window.App.gis.userLocation,
+    options: window.__gpsCurrentPositionOptions
+  }));
+  expect(buttonState.center).toMatchObject({ lat: 20.2565, lng: 105.9775 });
+  expect(buttonState.zoom).toBeGreaterThanOrEqual(17);
+  expect(buttonState.zoom).toBeLessThanOrEqual(buttonState.maxZoom);
+  expect(buttonState.location).toMatchObject({ latitude: 20.2565, longitude: 105.9775, accuracy: 7.4 });
+  expect(buttonState.options).toMatchObject({ enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+  expect(apiLog.filter(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location')).toEqual([]);
 });
 
 test('leaflet GIS keeps popup open and switches cluster to flat markers at max zoom', async ({ page }) => {
