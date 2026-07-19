@@ -67,7 +67,7 @@
     if (!main || document.querySelector('#movementsScreen')) return;
     main.insertAdjacentHTML('beforeend', `
       <section id="temporaryResidenceScreen" class="screen"><div class="admin-heading"><div><h3>Tạm trú</h3><p>Danh sách nhân khẩu có trạng thái cư trú tạm trú.</p></div></div><div id="temporaryResidenceRows" class="content-card table-responsive"></div></section>
-      <section id="temporaryAbsenceScreen" class="screen"><div class="admin-heading"><div><h3>Tạm vắng</h3><p>Danh sách nhân khẩu đang đi vắng để theo dõi nhanh.</p></div></div><div id="temporaryAbsenceRows" class="content-card table-responsive"></div></section>
+      <section id="temporaryAbsenceScreen" class="screen"><div class="admin-heading"><div><h3>Tạm vắng</h3></div></div><div id="temporaryAbsenceRows" class="content-card table-responsive"></div></section>
       <section id="movementsScreen" class="screen"><div class="toolbar"><input id="movementSearch" class="form-control" placeholder="Tìm nhân khẩu, CCCD, mã hộ, lý do"><select id="movementType" class="form-select w-auto"><option value="">Tất cả biến động</option><option value="BIRTH">Sinh</option><option value="DEATH">Tử</option><option value="MOVE_IN">Chuyển đến</option><option value="MOVE_OUT">Chuyển đi</option><option value="TEMPORARY_RESIDENCE">Tạm trú</option><option value="TEMPORARY_ABSENCE">Tạm vắng</option></select><button id="movementAddBtn" class="btn btn-primary" data-platform-action="admin.movement.add"><i class="fa-solid fa-plus"></i> Thêm biến động</button></div><div class="content-card table-responsive"><table class="table table-hover data-table mb-0"><thead><tr><th>Ngày</th><th>Loại</th><th>Nhân khẩu</th><th>CCCD</th><th>Mã hộ</th><th>Lý do</th><th></th></tr></thead><tbody id="movementRows"></tbody></table></div><div id="movementPager" class="pager"></div></section>
       <section id="exportExcelScreen" class="screen"><div class="admin-heading"><div><h3>Export Excel</h3><p>Xuất dữ liệu báo cáo, hộ dân và nhân khẩu ra Excel.</p></div></div><div class="content-card action-grid"><button class="btn btn-success" data-platform-action="admin.report.export" data-report-type="summary"><i class="fa-solid fa-file-excel"></i> Báo cáo tổng hợp</button><button class="btn btn-success" data-platform-action="admin.report.export" data-report-type="household"><i class="fa-solid fa-file-excel"></i> Danh sách hộ dân</button><button class="btn btn-success" data-platform-action="admin.report.export" data-report-type="population"><i class="fa-solid fa-file-excel"></i> Danh sách nhân khẩu</button></div></section>
       <section id="printFormsScreen" class="screen"><div class="admin-heading"><div><h3>In biểu mẫu</h3><p>In nhanh các biểu mẫu hành chính khổ A4.</p></div></div><div class="content-card action-grid"><button class="btn btn-outline-secondary" data-platform-action="admin.report.print" data-report-type="summary"><i class="fa-solid fa-print"></i> Báo cáo thống kê</button><button class="btn btn-outline-secondary" data-platform-action="admin.report.print" data-report-type="household"><i class="fa-solid fa-print"></i> Danh sách hộ</button><button class="btn btn-outline-secondary" data-platform-action="admin.report.print" data-report-type="population"><i class="fa-solid fa-print"></i> Danh sách nhân khẩu</button></div></section>
@@ -255,9 +255,8 @@
 
   async function loadPresenceList(value, selector) {
     const endpoint = value === 'TEMPORARY' ? '/api/temporary-residence' : '/api/temporary-absence';
-    const label = value === 'TEMPORARY' ? 'nhân khẩu tạm trú' : 'nhân khẩu tạm vắng';
     const data = await fetchAllPresenceRows(endpoint);
-    document.querySelector(selector).innerHTML = personMiniTable(data.items, data.total, label);
+    document.querySelector(selector).innerHTML = personMiniTable(data.items);
   }
 
   async function fetchAllPresenceRows(endpoint) {
@@ -278,9 +277,9 @@
     return { items, total };
   }
 
-  function personMiniTable(items, total, label) {
-    const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.phone || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="persons.detail" data-id="${Number(row.id || 0)}">Xem</button></td></tr>`).join('') || emptyRow(6, 'Không có dữ liệu');
-    return `<div class="d-flex justify-content-between align-items-center mb-2"><span class="text-muted small">Tổng số: <strong>${number(total)}</strong> ${escapeHtml(label || 'nhân khẩu')}</span><span class="text-muted small">Hiển thị ${number(items.length)} dòng</span></div><table class="table table-hover data-table mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Số điện thoại</th><th class="text-end">Thao tác</th></tr></thead><tbody>${rows}</tbody></table>`;
+  function personMiniTable(items) {
+    const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.phone || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="persons.detail" data-id="${Number(row.id || 0)}" aria-label="Chi tiết"><i class="fa-solid fa-eye"></i></button></td></tr>`).join('');
+    return `<table class="table table-hover data-table mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Số điện thoại</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   async function loadMovements() {
