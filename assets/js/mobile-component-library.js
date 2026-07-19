@@ -1070,7 +1070,6 @@
     var kpis = readKpis(screen, meta);
     var summaryItems = readSummaryItems(screen);
     var filteredKpis = filterItems(kpis, filterState);
-    var filteredSummaryItems = filterItems(summaryItems, filterState);
 
     var primary = el('div', 'app-v2-flow');
     var secondary = el('div', 'app-v2-flow');
@@ -1086,9 +1085,9 @@
     }))]);
 
     var metricSection = null;
-    if (filteredSummaryItems.length) {
+    if (summaryItems.length) {
       metricSection = AppSection({ title: 'Tóm tắt', meta: 'Dữ liệu bổ sung' });
-      append(metricSection, [AppCard({ body: AppList(filteredSummaryItems.map(function (item) { return AppMetricRow(item); })) })]);
+      append(metricSection, [AppCard({ body: AppList(filterItems(summaryItems, filterState).map(function (item) { return AppMetricRow(item); })) })]);
     }
 
     var filterSection = AppSection({ title: 'Bộ lọc nhanh', meta: 'Adaptive' });
@@ -1106,7 +1105,11 @@
     if (statusControl) statusControl.value = filterState.status || '';
     filterSheet.addEventListener('app-v2-filter-change', function (event) {
       filterStates[hostId] = event.detail.state || {};
-      renderModuleDashboard(screen);
+      renderFilteredStats(statSection, kpis, filterStates[hostId], 'Không tìm thấy chỉ số phù hợp');
+      if (metricSection) {
+        var filteredSummaryItems = filterItems(summaryItems, filterStates[hostId]);
+        setSectionBody(metricSection, filteredSummaryItems.length ? AppCard({ body: AppList(filteredSummaryItems.map(function (item) { return AppMetricRow(item); })) }) : AppEmptyState({ message: 'Không tìm thấy tóm tắt phù hợp', icon: 'fa-magnifying-glass' }));
+      }
     });
     append(filterSection, [filterSheet]);
 
@@ -1500,6 +1503,48 @@
     });
   }
 
+  function replaceChildren(node, children) {
+    if (!node) return;
+    node.textContent = '';
+    (children || []).forEach(function (child) {
+      node.appendChild(child);
+    });
+  }
+
+  function setSectionBody(section, body) {
+    if (!section) return;
+    while (section.children.length > 1) section.removeChild(section.lastChild);
+    section.appendChild(body);
+  }
+
+  function renderFilteredRecords(recordList, records, state) {
+    var filteredRecords = filterItems(records, state);
+    if (filteredRecords.length) {
+      replaceChildren(recordList, filteredRecords.map(function (record) { return AppRecordCard(record); }));
+    } else {
+      replaceChildren(recordList, [AppEmptyState({ message: 'Không tìm thấy bản ghi phù hợp', icon: 'fa-magnifying-glass' })]);
+    }
+    return filteredRecords;
+  }
+
+  function renderFilteredStats(section, items, state, emptyMessage) {
+    var filteredItems = filterItems(items, state);
+    var grid = el('div', 'app-v2-grid app-v2-dashboard-kpis');
+    filteredItems.forEach(function (item) { grid.appendChild(AppStatCard(item)); });
+    setSectionBody(section, filteredItems.length ? grid : AppEmptyState({ message: emptyMessage, icon: 'fa-magnifying-glass' }));
+    return filteredItems;
+  }
+
+  function renderFilteredSummaryList(list, items, state) {
+    var filteredItems = filterItems(items, state);
+    if (filteredItems.length) {
+      replaceChildren(list, filteredItems.map(function (item) { return AppSummaryCard(item); }));
+    } else {
+      replaceChildren(list, [AppEmptyState({ message: 'Không tìm thấy tóm tắt phù hợp', icon: 'fa-magnifying-glass' })]);
+    }
+    return filteredItems;
+  }
+
   function scopedCount(screen, scope) {
     if (!scope || !scope.match) return 0;
     return sourceRows(screen).filter(function (row) {
@@ -1520,7 +1565,6 @@
     host.textContent = '';
     var total = countRecords(screen);
     var records = sourceRecords(screen, meta);
-    var filteredRecords = filterItems(records, filterState);
     var primary = el('div', 'app-v2-flow');
     var secondary = el('div', 'app-v2-flow');
     var layout = el('div', 'app-v2-two-pane');
@@ -1542,11 +1586,7 @@
 
     var list = AppSection({ title: 'Danh sách', meta: 'Card List' });
     var recordList = el('div', 'app-v2-list');
-    if (filteredRecords.length) {
-      filteredRecords.forEach(function (record) { recordList.appendChild(AppRecordCard(record)); });
-    } else {
-      recordList.appendChild(AppEmptyState({ message: 'Không tìm thấy bản ghi phù hợp', icon: 'fa-magnifying-glass' }));
-    }
+    renderFilteredRecords(recordList, records, filterState);
     append(list, [recordList]);
 
     var filters = AppSection({ title: 'Bộ lọc', meta: 'Bottom Sheet ready' });
@@ -1564,7 +1604,7 @@
     if (statusControl) statusControl.value = filterState.status || '';
     filterSheet.addEventListener('app-v2-filter-change', function (event) {
       filterStates[hostId] = event.detail.state || {};
-      renderModuleScreen(screen);
+      renderFilteredRecords(recordList, records, filterStates[hostId]);
     });
     append(filters, [filterSheet]);
 
@@ -1661,7 +1701,22 @@
     if (dashboardSearchControl) dashboardSearchControl.value = filterState.search || '';
     dashboardFilterBar.addEventListener('app-v2-filter-change', function (event) {
       filterStates[hostId] = event.detail.state || {};
-      renderDashboard();
+      var nextState = filterStates[hostId];
+      renderFilteredStats(statSection, data.stats, nextState, 'Không tìm thấy chỉ số phù hợp');
+      if (chartSection) {
+        var nextChartCards = filterItems(data.charts || [], nextState).map(function (item) {
+          return AppDashboardChart(item);
+        }).filter(Boolean);
+        var nextChartGrid = el('div', 'app-v2-grid app-v2-dashboard-charts');
+        nextChartCards.forEach(function (card) { nextChartGrid.appendChild(card); });
+        setSectionBody(chartSection, nextChartCards.length ? nextChartGrid : AppEmptyState({ message: 'Không tìm thấy biểu đồ phù hợp', icon: 'fa-magnifying-glass' }));
+      }
+      var nextActions = filterItems(data.quickActions || [], nextState);
+      replaceChildren(actionList, nextActions.length ? nextActions.map(function (item) { return listItem(item); }) : [AppEmptyState({ message: 'Không tìm thấy thao tác phù hợp', icon: 'fa-magnifying-glass' })]);
+      renderFilteredSummaryList(summaryList, data.health || [], nextState);
+      var nextAlerts = filterItems(data.alerts || [], nextState);
+      var nextTasks = filterItems(data.tasks || [], nextState);
+      setSectionBody(alertSection, AppList((nextAlerts.length ? nextAlerts : [{ title: 'Không có cảnh báo nổi bật', subtitle: 'Dashboard đang ổn định', icon: 'fa-circle-check', action: 'dashboard' }]).concat(nextTasks)));
     });
     filteredStats.forEach(function (item) { statGrid.appendChild(AppStatCard(item)); });
     append(statSection, [filteredStats.length ? statGrid : AppEmptyState({ message: 'Không tìm thấy chỉ số phù hợp', icon: 'fa-magnifying-glass' })]);

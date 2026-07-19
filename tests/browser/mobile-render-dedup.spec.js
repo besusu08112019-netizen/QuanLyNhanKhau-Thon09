@@ -172,7 +172,18 @@ test('mobile shared AppFilterBar search filters records and restores the list', 
   const cards = page.locator('#businessHouseholdsScreen .app-v2-record-card');
   const search = page.locator('#businessHouseholdsScreen .app-v2-filter-bar .app-v2-search input');
   const status = page.locator('#businessHouseholdsScreen .app-v2-filter-bar select[data-app-v2-filter-field="status"]');
+  const inputKeepsFocus = () => search.evaluate((input) => document.activeElement === input && input.dataset.focusProbe === 'same-node');
   await expect(cards).toHaveCount(1);
+
+  await search.evaluate((input) => { input.dataset.focusProbe = 'same-node'; });
+  await search.click();
+  await page.keyboard.type('khong-co-ban-ghi-lien-tuc-123');
+  await expect(cards).toHaveCount(0);
+  await expect.poll(inputKeepsFocus).toBe(true);
+  await search.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+  await search.press('Backspace');
+  await expect(cards).toHaveCount(1);
+  await expect.poll(inputKeepsFocus).toBe(true);
 
   await search.fill('Bích');
   await expect(cards).toHaveCount(1);
