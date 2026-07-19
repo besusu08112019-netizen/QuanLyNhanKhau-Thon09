@@ -238,7 +238,7 @@
 
   function renderAdminDashboard(data) {
     const m = data.metrics || {};
-    const cards = [['Tổng số hộ',m.total_households,'fa-house'],['Tổng số nhân khẩu',m.total_citizens,'fa-users'],['Nam',m.male_count,'fa-mars'],['Nữ',m.female_count,'fa-venus'],['Chủ hộ',m.household_head_count,'fa-user-check'],['Trẻ em',m.children_count,'fa-child'],['Người cao tuổi',m.elderly_count,'fa-person-cane'],['Độ tuổi lao động',m.working_age_count,'fa-briefcase'],['Tạm trú',m.temporary_count,'fa-location-dot'],['Tạm vắng',m.away_count,'fa-person-walking-arrow-right'],['Hộ nghèo',m.poor_households,'fa-hand-holding-heart'],['Hộ cận nghèo',m.near_poor_households,'fa-scale-balanced']];
+    const cards = [['Tổng số hộ',m.total_households,'fa-house'],['Tổng số nhân khẩu',m.total_citizens,'fa-users'],['Nam',m.male_count,'fa-mars'],['Nữ',m.female_count,'fa-venus'],['Chủ hộ',m.household_head_count,'fa-user-check'],['Trẻ em',m.children_count,'fa-child'],['Người cao tuổi',m.elderly_count,'fa-person-cane'],['Độ tuổi lao động',m.working_age_count,'fa-briefcase'],['Tạm trú',m.temporary_residence_count ?? m.temporary_count,'fa-location-dot'],['Tạm vắng',m.temporary_absence_count ?? m.away_count,'fa-person-walking-arrow-right'],['Hộ nghèo',m.poor_households,'fa-hand-holding-heart'],['Hộ cận nghèo',m.near_poor_households,'fa-scale-balanced']];
     document.querySelector('#dashboardCards').innerHTML = cards.map(([label,value,icon]) => `<div class="col-sm-6 col-xl-3"><div class="metric-card admin-metric"><i class="fa-solid ${icon}"></i><div><div class="metric-label">${label}</div><div class="metric-value">${number(value)}</div></div></div></div>`).join('');
     ensureDashboardChart('hamletChart','Dân số theo thôn');
     ensureDashboardChart('monthlyChart','Tăng giảm dân số theo tháng');
@@ -254,14 +254,33 @@
   }
 
   async function loadPresenceList(value, selector) {
-    const params = value === 'TEMPORARY' ? { residencyStatus: 'TEMPORARY', pageSize: 100 } : { presenceStatus: 'AWAY', pageSize: 100 };
-    const data = await api('/api/persons?' + new URLSearchParams(params));
-    document.querySelector(selector).innerHTML = personMiniTable(data.items || []);
+    const endpoint = value === 'TEMPORARY' ? '/api/temporary-residence' : '/api/temporary-absence';
+    const label = value === 'TEMPORARY' ? 'nhân khẩu tạm trú' : 'nhân khẩu tạm vắng';
+    const data = await fetchAllPresenceRows(endpoint);
+    document.querySelector(selector).innerHTML = personMiniTable(data.items, data.total, label);
   }
 
-  function personMiniTable(items) {
+  async function fetchAllPresenceRows(endpoint) {
+    const pageSize = 100;
+    let page = 1;
+    let total = 0;
+    let totalPages = 1;
+    let items = [];
+    do {
+      const data = await api(endpoint + '?' + new URLSearchParams({ page, pageSize }).toString(), { cacheTtl: 12000 });
+      const pageItems = data.items || [];
+      items = items.concat(pageItems);
+      total = Number(data.total ?? items.length);
+      totalPages = Number(data.totalPages || Math.ceil(total / pageSize) || 1);
+      if (!pageItems.length) break;
+      page += 1;
+    } while (page <= totalPages && page <= 200);
+    return { items, total };
+  }
+
+  function personMiniTable(items, total, label) {
     const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.phone || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="persons.detail" data-id="${Number(row.id || 0)}">Xem</button></td></tr>`).join('') || emptyRow(6, 'Không có dữ liệu');
-    return `<table class="table table-hover data-table mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Số điện thoại</th><th class="text-end">Thao tác</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<div class="d-flex justify-content-between align-items-center mb-2"><span class="text-muted small">Tổng số: <strong>${number(total)}</strong> ${escapeHtml(label || 'nhân khẩu')}</span><span class="text-muted small">Hiển thị ${number(items.length)} dòng</span></div><table class="table table-hover data-table mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Số điện thoại</th><th class="text-end">Thao tác</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   async function loadMovements() {
