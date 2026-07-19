@@ -52,9 +52,6 @@
     window.__thon09HouseholdPhotoActionsRegistered = true;
       actions
         .register('householdPhoto.capture', context => {
-          if (typeof window.thon09RequestHouseholdPhotoGps === 'function') {
-            window.thon09RequestHouseholdPhotoGps(context.target);
-          }
           const input = context.target?.closest?.('.household-photo-widget')?.querySelector('[data-household-photo-capture-input]');
           input?.click();
         })
@@ -310,37 +307,6 @@
     return scopedId || qs('#householdId')?.value || qs('#householdForm [name="id"]')?.value || '';
   }
 
-  function householdLocationPayload(form) {
-    if (!form) return null;
-    const latitude = form.querySelector('[name="latitude"]')?.value?.trim();
-    const longitude = form.querySelector('[name="longitude"]')?.value?.trim();
-    if (!latitude || !longitude) return null;
-    return {
-      latitude,
-      longitude,
-      accuracy: form.querySelector('[name="locationAccuracy"], [name="location_accuracy"]')?.value || null,
-      source: form.querySelector('[name="locationSource"], [name="location_source"]')?.value || 'GPS',
-    };
-  }
-
-  async function saveGpsIfAvailable(entityId, form) {
-    const payload = householdLocationPayload(form);
-    if (!entityId || !payload) return;
-    try {
-      await fetchJson(`/api/gis/households/${entityId}/location`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (typeof window.thon09LoadGisHouseholdMarkers === 'function') {
-        window.thon09LoadGisHouseholdMarkers('', { force: true });
-      }
-    } catch (error) {
-      console.warn('[Household Photo GPS] Không lưu được tọa độ ảnh hộ', error);
-      toast(error.message || 'Ảnh đã lưu nhưng chưa lưu được tọa độ GPS.', 'warning');
-    }
-  }
-
   function refreshGisAfterHouseholdPhotoChange(entityId) {
     const id = String(entityId || '').trim();
     const gis = window.App?.gis;
@@ -459,7 +425,6 @@
       const entityId = savedRow.id || id || getHouseholdIdFromForm(form);
       if (form.elements.id && entityId) form.elements.id.value = entityId;
 
-      await saveGpsIfAvailable(entityId, form);
       await deletePhoto(entityId, shouldReplaceExistingPhoto);
       await uploadPhoto(entityId);
       await loadExistingPhoto(entityId);

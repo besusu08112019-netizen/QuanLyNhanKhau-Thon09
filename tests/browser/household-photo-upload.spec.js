@@ -34,6 +34,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   let savedHousehold = null;
   let uploadCount = 0;
   let deleteCount = 0;
+  let gisLocationWriteCount = 0;
   const uploadedFiles = [];
   const previewIds = [];
 
@@ -79,6 +80,10 @@ test('household photo is uploaded, read back and replaced from library/camera in
       const body = JSON.parse(request.postData() || '{}');
       savedHousehold = { ...savedHousehold, household_code: body.householdCode, head_citizen_name: body.headCitizenName, address: body.address };
       return payload(savedHousehold);
+    }
+    if (url.pathname === '/api/gis/households/123/location') {
+      gisLocationWriteCount += 1;
+      return payload({ id: 123, latitude: 10.1, longitude: 106.1, location_accuracy: 5, location_source: 'GPS' });
     }
 
     if (url.pathname === '/api/files' && request.method() === 'GET') {
@@ -139,6 +144,12 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await expectHouseholdModalOpen(page);
   await page.evaluate(() => window.thon09EnhanceHouseholdPhotoCapture && window.thon09EnhanceHouseholdPhotoCapture());
   await expect(page.locator('#householdPhotoLibraryBtn')).toBeVisible();
+  await page.evaluate(() => {
+    window.__photoGpsRequestCount = 0;
+    window.thon09RequestHouseholdPhotoGps = () => { window.__photoGpsRequestCount += 1; };
+    window.Thon09Platform.actions.dispatch('householdPhoto.capture', { target: document.createElement('button') });
+  });
+  await expect.poll(() => page.evaluate(() => window.__photoGpsRequestCount || 0)).toBe(0);
   await page.locator('#householdModal input[name="householdCode"]').fill('QA-PHOTO-001');
   await page.locator('#householdModal input[name="headCitizenName"]').fill('Nguyễn Văn Test');
   await page.locator('#householdModal input[name="address"]').fill('Thôn 09');
@@ -146,6 +157,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await expect.poll(() => page.locator('#householdPhotoPreview img').count()).toBe(1);
   await page.locator('#householdForm button[type="submit"]').click();
   await expect.poll(() => uploadCount).toBe(1);
+  expect(gisLocationWriteCount).toBe(0);
 
   await page.evaluate(() => window.showHousehold(123));
   await expect(page.locator('#detailModal')).toHaveClass(/show/);
@@ -180,6 +192,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await page.locator('#householdForm button[type="submit"]').click();
   await expect.poll(() => uploadCount).toBe(2);
   expect(deleteCount).toBeGreaterThanOrEqual(1);
+  expect(gisLocationWriteCount).toBe(0);
   expect(consoleErrors).toEqual([]);
 });
 

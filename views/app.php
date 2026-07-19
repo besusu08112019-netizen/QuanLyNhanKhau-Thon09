@@ -684,7 +684,6 @@
   <script charset="utf-8" src="/assets/js/gis-platform.min.js"></script>
   <script charset="utf-8" src="/assets/js/household-photo-capture.min.js"></script>
   <script charset="utf-8" src="/assets/js/household-photo-camera-fix.min.js"></script>
-  <script charset="utf-8" src="/assets/js/household-photo-gps.min.js"></script>
   <script charset="utf-8" src="/assets/js/digital-profile.min.js"></script>
   <script charset="utf-8" src="/assets/js/household-business.min.js"></script>
   <script charset="utf-8" src="/assets/js/livestock.min.js"></script>
