@@ -261,6 +261,13 @@ test('mobile V2 public asset cards keep address out of title and dedupe detail f
       const firstCard = screen?.querySelector('.app-v2-record-card');
       const title = firstCard?.querySelector('.app-v2-record-title')?.textContent?.trim() || '';
       const meta = firstCard?.querySelector('.app-v2-record-meta')?.textContent?.trim() || '';
+      const metaHiddenBeforeOpen = firstCard?.querySelector('.app-v2-record-meta')?.hidden || false;
+      const more = firstCard?.querySelector('.app-v2-record-more');
+      if (more) {
+        more.open = true;
+        more.dispatchEvent(new Event('toggle'));
+      }
+      const metaHiddenAfterOpen = firstCard?.querySelector('.app-v2-record-meta')?.hidden || false;
       const fields = Array.from(firstCard?.querySelectorAll('.app-v2-record-field') || []).map((field) => ({
         label: field.querySelector('dt')?.textContent?.trim() || '',
         value: field.querySelector('dd')?.textContent?.trim() || ''
@@ -270,6 +277,8 @@ test('mobile V2 public asset cards keep address out of title and dedupe detail f
       return {
         title,
         meta,
+        metaHiddenBeforeOpen,
+        metaHiddenAfterOpen,
         fields,
         addressFields,
         duplicateCount: identities.length - new Set(identities).size,
@@ -281,6 +290,8 @@ test('mobile V2 public asset cards keep address out of title and dedupe detail f
     expect(metrics.title).toBe('Nhà văn hóa thôn 09');
     expect(metrics.title).not.toContain('Xã Hồng Phong');
     expect(metrics.meta).not.toContain('Thôn 09, Xã Hồng Phong');
+    expect(metrics.metaHiddenBeforeOpen).toBe(false);
+    expect(metrics.metaHiddenAfterOpen).toBe(true);
     expect(metrics.addressFields).toHaveLength(1);
     expect(metrics.addressFields[0].value).toBe('Thôn 09, Xã Hồng Phong');
     expect(metrics.duplicateCount).toBe(0);

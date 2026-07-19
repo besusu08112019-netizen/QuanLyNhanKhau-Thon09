@@ -494,6 +494,7 @@
     var title = el('h3', 'app-v2-record-title');
     var meta = el('p', 'app-v2-record-meta');
     var summaryFields = options.summaryFields || [];
+    var previewNode = null;
     title.textContent = options.title || 'Bản ghi';
     meta.textContent = options.meta || 'Đang cập nhật';
     append(iconWrap, [icon(options.icon || 'fa-file-lines')]);
@@ -508,8 +509,10 @@
         summary.appendChild(chip);
       });
       textWrap.appendChild(summary);
+      previewNode = summary;
     } else {
       textWrap.appendChild(meta);
+      previewNode = meta;
     }
     if (options.badges && options.badges.length) {
       var tags = el('div', 'app-v2-record-tags');
@@ -524,6 +527,9 @@
         var more = el('details', 'app-v2-record-more');
         var summary = el('summary');
         var moreDetails = el('dl', 'app-v2-record-more-details');
+        more.addEventListener('toggle', function () {
+          if (previewNode) previewNode.hidden = more.open;
+        });
         summary.textContent = 'Thêm thông tin';
         extraDetails.forEach(function (field) {
           var item = el('div', 'app-v2-record-field');
