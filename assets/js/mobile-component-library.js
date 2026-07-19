@@ -4,6 +4,7 @@
   var mobileQuery = window.matchMedia ? window.matchMedia('(max-width: 1024px)') : null;
   var scheduled = false;
   var moduleShellEnabled = true;
+  var filterStates = Object.create(null);
   var enabledModuleScreens = [
     'householdsScreen', 'personsScreen', 'temporaryResidenceScreen', 'temporaryAbsenceScreen', 'movementsScreen',
     'gisScreen', 'publicAssetsScreen', 'housesScreen', 'vehiclesScreen',
@@ -22,6 +23,20 @@
     var raw = Number(value || 0);
     if (!Number.isFinite(raw)) raw = 0;
     return raw.toLocaleString('vi-VN');
+  }
+
+  function normalizeSearchText(value) {
+    var normalized = text(value).toLowerCase().replace(/đ/g, 'd').replace(/Đ/g, 'd');
+    if (normalized.normalize) normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return normalized.replace(/[^\p{L}\p{N}\s-]/gu, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function filterFieldKey(field, fallback) {
+    if (field && field.key) return field.key;
+    if (field && field.name) return field.name;
+    if (field && field.type === 'search') return 'search';
+    if (field && field.type === 'select') return 'status';
+    return fallback || 'field';
   }
 
   function el(tag, className, attrs) {
@@ -98,7 +113,8 @@
       id: id,
       type: options.type || 'text',
       placeholder: options.placeholder || '',
-      autocomplete: options.autocomplete || 'off'
+      autocomplete: options.autocomplete || 'off',
+      'data-app-v2-filter-field': filterFieldKey(options)
     });
     label.textContent = options.label || '';
     if (options.value != null) input.value = options.value;
@@ -110,7 +126,7 @@
     var field = el('div', 'app-v2-field');
     var id = options.id || 'app-v2-select-' + Math.random().toString(36).slice(2);
     var label = el('label', '', { for: id });
-    var select = el('select', 'app-v2-select', { id: id });
+    var select = el('select', 'app-v2-select', { id: id, 'data-app-v2-filter-field': filterFieldKey(options) });
     label.textContent = options.label || '';
     (options.options || []).forEach(function (item) {
       var option = el('option');
@@ -118,8 +134,34 @@
       option.textContent = item.label || item.value || '';
       select.appendChild(option);
     });
+    if (options.value != null) select.value = options.value;
     append(field, [label, select]);
     return field;
+  }
+
+  function readFilterState(root) {
+    var state = {};
+    Array.from(root.querySelectorAll('[data-app-v2-filter-field]')).forEach(function (control) {
+      var key = control.getAttribute('data-app-v2-filter-field') || control.name || 'field';
+      state[key] = control.value || '';
+    });
+    if (state.keyword && !state.search) state.search = state.keyword;
+    if (state.searchText && !state.search) state.search = state.searchText;
+    return state;
+  }
+
+  function emitFilterChange(root) {
+    root.dispatchEvent(new CustomEvent('app-v2-filter-change', {
+      bubbles: true,
+      detail: { state: readFilterState(root) }
+    }));
+  }
+
+  function resetFilterControls(root) {
+    Array.from(root.querySelectorAll('[data-app-v2-filter-field]')).forEach(function (control) {
+      control.value = '';
+    });
+    emitFilterChange(root);
   }
 
   function AppTabs(items, selected) {
@@ -144,8 +186,10 @@
       type: 'search',
       placeholder: field.placeholder || '',
       autocomplete: 'off',
-      inputmode: 'search'
+      inputmode: 'search',
+      'data-app-v2-filter-field': filterFieldKey(field)
     });
+    if (field.value != null) input.value = field.value;
     append(search, [icon(field.icon || 'fa-magnifying-glass'), input]);
     return search;
   }
@@ -156,6 +200,27 @@
       sheet.appendChild(field.type === 'select' ? AppSelect(field) : (field.type === 'search' ? AppSearchControl(field) : AppInput(field)));
     });
     if (options.actions && options.actions.length) sheet.appendChild(AppToolbar(options.actions));
+    var debounceTimer = null;
+    sheet.addEventListener('input', function (event) {
+      if (!event.target.matches('[data-app-v2-filter-field]')) return;
+      window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(function () { emitFilterChange(sheet); }, 120);
+    });
+    sheet.addEventListener('keyup', function (event) {
+      if (!event.target.matches('[data-app-v2-filter-field]')) return;
+      window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(function () { emitFilterChange(sheet); }, 120);
+    });
+    sheet.addEventListener('change', function (event) {
+      if (event.target.matches('[data-app-v2-filter-field]')) emitFilterChange(sheet);
+    });
+    sheet.addEventListener('click', function (event) {
+      var button = event.target.closest('button');
+      if (!button) return;
+      var actionText = normalizeSearchText(button.textContent + ' ' + button.getAttribute('title') + ' ' + button.innerHTML);
+      if (/rotate-right|reset|dat lai|lam moi/.test(actionText)) resetFilterControls(sheet);
+      else if (/filter|ap dung/.test(actionText)) emitFilterChange(sheet);
+    });
     return sheet;
   }
 
@@ -1000,17 +1065,20 @@
       host = el('section', 'app-v2-page app-v2-module-dashboard', { id: hostId, 'aria-label': 'Dashboard ' + meta.title });
       screen.insertBefore(host, screen.firstChild);
     }
+    var filterState = filterStates[hostId] || {};
     host.textContent = '';
     var kpis = readKpis(screen, meta);
     var summaryItems = readSummaryItems(screen);
+    var filteredKpis = filterItems(kpis, filterState);
+    var filteredSummaryItems = filterItems(summaryItems, filterState);
 
     var primary = el('div', 'app-v2-flow');
     var secondary = el('div', 'app-v2-flow');
     var layout = el('div', 'app-v2-two-pane');
     var statSection = AppSection({ title: 'Chỉ số', meta: 'Realtime' });
     var statGrid = el('div', 'app-v2-grid app-v2-dashboard-kpis');
-    kpis.forEach(function (item) { statGrid.appendChild(AppStatCard(item)); });
-    append(statSection, [kpis.length ? statGrid : AppEmptyState({ message: 'Đang tải chỉ số Dashboard', icon: 'fa-chart-simple' })]);
+    filteredKpis.forEach(function (item) { statGrid.appendChild(AppStatCard(item)); });
+    append(statSection, [filteredKpis.length ? statGrid : AppEmptyState({ message: filterState.search || filterState.status ? 'Không tìm thấy chỉ số phù hợp' : 'Đang tải chỉ số Dashboard', icon: 'fa-chart-simple' })]);
 
     var actionSection = AppSection({ title: 'Truy cập nhanh', meta: 'Module' });
     append(actionSection, [AppList((meta.actions || []).map(function (item) {
@@ -1018,20 +1086,29 @@
     }))]);
 
     var metricSection = null;
-    if (summaryItems.length) {
+    if (filteredSummaryItems.length) {
       metricSection = AppSection({ title: 'Tóm tắt', meta: 'Dữ liệu bổ sung' });
-      append(metricSection, [AppCard({ body: AppList(summaryItems.map(function (item) { return AppMetricRow(item); })) })]);
+      append(metricSection, [AppCard({ body: AppList(filteredSummaryItems.map(function (item) { return AppMetricRow(item); })) })]);
     }
 
     var filterSection = AppSection({ title: 'Bộ lọc nhanh', meta: 'Adaptive' });
-    append(filterSection, [AppFilterSheet({
+    var filterSheet = AppFilterSheet({
       label: 'Bộ lọc nhanh ' + meta.title,
       fields: [
         { label: 'Từ khóa', type: 'search', placeholder: 'Tìm trong ' + meta.title.toLowerCase() },
         { label: 'Trạng thái', type: 'select', options: [{ label: 'Tất cả', value: '' }, { label: 'Cần xử lý', value: 'todo' }, { label: 'Hoàn tất', value: 'done' }] }
       ],
       actions: [{ label: 'Áp dụng', icon: 'fa-filter' }, { label: 'Làm mới', icon: 'fa-rotate-right' }]
-    })]);
+    });
+    var searchControl = filterSheet.querySelector('[data-app-v2-filter-field="search"]');
+    var statusControl = filterSheet.querySelector('[data-app-v2-filter-field="status"]');
+    if (searchControl) searchControl.value = filterState.search || filterState.keyword || filterState.searchText || '';
+    if (statusControl) statusControl.value = filterState.status || '';
+    filterSheet.addEventListener('app-v2-filter-change', function (event) {
+      filterStates[hostId] = event.detail.state || {};
+      renderModuleDashboard(screen);
+    });
+    append(filterSection, [filterSheet]);
 
     append(primary, [statSection, filterSection, actionSection]);
     if (metricSection) append(secondary, [metricSection]);
@@ -1374,6 +1451,55 @@
     ];
   }
 
+  function itemSearchText(item) {
+    var parts = [
+      item && item.title,
+      item && item.label,
+      item && item.value,
+      item && item.meta,
+      item && item.subtitle,
+      item && item.unit
+    ];
+    (item && item.summaryFields || []).forEach(function (field) {
+      parts.push(field.label, field.value);
+    });
+    (item && item.badges || []).forEach(function (badge) {
+      parts.push(badge.label, badge.tone);
+    });
+    (item && item.details || []).forEach(function (field) {
+      parts.push(field.label, field.value);
+    });
+    (item && item.items || []).forEach(function (child) {
+      parts.push(child.label, child.value);
+    });
+    return normalizeSearchText(parts.filter(Boolean).join(' '));
+  }
+
+  function itemMatchesSearch(item, query) {
+    var needle = normalizeSearchText(query);
+    if (!needle) return true;
+    return itemSearchText(item).indexOf(needle) >= 0;
+  }
+
+  function itemMatchesStatus(item, status) {
+    var value = normalizeSearchText(status);
+    if (!value) return true;
+    var haystack = itemSearchText(item);
+    if (haystack.indexOf(value) >= 0) return true;
+    if (value === 'todo') return /(can xu ly|chua|thieu|het han|qua han|cho|pending|inactive|suspended)/.test(haystack);
+    if (value === 'done') return /(hoan tat|hoan thanh|da thu|da dong|da dinh vi|done|completed)/.test(haystack);
+    if (value === 'active') return /(dang quan ly|dang hoat dong|dang su dung|active|co du lieu)/.test(haystack);
+    return true;
+  }
+
+  function filterItems(items, state) {
+    var search = state && (state.search || state.searchText || state.keyword) || '';
+    var status = state && state.status || '';
+    return (items || []).filter(function (item) {
+      return itemMatchesSearch(item, search) && itemMatchesStatus(item, status);
+    });
+  }
+
   function scopedCount(screen, scope) {
     if (!scope || !scope.match) return 0;
     return sourceRows(screen).filter(function (row) {
@@ -1390,9 +1516,11 @@
       host = el('section', 'app-v2-page app-v2-module-screen', { id: hostId, 'aria-label': meta.title });
       screen.insertBefore(host, screen.firstChild);
     }
+    var filterState = filterStates[hostId] || {};
     host.textContent = '';
     var total = countRecords(screen);
     var records = sourceRecords(screen, meta);
+    var filteredRecords = filterItems(records, filterState);
     var primary = el('div', 'app-v2-flow');
     var secondary = el('div', 'app-v2-flow');
     var layout = el('div', 'app-v2-two-pane');
@@ -1414,18 +1542,31 @@
 
     var list = AppSection({ title: 'Danh sách', meta: 'Card List' });
     var recordList = el('div', 'app-v2-list');
-    records.forEach(function (record) { recordList.appendChild(AppRecordCard(record)); });
+    if (filteredRecords.length) {
+      filteredRecords.forEach(function (record) { recordList.appendChild(AppRecordCard(record)); });
+    } else {
+      recordList.appendChild(AppEmptyState({ message: 'Không tìm thấy bản ghi phù hợp', icon: 'fa-magnifying-glass' }));
+    }
     append(list, [recordList]);
 
     var filters = AppSection({ title: 'Bộ lọc', meta: 'Bottom Sheet ready' });
-    append(filters, [AppFilterSheet({
+    var filterSheet = AppFilterSheet({
       label: 'Bộ lọc ' + meta.title,
       fields: [
         { label: 'Từ khóa', type: 'search', placeholder: meta.search || 'Tìm kiếm...' },
         { label: 'Trạng thái', type: 'select', options: [{ label: 'Tất cả', value: '' }, { label: 'Đang quản lý', value: 'active' }, { label: 'Cần xử lý', value: 'todo' }] }
       ],
       actions: [{ label: 'Áp dụng', icon: 'fa-filter' }, { label: 'Đặt lại', icon: 'fa-rotate-right' }]
-    })]);
+    });
+    var searchControl = filterSheet.querySelector('[data-app-v2-filter-field="search"]');
+    var statusControl = filterSheet.querySelector('[data-app-v2-filter-field="status"]');
+    if (searchControl) searchControl.value = filterState.search || filterState.keyword || filterState.searchText || '';
+    if (statusControl) statusControl.value = filterState.status || '';
+    filterSheet.addEventListener('app-v2-filter-change', function (event) {
+      filterStates[hostId] = event.detail.state || {};
+      renderModuleScreen(screen);
+    });
+    append(filters, [filterSheet]);
 
     var actions = AppSection({ title: 'Thao tác', meta: 'Touch target 44px' });
     var actionRow = el('div', 'app-v2-action-row');
@@ -1482,7 +1623,15 @@
       host = el('section', 'app-v2-page app-v2-dashboard', { id: 'appMobileDashboard', 'aria-label': 'Dashboard Mobile' });
       screen.insertBefore(host, screen.firstChild);
     }
+    var hostId = 'appMobileDashboard';
+    var filterState = filterStates[hostId] || {};
     var data = dashboardData();
+    var filteredStats = filterItems(data.stats, filterState);
+    var filteredCharts = filterItems(data.charts || [], filterState);
+    var filteredQuickActions = filterItems(data.quickActions || [], filterState);
+    var filteredHealth = filterItems(data.health || [], filterState);
+    var filteredAlerts = filterItems(data.alerts || [], filterState);
+    var filteredTasks = filterItems(data.tasks || [], filterState);
     host.textContent = '';
     append(host, [
       AppHeader({
@@ -1508,10 +1657,16 @@
 
     var statSection = AppSection({ title: 'Chỉ số nhanh', meta: 'Mobile UI v2' });
     var statGrid = el('div', 'app-v2-grid app-v2-dashboard-kpis');
-    data.stats.forEach(function (item) { statGrid.appendChild(AppStatCard(item)); });
-    append(statSection, [statGrid]);
+    var dashboardSearchControl = dashboardFilterBar.querySelector('[data-app-v2-filter-field="search"]');
+    if (dashboardSearchControl) dashboardSearchControl.value = filterState.search || '';
+    dashboardFilterBar.addEventListener('app-v2-filter-change', function (event) {
+      filterStates[hostId] = event.detail.state || {};
+      renderDashboard();
+    });
+    filteredStats.forEach(function (item) { statGrid.appendChild(AppStatCard(item)); });
+    append(statSection, [filteredStats.length ? statGrid : AppEmptyState({ message: 'Không tìm thấy chỉ số phù hợp', icon: 'fa-magnifying-glass' })]);
 
-    var chartCards = (data.charts || []).map(function (item) {
+    var chartCards = filteredCharts.map(function (item) {
       return AppDashboardChart(item);
     }).filter(Boolean);
     var chartSection = null;
@@ -1524,7 +1679,8 @@
 
     var actionSection = AppSection({ title: 'Thao tác nhanh', meta: '4 mục chính' });
     var actionList = el('div', 'app-v2-list');
-    data.quickActions.forEach(function (item) { actionList.appendChild(listItem(item)); });
+    filteredQuickActions.forEach(function (item) { actionList.appendChild(listItem(item)); });
+    if (!filteredQuickActions.length) actionList.appendChild(AppEmptyState({ message: 'Không tìm thấy thao tác phù hợp', icon: 'fa-magnifying-glass' }));
     append(actionSection, [actionList]);
 
     var layout = el('div', 'app-v2-dashboard-layout');
@@ -1541,10 +1697,11 @@
     append(panelSection, [panels]);
     var summarySection = AppSection({ title: 'Tóm tắt', meta: 'Adaptive' });
     var summaryList = el('div', 'app-v2-list');
-    data.health.forEach(function (item) { summaryList.appendChild(AppSummaryCard(item)); });
+    filteredHealth.forEach(function (item) { summaryList.appendChild(AppSummaryCard(item)); });
+    if (!filteredHealth.length) summaryList.appendChild(AppEmptyState({ message: 'Không tìm thấy tóm tắt phù hợp', icon: 'fa-magnifying-glass' }));
     append(summarySection, [summaryList]);
-    var alertSection = AppSection({ title: 'Cảnh báo và tác vụ', meta: data.alerts.length + data.tasks.length ? 'Dữ liệu thật' : 'Fallback' });
-    append(alertSection, [AppList((data.alerts.length ? data.alerts : [{ title: 'Không có cảnh báo nổi bật', subtitle: 'Dashboard đang ổn định', icon: 'fa-circle-check', action: 'dashboard' }]).concat(data.tasks))]);
+    var alertSection = AppSection({ title: 'Cảnh báo và tác vụ', meta: filteredAlerts.length + filteredTasks.length ? 'Dữ liệu thật' : 'Fallback' });
+    append(alertSection, [AppList((filteredAlerts.length ? filteredAlerts : [{ title: 'Không có cảnh báo nổi bật', subtitle: 'Dashboard đang ổn định', icon: 'fa-circle-check', action: 'dashboard' }]).concat(filteredTasks))]);
     append(secondary, [summarySection, alertSection, panelSection]);
     append(layout, [primary, secondary]);
     append(host, [layout, AppFAB({ icon: 'fa-plus', label: 'Thêm nhanh', action: 'households' })]);

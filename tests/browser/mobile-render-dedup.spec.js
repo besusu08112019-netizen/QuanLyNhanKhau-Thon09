@@ -162,6 +162,39 @@ test('mobile render keeps one source row for business households and contributio
   expect(contributionDashboard.cellHeight).toBeLessThanOrEqual(120);
 });
 
+test('mobile shared AppFilterBar search filters records and restores the list', async ({ page }) => {
+  await openAuthenticatedApp(page);
+
+  await page.evaluate(() => window.Thon09NavigationController?.navigate('businessHouseholds'));
+  await expect(page.locator('#businessHouseholdRows > tr')).toHaveCount(1);
+  await page.evaluate(() => window.Thon09MobileComponents?.renderModuleScreen(document.querySelector('#businessHouseholdsScreen')));
+
+  const cards = page.locator('#businessHouseholdsScreen .app-v2-record-card');
+  const search = page.locator('#businessHouseholdsScreen .app-v2-filter-bar .app-v2-search input');
+  const status = page.locator('#businessHouseholdsScreen .app-v2-filter-bar select[data-app-v2-filter-field="status"]');
+  await expect(cards).toHaveCount(1);
+
+  await search.fill('Bích');
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first()).toContainText(/Bich|BÃ­ch/);
+
+  await search.fill('bich');
+  await expect(cards).toHaveCount(1);
+
+  await search.fill('H09-0007');
+  await expect(cards).toHaveCount(1);
+  await status.selectOption('active');
+  await expect(cards).toHaveCount(1);
+
+  await search.fill('khong-co-ban-ghi');
+  await expect(cards).toHaveCount(0);
+  await expect(page.locator('#businessHouseholdsScreen .app-v2-empty')).toContainText(/Không tìm thấy|KhÃ´ng tÃ¬m/);
+
+  await status.selectOption('');
+  await search.fill('');
+  await expect(cards).toHaveCount(1);
+});
+
 test('mobile shared filters do not render duplicate icon-only controls and empty lists stay informative', async ({ page }) => {
   await openAuthenticatedApp(page);
 
