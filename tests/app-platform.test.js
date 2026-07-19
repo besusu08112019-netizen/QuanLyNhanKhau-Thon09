@@ -172,7 +172,7 @@ function screenNode(screenId) {
   const mobileScreens = platform.menuRenderer.mobileScreens();
   assert.strictEqual(
     mobileScreens.join(','),
-    'dashboard,households,persons,gis,reports'
+    'dashboard,households,persons,publicAssets,houses,businessHouseholds,agriculture,livestock,contributions,gis,reports'
   );
   assert.strictEqual(platform.menuRenderer.mobileModules()[1].mobileLabel, 'Hộ');
   assert.strictEqual(platform.modules.get('households').label, 'Hộ gia đình');

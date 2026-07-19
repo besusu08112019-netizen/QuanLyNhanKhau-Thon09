@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260719-actions-cleanup';
+const PWA_VERSION = 'thon09-pwa-v20260719-bottom-nav-modules';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
