@@ -73,6 +73,6 @@ final class Backup extends BaseModel
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         $total = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM backups')['total'];
         $items = $this->fetchAll("SELECT b.*, u.email AS created_by_email FROM backups b LEFT JOIN users u ON u.id=b.created_by ORDER BY b.created_at DESC LIMIT $pageSize OFFSET $offset");
-        return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated($items, $page, $pageSize, $total);
     }
 }

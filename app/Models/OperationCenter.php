@@ -176,7 +176,7 @@ final class OperationCenter extends BaseModel
             [$where, $params] = $this->logWhere($filters);
             $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM audit_logs $where", $params) ?: [])['total'] ?? 0);
             $items = $this->fetchAll("SELECT id, actor_email AS user_email, created_at, module, action, message, entity_id, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.ip')), '') AS ip_address FROM audit_logs $where ORDER BY created_at DESC, id DESC LIMIT $pageSize OFFSET $offset", $params);
-            return ['items' => $items, 'total' => $total, 'page' => $page, 'pageSize' => $pageSize, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+            return $this->paginated($items, $page, $pageSize, $total);
         }, ['items' => [], 'total' => 0, 'page' => 1, 'pageSize' => 50, 'totalPages' => 1]);
     }
 

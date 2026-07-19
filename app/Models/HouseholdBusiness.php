@@ -117,7 +117,7 @@ SQL);
              LIMIT $pageSize OFFSET $offset",
             $params
         );
-        return ['items' => array_map(fn($row) => $this->normalize($row), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($row) => $this->normalize($row), $rows), $page, $pageSize, $total);
     }
 
     public function paginateHouseholds(array $filters): array
@@ -151,7 +151,7 @@ SQL);
         foreach ($items as $item) $byId[(int) $item['household_id']] = $item;
         $ordered = [];
         foreach ($ids as $id) if (isset($byId[$id])) $ordered[] = $byId[$id];
-        return ['items' => $ordered, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated($ordered, $page, $pageSize, $total);
     }
 
     public function findHouseholdSummary(int $householdId): ?array
@@ -465,8 +465,6 @@ SQL);
         $located = trim((string) ($filters['located'] ?? ''));
         if ($located === '1') $where[] = '((hb.gps_source = "activity" AND hb.latitude IS NOT NULL AND hb.longitude IS NOT NULL) OR (hb.gps_source <> "activity" AND h.latitude IS NOT NULL AND h.longitude IS NOT NULL))';
         if ($located === '0') $where[] = '((hb.gps_source = "activity" AND (hb.latitude IS NULL OR hb.longitude IS NULL)) OR (hb.gps_source <> "activity" AND (h.latitude IS NULL OR h.longitude IS NULL)))';
-        $sort = preg_replace('/[^a-z_]/', '', (string) ($filters['sort'] ?? 'household_code'));
-        $direction = strtoupper((string) ($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = [
             'household_code' => 'h.household_code',
             'head_citizen_name' => 'h.head_citizen_name',
@@ -474,18 +472,16 @@ SQL);
             'business_type' => 'hb.business_type',
             'economic_type' => 'hb.economic_type',
             'business_scale' => 'hb.business_scale',
-            'sector' => 'sector_label',
+            'sector' => 'COALESCE(NULLIF(hb.production_sector,""), NULLIF(hb.business_sector,""))',
             'worker_count' => 'hb.worker_count',
             'status' => 'hb.status',
             'address' => 'COALESCE(NULLIF(hb.address,""), h.address)',
         ];
-        return ['WHERE ' . implode(' AND ', $where), $params, 'ORDER BY ' . ($sortMap[$sort] ?? 'h.household_code') . ' ' . $direction . ', h.household_code ASC'];
+        return ['WHERE ' . implode(' AND ', $where), $params, $this->listOrder($filters, $sortMap, 'household_code', 'ASC', ['h.household_code ASC', 'hb.id ASC'])];
     }
 
     private function householdOrder(array $filters): string
     {
-        $sort = preg_replace('/[^a-z_]/', '', (string) ($filters['sort'] ?? 'household_code'));
-        $direction = strtoupper((string) ($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = [
             'household_code' => 'h.household_code',
             'head_citizen_name' => 'h.head_citizen_name',
@@ -499,7 +495,7 @@ SQL);
             'updated_at' => 'activity_updated_at',
             'address' => 'h.address',
         ];
-        return 'ORDER BY ' . ($sortMap[$sort] ?? 'h.household_code') . ' ' . $direction . ', h.household_code ASC';
+        return $this->listOrder($filters, $sortMap, 'household_code', 'ASC', ['h.household_code ASC', 'h.id ASC']);
     }
 
     private function normalizeHouseholdSummary(array $household, array $activities): array

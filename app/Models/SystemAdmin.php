@@ -73,7 +73,7 @@ final class SystemAdmin extends BaseModel
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) ($this->fetchOne("SELECT COUNT(*) AS total FROM user_sessions s LEFT JOIN users u ON u.id=s.user_id $sqlWhere", $params)['total'] ?? 0);
         $items = $this->fetchAll("SELECT s.id, s.user_id, u.email, u.display_name, u.role, s.ip_address, s.user_agent, s.created_at, s.expires_at, s.revoked_at, CASE WHEN s.revoked_at IS NULL AND s.expires_at > NOW() THEN 'ACTIVE' WHEN s.revoked_at IS NOT NULL THEN 'REVOKED' ELSE 'EXPIRED' END AS status FROM user_sessions s LEFT JOIN users u ON u.id=s.user_id $sqlWhere ORDER BY s.created_at DESC LIMIT $pageSize OFFSET $offset", $params);
-        return ['items' => array_map(fn($row) => $this->sessionRow($row), $items), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($row) => $this->sessionRow($row), $items), $page, $pageSize, $total);
     }
 
     public function revokeSession(int $id): int { return $this->execute('UPDATE user_sessions SET revoked_at = NOW() WHERE id = :id AND revoked_at IS NULL', ['id' => $id]); }

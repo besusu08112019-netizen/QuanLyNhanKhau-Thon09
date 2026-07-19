@@ -73,7 +73,7 @@ SQL);
              LIMIT $pageSize OFFSET $offset",
             $params
         );
-        return ['items' => array_map(fn($row) => $this->normalize($row), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($row) => $this->normalize($row), $rows), $page, $pageSize, $total);
     }
 
     public function find(int $id): ?array
@@ -290,11 +290,9 @@ SQL);
         if ($from !== '') { $where[] = 'DATE(COALESCE(l.updated_at, l.created_at)) >= :date_from'; $params['date_from'] = $from; }
         $to = trim((string) ($filters['date_to'] ?? $filters['dateTo'] ?? ''));
         if ($to !== '') { $where[] = 'DATE(COALESCE(l.updated_at, l.created_at)) <= :date_to'; $params['date_to'] = $to; }
-        $sort = preg_replace('/[^a-z_]/', '', (string) ($filters['sort'] ?? 'household_code'));
-        $direction = strtoupper((string) ($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = ['household_code' => 'h.household_code', 'head_citizen_name' => 'h.head_citizen_name', 'animal_type' => 'l.animal_type', 'breed' => 'l.breed', 'quantity' => 'l.quantity', 'vaccinated' => 'l.vaccinated', 'status' => 'l.status', 'updated_at' => 'COALESCE(l.updated_at, l.created_at)'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
-        if ($withOrder) $result[] = 'ORDER BY ' . ($sortMap[$sort] ?? 'h.household_code') . ' ' . $direction . ', l.animal_type ASC, l.id DESC';
+        if ($withOrder) $result[] = $this->listOrder($filters, $sortMap, 'household_code', 'ASC', ['h.household_code ASC', 'l.animal_type ASC', 'l.id ASC']);
         return $result;
     }
 

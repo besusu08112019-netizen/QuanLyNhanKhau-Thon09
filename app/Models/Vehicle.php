@@ -96,7 +96,7 @@ SQL);
              $where $order LIMIT $pageSize OFFSET $offset",
             $params
         );
-        return ['items' => array_map(fn($row) => $this->normalize($row), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($row) => $this->normalize($row), $rows), $page, $pageSize, $total);
     }
 
     public function find(int $id): ?array
@@ -280,11 +280,9 @@ SQL);
         if ($from !== '') { $where[] = 'DATE(COALESCE(v.updated_at, v.created_at)) >= :date_from'; $params['date_from'] = $from; }
         $to = trim((string) ($filters['date_to'] ?? $filters['dateTo'] ?? ''));
         if ($to !== '') { $where[] = 'DATE(COALESCE(v.updated_at, v.created_at)) <= :date_to'; $params['date_to'] = $to; }
-        $sort = preg_replace('/[^a-z_]/', '', (string) ($filters['sort'] ?? 'vehicle_code'));
-        $direction = strtoupper((string) ($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = ['vehicle_code'=>'v.vehicle_code','household_code'=>'h.household_code','owner_name'=>'v.owner_name','vehicle_type'=>'v.vehicle_type','detail_type'=>'v.detail_type','brand'=>'v.brand','license_plate'=>'v.license_plate','usage_status'=>'v.usage_status','insurance_expiry_date'=>'v.insurance_expiry_date','inspection_expiry_date'=>'v.inspection_expiry_date','updated_at'=>'COALESCE(v.updated_at,v.created_at)'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
-        if ($withOrder) $result[] = 'ORDER BY ' . ($sortMap[$sort] ?? 'v.vehicle_code') . ' ' . $direction . ', v.id DESC';
+        if ($withOrder) $result[] = $this->listOrder($filters, $sortMap, 'household_code', 'ASC', ['h.household_code ASC', 'v.vehicle_code ASC', 'v.id ASC']);
         return $result;
     }
 

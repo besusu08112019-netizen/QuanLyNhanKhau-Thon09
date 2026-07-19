@@ -216,7 +216,7 @@ SQL);
              $where $order LIMIT $pageSize OFFSET $offset",
             $params
         );
-        return ['items' => array_map(fn($row) => $this->normalizeParcel($row), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int)ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($row) => $this->normalizeParcel($row), $rows), $page, $pageSize, $total);
     }
 
     public function find(int $id): ?array
@@ -422,11 +422,9 @@ SQL);
         if ($crop !== '') { $where[] = 'EXISTS (SELECT 1 FROM agri_production_plots pp2 INNER JOIN agri_crop_seasons s2 ON s2.plot_id=pp2.id WHERE pp2.parcel_id=p.id AND pp2.status <> "DELETED" AND s2.status <> "DELETED" AND s2.crop = :crop)'; $params['crop'] = $crop; }
         $season = trim((string)($filters['season'] ?? ''));
         if ($season !== '') { $where[] = 'EXISTS (SELECT 1 FROM agri_production_plots pp3 INNER JOIN agri_crop_seasons s3 ON s3.plot_id=pp3.id WHERE pp3.parcel_id=p.id AND pp3.status <> "DELETED" AND s3.status <> "DELETED" AND s3.season_name = :season)'; $params['season'] = $season; }
-        $sort = preg_replace('/[^a-z_]/', '', (string)($filters['sort'] ?? 'parcel_code'));
-        $direction = strtoupper((string)($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = ['parcel_code' => 'p.parcel_code', 'field_area' => 'p.field_area', 'owner_name' => 'o.name', 'producer_name' => 'pr.name', 'actual_area' => 'p.actual_area', 'status' => 'p.status', 'updated_at' => 'COALESCE(p.updated_at,p.created_at)'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
-        if ($withOrder) $result[] = 'ORDER BY ' . ($sortMap[$sort] ?? 'p.parcel_code') . ' ' . $direction . ', p.id DESC';
+        if ($withOrder) $result[] = $this->listOrder($filters, $sortMap, 'parcel_code', 'ASC', ['p.id ASC']);
         return $result;
     }
 

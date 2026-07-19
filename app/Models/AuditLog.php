@@ -24,7 +24,7 @@ final class AuditLog extends BaseModel
         $sqlWhere = 'WHERE ' . implode(' AND ', $where);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM audit_logs $sqlWhere", $params)['total'];
         $items = $this->fetchAll("SELECT audit_logs.*, actor_email AS user_email, action AS action_name, module AS module_name, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.ip')), '') AS ip_address FROM audit_logs $sqlWhere ORDER BY created_at DESC, id DESC LIMIT $pageSize OFFSET $offset", $params);
-        return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated($items, $page, $pageSize, $total);
     }
 
     public function write(?int $userId, ?string $email, string $module, string $action, string $message, ?string $entityId = null, array $metadata = [], string $level = 'INFO'): void

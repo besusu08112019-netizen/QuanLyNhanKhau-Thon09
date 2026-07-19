@@ -123,7 +123,7 @@ SQL);
              $where $order LIMIT $pageSize OFFSET $offset",
             $params
         );
-        return ['items' => array_map(fn($row) => $this->normalize($row), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int)ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($row) => $this->normalize($row), $rows), $page, $pageSize, $total);
     }
 
     public function find(int $id): ?array
@@ -309,11 +309,9 @@ SQL);
         $located = trim((string)($filters['located'] ?? ''));
         if ($located === '1') $where[] = 'hs.latitude IS NOT NULL AND hs.longitude IS NOT NULL';
         if ($located === '0') $where[] = '(hs.latitude IS NULL OR hs.longitude IS NULL)';
-        $sort = preg_replace('/[^a-z_]/', '', (string)($filters['sort'] ?? 'house_code'));
-        $direction = strtoupper((string)($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = ['house_code' => 'hs.house_code', 'household_code' => 'h.household_code', 'head_citizen_name' => 'h.head_citizen_name', 'house_type' => 'hs.house_type', 'floors' => 'hs.floors', 'condition' => 'hs.`condition`', 'fire_risk' => 'hs.fire_risk', 'updated_at' => 'COALESCE(hs.updated_at,hs.created_at)'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
-        if ($withOrder) $result[] = 'ORDER BY ' . ($sortMap[$sort] ?? 'hs.house_code') . ' ' . $direction . ', hs.id DESC';
+        if ($withOrder) $result[] = $this->listOrder($filters, $sortMap, 'house_code', 'ASC', ['hs.id ASC']);
         return $result;
     }
 

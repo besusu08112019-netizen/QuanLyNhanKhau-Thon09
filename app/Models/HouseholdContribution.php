@@ -326,7 +326,7 @@ SQL);
              $order LIMIT $pageSize OFFSET $offset",
             $params
         );
-        return ['items' => array_map(fn($row) => $this->normalizeCampaign($row), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($row) => $this->normalizeCampaign($row), $rows), $page, $pageSize, $total);
     }
 
     public function findCampaign(int $id): ?array
@@ -385,7 +385,7 @@ SQL);
              $where $order LIMIT $pageSize OFFSET $offset",
             $params
         );
-        return ['items' => array_map(fn($row) => $this->normalizeTracking($row), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($row) => $this->normalizeTracking($row), $rows), $page, $pageSize, $total);
     }
 
     public function upsertTracking(int $campaignId, int $householdId, array $data, int $userId): array
@@ -762,7 +762,7 @@ SQL);
         if ($year > 0) { $where[] = 'c.year = :year'; $params['year'] = $year; }
         $status = strtoupper(trim((string) ($filters['status'] ?? '')));
         if ($status !== '' && isset(self::CAMPAIGN_STATUS[$status])) { $where[] = 'c.status = :status'; $params['status'] = $status; }
-        return ['WHERE ' . implode(' AND ', $where), $params, $withOrder ? 'ORDER BY c.year DESC, c.id DESC' : ''];
+        return ['WHERE ' . implode(' AND ', $where), $params, $withOrder ? $this->listOrder($filters, ['year' => 'c.year', 'contribution_name' => 'c.contribution_name', 'category_name' => 'cc.name', 'status' => 'c.status'], 'year', 'DESC', ['c.id DESC']) : ''];
     }
 
     private function trackingWhere(int $campaignId, array $filters): array
@@ -777,7 +777,7 @@ SQL);
         if ($payment !== '' && isset(self::PAYMENT_STATUS[$payment])) { $where[] = 'hc.payment_status = :payment_status'; $params['payment_status'] = $payment; }
         $area = trim((string) ($filters['area_code'] ?? $filters['areaCode'] ?? ''));
         if ($area !== '') { $where[] = 'h.area_code = :area_code'; $params['area_code'] = $area; }
-        return ['WHERE ' . implode(' AND ', $where), $params, 'ORDER BY h.household_code ASC'];
+        return ['WHERE ' . implode(' AND ', $where), $params, $this->listOrder($filters, ['household_code' => 'h.household_code', 'head_citizen_name' => 'h.head_citizen_name', 'area_code' => 'h.area_code', 'payment_status' => 'hc.payment_status', 'paid_amount' => 'hc.paid_amount', 'debt_amount' => 'hc.debt_amount'], 'household_code', 'ASC', ['h.household_code ASC', 'hc.id ASC'])];
     }
 
     private function summaryWhere(array $filters): array

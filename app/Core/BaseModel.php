@@ -89,4 +89,34 @@ abstract class BaseModel
         $pageSize = min(max($pageSize, 5), 100);
         return [$page, $pageSize, ($page - 1) * $pageSize];
     }
+
+    protected function paginated(array $items, int $page, int $pageSize, int $total, array $extra = []): array
+    {
+        return [
+            'items' => $items,
+            'page' => $page,
+            'pageSize' => $pageSize,
+            'total' => $total,
+            'totalPages' => max(1, (int) ceil($total / max(1, $pageSize))),
+        ] + $extra;
+    }
+
+    protected function listOrder(array $filters, array $sortMap, string $defaultSort, string $defaultDirection = 'ASC', array $tieBreakers = []): string
+    {
+        $sort = preg_replace('/[^a-z_]/', '', (string) ($filters['sort'] ?? $defaultSort));
+        if ($sort === '' || !isset($sortMap[$sort])) {
+            $sort = $defaultSort;
+        }
+
+        $direction = strtoupper((string) ($filters['direction'] ?? $defaultDirection)) === 'DESC' ? 'DESC' : 'ASC';
+        $parts = [$sortMap[$sort] . ' ' . $direction];
+        foreach ($tieBreakers as $tieBreaker) {
+            $tieBreaker = trim((string) $tieBreaker);
+            if ($tieBreaker !== '' && !in_array($tieBreaker, $parts, true)) {
+                $parts[] = $tieBreaker;
+            }
+        }
+
+        return 'ORDER BY ' . implode(', ', $parts);
+    }
 }

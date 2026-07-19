@@ -27,11 +27,12 @@ final class Movement extends BaseModel
         [$sqlWhere, $params] = $this->where($filters);
         try {
             $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere", $params)['total'];
-            $items = $this->fetchAll("SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere ORDER BY m.effective_date DESC, m.id DESC LIMIT $pageSize OFFSET $offset", $params);
+            $order = $this->listOrder($filters, ['effective_date' => 'm.effective_date', 'type' => 'm.type', 'full_name' => 'c.full_name', 'household_code' => 'h.household_code', 'status' => 'm.status'], 'effective_date', 'DESC', ['m.id DESC']);
+            $items = $this->fetchAll("SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere $order LIMIT $pageSize OFFSET $offset", $params);
         } catch (\Throwable $e) {
             return $this->fallbackPaginate($filters, $page, $pageSize, $offset, $e);
         }
-        return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+        return $this->paginated($items, $page, $pageSize, $total);
     }
 
     private function fallbackPaginate(array $filters, int $page, int $pageSize, int $offset, \Throwable $sourceError): array
@@ -40,10 +41,10 @@ final class Movement extends BaseModel
             [$sqlWhere, $params, $orderBy, $select, $joins] = $this->fallbackQueryParts($filters);
             $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM movements m $joins $sqlWhere", $params)['total'];
             $items = $this->fetchAll("SELECT $select FROM movements m $joins $sqlWhere ORDER BY $orderBy DESC, m.id DESC LIMIT $pageSize OFFSET $offset", $params);
-            return ['items' => $items, 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $pageSize))];
+            return $this->paginated($items, $page, $pageSize, $total);
         } catch (\Throwable $fallbackError) {
             error_log('[MOVEMENT_PAGINATE_FALLBACK_FAILED] ' . $sourceError->getMessage() . ' | ' . $fallbackError->getMessage());
-            return ['items' => [], 'page' => $page, 'pageSize' => $pageSize, 'total' => 0, 'totalPages' => 1];
+            return $this->paginated([], $page, $pageSize, 0);
         }
     }
 

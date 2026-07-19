@@ -61,13 +61,7 @@ final class User extends BaseModel
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM users $sqlWhere", $params)['total'];
         $items = $this->fetchAll('SELECT ' . $this->userSelectList() . " FROM users $sqlWhere ORDER BY role,email LIMIT $pageSize OFFSET $offset", $params);
 
-        return [
-            'items' => $items,
-            'page' => $page,
-            'pageSize' => $pageSize,
-            'total' => $total,
-            'totalPages' => max(1, (int) ceil($total / $pageSize)),
-        ];
+        return $this->paginated($items, $page, $pageSize, $total);
     }
 
     public function roles(): array

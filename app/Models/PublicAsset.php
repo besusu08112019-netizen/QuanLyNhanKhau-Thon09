@@ -145,7 +145,7 @@ SQL);
         [$where, $params, $order] = $this->where($filters);
         $total = (int)(($this->fetchOne("SELECT COUNT(*) AS total FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where", $params) ?: [])['total'] ?? 0);
         $rows = $this->fetchAll("SELECT pa.*, COALESCE(pat.name, pa.type_name) AS resolved_type_name, COALESCE(pat.category, pa.category) AS resolved_category, pat.icon AS type_icon FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id $where $order LIMIT $pageSize OFFSET $offset", $params);
-        return ['items' => array_map(fn($r) => $this->normalize($r), $rows), 'page' => $page, 'pageSize' => $pageSize, 'total' => $total, 'totalPages' => max(1, (int)ceil($total / $pageSize))];
+        return $this->paginated(array_map(fn($r) => $this->normalize($r), $rows), $page, $pageSize, $total);
     }
 
     public function find(int $id): ?array
@@ -300,11 +300,9 @@ SQL);
                 $params[$key] = (float)str_replace(',', '.', $value);
             }
         }
-        $sort = preg_replace('/[^a-z_]/', '', (string)($filters['sort'] ?? 'asset_code'));
-        $direction = strtoupper((string)($filters['direction'] ?? 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
         $sortMap = ['asset_code' => 'pa.asset_code', 'asset_name' => 'pa.asset_name', 'type_name' => 'resolved_type_name', 'area_code' => 'pa.area_code', 'managing_unit' => 'pa.managing_unit', 'manager_name' => 'pa.manager_name', 'status' => 'pa.status', 'campus_area' => 'pa.campus_area', 'building_area' => 'pa.building_area', 'updated_at' => 'COALESCE(pa.updated_at,pa.created_at)'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
-        if ($withOrder) $result[] = 'ORDER BY ' . ($sortMap[$sort] ?? 'pa.asset_code') . ' ' . $direction . ', pa.id DESC';
+        if ($withOrder) $result[] = $this->listOrder($filters, $sortMap, 'asset_code', 'ASC', ['pa.id ASC']);
         return $result;
     }
 
