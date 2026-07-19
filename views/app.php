@@ -245,7 +245,7 @@
         </div>
       </section>
       <section id="householdsScreen" class="screen household-management-screen">
-        <div class="module-action-row"><button id="householdAddBtn" class="module-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm hộ dân</button></div>
+        <button id="householdAddBtn" class="d-none" type="button" hidden aria-hidden="true" tabindex="-1"></button>
         <div class="content-card module-filter-card household-filter-card">
           <div class="household-filter-grid">
             <div class="module-field household-search-field"><label for="householdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="householdSearch" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ..."></div></div>
@@ -265,7 +265,7 @@
 
 
       <section id="businessHouseholdsScreen" class="screen household-management-screen">
-        <div class="module-action-row"><button id="businessHouseholdAddBtn" class="module-primary-action" type="button" data-platform-action="businessHouseholds.openCreate"><i class="fa-solid fa-plus"></i> Thêm thông tin SX/KD</button></div>
+        <button id="businessHouseholdAddBtn" class="d-none" type="button" data-platform-action="businessHouseholds.openCreate" hidden aria-hidden="true" tabindex="-1"></button>
         <div class="module-filter-panel household-filter-panel">
           <div class="module-filter-grid household-filter-grid">
             <div class="module-field household-search-field"><label for="businessHouseholdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="businessHouseholdSearch" class="form-control" placeholder="Mã hộ, chủ hộ, tên cơ sở, ngành nghề, điện thoại..."></div></div>
@@ -297,7 +297,6 @@
             <article><i class="fa-solid fa-shield-halved"></i><strong>&#272;&#259;ng ki&#7875;m / b&#7843;o hi&#7875;m</strong><span>S&#7861;n s&#224;ng m&#7903; r&#7897;ng nghi&#7879;p v&#7909;</span></article>
             <article><i class="fa-solid fa-map-location-dot"></i><strong>V&#7883; tr&#237; GIS</strong><span>Li&#234;n k&#7871;t l&#7899;p b&#7843;n &#273;&#7891; ph&#432;&#417;ng ti&#7879;n</span></article>
           </div>
-          <div class="module-placeholder-actions"><button class="btn btn-primary" type="button" data-screen="dashboardVehicles"><i class="fa-solid fa-chart-simple"></i> M&#7903; Dashboard Xe c&#7897;</button></div>
         </div>
       </section>
 
@@ -309,7 +308,6 @@
             <article><i class="fa-solid fa-receipt"></i><strong>Bi&#234;n lai</strong><span>S&#7861;n s&#224;ng xu&#7845;t / in b&#225;o c&#225;o</span></article>
             <article><i class="fa-solid fa-users-viewfinder"></i><strong>&#272;&#7889;i so&#225;t h&#7897;</strong><span>Li&#234;n k&#7871;t H&#7891; s&#417; h&#7897; gia &#273;&#236;nh</span></article>
           </div>
-          <div class="module-placeholder-actions"><button class="btn btn-outline-primary" type="button" data-screen="reports"><i class="fa-solid fa-chart-pie"></i> M&#7903; B&#225;o c&#225;o</button></div>
         </div>
       </section>
 
@@ -400,7 +398,7 @@
         </div>
       </div>
       <section id="personsScreen" class="screen person-management-screen">
-        <div class="module-action-row person-action-row"><button id="personAddBtn" class="person-primary-action" type="button"><i class="fa-solid fa-plus"></i> Thêm nhân khẩu</button></div>
+        <button id="personAddBtn" class="d-none" type="button" hidden aria-hidden="true" tabindex="-1"></button>
 
         <div class="content-card person-search-card mb-4">
           <div class="person-search-row">
