@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-const widths = [320, 360, 375, 390, 412, 430, 768, 820, 853, 912, 1024, 1280, 1440, 1920];
+const widths = [320, 360, 375, 390, 412, 414, 430, 768, 820, 853, 912, 1024, 1280, 1440, 1920];
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 const mobileScreens = moduleOrderScreens;
 const bottomNavScreens = ['dashboard', 'households', 'persons', 'gis', 'reports'];
@@ -67,6 +67,32 @@ async function clickSidebarModule(page, screen) {
 }
 
 test.describe('responsive system navigation audit', () => {
+  test('PWA online status stays out of mobile and tablet layout', async ({ page }) => {
+    await openAuthenticatedApp(page, 390);
+    await page.waitForTimeout(120);
+
+    const mobileWidths = [320, 360, 375, 390, 414, 768];
+    for (const width of mobileWidths) {
+      await page.setViewportSize({ width, height: 900 });
+      const metrics = await page.evaluate(() => {
+        const bar = document.querySelector('#pwaStatusBar');
+        const style = bar ? getComputedStyle(bar) : null;
+        return {
+          hasBar: !!bar,
+          display: style ? style.display : '',
+          visibleText: bar && style && style.display !== 'none' ? bar.innerText : ''
+        };
+      });
+      expect(metrics.hasBar, `${width}px PWA status exists for CSS audit`).toBe(true);
+      expect(metrics.display, `${width}px PWA status display`).toBe('none');
+      expect(metrics.visibleText, `${width}px PWA status text`).not.toMatch(/Đang trực tuyến|Online/i);
+    }
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const desktopDisplay = await page.locator('#pwaStatusBar').evaluate((bar) => getComputedStyle(bar).display);
+    expect(desktopDisplay).not.toBe('none');
+  });
+
   for (const width of widths) {
     test(`main modules do not overflow at ${width}px`, async ({ page }) => {
       await openAuthenticatedApp(page, width);

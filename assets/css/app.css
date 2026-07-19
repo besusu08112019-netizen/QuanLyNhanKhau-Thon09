@@ -4952,6 +4952,11 @@ body.theme-dark .platform-confirm-body { color: #cbd5e1; }
   .pwa-update-banner { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); grid-template-columns: 1fr; }
   .pwa-update-banner .btn { width: 100%; }
 }
+@media (max-width: 1024px) {
+  .pwa-status-bar {
+    display: none;
+  }
+}
 
 /* Unified sidebar contract: one accordion sidebar for every module. */
 body.app-authenticated {
