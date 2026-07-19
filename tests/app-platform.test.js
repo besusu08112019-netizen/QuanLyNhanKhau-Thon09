@@ -344,7 +344,18 @@ function screenNode(screenId) {
   assert.strictEqual(legacy.success, true);
   assert.strictEqual(legacy.message, '');
   assert.strictEqual(legacy.data.items.length, 0);
+  assert.deepStrictEqual(legacy.data.data, []);
+  assert.strictEqual(legacy.data.totalItems, 0);
+  assert.strictEqual(legacy.data.totalPages, 1);
+  assert.strictEqual(legacy.data.hasNext, false);
   assert.strictEqual(legacy.meta.page, 1);
+
+  const list = platform.normalizeApiResponse({ ok: true, data: { data: [{ id: 1 }], page: 2, pageSize: 20, totalItems: 41 } });
+  assert.strictEqual(list.data.items.length, 1);
+  assert.strictEqual(list.data.total, 41);
+  assert.strictEqual(list.data.totalPages, 3);
+  assert.strictEqual(list.data.hasNext, true);
+  assert.strictEqual(list.data.hasPrevious, true);
 
   const standard = platform.normalizeApiResponse({ success: false, message: 'Denied', data: null, meta: { code: 403 } });
   assert.strictEqual(standard.success, false);
@@ -2171,7 +2182,7 @@ function screenNode(screenId) {
   assert.strictEqual(pager.tagName, 'NAV');
   assert.strictEqual(pager.children[0].dataset.platformAction, 'households.page');
   assert.strictEqual(pager.children[0].dataset.page, '1');
-  assert.strictEqual(pager.children[1].textContent, '2/4');
+  assert.strictEqual(pager.children[1].textContent, 'Trang 2 / 4');
   assert.strictEqual(pager.children[2].dataset.page, '3');
 }
 
@@ -2314,7 +2325,7 @@ function screenNode(screenId) {
 
   const pager = platform.listView.pagination('vehicleList', { page: 2, pageSize: 25, total: 80 });
   assert.strictEqual(pager.children[0].dataset.platformAction, 'vehicles.page');
-  assert.strictEqual(pager.children[1].textContent, '2/4');
+  assert.strictEqual(pager.children[1].textContent, 'Trang 2 / 4');
 
   const rowActions = platform.listView.actions('vehicleList', 'row', { row: { id: 7 } });
   assert.strictEqual(rowActions.dataset.actionScope, 'row');

@@ -120,21 +120,46 @@
   }
 
   function normalizeApiResponse(payload, fallbackMessage) {
+    function normalizeListData(data) {
+      if (!data || typeof data !== 'object' || Array.isArray(data)) return data;
+      var hasRows = Array.isArray(data.data) || Array.isArray(data.items);
+      var hasMeta = data.page !== undefined || data.pageSize !== undefined || data.total !== undefined || data.totalItems !== undefined || data.totalPages !== undefined;
+      if (!hasRows && !hasMeta) return data;
+      var rows = Array.isArray(data.data) ? data.data : (Array.isArray(data.items) ? data.items : []);
+      var page = Math.max(1, Number(data.page || 1));
+      var pageSize = Math.max(1, Number(data.pageSize || rows.length || 20));
+      var totalItems = Math.max(0, Number(data.totalItems != null ? data.totalItems : (data.total != null ? data.total : rows.length)));
+      var totalPages = Math.max(1, Number(data.totalPages || Math.ceil(totalItems / pageSize) || 1));
+      return Object.assign({}, data, {
+        data: rows,
+        items: rows,
+        page: page,
+        pageSize: pageSize,
+        totalItems: totalItems,
+        total: totalItems,
+        totalPages: totalPages,
+        hasNext: data.hasNext !== undefined ? Boolean(data.hasNext) : page < totalPages,
+        hasPrevious: data.hasPrevious !== undefined ? Boolean(data.hasPrevious) : page > 1
+      });
+    }
+
     if (payload && typeof payload === 'object' && payload.success !== undefined && payload.data !== undefined) {
+      var successData = normalizeListData(payload.data);
       return {
         success: Boolean(payload.success),
         message: payload.message || fallbackMessage || '',
-        data: payload.data,
+        data: successData,
         meta: payload.meta || payload.pagination || null,
         raw: payload
       };
     }
 
     if (payload && typeof payload === 'object' && payload.ok !== undefined) {
+      var okData = normalizeListData(payload.data !== undefined ? payload.data : null);
       return {
         success: Boolean(payload.ok),
         message: payload.message || (payload.error && payload.error.message) || fallbackMessage || '',
-        data: payload.data !== undefined ? payload.data : null,
+        data: okData,
         meta: payload.meta || payload.pagination || null,
         raw: payload
       };
@@ -1308,7 +1333,8 @@
 
     function pagination(config) {
       var options = Object.assign({ page: 1, pageSize: 20, total: 0 }, config || {});
-      var totalPages = Math.max(1, Math.ceil(Number(options.total || 0) / Number(options.pageSize || 20)));
+      var total = Number(options.totalItems != null ? options.totalItems : options.total || 0);
+      var totalPages = Math.max(1, Number(options.totalPages || Math.ceil(total / Number(options.pageSize || 20))));
       var currentPage = Math.min(Math.max(1, Number(options.page || 1)), totalPages);
       var container = element('nav', {
         className: options.className || 'platform-pagination',
@@ -1324,7 +1350,7 @@
       });
       var status = element('span', {
         className: 'platform-pagination-status',
-        text: currentPage + '/' + totalPages
+        text: 'Trang ' + currentPage + ' / ' + totalPages
       });
       var next = button({
         label: options.nextLabel || 'Sau',

@@ -640,6 +640,18 @@
     font-weight: 800;
   }
 
+  body.app-authenticated .app-v2-end-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--app-space-2);
+    min-height: 44px;
+    color: var(--app-color-muted);
+    font-size: 13px;
+    font-weight: 850;
+    text-align: center;
+  }
+
   body.app-authenticated .app-v2-spinner {
     width: 28px;
     height: 28px;
@@ -846,6 +858,37 @@
     gap: var(--app-space-3);
     align-items: start;
     padding: var(--app-space-4);
+  }
+
+  body.app-authenticated .app-v2-pagination-host {
+    display: grid;
+    gap: var(--app-space-3);
+  }
+
+  body.app-authenticated .app-v2-pagination {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--app-space-3);
+    align-items: center;
+  }
+
+  body.app-authenticated .app-v2-pagination-status,
+  body.app-authenticated .app-v2-pagination-end {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--app-color-muted);
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  body.app-authenticated .app-v2-pagination-status {
+    color: var(--app-color-text);
+    font-size: 14px;
+    font-weight: 950;
+  }
+
+  body.app-authenticated .app-v2-back-to-top {
+    justify-self: end;
   }
 
   body.app-authenticated .app-v2-record-card .app-v2-card-icon,
