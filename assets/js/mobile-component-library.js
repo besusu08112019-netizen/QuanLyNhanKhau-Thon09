@@ -337,17 +337,6 @@
     return loading;
   }
 
-  function AppFAB(options) {
-    var button = el('button', 'app-v2-fab', {
-      type: 'button',
-      'aria-label': options.label || 'Thao tác nhanh',
-      title: options.label || ''
-    });
-    if (options.action) button.setAttribute('data-screen', options.action);
-    append(button, [icon(options.icon || 'fa-plus')]);
-    return button;
-  }
-
   function AppBottomNavigation(items, current) {
     var nav = el('nav', 'app-v2-bottom-nav', { 'aria-label': 'Điều hướng Mobile v2' });
     (items || []).slice(0, 5).forEach(function (item) {
@@ -1701,8 +1690,7 @@
       AppToolbar((meta.nav || []).concat((meta.scopes || []).map(function (scope) {
         return { label: scope.label, icon: scope.icon || meta.icon };
       })).concat([{ label: 'Làm mới', icon: 'fa-rotate-right' }])),
-      layout,
-      AppFAB({ icon: primaryAction.icon || 'fa-plus', label: primaryAction.label || 'Thêm mới', action: primaryAction.action || null })
+      layout
     ]);
     if (screen.id === 'gisScreen') {
       host.appendChild(AppMapToolbar([
@@ -1720,7 +1708,6 @@
         ])
       }));
     }
-    if (primaryAction.proxy) host.querySelector('.app-v2-fab').setAttribute('data-app-v2-proxy-click', primaryAction.proxy);
   }
 
   function renderDashboard() {
@@ -1827,7 +1814,7 @@
     append(alertSection, [AppList((filteredAlerts.length ? filteredAlerts : [{ title: 'Không có cảnh báo nổi bật', subtitle: 'Dashboard đang ổn định', icon: 'fa-circle-check', action: 'dashboard' }]).concat(filteredTasks))]);
     append(secondary, [summarySection, alertSection, panelSection]);
     append(layout, [primary, secondary]);
-    append(host, [layout, AppFAB({ icon: 'fa-plus', label: 'Thêm nhanh', action: 'households' })]);
+    append(host, [layout]);
   }
 
   function isMobileOrTablet() {
@@ -1888,7 +1875,7 @@
   }
 
   document.addEventListener('click', function (event) {
-    var target = event.target.closest('.app-v2-button[data-screen], .app-v2-icon-button[data-screen], .app-v2-chip[data-screen], .app-v2-tab[data-screen], .app-v2-fab[data-screen], .app-v2-bottom-nav button[data-screen]');
+    var target = event.target.closest('.app-v2-button[data-screen], .app-v2-icon-button[data-screen], .app-v2-chip[data-screen], .app-v2-tab[data-screen], .app-v2-bottom-nav button[data-screen]');
     var proxy = event.target.closest('[data-app-v2-proxy-click]');
     var primary = event.target.closest('[data-app-v2-primary-proxy]');
     if (proxy) {
@@ -1950,7 +1937,6 @@
     AppCard: AppCard,
     AppDrawer: AppDrawer,
     AppEmptyState: AppEmptyState,
-    AppFAB: AppFAB,
     AppFilterBar: AppFilterBar,
     AppFilterSheet: AppFilterSheet,
     AppHeader: AppHeader,

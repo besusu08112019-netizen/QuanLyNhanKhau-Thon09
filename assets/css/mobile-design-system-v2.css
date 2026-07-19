@@ -625,22 +625,6 @@
     }
   }
 
-  body.app-authenticated .app-v2-fab {
-    position: fixed;
-    right: calc(var(--app-space-4) + env(safe-area-inset-right, 0px));
-    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-    z-index: 54;
-    width: 56px;
-    height: 56px;
-    border: 0;
-    border-radius: 20px;
-    display: inline-grid;
-    place-items: center;
-    background: var(--app-color-primary);
-    color: #fff;
-    box-shadow: var(--app-shadow-2);
-  }
-
   body.app-authenticated .app-v2-bottom-nav {
     position: fixed;
     left: calc(var(--app-space-3) + env(safe-area-inset-left, 0px));

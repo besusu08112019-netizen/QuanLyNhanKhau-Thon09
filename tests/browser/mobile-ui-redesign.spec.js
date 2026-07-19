@@ -177,7 +177,8 @@ test.describe('mobile tablet UI redesign contract', () => {
               height: rect ? Math.round(rect.height) : 0
             };
           });
-          const actions = Array.from(active?.querySelectorAll('.app-v2-button, .app-v2-icon-button, .app-v2-fab') || []).map((button) => {
+          const fabCount = active?.querySelectorAll('.app-v2-fab').length || 0;
+          const actions = Array.from(active?.querySelectorAll('.app-v2-button, .app-v2-icon-button') || []).map((button) => {
             const rect = button.getBoundingClientRect();
             const icon = button.querySelector('i, svg');
             const style = icon ? getComputedStyle(icon) : null;
@@ -206,6 +207,7 @@ test.describe('mobile tablet UI redesign contract', () => {
             bodyClientWidth: Math.ceil(document.body.clientWidth),
             cardCount: cards.length,
             cardFitFailures: cardFitFailures.length,
+            fabCount,
             verticalTitles: titles.filter((item) => item.text.length >= 4 && item.width <= 24 && item.height > 80).length,
             badActions: actions.filter((item) => item.width < 44 || item.height < 44 || !item.icon).length,
             visibleTables: visibleTables.length,
@@ -221,6 +223,7 @@ test.describe('mobile tablet UI redesign contract', () => {
         if (width <= 1024) {
           expect(metrics.bodyScrollWidth).toBeLessThanOrEqual(metrics.bodyClientWidth + 2);
           expect(metrics.v2Visible).toBe(true);
+          expect(metrics.fabCount).toBe(0);
           expect(metrics.cardFitFailures).toBe(0);
           expect(metrics.verticalTitles).toBe(0);
           expect(metrics.badActions).toBe(0);

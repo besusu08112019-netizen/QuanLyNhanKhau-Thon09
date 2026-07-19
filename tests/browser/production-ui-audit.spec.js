@@ -286,7 +286,7 @@ test.describe(`Production UI audit (${browserName()})`, () => {
     await openApp(page, { name: 'mobile-portrait', width: 390, height: 844 });
     await page.evaluate(() => window.Thon09NavigationController?.navigate('systemAdmin'));
     await page.waitForTimeout(200);
-    const backupAction = page.locator('#systemAdminScreen .app-v2-button[data-app-v2-proxy-click*="systemAdmin.backup"], #systemAdminScreen .app-v2-fab[data-app-v2-proxy-click*="systemAdmin.backup"]').first();
+    const backupAction = page.locator('#systemAdminScreen .app-v2-button[data-app-v2-proxy-click*="systemAdmin.backup"]').first();
     if (await backupAction.count()) {
       await backupAction.click();
     } else {
