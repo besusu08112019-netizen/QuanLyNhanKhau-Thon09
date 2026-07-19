@@ -127,7 +127,7 @@ function leafletStub() {
         map.addLayer = function(layer){ this.layers.add(layer); return this; };
         map.removeLayer = function(layer){ this.layers.delete(layer); return this; };
         map.hasLayer = function(layer){ return this.layers.has(layer); };
-        map.fitBounds = function(){ return this; };
+        map.fitBounds = function(bounds, options){ this.lastFitBounds = { bounds, options: options || {} }; return this; };
         map.invalidateSize = function(){ return this; };
         map.addControl = function(){ return this; };
         map.panTo = function(center){ this.center = Array.isArray(center) ? { lat: center[0], lng: center[1] } : center; return this; };
@@ -309,12 +309,16 @@ test('GIS responsive breakpoints keep controls and popup inside the viewport', a
   }
 });
 
-test('leaflet GIS loads viewport markers and lazy popup detail', async ({ page }) => {
+test('leaflet GIS loads all markers immediately and lazy popup detail', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
   await expect(page.locator('#gisScreen')).toHaveClass(/active/);
   await expect(page.locator('#gisMapStatus')).toContainText('1 marker');
-  expect(apiLog.some(item => item.path === '/api/gis/households' && item.query.light === '1' && item.query.south)).toBeTruthy();
+  const markerRequests = apiLog.filter(item => item.path === '/api/gis/households');
+  expect(markerRequests.some(item => item.query.light === '1' && item.query.located === '1' && !item.query.south && !item.query.west && !item.query.north && !item.query.east)).toBeTruthy();
+  const initialFit = await page.evaluate(() => window.App.gis.map.lastFitBounds);
+  expect(initialFit.bounds.length).toBe(1);
+  expect(initialFit.options.maxZoom).toBe(18);
 
   await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
