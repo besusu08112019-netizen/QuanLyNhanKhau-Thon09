@@ -91,6 +91,8 @@ final class Dashboard extends BaseModel
             'children_count' => 0,
             'elderly_count' => 0,
             'working_age_count' => 0,
+            'temporary_residence_count' => 0,
+            'temporary_absence_count' => 0,
             'temporary_count' => 0,
             'away_count' => 0,
             'poor_households' => 0,
@@ -123,71 +125,12 @@ final class Dashboard extends BaseModel
     }
     public function metrics(array $filters = []): array
     {
-        [$householdWhere, $householdParams] = $this->householdWhere($filters);
-        [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
-        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor_households, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor_households, COALESCE(SUM(CASE WHEN h.meritorious_family=1 THEN 1 ELSE 0 END),0) AS meritorious_households, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy_households, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND h.meritorious_family=0 AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal_households FROM households h $householdWhere", $householdParams) ?: [];
-        $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female_count, COALESCE(SUM(CASE WHEN c.relationship='Chủ hộ' THEN 1 ELSE 0 END),0) AS household_head_count, COALESCE(SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END),0) AS active_citizens, COALESCE(SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary_count, COALESCE(SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END),0) AS working_age_count" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
-        $totalCitizens = max(1, (int) ($citizens['total_citizens'] ?? 0));
-        $totalHouseholds = max(1, (int) ($households['total_households'] ?? 0));
-        $metrics = [
-            'total_households' => (int) ($households['total_households'] ?? 0),
-            'total_citizens' => (int) ($citizens['total_citizens'] ?? 0),
-            'male_count' => (int) ($citizens['male_count'] ?? 0),
-            'female_count' => (int) ($citizens['female_count'] ?? 0),
-            'household_head_count' => (int) ($citizens['household_head_count'] ?? 0),
-            'active_citizens' => (int) ($citizens['active_citizens'] ?? 0),
-            'children_count' => (int) ($citizens['children_count'] ?? 0),
-            'elderly_count' => (int) ($citizens['elderly_count'] ?? 0),
-            'working_age_count' => (int) ($citizens['working_age_count'] ?? 0),
-            'temporary_count' => (int) ($citizens['temporary_count'] ?? 0),
-            'away_count' => (int) ($citizens['away_count'] ?? 0),
-            'poor_households' => (int) ($households['poor_households'] ?? 0),
-            'near_poor_households' => (int) ($households['near_poor_households'] ?? 0),
-            'policy_households' => (int) ($households['policy_households'] ?? 0),
-            'meritorious_households' => (int) ($households['meritorious_households'] ?? 0),
-            'normal_households' => (int) ($households['normal_households'] ?? 0),
-        ];
-        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
-            $metrics[$key . '_count'] = (int) ($citizens[$key] ?? 0);
-            $metrics[$key . '_percent'] = round($metrics[$key . '_count'] * 100 / $totalCitizens, 2);
-        }
-        $metrics['poor_households_percent'] = round($metrics['poor_households'] * 100 / $totalHouseholds, 2);
-        $metrics['near_poor_households_percent'] = round($metrics['near_poor_households'] * 100 / $totalHouseholds, 2);
-        $metrics['children_percent'] = round($metrics['children_count'] * 100 / $totalCitizens, 2);
-        $metrics['elderly_percent'] = round($metrics['elderly_count'] * 100 / $totalCitizens, 2);
-        $metrics['working_age_percent'] = round($metrics['working_age_count'] * 100 / $totalCitizens, 2);
-        $healthInsurance = $this->healthInsuranceStats($filters);
-        $metrics['health_insurance_total'] = $healthInsurance['total'];
-        $metrics['health_insurance_count'] = $healthInsurance['insured'];
-        $metrics['health_insurance_covered_count'] = $healthInsurance['insured'];
-        $metrics['health_insurance_missing_count'] = $healthInsurance['uninsured'];
-        $metrics['health_insurance_uninsured_count'] = $healthInsurance['uninsured'];
-        $metrics['health_insurance_coverage_percent'] = $healthInsurance['coverage_percent'];
-        $metrics['health_insurance_percent'] = $healthInsurance['coverage_percent'];
-        return $metrics;
+        return $this->statistics()->metrics($filters);
     }
 
     public function healthInsuranceStats(array $filters = []): array
     {
-        (new Citizen())->ensureHealthInsuranceSchema();
-        [$where, $params] = $this->citizenWhere($filters);
-        $hasColumn = $this->columnExists('citizens', 'has_health_insurance');
-        $endColumn = $this->columnExists('citizens', 'health_insurance_end_date');
-        $hasExpr = $hasColumn ? 'c.has_health_insurance=1' : '0=1';
-        $effectiveExpr = $endColumn ? "($hasExpr AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE()))" : $hasExpr;
-        $row = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN $hasExpr THEN 1 ELSE 0 END),0) AS enrolled, COALESCE(SUM(CASE WHEN $effectiveExpr THEN 1 ELSE 0 END),0) AS effective FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params) ?: [];
-        $total = (int) ($row['total'] ?? 0);
-        $enrolled = (int) ($row['enrolled'] ?? 0);
-        $effective = (int) ($row['effective'] ?? 0);
-        $uninsured = max(0, $total - $enrolled);
-        return [
-            'total' => $total,
-            'insured' => $effective,
-            'enrolled' => $enrolled,
-            'effective' => $effective,
-            'uninsured' => $uninsured,
-            'coverage_percent' => $total > 0 ? round($effective * 100 / $total, 2) : 0,
-        ];
+        return $this->statistics()->healthInsuranceStats($filters);
     }
 
     public function healthInsuranceChart(array $filters = []): array
@@ -611,8 +554,8 @@ final class Dashboard extends BaseModel
             $this->kpi('Nữ',$m['female_count']??0,'người','fa-venus','pink'),
             $this->kpi('Trẻ em',$m['children_count']??0,'người','fa-child-reaching','green'),
             $this->kpi('Người cao tuổi',$m['elderly_count']??0,'người','fa-person-cane','purple'),
-            $this->kpi('Tạm trú',$m['temporary_count']??0,'người','fa-location-dot','orange'),
-            $this->kpi('Tạm vắng',$m['away_count']??0,'người','fa-person-walking-arrow-right','pink'),
+            $this->kpi('Tạm trú',$m['temporary_residence_count']??$m['temporary_count']??0,'người','fa-location-dot','orange'),
+            $this->kpi('Tạm vắng',$m['temporary_absence_count']??$m['away_count']??0,'người','fa-person-walking-arrow-right','pink'),
             $this->kpi('BHYT',$m['health_insurance_count']??0,'người','fa-notes-medical','green'),
         ],'charts'=>['gender'=>$this->populationChart($filters),'ages'=>$this->ageChart($filters),'labor'=>$this->laborChart($filters),'healthInsurance'=>$this->healthInsuranceChart($filters)],'generatedAt'=>date('c')];
     }
