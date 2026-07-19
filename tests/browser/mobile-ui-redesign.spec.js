@@ -34,6 +34,28 @@ const dashboardSummary = {
   profiles: { citizenComplete: { done: 480 } }
 };
 
+const populationDashboard = {
+  module: 'population',
+  title: 'Dashboard Nhân khẩu',
+  generatedAt: new Date().toISOString(),
+  kpis: [
+    { label: 'Tổng nhân khẩu', value: 529, unit: 'người', icon: 'fa-users', tone: 'blue' },
+    { label: 'Nam', value: 260, unit: 'người', icon: 'fa-mars', tone: 'cyan' },
+    { label: 'Nữ', value: 269, unit: 'người', icon: 'fa-venus', tone: 'pink' },
+    { label: 'Trẻ em', value: 96, unit: 'người', icon: 'fa-child-reaching', tone: 'green' },
+    { label: 'Người cao tuổi', value: 48, unit: 'người', icon: 'fa-person-cane', tone: 'purple' },
+    { label: 'Tạm trú', value: 12, unit: 'người', icon: 'fa-location-dot', tone: 'orange' },
+    { label: 'Tạm vắng', value: 8, unit: 'người', icon: 'fa-person-walking-arrow-right', tone: 'pink' },
+    { label: 'BHYT', value: 502, unit: 'người', icon: 'fa-notes-medical', tone: 'green' }
+  ],
+  charts: {
+    gender: dashboardSummary.charts.population,
+    ages: dashboardSummary.charts.ages,
+    labor: dashboardSummary.charts.labor,
+    healthInsurance: [{ label: 'Có BHYT', value: 502 }, { label: 'Chưa có BHYT', value: 27 }]
+  }
+};
+
 function payload(data) {
   return { contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) };
 }
@@ -44,6 +66,7 @@ async function mockApis(page) {
     const path = url.pathname;
     if (path === '/api/public/login-config') return route.fulfill(payload({ settings: {}, metrics: {} }));
     if (path === '/api/auth/me') return route.fulfill(payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' }));
+    if (path === '/api/dashboard/population') return route.fulfill(payload(populationDashboard));
     if (path.includes('/api/dashboard')) return route.fulfill(payload(dashboardSummary));
     if (path.includes('/api/gis')) return route.fulfill(payload({ items: [], total: 0, metrics: {}, charts: {} }));
     if (path === '/api/profiles/household/1') return route.fulfill(payload({
@@ -359,7 +382,11 @@ test.describe('mobile tablet UI redesign contract', () => {
       await navigate(page, screen);
       const dashboard = page.locator('.screen.active .app-v2-module-dashboard');
       await expect(dashboard, `${screen} dashboard`).toBeVisible();
-      await expect(dashboard.locator('.app-v2-stat-card')).toHaveCount(4);
+      if (screen === 'dashboardPopulation') {
+        await expect(dashboard.locator('.app-v2-stat-card')).toHaveCount(8);
+      } else {
+        await expect.poll(() => dashboard.locator('.app-v2-stat-card').count(), { message: `${screen} has KPI cards` }).toBeGreaterThan(0);
+      }
       const cards = await dashboard.locator('.app-v2-stat-card').evaluateAll((nodes) => nodes.map((node) => ({
         label: node.querySelector('.app-v2-stat-label')?.textContent?.trim() || '',
         value: node.querySelector('.app-v2-stat-value')?.textContent?.trim() || '',
@@ -371,6 +398,17 @@ test.describe('mobile tablet UI redesign contract', () => {
         expect(card.value, `${screen} KPI value`).toMatch(/\D/);
         expect(card.meta, `${screen} KPI meta`).not.toBe('');
         expect(card.icons, `${screen} KPI icon`).toBeGreaterThan(0);
+      }
+      if (screen === 'dashboardPopulation') {
+        const populationCards = Object.fromEntries(cards.map((card) => [card.label, card.value]));
+        expect(populationCards['Tổng nhân khẩu']).toBe('529 người');
+        expect(populationCards.Nam).toBe('260 người');
+        expect(populationCards['Nữ']).toBe('269 người');
+        expect(populationCards['Trẻ em']).toBe('96 người');
+        expect(populationCards['Người cao tuổi']).toBe('48 người');
+        expect(populationCards['Tạm trú']).toBe('12 người');
+        expect(populationCards['Tạm vắng']).toBe('8 người');
+        expect(populationCards.BHYT).toBe('502 người');
       }
     }
   });

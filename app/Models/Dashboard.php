@@ -611,7 +611,9 @@ final class Dashboard extends BaseModel
             $this->kpi('Nữ',$m['female_count']??0,'người','fa-venus','pink'),
             $this->kpi('Trẻ em',$m['children_count']??0,'người','fa-child-reaching','green'),
             $this->kpi('Người cao tuổi',$m['elderly_count']??0,'người','fa-person-cane','purple'),
-            $this->kpi('Đảng viên',$m['party_member_count']??0,'người','fa-star','orange'),
+            $this->kpi('Tạm trú',$m['temporary_count']??0,'người','fa-location-dot','orange'),
+            $this->kpi('Tạm vắng',$m['away_count']??0,'người','fa-person-walking-arrow-right','pink'),
+            $this->kpi('BHYT',$m['health_insurance_count']??0,'người','fa-notes-medical','green'),
         ],'charts'=>['gender'=>$this->populationChart($filters),'ages'=>$this->ageChart($filters),'labor'=>$this->laborChart($filters),'healthInsurance'=>$this->healthInsuranceChart($filters)],'generatedAt'=>date('c')];
     }
 
