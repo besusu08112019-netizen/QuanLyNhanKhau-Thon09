@@ -666,7 +666,7 @@
   <script charset="utf-8" src="/assets/js/i18n.min.js"></script>
   <script charset="utf-8" src="/assets/js/print-framework.min.js"></script>
   <script charset="utf-8" src="/assets/js/app-platform.min.js"></script>
-  <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>
+  <script charset="utf-8" src="/assets/js/app.utf8.min.js?v=<?= urlencode(APP_ASSET_VERSION) ?>"></script>
   <script charset="utf-8" src="/assets/js/csrf.min.js"></script>
   <script charset="utf-8" src="/assets/js/session.min.js"></script>
   <script charset="utf-8" src="/assets/js/admin.utf8.min.js"></script>

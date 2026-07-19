@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260719-gis-esri-native-overzoom';
+const PWA_VERSION = 'thon09-pwa-v20260719-gis-esri-cache-bust';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
@@ -135,6 +135,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (request.method !== 'GET') return;
   if (isApiRequest(url)) return;
+  if (isExternalTileRequest(url)) return;
 
   if (isHtmlNavigation(request)) {
     event.respondWith(networkFirstHtml(request));
@@ -254,6 +255,13 @@ function isCacheableStaticResponse(request, response) {
   if (/\.(?:png|jpg|jpeg|webp|svg|ico)$/i.test(url.pathname)) return type.startsWith('image/');
   if (/\.(?:woff2?|ttf|otf)$/i.test(url.pathname)) return type.includes('font') || type.includes('octet-stream');
   return true;
+}
+
+function isExternalTileRequest(url) {
+  return url.hostname.endsWith('arcgisonline.com')
+    || url.hostname.endsWith('tile.openstreetmap.org')
+    || url.hostname.endsWith('openstreetmap.fr')
+    || url.hostname.endsWith('basemaps.cartocdn.com');
 }
 
 async function broadcast(message) {
