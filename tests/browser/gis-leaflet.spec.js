@@ -88,7 +88,7 @@ function leafletStub() {
       }
       function layerGroup(opts){
         const group = evented({ layers: new Set(), options: opts || {}, refreshCount: 0 });
-        group.addTo = function(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; };
+        group.addTo = function(map){ this.map = map; this._map = map; map && map.addLayer && map.addLayer(this); this.fire('add', { target: this }); return this; };
         group.addLayer = function(layer){ this.layers.add(layer); layer._parent = this; return this; };
         group.addLayers = function(layers){ (layers || []).forEach(layer => this.addLayer(layer)); return this; };
         group.removeLayer = function(layer){ this.layers.delete(layer); return this; };
@@ -126,6 +126,7 @@ function leafletStub() {
         map.setView = function(center, zoom){ if (center) this.center = Array.isArray(center) ? { lat: center[0], lng: center[1] } : center; if (zoom) this.zoom = zoom; return this; };
         map.getZoom = function(){ return this.zoom; };
         map.getMaxZoom = function(){ return this.options && this.options.maxZoom ? this.options.maxZoom : 20; };
+        map.getSize = function(){ return { x: 1200, y: 800 }; };
         map.createPane = function(name){ const pane = document.createElement('div'); pane.className = 'leaflet-pane ' + name; pane.dataset.pane = name; this.panes.set(name, pane); this.el && this.el.appendChild(pane); return pane; };
         map.getPane = function(name){ return this.panes.get(name) || null; };
         map.getBounds = function(){ const b = { getSouth: () => 20.20, getWest: () => 105.90, getNorth: () => 20.30, getEast: () => 106.00 }; b.pad = function(){ return b; }; return b; };
@@ -140,6 +141,7 @@ function leafletStub() {
         return map;
       }
       function tileLayer(url, opts){ return { url, opts: opts || {}, events: {}, on(name, cb){ this.events[name] = cb; return this; }, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
+      function imageOverlay(url, bounds, opts){ const overlay = evented({ url, bounds, opts: opts || {} }); overlay.addTo = function(group){ group && group.addLayer && group.addLayer(this); setTimeout(() => this.fire('load'), 0); return this; }; return overlay; }
       function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p._path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; p.toGeoJSON = function(){ return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [this.points.map(pt => Array.isArray(pt) ? [pt[1], pt[0]] : [pt.lng, pt.lat])] } }; }; p.editing = { enabled: false, enable(){ this.enabled = true; } }; return p; }
       function circle(latlng, opts){ const c = makeMarker(latlng, opts); c.setRadius = function(radius){ this.radius = radius; return this; }; return c; }
       function divIcon(opts){ return Object.assign({ createIcon(){ return document.createElement('div'); }, createShadow(){ return null; } }, opts || {}); }
@@ -157,7 +159,7 @@ function leafletStub() {
         };
         return group;
       }
-      window.L = { map: makeMap, tileLayer, featureGroup: layerGroup, layerGroup, markerClusterGroup, popup: makePopup, marker: makeMarker, circle, polygon, divIcon, Control: { Draw: DrawControl }, Draw: { Polygon: DrawPolygon, Event: { CREATED: 'draw:created', EDITED: 'draw:edited' } }, DomEvent: { disableClickPropagation(){}, disableScrollPropagation(){}, stopPropagation(){} } };
+      window.L = { map: makeMap, tileLayer, imageOverlay, featureGroup: layerGroup, layerGroup, markerClusterGroup, popup: makePopup, marker: makeMarker, circle, polygon, divIcon, Control: { Draw: DrawControl }, Draw: { Polygon: DrawPolygon, Event: { CREATED: 'draw:created', EDITED: 'draw:edited' } }, DomEvent: { disableClickPropagation(){}, disableScrollPropagation(){}, stopPropagation(){} } };
     })();
   `;
 }
@@ -261,7 +263,7 @@ test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page
   expect(result.editingEnabled).toBe(true);
 });
 
-test('leaflet GIS configures Esri imagery to scale native tiles at max zoom', async ({ page }) => {
+test('leaflet GIS uses Esri export imagery layer at max zoom', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
   const result = await page.evaluate(() => {
@@ -275,7 +277,7 @@ test('leaflet GIS configures Esri imagery to scale native tiles at max zoom', as
       activeUrl: window.App.gis.baseLayer?.url || '',
       isActive: window.App.gis.baseLayer === esri,
       opts: esri.opts || esri.options || {},
-      hasTileErrorHandler: typeof esri.events?.tileerror === 'function',
+      exportOverlayUrl: Array.from(esri.layers || [])[0]?.url || '',
       zoom: map.getZoom()
     };
   });
@@ -288,7 +290,10 @@ test('leaflet GIS configures Esri imagery to scale native tiles at max zoom', as
   expect(result.opts.detectRetina).toBe(false);
   expect(result.opts.updateWhenIdle).toBe(false);
   expect(result.opts.keepBuffer).toBe(8);
-  expect(result.hasTileErrorHandler).toBe(true);
+  expect(result.exportOverlayUrl.includes('/export?bbox=') || result.exportOverlayUrl.includes('?bbox=')).toBe(true);
+  expect(result.exportOverlayUrl).toContain('bboxSR=4326');
+  expect(result.exportOverlayUrl).toContain('imageSR=3857');
+  expect(result.exportOverlayUrl).toContain('size=1200,800');
   expect(result.zoom).toBe(result.mapMaxZoom);
 });
 
