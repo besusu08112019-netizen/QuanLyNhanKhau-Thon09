@@ -10,6 +10,8 @@ abstract class BaseController
 {
     private ?User $usersModel = null;
     private ?AuditLog $logsModel = null;
+    private const DEVELOPMENT_DATA_PATTERN = '/(?<![A-Z0-9])(?:QA[\s_-]*CODEX|QA[\s_-]*CITIZEN|UAT[\s_-]*CODEX|UAT|TEST|DEMO|CODEX)(?![A-Z0-9])/iu';
+    private const DEVELOPMENT_DATA_SKIP_KEYS = ['password', 'password_confirmation', 'current_password', 'new_password', 'token', 'csrf', 'csrf_token', 'x_csrf_token'];
 
     public function __construct(protected Request $request)
     {
@@ -102,7 +104,74 @@ abstract class BaseController
         if (!$this->users()->can($user, $module, $action)) {
             Response::error('Không có quyền ' . $action . ' module ' . $module, 403);
         }
+        $this->rejectDevelopmentDataPayload($module);
         return $user;
+    }
+
+    protected function developmentDataMatches(mixed $payload): array
+    {
+        $matches = [];
+        $this->collectDevelopmentDataMatches($payload, '', $matches);
+        return $matches;
+    }
+
+    protected function rejectDevelopmentDataPayload(string $module): void
+    {
+        if (in_array($this->request->method(), ['GET', 'HEAD', 'OPTIONS'], true)) {
+            return;
+        }
+
+        $matches = $this->developmentDataMatches($this->request->input());
+        if ($matches) {
+            Response::json([
+                'ok' => false,
+                'error' => [
+                    'message' => 'Du lieu QA/UAT/TEST/DEMO khong duoc phep trong production',
+                    'details' => [
+                        'module' => $module,
+                        'matches' => array_slice($matches, 0, 20),
+                    ],
+                ],
+            ], 422);
+        }
+    }
+
+    private function collectDevelopmentDataMatches(mixed $value, string $path, array &$matches): void
+    {
+        if (count($matches) >= 50) {
+            return;
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                $keyPath = $path === '' ? (string) $key : $path . '.' . $key;
+                $normalizedKey = strtolower(str_replace(['-', ' '], '_', (string) $key));
+                if (in_array($normalizedKey, self::DEVELOPMENT_DATA_SKIP_KEYS, true)) {
+                    continue;
+                }
+                $this->collectDevelopmentDataMatches($item, $keyPath, $matches);
+            }
+            return;
+        }
+
+        if (is_object($value)) {
+            $this->collectDevelopmentDataMatches((array) $value, $path, $matches);
+            return;
+        }
+
+        if (!is_string($value) && !is_numeric($value)) {
+            return;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '' || !preg_match(self::DEVELOPMENT_DATA_PATTERN, $text, $hit)) {
+            return;
+        }
+
+        $matches[] = [
+            'field' => $path,
+            'marker' => $hit[0],
+        ];
     }
 
     protected function auditPermissionDenied(?array $user, string $module, string $action): void

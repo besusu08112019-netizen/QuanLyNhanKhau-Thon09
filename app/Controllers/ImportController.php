@@ -256,6 +256,12 @@ final class ImportController extends BaseController
             $raw = $item['data'];
             $data = $this->normalizeData($type, $raw);
             $messages = [];
+            $developmentMatches = $this->developmentDataMatches($data);
+            if ($developmentMatches) {
+                foreach ($developmentMatches as $match) {
+                    $messages[] = 'Du lieu QA/UAT/TEST/DEMO khong duoc phep trong production: ' . ($match['field'] ?? '') . ' = ' . ($match['marker'] ?? '');
+                }
+            }
 
             if ($type === 'household') {
                 foreach (['householdCode' => 'Mã hộ', 'address' => 'Địa chỉ'] as $field => $label) {
