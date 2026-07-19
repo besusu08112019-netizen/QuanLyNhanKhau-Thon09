@@ -160,9 +160,13 @@ final class Citizen extends BaseModel
 
     private function where(array $filters): array
     {
-        $where = [$this->statistics()->citizenCondition('c'), $this->statistics()->householdCondition('h')]; $params = [];
+        $isTemporaryAbsence = ($filters['presenceStatus'] ?? '') === 'AWAY';
+        $where = $isTemporaryAbsence
+            ? [$this->statistics()->temporaryAbsenceCitizenCondition('c'), $this->statistics()->temporaryAbsenceHouseholdCondition('h')]
+            : [$this->statistics()->citizenCondition('c'), $this->statistics()->householdCondition('h')];
+        $params = [];
         if (!empty($filters['status'])) { $where[] = 'c.life_status = :life_status'; $params['life_status'] = $filters['status']; }
-        if (!empty($filters['presenceStatus'])) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
+        if (!empty($filters['presenceStatus']) && !$isTemporaryAbsence) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
         if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
         if (!empty($filters['householdId'])) { $where[] = '(h.household_code = :household OR c.household_id = :household_id)'; $params['household'] = $filters['householdId']; $params['household_id'] = (int) $filters['householdId']; }
         $category = $this->categoryKey($filters['household_type'] ?? $filters['householdType'] ?? $filters['category'] ?? '');

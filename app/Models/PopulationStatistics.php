@@ -51,6 +51,21 @@ final class PopulationStatistics extends BaseModel
         return implode(' AND ', $conditions);
     }
 
+    public function temporaryAbsenceCitizenCondition(string $alias = 'c'): string
+    {
+        $conditions = [$this->notDeletedCondition('citizens', $alias)];
+        if ($this->columnExists('citizens', 'life_status')) {
+            $conditions[] = "COALESCE(" . $alias . ".life_status,'ALIVE') <> 'DECEASED'";
+        }
+        $conditions[] = $alias . ".presence_status = 'AWAY'";
+        return implode(' AND ', $conditions);
+    }
+
+    public function temporaryAbsenceHouseholdCondition(string $alias = 'h'): string
+    {
+        return $this->notDeletedCondition('households', $alias);
+    }
+
     public function counts(): array
     {
         $householdWhere = $this->householdCondition('h');
@@ -77,7 +92,7 @@ final class PopulationStatistics extends BaseModel
         $totalCitizens = max(1, (int) ($citizens['total_citizens'] ?? 0));
         $totalHouseholds = max(1, (int) ($households['total_households'] ?? 0));
         $temporaryResidence = (int) ($citizens['temporary_residence_count'] ?? 0);
-        $temporaryAbsence = (int) ($citizens['temporary_absence_count'] ?? 0);
+        $temporaryAbsence = $this->temporaryAbsenceCount($filters);
 
         $metrics = [
             'total_households' => (int) ($households['total_households'] ?? 0),
@@ -214,6 +229,21 @@ final class PopulationStatistics extends BaseModel
             }
         }
         return ['WHERE ' . implode(' AND ', $where), $params];
+    }
+
+    private function temporaryAbsenceCount(array $filters): int
+    {
+        $filters = $this->normalizeFilters($filters);
+        $where = [$this->temporaryAbsenceCitizenCondition('c'), $this->temporaryAbsenceHouseholdCondition('h')];
+        $params = [];
+        if ($filters['householdStatus']) {
+            $where[] = 'h.status = :household_status';
+            $params['household_status'] = $filters['householdStatus'];
+        }
+        $category = $this->categoryKey($filters['householdType']);
+        if ($category) $this->addCategoryWhere($where, $params, $category);
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE ' . implode(' AND ', $where), $params) ?: [];
+        return (int) ($row['total'] ?? 0);
     }
 
     private function normalizeFilters(array $filters): array

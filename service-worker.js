@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260718-mobile-ui-10';
+const PWA_VERSION = 'thon09-pwa-v20260719-temporary-absence-logic';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
@@ -48,6 +48,10 @@ const STATIC_ASSETS = [
   withBase('assets/js/app.utf8.min.js'),
   withBase('assets/js/csrf.min.js'),
   withBase('assets/js/session.min.js'),
+  withBase('assets/js/admin.utf8.min.js'),
+  withBase('assets/js/admin-panel.min.js'),
+  withBase('assets/js/view-inline-patches.min.js'),
+  withBase('assets/js/module-dashboards.min.js'),
   withBase('assets/js/pwa.min.js')
 ];
 
