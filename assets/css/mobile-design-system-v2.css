@@ -442,6 +442,36 @@
     box-shadow: var(--app-shadow-1);
   }
 
+  body.app-authenticated .app-v2-list-summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--app-space-3);
+    padding: 0 var(--app-space-4);
+    border: 1px solid var(--app-color-line);
+    border-radius: var(--app-radius-sm);
+    background: rgba(255, 255, 255, .82);
+    color: var(--app-color-text);
+  }
+
+  body.app-authenticated .app-v2-list-summary-label {
+    min-width: 0;
+    color: var(--app-color-muted);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
+  }
+
+  body.app-authenticated .app-v2-list-summary-value {
+    flex: 0 0 auto;
+    color: var(--app-color-primary);
+    font-size: 14px;
+    font-weight: 950;
+    line-height: 1.2;
+    text-align: right;
+  }
+
   body.app-authenticated .app-v2-map-toolbar {
     display: flex;
     align-items: center;

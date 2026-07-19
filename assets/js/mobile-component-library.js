@@ -325,6 +325,26 @@
     return card;
   }
 
+  function updateListSummary(summary, options, total) {
+    if (!summary) return;
+    var safeTotal = Number(total || 0);
+    if (!Number.isFinite(safeTotal)) safeTotal = 0;
+    var label = (options && options.label) || 'Danh sách';
+    var unit = (options && options.unit) || 'bản ghi';
+    var labelNode = summary.querySelector('.app-v2-list-summary-label');
+    var valueNode = summary.querySelector('.app-v2-list-summary-value');
+    if (labelNode) labelNode.textContent = label + ':';
+    if (valueNode) valueNode.textContent = number(safeTotal) + ' ' + unit;
+    summary.setAttribute('data-app-v2-list-count', String(safeTotal));
+  }
+
+  function AppListSummary(options) {
+    var summary = el('div', 'app-v2-list-summary', { 'data-app-v2-list-summary': 'true', 'aria-live': 'polite' });
+    append(summary, [el('span', 'app-v2-list-summary-label'), el('strong', 'app-v2-list-summary-value')]);
+    updateListSummary(summary, options || {}, options && options.total);
+    return summary;
+  }
+
   function AppEmptyState(options) {
     var empty = el('div', 'app-v2-empty');
     append(empty, [icon(options.icon || 'fa-inbox'), text(options.message || 'Chưa có dữ liệu')]);
@@ -962,6 +982,35 @@
     }
   };
 
+  var MODULE_LIST_META = {
+    householdsScreen: { label: 'Danh sách hộ', unit: 'hộ', totalSelector: '#householdTotalCount' },
+    personsScreen: { label: 'Danh sách nhân khẩu', unit: 'nhân khẩu', totalSelector: '#personTotalCount' },
+    temporaryResidenceScreen: { label: 'Danh sách tạm trú', unit: 'nhân khẩu' },
+    temporaryAbsenceScreen: { label: 'Danh sách tạm vắng', unit: 'nhân khẩu' },
+    movementsScreen: { label: 'Danh sách biến động', unit: 'biến động' },
+    gisScreen: { label: 'Danh sách GIS', unit: 'điểm' },
+    publicAssetsScreen: { label: 'Danh sách công trình', unit: 'công trình', totalSelector: '#publicAssetsTotalCount' },
+    housesScreen: { label: 'Danh sách nhà', unit: 'nhà', totalSelector: '#housesTotalCount' },
+    vehiclesScreen: { label: 'Danh sách xe', unit: 'xe', totalSelector: '#vehiclesTotal' },
+    livestockScreen: { label: 'Danh sách vật nuôi', unit: 'con', totalSelector: '#livestockTotalCount' },
+    agricultureScreen: { label: 'Danh sách thửa', unit: 'thửa', totalSelector: '#agriTotalCount' },
+    businessHouseholdsScreen: { label: 'Danh sách hộ kinh doanh', unit: 'hộ', totalSelector: '#businessHouseholdTotalCount' },
+    contributionsScreen: { label: 'Danh sách khoản thu', unit: 'khoản' },
+    reportsScreen: { label: 'Danh sách báo cáo', unit: 'báo cáo', totalSelector: '#reportCount' },
+    operationCenterScreen: { label: 'Danh sách tác vụ', unit: 'tác vụ' },
+    importScreen: { label: 'Danh sách tác vụ', unit: 'tác vụ' },
+    exportExcelScreen: { label: 'Danh sách báo cáo', unit: 'báo cáo' },
+    printFormsScreen: { label: 'Danh sách biểu mẫu', unit: 'biểu mẫu' },
+    systemAdminScreen: { label: 'Danh sách tác vụ', unit: 'tác vụ' },
+    usersScreen: { label: 'Danh sách tài khoản', unit: 'tài khoản', totalSelector: '#userPager' },
+    permissionsScreen: { label: 'Danh sách quyền', unit: 'quyền' },
+    logsScreen: { label: 'Danh sách nhật ký', unit: 'dòng', totalSelector: '#logPager' },
+    backupsScreen: { label: 'Danh sách sao lưu', unit: 'bản sao', totalSelector: '#backupPager' },
+    restoreScreen: { label: 'Danh sách khôi phục', unit: 'tác vụ' },
+    settingsScreen: { label: 'Danh sách cấu hình', unit: 'mục' },
+    appearanceScreen: { label: 'Danh sách giao diện', unit: 'mục' }
+  };
+
   function moduleMeta(key) {
     return MODULE_DASHBOARD_META[key] || {
       title: 'Dashboard',
@@ -1134,6 +1183,25 @@
     var cards = screen.querySelectorAll('.houses-card-grid > *, .livestock-card-grid > *, .agri-card-grid > *, [id$="Grid"] > *');
     if (cards.length) return cards.length;
     return 0;
+  }
+
+  function listSummaryMeta(screen, meta) {
+    return Object.assign({ label: 'Danh sách ' + ((meta && meta.title) || 'dữ liệu'), unit: 'bản ghi' }, MODULE_LIST_META[screen.id] || {});
+  }
+
+  function parseCountText(value) {
+    var normalized = text(value).replace(/\./g, '');
+    var match = normalized.match(/(\d[\d,\s]*)/);
+    if (!match) return null;
+    var parsed = Number(match[1].replace(/[^\d]/g, ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function desktopListTotal(screen, options, fallback) {
+    var node = options && options.totalSelector ? screen.querySelector(options.totalSelector) || document.querySelector(options.totalSelector) : null;
+    if (!node) node = screen.querySelector('[id$="TotalCount"], [id$="Total"], [id$="Count"]');
+    var parsed = parseCountText(node && node.textContent);
+    return parsed == null ? Number(fallback || 0) : parsed;
   }
 
   function cleanLabel(value) {
@@ -1443,9 +1511,7 @@
         };
       });
     }
-    return [
-      { title: meta.title + ' đang sẵn sàng', meta: 'Dữ liệu sẽ hiển thị tại đây khi module được tải.', icon: meta.icon, action: screen.id.replace(/Screen$/, ''), badges: [] }
-    ];
+    return [];
   }
 
   function itemSearchText(item) {
@@ -1564,7 +1630,9 @@
     var recordList = host && host.querySelector('[data-app-v2-record-list]');
     if (!recordList) return false;
     var clientState = meta && meta.desktopFilter ? { status: state && state.status && !meta.desktopFilter.statusSelector ? state.status : '' } : state;
-    renderFilteredRecords(recordList, sourceRecords(screen, meta), clientState || {});
+    var renderedCount = renderFilteredRecords(recordList, sourceRecords(screen, meta), clientState || {});
+    var listMeta = listSummaryMeta(screen, meta);
+    updateListSummary(host.querySelector('[data-app-v2-list-summary]'), listMeta, desktopListTotal(screen, listMeta, renderedCount.length));
     return true;
   }
 
@@ -1618,6 +1686,7 @@
     host.textContent = '';
     var total = countRecords(screen);
     var records = sourceRecords(screen, meta);
+    var listMeta = listSummaryMeta(screen, meta);
     var primary = el('div', 'app-v2-flow');
     var secondary = el('div', 'app-v2-flow');
     var layout = el('div', 'app-v2-two-pane');
@@ -1640,7 +1709,8 @@
     var list = AppSection({ title: 'Danh sách', meta: 'Card List' });
     var recordList = el('div', 'app-v2-list');
     recordList.setAttribute('data-app-v2-record-list', 'true');
-    renderFilteredRecords(recordList, records, meta.desktopFilter ? { status: filterState.status && !meta.desktopFilter.statusSelector ? filterState.status : '' } : filterState);
+    var filteredRecords = renderFilteredRecords(recordList, records, meta.desktopFilter ? { status: filterState.status && !meta.desktopFilter.statusSelector ? filterState.status : '' } : filterState);
+    var listSummary = AppListSummary(Object.assign({}, listMeta, { total: desktopListTotal(screen, listMeta, filteredRecords.length) }));
     append(list, [recordList]);
 
     var filters = AppSection({ title: 'Bộ lọc', meta: 'Bottom Sheet ready' });
@@ -1661,7 +1731,8 @@
       if (applyDesktopFilter(screen, meta, host, filterStates[hostId], function () {
         records = sourceRecords(screen, meta);
       })) return;
-      renderFilteredRecords(recordList, records, filterStates[hostId]);
+      var nextRecords = renderFilteredRecords(recordList, records, filterStates[hostId]);
+      updateListSummary(listSummary, listMeta, nextRecords.length);
     });
     append(filters, [filterSheet]);
 
@@ -1676,7 +1747,7 @@
     });
     append(actions, [actionRow]);
 
-    append(primary, [summary, filters, list]);
+    append(primary, [summary, filters, listSummary, list]);
     append(secondary, [actions]);
     append(layout, [primary, secondary]);
     append(host, [
@@ -1943,6 +2014,7 @@
     AppIconButton: AppIconButton,
     AppInput: AppInput,
     AppList: AppList,
+    AppListSummary: AppListSummary,
     AppLoading: AppLoading,
     AppMapToolbar: AppMapToolbar,
     AppMetricRow: AppMetricRow,

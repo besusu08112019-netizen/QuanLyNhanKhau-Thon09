@@ -259,6 +259,29 @@ test.describe('mobile tablet UI redesign contract', () => {
     await expect(page.locator('#householdsScreen .app-v2-record-more')).toHaveCount(8);
   });
 
+  test('mobile and tablet module lists show desktop-aligned record totals', async ({ page }) => {
+    await openApp(page, 390);
+
+    await navigate(page, 'households');
+    await expect(page.locator('#householdsScreen .app-v2-list-summary')).toContainText('Danh sách hộ:');
+    await expect(page.locator('#householdsScreen .app-v2-list-summary')).toContainText('8 hộ');
+
+    await navigate(page, 'persons');
+    await expect(page.locator('#personsScreen .app-v2-list-summary')).toContainText('Danh sách nhân khẩu:');
+    await expect(page.locator('#personsScreen .app-v2-list-summary')).toContainText('1 nhân khẩu');
+
+    await navigate(page, 'publicAssets');
+    const publicAssetsSummary = page.locator('#publicAssetsScreen .app-v2-list-summary');
+    await expect(publicAssetsSummary).toContainText('Danh sách công trình:');
+    await expect(publicAssetsSummary).toContainText('1 công trình');
+    await page.locator('#publicAssetsScreen .app-v2-filter-bar input[type="search"]').fill('khong-co-du-lieu');
+    await expect(publicAssetsSummary).toContainText('0 công trình');
+
+    await page.setViewportSize({ width: 768, height: 900 });
+    await navigate(page, 'vehicles');
+    await expect(page.locator('#vehiclesScreen .app-v2-list-summary')).toContainText('Danh sách xe:');
+  });
+
   test('Dashboard Mobile V2 preserves KPI labels and charts from dashboard summary', async ({ page }) => {
     await openApp(page, 390);
     await navigate(page, 'dashboard');
