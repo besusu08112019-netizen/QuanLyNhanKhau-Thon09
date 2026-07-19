@@ -833,11 +833,17 @@
     const maxZoom = Number(m && typeof m.getMaxZoom === 'function' ? m.getMaxZoom() : m?.options?.maxZoom);
     const bottomZoom = Number.isFinite(maxZoom) ? maxZoom : 20;
     return {
+      disableClusteringAtZoom: Math.max(0, bottomZoom - 1),
       chunkedLoading: true,
+      animate: true,
+      animateAddingMarkers: true,
       showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      removeOutsideVisibleBounds: true,
+      singleMarkerMode: false,
       spiderfyOnMaxZoom: true,
-      spiderfyDistanceMultiplier: 1.35,
-      maxClusterRadius: zoom => Number(zoom) >= bottomZoom ? 1 : 46
+      spiderfyDistanceMultiplier: 1.8,
+      maxClusterRadius: zoom => Number(zoom) >= bottomZoom - 1 ? 0 : 46
     };
   }
 

@@ -145,6 +145,11 @@ function leafletStub() {
         window.__markerClusterGroupCreated = (window.__markerClusterGroupCreated || 0) + 1;
         const group = layerGroup(opts);
         group.__isMarkerClusterGroup = true;
+        const baseAddLayers = group.addLayers;
+        group.addLayers = function(layers){
+          window.__lastClusterAddLayerPositions = (layers || []).map(layer => layer.getLatLng && layer.getLatLng());
+          return baseAddLayers.call(this, layers);
+        };
         return group;
       }
       window.L = { map: makeMap, tileLayer, featureGroup: layerGroup, layerGroup, markerClusterGroup, popup: makePopup, marker: makeMarker, circle, polygon, divIcon, Control: { Draw: DrawControl }, Draw: { Polygon: DrawPolygon, Event: { CREATED: 'draw:created', EDITED: 'draw:edited' } }, DomEvent: { disableClickPropagation(){}, disableScrollPropagation(){}, stopPropagation(){} } };
@@ -380,6 +385,7 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
     chunkedLoading: window.App.gis.markerGroup.options.chunkedLoading,
     animate: window.App.gis.markerGroup.options.animate,
     animateAddingMarkers: window.App.gis.markerGroup.options.animateAddingMarkers,
+    singleMarkerMode: window.App.gis.markerGroup.options.singleMarkerMode,
     disableClusteringAtZoom: window.App.gis.markerGroup.options.disableClusteringAtZoom,
     maxZoom: window.App.gis.markerGroup.options.maxZoom,
     maxNativeZoom: window.App.gis.markerGroup.options.maxNativeZoom,
@@ -395,6 +401,7 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(clusterState.chunkedLoading).toBe(true);
   expect(clusterState.animate).toBe(true);
   expect(clusterState.animateAddingMarkers).toBe(true);
+  expect(clusterState.singleMarkerMode).toBe(false);
   expect(clusterState.disableClusteringAtZoom).toBe(19);
   expect(clusterState.maxZoom).toBe(20);
   expect(clusterState.maxNativeZoom).toBe(19);
@@ -402,7 +409,7 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(clusterState.layerCount).toBe(1);
   expect(clusterState.refreshCount).toBeGreaterThan(0);
   expect(clusterState.managerState.markerCount).toBe(1);
-  expect(clusterState.managerState.listenerCount).toBe(1);
+  expect(clusterState.managerState.listenerCount).toBe(2);
 
   const rebuiltState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
@@ -414,7 +421,8 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
       sameGroup: firstGroup === window.App.gis.markerGroup,
       created: window.__markerClusterGroupCreated,
       state: window.App.gis.markerClusterManager.debugState(),
-      positions: [a.getLatLng(), b.getLatLng()]
+      positions: [a.getLatLng(), b.getLatLng()],
+      addLayerPositions: window.__lastClusterAddLayerPositions
     };
   });
   expect(rebuiltState.sameGroup).toBe(true);
@@ -422,8 +430,9 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(rebuiltState.state.markerCount).toBe(2);
   expect(rebuiltState.state.coordinateBucketCount).toBe(1);
   expect(rebuiltState.state.duplicateCoordinateBuckets).toBe(1);
-  expect(rebuiltState.state.listenerCount).toBe(1);
+  expect(rebuiltState.state.listenerCount).toBe(2);
   expect(rebuiltState.positions[0]).not.toEqual(rebuiltState.positions[1]);
+  expect(rebuiltState.addLayerPositions[0]).not.toEqual(rebuiltState.addLayerPositions[1]);
 
   const legacyDelegateState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
@@ -436,7 +445,7 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   });
   expect(legacyDelegateState.sameGroup).toBe(true);
   expect(legacyDelegateState.created).toBe(1);
-  expect(legacyDelegateState.managerState.listenerCount).toBe(1);
+  expect(legacyDelegateState.managerState.listenerCount).toBe(2);
 
   await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
   await expect(page.locator('[data-test-popup]')).toContainText('HK001');
