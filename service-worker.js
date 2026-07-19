@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260719-gis-user-location';
+const PWA_VERSION = 'thon09-pwa-v20260719-gis-esri-overzoom-clamp';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
