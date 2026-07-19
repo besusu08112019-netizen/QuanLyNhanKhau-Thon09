@@ -539,7 +539,11 @@
   }
 
   body.app-authenticated #gisScreen .app-v2-module-screen ~ .gis-layout .gis-panel {
-    display: none;
+    display: flex;
+    order: 2;
+    max-height: none;
+    overflow: visible;
+    gap: var(--app-space-3);
   }
 
   body.app-authenticated #gisScreen .app-v2-module-screen ~ .gis-layout .gis-map {

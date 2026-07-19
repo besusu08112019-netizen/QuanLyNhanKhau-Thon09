@@ -135,7 +135,7 @@
     const gis = appGis();
     if (!gis || !window.L) return null;
     if (def.existing) return gis[def.existing] || null;
-    if (!state.layerGroups.has(def.key)) state.layerGroups.set(def.key, L.layerGroup());
+    if (!state.layerGroups.has(def.key)) state.layerGroups.set(def.key, L.layerGroup([], { pane: def.polygon ? 'gisAreaPane' : 'gisMarkerPane' }));
     return state.layerGroups.get(def.key);
   }
   function setMapLayerVisible(group, visible) {
@@ -164,14 +164,14 @@
     if (polygon) {
       const points = polygonLatLngs(polygon);
       if (points.length >= 3) {
-        const layer = L.polygon(points, { color: def.color, fillColor: def.color, fillOpacity: 0.18, weight: 2, className: 'gis-v2-polygon' });
+        const layer = L.polygon(points, { pane: 'gisAreaPane', color: def.color, fillColor: def.color, fillOpacity: 0.12, opacity: 0.98, weight: 3, lineCap: 'round', lineJoin: 'round', className: 'gis-v2-polygon' });
         layer.bindPopup(popupHtml(def, row));
         return layer;
       }
     }
     const point = coordinates(row);
     if (!point) return null;
-    const marker = L.marker(point, { icon: iconFor(def), title: typeof def.title === 'function' ? def.title(row) : def.label });
+    const marker = L.marker(point, { icon: iconFor(def), title: typeof def.title === 'function' ? def.title(row) : def.label, pane: 'gisMarkerPane', bubblingMouseEvents: false });
     marker.__gisPlatformData = row;
     marker.__gisPlatformLayer = def.key;
     marker.bindPopup(popupHtml(def, row));
@@ -323,7 +323,7 @@
   function heatLayerGroup() {
     const gis = appGis();
     if (!gis || !window.L) return null;
-    if (!state.heatLayer) state.heatLayer = L.layerGroup().addTo(gis.map);
+    if (!state.heatLayer) state.heatLayer = L.layerGroup([], { pane: 'gisHeatPane' }).addTo(gis.map);
     return state.heatLayer;
   }
   function heatSources(key) {
@@ -349,7 +349,7 @@
         const point = coordinates(item.row);
         if (!point) return;
         const radius = Math.max(35, Math.min(220, 30 + item.weight * 10));
-        const circle = L.circle(point, { radius, color: def.color, fillColor: def.color, fillOpacity: 0.18, opacity: 0.32, weight: 1, interactive: false });
+        const circle = L.circle(point, { pane: 'gisHeatPane', radius, color: def.color, fillColor: def.color, fillOpacity: 0.14, opacity: 0.24, weight: 1, interactive: false });
         circle.__gisHeatmap = def.key;
         group.addLayer(circle);
       });
@@ -405,7 +405,7 @@
   function ensureMeasureGroup() {
     const m = map();
     if (!m || !window.L) return null;
-    if (!state.measureGroup) state.measureGroup = L.layerGroup().addTo(m);
+    if (!state.measureGroup) state.measureGroup = L.layerGroup([], { pane: 'gisDrawPane' }).addTo(m);
     return state.measureGroup;
   }
   function addMeasurePoint(latlng) {
@@ -413,7 +413,7 @@
     const group = ensureMeasureGroup();
     if (!group) return;
     state.measurePoints.push(latlng);
-    const point = L.circle(latlng, { radius: 8, color: '#0f766e', fillColor: '#0f766e', fillOpacity: 0.9, weight: 2 });
+    const point = L.circle(latlng, { pane: 'gisDrawPane', radius: 8, color: '#0f766e', fillColor: '#0f766e', fillOpacity: 0.9, weight: 2 });
     group.addLayer(point);
     state.measureLayers.push(point);
     renderMeasureShape();
@@ -424,8 +424,8 @@
     state.measureLayers.filter(layer => layer.__gisMeasureShape).forEach(layer => group.removeLayer?.(layer));
     state.measureLayers = state.measureLayers.filter(layer => !layer.__gisMeasureShape);
     let shape = null;
-    if (state.measureMode === 'area' && state.measurePoints.length >= 3) shape = L.polygon(state.measurePoints, { color: '#0f766e', fillColor: '#0f766e', fillOpacity: 0.16, weight: 2 });
-    else if (window.L.polyline) shape = L.polyline(state.measurePoints, { color: '#0f766e', weight: 3 });
+    if (state.measureMode === 'area' && state.measurePoints.length >= 3) shape = L.polygon(state.measurePoints, { pane: 'gisDrawPane', color: '#0f766e', fillColor: '#0f766e', fillOpacity: 0.16, opacity: 1, weight: 3 });
+    else if (window.L.polyline) shape = L.polyline(state.measurePoints, { pane: 'gisDrawPane', color: '#0f766e', weight: 3 });
     if (shape) {
       shape.__gisMeasureShape = true;
       group.addLayer(shape);

@@ -2108,10 +2108,15 @@
       host.appendChild(AppMapToolbar([
         { label: 'Làm mới', icon: 'fa-rotate-right', proxy: '#gisRefreshBtn' },
         { label: 'GPS', icon: 'fa-location-crosshairs', proxy: '#gisCurrentLocationBtn' },
+        { label: 'Lưu ranh giới', icon: 'fa-floppy-disk', proxy: '#gisSaveBtn' },
+        { label: 'Hoàn tác điểm', icon: 'fa-rotate-left', proxy: '#gisUndoPointBtn' },
+        { label: 'Vẽ lại', icon: 'fa-rotate', proxy: '#gisRedoDrawBtn' },
+        { label: 'Hủy vẽ', icon: 'fa-ban', proxy: '#gisCancelDrawBtn' },
+        { label: 'Xóa khu vực', icon: 'fa-trash', proxy: '#gisDeleteAreaBtn' },
         { label: 'Vẽ ranh giới', icon: 'fa-draw-polygon', proxy: '#gisDrawBtn' },
         { label: 'Xuất PDF', icon: 'fa-file-pdf', proxy: '#gisPdfBtn' }
       ]));
-      host.appendChild(AppBottomSheet({
+      if (false) host.appendChild(AppBottomSheet({
         label: 'Thông tin bản đồ GIS',
         title: 'Bản đồ GIS',
         body: AppList([

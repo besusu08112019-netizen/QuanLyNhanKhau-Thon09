@@ -117,10 +117,12 @@ function leafletStub() {
       }
       function makeMap(id, opts){
         const el = typeof id === 'string' ? document.getElementById(id) : id;
-        const map = evented({ el, options: opts || {}, zoom: 14, center: { lat: 20.2506, lng: 105.9748 }, layers: new Set() });
+        const map = evented({ el, options: opts || {}, zoom: 14, center: { lat: 20.2506, lng: 105.9748 }, layers: new Set(), panes: new Map() });
         map.setView = function(center, zoom){ if (center) this.center = Array.isArray(center) ? { lat: center[0], lng: center[1] } : center; if (zoom) this.zoom = zoom; return this; };
         map.getZoom = function(){ return this.zoom; };
         map.getMaxZoom = function(){ return this.options && this.options.maxZoom ? this.options.maxZoom : 20; };
+        map.createPane = function(name){ const pane = document.createElement('div'); pane.className = 'leaflet-pane ' + name; pane.dataset.pane = name; this.panes.set(name, pane); this.el && this.el.appendChild(pane); return pane; };
+        map.getPane = function(name){ return this.panes.get(name) || null; };
         map.getBounds = function(){ const b = { getSouth: () => 20.20, getWest: () => 105.90, getNorth: () => 20.30, getEast: () => 106.00 }; b.pad = function(){ return b; }; return b; };
         map.addLayer = function(layer){ this.layers.add(layer); return this; };
         map.removeLayer = function(layer){ this.layers.delete(layer); return this; };
@@ -247,7 +249,9 @@ test('leaflet GIS renders GeoJSON area polygon and highlights selected area', as
   });
   expect(before.count).toBe(1);
   expect(before.points).toBeGreaterThanOrEqual(3);
-  expect(before.style.fillOpacity).toBeCloseTo(0.2);
+  expect(before.style.pane).toBe('gisAreaPane');
+  expect(before.style.weight).toBe(3);
+  expect(before.style.fillOpacity).toBeCloseTo(0.14);
 
   await page.evaluate(() => {
     document.querySelector('#gisAreaList .gis-area-item')?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
@@ -259,7 +263,50 @@ test('leaflet GIS renders GeoJSON area polygon and highlights selected area', as
   expect(after.selectedAreaId).toBe('11');
   expect(after.front).toBe(true);
   expect(after.style).toMatchObject({ color: '#1976D2', fillColor: '#1976D2', weight: 5, opacity: 1 });
-  expect(after.style.fillOpacity).toBeCloseTo(0.45);
+  expect(after.style.fillOpacity).toBeCloseTo(0.34);
+  expect(after.style.pane).toBe('gisAreaPane');
+});
+
+test('mobile GIS keeps the shared desktop panel controls available', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const apiLog = [];
+  await boot(page, apiLog);
+  await expect(page.locator('#gisScreen .gis-panel')).toBeVisible();
+  await expect(page.locator('#gisAreaForm')).toBeVisible();
+  await expect(page.locator('#gisAreaList')).toBeVisible();
+  await expect(page.locator('#gisV2LayerPanel')).toBeVisible();
+  await expect(page.locator('#gisSaveBtn')).toBeAttached();
+  await expect(page.locator('#gisDeleteAreaBtn')).toBeAttached();
+  await expect(page.locator('.app-v2-bottom-sheet', { hasText: /Leaflet|Công cụ bản đồ|Cong cu ban do/ })).toHaveCount(0);
+});
+
+test('GIS responsive breakpoints keep controls and popup inside the viewport', async ({ browser }) => {
+  for (const width of [320, 360, 390, 414, 768]) {
+    const page = await browser.newPage({ viewport: { width, height: width === 768 ? 1024 : 844 } });
+    const apiLog = [];
+    await boot(page, apiLog);
+    await page.evaluate(() => window.App.gis.markerCache.get('7').marker.fire('click'));
+    await expect(page.locator('[data-test-popup]')).toContainText('HK001');
+    const state = await page.evaluate(() => {
+      const marker = window.App.gis.markerCache.get('7')?.marker;
+      const popup = marker?.getPopup?.();
+      return {
+        overflowX: document.documentElement.scrollWidth - window.innerWidth,
+        panelVisible: Boolean(document.querySelector('#gisScreen .gis-panel')) && getComputedStyle(document.querySelector('#gisScreen .gis-panel')).display !== 'none',
+        toolbarButtons: document.querySelectorAll('#gisScreen .app-v2-map-toolbar button').length,
+        popupAutoPan: popup?.options?.autoPan === true,
+        popupKeepInView: popup?.options?.keepInView === true,
+        popupMaxWidth: Number(popup?.options?.maxWidth || 0)
+      };
+    });
+    expect(state.panelVisible).toBe(true);
+    expect(state.toolbarButtons).toBeGreaterThanOrEqual(8);
+    expect(state.popupAutoPan).toBe(true);
+    expect(state.popupKeepInView).toBe(true);
+    expect(state.popupMaxWidth).toBeLessThanOrEqual(width <= 768 ? Math.min(340, Math.max(260, width - 36)) : 420);
+    expect(state.overflowX).toBeLessThanOrEqual(2);
+    await page.close();
+  }
 });
 
 test('leaflet GIS loads viewport markers and lazy popup detail', async ({ page }) => {
@@ -344,10 +391,10 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(clusterState.chunkedLoading).toBe(true);
   expect(clusterState.animate).toBe(true);
   expect(clusterState.animateAddingMarkers).toBe(true);
-  expect(clusterState.disableClusteringAtZoom).toBe(20);
+  expect(clusterState.disableClusteringAtZoom).toBe(19);
   expect(clusterState.maxZoom).toBe(20);
   expect(clusterState.maxNativeZoom).toBe(19);
-  expect(clusterState.maxRadiusAtMaxZoom).toBe(1);
+  expect(clusterState.maxRadiusAtMaxZoom).toBe(0);
   expect(clusterState.layerCount).toBe(1);
   expect(clusterState.refreshCount).toBeGreaterThan(0);
   expect(clusterState.managerState.markerCount).toBe(1);
@@ -362,7 +409,8 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
     return {
       sameGroup: firstGroup === window.App.gis.markerGroup,
       created: window.__markerClusterGroupCreated,
-      state: window.App.gis.markerClusterManager.debugState()
+      state: window.App.gis.markerClusterManager.debugState(),
+      positions: [a.getLatLng(), b.getLatLng()]
     };
   });
   expect(rebuiltState.sameGroup).toBe(true);
@@ -371,6 +419,7 @@ test('leaflet GIS keeps popup open during map move and uses spiderfy cluster ref
   expect(rebuiltState.state.coordinateBucketCount).toBe(1);
   expect(rebuiltState.state.duplicateCoordinateBuckets).toBe(1);
   expect(rebuiltState.state.listenerCount).toBe(1);
+  expect(rebuiltState.positions[0]).not.toEqual(rebuiltState.positions[1]);
 
   const legacyDelegateState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;

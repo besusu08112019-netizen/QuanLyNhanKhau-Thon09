@@ -3649,6 +3649,7 @@ body.app-authenticated.modal-open #householdsScreen.active .module-action-row,
 
 
 .leaflet-popup,.leaflet-popup-content-wrapper,.leaflet-popup-content,.gis-smart-popup,.gis-smart-popup button,.gis-smart-popup a{pointer-events:auto;touch-action:manipulation;}
+.leaflet-popup-content{max-height:min(68dvh,520px);overflow:auto;-webkit-overflow-scrolling:touch;}
 .gis-smart-popup{display:block;min-width:280px;max-width:min(360px,82vw);color:#172033;}
 .gis-smart-popup-head{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;align-items:center;margin-bottom:10px;}
 .gis-smart-popup-photo{width:86px;height:72px;border-radius:12px;background:#eef6f1;overflow:hidden;display:grid;place-items:center;color:#0f766e;}
@@ -3665,7 +3666,7 @@ body.app-authenticated.modal-open #householdsScreen.active .module-action-row,
 .gis-smart-popup dd small{color:#64748b;font-weight:650;}
 .gis-smart-popup-actions{display:flex;flex-wrap:wrap;gap:6px;}
 .gis-smart-popup-actions .btn{border-radius:9px;font-size:12px;font-weight:800;}
-@media(max-width:820px){.gis-smart-popup{min-width:240px;max-width:78vw;}.gis-smart-popup-head{grid-template-columns:72px minmax(0,1fr);}.gis-smart-popup-photo{width:72px;height:64px;}.gis-smart-popup dl{grid-template-columns:92px minmax(0,1fr);}
+@media(max-width:820px){.gis-smart-popup{min-width:220px;max-width:calc(100vw - 48px);}.gis-smart-popup-head{grid-template-columns:72px minmax(0,1fr);}.gis-smart-popup-photo{width:72px;height:64px;}.gis-smart-popup dl{grid-template-columns:92px minmax(0,1fr);}.leaflet-popup-content{max-height:58dvh;}
 }
 
 /* Livestock modern module */
@@ -4193,8 +4194,9 @@ body.app-authenticated #householdsScreen.active .module-action-row,
 .gis-area-tooltip-active { background: #1976D2; color: #fff; border: 2px solid #fff; box-shadow: 0 10px 24px rgba(25, 118, 210, .35); }
 .gis-area-tooltip-active::before { border-top-color: #1976D2; }
 
-.gis-area-polygon, .gis-area-polygon-active { transition: stroke .24s ease, stroke-width .24s ease, fill .24s ease, fill-opacity .24s ease, opacity .24s ease; }
-.gis-area-polygon-active { stroke: #1976D2; stroke-width: 5px; fill: #1976D2; fill-opacity: .45; opacity: 1; }
+.gis-area-polygon, .gis-area-polygon-active { vector-effect: non-scaling-stroke; paint-order: stroke fill markers; stroke-linejoin: round; stroke-linecap: round; transition: stroke .24s ease, stroke-width .24s ease, fill .24s ease, fill-opacity .24s ease, opacity .24s ease; }
+.gis-area-polygon { stroke-opacity: .98; }
+.gis-area-polygon-active { stroke: #1976D2; stroke-width: 5px; fill: #1976D2; fill-opacity: .34; opacity: 1; }
 .gis-area-item.is-active, .gis-area-item[aria-selected="true"] { outline: 2px solid rgba(25, 118, 210, .22); }
 
 /* Household contributions polish */
