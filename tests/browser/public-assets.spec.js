@@ -84,6 +84,23 @@ async function mockApis(page) {
     if (url.pathname === '/api/dashboard/summary') return fulfill({ metrics: {}, charts: {} });
     if (url.pathname === '/api/public-assets/catalogs') return fulfill({ types: [type], areas: [{ value: 'Thôn 09', label: 'Thôn 09' }], statuses: [{ value: 'ACTIVE', label: 'Đang sử dụng' }, { value: 'REPAIRING', label: 'Đang sửa chữa' }] });
     if (url.pathname === '/api/public-assets/inventory/catalogs') return fulfill({ groups: [{ value: '15', label: 'Loa', parent: 'Điện tử' }, { value: '20', label: 'Bình chữa cháy', parent: 'PCCC' }], conditions: [{ value: 'IN_USE', label: 'Đang sử dụng' }, { value: 'NEEDS_REPAIR', label: 'Cần sửa chữa' }] });
+    if (url.pathname === '/api/reports/center') return fulfill({
+      groups: [{ key: 'public_assets', title: 'Báo cáo công trình công cộng', icon: 'fa-building-columns', description: 'Danh sách công trình công cộng', types: ['public-assets'] }],
+      templates: [{ key: 'public-assets-list', title: 'Danh sách công trình công cộng', type: 'public-assets' }],
+      exports: ['preview', 'print', 'pdf', 'excel', 'word']
+    });
+    if (url.pathname === '/api/reports/bi') return fulfill({ metrics: {}, charts: {}, progress: [], generatedAt: new Date().toISOString() });
+    if (url.pathname === '/api/reports/templates') return fulfill([]);
+    if (url.pathname === '/api/reports/summary' || url.pathname === '/api/reports/print') return fulfill({
+      title: 'Danh sách công trình công cộng',
+      headers: ['Mã công trình', 'Tên công trình', 'Khu vực', 'Trạng thái'],
+      rows: items.map(item => [item.asset_code, item.asset_name, item.area_code || '', item.status_label || item.status]),
+      totalRows: items.length,
+      filters: Object.fromEntries(url.searchParams.entries()),
+      generatedAt: new Date().toISOString()
+    });
+    if (url.pathname === '/api/reports/export-excel') return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/vnd.ms-excel', 'Content-Disposition': 'attachment; filename="public-assets.xls"' }, body: 'excel' });
+    if (url.pathname === '/api/reports/export-pdf') return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="public-assets.pdf"' }, body: '%PDF-1.4' });
     if (url.pathname === '/api/public-assets/inventory/dashboard') return fulfill({ total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Đang sử dụng', value: 1 }], by_asset: [{ label: 'Nhà văn hóa thôn 09', value: 1 }] });
     if (url.pathname === '/api/public-assets/dashboard') return fulfill({
       metrics: { total_assets: items.length, active_assets: 1, located_assets: 1, total_campus_area: 1234.5, total_building_area: 456.75 },
@@ -250,6 +267,45 @@ test('mobile V2 renders compact independent cards instead of desktop table', asy
   expect(metrics.actionOverlapsHead).toBe(false);
   expect(typeof metrics.filterTriggerVisible).toBe('boolean');
   expect(metrics.actionWidths.every((width) => width >= 44)).toBe(true);
+});
+
+test('public assets reports preview, print and exports use shared report API', async ({ page }) => {
+  const errors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  await openApp(page);
+
+  await page.evaluate(() => {
+    window.Thon09Print = {
+      rendered: null,
+      render(config) {
+        this.rendered = config;
+        return { close() {} };
+      }
+    };
+    window.Thon09NavigationController?.navigate('reports');
+  });
+  await expect(page.locator('#reportsScreen')).toHaveClass(/active/);
+  await page.locator('#reportTypeSelect').selectOption('public-assets');
+  await expect.poll(() => page.evaluate(() => document.querySelector('#reportTypeSelect')?.value)).toBe('public-assets');
+  await page.locator('#reportForm button[type="submit"]').click();
+  await expect.poll(() => requests.some(item => item.method === 'GET' && item.path === '/api/reports/summary' && new URLSearchParams(item.query).get('type') === 'public-assets')).toBeTruthy();
+
+  await expect(page.locator('#reportTitle')).toHaveText('Danh sách công trình công cộng');
+  await expect(page.locator('#reportPreview')).toContainText('CT09-00101');
+  await expect(page.locator('#reportPreview')).toContainText('Nhà văn hóa thôn 09');
+
+  await page.locator('#reportPrintBtn').click();
+  const printResult = await page.evaluate(() => window.Thon09Print?.rendered);
+  expect(printResult.title).toBe('Danh sách công trình công cộng');
+  expect(printResult.rows.length).toBe(2);
+
+  await page.locator('#reportExcelBtn').click();
+  await expect.poll(() => requests.some(item => item.method === 'GET' && item.path === '/api/reports/export-excel' && new URLSearchParams(item.query).get('type') === 'public-assets')).toBeTruthy();
+  await page.locator('#reportPdfBtn').click();
+  await expect.poll(() => requests.some(item => item.method === 'GET' && item.path === '/api/reports/export-pdf' && new URLSearchParams(item.query).get('type') === 'public-assets')).toBeTruthy();
+  expect(errors).toEqual([]);
 });
 
 test('mobile V2 public asset cards keep address out of title and dedupe detail fields', async ({ page }) => {

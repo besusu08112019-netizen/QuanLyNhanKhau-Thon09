@@ -206,6 +206,53 @@ SQL);
         return $this->paginate($filters)['items'];
     }
 
+    public function report(string $mode, array $filters = []): array
+    {
+        if ($mode === 'missing_gps') $filters['located'] = '0';
+        if ($mode === 'located') $filters['located'] = '1';
+        $filters['page'] = 1;
+        $filters['pageSize'] = 500;
+
+        if ($mode === 'inventory') {
+            return $this->inventoryReport($filters);
+        }
+
+        $rows = $this->paginate($filters)['items'];
+        $title = match ($mode) {
+            'missing_gps' => $this->u('Danh s\u00e1ch c\u00f4ng tr\u00ecnh ch\u01b0a c\u00f3 GPS'),
+            'located' => $this->u('Danh s\u00e1ch c\u00f4ng tr\u00ecnh \u0111\u00e3 \u0111\u1ecbnh v\u1ecb GPS'),
+            default => $this->u('Danh s\u00e1ch c\u00f4ng tr\u00ecnh c\u00f4ng c\u1ed9ng'),
+        };
+
+        return $this->table($title, [
+            $this->u('M\u00e3 c\u00f4ng tr\u00ecnh'),
+            $this->u('T\u00ean c\u00f4ng tr\u00ecnh'),
+            $this->u('Lo\u1ea1i'),
+            $this->u('Nh\u00f3m'),
+            $this->u('Khu v\u1ef1c'),
+            $this->u('\u0110\u1ecba ch\u1ec9'),
+            $this->u('Di\u1ec7n t\u00edch khu\u00f4n vi\u00ean'),
+            $this->u('Di\u1ec7n t\u00edch x\u00e2y d\u1ef1ng'),
+            $this->u('GPS'),
+            $this->u('\u0110\u01a1n v\u1ecb qu\u1ea3n l\u00fd'),
+            $this->u('Ng\u01b0\u1eddi qu\u1ea3n l\u00fd'),
+            $this->u('Tr\u1ea1ng th\u00e1i'),
+        ], array_map(fn($row) => [
+            $row['asset_code'],
+            $row['asset_name'],
+            $row['type_name'],
+            $row['category'],
+            $row['area_code'],
+            $row['address'],
+            $this->areaText($row['campus_area']),
+            $this->areaText($row['building_area']),
+            $this->gpsReportText($row),
+            $row['managing_unit'],
+            trim((string)($row['manager_name'] ?? '') . (($row['manager_phone'] ?? '') !== '' ? ' - ' . $row['manager_phone'] : '')),
+            $row['status_label'],
+        ], $rows), $filters);
+    }
+
     public function inventoryList(int $assetId): array
     {
         $this->ensureSchema();
@@ -505,6 +552,38 @@ SQL);
         return array_map(fn($label, $value) => ['label' => (string)$label, 'value' => (int)$value], array_keys($map), array_values($map));
     }
 
+    private function inventoryReport(array $filters): array
+    {
+        $this->ensureSchema();
+        [$where, $params] = $this->where($filters, false);
+        $rows = $this->fetchAll("SELECT pa.asset_code, pa.asset_name, pii.inventory_code, pii.item_name, COALESCE(pig.name, pii.group_name) AS group_name, pii.quantity, pii.unit, pii.condition_status, pii.start_use_date, pii.location_in_asset, pii.note FROM public_asset_inventory_items pii INNER JOIN public_assets pa ON pa.id=pii.public_asset_id LEFT JOIN public_asset_types pat ON pat.id=pa.type_id LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id $where AND pii.status <> \"DELETED\" ORDER BY pa.asset_code ASC, pii.item_name ASC", $params);
+        return $this->table($this->u('Danh s\u00e1ch t\u00e0i s\u1ea3n ki\u1ec3m k\u00ea c\u00f4ng tr\u00ecnh'), [
+            $this->u('M\u00e3 c\u00f4ng tr\u00ecnh'),
+            $this->u('T\u00ean c\u00f4ng tr\u00ecnh'),
+            $this->u('M\u00e3 t\u00e0i s\u1ea3n'),
+            $this->u('T\u00ean t\u00e0i s\u1ea3n'),
+            $this->u('Nh\u00f3m'),
+            $this->u('S\u1ed1 l\u01b0\u1ee3ng'),
+            $this->u('\u0110\u01a1n v\u1ecb'),
+            $this->u('T\u00ecnh tr\u1ea1ng'),
+            $this->u('Ng\u00e0y \u0111\u01b0a v\u00e0o s\u1eed d\u1ee5ng'),
+            $this->u('V\u1ecb tr\u00ed'),
+            $this->u('Ghi ch\u00fa'),
+        ], array_map(fn($row) => [
+            $row['asset_code'],
+            $row['asset_name'],
+            $row['inventory_code'],
+            $row['item_name'],
+            $row['group_name'],
+            (float)($row['quantity'] ?? 0),
+            $row['unit'],
+            $this->inventoryStatuses()[$row['condition_status'] ?? 'IN_USE'] ?? (string)($row['condition_status'] ?? ''),
+            $row['start_use_date'] ?? '',
+            $row['location_in_asset'] ?? '',
+            $row['note'] ?? '',
+        ], $rows), $filters);
+    }
+
     private function assertInventoryAllowed(int $assetId): array
     {
         $asset = $this->find($assetId);
@@ -535,6 +614,9 @@ SQL);
     private function nullableNumber(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
     private function positiveNumber(mixed $value, bool $required, string $message): ?float { $value = trim((string)($value ?? '')); if ($value === '') { if ($required) throw new \RuntimeException($message); return null; } $number = (float)str_replace(',', '.', $value); if ($number <= 0) throw new \RuntimeException($message); return $number; }
     private function year(mixed $value, bool $required, string $message): ?int { $value = trim((string)($value ?? '')); if ($value === '') { if ($required) throw new \RuntimeException($message); return null; } $year = (int)$value; $current = (int)date('Y') + 1; if ($year < 1800 || $year > $current) throw new \RuntimeException($message); return $year; }
+    private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }
+    private function areaText(mixed $value): string { $number = (float)($value ?? 0); return $number > 0 ? number_format($number, 2, ',', '.') . ' m2' : ''; }
+    private function gpsReportText(array $row): string { return $row['latitude'] !== null && $row['longitude'] !== null ? number_format((float)$row['latitude'], 6, '.', '') . ', ' . number_format((float)$row['longitude'], 6, '.', '') : $this->u('Ch\u01b0a c\u00f3 GPS'); }
     public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED"', ['id' => $id, 'url' => $url, 'user' => $userId]); return $this->find($id); }
     private function coord(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
     private function ensureColumn(string $table, string $column, string $definition): void { if ($this->columnExists($table, $column)) return; $this->execute('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition); }

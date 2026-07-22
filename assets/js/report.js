@@ -81,6 +81,7 @@
       ['digital-profile', 'Báo cáo Hồ sơ số'], ['profile-complete', 'Hồ sơ hoàn chỉnh'], ['profile-missing-photo', 'Hồ sơ thiếu ảnh'], ['profile-missing-documents', 'Hồ sơ thiếu giấy tờ'], ['profile-incomplete', 'Hồ sơ chưa hoàn thiện'],
       ['health_insurance', 'Thống kê Bảo hiểm y tế'], ['health-insurance-missing', 'Danh sách chưa tham gia BHYT'], ['health-insurance-expiring', 'Danh sách BHYT sắp hết hạn (30 ngày)'], ['health-insurance-expired', 'Danh sách BHYT đã hết hạn'], ['health-insurance-household', 'Thống kê BHYT theo hộ'], ['health-insurance-area', 'Thống kê BHYT theo khu vực'], ['temporary_residence', 'Danh sách tạm trú'], ['temporary_absence', 'Danh sách tạm vắng'], ['children', 'Danh sách trẻ em'], ['elderly', 'Danh sách người cao tuổi'], ['labor', 'Danh sách lao động'], ['party_member', 'Danh sách Đảng viên'], ['youth_union', 'Danh sách Đoàn viên'], ['poor-households', 'Danh sách hộ nghèo'], ['near-poor-households', 'Danh sách hộ cận nghèo'], ['age', 'Thống kê theo độ tuổi'], ['gender', 'Thống kê theo giới tính']
     ];
+    types.splice(2, 0, ['public-assets', 'Cong trinh cong cong - Danh sach'], ['public-assets-located', 'Cong trinh cong cong - Da co GPS'], ['public-assets-missing-gps', 'Cong trinh cong cong - Chua co GPS'], ['public-assets-inventory', 'Cong trinh cong cong - Kiem ke tai san']);
     select.innerHTML = types.map(([key, label]) => '<option value="' + esc(key) + '">' + esc(label) + '</option>').join('');
     select.value = types.some(([key]) => key === value) ? value : 'summary';
   }
