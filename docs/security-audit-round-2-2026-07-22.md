@@ -2,7 +2,7 @@
 
 Scope: full repository review focused on authentication, authorization, API security, upload/import, GIS, reports, backup/restore, logging, deployment secrets, and dependency audit.
 
-Note: the Codex Security preflight helper could not run because `python`/`py` is not installed in this workspace. I performed static code review, targeted penetration-style source checks, and regression tests locally.
+Note: Security Preflight không chạy trong sandbox do giới hạn thực thi executable ngoài workspace, không phải do máy thiếu Python. Windows resolves `python`/`py` to Python 3.13.14 outside the sandbox; the preflight was rerun with the absolute Python executable using escalated execution and returned `status: ready`.
 
 ## Fixed Findings
 
@@ -74,6 +74,7 @@ Note: the Codex Security preflight helper could not run because `python`/`py` is
 
 ## Regression Results
 
+- Codex Security config preflight: passed with `status: ready` when run outside the sandbox using the absolute Python 3.13.14 executable.
 - `php -l` on full PHP source set: passed.
 - `node tests/security-regression.test.js`: passed.
 - `npm.cmd run check:js`: passed.
