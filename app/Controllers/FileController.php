@@ -27,9 +27,9 @@ final class FileController extends BaseController
             $categoryInput = (string) ($_POST['category'] ?? $_POST['profileSection'] ?? $_POST['profile_section'] ?? '');
             $description = trim((string) ($_POST['description'] ?? ''));
 
+            $user = $this->requirePermission('file', 'upload');
             $this->storage->validateEntity($entityType, $entityId);
             $this->requirePermission($this->storage->permissionModule($entityType), 'read');
-            $user = $this->requirePermission('file', 'upload');
             if (empty($_FILES['file'])) $this->fail('Vui long chon file');
 
             $uploads = $this->normalizeUploadedFiles($_FILES['file']);

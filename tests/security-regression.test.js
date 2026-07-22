@@ -195,6 +195,22 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(files, /image\/svg\+xml/);
   assert.match(files, /Content-Security-Policy/);
   assert.match(files, /sandbox/);
+  assert.ok(
+    files.indexOf("$user = $this->requirePermission('file', 'upload');") < files.indexOf('$this->storage->validateEntity($entityType, $entityId);'),
+    'file uploads must authenticate before entity validation'
+  );
+}
+
+{
+  const htaccess = read('.htaccess');
+  assert.match(htaccess, /X-Robots-Tag "nosnippet"/);
+  assert.match(htaccess, /\(app\|config\|database\|docs\|uploads\|storage\|backups\|tests\|tools\|sample-data/);
+  assert.match(read('offline.html'), /<meta name="robots" content="nosnippet">/);
+  assert.match(read('robots.txt'), /Disallow: \//);
+  assert.match(read('sitemap.xml'), /<urlset/);
+  const artifact = read('tools/build-production-artifact.js');
+  assert.match(artifact, /'robots\.txt'/);
+  assert.match(artifact, /'sitemap\.xml'/);
 }
 
 console.log('security regression checks passed');
