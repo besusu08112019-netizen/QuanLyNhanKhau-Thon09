@@ -4,6 +4,7 @@ RewriteEngine On
 RewriteRule ^(app|config|database|docs|uploads|vendor|controllers|models)(/|$) - [F,L]
 RewriteRule ^(README|composer|package|appsscript|\.clasp|\.gitignore) - [F,L]
 RewriteRule \.(sql|log|bak|env|ini|md)$ - [F,L]
+RewriteRule ^uploads/.*\.(php|phtml|phar|cgi|pl|asp|aspx|jsp)$ - [F,L,NC]
 
 AddType application/manifest+json .webmanifest
 AddType application/manifest+json .json
@@ -19,6 +20,7 @@ RewriteRule ^ index.php [QSA,L]
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "same-origin"
   Header always set Permissions-Policy "geolocation=(self), camera=(self), microphone=()"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" "expr=%{HTTPS} == 'on'"
 </IfModule>
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml

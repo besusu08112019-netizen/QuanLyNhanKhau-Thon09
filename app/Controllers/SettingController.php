@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
-use App\Models\Dashboard;
 use App\Models\SystemSetting;
 
 final class SettingController extends BaseController
@@ -24,18 +23,15 @@ final class SettingController extends BaseController
     public function publicLoginConfig(): void
     {
         try {
-            $dashboard = new Dashboard();
-            $metrics = $dashboard->metrics();
             $settings = $this->settings()->all();
         } catch (\Throwable $e) {
             $this->logPublicConfigFailure($e);
-            $metrics = [];
             $settings = $this->defaultPublicSettings();
         }
 
         $this->ok([
             'settings' => array_replace($this->defaultPublicSettings(), is_array($settings) ? $settings : []),
-            'metrics' => $this->loginMetrics(is_array($metrics) ? $metrics : []),
+            'metrics' => [],
             'generatedAt' => date('c'),
         ]);
     }
@@ -196,7 +192,6 @@ final class SettingController extends BaseController
             'method' => $_SERVER['REQUEST_METHOD'] ?? '',
             'uri' => $_SERVER['REQUEST_URI'] ?? '',
             'exception' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 

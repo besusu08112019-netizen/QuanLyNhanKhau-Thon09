@@ -29,6 +29,7 @@ final class AuditLog extends BaseModel
 
     public function write(?int $userId, ?string $email, string $module, string $action, string $message, ?string $entityId = null, array $metadata = [], string $level = 'INFO'): void
     {
+        $metadata = $this->redact($metadata);
         $this->insert('INSERT INTO audit_logs (actor_user_id, actor_email, module, action, entity_id, level, message, metadata) VALUES (:actor_user_id, :actor_email, :module, :action, :entity_id, :level, :message, :metadata)', [
             'actor_user_id' => $userId,
             'actor_email' => $email,
@@ -39,5 +40,23 @@ final class AuditLog extends BaseModel
             'message' => $message,
             'metadata' => $metadata ? json_encode($metadata, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
         ]);
+    }
+
+    private function redact(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return is_string($value) && preg_match('/Bearer\s+[a-f0-9]{32,}/i', $value) ? '[REDACTED]' : $value;
+        }
+
+        $redacted = [];
+        foreach ($value as $key => $item) {
+            $normalized = strtolower(str_replace(['-', ' '], '_', (string) $key));
+            if (preg_match('/(password|passwd|pwd|token|csrf|cookie|session|authorization|identity|cccd|phone|email|login)/', $normalized)) {
+                $redacted[$key] = '[REDACTED]';
+                continue;
+            }
+            $redacted[$key] = $this->redact($item);
+        }
+        return $redacted;
     }
 }

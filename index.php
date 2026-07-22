@@ -13,6 +13,9 @@ function send_security_headers(): void
     header('Referrer-Policy: same-origin');
     header('Permissions-Policy: geolocation=(self), camera=(self), microphone=()');
     header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org https://*.openstreetmap.fr https://*.basemaps.cartocdn.com https://*.arcgisonline.com; connect-src 'self'; frame-src 'self' https://www.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
+    if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
 }
 
 send_security_headers();
@@ -50,17 +53,54 @@ use App\Controllers\VehicleController;
 
 Autoloader::register();
 
+function reject_oversized_api_request(): void
+{
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    if (!str_starts_with($path, '/api/')) return;
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    if (in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) return;
+    $length = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+    $maxBytes = 25 * 1024 * 1024;
+    if ($length <= $maxBytes) return;
+    Response::json([
+        'ok' => false,
+        'success' => false,
+        'message' => 'Request entity too large',
+        'errors' => [],
+        'error' => ['message' => 'Request entity too large'],
+        'status' => 413,
+    ], 413);
+}
+
+function redact_security_value(mixed $value): mixed
+{
+    if (is_array($value)) {
+        $redacted = [];
+        foreach ($value as $key => $item) {
+            $normalized = strtolower(str_replace(['-', ' '], '_', (string) $key));
+            if (preg_match('/(password|passwd|pwd|token|csrf|cookie|session|authorization|identity|cccd|phone|email|login)/', $normalized)) {
+                $redacted[$key] = '[REDACTED]';
+            } else {
+                $redacted[$key] = redact_security_value($item);
+            }
+        }
+        return $redacted;
+    }
+    if (is_string($value) && preg_match('/Bearer\s+[a-f0-9]{32,}/i', $value)) {
+        return '[REDACTED]';
+    }
+    return $value;
+}
+
 function api_log_exception(Throwable $e, array $payload): void
 {
     $lastQuery = BaseModel::lastQuery();
     $exception = [
-        'message' => $e->getMessage(),
+        'message' => $e instanceof PDOException ? 'Database operation failed' : $e->getMessage(),
         'type' => get_class($e),
         'code' => (string) $e->getCode(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine(),
         'sql' => $lastQuery['sql'] ?? null,
-        'sql_params' => $lastQuery['params'] ?? null,
+        'sql_params' => redact_security_value($lastQuery['params'] ?? null),
     ];
     if ($e instanceof PDOException) {
         $exception += [
@@ -73,7 +113,7 @@ function api_log_exception(Throwable $e, array $payload): void
         'time' => date('c'),
         'method' => $_SERVER['REQUEST_METHOD'] ?? null,
         'uri' => $_SERVER['REQUEST_URI'] ?? null,
-        'response' => $payload,
+        'response' => redact_security_value($payload),
         'exception' => $exception,
     ];
     $line = '[API_EXCEPTION] ' . json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
@@ -131,6 +171,7 @@ function api_exception_status(Throwable $e): int
     return 500;
 }
 
+reject_oversized_api_request();
 $request = Request::capture();
 set_exception_handler(function (Throwable $e) use ($request): void {
     if (str_starts_with($request->path(), '/api')) {

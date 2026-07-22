@@ -109,6 +109,15 @@ abstract class BaseController
         return $user;
     }
 
+    protected function requireSuperAdmin(string $module, string $action): array
+    {
+        $user = $this->requirePermission($module, $action);
+        if (($user['role'] ?? '') !== 'SUPER_ADMIN') {
+            Response::error('Chi tai khoan Super Admin moi duoc thuc hien thao tac nay', 403);
+        }
+        return $user;
+    }
+
     protected function developmentDataMatches(mixed $payload): array
     {
         $matches = [];

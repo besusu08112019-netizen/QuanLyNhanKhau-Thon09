@@ -34,7 +34,7 @@ final class BackupController extends BaseController
 
     public function restore(): void
     {
-        $user = $this->requirePermission('backup', 'restore');
+        $user = $this->requireSuperAdmin('backup', 'restore');
         $result = $this->backups->restoreSql($this->restoreSqlContent(), (int) $user['id']);
         $this->audit($user, 'backup', 'restore', 'Phục hồi dữ liệu từ SQL', null, $result, 'WARN');
         $this->ok($result);

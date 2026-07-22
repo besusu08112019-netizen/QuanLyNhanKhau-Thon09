@@ -49,11 +49,15 @@ final class Request
     {
         $authorization = (string) $this->header('authorization', '');
         if (preg_match('/Bearer\s+(.+)/i', $authorization, $matches)) {
-            return trim($matches[1]);
+            return self::validToken(trim($matches[1]));
         }
         $headerToken = $this->header('x-auth-token');
-        if ($headerToken) return (string) $headerToken;
-        $cookieToken = $_COOKIE['thon09_token'] ?? '';
-        return $cookieToken !== '' ? (string) $cookieToken : null;
+        if ($headerToken) return self::validToken((string) $headerToken);
+        return null;
+    }
+
+    private static function validToken(string $token): ?string
+    {
+        return preg_match('/^[a-f0-9]{64}$/i', $token) === 1 ? $token : null;
     }
 }

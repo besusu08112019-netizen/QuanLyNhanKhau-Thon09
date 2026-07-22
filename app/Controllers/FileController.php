@@ -210,6 +210,9 @@ final class FileController extends BaseController
         if (!$download && !$this->storage->canPreview($mime)) $download = true;
         $this->requirePermission('file', $download ? 'download' : 'read');
         header('X-Content-Type-Options: nosniff');
+        if ($mime === 'image/svg+xml') {
+            header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
+        }
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));
         header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . rawurlencode((string) ($file['original_name'] ?? $file['file_name'] ?? 'attachment')) . '"');
