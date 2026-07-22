@@ -115,6 +115,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 {
   const deploy = read('.github/workflows/deploy-ftp.yml');
   assert.match(deploy, /npm run build:production/);
+  assert.match(deploy, /npm run check:js/);
+  assert.match(deploy, /npm run test:platform/);
+  assert.match(deploy, /npm run test:navigation-cleanup/);
+  assert.match(deploy, /node tests\/security-regression\.test\.js/);
+  assert.ok(deploy.indexOf('Run pre-deploy checks') < deploy.indexOf('Deploy to hosting via FTPS'), 'pre-deploy checks must run before FTPS deploy');
   assert.match(deploy, /local-dir:\s*\.\/dist\/production\//);
   assert.doesNotMatch(deploy, /protocol:\s*ftp\b/);
   assert.match(deploy, /protocol:\s*ftps\b/);

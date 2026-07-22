@@ -62,6 +62,13 @@ jobs:
             echo "DB_CHARSET=${DB_CHARSET:-utf8mb4}"
           } > .deploy.env
 
+      - name: Run pre-deploy checks
+        run: |
+          npm run check:js
+          npm run test:platform
+          npm run test:navigation-cleanup
+          node tests/security-regression.test.js
+
       - name: Bust frontend asset cache
         shell: bash
         env:
