@@ -43,6 +43,7 @@ final class ProfileController extends BaseController
     {
         $module = $this->normalizeModule($module);
         $user = $this->requirePermission('profile', 'create');
+        $this->requireProfileSourcePermission($module);
         $note = $this->profiles->createNote($module, (int) $id, $this->input(), (int) $user['id']);
         $this->audit($user, $module, 'note', 'Thêm ghi chú hồ sơ', (int) $id, ['note' => $note['id'] ?? null, 'section' => $note['section'] ?? null]);
         $this->ok($note);
@@ -52,8 +53,9 @@ final class ProfileController extends BaseController
     {
         $note = $this->profiles->note((int) $id);
         if (!$note) $this->fail('Không tìm thấy ghi chú hồ sơ', 404);
-        $module = (string) ($note['module'] ?? 'household');
+        $module = $this->normalizeModule((string) ($note['module'] ?? 'household'));
         $user = $this->requirePermission('profile', 'delete');
+        $this->requireProfileSourcePermission($module);
         $this->profiles->deleteNote((int) $id, (int) $user['id']);
         $this->audit($user, $module, 'delete_note', 'Xóa ghi chú hồ sơ', $note['entity_id'] ?? null, ['note' => (int) $id, 'title' => $note['title'] ?? '']);
         $this->ok(['id' => (int) $id]);
@@ -63,8 +65,9 @@ final class ProfileController extends BaseController
     {
         $note = $this->profiles->note((int) $id);
         if (!$note) $this->fail('Không tìm thấy ghi chú hồ sơ', 404);
-        $module = (string) ($note['module'] ?? 'household');
+        $module = $this->normalizeModule((string) ($note['module'] ?? 'household'));
         $user = $this->requirePermission('profile', 'update');
+        $this->requireProfileSourcePermission($module);
         $updated = $this->profiles->updateNote((int) $id, $this->input(), (int) $user['id']);
         $this->audit($user, $module, 'update_note', 'Sửa ghi chú hồ sơ', $note['entity_id'] ?? null, ['note' => (int) $id, 'title' => $updated['title'] ?? '']);
         $this->ok($updated);
@@ -77,5 +80,10 @@ final class ProfileController extends BaseController
             $this->fail('Loại hồ sơ không hợp lệ');
         }
         return $module;
+    }
+
+    private function requireProfileSourcePermission(string $module): void
+    {
+        $this->requirePermission($module === 'citizen' ? 'citizen' : 'household', 'update');
     }
 }

@@ -242,7 +242,7 @@
   }
 
   function AppMapToolbar(items) {
-    var toolbar = el('div', 'app-v2-map-toolbar', { role: 'toolbar', 'aria-label': 'Công cụ bản đồ' });
+    var toolbar = el('div', 'app-v2-toolbar app-v2-map-toolbar', { role: 'toolbar', 'aria-label': 'Công cụ bản đồ' });
     (items || []).forEach(function (item) {
       var button = AppIconButton({ icon: item.icon || 'fa-circle', label: item.label || 'Công cụ', action: item.action || null });
       if (item.proxy) button.setAttribute('data-app-v2-proxy-click', item.proxy);
@@ -948,7 +948,7 @@
     },
     movementsScreen: {
       title: 'Bien dong',
-      overviewMode: 'none',
+      overviewMode: 'compact',
       eyebrow: 'Nhan khau',
       icon: 'fa-arrows-rotate',
       subtitle: 'Sinh, tu, chuyen den, chuyen di, tam tru va tam vang',
@@ -1984,7 +1984,8 @@
   }
 
   function buildModuleOverview(screen, meta, listMeta, total) {
-    var section = AppSection({ title: 'Tổng quan', meta: total ? number(total) + ' ' + ((listMeta && listMeta.unit) || 'bản ghi') : '0 ' + ((listMeta && listMeta.unit) || 'bản ghi') });
+    var sectionTitle = meta && meta.overviewMode === 'compact' ? 'Tóm tắt' : 'Tổng quan';
+    var section = AppSection({ title: sectionTitle, meta: total ? number(total) + ' ' + ((listMeta && listMeta.unit) || 'bản ghi') : '0 ' + ((listMeta && listMeta.unit) || 'bản ghi') });
     var grid = el('div', 'app-v2-grid app-v2-module-overview-grid');
     grid.appendChild(AppSummaryCard({
       label: overviewTotalLabel(listMeta, meta),
@@ -2033,7 +2034,9 @@
     var secondary = el('div', 'app-v2-flow');
     var layout = el('div', 'app-v2-two-pane');
 
-    var summary = buildModuleOverview(screen, meta, listMeta, desktopListTotal(screen, listMeta, total));
+    var summary = meta.overviewMode !== 'none'
+      ? buildModuleOverview(screen, meta, listMeta, desktopListTotal(screen, listMeta, total))
+      : null;
 
     var list = AppSection({ title: 'Danh sách', meta: 'Card List' });
     var recordList = el('div', 'app-v2-list');

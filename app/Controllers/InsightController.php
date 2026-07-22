@@ -18,6 +18,8 @@ final class InsightController extends BaseController
     public function search(): void
     {
         $this->requirePermission('dashboard', 'read');
+        $this->requirePermission('household', 'read');
+        $this->requirePermission('citizen', 'read');
         $q = trim((string) $this->query('q', $this->query('search', '')));
         $limit = (int) $this->query('limit', 20);
         $this->ok($this->insights->globalSearch($q, $limit));
@@ -26,6 +28,8 @@ final class InsightController extends BaseController
     public function alerts(): void
     {
         $this->requirePermission('dashboard', 'read');
+        $this->requirePermission('household', 'read');
+        $this->requirePermission('citizen', 'read');
         $this->ok($this->insights->smartAlerts());
     }
 }

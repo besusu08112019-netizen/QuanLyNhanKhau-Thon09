@@ -418,8 +418,12 @@ final class User extends BaseModel
 
     private function assertRoleAssignmentAllowed(?string $currentRole, string $nextRole, array $actor): void
     {
-        if (($currentRole === 'SUPER_ADMIN' || $nextRole === 'SUPER_ADMIN') && !$this->actorIsSuperAdmin($actor)) {
-            throw new RuntimeException('Chỉ tài khoản Super Admin mới được cấp hoặc thay đổi quyền Super Admin');
+        $protectedRoles = ['SUPER_ADMIN', 'ADMIN'];
+        $touchesProtectedRole = ($currentRole !== null && in_array($currentRole, $protectedRoles, true))
+            || in_array($nextRole, $protectedRoles, true);
+
+        if ($touchesProtectedRole && !$this->actorIsSuperAdmin($actor)) {
+            throw new RuntimeException('Chỉ tài khoản Super Admin mới được cấp hoặc thay đổi quyền quản trị');
         }
     }
 

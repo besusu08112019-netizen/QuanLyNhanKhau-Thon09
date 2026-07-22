@@ -119,11 +119,13 @@ final class ReportController extends BaseController
 
     public function center(): void
     {
+        $this->requireReportSourcePermissions('summary');
         $this->safeJson('center', fn() => $this->reports->center());
     }
 
     public function bi(): void
     {
+        $this->requireReportSourcePermissions('bi-dashboard');
         $this->safeJson('bi', fn() => $this->reports->biDashboard($this->filters()));
     }
 
@@ -187,6 +189,7 @@ final class ReportController extends BaseController
             str_starts_with($type, 'house-') || str_starts_with($type, 'houses') => ['houses'],
             str_starts_with($type, 'public-asset') || str_starts_with($type, 'public-assets') => ['public_assets'],
             str_starts_with($type, 'gis') => ['gis', 'household'],
+            $type === 'bi-dashboard' || $type === 'report-center' => ['household', 'citizen', 'movement', 'gis', 'household_business', 'agriculture', 'livestock', 'vehicles', 'contributions', 'houses', 'public_assets'],
             str_starts_with($type, 'digital-profile') || str_starts_with($type, 'profile-') => ['household', 'citizen', 'file'],
             in_array($type, ['population', 'citizen', 'citizens', 'gender', 'age', 'residency', 'health-insurance', 'health-insurance-missing', 'health-insurance-expiring', 'health-insurance-expired', 'health-insurance-household', 'health-insurance-area', 'party-members', 'party-member', 'party', 'youth-union', 'youth-union-member', 'meritorious-people', 'meritorious', 'meritorious-person', 'disabled-people', 'disabled', 'disabled-person', 'labor', 'labour', 'elderly', 'children'], true) => ['citizen'],
             in_array($type, ['household', 'households', 'poor-households', 'near-poor-households', 'special'], true) => ['household'],

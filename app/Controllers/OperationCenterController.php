@@ -19,42 +19,62 @@ final class OperationCenterController extends BaseController
     public function notifications(): void
     {
         $this->requirePermission('dashboard', 'read');
+        $this->requireOperationalSourcePermissions();
         $this->ok($this->operation->notifications($this->query()));
     }
 
     public function tasks(): void
     {
         $this->requirePermission('dashboard', 'read');
+        $this->requireOperationalSourcePermissions();
         $this->ok($this->operation->tasks($this->query()));
     }
 
     public function search(): void
     {
         $this->requirePermission('dashboard', 'read');
+        $this->requirePermission('household', 'read');
+        $this->requirePermission('citizen', 'read');
         $this->ok($this->operation->search(trim((string) $this->query('q', $this->query('search', ''))), (int) $this->query('limit', 20)));
     }
 
     public function quickProfile(): void
     {
         $this->requirePermission('dashboard', 'read');
-        $this->ok($this->operation->quickProfile((string) $this->query('type', 'household'), (int) $this->query('id', 0)));
+        $type = (string) $this->query('type', 'household');
+        if ($type === 'citizen') {
+            $this->requirePermission('citizen', 'read');
+            $this->requirePermission('household', 'read');
+        } else {
+            $this->requirePermission('household', 'read');
+            $this->requirePermission('citizen', 'read');
+            $this->requirePermission('gis', 'read');
+        }
+        $this->requirePermission('file', 'read');
+        $this->ok($this->operation->quickProfile($type, (int) $this->query('id', 0)));
     }
 
     public function timeline(): void
     {
         $this->requirePermission('dashboard', 'read');
+        $this->requirePermission('logs', 'read');
+        $this->requirePermission('movement', 'read');
         $this->ok($this->operation->timeline($this->query()));
     }
 
     public function areaDashboard(): void
     {
         $this->requirePermission('dashboard', 'read');
+        $this->requirePermission('household', 'read');
+        $this->requirePermission('citizen', 'read');
+        $this->requirePermission('gis', 'read');
         $this->ok($this->operation->areaDashboard($this->query()));
     }
 
     public function progress(): void
     {
         $this->requirePermission('dashboard', 'read');
+        $this->requireOperationalSourcePermissions();
         $this->ok($this->operation->progress($this->query()));
     }
 
@@ -67,6 +87,7 @@ final class OperationCenterController extends BaseController
     public function exportReport(): void
     {
         $user = $this->requirePermission('report', 'export');
+        $this->requireOperationalSourcePermissions();
         $format = strtolower(trim((string) $this->query('format', 'pdf')));
         $report = $this->operation->executiveReport($this->query());
         $this->audit($user, 'operation_center', 'export', 'Xuất báo cáo điều hành', null, ['format' => $format]);
@@ -126,5 +147,12 @@ final class OperationCenterController extends BaseController
         $text = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text) ?: $text;
         $text = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '_', $text));
         return trim($text, '_') ?: 'bao_cao';
+    }
+
+    private function requireOperationalSourcePermissions(): void
+    {
+        foreach (['household', 'citizen', 'movement', 'gis'] as $module) {
+            $this->requirePermission($module, 'read');
+        }
     }
 }

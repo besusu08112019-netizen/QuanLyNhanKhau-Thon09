@@ -5321,20 +5321,22 @@ body.theme-dark.app-authenticated .app-v2-global-fab {
   box-shadow: 0 18px 38px rgba(0, 0, 0, .36);
 }
 
-body.app-authenticated :where(
-  #householdAddBtn,
-  #personAddBtn,
-  #businessHouseholdAddBtn,
-  #vehicleAddBtn,
-  #agriAddBtn,
-  #housesAddBtn,
-  #publicAssetsAddBtn,
-  #livestockAddBtn,
-  #contributionCreateCampaignBtn,
-  #movementAddBtn,
-  #userAddBtn
-) {
-  display: none !important;
+@media (max-width: 1024px) {
+  body.app-authenticated :where(
+    #householdAddBtn,
+    #personAddBtn,
+    #businessHouseholdAddBtn,
+    #vehicleAddBtn,
+    #agriAddBtn,
+    #housesAddBtn,
+    #publicAssetsAddBtn,
+    #livestockAddBtn,
+    #contributionCreateCampaignBtn,
+    #movementAddBtn,
+    #userAddBtn
+  ) {
+    display: none !important;
+  }
 }
 
 body.theme-dark.app-authenticated .mobile-bottom-nav {

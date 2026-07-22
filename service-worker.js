@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260719-gis-esri-tilelayer-reset';
+const PWA_VERSION = 'thon09-pwa-v20260718-mobile-ui-10';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;

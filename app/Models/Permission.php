@@ -6,6 +6,10 @@ use App\Core\BaseModel;
 
 final class Permission extends BaseModel
 {
+    private const ROLES = ['SUPER_ADMIN', 'ADMIN', 'OFFICER', 'VIEWER'];
+    private const MODULES = ['dashboard','household','household_business','agriculture','livestock','vehicles','contributions','houses','public_assets','citizen','movement','report','pdf','import','export','print','profile','file','gis','photo','video','gps','notification','user','permission','logs','settings','backup','system_admin'];
+    private const ACTIONS = ['read','create','update','delete','upload','download','import','export','print','approve','restore','backup'];
+
     public function matrix(): array
     {
         $roles = [
@@ -14,8 +18,8 @@ final class Permission extends BaseModel
             'OFFICER' => 'Cán bộ',
             'VIEWER' => 'Khách',
         ];
-        $modules = ['dashboard','household','household_business','agriculture','livestock','vehicles','contributions','houses','public_assets','citizen','movement','report','pdf','import','export','print','profile','file','gis','photo','video','gps','notification','user','permission','logs','settings','backup','system_admin'];
-        $actions = ['read','create','update','delete','upload','download','import','export','print','approve','restore','backup'];
+        $modules = self::MODULES;
+        $actions = self::ACTIONS;
         $rows = $this->fetchAll('SELECT role, module, action, allowed FROM permissions');
         $matrix = [];
         foreach ($roles as $role => $label) {
@@ -39,7 +43,7 @@ final class Permission extends BaseModel
             if (in_array($role, ['SUPER_ADMIN', 'ADMIN'], true)) continue;
             $module = preg_replace('/[^a-z_]/', '', (string) ($item['module'] ?? ''));
             $action = preg_replace('/[^a-z_]/', '', (string) ($item['action'] ?? ''));
-            if ($role === '' || $module === '' || $action === '') continue;
+            if (!in_array($role, self::ROLES, true) || !in_array($module, self::MODULES, true) || !in_array($action, self::ACTIONS, true)) continue;
             $allowed = !empty($item['allowed']) ? 1 : 0;
             $this->execute('INSERT INTO permissions (role, module, action, allowed, updated_by) VALUES (:role,:module,:action,:allowed,:user) ON DUPLICATE KEY UPDATE allowed=VALUES(allowed), updated_by=VALUES(updated_by)', ['role' => $role, 'module' => $module, 'action' => $action, 'allowed' => $allowed, 'user' => $userId]);
         }

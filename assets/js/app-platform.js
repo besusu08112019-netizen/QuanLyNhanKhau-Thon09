@@ -5315,12 +5315,6 @@
       'dashboard',
       'households',
       'persons',
-      'publicAssets',
-      'houses',
-      'businessHouseholds',
-      'agriculture',
-      'livestock',
-      'contributions',
       'gis',
       'reports'
     ];

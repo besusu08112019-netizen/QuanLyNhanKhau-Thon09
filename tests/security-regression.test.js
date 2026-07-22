@@ -47,6 +47,17 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const users = read('app/Models/User.php');
   assert.match(users, /assertRoleAssignmentAllowed/);
   assert.match(users, /actorIsSuperAdmin/);
+  assert.match(users, /\['SUPER_ADMIN', 'ADMIN'\]/);
+}
+
+{
+  const permissions = read('app/Controllers/PermissionController.php');
+  assert.match(permissions, /requireSuperAdmin\('permission', 'read'\)/);
+  assert.match(permissions, /requireSuperAdmin\('permission', 'update'\)/);
+  const permissionModel = read('app/Models/Permission.php');
+  assert.match(permissionModel, /private const MODULES/);
+  assert.match(permissionModel, /private const ACTIONS/);
+  assert.match(permissionModel, /in_array\(\$module, self::MODULES, true\)/);
 }
 
 {
@@ -59,6 +70,21 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const reports = read('app/Controllers/ReportController.php');
   assert.match(reports, /requireReportSourcePermissions/);
   assert.match(reports, /sourceModulesForReportType/);
+  assert.match(reports, /bi-dashboard/);
+  assert.match(reports, /public_assets/);
+}
+
+{
+  const operation = read('app/Controllers/OperationCenterController.php');
+  assert.match(operation, /requireOperationalSourcePermissions/);
+  assert.match(operation, /requirePermission\('logs', 'read'\)/);
+  assert.match(operation, /requirePermission\('file', 'read'\)/);
+  const insights = read('app/Controllers/InsightController.php');
+  assert.match(insights, /requirePermission\('household', 'read'\)/);
+  assert.match(insights, /requirePermission\('citizen', 'read'\)/);
+  const profile = read('app/Controllers/ProfileController.php');
+  assert.match(profile, /requireProfileSourcePermission/);
+  assert.match(profile, /requirePermission\(\$module === 'citizen' \? 'citizen' : 'household', 'update'\)/);
 }
 
 {
@@ -86,6 +112,15 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(deploy, /\.env/);
   assert.match(deploy, /\.ftp-deploy-sync-state-utf8\.json/);
   assert.match(deploy, /config\/database\.local\.php/);
+  assert.doesNotMatch(deploy, /protocol:\s*ftp\b/);
+  assert.match(deploy, /protocol:\s*ftps\b/);
+  const cpanel = read('.cpanel.yml');
+  assert.match(cpanel, /--exclude=backups\//);
+  assert.match(cpanel, /--exclude=storage\//);
+  assert.match(cpanel, /--exclude=\.ftp-deploy-sync-state-utf8\.json/);
+  const gitignore = read('.gitignore');
+  assert.match(gitignore, /\.ftp-deploy-sync-state-utf8\.json/);
+  assert.ok(!fs.existsSync(path.join(root, '.ftp-deploy-sync-state-utf8.json')), 'deploy state file must not be committed');
 }
 
 {
