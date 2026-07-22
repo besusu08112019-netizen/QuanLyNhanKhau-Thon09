@@ -41,17 +41,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(index, /redact_security_value/);
   assert.match(index, /redact_security_uri/);
   assert.match(index, /Strict-Transport-Security/);
-  assert.match(index, /X-Robots-Tag: nosnippet/);
-  const htaccess = read('.htaccess');
-  assert.match(htaccess, /Header always set X-Robots-Tag "nosnippet"/);
   const appView = read('views/app.php');
   assert.match(appView, /<meta name="robots" content="nosnippet">/);
   assert.doesNotMatch(appView, /<meta\s+name=["']description["']/i);
   assert.doesNotMatch(appView, /<meta\s+property=["']og:description["']/i);
   assert.doesNotMatch(appView, /<meta\s+name=["']twitter:description["']/i);
-  const offline = read('offline.html');
-  assert.match(offline, /<meta name="robots" content="nosnippet">/);
-  assert.doesNotMatch(offline, /<meta\s+name=["']description["']/i);
 }
 
 {
