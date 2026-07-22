@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="nosnippet">
   <meta name="theme-color" content="#0b6b3a">
   <meta name="background-color" content="#eef3f8">
   <meta name="mobile-web-app-capable" content="yes">
