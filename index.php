@@ -92,6 +92,18 @@ function redact_security_value(mixed $value): mixed
     return $value;
 }
 
+function redact_security_uri(?string $uri): ?string
+{
+    if ($uri === null || $uri === '') return $uri;
+    $parts = parse_url($uri);
+    if ($parts === false) return '[REDACTED_URI]';
+    $path = (string) ($parts['path'] ?? '');
+    if (empty($parts['query'])) return $path;
+
+    parse_str((string) $parts['query'], $query);
+    return $path . '?' . http_build_query(redact_security_value($query));
+}
+
 function api_log_exception(Throwable $e, array $payload): void
 {
     $lastQuery = BaseModel::lastQuery();
@@ -112,7 +124,7 @@ function api_log_exception(Throwable $e, array $payload): void
     $entry = [
         'time' => date('c'),
         'method' => $_SERVER['REQUEST_METHOD'] ?? null,
-        'uri' => $_SERVER['REQUEST_URI'] ?? null,
+        'uri' => redact_security_uri($_SERVER['REQUEST_URI'] ?? null),
         'response' => redact_security_value($payload),
         'exception' => $exception,
     ];

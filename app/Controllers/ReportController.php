@@ -22,48 +22,57 @@ final class ReportController extends BaseController
     public function summary(): void
     {
         $this->requirePermission('report', 'read');
-        $this->ok($this->reports->build($this->reportType(), $this->filters()));
+        $type = $this->reportType();
+        $this->requireReportSourcePermissions($type);
+        $this->ok($this->reports->build($type, $this->filters()));
     }
 
     public function population(): void
     {
         $this->requirePermission('report', 'read');
+        $this->requireReportSourcePermissions('population');
         $this->ok($this->reports->populationReport($this->filters()));
     }
 
     public function household(): void
     {
         $this->requirePermission('report', 'read');
+        $this->requireReportSourcePermissions('household');
         $this->ok($this->reports->householdReport($this->filters()));
     }
 
     public function temporaryResidence(): void
     {
         $this->requirePermission('report', 'read');
+        $this->requireReportSourcePermissions('temporary-residence');
         $this->ok($this->reports->temporaryResidenceReport($this->filters()));
     }
 
     public function temporaryAbsence(): void
     {
         $this->requirePermission('report', 'read');
+        $this->requireReportSourcePermissions('temporary-absence');
         $this->ok($this->reports->temporaryAbsenceReport($this->filters()));
     }
 
     public function births(): void
     {
         $this->requirePermission('report', 'read');
+        $this->requireReportSourcePermissions('births');
         $this->ok($this->reports->birthReport($this->filters()));
     }
 
     public function deaths(): void
     {
         $this->requirePermission('report', 'read');
+        $this->requireReportSourcePermissions('deaths');
         $this->ok($this->reports->deathReport($this->filters()));
     }
 
     public function migration(): void
     {
         $this->requirePermission('report', 'read');
+        $this->requireReportSourcePermissions('migration');
         $this->ok($this->reports->migrationReport($this->filters()));
     }
 
@@ -71,6 +80,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'export');
         $type = $this->reportType();
+        $this->requireReportSourcePermissions($type);
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'export', 'Xuất Excel báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadExcel($report);
@@ -80,6 +90,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'print');
         $type = $this->reportType();
+        $this->requireReportSourcePermissions($type);
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'print', 'In báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->ok($report);
@@ -89,6 +100,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'export');
         $type = $this->reportType();
+        $this->requireReportSourcePermissions($type);
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'export', 'Xuất PDF báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadPdf($report);
@@ -99,6 +111,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'export');
         $type = $this->reportType();
+        $this->requireReportSourcePermissions($type);
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'export', 'Xuất Word báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadWord($report);
@@ -152,6 +165,34 @@ final class ReportController extends BaseController
             $type = trim((string) $this->query('report_type', ''));
         }
         return $type === '' ? 'summary' : $type;
+    }
+
+    private function requireReportSourcePermissions(string $type): void
+    {
+        foreach ($this->sourceModulesForReportType($type) as $module) {
+            $this->requirePermission($module, 'read');
+        }
+    }
+
+    private function sourceModulesForReportType(string $type): array
+    {
+        $type = strtolower(str_replace('_', '-', trim($type)));
+        return match (true) {
+            $type === '' || $type === 'summary' => ['household', 'citizen'],
+            str_starts_with($type, 'household-business') || str_starts_with($type, 'business-') => ['household_business'],
+            str_starts_with($type, 'livestock') => ['livestock'],
+            str_starts_with($type, 'vehicle') || str_starts_with($type, 'vehicles') => ['vehicles'],
+            str_starts_with($type, 'contribution') || str_starts_with($type, 'household-contribution') => ['contributions'],
+            str_starts_with($type, 'agriculture') => ['agriculture'],
+            str_starts_with($type, 'house-') || str_starts_with($type, 'houses') => ['houses'],
+            str_starts_with($type, 'public-asset') || str_starts_with($type, 'public-assets') => ['public_assets'],
+            str_starts_with($type, 'gis') => ['gis', 'household'],
+            str_starts_with($type, 'digital-profile') || str_starts_with($type, 'profile-') => ['household', 'citizen', 'file'],
+            in_array($type, ['population', 'citizen', 'citizens', 'gender', 'age', 'residency', 'health-insurance', 'health-insurance-missing', 'health-insurance-expiring', 'health-insurance-expired', 'health-insurance-household', 'health-insurance-area', 'party-members', 'party-member', 'party', 'youth-union', 'youth-union-member', 'meritorious-people', 'meritorious', 'meritorious-person', 'disabled-people', 'disabled', 'disabled-person', 'labor', 'labour', 'elderly', 'children'], true) => ['citizen'],
+            in_array($type, ['household', 'households', 'poor-households', 'near-poor-households', 'special'], true) => ['household'],
+            in_array($type, ['temporary-residence', 'temporary', 'temporary-absence', 'absence', 'births', 'birth', 'deaths', 'death', 'migration', 'movement', 'movement-summary'], true) => ['citizen', 'movement'],
+            default => ['household', 'citizen'],
+        };
     }
     private function filters(): array
     {

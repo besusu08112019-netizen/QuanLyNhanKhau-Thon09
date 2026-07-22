@@ -166,6 +166,8 @@ final class ImportController extends BaseController
         if (!class_exists('ZipArchive')) throw new \RuntimeException('Hosting chưa bật ZipArchive để đọc file XLSX');
         $zip = new \ZipArchive();
         if ($zip->open($path) !== true) throw new \RuntimeException('Không mở được file XLSX');
+        $this->assertZipEntrySafe($zip, 'xl/worksheets/sheet1.xml', 15 * 1024 * 1024);
+        $this->assertZipEntrySafe($zip, 'xl/sharedStrings.xml', 10 * 1024 * 1024, false);
         $shared = $this->sharedStrings($zip);
         $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
         $zip->close();
@@ -225,6 +227,21 @@ final class ImportController extends BaseController
             $strings[] = $text;
         }
         return $strings;
+    }
+
+    private function assertZipEntrySafe(\ZipArchive $zip, string $name, int $maxSize, bool $required = true): void
+    {
+        $stat = $zip->statName($name);
+        if ($stat === false) {
+            if ($required) throw new \RuntimeException('File XLSX thiếu thành phần dữ liệu bắt buộc');
+            return;
+        }
+
+        $size = (int) ($stat['size'] ?? 0);
+        $compressed = max(1, (int) ($stat['comp_size'] ?? 1));
+        if ($size <= 0 || $size > $maxSize || ($size / $compressed) > 100) {
+            throw new \RuntimeException('File XLSX có kích thước giải nén không an toàn');
+        }
     }
 
     private function mapRow(array $headers, array $values): array

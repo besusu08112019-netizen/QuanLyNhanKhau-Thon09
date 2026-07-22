@@ -60,7 +60,7 @@ jobs:
             echo "DB_USERNAME=${DB_USERNAME}"
             echo "DB_PASSWORD=${DB_PASSWORD}"
             echo "DB_CHARSET=${DB_CHARSET:-utf8mb4}"
-          } > .env
+          } > .deploy.env
 
       - name: Bust frontend asset cache
         shell: bash
@@ -101,6 +101,12 @@ jobs:
           exclude: |
             **/.git*
             **/.git*/**
+            .env
+            .deploy.env
+            .ftp-deploy-sync-state-utf8.json
+            *.log
+            **/*.log
+            config/database.local.php
             **/node_modules/**
             **/.github/**
             uploads/**

@@ -52,6 +52,7 @@ class GisController extends BaseController
     {
         try {
             $this->requirePermission('gis', 'read');
+            $this->requirePermission('household', 'read');
             $filters = $this->householdFiltersFromQuery();
             $items = (string) $this->query('light', '') === '1'
                 ? $this->locationModel()->lightMarkers($filters)
@@ -67,6 +68,10 @@ class GisController extends BaseController
     {
         try {
             $this->requirePermission('gis', 'read');
+            $this->requirePermission('household', 'read');
+            $this->requirePermission('citizen', 'read');
+            $this->requirePermission('household_business', 'read');
+            $this->requirePermission('livestock', 'read');
             $this->ok($this->locationModel()->detail($id));
         } catch (Throwable $e) {
             $this->logException('GET /api/gis/households/' . $id . '/detail', $e);
@@ -80,6 +85,7 @@ class GisController extends BaseController
 
         try {
             $this->requirePermission('gis', 'read');
+            $this->requirePermission('household', 'read');
             if (mb_strlen($query) < 2) {
                 $this->ok(['items' => []]);
                 return;

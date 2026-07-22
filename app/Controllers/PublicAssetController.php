@@ -71,6 +71,7 @@ final class PublicAssetController extends BaseController
         $this->requirePermission('public_assets', 'read');
         $path = $this->assets->coverPhotoPath((int)$id);
         if (!$path) $this->fail('Cong trinh chua co anh', 404);
+        if (!$this->isPublicAssetPhotoPath($path, false)) $this->fail('Duong dan anh cong trinh khong hop le', 404);
         $storage = new FileStorageService();
         $file = $storage->safeFilePath($path);
         if (!$file || !is_file($file)) $this->fail('Anh cong trinh khong con ton tai', 404);
@@ -167,6 +168,7 @@ final class PublicAssetController extends BaseController
         $this->requirePermission('public_assets', 'read');
         $path = $this->assets->inventoryPhotoPath((int)$id, (int)$itemId);
         if (!$path) $this->fail('Tai san chua co anh', 404);
+        if (!$this->isPublicAssetPhotoPath($path, true)) $this->fail('Duong dan anh tai san khong hop le', 404);
         $storage = new FileStorageService();
         $file = $storage->safeFilePath($path);
         if (!$file || !is_file($file)) $this->fail('Anh tai san khong con ton tai', 404);
@@ -214,5 +216,16 @@ final class PublicAssetController extends BaseController
             'sort' => $this->query('sort', 'asset_code'),
             'direction' => $this->query('direction', 'ASC'),
         ];
+    }
+
+    private function isPublicAssetPhotoPath(string $path, bool $inventory): bool
+    {
+        $normalized = ltrim(str_replace('\\', '/', trim($path)), '/');
+        if (preg_match('#^https?://#i', $normalized)) {
+            $parts = parse_url($normalized);
+            $normalized = ltrim(str_replace('\\', '/', (string) ($parts['path'] ?? '')), '/');
+        }
+        $prefix = $inventory ? 'uploads/public-assets/inventory/images/' : 'uploads/public-assets/images/';
+        return str_starts_with($normalized, $prefix);
     }
 }

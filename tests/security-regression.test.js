@@ -16,6 +16,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 {
   const backup = read('app/Controllers/BackupController.php');
   assert.match(backup, /requireSuperAdmin\('backup', 'restore'\)/);
+  assert.match(backup, /requireSuperAdmin\('backup', 'export'\)/);
+  const backupModel = read('app/Models/Backup.php');
+  assert.match(backupModel, /-- Signature:/);
+  assert.match(backupModel, /hash_hmac\('sha256'/);
+  assert.match(backupModel, /verifyBackupSignature/);
 }
 
 {
@@ -34,7 +39,53 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const index = read('index.php');
   assert.match(index, /reject_oversized_api_request/);
   assert.match(index, /redact_security_value/);
+  assert.match(index, /redact_security_uri/);
   assert.match(index, /Strict-Transport-Security/);
+}
+
+{
+  const users = read('app/Models/User.php');
+  assert.match(users, /assertRoleAssignmentAllowed/);
+  assert.match(users, /actorIsSuperAdmin/);
+}
+
+{
+  const systemAdmin = read('app/Controllers/SystemAdminController.php');
+  assert.match(systemAdmin, /requireSuperAdmin\('system_admin'/);
+  assert.doesNotMatch(systemAdmin, /\['SUPER_ADMIN', 'ADMIN'\]/);
+}
+
+{
+  const reports = read('app/Controllers/ReportController.php');
+  assert.match(reports, /requireReportSourcePermissions/);
+  assert.match(reports, /sourceModulesForReportType/);
+}
+
+{
+  const gis = read('app/Controllers/GisController.php');
+  assert.match(gis, /requirePermission\('household', 'read'\)/);
+  assert.match(gis, /requirePermission\('citizen', 'read'\)/);
+}
+
+{
+  const importController = read('app/Controllers/ImportController.php');
+  assert.match(importController, /assertZipEntrySafe/);
+  assert.match(importController, /statName/);
+}
+
+{
+  const publicAssets = read('app/Models/PublicAsset.php');
+  assert.doesNotMatch(publicAssets, /cover_photo_url' => \$this->nullable\(\$data\['cover_photo_url'\]/);
+  assert.doesNotMatch(publicAssets, /photo_url' => \$this->nullable\(\$data\['photo_url'\]/);
+  const publicAssetController = read('app/Controllers/PublicAssetController.php');
+  assert.match(publicAssetController, /isPublicAssetPhotoPath/);
+}
+
+{
+  const deploy = read('.github/workflows/deploy-ftp.yml');
+  assert.match(deploy, /\.env/);
+  assert.match(deploy, /\.ftp-deploy-sync-state-utf8\.json/);
+  assert.match(deploy, /config\/database\.local\.php/);
 }
 
 {

@@ -161,7 +161,7 @@ SQL);
         $existing = $id ? $this->find($id) : null;
         if ($id && !$existing) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y c\u00f4ng tr\u00ecnh'));
         $params = $this->params($data, $userId);
-        if ($id && !array_key_exists('cover_photo_url', $data) && !array_key_exists('coverPhotoUrl', $data)) {
+        if ($id) {
             $params['cover_photo_url'] = $this->coverPhotoPath($id);
         }
         if ($id) {
@@ -384,7 +384,7 @@ SQL);
             'longitude' => $longitude = $this->coord($data['longitude'] ?? null),
             'gps_accuracy' => $this->nullableNumber($data['gps_accuracy'] ?? $data['gpsAccuracy'] ?? null),
             'gps_updated_at' => ($latitude !== null && $longitude !== null) ? date('Y-m-d H:i:s') : null,
-            'cover_photo_url' => $this->nullable($data['cover_photo_url'] ?? $data['coverPhotoUrl'] ?? ''),
+            'cover_photo_url' => null,
             'description' => $this->nullable($data['description'] ?? ''),
             'managing_unit' => $this->nullable($data['managing_unit'] ?? $data['managingUnit'] ?? ''),
             'manager_name' => $this->nullable($data['manager_name'] ?? $data['managerName'] ?? ''),
@@ -481,10 +481,7 @@ SQL);
         if ($code === '') $code = $this->nextInventoryCode($assetId);
         $date = trim((string)($data['start_use_date'] ?? $data['startUseDate'] ?? ''));
         if ($date !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) throw new \RuntimeException($this->u('Ng\u00e0y \u0111\u01b0a v\u00e0o s\u1eed d\u1ee5ng kh\u00f4ng h\u1ee3p l\u1ec7'));
-        $photoUrl = $this->nullable($data['photo_url'] ?? $data['photoUrl'] ?? '');
-        if ($existing && !array_key_exists('photo_url', $data) && !array_key_exists('photoUrl', $data)) {
-            $photoUrl = $this->inventoryPhotoPath($assetId, (int)$existing['id']);
-        }
+        $photoUrl = $existing ? $this->inventoryPhotoPath($assetId, (int)$existing['id']) : null;
         return [
             'public_asset_id' => $assetId,
             'inventory_code' => $code,

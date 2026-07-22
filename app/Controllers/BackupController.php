@@ -23,7 +23,7 @@ final class BackupController extends BaseController
 
     public function create(): void
     {
-        $user = $this->requirePermission('backup', 'export');
+        $user = $this->requireSuperAdmin('backup', 'export');
         $backup = $this->backups->createSqlDump((int) $user['id']);
         $this->audit($user, 'backup', 'export', 'Tạo bản sao lưu SQL', null, ['fileName' => $backup['fileName'], 'size' => $backup['size'], 'checksum' => $backup['checksum']]);
         header('Content-Type: application/sql; charset=utf-8');

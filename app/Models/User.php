@@ -102,14 +102,17 @@ final class User extends BaseModel
         return $this->findById($id);
     }
 
-    public function create(array $data, int $actorId): array
+    public function create(array $data, array|int $actor): array
     {
+        $actorUser = $this->actorUser($actor);
+        $actorId = (int) $actorUser['id'];
         $email = $this->normalizeEmail($data['email'] ?? '');
         $username = $this->normalizeUsername((string) ($data['username'] ?? $this->usernameFromEmail($email)));
         $name = $this->displayName($data);
         $password = (string) ($data['password'] ?? '');
         $role = $this->roleFromPayload($data, 'VIEWER');
         $status = $this->statusFromPayload($data, 'ACTIVE');
+        $this->assertRoleAssignmentAllowed(null, $role, $actorUser);
 
         $this->validateUsername($username);
         $this->validateEmail($email);
@@ -150,13 +153,15 @@ final class User extends BaseModel
         return $this->findById($id);
     }
 
-    public function updateUser(int $id, array $data, int $actorId): array
+    public function updateUser(int $id, array $data, array|int $actor): array
     {
+        $actorUser = $this->actorUser($actor);
+        $actorId = (int) $actorUser['id'];
         $user = $this->findById($id);
         if (!$user) {
             throw new RuntimeException('Không tìm thấy người dùng');
         }
-        if ($user['role'] === 'SUPER_ADMIN') {
+        if ($user['role'] === 'SUPER_ADMIN' && !$this->actorIsSuperAdmin($actorUser)) {
             throw new RuntimeException('Không sửa tài khoản Super Admin');
         }
 
@@ -167,6 +172,7 @@ final class User extends BaseModel
         $this->validateDisplayName($name);
         $params['display_name'] = $name;
         $params['role'] = $this->roleFromPayload($data, (string) $user['role']);
+        $this->assertRoleAssignmentAllowed((string) $user['role'], (string) $params['role'], $actorUser);
 
         if (array_key_exists('status', $data)) {
             $sets[] = 'status=:status';
@@ -391,6 +397,30 @@ final class User extends BaseModel
     private function roleFromPayload(array $data, string $default): string
     {
         return $this->role((string) ($data['role'] ?? $data['role_id'] ?? $default));
+    }
+
+    private function actorUser(array|int $actor): array
+    {
+        if (is_array($actor)) {
+            if (!empty($actor['id'])) return $actor;
+            throw new RuntimeException('Người thực hiện không hợp lệ');
+        }
+
+        $user = $this->findById($actor);
+        if (!$user) throw new RuntimeException('Người thực hiện không hợp lệ');
+        return $user;
+    }
+
+    private function actorIsSuperAdmin(array $actor): bool
+    {
+        return (string) ($actor['role'] ?? '') === 'SUPER_ADMIN';
+    }
+
+    private function assertRoleAssignmentAllowed(?string $currentRole, string $nextRole, array $actor): void
+    {
+        if (($currentRole === 'SUPER_ADMIN' || $nextRole === 'SUPER_ADMIN') && !$this->actorIsSuperAdmin($actor)) {
+            throw new RuntimeException('Chỉ tài khoản Super Admin mới được cấp hoặc thay đổi quyền Super Admin');
+        }
     }
 
     private function roleId(string $role): int
