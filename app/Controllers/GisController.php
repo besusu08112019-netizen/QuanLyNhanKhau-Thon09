@@ -220,6 +220,10 @@ class GisController extends BaseController
             'area_code' => $this->query('area_code'),
             'located' => $this->query('located'),
         ];
+        $limit = $this->positiveIntQuery('limit');
+        if ($limit !== null) {
+            $filters['limit'] = min($limit, 2000);
+        }
         foreach (['party', 'children', 'elderly', 'poor', 'near_poor', 'labor', 'permanent', 'temporary'] as $key) {
             $filters[$key] = $this->query($key);
         }
@@ -229,6 +233,17 @@ class GisController extends BaseController
         }
         return $filters;
     }
+
+    private function positiveIntQuery(string $key): ?int
+    {
+        $value = $this->query($key);
+        if ($value === null || $value === '') {
+            return null;
+        }
+        $value = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        return $value === false ? null : (int) $value;
+    }
+
     private function boolQuery(string $key, bool $default): bool
     {
         $value = $this->query($key);

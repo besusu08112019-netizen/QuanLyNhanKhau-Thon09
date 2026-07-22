@@ -35,6 +35,7 @@ final class GisHouseholdLocation extends BaseModel
     {
         $this->ensureSchema();
         [$where, $params] = $this->markerConditions($filters);
+        $limit = $this->markerLimit($filters, 2000);
         $photoSql = $this->householdPhotoSql();
         $rows = $this->fetchAll(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
@@ -57,7 +58,7 @@ final class GisHouseholdLocation extends BaseModel
              WHERE ' . $this->statistics()->householdCondition('h') . $where . '
                AND h.latitude IS NOT NULL AND h.latitude <> "" AND h.longitude IS NOT NULL AND h.longitude <> ""
              ORDER BY h.id ASC
-             LIMIT 2000',
+             LIMIT ' . $limit,
             $params
         );
         return [
@@ -160,6 +161,7 @@ final class GisHouseholdLocation extends BaseModel
     {
         $this->ensureSchema();
         [$where, $params] = $this->markerConditions($filters);
+        $limit = $this->markerLimit($filters, 1000);
         $photoSql = $this->householdPhotoSql();
         $hasBusinessTable = $this->tableExists('household_business');
         $businessJoin = $hasBusinessTable ? ' LEFT JOIN (
@@ -222,7 +224,7 @@ final class GisHouseholdLocation extends BaseModel
              ) cm ON cm.household_id = h.id
              WHERE ' . $this->statistics()->householdCondition('h') . $where . '
              ORDER BY h.household_code ASC
-             LIMIT 1000',
+             LIMIT ' . $limit,
             $params
         );
 
@@ -477,6 +479,12 @@ final class GisHouseholdLocation extends BaseModel
             $where .= ' AND h.latitude BETWEEN :south AND :north AND h.longitude BETWEEN :west AND :east';
         }
         return [$where, $params];
+    }
+
+    private function markerLimit(array $filters, int $default): int
+    {
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : $default;
+        return min(max($limit, 1), $default);
     }
 
     private function enabledFilter(mixed $value): bool

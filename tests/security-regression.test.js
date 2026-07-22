@@ -42,6 +42,12 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(index, /redact_security_uri/);
   assert.match(index, /Strict-Transport-Security/);
   const appView = read('views/app.php');
+  assert.match(appView, /\$assetUrl = static function/);
+  assert.match(appView, /rawurlencode\(\$version\)/);
+  assert.match(appView, /href="<\?= \$assetUrl\('\/assets\/css\/app\.min\.css'\) \?>"/);
+  assert.match(appView, /src="<\?= \$assetUrl\('\/assets\/js\/pwa\.min\.js'\) \?>"/);
+  assert.match(appView, /class="skip-link" href="#mainContent"/);
+  assert.match(appView, /id="toastHost"[\s\S]+aria-live="polite"/);
   assert.match(appView, /<meta name="robots" content="nosnippet">/);
   assert.doesNotMatch(appView, /<meta\s+name=["']description["']/i);
   assert.doesNotMatch(appView, /<meta\s+property=["']og:description["']/i);
@@ -96,6 +102,10 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const gis = read('app/Controllers/GisController.php');
   assert.match(gis, /requirePermission\('household', 'read'\)/);
   assert.match(gis, /requirePermission\('citizen', 'read'\)/);
+  assert.match(gis, /positiveIntQuery\('limit'\)/);
+  const gisLocations = read('app/Models/GisHouseholdLocation.php');
+  assert.match(gisLocations, /function markerLimit/);
+  assert.match(gisLocations, /LIMIT ' \. \$limit/);
 }
 
 {
@@ -160,6 +170,13 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const reportTemplate = read('docs/RELEASE_REPORT_TEMPLATE.md');
   assert.match(reportTemplate, /Commit SHA:/);
   assert.match(reportTemplate, /Overall: PASS\/FAIL/);
+  const v21Checklist = read('docs/V2_1_RELEASE_CHECKLISTS.md');
+  assert.match(v21Checklist, /Version 2\.1 Release Checklists/);
+  assert.match(v21Checklist, /QA Checklist/);
+  assert.match(v21Checklist, /Deploy Checklist/);
+  assert.match(v21Checklist, /Backup Checklist/);
+  assert.match(v21Checklist, /Security Checklist/);
+  assert.match(v21Checklist, /Release Checklist/);
   const gitignore = read('.gitignore');
   assert.match(gitignore, /\.ftp-deploy-sync-state-utf8\.json/);
   assert.ok(!fs.existsSync(path.join(root, '.ftp-deploy-sync-state-utf8.json')), 'deploy state file must not be committed');

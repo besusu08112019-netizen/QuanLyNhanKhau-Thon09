@@ -16,6 +16,28 @@
 * { box-sizing: border-box; }
 html, body { max-width: 100%; overflow-x: hidden; font-family: var(--app-font-family); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { margin: 0; color: var(--ink); background: var(--surface); font-family: var(--app-font-family); }
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 3000;
+  transform: translateY(-160%);
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #fff;
+  background: #0f172a;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .24);
+  transition: transform .16s ease;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  color: #fff;
+  outline: 3px solid rgba(37, 99, 235, .32);
+  outline-offset: 3px;
+}
 body,
 button,
 input,
@@ -36,6 +58,10 @@ textarea,
 .topbar {
   font-family: var(--app-font-family);
   letter-spacing: 0;
+}
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid rgba(37, 99, 235, .26);
+  outline-offset: 2px;
 }
 body.theme-dark { --ink:#e5e7eb; --muted:#aeb8c6; --line:#344155; --surface:#111827; --card:#1f2937; --sidebar:#060b14; --sidebar-soft:#111827; }
 body.theme-dark .text-muted { color: #aeb8c6; }
