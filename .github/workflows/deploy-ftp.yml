@@ -90,6 +90,14 @@ jobs:
       - name: Build minimal production artifact
         run: npm run build:production
 
+      - name: Upload production artifact for audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-artifact
+          path: dist/production/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Deploy to hosting via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -101,7 +109,14 @@ jobs:
           local-dir: ./dist/production/
           server-dir: ./
           state-name: .ftp-deploy-sync-state-utf8.json
+          log-level: verbose
           exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .env
+            .env.*
+            config/database.php
             uploads/**
             !uploads/.htaccess
             storage/cache/**

@@ -21,7 +21,7 @@
 - `config/database.php`: cấu hình database production, không commit file này.
 - `docs/`: tài liệu triển khai, kiểm thử, release và audit.
 - `uploads/`: dữ liệu phát sinh khi vận hành, bị chặn truy cập trực tiếp qua `.htaccess`.
-- `.cpanel.yml`: cấu hình cPanel Git Version Control.
+- `.github/workflows/deploy-ftp.yml`: production deploy pipeline duy nhất qua GitHub Actions và FTPS.
 
 ## Chức năng
 
@@ -63,6 +63,24 @@ npm.cmd run check:js
 npm.cmd run test:browser
 Get-ChildItem -Recurse -Filter *.php | ForEach-Object { php -l $_.FullName }
 ```
+
+## Production deploy
+
+Production chỉ sử dụng một pipeline duy nhất:
+
+```text
+Git push main hoặc workflow_dispatch
+  -> GitHub Actions
+  -> npm run build:production
+  -> tools/build-assets.js
+  -> tools/build-production-artifact.js
+  -> upload GitHub artifact production-artifact
+  -> FTPS deploy nội dung dist/production/ vào public_html/
+```
+
+Không sử dụng cPanel Git Deploy cho production. Hosting production không bắt buộc có Node.js vì bước build chạy trên GitHub Actions runner. `dist/production/` không được commit vào Git và không được upload vào server repository; workflow upload trực tiếp nội dung artifact lên `public_html/`.
+
+FTPS deploy overwrite các file trong artifact và dùng `.ftp-deploy-sync-state-utf8.json` để theo dõi file đã deploy. Các dữ liệu runtime/secret như `.env`, `config/database.php`, `uploads/**`, `storage/cache/**` và `backups/**` không nằm trong publish/delete process.
 
 ## Tài liệu liên quan
 

@@ -1,4 +1,0 @@
----
-deployment:
-  tasks:
-    - /bin/bash -lc 'set -euo pipefail; DEPLOYPATH="${DEPLOYPATH:-$HOME/public_html}"; command -v node >/dev/null 2>&1 || { /bin/echo "Node.js is required to build the minimal production artifact"; exit 1; }; node tools/build-assets.js; node tools/build-production-artifact.js; /usr/bin/rsync -a --delete --exclude=.env --exclude=".env.bak*" --exclude=uploads/ --exclude=storage/cache/ dist/production/ "$DEPLOYPATH"/; /usr/bin/find "$DEPLOYPATH" -type d -exec /bin/chmod 755 {} +; /usr/bin/find "$DEPLOYPATH" -type f -exec /bin/chmod 644 {} +; /usr/bin/find "$DEPLOYPATH/uploads" "$DEPLOYPATH/storage/cache" -type d -exec /bin/chmod 755 {} + 2>/dev/null || true; /bin/echo "Minimal production artifact deployed for $(git rev-parse --short HEAD)"'
