@@ -162,7 +162,7 @@ SQL);
         if ($id && !$existing) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y c\u00f4ng tr\u00ecnh'));
         $params = $this->params($data, $userId);
         if ($id && !array_key_exists('cover_photo_url', $data) && !array_key_exists('coverPhotoUrl', $data)) {
-            $params['cover_photo_url'] = $existing['cover_photo_url'] ?? null;
+            $params['cover_photo_url'] = $this->coverPhotoPath($id);
         }
         if ($id) {
             $params['id'] = $id;
@@ -271,7 +271,15 @@ SQL);
     public function inventoryPhotoPath(int $assetId, int $itemId): ?string
     {
         $row = $this->fetchOne('SELECT photo_url FROM public_asset_inventory_items WHERE public_asset_id=:asset_id AND id=:id AND status <> "DELETED"', ['asset_id' => $assetId, 'id' => $itemId]);
-        return $row ? ($row['photo_url'] ?: null) : null;
+        $path = $row ? ($row['photo_url'] ?: null) : null;
+        if ($path && $this->isInventoryPhotoApiPath($path, $assetId, $itemId)) {
+            $recovered = $this->latestUploadPathFromAudit('inventory_upload_photo', (string)$itemId);
+            if ($recovered) {
+                $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url WHERE public_asset_id=:asset_id AND id=:id AND photo_url=:old', ['asset_id' => $assetId, 'id' => $itemId, 'url' => $recovered, 'old' => $path]);
+                return $recovered;
+            }
+        }
+        return $path;
     }
 
     private function where(array $filters, bool $withOrder = true): array
@@ -426,6 +434,10 @@ SQL);
         if ($code === '') $code = $this->nextInventoryCode($assetId);
         $date = trim((string)($data['start_use_date'] ?? $data['startUseDate'] ?? ''));
         if ($date !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) throw new \RuntimeException($this->u('Ng\u00e0y \u0111\u01b0a v\u00e0o s\u1eed d\u1ee5ng kh\u00f4ng h\u1ee3p l\u1ec7'));
+        $photoUrl = $this->nullable($data['photo_url'] ?? $data['photoUrl'] ?? '');
+        if ($existing && !array_key_exists('photo_url', $data) && !array_key_exists('photoUrl', $data)) {
+            $photoUrl = $this->inventoryPhotoPath($assetId, (int)$existing['id']);
+        }
         return [
             'public_asset_id' => $assetId,
             'inventory_code' => $code,
@@ -438,7 +450,7 @@ SQL);
             'start_use_date' => $date !== '' ? $date : null,
             'location_in_asset' => $this->nullable($data['location_in_asset'] ?? $data['locationInAsset'] ?? ''),
             'note' => $this->nullable($data['note'] ?? ''),
-            'photo_url' => $this->nullable($data['photo_url'] ?? $data['photoUrl'] ?? $existing['photo_url'] ?? ''),
+            'photo_url' => $photoUrl,
             'created_by' => $userId,
             'updated_by' => $userId,
         ];
@@ -526,9 +538,46 @@ SQL);
     public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED"', ['id' => $id, 'url' => $url, 'user' => $userId]); return $this->find($id); }
     private function coord(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
     private function ensureColumn(string $table, string $column, string $definition): void { if ($this->columnExists($table, $column)) return; $this->execute('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition); }
-    public function coverPhotoPath(int $id): ?string { $row = $this->fetchOne('SELECT cover_photo_url FROM public_assets WHERE id=:id AND status <> "DELETED"', ['id' => $id]); return $row ? ($row['cover_photo_url'] ?: null) : null; }
+    public function coverPhotoPath(int $id): ?string
+    {
+        $row = $this->fetchOne('SELECT cover_photo_url FROM public_assets WHERE id=:id AND status <> "DELETED"', ['id' => $id]);
+        $path = $row ? ($row['cover_photo_url'] ?: null) : null;
+        if ($path && $this->isCoverPhotoApiPath($path, $id)) {
+            $recovered = $this->latestUploadPathFromAudit('upload_photo', (string)$id);
+            if ($recovered) {
+                $this->execute('UPDATE public_assets SET cover_photo_url=:url WHERE id=:id AND cover_photo_url=:old', ['id' => $id, 'url' => $recovered, 'old' => $path]);
+                return $recovered;
+            }
+        }
+        return $path;
+    }
     private function coverPhotoUrl(array $row): string { $url = (string)($row['cover_photo_url'] ?? ''); return str_starts_with(ltrim($url, '/'), 'uploads/') ? '/api/public-assets/' . (int)$row['id'] . '/photo' : $url; }
     private function inventoryPhotoUrl(array $row): string { $url = (string)($row['photo_url'] ?? ''); return str_starts_with(ltrim($url, '/'), 'uploads/') ? '/api/public-assets/' . (int)$row['public_asset_id'] . '/inventory/' . (int)$row['id'] . '/photo' : $url; }
+    private function isCoverPhotoApiPath(string $path, int $id): bool { return $this->storedUrlPath($path) === '/api/public-assets/' . $id . '/photo'; }
+    private function isInventoryPhotoApiPath(string $path, int $assetId, int $itemId): bool { return $this->storedUrlPath($path) === '/api/public-assets/' . $assetId . '/inventory/' . $itemId . '/photo'; }
+    private function storedUrlPath(string $value): string
+    {
+        $value = trim(str_replace('\\', '/', $value));
+        if (preg_match('#^https?://#i', $value)) {
+            $parts = parse_url($value);
+            $value = (string)($parts['path'] ?? '');
+        }
+        return '/' . ltrim($value, '/');
+    }
+    private function latestUploadPathFromAudit(string $action, string $entityId): ?string
+    {
+        try {
+            $rows = $this->fetchAll('SELECT metadata FROM audit_logs WHERE module="public_assets" AND action=:action AND entity_id=:entity_id ORDER BY created_at DESC, id DESC LIMIT 5', ['action' => $action, 'entity_id' => $entityId]);
+        } catch (\Throwable) {
+            return null;
+        }
+        foreach ($rows as $row) {
+            $metadata = json_decode((string)($row['metadata'] ?? ''), true);
+            $path = is_array($metadata) ? (string)($metadata['file']['file_path'] ?? '') : '';
+            if (str_starts_with(ltrim($path, '/'), 'uploads/')) return '/' . ltrim(str_replace('\\', '/', $path), '/');
+        }
+        return null;
+    }
     private function pairs(array $map): array { return array_map(fn($k, $v) => ['value' => $k, 'label' => $v], array_keys($map), array_values($map)); }
     private function statuses(): array { return ['ACTIVE' => $this->u('\u0110ang s\u1eed d\u1ee5ng'), 'REPAIRING' => $this->u('\u0110ang s\u1eeda ch\u1eefa'), 'SUSPENDED' => $this->u('T\u1ea1m ng\u1eebng'), 'INACTIVE' => $this->u('Kh\u00f4ng c\u00f2n s\u1eed d\u1ee5ng'), 'DELETED' => $this->u('\u0110\u00e3 x\u00f3a')]; }
     private function inventoryStatuses(): array { return ['NEW' => $this->u('M\u1edbi'), 'GOOD' => $this->u('T\u1ed1t'), 'IN_USE' => $this->u('\u0110ang s\u1eed d\u1ee5ng'), 'MAINTENANCE' => $this->u('C\u1ea7n b\u1ea3o d\u01b0\u1ee1ng'), 'LIGHT_DAMAGE' => $this->u('H\u1ecfng nh\u1eb9'), 'HEAVY_DAMAGE' => $this->u('H\u1ecfng n\u1eb7ng'), 'NEEDS_REPAIR' => $this->u('C\u1ea7n s\u1eeda ch\u1eefa'), 'LIQUIDATED' => $this->u('Thanh l\u00fd'), 'DELETED' => $this->u('\u0110\u00e3 x\u00f3a')]; }
