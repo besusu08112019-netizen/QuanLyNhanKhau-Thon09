@@ -355,7 +355,7 @@ final class ReportController extends BaseController
             $this->requirePermission('report', 'read');
             $this->ok(['ok' => true, 'widget' => $widget, 'data' => $callback(), 'generatedAt' => date('c')]);
         } catch (Throwable $exception) {
-            error_log('[SMART_REPORTING_API_ERROR] ' . json_encode(['widget' => $widget, 'message' => $exception->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            error_log('[SMART_REPORTING_API_ERROR] ' . json_encode(['widget' => $widget, 'type' => get_class($exception)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             $message = $this->debugEnabled() ? $exception->getMessage() : json_decode('"Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u b\u00e1o c\u00e1o"', true);
             $this->ok(['ok' => true, 'widget' => $widget, 'data' => [], 'error' => ['message' => $message], 'generatedAt' => date('c')]);
         }

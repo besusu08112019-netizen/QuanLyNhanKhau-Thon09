@@ -109,18 +109,45 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 {
   const deploy = read('.github/workflows/deploy-ftp.yml');
-  assert.match(deploy, /\.env/);
-  assert.match(deploy, /\.ftp-deploy-sync-state-utf8\.json/);
-  assert.match(deploy, /config\/database\.local\.php/);
+  assert.match(deploy, /npm run build:production/);
+  assert.match(deploy, /local-dir:\s*\.\/dist\/production\//);
   assert.doesNotMatch(deploy, /protocol:\s*ftp\b/);
   assert.match(deploy, /protocol:\s*ftps\b/);
   const cpanel = read('.cpanel.yml');
-  assert.match(cpanel, /--exclude=backups\//);
-  assert.match(cpanel, /--exclude=storage\//);
-  assert.match(cpanel, /--exclude=\.ftp-deploy-sync-state-utf8\.json/);
+  assert.match(cpanel, /tools\/build-production-artifact\.js/);
+  assert.match(cpanel, /dist\/production\//);
+  const artifact = read('tools/build-production-artifact.js');
+  assert.match(artifact, /Forbidden production artifact entries/);
+  assert.match(artifact, /'\.git'/);
+  assert.match(artifact, /'\.github'/);
+  assert.match(artifact, /'\.env'/);
+  assert.match(artifact, /'docs'/);
+  assert.match(artifact, /'tests'/);
+  assert.match(artifact, /'tools'/);
+  assert.match(artifact, /'sample-data'/);
+  assert.match(artifact, /'package\.json'/);
+  assert.match(artifact, /'composer\.json'/);
   const gitignore = read('.gitignore');
   assert.match(gitignore, /\.ftp-deploy-sync-state-utf8\.json/);
   assert.ok(!fs.existsSync(path.join(root, '.ftp-deploy-sync-state-utf8.json')), 'deploy state file must not be committed');
+}
+
+{
+  const index = read('index.php');
+  assert.match(index, /function production_log_message/);
+  const logFunction = index.match(/function api_log_exception[\s\S]+?\n}\r?\nfunction app_debug_enabled/);
+  assert.ok(logFunction, 'api_log_exception must be present');
+  assert.doesNotMatch(logFunction[0], /lastQuery/);
+  assert.doesNotMatch(logFunction[0], /'sql'/);
+  assert.doesNotMatch(logFunction[0], /'sql_params'/);
+  const gis = read('app/Controllers/GisController.php');
+  assert.doesNotMatch(gis, /getTraceAsString\(\)/);
+  assert.doesNotMatch(gis, /getFile\(\)/);
+  const gisArea = read('app/Models/GisArea.php');
+  assert.doesNotMatch(gisArea, /'sql'\s*=>\s*\$this->lastSql/);
+  assert.doesNotMatch(gisArea, /getTraceAsString\(\)/);
+  const operation = read('app/Models/OperationCenter.php');
+  assert.doesNotMatch(operation, /'sql'\s*=>\s*\$lastQuery/);
 }
 
 {

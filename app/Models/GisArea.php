@@ -348,11 +348,9 @@ final class GisArea extends BaseModel
         $payload = [
             'time' => date('c'),
             'action' => $action,
-            'sql' => $this->lastSql,
             'params' => array_keys($this->lastParams),
             'request_keys' => array_keys($request),
-            'exception' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
+            'exception' => get_class($e),
         ];
         error_log('[GIS_SQL_ERROR] ' . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }

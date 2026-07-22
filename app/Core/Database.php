@@ -194,7 +194,7 @@ final class Database
 
     private static function exceptionMessage(PDOException $e): string
     {
-        return sprintf('SQLSTATE=%s; code=%s; driver_code=%s; message=%s', $e->errorInfo[0] ?? $e->getCode(), (string) $e->getCode(), (string) ($e->errorInfo[1] ?? ''), $e->getMessage());
+        return sprintf('SQLSTATE=%s; code=%s; driver_code=%s', $e->errorInfo[0] ?? $e->getCode(), (string) $e->getCode(), (string) ($e->errorInfo[1] ?? ''));
     }
 
     private static function logConfig(string $type, array $config, string $message, ?string $attempt = null): void

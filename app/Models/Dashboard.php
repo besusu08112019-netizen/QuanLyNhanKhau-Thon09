@@ -57,7 +57,6 @@ final class Dashboard extends BaseModel
         try {
             return $callback();
         } catch (\Throwable $exception) {
-            $lastQuery = self::lastQuery();
             $debug = $this->debugEnabled();
             $errors[$name] = [
                 'type' => $debug ? get_class($exception) : 'WidgetError',
@@ -66,9 +65,7 @@ final class Dashboard extends BaseModel
             error_log('[DASHBOARD_WIDGET_ERROR] ' . json_encode([
                 'widget' => $name,
                 'type' => get_class($exception),
-                'message' => $exception->getMessage(),
-                'sql' => $lastQuery['sql'] ?? null,
-                'params' => $lastQuery['params'] ?? null,
+                'debug' => $debug,
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             return $fallback;
         }

@@ -104,28 +104,28 @@ function redact_security_uri(?string $uri): ?string
     return $path . '?' . http_build_query(redact_security_value($query));
 }
 
+function production_log_message(Throwable $e): string
+{
+    if ($e instanceof PDOException) return 'Database operation failed';
+    if (app_debug_enabled()) return $e->getMessage();
+    return 'Application operation failed';
+}
+
 function api_log_exception(Throwable $e, array $payload): void
 {
-    $lastQuery = BaseModel::lastQuery();
     $exception = [
-        'message' => $e instanceof PDOException ? 'Database operation failed' : $e->getMessage(),
+        'message' => production_log_message($e),
         'type' => get_class($e),
         'code' => (string) $e->getCode(),
-        'sql' => $lastQuery['sql'] ?? null,
-        'sql_params' => redact_security_value($lastQuery['params'] ?? null),
     ];
     if ($e instanceof PDOException) {
-        $exception += [
-            'sqlstate' => $e->errorInfo[0] ?? $e->getCode(),
-            'driver_code' => $e->errorInfo[1] ?? null,
-            'driver_message' => $e->errorInfo[2] ?? null,
-        ];
+        $exception['sqlstate'] = $e->errorInfo[0] ?? $e->getCode();
     }
     $entry = [
         'time' => date('c'),
         'method' => $_SERVER['REQUEST_METHOD'] ?? null,
         'uri' => redact_security_uri($_SERVER['REQUEST_URI'] ?? null),
-        'response' => redact_security_value($payload),
+        'status' => $payload['status'] ?? null,
         'exception' => $exception,
     ];
     $line = '[API_EXCEPTION] ' . json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;

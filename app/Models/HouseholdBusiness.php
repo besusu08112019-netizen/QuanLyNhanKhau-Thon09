@@ -665,7 +665,7 @@ SQL);
     private function debugSql(string $context, string $sql, array $params): void
     {
         if (!$this->debugEnabled()) return;
-        error_log('[HOUSEHOLD_BUSINESS_SQL] ' . json_encode(['context' => $context, 'sql' => $sql, 'params' => $params], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        error_log('[HOUSEHOLD_BUSINESS_SQL] ' . json_encode(['context' => $context, 'param_keys' => array_keys($params)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     private function debugEnabled(): bool

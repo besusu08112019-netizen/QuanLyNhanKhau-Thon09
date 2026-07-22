@@ -285,12 +285,9 @@ class GisController extends BaseController
     private function logException(string $context, Throwable $e, array $request = []): void
     {
         error_log('[GIS] ' . $context . ' ' . json_encode([
-            'request' => $request,
+            'request_keys' => array_keys($request),
             'exception' => get_class($e),
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-            'trace' => $e->getTraceAsString(),
+            'message' => $this->debugEnabled() ? $e->getMessage() : 'GIS operation failed',
         ], JSON_UNESCAPED_UNICODE));
     }
 }

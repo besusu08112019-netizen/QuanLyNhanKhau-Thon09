@@ -87,6 +87,9 @@ jobs:
           print(f'Updated APP_ASSET_VERSION to {version}')
           PY
 
+      - name: Build minimal production artifact
+        run: npm run build:production
+
       - name: Deploy to hosting via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -95,19 +98,12 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
           port: 21
-          local-dir: ./
+          local-dir: ./dist/production/
           server-dir: ./
           state-name: .ftp-deploy-sync-state-utf8.json
           exclude: |
-            **/.git*
-            **/.git*/**
-            .env
-            .deploy.env
-            .ftp-deploy-sync-state-utf8.json
-            *.log
-            **/*.log
-            config/database.local.php
-            **/node_modules/**
-            **/.github/**
             uploads/**
+            !uploads/.htaccess
+            storage/cache/**
+            !storage/.htaccess
             backups/**
