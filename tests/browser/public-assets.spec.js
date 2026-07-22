@@ -308,6 +308,48 @@ test('public assets reports preview, print and exports use shared report API', a
   expect(errors).toEqual([]);
 });
 
+test('required management modules expose report buttons and report types', async ({ page }) => {
+  await openApp(page);
+
+  const required = [
+    ['householdsScreen', 'household'],
+    ['personsScreen', 'population'],
+    ['temporaryResidenceScreen', 'temporary_residence'],
+    ['temporaryAbsenceScreen', 'temporary_absence'],
+    ['movementsScreen', 'migration'],
+    ['publicAssetsScreen', 'public-assets'],
+    ['housesScreen', 'houses'],
+    ['businessHouseholdsScreen', 'household-business-production'],
+    ['agricultureScreen', 'agriculture'],
+    ['livestockScreen', 'livestock'],
+    ['vehiclesScreen', 'vehicles'],
+    ['contributionsScreen', 'contributions-list']
+  ];
+
+  const buttons = await page.evaluate((items) => {
+    window.thon09ViewReport?.();
+    return items.map(([screenId, type]) => {
+      const screen = document.getElementById(screenId);
+      const button = screen?.querySelector(`[data-platform-action="reports.module.open"][data-report-type="${type}"]`);
+      return { screenId, type, exists: !!button, text: button?.textContent?.trim() || '' };
+    });
+  }, required);
+  expect(buttons.filter(item => !item.exists)).toEqual([]);
+
+  await page.evaluate(() => window.Thon09NavigationController?.navigate('reports'));
+  await expect(page.locator('#reportsScreen')).toHaveClass(/active/);
+  for (const [, type] of required) {
+    await page.locator('#reportTypeSelect').selectOption(type);
+    await expect.poll(() => page.evaluate(() => document.querySelector('#reportTypeSelect')?.value)).toBe(type);
+  }
+
+  await page.evaluate(() => window.Thon09NavigationController?.navigate('publicAssets'));
+  await page.locator('[data-module-report-button="publicAssets"]').click();
+  await expect(page.locator('#reportsScreen')).toHaveClass(/active/);
+  await expect.poll(() => page.evaluate(() => document.querySelector('#reportTypeSelect')?.value)).toBe('public-assets');
+  await expect.poll(() => requests.some(item => item.method === 'GET' && item.path === '/api/reports/summary' && new URLSearchParams(item.query).get('type') === 'public-assets')).toBeTruthy();
+});
+
 test('mobile V2 public asset cards keep address out of title and dedupe detail fields', async ({ page }) => {
   for (const width of [320, 360, 390, 414, 768]) {
     await openApp(page, { width, height: width >= 768 ? 1024 : 844 });

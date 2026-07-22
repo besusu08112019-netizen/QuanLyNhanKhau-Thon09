@@ -20,9 +20,93 @@
     templateDefault: id => '/api/reports/templates/' + encodeURIComponent(id) + '/default'
   });
   const reportEndpoint = (name, query) => REPORT_ENDPOINTS[name] + (query ? '?' + query : '');
+  const FALLBACK_REPORT_TYPES = [
+    ['summary', 'Bao cao tong hop'],
+    ['population', 'Nhan khau - Danh sach'],
+    ['household', 'Ho gia dinh - Danh sach'],
+    ['temporary_residence', 'Tam tru - Danh sach'],
+    ['temporary_absence', 'Tam vang - Danh sach'],
+    ['migration', 'Bien dong nhan khau'],
+    ['public-assets', 'Cong trinh cong cong - Danh sach'],
+    ['public-assets-located', 'Cong trinh cong cong - Da co GPS'],
+    ['public-assets-missing-gps', 'Cong trinh cong cong - Chua co GPS'],
+    ['public-assets-inventory', 'Cong trinh cong cong - Kiem ke tai san'],
+    ['houses', 'Nha o va cong trinh - Danh sach'],
+    ['houses-degraded', 'Nha o xuong cap'],
+    ['houses-temporary', 'Nha tam'],
+    ['houses-fire-risk', 'Nha nguy co PCCC'],
+    ['houses-missing-gps', 'Nha chua co GPS'],
+    ['household-business-production', 'Ho san xuat'],
+    ['household-business-trade', 'Ho kinh doanh'],
+    ['household-business-sector', 'Ho SXKD theo nganh nghe'],
+    ['household-business-status', 'Ho SXKD theo trang thai'],
+    ['agriculture', 'San xuat nong nghiep - Danh sach'],
+    ['agriculture-producers', 'Chu the san xuat nong nghiep'],
+    ['agriculture-area', 'Dien tich san xuat nong nghiep'],
+    ['agriculture-crop', 'Cay trong'],
+    ['agriculture-season', 'Mua vu'],
+    ['agriculture-production', 'San luong nong nghiep'],
+    ['agriculture-damage', 'Thiet hai nong nghiep'],
+    ['livestock', 'Vat nuoi - Danh sach'],
+    ['livestock-by-type', 'Vat nuoi theo loai'],
+    ['livestock-vaccinated', 'Vat nuoi da tiem phong'],
+    ['livestock-unvaccinated', 'Vat nuoi chua tiem phong'],
+    ['livestock-disease', 'Vat nuoi co dich benh'],
+    ['vehicles', 'Xe co - Danh sach'],
+    ['vehicles-by-type', 'Xe co theo loai'],
+    ['vehicles-missing-plate', 'Xe chua co bien so'],
+    ['vehicles-expired-inspection', 'Xe het han kiem dinh'],
+    ['vehicles-expired-insurance', 'Xe het han bao hiem'],
+    ['contributions-list', 'Dong gop ho - Danh sach'],
+    ['contributions-collection', 'Dong gop ho - Thu tien'],
+    ['contributions-unpaid-list', 'Dong gop ho - Chua nop'],
+    ['contributions-partial', 'Dong gop ho - Nop mot phan'],
+    ['contributions-exempt', 'Dong gop ho - Mien giam'],
+    ['contributions-summary', 'Dong gop ho - Tong hop'],
+    ['contributions-year-summary', 'Dong gop ho - Tong hop nam'],
+    ['contributions-by-contribution', 'Dong gop ho - Theo khoan thu'],
+    ['gis', 'GIS - Ho gia dinh'],
+    ['gis-located', 'GIS - Da dinh vi'],
+    ['gis-unlocated', 'GIS - Chua dinh vi'],
+    ['digital-profile', 'Ho so so'],
+    ['profile-complete', 'Ho so hoan chinh'],
+    ['profile-missing-photo', 'Ho so thieu anh'],
+    ['profile-missing-documents', 'Ho so thieu giay to'],
+    ['profile-incomplete', 'Ho so chua hoan thien'],
+    ['health_insurance', 'Bao hiem y te'],
+    ['health-insurance-missing', 'Chua tham gia BHYT'],
+    ['health-insurance-expiring', 'BHYT sap het han'],
+    ['health-insurance-expired', 'BHYT da het han'],
+    ['health-insurance-household', 'BHYT theo ho'],
+    ['health-insurance-area', 'BHYT theo khu vuc'],
+    ['children', 'Tre em'],
+    ['elderly', 'Nguoi cao tuoi'],
+    ['labor', 'Lao dong'],
+    ['party_member', 'Dang vien'],
+    ['youth_union', 'Doan vien'],
+    ['poor-households', 'Ho ngheo'],
+    ['near-poor-households', 'Ho can ngheo'],
+    ['age', 'Theo do tuoi'],
+    ['gender', 'Theo gioi tinh']
+  ];
+  const MODULE_REPORT_TYPES = {
+    households: { screen: 'householdsScreen', type: 'household' },
+    persons: { screen: 'personsScreen', type: 'population' },
+    temporaryResidence: { screen: 'temporaryResidenceScreen', type: 'temporary_residence' },
+    temporaryAbsence: { screen: 'temporaryAbsenceScreen', type: 'temporary_absence' },
+    movements: { screen: 'movementsScreen', type: 'migration' },
+    publicAssets: { screen: 'publicAssetsScreen', type: 'public-assets' },
+    houses: { screen: 'housesScreen', type: 'houses' },
+    businessHouseholds: { screen: 'businessHouseholdsScreen', type: 'household-business-production' },
+    agriculture: { screen: 'agricultureScreen', type: 'agriculture' },
+    livestock: { screen: 'livestockScreen', type: 'livestock' },
+    vehicles: { screen: 'vehiclesScreen', type: 'vehicles' },
+    contributions: { screen: 'contributionsScreen', type: 'contributions-list' }
+  };
 
   document.addEventListener('DOMContentLoaded', bindSmartReporting);
   document.addEventListener('thon09:screen-change', event => {
+    ensureModuleReportButtons();
     if (event.detail?.screen === 'reports') initSmartReporting(true);
   });
 
@@ -47,6 +131,7 @@
       scheduleBiRefresh();
     });
     registerReportPlatformActions();
+    ensureModuleReportButtons();
     if (isReportsActive()) initSmartReporting();
   }
 
@@ -64,6 +149,7 @@
     actions.register('reports.template.default', context => defaultTemplate(context.dataset.templateDefault));
     actions.register('reports.type.select', context => selectReportType(context.dataset.reportType));
     actions.register('reports.type.open', context => selectReportType(context.dataset.reportType, true));
+    actions.register('reports.module.open', context => openReportType(context.dataset.reportType || context.dataset.moduleReportType));
     actions.register('reports.print', printReport);
     actions.register('reports.export.excel', () => downloadReport(REPORT_ENDPOINTS.exportExcel, 'xls', 'Đã xuất Excel'));
     actions.register('reports.export.pdf', () => downloadReport(REPORT_ENDPOINTS.exportPdf, 'pdf', 'Đã xuất PDF'));
@@ -82,8 +168,24 @@
       ['health_insurance', 'Thống kê Bảo hiểm y tế'], ['health-insurance-missing', 'Danh sách chưa tham gia BHYT'], ['health-insurance-expiring', 'Danh sách BHYT sắp hết hạn (30 ngày)'], ['health-insurance-expired', 'Danh sách BHYT đã hết hạn'], ['health-insurance-household', 'Thống kê BHYT theo hộ'], ['health-insurance-area', 'Thống kê BHYT theo khu vực'], ['temporary_residence', 'Danh sách tạm trú'], ['temporary_absence', 'Danh sách tạm vắng'], ['children', 'Danh sách trẻ em'], ['elderly', 'Danh sách người cao tuổi'], ['labor', 'Danh sách lao động'], ['party_member', 'Danh sách Đảng viên'], ['youth_union', 'Danh sách Đoàn viên'], ['poor-households', 'Danh sách hộ nghèo'], ['near-poor-households', 'Danh sách hộ cận nghèo'], ['age', 'Thống kê theo độ tuổi'], ['gender', 'Thống kê theo giới tính']
     ];
     types.splice(2, 0, ['public-assets', 'Cong trinh cong cong - Danh sach'], ['public-assets-located', 'Cong trinh cong cong - Da co GPS'], ['public-assets-missing-gps', 'Cong trinh cong cong - Chua co GPS'], ['public-assets-inventory', 'Cong trinh cong cong - Kiem ke tai san']);
+    reportTypes().forEach(([key, label]) => {
+      if (!types.some(([itemKey]) => itemKey === key)) types.push([key, label]);
+    });
     select.innerHTML = types.map(([key, label]) => '<option value="' + esc(key) + '">' + esc(label) + '</option>').join('');
     select.value = types.some(([key]) => key === value) ? value : 'summary';
+  }
+
+  function reportTypes() {
+    const byKey = new Map(FALLBACK_REPORT_TYPES);
+    (state.center?.templates || []).forEach(item => {
+      if (item?.type) byKey.set(item.type, item.title || item.type);
+    });
+    (state.center?.groups || []).forEach(group => {
+      (group.types || []).forEach(type => {
+        if (!byKey.has(type)) byKey.set(type, (group.title || 'Bao cao') + ' - ' + type);
+      });
+    });
+    return Array.from(byKey.entries());
   }
 
   async function initSmartReporting(force = false) {
@@ -141,6 +243,7 @@
     try {
       const data = await smartApi(REPORT_ENDPOINTS.center);
       state.center = data;
+      ensureReportTypes();
       renderGroups(data.groups || []);
       renderTemplateLibrary(data.templates || []);
     } catch (error) {
@@ -245,6 +348,30 @@
     setActions(false);
     if (autoLoad) loadReport().catch(() => {});
     scheduleBiRefresh();
+  }
+
+  function openReportType(type) {
+    const reportType = type || 'summary';
+    const navigate = window.Thon09NavigationController?.navigate || window.Thon09Platform?.navigation?.navigate;
+    if (typeof navigate === 'function') navigate.call(window.Thon09NavigationController || window.Thon09Platform.navigation, 'reports');
+    setTimeout(() => selectReportType(reportType, true), 80);
+  }
+
+  function ensureModuleReportButtons() {
+    Object.entries(MODULE_REPORT_TYPES).forEach(([moduleKey, config]) => {
+      const screen = document.getElementById(config.screen);
+      if (!screen || screen.querySelector('[data-module-report-button="' + moduleKey + '"]')) return;
+      const target = screen.querySelector('.agri-toolbar > div, .houses-toolbar > div, .livestock-toolbar-left, .person-list-head > div:last-child, .module-list-head > div:last-child, .module-page-head, .content-card');
+      if (!target) return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn btn-outline-primary btn-sm module-report-btn';
+      button.dataset.platformAction = 'reports.module.open';
+      button.dataset.moduleReportButton = moduleKey;
+      button.dataset.reportType = config.type;
+      button.innerHTML = '<i class="fa-solid fa-chart-pie"></i> Bao cao';
+      target.appendChild(button);
+    });
   }
 
   async function saveTemplate() {
