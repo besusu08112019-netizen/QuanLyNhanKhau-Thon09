@@ -68,6 +68,7 @@ jobs:
           npm run test:platform
           npm run test:navigation-cleanup
           node tests/security-regression.test.js
+          find . -path './dist' -prune -o -path './node_modules' -prune -o -path './vendor' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Bust frontend asset cache
         shell: bash
@@ -96,6 +97,9 @@ jobs:
 
       - name: Build minimal production artifact
         run: npm run build:production
+
+      - name: Validate production artifact
+        run: npm run validate:artifact
 
       - name: Upload production artifact for audit
         uses: actions/upload-artifact@v4

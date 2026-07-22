@@ -9,7 +9,8 @@
     "test:platform": "node tests/app-platform.test.js",
     "test:navigation-cleanup": "node tests/navigation-cleanup.test.js",
     "build:assets": "node tools/build-assets.js",
-    "build:production": "node tools/build-assets.js && node tools/build-production-artifact.js"
+    "build:production": "node tools/build-assets.js && node tools/build-production-artifact.js",
+    "validate:artifact": "node tools/validate-production-artifact.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.45.3"

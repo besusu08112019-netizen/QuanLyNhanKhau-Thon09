@@ -86,6 +86,7 @@ FTPS deploy overwrite các file trong artifact và dùng `.ftp-deploy-sync-state
 
 - `docs/DEPLOY_LINUX_HOSTING.md`: hướng dẫn triển khai Linux/cPanel.
 - `docs/PRODUCTION_DEPLOY_PROCESS.md`: quy trình deploy production duy nhất qua GitHub Actions và FTPS.
+- `docs/RELEASE_REPORT_TEMPLATE.md`: mẫu báo cáo release production sau deploy.
 - `docs/PRODUCTION_CHECKLIST.md`: checklist release production.
 - `docs/security-audit-2026-07-05.md`: báo cáo security audit gần nhất.
 - `docs/RELEASE_NOTES_2026-07-05.md`: release notes bản hiện tại.
