@@ -1,7 +1,7 @@
 Options -Indexes
 RewriteEngine On
 
-RewriteRule ^(app|config|database|docs|uploads|storage|backups|tests|tools|sample-data|vendor|node_modules|controllers|models)(/|$) - [F,L]
+RewriteRule ^(app|config|database|docs|storage|backups|tests|tools|sample-data|vendor|node_modules|controllers|models)(/|$) - [F,L]
 RewriteRule ^(README|composer|package|appsscript|\.clasp|\.gitignore) - [F,L]
 RewriteRule \.(sql|log|bak|env|ini|md)$ - [F,L]
 RewriteRule ^uploads/.*\.(php|phtml|phar|cgi|pl|asp|aspx|jsp)$ - [F,L,NC]

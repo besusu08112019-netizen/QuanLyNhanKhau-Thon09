@@ -61,7 +61,7 @@ test.describe('Leaflet asset loader', () => {
       }
 
       const cacheNames = await caches.keys();
-      const staticCache = cacheNames.find(name => name === 'thon09-pwa-v20260718-mobile-ui-10-static');
+      const staticCache = cacheNames.find(name => name === 'thon09-pwa-v20260723-upload-media-1-static');
       const cache = staticCache ? await caches.open(staticCache) : null;
       const cached = {};
       for (const asset of [
@@ -79,7 +79,7 @@ test.describe('Leaflet asset loader', () => {
     });
 
     expect(result.supported).toBe(true);
-    expect(result.staticCache).toBe('thon09-pwa-v20260718-mobile-ui-10-static');
+    expect(result.staticCache).toBe('thon09-pwa-v20260723-upload-media-1-static');
     expect(result.cached).toEqual({
       '/assets/vendor/leaflet/leaflet.css': true,
       '/assets/vendor/leaflet/leaflet.js': true,

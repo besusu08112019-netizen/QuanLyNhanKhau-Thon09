@@ -225,6 +225,10 @@ final class PublicAssetController extends BaseController
             $parts = parse_url($normalized);
             $normalized = ltrim(str_replace('\\', '/', (string) ($parts['path'] ?? '')), '/');
         }
+        foreach (['public/uploads/', 'public/', './'] as $prefix) {
+            if (str_starts_with($normalized, $prefix)) $normalized = substr($normalized, strlen($prefix));
+        }
+        if (str_starts_with($normalized, 'public-assets/')) $normalized = 'uploads/' . $normalized;
         $prefix = $inventory ? 'uploads/public-assets/inventory/images/' : 'uploads/public-assets/images/';
         return str_starts_with($normalized, $prefix);
     }

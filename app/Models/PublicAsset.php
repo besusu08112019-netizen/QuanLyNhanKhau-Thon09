@@ -311,22 +311,23 @@ SQL);
     public function setInventoryPhoto(int $assetId, int $itemId, ?string $url, int $userId): ?array
     {
         $this->assertInventoryAllowed($assetId);
-        $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id AND status <> "DELETED"', ['asset_id' => $assetId, 'id' => $itemId, 'url' => $url, 'user' => $userId]);
+        $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id AND status <> "DELETED"', ['asset_id' => $assetId, 'id' => $itemId, 'url' => $this->storedUploadPath((string)$url), 'user' => $userId]);
         return $this->findInventoryItem($assetId, $itemId);
     }
 
     public function inventoryPhotoPath(int $assetId, int $itemId): ?string
     {
         $row = $this->fetchOne('SELECT photo_url FROM public_asset_inventory_items WHERE public_asset_id=:asset_id AND id=:id AND status <> "DELETED"', ['asset_id' => $assetId, 'id' => $itemId]);
-        $path = $row ? ($row['photo_url'] ?: null) : null;
-        if ($path && $this->isInventoryPhotoApiPath($path, $assetId, $itemId)) {
+        $rawPath = $row ? (string)($row['photo_url'] ?? '') : '';
+        $path = $this->storedUploadPath($rawPath);
+        if ($rawPath !== '' && $this->isInventoryPhotoApiPath($rawPath, $assetId, $itemId)) {
             $recovered = $this->latestUploadPathFromAudit('inventory_upload_photo', (string)$itemId);
             if ($recovered) {
-                $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url WHERE public_asset_id=:asset_id AND id=:id AND photo_url=:old', ['asset_id' => $assetId, 'id' => $itemId, 'url' => $recovered, 'old' => $path]);
+                $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url WHERE public_asset_id=:asset_id AND id=:id AND photo_url=:old', ['asset_id' => $assetId, 'id' => $itemId, 'url' => $recovered, 'old' => $rawPath]);
                 return $recovered;
             }
         }
-        return $path;
+        return $path ?: null;
     }
 
     private function where(array $filters, bool $withOrder = true): array
@@ -614,24 +615,25 @@ SQL);
     private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }
     private function areaText(mixed $value): string { $number = (float)($value ?? 0); return $number > 0 ? number_format($number, 2, ',', '.') . ' m2' : ''; }
     private function gpsReportText(array $row): string { return $row['latitude'] !== null && $row['longitude'] !== null ? number_format((float)$row['latitude'], 6, '.', '') . ', ' . number_format((float)$row['longitude'], 6, '.', '') : $this->u('Ch\u01b0a c\u00f3 GPS'); }
-    public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED"', ['id' => $id, 'url' => $url, 'user' => $userId]); return $this->find($id); }
+    public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED"', ['id' => $id, 'url' => $this->storedUploadPath((string)$url), 'user' => $userId]); return $this->find($id); }
     private function coord(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
     private function ensureColumn(string $table, string $column, string $definition): void { if ($this->columnExists($table, $column)) return; $this->execute('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition); }
     public function coverPhotoPath(int $id): ?string
     {
         $row = $this->fetchOne('SELECT cover_photo_url FROM public_assets WHERE id=:id AND status <> "DELETED"', ['id' => $id]);
-        $path = $row ? ($row['cover_photo_url'] ?: null) : null;
-        if ($path && $this->isCoverPhotoApiPath($path, $id)) {
+        $rawPath = $row ? (string)($row['cover_photo_url'] ?? '') : '';
+        $path = $this->storedUploadPath($rawPath);
+        if ($rawPath !== '' && $this->isCoverPhotoApiPath($rawPath, $id)) {
             $recovered = $this->latestUploadPathFromAudit('upload_photo', (string)$id);
             if ($recovered) {
-                $this->execute('UPDATE public_assets SET cover_photo_url=:url WHERE id=:id AND cover_photo_url=:old', ['id' => $id, 'url' => $recovered, 'old' => $path]);
+                $this->execute('UPDATE public_assets SET cover_photo_url=:url WHERE id=:id AND cover_photo_url=:old', ['id' => $id, 'url' => $recovered, 'old' => $rawPath]);
                 return $recovered;
             }
         }
-        return $path;
+        return $path ?: null;
     }
-    private function coverPhotoUrl(array $row): string { $url = (string)($row['cover_photo_url'] ?? ''); return str_starts_with(ltrim($url, '/'), 'uploads/') ? '/api/public-assets/' . (int)$row['id'] . '/photo' : $url; }
-    private function inventoryPhotoUrl(array $row): string { $url = (string)($row['photo_url'] ?? ''); return str_starts_with(ltrim($url, '/'), 'uploads/') ? '/api/public-assets/' . (int)$row['public_asset_id'] . '/inventory/' . (int)$row['id'] . '/photo' : $url; }
+    private function coverPhotoUrl(array $row): string { $url = $this->storedUploadPath((string)($row['cover_photo_url'] ?? '')); return $url !== null ? '/api/public-assets/' . (int)$row['id'] . '/photo' : ''; }
+    private function inventoryPhotoUrl(array $row): string { $url = $this->storedUploadPath((string)($row['photo_url'] ?? '')); return $url !== null ? '/api/public-assets/' . (int)$row['public_asset_id'] . '/inventory/' . (int)$row['id'] . '/photo' : ''; }
     private function isCoverPhotoApiPath(string $path, int $id): bool { return $this->storedUrlPath($path) === '/api/public-assets/' . $id . '/photo'; }
     private function isInventoryPhotoApiPath(string $path, int $assetId, int $itemId): bool { return $this->storedUrlPath($path) === '/api/public-assets/' . $assetId . '/inventory/' . $itemId . '/photo'; }
     private function storedUrlPath(string $value): string
@@ -642,6 +644,23 @@ SQL);
             $value = (string)($parts['path'] ?? '');
         }
         return '/' . ltrim($value, '/');
+    }
+    private function storedUploadPath(string $value): ?string
+    {
+        $value = trim(str_replace('\\', '/', $value));
+        if ($value === '') return null;
+        if (preg_match('#^https?://#i', $value)) {
+            $parts = parse_url($value);
+            $value = (string)($parts['path'] ?? '');
+        }
+        $value = rawurldecode($value);
+        $value = ltrim($value, '/');
+        foreach (['public/uploads/', 'public/', './'] as $prefix) {
+            if (str_starts_with($value, $prefix)) $value = substr($value, strlen($prefix));
+        }
+        if (str_starts_with($value, 'uploads/public-assets/')) return '/' . $value;
+        if (str_starts_with($value, 'public-assets/')) return '/uploads/' . $value;
+        return null;
     }
     private function latestUploadPathFromAudit(string $action, string $entityId): ?string
     {

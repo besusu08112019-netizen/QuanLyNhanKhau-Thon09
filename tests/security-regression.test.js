@@ -243,7 +243,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 {
   const htaccess = read('.htaccess');
   assert.match(htaccess, /X-Robots-Tag "nosnippet"/);
-  assert.match(htaccess, /\(app\|config\|database\|docs\|uploads\|storage\|backups\|tests\|tools\|sample-data/);
+  assert.match(htaccess, /\(app\|config\|database\|docs\|storage\|backups\|tests\|tools\|sample-data/);
+  assert.doesNotMatch(htaccess, /\(app\|config\|database\|docs\|uploads\|storage\|backups\|tests\|tools\|sample-data/);
+  assert.match(htaccess, /\^uploads\/\.\*\\\.\(php\|phtml\|phar\|cgi\|pl\|asp\|aspx\|jsp\)\$/);
+  assert.match(read('uploads/.htaccess'), /Options -Indexes/);
+  assert.match(read('uploads/.htaccess'), /Require all denied/);
   assert.match(read('offline.html'), /<meta name="robots" content="nosnippet">/);
   assert.match(read('robots.txt'), /Disallow: \//);
   assert.match(read('sitemap.xml'), /<urlset/);

@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260718-mobile-ui-10';
+const PWA_VERSION = 'thon09-pwa-v20260723-upload-media-1';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
@@ -56,6 +56,7 @@ const STATIC_ASSETS = [
 ];
 
 const isApiRequest = url => url.origin === self.location.origin && url.pathname.startsWith('/api/');
+const isUploadRequest = url => url.origin === self.location.origin && url.pathname.startsWith(withBase('uploads/'));
 const isManifestRequest = url => url.origin === self.location.origin && (url.pathname === withBase('manifest.json') || url.pathname === withBase('manifest.webmanifest'));
 const isStaticRequest = url => /\.(?:css|js|mjs|json|webmanifest|png|jpg|jpeg|webp|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname);
 const isHtmlNavigation = request => request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
@@ -136,6 +137,10 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   if (isApiRequest(url)) return;
   if (isExternalTileRequest(url)) return;
+  if (isUploadRequest(url)) {
+    event.respondWith(networkOnly(request));
+    return;
+  }
 
   if (isHtmlNavigation(request)) {
     event.respondWith(networkFirstHtml(request));
@@ -255,6 +260,14 @@ function isCacheableStaticResponse(request, response) {
   if (/\.(?:png|jpg|jpeg|webp|svg|ico)$/i.test(url.pathname)) return type.startsWith('image/');
   if (/\.(?:woff2?|ttf|otf)$/i.test(url.pathname)) return type.includes('font') || type.includes('octet-stream');
   return true;
+}
+
+async function networkOnly(request) {
+  try {
+    return await fetch(new Request(request, { cache: 'no-store' }));
+  } catch (_) {
+    return Response.error();
+  }
 }
 
 function isExternalTileRequest(url) {
