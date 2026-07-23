@@ -577,8 +577,16 @@ if (!str_starts_with($request->path(), '/api')) {
         exit;
     }
     $versionedAssets = [
+        'manifest.json',
+        'favicon.ico',
+        'assets/icons/apple-touch-icon.png',
+        'assets/icons/splash-512.png',
+        'assets/vendor/bootstrap/bootstrap.min.css',
+        'assets/vendor/bootstrap/bootstrap.bundle.min.js',
+        'assets/vendor/fontawesome-local.css',
         'assets/css/app.min.css',
         'assets/css/mobile-design-system-v2.min.css',
+        'assets/css/print.min.css',
         'assets/js/i18n.min.js',
         'assets/js/print-framework.min.js',
         'assets/js/app-platform.min.js',
@@ -596,6 +604,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/view-inline-patches.min.js',
         'assets/js/operation-center.min.js',
         'assets/js/system-admin.min.js',
+        'assets/js/report.min.js',
         'assets/js/gis-household-location.min.js',
         'assets/js/gis-platform.min.js',
         'assets/js/household-photo-capture.min.js',
