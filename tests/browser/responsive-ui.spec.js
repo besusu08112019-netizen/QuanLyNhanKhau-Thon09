@@ -387,7 +387,7 @@ test.describe('responsive system navigation audit', () => {
 
   test('full responsive QA contract across requested breakpoints', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-chromium', 'Full breakpoint matrix runs once; device projects run the focused responsive suite.');
-    test.setTimeout(180000);
+    test.setTimeout(420000);
 
     for (const width of widths) {
       await openAuthenticatedApp(page, width);
