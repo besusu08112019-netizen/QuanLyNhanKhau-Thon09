@@ -28,10 +28,16 @@ test('login password input keeps typed value in password and text modes without 
   const secret = 'Admin@2019@@@@DesktopPWA';
 
   await expect(password).toHaveAttribute('type', 'password');
-  await expect(password).toHaveAttribute('autocomplete', 'current-password');
+  await expect(page.locator('#loginForm')).toHaveAttribute('autocomplete', 'off');
+  await expect(page.locator('#loginEmail')).toHaveAttribute('autocomplete', 'off');
+  await expect(password).toHaveAttribute('autocomplete', 'off');
   await expect(password).toHaveAttribute('autocorrect', 'off');
   await expect(password).toHaveAttribute('autocapitalize', 'off');
   await expect(password).toHaveAttribute('spellcheck', 'false');
+  await expect(password).toHaveAttribute('data-lpignore', 'true');
+  await expect(password).toHaveAttribute('data-1p-ignore', '');
+  await expect(password).toHaveAttribute('data-bwignore', '');
+  await expect(password).toHaveAttribute('data-protonpass-ignore', '');
 
   await page.evaluate(() => {
     window.__loginPasswordInputRef = document.getElementById('loginPassword');
