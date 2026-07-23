@@ -53,9 +53,25 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(appView, /class="skip-link" href="#mainContent"/);
   assert.match(appView, /id="toastHost"[\s\S]+aria-live="polite"/);
   assert.match(appView, /<meta name="robots" content="nosnippet">/);
+  assert.match(appView, /id="loginPassword"[\s\S]+autocomplete="current-password"[\s\S]+autocorrect="off"[\s\S]+autocapitalize="off"[\s\S]+spellcheck="false"/);
   assert.doesNotMatch(appView, /<meta\s+name=["']description["']/i);
   assert.doesNotMatch(appView, /<meta\s+property=["']og:description["']/i);
   assert.doesNotMatch(appView, /<meta\s+name=["']twitter:description["']/i);
+  const appJs = read('assets/js/app.utf8.min.js');
+  const passwordToggleBlock = appJs.match(/const toggle = \$\('\[data-password-toggle\]'[\s\S]+?hydrateLoginIntro\(\);/);
+  assert.ok(passwordToggleBlock, 'login password toggle block must be present');
+  assert.match(passwordToggleBlock[0], /password\.type = visible \? 'password' : 'text'/);
+  assert.doesNotMatch(passwordToggleBlock[0], /innerHTML|outerHTML|replaceChild|cloneNode|removeChild|appendChild|createElement\(['"]input['"]\)/);
+  const appCss = read('assets/css/app.css');
+  const cssBlock = (selector) => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = appCss.match(new RegExp(escaped + '\\s*\\{([^}]*)\\}'));
+    assert.ok(match, selector + ' CSS block must be present');
+    return match[1];
+  };
+  assert.doesNotMatch(cssBlock('.login-view::before'), /(filter|transform)\s*:/);
+  assert.doesNotMatch(cssBlock('.login-panel'), /(backdrop-filter|animation)\s*:/);
+  assert.match(cssBlock('.login-input-wrap'), /transition: border-color \.18s ease, box-shadow \.18s ease;/);
 }
 
 {

@@ -95,8 +95,6 @@ body.theme-dark .table th { background: #111827; color: #cbd5e1; }
   position: absolute;
   inset: -10px;
   background: var(--login-bg);
-  filter: blur(3px);
-  transform: scale(1.02);
 }
 .login-view::after {
   content: '';
@@ -120,8 +118,6 @@ body.theme-dark .table th { background: #111827; color: #cbd5e1; }
   background: rgba(255,255,255,.9);
   border: 1px solid rgba(255,255,255,.82);
   box-shadow: 0 26px 70px rgba(19, 74, 43, .18);
-  backdrop-filter: blur(18px);
-  animation: loginFade .45s ease both;
 }
 .login-brand { text-align: center; margin-bottom: 26px; }
 .login-logo-emblem {
@@ -179,7 +175,7 @@ body.theme-dark .table th { background: #111827; color: #cbd5e1; }
   border-radius: 16px;
   background: rgba(255,255,255,.96);
   overflow: hidden;
-  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  transition: border-color .18s ease, box-shadow .18s ease;
 }
 .login-input-wrap:focus-within { border-color: var(--login-green); box-shadow: 0 0 0 4px rgba(11,107,58,.12); }
 .login-input-wrap > i { color: var(--login-green); text-align: center; font-size: 17px; }
@@ -942,8 +938,6 @@ body.sidebar-collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
 @media (max-width: 767.98px) {
   .login-view::before {
     inset: -6px;
-    filter: blur(2px);
-    transform: scale(1.01);
   }
   .login-view::after {
     background: rgba(255,255,255,.66);

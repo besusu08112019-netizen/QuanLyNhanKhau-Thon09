@@ -51,7 +51,7 @@
           </div>
           <div class="login-field">
             <label class="form-label" for="loginPassword">Mật khẩu</label>
-            <div class="login-input-wrap"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="loginPassword" name="password" type="password" class="form-control" placeholder="Nhập mật khẩu" autocomplete="current-password" required minlength="8"><button class="password-toggle" type="button" aria-label="Hiện mật khẩu" data-password-toggle><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div>
+            <div class="login-input-wrap"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="loginPassword" name="password" type="password" class="form-control" placeholder="Nhập mật khẩu" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false" required minlength="8"><button class="password-toggle" type="button" aria-label="Hiện mật khẩu" data-password-toggle><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div>
           </div>
           <button class="btn login-submit" type="submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i><span>Đăng nhập</span></button>
         </form>
