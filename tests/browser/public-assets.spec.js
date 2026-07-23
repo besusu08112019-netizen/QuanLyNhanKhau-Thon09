@@ -76,7 +76,7 @@ async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    requests.push({ method: request.method(), path: url.pathname, query: url.searchParams.toString(), body: request.postDataJSON?.() || null });
+    requests.push({ method: request.method(), path: url.pathname, query: url.searchParams.toString(), headers: request.headers(), body: request.postDataJSON?.() || null });
     const fulfill = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(ok(data)) });
 
     if (url.pathname === '/api/public/login-config') return fulfill({ settings: { systemName: 'Thôn 09', hamletName: 'Thôn 09', communeName: 'Hồng Phong', version: 'v2.0' }, metrics: {} });
@@ -113,6 +113,14 @@ async function mockApis(page) {
       const created = asset({ ...body, id: 201, asset_code: 'CT09-00201', type_name: 'Nhà văn hóa', category: 'Hành chính', status_label: 'Đang sử dụng' });
       items = [created, ...items];
       return fulfill(created);
+    }
+    const photoMatch = /^\/api\/public-assets\/(\d+)\/photo$/.exec(url.pathname);
+    if (photoMatch && request.method() === 'GET') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=', 'base64')
+      });
     }
     const match = /^\/api\/public-assets\/(\d+)$/.exec(url.pathname);
     if (match && request.method() === 'GET') return fulfill(items.find(item => String(item.id) === match[1]));
@@ -306,6 +314,26 @@ test('public assets reports preview, print and exports use shared report API', a
   await page.locator('#reportPdfBtn').click();
   await expect.poll(() => requests.some(item => item.method === 'GET' && item.path === '/api/reports/export-pdf' && new URLSearchParams(item.query).get('type') === 'public-assets')).toBeTruthy();
   expect(errors).toEqual([]);
+});
+
+test('public asset photos load through authenticated blob previews after reload', async ({ page }) => {
+  await openApp(page);
+
+  items[0].cover_photo_url = '/api/public-assets/101/photo';
+  await page.evaluate(() => window.loadPublicAssets());
+
+  const listImage = page.locator('#publicAssetsRows img[data-public-asset-image]').first();
+  await expect(listImage).toHaveAttribute('data-public-asset-image', '/api/public-assets/101/photo');
+  await expect.poll(() => listImage.getAttribute('src')).toContain('blob:');
+
+  await page.locator('#publicAssetsRows [data-platform-action="publicAssets.detail"]').first().click();
+  const detailImage = page.locator('#publicAssetDetailBody img[data-public-asset-image]').first();
+  await expect(detailImage).toHaveAttribute('data-public-asset-image', '/api/public-assets/101/photo');
+  await expect.poll(() => detailImage.getAttribute('src')).toContain('blob:');
+
+  const photoRequests = requests.filter(item => item.method === 'GET' && item.path === '/api/public-assets/101/photo');
+  expect(photoRequests.length).toBeGreaterThanOrEqual(2);
+  expect(photoRequests.every(item => item.headers.authorization === 'Bearer test-token')).toBe(true);
 });
 
 test('required management modules expose report buttons and report types', async ({ page }) => {
