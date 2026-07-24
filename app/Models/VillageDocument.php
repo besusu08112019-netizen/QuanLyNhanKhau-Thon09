@@ -153,9 +153,14 @@ SQL);
 
     public function report(array $filters = []): array
     {
-        $filters['page'] = 1;
-        $filters['pageSize'] = 500;
-        $data = $this->paginate($filters);
+        $this->ensureSchema();
+        [$where, $params] = $this->where($filters);
+        $order = $this->listOrder($filters, ['document_code' => 'd.document_code', 'document_number' => 'd.document_number', 'title' => 'd.title', 'category' => 'c.name', 'issued_date' => 'd.issued_date', 'signer_name' => 'd.signer_name', 'status' => 'd.status'], 'issued_date', 'DESC', ['d.id DESC']);
+        $rows = array_map(
+            fn($r) => $this->normalize($r),
+            $this->fetchAll($this->selectSql() . ' ' . $this->fromSql() . " $where $order", $params)
+        );
+        $data = ['items' => $rows, 'total' => count($rows)];
         return ['title' => 'Báo cáo văn bản', 'headers' => ['Mã', 'Số văn bản', 'Tiêu đề', 'Loại', 'Người ký', 'Ngày ban hành', 'Trạng thái'], 'rows' => array_map(fn($r) => [$r['document_code'], $r['document_number'], $r['title'], $r['category_name'], $r['signer_name'], $r['issued_date'], $r['status_label']], $data['items']), 'totalRows' => $data['total']];
     }
 

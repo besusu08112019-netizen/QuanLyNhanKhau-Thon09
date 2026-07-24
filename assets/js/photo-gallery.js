@@ -197,7 +197,13 @@
   async function openUpload() {
     if (!can('upload')) return toast('Không có quyền tải ảnh', 'warning');
     await catalogs(true);
-    $('#photoGalleryUploadForm')?.reset();
+    const form = $('#photoGalleryUploadForm');
+    if (form) {
+      form.reset();
+      delete form.dataset.editId;
+      const fileInput = form.querySelector('[name="files"]');
+      if (fileInput) fileInput.required = true;
+    }
     openModal('photoGalleryUploadModal');
   }
 
