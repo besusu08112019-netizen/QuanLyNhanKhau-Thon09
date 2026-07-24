@@ -101,15 +101,16 @@ CREATE TABLE IF NOT EXISTS complaint_links (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   complaint_id BIGINT UNSIGNED NOT NULL,
   target_type VARCHAR(60) NOT NULL,
-  target_id BIGINT UNSIGNED NOT NULL,
+  target_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
   label VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by BIGINT UNSIGNED NULL,
-  UNIQUE KEY uq_complaint_links_target (complaint_id, target_type, target_id),
+  UNIQUE KEY uq_complaint_links_target (complaint_id, target_type, target_id, label),
   KEY idx_complaint_links_target (target_type, target_id),
   CONSTRAINT fk_complaint_links_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        $this->ensureComplaintLinkIndex();
         $this->execute(<<<SQL
 CREATE TABLE IF NOT EXISTS complaint_attachments (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -374,6 +375,31 @@ SQL);
         return array_map(fn($r) => ['id' => (int)$r['id'], 'label' => trim((string)$r['citizen_code'] . ' - ' . (string)$r['full_name']), 'name' => (string)$r['full_name'], 'phone' => (string)($r['phone'] ?? ''), 'household_id' => (int)$r['household_id'], 'household_code' => (string)$r['household_code'], 'address' => (string)($r['household_address'] ?? '')], $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.phone, c.household_id, h.household_code, h.address AS household_address FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE ' . $where . ' ORDER BY c.full_name ASC LIMIT 20', $params));
     }
 
+    public function relatedSearch(string $targetType, string $query): array
+    {
+        $this->ensureSchema();
+        $targetType = $this->targetType($targetType);
+        $query = trim($query);
+        if ($targetType === '' || mb_strlen($query, 'UTF-8') < 2) return [];
+        if ($targetType === 'other') return [['target_type' => 'other', 'target_id' => 0, 'label' => $query, 'meta' => 'Khác']];
+        $q = '%' . $query . '%';
+        try {
+            return match ($targetType) {
+                'household' => array_map(fn($r) => $this->relatedRow('household', (int)$r['id'], trim($r['household_code'] . ' - ' . $r['head_citizen_name']), $r['address'] ?? ''), $this->fetchAll('SELECT id, household_code, head_citizen_name, address, phone FROM households WHERE status <> "DELETED" AND (household_code LIKE :q OR head_citizen_name LIKE :q OR address LIKE :q OR phone LIKE :q) ORDER BY household_code ASC LIMIT 20', ['q' => $q])),
+                'citizen' => array_map(fn($r) => $this->relatedRow('citizen', (int)$r['id'], trim($r['citizen_code'] . ' - ' . $r['full_name']), trim(($r['household_code'] ?? '') . ' ' . ($r['identity_number'] ?? ''))), $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.identity_number, c.phone, h.household_code FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.status <> "DELETED" AND (c.citizen_code LIKE :q OR c.full_name LIKE :q OR c.identity_number LIKE :q OR c.phone LIKE :q OR h.household_code LIKE :q) ORDER BY c.full_name ASC LIMIT 20', ['q' => $q])),
+                'public_asset' => array_map(fn($r) => $this->relatedRow('public_asset', (int)$r['id'], trim($r['asset_code'] . ' - ' . $r['asset_name']), trim(($r['type_name'] ?? '') . ' ' . ($r['address'] ?? ''))), $this->fetchAll('SELECT id, asset_code, asset_name, type_name, address FROM public_assets WHERE status <> "DELETED" AND (asset_code LIKE :q OR asset_name LIKE :q OR type_name LIKE :q OR address LIKE :q) ORDER BY asset_code ASC LIMIT 20', ['q' => $q])),
+                'house' => array_map(fn($r) => $this->relatedRow('house', (int)$r['id'], trim($r['house_code'] . ' - ' . ($r['house_name'] ?: $r['house_type'] ?: 'Nhà ở')), trim(($r['household_code'] ?? '') . ' ' . ($r['head_citizen_name'] ?? '') . ' ' . ($r['address'] ?? ''))), $this->fetchAll('SELECT hs.id, hs.house_code, hs.house_name, hs.house_type, hs.address, h.household_code, h.head_citizen_name FROM houses hs INNER JOIN households h ON h.id=hs.household_id WHERE hs.status <> "DELETED" AND (hs.house_code LIKE :q OR hs.house_name LIKE :q OR hs.house_type LIKE :q OR hs.address LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q) ORDER BY hs.house_code ASC LIMIT 20', ['q' => $q])),
+                'business' => array_map(fn($r) => $this->relatedRow('business', (int)$r['id'], trim(($r['business_name'] ?: $r['household_code']) . ' - ' . ($r['owner_name'] ?: $r['head_citizen_name'])), trim(($r['business_sector'] ?? '') . ' ' . ($r['production_sector'] ?? '') . ' ' . ($r['tax_code'] ?? ''))), $this->fetchAll('SELECT hb.id, hb.business_name, hb.owner_name, hb.business_sector, hb.production_sector, hb.tax_code, h.household_code, h.head_citizen_name, h.address FROM household_business hb INNER JOIN households h ON h.id=hb.household_id WHERE hb.status <> "DELETED" AND (hb.business_name LIKE :q OR hb.owner_name LIKE :q OR hb.business_sector LIKE :q OR hb.production_sector LIKE :q OR hb.tax_code LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, hb.id DESC LIMIT 20', ['q' => $q])),
+                'agriculture' => array_map(fn($r) => $this->relatedRow('agriculture', (int)$r['id'], trim($r['parcel_code'] . ' - ' . ($r['field_area'] ?: $r['field_name'] ?: 'Sản xuất nông nghiệp')), trim(($r['owner_name'] ?? '') . ' ' . ($r['producer_name'] ?? '') . ' ' . ($r['current_crop'] ?? ''))), $this->fetchAll('SELECT p.id, p.parcel_code, p.field_area, p.field_name, o.name AS owner_name, pr.name AS producer_name, cs.crop AS current_crop FROM agri_land_parcels p INNER JOIN agri_stakeholders o ON o.id=p.owner_id INNER JOIN agri_stakeholders pr ON pr.id=p.producer_id LEFT JOIN (SELECT pp.parcel_id, s.crop FROM agri_crop_seasons s INNER JOIN agri_production_plots pp ON pp.id=s.plot_id WHERE s.status <> "DELETED" AND pp.status <> "DELETED" GROUP BY pp.parcel_id, s.crop) cs ON cs.parcel_id=p.id WHERE p.status <> "DELETED" AND (p.parcel_code LIKE :q OR p.field_area LIKE :q OR p.field_name LIKE :q OR o.name LIKE :q OR pr.name LIKE :q OR cs.crop LIKE :q) ORDER BY p.parcel_code ASC LIMIT 20', ['q' => $q])),
+                'livestock' => array_map(fn($r) => $this->relatedRow('livestock', (int)$r['id'], trim($r['animal_type'] . ' - Hộ ' . $r['household_code']), trim(($r['head_citizen_name'] ?? '') . ' ' . ($r['breed'] ?? '') . ' SL: ' . (string)($r['quantity'] ?? 0))), $this->fetchAll('SELECT l.id, l.animal_type, l.breed, l.quantity, h.household_code, h.head_citizen_name, h.address FROM livestock l INNER JOIN households h ON h.id=l.household_id WHERE l.status <> "DELETED" AND (l.animal_type LIKE :q OR l.breed LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, l.animal_type ASC LIMIT 20', ['q' => $q])),
+                'gis' => array_map(fn($r) => $this->relatedRow('gis', (int)$r['id'], trim($r['area_code'] . ' - ' . $r['name']), $r['note'] ?? ''), $this->fetchAll('SELECT id, area_code, name, note FROM gis_areas WHERE status <> "DELETED" AND (area_code LIKE :q OR name LIKE :q OR note LIKE :q) ORDER BY area_code ASC LIMIT 20', ['q' => $q])),
+                default => [],
+            };
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private function fromSql(): string
     {
         return 'FROM complaints c LEFT JOIN complaint_categories cc ON cc.id=c.category_id LEFT JOIN complaint_priorities cp ON cp.id=c.priority_id LEFT JOIN complaint_statuses cs ON cs.id=c.status_id LEFT JOIN households h ON h.id=c.household_id LEFT JOIN citizens ct ON ct.id=c.citizen_id';
@@ -491,24 +517,27 @@ SQL);
 
     private function links(int $id): array
     {
-        return $this->fetchAll('SELECT * FROM complaint_links WHERE complaint_id=:id ORDER BY target_type ASC, id ASC', ['id' => $id]);
+        return array_map(fn($row) => $this->normalizeLink($row), $this->fetchAll('SELECT * FROM complaint_links WHERE complaint_id=:id ORDER BY target_type ASC, id ASC', ['id' => $id]));
     }
 
     private function syncLinks(int $id, array $data, int $userId): void
     {
         $this->execute('DELETE FROM complaint_links WHERE complaint_id=:id', ['id' => $id]);
-        $links = $data['links'] ?? [];
+        $links = $data['related_links'] ?? $data['relatedLinks'] ?? $data['links'] ?? [];
         if (is_string($links)) $links = json_decode($links, true) ?: [];
         if (!is_array($links)) $links = [];
         $householdId = $this->nullableInt($data['household_id'] ?? $data['householdId'] ?? null);
         $citizenId = $this->nullableInt($data['citizen_id'] ?? $data['citizenId'] ?? null);
-        if ($householdId) $links[] = ['target_type' => 'household', 'target_id' => $householdId, 'label' => 'Hộ gia đình'];
-        if ($citizenId) $links[] = ['target_type' => 'citizen', 'target_id' => $citizenId, 'label' => 'Nhân khẩu'];
+        if ($householdId && !$this->hasLink($links, 'household', $householdId)) $links[] = ['target_type' => 'household', 'target_id' => $householdId, 'label' => 'Hộ gia đình'];
+        if ($citizenId && !$this->hasLink($links, 'citizen', $citizenId)) $links[] = ['target_type' => 'citizen', 'target_id' => $citizenId, 'label' => 'Nhân khẩu'];
         $allowed = array_column($this->linkTypes(), 'value');
         foreach ($links as $link) {
-            $type = preg_replace('/[^a-z_]/', '', (string)($link['target_type'] ?? $link['type'] ?? ''));
+            $type = $this->targetType((string)($link['target_type'] ?? $link['type'] ?? ''));
             $targetId = (int)($link['target_id'] ?? $link['id'] ?? 0);
-            if (!in_array($type, $allowed, true) || $targetId <= 0) continue;
+            $label = $this->nullable($link['label'] ?? '');
+            if (!in_array($type, $allowed, true)) continue;
+            if ($type !== 'other' && $targetId <= 0) continue;
+            if ($type === 'other' && $label === null) continue;
             $this->execute('INSERT IGNORE INTO complaint_links (complaint_id, target_type, target_id, label, created_by) VALUES (:id,:type,:target,:label,:user)', ['id' => $id, 'type' => $type, 'target' => $targetId, 'label' => $this->nullable($link['label'] ?? ''), 'user' => $userId]);
         }
     }
@@ -526,6 +555,15 @@ SQL);
         foreach ($statuses as [$code, $name, $color, $terminal]) { $this->execute('INSERT INTO complaint_statuses (code,name,marker_color,is_terminal,sort_order) VALUES (:code,:name,:color,:terminal,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), marker_color=VALUES(marker_color), is_terminal=VALUES(is_terminal), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'color' => $color, 'terminal' => $terminal, 'sort_order' => $order]); $order += 10; }
     }
 
+    private function ensureComplaintLinkIndex(): void
+    {
+        $rows = $this->fetchAll('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME="complaint_links" AND INDEX_NAME="uq_complaint_links_target" ORDER BY SEQ_IN_INDEX');
+        $columns = array_map(fn($row) => (string)$row['COLUMN_NAME'], $rows);
+        if ($columns === ['complaint_id', 'target_type', 'target_id', 'label']) return;
+        try { $this->execute('ALTER TABLE complaint_links DROP INDEX uq_complaint_links_target'); } catch (\Throwable) {}
+        try { $this->execute('ALTER TABLE complaint_links ADD UNIQUE KEY uq_complaint_links_target (complaint_id, target_type, target_id, label)'); } catch (\Throwable) {}
+    }
+
     private function catalog(string $table): array { return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name']], $this->fetchAll("SELECT id, code, name FROM $table WHERE is_active=1 ORDER BY sort_order ASC, name ASC")); }
     private function statusCatalog(): array { return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name'], 'marker_color' => (string)$r['marker_color'], 'is_terminal' => (bool)$r['is_terminal']], $this->fetchAll('SELECT id, code, name, marker_color, is_terminal FROM complaint_statuses WHERE is_active=1 ORDER BY sort_order ASC, name ASC')); }
     private function validId(string $table, mixed $value, bool $allowNull): ?int { $id = $this->nullableInt($value); if (!$id) { if ($allowNull) return null; return null; } $row = $this->fetchOne("SELECT id FROM $table WHERE id=:id AND is_active=1", ['id' => $id]); if (!$row) throw new \RuntimeException('Danh mục không hợp lệ'); return $id; }
@@ -533,7 +571,12 @@ SQL);
     private function defaultPriorityId(): int { return (int)(($this->fetchOne('SELECT id FROM complaint_priorities WHERE code="NORMAL"') ?: [])['id'] ?? 0); }
     private function statusTerminal(int $id): bool { return (bool)(($this->fetchOne('SELECT is_terminal FROM complaint_statuses WHERE id=:id', ['id' => $id]) ?: [])['is_terminal'] ?? false); }
     private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM complaints'); return 'PAKN-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
-    private function linkTypes(): array { return [['value'=>'household','label'=>'Hộ gia đình'],['value'=>'citizen','label'=>'Nhân khẩu'],['value'=>'public_asset','label'=>'Công trình công cộng'],['value'=>'house','label'=>'Nhà ở'],['value'=>'structure','label'=>'Công trình'],['value'=>'business','label'=>'Kinh doanh'],['value'=>'agriculture','label'=>'Nông nghiệp'],['value'=>'livestock','label'=>'Vật nuôi'],['value'=>'gis','label'=>'GIS']]; }
+    private function relatedRow(string $type, int $id, string $label, string $meta = ''): array { return ['target_type' => $type, 'target_id' => $id, 'label' => trim($label), 'meta' => trim($meta), 'type_label' => $this->linkTypeLabel($type)]; }
+    private function normalizeLink(array $row): array { $type = (string)$row['target_type']; return ['id' => (int)$row['id'], 'complaint_id' => (int)$row['complaint_id'], 'target_type' => $type, 'target_id' => (int)$row['target_id'], 'label' => (string)($row['label'] ?: $this->linkTypeLabel($type) . ' #' . (int)$row['target_id']), 'type_label' => $this->linkTypeLabel($type), 'created_at' => $row['created_at'] ?? null]; }
+    private function linkTypes(): array { return [['value'=>'household','label'=>'Hộ gia đình'],['value'=>'citizen','label'=>'Nhân khẩu'],['value'=>'public_asset','label'=>'Công trình công cộng'],['value'=>'house','label'=>'Nhà ở'],['value'=>'business','label'=>'Hộ sản xuất kinh doanh'],['value'=>'agriculture','label'=>'Sản xuất nông nghiệp'],['value'=>'livestock','label'=>'Vật nuôi'],['value'=>'gis','label'=>'GIS'],['value'=>'other','label'=>'Khác']]; }
+    private function linkTypeLabel(string $type): string { foreach ($this->linkTypes() as $item) if ($item['value'] === $type) return $item['label']; return $type; }
+    private function targetType(string $type): string { $type = preg_replace('/[^a-z_]/', '', strtolower(trim($type))); return match ($type) { 'person', 'persons', 'citizens' => 'citizen', 'publicassets', 'public_assets' => 'public_asset', 'household_business', 'household_businesses', 'business_household' => 'business', 'agri' => 'agriculture', default => $type }; }
+    private function hasLink(array $links, string $type, int $targetId): bool { foreach ($links as $link) if ($this->targetType((string)($link['target_type'] ?? $link['type'] ?? '')) === $type && (int)($link['target_id'] ?? $link['id'] ?? 0) === $targetId) return true; return false; }
     private function userName(int $id): string { $row = $this->fetchOne('SELECT COALESCE(NULLIF(display_name,""), email) AS name FROM users WHERE id=:id', ['id' => $id]); return (string)($row['name'] ?? ''); }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableInt(mixed $value): ?int { $value = trim((string)($value ?? '')); if ($value === '') return null; $id = (int)$value; return $id > 0 ? $id : null; }

@@ -351,6 +351,7 @@ $router->get('/api/complaints/export-excel', [ComplaintController::class, 'expor
 $router->get('/api/complaints/export-pdf', [ComplaintController::class, 'exportPdf']);
 $router->get('/api/complaints/household-search', [ComplaintController::class, 'householdSearch']);
 $router->get('/api/complaints/citizen-search', [ComplaintController::class, 'citizenSearch']);
+$router->get('/api/complaints/related-search', [ComplaintController::class, 'relatedSearch']);
 $router->post('/api/complaints/{id}/histories', [ComplaintController::class, 'addHistory']);
 $router->post('/api/complaints/{id}/assignments', [ComplaintController::class, 'assign']);
 $router->post('/api/complaints/{id}/evaluation', [ComplaintController::class, 'evaluate']);

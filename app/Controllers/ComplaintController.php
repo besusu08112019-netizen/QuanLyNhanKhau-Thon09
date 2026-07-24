@@ -23,6 +23,7 @@ final class ComplaintController extends BaseController
     public function gis(): void { $this->requirePermission('complaints', 'read'); $this->ok(['items' => $this->complaints->gisFeatures($this->filters())]); }
     public function householdSearch(): void { $this->requirePermission('complaints', 'read'); $this->ok(['items' => $this->complaints->householdSearch((string)$this->query('q', $this->query('search', '')))]); }
     public function citizenSearch(): void { $this->requirePermission('complaints', 'read'); $this->ok(['items' => $this->complaints->citizenSearch((string)$this->query('q', $this->query('search', '')), (int)$this->query('household_id', $this->query('householdId', 0)) ?: null)]); }
+    public function relatedSearch(): void { $this->requirePermission('complaints', 'read'); $this->ok(['items' => $this->complaints->relatedSearch((string)$this->query('target_type', $this->query('targetType', '')), (string)$this->query('q', $this->query('search', '')))]); }
 
     public function show(string $id): void
     {

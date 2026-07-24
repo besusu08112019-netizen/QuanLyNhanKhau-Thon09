@@ -86,11 +86,11 @@ CREATE TABLE IF NOT EXISTS complaint_links (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   complaint_id BIGINT UNSIGNED NOT NULL,
   target_type VARCHAR(60) NOT NULL,
-  target_id BIGINT UNSIGNED NOT NULL,
+  target_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
   label VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by BIGINT UNSIGNED NULL,
-  UNIQUE KEY uq_complaint_links_target (complaint_id, target_type, target_id),
+  UNIQUE KEY uq_complaint_links_target (complaint_id, target_type, target_id, label),
   KEY idx_complaint_links_target (target_type, target_id),
   CONSTRAINT fk_complaint_links_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -158,3 +158,5 @@ INSERT INTO complaint_statuses (code, name, marker_color, is_terminal, sort_orde
 ('NEW','Mới tiếp nhận','red',0,10),('VERIFYING','Đang xác minh','yellow',0,20),('PROCESSING','Đang xử lý','yellow',0,30),
 ('DONE','Đã hoàn thành','green',1,40),('ESCALATED','Đã chuyển cấp trên','yellow',1,50),('REJECTED','Không đủ điều kiện xử lý','red',1,60)
 ON DUPLICATE KEY UPDATE name=VALUES(name), marker_color=VALUES(marker_color), is_terminal=VALUES(is_terminal), sort_order=VALUES(sort_order), is_active=1;
+
+ALTER TABLE complaint_links MODIFY target_id BIGINT UNSIGNED NOT NULL DEFAULT 0;
