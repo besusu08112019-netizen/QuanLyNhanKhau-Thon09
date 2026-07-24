@@ -2333,6 +2333,12 @@
       renderStandard: renderStandard,
       open: function (key, payload) {
         var modal = registry.get(key);
+        if (!modal && document && document.getElementById) {
+          var element = document.getElementById(key);
+          if (element && element.classList && element.classList.contains('modal')) {
+            modal = registry.upsert(bootstrapModal(key, element, {}));
+          }
+        }
         if (!modal) throw new Error('Modal not registered: ' + key);
         active = { key: key, payload: payload || null };
         if (typeof modal.open === 'function') return modal.open(payload || null);
