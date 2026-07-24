@@ -290,6 +290,7 @@ final class FileStorageService
             'house' => 'houses',
             'public_asset' => 'public-assets',
             'public_asset_inventory' => 'public-assets/inventory',
+            'complaint' => 'complaints',
             default => 'documents',
         };
     }

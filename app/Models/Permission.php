@@ -7,7 +7,7 @@ use App\Core\BaseModel;
 final class Permission extends BaseModel
 {
     private const ROLES = ['SUPER_ADMIN', 'ADMIN', 'OFFICER', 'VIEWER'];
-    private const MODULES = ['dashboard','household','household_business','agriculture','livestock','vehicles','contributions','houses','public_assets','citizen','movement','report','pdf','import','export','print','profile','file','gis','photo','video','gps','notification','user','permission','logs','settings','backup','system_admin'];
+    private const MODULES = ['dashboard','household','household_business','agriculture','livestock','vehicles','contributions','houses','public_assets','complaints','citizen','movement','report','pdf','import','export','print','profile','file','gis','photo','video','gps','notification','user','permission','logs','settings','backup','system_admin'];
     private const ACTIONS = ['read','create','update','delete','upload','download','import','export','print','approve','restore','backup'];
 
     public function matrix(): array
@@ -54,8 +54,8 @@ final class Permission extends BaseModel
     {
         if ($role === 'SUPER_ADMIN') return true;
         if ($role === 'ADMIN') return true;
-        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','household_business','agriculture','livestock','vehicles','contributions','houses','public_assets','citizen','movement','report'], true) && in_array($action, ['read','create','update'], true)) || ($module === 'gis' && $action === 'read');
-        if ($role === 'VIEWER') return in_array($module, ['dashboard','household','household_business','agriculture','livestock','vehicles','contributions','houses','public_assets','citizen','report','gis'], true) && $action === 'read';
+        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','household_business','agriculture','livestock','vehicles','contributions','houses','public_assets','complaints','citizen','movement','report'], true) && in_array($action, ['read','create','update','upload'], true)) || ($module === 'gis' && $action === 'read');
+        if ($role === 'VIEWER') return in_array($module, ['dashboard','household','household_business','agriculture','livestock','vehicles','contributions','houses','public_assets','complaints','citizen','report','gis'], true) && $action === 'read';
         return false;
     }
 }

@@ -5432,3 +5432,9 @@ body.theme-dark.app-authenticated .mobile-bottom-nav button.active {
     transition: none;
   }
 }
+.complaint-timeline{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}
+.complaint-timeline li{border:1px solid #e5e7eb;border-radius:8px;padding:.75rem;background:#fff}
+.complaint-attachments{display:flex;flex-wrap:wrap;gap:.5rem}
+.complaint-attachment{display:inline-flex;align-items:center;gap:.5rem;max-width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:.5rem .75rem;background:#fff;color:#0f172a;text-decoration:none}
+.complaint-attachment span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.complaint-attachment:hover{border-color:#0d6efd;color:#0d6efd;background:#f8fbff}

@@ -28,6 +28,7 @@ use App\Core\Response;
 use App\Controllers\AgricultureProductionController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
+use App\Controllers\ComplaintController;
 use App\Controllers\ContributionController;
 use App\Controllers\DashboardController;
 use App\Controllers\FileController;
@@ -340,6 +341,26 @@ $router->delete('/api/public-assets/{id}/inventory/{itemId}', [PublicAssetContro
 $router->get('/api/public-assets/{id}', [PublicAssetController::class, 'show']);
 $router->put('/api/public-assets/{id}', [PublicAssetController::class, 'update']);
 $router->delete('/api/public-assets/{id}', [PublicAssetController::class, 'destroy']);
+$router->get('/api/complaints', [ComplaintController::class, 'index']);
+$router->post('/api/complaints', [ComplaintController::class, 'store']);
+$router->get('/api/complaints/dashboard', [ComplaintController::class, 'dashboard']);
+$router->get('/api/complaints/catalogs', [ComplaintController::class, 'catalogs']);
+$router->get('/api/complaints/gis', [ComplaintController::class, 'gis']);
+$router->get('/api/complaints/report', [ComplaintController::class, 'report']);
+$router->get('/api/complaints/export-excel', [ComplaintController::class, 'exportExcel']);
+$router->get('/api/complaints/export-pdf', [ComplaintController::class, 'exportPdf']);
+$router->get('/api/complaints/household-search', [ComplaintController::class, 'householdSearch']);
+$router->get('/api/complaints/citizen-search', [ComplaintController::class, 'citizenSearch']);
+$router->post('/api/complaints/{id}/histories', [ComplaintController::class, 'addHistory']);
+$router->post('/api/complaints/{id}/assignments', [ComplaintController::class, 'assign']);
+$router->post('/api/complaints/{id}/evaluation', [ComplaintController::class, 'evaluate']);
+$router->post('/api/complaints/{id}/attachments', [ComplaintController::class, 'uploadAttachment']);
+$router->get('/api/complaints/{id}/attachments/{fileId}/preview', [ComplaintController::class, 'previewAttachment']);
+$router->get('/api/complaints/{id}/attachments/{fileId}/download', [ComplaintController::class, 'downloadAttachment']);
+$router->delete('/api/complaints/{id}/attachments/{fileId}', [ComplaintController::class, 'deleteAttachment']);
+$router->get('/api/complaints/{id}', [ComplaintController::class, 'show']);
+$router->put('/api/complaints/{id}', [ComplaintController::class, 'update']);
+$router->delete('/api/complaints/{id}', [ComplaintController::class, 'destroy']);
 $router->get('/api/vehicles', [VehicleController::class, 'index']);
 $router->post('/api/vehicles', [VehicleController::class, 'store']);
 $router->get('/api/vehicles/dashboard', [VehicleController::class, 'dashboard']);
@@ -618,6 +639,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/agriculture.min.js',
         'assets/js/houses.min.js',
         'assets/js/public-assets.min.js',
+        'assets/js/complaints.min.js',
         'assets/js/module-dashboards.min.js',
         'assets/js/pwa.min.js',
     ];
