@@ -193,18 +193,21 @@
   async function openForm(id = null) {
     if (id && !can('update')) return toast('Không có quyền sửa', 'warning');
     if (!id && !can('create')) return toast('Không có quyền thêm', 'warning');
-    await catalogs();
+    shell();
     const form = $('#documentsForm');
+    if (!form) return toast('Không mở được form văn bản', 'danger');
     form.reset();
     form.elements.id.value = '';
-    form.elements.status.value = 'ACTIVE';
     $('#documentsFiles').value = '';
+    if (!id) openModal('documentsModal');
+    await catalogs();
+    form.elements.status.value = 'ACTIVE';
     if (id) {
       const item = await request(API + '/' + id);
       Object.entries(item).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
       form.elements.id.value = item.id;
+      openModal('documentsModal');
     }
-    openModal('documentsModal');
   }
 
   async function save(form) {

@@ -199,11 +199,14 @@
   async function openForm(id = null, type = 'INCOME') {
     if (id && !can('update')) return toast('Không có quyền sửa', 'warning');
     if (!id && !can('create')) return toast('Không có quyền thêm', 'warning');
-    await catalogs();
+    shell();
     const form = $('#financeForm');
-    form.reset(); form.elements.id.value = ''; form.elements.transaction_type.value = type; form.elements.status.value = 'POSTED'; form.elements.payment_method.value = 'CASH'; form.elements.transaction_date.value = new Date().toISOString().slice(0, 10); $('#financeFiles').value = ''; fillCategoryInputs();
-    if (id) { const item = await request(API + '/' + id); Object.entries(item).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; }); form.elements.id.value = item.id; fillCategoryInputs(); if (item.category_id) form.elements.category_id.value = item.category_id; }
-    openModal('financeModal');
+    if (!form) return toast('Không mở được form thu chi', 'danger');
+    form.reset(); form.elements.id.value = ''; form.elements.transaction_date.value = new Date().toISOString().slice(0, 10); $('#financeFiles').value = '';
+    if (!id) openModal('financeModal');
+    await catalogs();
+    form.elements.transaction_type.value = type; form.elements.status.value = 'POSTED'; form.elements.payment_method.value = 'CASH'; fillCategoryInputs();
+    if (id) { const item = await request(API + '/' + id); Object.entries(item).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; }); form.elements.id.value = item.id; fillCategoryInputs(); if (item.category_id) form.elements.category_id.value = item.category_id; openModal('financeModal'); }
   }
 
   async function save(form) {

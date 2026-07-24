@@ -215,7 +215,7 @@
 
   async function openUpload() {
     if (!can('upload')) return toast('Không có quyền tải ảnh', 'warning');
-    await catalogs(true);
+    shell();
     const form = $('#photoGalleryUploadForm');
     if (form) {
       form.reset();
@@ -224,6 +224,7 @@
       if (fileInput) fileInput.required = true;
     }
     openModal('photoGalleryUploadModal');
+    await catalogs(true);
   }
 
   async function upload(form) {
