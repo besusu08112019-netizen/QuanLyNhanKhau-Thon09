@@ -33,7 +33,7 @@ final class VillageDocumentController extends BaseController
 
     public function store(): void
     {
-        $user = $this->requirePermission('documents', 'create');
+        $user = $this->requireAdminDocumentWrite('create');
         try {
             $row = $this->documents->upsert((array)$this->input(), (int)$user['id']);
             $this->audit($user, 'documents', 'create', 'Them van ban', $row['id'], ['after' => $row]);
@@ -45,7 +45,7 @@ final class VillageDocumentController extends BaseController
 
     public function update(string $id): void
     {
-        $user = $this->requirePermission('documents', 'update');
+        $user = $this->requireAdminDocumentWrite('update');
         try {
             $before = $this->documents->find((int)$id);
             if (!$before) $this->fail('Khong tim thay van ban', 404);
@@ -59,28 +59,45 @@ final class VillageDocumentController extends BaseController
 
     public function destroy(string $id): void
     {
-        $user = $this->requirePermission('documents', 'delete');
+        $user = $this->requireAdminDocumentWrite('delete');
         $before = $this->documents->find((int)$id);
         if (!$before) $this->fail('Khong tim thay van ban', 404);
-        $this->documents->softDelete((int)$id, (int)$user['id']);
-        $this->audit($user, 'documents', 'delete', 'Xoa van ban', $id, ['before' => $before], 'WARN');
+        $deleted = $this->documents->deletePermanently((int)$id);
+        $storage = new FileStorageService();
+        $removed = [];
+        foreach (($deleted['files'] ?? []) as $file) {
+            $removed[] = ['id' => $file['id'] ?? null, 'path' => $file['stored_path'] ?? '', 'deleted' => $storage->deleteStoredFile((string)($file['stored_path'] ?? ''))];
+        }
+        $this->audit($user, 'documents', 'delete', 'Xoa van ban', $id, ['before' => $before, 'files' => $removed, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null], 'WARN');
         $this->ok(['id' => (int)$id]);
     }
 
     public function uploadAttachment(string $id): void
     {
-        $user = $this->requirePermission('documents', 'upload');
-        if (!$this->documents->find((int)$id)) $this->fail('Khong tim thay van ban', 404);
+        $user = $this->requireAdminDocumentWrite('upload');
+        $existing = $this->documents->find((int)$id);
+        if (!$existing) $this->fail('Khong tim thay van ban', 404);
         $file = $_FILES['file'] ?? null;
         if (!is_array($file)) $this->fail('Vui long chon file van ban', 422);
         $storage = new FileStorageService();
-        $info = $storage->inspectUpload($file, $this->fileType($file), 'document_record');
-        if (!$this->allowedMime($info['mime'])) throw new \RuntimeException('Dinh dang file khong duoc ho tro');
+        $info = $storage->inspectOfficeDocumentUpload($file);
+        if ((string)$this->query('replace', '') === '1') {
+            foreach (($existing['attachments'] ?? []) as $oldFile) {
+                $deleted = $this->documents->deleteAttachment((int)$id, (int)$oldFile['id'], (int)$user['id']);
+                $storage->deleteStoredFile((string)($deleted['stored_path'] ?? ''));
+            }
+        }
         $stored = $storage->storeUpload($file, 'document_record', $this->categoryForMime($info['mime']), $info['extension']);
         $stored['mime'] = $info['mime'];
+        $stored['extension'] = $info['extension'];
         $row = $this->documents->addAttachment((int)$id, $stored, $file, (int)$user['id']);
-        $this->audit($user, 'documents', 'upload', 'Dinh kem file van ban', $id, ['file' => $row]);
+        $this->audit($user, 'documents', 'upload', 'Dinh kem file van ban', $id, ['file' => $row, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
         $this->ok($row);
+    }
+
+    public function downloadPrimary(string $id): void
+    {
+        $this->streamAttachment((int)$id, 0, false);
     }
 
     public function previewAttachment(string $id, string $fileId): void { $this->streamAttachment((int)$id, (int)$fileId, true); }
@@ -88,11 +105,13 @@ final class VillageDocumentController extends BaseController
 
     public function deleteAttachment(string $id, string $fileId): void
     {
-        $user = $this->requirePermission('documents', 'delete');
+        $user = $this->requireAdminDocumentWrite('delete');
         $before = $this->documents->attachment((int)$id, (int)$fileId);
         if (!$before) $this->fail('Khong tim thay file dinh kem', 404);
-        $this->documents->deleteAttachment((int)$id, (int)$fileId, (int)$user['id']);
-        $this->audit($user, 'documents', 'delete_attachment', 'Xoa file dinh kem van ban', $id, ['file' => $before]);
+        $deleted = $this->documents->deleteAttachment((int)$id, (int)$fileId, (int)$user['id']);
+        $storage = new FileStorageService();
+        $removed = $storage->deleteStoredFile((string)($deleted['stored_path'] ?? ''));
+        $this->audit($user, 'documents', 'delete_attachment', 'Xoa file dinh kem van ban', $id, ['file' => $before, 'physical_deleted' => $removed, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
         $this->ok(['id' => (int)$fileId]);
     }
 
@@ -130,28 +149,43 @@ final class VillageDocumentController extends BaseController
 
     private function streamAttachment(int $id, int $fileId, bool $preview): void
     {
-        $this->requirePermission('documents', 'read');
-        $file = $this->documents->attachment($id, $fileId);
+        $user = $this->requirePermission('documents', 'read');
+        $file = $fileId > 0 ? $this->documents->attachment($id, $fileId) : $this->documents->primaryAttachment($id);
         if (!$file) $this->fail('Khong tim thay file dinh kem', 404);
         $storage = new FileStorageService();
         $path = $storage->safeFilePath((string)$file['stored_path']);
         if (!$path || !is_file($path)) $this->fail('File khong con ton tai', 404);
         $mime = mime_content_type($path) ?: (string)$file['mime_type'];
-        if (!$this->allowedMime($mime)) $this->fail('Dinh dang file khong duoc ho tro', 415);
+        if (!$this->allowedMime($mime, (string)$file['original_name'])) $this->fail('Dinh dang file khong duoc ho tro', 415);
+        if ($preview && $mime !== 'application/pdf') $preview = false;
+        if (!$preview) $this->audit($user, 'documents', 'download', 'Tai xuong van ban', $id, ['file' => $file['id'] ?? null, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
         header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));
-        header('Content-Disposition: ' . ($preview ? 'inline' : 'attachment') . '; filename="' . basename((string)$file['original_name']) . '"');
+        header('Content-Disposition: ' . ($preview ? 'inline' : 'attachment') . '; filename="' . rawurlencode(basename((string)$file['original_name'])) . '"');
         readfile($path);
         exit;
     }
 
     private function filters(): array
     {
-        return ['page' => $this->query('page', 1), 'pageSize' => $this->query('pageSize', 20), 'search' => $this->query('search', $this->query('q', '')), 'category_id' => $this->query('category_id', $this->query('categoryId', '')), 'status' => $this->query('status', ''), 'area_code' => $this->query('area_code', $this->query('areaCode', '')), 'date_from' => $this->query('date_from', $this->query('dateFrom', '')), 'date_to' => $this->query('date_to', $this->query('dateTo', '')), 'sort' => $this->query('sort', 'issued_date'), 'direction' => $this->query('direction', 'DESC')];
+        return ['page' => $this->query('page', 1), 'pageSize' => $this->query('pageSize', 20), 'search' => $this->query('search', $this->query('q', '')), 'category_id' => $this->query('category_id', $this->query('categoryId', '')), 'status' => $this->query('status', ''), 'year' => $this->query('year', ''), 'date_from' => $this->query('date_from', $this->query('dateFrom', '')), 'date_to' => $this->query('date_to', $this->query('dateTo', '')), 'sort' => $this->query('sort', 'created_at'), 'direction' => $this->query('direction', 'DESC')];
     }
 
-    private function fileType(array $file): string { $mime = !empty($file['tmp_name']) ? (mime_content_type($file['tmp_name']) ?: '') : ''; return str_starts_with($mime, 'image/') ? 'IMAGE' : 'DOCUMENT'; }
-    private function categoryForMime(string $mime): string { return str_starts_with($mime, 'image/') ? 'images' : 'documents'; }
-    private function allowedMime(string $mime): bool { return in_array($mime, ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','image/jpeg','image/png','image/webp'], true); }
+    private function categoryForMime(string $mime): string { return 'documents'; }
+    private function allowedMime(string $mime, string $name = ''): bool
+    {
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        return in_array($mime, ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/zip','application/x-zip-compressed','application/octet-stream'], true)
+            && in_array($extension, ['pdf','doc','docx','xls','xlsx','ppt','pptx','zip'], true);
+    }
+
+    private function requireAdminDocumentWrite(string $action): array
+    {
+        $user = $this->requirePermission('documents', $action);
+        if (!in_array((string)($user['role'] ?? ''), ['SUPER_ADMIN', 'ADMIN'], true)) {
+            $this->fail('Chi quan tri vien moi duoc thuc hien thao tac nay', 403);
+        }
+        return $user;
+    }
 }

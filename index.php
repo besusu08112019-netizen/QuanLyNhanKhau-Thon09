@@ -408,6 +408,7 @@ $router->get('/api/documents/catalogs', [VillageDocumentController::class, 'cata
 $router->get('/api/documents/report', [VillageDocumentController::class, 'report']);
 $router->get('/api/documents/export-excel', [VillageDocumentController::class, 'exportExcel']);
 $router->get('/api/documents/export-pdf', [VillageDocumentController::class, 'exportPdf']);
+$router->get('/api/documents/{id}/download', [VillageDocumentController::class, 'downloadPrimary']);
 $router->post('/api/documents/{id}/attachments', [VillageDocumentController::class, 'uploadAttachment']);
 $router->get('/api/documents/{id}/attachments/{fileId}/preview', [VillageDocumentController::class, 'previewAttachment']);
 $router->get('/api/documents/{id}/attachments/{fileId}/download', [VillageDocumentController::class, 'downloadAttachment']);

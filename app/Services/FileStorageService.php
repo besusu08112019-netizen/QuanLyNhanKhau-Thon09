@@ -123,9 +123,43 @@ final class FileStorageService
         return ['mime' => $mime, 'extension' => $allowed[$mime]];
     }
 
+    public function inspectOfficeDocumentUpload(array $file): array
+    {
+        $this->validateUploadedFile($file);
+        $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+        $extension = $extension === 'jpeg' ? 'jpg' : $extension;
+        $allowed = [
+            'pdf' => ['application/pdf'],
+            'doc' => ['application/msword', 'application/octet-stream'],
+            'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip', 'application/octet-stream'],
+            'xls' => ['application/vnd.ms-excel', 'application/octet-stream'],
+            'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip', 'application/octet-stream'],
+            'ppt' => ['application/vnd.ms-powerpoint', 'application/octet-stream'],
+            'pptx' => ['application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/zip', 'application/octet-stream'],
+            'zip' => ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'],
+        ];
+        if (!isset($allowed[$extension])) {
+            throw new \RuntimeException('Dinh dang file khong duoc ho tro');
+        }
+        $mime = mime_content_type($file['tmp_name']) ?: 'application/octet-stream';
+        if (!in_array($mime, $allowed[$extension], true)) {
+            throw new \RuntimeException('MIME Type khong khop voi dinh dang file');
+        }
+        $blocked = ['php', 'phtml', 'phar', 'js', 'mjs', 'html', 'htm', 'exe', 'bat', 'cmd', 'sh', 'com', 'scr', 'msi'];
+        if (in_array($extension, $blocked, true)) {
+            throw new \RuntimeException('Dinh dang file thuc thi khong duoc phep');
+        }
+        return ['mime' => $mime, 'extension' => $extension];
+    }
+
     public function storeUpload(array $file, string $entityType, string $category, string $extension): array
     {
-        $folder = $this->entityFolder($entityType) . '/' . $this->categoryFolder($category) . '/' . date('Y/m');
+        $normalizedEntity = $this->normalizeEntityType($entityType);
+        $baseFolder = $this->entityFolder($normalizedEntity);
+        $categoryFolder = $this->categoryFolder($category);
+        $folder = $normalizedEntity === 'document_record'
+            ? $baseFolder . '/' . date('Y/m')
+            : $baseFolder . '/' . $categoryFolder . '/' . date('Y/m');
         $root = 'uploads';
         $dir = BASE_PATH . '/' . $root . '/' . $folder;
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
@@ -143,6 +177,12 @@ final class FileStorageService
     {
         $candidate = $this->resolveFilePath($relative);
         return $candidate['path'];
+    }
+
+    public function deleteStoredFile(string $relative): bool
+    {
+        $path = $this->safeFilePath($relative);
+        return $path && is_file($path) ? @unlink($path) : false;
     }
 
     public function filePathDiagnostics(string $relative): array
