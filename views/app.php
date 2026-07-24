@@ -192,17 +192,65 @@
               <button class="btn btn-outline-secondary btn-sm" type="button" data-platform-action="operationCenter.export" data-operation-export="word"><i class="fa-solid fa-file-word"></i> Word</button>
             </div>
           </section>
+          <section class="content-card operation-panel operation-command-panel">
+            <div class="operation-panel-head"><h4>Dashboard dieu hanh</h4><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="operationCenter.refresh" data-operation-refresh="command"><i class="fa-solid fa-rotate-right"></i></button></div>
+            <div id="operationCommandCenter"></div>
+          </section>
           <section class="operation-grid">
             <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Notification Center</h4><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="operationCenter.refresh" data-operation-refresh="notifications"><i class="fa-solid fa-rotate-right"></i></button></div><div id="operationNotifications"></div></article>
             <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Cần xử lý</h4><div class="operation-filter-inline"><select id="operationTaskPriority" class="form-select form-select-sm"><option value="">Tất cả</option><option value="high">Cao</option><option value="medium">Vừa</option><option value="low">Theo dõi</option></select><input id="operationTaskDate" class="form-control form-control-sm" type="date"></div></div><div id="operationTasks"></div></article>
             <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Timeline toàn hệ thống</h4><div class="operation-filter-inline"><input id="operationTimelineSearch" class="form-control form-control-sm" placeholder="Tìm nhật ký"><select id="operationTimelineModule" class="form-select form-select-sm"><option value="">Tất cả module</option><option value="household">Hộ</option><option value="citizen">Công dân</option><option value="movements">Biến động</option><option value="gis">GIS</option><option value="file">Hồ sơ số</option></select></div></div><div id="operationTimeline"></div></article>
             <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Dashboard theo khu vực</h4><select id="operationAreaSelect" class="form-select form-select-sm"><option value="">Tất cả khu vực</option></select></div><div id="operationAreaDashboard"></div></article>
             <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Widget tiến độ</h4><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="operationCenter.refresh" data-operation-refresh="progress"><i class="fa-solid fa-rotate-right"></i></button></div><div id="operationProgress"></div></article>
+            <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Trợ lý dữ liệu chỉ đọc</h4></div><form id="operationAiForm" class="operation-ai-form"><div class="input-group"><input id="operationAiQuestion" class="form-control" maxlength="500" placeholder="Hỏi: Có bao nhiêu phản ánh chưa xử lý?"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass-chart"></i></button></div><div class="operation-ai-examples"><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="operationCenter.aiExample" data-question="Hộ nào chưa đóng quỹ?">Hộ chưa đóng quỹ</button><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="operationCenter.aiExample" data-question="Có bao nhiêu phản ánh chưa xử lý?">Phản ánh chưa xử lý</button><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="operationCenter.aiExample" data-question="Nhân khẩu trên 80 tuổi?">Trên 80 tuổi</button></div></form><div id="operationAiAnswer"></div></article>
             <article class="content-card operation-panel"><div class="operation-panel-head"><h4>Nhật ký hệ thống</h4><button class="btn btn-sm btn-outline-success" type="button" data-platform-action="operationCenter.exportLogs" data-operation-export-logs><i class="fa-solid fa-file-excel"></i> Xuất Excel</button></div><div class="operation-log-filters"><input id="operationLogSearch" class="form-control form-control-sm" placeholder="Tìm nhật ký"><input id="operationLogDateFrom" class="form-control form-control-sm" type="date"><input id="operationLogDateTo" class="form-control form-control-sm" type="date"></div><div id="operationLogs"></div></article>
           </section>
         </div>
       </section>
 
+      <section id="workCalendarScreen" class="screen household-management-screen module-placeholder-screen work-calendar-screen">
+        <div class="content-card module-filter-card ds-module-shell">
+          <div class="module-page-head"><div><h2>Lịch công tác</h2><p class="text-muted mb-0">Quản lý họp, hội nghị, trực, tiêm chủng, phát quà, sinh hoạt Chi bộ và đoàn thể.</p></div></div>
+          <div class="module-placeholder-grid">
+            <article><i class="fa-solid fa-calendar-days"></i><strong>Calendar</strong><span>Theo dõi lịch theo tháng và danh sách.</span></article>
+            <article><i class="fa-solid fa-users"></i><strong>Tham dự</strong><span>Lưu danh sách người tham dự và trạng thái điểm danh.</span></article>
+            <article><i class="fa-solid fa-paperclip"></i><strong>File đính kèm</strong><span>Tài liệu họp, kế hoạch và biên bản liên quan.</span></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="workTasksScreen" class="screen household-management-screen module-placeholder-screen work-tasks-screen">
+        <div class="content-card module-filter-card ds-module-shell">
+          <div class="module-page-head"><div><h2>Công việc</h2><p class="text-muted mb-0">Quản lý giao việc, tiến độ, nhật ký và file đính kèm độc lập với phản ánh.</p></div></div>
+          <div class="module-placeholder-grid">
+            <article><i class="fa-solid fa-list-check"></i><strong>Công việc điều hành</strong><span>Thu quỹ, kiểm tra hộ, phát quà, vệ sinh môi trường, tuần tra.</span></article>
+            <article><i class="fa-solid fa-user-check"></i><strong>Phân công</strong><span>Theo dõi người phụ trách, hạn hoàn thành và quá hạn.</span></article>
+            <article><i class="fa-solid fa-clock-rotate-left"></i><strong>Nhật ký xử lý</strong><span>Lưu toàn bộ lịch sử cập nhật và đính kèm.</span></article>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="photoGalleryScreen" class="screen household-management-screen module-placeholder-screen photo-gallery-screen">
+        <div class="content-card module-filter-card ds-module-shell">
+          <div class="module-page-head"><div><h2>Kho ảnh</h2><p class="text-muted mb-0">Quản lý album, tag và tìm kiếm ảnh hoạt động của thôn.</p></div></div>
+          <div class="text-muted py-4">Đang tải kho ảnh...</div>
+        </div>
+      </section>
+
+      <section id="documentsScreen" class="screen household-management-screen module-placeholder-screen documents-screen">
+        <div class="content-card module-filter-card ds-module-shell">
+          <div class="module-page-head"><div><h2>Văn bản</h2><p class="text-muted mb-0">Quản lý thông báo, quyết định, công văn, kế hoạch, báo cáo và biên bản.</p></div></div>
+          <div class="text-muted py-4">Đang tải module văn bản...</div>
+        </div>
+      </section>
+
+      <section id="financeScreen" class="screen household-management-screen module-placeholder-screen finance-screen">
+        <div class="content-card module-filter-card ds-module-shell">
+          <div class="module-page-head"><div><h2>Thu chi</h2><p class="text-muted mb-0">Quan ly quy, phieu thu, phieu chi, chung tu dinh kem va bao cao tai chinh.</p></div></div>
+          <div class="text-muted py-4">Dang tai module thu chi...</div>
+        </div>
+      </section>
 
       <section id="gisScreen" class="screen gis-screen">
         <div class="gis-layout">

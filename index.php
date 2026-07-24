@@ -32,6 +32,7 @@ use App\Controllers\ComplaintController;
 use App\Controllers\ContributionController;
 use App\Controllers\DashboardController;
 use App\Controllers\FileController;
+use App\Controllers\FinanceController;
 use App\Controllers\GisController;
 use App\Controllers\HouseholdBusinessController;
 use App\Controllers\HouseController;
@@ -41,9 +42,11 @@ use App\Controllers\InsightController;
 use App\Controllers\LivestockController;
 use App\Controllers\LogController;
 use App\Controllers\MovementController;
+use App\Controllers\NotificationController;
 use App\Controllers\OperationCenterController;
 use App\Controllers\PermissionController;
 use App\Controllers\PersonController;
+use App\Controllers\PhotoGalleryController;
 use App\Controllers\ProfileController;
 use App\Controllers\PublicAssetController;
 use App\Controllers\ReportController;
@@ -51,6 +54,9 @@ use App\Controllers\SettingController;
 use App\Controllers\SystemAdminController;
 use App\Controllers\UserController;
 use App\Controllers\VehicleController;
+use App\Controllers\VillageDocumentController;
+use App\Controllers\WorkCalendarController;
+use App\Controllers\WorkTaskController;
 
 Autoloader::register();
 
@@ -338,6 +344,10 @@ $router->post('/api/public-assets/{id}/inventory/{itemId}/photo', [PublicAssetCo
 $router->delete('/api/public-assets/{id}/inventory/{itemId}/photo', [PublicAssetController::class, 'inventoryDeletePhoto']);
 $router->put('/api/public-assets/{id}/inventory/{itemId}', [PublicAssetController::class, 'inventoryUpdate']);
 $router->delete('/api/public-assets/{id}/inventory/{itemId}', [PublicAssetController::class, 'inventoryDestroy']);
+$router->get('/api/public-assets/{id}/maintenance', [PublicAssetController::class, 'maintenanceIndex']);
+$router->post('/api/public-assets/{id}/maintenance', [PublicAssetController::class, 'maintenanceStore']);
+$router->put('/api/public-assets/{id}/maintenance/{maintenanceId}', [PublicAssetController::class, 'maintenanceUpdate']);
+$router->delete('/api/public-assets/{id}/maintenance/{maintenanceId}', [PublicAssetController::class, 'maintenanceDestroy']);
 $router->get('/api/public-assets/{id}', [PublicAssetController::class, 'show']);
 $router->put('/api/public-assets/{id}', [PublicAssetController::class, 'update']);
 $router->delete('/api/public-assets/{id}', [PublicAssetController::class, 'destroy']);
@@ -362,6 +372,74 @@ $router->delete('/api/complaints/{id}/attachments/{fileId}', [ComplaintControlle
 $router->get('/api/complaints/{id}', [ComplaintController::class, 'show']);
 $router->put('/api/complaints/{id}', [ComplaintController::class, 'update']);
 $router->delete('/api/complaints/{id}', [ComplaintController::class, 'destroy']);
+$router->get('/api/work-tasks', [WorkTaskController::class, 'index']);
+$router->post('/api/work-tasks', [WorkTaskController::class, 'store']);
+$router->get('/api/work-tasks/dashboard', [WorkTaskController::class, 'dashboard']);
+$router->get('/api/work-tasks/catalogs', [WorkTaskController::class, 'catalogs']);
+$router->get('/api/work-tasks/report', [WorkTaskController::class, 'report']);
+$router->get('/api/work-tasks/export-excel', [WorkTaskController::class, 'exportExcel']);
+$router->get('/api/work-tasks/export-pdf', [WorkTaskController::class, 'exportPdf']);
+$router->post('/api/work-tasks/{id}/logs', [WorkTaskController::class, 'addLog']);
+$router->post('/api/work-tasks/{id}/attachments', [WorkTaskController::class, 'uploadAttachment']);
+$router->get('/api/work-tasks/{id}/attachments/{fileId}/preview', [WorkTaskController::class, 'previewAttachment']);
+$router->get('/api/work-tasks/{id}/attachments/{fileId}/download', [WorkTaskController::class, 'downloadAttachment']);
+$router->delete('/api/work-tasks/{id}/attachments/{fileId}', [WorkTaskController::class, 'deleteAttachment']);
+$router->get('/api/work-tasks/{id}', [WorkTaskController::class, 'show']);
+$router->put('/api/work-tasks/{id}', [WorkTaskController::class, 'update']);
+$router->delete('/api/work-tasks/{id}', [WorkTaskController::class, 'destroy']);
+$router->get('/api/work-calendar', [WorkCalendarController::class, 'index']);
+$router->post('/api/work-calendar', [WorkCalendarController::class, 'store']);
+$router->get('/api/work-calendar/dashboard', [WorkCalendarController::class, 'dashboard']);
+$router->get('/api/work-calendar/catalogs', [WorkCalendarController::class, 'catalogs']);
+$router->get('/api/work-calendar/report', [WorkCalendarController::class, 'report']);
+$router->get('/api/work-calendar/export-excel', [WorkCalendarController::class, 'exportExcel']);
+$router->get('/api/work-calendar/export-pdf', [WorkCalendarController::class, 'exportPdf']);
+$router->post('/api/work-calendar/{id}/attachments', [WorkCalendarController::class, 'uploadAttachment']);
+$router->get('/api/work-calendar/{id}/attachments/{fileId}/preview', [WorkCalendarController::class, 'previewAttachment']);
+$router->get('/api/work-calendar/{id}/attachments/{fileId}/download', [WorkCalendarController::class, 'downloadAttachment']);
+$router->delete('/api/work-calendar/{id}/attachments/{fileId}', [WorkCalendarController::class, 'deleteAttachment']);
+$router->get('/api/work-calendar/{id}', [WorkCalendarController::class, 'show']);
+$router->put('/api/work-calendar/{id}', [WorkCalendarController::class, 'update']);
+$router->delete('/api/work-calendar/{id}', [WorkCalendarController::class, 'destroy']);
+$router->get('/api/documents', [VillageDocumentController::class, 'index']);
+$router->post('/api/documents', [VillageDocumentController::class, 'store']);
+$router->get('/api/documents/dashboard', [VillageDocumentController::class, 'dashboard']);
+$router->get('/api/documents/catalogs', [VillageDocumentController::class, 'catalogs']);
+$router->get('/api/documents/report', [VillageDocumentController::class, 'report']);
+$router->get('/api/documents/export-excel', [VillageDocumentController::class, 'exportExcel']);
+$router->get('/api/documents/export-pdf', [VillageDocumentController::class, 'exportPdf']);
+$router->post('/api/documents/{id}/attachments', [VillageDocumentController::class, 'uploadAttachment']);
+$router->get('/api/documents/{id}/attachments/{fileId}/preview', [VillageDocumentController::class, 'previewAttachment']);
+$router->get('/api/documents/{id}/attachments/{fileId}/download', [VillageDocumentController::class, 'downloadAttachment']);
+$router->delete('/api/documents/{id}/attachments/{fileId}', [VillageDocumentController::class, 'deleteAttachment']);
+$router->get('/api/documents/{id}', [VillageDocumentController::class, 'show']);
+$router->put('/api/documents/{id}', [VillageDocumentController::class, 'update']);
+$router->delete('/api/documents/{id}', [VillageDocumentController::class, 'destroy']);
+$router->get('/api/finance', [FinanceController::class, 'index']);
+$router->post('/api/finance', [FinanceController::class, 'store']);
+$router->get('/api/finance/dashboard', [FinanceController::class, 'dashboard']);
+$router->get('/api/finance/catalogs', [FinanceController::class, 'catalogs']);
+$router->get('/api/finance/report', [FinanceController::class, 'report']);
+$router->get('/api/finance/export-excel', [FinanceController::class, 'exportExcel']);
+$router->get('/api/finance/export-pdf', [FinanceController::class, 'exportPdf']);
+$router->post('/api/finance/{id}/attachments', [FinanceController::class, 'uploadAttachment']);
+$router->get('/api/finance/{id}/attachments/{fileId}/preview', [FinanceController::class, 'previewAttachment']);
+$router->get('/api/finance/{id}/attachments/{fileId}/download', [FinanceController::class, 'downloadAttachment']);
+$router->delete('/api/finance/{id}/attachments/{fileId}', [FinanceController::class, 'deleteAttachment']);
+$router->get('/api/finance/{id}', [FinanceController::class, 'show']);
+$router->put('/api/finance/{id}', [FinanceController::class, 'update']);
+$router->delete('/api/finance/{id}', [FinanceController::class, 'destroy']);
+$router->get('/api/photo-gallery', [PhotoGalleryController::class, 'index']);
+$router->post('/api/photo-gallery/upload', [PhotoGalleryController::class, 'upload']);
+$router->get('/api/photo-gallery/dashboard', [PhotoGalleryController::class, 'dashboard']);
+$router->get('/api/photo-gallery/catalogs', [PhotoGalleryController::class, 'catalogs']);
+$router->get('/api/photo-gallery/albums', [PhotoGalleryController::class, 'albums']);
+$router->post('/api/photo-gallery/albums', [PhotoGalleryController::class, 'createAlbum']);
+$router->get('/api/photo-gallery/{id}/preview', [PhotoGalleryController::class, 'preview']);
+$router->get('/api/photo-gallery/{id}/download', [PhotoGalleryController::class, 'download']);
+$router->get('/api/photo-gallery/{id}', [PhotoGalleryController::class, 'show']);
+$router->put('/api/photo-gallery/{id}', [PhotoGalleryController::class, 'update']);
+$router->delete('/api/photo-gallery/{id}', [PhotoGalleryController::class, 'destroy']);
 $router->get('/api/vehicles', [VehicleController::class, 'index']);
 $router->post('/api/vehicles', [VehicleController::class, 'store']);
 $router->get('/api/vehicles/dashboard', [VehicleController::class, 'dashboard']);
@@ -514,11 +592,17 @@ $router->get('/api/operation-center/quick-profile', [OperationCenterController::
 $router->get('/api/operation-center/timeline', [OperationCenterController::class, 'timeline']);
 $router->get('/api/operation-center/area-dashboard', [OperationCenterController::class, 'areaDashboard']);
 $router->get('/api/operation-center/progress', [OperationCenterController::class, 'progress']);
+$router->get('/api/operation-center/command-center', [OperationCenterController::class, 'commandCenter']);
 $router->get('/api/operation-center/system-logs', [OperationCenterController::class, 'systemLogs']);
 $router->get('/api/operation-center/export-report', [OperationCenterController::class, 'exportReport']);
 $router->get('/api/operation-center/export-logs', [OperationCenterController::class, 'exportLogs']);
+$router->get('/api/notifications', [NotificationController::class, 'index']);
+$router->post('/api/notifications/read-all', [NotificationController::class, 'readAll']);
+$router->post('/api/notifications/{key}/read', [NotificationController::class, 'read']);
+$router->post('/api/notifications/{key}/dismiss', [NotificationController::class, 'dismiss']);
 $router->get('/api/insights/search', [InsightController::class, 'search']);
 $router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
+$router->post('/api/insights/ask', [InsightController::class, 'ask']);
 $router->get('/api/profiles/household/{id}', [ProfileController::class, 'household']);
 $router->get('/api/profiles/citizen/{id}', [ProfileController::class, 'citizen']);
 $router->get('/api/profiles/timeline/{type}/{id}', [ProfileController::class, 'timeline']);
@@ -641,6 +725,12 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/houses.min.js',
         'assets/js/public-assets.min.js',
         'assets/js/complaints.min.js',
+        'assets/js/work-tasks.min.js',
+        'assets/js/work-calendar.min.js',
+        'assets/js/documents.min.js',
+        'assets/js/finance.min.js',
+        'assets/js/photo-gallery.min.js',
+        'assets/js/notifications.min.js',
         'assets/js/module-dashboards.min.js',
         'assets/js/pwa.min.js',
     ];

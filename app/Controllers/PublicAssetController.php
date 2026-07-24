@@ -191,6 +191,56 @@ final class PublicAssetController extends BaseController
         $this->ok(['item' => $row]);
     }
 
+    public function maintenanceIndex(string $id): void
+    {
+        $this->requirePermission('public_assets', 'read');
+        try {
+            $this->ok($this->assets->maintenanceList((int)$id));
+        } catch (\RuntimeException $e) {
+            $this->fail($e->getMessage(), 422);
+        }
+    }
+
+    public function maintenanceStore(string $id): void
+    {
+        $user = $this->requirePermission('public_assets', 'update');
+        try {
+            $row = $this->assets->upsertMaintenance((int)$id, (array)$this->input(), (int)$user['id']);
+            $this->audit($user, 'public_assets', 'maintenance_create', 'Them lich bao tri cong trinh cong cong', $row['id'], ['after' => $row, 'asset_id' => (int)$id]);
+            $this->ok($row);
+        } catch (\RuntimeException $e) {
+            $this->fail($e->getMessage(), 422);
+        }
+    }
+
+    public function maintenanceUpdate(string $id, string $maintenanceId): void
+    {
+        $user = $this->requirePermission('public_assets', 'update');
+        try {
+            $before = $this->assets->findMaintenance((int)$id, (int)$maintenanceId);
+            if (!$before) $this->fail('Khong tim thay lich bao tri', 404);
+            $row = $this->assets->upsertMaintenance((int)$id, (array)$this->input(), (int)$user['id'], (int)$maintenanceId);
+            $this->audit($user, 'public_assets', 'maintenance_update', 'Cap nhat lich bao tri cong trinh cong cong', $maintenanceId, ['before' => $before, 'after' => $row, 'asset_id' => (int)$id]);
+            $this->ok($row);
+        } catch (\RuntimeException $e) {
+            $this->fail($e->getMessage(), 422);
+        }
+    }
+
+    public function maintenanceDestroy(string $id, string $maintenanceId): void
+    {
+        $user = $this->requirePermission('public_assets', 'update');
+        try {
+            $before = $this->assets->findMaintenance((int)$id, (int)$maintenanceId);
+            if (!$before) $this->fail('Khong tim thay lich bao tri', 404);
+            $this->assets->softDeleteMaintenance((int)$id, (int)$maintenanceId, (int)$user['id']);
+            $this->audit($user, 'public_assets', 'maintenance_delete', 'Xoa lich bao tri cong trinh cong cong', $maintenanceId, ['before' => $before, 'asset_id' => (int)$id]);
+            $this->ok(['id' => (int)$maintenanceId, 'public_asset_id' => (int)$id]);
+        } catch (\RuntimeException $e) {
+            $this->fail($e->getMessage(), 422);
+        }
+    }
+
     public function destroy(string $id): void
     {
         $user = $this->requirePermission('public_assets', 'delete');

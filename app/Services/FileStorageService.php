@@ -13,13 +13,21 @@ final class FileStorageService
             'households' => 'household',
             'person', 'persons', 'citizens' => 'citizen',
             'setting' => 'settings',
+            'public_assets', 'publicassets' => 'public_asset',
+            'public_asset_inventories', 'publicassetinventory' => 'public_asset_inventory',
+            'complaints' => 'complaint',
+            'work_tasks', 'worktasks' => 'work_task',
+            'work_calendar', 'workcalendar', 'calendar_events' => 'work_calendar',
+            'photo_gallery', 'photogallery', 'gallery' => 'photo_gallery',
+            'documents', 'document', 'document_record', 'villagedocuments' => 'document_record',
+            'finance', 'finance_transaction', 'financetransaction' => 'finance_transaction',
             default => $type,
         };
     }
 
     public function validateEntity(string $entityType, int $entityId): void
     {
-        if (!in_array($entityType, ['household', 'citizen', 'settings', 'house'], true)) {
+        if (!in_array($entityType, ['household', 'citizen', 'settings', 'house', 'public_asset', 'public_asset_inventory', 'complaint', 'work_task', 'work_calendar', 'photo_gallery', 'document_record', 'finance_transaction'], true)) {
             throw new \RuntimeException('Module upload không hợp lệ');
         }
         if ($entityType !== 'settings' && $entityId <= 0) {
@@ -38,6 +46,13 @@ final class FileStorageService
             'citizen' => 'citizen',
             'household' => 'household',
             'house' => 'houses',
+            'public_asset', 'public_asset_inventory' => 'public_assets',
+            'complaint' => 'complaints',
+            'work_task' => 'work_tasks',
+            'work_calendar' => 'work_calendar',
+            'photo_gallery' => 'photo_gallery',
+            'document_record' => 'documents',
+            'finance_transaction' => 'finance',
             default => 'settings',
         };
     }
@@ -291,6 +306,11 @@ final class FileStorageService
             'public_asset' => 'public-assets',
             'public_asset_inventory' => 'public-assets/inventory',
             'complaint' => 'complaints',
+            'work_task' => 'work-tasks',
+            'work_calendar' => 'work-calendar',
+            'photo_gallery' => 'photo-gallery',
+            'document_record' => 'documents',
+            'finance_transaction' => 'finance',
             default => 'documents',
         };
     }

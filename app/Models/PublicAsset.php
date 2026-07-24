@@ -111,6 +111,40 @@ CREATE TABLE IF NOT EXISTS public_asset_inventory_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
         $this->execute("ALTER TABLE public_asset_inventory_items MODIFY condition_status ENUM('NEW','GOOD','IN_USE','MAINTENANCE','LIGHT_DAMAGE','HEAVY_DAMAGE','NEEDS_REPAIR','LIQUIDATED','DELETED') NOT NULL DEFAULT 'IN_USE'");
+        $this->ensureColumn('public_asset_inventory_items', 'estimated_value', 'DECIMAL(15,2) NULL AFTER quantity');
+        $this->ensureColumn('public_asset_inventory_items', 'purchase_date', 'DATE NULL AFTER unit');
+        $this->ensureColumn('public_asset_inventory_items', 'warranty_until', 'DATE NULL AFTER purchase_date');
+        $this->ensureColumn('public_asset_inventory_items', 'manager_name', 'VARCHAR(255) NULL AFTER location_in_asset');
+        $this->ensureColumn('public_asset_inventory_items', 'manager_phone', 'VARCHAR(80) NULL AFTER manager_name');
+        $this->ensureColumn('public_asset_inventory_items', 'maintenance_cycle', 'VARCHAR(120) NULL AFTER manager_phone');
+        $this->execute(<<<SQL
+CREATE TABLE IF NOT EXISTS public_asset_maintenance_schedules (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  public_asset_id BIGINT UNSIGNED NOT NULL,
+  inventory_item_id BIGINT UNSIGNED NULL,
+  maintenance_code VARCHAR(60) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  scheduled_date DATE NOT NULL,
+  completed_at DATETIME NULL,
+  manager_name VARCHAR(255) NULL,
+  cost DECIMAL(15,2) NULL,
+  status ENUM('SCHEDULED','DONE','CANCELLED') NOT NULL DEFAULT 'SCHEDULED',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  UNIQUE KEY uq_public_asset_maintenance_code (maintenance_code),
+  KEY idx_public_asset_maintenance_asset (public_asset_id),
+  KEY idx_public_asset_maintenance_item (inventory_item_id),
+  KEY idx_public_asset_maintenance_status (status),
+  KEY idx_public_asset_maintenance_due (scheduled_date),
+  CONSTRAINT fk_public_asset_maintenance_asset FOREIGN KEY (public_asset_id) REFERENCES public_assets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_public_asset_maintenance_item FOREIGN KEY (inventory_item_id) REFERENCES public_asset_inventory_items(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL);
         $this->seedTypes();
         $this->seedInventoryGroups();
     }
@@ -134,6 +168,7 @@ SQL);
         return [
             'groups' => array_map(fn($r) => ['value' => (string)$r['id'], 'label' => (string)$r['name'], 'parent' => (string)($r['parent_name'] ?? '')], $groups),
             'conditions' => $this->pairs($this->inventoryStatuses()),
+            'maintenance_statuses' => $this->pairs($this->maintenanceStatuses()),
             'units' => array_map(fn($v) => ['value' => $v, 'label' => $v], ['cái', 'bộ', 'chiếc', 'máy', 'm²', 'm', 'hộp', 'bình']),
         ];
     }
@@ -294,10 +329,10 @@ SQL);
         $params = $this->inventoryParams($assetId, $data, $userId, $existing);
         if ($itemId) {
             $params['id'] = $itemId;
-            $this->execute('UPDATE public_asset_inventory_items SET inventory_code=:inventory_code, item_name=:item_name, group_id=:group_id, group_name=:group_name, quantity=:quantity, unit=:unit, condition_status=:condition_status, start_use_date=:start_use_date, location_in_asset=:location_in_asset, note=:note, photo_url=:photo_url, updated_by=:updated_by WHERE id=:id AND public_asset_id=:public_asset_id AND status <> "DELETED"', $params);
+            $this->execute('UPDATE public_asset_inventory_items SET inventory_code=:inventory_code, item_name=:item_name, group_id=:group_id, group_name=:group_name, quantity=:quantity, estimated_value=:estimated_value, unit=:unit, purchase_date=:purchase_date, warranty_until=:warranty_until, condition_status=:condition_status, start_use_date=:start_use_date, location_in_asset=:location_in_asset, manager_name=:manager_name, manager_phone=:manager_phone, maintenance_cycle=:maintenance_cycle, note=:note, photo_url=:photo_url, updated_by=:updated_by WHERE id=:id AND public_asset_id=:public_asset_id AND status <> "DELETED"', $params);
             return $this->findInventoryItem($assetId, $itemId);
         }
-        $id = $this->insert('INSERT INTO public_asset_inventory_items (public_asset_id, inventory_code, item_name, group_id, group_name, quantity, unit, condition_status, start_use_date, location_in_asset, note, photo_url, created_by, updated_by) VALUES (:public_asset_id, :inventory_code, :item_name, :group_id, :group_name, :quantity, :unit, :condition_status, :start_use_date, :location_in_asset, :note, :photo_url, :created_by, :updated_by)', $params);
+        $id = $this->insert('INSERT INTO public_asset_inventory_items (public_asset_id, inventory_code, item_name, group_id, group_name, quantity, estimated_value, unit, purchase_date, warranty_until, condition_status, start_use_date, location_in_asset, manager_name, manager_phone, maintenance_cycle, note, photo_url, created_by, updated_by) VALUES (:public_asset_id, :inventory_code, :item_name, :group_id, :group_name, :quantity, :estimated_value, :unit, :purchase_date, :warranty_until, :condition_status, :start_use_date, :location_in_asset, :manager_name, :manager_phone, :maintenance_cycle, :note, :photo_url, :created_by, :updated_by)', $params);
         return $this->findInventoryItem($assetId, $id);
     }
 
@@ -328,6 +363,43 @@ SQL);
             }
         }
         return $path ?: null;
+    }
+
+    public function maintenanceList(int $assetId): array
+    {
+        $this->assertInventoryAllowed($assetId);
+        $rows = $this->fetchAll('SELECT pams.*, pii.inventory_code, pii.item_name FROM public_asset_maintenance_schedules pams LEFT JOIN public_asset_inventory_items pii ON pii.id=pams.inventory_item_id WHERE pams.public_asset_id=:id AND pams.deleted_at IS NULL ORDER BY pams.scheduled_date ASC, pams.id DESC', ['id' => $assetId]);
+        $items = array_map(fn($r) => $this->normalizeMaintenance($r), $rows);
+        return ['items' => $items, 'summary' => $this->maintenanceSummary($items)];
+    }
+
+    public function findMaintenance(int $assetId, int $maintenanceId): ?array
+    {
+        $this->ensureSchema();
+        $row = $this->fetchOne('SELECT pams.*, pii.inventory_code, pii.item_name FROM public_asset_maintenance_schedules pams LEFT JOIN public_asset_inventory_items pii ON pii.id=pams.inventory_item_id WHERE pams.public_asset_id=:asset_id AND pams.id=:id AND pams.deleted_at IS NULL', ['asset_id' => $assetId, 'id' => $maintenanceId]);
+        return $row ? $this->normalizeMaintenance($row) : null;
+    }
+
+    public function upsertMaintenance(int $assetId, array $data, int $userId, ?int $maintenanceId = null): array
+    {
+        $this->assertInventoryAllowed($assetId);
+        $existing = $maintenanceId ? $this->findMaintenance($assetId, $maintenanceId) : null;
+        if ($maintenanceId && !$existing) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y l\u1ecbch b\u1ea3o tr\u00ec'));
+        $params = $this->maintenanceParams($assetId, $data, $userId, $existing);
+        if ($maintenanceId) {
+            $params['id'] = $maintenanceId;
+            $this->execute('UPDATE public_asset_maintenance_schedules SET inventory_item_id=:inventory_item_id, maintenance_code=:maintenance_code, title=:title, scheduled_date=:scheduled_date, completed_at=:completed_at, manager_name=:manager_name, cost=:cost, status=:status, note=:note, updated_by=:updated_by WHERE id=:id AND public_asset_id=:public_asset_id AND deleted_at IS NULL', $params);
+            return $this->findMaintenance($assetId, $maintenanceId);
+        }
+        $id = $this->insert('INSERT INTO public_asset_maintenance_schedules (public_asset_id, inventory_item_id, maintenance_code, title, scheduled_date, completed_at, manager_name, cost, status, note, created_by, updated_by) VALUES (:public_asset_id, :inventory_item_id, :maintenance_code, :title, :scheduled_date, :completed_at, :manager_name, :cost, :status, :note, :created_by, :updated_by)', $params);
+        return $this->findMaintenance($assetId, $id);
+    }
+
+    public function softDeleteMaintenance(int $assetId, int $maintenanceId, int $userId): void
+    {
+        $this->assertInventoryAllowed($assetId);
+        if (!$this->findMaintenance($assetId, $maintenanceId)) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y l\u1ecbch b\u1ea3o tr\u00ec'));
+        $this->execute('UPDATE public_asset_maintenance_schedules SET deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id', ['asset_id' => $assetId, 'id' => $maintenanceId, 'user' => $userId]);
     }
 
     private function where(array $filters, bool $withOrder = true): array
@@ -463,6 +535,12 @@ SQL);
             ['Thiết bị PCCC', 'Thiết bị PCCC'], ['PCCC', 'Thiết bị PCCC'], ['Bình chữa cháy', 'Thiết bị PCCC'], ['Tủ PCCC', 'Thiết bị PCCC'], ['Chuông báo cháy', 'Thiết bị PCCC'],
             ['Thiết bị khác', 'Thiết bị khác'], ['Dụng cụ vệ sinh', 'Thiết bị khác'], ['Thiết bị thể thao', 'Thiết bị khác'], ['Thiết bị y tế', 'Thiết bị khác'], ['Thiết bị văn phòng', 'Thiết bị khác'],
         ];
+        $items = array_merge($items, [
+            ['Thiết bị', 'Thiết bị khác'],
+            ['Máy móc', 'Thiết bị khác'],
+            ['Bàn ghế', 'Nội thất'],
+            ['Cờ', 'Thiết bị khác'],
+        ]);
         $order = 10;
         foreach ($items as [$name, $parent]) {
             $this->execute('INSERT INTO public_asset_inventory_groups (name, parent_name, sort_order) VALUES (:name,:parent,:sort_order) ON DUPLICATE KEY UPDATE parent_name=VALUES(parent_name), sort_order=VALUES(sort_order), is_active=1', ['name' => $name, 'parent' => $parent, 'sort_order' => $order]);
@@ -482,6 +560,8 @@ SQL);
         if ($code === '') $code = $this->nextInventoryCode($assetId);
         $date = trim((string)($data['start_use_date'] ?? $data['startUseDate'] ?? ''));
         if ($date !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) throw new \RuntimeException($this->u('Ng\u00e0y \u0111\u01b0a v\u00e0o s\u1eed d\u1ee5ng kh\u00f4ng h\u1ee3p l\u1ec7'));
+        $purchaseDate = $this->dateOrNull($data['purchase_date'] ?? $data['purchaseDate'] ?? '', $this->u('Ng\u00e0y mua kh\u00f4ng h\u1ee3p l\u1ec7'));
+        $warrantyUntil = $this->dateOrNull($data['warranty_until'] ?? $data['warrantyUntil'] ?? '', $this->u('Ng\u00e0y h\u1ebft b\u1ea3o h\u00e0nh kh\u00f4ng h\u1ee3p l\u1ec7'));
         $photoUrl = $existing ? $this->inventoryPhotoPath($assetId, (int)$existing['id']) : null;
         return [
             'public_asset_id' => $assetId,
@@ -490,10 +570,16 @@ SQL);
             'group_id' => $group ? (int)$group['id'] : null,
             'group_name' => $group ? (string)$group['name'] : $this->nullable($data['group_name'] ?? $data['groupName'] ?? ''),
             'quantity' => $this->positiveNumber($data['quantity'] ?? 1, true, $this->u('S\u1ed1 l\u01b0\u1ee3ng t\u00e0i s\u1ea3n ph\u1ea3i l\u00e0 s\u1ed1 d\u01b0\u01a1ng')),
+            'estimated_value' => $this->nullableNumber($data['estimated_value'] ?? $data['estimatedValue'] ?? null),
             'unit' => $this->nullable($data['unit'] ?? ''),
+            'purchase_date' => $purchaseDate,
+            'warranty_until' => $warrantyUntil,
             'condition_status' => $condition,
             'start_use_date' => $date !== '' ? $date : null,
             'location_in_asset' => $this->nullable($data['location_in_asset'] ?? $data['locationInAsset'] ?? ''),
+            'manager_name' => $this->nullable($data['manager_name'] ?? $data['managerName'] ?? ''),
+            'manager_phone' => $this->nullable($data['manager_phone'] ?? $data['managerPhone'] ?? ''),
+            'maintenance_cycle' => $this->nullable($data['maintenance_cycle'] ?? $data['maintenanceCycle'] ?? ''),
             'note' => $this->nullable($data['note'] ?? ''),
             'photo_url' => $photoUrl,
             'created_by' => $userId,
@@ -512,11 +598,17 @@ SQL);
             'group_id' => $row['group_id'] !== null ? (int)$row['group_id'] : null,
             'group_name' => (string)($row['resolved_group_name'] ?? $row['group_name'] ?? ''),
             'quantity' => (float)($row['quantity'] ?? 0),
+            'estimated_value' => $row['estimated_value'] !== null ? (float)$row['estimated_value'] : null,
             'unit' => (string)($row['unit'] ?? ''),
+            'purchase_date' => $row['purchase_date'] ?? null,
+            'warranty_until' => $row['warranty_until'] ?? null,
             'condition_status' => $status,
             'condition_label' => $this->inventoryStatuses()[$status] ?? $status,
             'start_use_date' => $row['start_use_date'] ?? null,
             'location_in_asset' => (string)($row['location_in_asset'] ?? ''),
+            'manager_name' => (string)($row['manager_name'] ?? ''),
+            'manager_phone' => (string)($row['manager_phone'] ?? ''),
+            'maintenance_cycle' => (string)($row['maintenance_cycle'] ?? ''),
             'note' => (string)($row['note'] ?? ''),
             'photo_url' => $this->inventoryPhotoUrl($row),
             'asset_name' => (string)($row['asset_name'] ?? ''),
@@ -527,10 +619,13 @@ SQL);
 
     private function inventorySummary(array $items): array
     {
-        $summary = ['total_items' => 0, 'total_quantity' => 0, 'by_group' => [], 'by_condition' => [], 'by_asset' => []];
+        $summary = ['total_items' => 0, 'total_quantity' => 0, 'total_value' => 0, 'warranty_expiring' => 0, 'by_group' => [], 'by_condition' => [], 'by_asset' => []];
+        $warrantyLimit = date('Y-m-d', strtotime('+60 days'));
         foreach ($items as $item) {
             $summary['total_items']++;
             $summary['total_quantity'] += (float)($item['quantity'] ?? 0);
+            $summary['total_value'] += (float)($item['estimated_value'] ?? 0);
+            if (!empty($item['warranty_until']) && $item['warranty_until'] <= $warrantyLimit) $summary['warranty_expiring']++;
             $group = $item['group_name'] ?: $this->u('Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u');
             $condition = $item['condition_label'] ?? $item['condition_status'] ?? $this->u('Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u');
             $asset = $item['asset_name'] ?: (string)($item['public_asset_id'] ?? '');
@@ -544,6 +639,72 @@ SQL);
         return $summary;
     }
 
+    private function maintenanceParams(int $assetId, array $data, int $userId, ?array $existing = null): array
+    {
+        $title = trim((string)($data['title'] ?? ''));
+        if ($title === '') throw new \RuntimeException($this->u('N\u1ed9i dung b\u1ea3o tr\u00ec l\u00e0 b\u1eaft bu\u1ed9c'));
+        $scheduledDate = $this->dateOrNull($data['scheduled_date'] ?? $data['scheduledDate'] ?? '', $this->u('Ng\u00e0y b\u1ea3o tr\u00ec kh\u00f4ng h\u1ee3p l\u1ec7'));
+        if ($scheduledDate === null) throw new \RuntimeException($this->u('Ng\u00e0y b\u1ea3o tr\u00ec l\u00e0 b\u1eaft bu\u1ed9c'));
+        $status = strtoupper(trim((string)($data['status'] ?? 'SCHEDULED')));
+        if (!isset($this->maintenanceStatuses()[$status])) $status = 'SCHEDULED';
+        $itemId = (int)($data['inventory_item_id'] ?? $data['inventoryItemId'] ?? 0);
+        if ($itemId > 0 && !$this->findInventoryItem($assetId, $itemId)) throw new \RuntimeException($this->u('T\u00e0i s\u1ea3n b\u1ea3o tr\u00ec kh\u00f4ng h\u1ee3p l\u1ec7'));
+        $completedAt = $status === 'DONE' ? date('Y-m-d H:i:s') : null;
+        if ($existing && $status === 'DONE' && !empty($existing['completed_at'])) $completedAt = $existing['completed_at'];
+        return [
+            'public_asset_id' => $assetId,
+            'inventory_item_id' => $itemId > 0 ? $itemId : null,
+            'maintenance_code' => trim((string)($data['maintenance_code'] ?? $data['maintenanceCode'] ?? $existing['maintenance_code'] ?? '')) ?: $this->nextMaintenanceCode($assetId),
+            'title' => $title,
+            'scheduled_date' => $scheduledDate,
+            'completed_at' => $completedAt,
+            'manager_name' => $this->nullable($data['manager_name'] ?? $data['managerName'] ?? ''),
+            'cost' => $this->nullableNumber($data['cost'] ?? null),
+            'status' => $status,
+            'note' => $this->nullable($data['note'] ?? ''),
+            'created_by' => $userId,
+            'updated_by' => $userId,
+        ];
+    }
+
+    private function normalizeMaintenance(array $row): array
+    {
+        $status = (string)($row['status'] ?? 'SCHEDULED');
+        $isOverdue = $status === 'SCHEDULED' && !empty($row['scheduled_date']) && $row['scheduled_date'] < date('Y-m-d');
+        return [
+            'id' => (int)$row['id'],
+            'public_asset_id' => (int)$row['public_asset_id'],
+            'inventory_item_id' => $row['inventory_item_id'] !== null ? (int)$row['inventory_item_id'] : null,
+            'inventory_code' => (string)($row['inventory_code'] ?? ''),
+            'item_name' => (string)($row['item_name'] ?? ''),
+            'maintenance_code' => (string)$row['maintenance_code'],
+            'title' => (string)$row['title'],
+            'scheduled_date' => $row['scheduled_date'] ?? null,
+            'completed_at' => $row['completed_at'] ?? null,
+            'manager_name' => (string)($row['manager_name'] ?? ''),
+            'cost' => $row['cost'] !== null ? (float)$row['cost'] : null,
+            'status' => $status,
+            'status_label' => $isOverdue ? $this->u('Qu\u00e1 h\u1ea1n') : ($this->maintenanceStatuses()[$status] ?? $status),
+            'is_overdue' => $isOverdue,
+            'note' => (string)($row['note'] ?? ''),
+            'created_at' => $row['created_at'] ?? null,
+            'updated_at' => $row['updated_at'] ?? null,
+        ];
+    }
+
+    private function maintenanceSummary(array $items): array
+    {
+        $summary = ['total' => 0, 'scheduled' => 0, 'done' => 0, 'cancelled' => 0, 'overdue' => 0, 'total_cost' => 0];
+        foreach ($items as $item) {
+            $summary['total']++;
+            $status = strtolower((string)($item['status'] ?? 'scheduled'));
+            if (isset($summary[$status])) $summary[$status]++;
+            if (!empty($item['is_overdue'])) $summary['overdue']++;
+            $summary['total_cost'] += (float)($item['cost'] ?? 0);
+        }
+        return $summary;
+    }
+
     private function chartRows(array $map): array
     {
         arsort($map);
@@ -554,7 +715,7 @@ SQL);
     {
         $this->ensureSchema();
         [$where, $params] = $this->where($filters, false);
-        $rows = $this->fetchAll("SELECT pa.asset_code, pa.asset_name, pii.inventory_code, pii.item_name, COALESCE(pig.name, pii.group_name) AS group_name, pii.quantity, pii.unit, pii.condition_status, pii.start_use_date, pii.location_in_asset, pii.note FROM public_asset_inventory_items pii INNER JOIN public_assets pa ON pa.id=pii.public_asset_id LEFT JOIN public_asset_types pat ON pat.id=pa.type_id LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id $where AND pii.status <> \"DELETED\" ORDER BY pa.asset_code ASC, pii.item_name ASC", $params);
+        $rows = $this->fetchAll("SELECT pa.asset_code, pa.asset_name, pii.inventory_code, pii.item_name, COALESCE(pig.name, pii.group_name) AS group_name, pii.quantity, pii.estimated_value, pii.unit, pii.purchase_date, pii.warranty_until, pii.condition_status, pii.start_use_date, pii.location_in_asset, pii.manager_name, pii.manager_phone, pii.maintenance_cycle, pii.note FROM public_asset_inventory_items pii INNER JOIN public_assets pa ON pa.id=pii.public_asset_id LEFT JOIN public_asset_types pat ON pat.id=pa.type_id LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id $where AND pii.status <> \"DELETED\" ORDER BY pa.asset_code ASC, pii.item_name ASC", $params);
         return $this->table($this->u('Danh s\u00e1ch t\u00e0i s\u1ea3n ki\u1ec3m k\u00ea c\u00f4ng tr\u00ecnh'), [
             $this->u('M\u00e3 c\u00f4ng tr\u00ecnh'),
             $this->u('T\u00ean c\u00f4ng tr\u00ecnh'),
@@ -562,10 +723,15 @@ SQL);
             $this->u('T\u00ean t\u00e0i s\u1ea3n'),
             $this->u('Nh\u00f3m'),
             $this->u('S\u1ed1 l\u01b0\u1ee3ng'),
+            $this->u('Gi\u00e1 tr\u1ecb'),
             $this->u('\u0110\u01a1n v\u1ecb'),
+            $this->u('Ng\u00e0y mua'),
+            $this->u('B\u1ea3o h\u00e0nh \u0111\u1ebfn'),
             $this->u('T\u00ecnh tr\u1ea1ng'),
             $this->u('Ng\u00e0y \u0111\u01b0a v\u00e0o s\u1eed d\u1ee5ng'),
             $this->u('V\u1ecb tr\u00ed'),
+            $this->u('Ng\u01b0\u1eddi qu\u1ea3n l\u00fd'),
+            $this->u('Chu k\u1ef3 b\u1ea3o tr\u00ec'),
             $this->u('Ghi ch\u00fa'),
         ], array_map(fn($row) => [
             $row['asset_code'],
@@ -574,10 +740,15 @@ SQL);
             $row['item_name'],
             $row['group_name'],
             (float)($row['quantity'] ?? 0),
+            (float)($row['estimated_value'] ?? 0),
             $row['unit'],
+            $row['purchase_date'] ?? '',
+            $row['warranty_until'] ?? '',
             $this->inventoryStatuses()[$row['condition_status'] ?? 'IN_USE'] ?? (string)($row['condition_status'] ?? ''),
             $row['start_use_date'] ?? '',
             $row['location_in_asset'] ?? '',
+            trim((string)($row['manager_name'] ?? '') . (($row['manager_phone'] ?? '') !== '' ? ' - ' . $row['manager_phone'] : '')),
+            $row['maintenance_cycle'] ?? '',
             $row['note'] ?? '',
         ], $rows), $filters);
     }
@@ -608,8 +779,11 @@ SQL);
     }
 
     private function nextInventoryCode(int $assetId): string { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM public_asset_inventory_items WHERE public_asset_id=:id', ['id' => $assetId]); return 'TS' . str_pad((string)$assetId, 5, '0', STR_PAD_LEFT) . '-' . str_pad((string)(((int)($row['total'] ?? 0)) + 1), 3, '0', STR_PAD_LEFT); }
+    private function nextMaintenanceCode(int $assetId): string { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM public_asset_maintenance_schedules WHERE public_asset_id=:id', ['id' => $assetId]); return 'BT' . str_pad((string)$assetId, 5, '0', STR_PAD_LEFT) . '-' . str_pad((string)(((int)($row['total'] ?? 0)) + 1), 3, '0', STR_PAD_LEFT); }
+    private function maintenanceStatuses(): array { return ['SCHEDULED' => $this->u('Theo k\u1ebf ho\u1ea1ch'), 'DONE' => $this->u('\u0110\u00e3 ho\u00e0n th\u00e0nh'), 'CANCELLED' => $this->u('\u0110\u00e3 h\u1ee7y')]; }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableNumber(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
+    private function dateOrNull(mixed $value, string $message): ?string { $value = trim((string)($value ?? '')); if ($value === '') return null; if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) throw new \RuntimeException($message); return $value; }
     private function positiveNumber(mixed $value, bool $required, string $message): ?float { $value = trim((string)($value ?? '')); if ($value === '') { if ($required) throw new \RuntimeException($message); return null; } $number = (float)str_replace(',', '.', $value); if ($number <= 0) throw new \RuntimeException($message); return $number; }
     private function year(mixed $value, bool $required, string $message): ?int { $value = trim((string)($value ?? '')); if ($value === '') { if ($required) throw new \RuntimeException($message); return null; } $year = (int)$value; $current = (int)date('Y') + 1; if ($year < 1800 || $year > $current) throw new \RuntimeException($message); return $year; }
     private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }

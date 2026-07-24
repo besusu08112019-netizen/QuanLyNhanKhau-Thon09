@@ -32,4 +32,16 @@ final class InsightController extends BaseController
         $this->requirePermission('citizen', 'read');
         $this->ok($this->insights->smartAlerts());
     }
+
+    public function ask(): void
+    {
+        $user = $this->requirePermission('dashboard', 'read');
+        $question = trim((string)($this->input()['question'] ?? $this->query('q', '')));
+        foreach ($this->insights->requiredModulesForQuestion($question) as $module) {
+            $this->requirePermission($module, 'read');
+        }
+        $answer = $this->insights->ask($question);
+        $this->audit($user, 'insights', 'ask_readonly', 'Hoi tro ly du lieu chi doc', null, ['intent' => $answer['intent'] ?? 'overview']);
+        $this->ok($answer);
+    }
 }

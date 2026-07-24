@@ -78,6 +78,13 @@ final class OperationCenterController extends BaseController
         $this->ok($this->operation->progress($this->query()));
     }
 
+    public function commandCenter(): void
+    {
+        $this->requirePermission('dashboard', 'read');
+        $this->requireOperationalSourcePermissions();
+        $this->ok($this->operation->commandCenter($this->query()));
+    }
+
     public function systemLogs(): void
     {
         $this->requirePermission('logs', 'read');
@@ -151,7 +158,7 @@ final class OperationCenterController extends BaseController
 
     private function requireOperationalSourcePermissions(): void
     {
-        foreach (['household', 'citizen', 'movement', 'gis'] as $module) {
+        foreach (['household', 'citizen', 'movement', 'gis', 'work_tasks', 'work_calendar', 'documents', 'finance', 'public_assets', 'complaints'] as $module) {
             $this->requirePermission($module, 'read');
         }
     }

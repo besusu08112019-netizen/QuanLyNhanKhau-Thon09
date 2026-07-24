@@ -6,7 +6,6 @@ use App\Core\BaseController;
 use App\Models\GisArea;
 use App\Models\GisHouseholdLocation;
 use App\Models\GisSearch;
-use App\Models\SystemLog;
 use Throwable;
 
 class GisController extends BaseController
@@ -178,9 +177,10 @@ class GisController extends BaseController
 
     public function exportPdf(): void
     {
-        $this->requirePermission('gis', 'export');
+        $user = $this->requirePermission('gis', 'export');
         $data = $this->areasModel()->all();
         $areas = $data['areas'] ?? [];
+        $this->audit($user, 'gis', 'export', 'Xuất báo cáo bản đồ địa bàn', null, ['area_count' => count($areas)]);
         $filename = 'ban-do-dia-ban-' . date('Ymd-His') . '.html';
         header('Content-Type: text/html; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -278,20 +278,11 @@ class GisController extends BaseController
     private function writeLog(string $action, string $module, string $target, ?array $data = null): void
     {
         try {
-            if (!class_exists(SystemLog::class) && defined('APP_ROOT') && is_file(APP_ROOT . '/app/Models/SystemLog.php')) {
-                require_once APP_ROOT . '/app/Models/SystemLog.php';
-            }
-            if (class_exists(SystemLog::class)) {
-                (new SystemLog())->record([
-                    'user_id' => $this->currentUserId() ?: null,
-                    'username' => null,
-                    'action' => $action,
-                    'module' => $module,
-                    'target_id' => $target,
-                    'description' => $module . ' ' . $action,
-                    'metadata' => $data ?? [],
-                ]);
-            }
+            $normalized = strtolower($action);
+            $this->audit($this->user(), 'gis', $normalized, $module . ' ' . $action, $target, [
+                'target_module' => $module,
+                'data' => $data ?? [],
+            ], $normalized === 'delete' ? 'WARN' : 'INFO');
         } catch (Throwable $ignored) {
             // Log writing must not block GIS operations.
         }

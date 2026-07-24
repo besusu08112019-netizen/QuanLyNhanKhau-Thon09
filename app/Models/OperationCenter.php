@@ -168,6 +168,63 @@ final class OperationCenter extends BaseModel
         }, ['items' => [], 'generatedAt' => date('c')]);
     }
 
+    public function commandCenter(array $filters = []): array
+    {
+        return $this->safePayload('commandCenter', function () use ($filters) {
+            $metrics = [
+                'households' => $this->countRows('households', $this->activeHouseholdCondition('h'), 'h'),
+                'citizens' => $this->countRows('citizens', $this->activeCitizenCondition('c'), 'c'),
+                'temporary_residence' => $this->movementTypeCount('TEMPORARY_RESIDENCE'),
+                'temporary_absence' => $this->movementTypeCount('TEMPORARY_ABSENCE'),
+                'poor_households' => $this->countRows('households', $this->activeHouseholdCondition('h') . ' AND h.poor_household=1', 'h'),
+                'party_members' => $this->countCitizenFlag('party_member'),
+                'public_assets' => $this->countRows('public_assets', 'pa.status <> "DELETED"', 'pa'),
+                'work_tasks' => $this->countRows('work_tasks', 'wt.soft_status <> "DELETED"', 'wt'),
+                'work_tasks_overdue' => $this->countRows('work_tasks', 'wt.soft_status <> "DELETED" AND wt.completed_at IS NULL AND wt.due_at IS NOT NULL AND wt.due_at < NOW()', 'wt'),
+                'complaints' => $this->countRows('complaints', 'cp.soft_status <> "DELETED"', 'cp'),
+                'complaints_overdue' => $this->countRows('complaints', 'cp.soft_status <> "DELETED" AND cp.closed_at IS NULL AND cp.due_at IS NOT NULL AND cp.due_at < NOW()', 'cp'),
+                'documents' => $this->countRows('village_documents', 'vd.status <> "DELETED"', 'vd'),
+                'today_events' => $this->countRows('calendar_events', 'ce.soft_status <> "DELETED" AND DATE(ce.start_at)=CURDATE()', 'ce'),
+                'maintenance_due' => $this->countRows('public_asset_maintenance_schedules', 'pams.deleted_at IS NULL AND pams.status="SCHEDULED" AND pams.scheduled_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)', 'pams'),
+            ];
+            $finance = $this->financeMonth();
+            return [
+                'metrics' => $metrics + $finance,
+                'widgets' => [
+                    ['key' => 'population', 'label' => 'Dan cu', 'screen' => 'households', 'items' => [
+                        ['label' => 'Tong ho', 'value' => $metrics['households']],
+                        ['label' => 'Tong nhan khau', 'value' => $metrics['citizens']],
+                        ['label' => 'Tam tru', 'value' => $metrics['temporary_residence']],
+                        ['label' => 'Tam vang', 'value' => $metrics['temporary_absence']],
+                    ]],
+                    ['key' => 'operations', 'label' => 'Dieu hanh', 'screen' => 'workTasks', 'items' => [
+                        ['label' => 'Cong viec', 'value' => $metrics['work_tasks']],
+                        ['label' => 'Viec qua han', 'value' => $metrics['work_tasks_overdue']],
+                        ['label' => 'Phan anh qua han', 'value' => $metrics['complaints_overdue']],
+                        ['label' => 'Lich hom nay', 'value' => $metrics['today_events']],
+                    ]],
+                    ['key' => 'records', 'label' => 'Ho so va tai san', 'screen' => 'documents', 'items' => [
+                        ['label' => 'Van ban', 'value' => $metrics['documents']],
+                        ['label' => 'Cong trinh', 'value' => $metrics['public_assets']],
+                        ['label' => 'Can bao tri', 'value' => $metrics['maintenance_due']],
+                        ['label' => 'Ho ngheo', 'value' => $metrics['poor_households']],
+                    ]],
+                    ['key' => 'finance', 'label' => 'Thu chi thang', 'screen' => 'finance', 'items' => [
+                        ['label' => 'Thu', 'value' => $finance['finance_income_month']],
+                        ['label' => 'Chi', 'value' => $finance['finance_expense_month']],
+                        ['label' => 'Chenh lech', 'value' => $finance['finance_balance_month']],
+                        ['label' => 'Phieu', 'value' => $finance['finance_transactions_month']],
+                    ]],
+                ],
+                'charts' => [
+                    'work_vs_complaints' => [['label' => 'Cong viec qua han', 'value' => $metrics['work_tasks_overdue']], ['label' => 'Phan anh qua han', 'value' => $metrics['complaints_overdue']]],
+                    'finance_month' => [['label' => 'Thu', 'value' => $finance['finance_income_month']], ['label' => 'Chi', 'value' => $finance['finance_expense_month']]],
+                ],
+                'generatedAt' => date('c'),
+            ];
+        }, ['metrics' => [], 'widgets' => [], 'charts' => [], 'generatedAt' => date('c')]);
+    }
+
     public function systemLogs(array $filters = []): array
     {
         return $this->safePayload('systemLogs', function () use ($filters) {
@@ -269,6 +326,34 @@ final class OperationCenter extends BaseModel
     private function missingHouseholdPhotoCount(array $filters): int { return $this->missingEntityFileCount('household', 'households', 'h', 'h.id', true); }
     private function missingCitizenDocumentsCount(array $filters): int { return $this->missingEntityFileCount('citizen', 'citizens', 'c', 'c.id', false); }
     private function missingHouseholdDocumentsCount(array $filters): int { return $this->missingEntityFileCount('household', 'households', 'h', 'h.id', false); }
+
+    private function countRows(string $table, string $where, string $alias): int
+    {
+        if (!$this->tableExists($table)) return 0;
+        return (int)(($this->fetchOne("SELECT COUNT(*) AS total FROM $table $alias WHERE $where") ?: [])['total'] ?? 0);
+    }
+
+    private function countCitizenFlag(string $column): int
+    {
+        if (!$this->tableExists('citizens') || !$this->columnExists('citizens', $column)) return 0;
+        return (int)(($this->fetchOne("SELECT COUNT(*) AS total FROM citizens c WHERE " . $this->activeCitizenCondition('c') . " AND c.$column=1") ?: [])['total'] ?? 0);
+    }
+
+    private function movementTypeCount(string $type): int
+    {
+        if (!$this->tableExists('movements')) return 0;
+        return (int)(($this->fetchOne('SELECT COUNT(*) AS total FROM movements WHERE status <> "DELETED" AND type=:type', ['type' => $type]) ?: [])['total'] ?? 0);
+    }
+
+    private function financeMonth(): array
+    {
+        $empty = ['finance_income_month' => 0.0, 'finance_expense_month' => 0.0, 'finance_balance_month' => 0.0, 'finance_transactions_month' => 0];
+        if (!$this->tableExists('finance_transactions')) return $empty;
+        $row = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN transaction_type='INCOME' THEN amount ELSE 0 END),0) AS income, COALESCE(SUM(CASE WHEN transaction_type='EXPENSE' THEN amount ELSE 0 END),0) AS expense FROM finance_transactions WHERE status='POSTED' AND transaction_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')") ?: [];
+        $income = (float)($row['income'] ?? 0);
+        $expense = (float)($row['expense'] ?? 0);
+        return ['finance_income_month' => $income, 'finance_expense_month' => $expense, 'finance_balance_month' => $income - $expense, 'finance_transactions_month' => (int)($row['total'] ?? 0)];
+    }
 
     private function missingEntityFileCount(string $module, string $table, string $alias, string $idExpr, bool $imageOnly): int
     {

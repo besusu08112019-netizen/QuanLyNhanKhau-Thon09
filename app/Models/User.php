@@ -341,12 +341,12 @@ final class User extends BaseModel
         if ($role === 'SUPER_ADMIN' || $role === 'ADMIN') return true;
 
         if ($role === 'VIEWER') {
-            return in_array($module, ['dashboard','household','household_business','agriculture','livestock','houses','public_assets','complaints','citizen','report','gis'], true) && $action === 'read';
+            return (in_array($module, ['dashboard','household','household_business','agriculture','livestock','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','report','gis'], true) && $action === 'read') || ($module === 'notification' && in_array($action, ['read','update'], true));
         }
 
         $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $role, 'module' => $module, 'action' => $action]);
         if ($permission) return (bool) $permission['allowed'];
-        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','household_business','agriculture','livestock','houses','public_assets','complaints','citizen','movement','report'], true) && in_array($action, ['read','create','update','upload'], true)) || ($module === 'gis' && $action === 'read');
+        if ($role === 'OFFICER') return (in_array($module, ['dashboard','household','household_business','agriculture','livestock','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','movement','report'], true) && in_array($action, ['read','create','update','upload','export'], true)) || ($module === 'notification' && in_array($action, ['read','update'], true)) || ($module === 'gis' && $action === 'read');
         return false;
     }
 
