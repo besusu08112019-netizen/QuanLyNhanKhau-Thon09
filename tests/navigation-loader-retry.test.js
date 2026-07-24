@@ -6,9 +6,18 @@ const { chromium } = require('@playwright/test');
   const source = fs.readFileSync('assets/js/view-inline-patches.js', 'utf8');
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
+  await page.route('**/assets/js/documents.min.js*', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: `
+      window.loadDocuments = function () {
+        document.getElementById('documentsScreen').innerHTML = '<div id="documentsLoaded">loaded</div>';
+      };
+    `
+  }));
 
   await page.setContent(`
     <!doctype html>
+    <base href="http://thon09.test/">
     <div id="dashboardScreen" class="screen"></div>
     <div id="documentsScreen" class="screen">
       <div>Dang tai module van ban...</div>
@@ -36,16 +45,12 @@ const { chromium } = require('@playwright/test');
   });
 
   await page.evaluate(source);
-  await page.waitForTimeout(250);
-  await page.evaluate(() => {
-    window.loadDocuments = () => {
-      document.getElementById('documentsScreen').innerHTML = '<div id="documentsLoaded">loaded</div>';
-    };
-  });
 
   await page.waitForSelector('#documentsLoaded', { timeout: 5000 });
   const log = await page.evaluate(() => window.__thon09NavigationLog || []);
-  assert.ok(log.some(entry => entry.step === 'renderRetryWaiting' || entry.step === 'renderRetryReady'));
+  assert.ok(log.some(entry => entry.step === 'dynamicLoaderStart'));
+  assert.ok(log.some(entry => entry.step === 'dynamicLoaderLoaded'));
+  assert.ok(log.some(entry => entry.step === 'render' && entry.loader === 'loadDocuments'));
 
   await browser.close();
   console.log('navigation loader retry test passed');
