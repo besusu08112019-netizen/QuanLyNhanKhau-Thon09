@@ -43,6 +43,8 @@ if (!fs.existsSync(artifact)) {
     'manifest.json',
     'manifest.webmanifest',
     'service-worker.js',
+    'sample-data/Mau_Import_NhanKhau.xlsx',
+    'sample-data/Mau_Import_HoDan.xlsx',
   ]) {
     if (!exists(rel)) fail(`Required production artifact file is missing: ${rel}`);
   }
@@ -57,7 +59,6 @@ if (!fs.existsSync(artifact)) {
     'docs',
     'tests',
     'tools',
-    'sample-data',
     'package.json',
     'package-lock.json',
     'composer.json',

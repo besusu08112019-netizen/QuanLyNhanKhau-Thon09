@@ -17,6 +17,7 @@ deployment:
     - /bin/cp -R api $DEPLOYPATH
     - /bin/cp -R app $DEPLOYPATH
     - /bin/cp -R assets $DEPLOYPATH
+    - /bin/cp -R sample-data $DEPLOYPATH
     - /bin/cp -R config $DEPLOYPATH
     - /bin/cp -R controllers $DEPLOYPATH
     - /bin/cp -R database $DEPLOYPATH
@@ -40,6 +41,7 @@ deployment:
     - /bin/cp -R api $DEPLOYPATH
     - /bin/cp -R app $DEPLOYPATH
     - /bin/cp -R assets $DEPLOYPATH
+    - /bin/cp -R sample-data $DEPLOYPATH
     - /bin/cp -R config $DEPLOYPATH
     - /bin/cp -R controllers $DEPLOYPATH
     - /bin/cp -R database $DEPLOYPATH

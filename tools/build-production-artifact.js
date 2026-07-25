@@ -25,6 +25,7 @@ const includeFiles = [
 const includeDirs = [
   'app',
   'assets',
+  'sample-data',
 ];
 
 const runtimeDirs = [
@@ -78,7 +79,6 @@ function assertExcluded() {
     'docs',
     'tests',
     'tools',
-    'sample-data',
     'package.json',
     'package-lock.json',
     'composer.json',
