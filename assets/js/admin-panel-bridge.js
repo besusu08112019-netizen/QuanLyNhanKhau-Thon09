@@ -342,6 +342,7 @@
       const params = new URLSearchParams({ page: App.households.page || 1, pageSize: App.households.pageSize || 20 });
       if (App.households.search) params.set('search', App.households.search);
       if (category) { params.set('category', category); params.set('household_type', category); }
+      if (App.households.status) params.set('status', App.households.status);
       const data = await api('/api/households?' + params.toString());
       const items = data.items || [];
       const tbody = document.querySelector('#householdRows');
@@ -475,4 +476,3 @@ function scheduleCategoryFilterSetup() {
 
   function statusLabel(status) { return status === 'ACTIVE' ? 'Hoat dong' : status === 'INACTIVE' ? 'Da khoa' : status; }
 })();
-

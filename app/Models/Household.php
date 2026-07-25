@@ -22,7 +22,7 @@ final class Household extends BaseModel
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$sqlWhere, $params] = $this->where($filters);
-        $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM households h $sqlWhere", $params)['total'];
+        $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere", $params)['total'];
         $order = $this->listOrder($filters, ['household_code' => 'h.household_code', 'head_citizen_name' => 'h.head_citizen_name', 'area_code' => 'h.area_code', 'status' => 'h.status'], 'household_code', 'ASC', ['h.id ASC']);
         $items = $this->fetchAll("SELECT h.id, h.household_code, h.head_citizen_id, h.head_citizen_name, h.address, h.phone, h.area_code, h.meritorious_family, h.poor_household, h.near_poor_household, h.disabled_household, h.note, h.status, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere $order LIMIT $pageSize OFFSET $offset", $params);
         return $this->paginated(array_map(fn($row) => $this->withPhoto($this->withCategory($row)), $items), $page, $pageSize, $total);
@@ -82,11 +82,17 @@ final class Household extends BaseModel
     private function where(array $filters): array
     {
         $params = $this->withTenant();
-        if (!empty($filters['status'])) {
-            $where = ['h.status = :status', 'h.status <> "DELETED"', $this->tenantWhere('h', 'households')];
-            $params['status'] = $filters['status'];
-        } else {
-            $where = [$this->activeHouseholdCondition('h'), $this->tenantWhere('h', 'households')];
+        $where = [$this->activeHouseholdCondition('h'), $this->tenantWhere('h', 'households')];
+        $status = strtolower(trim((string) ($filters['status'] ?? '')));
+        if ($status !== '') {
+            if (in_array($status, ['temporary_absence', 'has_away', 'away'], true)) {
+                $where[] = 'COALESCE(v.away_count,0) > 0';
+            } elseif (in_array($status, ['empty_home', 'away_household', 'all_away'], true)) {
+                $where[] = 'COALESCE(v.at_home_count,0) = 0 AND COALESCE(v.away_count,0) > 0';
+            } else {
+                $where[] = 'h.status = :status';
+                $params['status'] = strtoupper($status);
+            }
         }
 
         $category = $this->filterCategory($filters);
@@ -187,6 +193,10 @@ final class Household extends BaseModel
     {
         $row['household_type'] = $this->categoryLabel($row);
         $row['household_type_key'] = $this->categoryKey($row['household_type']);
+        $atHome = (int) ($row['at_home_count'] ?? 0);
+        $away = (int) ($row['away_count'] ?? 0);
+        $row['presence_status_key'] = $atHome === 0 && $away > 0 ? 'empty_home' : ($away > 0 ? 'temporary_absence' : 'active');
+        $row['presence_status_label'] = $row['presence_status_key'] === 'empty_home' ? 'Hộ đi vắng' : ($row['presence_status_key'] === 'temporary_absence' ? 'Có đi vắng' : 'Đang ở nhà');
         return $row;
     }
 
