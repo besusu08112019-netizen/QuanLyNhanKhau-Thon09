@@ -323,7 +323,7 @@
         </div>
         <div class="content-card module-list-card">
           <div class="module-list-head"><div><h3>Danh sách hộ gia đình</h3><span id="householdTotalCount">Tổng số: 0 hộ</span></div><button id="householdBulkDeleteBtn" class="btn btn-outline-danger btn-sm d-none"><i class="fa-solid fa-trash"></i> Xóa đã chọn</button></div>
-          <div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th><input type="checkbox" id="householdCheckAll"></th><th>Mã hộ</th><th>Chủ hộ</th><th>Địa chỉ</th><th>Ở nhà</th><th>Đi vắng</th><th>Diện hộ</th><th class="text-end">Thao tác</th></tr></thead><tbody id="householdRows"></tbody></table></div>
+          <div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th><input type="checkbox" id="householdCheckAll"></th><th>Mã hộ</th><th>Chủ hộ</th><th>Địa chỉ</th><th>Ở nhà</th><th>Đi vắng</th><th>Trạng thái</th><th>Diện hộ</th><th class="text-end">Thao tác</th></tr></thead><tbody id="householdRows"></tbody></table></div>
           <div id="householdPager" class="pager module-pager"></div>
         </div>
       </section>

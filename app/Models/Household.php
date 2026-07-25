@@ -85,7 +85,9 @@ final class Household extends BaseModel
         $where = [$this->activeHouseholdCondition('h'), $this->tenantWhere('h', 'households')];
         $status = strtolower(trim((string) ($filters['status'] ?? '')));
         if ($status !== '') {
-            if (in_array($status, ['temporary_absence', 'has_away', 'away'], true)) {
+            if (in_array($status, ['active', 'active_in_village'], true)) {
+                $where[] = 'COALESCE(v.at_home_count,0) > 0';
+            } elseif (in_array($status, ['temporary_absence', 'has_away', 'away'], true)) {
                 $where[] = 'COALESCE(v.away_count,0) > 0';
             } elseif (in_array($status, ['empty_home', 'away_household', 'all_away'], true)) {
                 $where[] = 'COALESCE(v.at_home_count,0) = 0 AND COALESCE(v.away_count,0) > 0';
@@ -195,8 +197,12 @@ final class Household extends BaseModel
         $row['household_type_key'] = $this->categoryKey($row['household_type']);
         $atHome = (int) ($row['at_home_count'] ?? 0);
         $away = (int) ($row['away_count'] ?? 0);
-        $row['presence_status_key'] = $atHome === 0 && $away > 0 ? 'empty_home' : ($away > 0 ? 'temporary_absence' : 'active');
-        $row['presence_status_label'] = $row['presence_status_key'] === 'empty_home' ? 'Hộ đi vắng' : ($row['presence_status_key'] === 'temporary_absence' ? 'Có đi vắng' : 'Đang ở nhà');
+        $row['presence_status_key'] = $atHome > 0 ? 'active' : ($away > 0 ? 'empty_home' : 'no_members');
+        $row['presence_status_label'] = match ($row['presence_status_key']) {
+            'active' => 'Hoạt động tại thôn',
+            'empty_home' => 'Không hoạt động ở thôn',
+            default => 'Chưa có nhân khẩu',
+        };
         return $row;
     }
 
