@@ -44,7 +44,7 @@ final class ImportController extends BaseController
     {
         $user = $this->requirePermission('import', 'import');
         $type = $this->type();
-        $rows = $this->readRows();
+        $rows = $this->readRows($type);
         $result = $this->validateRows($type, $rows);
         $this->audit($user, 'import', 'read', 'Kiểm tra file import', null, ['type' => $type, 'total' => count($rows), 'errors' => count($result['errors']), 'warnings' => count($result['warnings'] ?? [])]);
         $this->ok($result + ['type' => $type]);
@@ -55,7 +55,7 @@ final class ImportController extends BaseController
         $user = $this->requirePermission('import', 'import');
         $type = $this->type();
         $mode = (string) ($_POST['mode'] ?? $this->input('mode', 'skip'));
-        $rows = $this->readRows();
+        $rows = $this->readRows($type);
         $result = $this->validateRows($type, $rows);
         $success = 0;
         $skipped = 0;
@@ -124,7 +124,7 @@ final class ImportController extends BaseController
         return $type;
     }
 
-    private function readRows(): array
+    private function readRows(string $type): array
     {
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
             $this->fail('Vui lòng chọn file CSV hoặc XLSX', 422);
@@ -138,7 +138,7 @@ final class ImportController extends BaseController
         $name = strtolower((string) $_FILES['file']['name']);
         $mime = mime_content_type($_FILES['file']['tmp_name']) ?: 'application/octet-stream';
         if (str_ends_with($name, '.csv') && in_array($mime, ['text/plain','text/csv','application/csv','application/vnd.ms-excel'], true)) return $this->readCsv($_FILES['file']['tmp_name']);
-        if (str_ends_with($name, '.xlsx') && in_array($mime, ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/zip'], true)) return $this->readXlsx($_FILES['file']['tmp_name']);
+        if (str_ends_with($name, '.xlsx') && in_array($mime, ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/zip'], true)) return $this->readXlsx($_FILES['file']['tmp_name'], $type);
         throw new \RuntimeException('Chỉ hỗ trợ file CSV hoặc XLSX');
     }
 
@@ -162,15 +162,16 @@ final class ImportController extends BaseController
         return $rows;
     }
 
-    private function readXlsx(string $path): array
+    private function readXlsx(string $path, string $importType): array
     {
         if (!class_exists('ZipArchive')) throw new \RuntimeException('Hosting chưa bật ZipArchive để đọc file XLSX');
         $zip = new \ZipArchive();
         if ($zip->open($path) !== true) throw new \RuntimeException('Không mở được file XLSX');
-        $this->assertZipEntrySafe($zip, 'xl/worksheets/sheet1.xml', 15 * 1024 * 1024);
+        $worksheetName = $this->worksheetName($zip, $importType);
+        $this->assertZipEntrySafe($zip, $worksheetName, 15 * 1024 * 1024);
         $this->assertZipEntrySafe($zip, 'xl/sharedStrings.xml', 10 * 1024 * 1024, false);
         $shared = $this->sharedStrings($zip);
-        $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $xml = $zip->getFromName($worksheetName);
         $zip->close();
         if ($xml === false) throw new \RuntimeException('File XLSX chưa có sheet dữ liệu đầu tiên');
         if (strlen($xml) > 15 * 1024 * 1024) throw new \RuntimeException('XLSX worksheet is too large');
@@ -185,12 +186,16 @@ final class ImportController extends BaseController
                 $value = (string) ($cell->v ?? '');
                 if ($type === 's') $value = $shared[(int) $value] ?? '';
                 if ($type === 'inlineStr') $value = (string) ($cell->is->t ?? '');
-                $matrix[$line][$col] = trim($value);
+                $value = $this->cleanImportedText($value);
+                if ($value !== '') $matrix[$line][$col] = $value;
             }
         }
         if (!$matrix) return [];
         ksort($matrix);
-        $headerLine = array_key_first($matrix);
+        $headerLine = $this->findHeaderLine($matrix, $importType);
+        if ($headerLine === null) {
+            throw new \RuntimeException('File XLSX chua co dong tieu de dung mau');
+        }
         $headerCells = $matrix[$headerLine] ?? [];
         $lastColumn = $headerCells ? max(array_keys($headerCells)) : -1;
         $headers = [];
@@ -210,8 +215,86 @@ final class ImportController extends BaseController
     private function stripSpreadsheetNamespaces(string $xml): string
     {
         $xml = preg_replace('/(<\/?)[A-Za-z0-9_\-]+:/', '$1', $xml) ?? $xml;
+        $xml = preg_replace('/\s+[A-Za-z0-9_\-]+:([A-Za-z0-9_\-]+)=/', ' $1=', $xml) ?? $xml;
         $xml = preg_replace('/\s+xmlns(:[A-Za-z0-9_\-]+)?="[^"]*"/', '', $xml) ?? $xml;
         return $xml;
+    }
+
+    private function worksheetName(\ZipArchive $zip, string $importType): string
+    {
+        $workbookXml = $zip->getFromName('xl/workbook.xml');
+        $relsXml = $zip->getFromName('xl/_rels/workbook.xml.rels');
+        if ($workbookXml === false || $relsXml === false) return 'xl/worksheets/sheet1.xml';
+
+        $workbook = simplexml_load_string($this->stripSpreadsheetNamespaces($workbookXml), 'SimpleXMLElement', LIBXML_NONET);
+        $rels = simplexml_load_string($this->stripSpreadsheetNamespaces($relsXml), 'SimpleXMLElement', LIBXML_NONET);
+        if (!$workbook || !$rels) return 'xl/worksheets/sheet1.xml';
+
+        $targets = [];
+        foreach ($rels->Relationship as $rel) {
+            $id = (string) $rel['Id'];
+            $target = (string) $rel['Target'];
+            if ($id === '' || $target === '') continue;
+            if (str_starts_with($target, '/')) {
+                $target = ltrim($target, '/');
+            } elseif (!str_starts_with($target, 'xl/')) {
+                $target = 'xl/' . ltrim($target, '/');
+            }
+            $targets[$id] = $target;
+        }
+
+        $needles = $importType === 'household'
+            ? ['hodan', 'ho dan', 'household']
+            : ['nhankhau', 'nhan khau', 'person', 'citizen'];
+        $fallback = 'xl/worksheets/sheet1.xml';
+
+        foreach ($workbook->sheets->sheet as $sheet) {
+            $id = (string) ($sheet['id'] ?? '');
+            $name = $this->headerKey((string) ($sheet['name'] ?? ''));
+            if (isset($targets[$id]) && $fallback === 'xl/worksheets/sheet1.xml') {
+                $fallback = $targets[$id];
+            }
+            foreach ($needles as $needle) {
+                if (str_contains($name, $needle) && isset($targets[$id])) {
+                    return $targets[$id];
+                }
+            }
+        }
+
+        return $fallback;
+    }
+
+    private function findHeaderLine(array $matrix, string $importType): ?int
+    {
+        $required = $importType === 'household'
+            ? ['householdCode', 'address']
+            : ['householdCode', 'fullName', 'dateOfBirth'];
+        $aliases = $this->aliases();
+        $bestLine = null;
+        $bestScore = 0;
+
+        foreach ($matrix as $line => $cells) {
+            $fields = [];
+            foreach ($cells as $value) {
+                $key = $this->headerKey((string) $value);
+                foreach ($aliases as $field => $names) {
+                    if (in_array($key, $names, true)) {
+                        $fields[$field] = true;
+                        break;
+                    }
+                }
+            }
+
+            $requiredHits = count(array_filter($required, fn($field) => isset($fields[$field])));
+            $score = $requiredHits * 10 + count($fields);
+            if ($requiredHits === count($required)) return (int) $line;
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestLine = (int) $line;
+            }
+        }
+
+        return $bestScore >= 10 ? $bestLine : null;
     }
 
     private function sharedStrings(\ZipArchive $zip): array
