@@ -15,8 +15,9 @@ final class SimplePdf
 
     public function addPrintHeader(string $unit, string $title): void
     {
-        $this->text('TINH NINH BINH', 42, 820, 11, true);
-        $this->text('Thon 09, xa Hong Phong', 42, 804, 9);
+        $unit = trim($unit) !== '' ? $unit : TenantConfig::unitName();
+        $this->text($unit, 42, 820, 11, true);
+        $this->text('', 42, 804, 9);
         $this->text('CONG HOA XA HOI CHU NGHIA VIET NAM', 210, 820, 11, true);
         $this->text('Doc lap - Tu do - Hanh phuc', 252, 804, 10, true);
         $this->line(270, 799, 415, 799);

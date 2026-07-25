@@ -9,22 +9,22 @@ function asset(overrides = {}) {
   return {
     id: 101,
     asset_code: 'CT09-00101',
-    asset_name: 'Nhà văn hóa thôn 09',
+    asset_name: 'Nhà văn hóa thon mau',
     type_id: 1,
     type_name: 'Nhà văn hóa',
     category: 'Hành chính',
     type_icon: 'fa-building-columns',
-    area_code: 'Thôn 09',
+    area_code: 'Thon mau',
     campus_area: 1234.5,
     building_area: 456.75,
     construction_year: 2020,
     operation_year: 2021,
-    address: 'Thôn 09, Xã Hồng Phong',
+    address: 'Thon mau, Xa mau',
     latitude: 20.255,
     longitude: 105.976,
     gps_accuracy: 4.5,
     gps_updated_at: '2026-07-11 10:00:00',
-    managing_unit: 'UBND xã Hồng Phong',
+    managing_unit: 'UBND Xa mau',
     manager_name: 'Nguyễn Văn A',
     manager_position: 'Cán bộ phụ trách',
     manager_phone: '0900000000',
@@ -79,10 +79,10 @@ async function mockApis(page) {
     requests.push({ method: request.method(), path: url.pathname, query: url.searchParams.toString(), headers: request.headers(), body: request.postDataJSON?.() || null });
     const fulfill = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(ok(data)) });
 
-    if (url.pathname === '/api/public/login-config') return fulfill({ settings: { systemName: 'Thôn 09', hamletName: 'Thôn 09', communeName: 'Hồng Phong', version: 'v2.0' }, metrics: {} });
+    if (url.pathname === '/api/public/login-config') return fulfill({ settings: { systemName: 'Thon mau', hamletName: 'Thon mau', communeName: 'Xa mau', version: 'v2.0' }, metrics: {} });
     if (url.pathname === '/api/auth/me') return fulfill({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
     if (url.pathname === '/api/dashboard/summary') return fulfill({ metrics: {}, charts: {} });
-    if (url.pathname === '/api/public-assets/catalogs') return fulfill({ types: [type], areas: [{ value: 'Thôn 09', label: 'Thôn 09' }], statuses: [{ value: 'ACTIVE', label: 'Đang sử dụng' }, { value: 'REPAIRING', label: 'Đang sửa chữa' }] });
+    if (url.pathname === '/api/public-assets/catalogs') return fulfill({ types: [type], areas: [{ value: 'Thon mau', label: 'Thon mau' }], statuses: [{ value: 'ACTIVE', label: 'Đang sử dụng' }, { value: 'REPAIRING', label: 'Đang sửa chữa' }] });
     if (url.pathname === '/api/public-assets/inventory/catalogs') return fulfill({ groups: [{ value: '15', label: 'Loa', parent: 'Điện tử' }, { value: '20', label: 'Bình chữa cháy', parent: 'PCCC' }], conditions: [{ value: 'IN_USE', label: 'Đang sử dụng' }, { value: 'NEEDS_REPAIR', label: 'Cần sửa chữa' }] });
     if (url.pathname === '/api/reports/center') return fulfill({
       groups: [{ key: 'public_assets', title: 'Báo cáo công trình công cộng', icon: 'fa-building-columns', description: 'Danh sách công trình công cộng', types: ['public-assets'] }],
@@ -101,7 +101,7 @@ async function mockApis(page) {
     });
     if (url.pathname === '/api/reports/export-excel') return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/vnd.ms-excel', 'Content-Disposition': 'attachment; filename="public-assets.xls"' }, body: 'excel' });
     if (url.pathname === '/api/reports/export-pdf') return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="public-assets.pdf"' }, body: '%PDF-1.4' });
-    if (url.pathname === '/api/public-assets/inventory/dashboard') return fulfill({ total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Đang sử dụng', value: 1 }], by_asset: [{ label: 'Nhà văn hóa thôn 09', value: 1 }] });
+    if (url.pathname === '/api/public-assets/inventory/dashboard') return fulfill({ total_items: inventoryItems.length, total_quantity: 2, by_group: [{ label: 'Loa', value: 1 }], by_condition: [{ label: 'Đang sử dụng', value: 1 }], by_asset: [{ label: 'Nhà văn hóa thon mau', value: 1 }] });
     if (url.pathname === '/api/public-assets/dashboard') return fulfill({
       metrics: { total_assets: items.length, active_assets: 1, located_assets: 1, total_campus_area: 1234.5, total_building_area: 456.75 },
       charts: { types: [{ label: 'Nhà văn hóa', value: 1 }], area_by_category: [{ label: 'Hành chính', campus_area: 1234.5, building_area: 456.75 }] }
@@ -195,7 +195,7 @@ test('public assets list, dashboard, filters and display format are consistent',
 
   const firstCells = page.locator('#publicAssetsRows tr').first().locator('td');
   await expect(firstCells.nth(6)).toContainText('KV: 1.234,5 m²');
-  await expect(firstCells.nth(7)).toContainText('UBND xã Hồng Phong');
+  await expect(firstCells.nth(7)).toContainText('UBND Xa mau');
   await expect(firstCells.nth(8)).toContainText('Nguy\u1ec5n V\u0103n A');
   await expect(firstCells.nth(9)).toContainText('\u0110ang s\u1eed d\u1ee5ng');
 
@@ -269,7 +269,7 @@ test('mobile V2 renders compact independent cards instead of desktop table', asy
   expect(metrics.dashboardCardHeight).toBeLessThanOrEqual(180);
   expect(metrics.cardHeight).toBeGreaterThan(0);
   expect(metrics.cardHeight).toBeLessThanOrEqual(320);
-  expect(metrics.cardText.toLocaleLowerCase('vi-VN')).toContain('nhà văn hóa thôn 09');
+  expect(metrics.cardText.toLocaleLowerCase('vi-VN')).toContain('nhà văn hóa thon mau');
   expect(metrics.actionCount).toBeLessThanOrEqual(3);
   expect(metrics.actionOverlapsBody).toBe(false);
   expect(metrics.actionOverlapsHead).toBe(false);
@@ -302,7 +302,7 @@ test('public assets reports preview, print and exports use shared report API', a
 
   await expect(page.locator('#reportTitle')).toHaveText('Danh sách công trình công cộng');
   await expect(page.locator('#reportPreview')).toContainText('CT09-00101');
-  await expect(page.locator('#reportPreview')).toContainText('Nhà văn hóa thôn 09');
+  await expect(page.locator('#reportPreview')).toContainText('Nhà văn hóa thon mau');
 
   await page.locator('#reportPrintBtn').click();
   const printResult = await page.evaluate(() => window.Thon09Print?.rendered);
@@ -413,13 +413,13 @@ test('mobile V2 public asset cards keep address out of title and dedupe detail f
       };
     });
 
-    expect(metrics.title).toBe('Nhà văn hóa thôn 09');
-    expect(metrics.title).not.toContain('Xã Hồng Phong');
-    expect(metrics.meta).not.toContain('Thôn 09, Xã Hồng Phong');
+    expect(metrics.title).toBe('Nhà văn hóa thon mau');
+    expect(metrics.title).not.toContain('Xa mau');
+    expect(metrics.meta).not.toContain('Thon mau, Xa mau');
     expect(metrics.metaHiddenBeforeOpen).toBe(false);
     expect(metrics.metaHiddenAfterOpen).toBe(true);
     expect(metrics.addressFields).toHaveLength(1);
-    expect(metrics.addressFields[0].value).toBe('Thôn 09, Xã Hồng Phong');
+    expect(metrics.addressFields[0].value).toBe('Thon mau, Xa mau');
     expect(metrics.duplicateCount).toBe(0);
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 2);
   }
@@ -475,7 +475,7 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
   await page.locator('#publicAssetForm [name="asset_name"]').fill('Công trình kiểm thử');
   await page.locator('#publicAssetForm [name="type_id"]').selectOption('1');
   await page.locator('#publicAssetForm [name="campus_area"]').fill('88.5');
-  await page.locator('#publicAssetForm [name="address"]').fill('Thôn 09, Xã Hồng Phong');
+  await page.locator('#publicAssetForm [name="address"]').fill('Thon mau, Xa mau');
   await page.locator('#publicAssetForm [name="managing_unit"]').fill('Ban quản lý thôn');
   await page.locator('#publicAssetForm [name="manager_name"]').fill('Trần Thị B');
   await page.locator('#publicAssetForm button[type="submit"]').click();
@@ -512,14 +512,14 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
         return Promise.resolve({
           items: [{
             id: 101,
-            asset_name: 'Nhà văn hóa thôn 09',
+            asset_name: 'Nhà văn hóa thon mau',
             type_name: 'Nhà văn hóa',
             status_label: 'Đang sử dụng',
-            address: 'Thôn 09, Xã Hồng Phong',
+            address: 'Thon mau, Xa mau',
             campus_area: 1234.5,
             latitude: 20.255,
             longitude: 105.976,
-            managing_unit: 'UBND xã Hồng Phong',
+            managing_unit: 'UBND Xa mau',
             manager_name: 'Nguyễn Văn A',
             type_icon: 'fa-building-columns',
             status: 'ACTIVE'
@@ -545,14 +545,14 @@ test('public assets detail, create, update, delete and GIS layer work', async ({
   });
   expect(gisResult.count).toBe(1);
   expect(gisResult.popup).toContain('https://www.google.com/maps/dir/?api=1&destination=20.255%2C105.976');
-  expect(gisResult.popup).toContain('UBND xã Hồng Phong');
+  expect(gisResult.popup).toContain('UBND Xa mau');
 });
 
 test('religious public assets do not expose inventory tab', async ({ page }) => {
   await openApp(page);
   await page.route('**/api/public-assets/999', route => route.fulfill({
     contentType: 'application/json',
-    body: JSON.stringify(ok(asset({ id: 999, asset_code: 'CT09-00999', asset_name: 'Chùa thôn 09', type_name: 'Chùa', category: 'Tôn giáo, tín ngưỡng', inventory_enabled: false, inventory_allowed: false })))
+    body: JSON.stringify(ok(asset({ id: 999, asset_code: 'CT09-00999', asset_name: 'Chùa thon mau', type_name: 'Chùa', category: 'Tôn giáo, tín ngưỡng', inventory_enabled: false, inventory_allowed: false })))
   }));
   await page.evaluate(() => window.openPublicAssetDetail(999));
   await expect(page.locator('#publicAssetDetailModal.show')).toBeVisible();

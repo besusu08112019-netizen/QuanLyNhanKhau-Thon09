@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 async function openLogin(page) {
   await page.route('**/api/public/login-config', route => route.fulfill({
@@ -9,8 +9,8 @@ async function openLogin(page) {
       data: {
         settings: {
           systemName: 'He thong quan ly',
-          hamletName: 'Thon 09',
-          communeName: 'Xa Hong Phong',
+          hamletName: 'Thon mau',
+          communeName: 'Xa Xa mau',
           version: 'v2.1'
         },
         metrics: {}

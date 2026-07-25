@@ -52,7 +52,7 @@ node tests/security-regression.test.js
 npm.cmd run test:platform
 npm.cmd run test:navigation-cleanup
 npm.cmd audit --audit-level=moderate
-curl.exe --ssl-no-revoke -I http://nhankhauthon09.com/
+curl.exe --ssl-no-revoke -I https://your-domain.example/
 ```
 
 HTTPS headers were revalidated with a Node TLS client because Windows Schannel in the sandbox could not complete the HTTPS `curl` handshake.

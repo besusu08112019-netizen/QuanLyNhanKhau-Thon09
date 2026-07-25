@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable production release changes are tracked here.
 
@@ -17,7 +17,7 @@ All notable production release changes are tracked here.
 - Updated FTP deployment workflow to use the production artifact and FTPS.
 
 ### Release gate
-- Revalidated HTTP redirect: `http://nhankhauthon09.com/` returns `301` to `https://nhankhauthon09.com/`.
+- Revalidated HTTP redirect: `http://your-domain.example/` returns `301` to `https://your-domain.example/`.
 - Revalidated HTTPS root: returns `200` with HSTS, CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
 - Revalidated anonymous API authorization for `/api/me`, backup, and restore endpoints.
 - Restore remains restricted to Super Admin and application-generated signed SQL dumps.

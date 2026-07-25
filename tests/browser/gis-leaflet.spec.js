@@ -3,7 +3,7 @@
 const loginConfig = {
   ok: true,
   data: {
-    settings: { systemName: 'Test', hamletName: 'Hamlet 09', communeName: 'Hong Phong', version: 'v2' },
+    settings: { systemName: 'Test', hamletName: 'Hamlet 09', communeName: 'Xa mau', version: 'v2' },
     metrics: {}
   }
 };
@@ -43,7 +43,7 @@ const detail = {
     id: 7,
     household_code: 'HK001',
     head_citizen_name: 'Nguyen Van A',
-    address: 'Thon 09',
+    address: 'Thon mau',
     phone: '0900000000',
     total_members: 3,
     at_home_count: 2,
@@ -433,7 +433,7 @@ test('leaflet GIS routes marker directions through Google Maps', async ({ page }
   const missing = await page.evaluate(() => window.thon09GisDirectionsUrl({ latitude: null, longitude: null }));
   expect(missing).toBe('');
   const missingPopup = await page.evaluate(() => window.gisHouseholdDetailPopup({
-    household: { id: 8, household_code: 'HK002', head_citizen_name: 'No GPS', address: 'Thon 09' },
+    household: { id: 8, household_code: 'HK002', head_citizen_name: 'No GPS', address: 'Thon mau' },
     business: []
   }));
   expect(missingPopup).toContain('Chưa có tọa độ GPS để dẫn đường.');

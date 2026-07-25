@@ -1,44 +1,27 @@
 {
-  "id": "/pwa/thon09",
-  "name": "Quản lý Nhân khẩu Thôn 09",
-  "short_name": "Thôn 09",
-  "description": "Hệ thống quản lý nhân khẩu, hộ gia đình, GIS và báo cáo Thôn 09.",
-  "version": "2026.07.14.12",
-  "lang": "vi",
-  "dir": "ltr",
+  "id": "/pwa/app",
+  "name": "He thong Quan ly Hanh chinh",
+  "short_name": "Hanh chinh",
+  "description": "He thong quan ly hanh chinh, nhan khau, ho gia dinh, GIS va bao cao.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone"],
-  "orientation": "portrait-primary",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "orientation": "any",
   "background_color": "#eef3f8",
   "theme_color": "#0b6b3a",
-  "categories": ["productivity", "utilities", "government"],
-  "prefer_related_applications": false,
+  "categories": ["government", "productivity", "utilities"],
+  "lang": "vi",
+  "dir": "ltr",
   "icons": [
-    {
-      "src": "/assets/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/maskable-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/assets/icons/maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/assets/icons/icon-192.png?v=20260715-1", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-512.png?v=20260715-1", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/maskable-192.png?v=20260715-1", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/assets/icons/maskable-512.png?v=20260715-1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Dashboard", "short_name": "Dashboard", "url": "/dashboard", "icons": [{ "src": "/assets/icons/icon-192.png?v=20260715-1", "sizes": "192x192" }] },
+    { "name": "Ho gia dinh", "short_name": "Ho dan", "url": "/households", "icons": [{ "src": "/assets/icons/icon-192.png?v=20260715-1", "sizes": "192x192" }] },
+    { "name": "GIS", "short_name": "GIS", "url": "/gis", "icons": [{ "src": "/assets/icons/icon-192.png?v=20260715-1", "sizes": "192x192" }] }
   ]
 }

@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 async function mockApis(page) {
   await page.route('**/api/**', async route => {
@@ -15,7 +15,7 @@ async function mockApis(page) {
       date_of_birth: '1990-01-01',
       household_id: 9,
       relationship: 'Chủ hộ',
-      display_address: 'Thôn 09, xã Hồng Phong'
+      display_address: 'Thon mau, Xa mau'
     });
     if (url.includes('/api/files?')) return payload({
       items: [{

@@ -1,4 +1,4 @@
--- Multi-tenant administrative management schema
+﻿-- Multi-tenant administrative management schema
 -- Sprint 1: database design for PHP 8.2 migration
 
 SET NAMES utf8mb4;
@@ -82,7 +82,7 @@ CREATE TABLE `citizens` (
   `citizen_code` VARCHAR(50) NOT NULL,
   `household_id` BIGINT UNSIGNED NOT NULL,
   `full_name` VARCHAR(190) NOT NULL,
-  `gender` ENUM('Nam','Nữ','Khác') NOT NULL,
+  `gender` ENUM('Nam','Ná»¯','KhÃ¡c') NOT NULL,
   `date_of_birth` DATE NOT NULL,
   `identity_number` VARCHAR(20) NULL,
   `identity_issue_date` DATE NULL,
@@ -294,37 +294,12 @@ SELECT
   (SELECT COUNT(*) FROM households WHERE status <> 'DELETED') AS total_households,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED') AS total_citizens,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND gender = 'Nam') AS total_male,
-  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND gender = 'Nữ') AS total_female,
+  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND gender = 'Ná»¯') AS total_female,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND life_status = 'ALIVE') AS active_citizens,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND residency_status = 'TEMPORARY') AS temporary_residence,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND presence_status = 'AWAY') AS temporary_absence;
 
-INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
-('unitName', ''),
-('hamletName', ''),
-('communeName', ''),
-('systemName', 'He thong Quan ly Hanh chinh'),
-('address', ''),
-('phone', ''),
-('email', ''),
-('website', ''),
-('logoUrl', ''),
-('backgroundUrl', ''),
-('backgroundImages', ''),
-('themeColor', '#0b6b3a'),
-('backgroundColor', '#eef3f8'),
-('backupSchedule', 'DAILY'),
-('reportSigner', ''),
-('reportTitlePrefix', 'Quản lý nhân khẩu'),
-('supportEmail', ''),
-('maintenanceMessage', '')
-ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
-INSERT INTO `permissions` (`role`, `module`, `action`, `allowed`) VALUES
-('ADMIN','dashboard','read',1),('ADMIN','household','read',1),('ADMIN','household','create',1),('ADMIN','household','update',1),('ADMIN','household','delete',1),('ADMIN','citizen','read',1),('ADMIN','citizen','create',1),('ADMIN','citizen','update',1),('ADMIN','citizen','delete',1),('ADMIN','movement','read',1),('ADMIN','movement','create',1),('ADMIN','movement','update',1),('ADMIN','movement','delete',1),('ADMIN','report','read',1),('ADMIN','report','export',1),('ADMIN','pdf','read',1),('ADMIN','pdf','export',1),('ADMIN','import','read',1),('ADMIN','import','create',1),('ADMIN','backup','read',1),('ADMIN','backup','create',1),('ADMIN','backup','update',1),('ADMIN','user','read',1),('ADMIN','user','create',1),('ADMIN','user','update',1),('ADMIN','user','delete',1),('ADMIN','permission','read',1),('ADMIN','permission','update',1),('ADMIN','logs','read',1),('ADMIN','settings','read',1),('ADMIN','settings','update',1),
-('OFFICER','dashboard','read',1),('OFFICER','household','read',1),('OFFICER','household','create',1),('OFFICER','household','update',1),('OFFICER','household','delete',1),('OFFICER','citizen','read',1),('OFFICER','citizen','create',1),('OFFICER','citizen','update',1),('OFFICER','citizen','delete',1),('OFFICER','movement','read',1),('OFFICER','movement','create',1),('OFFICER','movement','update',1),('OFFICER','report','read',1),('OFFICER','report','export',1),('OFFICER','pdf','read',1),('OFFICER','pdf','export',1),('OFFICER','import','read',1),('OFFICER','import','create',1),
-('VIEWER','dashboard','read',1),('VIEWER','household','read',1),('VIEWER','citizen','read',1),('VIEWER','report','read',1)
-ON DUPLICATE KEY UPDATE `allowed` = VALUES(`allowed`);
 
 -- Tai khoan quan tri dau tien se duoc tao bang man hinh cai dat o Sprint 2.
 -- Khong seed password mac dinh trong file SQL de tranh mat an toan.
@@ -421,14 +396,4 @@ CREATE TABLE IF NOT EXISTS `household_business_files` (
   CONSTRAINT `fk_hb_files_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `permissions` (`role`, `module`, `action`, `allowed`)
-VALUES
-('ADMIN','household_business','read',1),
-('ADMIN','household_business','create',1),
-('ADMIN','household_business','update',1),
-('ADMIN','household_business','delete',1),
-('OFFICER','household_business','read',1),
-('OFFICER','household_business','create',1),
-('OFFICER','household_business','update',1),
-('VIEWER','household_business','read',1)
-ON DUPLICATE KEY UPDATE `allowed` = VALUES(`allowed`);
+

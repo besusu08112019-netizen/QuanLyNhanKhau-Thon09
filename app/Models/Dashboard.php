@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Core\TenantConfig;
 
 final class Dashboard extends BaseModel
 {
@@ -165,7 +166,8 @@ final class Dashboard extends BaseModel
     public function hamletChart(array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        return $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'Thôn 09') AS label, COUNT(c.id) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY label", $params);
+        $params['default_area_label'] = TenantConfig::setting('hamletName', 'Khu vuc chua phan loai');
+        return $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),:default_area_label) AS label, COUNT(c.id) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY label", $params);
     }
 
     public function monthlyChangeChart(array $filters = []): array

@@ -2207,7 +2207,7 @@
     host.textContent = '';
     append(host, [
       AppHeader({
-        eyebrow: 'Thôn 09',
+        eyebrow: window.AppSettings?.unitName || 'Đơn vị hành chính',
         title: 'Dashboard',
         subtitle: data.generatedAt,
         icon: 'fa-bell',

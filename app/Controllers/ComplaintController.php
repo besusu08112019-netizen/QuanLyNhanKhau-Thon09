@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Core\SimplePdf;
+use App\Core\TenantConfig;
 use App\Models\Complaint;
 use App\Services\FileStorageService;
 
@@ -147,7 +148,7 @@ final class ComplaintController extends BaseController
         $report = $this->complaints->report($this->filters());
         $this->audit($user, 'complaints', 'export', 'Xuất PDF báo cáo phản ánh', null, ['totalRows' => $report['totalRows']]);
         $pdf = new SimplePdf();
-        $pdf->addPrintHeader('Thôn 09', $report['title']);
+        $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
         $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
         foreach ($report['summary'] as $label => $value) $pdf->addMeta($label . ': ' . $value);
         $pdf->addTable($report['headers'], $report['rows']);

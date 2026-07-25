@@ -35,10 +35,10 @@ CREATE TABLE IF NOT EXISTS `file_attachments` (
 INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 ('logoUrl', ''),
 ('backgroundUrl', ''),
-('communeName', 'xã Hồng Phong'),
+('communeName', ''),
 ('phone', ''),
 ('email', ''),
-('address', 'Thôn 09, xã Hồng Phong')
+('address', '')
 ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
 INSERT INTO `permissions` (`role`, `module`, `action`, `allowed`) VALUES

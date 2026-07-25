@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Core\SimplePdf;
+use App\Core\TenantConfig;
 use App\Models\Report;
 use App\Models\SystemSetting;
 use Throwable;
@@ -395,13 +396,14 @@ final class ReportController extends BaseController
         } catch (Throwable) {
         }
 
-        return 'Thôn 09 - Xã Hồng Phong';
+        return TenantConfig::unitName();
     }
 
     private function echoReportHeaderHtml(array $report): void
     {
+        $unitName = htmlspecialchars($this->reportUnitName($report), ENT_QUOTES, 'UTF-8');
         echo '<div class="report-print-masthead">';
-        echo '<div class="report-print-agency"><div class="report-print-agency-primary">T&#7880;NH NINH B&#204;NH</div><div class="report-print-agency-secondary">Th&#244;n 09, x&#227; H&#7891;ng Phong</div></div>';
+        echo '<div class="report-print-agency"><div class="report-print-agency-primary">' . $unitName . '</div><div class="report-print-agency-secondary"></div></div>';
         echo '<div class="report-print-national"><div class="report-print-national-title">C&#7896;NG H&#210;A X&#195; H&#7896;I CH&#7910; NGH&#296;A VI&#7878;T NAM</div><div class="report-print-national-subtitle">&#272;&#7897;c l&#7853;p - T&#7921; do - H&#7841;nh ph&#250;c</div></div>';
         echo '<div></div></div>';
         echo '<div class="report-print-title">' . htmlspecialchars((string) ($report['title'] ?? 'Báo cáo'), ENT_QUOTES, 'UTF-8') . '</div>';

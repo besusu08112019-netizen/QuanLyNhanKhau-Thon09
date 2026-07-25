@@ -4,7 +4,7 @@ $uploadPath = getenv('UPLOAD_PATH') ?: dirname(__DIR__) . '/uploads';
 
 $resolveAppKey = static function () use ($uploadPath): string {
     $envKey = trim((string) getenv('APP_KEY'));
-    if ($envKey !== '' && $envKey !== 'change-me-thon09-production-key') {
+    if ($envKey !== '' && $envKey !== 'change-this-to-a-long-random-production-secret') {
         return $envKey;
     }
 
@@ -28,7 +28,7 @@ $resolveAppKey = static function () use ($uploadPath): string {
 };
 
 return [
-    'name' => getenv('APP_NAME') ?: json_decode('"Qu\u1ea3n l\u00fd Nh\u00e2n kh\u1ea9u Th\u00f4n 09 x\u00e3 H\u1ed3ng Phong"', true),
+    'name' => getenv('APP_NAME') ?: 'He thong Quan ly Hanh chinh',
     'app_key' => $resolveAppKey(),
     'timezone' => getenv('APP_TIMEZONE') ?: 'Asia/Ho_Chi_Minh',
     'debug' => filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN),

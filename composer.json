@@ -1,6 +1,6 @@
 {
-  "name": "thon09/quan-ly-nhan-khau",
-  "description": "He thong Quan Ly Nhan Khau Thon 09 chay tren PHP 8.2 va MySQL.",
+  "name": "tenant/quan-ly-hanh-chinh",
+  "description": "He thong Quan Ly Hanh Chinh multi-tenant theo cau hinh chay tren PHP 8.2 va MySQL.",
   "type": "project",
   "license": "proprietary",
   "require": {

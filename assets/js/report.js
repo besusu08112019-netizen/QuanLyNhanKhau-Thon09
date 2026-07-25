@@ -466,7 +466,7 @@
     const meta = report.meta || {};
     const configured = window.App?.settings || window.AppSettings || {};
     const unit = meta.unit_name || configured.unitName || [configured.hamletName, configured.communeName].filter(Boolean).join(' - ');
-    return unit || 'Thôn 09 - Xã Hồng Phong';
+    return unit || 'Đơn vị hành chính';
   }
 
   function reportSignatures(report) {

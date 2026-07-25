@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Core\SimplePdf;
+use App\Core\TenantConfig;
 use App\Models\Finance;
 use App\Services\FileStorageService;
 use Throwable;
@@ -119,7 +120,7 @@ final class FinanceController extends BaseController
         $report = $this->finance->report($this->filters());
         $this->audit($user, 'finance', 'export', 'Xuat PDF thu chi', null, ['totalRows' => $report['totalRows']]);
         $pdf = new SimplePdf();
-        $pdf->addPrintHeader('Thon 09', $report['title']);
+        $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
         $pdf->addMeta('Tong thu: ' . number_format((float)$report['summary']['total_income'], 0, ',', '.') . ' VND');
         $pdf->addMeta('Tong chi: ' . number_format((float)$report['summary']['total_expense'], 0, ',', '.') . ' VND');
         $pdf->addMeta('Con lai: ' . number_format((float)$report['summary']['balance'], 0, ',', '.') . ' VND');

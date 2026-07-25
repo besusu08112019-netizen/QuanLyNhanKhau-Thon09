@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Core\SimplePdf;
+use App\Core\TenantConfig;
 use App\Models\VillageDocument;
 use App\Services\FileStorageService;
 use Throwable;
@@ -137,7 +138,7 @@ final class VillageDocumentController extends BaseController
         $report = $this->documents->report($this->filters());
         $this->audit($user, 'documents', 'export', 'Xuat PDF van ban', null, ['totalRows' => $report['totalRows']]);
         $pdf = new SimplePdf();
-        $pdf->addPrintHeader('Thon 09', $report['title']);
+        $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
         $pdf->addMeta('Thoi gian xuat: ' . date('d/m/Y H:i:s'));
         $pdf->addTable($report['headers'], $report['rows']);
         $pdf->addSignatureBlock('Truong thon');

@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 function payload(data) {
   return { contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) };
@@ -23,8 +23,8 @@ async function mockApis(page) {
     if (path === '/api/households') {
       const search = url.searchParams.get('search') || '';
       const rows = [
-        { id: 1, household_code: 'H09-001', head_citizen_name: 'Nguyễn Văn A', address: 'Xóm 1 Thôn 09', phone: '0912345678', at_home_count: 4, away_count: 0, household_type: 'normal' },
-        { id: 2, household_code: 'H09-002', head_citizen_name: 'Trần Văn B', address: 'Xóm 2 Thôn 09', phone: '0987654321', at_home_count: 3, away_count: 1, household_type: 'normal' }
+        { id: 1, household_code: 'H09-001', head_citizen_name: 'Nguyễn Văn A', address: 'Xóm 1 Thon mau', phone: '0912345678', at_home_count: 4, away_count: 0, household_type: 'normal' },
+        { id: 2, household_code: 'H09-002', head_citizen_name: 'Trần Văn B', address: 'Xóm 2 Thon mau', phone: '0987654321', at_home_count: 3, away_count: 1, household_type: 'normal' }
       ];
       const items = rows.filter((row) => matchesSearch(row, ['household_code', 'head_citizen_name', 'address', 'phone'], search));
       return route.fulfill(payload({ items, total: items.length, page: 1, pageSize: 20, totalPages: 1 }));

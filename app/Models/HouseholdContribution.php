@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Core\TenantConfig;
 use App\Services\ContributionRuleEngine;
 
 final class HouseholdContribution extends BaseModel
@@ -1316,7 +1317,7 @@ SQL);
             : ('Năm ' . (string) ($filters['year'] ?? date('Y')));
         $report['meta'] = [
             'national_header' => 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM - Độc lập - Tự do - Hạnh phúc',
-            'unit_name' => 'Thôn 09 - Xã Hồng Phong',
+            'unit_name' => TenantConfig::unitName(),
             'period_label' => 'Thời gian thống kê: ' . $period,
             'prepared_by' => 'Người lập biểu: ................................',
             'approved_by' => 'Trưởng thôn ký xác nhận: ................................',

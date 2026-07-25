@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 const widths = [320, 360, 375, 390, 414, 430, 600, 768, 1024, 1280, 1440, 1920];
 const screens = ['dashboard', 'households', 'persons', 'gis', 'reports', 'businessHouseholds', 'agriculture', 'livestock', 'publicAssets', 'houses', 'vehicles', 'contributions'];
@@ -71,7 +71,7 @@ async function mockApis(page) {
     if (path.includes('/api/gis')) return route.fulfill(payload({ items: [], total: 0, metrics: {}, charts: {} }));
     if (path === '/api/profiles/household/1') return route.fulfill(payload({
       type: 'household',
-      profile: { id: 1, household_code: 'H09-0001', head_citizen_name: 'NGUYEN VAN AN', address: 'Thon 09, xa Hong Phong', at_home_count: 4, away_count: 1 },
+      profile: { id: 1, household_code: 'H09-0001', head_citizen_name: 'NGUYEN VAN AN', address: 'Thon mau, Xa mau', at_home_count: 4, away_count: 1 },
       sections: {},
       members: [],
       files: [],
@@ -93,7 +93,7 @@ async function mockApis(page) {
       id: 1,
       household_code: 'H09-0001',
       head_citizen_name: 'NGUYEN VAN AN',
-      address: 'Thon 09, xa Hong Phong',
+      address: 'Thon mau, Xa mau',
       phone: '0912345678',
       at_home_count: 4,
       away_count: 1,
@@ -104,7 +104,7 @@ async function mockApis(page) {
         id: index + 1,
         household_code: index === 1 ? 'H09-0087' : `H09-000${index + 1}`,
         head_citizen_name: index < 2 ? 'NGUYEN VAN AN' : `HO TEST ${index + 1}`,
-        address: index === 1 ? 'Xom 03 cu, thon 09' : 'Thon 09, xa Hong Phong',
+        address: index === 1 ? 'Xom 03 cu, thon mau' : 'Thon mau, Xa mau',
         area_code: index === 1 ? 'Xom 03 cu' : 'Xom 01 cu',
         phone: index === 1 ? '0987000000' : '0912345678',
         member_count_real: index === 1 ? 3 : (index === 2 ? 1 : 5),
@@ -122,7 +122,7 @@ async function mockApis(page) {
       id: 1,
       household_id: 1,
       household_code: 'H09-0001',
-      household_address: 'Thon 09, xa Hong Phong',
+      household_address: 'Thon mau, Xa mau',
       head_citizen_name: 'NGUYEN VAN AN',
       member_count_real: 5,
       citizen_code: 'NK-0001',
@@ -157,7 +157,7 @@ async function mockApis(page) {
       total: 1, page: 1, pageSize: 20, totalPages: 1, kpis: {}
     }));
     if (path.includes('/api/public-assets')) return route.fulfill(payload({
-      items: [{ id: 1, asset_code: 'CT-01', asset_name: 'Nha van hoa thon', type_name: 'Nha van hoa', area_code: 'K1', campus_area: 350, managing_unit: 'Thon 09', manager_name: 'Nguyen Van An', status_label: 'Dang su dung' }],
+      items: [{ id: 1, asset_code: 'CT-01', asset_name: 'Nha van hoa thon', type_name: 'Nha van hoa', area_code: 'K1', campus_area: 350, managing_unit: 'Thon mau', manager_name: 'Nguyen Van An', status_label: 'Dang su dung' }],
       total: 1, page: 1, pageSize: 20, totalPages: 1, metrics: {}, charts: {}, types: [], areas: [], statuses: []
     }));
     return route.fulfill(payload({ items: [], total: 0, page: 1, pageSize: 20, totalPages: 1, metrics: {}, charts: {} }));
@@ -344,7 +344,7 @@ test.describe('mobile tablet UI redesign contract', () => {
       await expect(page.locator('#personForm [name="householdId"]')).toHaveValue('2');
       await expect(page.locator('#personForm [name="householdCode"]')).toHaveValue('H09-0087');
       await expect(page.locator('#personForm [name="householdHeadName"]')).toHaveValue('NGUYEN VAN AN');
-      await expect(page.locator('#personForm [name="householdAddress"]')).toHaveValue('Xom 03 cu, thon 09');
+      await expect(page.locator('#personForm [name="householdAddress"]')).toHaveValue('Xom 03 cu, thon mau');
       await expect(page.locator('#personForm [name="householdMemberCount"]')).toHaveValue('3 nhân khẩu');
       await expect(page.locator('#personForm [name="citizenCode"]')).toBeDisabled();
       await expect(page.locator('#personForm [name="citizenCode"]')).toHaveValue('Tự sinh khi lưu');

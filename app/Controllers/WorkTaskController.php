@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Core\SimplePdf;
+use App\Core\TenantConfig;
 use App\Models\WorkTask;
 use App\Services\FileStorageService;
 use Throwable;
@@ -138,7 +139,7 @@ final class WorkTaskController extends BaseController
         $report = $this->tasks->report($this->filters());
         $this->audit($user, 'work_tasks', 'export', 'Xuất PDF báo cáo công việc', null, ['totalRows' => $report['totalRows']]);
         $pdf = new SimplePdf();
-        $pdf->addPrintHeader('Thôn 09', $report['title']);
+        $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
         $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
         $pdf->addTable($report['headers'], $report['rows']);
         $pdf->addSignatureBlock('Trưởng thôn');

@@ -4,7 +4,7 @@ Date: 2026-07-24
 
 ## Scope
 
-This audit starts Phase 1 of the Thon 09 operating platform roadmap. The goal is to establish a clean baseline before adding or expanding modules.
+This audit starts Phase 1 of the multi-tenant operating platform roadmap. The goal is to establish a clean baseline before adding or expanding modules.
 
 Covered in this pass:
 

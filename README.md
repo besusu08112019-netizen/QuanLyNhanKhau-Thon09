@@ -1,6 +1,6 @@
-# Hệ thống Quản lý Nhân khẩu Thôn 09
+# Hệ thống Quản lý Hành chính Multi-tenant
 
-Ứng dụng web quản lý hộ gia đình, nhân khẩu, GIS, báo cáo, import/export, phân quyền, nhật ký và sao lưu dữ liệu cho Thôn 09 xã Hồng Phong.
+Ứng dụng web quản lý hộ gia đình, nhân khẩu, GIS, báo cáo, import/export, phân quyền, nhật ký và sao lưu dữ liệu cho nhiều thôn từ cùng một source code. Mỗi thôn dùng database, domain/subdomain và cấu hình `.env` hoặc bảng `settings` riêng.
 
 ## Nền tảng
 
@@ -15,7 +15,9 @@
 - `app/`: controller, model, service và core framework.
 - `assets/css`, `assets/js`: giao diện và logic frontend.
 - `views/app.php`: shell giao diện chính.
-- `database/database.sql`: schema cơ sở dữ liệu nền.
+- `database/schema.sql`: schema cơ sở dữ liệu nền.
+- `database/seed.sql`: dữ liệu cấu hình/quyền mặc định, không chứa dữ liệu người dân.
+- `database/database.sql`: bản all-in-one tương thích ngược.
 - `database/migrations/`: migration bổ sung theo sprint.
 - `sample-data/`: file mẫu import CSV/XLSX.
 - `config/database.php`: cấu hình database production, không commit file này.
@@ -48,7 +50,7 @@ Mọi API nghiệp vụ đều kiểm tra token đăng nhập và quyền trư�
 
 1. Trỏ document root của website vào thư mục chứa `index.php`.
 2. Tạo database MySQL/MariaDB rỗng với charset `utf8mb4`.
-3. Import `database/database.sql`.
+3. Import `database/schema.sql`, sau đó import `database/seed.sql`.
 4. Chạy các migration trong `database/migrations/` theo thứ tự tên file nếu nâng cấp từ bản cũ.
 5. Tạo `config/database.php` từ `config/database.example.php` hoặc cấu hình biến môi trường `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_CHARSET`.
 6. Đảm bảo `APP_KEY` được cấu hình trong môi trường production. Nếu không, ứng dụng sẽ tạo secret runtime trong `uploads/.app_key`.

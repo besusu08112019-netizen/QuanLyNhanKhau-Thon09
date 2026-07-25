@@ -32,7 +32,7 @@ Checklist này dùng cho bản PHP/MySQL chạy trên Linux hosting hoặc cPane
 
 - [ ] Tạo backup SQL trước khi deploy hoặc chạy migration.
 - [ ] Tải được backup SQL qua module Sao lưu.
-- [ ] File backup có header `Quan Ly Nhan Khau Thon 09 backup`.
+- [ ] File backup có header `Quan Ly Hanh Chinh backup`.
 - [ ] Restore chỉ thao tác bởi tài khoản đủ quyền và chỉ dùng backup do ứng dụng sinh ra.
 - [ ] Không test restore trực tiếp trên production nếu chưa có phê duyệt mất dữ liệu.
 

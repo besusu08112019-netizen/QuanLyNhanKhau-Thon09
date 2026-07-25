@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 const widths = [320, 360, 375, 390, 412, 414, 430, 768, 820, 853, 912, 1024, 1280, 1440, 1920];
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
@@ -12,7 +12,7 @@ async function mockApis(page) {
     const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
 
     if (url.includes('/api/public/login-config')) return payload({
-      settings: { systemName: 'Thong 09', hamletName: 'Thon 09', communeName: 'Hong Phong', version: 'v2.0' },
+      settings: { systemName: 'Thong 09', hamletName: 'Thon mau', communeName: 'Xa mau', version: 'v2.0' },
       metrics: {}
     });
     if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });

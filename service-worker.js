@@ -1,4 +1,4 @@
-const PWA_VERSION = 'thon09-pwa-v20260723-upload-media-1';
+const PWA_VERSION = 'tenant-pwa-v20260725-multitenant-1';
 const STATIC_CACHE = `${PWA_VERSION}-static`;
 const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
@@ -15,7 +15,7 @@ const STATIC_ASSETS = [
   withBase('manifest.json'),
   withBase('manifest.webmanifest'),
   withBase('favicon.ico?v=20260715-1'),
-  withBase('assets/icons/thon09-logo.png?v=20260715-1'),
+  withBase('assets/icons/icon-192.png?v=20260715-1'),
   withBase('assets/icons/icon-192.png?v=20260715-1'),
   withBase('assets/icons/icon-512.png?v=20260715-1'),
   withBase('assets/icons/maskable-192.png?v=20260715-1'),
@@ -103,7 +103,7 @@ self.addEventListener('sync', event => {
 });
 
 self.addEventListener('push', event => {
-  const fallback = { title: 'Quản lý Nhân khẩu Thôn 09', body: 'Bạn có thông báo mới từ hệ thống.', data: { url: '/' } };
+    const fallback = { title: 'Hệ thống Quản lý Hành chính', body: 'Bạn có thông báo mới từ hệ thống.', data: { url: '/' } };
   const payload = (() => {
     try { return event.data ? event.data.json() : fallback; } catch (_) { return fallback; }
   })();

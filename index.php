@@ -25,6 +25,7 @@ use App\Core\BaseModel;
 use App\Core\Request;
 use App\Core\Router;
 use App\Core\Response;
+use App\Core\TenantConfig;
 use App\Controllers\AgricultureProductionController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
@@ -683,6 +684,24 @@ if (!str_starts_with($request->path(), '/api')) {
         echo 'Không tải được giao diện ứng dụng.';
         exit;
     }
+    $tenantSettings = TenantConfig::publicSettings();
+    $tenantMark = trim((string) ($tenantSettings['hamletName'] ?? ''));
+    if ($tenantMark === '') {
+        $tenantMark = trim((string) ($tenantSettings['unitName'] ?? ''));
+    }
+    $tenantMark = mb_strtoupper(mb_substr($tenantMark !== '' ? $tenantMark : 'DV', 0, 3, 'UTF-8'), 'UTF-8');
+    $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    $html = strtr($html, [
+        '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'He thong Quan ly Hanh chinh')),
+        '{{UNIT_NAME}}' => $escapeHtml(TenantConfig::unitName($tenantSettings)),
+        '{{HAMLET_NAME}}' => $escapeHtml((string) ($tenantSettings['hamletName'] ?? '')),
+        '{{COMMUNE_NAME}}' => $escapeHtml((string) ($tenantSettings['communeName'] ?? '')),
+        '{{COPYRIGHT}}' => $escapeHtml((string) ($tenantSettings['copyright'] ?? '')),
+        '{{TENANT_MARK}}' => $escapeHtml($tenantMark),
+        '{{THEME_COLOR}}' => $escapeHtml((string) ($tenantSettings['themeColor'] ?? '#0b6b3a')),
+        '{{BACKGROUND_COLOR}}' => $escapeHtml((string) ($tenantSettings['backgroundColor'] ?? '#eef3f8')),
+        '{{APP_SETTINGS_JSON}}' => json_encode($tenantSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
+    ]);
     $versionedAssets = [
         'manifest.json',
         'favicon.ico',

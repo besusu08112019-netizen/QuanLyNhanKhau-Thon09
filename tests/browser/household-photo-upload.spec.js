@@ -6,7 +6,7 @@ const path = require('path');
 const loginConfig = {
   ok: true,
   data: {
-    settings: { systemName: 'Test', hamletName: 'Thon 09', communeName: 'Test', slogan: '', version: 'test', copyright: '' },
+    settings: { systemName: 'Test', hamletName: 'Thon mau', communeName: 'Test', slogan: '', version: 'test', copyright: '' },
     metrics: { total_households: 0, total_citizens: 0, party_member_count: 0, male_count: 0, female_count: 0, away_count: 0 }
   }
 };
@@ -152,7 +152,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await expect.poll(() => page.evaluate(() => window.__photoGpsRequestCount || 0)).toBe(0);
   await page.locator('#householdModal input[name="householdCode"]').fill('QA-PHOTO-001');
   await page.locator('#householdModal input[name="headCitizenName"]').fill('Nguyễn Văn Test');
-  await page.locator('#householdModal input[name="address"]').fill('Thôn 09');
+  await page.locator('#householdModal input[name="address"]').fill('Thon mau');
   await page.locator('#householdModal input[name="householdPhoto"]').setInputFiles(pngFile('thon09-library.png'));
   await expect.poll(() => page.locator('#householdPhotoPreview img').count()).toBe(1);
   await page.locator('#householdForm button[type="submit"]').click();

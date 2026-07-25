@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
+use App\Core\TenantConfig;
 use App\Models\SystemSetting;
 
 final class SettingController extends BaseController
@@ -165,26 +166,8 @@ final class SettingController extends BaseController
 
     private function defaultPublicSettings(): array
     {
-        return [
-            'logoUrl' => null,
-            'backgroundUrl' => null,
-            'backgroundImages' => [],
-            'systemName' => 'Hệ thống Quản lý Hành chính',
-            'hamletName' => 'Thôn 09',
-            'communeName' => 'Xã Hồng Phong',
-            'slogan' => 'Vì Nhân dân phục vụ',
-            'version' => 'v2.0',
-            'copyright' => '© Thôn 09 - Xã Hồng Phong',
-            'introTitle' => 'Giới thiệu Thôn 09 - Xã Hồng Phong',
-            'introContent' => '',
-            'introImageUrl' => null,
-            'contactAddress' => '',
-            'contactPhone' => '',
-            'contactEmail' => '',
-            'contactWebsite' => '',
-        ];
+        return TenantConfig::publicSettings([]);
     }
-
     private function logPublicConfigFailure(\Throwable $e): void
     {
         error_log('[PUBLIC_LOGIN_CONFIG_ERROR] ' . json_encode([

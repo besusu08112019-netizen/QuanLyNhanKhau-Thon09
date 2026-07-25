@@ -3,18 +3,25 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Core\TenantConfig;
 
 final class SystemSetting extends BaseModel
 {
-    private array $allowed = ['systemName','logoUrl','backgroundUrl','backgroundImages','backgroundInterval','introImageUrl','unitName','hamletName','communeName','slogan','softwareVersion','introTitle','historyTitle','hamletHistory','introduction','phone','email','address','website','copyright','reportSigner','supportEmail','maintenanceMessage'];
+    private array $allowed = ['systemName','logoUrl','backgroundUrl','backgroundImages','backgroundInterval','introImageUrl','unitName','hamletName','communeName','slogan','softwareVersion','introTitle','historyTitle','hamletHistory','introduction','phone','email','address','website','copyright','reportSigner','supportEmail','maintenanceMessage','themeColor','backgroundColor','manifestId'];
 
     public function all(): array
     {
         $rows = $this->fetchAll('SELECT setting_key, setting_value FROM settings ORDER BY setting_key');
         $settings = [];
-        foreach ($rows as $row) $settings[$row['setting_key']] = $row['setting_value'];
-        foreach ($this->allowed as $key) if (!array_key_exists($key, $settings)) $settings[$key] = $this->defaultValue($key);
-        return $settings;
+        foreach ($rows as $row) {
+            $settings[$row['setting_key']] = $row['setting_value'];
+        }
+        foreach ($this->allowed as $key) {
+            if (!array_key_exists($key, $settings)) {
+                $settings[$key] = $this->defaultValue($key);
+            }
+        }
+        return TenantConfig::publicSettings($settings);
     }
 
     public function updateMany(array $data, int $userId): array
@@ -29,19 +36,7 @@ final class SystemSetting extends BaseModel
 
     private function defaultValue(string $key): string
     {
-        $defaults = [
-            'systemName' => 'Hệ thống Quản lý Hành chính',
-            'hamletName' => 'Thôn 09',
-            'communeName' => 'Xã Hồng Phong',
-            'slogan' => 'Vì Nhân dân phục vụ',
-            'softwareVersion' => 'v2.0',
-            'introTitle' => 'Giới thiệu Thôn 09 - Xã Hồng Phong',
-            'historyTitle' => 'Lịch sử hình thành Thôn 09',
-            'backgroundInterval' => '6000',
-            'website' => 'nhankhauthon09.com',
-            'copyright' => '© Thôn 09 - Xã Hồng Phong',
-        ];
+        $defaults = TenantConfig::defaults();
         return $defaults[$key] ?? '';
     }
 }
-

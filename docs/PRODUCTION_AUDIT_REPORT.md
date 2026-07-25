@@ -4,7 +4,7 @@ Ngày rà soát: 2026-06-28
 
 ## Phạm vi
 
-Rà soát phiên bản PHP/MySQL của hệ thống Quản lý Nhân khẩu Thôn 09 để chuẩn bị chạy trên Linux Hosting, Apache, PHP 8.2 và MySQL 8 cho domain `nhankhauthon09.com`.
+Rà soát phiên bản PHP/MySQL của hệ thống Quản lý Hành chính multi-tenant để chuẩn bị chạy trên Linux Hosting, Apache, PHP 8.2 và MySQL 8 cho từng domain tenant.
 
 ## Lỗi và rủi ro đã xử lý
 
@@ -19,8 +19,8 @@ Rà soát phiên bản PHP/MySQL của hệ thống Quản lý Nhân khẩu Thô
 - Bổ sung `APP_KEY` và timezone từ biến môi trường để cấu hình production an toàn hơn.
 - Bổ sung vai trò `COLLABORATOR` vào màn hình ma trận phân quyền để đồng bộ với migration database.
 - Bổ sung `composer.json` để khai báo PHP 8.2 và các extension cần có trên hosting.
-- Bổ sung `.env.example` cho domain `nhankhauthon09.com`.
-- Cập nhật hướng dẫn triển khai Linux Hosting riêng cho `nhankhauthon09.com`.
+- Bổ sung `.env.example` cho domain tenant.
+- Cập nhật hướng dẫn triển khai Linux Hosting cho từng tenant.
 
 ## File đã chỉnh sửa hoặc tạo mới
 
@@ -64,12 +64,12 @@ Rà soát phiên bản PHP/MySQL của hệ thống Quản lý Nhân khẩu Thô
 ## Giới hạn kiểm thử trong môi trường hiện tại
 
 - Môi trường hiện tại không cho phép clone repository qua mạng và không có MySQL/PHP Linux runtime thực để chạy end-to-end.
-- Chưa có thông tin FTP/SFTP/cPanel/SSH và tài khoản MySQL của hosting nên chưa thể upload trực tiếp lên `nhankhauthon09.com`.
+- Chưa có thông tin FTP/SFTP/cPanel/SSH và tài khoản MySQL của hosting tenant nên chưa thể upload trực tiếp.
 - Cần kiểm thử thực tế trên hosting sau khi có thông tin truy cập để xác nhận không còn lỗi PHP, SQL, routing, session, upload và authentication.
 
 ## Checklist triển khai thực tế
 
-- Trỏ DNS `nhankhauthon09.com` về IP hosting.
+- Trỏ DNS domain tenant về IP hosting.
 - Upload source vào `public_html` hoặc document root tương ứng.
 - Import `database/database.sql` và migration admin panel.
 - Cấu hình `config/database.php` hoặc biến môi trường database.

@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="nosnippet">
-  <meta name="theme-color" content="#0b6b3a">
-  <meta name="background-color" content="#eef3f8">
+  <meta name="theme-color" content="{{THEME_COLOR}}">
+  <meta name="background-color" content="{{BACKGROUND_COLOR}}">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Quản lý Nhân khẩu Thôn 09">
-  <meta name="application-name" content="Quản lý Nhân khẩu Thôn 09">
-  <meta name="msapplication-TileColor" content="#0b6b3a">
-  <title>Quản Lý Nhân Khẩu Thôn 09</title>
+  <meta name="apple-mobile-web-app-title" content="{{APP_NAME}}">
+  <meta name="application-name" content="{{APP_NAME}}">
+  <meta name="msapplication-TileColor" content="{{THEME_COLOR}}">
+  <title>{{APP_NAME}}</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
@@ -22,25 +22,26 @@
   <link rel="stylesheet" href="/assets/css/app.min.css">
   <link rel="stylesheet" href="/assets/css/mobile-design-system-v2.min.css">
   <link rel="stylesheet" href="/assets/css/print.min.css" media="print">
+  <script>window.AppSettings={{APP_SETTINGS_JSON}};</script>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Bỏ qua điều hướng</a>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3" aria-live="polite" aria-atomic="true"></div>
 
   <main id="loginView" class="login-view">
-    <section class="login-landing" aria-label="Đăng nhập hệ thống quản lý hành chính Thôn 09">
+    <section class="login-landing" aria-label="Đăng nhập hệ thống quản lý hành chính">
       <section class="login-panel" aria-labelledby="loginSystemName">
-        <div class="login-brand" aria-label="Thôn 09 xã Hồng Phong">
+        <div class="login-brand" aria-label="{{UNIT_NAME}}">
           <div id="loginLogo" class="login-logo login-logo-emblem" aria-hidden="true">
             <span class="logo-flag"><i class="fa-solid fa-star"></i></span>
             <span class="logo-landmark"><i class="fa-solid fa-landmark"></i></span>
             <span class="logo-village"><i class="fa-solid fa-house-chimney"></i></span>
             <span class="logo-name">Thôn</span>
-            <strong>09</strong>
+            <strong id="loginLogoText">{{TENANT_MARK}}</strong>
           </div>
           <div class="login-title-block">
-            <p id="loginSystemName">Hệ thống Quản lý Hành chính</p>
-            <h1><span id="loginHamletName">Thôn 09</span> - <span id="loginCommuneName">Xã Hồng Phong</span></h1>
+            <p id="loginSystemName">{{APP_NAME}}</p>
+            <h1><span id="loginHamletName">{{HAMLET_NAME}}</span><span id="loginUnitSeparator"> - </span><span id="loginCommuneName">{{COMMUNE_NAME}}</span></h1>
             <div id="loginSlogan" class="login-slogan">Vì Nhân dân phục vụ</div>
           </div>
         </div>
@@ -55,7 +56,7 @@
           </div>
           <button class="btn login-submit" type="submit"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i><span>Đăng nhập</span></button>
         </form>
-        <footer class="login-footer"><span id="loginVersion">Phiên bản v2.0</span><span id="loginCopyright">© Thôn 09 - Xã Hồng Phong</span></footer>
+        <footer class="login-footer"><span id="loginVersion">Phiên bản v2.0</span><span id="loginCopyright">{{COPYRIGHT}}</span></footer>
       </section>
     </section>
   </main>
@@ -65,11 +66,11 @@
     <aside class="sidebar gov-sidebar">
       <button id="sidebarCollapse" class="sidebar-collapse-btn" type="button" title="Thu gọn Sidebar" aria-label="Thu gọn Sidebar"><i class="fa-solid fa-angle-left"></i></button>
       <div class="sidebar-brand gov-brand">
-        <span class="state-mark small-mark">09</span>
+        <span id="sidebarTenantMark" class="state-mark small-mark">{{TENANT_MARK}}</span>
         <div>
-          <strong>Hệ thống quản lý hành chính</strong>
-          <b>Thôn 09</b>
-          <small>Xã Hồng Phong</small>
+          <strong id="sidebarSystemName">{{APP_NAME}}</strong>
+          <b id="sidebarHamletName">{{HAMLET_NAME}}</b>
+          <small id="sidebarCommuneName">{{COMMUNE_NAME}}</small>
         </div>
       </div>
       <nav class="nav flex-column gov-nav" aria-label="Dieu huong chinh" data-platform-menu-mount></nav>
@@ -79,7 +80,7 @@
     <section id="mainContent" class="main-area" tabindex="-1">
       <header class="topbar gov-topbar">
         <button id="sidebarToggle" class="btn btn-outline-secondary btn-sm d-lg-none" type="button"><i class="fa-solid fa-bars"></i></button>
-        <span class="mobile-topbar-logo state-mark small-mark" aria-hidden="true">09</span>
+        <span id="mobileTenantMark" class="mobile-topbar-logo state-mark small-mark" aria-hidden="true">{{TENANT_MARK}}</span>
         <div class="topbar-title-block gov-breadcrumb-block">
           <small id="breadcrumbTrail" class="breadcrumb-trail">Trang chủ / Dashboard</small>
         </div>

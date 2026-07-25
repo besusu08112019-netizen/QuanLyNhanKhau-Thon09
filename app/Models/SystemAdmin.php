@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Core\TenantConfig;
 use Throwable;
 
 final class SystemAdmin extends BaseModel
@@ -13,7 +14,7 @@ final class SystemAdmin extends BaseModel
         $population = (new PopulationStatistics())->counts();
         return [
             'system' => [
-                'name' => $app['name'] ?? 'Thon 09',
+                'name' => $app['name'] ?? TenantConfig::setting('systemName', 'He thong Quan ly Hanh chinh'),
                 'version' => defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1.0.0',
                 'phpVersion' => PHP_VERSION,
                 'databaseVersion' => $this->databaseVersion(),
