@@ -105,6 +105,17 @@
     return modal && !modal.classList.contains('d-none') && getComputedStyle(modal).display !== 'none';
   }
 
+  function householdFormPayload(form) {
+    const payload = Object.fromEntries(new FormData(form).entries());
+    form.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      if (input.name) payload[input.name] = input.checked ? 1 : 0;
+    });
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === '') payload[key] = null;
+    });
+    return payload;
+  }
+
   function fileNameForHousehold(code, ext = 'jpg') {
     const safeCode = String(code || 'unknown').replace(/[^A-Za-z0-9_-]/g, '_');
     const now = new Date();
@@ -411,7 +422,7 @@
       if (pendingFileTask) await pendingFileTask;
       const hadPhotoChange = !!currentFile || removeExisting;
       const shouldReplaceExistingPhoto = !!currentFile && (!!currentPhoto || !!idBefore);
-      const payload = Object.fromEntries(new FormData(form).entries());
+      const payload = householdFormPayload(form);
       delete payload.photo;
       delete payload.householdPhoto;
       const id = idBefore || payload.id;

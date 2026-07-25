@@ -302,7 +302,7 @@ final class Household extends BaseModel
     private function bool(mixed $value): int
     {
         $text = mb_strtolower(trim((string) $value));
-        return in_array($text, ['1','true','yes','co','có','x'], true) ? 1 : 0;
+        return in_array($text, ['1','true','yes','on','co','có','x'], true) ? 1 : 0;
     }
 
     private function normalize(string $value): string
