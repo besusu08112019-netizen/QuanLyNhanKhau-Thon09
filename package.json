@@ -10,6 +10,7 @@
     "test:ai-household-tool": "php tests/ai-household-tool-smoke.php",
     "test:ai-intent": "php tests/ai-intent-smoke.php && node tests/ai-intent.test.js",
     "test:ai-resident-tool": "php tests/ai-resident-tool-smoke.php",
+    "test:ai-statistics-tool": "php tests/ai-statistics-tool-smoke.php",
     "test:ai-speech": "node tests/ai-speech.test.js",
     "test:ai-tools": "php tests/ai-tool-framework-smoke.php",
     "test:browser": "playwright test",
