@@ -1,7 +1,4 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/nhhon5mp/thon09.hongphongnb.com
-    - /bin/mkdir -p "$DEPLOYPATH"
-    - /bin/mkdir -p "$DEPLOYPATH/storage" "$DEPLOYPATH/uploads" "$DEPLOYPATH/backups" "$DEPLOYPATH/cache" "$DEPLOYPATH/sessions" "$DEPLOYPATH/logs"
-    - /usr/bin/rsync -a --delete --chmod=D755,F644 --exclude='.cpanel.yml' --exclude='.git/' --exclude='.github/' --exclude='.env' --exclude='.env.*' --exclude='storage/***' --exclude='uploads/***' --exclude='backups/***' --exclude='cache/***' --exclude='sessions/***' --exclude='logs/***' --exclude='vendor/bin/***' --exclude='tests/***' --exclude='node_modules/***' --exclude='installed.lock' --exclude='test-results/***' --exclude='.tmp/***' --exclude='*.log' ./ "$DEPLOYPATH"/
+    - echo "Deploy test"
