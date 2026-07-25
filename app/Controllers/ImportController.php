@@ -415,7 +415,14 @@ final class ImportController extends BaseController
         return ['total' => count($rows), 'valid' => count($validRows), 'warnings' => $warnings, 'warning' => count($warnings), 'failed' => count($errors), 'errors' => $errors, 'validRows' => $validRows, 'previewRows' => array_slice($validRows, 0, 20)];
     }
 
-    private function validIdentity(string $value): bool { return (bool) preg_match('/^\d{9}(\d{3})?$/', preg_replace('/\D+/', '', $value)); }
+    private function validIdentity(string $value): bool { return (bool) preg_match('/^\d{9}(\d{3})?$/', $this->normalizeIdentity($value)); }
+
+    private function normalizeIdentity(string $value): string
+    {
+        $digits = preg_replace('/\D+/', '', trim($value)) ?? '';
+        if (strlen($digits) === 11 && str_starts_with($digits, '3')) return '0' . $digits;
+        return $digits;
+    }
     private function validPhone(string $value): bool { return (bool) preg_match('/^0\d{9,10}$/', $this->normalizePhone($value)); }
 
     private function normalizePhone(string $value): string
@@ -455,7 +462,7 @@ final class ImportController extends BaseController
             'fullName' => trim((string) ($data['fullName'] ?? '')),
             'gender' => $data['gender'] ?? 'Nam',
             'dateOfBirth' => $data['dateOfBirth'] ?? '',
-            'identityNumber' => trim((string) ($data['identityNumber'] ?? '')),
+            'identityNumber' => $this->normalizeIdentity((string) ($data['identityNumber'] ?? '')),
             'phone' => $this->normalizePhone((string) ($data['phone'] ?? '')),
             'relationship' => $data['relationship'] ?? 'Khác',
             'fatherName' => trim((string) ($data['fatherName'] ?? '')),
