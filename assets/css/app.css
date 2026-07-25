@@ -588,9 +588,11 @@ body { background: var(--surface); font-size: 14px; line-height: 1.55; }
 .app-shell { grid-template-columns: var(--sidebar-width) minmax(0, 1fr); background: var(--surface); }
 .gov-sidebar { position: sticky; top: 0; height: 100vh; padding: 16px 12px; background: #fff; color: var(--ink); border-right: 1px solid var(--line); box-shadow: 8px 0 30px rgba(15,23,42,.04); overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; }
 .sidebar-collapse-btn { position: absolute; top: 18px; right: -15px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--brand); display: grid; place-items: center; box-shadow: 0 8px 18px rgba(16,36,28,.12); z-index: 2; }
-.gov-brand { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 8px 8px 16px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.gov-brand { display: grid; justify-items: center; justify-content: center; gap: 8px; width: 100%; text-align: center; padding: 8px 8px 16px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.sidebar-brand.gov-brand { display: grid; align-items: start; justify-items: center; justify-content: center; text-align: center; }
+.sidebar-brand.gov-brand > div:not(.sidebar-logo) { display: grid; justify-items: center; width: 100%; max-width: 190px; text-align: center; }
 .gov-brand .state-mark { width:72px; height:72px; font-size:22px; border-radius:50%; background: linear-gradient(145deg,#fff,#eaf7ef); border:3px solid #f0b429; color:var(--brand); box-shadow:0 10px 24px rgba(11,107,58,.14); }
-.gov-brand .sidebar-logo { --login-green: var(--brand); --login-red: #dc2626; width: 76px; height: 76px; margin: 0; border-width: 2px; box-shadow: 0 10px 24px rgba(11,107,58,.14), inset 0 0 0 5px #fff; }
+.gov-brand .sidebar-logo { --login-green: var(--brand); --login-red: #dc2626; width: 76px; height: 76px; margin: 0 auto; border-width: 2px; box-shadow: 0 10px 24px rgba(11,107,58,.14), inset 0 0 0 5px #fff; }
 .gov-brand .sidebar-logo::before { inset: 8px; border-width: 1px; }
 .gov-brand .sidebar-logo .logo-flag { top: 10px; width: 24px; height: 14px; font-size: 7px; border-radius: 4px 9px 9px 4px; }
 .gov-brand .sidebar-logo .logo-landmark { top: 26px; left: 18px; font-size: 16px; }
