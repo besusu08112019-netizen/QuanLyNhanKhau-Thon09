@@ -121,6 +121,8 @@
     actions.register('movements.edit', context => window.openMovementForm(Number(context.dataset.id || context.dataset.movementId || 0)));
     actions.register('movements.delete', context => window.deleteMovement(Number(context.dataset.id || context.dataset.movementId || 0)));
     actions.register('persons.detail', context => openPersonDetailAction(Number(context.dataset.id || context.dataset.personId || 0)));
+    actions.register('persons.edit', context => openPersonEditAction(Number(context.dataset.id || context.dataset.personId || 0)));
+    actions.register('persons.delete', context => deletePersonAction(Number(context.dataset.id || context.dataset.personId || 0)));
     actions.register('admin.theme.toggle', () => toggleTheme());
     actions.register('admin.movement.add', () => window.openMovementForm());
     actions.register('admin.permissions.save', () => savePermissions());
@@ -146,6 +148,29 @@
     if (navigation && typeof navigation.navigate === 'function') {
       navigation.navigate({ screenId: 'persons', moduleKey: 'persons', action: 'detail', params: { id } });
     }
+  }
+
+  function openPersonEditAction(id) {
+    if (!id) return;
+    if (typeof window.openPersonForm === 'function') {
+      window.openPersonForm(id);
+      return;
+    }
+    const navigation = window.TenantAppPlatform && window.TenantAppPlatform.navigation;
+    if (navigation && typeof navigation.navigate === 'function') {
+      navigation.navigate({ screenId: 'persons', moduleKey: 'persons', action: 'edit', params: { id } });
+    }
+  }
+
+  async function deletePersonAction(id) {
+    if (!id) return;
+    if (typeof window.deletePerson === 'function') {
+      await window.deletePerson(id);
+    }
+  }
+
+  function canCitizen(action) {
+    return typeof window.TenantAppCanAccess !== 'function' || window.TenantAppCanAccess('citizen', action) || window.TenantAppCanAccess('persons', action);
   }
 
   function formatChartPercent(value, total) {
@@ -278,6 +303,16 @@
   }
 
   function personMiniTable(items) {
+    const rowsWithActions = items.map(row => {
+      const id = Number(row.id || 0);
+      const buttons = [
+        `<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="persons.detail" data-id="${id}" aria-label="Chi tiáº¿t"><i class="fa-solid fa-eye"></i></button>`,
+        canCitizen('update') ? `<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="persons.edit" data-id="${id}">Sá»­a</button>` : '',
+        canCitizen('delete') ? `<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="persons.delete" data-id="${id}">XÃ³a</button>` : '',
+      ].filter(Boolean).join(' ');
+      return `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.phone || '')}</td><td class="text-end">${buttons}</td></tr>`;
+    }).join('');
+    return `<table class="table table-hover data-table mb-0"><thead><tr><th>MÃ£ há»™</th><th>Há» tÃªn</th><th>NgÃ y sinh</th><th>CCCD</th><th>Sá»‘ Ä‘iá»‡n thoáº¡i</th><th></th></tr></thead><tbody>${rowsWithActions}</tbody></table>`;
     const rows = items.map(row => `<tr><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.full_name || '')}</td><td>${formatDate(row.date_of_birth)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.phone || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="persons.detail" data-id="${Number(row.id || 0)}" aria-label="Chi tiết"><i class="fa-solid fa-eye"></i></button></td></tr>`).join('');
     return `<table class="table table-hover data-table mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Số điện thoại</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
   }
