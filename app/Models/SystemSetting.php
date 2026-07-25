@@ -31,7 +31,9 @@ final class SystemSetting extends BaseModel
     {
         foreach ($this->allowed as $key) {
             if (!array_key_exists($key, $data)) continue;
-            $value = trim((string) $data[$key]);
+            $value = $key === 'backgroundImages'
+                ? $this->singleBackgroundImageValue($data[$key])
+                : trim((string) $data[$key]);
             if ($this->columnExists('settings', 'village_id')) {
                 $this->execute('INSERT INTO settings (village_id, setting_key, setting_value, updated_by) VALUES (:village_id,:key,:value,:user) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value), updated_by=VALUES(updated_by)', ['village_id' => TenantContext::id(), 'key' => $key, 'value' => $value, 'user' => $userId]);
             } else {
@@ -45,5 +47,35 @@ final class SystemSetting extends BaseModel
     {
         $defaults = TenantConfig::defaults();
         return $defaults[$key] ?? '';
+    }
+
+    private function singleBackgroundImageValue(mixed $value): string
+    {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $url = trim((string) $item);
+                if ($url !== '') return $url;
+            }
+            return '';
+        }
+
+        $text = trim((string) $value);
+        if ($text === '') return '';
+
+        $decoded = json_decode($text, true);
+        if (is_array($decoded)) {
+            foreach ($decoded as $item) {
+                $url = trim((string) $item);
+                if ($url !== '') return $url;
+            }
+            return '';
+        }
+
+        foreach (preg_split('/[\r\n,]+/', $text) ?: [] as $item) {
+            $url = trim((string) $item);
+            if ($url !== '') return $url;
+        }
+
+        return '';
     }
 }
