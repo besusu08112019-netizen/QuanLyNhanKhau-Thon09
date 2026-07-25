@@ -81,7 +81,13 @@
     <aside class="sidebar gov-sidebar">
       <button id="sidebarCollapse" class="sidebar-collapse-btn" type="button" title="Thu gọn Sidebar" aria-label="Thu gọn Sidebar"><i class="fa-solid fa-angle-left"></i></button>
       <div class="sidebar-brand gov-brand">
-        <span id="sidebarTenantMark" class="state-mark small-mark">{{TENANT_MARK}}</span>
+        <div id="sidebarLogo" class="sidebar-logo login-logo login-logo-emblem" aria-hidden="true">
+          <span class="logo-flag"><i class="fa-solid fa-star"></i></span>
+          <span class="logo-landmark"><i class="fa-solid fa-landmark"></i></span>
+          <span class="logo-village"><i class="fa-solid fa-house-chimney"></i></span>
+          <span class="logo-name">Thôn</span>
+          <strong id="sidebarLogoText">{{TENANT_MARK}}</strong>
+        </div>
         <div>
           <strong id="sidebarSystemName">{{APP_NAME}}</strong>
           <b id="sidebarHamletName">{{HAMLET_NAME}}</b>

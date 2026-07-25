@@ -590,6 +590,14 @@ body { background: var(--surface); font-size: 14px; line-height: 1.55; }
 .sidebar-collapse-btn { position: absolute; top: 18px; right: -15px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--brand); display: grid; place-items: center; box-shadow: 0 8px 18px rgba(16,36,28,.12); z-index: 2; }
 .gov-brand { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 8px 8px 16px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
 .gov-brand .state-mark { width:72px; height:72px; font-size:22px; border-radius:50%; background: linear-gradient(145deg,#fff,#eaf7ef); border:3px solid #f0b429; color:var(--brand); box-shadow:0 10px 24px rgba(11,107,58,.14); }
+.gov-brand .sidebar-logo { --login-green: var(--brand); --login-red: #dc2626; width: 76px; height: 76px; margin: 0; border-width: 2px; box-shadow: 0 10px 24px rgba(11,107,58,.14), inset 0 0 0 5px #fff; }
+.gov-brand .sidebar-logo::before { inset: 8px; border-width: 1px; }
+.gov-brand .sidebar-logo .logo-flag { top: 10px; width: 24px; height: 14px; font-size: 7px; border-radius: 4px 9px 9px 4px; }
+.gov-brand .sidebar-logo .logo-landmark { top: 26px; left: 18px; font-size: 16px; }
+.gov-brand .sidebar-logo .logo-village { top: 29px; right: 18px; font-size: 13px; }
+.gov-brand .sidebar-logo .logo-name { top: 44px; font-size: 9px; }
+.gov-brand .sidebar-logo strong { top: 54px; font-size: 19px; }
+.gov-brand .sidebar-logo.login-logo-image img { padding: 7px; }
 .gov-brand strong { display:block; max-width: 190px; color: var(--brand-strong); font-size: 12px; line-height: 1.35; text-transform: uppercase; }
 .gov-brand b { display:block; color: #dc2626; font-size: 15px; line-height: 1.25; text-transform: uppercase; }
 .gov-brand small { display:block; color: #667085; font-size: 12px; line-height: 1.3; text-transform: uppercase; }
@@ -607,8 +615,16 @@ body { background: var(--surface); font-size: 14px; line-height: 1.55; }
 .gov-notification-btn { width: 36px; height: 36px; border: 1px solid var(--line); background: #fff; border-radius: 12px; color: var(--brand); position: relative; display: grid; place-items: center; }
 .gov-notification-btn span { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background:#dc2626; color:#fff; font-size:10px; font-weight:800; display:grid; place-items:center; }
 body.sidebar-collapsed { --sidebar-width: 76px; }
-body.sidebar-collapsed .gov-brand div, body.sidebar-collapsed .nav-section-title, body.sidebar-collapsed .gov-nav .nav-link span, body.sidebar-collapsed .gov-logout span { display: none; }
+body.sidebar-collapsed .gov-brand div:not(.sidebar-logo), body.sidebar-collapsed .nav-section-title, body.sidebar-collapsed .gov-nav .nav-link span, body.sidebar-collapsed .gov-logout span { display: none; }
 body.sidebar-collapsed .gov-brand .state-mark { width:48px; height:48px; font-size:16px; }
+body.sidebar-collapsed .gov-brand .sidebar-logo { display: grid; width: 50px; height: 50px; box-shadow: 0 8px 18px rgba(11,107,58,.12), inset 0 0 0 4px #fff; }
+body.sidebar-collapsed .gov-brand .sidebar-logo::before { inset: 6px; }
+body.sidebar-collapsed .gov-brand .sidebar-logo .logo-flag { top: 7px; width: 17px; height: 10px; font-size: 5px; }
+body.sidebar-collapsed .gov-brand .sidebar-logo .logo-landmark { top: 17px; left: 12px; font-size: 11px; }
+body.sidebar-collapsed .gov-brand .sidebar-logo .logo-village { top: 19px; right: 12px; font-size: 9px; }
+body.sidebar-collapsed .gov-brand .sidebar-logo .logo-name { top: 29px; font-size: 6px; }
+body.sidebar-collapsed .gov-brand .sidebar-logo strong { top: 36px; font-size: 12px; }
+body.sidebar-collapsed .gov-brand .sidebar-logo.login-logo-image img { padding: 5px; }
 body.sidebar-collapsed .gov-sidebar { padding-inline: 8px; }
 body.sidebar-collapsed .gov-nav { padding-right: 0; }
 body.sidebar-collapsed .gov-nav .nav-link, body.sidebar-collapsed .gov-logout { justify-content: center; padding:0; min-width: 58px; }
@@ -5136,7 +5152,7 @@ body.sidebar-collapsed.app-authenticated {
 body.sidebar-collapsed.app-authenticated .gov-nav .nav-section-title span,
 body.sidebar-collapsed.app-authenticated .gov-nav .nav-section-caret,
 body.sidebar-collapsed.app-authenticated .gov-nav .nav-section-items,
-body.sidebar-collapsed.app-authenticated .gov-brand div,
+body.sidebar-collapsed.app-authenticated .gov-brand div:not(.sidebar-logo),
 body.sidebar-collapsed.app-authenticated .gov-nav .nav-link span,
 body.sidebar-collapsed.app-authenticated .gov-logout span {
   display: none;
