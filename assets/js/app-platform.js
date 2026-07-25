@@ -1,6 +1,22 @@
 (function (window, document) {
   'use strict';
 
+  window.TenantRuntime = window.TenantRuntime || {};
+  if (typeof window.tenantStorageKey !== 'function') {
+    window.tenantStorageKey = function tenantStorageKey(key) {
+      var settings = window.AppSettings || {};
+      var raw = String(settings.tenantNamespace || window.location.host || 'tenant').toLowerCase();
+      var namespace = raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
+      window.TenantRuntime.namespace = namespace;
+      return namespace + '_' + String(key || '').replace(/^_+/, '');
+    };
+  }
+  if (typeof window.tenantEventName !== 'function') {
+    window.tenantEventName = function tenantEventName(name) {
+      return 'tenant:' + String(name || '').replace(/^:+/, '');
+    };
+  }
+
   var STATE = Object.freeze({
     LOADING: 'Loading',
     LOADED: 'Loaded',
@@ -443,8 +459,8 @@
       var config = context || {};
       if (!module) throw new Error('Module not registered: ' + (target && target.moduleKey || target));
       var scope = module.permissionScope || module.moduleKey;
-      var allowed = typeof window.thon09CanAccess === 'function'
-        ? window.thon09CanAccess(scope, 'read')
+      var allowed = typeof window.TenantAppCanAccess === 'function'
+        ? window.TenantAppCanAccess(scope, 'read')
         : (!permissionService || permissionService.can(scope, 'read', window.App && window.App.user));
       if (!allowed) {
         var screen = document.getElementById((module.screenId || module.moduleKey) + 'Screen');
@@ -801,7 +817,7 @@
     function emit(record) {
       var snapshot = clone(record);
       if (document && document.dispatchEvent) {
-        document.dispatchEvent(new CustomEvent('thon09:module-state-change', { detail: snapshot }));
+        document.dispatchEvent(new CustomEvent('tenant:module-state-change', { detail: snapshot }));
       }
       subscribers.slice().forEach(function (subscriber) {
         if (!subscriber.moduleKey || subscriber.moduleKey === record.moduleKey) {
@@ -2135,10 +2151,10 @@
       if (typeof window.bootstrap.Modal.getOrCreateInstance === 'function') {
         return window.bootstrap.Modal.getOrCreateInstance(element, options || {});
       }
-      if (!element.__thon09BootstrapModal) {
-        element.__thon09BootstrapModal = new window.bootstrap.Modal(element, options || {});
+      if (!element.__TenantAppBootstrapModal) {
+        element.__TenantAppBootstrapModal = new window.bootstrap.Modal(element, options || {});
       }
-      return element.__thon09BootstrapModal;
+      return element.__TenantAppBootstrapModal;
     }
 
     function bootstrapModal(key, target, options) {
@@ -2150,7 +2166,7 @@
           var element = this.element || resolveElement(this.selector);
           var instance = bootstrapInstance(element, options);
           if (!instance) return null;
-          element && element.dispatchEvent && element.dispatchEvent(new CustomEvent('thon09:modal-open', { detail: { key: key, payload: payload || null } }));
+          element && element.dispatchEvent && element.dispatchEvent(new CustomEvent('tenant:modal-open', { detail: { key: key, payload: payload || null } }));
           instance.show();
           return { key: key, payload: payload || null };
         },
@@ -2159,7 +2175,7 @@
           var instance = bootstrapInstance(element, options);
           if (!instance) return null;
           instance.hide();
-          element && element.dispatchEvent && element.dispatchEvent(new CustomEvent('thon09:modal-close', { detail: { key: key } }));
+          element && element.dispatchEvent && element.dispatchEvent(new CustomEvent('tenant:modal-close', { detail: { key: key } }));
           return { key: key };
         }
       };
@@ -2456,8 +2472,8 @@
     var last = null;
 
     function controller() {
-      return window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function'
-        ? window.Thon09NavigationController
+      return window.TenantAppNavigationController && typeof window.TenantAppNavigationController.navigate === 'function'
+        ? window.TenantAppNavigationController
         : null;
     }
 
@@ -4240,7 +4256,7 @@
     function emit() {
       var snapshot = clone(current);
       if (document && document.dispatchEvent) {
-        document.dispatchEvent(new CustomEvent('thon09:app-state-change', { detail: snapshot }));
+        document.dispatchEvent(new CustomEvent('tenant:app-state-change', { detail: snapshot }));
       }
       subscribers.slice().forEach(function (subscriber) {
         if (!subscriber.moduleKey || subscriber.moduleKey === snapshot.moduleKey) {
@@ -4954,7 +4970,7 @@
       var executor = navigationExecutorService.inspect();
       var issues = [];
 
-      if (!executor.controllerAvailable) issues.push(issue('controller-missing', 'Thon09NavigationController is not available'));
+      if (!executor.controllerAvailable) issues.push(issue('controller-missing', 'TenantAppNavigationController is not available'));
       if (!window.App) issues.push(issue('app-missing', 'window.App is not available'));
       if (!sidebar.present) issues.push(issue('sidebar-root-missing', 'Sidebar navigation root is missing'));
       if (!bottomNavigation.present) issues.push(issue('bottom-navigation-root-missing', 'Bottom navigation root is missing'));
@@ -5341,7 +5357,7 @@
     var sidebarGroupState = new Map();
 
     function sidebarGroupStorageKey(key) {
-      return 'thon09_sidebar_group_' + key;
+      return tenantStorageKey('sidebar_group_' + key);
     }
 
     function readSidebarGroupState(key) {
@@ -5495,8 +5511,8 @@
         sidebar: renderSidebar(),
         mobile: renderMobile()
       };
-      if (typeof window.thon09ApplyModuleDisplayOrder === 'function') {
-        window.thon09ApplyModuleDisplayOrder();
+      if (typeof window.TenantAppApplyModuleDisplayOrder === 'function') {
+        window.TenantAppApplyModuleDisplayOrder();
       }
       return rendered;
     }
@@ -5675,7 +5691,7 @@
       { moduleKey: 'vehicles', screenId: 'vehicles', path: '/vehicles', label: 'Quản lý xe cộ', mobileLabel: 'Xe cộ', icon: 'fa-car', permissionScope: 'vehicles' },
       { moduleKey: 'contributions', screenId: 'contributions', path: '/contributions', label: 'Đóng góp hộ', mobileLabel: 'Đóng góp', icon: 'fa-hand-holding-dollar', permissionScope: 'contributions' },
       { moduleKey: 'gis', screenId: 'gis', path: '/gis', label: 'GIS', icon: 'fa-map-location-dot', permissionScope: 'gis', loaderName: 'loadGisMap' },
-      { moduleKey: 'reports', screenId: 'reports', path: '/reports', label: 'Báo cáo', icon: 'fa-chart-pie', permissionScope: 'reports', loaderName: 'thon09ViewReport' },
+      { moduleKey: 'reports', screenId: 'reports', path: '/reports', label: 'Báo cáo', icon: 'fa-chart-pie', permissionScope: 'reports', loaderName: 'TenantAppViewReport' },
       { moduleKey: 'import', screenId: 'import', path: '/import', label: 'Import dữ liệu', icon: 'fa-file-import', permissionScope: 'import' },
       { moduleKey: 'exportExcel', screenId: 'exportExcel', path: '/export-excel', label: 'Xuất Excel', icon: 'fa-file-export', permissionScope: 'export' },
       { moduleKey: 'printForms', screenId: 'printForms', path: '/print-forms', label: 'In biểu mẫu', icon: 'fa-print', permissionScope: 'reports' },
@@ -6122,9 +6138,9 @@
     actions.bind(document);
   }
 
-  window.Thon09Platform = platform;
+  window.TenantAppPlatform = platform;
 
   if (document && document.dispatchEvent) {
-    document.dispatchEvent(new CustomEvent('thon09:platform-ready', { detail: { version: platform.version } }));
+    document.dispatchEvent(new CustomEvent('tenant:platform-ready', { detail: { version: platform.version } }));
   }
 })(window, document);

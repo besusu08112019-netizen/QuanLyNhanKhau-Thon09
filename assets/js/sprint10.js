@@ -1,6 +1,6 @@
 (() => {
   document.addEventListener('DOMContentLoaded', bootSprint10);
-  document.addEventListener('thon09:auth-state', event => { if (event.detail?.authenticated) bootSprint10(); });
+  document.addEventListener('tenant:auth-state', event => { if (event.detail?.authenticated) bootSprint10(); });
 
   function bootSprint10() {
     injectSprint10Screens();
@@ -14,19 +14,19 @@
 
   function registerModal(id) {
     const modal = document.querySelector('#' + id);
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (modal && service?.registerBootstrap) service.registerBootstrap(id, '#' + id);
     return modal;
   }
 
   function openModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.open && service.open(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.show();
   }
 
   function closeModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.hide();
   }
@@ -46,9 +46,9 @@
   }
 
   function bindSprint10Menu() {
-    if (!window.__thon09Sprint10ScreenChangeBound) {
-      window.__thon09Sprint10ScreenChangeBound = true;
-      document.addEventListener('thon09:screen-change', event => {
+    if (!window.__TenantAppSprint10ScreenChangeBound) {
+      window.__TenantAppSprint10ScreenChangeBound = true;
+      document.addEventListener('tenant:screen-change', event => {
         loadSprint10Screen(event.detail?.screen);
       });
     }
@@ -63,7 +63,7 @@
   }
 
   function loadSprint10Screen(screen) {
-    if (screen === 'reports' && typeof window.thon09ViewReport === 'function') window.thon09ViewReport();
+    if (screen === 'reports' && typeof window.TenantAppViewReport === 'function') window.TenantAppViewReport();
     if (screen === 'logs') loadLogs10();
     if (screen === 'backups') loadBackups10();
     if (screen === 'restore') {}
@@ -114,7 +114,7 @@
 
   function patchSprint10Reports() { return; }
 
-  async function loadReport10() { if (typeof window.thon09ViewReport === 'function') return window.thon09ViewReport(); }
+  async function loadReport10() { if (typeof window.TenantAppViewReport === 'function') return window.TenantAppViewReport(); }
 
   async function downloadReport10(kind) { return; }
   async function printReport10() { return; }
@@ -131,7 +131,7 @@
   function patchSprint10Users() { window.openUserForm = openUserForm10; window.resetUserPassword = resetUserPassword10; }
 
   async function loadUsers10() {
-    if (typeof window.thon09CanAccess === 'function' && !window.thon09CanAccess('users', 'read')) return;
+    if (typeof window.TenantAppCanAccess === 'function' && !window.TenantAppCanAccess('users', 'read')) return;
     const rows = document.querySelector('#userRows');
     if (!rows) return;
     const data = await api('/api/users?' + new URLSearchParams(App.users));
@@ -231,13 +231,13 @@
       window.showPerson(id);
       return;
     }
-    const navigation = window.Thon09Platform?.navigation;
+    const navigation = window.TenantAppPlatform?.navigation;
     if (navigation?.navigate) navigation.navigate({ screenId: 'persons', moduleKey: 'persons', action: 'detail', params: { id } });
   }
   function registerSprint10PlatformActions() {
-    if (window.__thon09Sprint10ActionsRegistered || !window.Thon09Platform?.actions) return;
-    window.__thon09Sprint10ActionsRegistered = true;
-    window.Thon09Platform.actions
+    if (window.__TenantAppSprint10ActionsRegistered || !window.TenantAppPlatform?.actions) return;
+    window.__TenantAppSprint10ActionsRegistered = true;
+    window.TenantAppPlatform.actions
       .register({ key: 'users.edit', handler: ({ dataset }) => openUserForm10(Number(dataset.id || 0)) })
       .register({ key: 'users.toggle', handler: ({ dataset }) => window.toggleUser(Number(dataset.id || 0), dataset.action) })
       .register({ key: 'users.resetPassword', handler: ({ dataset }) => resetUserPassword10(Number(dataset.id || 0)) })

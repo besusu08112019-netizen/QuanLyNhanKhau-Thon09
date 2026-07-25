@@ -91,6 +91,9 @@ CREATE TABLE IF NOT EXISTS finance_transaction_attachments (
   CONSTRAINT fk_finance_attachments_transaction FOREIGN KEY (transaction_id) REFERENCES finance_transactions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        foreach (['finance_funds', 'finance_transactions', 'finance_transaction_attachments'] as $table) {
+            $this->ensureTenantColumn($table);
+        }
         $this->seedDefaults();
     }
 
@@ -98,7 +101,7 @@ SQL);
     {
         $this->ensureSchema();
         return [
-            'funds' => array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['fund_code'], 'label' => (string)$r['name'], 'opening_balance' => (float)$r['opening_balance']], $this->fetchAll('SELECT id, fund_code, name, opening_balance FROM finance_funds WHERE status="ACTIVE" ORDER BY name ASC')),
+            'funds' => array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['fund_code'], 'label' => (string)$r['name'], 'opening_balance' => (float)$r['opening_balance']], $this->fetchAll('SELECT id, fund_code, name, opening_balance FROM finance_funds WHERE status="ACTIVE" AND ' . $this->tenantWhere('finance_funds') . ' ORDER BY name ASC', $this->withTenant())),
             'categories' => array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name'], 'transaction_type' => (string)$r['transaction_type']], $this->fetchAll('SELECT id, code, name, transaction_type FROM finance_categories WHERE is_active=1 ORDER BY transaction_type ASC, sort_order ASC, name ASC')),
             'types' => [['value' => 'INCOME', 'label' => 'Thu'], ['value' => 'EXPENSE', 'label' => 'Chi']],
             'statuses' => [['value' => 'POSTED', 'label' => 'Da ghi so'], ['value' => 'CANCELLED', 'label' => 'Da huy']],
@@ -121,7 +124,7 @@ SQL);
     public function find(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE t.id=:id AND t.status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE t.id=:id AND t.status <> "DELETED" AND ' . $this->tenantWhere('t', 'finance_transactions'), $this->withTenant(['id' => $id]));
         if (!$row) return null;
         $item = $this->normalize($row);
         $item['attachments'] = $this->attachments($id);
@@ -135,18 +138,20 @@ SQL);
         $params = $this->params($data, $userId);
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE finance_transactions SET transaction_type=:transaction_type, fund_id=:fund_id, category_id=:category_id, amount=:amount, transaction_date=:transaction_date, payer_name=:payer_name, receiver_name=:receiver_name, payment_method=:payment_method, receipt_number=:receipt_number, description=:description, source_module=:source_module, source_id=:source_id, status=:status, updated_by=:updated_by WHERE id=:id AND status <> "DELETED"', $params);
+            $this->execute('UPDATE finance_transactions SET transaction_type=:transaction_type, fund_id=:fund_id, category_id=:category_id, amount=:amount, transaction_date=:transaction_date, payer_name=:payer_name, receiver_name=:receiver_name, payment_method=:payment_method, receipt_number=:receipt_number, description=:description, source_module=:source_module, source_id=:source_id, status=:status, updated_by=:updated_by WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('finance_transactions'), $this->withTenant($params));
             return $this->find($id);
         }
         $params['transaction_code'] = $this->nextCode((string)$params['transaction_type']);
-        $newId = $this->insert('INSERT INTO finance_transactions (transaction_code, transaction_type, fund_id, category_id, amount, transaction_date, payer_name, receiver_name, payment_method, receipt_number, description, source_module, source_id, status, created_by, updated_by) VALUES (:transaction_code,:transaction_type,:fund_id,:category_id,:amount,:transaction_date,:payer_name,:receiver_name,:payment_method,:receipt_number,:description,:source_module,:source_id,:status,:created_by,:updated_by)', $params);
+        $columns = ['transaction_code', 'transaction_type', 'fund_id', 'category_id', 'amount', 'transaction_date', 'payer_name', 'receiver_name', 'payment_method', 'receipt_number', 'description', 'source_module', 'source_id', 'status', 'created_by', 'updated_by'];
+        $this->addTenantInsert('finance_transactions', $columns, $params);
+        $newId = $this->insert('INSERT INTO finance_transactions (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return $this->find($newId);
     }
 
     public function softDelete(int $id, int $userId): void
     {
         if (!$this->find($id)) throw new \RuntimeException('Khong tim thay phieu thu chi');
-        $this->execute('UPDATE finance_transactions SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE finance_transactions SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('finance_transactions'), $this->withTenant(['id' => $id, 'user' => $userId]));
     }
 
     public function addAttachment(int $id, array $stored, array $file, int $userId): array
@@ -154,21 +159,24 @@ SQL);
         if (!$this->find($id)) throw new \RuntimeException('Khong tim thay phieu thu chi');
         $mime = (string)$stored['mime'];
         $kind = $mime === 'application/pdf' ? 'PDF' : (str_starts_with($mime, 'image/') ? 'IMAGE' : 'DOCUMENT');
-        $fileId = $this->insert('INSERT INTO finance_transaction_attachments (transaction_id, original_name, stored_path, mime_type, file_size, file_kind, created_by) VALUES (:id,:name,:path,:mime,:size,:kind,:user)', ['id' => $id, 'name' => basename((string)($file['name'] ?? 'attachment')), 'path' => $stored['file_path'], 'mime' => $mime, 'size' => (int)($file['size'] ?? 0), 'kind' => $kind, 'user' => $userId]);
+        $columns = ['transaction_id', 'original_name', 'stored_path', 'mime_type', 'file_size', 'file_kind', 'created_by'];
+        $params = ['transaction_id' => $id, 'original_name' => basename((string)($file['name'] ?? 'attachment')), 'stored_path' => $stored['file_path'], 'mime_type' => $mime, 'file_size' => (int)($file['size'] ?? 0), 'file_kind' => $kind, 'created_by' => $userId];
+        $this->addTenantInsert('finance_transaction_attachments', $columns, $params);
+        $fileId = $this->insert('INSERT INTO finance_transaction_attachments (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return $this->attachment($id, $fileId) ?? ['id' => $fileId];
     }
 
     public function attachment(int $transactionId, int $fileId): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT * FROM finance_transaction_attachments WHERE transaction_id=:transaction_id AND id=:id AND deleted_at IS NULL', ['transaction_id' => $transactionId, 'id' => $fileId]);
+        $row = $this->fetchOne('SELECT * FROM finance_transaction_attachments WHERE transaction_id=:transaction_id AND id=:id AND deleted_at IS NULL AND ' . $this->tenantWhere('finance_transaction_attachments'), $this->withTenant(['transaction_id' => $transactionId, 'id' => $fileId]));
         return $row ? $this->normalizeAttachment($row) : null;
     }
 
     public function deleteAttachment(int $transactionId, int $fileId, int $userId): void
     {
         if (!$this->attachment($transactionId, $fileId)) throw new \RuntimeException('Khong tim thay file dinh kem');
-        $this->execute('UPDATE finance_transaction_attachments SET deleted_at=NOW(), deleted_by=:user WHERE transaction_id=:transaction_id AND id=:id', ['transaction_id' => $transactionId, 'id' => $fileId, 'user' => $userId]);
+        $this->execute('UPDATE finance_transaction_attachments SET deleted_at=NOW(), deleted_by=:user WHERE transaction_id=:transaction_id AND id=:id AND ' . $this->tenantWhere('finance_transaction_attachments'), $this->withTenant(['transaction_id' => $transactionId, 'id' => $fileId, 'user' => $userId]));
     }
 
     public function dashboard(array $filters = []): array
@@ -239,8 +247,8 @@ SQL);
 
     private function where(array $filters): array
     {
-        $where = ['t.status <> "DELETED"'];
-        $params = [];
+        $where = ['t.status <> "DELETED"', $this->tenantWhere('t', 'finance_transactions'), $this->tenantWhere('f', 'finance_funds')];
+        $params = $this->withTenant();
         $search = trim((string)($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $where[] = '(LOWER(t.transaction_code) LIKE :q OR LOWER(t.receipt_number) LIKE :q OR LOWER(t.payer_name) LIKE :q OR LOWER(t.receiver_name) LIKE :q OR LOWER(t.description) LIKE :q OR LOWER(f.name) LIKE :q OR LOWER(c.name) LIKE :q)';
@@ -263,24 +271,24 @@ SQL);
 SELECT f.id, f.fund_code, f.name, f.opening_balance,
   f.opening_balance + COALESCE(SUM(CASE WHEN t.status='POSTED' AND t.transaction_type='INCOME' THEN t.amount WHEN t.status='POSTED' AND t.transaction_type='EXPENSE' THEN -t.amount ELSE 0 END),0) AS balance
 FROM finance_funds f
-LEFT JOIN finance_transactions t ON t.fund_id=f.id AND t.status <> 'DELETED'
-WHERE f.status='ACTIVE'
+LEFT JOIN finance_transactions t ON t.fund_id=f.id AND t.status <> 'DELETED' AND {$this->tenantWhere('t', 'finance_transactions')}
+WHERE f.status='ACTIVE' AND {$this->tenantWhere('f', 'finance_funds')}
 GROUP BY f.id, f.fund_code, f.name, f.opening_balance
 ORDER BY f.name ASC
-SQL);
+SQL, $this->withTenant());
     }
 
     private function attachments(int $id): array
     {
-        return array_map(fn($r) => $this->normalizeAttachment($r), $this->fetchAll('SELECT * FROM finance_transaction_attachments WHERE transaction_id=:id AND deleted_at IS NULL ORDER BY id DESC', ['id' => $id]));
+        return array_map(fn($r) => $this->normalizeAttachment($r), $this->fetchAll('SELECT * FROM finance_transaction_attachments WHERE transaction_id=:id AND deleted_at IS NULL AND ' . $this->tenantWhere('finance_transaction_attachments') . ' ORDER BY id DESC', $this->withTenant(['id' => $id])));
     }
 
     private function selectSql(): string { return 'SELECT t.*, f.name AS fund_name, f.fund_code, c.name AS category_name, c.code AS category_code, (SELECT COUNT(*) FROM finance_transaction_attachments a WHERE a.transaction_id=t.id AND a.deleted_at IS NULL) AS attachment_count'; }
-    private function fromSql(): string { return 'FROM finance_transactions t INNER JOIN finance_funds f ON f.id=t.fund_id LEFT JOIN finance_categories c ON c.id=t.category_id'; }
+    private function fromSql(): string { return 'FROM finance_transactions t INNER JOIN finance_funds f ON f.id=t.fund_id AND ' . $this->tenantWhere('f', 'finance_funds') . ' LEFT JOIN finance_categories c ON c.id=t.category_id'; }
     private function normalize(array $row): array { $type = (string)$row['transaction_type']; $status = (string)$row['status']; return ['id' => (int)$row['id'], 'transaction_code' => (string)$row['transaction_code'], 'transaction_type' => $type, 'type_label' => $type === 'EXPENSE' ? 'Chi' : 'Thu', 'fund_id' => (int)$row['fund_id'], 'fund_name' => (string)($row['fund_name'] ?? ''), 'category_id' => $row['category_id'] !== null ? (int)$row['category_id'] : null, 'category_name' => (string)($row['category_name'] ?? ''), 'amount' => (float)$row['amount'], 'transaction_date' => $row['transaction_date'] ?? null, 'payer_name' => (string)($row['payer_name'] ?? ''), 'receiver_name' => (string)($row['receiver_name'] ?? ''), 'payment_method' => (string)($row['payment_method'] ?? ''), 'receipt_number' => (string)($row['receipt_number'] ?? ''), 'description' => (string)($row['description'] ?? ''), 'source_module' => (string)($row['source_module'] ?? ''), 'source_id' => $row['source_id'] !== null ? (int)$row['source_id'] : null, 'status' => $status, 'status_label' => $status === 'CANCELLED' ? 'Da huy' : 'Da ghi so', 'attachment_count' => (int)($row['attachment_count'] ?? 0), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null]; }
     private function normalizeAttachment(array $row): array { $id = (int)$row['id']; return ['id' => $id, 'transaction_id' => (int)$row['transaction_id'], 'original_name' => (string)$row['original_name'], 'stored_path' => (string)$row['stored_path'], 'mime_type' => (string)$row['mime_type'], 'file_size' => (int)$row['file_size'], 'file_kind' => (string)$row['file_kind'], 'preview_url' => '/api/finance/' . (int)$row['transaction_id'] . '/attachments/' . $id . '/preview', 'download_url' => '/api/finance/' . (int)$row['transaction_id'] . '/attachments/' . $id . '/download']; }
-    private function seedDefaults(): void { $this->execute('INSERT INTO finance_funds (fund_code,name,opening_balance) VALUES ("GENERAL","Quy chung",0) ON DUPLICATE KEY UPDATE name=VALUES(name)'); $items = [['CONTRIBUTION','Thu dong gop','INCOME',10], ['SUPPORT','Thu ho tro','INCOME',20], ['OTHER_INCOME','Thu khac','INCOME',90], ['COMMUNITY_ACTIVITY','Chi hoat dong cong dong','EXPENSE',10], ['PUBLIC_ASSET_MAINTENANCE','Chi bao tri cong trinh tai san','EXPENSE',20], ['ENVIRONMENT','Chi ve sinh moi truong','EXPENSE',30], ['OTHER_EXPENSE','Chi khac','EXPENSE',90]]; foreach ($items as [$code, $name, $type, $order]) { $this->execute('INSERT INTO finance_categories (code,name,transaction_type,sort_order) VALUES (:code,:name,:type,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), transaction_type=VALUES(transaction_type), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'type' => $type, 'sort_order' => $order]); } }
-    private function nextCode(string $type): string { $prefix = $type === 'EXPENSE' ? 'PC09-' : 'PT09-'; $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM finance_transactions'); return $prefix . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
+    private function seedDefaults(): void { if (!$this->fetchOne('SELECT id FROM finance_funds WHERE fund_code="GENERAL" AND ' . $this->tenantWhere('finance_funds'), $this->withTenant())) $this->insert('INSERT INTO finance_funds (village_id,fund_code,name,opening_balance) VALUES (:village_id,"GENERAL","Quy chung",0)', $this->withTenant()); $items = [['CONTRIBUTION','Thu dong gop','INCOME',10], ['SUPPORT','Thu ho tro','INCOME',20], ['OTHER_INCOME','Thu khac','INCOME',90], ['COMMUNITY_ACTIVITY','Chi hoat dong cong dong','EXPENSE',10], ['PUBLIC_ASSET_MAINTENANCE','Chi bao tri cong trinh tai san','EXPENSE',20], ['ENVIRONMENT','Chi ve sinh moi truong','EXPENSE',30], ['OTHER_EXPENSE','Chi khac','EXPENSE',90]]; foreach ($items as [$code, $name, $type, $order]) { $this->execute('INSERT INTO finance_categories (code,name,transaction_type,sort_order) VALUES (:code,:name,:type,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), transaction_type=VALUES(transaction_type), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'type' => $type, 'sort_order' => $order]); } }
+    private function nextCode(string $type): string { $prefix = $type === 'EXPENSE' ? 'PC-' : 'PT-'; $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM finance_transactions WHERE ' . $this->tenantWhere('finance_transactions'), $this->withTenant()); return $prefix . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : mb_substr($value, 0, 180); }
     private function nullableText(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : mb_substr($value, 0, 4000); }
     private function dateRequired(mixed $value, string $message): string { $value = trim((string)($value ?? '')); if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) throw new \RuntimeException($message); return $value; }

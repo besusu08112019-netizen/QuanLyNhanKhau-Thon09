@@ -132,7 +132,7 @@ SQL);
     public function find(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE e.id=:id AND e.soft_status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE e.id=:id AND e.soft_status <> "DELETED" AND ' . $this->tenantWhere('e', 'calendar_events'), ['id' => $id]);
         if (!$row) return null;
         $item = $this->normalize($row);
         $item['attendees'] = $this->attendees($id);
@@ -148,12 +148,14 @@ SQL);
         $params = $this->params($data, $userId, $userName);
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE calendar_events SET title=:title, description=:description, category_id=:category_id, location=:location, start_at=:start_at, end_at=:end_at, reminder_at=:reminder_at, host_user_id=:host_user_id, host_name=:host_name, area_code=:area_code, status=:status, note=:note, updated_by=:updated_by WHERE id=:id AND soft_status <> "DELETED"', $params);
+            $this->execute('UPDATE calendar_events SET title=:title, description=:description, category_id=:category_id, location=:location, start_at=:start_at, end_at=:end_at, reminder_at=:reminder_at, host_user_id=:host_user_id, host_name=:host_name, area_code=:area_code, status=:status, note=:note, updated_by=:updated_by WHERE id=:id AND soft_status <> "DELETED" AND ' . $this->tenantWhere('calendar_events'), $params);
             $this->syncAttendees($id, $data['attendees'] ?? [], $userId);
             return $this->find($id);
         }
         $params['event_code'] = $this->nextCode();
-        $newId = $this->insert('INSERT INTO calendar_events (event_code, title, description, category_id, location, start_at, end_at, reminder_at, host_user_id, host_name, area_code, status, note, created_by, updated_by) VALUES (:event_code, :title, :description, :category_id, :location, :start_at, :end_at, :reminder_at, :host_user_id, :host_name, :area_code, :status, :note, :created_by, :updated_by)', $params);
+        $columns = ['event_code', 'title', 'description', 'category_id', 'location', 'start_at', 'end_at', 'reminder_at', 'host_user_id', 'host_name', 'area_code', 'status', 'note', 'created_by', 'updated_by'];
+        $this->addTenantInsert('calendar_events', $columns, $params);
+        $newId = $this->insert('INSERT INTO calendar_events (' . implode(',', $columns) . ') VALUES (:' . implode(', :', $columns) . ')', $params);
         $this->syncAttendees($newId, $data['attendees'] ?? [], $userId);
         return $this->find($newId);
     }
@@ -162,7 +164,7 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy lịch công tác');
-        $this->execute('UPDATE calendar_events SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE calendar_events SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('calendar_events'), ['id' => $id, 'user' => $userId]);
     }
 
     public function addAttachment(int $id, array $stored, array $file, int $userId): array
@@ -278,7 +280,7 @@ SQL);
 
     private function where(array $filters): array
     {
-        $where = ['e.soft_status <> "DELETED"'];
+        $where = ['e.soft_status <> "DELETED"', $this->tenantWhere('e', 'calendar_events')];
         $params = [];
         $category = $this->nullableInt($filters['category_id'] ?? $filters['categoryId'] ?? null);
         if ($category) { $where[] = 'e.category_id=:category_id'; $params['category_id'] = $category; }
@@ -306,7 +308,7 @@ SQL);
     private function normalize(array $row): array { $row['id'] = (int)$row['id']; $row['category_id'] = $row['category_id'] !== null ? (int)$row['category_id'] : null; $row['host_user_id'] = $row['host_user_id'] !== null ? (int)$row['host_user_id'] : null; $row['status_label'] = $this->statusLabel((string)$row['status']); return $row; }
     private function normalizeAttachment(array $row): array { $row['id'] = (int)$row['id']; $row['event_id'] = (int)$row['event_id']; $row['file_size'] = (int)$row['file_size']; $row['preview_url'] = '/api/work-calendar/' . $row['event_id'] . '/attachments/' . $row['id'] . '/preview'; $row['download_url'] = '/api/work-calendar/' . $row['event_id'] . '/attachments/' . $row['id'] . '/download'; return $row; }
     private function statusLabel(string $value): string { return ['SCHEDULED' => 'Đã lên lịch', 'DONE' => 'Đã hoàn thành', 'CANCELLED' => 'Đã hủy'][$value] ?? $value; }
-    private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM calendar_events'); return 'LCT-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
+    private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM calendar_events WHERE ' . $this->tenantWhere('calendar_events')); return 'LCT-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableInt(mixed $value): ?int { $value = trim((string)($value ?? '')); if ($value === '') return null; $id = (int)$value; return $id > 0 ? $id : null; }
     private function dateTime(mixed $value, bool $required, string $message): ?string { $value = trim((string)($value ?? '')); if ($value === '') { if ($required) throw new \RuntimeException($message); return null; } if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) return $value . ' 00:00:00'; if (!preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/', $value)) throw new \RuntimeException($message); return str_replace('T', ' ', strlen($value) === 16 ? $value . ':00' : $value); }

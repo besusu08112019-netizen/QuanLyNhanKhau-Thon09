@@ -8,6 +8,7 @@ abstract class BaseModel
 {
     protected PDO $db;
     private static ?array $lastQuery = null;
+    private static array $columnCache = [];
 
     public function __construct()
     {
@@ -47,16 +48,69 @@ abstract class BaseModel
 
     protected function columnExists(string $table, string $column): bool
     {
-        static $cache = [];
         $key = $table . '.' . $column;
-        if (array_key_exists($key, $cache)) return $cache[$key];
+        if (array_key_exists($key, self::$columnCache)) return self::$columnCache[$key];
         $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column', ['table' => $table, 'column' => $column]);
-        return $cache[$key] = ((int) ($row['total'] ?? 0) > 0);
+        return self::$columnCache[$key] = ((int) ($row['total'] ?? 0) > 0);
     }
 
     protected function existingColumns(string $table, array $columns): array
     {
         return array_values(array_filter($columns, fn($column) => $this->columnExists($table, $column)));
+    }
+
+    protected function tenantId(): int
+    {
+        return TenantContext::id();
+    }
+
+    protected function tenantColumnExists(string $table): bool
+    {
+        return $this->columnExists($table, 'village_id');
+    }
+
+    protected function ensureTenantColumn(string $table): void
+    {
+        if ($this->tenantColumnExists($table)) {
+            return;
+        }
+
+        $this->execute('ALTER TABLE ' . $table . ' ADD COLUMN village_id BIGINT UNSIGNED NULL AFTER id');
+        unset(self::$columnCache[$table . '.village_id']);
+        $this->execute('UPDATE ' . $table . ' SET village_id = :village_id WHERE village_id IS NULL', $this->withTenant());
+        $this->execute('ALTER TABLE ' . $table . ' MODIFY COLUMN village_id BIGINT UNSIGNED NOT NULL');
+        unset(self::$columnCache[$table . '.village_id']);
+        try {
+            $this->execute('ALTER TABLE ' . $table . ' ADD INDEX idx_' . $table . '_village (village_id)');
+        } catch (\Throwable) {
+        }
+    }
+
+    protected function tenantWhere(string $tableAlias = '', string $table = ''): string
+    {
+        $tableName = $table !== '' ? $table : $tableAlias;
+        if ($tableName === '' || !$this->tenantColumnExists($tableName)) {
+            return '1=1';
+        }
+
+        $prefix = $tableAlias !== '' ? rtrim($tableAlias, '.') . '.' : '';
+        return $prefix . 'village_id = :village_id';
+    }
+
+    protected function withTenant(array $params = []): array
+    {
+        $params['village_id'] = $this->tenantId();
+        return $params;
+    }
+
+    protected function addTenantInsert(string $table, array &$columns, array &$params): void
+    {
+        if (!$this->tenantColumnExists($table) || in_array('village_id', $columns, true)) {
+            return;
+        }
+
+        $columns[] = 'village_id';
+        $params['village_id'] = $this->tenantId();
     }
 
     public static function lastQuery(): ?array

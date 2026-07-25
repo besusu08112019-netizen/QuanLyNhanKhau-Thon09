@@ -33,6 +33,11 @@ final class FileAttachment extends BaseModel
             $params['updated_by'] = $userId;
         }
 
+        $this->addTenantInsert('file_attachments', $columns, $params);
+        if (in_array('village_id', $columns, true)) {
+            $values[] = ':village_id';
+        }
+
         $sql = 'INSERT INTO file_attachments (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')';
         $bindParams = $this->prepareSqlParams($sql, $params);
         $id = $this->insert($sql, $bindParams);
@@ -41,7 +46,7 @@ final class FileAttachment extends BaseModel
 
     public function find(int $id): ?array
     {
-        return $this->fetchOne('SELECT * FROM file_attachments WHERE id=:id AND status="ACTIVE"', ['id' => $id]);
+        return $this->fetchOne('SELECT * FROM file_attachments WHERE id=:id AND status="ACTIVE" AND ' . $this->tenantWhere('file_attachments'), ['id' => $id]);
     }
 
     public function byEntity(string $entityType, int $entityId): array
@@ -55,7 +60,7 @@ final class FileAttachment extends BaseModel
             throw new \RuntimeException('Bảng file_attachments thiếu cột bắt buộc: ' . implode(', ', $missing));
         }
 
-        $where = ['f.entity_id = :entity_id'];
+        $where = ['f.entity_id = :entity_id', $this->tenantWhere('f', 'file_attachments')];
         $params = ['entity_type' => $entityType, 'entity_id' => $entityId];
         if ($this->columnExists('file_attachments', 'status')) {
             $where[] = 'f.status = "ACTIVE"';
@@ -139,7 +144,7 @@ final class FileAttachment extends BaseModel
             $params['updated_by'] = $userId;
         }
         if ($this->columnExists('file_attachments', 'updated_at')) $sets[] = 'updated_at=NOW()';
-        $this->execute('UPDATE file_attachments SET ' . implode(',', $sets) . ' WHERE id=:id', $params);
+        $this->execute('UPDATE file_attachments SET ' . implode(',', $sets) . ' WHERE id=:id AND ' . $this->tenantWhere('file_attachments'), $params);
     }
     public function updateMetadata(int $id, array $data, int $userId): ?array
     {
@@ -199,7 +204,7 @@ final class FileAttachment extends BaseModel
         if (!$sets) return $file;
         if ($this->columnExists('file_attachments', 'updated_by')) $sets[] = 'updated_by=:user';
         if ($this->columnExists('file_attachments', 'updated_at')) $sets[] = 'updated_at=NOW()';
-        $this->execute('UPDATE file_attachments SET ' . implode(',', $sets) . ' WHERE id=:id AND status="ACTIVE"', $params);
+        $this->execute('UPDATE file_attachments SET ' . implode(',', $sets) . ' WHERE id=:id AND status="ACTIVE" AND ' . $this->tenantWhere('file_attachments'), $params);
         return $this->find($id);
     }
 
@@ -220,7 +225,7 @@ final class FileAttachment extends BaseModel
 
     private function entityWhere(string $entityType, int $entityId): array
     {
-        $where = ['f.entity_id = :entity_id'];
+        $where = ['f.entity_id = :entity_id', $this->tenantWhere('f', 'file_attachments')];
         $params = ['entity_type' => $entityType, 'entity_id' => $entityId];
         if ($this->columnExists('file_attachments', 'status')) {
             $where[] = 'f.status = "ACTIVE"';

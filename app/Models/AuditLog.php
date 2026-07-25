@@ -9,7 +9,7 @@ final class AuditLog extends BaseModel
     public function paginate(array $filters = []): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 50));
-        $where = ['1=1']; $params = [];
+        $where = [$this->tenantWhere('audit_logs')]; $params = $this->withTenant();
         if (!empty($filters['module'])) { $where[] = 'module = :module'; $params['module'] = $filters['module']; }
         if (!empty($filters['action'])) { $where[] = 'action = :action'; $params['action'] = $filters['action']; }
         if (!empty($filters['search'])) {
@@ -30,7 +30,8 @@ final class AuditLog extends BaseModel
     public function write(?int $userId, ?string $email, string $module, string $action, string $message, ?string $entityId = null, array $metadata = [], string $level = 'INFO'): void
     {
         $metadata = $this->redact($metadata);
-        $this->insert('INSERT INTO audit_logs (actor_user_id, actor_email, module, action, entity_id, level, message, metadata) VALUES (:actor_user_id, :actor_email, :module, :action, :entity_id, :level, :message, :metadata)', [
+        $columns = ['actor_user_id', 'actor_email', 'module', 'action', 'entity_id', 'level', 'message', 'metadata'];
+        $params = [
             'actor_user_id' => $userId,
             'actor_email' => $email,
             'module' => $module,
@@ -39,7 +40,9 @@ final class AuditLog extends BaseModel
             'level' => $level,
             'message' => $message,
             'metadata' => $metadata ? json_encode($metadata, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
-        ]);
+        ];
+        $this->addTenantInsert('audit_logs', $columns, $params);
+        $this->insert('INSERT INTO audit_logs (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
     }
 
     private function redact(mixed $value): mixed

@@ -18,7 +18,9 @@ final class Backup extends BaseModel
             $safeTable = str_replace('`', '``', $table);
             $create = $this->fetchOne('SHOW CREATE TABLE `' . $safeTable . '`');
             $body .= "DROP TABLE IF EXISTS `$safeTable`;\n" . ($create['Create Table'] ?? array_values($create)[1]) . ";\n\n";
-            $records = $this->fetchAll('SELECT * FROM `' . $safeTable . '`');
+            $records = $this->tenantColumnExists((string) $table)
+                ? $this->fetchAll('SELECT * FROM `' . $safeTable . '` WHERE village_id = :village_id', $this->withTenant())
+                : $this->fetchAll('SELECT * FROM `' . $safeTable . '`');
             foreach ($records as $record) {
                 $columns = array_map(fn($col) => '`' . str_replace('`', '``', $col) . '`', array_keys($record));
                 $values = array_map(fn($value) => $value === null ? 'NULL' : $this->db->quote((string) $value, PDO::PARAM_STR), array_values($record));
@@ -30,7 +32,10 @@ final class Backup extends BaseModel
         $sql = self::BACKUP_HEADER . "\n-- Created at: " . date('c') . "\n-- Signature: " . $this->backupSignature($body) . "\n" . $body;
         $fileName = 'Backup_' . date('Ymd_Hi') . '.sql';
         $checksum = hash('sha256', $sql);
-        $this->insert('INSERT INTO backups (file_name, file_path, file_size, checksum, status, created_by) VALUES (:file_name,:file_path,:file_size,:checksum,"SUCCESS",:user)', ['file_name' => $fileName, 'file_path' => 'download://' . $fileName, 'file_size' => strlen($sql), 'checksum' => $checksum, 'user' => $userId]);
+        $columns = ['file_name', 'file_path', 'file_size', 'checksum', 'status', 'created_by'];
+        $params = ['file_name' => $fileName, 'file_path' => 'download://' . $fileName, 'file_size' => strlen($sql), 'checksum' => $checksum, 'status' => 'SUCCESS', 'created_by' => $userId];
+        $this->addTenantInsert('backups', $columns, $params);
+        $this->insert('INSERT INTO backups (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return ['fileName' => $fileName, 'content' => $sql, 'size' => strlen($sql), 'checksum' => $checksum];
     }
 
@@ -55,7 +60,10 @@ final class Backup extends BaseModel
         }
         $fileName = 'Restore_' . date('Ymd_Hi') . '.sql';
         $checksum = hash('sha256', $sql);
-        $this->insert('INSERT INTO backups (file_name, file_path, file_size, checksum, status, created_by, restored_at, restored_by) VALUES (:file_name,:file_path,:file_size,:checksum,"RESTORED",:created_by,NOW(),:restored_by)', ['file_name' => $fileName, 'file_path' => 'restore://inline', 'file_size' => strlen($sql), 'checksum' => $checksum, 'created_by' => $userId, 'restored_by' => $userId]);
+        $columns = ['file_name', 'file_path', 'file_size', 'checksum', 'status', 'created_by', 'restored_at', 'restored_by'];
+        $params = ['file_name' => $fileName, 'file_path' => 'restore://inline', 'file_size' => strlen($sql), 'checksum' => $checksum, 'status' => 'RESTORED', 'created_by' => $userId, 'restored_at' => date('Y-m-d H:i:s'), 'restored_by' => $userId];
+        $this->addTenantInsert('backups', $columns, $params);
+        $this->insert('INSERT INTO backups (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return ['statements' => $count, 'checksum' => $checksum];
     }
 
@@ -92,8 +100,10 @@ final class Backup extends BaseModel
     public function paginate(array $filters = []): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
-        $total = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM backups')['total'];
-        $items = $this->fetchAll("SELECT b.*, u.email AS created_by_email FROM backups b LEFT JOIN users u ON u.id=b.created_by ORDER BY b.created_at DESC LIMIT $pageSize OFFSET $offset");
+        $where = $this->tenantWhere('b', 'backups');
+        $params = $this->withTenant();
+        $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM backups b WHERE $where", $params)['total'];
+        $items = $this->fetchAll("SELECT b.*, u.email AS created_by_email FROM backups b LEFT JOIN users u ON u.id=b.created_by WHERE $where ORDER BY b.created_at DESC LIMIT $pageSize OFFSET $offset", $params);
         return $this->paginated($items, $page, $pageSize, $total);
     }
 }

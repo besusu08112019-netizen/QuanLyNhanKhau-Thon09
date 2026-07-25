@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS agri_stakeholders (
   CONSTRAINT fk_agri_stakeholders_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        foreach (['agri_stakeholders', 'agri_land_parcels', 'agri_production_plots', 'agri_crop_seasons', 'agri_production_logs', 'agri_damages', 'agri_files'] as $table) {
+            $this->ensureTenantColumn($table);
+        }
         $this->execute(<<<SQL
 CREATE TABLE IF NOT EXISTS agri_land_parcels (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -236,8 +239,8 @@ SQL);
                 INNER JOIN agri_production_plots pp ON pp.id=s.plot_id
                 INNER JOIN (SELECT pp2.parcel_id, MAX(s2.id) AS season_id FROM agri_crop_seasons s2 INNER JOIN agri_production_plots pp2 ON pp2.id=s2.plot_id WHERE s2.status <> 'DELETED' AND pp2.status <> 'DELETED' GROUP BY pp2.parcel_id) latest ON latest.season_id=s.id
              ) cs ON cs.parcel_id=p.id
-             WHERE p.id=:id AND p.status <> 'DELETED'",
-            ['id' => $id]
+             WHERE p.id=:id AND p.status <> 'DELETED' AND " . $this->tenantWhere('p', 'agri_land_parcels') . " AND " . $this->tenantWhere('o', 'agri_stakeholders') . " AND " . $this->tenantWhere('pr', 'agri_stakeholders'),
+            $this->withTenant(['id' => $id])
         );
         if (!$row) return null;
         $parcel = $this->normalizeParcel($row);
@@ -260,11 +263,13 @@ SQL);
         if ($id) {
             unset($params['created_by']);
             $params['id'] = $id;
-            $this->execute('UPDATE agri_land_parcels SET map_sheet_no=:map_sheet_no, parcel_no=:parcel_no, field_area=:field_area, field_name=:field_name, land_type=:land_type, legal_area=:legal_area, actual_area=:actual_area, cultivated_area=:cultivated_area, abandoned_area=:abandoned_area, owner_id=:owner_id, producer_id=:producer_id, usage_form=:usage_form, latitude=:latitude, longitude=:longitude, polygon_geojson=:polygon_geojson, status=:status, note=:note, updated_by=:updated_by WHERE id=:id', $params);
+            $this->execute('UPDATE agri_land_parcels SET map_sheet_no=:map_sheet_no, parcel_no=:parcel_no, field_area=:field_area, field_name=:field_name, land_type=:land_type, legal_area=:legal_area, actual_area=:actual_area, cultivated_area=:cultivated_area, abandoned_area=:abandoned_area, owner_id=:owner_id, producer_id=:producer_id, usage_form=:usage_form, latitude=:latitude, longitude=:longitude, polygon_geojson=:polygon_geojson, status=:status, note=:note, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('agri_land_parcels'), $this->withTenant($params));
             return $this->find($id);
         }
         $params['parcel_code'] = $this->nextParcelCode();
-        $newId = $this->insert('INSERT INTO agri_land_parcels (parcel_code, map_sheet_no, parcel_no, field_area, field_name, land_type, legal_area, actual_area, cultivated_area, abandoned_area, owner_id, producer_id, usage_form, latitude, longitude, polygon_geojson, status, note, created_by, updated_by) VALUES (:parcel_code, :map_sheet_no, :parcel_no, :field_area, :field_name, :land_type, :legal_area, :actual_area, :cultivated_area, :abandoned_area, :owner_id, :producer_id, :usage_form, :latitude, :longitude, :polygon_geojson, :status, :note, :created_by, :updated_by)', $params);
+        $columns = ['parcel_code', 'map_sheet_no', 'parcel_no', 'field_area', 'field_name', 'land_type', 'legal_area', 'actual_area', 'cultivated_area', 'abandoned_area', 'owner_id', 'producer_id', 'usage_form', 'latitude', 'longitude', 'polygon_geojson', 'status', 'note', 'created_by', 'updated_by'];
+        $this->addTenantInsert('agri_land_parcels', $columns, $params);
+        $newId = $this->insert('INSERT INTO agri_land_parcels (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return $this->find($newId);
     }
 
@@ -272,7 +277,7 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException("Không tìm thấy thửa đất");
-        $this->execute('UPDATE agri_land_parcels SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
+        $this->execute('UPDATE agri_land_parcels SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('agri_land_parcels'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
     public function addPlot(int $parcelId, array $data): array
@@ -281,45 +286,54 @@ SQL);
         if (!$this->find($parcelId)) throw new \RuntimeException("Không tìm thấy thửa đất");
         $name = trim((string)($data['plot_name'] ?? $data['plotName'] ?? ''));
         if ($name === '') throw new \RuntimeException("Tên lô sản xuất là bắt buộc");
-        $id = $this->insert('INSERT INTO agri_production_plots (parcel_id, plot_code, plot_name, area, status, note) VALUES (:parcel_id, :plot_code, :plot_name, :area, :status, :note)', [
+        $columns = ['parcel_id', 'plot_code', 'plot_name', 'area', 'status', 'note'];
+        $params = [
             'parcel_id' => $parcelId,
             'plot_code' => trim((string)($data['plot_code'] ?? $data['plotCode'] ?? '')) ?: null,
             'plot_name' => $name,
             'area' => $this->number($data['area'] ?? 0),
             'status' => in_array((string)($data['status'] ?? 'ACTIVE'), ['ACTIVE','IDLE'], true) ? (string)$data['status'] : 'ACTIVE',
             'note' => trim((string)($data['note'] ?? '')) ?: null,
-        ]);
+        ];
+        $this->addTenantInsert('agri_production_plots', $columns, $params);
+        $id = $this->insert('INSERT INTO agri_production_plots (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         $this->validatePlotTotal($parcelId);
-        return $this->fetchOne('SELECT * FROM agri_production_plots WHERE id=:id', ['id' => $id]) ?: [];
+        return $this->fetchOne('SELECT * FROM agri_production_plots WHERE id=:id AND ' . $this->tenantWhere('agri_production_plots'), $this->withTenant(['id' => $id])) ?: [];
     }
 
     public function addSeason(int $plotId, array $data): array
     {
         $this->ensureSchema();
-        $plot = $this->fetchOne('SELECT * FROM agri_production_plots WHERE id=:id AND status <> "DELETED"', ['id' => $plotId]);
+        $plot = $this->fetchOne('SELECT * FROM agri_production_plots WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('agri_production_plots'), $this->withTenant(['id' => $plotId]));
         if (!$plot) throw new \RuntimeException("Không tìm thấy lô sản xuất");
         $season = trim((string)($data['season_name'] ?? $data['seasonName'] ?? ''));
         $crop = trim((string)($data['crop'] ?? ''));
         if ($season === '' || $crop === '') throw new \RuntimeException("Mùa vụ và cây trồng là bắt buộc");
         $revenue = $this->number($data['revenue'] ?? 0);
         $cost = $this->number($data['cost'] ?? 0);
-        $id = $this->insert('INSERT INTO agri_crop_seasons (plot_id, season_name, crop, variety, area, land_prep_date, sowing_date, transplant_date, fertilizer_date, pesticide_date, expected_harvest_date, actual_harvest_date, yield_value, output_value, sale_price, revenue, cost, profit, status, note) VALUES (:plot_id, :season_name, :crop, :variety, :area, :land_prep_date, :sowing_date, :transplant_date, :fertilizer_date, :pesticide_date, :expected_harvest_date, :actual_harvest_date, :yield_value, :output_value, :sale_price, :revenue, :cost, :profit, :status, :note)', [
+        $columns = ['plot_id', 'season_name', 'crop', 'variety', 'area', 'land_prep_date', 'sowing_date', 'transplant_date', 'fertilizer_date', 'pesticide_date', 'expected_harvest_date', 'actual_harvest_date', 'yield_value', 'output_value', 'sale_price', 'revenue', 'cost', 'profit', 'status', 'note'];
+        $params = [
             'plot_id' => $plotId, 'season_name' => $season, 'crop' => $crop, 'variety' => trim((string)($data['variety'] ?? '')) ?: null,
             'area' => $this->number($data['area'] ?? $plot['area'] ?? 0), 'land_prep_date' => $this->dateOrNull($data['land_prep_date'] ?? null), 'sowing_date' => $this->dateOrNull($data['sowing_date'] ?? null), 'transplant_date' => $this->dateOrNull($data['transplant_date'] ?? null), 'fertilizer_date' => $this->dateOrNull($data['fertilizer_date'] ?? null), 'pesticide_date' => $this->dateOrNull($data['pesticide_date'] ?? null), 'expected_harvest_date' => $this->dateOrNull($data['expected_harvest_date'] ?? null), 'actual_harvest_date' => $this->dateOrNull($data['actual_harvest_date'] ?? null),
             'yield_value' => $this->number($data['yield_value'] ?? $data['yield'] ?? 0), 'output_value' => $this->number($data['output_value'] ?? $data['output'] ?? 0), 'sale_price' => $this->number($data['sale_price'] ?? 0), 'revenue' => $revenue, 'cost' => $cost, 'profit' => $this->number($data['profit'] ?? ($revenue - $cost)), 'status' => in_array((string)($data['status'] ?? 'IN_PROGRESS'), ['PLANNED','IN_PROGRESS','HARVESTED','CANCELLED'], true) ? (string)$data['status'] : 'IN_PROGRESS', 'note' => trim((string)($data['note'] ?? '')) ?: null,
-        ]);
-        return $this->fetchOne('SELECT * FROM agri_crop_seasons WHERE id=:id', ['id' => $id]) ?: [];
+        ];
+        $this->addTenantInsert('agri_crop_seasons', $columns, $params);
+        $id = $this->insert('INSERT INTO agri_crop_seasons (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
+        return $this->fetchOne('SELECT * FROM agri_crop_seasons WHERE id=:id AND ' . $this->tenantWhere('agri_crop_seasons'), $this->withTenant(['id' => $id])) ?: [];
     }
 
     public function addLog(int $seasonId, array $data, int $userId): array
     {
         $this->ensureSchema();
-        if (!$this->fetchOne('SELECT id FROM agri_crop_seasons WHERE id=:id AND status <> "DELETED"', ['id' => $seasonId])) throw new \RuntimeException("Không tìm thấy mùa vụ");
+        if (!$this->fetchOne('SELECT id FROM agri_crop_seasons WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('agri_crop_seasons'), $this->withTenant(['id' => $seasonId]))) throw new \RuntimeException("Không tìm thấy mùa vụ");
         $type = (string)($data['activity_type'] ?? $data['activityType'] ?? '');
         if (!isset($this->logTypes()[$type])) $type = 'LAND_PREP';
         $date = $this->dateOrNull($data['activity_date'] ?? $data['activityDate'] ?? null) ?: date('Y-m-d');
-        $id = $this->insert('INSERT INTO agri_production_logs (season_id, activity_type, activity_date, actor_name, note, created_by) VALUES (:season_id, :activity_type, :activity_date, :actor_name, :note, :created_by)', ['season_id' => $seasonId, 'activity_type' => $type, 'activity_date' => $date, 'actor_name' => trim((string)($data['actor_name'] ?? $data['actorName'] ?? '')) ?: null, 'note' => trim((string)($data['note'] ?? '')) ?: null, 'created_by' => $userId]);
-        return $this->fetchOne('SELECT * FROM agri_production_logs WHERE id=:id', ['id' => $id]) ?: [];
+        $columns = ['season_id', 'activity_type', 'activity_date', 'actor_name', 'note', 'created_by'];
+        $params = ['season_id' => $seasonId, 'activity_type' => $type, 'activity_date' => $date, 'actor_name' => trim((string)($data['actor_name'] ?? $data['actorName'] ?? '')) ?: null, 'note' => trim((string)($data['note'] ?? '')) ?: null, 'created_by' => $userId];
+        $this->addTenantInsert('agri_production_logs', $columns, $params);
+        $id = $this->insert('INSERT INTO agri_production_logs (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
+        return $this->fetchOne('SELECT * FROM agri_production_logs WHERE id=:id AND ' . $this->tenantWhere('agri_production_logs'), $this->withTenant(['id' => $id])) ?: [];
     }
 
     public function addDamage(int $parcelId, array $data): array
@@ -328,8 +342,11 @@ SQL);
         if (!$this->find($parcelId)) throw new \RuntimeException("Không tìm thấy thửa đất");
         $type = (string)($data['damage_type'] ?? $data['damageType'] ?? 'OTHER');
         if (!isset($this->damageTypes()[$type])) $type = 'OTHER';
-        $id = $this->insert('INSERT INTO agri_damages (parcel_id, season_id, damage_type, event_date, affected_area, damage_percent, estimated_output_loss, note) VALUES (:parcel_id, :season_id, :damage_type, :event_date, :affected_area, :damage_percent, :estimated_output_loss, :note)', ['parcel_id' => $parcelId, 'season_id' => (int)($data['season_id'] ?? 0) ?: null, 'damage_type' => $type, 'event_date' => $this->dateOrNull($data['event_date'] ?? null) ?: date('Y-m-d'), 'affected_area' => $this->number($data['affected_area'] ?? 0), 'damage_percent' => min(100, max(0, $this->number($data['damage_percent'] ?? 0))), 'estimated_output_loss' => $this->number($data['estimated_output_loss'] ?? 0), 'note' => trim((string)($data['note'] ?? '')) ?: null]);
-        return $this->fetchOne('SELECT * FROM agri_damages WHERE id=:id', ['id' => $id]) ?: [];
+        $columns = ['parcel_id', 'season_id', 'damage_type', 'event_date', 'affected_area', 'damage_percent', 'estimated_output_loss', 'note'];
+        $params = ['parcel_id' => $parcelId, 'season_id' => (int)($data['season_id'] ?? 0) ?: null, 'damage_type' => $type, 'event_date' => $this->dateOrNull($data['event_date'] ?? null) ?: date('Y-m-d'), 'affected_area' => $this->number($data['affected_area'] ?? 0), 'damage_percent' => min(100, max(0, $this->number($data['damage_percent'] ?? 0))), 'estimated_output_loss' => $this->number($data['estimated_output_loss'] ?? 0), 'note' => trim((string)($data['note'] ?? '')) ?: null];
+        $this->addTenantInsert('agri_damages', $columns, $params);
+        $id = $this->insert('INSERT INTO agri_damages (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
+        return $this->fetchOne('SELECT * FROM agri_damages WHERE id=:id AND ' . $this->tenantWhere('agri_damages'), $this->withTenant(['id' => $id])) ?: [];
     }
 
     public function dashboard(array $filters = []): array
@@ -406,8 +423,8 @@ SQL);
 
     private function where(array $filters, bool $withOrder = true): array
     {
-        $where = ['p.status <> "DELETED"'];
-        $params = [];
+        $where = ['p.status <> "DELETED"', $this->tenantWhere('p', 'agri_land_parcels'), $this->tenantWhere('o', 'agri_stakeholders'), $this->tenantWhere('pr', 'agri_stakeholders')];
+        $params = $this->withTenant();
         $search = trim((string)($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $kw = '%' . mb_strtolower($search, 'UTF-8') . '%';
@@ -435,17 +452,19 @@ SQL);
         $householdId = (int)($data['household_id'] ?? $data['householdId'] ?? 0) ?: null;
         $name = trim((string)($data['name'] ?? ''));
         if ($householdId && $name === '') {
-            $h = $this->fetchOne('SELECT head_citizen_name, address, phone FROM households WHERE id=:id', ['id' => $householdId]);
+            $h = $this->fetchOne('SELECT head_citizen_name, address, phone FROM households WHERE id=:id AND ' . $this->tenantWhere('households'), $this->withTenant(['id' => $householdId]));
             if ($h) $name = (string)$h['head_citizen_name'];
         }
         if ($name === '') throw new \RuntimeException(($role === 'owner' ? "Chủ sử dụng đất" : "Người sản xuất") . " là bắt buộc");
         $params = ['stakeholder_type' => $type, 'household_id' => $householdId, 'name' => $name, 'identity_number' => trim((string)($data['identity_number'] ?? '')) ?: null, 'tax_code' => trim((string)($data['tax_code'] ?? '')) ?: null, 'phone' => trim((string)($data['phone'] ?? '')) ?: null, 'address' => trim((string)($data['address'] ?? '')) ?: null, 'note' => trim((string)($data['note'] ?? '')) ?: null];
         if ($existingId) {
             $params['id'] = $existingId;
-            $this->execute('UPDATE agri_stakeholders SET stakeholder_type=:stakeholder_type, household_id=:household_id, name=:name, identity_number=:identity_number, tax_code=:tax_code, phone=:phone, address=:address, note=:note WHERE id=:id', $params);
+            $this->execute('UPDATE agri_stakeholders SET stakeholder_type=:stakeholder_type, household_id=:household_id, name=:name, identity_number=:identity_number, tax_code=:tax_code, phone=:phone, address=:address, note=:note WHERE id=:id AND ' . $this->tenantWhere('agri_stakeholders'), $this->withTenant($params));
             return $existingId;
         }
-        return $this->insert('INSERT INTO agri_stakeholders (stakeholder_type, household_id, name, identity_number, tax_code, phone, address, note) VALUES (:stakeholder_type, :household_id, :name, :identity_number, :tax_code, :phone, :address, :note)', $params);
+        $columns = ['stakeholder_type', 'household_id', 'name', 'identity_number', 'tax_code', 'phone', 'address', 'note'];
+        $this->addTenantInsert('agri_stakeholders', $columns, $params);
+        return $this->insert('INSERT INTO agri_stakeholders (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
     }
 
     private function parcelParams(array $data, int $ownerId, int $producerId, int $userId): array
@@ -463,21 +482,21 @@ SQL);
 
     private function nextParcelCode(): string
     {
-        $row = $this->fetchOne("SELECT MAX(id) AS max_id FROM agri_land_parcels");
-        return 'NN09-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT);
+        $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM agri_land_parcels WHERE ' . $this->tenantWhere('agri_land_parcels'), $this->withTenant());
+        return 'NN-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT);
     }
 
     private function validatePlotTotal(int $parcelId): void
     {
-        $row = $this->fetchOne('SELECT p.actual_area, COALESCE(SUM(pp.area),0) AS plot_area FROM agri_land_parcels p LEFT JOIN agri_production_plots pp ON pp.parcel_id=p.id AND pp.status <> "DELETED" WHERE p.id=:id GROUP BY p.id, p.actual_area', ['id' => $parcelId]);
+        $row = $this->fetchOne('SELECT p.actual_area, COALESCE(SUM(pp.area),0) AS plot_area FROM agri_land_parcels p LEFT JOIN agri_production_plots pp ON pp.parcel_id=p.id AND pp.status <> "DELETED" AND ' . $this->tenantWhere('pp', 'agri_production_plots') . ' WHERE p.id=:id AND ' . $this->tenantWhere('p', 'agri_land_parcels') . ' GROUP BY p.id, p.actual_area', $this->withTenant(['id' => $parcelId]));
         if ($row && (float)$row['plot_area'] - (float)$row['actual_area'] > 0.01) throw new \RuntimeException("Tổng diện tích các lô không được vượt diện tích thực tế của thửa");
     }
 
-    private function plots(int $parcelId): array { return $this->fetchAll('SELECT * FROM agri_production_plots WHERE parcel_id=:id AND status <> "DELETED" ORDER BY id ASC', ['id' => $parcelId]); }
-    private function seasons(int $parcelId): array { return $this->fetchAll('SELECT s.*, pp.plot_name FROM agri_crop_seasons s INNER JOIN agri_production_plots pp ON pp.id=s.plot_id WHERE pp.parcel_id=:id AND pp.status <> "DELETED" AND s.status <> "DELETED" ORDER BY COALESCE(s.sowing_date,s.created_at) DESC, s.id DESC', ['id' => $parcelId]); }
-    private function logs(int $parcelId): array { return $this->fetchAll('SELECT l.*, s.crop, s.season_name FROM agri_production_logs l INNER JOIN agri_crop_seasons s ON s.id=l.season_id INNER JOIN agri_production_plots pp ON pp.id=s.plot_id WHERE pp.parcel_id=:id ORDER BY l.activity_date DESC, l.id DESC', ['id' => $parcelId]); }
-    private function damages(int $parcelId): array { return $this->fetchAll('SELECT * FROM agri_damages WHERE parcel_id=:id ORDER BY event_date DESC, id DESC', ['id' => $parcelId]); }
-    private function files(int $parcelId): array { return $this->fetchAll('SELECT * FROM agri_files WHERE parcel_id=:id ORDER BY created_at DESC, id DESC', ['id' => $parcelId]); }
+    private function plots(int $parcelId): array { return $this->fetchAll('SELECT * FROM agri_production_plots WHERE parcel_id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('agri_production_plots') . ' ORDER BY id ASC', $this->withTenant(['id' => $parcelId])); }
+    private function seasons(int $parcelId): array { return $this->fetchAll('SELECT s.*, pp.plot_name FROM agri_crop_seasons s INNER JOIN agri_production_plots pp ON pp.id=s.plot_id AND ' . $this->tenantWhere('pp', 'agri_production_plots') . ' WHERE pp.parcel_id=:id AND pp.status <> "DELETED" AND s.status <> "DELETED" AND ' . $this->tenantWhere('s', 'agri_crop_seasons') . ' ORDER BY COALESCE(s.sowing_date,s.created_at) DESC, s.id DESC', $this->withTenant(['id' => $parcelId])); }
+    private function logs(int $parcelId): array { return $this->fetchAll('SELECT l.*, s.crop, s.season_name FROM agri_production_logs l INNER JOIN agri_crop_seasons s ON s.id=l.season_id AND ' . $this->tenantWhere('s', 'agri_crop_seasons') . ' INNER JOIN agri_production_plots pp ON pp.id=s.plot_id AND ' . $this->tenantWhere('pp', 'agri_production_plots') . ' WHERE pp.parcel_id=:id AND ' . $this->tenantWhere('l', 'agri_production_logs') . ' ORDER BY l.activity_date DESC, l.id DESC', $this->withTenant(['id' => $parcelId])); }
+    private function damages(int $parcelId): array { return $this->fetchAll('SELECT * FROM agri_damages WHERE parcel_id=:id AND ' . $this->tenantWhere('agri_damages') . ' ORDER BY event_date DESC, id DESC', $this->withTenant(['id' => $parcelId])); }
+    private function files(int $parcelId): array { return $this->fetchAll('SELECT * FROM agri_files WHERE parcel_id=:id AND ' . $this->tenantWhere('agri_files') . ' ORDER BY created_at DESC, id DESC', $this->withTenant(['id' => $parcelId])); }
 
     private function normalizeParcel(array $row): array
     {

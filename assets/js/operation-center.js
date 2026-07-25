@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   'use strict';
 
   const state = { booted: false, taskStatus: loadTaskStatus(), timers: {} };
@@ -11,12 +11,12 @@
   function pct(value) { return Math.max(0, Math.min(100, Number(value || 0))); }
   function toast(message, type) { if (typeof window.showToast === 'function') window.showToast(message, type || 'info'); }
   function openModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.open && service.open(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(qs('#' + id))?.show();
   }
   function closeModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(qs('#' + id))?.hide();
   }
@@ -44,20 +44,20 @@
   }
 
   function loadTaskStatus() {
-    try { return JSON.parse(localStorage.getItem('thon09_operation_task_status') || '{}') || {}; } catch (_) { return {}; }
+    try { return JSON.parse(localStorage.getItem(tenantStorageKey('operation_task_status')) || '{}') || {}; } catch (_) { return {}; }
   }
-  function saveTaskStatus() { localStorage.setItem('thon09_operation_task_status', JSON.stringify(state.taskStatus)); }
+  function saveTaskStatus() { localStorage.setItem(tenantStorageKey('operation_task_status'), JSON.stringify(state.taskStatus)); }
 
   function boot() {
     installStyles();
     registerOperationPlatformActions();
     bindStaticEvents();
-    document.addEventListener('thon09:auth-state', event => { if (event.detail && event.detail.authenticated && isActive()) loadAll(); });
+    document.addEventListener('tenant:auth-state', event => { if (event.detail && event.detail.authenticated && isActive()) loadAll(); });
     if (isActive()) loadAll();
   }
 
   function registerOperationPlatformActions() {
-    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
     if (!actions || typeof actions.register !== 'function') return;
     actions
       .register('operationCenter.refresh', context => context.dataset.operationRefresh === 'progress' ? loadProgress() : (context.dataset.operationRefresh === 'command' ? loadCommandCenter() : loadNotifications()))
@@ -68,7 +68,7 @@
         saveTaskStatus();
         renderTasks();
       })
-      .register('operationCenter.openScreen', context => window.Thon09NavigationController?.navigate(context.dataset.operationScreen || 'dashboard'))
+      .register('operationCenter.openScreen', context => window.TenantAppNavigationController?.navigate(context.dataset.operationScreen || 'dashboard'))
       .register('operationCenter.aiExample', context => askAi(context.dataset.question || ''))
       .register('operationCenter.quickProfile', context => openQuickProfile(context.dataset.profileType, Number(context.dataset.profileId || 0)))
       .register('operationCenter.openDetail', context => {
@@ -277,5 +277,6 @@
   function formatTime(value) { if (!value) return ''; try { return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)); } catch (_) { return String(value); } }
   function debounce(fn, wait) { let timer; return function () { clearTimeout(timer); const args = arguments; timer = setTimeout(() => fn.apply(this, args), wait); }; }
 
+  window.loadOperationCenter = loadAll;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

@@ -13,75 +13,75 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 ## Phase 2 progress
 
 - Da them `assets/js/app-platform.js` lam registry tap trung cho module, menu, route metadata, API response adapter, permission service va modal/navigation facade.
-- `views/app.php` khong con hard-code sidebar menu chinh; `.gov-nav` va `.mobile-bottom-nav` duoc render tu `Thon09Platform.menuRenderer`.
-- `Thon09Platform.menuRenderer` giu `data-screen/data-mobile-screen` cho controller hien tai va bo sung `data-module/data-route/data-action` cho NavigationIntentService.
-- `view-inline-patches.js` van la noi khoi tao `window.Thon09NavigationController`, nhung controller da doc label, loader, dashboard mapping tu platform metadata thay vi hard-code mapping rieng.
-- `app.utf8.min.js` khong con tu tao mobile bottom navigation va khong con wrapper `openScreen()`. Quick actions goi truc tiep `window.Thon09NavigationController.navigate(screen)`.
-- `sprint10.js` khong con gan click listener len `.sidebar .nav-link`; cac loader bo sung chuyen sang nghe `thon09:screen-change` do NavigationController phat ra.
-- Cac file `admin-panel`, `admin-panel-bridge`, `import`, `sprint8`, `sprint9`, `sprint10` khong con monkey-patch `window.showApp`; tat ca lifecycle bo sung chuyen sang `thon09:auth-state` hoac `thon09:screen-change`.
+- `views/app.php` khong con hard-code sidebar menu chinh; `.gov-nav` va `.mobile-bottom-nav` duoc render tu `TenantAppPlatform.menuRenderer`.
+- `TenantAppPlatform.menuRenderer` giu `data-screen/data-mobile-screen` cho controller hien tai va bo sung `data-module/data-route/data-action` cho NavigationIntentService.
+- `view-inline-patches.js` van la noi khoi tao `window.TenantAppNavigationController`, nhung controller da doc label, loader, dashboard mapping tu platform metadata thay vi hard-code mapping rieng.
+- `app.utf8.min.js` khong con tu tao mobile bottom navigation va khong con wrapper `openScreen()`. Quick actions goi truc tiep `window.TenantAppNavigationController.navigate(screen)`.
+- `sprint10.js` khong con gan click listener len `.sidebar .nav-link`; cac loader bo sung chuyen sang nghe `tenant:screen-change` do NavigationController phat ra.
+- Cac file `admin-panel`, `admin-panel-bridge`, `import`, `sprint8`, `sprint9`, `sprint10` khong con monkey-patch `window.showApp`; tat ca lifecycle bo sung chuyen sang `tenant:auth-state` hoac `tenant:screen-change`.
 - `systemAdmin` da duoc dua vao Platform module/menu/route registry (`/system/admin`); `system-admin.js` khong con tu chen nut menu vao sidebar.
-- `admin-panel` khong con hard-code fallback menu rieng; label header doc tu `Thon09Platform.modules`.
+- `admin-panel` khong con hard-code fallback menu rieng; label header doc tu `TenantAppPlatform.modules`.
 - `import.js` va `admin.utf8.js` khong con tu chen menu item `import/users/logs/backups`; cac file nay chi con tao screen neu screen DOM chua ton tai.
-- `Thon09Platform.modals` da co Bootstrap adapter (`registerBootstrap`, `registerBootstrapAll`) va tu dong dang ky cac `.modal[id]` tinh trong DOM.
-- `Thon09Platform.modals.attachApp()` da bridge `App.modals.*` legacy vao modal registry chung. Cac module cu van co the goi `App.modals.user.show()`, nhung platform da co the quan sat/mo/dong cung modal qua mot service duy nhat.
-- `Thon09Platform.actions` da duoc them lam Action Registry chuan cho lenh UI/CRUD sau nay. Selector moi la `data-platform-action` de khong va cham voi `data-action` hien dang dung cho permission/module cu; service co `contextFor`, `bind`, `unbind`, `isBound`, `boundCount` de delegation duoc kiem soat.
-- `Thon09Platform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error`, helper `statusFor/is/summary`, `subscribe/onChange` va event `thon09:module-state-change`.
-- `Thon09Platform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `status`, `card`, `form`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; button/form/pagination/tabs moi co the gan truc tiep `data-platform-action`, state view co dataset status/module va hien error tu store.
-- `Thon09Platform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
-- `Thon09Platform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata, gom `methodFor()` va `inspect()` read-only cho endpoint/method/permission.
-- `Thon09Platform.crudData` da duoc them lam CrudDataService cho inspect/list/detail/create/update/delete, dung ApiResourceService va cap nhat Module State Store.
-- `Thon09Platform.moduleLoader` da duoc them lam ModuleLoaderService chuan hoa resolve module, inspect loader availability, goi loaderName va cap nhat Loading/Loaded/Error state.
-- `Thon09Platform.modals` da co standard modal schema/render contract cho Header, Tabs, Basic, Linked, Extended, History, Attachments, Footer dua tren FormRegistry/ComponentService/ModalLayout.
-- `Thon09Platform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
-- `Thon09Platform.permissionView` da duoc them lam PermissionViewService cho state/attrs/apply/button/action filtering dua tren PermissionService.
-- `Thon09Platform.routes` da co metadata CRUD chuan cho cac module nghiep vu: list, create, detail, edit. Vi du `/persons/create`, `/persons/:id`, `/persons/:id/edit`.
-- `Thon09Platform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
-- `Thon09Platform.formView` da duoc them lam renderer form chung cho field, section, action footer va form node dua tren FormRegistry/ComponentService.
-- `Thon09Platform.lists` da duoc them lam ListRegistry chung cho metadata table/list: columns, filters, search, pagination, rowActions, bulkActions va query defaults.
-- `Thon09Platform.listView` da duoc them lam renderer list chung cho toolbar, table, pagination, row/bulk actions va list container dua tren ListRegistry/ComponentService.
-- `Thon09Platform.crud` da duoc them lam CrudRegistry chung cho workflow list/detail/create/edit/delete/import/export/log, gan route/list/form/action/permission metadata ma chua tu goi API hay thay luong module cu.
-- `Thon09Platform.crudView` da duoc them lam renderer CRUD chung cho list/detail/form/modal dua tren CrudRegistry/ListView/FormView/ModalService.
-- `Thon09Platform.layout` da duoc them lam LayoutRegistry chung cho desktop/tablet/mobile modes, shared regions, navigation mode va modal presentation.
-- `Thon09Platform.breadcrumbs` da duoc them lam BreadcrumbService chung, tao breadcrumb tu route/module/action va co render helper cho `[data-platform-breadcrumb]`.
-- `Thon09Platform.appState` da duoc them lam AppStateService chung cho route/module/screen/action/params/layout/breadcrumb snapshot, event `thon09:app-state-change`, va `subscribe/onChange`.
-- `Thon09Platform.router` da duoc them lam RouterService chung cho `pathFor`, `resolve`, `route -> module -> screen -> action -> params`, va sync vao AppState; chua thay controller runtime khi chua migrate tung module.
-- `Thon09Platform.history` da duoc them lam RouteHistoryService chung cho push/replace/popstate sync vao AppState; service nay khong tu goi NavigationController.
-- `Thon09Platform.navigation` da delegate sang RouterService/AppState; co `activate/bindHistory` de history/popstate di qua cung executor; `Thon09NavigationController` chi con la executor doi screen va `window.App` chi la mirror legacy state.
-- `Thon09Platform.navigationExecutor` da tach viec goi `Thon09NavigationController.navigate()` va mirror `window.App` ra mot adapter duy nhat co `inspect()`.
-- `Thon09Platform.navigationTransitions` da duoc them lam transition log chung cho moi lan dieu huong, gom source, route/module/screen/action, previous state, intent va executor status.
-- `Thon09Platform.navigationDiagnostics` da duoc them de doc mot report chung ve AppState, transition, executor, visible screens, active screens, z-index va active sidebar/bottom navigation.
-- `Thon09Platform.navigationGuard` da duoc them de validate invariant dieu huong: dung mot screen visible, active screen/menu khop AppState va executor khop target screen.
-- `Thon09Platform.navigationReadiness` da duoc them de kiem tra controller, `window.App`, DOM roots, screen count va platform-rendered menu truoc khi bat runtime moi.
-- `Thon09Platform.navigationRuntimePlan` da duoc them de tao dry-run plan truoc khi start runtime moi, gom readiness, mapping audit, route coverage, DOM coverage, guard, roots va binding contract.
-- `Thon09Platform.navigationActivation` da duoc them lam contract `prepare/activate/deactivate` co gate bang runtime plan; khong auto-start tren production.
-- `Thon09Platform.navigationRollout` da duoc them lam status read-only cho rollout runtime moi: ready/blocked/canActivate/active/issues.
-- `Thon09Platform.navigationMapping` da duoc them de audit mapping `menu -> module -> route -> screen` truoc khi rollout runtime moi.
-- `Thon09Platform.navigationScopes` da duoc them de quan ly scope rollout theo ten, gom `requiredBusinessModules`, `desktopModules`, `tabletModules`, `mobileModules` va `navigationRollout` cho 12 module nghiep vu can kiem thu.
-- `Thon09Platform.navigationScopes` da co them `dashboardModules` va `migrationDashboard` de co lap 8 dashboard screen cho module migrate dau tien.
-- `Thon09Platform.navigationRouteCoverage` da duoc them de audit route CRUD bat buoc trong tung navigation scope truoc khi rollout runtime moi.
-- `Thon09Platform.navigationDomCoverage` da duoc them de audit `module.screenId -> DOM screen` va phat hien screen thieu/trung truoc khi rollout.
-- `Thon09Platform.moduleMigration` da duoc them de audit readiness va lap migration plan theo module/scope truoc khi migrate tung module, gom route, DOM screen, loader va CRUD metadata.
-- `Thon09Platform.moduleMigration` da co progress runtime `progress/markComplete/resetProgress` de theo doi module tiep theo trong tung scope ma khong ghi database hay localStorage.
-- `Thon09Platform.moduleMigration` da co report read-only `report/reports`, `assertReport()` va `assertReports()` de gom readiness, progress, next module va issue theo tung stage/scope truoc khi tiep tuc migrate module.
-- `Thon09Platform.moduleMigration.handoff()` da co checklist read-only cho module ke tiep hoac module chi dinh, gom registered/routes/DOM/loader/CRUD de khong migrate module khi dieu kien nen chua san sang.
-- `Thon09Platform.moduleMigration.advance()` va `completeHandoff()` da them guard runtime-memory de chi danh dau module hoan tat khi handoff san sang va dung thu tu migration, tru khi chu dong cho phep out-of-order.
-- `Thon09Platform.moduleMigration.queue()` da co snapshot read-only cho completed/remaining/next/upcoming/blocked/percent theo scope va stage de theo doi tien do migrate tung module.
-- `Thon09Platform.moduleMigration.blockers()` da co report read-only gom module bi chan, issue count va ma loi theo scope/stage de triage truoc khi migrate tiep.
-- `Thon09Platform.moduleMigration.matrix()` va `assertMatrix()` da co bang/guard theo nhieu scope/stage de xem va chan khi con completed/remaining/blocked/next/blocker count chua dat.
-- `Thon09Platform.moduleMigration.gate()` da co check read-only truoc khi advance, tra ve `canAdvance`, `reason`, next module, queue, blockers va handoff.
-- `Thon09Platform.moduleMigration.assertGate()`/`assertCanAdvance()` da co guard throw ro rang khi gate bi chan, de caller khong the advance migration neu con blocker.
-- `Thon09Platform.moduleMigration.timeline()` da co event log runtime-memory cho `markComplete`, `completeHandoff` va `resetProgress`, co filter theo scope/stage/type de audit migration.
-- `Thon09Platform.moduleMigration.current()`/`next()`, `checkpoint()` va `assertCheckpoint()` da co snapshot/guard read-only de noi phien migrate, gom module ke tiep, gate, handoff, blockers, queue, report va timeline.
-- `Thon09Platform.moduleMigration.status()` va `assertStatus()` da co snapshot/guard tong hop read-only cho checkpoint/report/matrix/timeline de CI va handoff doc mot packet duy nhat truoc khi tiep tuc migrate.
+- `TenantAppPlatform.modals` da co Bootstrap adapter (`registerBootstrap`, `registerBootstrapAll`) va tu dong dang ky cac `.modal[id]` tinh trong DOM.
+- `TenantAppPlatform.modals.attachApp()` da bridge `App.modals.*` legacy vao modal registry chung. Cac module cu van co the goi `App.modals.user.show()`, nhung platform da co the quan sat/mo/dong cung modal qua mot service duy nhat.
+- `TenantAppPlatform.actions` da duoc them lam Action Registry chuan cho lenh UI/CRUD sau nay. Selector moi la `data-platform-action` de khong va cham voi `data-action` hien dang dung cho permission/module cu; service co `contextFor`, `bind`, `unbind`, `isBound`, `boundCount` de delegation duoc kiem soat.
+- `TenantAppPlatform.state` da duoc them lam Module State Store chuan voi bon trang thai `Loading`, `Loaded`, `Empty`, `Error`, helper `statusFor/is/summary`, `subscribe/onChange` va event `tenant:module-state-change`.
+- `TenantAppPlatform.components` da duoc them lam Component Factory nen cho `element`, `button`, `badge`, `status`, `card`, `form`, `input`, `select`, `searchBox`, `filterBar`, `tabs`, `upload`, `stateView`, `moduleState`, `table`, `pagination`; button/form/pagination/tabs moi co the gan truc tiep `data-platform-action`, state view co dataset status/module va hien error tu store.
+- `TenantAppPlatform.api` da co JSON helpers chung cho `get`, `post`, `put`, `patch`, `delete/del` va tiep tuc normalize response ve `{ success, message, data, meta }`.
+- `TenantAppPlatform.apiResources` da duoc them lam ApiResourceService cho CRUD endpoint/module operation contract dua tren Router/Crud metadata, gom `methodFor()` va `inspect()` read-only cho endpoint/method/permission.
+- `TenantAppPlatform.crudData` da duoc them lam CrudDataService cho inspect/list/detail/create/update/delete, dung ApiResourceService va cap nhat Module State Store.
+- `TenantAppPlatform.moduleLoader` da duoc them lam ModuleLoaderService chuan hoa resolve module, inspect loader availability, goi loaderName va cap nhat Loading/Loaded/Error state.
+- `TenantAppPlatform.modals` da co standard modal schema/render contract cho Header, Tabs, Basic, Linked, Extended, History, Attachments, Footer dua tren FormRegistry/ComponentService/ModalLayout.
+- `TenantAppPlatform.permissions` da duoc mo rong voi alias module/action, `setMany`, `loadUser`, `loadMatrix`, `canAll`, `canAny` de chuan bi thay the cac permission check rai rac.
+- `TenantAppPlatform.permissionView` da duoc them lam PermissionViewService cho state/attrs/apply/button/action filtering dua tren PermissionService.
+- `TenantAppPlatform.routes` da co metadata CRUD chuan cho cac module nghiep vu: list, create, detail, edit. Vi du `/persons/create`, `/persons/:id`, `/persons/:id/edit`.
+- `TenantAppPlatform.forms` da duoc them lam FormRegistry chung cho schema sections (`basic`, `linked`, `extended`, `attachments`), fields, actions, modalKey va serialize form DOM.
+- `TenantAppPlatform.formView` da duoc them lam renderer form chung cho field, section, action footer va form node dua tren FormRegistry/ComponentService.
+- `TenantAppPlatform.lists` da duoc them lam ListRegistry chung cho metadata table/list: columns, filters, search, pagination, rowActions, bulkActions va query defaults.
+- `TenantAppPlatform.listView` da duoc them lam renderer list chung cho toolbar, table, pagination, row/bulk actions va list container dua tren ListRegistry/ComponentService.
+- `TenantAppPlatform.crud` da duoc them lam CrudRegistry chung cho workflow list/detail/create/edit/delete/import/export/log, gan route/list/form/action/permission metadata ma chua tu goi API hay thay luong module cu.
+- `TenantAppPlatform.crudView` da duoc them lam renderer CRUD chung cho list/detail/form/modal dua tren CrudRegistry/ListView/FormView/ModalService.
+- `TenantAppPlatform.layout` da duoc them lam LayoutRegistry chung cho desktop/tablet/mobile modes, shared regions, navigation mode va modal presentation.
+- `TenantAppPlatform.breadcrumbs` da duoc them lam BreadcrumbService chung, tao breadcrumb tu route/module/action va co render helper cho `[data-platform-breadcrumb]`.
+- `TenantAppPlatform.appState` da duoc them lam AppStateService chung cho route/module/screen/action/params/layout/breadcrumb snapshot, event `tenant:app-state-change`, va `subscribe/onChange`.
+- `TenantAppPlatform.router` da duoc them lam RouterService chung cho `pathFor`, `resolve`, `route -> module -> screen -> action -> params`, va sync vao AppState; chua thay controller runtime khi chua migrate tung module.
+- `TenantAppPlatform.history` da duoc them lam RouteHistoryService chung cho push/replace/popstate sync vao AppState; service nay khong tu goi NavigationController.
+- `TenantAppPlatform.navigation` da delegate sang RouterService/AppState; co `activate/bindHistory` de history/popstate di qua cung executor; `TenantAppNavigationController` chi con la executor doi screen va `window.App` chi la mirror legacy state.
+- `TenantAppPlatform.navigationExecutor` da tach viec goi `TenantAppNavigationController.navigate()` va mirror `window.App` ra mot adapter duy nhat co `inspect()`.
+- `TenantAppPlatform.navigationTransitions` da duoc them lam transition log chung cho moi lan dieu huong, gom source, route/module/screen/action, previous state, intent va executor status.
+- `TenantAppPlatform.navigationDiagnostics` da duoc them de doc mot report chung ve AppState, transition, executor, visible screens, active screens, z-index va active sidebar/bottom navigation.
+- `TenantAppPlatform.navigationGuard` da duoc them de validate invariant dieu huong: dung mot screen visible, active screen/menu khop AppState va executor khop target screen.
+- `TenantAppPlatform.navigationReadiness` da duoc them de kiem tra controller, `window.App`, DOM roots, screen count va platform-rendered menu truoc khi bat runtime moi.
+- `TenantAppPlatform.navigationRuntimePlan` da duoc them de tao dry-run plan truoc khi start runtime moi, gom readiness, mapping audit, route coverage, DOM coverage, guard, roots va binding contract.
+- `TenantAppPlatform.navigationActivation` da duoc them lam contract `prepare/activate/deactivate` co gate bang runtime plan; khong auto-start tren production.
+- `TenantAppPlatform.navigationRollout` da duoc them lam status read-only cho rollout runtime moi: ready/blocked/canActivate/active/issues.
+- `TenantAppPlatform.navigationMapping` da duoc them de audit mapping `menu -> module -> route -> screen` truoc khi rollout runtime moi.
+- `TenantAppPlatform.navigationScopes` da duoc them de quan ly scope rollout theo ten, gom `requiredBusinessModules`, `desktopModules`, `tabletModules`, `mobileModules` va `navigationRollout` cho 12 module nghiep vu can kiem thu.
+- `TenantAppPlatform.navigationScopes` da co them `dashboardModules` va `migrationDashboard` de co lap 8 dashboard screen cho module migrate dau tien.
+- `TenantAppPlatform.navigationRouteCoverage` da duoc them de audit route CRUD bat buoc trong tung navigation scope truoc khi rollout runtime moi.
+- `TenantAppPlatform.navigationDomCoverage` da duoc them de audit `module.screenId -> DOM screen` va phat hien screen thieu/trung truoc khi rollout.
+- `TenantAppPlatform.moduleMigration` da duoc them de audit readiness va lap migration plan theo module/scope truoc khi migrate tung module, gom route, DOM screen, loader va CRUD metadata.
+- `TenantAppPlatform.moduleMigration` da co progress runtime `progress/markComplete/resetProgress` de theo doi module tiep theo trong tung scope ma khong ghi database hay localStorage.
+- `TenantAppPlatform.moduleMigration` da co report read-only `report/reports`, `assertReport()` va `assertReports()` de gom readiness, progress, next module va issue theo tung stage/scope truoc khi tiep tuc migrate module.
+- `TenantAppPlatform.moduleMigration.handoff()` da co checklist read-only cho module ke tiep hoac module chi dinh, gom registered/routes/DOM/loader/CRUD de khong migrate module khi dieu kien nen chua san sang.
+- `TenantAppPlatform.moduleMigration.advance()` va `completeHandoff()` da them guard runtime-memory de chi danh dau module hoan tat khi handoff san sang va dung thu tu migration, tru khi chu dong cho phep out-of-order.
+- `TenantAppPlatform.moduleMigration.queue()` da co snapshot read-only cho completed/remaining/next/upcoming/blocked/percent theo scope va stage de theo doi tien do migrate tung module.
+- `TenantAppPlatform.moduleMigration.blockers()` da co report read-only gom module bi chan, issue count va ma loi theo scope/stage de triage truoc khi migrate tiep.
+- `TenantAppPlatform.moduleMigration.matrix()` va `assertMatrix()` da co bang/guard theo nhieu scope/stage de xem va chan khi con completed/remaining/blocked/next/blocker count chua dat.
+- `TenantAppPlatform.moduleMigration.gate()` da co check read-only truoc khi advance, tra ve `canAdvance`, `reason`, next module, queue, blockers va handoff.
+- `TenantAppPlatform.moduleMigration.assertGate()`/`assertCanAdvance()` da co guard throw ro rang khi gate bi chan, de caller khong the advance migration neu con blocker.
+- `TenantAppPlatform.moduleMigration.timeline()` da co event log runtime-memory cho `markComplete`, `completeHandoff` va `resetProgress`, co filter theo scope/stage/type de audit migration.
+- `TenantAppPlatform.moduleMigration.current()`/`next()`, `checkpoint()` va `assertCheckpoint()` da co snapshot/guard read-only de noi phien migrate, gom module ke tiep, gate, handoff, blockers, queue, report va timeline.
+- `TenantAppPlatform.moduleMigration.status()` va `assertStatus()` da co snapshot/guard tong hop read-only cho checkpoint/report/matrix/timeline de CI va handoff doc mot packet duy nhat truoc khi tiep tuc migrate.
 - 12 module nghiep vu trong `requiredBusinessModules` da co list/form/crud metadata mac dinh trong Platform de qua CRUD migration contract cho `list/detail/create/edit`; scope CRUD metadata da san sang cho handoff tung module.
-- `Thon09Platform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
-- `Thon09Platform.navigationDelegation` da duoc them de chuan hoa mot listener click chung: event -> navigation intent -> NavigationService.
-- `Thon09Platform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
-- `Thon09Platform.screens` da duoc them lam ScreenViewService chung de hide tat ca screen va chi show screen theo AppState.
-- `Thon09Platform.shellView` da duoc them lam AppShellViewService de render/bind screen, sidebar, bottom navigation va breadcrumb tu cung mot AppState snapshot.
-- `Thon09Platform.navigationRuntime` da duoc them lam coordinator start/stop cho delegation, history va shell render tu mot noi; chua auto-start tren production.
-- `Thon09Platform.domRoots` da duoc them lam DomRootService de gom selector sidebar, bottom navigation, breadcrumb, screen root va screen list vao mot contract chung cho navigation runtime.
-- `Thon09Platform.modalLayout` da duoc them lam ModalLayoutService de chuan hoa dialog/fullscreen presentation theo Layout/AppState.
+- `TenantAppPlatform.navigationIntent` da duoc them de chuan hoa menu/click target tu `data-module`, `data-screen`, `data-route`, `href` thanh navigation intent truoc khi goi controller.
+- `TenantAppPlatform.navigationDelegation` da duoc them de chuan hoa mot listener click chung: event -> navigation intent -> NavigationService.
+- `TenantAppPlatform.navigationView` da duoc them lam NavigationViewService chung de sync active sidebar, bottom navigation va breadcrumb tu AppState.
+- `TenantAppPlatform.screens` da duoc them lam ScreenViewService chung de hide tat ca screen va chi show screen theo AppState.
+- `TenantAppPlatform.shellView` da duoc them lam AppShellViewService de render/bind screen, sidebar, bottom navigation va breadcrumb tu cung mot AppState snapshot.
+- `TenantAppPlatform.navigationRuntime` da duoc them lam coordinator start/stop cho delegation, history va shell render tu mot noi; chua auto-start tren production.
+- `TenantAppPlatform.domRoots` da duoc them lam DomRootService de gom selector sidebar, bottom navigation, breadcrumb, screen root va screen list vao mot contract chung cho navigation runtime.
+- `TenantAppPlatform.modalLayout` da duoc them lam ModalLayoutService de chuan hoa dialog/fullscreen presentation theo Layout/AppState.
 - Da them `tests/navigation-cleanup.test.js` de chan cac pattern dieu huong cu: `window.showApp =`, `hardNavigate`, `window.switchScreen`, `window.showScreen`, `navigationRepairModule`, menu fallback, va menu item tu chen ngoai Platform.
 - Cac `document.addEventListener('click')` con lai da phan loai: autocomplete/suggestion close, modal tabs, GPS/photo actions, GIS dirty-state guard va CRUD/module action. Khong co doan nao tu doi active screen ngoai NavigationController.
 - `tests/app-platform.test.js` da bao phu route CRUD/menu/API client/permission aliases/state/navigation facade, BreadcrumbService, AppStateService, RouterService, Action Registry, Component Factory, Card/Form/Filter/Tabs/Upload primitives, Table/Pagination primitives, FormRegistry, ListRegistry/ListView actions, CrudRegistry, LayoutRegistry, va modal bridge legacy `App.modals.*`.
@@ -100,7 +100,7 @@ Ngay lap tuc dung cach sua loi theo tung diem. Tai lieu nay la baseline cho dot 
 
 Da co mot controller tap trung trong `assets/js/view-inline-patches.js`:
 
-- `window.Thon09NavigationController.navigate(screen)`
+- `window.TenantAppNavigationController.navigate(screen)`
 - `hideOtherScreens()`
 - `render()`
 - `inspect()`
@@ -141,7 +141,7 @@ Backend API route table nam tap trung trong `index.php`, nhung co nhieu alias va
 
 Cac alias nay khong duoc xoa dot ngot vi co the dang duoc frontend, mobile, production bookmark hoac tich hop ngoai su dung.
 
-Tinh trang hien tai: `Thon09Platform.routes` da khai bao CRUD route metadata cho cac module nghiep vu. Navigation runtime van co the dung `screenId` trong giai doan qua do; viec bat URL/history router se lam sau khi co test module.
+Tinh trang hien tai: `TenantAppPlatform.routes` da khai bao CRUD route metadata cho cac module nghiep vu. Navigation runtime van co the dung `screenId` trong giai doan qua do; viec bat URL/history router se lam sau khi co test module.
 
 ### Menu va layout
 
@@ -161,7 +161,7 @@ Layout hien tai la mot SPA file lon:
 - Mobile: bottom navigation + content, nhung data menu va cach render chua hoan toan dung chung voi desktop.
 - Tablet/Mobile/Desktop dang chia hanh vi bang CSS va mot so JS rieng.
 
-Tinh trang hien tai: `Thon09Platform.layout` da co contract chung cho mode desktop/tablet/mobile, regions (`sidebar`, `content`, `bottomNavigation`, `modal`), navigation mode va modal presentation. Chua thay CSS/DOM runtime hien tai; giai doan migrate module/layout se dung contract nay de khong duy tri ba he thong giao dien khac nhau.
+Tinh trang hien tai: `TenantAppPlatform.layout` da co contract chung cho mode desktop/tablet/mobile, regions (`sidebar`, `content`, `bottomNavigation`, `modal`), navigation mode va modal presentation. Chua thay CSS/DOM runtime hien tai; giai doan migrate module/layout se dung contract nay de khong duy tri ba he thong giao dien khac nhau.
 
 ### Component
 
@@ -184,11 +184,11 @@ Mot so helper nen giu tam thoi trong giai doan migrate:
 
 Sau do can dong goi lai thanh component/service chung.
 
-Tinh trang hien tai: `Thon09Platform.components` da co factory nho cho cac primitive an toan, gom card, form controls, filter bar, tabs, upload, table va pagination. `Thon09Platform.forms` da co FormRegistry cho schema/sections/serialize. `Thon09Platform.lists` da co ListRegistry cho columns/filters/search/pagination/actions/query defaults. Chua migrate table/form/pagination cua module cu de tranh thay doi layout va CRUD dong loat.
+Tinh trang hien tai: `TenantAppPlatform.components` da co factory nho cho cac primitive an toan, gom card, form controls, filter bar, tabs, upload, table va pagination. `TenantAppPlatform.forms` da co FormRegistry cho schema/sections/serialize. `TenantAppPlatform.lists` da co ListRegistry cho columns/filters/search/pagination/actions/query defaults. Chua migrate table/form/pagination cua module cu de tranh thay doi layout va CRUD dong loat.
 
-Tinh trang hien tai cua CRUD: `Thon09Platform.crud` da co workflow metadata list/detail/create/edit/delete/import/export/log va biet noi route, list schema, form schema, action key, permission action. Service nay chua tu goi API, chua submit form va chua thay event handler cu; module migration se dung contract nay theo tung module.
+Tinh trang hien tai cua CRUD: `TenantAppPlatform.crud` da co workflow metadata list/detail/create/edit/delete/import/export/log va biet noi route, list schema, form schema, action key, permission action. Service nay chua tu goi API, chua submit form va chua thay event handler cu; module migration se dung contract nay theo tung module.
 
-Tinh trang hien tai cua migration: `Thon09Platform.moduleMigration.report()`, `assertReport()`, `reports()`, `assertReports()`, `queue()`, `blockers()`, `matrix()`, `assertMatrix()`, `gate()`, `assertGate()`, `current()`, `next()`, `checkpoint()`, `assertCheckpoint()`, `status()`, `assertStatus()`, `timeline()` va `handoff()` chi doc registry/DOM/runtime memory de lap bao cao readiness va audit theo scope/stage/module. CRUD stage mac dinh gate `list/detail/create/edit`; `advance()` va `completeHandoff()` chi cap nhat progress trong memory sau khi checklist san sang; cac API nay khong auto-start navigation runtime, khong goi API, khong ghi localStorage va khong thay doi database.
+Tinh trang hien tai cua migration: `TenantAppPlatform.moduleMigration.report()`, `assertReport()`, `reports()`, `assertReports()`, `queue()`, `blockers()`, `matrix()`, `assertMatrix()`, `gate()`, `assertGate()`, `current()`, `next()`, `checkpoint()`, `assertCheckpoint()`, `status()`, `assertStatus()`, `timeline()` va `handoff()` chi doc registry/DOM/runtime memory de lap bao cao readiness va audit theo scope/stage/module. CRUD stage mac dinh gate `list/detail/create/edit`; `advance()` va `completeHandoff()` chi cap nhat progress trong memory sau khi checklist san sang; cac API nay khong auto-start navigation runtime, khong goi API, khong ghi localStorage va khong thay doi database.
 
 ### Modal/Popup
 
@@ -212,7 +212,7 @@ Ngoai ra con nhieu global opener nhu `openHouseholdForm`, `openPersonForm`, `ope
 
 Day la khu vuc can thay bang `ModalService` va `FormRegistry`. Khong nen xoa tung modal khi chua migrate module tuong ung.
 
-Tinh trang hien tai: `Thon09Platform.modals` da la service tap trung cho modal registry va Bootstrap adapter. Cac static modal trong DOM duoc auto-register, va `App.modals.*` legacy duoc bridge vao registry de giam trung lap ma chua can sua tung flow CRUD. `Thon09Platform.forms` da co contract schema/form/tabs nen viec migrate tung module co the lam tuan tu sau.
+Tinh trang hien tai: `TenantAppPlatform.modals` da la service tap trung cho modal registry va Bootstrap adapter. Cac static modal trong DOM duoc auto-register, va `App.modals.*` legacy duoc bridge vao registry de giam trung lap ma chua can sua tung flow CRUD. `TenantAppPlatform.forms` da co contract schema/form/tabs nen viec migrate tung module co the lam tuan tu sau.
 
 ### State
 
@@ -230,7 +230,7 @@ State hien tai nam rai rac:
 
 Chua co state machine chuan `Loading`, `Loaded`, `Empty`, `Error`. Nhieu module tu gan `loaded`, `dataset.loaded`, text loading/empty/error rieng.
 
-Tinh trang hien tai: `Thon09Platform.state` da co contract chung cho module state, phat event khi thay doi va co subscriber noi bo co the loc theo module. Cac module cu chua bi ep migrate ngay de tranh thay doi UI/CRUD dong loat.
+Tinh trang hien tai: `TenantAppPlatform.state` da co contract chung cho module state, phat event khi thay doi va co subscriber noi bo co the loc theo module. Cac module cu chua bi ep migrate ngay de tranh thay doi UI/CRUD dong loat.
 
 ### API
 
@@ -248,13 +248,13 @@ Nhung mot so controller tra ve response nested hoac custom:
 
 Chuan moi can la `{ success, message, data, meta }`, nhung de khong pha production, giai doan dau phai them adapter frontend va contract tests truoc, chua doi tat ca controller ngay.
 
-Tinh trang hien tai: `Thon09Platform.api` da co adapter response va JSON request helpers cho cac method CRUD chuan. Backend controllers chua bi doi shape response dong loat.
+Tinh trang hien tai: `TenantAppPlatform.api` da co adapter response va JSON request helpers cho cac method CRUD chuan. Backend controllers chua bi doi shape response dong loat.
 
 ### Permission
 
 Backend da co `requirePermission(module, action)`. Frontend van kiem tra phan tan:
 
-- `window.thon09CanAccess`
+- `window.TenantAppCanAccess`
 - `canAccess`
 - `requireUiPermission`
 - role checks truc tiep tren `App.user`
@@ -262,7 +262,7 @@ Backend da co `requirePermission(module, action)`. Frontend van kiem tra phan ta
 
 Can thay bang `PermissionService` dung action chuan: `View`, `Create`, `Edit`, `Delete`, `Import`, `Export`, `Manage`.
 
-Tinh trang hien tai: `Thon09Platform.permissions` da co contract chung va alias cho cac ten cu nhu `citizen`, `household`, `public_assets`, `update`. Chua thay the `window.thon09CanAccess` dong loat trong runtime de tranh thay doi hanh vi khi chua migrate module.
+Tinh trang hien tai: `TenantAppPlatform.permissions` da co contract chung va alias cho cac ten cu nhu `citizen`, `household`, `public_assets`, `update`. Chua thay the `window.TenantAppCanAccess` dong loat trong runtime de tranh thay doi hanh vi khi chua migrate module.
 
 ### GIS
 
@@ -278,7 +278,7 @@ Dashboard hien gom dashboard tong va dashboard tung module. Can giu ket qua thon
 
 - Backend controllers, models, route aliases va database schema hien tai.
 - Cac API response hien co, bao gom shape cu, cho den khi co adapter va test hop dong.
-- `Thon09NavigationController` nhu mot cau noi on dinh cho navigation trong luc xay router moi.
+- `TenantAppNavigationController` nhu mot cau noi on dinh cho navigation trong luc xay router moi.
 - Static screens va modals hien co cho module chua migrate.
 - Helper frontend dang dung rong rai nhu `api`, formatter, pager, escape HTML.
 
@@ -366,7 +366,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 
 11. `StateService`
    - Moi module chi ghi nhan mot trong bon trang thai `Loading`, `Loaded`, `Empty`, `Error`.
-   - State thay doi phat `thon09:module-state-change` de layout/component co the render theo contract chung.
+   - State thay doi phat `tenant:module-state-change` de layout/component co the render theo contract chung.
    - Co helper `statusFor`, `is`, `summary`, `subscribe/onChange` de module sau nay khong tu doc local flags rieng hoac tu gan listener rieng.
 
 12. `ModalService`
@@ -416,7 +416,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
 
 21. `AppStateService`
    - Luu snapshot route/module/screen/action/params/layout/breadcrumb hien tai.
-   - Phat event `thon09:app-state-change` de layout/controller sau nay dong bo tu mot nguon.
+   - Phat event `tenant:app-state-change` de layout/controller sau nay dong bo tu mot nguon.
    - Co `subscribe/onChange` loc theo module de layout/controller sau nay khong tu gan listener rieng.
    - Chua thay `window.App.screen` hoac controller runtime khi chua migrate navigation controller.
 
@@ -432,7 +432,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - Khong doc `window.App` nhu source of truth; legacy mirror duoc tach sang NavigationExecutorService.
 
 24. `NavigationExecutorService`
-   - La adapter duy nhat goi `Thon09NavigationController.navigate(screen)` trong platform navigation layer.
+   - La adapter duy nhat goi `TenantAppNavigationController.navigate(screen)` trong platform navigation layer.
    - Mirror `window.App.route/moduleKey/screen/action/params` de giu module cu chay trong giai doan qua do.
    - Co `inspect()` de xac minh controller availability, screen vua execute va trang thai mirror legacy.
 
@@ -562,7 +562,7 @@ Khong migrate module ngay. Truoc tien tao layer nen:
    - `stateView/moduleState` co dataset status/module va hien error message tu StateService.
 
 47. `ActionRegistry`
-   - Chuan hoa cac lenh UI bang `Thon09Platform.actions.register(key, handler)`.
+   - Chuan hoa cac lenh UI bang `TenantAppPlatform.actions.register(key, handler)`.
    - Markup moi dung `data-platform-action`, khong dung `data-action` vi `data-action` dang co nghia cu trong permission va mot so module.
    - Co contract delegation `contextFor/handleClick/bind/unbind` de thay inline `onclick` theo tung module ma khong tao nhieu listener chong cheo.
    - Giai doan sau se thay inline `onclick` theo tung module, khong thay dong loat khi chua co test module.

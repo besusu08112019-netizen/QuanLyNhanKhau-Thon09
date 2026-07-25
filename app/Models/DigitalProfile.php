@@ -12,7 +12,7 @@ final class DigitalProfile extends BaseModel
         if (!$household) return null;
 
         $members = $this->fetchAll(
-            'SELECT c.*, h.household_code, h.address AS household_address FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.household_id=:id AND c.status <> "DELETED" ORDER BY CASE WHEN c.relationship="Chủ hộ" THEN 0 ELSE 1 END, c.full_name',
+            'SELECT c.*, h.household_code, h.address AS household_address FROM citizens c INNER JOIN households h ON h.id=c.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE c.household_id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens') . ' ORDER BY CASE WHEN c.relationship="Chủ hộ" THEN 0 ELSE 1 END, c.full_name',
             ['id' => $id]
         );
         $citizenIds = array_map(fn($row) => (int) $row['id'], $members);
@@ -64,7 +64,7 @@ final class DigitalProfile extends BaseModel
         $householdId = (int) ($citizen['household_id'] ?? 0);
         $household = $householdId > 0 ? (new Household())->find($householdId) : null;
         $family = $householdId > 0 ? $this->fetchAll(
-            'SELECT id, citizen_code, full_name, gender, date_of_birth, identity_number, relationship, residency_status, presence_status, life_status FROM citizens WHERE household_id=:household_id AND status <> "DELETED" ORDER BY CASE WHEN relationship="Chủ hộ" THEN 0 ELSE 1 END, full_name',
+            'SELECT id, citizen_code, full_name, gender, date_of_birth, identity_number, relationship, residency_status, presence_status, life_status FROM citizens WHERE household_id=:household_id AND status <> "DELETED" AND ' . $this->tenantWhere('citizens') . ' ORDER BY CASE WHEN relationship="Chủ hộ" THEN 0 ELSE 1 END, full_name',
             ['household_id' => $householdId]
         ) : [];
         $citizen['computed_age'] = $this->age($citizen['date_of_birth'] ?? null);
@@ -145,14 +145,17 @@ final class DigitalProfile extends BaseModel
         $content = trim((string) ($data['content'] ?? ''));
         if ($content === '') throw new \RuntimeException('Nội dung ghi chú là bắt buộc');
         $section = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($data['section'] ?? 'general'))) ?: 'general';
-        $id = $this->insert('INSERT INTO profile_notes (module, entity_id, section, title, content, status, created_by) VALUES (:module,:entity_id,:section,:title,:content,"ACTIVE",:user)', [
+        $columns = ['module', 'entity_id', 'section', 'title', 'content', 'status', 'created_by'];
+        $params = [
             'module' => $module,
             'entity_id' => $entityId,
             'section' => $section,
             'title' => mb_substr($title, 0, 255),
             'content' => $content,
             'user' => $userId,
-        ]);
+        ];
+        $this->addTenantInsert('profile_notes', $columns, $params);
+        $id = $this->insert('INSERT INTO profile_notes (' . implode(',', $columns) . ') VALUES (:module,:entity_id,:section,:title,:content,"ACTIVE",:user' . (in_array('village_id', $columns, true) ? ',:village_id' : '') . ')', $params);
         return $this->noteById($id) ?? ['id' => $id, 'module' => $module, 'entity_id' => $entityId, 'section' => $section, 'title' => $title, 'content' => $content];
     }
 
@@ -166,7 +169,7 @@ final class DigitalProfile extends BaseModel
         $this->assertNotesReady();
         $note = $this->noteById($id);
         if (!$note) return null;
-        $this->execute('UPDATE profile_notes SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE profile_notes SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id AND ' . $this->tenantWhere('profile_notes'), ['id' => $id, 'user' => $userId]);
         return $note;
     }
 
@@ -179,7 +182,7 @@ final class DigitalProfile extends BaseModel
         $content = trim((string) ($data['content'] ?? $note['content'] ?? ''));
         if ($content === '') throw new \RuntimeException('Nội dung ghi chú là bắt buộc');
         $section = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($data['section'] ?? $note['section'] ?? 'general'))) ?: 'general';
-        $this->execute('UPDATE profile_notes SET section=:section, title=:title, content=:content, updated_by=:user WHERE id=:id AND status="ACTIVE"', [
+        $this->execute('UPDATE profile_notes SET section=:section, title=:title, content=:content, updated_by=:user WHERE id=:id AND status="ACTIVE" AND ' . $this->tenantWhere('profile_notes'), [
             'id' => $id,
             'section' => $section,
             'title' => mb_substr($title, 0, 255),
@@ -202,12 +205,12 @@ final class DigitalProfile extends BaseModel
             }
             $parts[] = 'm.citizen_id IN (' . implode(',', $in) . ')';
         }
-        return $this->fetchAll('SELECT m.*, c.full_name, c.citizen_code, c.identity_number, h.household_code FROM movements m LEFT JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id WHERE m.status <> "DELETED" AND (' . implode(' OR ', $parts) . ') ORDER BY m.effective_date DESC, m.id DESC', $params);
+        return $this->fetchAll('SELECT m.*, c.full_name, c.citizen_code, c.identity_number, h.household_code FROM movements m LEFT JOIN citizens c ON c.id=m.citizen_id AND ' . $this->tenantWhere('c', 'citizens') . ' LEFT JOIN households h ON h.id=m.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE m.status <> "DELETED" AND ' . $this->tenantWhere('m', 'movements') . ' AND (' . implode(' OR ', $parts) . ') ORDER BY m.effective_date DESC, m.id DESC', $params);
     }
 
     private function citizenMovements(int $citizenId): array
     {
-        return $this->fetchAll('SELECT m.*, c.full_name, c.citizen_code, c.identity_number, h.household_code FROM movements m LEFT JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id WHERE m.citizen_id=:citizen_id AND m.status <> "DELETED" ORDER BY m.effective_date DESC, m.id DESC', ['citizen_id' => $citizenId]);
+        return $this->fetchAll('SELECT m.*, c.full_name, c.citizen_code, c.identity_number, h.household_code FROM movements m LEFT JOIN citizens c ON c.id=m.citizen_id AND ' . $this->tenantWhere('c', 'citizens') . ' LEFT JOIN households h ON h.id=m.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE m.citizen_id=:citizen_id AND ' . $this->tenantWhere('m', 'movements') . ' AND m.status <> "DELETED" ORDER BY m.effective_date DESC, m.id DESC', ['citizen_id' => $citizenId]);
     }
 
     private function files(string $module, int $entityId): array
@@ -222,12 +225,12 @@ final class DigitalProfile extends BaseModel
     private function notes(string $module, int $entityId): array
     {
         if (!$this->tableExists('profile_notes')) return [];
-        return $this->fetchAll('SELECT n.*, u.display_name AS created_by_name, u.email AS created_by_email FROM profile_notes n LEFT JOIN users u ON u.id=n.created_by WHERE n.module=:module AND n.entity_id=:entity_id AND n.status="ACTIVE" ORDER BY n.created_at DESC, n.id DESC', ['module' => $module, 'entity_id' => $entityId]);
+        return $this->fetchAll('SELECT n.*, u.display_name AS created_by_name, u.email AS created_by_email FROM profile_notes n LEFT JOIN users u ON u.id=n.created_by WHERE n.module=:module AND n.entity_id=:entity_id AND n.status="ACTIVE" AND ' . $this->tenantWhere('n', 'profile_notes') . ' ORDER BY n.created_at DESC, n.id DESC', ['module' => $module, 'entity_id' => $entityId]);
     }
 
     private function noteById(int $id): ?array
     {
-        return $this->fetchOne('SELECT n.*, u.display_name AS created_by_name, u.email AS created_by_email FROM profile_notes n LEFT JOIN users u ON u.id=n.created_by WHERE n.id=:id AND n.status="ACTIVE"', ['id' => $id]);
+        return $this->fetchOne('SELECT n.*, u.display_name AS created_by_name, u.email AS created_by_email FROM profile_notes n LEFT JOIN users u ON u.id=n.created_by WHERE n.id=:id AND n.status="ACTIVE" AND ' . $this->tenantWhere('n', 'profile_notes'), ['id' => $id]);
     }
 
     private function logs(string $module, string $entityId): array
@@ -236,7 +239,7 @@ final class DigitalProfile extends BaseModel
         foreach (['ip_address', 'user_agent', 'before_data', 'after_data'] as $column) {
             if ($this->columnExists('audit_logs', $column)) $columns[] = $column;
         }
-        return $this->fetchAll('SELECT ' . implode(',', $columns) . ' FROM audit_logs WHERE module=:module AND entity_id=:entity_id ORDER BY created_at DESC, id DESC LIMIT 100', ['module' => $module, 'entity_id' => $entityId]);
+        return $this->fetchAll('SELECT ' . implode(',', $columns) . ' FROM audit_logs WHERE module=:module AND entity_id=:entity_id AND ' . $this->tenantWhere('audit_logs') . ' ORDER BY created_at DESC, id DESC LIMIT 100', ['module' => $module, 'entity_id' => $entityId]);
     }
 
     private function section(array $row, array $labels): array
@@ -352,3 +355,4 @@ final class DigitalProfile extends BaseModel
         return (int) ($row['total'] ?? 0) > 0;
     }
 }
+

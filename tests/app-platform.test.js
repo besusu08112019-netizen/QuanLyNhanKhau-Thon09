@@ -69,7 +69,7 @@ function createSandbox() {
       removeEventListener(name, handler) {
         if (windowListeners[name] === handler) delete windowListeners[name];
       },
-      Thon09NavigationController: {
+      TenantAppNavigationController: {
         calls: [],
         navigate(screen, options) {
           this.calls.push({ screen, options });
@@ -133,12 +133,12 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  assert.ok(sandbox.window.Thon09Platform, 'platform is exposed');
-  assert.strictEqual(sandbox.listeners[0].type, 'thon09:platform-ready');
+  assert.ok(sandbox.window.TenantAppPlatform, 'platform is exposed');
+  assert.strictEqual(sandbox.listeners[0].type, 'tenant:platform-ready');
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const route = platform.routes.match('/households/42/edit');
   assert.strictEqual(route.moduleKey, 'households');
   assert.strictEqual(route.screenId, 'households');
@@ -147,7 +147,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const module = platform.modules.get('households');
   assert.strictEqual(module.path, '/households');
   assert.strictEqual(module.screenId, 'households');
@@ -190,7 +190,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const visibleLabels = [];
   platform.forms.list().forEach((form) => {
     Object.keys(form.sections || {}).forEach((sectionKey) => {
@@ -228,7 +228,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const audit = platform.navigationMapping.audit();
   assert.strictEqual(audit.ok, true);
   assert.strictEqual(audit.issues.length, 0);
@@ -265,7 +265,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const screenRoot = {
     querySelectorAll(selector) {
@@ -319,7 +319,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const nav = {
     textContent: 'old',
     dataset: {},
@@ -339,7 +339,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const legacy = platform.normalizeApiResponse({ ok: true, data: { items: [] }, pagination: { page: 1 } });
   assert.strictEqual(legacy.success, true);
   assert.strictEqual(legacy.message, '');
@@ -364,7 +364,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const requests = [];
   function syncThen(value) {
     return {
@@ -405,7 +405,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   assert.strictEqual(platform.apiResources.endpoint('households', 'list', { query: { page: 2, search: 'A B' } }), '/households?page=2&search=A%20B');
   assert.strictEqual(platform.apiResources.endpoint('households', 'detail', { params: { id: 42 } }), '/households/42');
   assert.strictEqual(platform.apiResources.endpoint('households', 'update', { params: { id: 42 } }), '/households/42/edit');
@@ -457,7 +457,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const calls = [];
   const beforeLoad = platform.moduleLoader.inspect('households', {
     loaders: {
@@ -510,7 +510,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const mockResources = {
     inspect(moduleKey, action, options) {
       return {
@@ -568,12 +568,12 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const result = platform.navigation.navigate('/persons', { source: 'menu' });
   assert.strictEqual(result.moduleKey, 'persons');
   assert.strictEqual(result.screenId, 'persons');
   assert.strictEqual(result.route, '/persons');
-  assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'persons');
+  assert.strictEqual(sandbox.window.TenantAppNavigationController.calls[0].screen, 'persons');
   assert.strictEqual(sandbox.window.App.route, '/persons');
   assert.strictEqual(sandbox.window.App.moduleKey, 'persons');
   assert.strictEqual(sandbox.window.App.screen, 'persons');
@@ -596,7 +596,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const personEdit = platform.routes.match('/persons/9/edit');
   assert.strictEqual(personEdit.moduleKey, 'persons');
   assert.strictEqual(personEdit.action, 'edit');
@@ -610,7 +610,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const fromMenu = platform.navigationIntent.fromMenu('households');
   assert.strictEqual(fromMenu.moduleKey, 'households');
   assert.strictEqual(fromMenu.screenId, 'households');
@@ -666,7 +666,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const moduleNode = {
     dataset: { module: 'vehicles', action: 'detail', route: '/vehicles/7' },
     getAttribute() {
@@ -689,7 +689,7 @@ function screenNode(screenId) {
   assert.strictEqual(handled.action, 'detail');
   assert.strictEqual(event.prevented, true);
   assert.strictEqual(event.stopped, true);
-  assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'vehicles');
+  assert.strictEqual(sandbox.window.TenantAppNavigationController.calls[0].screen, 'vehicles');
   assert.strictEqual(sandbox.window.App.screen, 'vehicles');
   assert.strictEqual(handled.transition.source, 'event');
   assert.strictEqual(handled.transition.intent.moduleKey, 'vehicles');
@@ -724,7 +724,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const crumbs = platform.breadcrumbs.fromRoute('/households/42/edit');
   assert.strictEqual(crumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quản lý dân cư>Hộ gia đình>Chinh sua');
   assert.strictEqual(crumbs[2].moduleKey, 'households');
@@ -752,7 +752,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const stateChanges = [];
   const unsubscribe = platform.appState.subscribe((state) => {
     stateChanges.push(state.moduleKey + ':' + state.action);
@@ -767,7 +767,7 @@ function screenNode(screenId) {
   assert.strictEqual(next.params.id, '42');
   assert.strictEqual(next.layout.mode, 'mobile');
   assert.strictEqual(next.breadcrumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quản lý dân cư>Hộ gia đình>Chinh sua');
-  assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:app-state-change'));
+  assert.ok(sandbox.listeners.some((event) => event.type === 'tenant:app-state-change'));
 
   const patched = platform.appState.patch({ action: 'detail', params: { id: '99' }, width: 1280 });
   assert.strictEqual(patched.action, 'detail');
@@ -786,7 +786,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   assert.strictEqual(platform.router.pathFor('households', 'edit', { id: 42 }), '/households/42/edit');
 
   const resolved = platform.router.resolve('/vehicles/7');
@@ -805,19 +805,19 @@ function screenNode(screenId) {
   assert.strictEqual(synced.route, '/temporary-residence');
   assert.strictEqual(synced.moduleKey, 'temporaryResidence');
   assert.strictEqual(synced.layout.mode, 'mobile');
-  assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:app-state-change'));
+  assert.ok(sandbox.listeners.some((event) => event.type === 'tenant:app-state-change'));
 }
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const pushed = platform.history.push('/households/42/edit', { width: 390 });
   assert.strictEqual(pushed.route, '/households/42/edit');
   assert.strictEqual(pushed.moduleKey, 'households');
   assert.strictEqual(pushed.action, 'edit');
   assert.strictEqual(sandbox.historyCalls[0].method, 'pushState');
   assert.strictEqual(sandbox.historyCalls[0].url, '/households/42/edit');
-  assert.strictEqual(sandbox.window.Thon09NavigationController.calls.length, 0);
+  assert.strictEqual(sandbox.window.TenantAppNavigationController.calls.length, 0);
 
   const replaced = platform.history.replace({ moduleKey: 'vehicles', action: 'detail', params: { id: 7 } });
   assert.strictEqual(replaced.route, '/vehicles/7');
@@ -835,14 +835,14 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const binding = platform.navigation.bindHistory(platform.history, { width: 390 });
   assert.strictEqual(binding.start(), true);
   assert.strictEqual(binding.start(), false);
 
   sandbox.window.location.pathname = '/vehicles/7';
   sandbox.windowListeners.popstate({ state: { route: '/vehicles/7' } });
-  assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'vehicles');
+  assert.strictEqual(sandbox.window.TenantAppNavigationController.calls[0].screen, 'vehicles');
   assert.strictEqual(platform.navigation.current().moduleKey, 'vehicles');
   assert.strictEqual(platform.navigation.current().options.source, 'popstate');
   assert.strictEqual(platform.navigation.current().options.historyState.route, '/vehicles/7');
@@ -854,7 +854,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
   const breadcrumbRoot = {
@@ -886,7 +886,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const state = platform.appState.set({ route: '/persons', width: 1280 });
   const result = platform.screens.sync({ screens, state });
@@ -909,7 +909,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const required = platform.navigationScopes.resolve('requiredBusinessModules');
   assert.strictEqual(required.ok, true);
   assert.strictEqual(required.moduleKeys.join(','), [
@@ -968,7 +968,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const dashboardScreens = [
     'dashboard',
     'dashboardHouseholds',
@@ -1370,7 +1370,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1407,7 +1407,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1433,7 +1433,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1462,7 +1462,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1508,7 +1508,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1547,7 +1547,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   screens[0].className = 'screen active';
   screens[0].style.zIndex = '10';
@@ -1620,7 +1620,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   screens[0].className = 'screen active';
   screens[0].style.zIndex = '10';
@@ -1697,7 +1697,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   screens[0].className = 'screen active';
   screens[0].style.zIndex = '10';
@@ -1779,7 +1779,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1808,7 +1808,7 @@ function screenNode(screenId) {
   assert.strictEqual(screens[1].style.display, 'block');
   assert.strictEqual(sidebarRoot.nodes[1].attributes['aria-current'], 'page');
   assert.strictEqual(bottomRoot.nodes[1].attributes['aria-current'], 'page');
-  assert.strictEqual(sandbox.window.Thon09NavigationController.calls[0].screen, 'persons');
+  assert.strictEqual(sandbox.window.TenantAppNavigationController.calls[0].screen, 'persons');
 
   assert.strictEqual(platform.navigationRuntime.stop(), true);
   assert.strictEqual(platform.navigationRuntime.stop(), false);
@@ -1819,7 +1819,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1863,7 +1863,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'SUPER_ADMIN' }), false);
@@ -1887,7 +1887,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   platform.permissions.set('vehicles', platform.ACTION.DELETE, false);
   platform.permissions.set('vehicles', platform.ACTION.EDIT, true);
   const denied = platform.permissionView.state('vehicle', 'delete');
@@ -1939,7 +1939,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   const stateChanges = [];
   const unsubscribe = platform.state.subscribe((record) => {
     stateChanges.push(record.moduleKey + ':' + record.status);
@@ -1957,7 +1957,7 @@ function screenNode(screenId) {
   assert.strictEqual(platform.state.summary().Loaded, 1);
   assert.strictEqual(platform.state.summary().Error, 1);
   assert.ok(platform.state.list().length >= 3);
-  assert.ok(sandbox.listeners.some((event) => event.type === 'thon09:module-state-change'));
+  assert.ok(sandbox.listeners.some((event) => event.type === 'tenant:module-state-change'));
   assert.deepStrictEqual(stateChanges, ['households:Loading', 'households:Loaded']);
   assert.strictEqual(unsubscribe(), true);
   assert.strictEqual(unsubscribe(), false);
@@ -1968,7 +1968,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const calls = [];
   platform.actions.register('households.create', (context) => {
     calls.push(context);
@@ -2021,7 +2021,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   const createButton = platform.components.button({
     label: 'Them',
     icon: 'fa-plus',
@@ -2187,7 +2187,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   platform.forms.register({
     key: 'householdForm',
     moduleKey: 'households',
@@ -2226,7 +2226,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   platform.forms.register({
     key: 'personForm',
     moduleKey: 'persons',
@@ -2263,7 +2263,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   platform.lists.register({
     key: 'householdList',
     moduleKey: 'households',
@@ -2298,7 +2298,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   platform.lists.register({
     key: 'vehicleList',
     moduleKey: 'vehicles',
@@ -2344,7 +2344,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   platform.forms.register({
     key: 'householdsForm',
     moduleKey: 'households',
@@ -2390,7 +2390,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   platform.forms.register({
     key: 'vehiclesForm',
     moduleKey: 'vehicles',
@@ -2434,7 +2434,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   assert.strictEqual(platform.layout.modeFor(1280).key, 'desktop');
   assert.strictEqual(platform.layout.modeFor(900).key, 'tablet');
   assert.strictEqual(platform.layout.modeFor(390).key, 'mobile');
@@ -2452,7 +2452,7 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.Thon09Platform;
+  const platform = loadPlatform().window.TenantAppPlatform;
   assert.strictEqual(platform.modalLayout.presentation({ width: 1280 }).modal, 'dialog');
   assert.strictEqual(platform.modalLayout.presentation({ width: 390 }).fullscreen, true);
   platform.appState.set({ route: '/households', width: 390 });
@@ -2496,18 +2496,18 @@ function screenNode(screenId) {
     }
   };
 
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   platform.modals.registerBootstrap('householdModal', element);
   assert.strictEqual(platform.modals.open('householdModal', { id: 7 }).key, 'householdModal');
   assert.strictEqual(platform.modals.active().payload.id, 7);
   assert.strictEqual(platform.modals.close('householdModal').key, 'householdModal');
   assert.deepStrictEqual(calls, ['show', 'hide']);
-  assert.deepStrictEqual(elementEvents.map((event) => event.type), ['thon09:modal-open', 'thon09:modal-close']);
+  assert.deepStrictEqual(elementEvents.map((event) => event.type), ['tenant:modal-open', 'tenant:modal-close']);
 }
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   platform.forms.register({
     key: 'vehicleForm',
     moduleKey: 'vehicles',
@@ -2543,23 +2543,23 @@ function screenNode(screenId) {
     show() { calls.push('legacy-show'); },
     hide() { calls.push('legacy-hide'); }
   };
-  assert.strictEqual(sandbox.window.Thon09Platform.modals.open('user', { mode: 'edit' }).key, 'user');
-  assert.strictEqual(sandbox.window.Thon09Platform.modals.active().payload.mode, 'edit');
-  assert.strictEqual(sandbox.window.Thon09Platform.modals.close('user').key, 'user');
+  assert.strictEqual(sandbox.window.TenantAppPlatform.modals.open('user', { mode: 'edit' }).key, 'user');
+  assert.strictEqual(sandbox.window.TenantAppPlatform.modals.active().payload.mode, 'edit');
+  assert.strictEqual(sandbox.window.TenantAppPlatform.modals.close('user').key, 'user');
 
   sandbox.window.App = { modals: {} };
   sandbox.window.App.modals.movement = {
     show() { calls.push('setter-show'); },
     hide() { calls.push('setter-hide'); }
   };
-  assert.strictEqual(sandbox.window.Thon09Platform.modals.open('movement').key, 'movement');
-  assert.strictEqual(sandbox.window.Thon09Platform.modals.close('movement').key, 'movement');
+  assert.strictEqual(sandbox.window.TenantAppPlatform.modals.open('movement').key, 'movement');
+  assert.strictEqual(sandbox.window.TenantAppPlatform.modals.close('movement').key, 'movement');
   assert.deepStrictEqual(calls, ['legacy-show', 'legacy-hide', 'setter-show', 'setter-hide']);
 }
 
 {
   const sandbox = loadPlatform();
-  const platform = sandbox.window.Thon09Platform;
+  const platform = sandbox.window.TenantAppPlatform;
   let resolved = null;
   platform.confirmDialog.ask({ message: 'Xác nhận thao tác quản trị?' }).then((value) => {
     resolved = value;

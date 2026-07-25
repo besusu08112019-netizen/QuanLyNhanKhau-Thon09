@@ -11,17 +11,24 @@ final class NotificationCenter extends BaseModel
         $this->execute(<<<SQL
 CREATE TABLE IF NOT EXISTS notification_states (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  village_id BIGINT UNSIGNED NOT NULL,
   user_id BIGINT UNSIGNED NOT NULL,
   notification_key VARCHAR(160) NOT NULL,
   read_at DATETIME NULL,
   dismissed_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_notification_state_user_key (user_id, notification_key),
+  UNIQUE KEY uq_notification_state_user_key (village_id, user_id, notification_key),
+  KEY idx_notification_states_village (village_id),
   KEY idx_notification_states_user_read (user_id, read_at),
   KEY idx_notification_states_user_dismissed (user_id, dismissed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        if (!$this->columnExists('notification_states', 'village_id')) {
+            $this->execute('ALTER TABLE notification_states ADD COLUMN village_id BIGINT UNSIGNED NULL AFTER id');
+            $this->execute('UPDATE notification_states SET village_id = :village_id WHERE village_id IS NULL', $this->withTenant());
+            $this->execute('ALTER TABLE notification_states MODIFY COLUMN village_id BIGINT UNSIGNED NOT NULL');
+        }
     }
 
     public function list(int $userId, array $filters = []): array
@@ -47,13 +54,13 @@ SQL);
     public function markRead(int $userId, string $key): void
     {
         $this->ensureSchema();
-        $this->execute('INSERT INTO notification_states (user_id, notification_key, read_at) VALUES (:user_id,:notification_key,NOW()) ON DUPLICATE KEY UPDATE read_at=COALESCE(read_at, NOW()), dismissed_at=NULL', ['user_id' => $userId, 'notification_key' => $key]);
+        $this->execute('INSERT INTO notification_states (village_id, user_id, notification_key, read_at) VALUES (:village_id,:user_id,:notification_key,NOW()) ON DUPLICATE KEY UPDATE read_at=COALESCE(read_at, NOW()), dismissed_at=NULL', $this->withTenant(['user_id' => $userId, 'notification_key' => $key]));
     }
 
     public function dismiss(int $userId, string $key): void
     {
         $this->ensureSchema();
-        $this->execute('INSERT INTO notification_states (user_id, notification_key, read_at, dismissed_at) VALUES (:user_id,:notification_key,NOW(),NOW()) ON DUPLICATE KEY UPDATE read_at=COALESCE(read_at, NOW()), dismissed_at=NOW()', ['user_id' => $userId, 'notification_key' => $key]);
+        $this->execute('INSERT INTO notification_states (village_id, user_id, notification_key, read_at, dismissed_at) VALUES (:village_id,:user_id,:notification_key,NOW(),NOW()) ON DUPLICATE KEY UPDATE read_at=COALESCE(read_at, NOW()), dismissed_at=NOW()', $this->withTenant(['user_id' => $userId, 'notification_key' => $key]));
     }
 
     public function markAllRead(int $userId): void
@@ -75,8 +82,8 @@ SQL);
     private function complaintNotifications(): array
     {
         if (!$this->tableExists('complaints')) return [];
-        $new = $this->count('complaints c', 'c.soft_status <> "DELETED" AND c.closed_at IS NULL AND c.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)');
-        $overdue = $this->count('complaints c', 'c.soft_status <> "DELETED" AND c.closed_at IS NULL AND c.due_at IS NOT NULL AND c.due_at < NOW()');
+        $new = $this->count('complaints c', 'c.soft_status <> "DELETED" AND ' . $this->tenantWhere('c', 'complaints') . ' AND c.closed_at IS NULL AND c.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)');
+        $overdue = $this->count('complaints c', 'c.soft_status <> "DELETED" AND ' . $this->tenantWhere('c', 'complaints') . ' AND c.closed_at IS NULL AND c.due_at IS NOT NULL AND c.due_at < NOW()');
         return [
             $this->item('complaints_new', 'Phan anh moi', 'Co phan anh moi can tiep nhan/xu ly', $new, 'high', 'complaints', 'fa-comments'),
             $this->item('complaints_overdue', 'Phan anh qua han', 'Co phan anh da qua han xu ly', $overdue, 'urgent', 'complaints', 'fa-triangle-exclamation'),
@@ -86,9 +93,9 @@ SQL);
     private function workTaskNotifications(): array
     {
         if (!$this->tableExists('work_tasks')) return [];
-        $new = $this->count('work_tasks wt', 'wt.soft_status <> "DELETED" AND wt.completed_at IS NULL AND wt.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)');
-        $due = $this->count('work_tasks wt', 'wt.soft_status <> "DELETED" AND wt.completed_at IS NULL AND wt.due_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 DAY)');
-        $overdue = $this->count('work_tasks wt', 'wt.soft_status <> "DELETED" AND wt.completed_at IS NULL AND wt.due_at IS NOT NULL AND wt.due_at < NOW()');
+        $new = $this->count('work_tasks wt', 'wt.soft_status <> "DELETED" AND ' . $this->tenantWhere('wt', 'work_tasks') . ' AND wt.completed_at IS NULL AND wt.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)');
+        $due = $this->count('work_tasks wt', 'wt.soft_status <> "DELETED" AND ' . $this->tenantWhere('wt', 'work_tasks') . ' AND wt.completed_at IS NULL AND wt.due_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 DAY)');
+        $overdue = $this->count('work_tasks wt', 'wt.soft_status <> "DELETED" AND ' . $this->tenantWhere('wt', 'work_tasks') . ' AND wt.completed_at IS NULL AND wt.due_at IS NOT NULL AND wt.due_at < NOW()');
         return [
             $this->item('work_tasks_new', 'Cong viec moi', 'Co cong viec moi duoc tao', $new, 'medium', 'workTasks', 'fa-list-check'),
             $this->item('work_tasks_due_soon', 'Cong viec gan den han', 'Cong viec se den han trong 3 ngay', $due, 'high', 'workTasks', 'fa-clock'),
@@ -99,8 +106,8 @@ SQL);
     private function calendarNotifications(): array
     {
         if (!$this->tableExists('calendar_events')) return [];
-        $today = $this->count('calendar_events ce', 'ce.soft_status <> "DELETED" AND ce.status="SCHEDULED" AND DATE(ce.start_at)=CURDATE()');
-        $upcoming = $this->count('calendar_events ce', 'ce.soft_status <> "DELETED" AND ce.status="SCHEDULED" AND ce.start_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 DAY)');
+        $today = $this->count('calendar_events ce', 'ce.soft_status <> "DELETED" AND ' . $this->tenantWhere('ce', 'calendar_events') . ' AND ce.status="SCHEDULED" AND DATE(ce.start_at)=CURDATE()');
+        $upcoming = $this->count('calendar_events ce', 'ce.soft_status <> "DELETED" AND ' . $this->tenantWhere('ce', 'calendar_events') . ' AND ce.status="SCHEDULED" AND ce.start_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 DAY)');
         return [
             $this->item('calendar_today', 'Lich hom nay', 'Co lich cong tac trong ngay', $today, 'high', 'workCalendar', 'fa-calendar-day'),
             $this->item('calendar_upcoming', 'Lich sap toi', 'Co lich cong tac trong 3 ngay toi', $upcoming, 'medium', 'workCalendar', 'fa-calendar-days'),
@@ -110,14 +117,14 @@ SQL);
     private function documentNotifications(): array
     {
         if (!$this->tableExists('village_documents')) return [];
-        $recent = $this->count('village_documents vd', 'vd.status <> "DELETED" AND vd.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)');
+        $recent = $this->count('village_documents vd', 'vd.status <> "DELETED" AND ' . $this->tenantWhere('vd', 'village_documents') . ' AND vd.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)');
         return [$this->item('documents_recent', 'Van ban moi', 'Co van ban moi duoc cap nhat', $recent, 'medium', 'documents', 'fa-file-lines')];
     }
 
     private function backupNotifications(): array
     {
         if (!$this->tableExists('backups')) return [];
-        $failed = $this->count('backups b', 'UPPER(COALESCE(b.status,"")) NOT IN ("SUCCESS","RESTORED") AND b.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)');
+        $failed = $this->count('backups b', 'UPPER(COALESCE(b.status,"")) NOT IN ("SUCCESS","RESTORED") AND ' . $this->tenantWhere('b', 'backups') . ' AND b.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)');
         return [$this->item('backup_failed', 'Sao luu that bai', 'Co ban sao luu/khôi phuc khong thanh cong', $failed, 'urgent', 'backups', 'fa-database')];
     }
 
@@ -135,13 +142,13 @@ SQL);
     {
         if (!$keys) return [];
         $placeholders = [];
-        $params = ['user_id' => $userId];
+        $params = $this->withTenant(['user_id' => $userId]);
         foreach (array_values($keys) as $index => $key) {
             $name = 'k' . $index;
             $placeholders[] = ':' . $name;
             $params[$name] = $key;
         }
-        $rows = $this->fetchAll('SELECT notification_key, read_at, dismissed_at FROM notification_states WHERE user_id=:user_id AND notification_key IN (' . implode(',', $placeholders) . ')', $params);
+        $rows = $this->fetchAll('SELECT notification_key, read_at, dismissed_at FROM notification_states WHERE user_id=:user_id AND ' . $this->tenantWhere('notification_states') . ' AND notification_key IN (' . implode(',', $placeholders) . ')', $params);
         $map = [];
         foreach ($rows as $row) $map[(string)$row['notification_key']] = $row;
         return $map;

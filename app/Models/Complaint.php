@@ -208,7 +208,7 @@ SQL);
     public function find(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE c.id=:id AND c.soft_status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE c.id=:id AND c.soft_status <> "DELETED" AND ' . $this->tenantWhere('c', 'complaints'), ['id' => $id]);
         if (!$row) return null;
         $item = $this->normalize($row);
         $item['links'] = $this->links($id);
@@ -226,12 +226,15 @@ SQL);
         $params = $this->params($data, $userId, $userName, $existing);
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE complaints SET title=:title, detail=:detail, received_at=:received_at, receiver_user_id=:receiver_user_id, receiver_name=:receiver_name, reporter_name=:reporter_name, reporter_phone=:reporter_phone, household_id=:household_id, citizen_id=:citizen_id, category_id=:category_id, priority_id=:priority_id, status_id=:status_id, assigned_user_id=:assigned_user_id, assigned_name=:assigned_name, due_at=:due_at, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, result_rating=:result_rating, result_note=:result_note, closed_at=:closed_at, updated_by=:updated_by WHERE id=:id AND soft_status <> "DELETED"', $params);
+            $this->execute('UPDATE complaints SET title=:title, detail=:detail, received_at=:received_at, receiver_user_id=:receiver_user_id, receiver_name=:receiver_name, reporter_name=:reporter_name, reporter_phone=:reporter_phone, household_id=:household_id, citizen_id=:citizen_id, category_id=:category_id, priority_id=:priority_id, status_id=:status_id, assigned_user_id=:assigned_user_id, assigned_name=:assigned_name, due_at=:due_at, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, result_rating=:result_rating, result_note=:result_note, closed_at=:closed_at, updated_by=:updated_by WHERE id=:id AND soft_status <> "DELETED" AND ' . $this->tenantWhere('complaints'), $params);
             $this->syncLinks($id, $data, $userId);
             return $this->find($id);
         }
         $params['complaint_code'] = $this->nextCode();
-        $newId = $this->insert('INSERT INTO complaints (complaint_code, title, detail, received_at, receiver_user_id, receiver_name, reporter_name, reporter_phone, household_id, citizen_id, category_id, priority_id, status_id, assigned_user_id, assigned_name, due_at, latitude, longitude, gps_accuracy, result_rating, result_note, closed_at, created_by, updated_by) VALUES (:complaint_code, :title, :detail, :received_at, :receiver_user_id, :receiver_name, :reporter_name, :reporter_phone, :household_id, :citizen_id, :category_id, :priority_id, :status_id, :assigned_user_id, :assigned_name, :due_at, :latitude, :longitude, :gps_accuracy, :result_rating, :result_note, :closed_at, :created_by, :updated_by)', $params);
+        $columns = ['complaint_code', 'title', 'detail', 'received_at', 'receiver_user_id', 'receiver_name', 'reporter_name', 'reporter_phone', 'household_id', 'citizen_id', 'category_id', 'priority_id', 'status_id', 'assigned_user_id', 'assigned_name', 'due_at', 'latitude', 'longitude', 'gps_accuracy', 'result_rating', 'result_note', 'closed_at', 'created_by', 'updated_by'];
+        $this->addTenantInsert('complaints', $columns, $params);
+        $values = array_map(fn(string $column): string => ':' . $column, $columns);
+        $newId = $this->insert('INSERT INTO complaints (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         $this->syncLinks($newId, $data, $userId);
         $this->addHistory($newId, ['content' => 'Tiếp nhận phản ánh', 'status_id' => $params['status_id']], $userId, $userName);
         return $this->find($newId);
@@ -241,7 +244,7 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phản ánh');
-        $this->execute('UPDATE complaints SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE complaints SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('complaints'), ['id' => $id, 'user' => $userId]);
     }
 
     public function addHistory(int $id, array $data, int $userId, string $userName): array
@@ -254,7 +257,7 @@ SQL);
         $historyId = $this->insert('INSERT INTO complaint_histories (complaint_id, actor_user_id, actor_name, content, status_id) VALUES (:id,:user,:name,:content,:status)', ['id' => $id, 'user' => $userId, 'name' => $userName, 'content' => $content, 'status' => $statusId]);
         if ($statusId) {
             $closed = $this->statusTerminal($statusId) ? ', closed_at=COALESCE(closed_at,NOW())' : ', closed_at=NULL';
-            $this->execute('UPDATE complaints SET status_id=:status, updated_by=:user' . $closed . ' WHERE id=:id', ['id' => $id, 'status' => $statusId, 'user' => $userId]);
+            $this->execute('UPDATE complaints SET status_id=:status, updated_by=:user' . $closed . ' WHERE id=:id AND ' . $this->tenantWhere('complaints'), ['id' => $id, 'status' => $statusId, 'user' => $userId]);
         }
         return $this->histories($id)[0] ?? ['id' => $historyId];
     }
@@ -271,7 +274,7 @@ SQL);
         $dueAt = $this->dateTime($data['due_at'] ?? $data['dueAt'] ?? null, false, 'Hạn hoàn thành không hợp lệ');
         $note = $this->nullable($data['note'] ?? '');
         $assignmentId = $this->insert('INSERT INTO complaint_assignments (complaint_id, assignee_user_id, assignee_name, assigned_at, due_at, note, assigned_by) VALUES (:id,:assignee_id,:assignee_name,:assigned_at,:due_at,:note,:user)', ['id' => $id, 'assignee_id' => $assigneeId, 'assignee_name' => $assigneeName, 'assigned_at' => $assignedAt, 'due_at' => $dueAt, 'note' => $note, 'user' => $userId]);
-        $this->execute('UPDATE complaints SET assigned_user_id=:assignee_id, assigned_name=:assignee_name, due_at=:due_at, updated_by=:user WHERE id=:id', ['id' => $id, 'assignee_id' => $assigneeId, 'assignee_name' => $assigneeName, 'due_at' => $dueAt, 'user' => $userId]);
+        $this->execute('UPDATE complaints SET assigned_user_id=:assignee_id, assigned_name=:assignee_name, due_at=:due_at, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('complaints'), ['id' => $id, 'assignee_id' => $assigneeId, 'assignee_name' => $assigneeName, 'due_at' => $dueAt, 'user' => $userId]);
         return $this->assignments($id)[0] ?? ['id' => $assignmentId];
     }
 
@@ -281,7 +284,7 @@ SQL);
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phản ánh');
         $rating = strtoupper(trim((string)($data['result_rating'] ?? $data['resultRating'] ?? '')));
         if (!in_array($rating, ['SATISFIED','NEEDS_MORE','DISAGREE'], true)) throw new \RuntimeException('Đánh giá kết quả không hợp lệ');
-        $this->execute('UPDATE complaints SET result_rating=:rating, result_note=:note, updated_by=:user WHERE id=:id', ['id' => $id, 'rating' => $rating, 'note' => $this->nullable($data['result_note'] ?? $data['resultNote'] ?? ''), 'user' => $userId]);
+        $this->execute('UPDATE complaints SET result_rating=:rating, result_note=:note, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('complaints'), ['id' => $id, 'rating' => $rating, 'note' => $this->nullable($data['result_note'] ?? $data['resultNote'] ?? ''), 'user' => $userId]);
         return $this->find($id);
     }
 
@@ -361,18 +364,18 @@ SQL);
     public function householdSearch(string $query): array
     {
         $q = '%' . trim($query) . '%';
-        return array_map(fn($r) => ['id' => (int)$r['id'], 'label' => trim((string)$r['household_code'] . ' - ' . (string)$r['head_citizen_name']), 'code' => (string)$r['household_code'], 'head' => (string)$r['head_citizen_name'], 'phone' => (string)($r['phone'] ?? ''), 'address' => (string)($r['address'] ?? ''), 'area_code' => (string)($r['area_code'] ?? '')], $this->fetchAll('SELECT id, household_code, head_citizen_name, phone, address, area_code FROM households WHERE status <> "DELETED" AND (household_code LIKE :q OR head_citizen_name LIKE :q OR phone LIKE :q OR address LIKE :q) ORDER BY household_code ASC LIMIT 20', ['q' => $q]));
+        return array_map(fn($r) => ['id' => (int)$r['id'], 'label' => trim((string)$r['household_code'] . ' - ' . (string)$r['head_citizen_name']), 'code' => (string)$r['household_code'], 'head' => (string)$r['head_citizen_name'], 'phone' => (string)($r['phone'] ?? ''), 'address' => (string)($r['address'] ?? ''), 'area_code' => (string)($r['area_code'] ?? '')], $this->fetchAll('SELECT id, household_code, head_citizen_name, phone, address, area_code FROM households WHERE status <> "DELETED" AND ' . $this->tenantWhere('households') . ' AND (household_code LIKE :q OR head_citizen_name LIKE :q OR phone LIKE :q OR address LIKE :q) ORDER BY household_code ASC LIMIT 20', ['q' => $q]));
     }
 
     public function citizenSearch(string $query, ?int $householdId = null): array
     {
         $params = ['q' => '%' . trim($query) . '%'];
-        $where = 'c.status <> "DELETED" AND (c.citizen_code LIKE :q OR c.full_name LIKE :q OR c.phone LIKE :q OR c.identity_number LIKE :q)';
+        $where = 'c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens') . ' AND (c.citizen_code LIKE :q OR c.full_name LIKE :q OR c.phone LIKE :q OR c.identity_number LIKE :q)';
         if ($householdId) {
             $where .= ' AND c.household_id=:household_id';
             $params['household_id'] = $householdId;
         }
-        return array_map(fn($r) => ['id' => (int)$r['id'], 'label' => trim((string)$r['citizen_code'] . ' - ' . (string)$r['full_name']), 'name' => (string)$r['full_name'], 'phone' => (string)($r['phone'] ?? ''), 'household_id' => (int)$r['household_id'], 'household_code' => (string)$r['household_code'], 'address' => (string)($r['household_address'] ?? '')], $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.phone, c.household_id, h.household_code, h.address AS household_address FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE ' . $where . ' ORDER BY c.full_name ASC LIMIT 20', $params));
+        return array_map(fn($r) => ['id' => (int)$r['id'], 'label' => trim((string)$r['citizen_code'] . ' - ' . (string)$r['full_name']), 'name' => (string)$r['full_name'], 'phone' => (string)($r['phone'] ?? ''), 'household_id' => (int)$r['household_id'], 'household_code' => (string)$r['household_code'], 'address' => (string)($r['household_address'] ?? '')], $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.phone, c.household_id, h.household_code, h.address AS household_address FROM citizens c INNER JOIN households h ON h.id=c.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE ' . $where . ' ORDER BY c.full_name ASC LIMIT 20', $params));
     }
 
     public function relatedSearch(string $targetType, string $query): array
@@ -385,14 +388,14 @@ SQL);
         $q = '%' . $query . '%';
         try {
             return match ($targetType) {
-                'household' => array_map(fn($r) => $this->relatedRow('household', (int)$r['id'], trim($r['household_code'] . ' - ' . $r['head_citizen_name']), $r['address'] ?? ''), $this->fetchAll('SELECT id, household_code, head_citizen_name, address, phone FROM households WHERE status <> "DELETED" AND (household_code LIKE :q OR head_citizen_name LIKE :q OR address LIKE :q OR phone LIKE :q) ORDER BY household_code ASC LIMIT 20', ['q' => $q])),
-                'citizen' => array_map(fn($r) => $this->relatedRow('citizen', (int)$r['id'], trim($r['citizen_code'] . ' - ' . $r['full_name']), trim(($r['household_code'] ?? '') . ' ' . ($r['identity_number'] ?? ''))), $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.identity_number, c.phone, h.household_code FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.status <> "DELETED" AND (c.citizen_code LIKE :q OR c.full_name LIKE :q OR c.identity_number LIKE :q OR c.phone LIKE :q OR h.household_code LIKE :q) ORDER BY c.full_name ASC LIMIT 20', ['q' => $q])),
+                'household' => array_map(fn($r) => $this->relatedRow('household', (int)$r['id'], trim($r['household_code'] . ' - ' . $r['head_citizen_name']), $r['address'] ?? ''), $this->fetchAll('SELECT id, household_code, head_citizen_name, address, phone FROM households WHERE status <> "DELETED" AND ' . $this->tenantWhere('households') . ' AND (household_code LIKE :q OR head_citizen_name LIKE :q OR address LIKE :q OR phone LIKE :q) ORDER BY household_code ASC LIMIT 20', ['q' => $q])),
+                'citizen' => array_map(fn($r) => $this->relatedRow('citizen', (int)$r['id'], trim($r['citizen_code'] . ' - ' . $r['full_name']), trim(($r['household_code'] ?? '') . ' ' . ($r['identity_number'] ?? ''))), $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.identity_number, c.phone, h.household_code FROM citizens c INNER JOIN households h ON h.id=c.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens') . ' AND (c.citizen_code LIKE :q OR c.full_name LIKE :q OR c.identity_number LIKE :q OR c.phone LIKE :q OR h.household_code LIKE :q) ORDER BY c.full_name ASC LIMIT 20', ['q' => $q])),
                 'public_asset' => array_map(fn($r) => $this->relatedRow('public_asset', (int)$r['id'], trim($r['asset_code'] . ' - ' . $r['asset_name']), trim(($r['type_name'] ?? '') . ' ' . ($r['address'] ?? ''))), $this->fetchAll('SELECT id, asset_code, asset_name, type_name, address FROM public_assets WHERE status <> "DELETED" AND (asset_code LIKE :q OR asset_name LIKE :q OR type_name LIKE :q OR address LIKE :q) ORDER BY asset_code ASC LIMIT 20', ['q' => $q])),
-                'house' => array_map(fn($r) => $this->relatedRow('house', (int)$r['id'], trim($r['house_code'] . ' - ' . ($r['house_name'] ?: $r['house_type'] ?: 'Nhà ở')), trim(($r['household_code'] ?? '') . ' ' . ($r['head_citizen_name'] ?? '') . ' ' . ($r['address'] ?? ''))), $this->fetchAll('SELECT hs.id, hs.house_code, hs.house_name, hs.house_type, hs.address, h.household_code, h.head_citizen_name FROM houses hs INNER JOIN households h ON h.id=hs.household_id WHERE hs.status <> "DELETED" AND (hs.house_code LIKE :q OR hs.house_name LIKE :q OR hs.house_type LIKE :q OR hs.address LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q) ORDER BY hs.house_code ASC LIMIT 20', ['q' => $q])),
-                'business' => array_map(fn($r) => $this->relatedRow('business', (int)$r['id'], trim(($r['business_name'] ?: $r['household_code']) . ' - ' . ($r['owner_name'] ?: $r['head_citizen_name'])), trim(($r['business_sector'] ?? '') . ' ' . ($r['production_sector'] ?? '') . ' ' . ($r['tax_code'] ?? ''))), $this->fetchAll('SELECT hb.id, hb.business_name, hb.owner_name, hb.business_sector, hb.production_sector, hb.tax_code, h.household_code, h.head_citizen_name, h.address FROM household_business hb INNER JOIN households h ON h.id=hb.household_id WHERE hb.status <> "DELETED" AND (hb.business_name LIKE :q OR hb.owner_name LIKE :q OR hb.business_sector LIKE :q OR hb.production_sector LIKE :q OR hb.tax_code LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, hb.id DESC LIMIT 20', ['q' => $q])),
+                'house' => array_map(fn($r) => $this->relatedRow('house', (int)$r['id'], trim($r['house_code'] . ' - ' . ($r['house_name'] ?: $r['house_type'] ?: 'Nhà ở')), trim(($r['household_code'] ?? '') . ' ' . ($r['head_citizen_name'] ?? '') . ' ' . ($r['address'] ?? ''))), $this->fetchAll('SELECT hs.id, hs.house_code, hs.house_name, hs.house_type, hs.address, h.household_code, h.head_citizen_name FROM houses hs INNER JOIN households h ON h.id=hs.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE hs.status <> "DELETED" AND ' . $this->tenantWhere('hs', 'houses') . ' AND (hs.house_code LIKE :q OR hs.house_name LIKE :q OR hs.house_type LIKE :q OR hs.address LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q) ORDER BY hs.house_code ASC LIMIT 20', ['q' => $q])),
+                'business' => array_map(fn($r) => $this->relatedRow('business', (int)$r['id'], trim(($r['business_name'] ?: $r['household_code']) . ' - ' . ($r['owner_name'] ?: $r['head_citizen_name'])), trim(($r['business_sector'] ?? '') . ' ' . ($r['production_sector'] ?? '') . ' ' . ($r['tax_code'] ?? ''))), $this->fetchAll('SELECT hb.id, hb.business_name, hb.owner_name, hb.business_sector, hb.production_sector, hb.tax_code, h.household_code, h.head_citizen_name, h.address FROM household_business hb INNER JOIN households h ON h.id=hb.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE hb.status <> "DELETED" AND ' . $this->tenantWhere('hb', 'household_business') . ' AND (hb.business_name LIKE :q OR hb.owner_name LIKE :q OR hb.business_sector LIKE :q OR hb.production_sector LIKE :q OR hb.tax_code LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, hb.id DESC LIMIT 20', ['q' => $q])),
                 'agriculture' => array_map(fn($r) => $this->relatedRow('agriculture', (int)$r['id'], trim($r['parcel_code'] . ' - ' . ($r['field_area'] ?: $r['field_name'] ?: 'Sản xuất nông nghiệp')), trim(($r['owner_name'] ?? '') . ' ' . ($r['producer_name'] ?? '') . ' ' . ($r['current_crop'] ?? ''))), $this->fetchAll('SELECT p.id, p.parcel_code, p.field_area, p.field_name, o.name AS owner_name, pr.name AS producer_name, cs.crop AS current_crop FROM agri_land_parcels p INNER JOIN agri_stakeholders o ON o.id=p.owner_id INNER JOIN agri_stakeholders pr ON pr.id=p.producer_id LEFT JOIN (SELECT pp.parcel_id, s.crop FROM agri_crop_seasons s INNER JOIN agri_production_plots pp ON pp.id=s.plot_id WHERE s.status <> "DELETED" AND pp.status <> "DELETED" GROUP BY pp.parcel_id, s.crop) cs ON cs.parcel_id=p.id WHERE p.status <> "DELETED" AND (p.parcel_code LIKE :q OR p.field_area LIKE :q OR p.field_name LIKE :q OR o.name LIKE :q OR pr.name LIKE :q OR cs.crop LIKE :q) ORDER BY p.parcel_code ASC LIMIT 20', ['q' => $q])),
-                'livestock' => array_map(fn($r) => $this->relatedRow('livestock', (int)$r['id'], trim($r['animal_type'] . ' - Hộ ' . $r['household_code']), trim(($r['head_citizen_name'] ?? '') . ' ' . ($r['breed'] ?? '') . ' SL: ' . (string)($r['quantity'] ?? 0))), $this->fetchAll('SELECT l.id, l.animal_type, l.breed, l.quantity, h.household_code, h.head_citizen_name, h.address FROM livestock l INNER JOIN households h ON h.id=l.household_id WHERE l.status <> "DELETED" AND (l.animal_type LIKE :q OR l.breed LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, l.animal_type ASC LIMIT 20', ['q' => $q])),
-                'gis' => array_map(fn($r) => $this->relatedRow('gis', (int)$r['id'], trim($r['area_code'] . ' - ' . $r['name']), $r['note'] ?? ''), $this->fetchAll('SELECT id, area_code, name, note FROM gis_areas WHERE status <> "DELETED" AND (area_code LIKE :q OR name LIKE :q OR note LIKE :q) ORDER BY area_code ASC LIMIT 20', ['q' => $q])),
+                'livestock' => array_map(fn($r) => $this->relatedRow('livestock', (int)$r['id'], trim($r['animal_type'] . ' - Hộ ' . $r['household_code']), trim(($r['head_citizen_name'] ?? '') . ' ' . ($r['breed'] ?? '') . ' SL: ' . (string)($r['quantity'] ?? 0))), $this->fetchAll('SELECT l.id, l.animal_type, l.breed, l.quantity, h.household_code, h.head_citizen_name, h.address FROM livestock l INNER JOIN households h ON h.id=l.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE l.status <> "DELETED" AND ' . $this->tenantWhere('l', 'livestock') . ' AND (l.animal_type LIKE :q OR l.breed LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, l.animal_type ASC LIMIT 20', ['q' => $q])),
+                'gis' => array_map(fn($r) => $this->relatedRow('gis', (int)$r['id'], trim($r['area_code'] . ' - ' . $r['name']), $r['note'] ?? ''), $this->fetchAll('SELECT id, area_code, name, note FROM gis_areas WHERE status <> "DELETED" AND ' . $this->tenantWhere('gis_areas') . ' AND (area_code LIKE :q OR name LIKE :q OR note LIKE :q) ORDER BY area_code ASC LIMIT 20', ['q' => $q])),
                 default => [],
             };
         } catch (\Throwable) {
@@ -402,7 +405,7 @@ SQL);
 
     private function fromSql(): string
     {
-        return 'FROM complaints c LEFT JOIN complaint_categories cc ON cc.id=c.category_id LEFT JOIN complaint_priorities cp ON cp.id=c.priority_id LEFT JOIN complaint_statuses cs ON cs.id=c.status_id LEFT JOIN households h ON h.id=c.household_id LEFT JOIN citizens ct ON ct.id=c.citizen_id';
+        return 'FROM complaints c LEFT JOIN complaint_categories cc ON cc.id=c.category_id LEFT JOIN complaint_priorities cp ON cp.id=c.priority_id LEFT JOIN complaint_statuses cs ON cs.id=c.status_id LEFT JOIN households h ON h.id=c.household_id AND ' . $this->tenantWhere('h', 'households') . ' LEFT JOIN citizens ct ON ct.id=c.citizen_id AND ' . $this->tenantWhere('ct', 'citizens');
     }
 
     private function selectSql(): string
@@ -412,7 +415,7 @@ SQL);
 
     private function where(array $filters, bool $withOrderFilters = true): array
     {
-        $where = ['c.soft_status <> "DELETED"'];
+        $where = ['c.soft_status <> "DELETED"', $this->tenantWhere('c', 'complaints')];
         $params = [];
         foreach (['category_id' => 'c.category_id', 'priority_id' => 'c.priority_id', 'status_id' => 'c.status_id', 'assigned_user_id' => 'c.assigned_user_id', 'receiver_user_id' => 'c.receiver_user_id', 'household_id' => 'c.household_id'] as $key => $column) {
             $value = $filters[$key] ?? $filters[$this->camel($key)] ?? '';
@@ -570,7 +573,7 @@ SQL);
     private function defaultStatusId(): int { return (int)(($this->fetchOne('SELECT id FROM complaint_statuses WHERE code="NEW"') ?: [])['id'] ?? 0); }
     private function defaultPriorityId(): int { return (int)(($this->fetchOne('SELECT id FROM complaint_priorities WHERE code="NORMAL"') ?: [])['id'] ?? 0); }
     private function statusTerminal(int $id): bool { return (bool)(($this->fetchOne('SELECT is_terminal FROM complaint_statuses WHERE id=:id', ['id' => $id]) ?: [])['is_terminal'] ?? false); }
-    private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM complaints'); return 'PAKN-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
+    private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM complaints WHERE ' . $this->tenantWhere('complaints')); return 'PAKN-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function relatedRow(string $type, int $id, string $label, string $meta = ''): array { return ['target_type' => $type, 'target_id' => $id, 'label' => trim($label), 'meta' => trim($meta), 'type_label' => $this->linkTypeLabel($type)]; }
     private function normalizeLink(array $row): array { $type = (string)$row['target_type']; return ['id' => (int)$row['id'], 'complaint_id' => (int)$row['complaint_id'], 'target_type' => $type, 'target_id' => (int)$row['target_id'], 'label' => (string)($row['label'] ?: $this->linkTypeLabel($type) . ' #' . (int)$row['target_id']), 'type_label' => $this->linkTypeLabel($type), 'created_at' => $row['created_at'] ?? null]; }
     private function linkTypes(): array { return [['value'=>'household','label'=>'Hộ gia đình'],['value'=>'citizen','label'=>'Nhân khẩu'],['value'=>'public_asset','label'=>'Công trình công cộng'],['value'=>'house','label'=>'Nhà ở'],['value'=>'business','label'=>'Hộ sản xuất kinh doanh'],['value'=>'agriculture','label'=>'Sản xuất nông nghiệp'],['value'=>'livestock','label'=>'Vật nuôi'],['value'=>'gis','label'=>'GIS'],['value'=>'other','label'=>'Khác']]; }
@@ -586,3 +589,4 @@ SQL);
     private function rating(mixed $value): ?string { $value = strtoupper(trim((string)($value ?? ''))); return in_array($value, ['SATISFIED','NEEDS_MORE','DISAGREE'], true) ? $value : null; }
     private function camel(string $value): string { return preg_replace_callback('/_([a-z])/', fn($m) => strtoupper($m[1]), $value); }
 }
+

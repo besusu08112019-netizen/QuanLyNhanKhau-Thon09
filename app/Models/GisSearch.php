@@ -48,6 +48,7 @@ class GisSearch extends BaseModel
                 FROM households h
                 LEFT JOIN v_household_member_counts v ON v.household_id = h.id
                 WHERE (h.status IS NULL OR h.status NOT IN ('DELETED', 'ARCHIVED'))
+                  AND " . $this->tenantLiteral('households', 'h') . "
                   AND (
                     h.household_code LIKE :household_code
                     OR h.head_citizen_name LIKE :head_name
@@ -56,6 +57,7 @@ class GisSearch extends BaseModel
                         SELECT 1
                         FROM citizens c
                         WHERE c.household_id = h.id
+                          AND " . $this->tenantLiteral('citizens', 'c') . "
                           AND (c.status IS NULL OR c.status <> 'DELETED')
                           AND (c.full_name LIKE :citizen_name OR c.identity_number LIKE :identity_number)
                     )
@@ -155,5 +157,11 @@ class GisSearch extends BaseModel
         if ((int) ($exists['total'] ?? 0) === 0) {
             $this->execute("CREATE INDEX {$name} ON {$table} ({$columns})");
         }
+    }
+
+    private function tenantLiteral(string $table, string $alias = ''): string
+    {
+        if (!$this->tenantColumnExists($table)) return '1=1';
+        return ($alias !== '' ? $alias . '.' : '') . 'village_id = ' . $this->tenantId();
     }
 }

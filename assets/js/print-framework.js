@@ -201,11 +201,11 @@
   function currentScreen(config = {}) {
     const screen = document.querySelector('.screen.active') || document;
     const table = screen.querySelector('table');
-    if (table) return fromTable(table, Object.assign({ title: window.Thon09Platform?.navigation?.current?.()?.label || document.title }, config));
+    if (table) return fromTable(table, Object.assign({ title: window.TenantAppPlatform?.navigation?.current?.()?.label || document.title }, config));
     return print(Object.assign({ title: document.title, headers: ['N\u1ed9i dung'], rows: [[screen.innerText.trim()]] }, config));
   }
 
-  window.Thon09Print = Object.freeze({
+  window.TenantAppPrint = Object.freeze({
     print,
     render: print,
     fromTable,

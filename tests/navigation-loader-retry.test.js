@@ -17,7 +17,7 @@ const { chromium } = require('@playwright/test');
 
   await page.setContent(`
     <!doctype html>
-    <base href="http://thon09.test/">
+    <base href="http://TenantApp.test/">
     <div id="dashboardScreen" class="screen"></div>
     <div id="documentsScreen" class="screen">
       <div>Dang tai module van ban...</div>
@@ -28,7 +28,7 @@ const { chromium } = require('@playwright/test');
   `);
 
   await page.evaluate(() => {
-    window.Thon09Platform = {
+    window.TenantAppPlatform = {
       modules: {
         list: () => [{
           moduleKey: 'documents',
@@ -47,7 +47,7 @@ const { chromium } = require('@playwright/test');
   await page.evaluate(source);
 
   await page.waitForSelector('#documentsLoaded', { timeout: 5000 });
-  const log = await page.evaluate(() => window.__thon09NavigationLog || []);
+  const log = await page.evaluate(() => window.__TenantAppNavigationLog || []);
   assert.ok(log.some(entry => entry.step === 'dynamicLoaderStart'));
   assert.ok(log.some(entry => entry.step === 'dynamicLoaderLoaded'));
   assert.ok(log.some(entry => entry.step === 'render' && entry.loader === 'loadDocuments'));

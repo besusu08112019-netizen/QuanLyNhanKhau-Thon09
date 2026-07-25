@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS houses (
   CONSTRAINT fk_houses_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        foreach (['houses', 'house_structures', 'house_photos'] as $table) {
+            $this->ensureTenantColumn($table);
+        }
         $this->execute(<<<SQL
 CREATE TABLE IF NOT EXISTS house_structures (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -136,8 +139,8 @@ SQL);
              INNER JOIN households h ON h.id=hs.household_id
              LEFT JOIN (SELECT house_id, COUNT(*) AS structure_count FROM house_structures GROUP BY house_id) sc ON sc.house_id=hs.id
              LEFT JOIN (SELECT p1.house_id, p1.file_path FROM house_photos p1 INNER JOIN (SELECT house_id, MIN(id) AS id FROM house_photos WHERE deleted_at IS NULL GROUP BY house_id) p2 ON p2.id=p1.id) ph ON ph.house_id=hs.id
-             WHERE hs.id=:id AND hs.status <> 'DELETED' AND h.status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')",
-            ['id' => $id]
+             WHERE hs.id=:id AND hs.status <> 'DELETED' AND " . $this->tenantWhere('hs', 'houses') . " AND " . $this->tenantWhere('h', 'households') . " AND h.status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')",
+            $this->withTenant(['id' => $id])
         );
         if (!$row) return null;
         $house = $this->normalize($row);
@@ -149,7 +152,7 @@ SQL);
     public function byHousehold(int $householdId): array
     {
         $this->ensureSchema();
-        $rows = $this->fetchAll("SELECT hs.*, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.area_code, h.address AS household_address, COALESCE(sc.structure_count,0) AS structure_count, ph.file_path AS cover_photo FROM houses hs INNER JOIN households h ON h.id=hs.household_id LEFT JOIN (SELECT house_id, COUNT(*) AS structure_count FROM house_structures GROUP BY house_id) sc ON sc.house_id=hs.id LEFT JOIN (SELECT p1.house_id, p1.file_path FROM house_photos p1 INNER JOIN (SELECT house_id, MIN(id) AS id FROM house_photos WHERE deleted_at IS NULL GROUP BY house_id) p2 ON p2.id=p1.id) ph ON ph.house_id=hs.id WHERE hs.household_id=:household_id AND hs.status <> 'DELETED' ORDER BY hs.house_code ASC", ['household_id' => $householdId]);
+        $rows = $this->fetchAll("SELECT hs.*, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.area_code, h.address AS household_address, COALESCE(sc.structure_count,0) AS structure_count, ph.file_path AS cover_photo FROM houses hs INNER JOIN households h ON h.id=hs.household_id LEFT JOIN (SELECT house_id, COUNT(*) AS structure_count FROM house_structures WHERE " . $this->tenantWhere('house_structures') . " GROUP BY house_id) sc ON sc.house_id=hs.id LEFT JOIN (SELECT p1.house_id, p1.file_path FROM house_photos p1 INNER JOIN (SELECT house_id, MIN(id) AS id FROM house_photos WHERE deleted_at IS NULL AND " . $this->tenantWhere('house_photos') . " GROUP BY house_id) p2 ON p2.id=p1.id) ph ON ph.house_id=hs.id WHERE hs.household_id=:household_id AND hs.status <> 'DELETED' AND " . $this->tenantWhere('hs', 'houses') . " AND " . $this->tenantWhere('h', 'households') . " ORDER BY hs.house_code ASC", $this->withTenant(['household_id' => $householdId]));
         return array_map(fn($row) => $this->normalize($row), $rows);
     }
 
@@ -162,11 +165,12 @@ SQL);
         $rows = $this->fetchAll(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.latitude, h.longitude, COALESCE(hc.house_count,0) AS house_count
              FROM households h
-             LEFT JOIN (SELECT household_id, COUNT(*) AS house_count FROM houses WHERE status <> "DELETED" GROUP BY household_id) hc ON hc.household_id=h.id
+             LEFT JOIN (SELECT household_id, COUNT(*) AS house_count FROM houses WHERE status <> "DELETED" AND ' . $this->tenantWhere('houses') . ' GROUP BY household_id) hc ON hc.household_id=h.id
              WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
+               AND ' . $this->tenantWhere('h', 'households') . '
                AND (LOWER(h.household_code) LIKE :code OR LOWER(h.head_citizen_name) LIKE :head OR LOWER(h.address) LIKE :address)
              ORDER BY h.household_code ASC LIMIT ' . max(1, min(20, $limit)),
-            ['code' => $keyword, 'head' => $keyword, 'address' => $keyword]
+            $this->withTenant(['code' => $keyword, 'head' => $keyword, 'address' => $keyword])
         );
         return array_map(fn($row) => [
             'id' => (int)$row['id'],
@@ -187,12 +191,16 @@ SQL);
         $params = $this->params($data, $userId);
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE houses SET household_id=:household_id, house_name=:house_name, address=:address, house_type=:house_type, structure_type=:structure_type, floors=:floors, land_area=:land_area, building_area=:building_area, floor_area=:floor_area, build_year=:build_year, renovated_year=:renovated_year, `condition`=:condition, solidity=:solidity, `usage`=:usage, legal_status=:legal_status, electric_meter=:electric_meter, water_meter=:water_meter, internet=:internet, security_camera=:security_camera, fire_extinguisher=:fire_extinguisher, fire_risk=:fire_risk, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, notes=:notes, status=:status, updated_by=:updated_by WHERE id=:id', $params);
+            $this->execute('UPDATE houses SET household_id=:household_id, house_name=:house_name, address=:address, house_type=:house_type, structure_type=:structure_type, floors=:floors, land_area=:land_area, building_area=:building_area, floor_area=:floor_area, build_year=:build_year, renovated_year=:renovated_year, `condition`=:condition, solidity=:solidity, `usage`=:usage, legal_status=:legal_status, electric_meter=:electric_meter, water_meter=:water_meter, internet=:internet, security_camera=:security_camera, fire_extinguisher=:fire_extinguisher, fire_risk=:fire_risk, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, notes=:notes, status=:status, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('houses'), $this->withTenant($params));
             $this->syncStructures($id, $data['structures'] ?? []);
             return $this->find($id);
         }
         $params['house_code'] = $this->nextCode();
-        $newId = $this->insert('INSERT INTO houses (household_id, house_code, house_name, address, house_type, structure_type, floors, land_area, building_area, floor_area, build_year, renovated_year, `condition`, solidity, `usage`, legal_status, electric_meter, water_meter, internet, security_camera, fire_extinguisher, fire_risk, latitude, longitude, gps_accuracy, notes, status, created_by, updated_by) VALUES (:household_id, :house_code, :house_name, :address, :house_type, :structure_type, :floors, :land_area, :building_area, :floor_area, :build_year, :renovated_year, :condition, :solidity, :usage, :legal_status, :electric_meter, :water_meter, :internet, :security_camera, :fire_extinguisher, :fire_risk, :latitude, :longitude, :gps_accuracy, :notes, :status, :created_by, :updated_by)', $params);
+        $columns = ['household_id', 'house_code', 'house_name', 'address', 'house_type', 'structure_type', 'floors', 'land_area', 'building_area', 'floor_area', 'build_year', 'renovated_year', '`condition`', 'solidity', '`usage`', 'legal_status', 'electric_meter', 'water_meter', 'internet', 'security_camera', 'fire_extinguisher', 'fire_risk', 'latitude', 'longitude', 'gps_accuracy', 'notes', 'status', 'created_by', 'updated_by'];
+        $insertColumns = ['household_id', 'house_code', 'house_name', 'address', 'house_type', 'structure_type', 'floors', 'land_area', 'building_area', 'floor_area', 'build_year', 'renovated_year', 'condition', 'solidity', 'usage', 'legal_status', 'electric_meter', 'water_meter', 'internet', 'security_camera', 'fire_extinguisher', 'fire_risk', 'latitude', 'longitude', 'gps_accuracy', 'notes', 'status', 'created_by', 'updated_by'];
+        $this->addTenantInsert('houses', $insertColumns, $params);
+        if (in_array('village_id', $insertColumns, true)) $columns[] = 'village_id';
+        $newId = $this->insert('INSERT INTO houses (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $insertColumns) . ')', $params);
         $this->syncStructures($newId, $data['structures'] ?? []);
         return $this->find($newId);
     }
@@ -201,14 +209,15 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y nh\u00e0 \u1edf'));
-        $this->execute('UPDATE houses SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
+        $this->execute('UPDATE houses SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('houses'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
     public function addPhoto(int $houseId, array $stored, array $file, string $mime, string $type, string $description, int $userId): array
     {
         $this->ensureSchema();
         if (!$this->find($houseId)) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y nh\u00e0 \u1edf'));
-        $id = $this->insert('INSERT INTO house_photos (house_id, file_path, stored_name, original_name, mime_type, file_size, photo_type, description, created_by) VALUES (:house_id, :file_path, :stored_name, :original_name, :mime_type, :file_size, :photo_type, :description, :created_by)', [
+        $columns = ['house_id', 'file_path', 'stored_name', 'original_name', 'mime_type', 'file_size', 'photo_type', 'description', 'created_by'];
+        $params = [
             'house_id' => $houseId,
             'file_path' => $stored['file_path'],
             'stored_name' => $stored['stored_name'],
@@ -218,7 +227,9 @@ SQL);
             'photo_type' => $type ?: $this->u('Kh\u00e1c'),
             'description' => $description ?: null,
             'created_by' => $userId,
-        ]);
+        ];
+        $this->addTenantInsert('house_photos', $columns, $params);
+        $id = $this->insert('INSERT INTO house_photos (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return $this->photo($id) ?: ['id' => $id];
     }
 
@@ -226,13 +237,13 @@ SQL);
     {
         $photo = $this->photo($id);
         if (!$photo) return null;
-        $this->execute('UPDATE house_photos SET deleted_at=NOW(), deleted_by=:deleted_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId]);
+        $this->execute('UPDATE house_photos SET deleted_at=NOW(), deleted_by=:deleted_by WHERE id=:id AND ' . $this->tenantWhere('house_photos'), $this->withTenant(['id' => $id, 'deleted_by' => $userId]));
         return $photo;
     }
 
     public function photo(int $id): ?array
     {
-        $row = $this->fetchOne('SELECT * FROM house_photos WHERE id=:id AND deleted_at IS NULL', ['id' => $id]);
+        $row = $this->fetchOne('SELECT * FROM house_photos WHERE id=:id AND deleted_at IS NULL AND ' . $this->tenantWhere('house_photos'), $this->withTenant(['id' => $id]));
         return $row ? $this->normalizePhoto($row) : null;
     }
 
@@ -288,8 +299,8 @@ SQL);
 
     private function where(array $filters, bool $withOrder = true): array
     {
-        $where = ['hs.status <> "DELETED"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
-        $params = [];
+        $where = ['hs.status <> "DELETED"', $this->tenantWhere('hs', 'houses'), $this->tenantWhere('h', 'households'), 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
+        $params = $this->withTenant();
         $search = trim((string)($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $kw = '%' . mb_strtolower($search, 'UTF-8') . '%';
@@ -319,7 +330,7 @@ SQL);
     {
         $householdId = (int)($data['household_id'] ?? $data['householdId'] ?? 0);
         if ($householdId <= 0) throw new \RuntimeException($this->u('H\u1ed9 gia \u0111\u00ecnh l\u00e0 b\u1eaft bu\u1ed9c'));
-        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id=:id AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', ['id' => $householdId])) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y h\u1ed9 gia \u0111\u00ecnh'));
+        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id=:id AND ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', $this->withTenant(['id' => $householdId]))) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y h\u1ed9 gia \u0111\u00ecnh'));
         $status = strtoupper(trim((string)($data['status'] ?? 'ACTIVE')));
         if (!isset($this->statuses()[$status]) || $status === 'DELETED') $status = 'ACTIVE';
         $fireRisk = strtoupper(trim((string)($data['fire_risk'] ?? $data['fireRisk'] ?? 'LOW')));
@@ -360,12 +371,14 @@ SQL);
     {
         if (is_string($items)) $items = json_decode($items, true);
         if (!is_array($items)) return;
-        $this->execute('DELETE FROM house_structures WHERE house_id=:house_id', ['house_id' => $houseId]);
+        $this->execute('DELETE FROM house_structures WHERE house_id=:house_id AND ' . $this->tenantWhere('house_structures'), $this->withTenant(['house_id' => $houseId]));
         foreach ($items as $item) {
             if (!is_array($item)) continue;
             $type = trim((string)($item['structure_type'] ?? $item['type'] ?? ''));
             if ($type === '') continue;
-            $this->insert('INSERT INTO house_structures (house_id, structure_type, structure_name, area, build_year, `condition`, notes) VALUES (:house_id, :structure_type, :structure_name, :area, :build_year, :condition, :notes)', [
+            $columns = ['house_id', 'structure_type', 'structure_name', 'area', 'build_year', '`condition`', 'notes'];
+            $paramColumns = ['house_id', 'structure_type', 'structure_name', 'area', 'build_year', 'condition', 'notes'];
+            $params = [
                 'house_id' => $houseId,
                 'structure_type' => $type,
                 'structure_name' => $this->nullable($item['structure_name'] ?? $item['name'] ?? ''),
@@ -373,19 +386,22 @@ SQL);
                 'build_year' => $this->year($item['build_year'] ?? null),
                 'condition' => $this->nullable($item['condition'] ?? ''),
                 'notes' => $this->nullable($item['notes'] ?? $item['note'] ?? ''),
-            ]);
+            ];
+            $this->addTenantInsert('house_structures', $paramColumns, $params);
+            if (in_array('village_id', $paramColumns, true)) $columns[] = 'village_id';
+            $this->insert('INSERT INTO house_structures (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $paramColumns) . ')', $params);
         }
     }
 
     private function structures(int $houseId): array
     {
-        $rows = $this->fetchAll('SELECT * FROM house_structures WHERE house_id=:house_id ORDER BY id ASC', ['house_id' => $houseId]);
+        $rows = $this->fetchAll('SELECT * FROM house_structures WHERE house_id=:house_id AND ' . $this->tenantWhere('house_structures') . ' ORDER BY id ASC', $this->withTenant(['house_id' => $houseId]));
         return array_map(fn($r) => ['id' => (int)$r['id'], 'house_id' => (int)$r['house_id'], 'structure_type' => (string)$r['structure_type'], 'structure_name' => (string)($r['structure_name'] ?? ''), 'area' => (float)($r['area'] ?? 0), 'build_year' => $r['build_year'] !== null ? (int)$r['build_year'] : null, 'condition' => (string)($r['condition'] ?? ''), 'notes' => (string)($r['notes'] ?? '')], $rows);
     }
 
     private function photos(int $houseId): array
     {
-        return array_map(fn($r) => $this->normalizePhoto($r), $this->fetchAll('SELECT * FROM house_photos WHERE house_id=:house_id AND deleted_at IS NULL ORDER BY id DESC', ['house_id' => $houseId]));
+        return array_map(fn($r) => $this->normalizePhoto($r), $this->fetchAll('SELECT * FROM house_photos WHERE house_id=:house_id AND deleted_at IS NULL AND ' . $this->tenantWhere('house_photos') . ' ORDER BY id DESC', $this->withTenant(['house_id' => $houseId])));
     }
 
     private function normalize(array $row): array
@@ -413,8 +429,8 @@ SQL);
 
     private function nextCode(): string
     {
-        $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM houses');
-        return 'NO09-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT);
+        $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM houses WHERE ' . $this->tenantWhere('houses'), $this->withTenant());
+        return 'NO-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT);
     }
 
     private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }

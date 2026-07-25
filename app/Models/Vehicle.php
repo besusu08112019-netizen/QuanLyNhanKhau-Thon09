@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   CONSTRAINT fk_vehicles_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        $this->ensureTenantColumn('vehicles');
         $this->ensureColumns();
     }
 
@@ -108,8 +109,8 @@ SQL);
              FROM vehicles v
              INNER JOIN households h ON h.id=v.household_id
              LEFT JOIN citizens oc ON oc.id=v.owner_citizen_id
-             WHERE v.id=:id AND v.status <> "DELETED" AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")',
-            ['id' => $id]
+             WHERE v.id=:id AND v.status <> "DELETED" AND ' . $this->tenantWhere('v', 'vehicles') . ' AND ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")',
+            $this->withTenant(['id' => $id])
         );
         return $row ? $this->normalize($row) : null;
     }
@@ -123,9 +124,9 @@ SQL);
              FROM vehicles v
              INNER JOIN households h ON h.id=v.household_id
              LEFT JOIN citizens oc ON oc.id=v.owner_citizen_id
-             WHERE v.household_id=:household_id AND v.status <> "DELETED" AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
+             WHERE v.household_id=:household_id AND v.status <> "DELETED" AND ' . $this->tenantWhere('v', 'vehicles') . ' AND ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
              ORDER BY v.vehicle_type ASC, v.id DESC',
-            ['household_id' => $householdId]
+            $this->withTenant(['household_id' => $householdId])
         );
         return array_map(fn($row) => $this->normalize($row), $rows);
     }
@@ -139,11 +140,11 @@ SQL);
         $rows = $this->fetchAll(
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, COALESCE(vc.vehicle_count,0) AS vehicle_count
              FROM households h
-             LEFT JOIN (SELECT household_id, COUNT(*) AS vehicle_count FROM vehicles WHERE status <> "DELETED" GROUP BY household_id) vc ON vc.household_id=h.id
-             WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
+             LEFT JOIN (SELECT household_id, COUNT(*) AS vehicle_count FROM vehicles WHERE status <> "DELETED" AND ' . $this->tenantWhere('vehicles') . ' GROUP BY household_id) vc ON vc.household_id=h.id
+             WHERE ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
                AND (LOWER(h.household_code) LIKE :code OR LOWER(h.head_citizen_name) LIKE :head OR LOWER(h.address) LIKE :address)
              ORDER BY h.household_code ASC LIMIT ' . max(1, min(20, $limit)),
-            ['code' => $keyword, 'head' => $keyword, 'address' => $keyword]
+            $this->withTenant(['code' => $keyword, 'head' => $keyword, 'address' => $keyword])
         );
         return array_map(fn($r) => ['id' => (int) $r['id'], 'household_code' => (string) $r['household_code'], 'head_citizen_name' => (string) $r['head_citizen_name'], 'address' => (string) ($r['address'] ?? ''), 'phone' => (string) ($r['phone'] ?? ''), 'vehicle_count' => (int) ($r['vehicle_count'] ?? 0)], $rows);
     }
@@ -151,8 +152,8 @@ SQL);
     public function searchCitizens(int $householdId, string $query = '', int $limit = 20): array
     {
         $query = trim($query);
-        $params = ['household_id' => $householdId];
-        $where = ['c.household_id=:household_id', 'c.status NOT IN ("DELETED","INACTIVE")'];
+        $params = $this->withTenant(['household_id' => $householdId]);
+        $where = ['c.household_id=:household_id', $this->tenantWhere('c', 'citizens'), 'c.status NOT IN ("DELETED","INACTIVE")'];
         if ($query !== '') {
             $where[] = '(LOWER(c.full_name) LIKE :q OR LOWER(c.citizen_code) LIKE :q OR LOWER(c.identity_number) LIKE :q)';
             $params['q'] = '%' . mb_strtolower($query, 'UTF-8') . '%';
@@ -169,17 +170,16 @@ SQL);
         if ($id) {
             $params['id'] = $id;
             $this->execute(
-                'UPDATE vehicles SET household_id=:household_id, owner_citizen_id=:owner_citizen_id, owner_name=:owner_name, vehicle_type=:vehicle_type, detail_type=:detail_type, brand=:brand, model=:model, version_name=:version_name, license_plate=:license_plate, frame_number=:frame_number, engine_number=:engine_number, registration_date=:registration_date, registration_place=:registration_place, manufacture_year=:manufacture_year, color=:color, usage_status=:usage_status, has_insurance=:has_insurance, insurance_expiry_date=:insurance_expiry_date, has_inspection=:has_inspection, inspection_expiry_date=:inspection_expiry_date, vehicle_photo_path=:vehicle_photo_path, plate_photo_path=:plate_photo_path, registration_photo_path=:registration_photo_path, status=:status, note=:note, updated_by=:user WHERE id=:id',
-                $params
+                'UPDATE vehicles SET household_id=:household_id, owner_citizen_id=:owner_citizen_id, owner_name=:owner_name, vehicle_type=:vehicle_type, detail_type=:detail_type, brand=:brand, model=:model, version_name=:version_name, license_plate=:license_plate, frame_number=:frame_number, engine_number=:engine_number, registration_date=:registration_date, registration_place=:registration_place, manufacture_year=:manufacture_year, color=:color, usage_status=:usage_status, has_insurance=:has_insurance, insurance_expiry_date=:insurance_expiry_date, has_inspection=:has_inspection, inspection_expiry_date=:inspection_expiry_date, vehicle_photo_path=:vehicle_photo_path, plate_photo_path=:plate_photo_path, registration_photo_path=:registration_photo_path, status=:status, note=:note, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('vehicles'),
+                $this->withTenant($params)
             );
             return $this->find($id);
         }
         $insertParams = $params + ['vehicle_code' => $this->nextCode(), 'created_by' => $userId, 'updated_by' => $userId];
         unset($insertParams['user']);
-        $newId = $this->insert(
-            'INSERT INTO vehicles (vehicle_code, household_id, owner_citizen_id, owner_name, vehicle_type, detail_type, brand, model, version_name, license_plate, frame_number, engine_number, registration_date, registration_place, manufacture_year, color, usage_status, has_insurance, insurance_expiry_date, has_inspection, inspection_expiry_date, vehicle_photo_path, plate_photo_path, registration_photo_path, status, note, created_by, updated_by) VALUES (:vehicle_code,:household_id,:owner_citizen_id,:owner_name,:vehicle_type,:detail_type,:brand,:model,:version_name,:license_plate,:frame_number,:engine_number,:registration_date,:registration_place,:manufacture_year,:color,:usage_status,:has_insurance,:insurance_expiry_date,:has_inspection,:inspection_expiry_date,:vehicle_photo_path,:plate_photo_path,:registration_photo_path,:status,:note,:created_by,:updated_by)',
-            $insertParams
-        );
+        $columns = ['vehicle_code', 'household_id', 'owner_citizen_id', 'owner_name', 'vehicle_type', 'detail_type', 'brand', 'model', 'version_name', 'license_plate', 'frame_number', 'engine_number', 'registration_date', 'registration_place', 'manufacture_year', 'color', 'usage_status', 'has_insurance', 'insurance_expiry_date', 'has_inspection', 'inspection_expiry_date', 'vehicle_photo_path', 'plate_photo_path', 'registration_photo_path', 'status', 'note', 'created_by', 'updated_by'];
+        $this->addTenantInsert('vehicles', $columns, $insertParams);
+        $newId = $this->insert('INSERT INTO vehicles (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $insertParams);
         return $this->find($newId);
     }
 
@@ -187,7 +187,7 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phương tiện');
-        $this->execute('UPDATE vehicles SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
+        $this->execute('UPDATE vehicles SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('vehicles'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
     public function dashboard(array $filters = []): array
@@ -249,8 +249,8 @@ SQL);
 
     private function where(array $filters, bool $withOrder = true): array
     {
-        $where = ['v.status <> "DELETED"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
-        $params = [];
+        $where = ['v.status <> "DELETED"', $this->tenantWhere('v', 'vehicles'), $this->tenantWhere('h', 'households'), 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
+        $params = $this->withTenant();
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $keyword = '%' . mb_strtolower($search, 'UTF-8') . '%';
@@ -290,9 +290,9 @@ SQL);
     {
         $householdId = (int) ($data['household_id'] ?? $data['householdId'] ?? 0);
         if ($householdId <= 0) throw new \RuntimeException('Hộ gia đình là bắt buộc');
-        if (!$this->fetchOne('SELECT id FROM households WHERE id=:id AND status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', ['id' => $householdId])) throw new \RuntimeException('Không tìm thấy hộ gia đình');
+        if (!$this->fetchOne('SELECT id FROM households WHERE id=:id AND ' . $this->tenantWhere('households') . ' AND status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('Không tìm thấy hộ gia đình');
         $ownerCitizenId = (int) ($data['owner_citizen_id'] ?? $data['ownerCitizenId'] ?? 0);
-        if ($ownerCitizenId > 0 && !$this->fetchOne('SELECT id FROM citizens WHERE id=:id AND household_id=:household_id AND status NOT IN ("DELETED","INACTIVE")', ['id' => $ownerCitizenId, 'household_id' => $householdId])) throw new \RuntimeException('Chủ sở hữu không thuộc hộ đã chọn');
+        if ($ownerCitizenId > 0 && !$this->fetchOne('SELECT id FROM citizens WHERE id=:id AND household_id=:household_id AND ' . $this->tenantWhere('citizens') . ' AND status NOT IN ("DELETED","INACTIVE")', $this->withTenant(['id' => $ownerCitizenId, 'household_id' => $householdId]))) throw new \RuntimeException('Chủ sở hữu không thuộc hộ đã chọn');
         $type = trim((string) ($data['vehicle_type'] ?? $data['vehicleType'] ?? ''));
         if ($type === '') throw new \RuntimeException('Loại phương tiện là bắt buộc');
         $usage = strtoupper(trim((string) ($data['usage_status'] ?? $data['usageStatus'] ?? 'USING')));
@@ -380,7 +380,7 @@ SQL);
 
     private function nextCode(): string
     {
-        $row = $this->fetchOne('SELECT MAX(id) + 1 AS next_id FROM vehicles') ?: [];
+        $row = $this->fetchOne('SELECT MAX(id) + 1 AS next_id FROM vehicles WHERE ' . $this->tenantWhere('vehicles'), $this->withTenant()) ?: [];
         return 'PT-' . str_pad((string) max(1, (int) ($row['next_id'] ?? 1)), 6, '0', STR_PAD_LEFT);
     }
 
@@ -404,9 +404,9 @@ SQL);
         foreach ($columns as $column => $definition) {
             if (!$this->columnExists('vehicles', $column)) $this->execute("ALTER TABLE vehicles ADD COLUMN $column $definition");
         }
-        $this->execute("UPDATE vehicles SET usage_status='DAMAGED' WHERE usage_status='REPAIRING'");
+        $this->execute("UPDATE vehicles SET usage_status='DAMAGED' WHERE usage_status='REPAIRING' AND " . $this->tenantWhere('vehicles'), $this->withTenant());
         $this->execute("ALTER TABLE vehicles MODIFY usage_status ENUM('USING','INACTIVE','SOLD','LIQUIDATED','DAMAGED','LOST') NOT NULL DEFAULT 'USING'");
-        $this->execute("UPDATE vehicles SET vehicle_code=CONCAT('PT-', LPAD(id, 6, '0')) WHERE vehicle_code IS NULL OR vehicle_code=''");
+        $this->execute("UPDATE vehicles SET vehicle_code=CONCAT('PT-', LPAD(id, 6, '0')) WHERE (vehicle_code IS NULL OR vehicle_code='') AND " . $this->tenantWhere('vehicles'), $this->withTenant());
     }
 
     private function table(string $title, array $headers, array $rows, array $filters): array
@@ -414,3 +414,4 @@ SQL);
         return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')];
     }
 }
+

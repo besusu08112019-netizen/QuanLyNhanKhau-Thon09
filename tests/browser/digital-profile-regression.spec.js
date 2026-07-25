@@ -1,4 +1,4 @@
-﻿const { test, expect } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 async function mockApis(page) {
   await page.route('**/api/**', async route => {
@@ -10,7 +10,7 @@ async function mockApis(page) {
     if (url.includes('/api/persons/123')) return payload({
       id: 123,
       citizen_code: 'NK001',
-      full_name: 'Nguyễn Văn A',
+      full_name: 'Nguyễn Van A',
       gender: 'Nam',
       date_of_birth: '1990-01-01',
       household_id: 9,
@@ -47,9 +47,9 @@ async function openAuthenticatedApp(page) {
     App.csrfToken = 'test-csrf';
     App.user = user;
     window.App = App;
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_csrf', 'test-csrf');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('csrf'), 'test-csrf');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
     if (typeof window.showApp === 'function') window.showApp();
   });
   await expect(page.locator('#appView')).not.toHaveClass(/d-none/);

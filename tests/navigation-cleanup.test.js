@@ -12,15 +12,15 @@ const cssScanFiles = [
 ];
 
 const forbidden = [
-  { pattern: /window\.showApp\s*=/, reason: 'showApp monkey-patching is replaced by thon09:auth-state' },
+  { pattern: /window\.showApp\s*=/, reason: 'showApp monkey-patching is replaced by tenant:auth-state' },
   { pattern: /hardNavigate\s*\(/, reason: 'hardNavigate duplicates NavigationController' },
   { pattern: /window\.switchScreen\b/, reason: 'window.switchScreen duplicates NavigationController' },
   { pattern: /window\.showScreen\b/, reason: 'window.showScreen duplicates NavigationController' },
   { pattern: /navigationRepairModule\b/, reason: 'repair modules are not part of single-source navigation' },
-  { pattern: /nav\.innerHTML\s*=\s*menu\.filter/, reason: 'menu rendering must come from Thon09Platform' },
-  { pattern: /btn\.dataset\.screen\s*=\s*['"]systemAdmin['"]/, reason: 'systemAdmin menu item must come from Thon09Platform' },
-  { pattern: /data-screen=["']import["'][\s\S]{0,120}insertAdjacentHTML|insertAdjacentHTML[\s\S]{0,120}data-screen=["']import["']/, reason: 'import menu item must come from Thon09Platform' },
-  { pattern: /data-screen=["']users["'][\s\S]{0,180}data-screen=["']logs["'][\s\S]{0,180}data-screen=["']backups["']/, reason: 'admin menu items must come from Thon09Platform' }
+  { pattern: /nav\.innerHTML\s*=\s*menu\.filter/, reason: 'menu rendering must come from TenantAppPlatform' },
+  { pattern: /btn\.dataset\.screen\s*=\s*['"]systemAdmin['"]/, reason: 'systemAdmin menu item must come from TenantAppPlatform' },
+  { pattern: /data-screen=["']import["'][\s\S]{0,120}insertAdjacentHTML|insertAdjacentHTML[\s\S]{0,120}data-screen=["']import["']/, reason: 'import menu item must come from TenantAppPlatform' },
+  { pattern: /data-screen=["']users["'][\s\S]{0,180}data-screen=["']logs["'][\s\S]{0,180}data-screen=["']backups["']/, reason: 'admin menu items must come from TenantAppPlatform' }
 ];
 
 const forbiddenCss = [
@@ -64,7 +64,7 @@ const allowedClickListeners = new Map([
     ".onclick="
   ]],
   ['assets/js/view-inline-patches.js', [
-    "document.addEventListener('click',function(event){var item=event.target.closest&&event.target.closest('[data-screen],[data-mobile-screen]');if(!item||item.classList.contains('gov-logout'))return;var delegation=window.Thon09Platform&&window.Thon09Platform.navigationDelegation;"
+    "document.addEventListener('click',function(event){var item=event.target.closest&&event.target.closest('[data-screen],[data-mobile-screen]');if(!item||item.classList.contains('gov-logout'))return;var delegation=window.TenantAppPlatform&&window.TenantAppPlatform.navigationDelegation;"
   ]],
   ['assets/js/mobile-component-library.js', [
     "document.addEventListener('click', function (event) {",

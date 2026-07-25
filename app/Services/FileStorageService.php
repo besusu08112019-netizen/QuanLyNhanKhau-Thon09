@@ -161,7 +161,7 @@ final class FileStorageService
             ? $baseFolder . '/' . date('Y/m')
             : $baseFolder . '/' . $categoryFolder . '/' . date('Y/m');
         $root = 'uploads';
-        $dir = BASE_PATH . '/' . $root . '/' . $folder;
+        $dir = $this->uploadRoot() . '/' . $folder;
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
             throw new \RuntimeException('Không tạo được thư mục upload');
         }
@@ -249,7 +249,14 @@ final class FileStorageService
         }
         $paths = [];
         foreach (array_unique(array_filter($variants)) as $variant) {
-            $paths[] = BASE_PATH . '/' . $variant;
+            $variant = ltrim($variant, '/\\');
+            if (str_starts_with($variant, 'uploads/')) {
+                $paths[] = $this->uploadRoot() . '/' . substr($variant, strlen('uploads/'));
+            } elseif (str_starts_with($variant, 'storage/')) {
+                $paths[] = $this->storageRoot() . '/' . substr($variant, strlen('storage/'));
+            } else {
+                $paths[] = BASE_PATH . '/' . $variant;
+            }
         }
         return $paths;
     }
@@ -257,11 +264,28 @@ final class FileStorageService
     private function storageRoots(): array
     {
         $roots = [];
-        foreach (['storage', 'uploads'] as $root) {
-            $base = realpath(BASE_PATH . '/' . $root);
+        foreach ([$this->storageRoot(), $this->uploadRoot()] as $root) {
+            $base = realpath($root);
             if ($base) $roots[] = $base;
         }
         return $roots;
+    }
+
+    private function uploadRoot(): string
+    {
+        return rtrim(str_replace('\\', '/', (string) $this->appConfig('upload_path', BASE_PATH . '/uploads')), '/');
+    }
+
+    private function storageRoot(): string
+    {
+        return rtrim(str_replace('\\', '/', (string) $this->appConfig('storage_path', BASE_PATH . '/storage')), '/');
+    }
+
+    private function appConfig(string $key, mixed $default): mixed
+    {
+        $configFile = BASE_PATH . '/config/app.php';
+        $config = is_file($configFile) ? require $configFile : [];
+        return $config[$key] ?? $default;
     }
 
     private function findFileByBasename(string $base, string $basename): ?string

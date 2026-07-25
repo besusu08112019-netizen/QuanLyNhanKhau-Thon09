@@ -32,8 +32,8 @@ final class SystemAdmin extends BaseModel
             ],
             'storage' => [
                 'root' => $this->pathStats(BASE_PATH),
-                'uploads' => $this->pathStats(BASE_PATH . '/uploads'),
-                'storage' => $this->pathStats(BASE_PATH . '/storage'),
+                'uploads' => $this->pathStats($this->uploadRoot()),
+                'storage' => $this->pathStats($this->storageRoot()),
             ],
         ];
     }
@@ -44,8 +44,8 @@ final class SystemAdmin extends BaseModel
         $checks = [];
         $checks[] = $this->check('database', 'Database kết nối', fn() => ['message' => 'OK', 'meta' => ['version' => $this->databaseVersion()]]);
         $checks[] = $this->check('api', 'API hoạt động', fn() => ['message' => 'OK', 'meta' => ['responseMs' => round((microtime(true) - $started) * 1000, 2)]]);
-        $checks[] = $this->checkPath('uploads', 'Thư mục Upload', BASE_PATH . '/uploads', true);
-        $checks[] = $this->checkPath('storage', 'Thư mục Storage', BASE_PATH . '/storage', true);
+        $checks[] = $this->checkPath('uploads', 'Thư mục Upload', $this->uploadRoot(), true);
+        $checks[] = $this->checkPath('storage', 'Thư mục Storage', $this->storageRoot(), true);
         $checks[] = $this->check('disk', 'Dung lượng ổ đĩa', function () {
             $free = @disk_free_space(BASE_PATH);
             $total = @disk_total_space(BASE_PATH);
@@ -115,9 +115,9 @@ final class SystemAdmin extends BaseModel
     public function memory(): array
     {
         return ['items' => [
-            ['key' => 'cache', 'label' => 'Cache', 'stats' => $this->pathStats(BASE_PATH . '/storage/cache')],
+            ['key' => 'cache', 'label' => 'Cache', 'stats' => $this->pathStats($this->cacheRoot())],
             ['key' => 'sessions', 'label' => 'Session hết hạn', 'stats' => ['files' => 0, 'bytes' => 0, 'expired' => $this->expiredSessionCount(), 'label' => $this->expiredSessionCount() . ' phiên']],
-            ['key' => 'logs', 'label' => 'Log', 'stats' => $this->pathStats(BASE_PATH . '/storage')],
+            ['key' => 'logs', 'label' => 'Log', 'stats' => $this->pathStats($this->logsRoot())],
             ['key' => 'tmp', 'label' => 'File tạm', 'stats' => $this->pathStats(sys_get_temp_dir())],
         ]];
     }
@@ -125,7 +125,7 @@ final class SystemAdmin extends BaseModel
     public function cleanup(string $target): array
     {
         return match ($target) {
-            'cache' => $this->cleanupDirectory(BASE_PATH . '/storage/cache'),
+            'cache' => $this->cleanupDirectory($this->cacheRoot()),
             'sessions' => ['removed' => $this->execute('UPDATE user_sessions SET revoked_at = NOW() WHERE revoked_at IS NULL AND expires_at <= NOW()'), 'bytes' => 0, 'label' => '0 B'],
             'tmp' => $this->cleanupDirectory(sys_get_temp_dir(), true),
             default => throw new \RuntimeException('Không hỗ trợ dọn dẹp mục này'),
@@ -143,7 +143,7 @@ final class SystemAdmin extends BaseModel
     private function countTable(string $table, string $where = '1=1'): int { if (!$this->tableExists($table)) return 0; try { return (int) ($this->fetchOne("SELECT COUNT(*) AS total FROM `$table` WHERE $where")['total'] ?? 0); } catch (Throwable) { return 0; } }
     private function countFiles(array $extensions): int
     {
-        $base = BASE_PATH . '/uploads'; if (!is_dir($base)) return 0; $count = 0; $allowed = array_flip(array_map('strtolower', $extensions));
+        $base = $this->uploadRoot(); if (!is_dir($base)) return 0; $count = 0; $allowed = array_flip(array_map('strtolower', $extensions));
         $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS));
         foreach ($it as $file) if ($file->isFile() && isset($allowed[strtolower($file->getExtension())])) $count++;
         return $count;
@@ -173,6 +173,11 @@ final class SystemAdmin extends BaseModel
     private function activeSessionCount(): int { return $this->tableExists('user_sessions') ? $this->countTable('user_sessions', 'revoked_at IS NULL AND expires_at > NOW()') : 0; }
     private function expiredSessionCount(): int { return $this->tableExists('user_sessions') ? $this->countTable('user_sessions', 'revoked_at IS NULL AND expires_at <= NOW()') : 0; }
     private function tableExists(string $table): bool { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]); return (int) ($row['total'] ?? 0) > 0; }
+    private function uploadRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? BASE_PATH . '/uploads')), '/'); }
+    private function storageRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['storage_path'] ?? BASE_PATH . '/storage')), '/'); }
+    private function cacheRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['cache_path'] ?? $this->storageRoot() . '/cache')), '/'); }
+    private function logsRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['logs_path'] ?? $this->storageRoot() . '/logs')), '/'); }
+    private function appConfig(): array { return is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : []; }
     private function bytes(int|float|null $bytes): string { $bytes = max(0, (float) ($bytes ?? 0)); foreach (['B','KB','MB','GB','TB'] as $unit) { if ($bytes < 1024 || $unit === 'TB') return round($bytes, $unit === 'B' ? 0 : 2) . ' ' . $unit; $bytes /= 1024; } return '0 B'; }
     private function uptimeLabel(): string { if (function_exists('sys_getloadavg')) { $load = @sys_getloadavg(); if ($load) return 'Load ' . implode(' / ', array_map(fn($v) => round((float) $v, 2), $load)); } return 'Đang hoạt động'; }
     private function deviceFromAgent(string $agent): string { return preg_match('/Mobile|Android|iPhone/i', $agent) ? 'Mobile' : (preg_match('/Tablet|iPad/i', $agent) ? 'Tablet' : 'Desktop'); }

@@ -250,7 +250,7 @@ SQL);
                 COALESCE(COUNT(c.id),0) AS campaign_count,
                 COALESCE(SUM(CASE WHEN c.status='ACTIVE' THEN 1 ELSE 0 END),0) AS active_campaign_count
              FROM contribution_categories cc
-             LEFT JOIN contribution_campaigns c ON c.category_id=cc.id AND c.status <> 'DELETED'
+             LEFT JOIN contribution_campaigns c ON c.category_id=cc.id AND c.status <> 'DELETED' AND " . $this->tenantWhere('c', 'contribution_campaigns') . "
              $where
              GROUP BY cc.id
              ORDER BY cc.status ASC, cc.name ASC",
@@ -267,10 +267,10 @@ SQL);
                 COALESCE(COUNT(c.id),0) AS campaign_count,
                 COALESCE(SUM(CASE WHEN c.status='ACTIVE' THEN 1 ELSE 0 END),0) AS active_campaign_count
              FROM contribution_categories cc
-             LEFT JOIN contribution_campaigns c ON c.category_id=cc.id AND c.status <> 'DELETED'
-             WHERE cc.id=:id AND cc.status <> 'DELETED'
+             LEFT JOIN contribution_campaigns c ON c.category_id=cc.id AND c.status <> 'DELETED' AND " . $this->tenantWhere('c', 'contribution_campaigns') . "
+             WHERE cc.id=:id AND cc.status <> 'DELETED' AND " . $this->tenantWhere('cc', 'contribution_categories') . "
              GROUP BY cc.id",
-            ['id' => $id]
+            $this->withTenant(['id' => $id])
         );
         return $row ? $this->normalizeCategory($row) : null;
     }
@@ -282,13 +282,15 @@ SQL);
         if ($id) {
             if (!$this->findCategory($id)) throw new \RuntimeException('Không tìm thấy khoản thu');
             $params['id'] = $id;
-            $this->execute('UPDATE contribution_categories SET code=:code, name=:name, contribution_type=:contribution_type, unit_type=:unit_type, amount=:amount, unit=:unit, collection_cycle=:collection_cycle, custom_cycle=:custom_cycle, target_config_json=:target_config_json, exemption_config_json=:exemption_config_json, status=:status, note=:note, updated_by=:user WHERE id=:id', $params);
+            $this->execute('UPDATE contribution_categories SET code=:code, name=:name, contribution_type=:contribution_type, unit_type=:unit_type, amount=:amount, unit=:unit, collection_cycle=:collection_cycle, custom_cycle=:custom_cycle, target_config_json=:target_config_json, exemption_config_json=:exemption_config_json, status=:status, note=:note, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('contribution_categories'), $this->withTenant($params));
             $this->refreshCampaignsFromCategory($id);
             return $this->findCategory($id);
         }
         $insertParams = $params + ['created_by' => $userId, 'updated_by' => $userId];
         unset($insertParams['user']);
-        $newId = $this->insert('INSERT INTO contribution_categories (code, name, contribution_type, unit_type, amount, unit, collection_cycle, custom_cycle, target_config_json, exemption_config_json, status, note, created_by, updated_by) VALUES (:code,:name,:contribution_type,:unit_type,:amount,:unit,:collection_cycle,:custom_cycle,:target_config_json,:exemption_config_json,:status,:note,:created_by,:updated_by)', $insertParams);
+        $columns = ['code', 'name', 'contribution_type', 'unit_type', 'amount', 'unit', 'collection_cycle', 'custom_cycle', 'target_config_json', 'exemption_config_json', 'status', 'note', 'created_by', 'updated_by'];
+        $this->addTenantInsert('contribution_categories', $columns, $insertParams);
+        $newId = $this->insert('INSERT INTO contribution_categories (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $insertParams);
         return $this->findCategory($newId);
     }
 
@@ -296,9 +298,9 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->findCategory($id)) throw new \RuntimeException('Không tìm thấy khoản thu');
-        $active = (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM contribution_campaigns WHERE category_id=:id AND status <> "DELETED"', ['id' => $id]) ?: [])['total'] ?? 0);
+        $active = (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM contribution_campaigns WHERE category_id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('contribution_campaigns'), $this->withTenant(['id' => $id])) ?: [])['total'] ?? 0);
         if ($active > 0) throw new \RuntimeException('Khoản thu đang có đợt thu, không thể xóa');
-        $this->execute('UPDATE contribution_categories SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
+        $this->execute('UPDATE contribution_categories SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('contribution_categories'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
     public function campaigns(array $filters): array
@@ -321,7 +323,7 @@ SQL);
                 COALESCE(SUM(CASE WHEN hc.status='ACTIVE' THEN hc.debt_amount ELSE 0 END),0) AS debt_amount
              FROM contribution_campaigns c
              LEFT JOIN contribution_categories cc ON cc.id=c.category_id
-             LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE'
+             LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' AND " . $this->tenantWhere('hc', 'household_contributions') . "
              $where
              GROUP BY c.id
              $order LIMIT $pageSize OFFSET $offset",
@@ -333,7 +335,7 @@ SQL);
     public function findCampaign(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT c.*, cc.code AS category_code, cc.name AS category_name, cc.collection_cycle AS category_cycle FROM contribution_campaigns c LEFT JOIN contribution_categories cc ON cc.id=c.category_id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT c.*, cc.code AS category_code, cc.name AS category_name, cc.collection_cycle AS category_cycle FROM contribution_campaigns c LEFT JOIN contribution_categories cc ON cc.id=c.category_id WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'contribution_campaigns') . ' AND (cc.id IS NULL OR ' . $this->tenantWhere('cc', 'contribution_categories') . ')', $this->withTenant(['id' => $id]));
         return $row ? $this->normalizeCampaign($row) : null;
     }
 
@@ -346,14 +348,16 @@ SQL);
         if ($id && !$before) throw new \RuntimeException('Không tìm thấy đợt thu');
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE contribution_campaigns SET category_id=:category_id, contribution_name=:contribution_name, contribution_type=:contribution_type, year=:year, period_name=:period_name, amount=:amount, unit=:unit, unit_type=:unit_type, start_date=:start_date, due_date=:due_date, target_config_json=:target_config_json, exemption_config_json=:exemption_config_json, note=:note, status=:status, updated_by=:user WHERE id=:id', $params);
+            $this->execute('UPDATE contribution_campaigns SET category_id=:category_id, contribution_name=:contribution_name, contribution_type=:contribution_type, year=:year, period_name=:period_name, amount=:amount, unit=:unit, unit_type=:unit_type, start_date=:start_date, due_date=:due_date, target_config_json=:target_config_json, exemption_config_json=:exemption_config_json, note=:note, status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('contribution_campaigns'), $this->withTenant($params));
             $this->writeAdjustment($id, null, $before, $params, $userId, 'Cập nhật quy định đợt thu');
             $this->syncCampaign($id);
             return $this->findCampaign($id);
         }
         $insertParams = $params + ['created_by' => $userId, 'updated_by' => $userId];
         unset($insertParams['user']);
-        $newId = $this->insert('INSERT INTO contribution_campaigns (category_id, contribution_name, contribution_type, year, period_name, amount, unit, unit_type, start_date, due_date, target_config_json, exemption_config_json, note, status, created_by, updated_by) VALUES (:category_id,:contribution_name,:contribution_type,:year,:period_name,:amount,:unit,:unit_type,:start_date,:due_date,:target_config_json,:exemption_config_json,:note,:status,:created_by,:updated_by)', $insertParams);
+        $columns = ['category_id', 'contribution_name', 'contribution_type', 'year', 'period_name', 'amount', 'unit', 'unit_type', 'start_date', 'due_date', 'target_config_json', 'exemption_config_json', 'note', 'status', 'created_by', 'updated_by'];
+        $this->addTenantInsert('contribution_campaigns', $columns, $insertParams);
+        $newId = $this->insert('INSERT INTO contribution_campaigns (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $insertParams);
         $this->upsertRateRule($newId, $params);
         $this->syncCampaign($newId);
         return $this->findCampaign($newId);
@@ -364,7 +368,7 @@ SQL);
         $this->ensureSchema();
         $before = $this->findCampaign($id);
         if (!$before) throw new \RuntimeException('Không tìm thấy đợt thu');
-        $this->execute('UPDATE contribution_campaigns SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
+        $this->execute('UPDATE contribution_campaigns SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('contribution_campaigns'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
         $this->writeAdjustment($id, null, $before, ['status' => 'DELETED'], $userId, 'Xóa đợt thu');
     }
 
@@ -394,7 +398,7 @@ SQL);
         $this->ensureSchema();
         $campaign = $this->findCampaign($campaignId);
         if (!$campaign) throw new \RuntimeException('Không tìm thấy đợt thu');
-        if (!$this->fetchOne('SELECT id FROM households h WHERE h.id=:id AND ' . self::ACTIVE_HOUSEHOLD, ['id' => $householdId])) throw new \RuntimeException('Không tìm thấy hộ gia đình');
+        if (!$this->fetchOne('SELECT id FROM households h WHERE h.id=:id AND ' . $this->tenantWhere('h', 'households') . ' AND ' . self::ACTIVE_HOUSEHOLD, $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('Không tìm thấy hộ gia đình');
         $this->syncCampaign($campaignId);
         $before = $this->tracking($campaignId, ['household_id' => $householdId, 'pageSize' => 1])['items'][0] ?? null;
         $status = strtoupper(trim((string) ($data['payment_status'] ?? $data['paymentStatus'] ?? 'UNPAID')));
@@ -425,8 +429,8 @@ SQL);
         ];
         if (!in_array($params['payment_method'], ['CASH', 'TRANSFER', 'OTHER'], true)) $params['payment_method'] = 'CASH';
         $this->execute(
-            'UPDATE household_contributions SET payment_status=:payment_status, paid_amount=:paid_amount, amount=:amount, discount_amount=:discount_amount, debt_amount=:debt_amount, paid_at=:paid_at, collector_name=:collector_name, payment_method=:payment_method, receipt_number=:receipt_number, note=:note, status="ACTIVE", updated_by=:user, deleted_at=NULL, deleted_by=NULL WHERE campaign_id=:campaign_id AND household_id=:household_id',
-            $params
+            'UPDATE household_contributions SET payment_status=:payment_status, paid_amount=:paid_amount, amount=:amount, discount_amount=:discount_amount, debt_amount=:debt_amount, paid_at=:paid_at, collector_name=:collector_name, payment_method=:payment_method, receipt_number=:receipt_number, note=:note, status="ACTIVE", updated_by=:user, deleted_at=NULL, deleted_by=NULL WHERE campaign_id=:campaign_id AND household_id=:household_id AND ' . $this->tenantWhere('household_contributions'),
+            $this->withTenant($params)
         );
         $row = $this->tracking($campaignId, ['household_id' => $householdId, 'pageSize' => 1])['items'][0] ?? [];
         $this->writePaymentHistory((int) ($row['id'] ?? 0), $params, $userId);
@@ -463,8 +467,8 @@ SQL);
                 ['label' => 'Đã thu', 'value' => $summary['collected_amount']],
                 ['label' => 'Còn phải thu', 'value' => $summary['debt_amount']],
             ],
-            'by_year' => $this->fetchAll("SELECT c.year AS label, COALESCE(SUM(hc.paid_amount),0) AS value FROM contribution_campaigns c LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' WHERE c.status <> 'DELETED' GROUP BY c.year ORDER BY c.year DESC LIMIT 10"),
-            'by_campaign' => $this->fetchAll("SELECT c.contribution_name AS label, COALESCE(SUM(hc.paid_amount),0) AS value FROM contribution_campaigns c LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' WHERE c.status <> 'DELETED' GROUP BY c.id, c.contribution_name ORDER BY value DESC LIMIT 10"),
+            'by_year' => $this->fetchAll("SELECT c.year AS label, COALESCE(SUM(hc.paid_amount),0) AS value FROM contribution_campaigns c LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' AND " . $this->tenantWhere('hc', 'household_contributions') . " WHERE c.status <> 'DELETED' AND " . $this->tenantWhere('c', 'contribution_campaigns') . " GROUP BY c.year ORDER BY c.year DESC LIMIT 10", $this->withTenant()),
+            'by_campaign' => $this->fetchAll("SELECT c.contribution_name AS label, COALESCE(SUM(hc.paid_amount),0) AS value FROM contribution_campaigns c LEFT JOIN household_contributions hc ON hc.campaign_id=c.id AND hc.status='ACTIVE' AND " . $this->tenantWhere('hc', 'household_contributions') . " WHERE c.status <> 'DELETED' AND " . $this->tenantWhere('c', 'contribution_campaigns') . " GROUP BY c.id, c.contribution_name ORDER BY value DESC LIMIT 10", $this->withTenant()),
         ];
     }
 
@@ -473,7 +477,7 @@ SQL);
         $query = trim($query);
         if (mb_strlen($query) < 2) return [];
         $keyword = '%' . mb_strtolower($query, 'UTF-8') . '%';
-        $rows = $this->fetchAll('SELECT id, household_code, head_citizen_name, address, phone FROM households h WHERE ' . self::ACTIVE_HOUSEHOLD . ' AND (LOWER(h.household_code) LIKE :code OR LOWER(h.head_citizen_name) LIKE :head OR LOWER(h.address) LIKE :address) ORDER BY h.household_code LIMIT ' . max(1, min(20, $limit)), ['code' => $keyword, 'head' => $keyword, 'address' => $keyword]);
+        $rows = $this->fetchAll('SELECT id, household_code, head_citizen_name, address, phone FROM households h WHERE ' . $this->tenantWhere('h', 'households') . ' AND ' . self::ACTIVE_HOUSEHOLD . ' AND (LOWER(h.household_code) LIKE :code OR LOWER(h.head_citizen_name) LIKE :head OR LOWER(h.address) LIKE :address) ORDER BY h.household_code LIMIT ' . max(1, min(20, $limit)), $this->withTenant(['code' => $keyword, 'head' => $keyword, 'address' => $keyword]));
         return array_map(fn($r) => ['id' => (int) $r['id'], 'household_code' => (string) $r['household_code'], 'head_citizen_name' => (string) $r['head_citizen_name'], 'address' => (string) ($r['address'] ?? ''), 'phone' => (string) ($r['phone'] ?? '')], $rows);
     }
 
@@ -693,19 +697,19 @@ SQL);
 
     private function syncActiveCampaigns(): void
     {
-        $ids = $this->fetchAll('SELECT id FROM contribution_campaigns WHERE status="ACTIVE" ORDER BY id DESC LIMIT 30');
+        $ids = $this->fetchAll('SELECT id FROM contribution_campaigns WHERE status="ACTIVE" AND ' . $this->tenantWhere('contribution_campaigns') . ' ORDER BY id DESC LIMIT 30', $this->withTenant());
         foreach ($ids as $row) $this->syncCampaign((int) $row['id']);
     }
 
     private function syncCampaign(int $campaignId): void
     {
-        $campaign = $this->fetchOne('SELECT * FROM contribution_campaigns WHERE id=:id AND status <> "DELETED"', ['id' => $campaignId]);
+        $campaign = $this->fetchOne('SELECT * FROM contribution_campaigns WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('contribution_campaigns'), $this->withTenant(['id' => $campaignId]));
         if (!$campaign) return;
-        $households = $this->fetchAll('SELECT h.* FROM households h WHERE ' . self::ACTIVE_HOUSEHOLD . ' ORDER BY h.household_code');
+        $households = $this->fetchAll('SELECT h.* FROM households h WHERE ' . $this->tenantWhere('h', 'households') . ' AND ' . self::ACTIVE_HOUSEHOLD . ' ORDER BY h.household_code', $this->withTenant());
         foreach ($households as $household) {
             $members = $this->householdMembers((int) $household['id']);
             $calc = $this->rules->calculateHousehold($campaign, $household, $members);
-            $existing = $this->fetchOne('SELECT * FROM household_contributions WHERE campaign_id=:campaign_id AND household_id=:household_id AND status="ACTIVE"', ['campaign_id' => $campaignId, 'household_id' => (int) $household['id']]);
+            $existing = $this->fetchOne('SELECT * FROM household_contributions WHERE campaign_id=:campaign_id AND household_id=:household_id AND status="ACTIVE" AND ' . $this->tenantWhere('household_contributions'), $this->withTenant(['campaign_id' => $campaignId, 'household_id' => (int) $household['id']]));
             $paid = (float) ($existing['paid_amount'] ?? $existing['amount'] ?? 0);
             $hasAutoDiscount = !empty($calc['has_auto_discount']);
             $discount = $hasAutoDiscount ? (float) ($calc['discount_amount'] ?? 0) : (float) ($existing['discount_amount'] ?? 0);
@@ -734,23 +738,23 @@ SQL);
                 'calculation_note' => json_encode(['engine' => $calc['note'], 'exempt_subjects' => $calc['exempt_subjects'], 'discount_percent' => (float) ($calc['discount_percent'] ?? 0), 'discount_reason' => (string) ($calc['discount_reason'] ?? '')], JSON_UNESCAPED_UNICODE),
             ];
             $this->execute(
-                'INSERT INTO household_contributions (campaign_id, household_id, payment_status, expected_amount, gross_amount, exempt_amount, discount_amount, paid_amount, amount, debt_amount, eligible_count, exempt_count, chargeable_count, calculation_note)
-                 VALUES (:campaign_id,:household_id,:payment_status,:expected_amount,:gross_amount,:exempt_amount,:discount_amount,:paid_amount,:amount,:debt_amount,:eligible_count,:exempt_count,:chargeable_count,:calculation_note)
+                'INSERT INTO household_contributions (village_id, campaign_id, household_id, payment_status, expected_amount, gross_amount, exempt_amount, discount_amount, paid_amount, amount, debt_amount, eligible_count, exempt_count, chargeable_count, calculation_note)
+                 VALUES (:tenant_village_id,:campaign_id,:household_id,:payment_status,:expected_amount,:gross_amount,:exempt_amount,:discount_amount,:paid_amount,:amount,:debt_amount,:eligible_count,:exempt_count,:chargeable_count,:calculation_note)
                  ON DUPLICATE KEY UPDATE payment_status=VALUES(payment_status), expected_amount=VALUES(expected_amount), gross_amount=VALUES(gross_amount), exempt_amount=VALUES(exempt_amount), discount_amount=VALUES(discount_amount), paid_amount=VALUES(paid_amount), amount=VALUES(amount), debt_amount=VALUES(debt_amount), eligible_count=VALUES(eligible_count), exempt_count=VALUES(exempt_count), chargeable_count=VALUES(chargeable_count), calculation_note=VALUES(calculation_note), status="ACTIVE", updated_at=CURRENT_TIMESTAMP',
-                $params
+                $this->withTenant($params)
             );
         }
     }
 
     private function householdMembers(int $householdId): array
     {
-        return $this->fetchAll('SELECT c.* FROM citizens c WHERE c.household_id=:household_id AND ' . self::ACTIVE_CITIZEN . ' ORDER BY CASE WHEN c.relationship="Chủ hộ" THEN 0 ELSE 1 END, c.full_name', ['household_id' => $householdId]);
+        return $this->fetchAll('SELECT c.* FROM citizens c WHERE c.household_id=:household_id AND ' . $this->tenantWhere('c', 'citizens') . ' AND ' . self::ACTIVE_CITIZEN . ' ORDER BY CASE WHEN c.relationship="Chủ hộ" THEN 0 ELSE 1 END, c.full_name', $this->withTenant(['household_id' => $householdId]));
     }
 
     private function campaignWhere(array $filters, bool $withOrder = true): array
     {
-        $where = ['c.status <> "DELETED"'];
-        $params = [];
+        $where = ['c.status <> "DELETED"', $this->tenantWhere('c', 'contribution_campaigns'), '(cc.id IS NULL OR ' . $this->tenantWhere('cc', 'contribution_categories') . ')'];
+        $params = $this->withTenant();
         $campaignId = (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0);
         if ($campaignId > 0) { $where[] = 'c.id = :campaign_id'; $params['campaign_id'] = $campaignId; }
         $categoryId = (int) ($filters['category_id'] ?? $filters['categoryId'] ?? 0);
@@ -768,8 +772,8 @@ SQL);
 
     private function trackingWhere(int $campaignId, array $filters): array
     {
-        $where = ['hc.campaign_id=:campaign_id', 'hc.status="ACTIVE"', self::ACTIVE_HOUSEHOLD];
-        $params = ['campaign_id' => $campaignId];
+        $where = ['hc.campaign_id=:campaign_id', 'hc.status="ACTIVE"', $this->tenantWhere('hc', 'household_contributions'), $this->tenantWhere('h', 'households'), self::ACTIVE_HOUSEHOLD];
+        $params = $this->withTenant(['campaign_id' => $campaignId]);
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') { $where[] = '(LOWER(h.household_code) LIKE :search OR LOWER(h.head_citizen_name) LIKE :search OR LOWER(h.address) LIKE :search OR LOWER(hc.receipt_number) LIKE :search)'; $params['search'] = '%' . mb_strtolower($search, 'UTF-8') . '%'; }
         $householdId = (int) ($filters['household_id'] ?? $filters['householdId'] ?? 0);
@@ -784,11 +788,11 @@ SQL);
     private function summaryWhere(array $filters): array
     {
         if (empty($filters['campaign_id']) && empty($filters['campaignId']) && empty($filters['year']) && empty($filters['status'])) {
-            $latest = $this->fetchOne('SELECT id FROM contribution_campaigns WHERE status="ACTIVE" ORDER BY year DESC, id DESC LIMIT 1');
+            $latest = $this->fetchOne('SELECT id FROM contribution_campaigns WHERE status="ACTIVE" AND ' . $this->tenantWhere('contribution_campaigns') . ' ORDER BY year DESC, id DESC LIMIT 1', $this->withTenant());
             if ($latest) $filters['campaign_id'] = (int) $latest['id'];
         }
         [$campaignWhere, $params] = $this->campaignWhere($filters, false);
-        return [$campaignWhere . ' AND hc.status="ACTIVE" AND ' . self::ACTIVE_HOUSEHOLD, $params];
+        return [$campaignWhere . ' AND hc.status="ACTIVE" AND ' . $this->tenantWhere('hc', 'household_contributions') . ' AND ' . $this->tenantWhere('h', 'households') . ' AND ' . self::ACTIVE_HOUSEHOLD, $params];
     }
 
     private function campaignParams(array $data, int $userId): array
@@ -874,8 +878,8 @@ SQL);
         if ($name === '') throw new \RuntimeException('Ten khoan thu la bat buoc');
         $code = strtoupper(trim((string) ($data['code'] ?? $data['category_code'] ?? $data['categoryCode'] ?? '')));
         if ($code === '') $code = $this->categoryCodeFromName($name);
-        $duplicateSql = 'SELECT id FROM contribution_categories WHERE code=:code AND status <> "DELETED"';
-        $duplicateParams = ['code' => $code];
+        $duplicateSql = 'SELECT id FROM contribution_categories WHERE code=:code AND status <> "DELETED" AND ' . $this->tenantWhere('contribution_categories');
+        $duplicateParams = $this->withTenant(['code' => $code]);
         if ($id) {
             $duplicateSql .= ' AND id <> :id';
             $duplicateParams['id'] = $id;
@@ -917,8 +921,8 @@ SQL);
 
     private function categoryWhere(array $filters): array
     {
-        $where = ['cc.status <> "DELETED"'];
-        $params = [];
+        $where = ['cc.status <> "DELETED"', $this->tenantWhere('cc', 'contribution_categories')];
+        $params = $this->withTenant();
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $where[] = '(LOWER(cc.name) LIKE :search OR LOWER(cc.code) LIKE :search OR LOWER(cc.note) LIKE :search)';
@@ -934,7 +938,7 @@ SQL);
 
     private function categoryOptions(): array
     {
-        return array_map(fn($row) => $this->normalizeCategoryOption($row), $this->fetchAll('SELECT * FROM contribution_categories WHERE status="ACTIVE" ORDER BY name ASC'));
+        return array_map(fn($row) => $this->normalizeCategoryOption($row), $this->fetchAll('SELECT * FROM contribution_categories WHERE status="ACTIVE" AND ' . $this->tenantWhere('contribution_categories') . ' ORDER BY name ASC', $this->withTenant()));
     }
 
     private function normalizeCategoryOption(array $row): array
@@ -975,14 +979,14 @@ SQL);
 
     private function refreshCampaignsFromCategory(int $categoryId): void
     {
-        foreach ($this->fetchAll('SELECT id FROM contribution_campaigns WHERE category_id=:id AND status="ACTIVE"', ['id' => $categoryId]) as $row) {
+        foreach ($this->fetchAll('SELECT id FROM contribution_campaigns WHERE category_id=:id AND status="ACTIVE" AND ' . $this->tenantWhere('contribution_campaigns'), $this->withTenant(['id' => $categoryId])) as $row) {
             $this->syncCampaign((int) $row['id']);
         }
     }
 
     private function syncLegacyCampaignCategories(): void
     {
-        $this->execute('UPDATE contribution_campaigns c INNER JOIN contribution_categories cc ON LOWER(TRIM(cc.name))=LOWER(TRIM(c.contribution_name)) AND cc.status <> "DELETED" SET c.category_id=cc.id WHERE c.category_id IS NULL OR c.category_id=0');
+        $this->execute('UPDATE contribution_campaigns c INNER JOIN contribution_categories cc ON LOWER(TRIM(cc.name))=LOWER(TRIM(c.contribution_name)) AND cc.status <> "DELETED" AND ' . $this->tenantWhere('cc', 'contribution_categories') . ' SET c.category_id=cc.id WHERE (c.category_id IS NULL OR c.category_id=0) AND ' . $this->tenantWhere('c', 'contribution_campaigns'), $this->withTenant());
     }
 
     private function backfillCategoriesFromLegacyCampaigns(): void
@@ -995,20 +999,22 @@ SQL);
                 INNER JOIN (
                     SELECT LOWER(TRIM(contribution_name)) AS name_key, MAX(id) AS latest_id
                     FROM contribution_campaigns
-                    WHERE status <> 'DELETED' AND TRIM(COALESCE(contribution_name,'')) <> ''
+                    WHERE status <> 'DELETED' AND " . $this->tenantWhere('contribution_campaigns') . " AND TRIM(COALESCE(contribution_name,'')) <> ''
                     GROUP BY LOWER(TRIM(contribution_name))
                 ) latest ON latest.latest_id=c.id
              ) x
-             LEFT JOIN contribution_categories cc ON LOWER(TRIM(cc.name))=LOWER(TRIM(x.contribution_name)) AND cc.status <> 'DELETED'
+             LEFT JOIN contribution_categories cc ON LOWER(TRIM(cc.name))=LOWER(TRIM(x.contribution_name)) AND cc.status <> 'DELETED' AND " . $this->tenantWhere('cc', 'contribution_categories') . "
              WHERE cc.id IS NULL"
+            ,
+            $this->withTenant()
         );
         foreach ($rows as $row) {
             $name = trim((string) ($row['contribution_name'] ?? ''));
             if ($name === '') continue;
             $this->execute(
-                'INSERT INTO contribution_categories (code, name, contribution_type, unit_type, amount, unit, collection_cycle, target_config_json, exemption_config_json, status, note, created_by, updated_by)
-                 VALUES (:code,:name,:contribution_type,:unit_type,:amount,:unit,:collection_cycle,:target_config_json,:exemption_config_json,:status,:note,:created_by,:updated_by)',
-                [
+                'INSERT INTO contribution_categories (village_id, code, name, contribution_type, unit_type, amount, unit, collection_cycle, target_config_json, exemption_config_json, status, note, created_by, updated_by)
+                 VALUES (:tenant_village_id,:code,:name,:contribution_type,:unit_type,:amount,:unit,:collection_cycle,:target_config_json,:exemption_config_json,:status,:note,:created_by,:updated_by)',
+                $this->withTenant([
                     'code' => $this->categoryCodeFromName($name),
                     'name' => $name,
                     'contribution_type' => trim((string) ($row['contribution_type'] ?? '')) ?: $name,
@@ -1022,7 +1028,7 @@ SQL);
                     'note' => 'Tự động chuyển đổi từ dữ liệu đợt thu cũ.',
                     'created_by' => $row['created_by'] ?? null,
                     'updated_by' => $row['updated_by'] ?? null,
-                ]
+                ])
             );
         }
     }
@@ -1033,7 +1039,7 @@ SQL);
         $base = trim($base, '_') ?: 'KHOAN_THU';
         $code = substr($base, 0, 32);
         $suffix = 1;
-        while ($this->fetchOne('SELECT id FROM contribution_categories WHERE code=:code', ['code' => $code])) {
+        while ($this->fetchOne('SELECT id FROM contribution_categories WHERE code=:code AND ' . $this->tenantWhere('contribution_categories'), $this->withTenant(['code' => $code]))) {
             $tail = '_' . (++$suffix);
             $code = substr($base, 0, 40 - strlen($tail)) . $tail;
         }
@@ -1167,6 +1173,18 @@ SQL);
                 if (!$this->columnExists($table, $column)) $this->execute($sql);
             }
         }
+        foreach ([
+            'contribution_categories',
+            'contribution_campaigns',
+            'contribution_rate_rules',
+            'contribution_exemption_policies',
+            'household_contributions',
+            'contribution_receipts',
+            'contribution_payment_history',
+            'contribution_adjustment_history',
+        ] as $tenantTable) {
+            $this->ensureTenantColumn($tenantTable);
+        }
         $this->execute("ALTER TABLE household_contributions MODIFY payment_status ENUM('UNPAID','PAID','PARTIAL','EXEMPT','REDUCED') NOT NULL DEFAULT 'UNPAID'");
         $this->backfillCategoriesFromLegacyCampaigns();
         $this->syncLegacyCampaignCategories();
@@ -1249,34 +1267,34 @@ SQL);
 
     private function upsertRateRule(int $campaignId, array $params): void
     {
-        $this->execute('INSERT INTO contribution_rate_rules (campaign_id, rule_name, unit_type, amount, target_config_json, effective_from, effective_to) VALUES (:campaign_id,:rule_name,:unit_type,:amount,:target_config_json,:effective_from,:effective_to)', ['campaign_id' => $campaignId, 'rule_name' => $params['contribution_name'], 'unit_type' => $params['unit_type'], 'amount' => $params['amount'], 'target_config_json' => $params['target_config_json'], 'effective_from' => $params['start_date'], 'effective_to' => $params['due_date']]);
+        $this->execute('INSERT INTO contribution_rate_rules (village_id, campaign_id, rule_name, unit_type, amount, target_config_json, effective_from, effective_to) VALUES (:tenant_village_id,:campaign_id,:rule_name,:unit_type,:amount,:target_config_json,:effective_from,:effective_to)', $this->withTenant(['campaign_id' => $campaignId, 'rule_name' => $params['contribution_name'], 'unit_type' => $params['unit_type'], 'amount' => $params['amount'], 'target_config_json' => $params['target_config_json'], 'effective_from' => $params['start_date'], 'effective_to' => $params['due_date']]));
     }
 
     private function writePaymentHistory(int $contributionId, array $params, int $userId): void
     {
         if ($contributionId <= 0) return;
-        $this->execute('INSERT INTO contribution_payment_history (contribution_id, campaign_id, household_id, action, amount, payment_status, paid_at, collector_name, receipt_number, note, created_by) VALUES (:contribution_id,:campaign_id,:household_id,"PAYMENT",:amount,:payment_status,:paid_at,:collector_name,:receipt_number,:note,:created_by)', ['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'amount' => $params['paid_amount'], 'payment_status' => $params['payment_status'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'receipt_number' => $params['receipt_number'], 'note' => $params['note'], 'created_by' => $userId]);
+        $this->execute('INSERT INTO contribution_payment_history (village_id, contribution_id, campaign_id, household_id, action, amount, payment_status, paid_at, collector_name, receipt_number, note, created_by) VALUES (:tenant_village_id,:contribution_id,:campaign_id,:household_id,"PAYMENT",:amount,:payment_status,:paid_at,:collector_name,:receipt_number,:note,:created_by)', $this->withTenant(['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'amount' => $params['paid_amount'], 'payment_status' => $params['payment_status'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'receipt_number' => $params['receipt_number'], 'note' => $params['note'], 'created_by' => $userId]));
     }
 
     private function writeReceipt(int $contributionId, array $params, int $userId): void
     {
         if ($contributionId <= 0) return;
-        $this->execute('INSERT INTO contribution_receipts (contribution_id, campaign_id, household_id, receipt_number, amount, paid_at, collector_name, payment_method, note, created_by) VALUES (:contribution_id,:campaign_id,:household_id,:receipt_number,:amount,:paid_at,:collector_name,:payment_method,:note,:created_by)', ['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'receipt_number' => $params['receipt_number'], 'amount' => $params['paid_amount'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'payment_method' => $params['payment_method'] ?? 'CASH', 'note' => $params['note'], 'created_by' => $userId]);
+        $this->execute('INSERT INTO contribution_receipts (village_id, contribution_id, campaign_id, household_id, receipt_number, amount, paid_at, collector_name, payment_method, note, created_by) VALUES (:tenant_village_id,:contribution_id,:campaign_id,:household_id,:receipt_number,:amount,:paid_at,:collector_name,:payment_method,:note,:created_by)', $this->withTenant(['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'receipt_number' => $params['receipt_number'], 'amount' => $params['paid_amount'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'payment_method' => $params['payment_method'] ?? 'CASH', 'note' => $params['note'], 'created_by' => $userId]));
     }
 
     private function writeAdjustment(int $campaignId, ?int $householdId, mixed $before, mixed $after, int $userId, string $reason): void
     {
-        $this->execute('INSERT INTO contribution_adjustment_history (campaign_id, household_id, before_json, after_json, reason, created_by) VALUES (:campaign_id,:household_id,:before_json,:after_json,:reason,:created_by)', ['campaign_id' => $campaignId, 'household_id' => $householdId, 'before_json' => json_encode($before, JSON_UNESCAPED_UNICODE), 'after_json' => json_encode($after, JSON_UNESCAPED_UNICODE), 'reason' => $reason, 'created_by' => $userId]);
+        $this->execute('INSERT INTO contribution_adjustment_history (village_id, campaign_id, household_id, before_json, after_json, reason, created_by) VALUES (:tenant_village_id,:campaign_id,:household_id,:before_json,:after_json,:reason,:created_by)', $this->withTenant(['campaign_id' => $campaignId, 'household_id' => $householdId, 'before_json' => json_encode($before, JSON_UNESCAPED_UNICODE), 'after_json' => json_encode($after, JSON_UNESCAPED_UNICODE), 'reason' => $reason, 'created_by' => $userId]));
     }
 
     private function activeHouseholdCount(): int
     {
-        return (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM households h WHERE ' . self::ACTIVE_HOUSEHOLD) ?: [])['total'] ?? 0);
+        return (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM households h WHERE ' . $this->tenantWhere('h', 'households') . ' AND ' . self::ACTIVE_HOUSEHOLD, $this->withTenant()) ?: [])['total'] ?? 0);
     }
 
     private function activeCitizenCount(): int
     {
-        return (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE ' . self::ACTIVE_CITIZEN . ' AND ' . self::ACTIVE_HOUSEHOLD) ?: [])['total'] ?? 0);
+        return (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE ' . $this->tenantWhere('c', 'citizens') . ' AND ' . $this->tenantWhere('h', 'households') . ' AND ' . self::ACTIVE_CITIZEN . ' AND ' . self::ACTIVE_HOUSEHOLD, $this->withTenant()) ?: [])['total'] ?? 0);
     }
 
     private function contributionRows(int $campaignId, array $filters): array

@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\BaseController;
 use App\Core\Database;
 use App\Core\Encoding;
+use App\Core\TenantContext;
 use App\Models\Citizen;
 use App\Models\Household;
 
@@ -335,8 +336,8 @@ final class ImportController extends BaseController
     private function validPhone(string $value): bool { return (bool) preg_match('/^0\d{9,10}$/', preg_replace('/\D+/', '', $value)); }
     private function citizenCodeExists(string $code): bool
     {
-        $row = Database::pdo()->prepare('SELECT COUNT(*) FROM citizens WHERE citizen_code = :code AND status <> "DELETED"');
-        $row->execute(['code' => strtoupper(trim($code))]);
+        $row = Database::pdo()->prepare('SELECT COUNT(*) FROM citizens WHERE citizen_code = :code AND village_id = :village_id AND status <> "DELETED"');
+        $row->execute(['code' => strtoupper(trim($code)), 'village_id' => TenantContext::id()]);
         return (int) $row->fetchColumn() > 0;
     }
 

@@ -4,8 +4,32 @@
 SET NAMES utf8mb4;
 SET time_zone = '+07:00';
 
+CREATE TABLE `villages` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(50) NOT NULL,
+  `name` VARCHAR(190) NOT NULL,
+  `unit_name` VARCHAR(190) NULL,
+  `commune_name` VARCHAR(190) NULL,
+  `domain` VARCHAR(190) NULL,
+  `subdomain` VARCHAR(190) NULL,
+  `logo_url` VARCHAR(500) NULL,
+  `theme_color` VARCHAR(20) NULL,
+  `address` VARCHAR(500) NULL,
+  `phone` VARCHAR(50) NULL,
+  `email` VARCHAR(190) NULL,
+  `status` ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_villages_code` (`code`),
+  UNIQUE KEY `uq_villages_domain` (`domain`),
+  UNIQUE KEY `uq_villages_subdomain` (`subdomain`),
+  KEY `idx_villages_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `users` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `email` VARCHAR(190) NOT NULL,
   `display_name` VARCHAR(190) NOT NULL,
   `password_hash` VARCHAR(255) NULL,
@@ -19,9 +43,11 @@ CREATE TABLE `users` (
   `deleted_at` DATETIME NULL,
   `deleted_by` BIGINT UNSIGNED NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_users_email` (`email`),
+  UNIQUE KEY `uq_users_village_email` (`village_id`, `email`),
   KEY `idx_users_role` (`role`),
   KEY `idx_users_status` (`status`),
+  KEY `idx_users_village` (`village_id`),
+  CONSTRAINT `fk_users_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_users_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_users_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_users_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
@@ -45,6 +71,7 @@ CREATE TABLE `user_sessions` (
 
 CREATE TABLE `households` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `household_code` VARCHAR(50) NOT NULL,
   `head_citizen_id` BIGINT UNSIGNED NULL,
   `head_citizen_name` VARCHAR(190) NULL,
@@ -65,12 +92,13 @@ CREATE TABLE `households` (
   `deleted_at` DATETIME NULL,
   `deleted_by` BIGINT UNSIGNED NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_households_code` (`household_code`),
+  UNIQUE KEY `uq_households_village_code` (`village_id`, `household_code`),
   KEY `idx_households_head_citizen` (`head_citizen_id`),
   KEY `idx_households_head_name` (`head_citizen_name`),
   KEY `idx_households_address` (`address`),
   KEY `idx_households_area` (`area_code`),
   KEY `idx_households_status` (`status`),
+  KEY `idx_households_village` (`village_id`),
   KEY `idx_households_policy` (`meritorious_family`, `poor_household`, `near_poor_household`, `disabled_household`),
   CONSTRAINT `fk_households_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_households_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
@@ -79,6 +107,7 @@ CREATE TABLE `households` (
 
 CREATE TABLE `citizens` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `citizen_code` VARCHAR(50) NOT NULL,
   `household_id` BIGINT UNSIGNED NOT NULL,
   `full_name` VARCHAR(190) NOT NULL,
@@ -114,8 +143,8 @@ CREATE TABLE `citizens` (
   `deleted_at` DATETIME NULL,
   `deleted_by` BIGINT UNSIGNED NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_citizens_code` (`citizen_code`),
-  UNIQUE KEY `uq_citizens_identity` (`identity_number`),
+  UNIQUE KEY `uq_citizens_village_code` (`village_id`, `citizen_code`),
+  UNIQUE KEY `uq_citizens_village_identity` (`village_id`, `identity_number`),
   KEY `idx_citizens_household` (`household_id`),
   KEY `idx_citizens_full_name` (`full_name`),
   KEY `idx_citizens_gender` (`gender`),
@@ -126,6 +155,8 @@ CREATE TABLE `citizens` (
   KEY `idx_citizens_residency_status` (`residency_status`),
   KEY `idx_citizens_health_insurance` (`has_health_insurance`, `health_insurance_end_date`),
   KEY `idx_citizens_status` (`status`),
+  KEY `idx_citizens_village` (`village_id`),
+  CONSTRAINT `fk_citizens_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_citizens_household` FOREIGN KEY (`household_id`) REFERENCES `households` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_citizens_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_citizens_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
@@ -137,6 +168,7 @@ ALTER TABLE `households`
 
 CREATE TABLE `movements` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `citizen_id` BIGINT UNSIGNED NOT NULL,
   `household_id` BIGINT UNSIGNED NULL,
   `type` ENUM('BIRTH','DEATH','MOVE_IN','MOVE_OUT','TEMPORARY_RESIDENCE','TEMPORARY_ABSENCE','OTHER') NOT NULL DEFAULT 'OTHER',
@@ -159,6 +191,8 @@ CREATE TABLE `movements` (
   KEY `idx_movements_type` (`type`),
   KEY `idx_movements_effective_date` (`effective_date`),
   KEY `idx_movements_status` (`status`),
+  KEY `idx_movements_village` (`village_id`),
+  CONSTRAINT `fk_movements_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_movements_citizen` FOREIGN KEY (`citizen_id`) REFERENCES `citizens` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_movements_household` FOREIGN KEY (`household_id`) REFERENCES `households` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_movements_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
@@ -185,6 +219,7 @@ CREATE TABLE `permissions` (
 
 CREATE TABLE `audit_logs` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `actor_user_id` BIGINT UNSIGNED NULL,
   `actor_email` VARCHAR(190) NULL,
@@ -199,20 +234,25 @@ CREATE TABLE `audit_logs` (
   KEY `idx_audit_logs_actor` (`actor_user_id`),
   KEY `idx_audit_logs_module_action` (`module`, `action`),
   KEY `idx_audit_logs_entity` (`entity_id`),
+  KEY `idx_audit_logs_village` (`village_id`),
+  CONSTRAINT `fk_audit_logs_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_audit_logs_actor` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `settings` (
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `setting_key` VARCHAR(100) NOT NULL,
   `setting_value` TEXT NULL,
   `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `updated_by` BIGINT UNSIGNED NULL,
-  PRIMARY KEY (`setting_key`),
+  PRIMARY KEY (`village_id`, `setting_key`),
+  CONSTRAINT `fk_settings_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_settings_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `backups` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `file_name` VARCHAR(255) NOT NULL,
   `file_path` VARCHAR(500) NOT NULL,
   `file_size` BIGINT UNSIGNED NULL,
@@ -226,12 +266,15 @@ CREATE TABLE `backups` (
   PRIMARY KEY (`id`),
   KEY `idx_backups_created_at` (`created_at`),
   KEY `idx_backups_status` (`status`),
+  KEY `idx_backups_village` (`village_id`),
+  CONSTRAINT `fk_backups_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_backups_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_backups_restored_by` FOREIGN KEY (`restored_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `import_batches` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `type` ENUM('HOUSEHOLD','CITIZEN') NOT NULL,
   `source_file_name` VARCHAR(255) NOT NULL,
   `source_file_path` VARCHAR(500) NULL,
@@ -248,6 +291,8 @@ CREATE TABLE `import_batches` (
   PRIMARY KEY (`id`),
   KEY `idx_import_batches_type` (`type`),
   KEY `idx_import_batches_created_at` (`created_at`),
+  KEY `idx_import_batches_village` (`village_id`),
+  CONSTRAINT `fk_import_batches_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_import_batches_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -265,6 +310,7 @@ CREATE TABLE `import_errors` (
 
 CREATE TABLE `export_files` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `type` ENUM('EXCEL','PDF','PRINT') NOT NULL,
   `module` VARCHAR(50) NOT NULL,
   `file_name` VARCHAR(255) NOT NULL,
@@ -276,6 +322,8 @@ CREATE TABLE `export_files` (
   KEY `idx_export_files_type` (`type`),
   KEY `idx_export_files_module` (`module`),
   KEY `idx_export_files_created_at` (`created_at`),
+  KEY `idx_export_files_village` (`village_id`),
+  CONSTRAINT `fk_export_files_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_export_files_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -307,6 +355,7 @@ SELECT
 -- Sprint 19: Household production and business module
 CREATE TABLE IF NOT EXISTS `household_business` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
   `household_id` BIGINT UNSIGNED NOT NULL,
   `business_type` ENUM('RESIDENT','PRODUCTION','BUSINESS','BOTH') NOT NULL DEFAULT 'RESIDENT',
   `economic_type` VARCHAR(120) NULL,
@@ -353,6 +402,8 @@ CREATE TABLE IF NOT EXISTS `household_business` (
   KEY `idx_household_business_license` (`business_license`),
   KEY `idx_household_business_tax` (`tax_code`),
   KEY `idx_household_business_location` (`latitude`, `longitude`),
+  KEY `idx_household_business_village` (`village_id`),
+  CONSTRAINT `fk_household_business_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_household_business_household` FOREIGN KEY (`household_id`) REFERENCES `households` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_household_business_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_household_business_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
@@ -395,5 +446,4 @@ CREATE TABLE IF NOT EXISTS `household_business_files` (
   CONSTRAINT `fk_hb_files_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_hb_files_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 

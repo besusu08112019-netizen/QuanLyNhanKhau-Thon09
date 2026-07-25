@@ -825,8 +825,8 @@ body.sidebar-collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
 .notification-popover-head span, .notification-popover-empty { color: #667085; font-size: 13px; }
 .notification-popover-empty { padding: 16px 4px 4px; text-align: center; }
 .screen:not(.active) { display: none; }
-.screen.active { display: block; animation: thon09FadeIn .16s ease-out; }
-@keyframes thon09FadeIn { from { opacity: .72; transform: translateY(4px); } to { opacity: 1; transform: none; }
+.screen.active { display: block; animation: TenantAppFadeIn .16s ease-out; }
+@keyframes TenantAppFadeIn { from { opacity: .72; transform: translateY(4px); } to { opacity: 1; transform: none; }
 }
 .admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .admin-heading h3 { margin: 0; font-size: 20px; font-weight: 700; color: #064e3b; }

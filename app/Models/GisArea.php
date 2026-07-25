@@ -14,7 +14,7 @@ final class GisArea extends BaseModel
     public function all(): array
     {
         $this->ensureSchema();
-        $areas = $this->fetchAll('SELECT * FROM gis_areas WHERE status <> "DELETED" ORDER BY sort_order, name');
+        $areas = $this->fetchAll('SELECT * FROM gis_areas WHERE status <> "DELETED" AND ' . $this->tenantLiteral('gis_areas') . ' ORDER BY sort_order, name');
         $households = $this->householdsForMapStats();
         $items = [];
 
@@ -60,13 +60,15 @@ final class GisArea extends BaseModel
 
         try {
             $this->db->beginTransaction();
-            if ($id > 0 && $this->fetchOne('SELECT id FROM gis_areas WHERE id = :id AND status <> "DELETED"', ['id' => $id])) {
+            if ($id > 0 && $this->fetchOne('SELECT id FROM gis_areas WHERE id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('gis_areas'), ['id' => $id])) {
                 $params['id'] = $id;
-                $sql = 'UPDATE gis_areas SET name = :name, area_code = :area_code, color = :color, note = :note, polygon = :polygon, geometry_json = :geometry_json, updated_by = :updated_by, updated_at = NOW() WHERE id = :id';
+                $sql = 'UPDATE gis_areas SET name = :name, area_code = :area_code, color = :color, note = :note, polygon = :polygon, geometry_json = :geometry_json, updated_by = :updated_by, updated_at = NOW() WHERE id = :id AND ' . $this->tenantLiteral('gis_areas');
                 $this->trackedExecute($sql, $params);
             } else {
                 $params['created_by'] = $userId;
-                $sql = 'INSERT INTO gis_areas (name, area_code, color, note, polygon, geometry_json, created_by, updated_by) VALUES (:name, :area_code, :color, :note, :polygon, :geometry_json, :created_by, :updated_by)';
+                $columns = ['name', 'area_code', 'color', 'note', 'polygon', 'geometry_json', 'created_by', 'updated_by'];
+                $this->addTenantInsert('gis_areas', $columns, $params);
+                $sql = 'INSERT INTO gis_areas (' . implode(',', $columns) . ') VALUES (:name, :area_code, :color, :note, :polygon, :geometry_json, :created_by, :updated_by' . (in_array('village_id', $columns, true) ? ', :village_id' : '') . ')';
                 $id = $this->trackedInsert($sql, $params);
             }
             $this->db->commit();
@@ -82,7 +84,7 @@ final class GisArea extends BaseModel
     public function find(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT * FROM gis_areas WHERE id = :id AND status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT * FROM gis_areas WHERE id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('gis_areas'), ['id' => $id]);
         if (!$row) return null;
         $item = $this->normalizeArea($row);
         $item['stats'] = $this->enrichStats($this->statsForPolygon($item['polygon'], $this->householdsForMapStats()), $item);
@@ -93,7 +95,7 @@ final class GisArea extends BaseModel
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy khu vực bản đồ');
-        $sql = 'UPDATE gis_areas SET status = "DELETED", deleted_by = :deleted_by, deleted_at = NOW() WHERE id = :id';
+        $sql = 'UPDATE gis_areas SET status = "DELETED", deleted_by = :deleted_by, deleted_at = NOW() WHERE id = :id AND ' . $this->tenantLiteral('gis_areas');
         try {
             $this->trackedExecute($sql, ['id' => $id, 'deleted_by' => $userId]);
         } catch (\Throwable $e) {
@@ -119,6 +121,7 @@ final class GisArea extends BaseModel
     {
         $this->execute('CREATE TABLE IF NOT EXISTS gis_areas (
             id INT AUTO_INCREMENT PRIMARY KEY,
+            village_id BIGINT UNSIGNED NOT NULL,
             name VARCHAR(150) NOT NULL,
             area_code VARCHAR(100) NOT NULL,
             color VARCHAR(20) DEFAULT "#0f8a4b",
@@ -137,9 +140,11 @@ final class GisArea extends BaseModel
             INDEX idx_gis_status (status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 
-        foreach (['polygon' => 'LONGTEXT NULL', 'geometry_json' => 'LONGTEXT NULL'] as $column => $definition) {
+        foreach (['village_id' => 'BIGINT UNSIGNED NULL', 'polygon' => 'LONGTEXT NULL', 'geometry_json' => 'LONGTEXT NULL'] as $column => $definition) {
             if (!$this->columnExists('gis_areas', $column)) $this->execute('ALTER TABLE gis_areas ADD COLUMN ' . $column . ' ' . $definition);
         }
+        $this->execute('UPDATE gis_areas SET village_id = :village_id WHERE village_id IS NULL', $this->withTenant());
+        $this->execute('ALTER TABLE gis_areas MODIFY COLUMN village_id BIGINT UNSIGNED NOT NULL');
 
         $householdColumns = [
             'latitude' => 'DECIMAL(10,8) NULL',
@@ -178,6 +183,12 @@ final class GisArea extends BaseModel
     private function statistics(): PopulationStatistics
     {
         return $this->statistics ??= new PopulationStatistics();
+    }
+
+    private function tenantLiteral(string $table, string $alias = ''): string
+    {
+        if (!$this->tenantColumnExists($table)) return '1=1';
+        return ($alias !== '' ? $alias . '.' : '') . 'village_id = ' . $this->tenantId();
     }
 
     private function statsForPolygon(array $polygon, array $households): array

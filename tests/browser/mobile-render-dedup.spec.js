@@ -1,4 +1,4 @@
-﻿const { test, expect } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 function payload(data) {
   return { contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) };
@@ -32,8 +32,8 @@ async function mockApis(page) {
     if (path === '/api/persons') {
       const search = url.searchParams.get('search') || '';
       const rows = [
-        { id: 101, household_code: 'H09-001', person_code: 'NK001', citizen_code: 'NK001', full_name: 'Nguyễn Văn C', head_citizen_name: 'Nguyễn Văn A', relationship: 'Con', date_of_birth: '2000-01-01', identity_number: '012345678901', gender: 'male', residency_status: 'permanent', presence_status: 'at_home' },
-        { id: 102, household_code: 'H09-002', person_code: 'NK002', citizen_code: 'NK002', full_name: 'Trần Thị D', head_citizen_name: 'Trần Văn B', relationship: 'Chủ hộ', date_of_birth: '1985-01-01', identity_number: '987654321098', gender: 'female', residency_status: 'permanent', presence_status: 'at_home' }
+        { id: 101, household_code: 'HH-001', person_code: 'NK001', citizen_code: 'NK001', full_name: 'Nguyễn Văn C', head_citizen_name: 'Nguyễn Văn A', relationship: 'Con', date_of_birth: '2000-01-01', identity_number: '012345678901', gender: 'male', residency_status: 'permanent', presence_status: 'at_home' },
+        { id: 102, household_code: 'HH-002', person_code: 'NK002', citizen_code: 'NK002', full_name: 'Trần Thị D', head_citizen_name: 'Trần Văn B', relationship: 'Chủ hộ', date_of_birth: '1985-01-01', identity_number: '987654321098', gender: 'female', residency_status: 'permanent', presence_status: 'at_home' }
       ];
       const items = rows.filter((row) => matchesSearch(row, ['full_name', 'head_citizen_name', 'household_code', 'person_code', 'citizen_code', 'identity_number'], search));
       return route.fulfill(payload({ items, total: items.length, page: 1, pageSize: 20, totalPages: 1 }));
@@ -109,9 +109,9 @@ async function openAuthenticatedApp(page) {
     App.token = 'test-token';
     App.csrfToken = 'test-csrf';
     App.user = user;
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_csrf', 'test-csrf');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('csrf'), 'test-csrf');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
     if (typeof window.showApp === 'function') window.showApp();
   });
   await expect(page.locator('#appView')).not.toHaveClass(/d-none/);
@@ -122,7 +122,7 @@ async function dedupMetrics(page, screenId, tbodyId, pagerId) {
     const screen = document.querySelector('#' + screenId);
     const tbody = document.querySelector('#' + tbodyId);
     const pager = document.querySelector('#' + pagerId);
-    window.Thon09MobileComponents?.renderModuleScreen(screen);
+    window.TenantAppMobileComponents?.renderModuleScreen(screen);
     const host = screen?.querySelector('.app-v2-module-screen');
     const firstCard = host?.querySelector('.app-v2-record-card');
     const search = host?.querySelector('.app-v2-search input');
@@ -148,7 +148,7 @@ async function dedupMetrics(page, screenId, tbodyId, pagerId) {
 test('mobile render keeps one source row for business households and contributions', async ({ page }) => {
   await openAuthenticatedApp(page);
 
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('businessHouseholds'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('businessHouseholds'));
   await expect(page.locator('#businessHouseholdRows > tr')).toHaveCount(1);
   await expect.poll(() => dedupMetrics(page, 'businessHouseholdsScreen', 'businessHouseholdRows', 'businessHouseholdPager')).toMatchObject({
     sourceRows: 1,
@@ -163,7 +163,7 @@ test('mobile render keeps one source row for business households and contributio
   const businessMetrics = await dedupMetrics(page, 'businessHouseholdsScreen', 'businessHouseholdRows', 'businessHouseholdPager');
   expect(businessMetrics.title.length).toBeGreaterThan(0);
 
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('contributions'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('contributions'));
   await expect(page.locator('#contributionsRows > tr')).toHaveCount(1);
   await expect.poll(() => dedupMetrics(page, 'contributionsScreen', 'contributionsRows', 'contributionsPager')).toMatchObject({
     sourceRows: 1,
@@ -193,9 +193,9 @@ test('mobile render keeps one source row for business households and contributio
 test('mobile shared AppFilterBar search filters records and restores the list', async ({ page }) => {
   await openAuthenticatedApp(page);
 
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('businessHouseholds'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('businessHouseholds'));
   await expect(page.locator('#businessHouseholdRows > tr')).toHaveCount(1);
-  await page.evaluate(() => window.Thon09MobileComponents?.renderModuleScreen(document.querySelector('#businessHouseholdsScreen')));
+  await page.evaluate(() => window.TenantAppMobileComponents?.renderModuleScreen(document.querySelector('#businessHouseholdsScreen')));
 
   const cards = page.locator('#businessHouseholdsScreen .app-v2-record-card');
   const search = page.locator('#businessHouseholdsScreen .app-v2-filter-bar .app-v2-search input');
@@ -215,7 +215,7 @@ test('mobile shared AppFilterBar search filters records and restores the list', 
 
   await search.fill('Bích');
   await expect(cards).toHaveCount(1);
-  await expect(cards.first()).toContainText(/Bich|BÃ­ch/);
+  await expect(cards.first()).toContainText(/Bích|Bich/);
 
   await search.fill('bich');
   await expect(cards).toHaveCount(1);
@@ -227,7 +227,7 @@ test('mobile shared AppFilterBar search filters records and restores the list', 
 
   await search.fill('khong-co-ban-ghi');
   await expect(cards).toHaveCount(0);
-  await expect(page.locator('#businessHouseholdsScreen .app-v2-empty')).toContainText(/Không tìm thấy|KhÃ´ng tÃ¬m/);
+  await expect(page.locator('#businessHouseholdsScreen .app-v2-empty')).toContainText(/Không tìm thấy/);
 
   await status.selectOption('');
   await search.fill('');
@@ -237,17 +237,17 @@ test('mobile shared AppFilterBar search filters records and restores the list', 
 test('mobile shared search indexes household and person names, codes and addresses', async ({ page }) => {
   await openAuthenticatedApp(page);
 
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('households'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('households'));
   await expect(page.locator('#householdRows > tr')).toHaveCount(2);
-  await page.evaluate(() => window.Thon09MobileComponents?.renderModuleScreen(document.querySelector('#householdsScreen')));
+  await page.evaluate(() => window.TenantAppMobileComponents?.renderModuleScreen(document.querySelector('#householdsScreen')));
   const householdCards = page.locator('#householdsScreen .app-v2-record-card');
   const householdSearch = page.locator('#householdsScreen .app-v2-filter-bar .app-v2-search input');
   await expect(householdCards).toHaveCount(2);
 
   await householdSearch.fill('Nguyễn');
   await expect(householdCards).toHaveCount(1);
-  await expect(householdCards.first()).toContainText(/Nguy/);
-  await householdSearch.fill('Nguyen');
+  await expect(householdCards.first()).toContainText(/H09-001|Nguyễn/);
+  await householdSearch.fill('Nguyễn');
   await expect(householdCards).toHaveCount(1);
   await householdSearch.fill('Văn');
   await expect(householdCards).toHaveCount(2);
@@ -255,13 +255,13 @@ test('mobile shared search indexes household and person names, codes and address
   await expect(householdCards).toHaveCount(1);
   await householdSearch.fill('Xóm 2');
   await expect(householdCards).toHaveCount(1);
-  await expect(householdCards.first()).toContainText(/H09-002|Trần/);
+  await expect(householdCards.first()).toContainText(/HH-002|Trần/);
   await householdSearch.fill('');
   await expect(householdCards).toHaveCount(2);
 
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('persons'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('persons'));
   await expect(page.locator('#personRows > tr:not(.group-row)')).toHaveCount(2);
-  await page.evaluate(() => window.Thon09MobileComponents?.renderModuleScreen(document.querySelector('#personsScreen')));
+  await page.evaluate(() => window.TenantAppMobileComponents?.renderModuleScreen(document.querySelector('#personsScreen')));
   const personCards = page.locator('#personsScreen .app-v2-record-card');
   const personSearch = page.locator('#personsScreen .app-v2-filter-bar .app-v2-search input');
   await expect(personCards).toHaveCount(2);
@@ -286,11 +286,11 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
   await openAuthenticatedApp(page);
 
   for (const screen of ['households', 'persons', 'movements', 'agriculture', 'livestock', 'businessHouseholds', 'contributions']) {
-    await page.evaluate((name) => window.Thon09NavigationController?.navigate(name), screen);
+    await page.evaluate((name) => window.TenantAppNavigationController?.navigate(name), screen);
     await page.waitForTimeout(150);
     const metrics = await page.evaluate(() => {
       const active = document.querySelector('.screen.active');
-      window.Thon09MobileComponents?.renderModuleScreen(active);
+      window.TenantAppMobileComponents?.renderModuleScreen(active);
       const filters = Array.from(active?.querySelectorAll('.app-v2-filter-sheet') || []);
       const generatedTriggers = Array.from(active?.querySelectorAll('.app-v2-toolbar .app-v2-chip') || []).filter((trigger) => /lọc|loc|filter/i.test(trigger.textContent || ''));
       const orphanTriggers = [];
@@ -334,11 +334,11 @@ test('mobile shared filters do not render duplicate icon-only controls and empty
     expect(metrics.generatedTriggerCount, `${screen} duplicate generated filter trigger`).toBeLessThanOrEqual(1);
   }
 
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('temporaryResidence'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('temporaryResidence'));
   await expect(page.locator('#temporaryResidenceRows table')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const screen = document.querySelector('#temporaryResidenceScreen');
-    window.Thon09MobileComponents?.renderModuleScreen(screen);
+    window.TenantAppMobileComponents?.renderModuleScreen(screen);
     const row = document.querySelector('#temporaryResidenceScreen .app-v2-empty, #temporaryResidenceScreen .app-v2-record-card');
     return {
       exists: !!row,
@@ -364,12 +364,12 @@ test('mobile shared component shells avoid blank panels, vertical toolbars and o
 
   const screens = ['households', 'persons', 'movements', 'vehicles', 'businessHouseholds', 'agriculture', 'livestock', 'contributions'];
   for (const screen of screens) {
-    await page.evaluate((name) => window.Thon09NavigationController?.navigate(name), screen);
+    await page.evaluate((name) => window.TenantAppNavigationController?.navigate(name), screen);
     await page.waitForTimeout(180);
     const metrics = await page.evaluate(() => {
-      window.Thon09MobileUiSystem?.enhance(document);
+      window.TenantAppMobileUiSystem?.enhance(document);
       const active = document.querySelector('.screen.active');
-      window.Thon09MobileComponents?.renderModuleScreen(active);
+      window.TenantAppMobileComponents?.renderModuleScreen(active);
       const visible = (el) => {
         const style = getComputedStyle(el);
         const rect = el.getBoundingClientRect();

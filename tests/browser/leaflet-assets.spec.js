@@ -60,8 +60,10 @@ test.describe('Leaflet asset loader', () => {
         });
       }
 
+      const tenantNamespace = `${location.host}/`.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
+      const expectedStaticCache = `${tenantNamespace}-tenant-pwa-v20260725-multitenant-1-static`;
       const cacheNames = await caches.keys();
-      const staticCache = cacheNames.find(name => name === 'tenant-pwa-v20260725-multitenant-1-static');
+      const staticCache = cacheNames.find(name => name === expectedStaticCache);
       const cache = staticCache ? await caches.open(staticCache) : null;
       const cached = {};
       for (const asset of [
@@ -75,11 +77,11 @@ test.describe('Leaflet asset loader', () => {
         cached[asset] = cache ? Boolean(await cache.match(asset)) : false;
       }
       await registration.unregister();
-      return { supported: true, cacheNames, staticCache, cached };
+      return { supported: true, cacheNames, staticCache, expectedStaticCache, cached };
     });
 
     expect(result.supported).toBe(true);
-    expect(result.staticCache).toBe('tenant-pwa-v20260725-multitenant-1-static');
+    expect(result.staticCache).toBe(result.expectedStaticCache);
     expect(result.cached).toEqual({
       '/assets/vendor/leaflet/leaflet.css': true,
       '/assets/vendor/leaflet/leaflet.js': true,

@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS livestock (
   CONSTRAINT fk_livestock_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        $this->ensureTenantColumn('livestock');
     }
 
     public function catalogs(): array
@@ -83,8 +84,8 @@ SQL);
             'SELECT l.*, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude, h.longitude
              FROM livestock l
              INNER JOIN households h ON h.id = l.household_id
-             WHERE l.id = :id AND l.status <> "DELETED" AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")',
-            ['id' => $id]
+             WHERE l.id = :id AND l.status <> "DELETED" AND ' . $this->tenantWhere('l', 'livestock') . ' AND ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")',
+            $this->withTenant(['id' => $id])
         );
         return $row ? $this->normalize($row) : null;
     }
@@ -96,9 +97,9 @@ SQL);
             'SELECT l.*, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude, h.longitude
              FROM livestock l
              INNER JOIN households h ON h.id = l.household_id
-             WHERE l.household_id = :household_id AND l.status <> "DELETED" AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
+             WHERE l.household_id = :household_id AND l.status <> "DELETED" AND ' . $this->tenantWhere('l', 'livestock') . ' AND ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
              ORDER BY l.animal_type ASC, l.id DESC',
-            ['household_id' => $householdId]
+            $this->withTenant(['household_id' => $householdId])
         );
         return array_map(fn($row) => $this->normalize($row), $rows);
     }
@@ -115,14 +116,14 @@ SQL);
              LEFT JOIN (
                 SELECT l.household_id, COUNT(*) AS livestock_count
                 FROM livestock l
-                WHERE l.status <> "DELETED"
+                WHERE l.status <> "DELETED" AND ' . $this->tenantWhere('l', 'livestock') . '
                 GROUP BY l.household_id
              ) lc ON lc.household_id = h.id
-             WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
+             WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE") AND ' . $this->tenantWhere('h', 'households') . '
                AND (LOWER(h.household_code) LIKE :code OR LOWER(h.head_citizen_name) LIKE :head OR LOWER(h.address) LIKE :address)
              ORDER BY h.household_code ASC
              LIMIT ' . max(1, min(20, $limit)),
-            ['code' => $keyword, 'head' => $keyword, 'address' => $keyword]
+            $this->withTenant(['code' => $keyword, 'head' => $keyword, 'address' => $keyword])
         );
         return array_map(fn($row) => [
             'id' => (int) $row['id'],
@@ -144,8 +145,8 @@ SQL);
         if ($id) {
             $params['id'] = $id;
             $this->execute(
-                'UPDATE livestock SET household_id=:household_id, animal_type=:animal_type, breed=:breed, quantity=:quantity, vaccinated=:vaccinated, vaccine_date=:vaccine_date, disease_status=:disease_status, barn_area=:barn_area, status=:status, note=:note, updated_by=:user WHERE id=:id',
-                $params
+                'UPDATE livestock SET household_id=:household_id, animal_type=:animal_type, breed=:breed, quantity=:quantity, vaccinated=:vaccinated, vaccine_date=:vaccine_date, disease_status=:disease_status, barn_area=:barn_area, status=:status, note=:note, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('livestock'),
+                $this->withTenant($params)
             );
             return $this->find($id);
         }
@@ -153,10 +154,9 @@ SQL);
         $insertParams['created_by'] = $userId;
         $insertParams['updated_by'] = $userId;
         unset($insertParams['user']);
-        $newId = $this->insert(
-            'INSERT INTO livestock (household_id, animal_type, breed, quantity, vaccinated, vaccine_date, disease_status, barn_area, status, note, created_by, updated_by) VALUES (:household_id, :animal_type, :breed, :quantity, :vaccinated, :vaccine_date, :disease_status, :barn_area, :status, :note, :created_by, :updated_by)',
-            $insertParams
-        );
+        $columns = ['household_id', 'animal_type', 'breed', 'quantity', 'vaccinated', 'vaccine_date', 'disease_status', 'barn_area', 'status', 'note', 'created_by', 'updated_by'];
+        $this->addTenantInsert('livestock', $columns, $insertParams);
+        $newId = $this->insert('INSERT INTO livestock (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $insertParams);
         return $this->find($newId);
     }
 
@@ -164,7 +164,7 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy bản ghi vật nuôi');
-        $this->execute('UPDATE livestock SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
+        $this->execute('UPDATE livestock SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('livestock'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
     public function dashboard(array $filters = []): array
@@ -263,8 +263,8 @@ SQL);
 
     private function where(array $filters, bool $withOrder = true): array
     {
-        $where = ['l.status <> "DELETED"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
-        $params = [];
+        $where = ['l.status <> "DELETED"', $this->tenantWhere('l', 'livestock'), $this->tenantWhere('h', 'households'), 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
+        $params = $this->withTenant();
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $keyword = '%' . mb_strtolower($search, 'UTF-8') . '%';
@@ -300,7 +300,7 @@ SQL);
     {
         $householdId = (int) ($data['household_id'] ?? $data['householdId'] ?? 0);
         if ($householdId <= 0) throw new \RuntimeException('Hộ gia đình là bắt buộc');
-        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', ['id' => $householdId])) throw new \RuntimeException('Không tìm thấy hộ gia đình');
+        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('Không tìm thấy hộ gia đình');
         $animalType = trim((string) ($data['animal_type'] ?? $data['animalType'] ?? ''));
         if ($animalType === '') throw new \RuntimeException(json_decode('"Lo\u1ea1i v\u1eadt nu\u00f4i l\u00e0 b\u1eaft bu\u1ed9c"', true));
         $breed = trim((string) ($data['breed'] ?? '')) ?: null;
@@ -312,6 +312,7 @@ SQL);
                AND LOWER(COALESCE(l.breed,"")) = LOWER(:breed)
                AND LOWER(COALESCE(l.barn_area,"")) = LOWER(:barn_area)
                AND l.status <> "DELETED"
+               AND ' . $this->tenantWhere('l', 'livestock') . '
                AND (:current_id = 0 OR l.id <> :exclude_id)
              LIMIT 1',
             ['household_id' => $householdId, 'animal_type' => $animalType, 'breed' => $breed ?? '', 'barn_area' => $barnArea ?? '', 'current_id' => (int) ($id ?? 0), 'exclude_id' => (int) ($id ?? 0)]

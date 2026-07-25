@@ -174,7 +174,7 @@ SQL);
     public function find(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE t.id=:id AND t.soft_status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE t.id=:id AND t.soft_status <> "DELETED" AND ' . $this->tenantWhere('t', 'work_tasks'), ['id' => $id]);
         if (!$row) return null;
         $item = $this->normalize($row);
         $item['logs'] = $this->logs($id);
@@ -190,11 +190,13 @@ SQL);
         $params = $this->params($data, $userId, $existing);
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE work_tasks SET title=:title, description=:description, category_id=:category_id, priority_id=:priority_id, status_id=:status_id, assigned_user_id=:assigned_user_id, assigned_name=:assigned_name, start_at=:start_at, due_at=:due_at, completed_at=:completed_at, progress_percent=:progress_percent, related_module=:related_module, related_id=:related_id, area_code=:area_code, note=:note, updated_by=:updated_by WHERE id=:id AND soft_status <> "DELETED"', $params);
+            $this->execute('UPDATE work_tasks SET title=:title, description=:description, category_id=:category_id, priority_id=:priority_id, status_id=:status_id, assigned_user_id=:assigned_user_id, assigned_name=:assigned_name, start_at=:start_at, due_at=:due_at, completed_at=:completed_at, progress_percent=:progress_percent, related_module=:related_module, related_id=:related_id, area_code=:area_code, note=:note, updated_by=:updated_by WHERE id=:id AND soft_status <> "DELETED" AND ' . $this->tenantWhere('work_tasks'), $params);
             return $this->find($id);
         }
         $params['task_code'] = $this->nextCode();
-        $newId = $this->insert('INSERT INTO work_tasks (task_code, title, description, category_id, priority_id, status_id, assigned_user_id, assigned_name, start_at, due_at, completed_at, progress_percent, related_module, related_id, area_code, note, created_by, updated_by) VALUES (:task_code, :title, :description, :category_id, :priority_id, :status_id, :assigned_user_id, :assigned_name, :start_at, :due_at, :completed_at, :progress_percent, :related_module, :related_id, :area_code, :note, :created_by, :updated_by)', $params);
+        $columns = ['task_code', 'title', 'description', 'category_id', 'priority_id', 'status_id', 'assigned_user_id', 'assigned_name', 'start_at', 'due_at', 'completed_at', 'progress_percent', 'related_module', 'related_id', 'area_code', 'note', 'created_by', 'updated_by'];
+        $this->addTenantInsert('work_tasks', $columns, $params);
+        $newId = $this->insert('INSERT INTO work_tasks (' . implode(',', $columns) . ') VALUES (:' . implode(', :', $columns) . ')', $params);
         $this->addLog($newId, ['content' => 'Tạo công việc', 'status_id' => $params['status_id'], 'progress_percent' => $params['progress_percent']], $userId, $userName);
         return $this->find($newId);
     }
@@ -203,7 +205,7 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy công việc');
-        $this->execute('UPDATE work_tasks SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE work_tasks SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('work_tasks'), ['id' => $id, 'user' => $userId]);
     }
 
     public function addLog(int $id, array $data, int $userId, string $userName): array
@@ -226,7 +228,7 @@ SQL);
             $sets[] = 'progress_percent=:progress';
             $params['progress'] = $progress;
         }
-        $this->execute('UPDATE work_tasks SET ' . implode(', ', $sets) . ' WHERE id=:id', $params);
+        $this->execute('UPDATE work_tasks SET ' . implode(', ', $sets) . ' WHERE id=:id AND ' . $this->tenantWhere('work_tasks'), $params);
         return $this->logs($id)[0] ?? ['id' => $logId];
     }
 
@@ -307,7 +309,7 @@ SQL);
 
     private function where(array $filters): array
     {
-        $where = ['t.soft_status <> "DELETED"'];
+        $where = ['t.soft_status <> "DELETED"', $this->tenantWhere('t', 'work_tasks')];
         $params = [];
         foreach (['category_id' => 't.category_id', 'priority_id' => 't.priority_id', 'status_id' => 't.status_id', 'assigned_user_id' => 't.assigned_user_id'] as $key => $column) {
             $value = $filters[$key] ?? $filters[$this->camel($key)] ?? '';
@@ -447,7 +449,7 @@ SQL);
     private function defaultPriorityId(): int { return (int)(($this->fetchOne('SELECT id FROM work_task_priorities WHERE code="NORMAL"') ?: [])['id'] ?? 0); }
     private function statusTerminal(int $id): bool { return (bool)(($this->fetchOne('SELECT is_terminal FROM work_task_statuses WHERE id=:id', ['id' => $id]) ?: [])['is_terminal'] ?? false); }
     private function defaultProgress(int $statusId): int { return (int)(($this->fetchOne('SELECT progress_percent FROM work_task_statuses WHERE id=:id', ['id' => $statusId]) ?: [])['progress_percent'] ?? 0); }
-    private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM work_tasks'); return 'CV-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
+    private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM work_tasks WHERE ' . $this->tenantWhere('work_tasks')); return 'CV-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableInt(mixed $value): ?int { $value = trim((string)($value ?? '')); if ($value === '') return null; $id = (int)$value; return $id > 0 ? $id : null; }
     private function progress(mixed $value, bool $nullable): ?int { $value = trim((string)($value ?? '')); if ($value === '') return $nullable ? null : null; return max(0, min(100, (int)$value)); }

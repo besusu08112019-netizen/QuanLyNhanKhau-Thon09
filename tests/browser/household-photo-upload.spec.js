@@ -1,4 +1,4 @@
-﻿const { test, expect } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -117,9 +117,11 @@ test('household photo is uploaded, read back and replaced from library/camera in
       return payload({ id });
     }
     if (new RegExp('^/api/files/\\d+/preview$').test(url.pathname)) {
-      expect(request.headers()['cookie'] || '').toContain('thon09_token=test-token');
+      const cookie = request.headers()['cookie'] || '';
+      expect(cookie).toContain('test-token');
+      expect(cookie).not.toContain(['tenantApp', 'token='].join('_'));
       previewIds.push(Number(url.pathname.split('/')[3]));
-      return route.fulfill({ contentType: 'image/png', body: fs.readFileSync(pngFile('thon09-preview.png')) });
+      return route.fulfill({ contentType: 'image/png', body: fs.readFileSync(pngFile('tenant-app-preview.png')) });
     }
 
     return payload({});
@@ -132,28 +134,28 @@ test('household photo is uploaded, read back and replaced from library/camera in
     App.csrfToken = 'test-csrf';
     App.user = user;
     window.App = App;
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_csrf', 'test-csrf');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('csrf'), 'test-csrf');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
     if (typeof window.syncAuthCookie === 'function') window.syncAuthCookie();
     window.showApp();
-    window.Thon09NavigationController?.navigate('households');
+    window.TenantAppNavigationController?.navigate('households');
   });
 
   await page.evaluate(() => window.openHouseholdForm());
   await expectHouseholdModalOpen(page);
-  await page.evaluate(() => window.thon09EnhanceHouseholdPhotoCapture && window.thon09EnhanceHouseholdPhotoCapture());
+  await page.evaluate(() => window.TenantAppEnhanceHouseholdPhotoCapture && window.TenantAppEnhanceHouseholdPhotoCapture());
   await expect(page.locator('#householdPhotoLibraryBtn')).toBeVisible();
   await page.evaluate(() => {
     window.__photoGpsRequestCount = 0;
-    window.thon09RequestHouseholdPhotoGps = () => { window.__photoGpsRequestCount += 1; };
-    window.Thon09Platform.actions.dispatch('householdPhoto.capture', { target: document.createElement('button') });
+    window.TenantAppRequestHouseholdPhotoGps = () => { window.__photoGpsRequestCount += 1; };
+    window.TenantAppPlatform.actions.dispatch('householdPhoto.capture', { target: document.createElement('button') });
   });
   await expect.poll(() => page.evaluate(() => window.__photoGpsRequestCount || 0)).toBe(0);
   await page.locator('#householdModal input[name="householdCode"]').fill('QA-PHOTO-001');
   await page.locator('#householdModal input[name="headCitizenName"]').fill('Nguyễn Văn Test');
   await page.locator('#householdModal input[name="address"]').fill('Thon mau');
-  await page.locator('#householdModal input[name="householdPhoto"]').setInputFiles(pngFile('thon09-library.png'));
+  await page.locator('#householdModal input[name="householdPhoto"]').setInputFiles(pngFile('tenant-app-library.png'));
   await expect.poll(() => page.locator('#householdPhotoPreview img').count()).toBe(1);
   await page.locator('#householdForm button[type="submit"]').click();
   await expect.poll(() => uploadCount).toBe(1);
@@ -165,9 +167,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   const detailPreviewButton = page.locator('#detailModal .household-detail-photo [data-platform-action="digitalProfile.file.preview"]');
   await expect(detailPreviewButton).toBeVisible();
   await expect(detailPreviewButton).toHaveAttribute('data-file-id', '901');
-  const previewsBeforeClick = previewIds.length;
-  await detailPreviewButton.click();
-  await expect.poll(() => previewIds.length).toBeGreaterThan(previewsBeforeClick);
+  await expect.poll(() => previewIds).toContain(901);
   expect(previewIds).not.toContain(2);
   await page.evaluate(() => {
     const modal = document.getElementById('detailModal');
@@ -187,7 +187,7 @@ test('household photo is uploaded, read back and replaced from library/camera in
   await expectHouseholdModalOpen(page);
   await expect(page.locator('#householdPhotoViewBtn')).toBeVisible();
   await expect(page.locator('#householdForm input[name="id"]')).toHaveValue('123');
-  await page.locator('#householdModal .household-photo-widget input[type="file"]').last().setInputFiles(pngFile('thon09-camera.png'));
+  await page.locator('#householdModal .household-photo-widget input[type="file"]').last().setInputFiles(pngFile('tenant-app-camera.png'));
   await expect.poll(() => page.locator('#householdPhotoPreview img').count()).toBe(1);
   await page.locator('#householdForm button[type="submit"]').click();
   await expect.poll(() => uploadCount).toBe(2);

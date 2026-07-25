@@ -1,4 +1,4 @@
-﻿const { test, expect } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 const type = { value: '1', label: 'Nhà văn hóa', category: 'Hành chính', icon: 'fa-building-columns' };
 let items;
@@ -164,9 +164,9 @@ async function openApp(page, viewport = { width: 1366, height: 768 }) {
   await mockApis(page);
   await page.addInitScript(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_csrf', 'test-csrf');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('csrf'), 'test-csrf');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
@@ -174,12 +174,12 @@ async function openApp(page, viewport = { width: 1366, height: 768 }) {
     window.App.token = 'test-token';
     window.App.csrfToken = 'test-csrf';
     window.App.user = user;
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
     if (typeof window.showApp === 'function') window.showApp();
   });
   await page.waitForFunction(() => typeof window.loadPublicAssets === 'function');
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('publicAssets'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('publicAssets'));
   await page.evaluate(() => window.loadPublicAssets());
   await expect(page.locator('#publicAssetsScreen')).toHaveClass(/active/);
   await expect(page.locator('#publicAssetsRows tr')).toHaveCount(2);
@@ -219,7 +219,7 @@ test('mobile V2 renders compact independent cards instead of desktop table', asy
 
   const metrics = await page.evaluate(() => {
     const screen = document.querySelector('#publicAssetsScreen');
-    window.Thon09MobileComponents?.renderModuleScreen(screen);
+    window.TenantAppMobileComponents?.renderModuleScreen(screen);
     const wrapper = document.querySelector('#publicAssetsRows')?.closest('.table-responsive');
     const table = wrapper?.querySelector('table');
     const surface = screen?.querySelector('.app-v2-module-screen');
@@ -285,14 +285,14 @@ test('public assets reports preview, print and exports use shared report API', a
   await openApp(page);
 
   await page.evaluate(() => {
-    window.Thon09Print = {
+    window.TenantAppPrint = {
       rendered: null,
       render(config) {
         this.rendered = config;
         return { close() {} };
       }
     };
-    window.Thon09NavigationController?.navigate('reports');
+    window.TenantAppNavigationController?.navigate('reports');
   });
   await expect(page.locator('#reportsScreen')).toHaveClass(/active/);
   await page.locator('#reportTypeSelect').selectOption('public-assets');
@@ -305,7 +305,7 @@ test('public assets reports preview, print and exports use shared report API', a
   await expect(page.locator('#reportPreview')).toContainText('Nhà văn hóa thon mau');
 
   await page.locator('#reportPrintBtn').click();
-  const printResult = await page.evaluate(() => window.Thon09Print?.rendered);
+  const printResult = await page.evaluate(() => window.TenantAppPrint?.rendered);
   expect(printResult.title).toBe('Danh sách công trình công cộng');
   expect(printResult.rows.length).toBe(2);
 
@@ -355,7 +355,7 @@ test('required management modules expose report buttons and report types', async
   ];
 
   const buttons = await page.evaluate((items) => {
-    window.thon09ViewReport?.();
+    window.tenantAppViewReport?.();
     return items.map(([screenId, type]) => {
       const screen = document.getElementById(screenId);
       const button = screen?.querySelector(`[data-platform-action="reports.module.open"][data-report-type="${type}"]`);
@@ -364,14 +364,14 @@ test('required management modules expose report buttons and report types', async
   }, required);
   expect(buttons.filter(item => !item.exists)).toEqual([]);
 
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('reports'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('reports'));
   await expect(page.locator('#reportsScreen')).toHaveClass(/active/);
   for (const [, type] of required) {
     await page.locator('#reportTypeSelect').selectOption(type);
     await expect.poll(() => page.evaluate(() => document.querySelector('#reportTypeSelect')?.value)).toBe(type);
   }
 
-  await page.evaluate(() => window.Thon09NavigationController?.navigate('publicAssets'));
+  await page.evaluate(() => window.TenantAppNavigationController?.navigate('publicAssets'));
   await page.locator('[data-module-report-button="publicAssets"]').click();
   await expect(page.locator('#reportsScreen')).toHaveClass(/active/);
   await expect.poll(() => page.evaluate(() => document.querySelector('#reportTypeSelect')?.value)).toBe('public-assets');
@@ -383,7 +383,7 @@ test('mobile V2 public asset cards keep address out of title and dedupe detail f
     await openApp(page, { width, height: width >= 768 ? 1024 : 844 });
     const metrics = await page.evaluate(() => {
       const screen = document.querySelector('#publicAssetsScreen');
-      window.Thon09MobileComponents?.renderModuleScreen(screen);
+      window.TenantAppMobileComponents?.renderModuleScreen(screen);
       const firstCard = screen?.querySelector('.app-v2-record-card');
       const title = firstCard?.querySelector('.app-v2-record-title')?.textContent?.trim() || '';
       const meta = firstCard?.querySelector('.app-v2-record-meta')?.textContent?.trim() || '';

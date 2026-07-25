@@ -1,7 +1,9 @@
 const PWA_VERSION = 'tenant-pwa-v20260725-multitenant-1';
-const STATIC_CACHE = `${PWA_VERSION}-static`;
-const RUNTIME_CACHE = `${PWA_VERSION}-runtime`;
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
+const TENANT_NAMESPACE = `${self.location.host}${APP_BASE_PATH}`.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
+const CACHE_PREFIX = `${TENANT_NAMESPACE}-${PWA_VERSION}`;
+const STATIC_CACHE = `${CACHE_PREFIX}-static`;
+const RUNTIME_CACHE = `${CACHE_PREFIX}-runtime`;
 const withBase = path => {
   const url = new URL(String(path || '').replace(/^\/+/, ''), self.location.origin + APP_BASE_PATH);
   return url.pathname + url.search;
@@ -65,7 +67,7 @@ self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(STATIC_CACHE);
     const summary = await cacheAssets(cache, STATIC_ASSETS);
-    if (summary.failed.length) console.warn('[Thon09 PWA] Precache skipped assets', summary.failed);
+    if (summary.failed.length) console.warn('[Tenant PWA] Precache skipped assets', summary.failed);
     await self.skipWaiting();
   })());
 });
@@ -73,7 +75,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    const staleKeys = keys.filter(key => key !== STATIC_CACHE && key !== RUNTIME_CACHE);
+    const staleKeys = keys.filter(key => key.startsWith(`${TENANT_NAMESPACE}-`) && key !== STATIC_CACHE && key !== RUNTIME_CACHE);
     await Promise.allSettled(staleKeys.map(key => caches.delete(key)));
     await self.clients.claim();
     await broadcast({ type: 'PWA_UPDATED', version: PWA_VERSION, deletedCaches: staleKeys });
@@ -97,7 +99,7 @@ self.addEventListener('message', event => {
 });
 
 self.addEventListener('sync', event => {
-  if (event.tag === 'thon09-background-sync') {
+  if (event.tag === `${TENANT_NAMESPACE}-background-sync`) {
     event.waitUntil(broadcast({ type: 'PWA_SYNC_REQUESTED' }));
   }
 });
@@ -111,7 +113,7 @@ self.addEventListener('push', event => {
     body: payload.body || fallback.body,
     icon: '/assets/icons/icon-192.png?v=20260714-7',
     badge: '/assets/icons/maskable-192.png?v=20260714-7',
-    tag: payload.tag || 'thon09-system',
+    tag: payload.tag || `${TENANT_NAMESPACE}-system`,
     data: payload.data || fallback.data
   }));
 });

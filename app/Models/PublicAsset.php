@@ -145,6 +145,9 @@ CREATE TABLE IF NOT EXISTS public_asset_maintenance_schedules (
   CONSTRAINT fk_public_asset_maintenance_item FOREIGN KEY (inventory_item_id) REFERENCES public_asset_inventory_items(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        $this->ensureTenantColumn('public_assets');
+        $this->ensureTenantColumn('public_asset_inventory_items');
+        $this->ensureTenantColumn('public_asset_maintenance_schedules');
         $this->seedTypes();
         $this->seedInventoryGroups();
     }
@@ -153,7 +156,7 @@ SQL);
     {
         $this->ensureSchema();
         $types = $this->fetchAll('SELECT id, category, name, icon FROM public_asset_types WHERE is_active=1 ORDER BY sort_order ASC, category ASC, name ASC');
-        $areas = $this->fetchAll('SELECT DISTINCT area_code FROM public_assets WHERE status <> "DELETED" AND area_code IS NOT NULL AND area_code <> "" ORDER BY area_code ASC');
+        $areas = $this->fetchAll('SELECT DISTINCT area_code FROM public_assets WHERE status <> "DELETED" AND ' . $this->tenantWhere('public_assets') . ' AND area_code IS NOT NULL AND area_code <> "" ORDER BY area_code ASC', $this->withTenant());
         return [
             'types' => array_map(fn($r) => ['value' => (string)$r['id'], 'label' => (string)$r['name'], 'category' => (string)$r['category'], 'icon' => (string)$r['icon']], $types),
             'areas' => array_map(fn($r) => ['value' => (string)$r['area_code'], 'label' => (string)$r['area_code']], $areas),
@@ -186,7 +189,7 @@ SQL);
     public function find(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT pa.*, COALESCE(pat.name, pa.type_name) AS resolved_type_name, COALESCE(pat.category, pa.category) AS resolved_category, pat.icon AS type_icon FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id WHERE pa.id=:id AND pa.status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT pa.*, COALESCE(pat.name, pa.type_name) AS resolved_type_name, COALESCE(pat.category, pa.category) AS resolved_category, pat.icon AS type_icon FROM public_assets pa LEFT JOIN public_asset_types pat ON pat.id=pa.type_id WHERE pa.id=:id AND pa.status <> "DELETED" AND ' . $this->tenantWhere('pa', 'public_assets'), $this->withTenant(['id' => $id]));
         return $row ? $this->normalize($row) : null;
     }
 
@@ -201,11 +204,13 @@ SQL);
         }
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE public_assets SET asset_name=:asset_name, type_id=:type_id, type_name=:type_name, category=:category, area_code=:area_code, campus_area=:campus_area, building_area=:building_area, construction_year=:construction_year, operation_year=:operation_year, address=:address, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, gps_updated_at=:gps_updated_at, cover_photo_url=:cover_photo_url, description=:description, managing_unit=:managing_unit, manager_name=:manager_name, manager_position=:manager_position, manager_phone=:manager_phone, note=:note, status=:status, updated_by=:updated_by WHERE id=:id', $params);
+            $this->execute('UPDATE public_assets SET asset_name=:asset_name, type_id=:type_id, type_name=:type_name, category=:category, area_code=:area_code, campus_area=:campus_area, building_area=:building_area, construction_year=:construction_year, operation_year=:operation_year, address=:address, latitude=:latitude, longitude=:longitude, gps_accuracy=:gps_accuracy, gps_updated_at=:gps_updated_at, cover_photo_url=:cover_photo_url, description=:description, managing_unit=:managing_unit, manager_name=:manager_name, manager_position=:manager_position, manager_phone=:manager_phone, note=:note, status=:status, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('public_assets'), $this->withTenant($params));
             return $this->find($id);
         }
         $params['asset_code'] = $this->nextCode();
-        $newId = $this->insert('INSERT INTO public_assets (asset_code, asset_name, type_id, type_name, category, area_code, campus_area, building_area, construction_year, operation_year, address, latitude, longitude, gps_accuracy, gps_updated_at, cover_photo_url, description, managing_unit, manager_name, manager_position, manager_phone, note, status, created_by, updated_by) VALUES (:asset_code, :asset_name, :type_id, :type_name, :category, :area_code, :campus_area, :building_area, :construction_year, :operation_year, :address, :latitude, :longitude, :gps_accuracy, :gps_updated_at, :cover_photo_url, :description, :managing_unit, :manager_name, :manager_position, :manager_phone, :note, :status, :created_by, :updated_by)', $params);
+        $columns = ['asset_code', 'asset_name', 'type_id', 'type_name', 'category', 'area_code', 'campus_area', 'building_area', 'construction_year', 'operation_year', 'address', 'latitude', 'longitude', 'gps_accuracy', 'gps_updated_at', 'cover_photo_url', 'description', 'managing_unit', 'manager_name', 'manager_position', 'manager_phone', 'note', 'status', 'created_by', 'updated_by'];
+        $this->addTenantInsert('public_assets', $columns, $params);
+        $newId = $this->insert('INSERT INTO public_assets (' . implode(',', $columns) . ') VALUES (:' . implode(', :', $columns) . ')', $params);
         return $this->find($newId);
     }
 
@@ -213,7 +218,7 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->find($id)) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y c\u00f4ng tr\u00ecnh'));
-        $this->execute('UPDATE public_assets SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id', ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]);
+        $this->execute('UPDATE public_assets SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('public_assets'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
     public function dashboard(array $filters = []): array
@@ -301,7 +306,7 @@ SQL);
                 'summary' => $this->inventorySummary([]),
             ];
         }
-        $rows = $this->fetchAll('SELECT pii.*, pig.name AS resolved_group_name, pig.parent_name FROM public_asset_inventory_items pii LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id WHERE pii.public_asset_id=:id AND pii.status <> "DELETED" ORDER BY pii.item_name ASC, pii.id DESC', ['id' => $assetId]);
+        $rows = $this->fetchAll('SELECT pii.*, pig.name AS resolved_group_name, pig.parent_name FROM public_asset_inventory_items pii LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id WHERE pii.public_asset_id=:id AND pii.status <> "DELETED" AND ' . $this->tenantWhere('pii', 'public_asset_inventory_items') . ' ORDER BY pii.item_name ASC, pii.id DESC', $this->withTenant(['id' => $assetId]));
         $items = array_map(fn($r) => $this->normalizeInventoryItem($r), $rows);
         return ['enabled' => true, 'items' => $items, 'summary' => $this->inventorySummary($items)];
     }
@@ -309,7 +314,7 @@ SQL);
     public function inventoryDashboard(array $filters = []): array
     {
         $this->ensureSchema();
-        $rows = $this->fetchAll('SELECT pii.*, COALESCE(pig.name, pii.group_name) AS resolved_group_name, pa.asset_name FROM public_asset_inventory_items pii INNER JOIN public_assets pa ON pa.id=pii.public_asset_id LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id WHERE pii.status <> "DELETED" AND pa.status <> "DELETED" ORDER BY pii.id DESC');
+        $rows = $this->fetchAll('SELECT pii.*, COALESCE(pig.name, pii.group_name) AS resolved_group_name, pa.asset_name FROM public_asset_inventory_items pii INNER JOIN public_assets pa ON pa.id=pii.public_asset_id LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id WHERE pii.status <> "DELETED" AND pa.status <> "DELETED" AND ' . $this->tenantWhere('pii', 'public_asset_inventory_items') . ' AND ' . $this->tenantWhere('pa', 'public_assets') . ' ORDER BY pii.id DESC', $this->withTenant());
         $items = array_map(fn($r) => $this->normalizeInventoryItem($r), $rows);
         return $this->inventorySummary($items);
     }
@@ -317,7 +322,7 @@ SQL);
     public function findInventoryItem(int $assetId, int $itemId): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT pii.*, pig.name AS resolved_group_name, pig.parent_name FROM public_asset_inventory_items pii LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id WHERE pii.public_asset_id=:asset_id AND pii.id=:id AND pii.status <> "DELETED"', ['asset_id' => $assetId, 'id' => $itemId]);
+        $row = $this->fetchOne('SELECT pii.*, pig.name AS resolved_group_name, pig.parent_name FROM public_asset_inventory_items pii LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id WHERE pii.public_asset_id=:asset_id AND pii.id=:id AND pii.status <> "DELETED" AND ' . $this->tenantWhere('pii', 'public_asset_inventory_items'), $this->withTenant(['asset_id' => $assetId, 'id' => $itemId]));
         return $row ? $this->normalizeInventoryItem($row) : null;
     }
 
@@ -329,10 +334,12 @@ SQL);
         $params = $this->inventoryParams($assetId, $data, $userId, $existing);
         if ($itemId) {
             $params['id'] = $itemId;
-            $this->execute('UPDATE public_asset_inventory_items SET inventory_code=:inventory_code, item_name=:item_name, group_id=:group_id, group_name=:group_name, quantity=:quantity, estimated_value=:estimated_value, unit=:unit, purchase_date=:purchase_date, warranty_until=:warranty_until, condition_status=:condition_status, start_use_date=:start_use_date, location_in_asset=:location_in_asset, manager_name=:manager_name, manager_phone=:manager_phone, maintenance_cycle=:maintenance_cycle, note=:note, photo_url=:photo_url, updated_by=:updated_by WHERE id=:id AND public_asset_id=:public_asset_id AND status <> "DELETED"', $params);
+            $this->execute('UPDATE public_asset_inventory_items SET inventory_code=:inventory_code, item_name=:item_name, group_id=:group_id, group_name=:group_name, quantity=:quantity, estimated_value=:estimated_value, unit=:unit, purchase_date=:purchase_date, warranty_until=:warranty_until, condition_status=:condition_status, start_use_date=:start_use_date, location_in_asset=:location_in_asset, manager_name=:manager_name, manager_phone=:manager_phone, maintenance_cycle=:maintenance_cycle, note=:note, photo_url=:photo_url, updated_by=:updated_by WHERE id=:id AND public_asset_id=:public_asset_id AND status <> "DELETED" AND ' . $this->tenantWhere('public_asset_inventory_items'), $this->withTenant($params));
             return $this->findInventoryItem($assetId, $itemId);
         }
-        $id = $this->insert('INSERT INTO public_asset_inventory_items (public_asset_id, inventory_code, item_name, group_id, group_name, quantity, estimated_value, unit, purchase_date, warranty_until, condition_status, start_use_date, location_in_asset, manager_name, manager_phone, maintenance_cycle, note, photo_url, created_by, updated_by) VALUES (:public_asset_id, :inventory_code, :item_name, :group_id, :group_name, :quantity, :estimated_value, :unit, :purchase_date, :warranty_until, :condition_status, :start_use_date, :location_in_asset, :manager_name, :manager_phone, :maintenance_cycle, :note, :photo_url, :created_by, :updated_by)', $params);
+        $columns = ['public_asset_id', 'inventory_code', 'item_name', 'group_id', 'group_name', 'quantity', 'estimated_value', 'unit', 'purchase_date', 'warranty_until', 'condition_status', 'start_use_date', 'location_in_asset', 'manager_name', 'manager_phone', 'maintenance_cycle', 'note', 'photo_url', 'created_by', 'updated_by'];
+        $this->addTenantInsert('public_asset_inventory_items', $columns, $params);
+        $id = $this->insert('INSERT INTO public_asset_inventory_items (' . implode(',', $columns) . ') VALUES (:' . implode(', :', $columns) . ')', $params);
         return $this->findInventoryItem($assetId, $id);
     }
 
@@ -340,25 +347,25 @@ SQL);
     {
         $this->assertInventoryAllowed($assetId);
         if (!$this->findInventoryItem($assetId, $itemId)) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y t\u00e0i s\u1ea3n ki\u1ec3m k\u00ea'));
-        $this->execute('UPDATE public_asset_inventory_items SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id', ['asset_id' => $assetId, 'id' => $itemId, 'user' => $userId]);
+        $this->execute('UPDATE public_asset_inventory_items SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id AND ' . $this->tenantWhere('public_asset_inventory_items'), $this->withTenant(['asset_id' => $assetId, 'id' => $itemId, 'user' => $userId]));
     }
 
     public function setInventoryPhoto(int $assetId, int $itemId, ?string $url, int $userId): ?array
     {
         $this->assertInventoryAllowed($assetId);
-        $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id AND status <> "DELETED"', ['asset_id' => $assetId, 'id' => $itemId, 'url' => $this->storedUploadPath((string)$url), 'user' => $userId]);
+        $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('public_asset_inventory_items'), $this->withTenant(['asset_id' => $assetId, 'id' => $itemId, 'url' => $this->storedUploadPath((string)$url), 'user' => $userId]));
         return $this->findInventoryItem($assetId, $itemId);
     }
 
     public function inventoryPhotoPath(int $assetId, int $itemId): ?string
     {
-        $row = $this->fetchOne('SELECT photo_url FROM public_asset_inventory_items WHERE public_asset_id=:asset_id AND id=:id AND status <> "DELETED"', ['asset_id' => $assetId, 'id' => $itemId]);
+        $row = $this->fetchOne('SELECT photo_url FROM public_asset_inventory_items WHERE public_asset_id=:asset_id AND id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('public_asset_inventory_items'), $this->withTenant(['asset_id' => $assetId, 'id' => $itemId]));
         $rawPath = $row ? (string)($row['photo_url'] ?? '') : '';
         $path = $this->storedUploadPath($rawPath);
         if ($rawPath !== '' && $this->isInventoryPhotoApiPath($rawPath, $assetId, $itemId)) {
             $recovered = $this->latestUploadPathFromAudit('inventory_upload_photo', (string)$itemId);
             if ($recovered) {
-                $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url WHERE public_asset_id=:asset_id AND id=:id AND photo_url=:old', ['asset_id' => $assetId, 'id' => $itemId, 'url' => $recovered, 'old' => $rawPath]);
+                $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url WHERE public_asset_id=:asset_id AND id=:id AND photo_url=:old AND ' . $this->tenantWhere('public_asset_inventory_items'), $this->withTenant(['asset_id' => $assetId, 'id' => $itemId, 'url' => $recovered, 'old' => $rawPath]));
                 return $recovered;
             }
         }
@@ -368,7 +375,7 @@ SQL);
     public function maintenanceList(int $assetId): array
     {
         $this->assertInventoryAllowed($assetId);
-        $rows = $this->fetchAll('SELECT pams.*, pii.inventory_code, pii.item_name FROM public_asset_maintenance_schedules pams LEFT JOIN public_asset_inventory_items pii ON pii.id=pams.inventory_item_id WHERE pams.public_asset_id=:id AND pams.deleted_at IS NULL ORDER BY pams.scheduled_date ASC, pams.id DESC', ['id' => $assetId]);
+        $rows = $this->fetchAll('SELECT pams.*, pii.inventory_code, pii.item_name FROM public_asset_maintenance_schedules pams LEFT JOIN public_asset_inventory_items pii ON pii.id=pams.inventory_item_id WHERE pams.public_asset_id=:id AND pams.deleted_at IS NULL AND ' . $this->tenantWhere('pams', 'public_asset_maintenance_schedules') . ' AND (pii.id IS NULL OR ' . $this->tenantWhere('pii', 'public_asset_inventory_items') . ') ORDER BY pams.scheduled_date ASC, pams.id DESC', $this->withTenant(['id' => $assetId]));
         $items = array_map(fn($r) => $this->normalizeMaintenance($r), $rows);
         return ['items' => $items, 'summary' => $this->maintenanceSummary($items)];
     }
@@ -376,7 +383,7 @@ SQL);
     public function findMaintenance(int $assetId, int $maintenanceId): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT pams.*, pii.inventory_code, pii.item_name FROM public_asset_maintenance_schedules pams LEFT JOIN public_asset_inventory_items pii ON pii.id=pams.inventory_item_id WHERE pams.public_asset_id=:asset_id AND pams.id=:id AND pams.deleted_at IS NULL', ['asset_id' => $assetId, 'id' => $maintenanceId]);
+        $row = $this->fetchOne('SELECT pams.*, pii.inventory_code, pii.item_name FROM public_asset_maintenance_schedules pams LEFT JOIN public_asset_inventory_items pii ON pii.id=pams.inventory_item_id WHERE pams.public_asset_id=:asset_id AND pams.id=:id AND pams.deleted_at IS NULL AND ' . $this->tenantWhere('pams', 'public_asset_maintenance_schedules') . ' AND (pii.id IS NULL OR ' . $this->tenantWhere('pii', 'public_asset_inventory_items') . ')', $this->withTenant(['asset_id' => $assetId, 'id' => $maintenanceId]));
         return $row ? $this->normalizeMaintenance($row) : null;
     }
 
@@ -388,10 +395,12 @@ SQL);
         $params = $this->maintenanceParams($assetId, $data, $userId, $existing);
         if ($maintenanceId) {
             $params['id'] = $maintenanceId;
-            $this->execute('UPDATE public_asset_maintenance_schedules SET inventory_item_id=:inventory_item_id, maintenance_code=:maintenance_code, title=:title, scheduled_date=:scheduled_date, completed_at=:completed_at, manager_name=:manager_name, cost=:cost, status=:status, note=:note, updated_by=:updated_by WHERE id=:id AND public_asset_id=:public_asset_id AND deleted_at IS NULL', $params);
+            $this->execute('UPDATE public_asset_maintenance_schedules SET inventory_item_id=:inventory_item_id, maintenance_code=:maintenance_code, title=:title, scheduled_date=:scheduled_date, completed_at=:completed_at, manager_name=:manager_name, cost=:cost, status=:status, note=:note, updated_by=:updated_by WHERE id=:id AND public_asset_id=:public_asset_id AND deleted_at IS NULL AND ' . $this->tenantWhere('public_asset_maintenance_schedules'), $this->withTenant($params));
             return $this->findMaintenance($assetId, $maintenanceId);
         }
-        $id = $this->insert('INSERT INTO public_asset_maintenance_schedules (public_asset_id, inventory_item_id, maintenance_code, title, scheduled_date, completed_at, manager_name, cost, status, note, created_by, updated_by) VALUES (:public_asset_id, :inventory_item_id, :maintenance_code, :title, :scheduled_date, :completed_at, :manager_name, :cost, :status, :note, :created_by, :updated_by)', $params);
+        $columns = ['public_asset_id', 'inventory_item_id', 'maintenance_code', 'title', 'scheduled_date', 'completed_at', 'manager_name', 'cost', 'status', 'note', 'created_by', 'updated_by'];
+        $this->addTenantInsert('public_asset_maintenance_schedules', $columns, $params);
+        $id = $this->insert('INSERT INTO public_asset_maintenance_schedules (' . implode(',', $columns) . ') VALUES (:' . implode(', :', $columns) . ')', $params);
         return $this->findMaintenance($assetId, $id);
     }
 
@@ -399,13 +408,13 @@ SQL);
     {
         $this->assertInventoryAllowed($assetId);
         if (!$this->findMaintenance($assetId, $maintenanceId)) throw new \RuntimeException($this->u('Kh\u00f4ng t\u00ecm th\u1ea5y l\u1ecbch b\u1ea3o tr\u00ec'));
-        $this->execute('UPDATE public_asset_maintenance_schedules SET deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id', ['asset_id' => $assetId, 'id' => $maintenanceId, 'user' => $userId]);
+        $this->execute('UPDATE public_asset_maintenance_schedules SET deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE public_asset_id=:asset_id AND id=:id AND ' . $this->tenantWhere('public_asset_maintenance_schedules'), $this->withTenant(['asset_id' => $assetId, 'id' => $maintenanceId, 'user' => $userId]));
     }
 
     private function where(array $filters, bool $withOrder = true): array
     {
-        $where = ['pa.status <> "DELETED"'];
-        $params = [];
+        $where = ['pa.status <> "DELETED"', $this->tenantWhere('pa', 'public_assets')];
+        $params = $this->withTenant();
         $search = trim((string)($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $kw = '%' . mb_strtolower($search, 'UTF-8') . '%';
@@ -525,7 +534,7 @@ SQL);
         }
     }
 
-    private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM public_assets'); return 'CT09-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
+    private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM public_assets WHERE ' . $this->tenantWhere('public_assets'), $this->withTenant()); return 'CT-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function seedInventoryGroups(): void
     {
         $items = [
@@ -715,7 +724,7 @@ SQL);
     {
         $this->ensureSchema();
         [$where, $params] = $this->where($filters, false);
-        $rows = $this->fetchAll("SELECT pa.asset_code, pa.asset_name, pii.inventory_code, pii.item_name, COALESCE(pig.name, pii.group_name) AS group_name, pii.quantity, pii.estimated_value, pii.unit, pii.purchase_date, pii.warranty_until, pii.condition_status, pii.start_use_date, pii.location_in_asset, pii.manager_name, pii.manager_phone, pii.maintenance_cycle, pii.note FROM public_asset_inventory_items pii INNER JOIN public_assets pa ON pa.id=pii.public_asset_id LEFT JOIN public_asset_types pat ON pat.id=pa.type_id LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id $where AND pii.status <> \"DELETED\" ORDER BY pa.asset_code ASC, pii.item_name ASC", $params);
+        $rows = $this->fetchAll("SELECT pa.asset_code, pa.asset_name, pii.inventory_code, pii.item_name, COALESCE(pig.name, pii.group_name) AS group_name, pii.quantity, pii.estimated_value, pii.unit, pii.purchase_date, pii.warranty_until, pii.condition_status, pii.start_use_date, pii.location_in_asset, pii.manager_name, pii.manager_phone, pii.maintenance_cycle, pii.note FROM public_asset_inventory_items pii INNER JOIN public_assets pa ON pa.id=pii.public_asset_id LEFT JOIN public_asset_types pat ON pat.id=pa.type_id LEFT JOIN public_asset_inventory_groups pig ON pig.id=pii.group_id $where AND pii.status <> \"DELETED\" AND " . $this->tenantWhere('pii', 'public_asset_inventory_items') . " ORDER BY pa.asset_code ASC, pii.item_name ASC", $params);
         return $this->table($this->u('Danh s\u00e1ch t\u00e0i s\u1ea3n ki\u1ec3m k\u00ea c\u00f4ng tr\u00ecnh'), [
             $this->u('M\u00e3 c\u00f4ng tr\u00ecnh'),
             $this->u('T\u00ean c\u00f4ng tr\u00ecnh'),
@@ -778,8 +787,8 @@ SQL);
         return preg_replace('/[^a-z0-9]+/', ' ', $value) ?: '';
     }
 
-    private function nextInventoryCode(int $assetId): string { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM public_asset_inventory_items WHERE public_asset_id=:id', ['id' => $assetId]); return 'TS' . str_pad((string)$assetId, 5, '0', STR_PAD_LEFT) . '-' . str_pad((string)(((int)($row['total'] ?? 0)) + 1), 3, '0', STR_PAD_LEFT); }
-    private function nextMaintenanceCode(int $assetId): string { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM public_asset_maintenance_schedules WHERE public_asset_id=:id', ['id' => $assetId]); return 'BT' . str_pad((string)$assetId, 5, '0', STR_PAD_LEFT) . '-' . str_pad((string)(((int)($row['total'] ?? 0)) + 1), 3, '0', STR_PAD_LEFT); }
+    private function nextInventoryCode(int $assetId): string { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM public_asset_inventory_items WHERE public_asset_id=:id AND ' . $this->tenantWhere('public_asset_inventory_items'), $this->withTenant(['id' => $assetId])); return 'TS' . str_pad((string)$assetId, 5, '0', STR_PAD_LEFT) . '-' . str_pad((string)(((int)($row['total'] ?? 0)) + 1), 3, '0', STR_PAD_LEFT); }
+    private function nextMaintenanceCode(int $assetId): string { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM public_asset_maintenance_schedules WHERE public_asset_id=:id AND ' . $this->tenantWhere('public_asset_maintenance_schedules'), $this->withTenant(['id' => $assetId])); return 'BT' . str_pad((string)$assetId, 5, '0', STR_PAD_LEFT) . '-' . str_pad((string)(((int)($row['total'] ?? 0)) + 1), 3, '0', STR_PAD_LEFT); }
     private function maintenanceStatuses(): array { return ['SCHEDULED' => $this->u('Theo k\u1ebf ho\u1ea1ch'), 'DONE' => $this->u('\u0110\u00e3 ho\u00e0n th\u00e0nh'), 'CANCELLED' => $this->u('\u0110\u00e3 h\u1ee7y')]; }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableNumber(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
@@ -789,18 +798,18 @@ SQL);
     private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }
     private function areaText(mixed $value): string { $number = (float)($value ?? 0); return $number > 0 ? number_format($number, 2, ',', '.') . ' m2' : ''; }
     private function gpsReportText(array $row): string { return $row['latitude'] !== null && $row['longitude'] !== null ? number_format((float)$row['latitude'], 6, '.', '') . ', ' . number_format((float)$row['longitude'], 6, '.', '') : $this->u('Ch\u01b0a c\u00f3 GPS'); }
-    public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED"', ['id' => $id, 'url' => $this->storedUploadPath((string)$url), 'user' => $userId]); return $this->find($id); }
+    public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('public_assets'), $this->withTenant(['id' => $id, 'url' => $this->storedUploadPath((string)$url), 'user' => $userId])); return $this->find($id); }
     private function coord(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
     private function ensureColumn(string $table, string $column, string $definition): void { if ($this->columnExists($table, $column)) return; $this->execute('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition); }
     public function coverPhotoPath(int $id): ?string
     {
-        $row = $this->fetchOne('SELECT cover_photo_url FROM public_assets WHERE id=:id AND status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT cover_photo_url FROM public_assets WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('public_assets'), $this->withTenant(['id' => $id]));
         $rawPath = $row ? (string)($row['cover_photo_url'] ?? '') : '';
         $path = $this->storedUploadPath($rawPath);
         if ($rawPath !== '' && $this->isCoverPhotoApiPath($rawPath, $id)) {
             $recovered = $this->latestUploadPathFromAudit('upload_photo', (string)$id);
             if ($recovered) {
-                $this->execute('UPDATE public_assets SET cover_photo_url=:url WHERE id=:id AND cover_photo_url=:old', ['id' => $id, 'url' => $recovered, 'old' => $rawPath]);
+                $this->execute('UPDATE public_assets SET cover_photo_url=:url WHERE id=:id AND cover_photo_url=:old AND ' . $this->tenantWhere('public_assets'), $this->withTenant(['id' => $id, 'url' => $recovered, 'old' => $rawPath]));
                 return $recovered;
             }
         }
@@ -839,7 +848,7 @@ SQL);
     private function latestUploadPathFromAudit(string $action, string $entityId): ?string
     {
         try {
-            $rows = $this->fetchAll('SELECT metadata FROM audit_logs WHERE module="public_assets" AND action=:action AND entity_id=:entity_id ORDER BY created_at DESC, id DESC LIMIT 5', ['action' => $action, 'entity_id' => $entityId]);
+            $rows = $this->fetchAll('SELECT metadata FROM audit_logs WHERE module="public_assets" AND action=:action AND entity_id=:entity_id AND ' . $this->tenantWhere('audit_logs') . ' ORDER BY created_at DESC, id DESC LIMIT 5', $this->withTenant(['action' => $action, 'entity_id' => $entityId]));
         } catch (\Throwable) {
             return null;
         }

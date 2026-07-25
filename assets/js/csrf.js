@@ -1,19 +1,19 @@
 (() => {
-  App.csrfToken = localStorage.getItem('thon09_csrf') || App.csrfToken || '';
+  App.csrfToken = localStorage.getItem(tenantStorageKey('csrf')) || App.csrfToken || '';
   const AUTH_REQUIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
 
   function redirectToLoginOnAuthFailure() {
-    if (window.__thon09SessionExpired) return;
-    window.__thon09SessionExpired = true;
+    if (window.__TenantAppSessionExpired) return;
+    window.__TenantAppSessionExpired = true;
     if (typeof clearClientSession === 'function') {
       clearClientSession();
     } else {
       App.token = '';
       App.user = null;
       App.csrfToken = '';
-      localStorage.removeItem('thon09_token');
-      localStorage.removeItem('thon09_user');
-      localStorage.removeItem('thon09_csrf');
+      localStorage.removeItem(tenantStorageKey('token'));
+      localStorage.removeItem(tenantStorageKey('user'));
+      localStorage.removeItem(tenantStorageKey('csrf'));
     }
     if (typeof showLogin === 'function') showLogin();
   }
@@ -39,7 +39,7 @@
         headers.Authorization = `Bearer ${App.token}`;
       }
       if (!options.public && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-        App.csrfToken = App.csrfToken || localStorage.getItem('thon09_csrf') || '';
+        App.csrfToken = App.csrfToken || localStorage.getItem(tenantStorageKey('csrf')) || '';
         if (!App.csrfToken) {
           throw new Error('Phiên đăng nhập thiếu CSRF token, vui lòng đăng nhập lại');
         }
@@ -56,7 +56,7 @@
 
       if (payload?.data?.csrfToken) {
         App.csrfToken = payload.data.csrfToken;
-        localStorage.setItem('thon09_csrf', App.csrfToken);
+        localStorage.setItem(tenantStorageKey('csrf'), App.csrfToken);
       }
       if (response.status === 401 && !options.public && !String(url).includes('/api/auth/logout')) {
         redirectToLoginOnAuthFailure();
@@ -79,9 +79,9 @@
     App.token = '';
     App.user = null;
     App.csrfToken = '';
-    localStorage.removeItem('thon09_token');
-    localStorage.removeItem('thon09_user');
-    localStorage.removeItem('thon09_csrf');
+    localStorage.removeItem(tenantStorageKey('token'));
+    localStorage.removeItem(tenantStorageKey('user'));
+    localStorage.removeItem(tenantStorageKey('csrf'));
   }
 
   window.clearClientSession = clearClientSession;

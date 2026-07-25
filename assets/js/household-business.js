@@ -10,7 +10,7 @@
     return match ? match[3] + '/' + match[2] + '/' + match[1] : String(value);
   };
   const hasPlatformPermissionRule = (module, action) => {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (!service?.list) return false;
     const normalizedModule = service.normalizeModule ? service.normalizeModule(module) : module;
     const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
@@ -18,9 +18,9 @@
     return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
   };
   const can = (module, action) => {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (service?.can && hasPlatformPermissionRule(module, action)) return service.can(module, action, window.App?.user);
-    if (typeof window.thon09CanAccess === 'function') return window.thon09CanAccess(module, action);
+    if (typeof window.TenantAppCanAccess === 'function') return window.TenantAppCanAccess(module, action);
     const role = String(window.App?.user?.role || '').toUpperCase();
     if (['SUPER_ADMIN', 'ADMIN'].includes(role)) return true;
     if (role === 'VIEWER') return module === 'household_business' && action === 'read';
@@ -28,26 +28,26 @@
     return false;
   };
   const show = (message, type = 'success') => typeof window.showToast === 'function' ? window.showToast(message, type) : console.log(message);
-  const request = (url, options = {}) => (window.api || window.thon09Api)(url, options);
-  const isActive = () => (window.Thon09Platform?.navigation?.current?.()?.screenId || window.App?.screen || document.querySelector('.screen.active')?.id?.replace(/Screen$/, '')) === 'businessHouseholds';
+  const request = (url, options = {}) => (window.api || window.TenantAppApi)(url, options);
+  const isActive = () => (window.TenantAppPlatform?.navigation?.current?.()?.screenId || window.App?.screen || document.querySelector('.screen.active')?.id?.replace(/Screen$/, '')) === 'businessHouseholds';
   const confirmAction = options => {
-    const dialog = window.Thon09Platform?.confirmDialog;
+    const dialog = window.TenantAppPlatform?.confirmDialog;
     if (dialog?.ask) return dialog.ask(options);
     return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
   };
   const registerModal = id => {
     const modal = $('#' + id);
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (modal && service?.registerBootstrap) service.registerBootstrap(id, '#' + id);
     return modal;
   };
   const openModal = id => {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.open && service.open(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
   };
   const closeModal = id => {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
   };
@@ -75,11 +75,11 @@
     });
     $('#businessHouseholdPageSize')?.addEventListener('change', event => { state.pageSize = Number(event.target.value || 20); state.page = 1; load(); });
     registerBusinessPlatformActions();
-    document.addEventListener('thon09:screen-change', event => {
+    document.addEventListener('tenant:screen-change', event => {
       if (event.detail?.screen === 'businessHouseholds') load();
       if (event.detail?.screen === 'dashboard') setTimeout(renderDashboard, 120);
     });
-    document.addEventListener('thon09:auth-state', () => { applyAccess(); addReportOptions(); if (isActive()) ensureCatalogs().catch(() => {}); renderDashboard(); });
+    document.addEventListener('tenant:auth-state', () => { applyAccess(); addReportOptions(); if (isActive()) ensureCatalogs().catch(() => {}); renderDashboard(); });
     addReportOptions();
     applyAccess();
     if (isActive()) ensureCatalogs().catch(() => {});
@@ -87,7 +87,7 @@
   }
 
   function registerBusinessPlatformActions() {
-    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
     if (!actions || typeof actions.register !== 'function') return;
     actions.register('businessHouseholds.openCreate', () => openForm());
     actions.register('businessHouseholds.reset', () => resetFilters());
@@ -140,7 +140,7 @@
       const rows = $('#businessHouseholdRows');
       if (rows) rows.innerHTML = items.length ? items.map((row, index) => rowHtml(row, start + index + 1)).join('') : '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có hồ sơ sản xuất & kinh doanh</td></tr>';
       renderPager(data);
-      if (typeof window.thon09SyncResponsiveTableLabels === 'function') window.thon09SyncResponsiveTableLabels($('#businessHouseholdsScreen') || document);
+      if (typeof window.TenantAppSyncResponsiveTableLabels === 'function') window.TenantAppSyncResponsiveTableLabels($('#businessHouseholdsScreen') || document);
     } catch (error) {
       show('Không tải được danh sách hộ sản xuất/kinh doanh: ' + error.message, 'danger');
     }
@@ -453,7 +453,7 @@
     }
     if (action === 'map') {
       closeModal('businessHouseholdModal');
-      if (window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') window.Thon09NavigationController.navigate('gis');
+      if (window.TenantAppNavigationController && typeof window.TenantAppNavigationController.navigate === 'function') window.TenantAppNavigationController.navigate('gis');
       show('\u0110\u00e3 m\u1edf GIS Google. H\u00e3y ch\u1ecdn h\u1ed9 v\u00e0 \u0111\u1eb7t marker tr\u00ean b\u1ea3n \u0111\u1ed3, h\u1ec7 th\u1ed1ng s\u1ebd d\u00f9ng GPS h\u1ed9 gia \u0111\u00ecnh.', 'info');
       return;
     }

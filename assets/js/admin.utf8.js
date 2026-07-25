@@ -1,16 +1,16 @@
-﻿(() => {
+(() => {
   installPersonTableRenderFix();
 
   function installPersonTableRenderFix() {
-    if (window.__thon09PersonTableRenderFixInstalled) return;
-    window.__thon09PersonTableRenderFixInstalled = true;
+    if (window.__tenantAppPersonTableRenderFixInstalled) return;
+    window.__tenantAppPersonTableRenderFixInstalled = true;
 
     const text = value => value === null || value === undefined ? '' : String(value).trim();
     const safe = value => typeof escapeHtml === 'function' ? escapeHtml(value) : text(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     const fmtDate = value => typeof formatDate === 'function' ? formatDate(value) : text(value);
     const normalize = value => typeof normalizeSearchText === 'function' ? normalizeSearchText(value) : text(value).toLowerCase();
     const hasPlatformPermissionRule = (moduleKey, action) => {
-      const service = window.Thon09Platform?.permissions;
+      const service = window.TenantAppPlatform?.permissions;
       if (!service?.list) return false;
       const normalizedModule = service.normalizeModule ? service.normalizeModule(moduleKey) : moduleKey;
       const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
@@ -18,14 +18,14 @@
       return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
     };
     const canAccess = (moduleKey, action) => {
-      const service = window.Thon09Platform?.permissions;
+      const service = window.TenantAppPlatform?.permissions;
       if (service?.can && hasPlatformPermissionRule(moduleKey, action)) return service.can(moduleKey, action, window.App?.user);
-      return typeof window.thon09CanAccess === 'function' && window.thon09CanAccess(moduleKey, action);
+      return typeof window.TenantAppCanAccess === 'function' && window.TenantAppCanAccess(moduleKey, action);
     };
     const registerPersonTableActions = () => {
-      const actions = window.Thon09Platform?.actions;
-      if (window.__thon09PersonTableActionsRegistered || !actions?.register) return;
-      window.__thon09PersonTableActionsRegistered = true;
+      const actions = window.TenantAppPlatform?.actions;
+      if (window.__tenantAppPersonTableActionsRegistered || !actions?.register) return;
+      window.__tenantAppPersonTableActionsRegistered = true;
       actions
         .register({ key: 'persons.edit', handler: ({ dataset }) => {
           const id = Number(dataset.id || dataset.personId || 0);
@@ -117,19 +117,19 @@
 
   function registerModal(id) {
     const modal = document.querySelector('#' + id);
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (modal && service?.registerBootstrap) service.registerBootstrap(id, '#' + id);
     return modal;
   }
 
   function openModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.open && service.open(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.show();
   }
 
   function closeModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.hide();
   }
@@ -146,12 +146,12 @@
     document.querySelector('#userForm').addEventListener('submit', saveUser);
   }
 
-  function bindAdminLoaders() { document.addEventListener('thon09:screen-change', event => { const screen = event.detail?.screen; if (screen === 'users') loadUsers(); if (screen === 'logs') loadLogs(); if (screen === 'backups') loadBackups(); }); }
+  function bindAdminLoaders() { document.addEventListener('tenant:screen-change', event => { const screen = event.detail?.screen; if (screen === 'users') loadUsers(); if (screen === 'logs') loadLogs(); if (screen === 'backups') loadBackups(); }); }
 
   function registerUserPlatformActions() {
-    if (window.__thon09UserActionsRegistered || !window.Thon09Platform?.actions) return;
-    window.__thon09UserActionsRegistered = true;
-    window.Thon09Platform.actions
+    if (window.__tenantAppUserActionsRegistered || !window.TenantAppPlatform?.actions) return;
+    window.__tenantAppUserActionsRegistered = true;
+    window.TenantAppPlatform.actions
       .register({ key: 'users.create', handler: () => window.openUserForm?.() })
       .register({ key: 'users.edit', handler: ({ dataset }) => window.openUserForm?.(Number(dataset.id || 0)) })
       .register({ key: 'users.toggle', handler: ({ dataset }) => window.toggleUser?.(Number(dataset.id || 0), dataset.action) })
@@ -168,6 +168,7 @@
   window.deleteUser = async function deleteUser(id) { if (!confirm('Xóa người dùng này?')) return; try { await api('/api/users/' + id, { method: 'DELETE' }); showToast('Đã xóa người dùng'); loadUsers(); } catch (error) { showToast(error.message, 'danger'); } };
   async function loadLogs() { try { const data = await api('/api/logs?' + new URLSearchParams(App.logs).toString()); document.querySelector('#logRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.created_at)}</td><td>${escapeHtml(row.actor_email || '')}</td><td>${escapeHtml(row.module)}</td><td>${escapeHtml(row.action)}</td><td>${escapeHtml(row.message)}</td></tr>`).join('') || emptyRow(5, 'Chưa có nhật ký'); renderPager('#logPager', data, page => { App.logs.page = page; loadLogs(); }); } catch (error) { showToast(error.message, 'danger'); } }
   async function loadBackups() { try { const data = await api('/api/backups?' + new URLSearchParams(App.backups).toString()); document.querySelector('#backupRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.created_at)}</td><td>${escapeHtml(row.file_name)}</td><td>${number(row.file_size || 0)} byte</td><td>${escapeHtml(row.status)}</td><td>${escapeHtml(row.created_by_email || '')}</td></tr>`).join('') || emptyRow(5, 'Chưa có bản sao lưu'); renderPager('#backupPager', data, page => { App.backups.page = page; loadBackups(); }); } catch (error) { showToast(error.message, 'danger'); } }
+  window.loadAdminUsers = loadUsers; window.loadAdminLogs = loadLogs; window.loadAdminBackups = loadBackups;
   async function createBackup() { try { const response = await fetch('/api/backups', { method: 'POST', headers: { Authorization: `Bearer ${App.token}`, 'X-CSRF-Token': App.csrfToken || '' } }); if (!response.ok) { const payload = await response.json().catch(() => null); throw new Error(payload?.error?.message || 'Không tạo được bản sao lưu'); } const blob = await response.blob(); const name = /filename="?([^";]+)"?/i.exec(response.headers.get('Content-Disposition') || '')?.[1] || `backup_tenant_${Date.now()}.sql`; const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url); showToast('Đã tạo bản sao lưu'); loadBackups(); } catch (error) { showToast(error.message, 'danger'); } }
   function statusLabel(status) { return status === 'ACTIVE' ? 'Hoạt động' : status === 'INACTIVE' ? 'Đã khóa' : status; }
 })();

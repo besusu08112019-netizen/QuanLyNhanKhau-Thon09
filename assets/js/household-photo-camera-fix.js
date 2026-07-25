@@ -11,5 +11,5 @@
   document.addEventListener('shown.bs.modal', event => {
     if (event.target?.id === 'householdModal') window.setTimeout(applyHouseholdCameraCapture, 30);
   });
-  document.addEventListener('thon09:household-photo-ready', applyHouseholdCameraCapture);
+  document.addEventListener('tenant:household-photo-ready', applyHouseholdCameraCapture);
 })();

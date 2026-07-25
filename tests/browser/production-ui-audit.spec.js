@@ -37,7 +37,7 @@ async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
     const url = route.request().url();
     const fulfill = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(ok(data)) });
-    if (url.includes('/api/public/login-config')) return fulfill({ settings: { systemName: 'H? th?ng qu?n l� h�nh ch�nh', hamletName: 'Th�n 09', communeName: 'X� H?ng Phong', version: 'v2.0' }, metrics: {} });
+    if (url.includes('/api/public/login-config')) return fulfill({ settings: { systemName: 'Hệ thống quản lý hành chính', hamletName: 'Thôn 09', communeName: 'Xã Hồng Phong', version: 'v2.0' }, metrics: {} });
     if (url.includes('/api/auth/me')) return fulfill({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
     if (url.includes('/api/dashboard/summary')) return fulfill({ metrics: {}, charts: {}, generatedAt: new Date().toISOString() });
     if (url.includes('/api/dashboard/')) return fulfill({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() });
@@ -65,8 +65,8 @@ async function openApp(page, viewport) {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
     window.App.token = 'test-token';
     window.App.user = user;
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
     if (typeof window.showApp === 'function') window.showApp();
   });
   await expect(page.locator('#appView')).not.toHaveClass(/d-none/);
@@ -113,7 +113,7 @@ test.describe(`Production UI audit (${browserName()})`, () => {
       const runtimeErrors = attachRuntimeErrorAudit(page);
       await openApp(page, viewport);
       for (const screen of screens) {
-        await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+        await page.evaluate((target) => window.TenantAppNavigationController?.navigate(target), screen);
         await page.waitForTimeout(100);
         const result = await page.evaluate(({ screen, width, moduleOrderScreens }) => {
           const active = document.querySelector('.screen.active');
@@ -284,7 +284,7 @@ test.describe(`Production UI audit (${browserName()})`, () => {
   test('system admin destructive actions use the shared confirm dialog on mobile', async ({ page }) => {
     const runtimeErrors = attachRuntimeErrorAudit(page);
     await openApp(page, { name: 'mobile-portrait', width: 390, height: 844 });
-    await page.evaluate(() => window.Thon09NavigationController?.navigate('systemAdmin'));
+    await page.evaluate(() => window.TenantAppNavigationController?.navigate('systemAdmin'));
     await page.waitForTimeout(200);
     const backupAction = page.locator('#systemAdminScreen .app-v2-button[data-app-v2-proxy-click*="systemAdmin.backup"]').first();
     if (await backupAction.count()) {

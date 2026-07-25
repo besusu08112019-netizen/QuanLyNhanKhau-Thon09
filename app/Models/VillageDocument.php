@@ -77,7 +77,7 @@ SQL);
         return [
             'categories' => array_map(fn($r) => ['value' => (string) $r['id'], 'code' => (string) $r['code'], 'label' => (string) $r['name']], $this->fetchAll('SELECT id, code, name FROM document_categories WHERE is_active=1 ORDER BY sort_order ASC, name ASC')),
             'statuses' => [['value' => 'ACTIVE', 'label' => 'Dang hieu luc'], ['value' => 'ARCHIVED', 'label' => 'Luu tru']],
-            'years' => array_map(fn($r) => ['value' => (string) $r['year'], 'label' => (string) $r['year']], $this->fetchAll('SELECT DISTINCT YEAR(COALESCE(issued_date, created_at)) AS year FROM village_documents WHERE status <> "DELETED" ORDER BY year DESC')),
+            'years' => array_map(fn($r) => ['value' => (string) $r['year'], 'label' => (string) $r['year']], $this->fetchAll('SELECT DISTINCT YEAR(COALESCE(issued_date, created_at)) AS year FROM village_documents WHERE status <> "DELETED" AND ' . $this->tenantWhere('village_documents') . ' ORDER BY year DESC')),
         ];
     }
 
@@ -105,7 +105,7 @@ SQL);
     public function find(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE d.id=:id AND d.status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne($this->selectSql() . ' ' . $this->fromSql() . ' WHERE d.id=:id AND d.status <> "DELETED" AND ' . $this->tenantWhere('d', 'village_documents'), ['id' => $id]);
         if (!$row) return null;
         $item = $this->normalize($row);
         $item['attachments'] = $this->attachments($id);
@@ -119,11 +119,13 @@ SQL);
         $params = $this->params($data, $userId);
         if ($id) {
             $params['id'] = $id;
-            $this->execute('UPDATE village_documents SET document_number=:document_number,title=:title,category_id=:category_id,issuing_unit=:issuing_unit,signer_name=:signer_name,issued_date=:issued_date,effective_date=:effective_date,area_code=:area_code,summary=:summary,status=:status,updated_by=:updated_by WHERE id=:id AND status <> "DELETED"', $params);
+            $this->execute('UPDATE village_documents SET document_number=:document_number,title=:title,category_id=:category_id,issuing_unit=:issuing_unit,signer_name=:signer_name,issued_date=:issued_date,effective_date=:effective_date,area_code=:area_code,summary=:summary,status=:status,updated_by=:updated_by WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('village_documents'), $params);
             return $this->find($id);
         }
         $params['document_code'] = $this->nextCode();
-        $newId = $this->insert('INSERT INTO village_documents (document_code,document_number,title,category_id,issuing_unit,signer_name,issued_date,effective_date,area_code,summary,status,created_by,updated_by) VALUES (:document_code,:document_number,:title,:category_id,:issuing_unit,:signer_name,:issued_date,:effective_date,:area_code,:summary,:status,:created_by,:updated_by)', $params);
+        $columns = ['document_code','document_number','title','category_id','issuing_unit','signer_name','issued_date','effective_date','area_code','summary','status','created_by','updated_by'];
+        $this->addTenantInsert('village_documents', $columns, $params);
+        $newId = $this->insert('INSERT INTO village_documents (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return $this->find($newId);
     }
 
@@ -133,7 +135,7 @@ SQL);
         if (!$row) throw new RuntimeException('Khong tim thay van ban');
         $files = $this->attachments($id);
         $this->execute('DELETE FROM village_document_attachments WHERE document_id=:id', ['id' => $id]);
-        $this->execute('DELETE FROM village_documents WHERE id=:id', ['id' => $id]);
+        $this->execute('DELETE FROM village_documents WHERE id=:id AND ' . $this->tenantWhere('village_documents'), ['id' => $id]);
         return ['document' => $row, 'files' => $files];
     }
 
@@ -228,7 +230,7 @@ SQL);
 
     private function where(array $filters): array
     {
-        $where = ['d.status <> "DELETED"'];
+        $where = ['d.status <> "DELETED"', $this->tenantWhere('d', 'village_documents')];
         $params = [];
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
@@ -342,8 +344,8 @@ SQL);
 
     private function nextCode(): string
     {
-        $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM village_documents');
-        return 'VB09-' . str_pad((string) (((int) ($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT);
+        $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM village_documents WHERE ' . $this->tenantWhere('village_documents'));
+        return 'VB-' . str_pad((string) (((int) ($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT);
     }
 
     private function nullable(mixed $value, int $max): ?string
@@ -358,3 +360,4 @@ SQL);
         return $value !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) ? $value : null;
     }
 }
+

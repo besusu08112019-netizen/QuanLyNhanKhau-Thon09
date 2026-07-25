@@ -30,17 +30,19 @@ final class Household extends BaseModel
 
     public function find(int $id): ?array
     {
-        $row = $this->fetchOne('SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id WHERE h.id = :id AND h.status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id WHERE h.id = :id AND h.status <> "DELETED" AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $id]));
         return $row ? $this->withPhoto($this->withCategory($row)) : null;
     }
 
-    public function findByCode(string $code): ?array { return $this->fetchOne('SELECT * FROM households WHERE household_code = :code AND status <> "DELETED"', ['code' => strtoupper(trim($code))]); }
+    public function findByCode(string $code): ?array { return $this->fetchOne('SELECT * FROM households WHERE household_code = :code AND status <> "DELETED" AND ' . $this->tenantWhere('households'), $this->withTenant(['code' => strtoupper(trim($code))])); }
 
     public function create(array $data, int $userId): array
     {
         $params = $this->params($data, $userId);
         $this->ensureUniqueCode($params['code']);
-        $id = $this->insert('INSERT INTO households (household_code, head_citizen_name, address, phone, area_code, meritorious_family, poor_household, near_poor_household, disabled_household, note, status, created_by) VALUES (:code,:head,:address,:phone,:area,:meritorious,:poor,:near_poor,:disabled,:note,:status,:user)', $params);
+        $columns = ['household_code', 'head_citizen_name', 'address', 'phone', 'area_code', 'meritorious_family', 'poor_household', 'near_poor_household', 'disabled_household', 'note', 'status', 'created_by'];
+        $this->addTenantInsert('households', $columns, $params);
+        $id = $this->insert('INSERT INTO households (' . implode(',', $columns) . ') VALUES (:code,:head,:address,:phone,:area,:meritorious,:poor,:near_poor,:disabled,:note,:status,:user' . (in_array('village_id', $columns, true) ? ',:village_id' : '') . ')', $params);
         return $this->find($id);
     }
 
@@ -49,17 +51,17 @@ final class Household extends BaseModel
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy hộ dân');
         $params = $this->params($data, $userId); $params['id'] = $id;
         $this->ensureUniqueCode($params['code'], $id);
-        $this->execute('UPDATE households SET household_code=:code, head_citizen_name=:head, address=:address, phone=:phone, area_code=:area, meritorious_family=:meritorious, poor_household=:poor, near_poor_household=:near_poor, disabled_household=:disabled, note=:note, status=:status, updated_by=:user WHERE id=:id', $params);
+        $this->execute('UPDATE households SET household_code=:code, head_citizen_name=:head, address=:address, phone=:phone, area_code=:area, meritorious_family=:meritorious, poor_household=:poor, near_poor_household=:near_poor, disabled_household=:disabled, note=:note, status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('households'), $this->withTenant($params));
         return $this->find($id);
     }
 
     public function softDelete(int $id, int $userId): void
     {
         if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy hộ gia đình');
-        $members = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE household_id = :id AND status <> "DELETED" AND COALESCE(life_status,"ALIVE") <> "DECEASED" AND COALESCE(residency_status,"PERMANENT") <> "TRANSFERRED_OUT"', ['id' => $id])['total'];
+        $members = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE household_id = :id AND status <> "DELETED" AND COALESCE(life_status,"ALIVE") <> "DECEASED" AND COALESCE(residency_status,"PERMANENT") <> "TRANSFERRED_OUT" AND ' . $this->tenantWhere('citizens'), $this->withTenant(['id' => $id]))['total'];
         if ($members > 0) throw new \RuntimeException('Hộ gia đình vẫn còn nhân khẩu hoặc dữ liệu liên quan. Vui lòng xử lý các dữ liệu liên kết trước khi kết thúc hộ.');
         $status = $this->enumAllows('households', 'status', 'ENDED') ? 'ENDED' : 'INACTIVE';
-        $this->execute('UPDATE households SET status=:status, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId, 'status' => $status]);
+        $this->execute('UPDATE households SET status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('households'), $this->withTenant(['id' => $id, 'user' => $userId, 'status' => $status]));
     }
 
     public function bulkSoftDelete(array $ids, int $userId): int
@@ -79,12 +81,12 @@ final class Household extends BaseModel
 
     private function where(array $filters): array
     {
-        $params = [];
+        $params = $this->withTenant();
         if (!empty($filters['status'])) {
-            $where = ['h.status = :status', 'h.status <> "DELETED"'];
+            $where = ['h.status = :status', 'h.status <> "DELETED"', $this->tenantWhere('h', 'households')];
             $params['status'] = $filters['status'];
         } else {
-            $where = [$this->activeHouseholdCondition('h')];
+            $where = [$this->activeHouseholdCondition('h'), $this->tenantWhere('h', 'households')];
         }
 
         $category = $this->filterCategory($filters);
@@ -268,8 +270,8 @@ final class Household extends BaseModel
     }
     private function ensureUniqueCode(string $code, ?int $ignoreId = null): void
     {
-        $params = ['code' => $code];
-        $sql = 'SELECT id FROM households WHERE household_code=:code AND status <> "DELETED"';
+        $params = $this->withTenant(['code' => $code]);
+        $sql = 'SELECT id FROM households WHERE household_code=:code AND status <> "DELETED" AND ' . $this->tenantWhere('households');
         if ($ignoreId) { $sql .= ' AND id <> :id'; $params['id'] = $ignoreId; }
         if ($this->fetchOne($sql, $params)) throw new \RuntimeException('Mã hộ đã tồn tại');
     }

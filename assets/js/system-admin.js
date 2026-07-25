@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   'use strict';
 
   const API = '/api/system-admin';
@@ -8,12 +8,12 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[c]));
   const fmt = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
-  const token = () => (window.App && App.token) || localStorage.getItem('thon09_token') || '';
-  const csrf = () => (window.App && App.csrfToken) || localStorage.getItem('thon09_csrf') || '';
+  const token = () => (window.App && App.token) || localStorage.getItem(tenantStorageKey('token')) || '';
+  const csrf = () => (window.App && App.csrfToken) || localStorage.getItem(tenantStorageKey('csrf')) || '';
 
   document.addEventListener('DOMContentLoaded', boot);
-  document.addEventListener('thon09:auth-state', event => { if (event.detail?.authenticated) boot(); });
-  document.addEventListener('thon09:screen-change', event => { if (event.detail?.screen === 'systemAdmin') loadAll(); });
+  document.addEventListener('tenant:auth-state', event => { if (event.detail?.authenticated) boot(); });
+  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'systemAdmin') loadAll(); });
 
   function boot() {
     try {
@@ -88,14 +88,14 @@
   }
 
   function registerSystemAdminPlatformActions() {
-    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
     if (!actions || typeof actions.register !== 'function') return;
     actions.register('systemAdmin.refresh', () => loadAll(true));
     actions.register('systemAdmin.backup', context => createBackup(context.dataset.systemBackup || 'database'));
     actions.register('systemAdmin.sessions.revokeAll', revokeAllSessions);
     actions.register('systemAdmin.sessions.revoke', context => revokeSession(context.dataset.revokeSession));
     actions.register('systemAdmin.cleanup', context => cleanup(context.dataset.cleanup));
-    actions.register('systemAdmin.settings.open', () => window.Thon09NavigationController?.navigate('settings'));
+    actions.register('systemAdmin.settings.open', () => window.TenantAppNavigationController?.navigate('settings'));
   }
 
   function isActive() { return !!$('#systemAdminScreen.active'); }
@@ -282,8 +282,9 @@
   function formatTime(value) { if (!value) return ''; try { return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)); } catch (_) { return String(value); } }
   function debounce(fn, wait) { let timer; return function () { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, arguments), wait); }; }
   function notify(message, type) { if (typeof window.showToast === 'function') window.showToast(message, type || 'info'); }
+  window.loadSystemAdmin = loadAll;
   function confirmAction(options) {
-    const service = window.Thon09Platform && window.Thon09Platform.confirmDialog;
+    const service = window.TenantAppPlatform && window.TenantAppPlatform.confirmDialog;
     if (service && typeof service.ask === 'function') return service.ask(options);
     return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
   }

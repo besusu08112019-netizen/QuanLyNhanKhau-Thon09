@@ -1398,7 +1398,7 @@
   function foldedText(value) {
     var normalized = cleanLabel(value).toLowerCase();
     if (normalized.normalize) normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return normalized.replace(/đ/g, 'd').replace(/Ä‘/g, 'd').replace(/Ä/g, 'd');
+    return normalized.replace(/\u0111/g, 'd').replace(/\u0110/g, 'd');
   }
 
   function isActionLabel(label) {
@@ -2372,8 +2372,8 @@
     if (!target) return;
     var screen = target.getAttribute('data-screen');
     if (!screen) return;
-    if (window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') {
-      window.Thon09NavigationController.navigate(screen);
+    if (window.TenantAppNavigationController && typeof window.TenantAppNavigationController.navigate === 'function') {
+      window.TenantAppNavigationController.navigate(screen);
     }
   });
 
@@ -2389,9 +2389,9 @@
   else window.addEventListener('resize', schedule, { passive: true });
 
   syncAfterDataRequests();
-  document.addEventListener('thon09:screen-change', scheduleDataSync);
-  document.addEventListener('thon09:module-state-change', schedule);
-  document.addEventListener('thon09:app-state-change', schedule);
+  document.addEventListener('tenant:screen-change', scheduleDataSync);
+  document.addEventListener('tenant:module-state-change', schedule);
+  document.addEventListener('tenant:app-state-change', schedule);
 
   if (window.MutationObserver) {
     new MutationObserver(function (mutations) {
@@ -2413,7 +2413,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule);
   else schedule();
 
-  window.Thon09MobileComponents = {
+  window.TenantAppMobileComponents = {
     AppButton: AppButton,
     AppBadge: AppBadge,
     AppStatusChip: AppStatusChip,

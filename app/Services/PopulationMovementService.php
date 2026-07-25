@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\TenantContext;
 use PDO;
 
 final class PopulationMovementService
@@ -156,7 +157,7 @@ final class PopulationMovementService
                 $params[$column] = $column === 'move_out_date' ? ($this->date($input, $keys) ?? date('Y-m-d')) : $this->text($input, $keys);
             }
         }
-        $stmt = $this->db->prepare('UPDATE citizens SET ' . implode(',', $sets) . ' WHERE id=:id');
+        $stmt = $this->db->prepare('UPDATE citizens SET ' . implode(',', $sets) . ' WHERE id=:id AND ' . $this->tenantSql('citizens'));
         $stmt->execute($params);
 
         $after = $this->citizen($id) ?: $before;
@@ -202,7 +203,7 @@ final class PopulationMovementService
         }
         if (!$sets) return;
         $sets[] = 'updated_by=:user';
-        $stmt = $this->db->prepare('UPDATE citizens SET ' . implode(',', array_unique($sets)) . ' WHERE id=:id');
+        $stmt = $this->db->prepare('UPDATE citizens SET ' . implode(',', array_unique($sets)) . ' WHERE id=:id AND ' . $this->tenantSql('citizens'));
         $stmt->execute($params);
     }
 
@@ -225,7 +226,7 @@ final class PopulationMovementService
         }
         if (!$sets) return;
         $sets[] = 'updated_by=:user';
-        $stmt = $this->db->prepare('UPDATE households SET ' . implode(',', $sets) . ' WHERE id=:id');
+        $stmt = $this->db->prepare('UPDATE households SET ' . implode(',', $sets) . ' WHERE id=:id AND ' . $this->tenantSql('households'));
         $stmt->execute($params);
     }
 
@@ -233,7 +234,7 @@ final class PopulationMovementService
     {
         $citizenId = (int) ($household['head_citizen_id'] ?? 0);
         if ($citizenId <= 0) {
-            $citizenId = (int) ($this->scalar('SELECT id FROM citizens WHERE household_id=:id AND status <> "DELETED" ORDER BY relationship="Chủ hộ" DESC, id LIMIT 1', ['id' => (int) $household['id']]) ?? 0);
+            $citizenId = (int) ($this->scalar('SELECT id FROM citizens WHERE household_id=:id AND status <> "DELETED" AND ' . $this->tenantSql('citizens') . ' ORDER BY relationship="Chủ hộ" DESC, id LIMIT 1', ['id' => (int) $household['id']]) ?? 0);
         }
         if ($citizenId <= 0) return;
         $citizen = $this->citizen($citizenId);
@@ -256,11 +257,11 @@ final class PopulationMovementService
     {
         if ($householdId <= 0) return;
         $residencyClause = $this->enumAllows('citizens', 'residency_status', 'TRANSFERRED_OUT') ? ' AND residency_status <> "TRANSFERRED_OUT"' : '';
-        $count = (int) ($this->scalar('SELECT COUNT(*) FROM citizens WHERE household_id=:id AND status="ACTIVE" AND life_status="ALIVE"' . $residencyClause, ['id' => $householdId]) ?? 0);
+        $count = (int) ($this->scalar('SELECT COUNT(*) FROM citizens WHERE household_id=:id AND ' . $this->tenantSql('citizens') . ' AND status="ACTIVE" AND life_status="ALIVE"' . $residencyClause, ['id' => $householdId]) ?? 0);
         if ($count === 0) {
             $ended = $this->enumAllows('households', 'status', 'ENDED') ? 'ENDED' : 'INACTIVE';
             $blocked = $this->enumAllows('households', 'status', 'MERGED') ? '("DELETED","MERGED")' : '("DELETED")';
-            $stmt = $this->db->prepare('UPDATE households SET status=:status, updated_by=:user WHERE id=:id AND status NOT IN ' . $blocked);
+            $stmt = $this->db->prepare('UPDATE households SET status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantSql('households') . ' AND status NOT IN ' . $blocked);
             $stmt->execute(['id' => $householdId, 'user' => $userId, 'status' => $ended]);
         }
     }
@@ -294,13 +295,14 @@ final class PopulationMovementService
                 'after_data' => $this->jsonOrNull($payload['after_data'] ?? null),
             };
         }
+        $this->addTenantInsert('movements', $columns, $values, $params);
         $stmt = $this->db->prepare('INSERT INTO movements (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')');
         $stmt->execute($params);
     }
 
     private function citizen(int $id): ?array
     {
-        $stmt = $this->db->prepare('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name FROM citizens c LEFT JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED"');
+        $stmt = $this->db->prepare('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name FROM citizens c LEFT JOIN households h ON h.id=c.household_id AND ' . $this->tenantSql('households', 'h') . ' WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->tenantSql('citizens', 'c'));
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -308,7 +310,7 @@ final class PopulationMovementService
 
     private function household(int $id): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM households WHERE id=:id AND status <> "DELETED"');
+        $stmt = $this->db->prepare('SELECT * FROM households WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantSql('households'));
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -366,6 +368,30 @@ final class PopulationMovementService
         $stmt = $this->db->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column');
         $stmt->execute(['table' => $table, 'column' => $column]);
         return $this->columnCache[$key] = ((int) $stmt->fetchColumn() > 0);
+    }
+
+    private function tenantId(): int
+    {
+        return TenantContext::id();
+    }
+
+    private function tenantColumnExists(string $table): bool
+    {
+        return $this->columnExists($table, 'village_id');
+    }
+
+    private function tenantSql(string $table, string $alias = ''): string
+    {
+        if (!$this->tenantColumnExists($table)) return '1=1';
+        return ($alias !== '' ? $alias . '.' : '') . 'village_id = ' . $this->tenantId();
+    }
+
+    private function addTenantInsert(string $table, array &$columns, array &$values, array &$params): void
+    {
+        if (!$this->tenantColumnExists($table) || in_array('village_id', $columns, true)) return;
+        $columns[] = 'village_id';
+        $values[] = ':village_id';
+        $params['village_id'] = $this->tenantId();
     }
 
     private function enumAllows(string $table, string $column, string $value): bool

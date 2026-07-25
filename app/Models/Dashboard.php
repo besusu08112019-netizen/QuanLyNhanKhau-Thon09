@@ -172,7 +172,7 @@ final class Dashboard extends BaseModel
 
     public function monthlyChangeChart(array $filters = []): array
     {
-        $rows = $this->fetchAll("SELECT DATE_FORMAT(effective_date, '%Y-%m') AS label, SUM(CASE WHEN type IN ('BIRTH','MOVE_IN','TEMPORARY_RESIDENCE') THEN 1 WHEN type IN ('DEATH','MOVE_OUT','TEMPORARY_ABSENCE') THEN -1 ELSE 0 END) AS value FROM movements WHERE status <> 'DELETED' AND effective_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY label ORDER BY label");
+        $rows = $this->fetchAll("SELECT DATE_FORMAT(effective_date, '%Y-%m') AS label, SUM(CASE WHEN type IN ('BIRTH','MOVE_IN','TEMPORARY_RESIDENCE') THEN 1 WHEN type IN ('DEATH','MOVE_OUT','TEMPORARY_ABSENCE') THEN -1 ELSE 0 END) AS value FROM movements WHERE status <> 'DELETED' AND " . $this->tenantLiteral('movements') . " AND effective_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY label ORDER BY label");
         return array_map(fn($row) => ['label' => $row['label'], 'value' => (int) $row['value']], $rows);
     }
 
@@ -331,7 +331,7 @@ final class Dashboard extends BaseModel
         $located = (int) ($row['located'] ?? 0);
         $areas = 0;
         if ($this->tableExists('gis_areas')) {
-            $areaSql = $this->columnExists('gis_areas', 'status') ? 'SELECT COUNT(*) AS total FROM gis_areas WHERE status <> "DELETED"' : 'SELECT COUNT(*) AS total FROM gis_areas';
+            $areaSql = $this->columnExists('gis_areas', 'status') ? 'SELECT COUNT(*) AS total FROM gis_areas WHERE status <> "DELETED" AND ' . $this->tenantLiteral('gis_areas') : 'SELECT COUNT(*) AS total FROM gis_areas WHERE ' . $this->tenantLiteral('gis_areas');
             $areas = (int) (($this->fetchOne($areaSql) ?: [])['total'] ?? 0);
         }
         return [
@@ -427,13 +427,13 @@ final class Dashboard extends BaseModel
     private function movementCount(array $filters, int $days): int
     {
         [$condition, $params] = $this->movementWindowCondition($days);
-        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements m WHERE m.status <> 'DELETED' AND $condition", $params) ?: [])['total'] ?? 0);
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements m WHERE m.status <> 'DELETED' AND " . $this->tenantLiteral('movements', 'm') . " AND $condition", $params) ?: [])['total'] ?? 0);
     }
 
     private function movementTypeCounts(array $filters, int $days): array
     {
         [$condition, $params] = $this->movementWindowCondition($days);
-        $rows = $this->fetchAll("SELECT m.type, COUNT(*) AS value FROM movements m WHERE m.status <> 'DELETED' AND $condition GROUP BY m.type", $params);
+        $rows = $this->fetchAll("SELECT m.type, COUNT(*) AS value FROM movements m WHERE m.status <> 'DELETED' AND " . $this->tenantLiteral('movements', 'm') . " AND $condition GROUP BY m.type", $params);
         $map = ['BIRTH' => 0, 'MOVE_IN' => 0, 'MOVE_OUT' => 0, 'DEATH' => 0, 'TEMPORARY_RESIDENCE' => 0, 'TEMPORARY_ABSENCE' => 0];
         foreach ($rows as $row) {
             $type = (string) ($row['type'] ?? '');
@@ -458,7 +458,7 @@ final class Dashboard extends BaseModel
     private function pendingMovementCount(): int
     {
         if (!$this->tableExists('movements')) return 0;
-        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements WHERE status IN ('PENDING','DRAFT')") ?: [])['total'] ?? 0);
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements WHERE status IN ('PENDING','DRAFT') AND " . $this->tenantLiteral('movements')) ?: [])['total'] ?? 0);
     }
 
     private function identityExpiringCount(array $filters): int
@@ -485,6 +485,7 @@ final class Dashboard extends BaseModel
             $usesFileModuleParam = true;
         }
         if (in_array('status', $columns, true)) $where[] = 'f.status = "ACTIVE"';
+        $where[] = $this->tenantLiteral('file_attachments', 'f');
         if ($imageOnly) {
             $image = [];
             if (in_array('file_type', $columns, true)) $image[] = 'f.file_type IN ("PHOTO","IMAGE")';
@@ -676,7 +677,7 @@ final class Dashboard extends BaseModel
 
     private function businessWhere(array $filters): array
     {
-        $where = ['hb.status <> "DELETED"', $this->activeHouseholdCondition('h')];
+        $where = ['hb.status <> "DELETED"', $this->tenantLiteral('household_business', 'hb'), $this->activeHouseholdCondition('h')];
         $params = [];
         $area = trim((string) ($filters['area_code'] ?? $filters['areaCode'] ?? ''));
         if ($area !== '') { $where[] = 'h.area_code = :business_area_code'; $params['business_area_code'] = $area; }
@@ -805,5 +806,11 @@ final class Dashboard extends BaseModel
     {
         $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
         return (int) ($row['total'] ?? 0) > 0;
+    }
+
+    private function tenantLiteral(string $table, string $alias = ''): string
+    {
+        if (!$this->tenantColumnExists($table)) return '1=1';
+        return ($alias !== '' ? $alias . '.' : '') . 'village_id = ' . $this->tenantId();
     }
 }

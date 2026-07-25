@@ -49,22 +49,22 @@ RewriteRule ^ index.php [QSA,L]
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
-  <FilesMatch "^(favicon\.ico|(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512|thon09-logo)\.png)$">
+  <FilesMatch "^(favicon\.ico|(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512)\.png)$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
-  SetEnvIf Request_URI "^/(favicon\.ico|assets/icons/(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512|thon09-logo)\.png)$" thon09_pwa_icon=1
-  Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=thon09_pwa_icon
-  Header set Pragma "no-cache" env=thon09_pwa_icon
-  Header set Expires "0" env=thon09_pwa_icon
+  SetEnvIf Request_URI "^/(favicon\.ico|assets/icons/(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512)\.png)$" pwa_icon_request=1
+  Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=pwa_icon_request
+  Header set Pragma "no-cache" env=pwa_icon_request
+  Header set Expires "0" env=pwa_icon_request
 </IfModule>
 <IfModule mod_headers.c>
-  SetEnvIf Request_URI "^/api/" thon09_api_request=1
-  Header always unset Cache-Control env=thon09_api_request
-  Header always unset Expires env=thon09_api_request
-  Header always unset Pragma env=thon09_api_request
-  Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=thon09_api_request
-  Header always set Pragma "no-cache" env=thon09_api_request
-  Header always set Expires "0" env=thon09_api_request
+  SetEnvIf Request_URI "^/api/" api_request=1
+  Header always unset Cache-Control env=api_request
+  Header always unset Expires env=api_request
+  Header always unset Pragma env=api_request
+  Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=api_request
+  Header always set Pragma "no-cache" env=api_request
+  Header always set Expires "0" env=api_request
 </IfModule>

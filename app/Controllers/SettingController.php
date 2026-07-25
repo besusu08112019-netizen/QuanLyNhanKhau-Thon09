@@ -70,7 +70,7 @@ final class SettingController extends BaseController
         }
 
         $datePath = date('Y/m');
-        $originalDir = BASE_PATH . '/uploads/' . $folder . '/original/' . $datePath;
+        $originalDir = $this->uploadRoot() . '/' . $folder . '/original/' . $datePath;
         $this->ensureUploadDir($originalDir);
         $basename = bin2hex(random_bytes(16));
         $stored = $basename . '.' . $extension;
@@ -80,7 +80,7 @@ final class SettingController extends BaseController
         $originalRelative = 'uploads/' . $folder . '/original/' . $datePath . '/' . $stored;
         $displayRelative = $originalRelative;
         if ($type === 'logo' && $extension !== 'svg') {
-            $thumbDir = BASE_PATH . '/uploads/logo/thumb/' . $datePath;
+            $thumbDir = $this->uploadRoot() . '/logo/thumb/' . $datePath;
             $this->ensureUploadDir($thumbDir);
             $thumbPath = $thumbDir . '/' . $basename . '.png';
             $this->createLogoThumbnail($path, $thumbPath, $extension);
@@ -142,8 +142,8 @@ final class SettingController extends BaseController
         if (!preg_match('/^\d{4}$/', $year) || !preg_match('/^\d{2}$/', $month)) $this->fail('Media không hợp lệ', 404);
         $name = basename($file);
         if ($name !== $file || !preg_match('/^[a-f0-9]{32}\.(png|jpg|jpeg|svg|webp)$/i', $name)) $this->fail('Media không hợp lệ', 404);
-        $path = BASE_PATH . '/uploads/' . $folder . '/' . $kind . '/' . $year . '/' . $month . '/' . $name;
-        $base = realpath(BASE_PATH . '/uploads');
+        $path = $this->uploadRoot() . '/' . $folder . '/' . $kind . '/' . $year . '/' . $month . '/' . $name;
+        $base = realpath($this->uploadRoot());
         $real = realpath($path);
         if (!$base || !$real || strpos($real, $base) !== 0 || !is_file($real)) $this->fail('Không tìm thấy media', 404);
         $extension = strtolower(pathinfo($real, PATHINFO_EXTENSION));
@@ -240,13 +240,21 @@ final class SettingController extends BaseController
 
     private function versionedUrl(string $relative): string
     {
-        $path = BASE_PATH . '/' . ltrim($relative, '/');
+        $path = str_starts_with(ltrim($relative, '/'), 'uploads/')
+            ? $this->uploadRoot() . '/' . substr(ltrim($relative, '/'), strlen('uploads/'))
+            : BASE_PATH . '/' . ltrim($relative, '/');
         $version = is_file($path) ? filemtime($path) : time();
         $parts = explode('/', trim($relative, '/'));
         if (count($parts) === 6 && $parts[0] === 'uploads') {
             return '/api/media/' . rawurlencode($parts[1]) . '/' . rawurlencode($parts[2]) . '/' . rawurlencode($parts[3]) . '/' . rawurlencode($parts[4]) . '/' . rawurlencode($parts[5]) . '?v=' . $version;
         }
         return $relative . '?v=' . $version;
+    }
+
+    private function uploadRoot(): string
+    {
+        $config = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
+        return rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? BASE_PATH . '/uploads')), '/');
     }
 
     private function loginMetrics(array $metrics): array

@@ -56,7 +56,7 @@ The repeated mobile layout failures were caused by two responsive systems runnin
   - Desktop `>=1024px`: no compact filter icon.
 - Fixed shared bottom navigation and action button sizing to avoid overflow at `320px`, `360px`, and `1024px`.
 - Updated asset and PWA cache versions to force production reload of the new CSS/JS.
-- Bumped `APP_ASSET_VERSION` to `mobile-tablet-ui-redesign-20260718-03` and `PWA_VERSION` to `thon09-pwa-v20260718-mobile-ui-03` after the final legacy CSS cleanup.
+- Bumped `APP_ASSET_VERSION` to `mobile-tablet-ui-redesign-20260718-03` and `PWA_VERSION` to `tenant-pwa-v20260718-mobile-ui-03` after the final legacy CSS cleanup.
 - Updated tests to assert the new `mdu-*` component contract and guard against legacy classes returning.
 
 ## Why Earlier Refactors Missed It

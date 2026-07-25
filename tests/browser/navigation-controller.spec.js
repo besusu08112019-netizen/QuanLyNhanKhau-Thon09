@@ -73,9 +73,9 @@ async function openAuthenticatedApp(page) {
     App.csrfToken = 'test-csrf';
     App.user = user;
     window.App = App;
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_csrf', 'test-csrf');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('csrf'), 'test-csrf');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
     if (typeof window.showApp === 'function') window.showApp();
   });
   await expect(page.locator('#appView')).not.toHaveClass(/d-none/);
@@ -83,7 +83,7 @@ async function openAuthenticatedApp(page) {
 
 async function expectPlatformMenus(page) {
   const state = await page.evaluate(() => {
-    const platform = window.Thon09Platform;
+    const platform = window.TenantAppPlatform;
     return {
       hasPlatform: Boolean(platform),
       sidebarRendered: document.querySelector('.gov-nav')?.dataset.platformMenu === 'true',
@@ -100,7 +100,7 @@ async function expectPlatformMenus(page) {
     };
   });
 
-  expect(state.hasPlatform, 'Thon09Platform is loaded').toBe(true);
+  expect(state.hasPlatform, 'TenantAppPlatform is loaded').toBe(true);
   expect(state.sidebarRendered, 'sidebar is rendered by platform menu renderer').toBe(true);
   expect(state.mobileRendered, 'mobile nav is rendered by platform menu renderer').toBe(true);
   expect(state.sidebarItems, 'sidebar item count follows platform menus').toBe(state.platformDesktopItems);
@@ -232,7 +232,7 @@ test('shared sidebar accordion toggles through renderer state', async ({ page })
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
 
   const groupKey = await toggle.evaluate((el) => el.dataset.sidebarGroupToggle);
-  await page.evaluate(() => window.Thon09Platform?.menuRenderer?.renderSidebar());
+  await page.evaluate(() => window.TenantAppPlatform?.menuRenderer?.renderSidebar());
   const rerendered = page.locator(`.gov-nav .nav-section[data-nav-section="${groupKey}"]`);
   await expect(rerendered).toHaveClass(/is-open/);
   await expect(page.locator(`.gov-nav [data-sidebar-group-toggle="${groupKey}"]`)).toHaveAttribute('aria-expanded', 'true');

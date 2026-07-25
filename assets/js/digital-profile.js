@@ -67,17 +67,17 @@
   }
   function show(message, type = 'success') { if (typeof showToast === 'function') showToast(message, type); }
   function openModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.open && service.open(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
   }
   function closeModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
   }
   function hasPlatformPermissionRule(module, action) {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (!service?.list) return false;
     const normalizedModule = service.normalizeModule ? service.normalizeModule(module) : module;
     const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
@@ -85,9 +85,9 @@
     return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
   }
   function can(module, action) {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (service?.can && hasPlatformPermissionRule(module, action)) return service.can(module, action, window.App?.user);
-    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess(module, action) : false;
+    return typeof window.TenantAppCanAccess === 'function' ? window.TenantAppCanAccess(module, action) : false;
   }
   function requirePermission(module, action) {
     if (can(module, action)) return true;
@@ -95,15 +95,15 @@
     return false;
   }
   function registerDigitalProfilePlatformActions() {
-    if (window.__thon09DigitalProfileActionsRegistered || !window.Thon09Platform?.actions) return;
-    window.__thon09DigitalProfileActionsRegistered = true;
-    window.Thon09Platform.actions
+    if (window.__TenantAppDigitalProfileActionsRegistered || !window.TenantAppPlatform?.actions) return;
+    window.__TenantAppDigitalProfileActionsRegistered = true;
+    window.TenantAppPlatform.actions
       .register({ key: 'digitalProfile.file.preview', handler: ({ dataset }) => previewFile(dataset.fileId || dataset.previewFile) })
       .register({ key: 'digitalProfile.file.download', handler: ({ dataset }) => downloadFile(dataset.fileId || dataset.downloadFile) })
       .register({ key: 'digitalProfile.file.edit', handler: ({ target }) => editFileFromAction(target) })
       .register({ key: 'digitalProfile.file.delete', handler: ({ target, dataset }) => deleteFileFromAction(target, dataset.fileId || dataset.deleteFile) })
       .register({ key: 'digitalProfile.profile.refresh', handler: ({ target }) => refreshProfileFromAction(target) })
-      .register({ key: 'digitalProfile.profile.print', handler: () => window.Thon09Print?.currentScreen({ title: 'Hồ sơ số', orientation: 'portrait', showSummary: false }) || show('Print Framework is not ready', 'warning') })
+      .register({ key: 'digitalProfile.profile.print', handler: () => window.TenantAppPrint?.currentScreen({ title: 'Hồ sơ số', orientation: 'portrait', showSummary: false }) || show('Print Framework is not ready', 'warning') })
       .register({ key: 'digitalProfile.citizen.open', handler: ({ dataset }) => window.showPerson?.(dataset.citizenId || dataset.openCitizen) })
       .register({ key: 'digitalProfile.profile.link', handler: ({ dataset }) => openLink(dataset.profileSection || dataset.profileLink) })
       .register({ key: 'digitalProfile.note.edit', handler: ({ target }) => editNoteFromAction(target) })
@@ -215,11 +215,11 @@
   }
   function openGalleryFromAction(target, index) {
     const pane = target?.closest?.('[data-household-pane="gallery"]');
-    const items = pane?.__thon09GalleryItems || [];
+    const items = pane?.__TenantAppGalleryItems || [];
     if (items.length) openMediaLightbox(items, index);
   }
   function runLightboxCommand(target, command) {
-    const state = target?.closest?.('.modal')?.__thon09LightboxState;
+    const state = target?.closest?.('.modal')?.__TenantAppLightboxState;
     if (state && typeof state[command] === 'function') state[command]();
   }
   function applyProfilePermissions(root) {
@@ -610,7 +610,7 @@
       show('Kh\u00F4ng xem tr\u01B0\u1EDBc \u0111\u01B0\u1EE3c file', 'danger');
     }
   }
-  window.thon09PreviewFile = previewFile;
+  window.TenantAppPreviewFile = previewFile;
 
   async function downloadFile(id) {
     if (!requirePermission('file', 'download')) return;
@@ -628,10 +628,10 @@
   }
 
   function openLink(link) {
-    if (link === 'gis' && window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') return window.Thon09NavigationController.navigate('gis');
+    if (link === 'gis' && window.TenantAppNavigationController && typeof window.TenantAppNavigationController.navigate === 'function') return window.TenantAppNavigationController.navigate('gis');
     if (link === 'members') return document.getElementById('digitalProfileMembers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (link === 'files') return document.getElementById('digitalProfileFiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (link === 'movements' && window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') return window.Thon09NavigationController.navigate('movements');
+    if (link === 'movements' && window.TenantAppNavigationController && typeof window.TenantAppNavigationController.navigate === 'function') return window.TenantAppNavigationController.navigate('movements');
     if (link.startsWith('household:')) return window.showHousehold(link.split(':')[1]);
   }
 
@@ -839,7 +839,7 @@
       const data = await fetchHouseholdFiles(id, { page, pageSize: 12, search, fileType: 'PHOTO' });
       const imageItems = dataItems(data.items).filter(isImageFile);
       pane.innerHTML = renderGalleryPanel(data, imageItems, search);
-      pane.__thon09GalleryItems = imageItems;
+      pane.__TenantAppGalleryItems = imageItems;
       pane.dataset.loaded = '1';
       pane.dataset.page = String(data.page || page);
       hydrateAuthPreviews(pane);
@@ -927,7 +927,7 @@
       img.style.transform = 'scale(' + zoom + ')';
       img.style.transformOrigin = 'center center';
     };
-    modal.__thon09LightboxState = {
+    modal.__TenantAppLightboxState = {
       prev: () => { current = (current + items.length - 1) % items.length; zoom = 1; render(); },
       next: () => { current = (current + 1) % items.length; zoom = 1; render(); },
       zoomIn: () => { zoom += 0.25; render(); },
@@ -960,9 +960,9 @@
     });
   }
   function handleGpsAction(action, row) {
-    if (action === 'gis' && window.Thon09NavigationController && typeof window.Thon09NavigationController.navigate === 'function') {
+    if (action === 'gis' && window.TenantAppNavigationController && typeof window.TenantAppNavigationController.navigate === 'function') {
       closeModal('detailModal');
-      window.Thon09NavigationController.navigate('gis');
+      window.TenantAppNavigationController.navigate('gis');
       if (window.focusHouseholdMarker) setTimeout(() => window.focusHouseholdMarker(row.id), 400);
     }
   }

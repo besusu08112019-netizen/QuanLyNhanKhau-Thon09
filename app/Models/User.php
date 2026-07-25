@@ -23,14 +23,15 @@ final class User extends BaseModel
 
     public function count(): int
     {
-        return (int) $this->fetchOne('SELECT COUNT(*) AS total FROM users')['total'];
+        $where = $this->tenantWhere('users');
+        return (int) $this->fetchOne("SELECT COUNT(*) AS total FROM users WHERE $where", $this->withTenant())['total'];
     }
 
     public function paginate(array $filters = []): array
     {
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
-        $where = ['status <> "DELETED"'];
-        $params = [];
+        $where = ['status <> "DELETED"', $this->tenantWhere('users')];
+        $params = $this->withTenant();
 
         if (!empty($filters['role'])) {
             $where[] = 'role = :role';
@@ -97,6 +98,7 @@ final class User extends BaseModel
             array_unshift($columns, 'username');
             $params['username'] = $this->usernameFromEmail($email);
         }
+        $this->addTenantInsert('users', $columns, $params);
 
         $id = $this->insert('INSERT INTO users (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return $this->findById($id);
@@ -143,6 +145,7 @@ final class User extends BaseModel
             $columns[] = 'position';
             $params['position'] = $this->nullable($data['position'] ?? null);
         }
+        $this->addTenantInsert('users', $columns, $params);
 
         try {
             $id = $this->insert('INSERT INTO users (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
@@ -212,7 +215,7 @@ final class User extends BaseModel
         }
 
         try {
-            $this->execute('UPDATE users SET ' . implode(', ', $sets) . ' WHERE id=:id', $params);
+            $this->execute('UPDATE users SET ' . implode(', ', $sets) . ' WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant($params));
         } catch (PDOException $e) {
             $this->throwUserDataException($e);
         }
@@ -230,7 +233,7 @@ final class User extends BaseModel
             throw new RuntimeException('Không xóa tài khoản Super Admin');
         }
 
-        $this->execute('UPDATE users SET status="DELETED", deleted_at=NOW(), deleted_by=:actor WHERE id=:id', ['id' => $id, 'actor' => $actorId]);
+        $this->execute('UPDATE users SET status="DELETED", deleted_at=NOW(), deleted_by=:actor WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $id, 'actor' => $actorId]));
     }
 
     public function lock(int $id, int $actorId): void
@@ -254,17 +257,17 @@ final class User extends BaseModel
         }
 
         $this->assertPasswordPolicy($password);
-        $this->execute('UPDATE users SET password_hash=:hash, updated_by=:actor WHERE id=:id', ['id' => $id, 'hash' => password_hash($password, PASSWORD_DEFAULT), 'actor' => $actorId]);
+        $this->execute('UPDATE users SET password_hash=:hash, updated_by=:actor WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $id, 'hash' => password_hash($password, PASSWORD_DEFAULT), 'actor' => $actorId]));
     }
 
     public function findById(int $id): ?array
     {
-        return $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE id = :id AND status <> "DELETED"', ['id' => $id]);
+        return $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE id = :id AND status <> "DELETED" AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $id]));
     }
 
     public function findByEmail(string $email): ?array
     {
-        return $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE email = :email AND status <> "DELETED"', ['email' => $this->normalizeEmail($email)]);
+        return $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE email = :email AND status <> "DELETED" AND ' . $this->tenantWhere('users'), $this->withTenant(['email' => $this->normalizeEmail($email)]));
     }
 
     public function findByUsername(string $username): ?array
@@ -272,7 +275,7 @@ final class User extends BaseModel
         if (!$this->hasColumn('username')) {
             return null;
         }
-        return $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE username = :username AND status <> "DELETED"', ['username' => $this->normalizeUsername($username)]);
+        return $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE username = :username AND status <> "DELETED" AND ' . $this->tenantWhere('users'), $this->withTenant(['username' => $this->normalizeUsername($username)]));
     }
 
     public function login(string $email, string $password): array
@@ -283,9 +286,9 @@ final class User extends BaseModel
             throw new RuntimeException('Invalid account or password');
         }
         if (password_needs_rehash((string) $user['password_hash'], PASSWORD_DEFAULT)) {
-            $this->execute('UPDATE users SET password_hash=:hash WHERE id=:id', ['id' => $user['id'], 'hash' => password_hash($password, PASSWORD_DEFAULT)]);
+            $this->execute('UPDATE users SET password_hash=:hash WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $user['id'], 'hash' => password_hash($password, PASSWORD_DEFAULT)]));
         }
-        $this->execute('UPDATE users SET last_login_at = NOW() WHERE id = :id', ['id' => $user['id']]);
+        $this->execute('UPDATE users SET last_login_at = NOW() WHERE id = :id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $user['id']]));
         $token = bin2hex(random_bytes(32));
         $config = require BASE_PATH . '/config/app.php';
         $ttl = (int) ($config['session_ttl_seconds'] ?? 21600);
@@ -297,13 +300,13 @@ final class User extends BaseModel
     public function csrfToken(string $token): string
     {
         $config = require BASE_PATH . '/config/app.php';
-        $key = (string) ($config['app_key'] ?? $config['name'] ?? 'thon09');
+        $key = (string) ($config['app_key'] ?? $config['name'] ?? 'app');
         return hash_hmac('sha256', $token, $key);
     }
 
     public function findByToken(string $token): ?array
     {
-        return $this->fetchOne('SELECT ' . $this->userSelectList('u') . ' FROM user_sessions s INNER JOIN users u ON u.id = s.user_id WHERE s.token_hash = :hash AND s.revoked_at IS NULL AND s.expires_at > NOW() AND u.status = "ACTIVE"', ['hash' => hash('sha256', $token)]);
+        return $this->fetchOne('SELECT ' . $this->userSelectList('u') . ' FROM user_sessions s INNER JOIN users u ON u.id = s.user_id WHERE s.token_hash = :hash AND s.revoked_at IS NULL AND s.expires_at > NOW() AND u.status = "ACTIVE" AND ' . $this->tenantWhere('u', 'users'), $this->withTenant(['hash' => hash('sha256', $token)]));
     }
 
     public function revoke(string $token): void
@@ -382,7 +385,7 @@ final class User extends BaseModel
             throw new RuntimeException('Không khóa tài khoản Super Admin');
         }
 
-        $this->execute('UPDATE users SET status=:status, updated_by=:actor WHERE id=:id', ['id' => $id, 'status' => $status, 'actor' => $actorId]);
+        $this->execute('UPDATE users SET status=:status, updated_by=:actor WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $id, 'status' => $status, 'actor' => $actorId]));
     }
 
     private function role(string $role): string
@@ -507,8 +510,8 @@ final class User extends BaseModel
 
     private function assertUniqueEmail(string $email, ?int $ignoreId = null): void
     {
-        $params = ['email' => $email];
-        $where = 'email = :email AND status <> "DELETED"';
+        $params = $this->withTenant(['email' => $email]);
+        $where = 'email = :email AND status <> "DELETED" AND ' . $this->tenantWhere('users');
         if ($ignoreId !== null) {
             $where .= ' AND id <> :id';
             $params['id'] = $ignoreId;
@@ -523,8 +526,8 @@ final class User extends BaseModel
         if (!$this->hasColumn('username')) {
             return;
         }
-        $params = ['username' => $username];
-        $where = 'username = :username AND status <> "DELETED"';
+        $params = $this->withTenant(['username' => $username]);
+        $where = 'username = :username AND status <> "DELETED" AND ' . $this->tenantWhere('users');
         if ($ignoreId !== null) {
             $where .= ' AND id <> :id';
             $params['id'] = $ignoreId;

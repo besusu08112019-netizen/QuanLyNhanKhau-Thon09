@@ -22,13 +22,13 @@
     return headers;
   };
   const can = action => {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (service?.can) return service.can('complaints', action, window.App?.user);
-    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('complaints', action) : true;
+    return typeof window.TenantAppCanAccess === 'function' ? window.TenantAppCanAccess('complaints', action) : true;
   };
-  const openModal = id => window.Thon09Platform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
-  const closeModal = id => window.Thon09Platform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
-  const confirmAction = options => window.Thon09Platform?.confirmDialog?.ask?.(options) || Promise.resolve(window.confirm(options.message || 'Xác nhận thao tác?'));
+  const openModal = id => window.TenantAppPlatform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
+  const closeModal = id => window.TenantAppPlatform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
+  const confirmAction = options => window.TenantAppPlatform?.confirmDialog?.ask?.(options) || Promise.resolve(window.confirm(options.message || 'Xác nhận thao tác?'));
   function run(fn) { Promise.resolve().then(fn).catch(error => toast(error.message || 'Thao tác không thành công', 'danger')); }
   function debounce(fn, delay) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; }
 
@@ -41,9 +41,9 @@
   }
 
   function registerActions() {
-    if (window.__thon09ComplaintsActionsRegistered || !window.Thon09Platform?.actions) return;
-    window.__thon09ComplaintsActionsRegistered = true;
-    window.Thon09Platform.actions
+    if (window.__TenantAppComplaintsActionsRegistered || !window.TenantAppPlatform?.actions) return;
+    window.__TenantAppComplaintsActionsRegistered = true;
+    window.TenantAppPlatform.actions
       .register({ key: 'complaints.create', handler: () => run(() => openForm()) })
       .register({ key: 'complaints.detail', handler: ({ dataset }) => run(() => openDetail(Number(dataset.id || 0))) })
       .register({ key: 'complaints.edit', handler: ({ dataset }) => run(() => openForm(Number(dataset.id || 0))) })
@@ -78,7 +78,7 @@
     $('#complaintCitizenSearch')?.addEventListener('input', debounce(event => run(() => searchCitizens(event.target.value)), 250));
     $('#complaintRelatedSearch')?.addEventListener('input', debounce(event => run(() => searchRelated(event.target.value)), 250));
     $('#complaintRelatedType')?.addEventListener('change', clearRelatedSearch);
-    document.addEventListener('thon09:screen-change', event => {
+    document.addEventListener('tenant:screen-change', event => {
       if (event.detail?.screen === 'complaints') run(load);
       if (event.detail?.screen === 'gis') scheduleGisLayer();
     });
@@ -138,7 +138,7 @@
     renderDashboard(dashboard);
     renderRows(list);
     renderPager(list);
-    window.thon09ApplyAccessControls?.();
+    window.TenantAppApplyAccessControls?.();
   }
 
   function renderDashboard(data = {}) {
@@ -478,12 +478,12 @@
         form.elements.latitude.value = event.latlng.lat.toFixed(8);
         form.elements.longitude.value = event.latlng.lng.toFixed(8);
         $('#complaintGpsMeta').textContent = `Vị trí: ${form.elements.latitude.value}, ${form.elements.longitude.value}`;
-        window.Thon09NavigationController?.navigate('complaints');
+        window.TenantAppNavigationController?.navigate('complaints');
         openModal('complaintFormModal');
       });
     };
     closeModal('complaintFormModal');
-    window.Thon09NavigationController?.navigate('gis');
+    window.TenantAppNavigationController?.navigate('gis');
     setTimeout(activate, 700);
   }
 
@@ -517,7 +517,7 @@
   }
   async function printReport() {
     const report = await request(`${API}/report?${params()}`);
-    if (window.Thon09Print?.print) window.Thon09Print.print(report);
+    if (window.TenantAppPrint?.print) window.TenantAppPrint.print(report);
   }
 
   window.loadComplaints = load;

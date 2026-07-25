@@ -9,12 +9,12 @@
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-  document.addEventListener('thon09:auth-state', event => {
+  document.addEventListener('tenant:auth-state', event => {
     if (event.detail?.authenticated) start();
   });
 
   function hasPlatformPermissionRule(moduleKey, action) {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (!service?.list) return false;
     const normalizedModule = service.normalizeModule ? service.normalizeModule(moduleKey) : moduleKey;
     const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
@@ -23,9 +23,11 @@
   }
 
   function canImport() {
-    const service = window.Thon09Platform?.permissions;
+    const role = String(window.App?.user?.role || '').toUpperCase();
+    if (role === 'SUPER_ADMIN' || role === 'ADMIN') return true;
+    const service = window.TenantAppPlatform?.permissions;
     if (service?.can && hasPlatformPermissionRule('import', 'import')) return service.can('import', 'import', window.App?.user);
-    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('import', 'import') : false;
+    return typeof window.TenantAppCanAccess === 'function' ? window.TenantAppCanAccess('import', 'import') : false;
   }
 
   function injectImportScreen() {
@@ -39,7 +41,7 @@
     '</section>');
   }
   function registerImportPlatformActions() {
-    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
     if (!actions || typeof actions.register !== 'function') return;
     actions.register('import.preview', () => submitImport('/api/import/preview', false));
     actions.register('import.run', () => submitImport('/api/import/process', true));
@@ -47,9 +49,9 @@
     actions.register('import.errors.download', () => downloadImportErrors(latestImportErrors));
   }
   function bindImportNavigation() {
-    if (window.__thon09ImportNavigationBound) return;
-    window.__thon09ImportNavigationBound = true;
-    document.addEventListener('thon09:screen-change', event => {
+    if (window.__TenantAppImportNavigationBound) return;
+    window.__TenantAppImportNavigationBound = true;
+    document.addEventListener('tenant:screen-change', event => {
       if (event.detail?.screen !== 'import') return;
       const title = document.querySelector('#screenTitle');
       if (title) title.textContent = 'Import dữ liệu';
@@ -102,7 +104,7 @@
         if (typeof loadHouseholds === 'function') loadHouseholds();
         if (typeof loadPersons === 'function') loadPersons();
         if (typeof refreshLoginConfig === 'function') refreshLoginConfig();
-        window.dispatchEvent(new CustomEvent('thon09:data-mutated', { detail: { module: 'import' } }));
+        window.dispatchEvent(new CustomEvent('tenant:data-mutated', { detail: { module: 'import' } }));
       }
     } catch (error) {
       showToast(error.message, 'danger');

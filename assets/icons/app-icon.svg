@@ -7,6 +7,6 @@
   <path fill="#086a36" d="M118 274 256 166l138 108-27 35-111-86-111 86z"/>
   <path fill="#e10613" d="M204 112h118c-18 30 5 51-12 80H204z"/>
   <path fill="#f8d21c" d="m263 135 9 24h25l-20 15 8 24-22-14-21 14 8-24-20-15h25z"/>
-  <text x="256" y="101" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="800" fill="#086a36">THON 09</text>
+  <text x="256" y="101" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="800" fill="#086a36">TENANT</text>
   <text x="256" y="418" text-anchor="middle" font-family="Arial, sans-serif" font-size="112" font-weight="800" fill="#e10613">09</text>
 </svg>

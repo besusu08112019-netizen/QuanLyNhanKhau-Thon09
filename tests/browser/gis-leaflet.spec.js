@@ -1,4 +1,4 @@
-﻿const { test, expect } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 const loginConfig = {
   ok: true,
@@ -169,10 +169,10 @@ async function boot(page, apiLog) {
   await page.addInitScript({ content: leafletStub() });
   await page.addInitScript(() => {
     const user = { id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' };
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_csrf', 'test-csrf');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
-    localStorage.setItem('thon09_screen', 'gis');
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('csrf'), 'test-csrf');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('screen'), 'gis');
   });
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'geolocation', {
@@ -227,12 +227,12 @@ async function boot(page, apiLog) {
     App.csrfToken = 'test-csrf';
     App.user = user;
     window.App = App;
-    window.__thon09SessionExpired = false;
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_csrf', 'test-csrf');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    window.__TenantAppSessionExpired = false;
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('csrf'), 'test-csrf');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
     window.showApp();
-    window.Thon09NavigationController?.navigate('gis');
+    window.TenantAppNavigationController?.navigate('gis');
     return window.loadGisMap();
   });
   await page.waitForFunction(() => Boolean(window.App?.gis?.markerCache?.get('7')?.marker));
@@ -428,9 +428,9 @@ test('leaflet GIS routes marker directions through Google Maps', async ({ page }
   await expect(route).toHaveAttribute('href', 'https://www.google.com/maps/dir/?api=1&destination=20.255%2C105.976');
   await expect(route).toHaveAttribute('target', '_blank');
   await expect(route).toHaveAttribute('rel', /noopener/);
-  const href = await page.evaluate(() => window.thon09GisDirectionsUrl({ latitude: 20.255, longitude: 105.976 }));
+  const href = await page.evaluate(() => window.TenantAppGisDirectionsUrl({ latitude: 20.255, longitude: 105.976 }));
   expect(href).toBe('https://www.google.com/maps/dir/?api=1&destination=20.255%2C105.976');
-  const missing = await page.evaluate(() => window.thon09GisDirectionsUrl({ latitude: null, longitude: null }));
+  const missing = await page.evaluate(() => window.TenantAppGisDirectionsUrl({ latitude: null, longitude: null }));
   expect(missing).toBe('');
   const missingPopup = await page.evaluate(() => window.gisHouseholdDetailPopup({
     household: { id: 8, household_code: 'HK002', head_citizen_name: 'No GPS', address: 'Thon mau' },
@@ -500,8 +500,8 @@ test('leaflet GIS keeps popup open and switches cluster to flat markers at max z
   const rebuiltState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
     await window.loadGisMap();
-    const a = window.L.marker([20.255, 105.976]); a.__thon09GisHouseholdId = 'same-a';
-    const b = window.L.marker([20.255, 105.976]); b.__thon09GisHouseholdId = 'same-b';
+    const a = window.L.marker([20.255, 105.976]); a.__tenantAppGisHouseholdId = 'same-a';
+    const b = window.L.marker([20.255, 105.976]); b.__tenantAppGisHouseholdId = 'same-b';
     window.App.gis.markerClusterManager.replace([a, b]);
     return {
       sameGroup: firstGroup === window.App.gis.markerGroup,
@@ -562,7 +562,7 @@ test('leaflet GIS keeps popup open and switches cluster to flat markers at max z
 
   const legacyDelegateState = await page.evaluate(async () => {
     const firstGroup = window.App.gis.markerGroup;
-    await window.thon09LoadGisHouseholdMarkers?.('', { force: true });
+    await window.TenantAppLoadGisHouseholdMarkers?.('', { force: true });
     return {
       sameGroup: firstGroup === window.App.gis.markerGroup,
       created: window.__markerClusterGroupCreated,
@@ -608,9 +608,9 @@ test('GIS platform layer registry toggles module overlays independently', async 
   await expect(page.locator('[data-gis-v2-layer-status="publicAssets"]')).toContainText('1 đối tượng');
 
   const layerState = await page.evaluate(() => {
-    const group = window.Thon09GisPlatform.state.layerGroups.get('publicAssets');
+    const group = window.TenantAppGisPlatform.state.layerGroups.get('publicAssets');
     return {
-      definitions: window.Thon09GisPlatform.definitions.map(item => item.label),
+      definitions: window.TenantAppGisPlatform.definitions.map(item => item.label),
       count: group ? group.getLayers().length : 0,
       visible: window.App.gis.map.hasLayer(group)
     };
@@ -630,7 +630,7 @@ test('GIS platform layer registry toggles module overlays independently', async 
     }
   });
   await expect.poll(() => page.evaluate(() => {
-    const group = window.Thon09GisPlatform.state.layerGroups.get('publicAssets');
+    const group = window.TenantAppGisPlatform.state.layerGroups.get('publicAssets');
     return window.App.gis.map.hasLayer(group);
   })).toBe(false);
 });
@@ -653,8 +653,8 @@ test('GIS v3 dashboard, heatmap, drag marker, measure tools and unified search w
       input.dispatchEvent(new Event('change', { bubbles: true }));
     }
   });
-  await expect.poll(() => page.evaluate(() => window.Thon09GisPlatform.state.heatLayer?.getLayers().length || 0)).toBeGreaterThan(0);
-  const heatState = await page.evaluate(() => window.Thon09GisPlatform.state.heatLayer.getLayers().map(layer => layer.__gisHeatmap));
+  await expect.poll(() => page.evaluate(() => window.TenantAppGisPlatform.state.heatLayer?.getLayers().length || 0)).toBeGreaterThan(0);
+  const heatState = await page.evaluate(() => window.TenantAppGisPlatform.state.heatLayer.getLayers().map(layer => layer.__gisHeatmap));
   expect(heatState).toContain('population');
 
   await expect.poll(() => page.evaluate(() => Boolean(window.App.gis.markerCache.get('7')?.marker.__gisDragEnabled))).toBe(true);
@@ -667,7 +667,7 @@ test('GIS v3 dashboard, heatmap, drag marker, measure tools and unified search w
   await expect.poll(() => apiLog.find(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location')?.body.longitude).toBe(105.979);
 
   await page.evaluate(() => {
-    window.Thon09GisPlatform.startMeasure('distance');
+    window.TenantAppGisPlatform.startMeasure('distance');
     window.App.gis.map.fire('click', { latlng: { lat: 20.250, lng: 105.970 } });
     window.App.gis.map.fire('click', { latlng: { lat: 20.251, lng: 105.971 } });
   });
@@ -675,7 +675,7 @@ test('GIS v3 dashboard, heatmap, drag marker, measure tools and unified search w
   await expect(page.locator('#gisV2MeasureResult')).toContainText(/m|km/);
 
   await page.evaluate(() => {
-    window.Thon09GisPlatform.startMeasure('area');
+    window.TenantAppGisPlatform.startMeasure('area');
     window.App.gis.map.fire('click', { latlng: { lat: 20.250, lng: 105.970 } });
     window.App.gis.map.fire('click', { latlng: { lat: 20.251, lng: 105.970 } });
     window.App.gis.map.fire('click', { latlng: { lat: 20.251, lng: 105.971 } });

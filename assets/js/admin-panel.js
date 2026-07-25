@@ -1,40 +1,40 @@
 (() => {
   function labelForScreen(screen) {
-    return window.Thon09Platform?.modules?.get(screen)?.label || 'Dashboard';
+    return window.TenantAppPlatform?.modules?.get(screen)?.label || 'Dashboard';
   }
   function currentScreen() {
-    return window.Thon09Platform?.navigation?.current?.()?.screenId || window.App?.screen || document.querySelector('.screen.active')?.id?.replace(/Screen$/, '') || 'dashboard';
+    return window.TenantAppPlatform?.navigation?.current?.()?.screenId || window.App?.screen || document.querySelector('.screen.active')?.id?.replace(/Screen$/, '') || 'dashboard';
   }
   const charts = {};
   function registerModal(id) {
     const modal = document.querySelector('#' + id);
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (modal && service?.registerBootstrap) service.registerBootstrap(id, '#' + id);
     return modal;
   }
   function openModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.open && service.open(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.show();
   }
   function closeModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.hide();
   }
   function confirmAction(options) {
-    const dialog = window.Thon09Platform?.confirmDialog;
+    const dialog = window.TenantAppPlatform?.confirmDialog;
     if (dialog?.ask) return dialog.ask(options);
     return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    document.body.classList.add(localStorage.getItem('thon09_theme') || 'theme-light');
+    document.body.classList.add(localStorage.getItem(tenantStorageKey('theme')) || 'theme-light');
     enhanceShell();
     injectScreens();
     renderRoleAwareMenu();
   });
-  document.addEventListener('thon09:auth-state', event => {
+  document.addEventListener('tenant:auth-state', event => {
     if (!event.detail?.authenticated) return;
     enhanceShell();
     renderRoleAwareMenu();
@@ -89,7 +89,7 @@
 
   function loadAdminScreen(screen) {
     cleanDuplicateHeaders(screen);
-    if (screen && typeof window.thon09CanAccess === 'function' && !window.thon09CanAccess(screen, 'read')) {
+    if (screen && typeof window.TenantAppCanAccess === 'function' && !window.TenantAppCanAccess(screen, 'read')) {
       const host = document.querySelector('#' + screen + 'Screen');
       if (host && !host.dataset.accessDeniedRendered) {
         host.dataset.accessDeniedRendered = '1';
@@ -113,10 +113,10 @@
   window.loadPermissions = loadPermissions;
   window.loadSettings = loadSettings;
   window.loadAppearanceSettings = loadAppearanceSettings;
-  document.addEventListener('thon09:screen-change', event => loadAdminScreen(event.detail?.screen));
+  document.addEventListener('tenant:screen-change', event => loadAdminScreen(event.detail?.screen));
 
   function registerMovementPlatformActions() {
-    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
     if (!actions || typeof actions.register !== 'function') return;
     actions.register('movements.edit', context => window.openMovementForm(Number(context.dataset.id || context.dataset.movementId || 0)));
     actions.register('movements.delete', context => window.deleteMovement(Number(context.dataset.id || context.dataset.movementId || 0)));
@@ -142,7 +142,7 @@
       window.showPerson(id);
       return;
     }
-    const navigation = window.Thon09Platform && window.Thon09Platform.navigation;
+    const navigation = window.TenantAppPlatform && window.TenantAppPlatform.navigation;
     if (navigation && typeof navigation.navigate === 'function') {
       navigation.navigate({ screenId: 'persons', moduleKey: 'persons', action: 'detail', params: { id } });
     }
@@ -474,8 +474,8 @@
 
   async function printAdminReport(type) {
     const report = await api('/api/reports/print?' + new URLSearchParams({ type }));
-    if (!window.Thon09Print) throw new Error('Print Framework is not ready');
-    window.Thon09Print.render({
+    if (!window.TenantAppPrint) throw new Error('Print Framework is not ready');
+    window.TenantAppPrint.render({
       title: report.title || 'Báo cáo',
       type,
       paperSize: 'A4',
@@ -498,7 +498,7 @@
   function renderRoleAwareMenu() {
     document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
       const screen = btn.dataset.screen;
-      const canRead = typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess(screen, 'read') : true;
+      const canRead = typeof window.TenantAppCanAccess === 'function' ? window.TenantAppCanAccess(screen, 'read') : true;
       btn.classList.toggle('d-none', !canRead);
     });
   }
@@ -506,7 +506,7 @@
   function toggleTheme() {
     document.body.classList.toggle('theme-dark');
     document.body.classList.toggle('theme-light');
-    localStorage.setItem('thon09_theme', document.body.classList.contains('theme-dark') ? 'theme-dark' : 'theme-light');
+    localStorage.setItem(tenantStorageKey('theme'), document.body.classList.contains('theme-dark') ? 'theme-dark' : 'theme-light');
   }
 
   function movementLabel(type) {

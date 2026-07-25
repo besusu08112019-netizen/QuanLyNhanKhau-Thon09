@@ -4,25 +4,33 @@
 SET NAMES utf8mb4;
 SET time_zone = '+07:00';
 
-INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
-('unitName', ''),
-('hamletName', ''),
-('communeName', ''),
-('systemName', 'He thong Quan ly Hanh chinh'),
-('address', ''),
-('phone', ''),
-('email', ''),
-('website', ''),
-('logoUrl', ''),
-('backgroundUrl', ''),
-('backgroundImages', ''),
-('themeColor', '#0b6b3a'),
-('backgroundColor', '#eef3f8'),
-('backupSchedule', 'DAILY'),
-('reportSigner', ''),
-('reportTitlePrefix', 'Quáº£n lÃ½ nhÃ¢n kháº©u'),
-('supportEmail', ''),
-('maintenanceMessage', '')
+INSERT INTO `villages` (`code`, `name`, `unit_name`, `commune_name`, `domain`, `subdomain`, `status`) VALUES
+('default', 'Ten thon', 'Ten don vi', 'Ten xa', NULL, NULL, 'ACTIVE')
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `unit_name` = VALUES(`unit_name`), `commune_name` = VALUES(`commune_name`);
+
+SET @tenant_default_village_id = (
+  SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1
+);
+
+INSERT INTO `settings` (`village_id`, `setting_key`, `setting_value`) VALUES
+(@tenant_default_village_id, 'unitName', ''),
+(@tenant_default_village_id, 'hamletName', ''),
+(@tenant_default_village_id, 'communeName', ''),
+(@tenant_default_village_id, 'systemName', 'He thong Quan ly Hanh chinh'),
+(@tenant_default_village_id, 'address', ''),
+(@tenant_default_village_id, 'phone', ''),
+(@tenant_default_village_id, 'email', ''),
+(@tenant_default_village_id, 'website', ''),
+(@tenant_default_village_id, 'logoUrl', ''),
+(@tenant_default_village_id, 'backgroundUrl', ''),
+(@tenant_default_village_id, 'backgroundImages', ''),
+(@tenant_default_village_id, 'themeColor', '#0b6b3a'),
+(@tenant_default_village_id, 'backgroundColor', '#eef3f8'),
+(@tenant_default_village_id, 'backupSchedule', 'DAILY'),
+(@tenant_default_village_id, 'reportSigner', ''),
+(@tenant_default_village_id, 'reportTitlePrefix', 'Quan ly nhan khau'),
+(@tenant_default_village_id, 'supportEmail', ''),
+(@tenant_default_village_id, 'maintenanceMessage', '')
 ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
 INSERT INTO `permissions` (`role`, `module`, `action`, `allowed`) VALUES

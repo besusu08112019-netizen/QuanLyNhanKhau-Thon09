@@ -1,4 +1,4 @@
-﻿const { test, expect } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 const widths = [320, 360, 375, 390, 412, 414, 430, 768, 820, 853, 912, 1024, 1280, 1440, 1920];
 const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
@@ -43,9 +43,9 @@ async function openAuthenticatedApp(page, width) {
     App.csrfToken = 'test-csrf';
     App.user = user;
     window.App = App;
-    localStorage.setItem('thon09_token', 'test-token');
-    localStorage.setItem('thon09_csrf', 'test-csrf');
-    localStorage.setItem('thon09_user', JSON.stringify(user));
+    localStorage.setItem(tenantStorageKey('token'), 'test-token');
+    localStorage.setItem(tenantStorageKey('csrf'), 'test-csrf');
+    localStorage.setItem(tenantStorageKey('user'), JSON.stringify(user));
     if (typeof window.showApp === 'function') window.showApp();
   });
   await expect(page.locator('#appView')).not.toHaveClass(/d-none/);
@@ -98,7 +98,7 @@ test.describe('responsive system navigation audit', () => {
       await openAuthenticatedApp(page, width);
 
       for (const screen of mobileScreens) {
-        await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+        await page.evaluate((target) => window.TenantAppNavigationController?.navigate(target), screen);
         await page.waitForTimeout(120);
         const metrics = await page.evaluate(() => {
           const active = document.querySelector('.screen.active');
@@ -165,7 +165,7 @@ test.describe('responsive system navigation audit', () => {
 
   test('mobile sidebar masks GIS controls and keeps navigation layers below it', async ({ page }) => {
     await openAuthenticatedApp(page, 390);
-    await page.evaluate(() => window.Thon09NavigationController?.navigate('gis'));
+    await page.evaluate(() => window.TenantAppNavigationController?.navigate('gis'));
     await page.waitForTimeout(200);
 
     await page.locator('#sidebarToggle').click();
@@ -214,7 +214,7 @@ test.describe('responsive system navigation audit', () => {
     for (const width of [1024, 1366]) {
       await openAuthenticatedApp(page, width);
       for (const screen of mobileScreens) {
-        await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+        await page.evaluate((target) => window.TenantAppNavigationController?.navigate(target), screen);
         await page.waitForTimeout(120);
         const desktopFilterIcons = await page.evaluate(() => Array.from(document.querySelectorAll('.screen.active :is(.mdu-filter-trigger, .mobile-filter-trigger, .mobile-filter-toggle, .mobile-filter-shell)')).filter((node) => {
           const style = getComputedStyle(node);
@@ -227,7 +227,7 @@ test.describe('responsive system navigation audit', () => {
 
     await openAuthenticatedApp(page, 390);
     for (const screen of mobileScreens) {
-      await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+      await page.evaluate((target) => window.TenantAppNavigationController?.navigate(target), screen);
       await page.waitForTimeout(120);
       const compactState = await page.evaluate(() => Array.from(document.querySelectorAll('.screen.active .mdu-filter-collapsed')).map((filter) => {
         const icon = filter.querySelector('.mdu-filter-trigger');
@@ -252,7 +252,7 @@ test.describe('responsive system navigation audit', () => {
     const screens = ['dashboard', 'households', 'persons', 'gis', 'reports', 'publicAssets', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 
     for (const screen of screens) {
-      await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+      await page.evaluate((target) => window.TenantAppNavigationController?.navigate(target), screen);
       await page.waitForTimeout(120);
       const sidebar = await page.evaluate((target) => {
         const sidebars = Array.from(document.querySelectorAll('.sidebar.gov-sidebar'));
@@ -335,8 +335,8 @@ test.describe('responsive system navigation audit', () => {
     await openAuthenticatedApp(page, 960);
     await page.setViewportSize({ width: 960, height: 760 });
     await page.evaluate(() => {
-      localStorage.setItem('thon09_dashboard_tree_open', '1');
-      window.Thon09NavigationController?.navigate('gis');
+      localStorage.setItem(tenantStorageKey('dashboard_tree_open'), '1');
+      window.TenantAppNavigationController?.navigate('gis');
       const sidebar = document.querySelector('.sidebar');
       if (sidebar) sidebar.scrollTop = 0;
       window.scrollTo(0, 0);
@@ -394,7 +394,7 @@ test.describe('responsive system navigation audit', () => {
       await page.setViewportSize({ width, height: width >= 1280 ? 900 : 844 });
 
       for (const screen of qaScreens) {
-        await page.evaluate((target) => window.Thon09NavigationController?.navigate(target), screen);
+        await page.evaluate((target) => window.TenantAppNavigationController?.navigate(target), screen);
         await page.waitForTimeout(140);
 
         const audit = await page.evaluate(({ target, width }) => {

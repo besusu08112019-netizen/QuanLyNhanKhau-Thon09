@@ -108,14 +108,14 @@ final class GisHouseholdLocation extends BaseModel
             ['id' => $householdId]
         );
         if (!$row) throw new \RuntimeException('Không tìm thấy hộ gia đình');
-        $members = $this->fetchAll('SELECT id, citizen_code, full_name, relationship, phone, residency_status, presence_status FROM citizens WHERE household_id = :id AND status <> "DELETED" ORDER BY CASE WHEN relationship = "Chủ hộ" THEN 0 ELSE 1 END, full_name LIMIT 200', ['id' => $householdId]);
+        $members = $this->fetchAll('SELECT id, citizen_code, full_name, relationship, phone, residency_status, presence_status FROM citizens WHERE household_id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('citizens') . ' ORDER BY CASE WHEN relationship = "Chủ hộ" THEN 0 ELSE 1 END, full_name LIMIT 200', ['id' => $householdId]);
         $business = [];
         if ($this->tableExists('household_business')) {
-            $business = $this->fetchAll('SELECT id, business_name, business_type, economic_type, production_sector, business_sector, business_scale, worker_count, status FROM household_business WHERE household_id = :id AND status <> "DELETED" ORDER BY id ASC', ['id' => $householdId]);
+            $business = $this->fetchAll('SELECT id, business_name, business_type, economic_type, production_sector, business_sector, business_scale, worker_count, status FROM household_business WHERE household_id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('household_business') . ' ORDER BY id ASC', ['id' => $householdId]);
         }
         $livestock = [];
         if ($this->tableExists('livestock')) {
-            $livestock = $this->fetchAll('SELECT id, animal_type, breed, quantity, vaccinated, status FROM livestock WHERE household_id = :id AND status <> "DELETED" ORDER BY animal_type ASC, id ASC', ['id' => $householdId]);
+            $livestock = $this->fetchAll('SELECT id, animal_type, breed, quantity, vaccinated, status FROM livestock WHERE household_id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('livestock') . ' ORDER BY animal_type ASC, id ASC', ['id' => $householdId]);
         }
         return [
             'household' => [
@@ -184,7 +184,7 @@ final class GisHouseholdLocation extends BaseModel
                            ELSE "RESIDENT"
                        END AS business_marker_type
                 FROM household_business x
-                WHERE x.status <> "DELETED"
+                WHERE x.status <> "DELETED" AND ' . $this->tenantLiteral('household_business', 'x') . '
                 GROUP BY x.household_id
              ) hb ON hb.household_id = h.id' : '';
         $businessSelect = $hasBusinessTable ? ', hb.business_names AS business_name, hb.business_marker_type, hb.business_activities_json' : ', NULL AS business_name, NULL AS business_marker_type, NULL AS business_activities_json';
@@ -258,7 +258,7 @@ final class GisHouseholdLocation extends BaseModel
                      area_code = :area_code,
                      updated_at = NOW(),
                      updated_by = :updated_by
-                 WHERE id = :id AND status <> "DELETED"',
+                 WHERE id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('households'),
                 [
                     'latitude' => $lat,
                     'longitude' => $lng,
@@ -294,7 +294,7 @@ final class GisHouseholdLocation extends BaseModel
                  area_code = NULL,
                  updated_at = NOW(),
                  updated_by = :updated_by
-             WHERE id = :id AND status <> "DELETED"',
+             WHERE id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('households'),
             ['location_updated_by' => $userId, 'updated_by' => $userId, 'id' => $householdId]
         );
         if ($updated < 1) throw new \RuntimeException('Không tìm thấy hộ gia đình cần xóa vị trí');
@@ -316,13 +316,13 @@ final class GisHouseholdLocation extends BaseModel
     {
         $this->ensureSchema();
         $areas = $this->activeAreas();
-        $rows = $this->fetchAll('SELECT id, latitude, longitude, area_code FROM households WHERE status <> "DELETED" AND latitude IS NOT NULL AND longitude IS NOT NULL');
+        $rows = $this->fetchAll('SELECT id, latitude, longitude, area_code FROM households WHERE status <> "DELETED" AND ' . $this->tenantLiteral('households') . ' AND latitude IS NOT NULL AND longitude IS NOT NULL');
         $changed = 0;
         foreach ($rows as $row) {
             $newCode = $this->areaCodeForPoint((float) $row['latitude'], (float) $row['longitude'], $areas);
             $oldCode = ($row['area_code'] ?? '') !== '' ? (string) $row['area_code'] : null;
             if ($newCode === $oldCode) continue;
-            $this->execute('UPDATE households SET area_code = :area_code, updated_at = NOW() WHERE id = :id', ['area_code' => $newCode, 'id' => (int) $row['id']]);
+            $this->execute('UPDATE households SET area_code = :area_code, updated_at = NOW() WHERE id = :id AND ' . $this->tenantLiteral('households'), ['area_code' => $newCode, 'id' => (int) $row['id']]);
             $changed++;
         }
         return $changed;
@@ -395,6 +395,7 @@ final class GisHouseholdLocation extends BaseModel
         if (in_array('status', $columns, true)) {
             $where[] = '(f.status IS NULL OR f.status <> "DELETED")';
         }
+        $where[] = $this->tenantLiteral('file_attachments', 'f');
 
         $imageParts = [];
         if (in_array('file_type', $columns, true)) {
@@ -436,6 +437,13 @@ final class GisHouseholdLocation extends BaseModel
     {
         return $this->statistics ??= new PopulationStatistics();
     }
+
+    private function tenantLiteral(string $table, string $alias = ''): string
+    {
+        if (!$this->tenantColumnExists($table)) return '1=1';
+        return ($alias !== '' ? $alias . '.' : '') . 'village_id = ' . $this->tenantId();
+    }
+
     private function findMarker(int $householdId): ?array
     {
         $rows = $this->markers(['id' => $householdId]);
@@ -458,8 +466,8 @@ final class GisHouseholdLocation extends BaseModel
         }
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
-            $businessSearch = $this->tableExists('household_business') ? ' OR EXISTS (SELECT 1 FROM household_business hbq WHERE hbq.household_id = h.id AND hbq.status <> "DELETED" AND (hbq.business_name LIKE :search OR hbq.economic_type LIKE :search OR hbq.production_sector LIKE :search OR hbq.business_sector LIKE :search OR hbq.owner_name LIKE :search OR hbq.phone LIKE :search))' : '';
-            $where .= ' AND (h.household_code LIKE :search OR h.head_citizen_name LIKE :search OR h.address LIKE :search OR h.phone LIKE :search OR EXISTS (SELECT 1 FROM citizens cs WHERE cs.household_id = h.id AND cs.status <> "DELETED" AND (cs.full_name LIKE :search OR cs.identity_number LIKE :search))' . $businessSearch . ')';
+            $businessSearch = $this->tableExists('household_business') ? ' OR EXISTS (SELECT 1 FROM household_business hbq WHERE hbq.household_id = h.id AND hbq.status <> "DELETED" AND ' . $this->tenantLiteral('household_business', 'hbq') . ' AND (hbq.business_name LIKE :search OR hbq.economic_type LIKE :search OR hbq.production_sector LIKE :search OR hbq.business_sector LIKE :search OR hbq.owner_name LIKE :search OR hbq.phone LIKE :search))' : '';
+            $where .= ' AND (h.household_code LIKE :search OR h.head_citizen_name LIKE :search OR h.address LIKE :search OR h.phone LIKE :search OR EXISTS (SELECT 1 FROM citizens cs WHERE cs.household_id = h.id AND cs.status <> "DELETED" AND ' . $this->tenantLiteral('citizens', 'cs') . ' AND (cs.full_name LIKE :search OR cs.identity_number LIKE :search))' . $businessSearch . ')';
             $params['search'] = '%' . $search . '%';
         }
         $areaCode = trim((string) ($filters['area_code'] ?? ''));
@@ -604,7 +612,7 @@ final class GisHouseholdLocation extends BaseModel
 
     private function activeAreas(): array
     {
-        $rows = $this->fetchAll('SELECT area_code, polygon, geometry_json FROM gis_areas WHERE status <> "DELETED" ORDER BY sort_order, name');
+        $rows = $this->fetchAll('SELECT area_code, polygon, geometry_json FROM gis_areas WHERE status <> "DELETED" AND ' . $this->tenantLiteral('gis_areas') . ' ORDER BY sort_order, name');
         $areas = [];
         foreach ($rows as $row) {
             $polygon = $this->normalizePolygon(json_decode((string) ($row['polygon'] ?? $row['geometry_json'] ?? '[]'), true));
@@ -656,3 +664,4 @@ final class GisHouseholdLocation extends BaseModel
         }
     }
 }
+

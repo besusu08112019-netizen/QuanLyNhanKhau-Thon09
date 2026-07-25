@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   'use strict';
 
   const API = '/api/public-assets';
@@ -12,7 +12,7 @@
   const number = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
   const toast = (message, type = 'info') => typeof window.showToast === 'function' ? window.showToast(message, type) : console[type === 'danger' ? 'error' : 'log'](message);
   const hasPlatformPermissionRule = (moduleKey, action) => {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (!service?.list) return false;
     const normalizedModule = service.normalizeModule ? service.normalizeModule(moduleKey) : moduleKey;
     const normalizedAction = service.normalizeAction ? service.normalizeAction(action) : action;
@@ -20,25 +20,25 @@
     return keys.has(normalizedModule + ':' + normalizedAction) || keys.has(normalizedModule + ':manage') || keys.has(normalizedModule + ':*');
   };
   const can = action => {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (service?.can && hasPlatformPermissionRule('public_assets', action)) return service.can('public_assets', action, window.App?.user);
-    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('public_assets', action) : true;
+    return typeof window.TenantAppCanAccess === 'function' ? window.TenantAppCanAccess('public_assets', action) : true;
   };
   const confirmAction = options => {
-    const dialog = window.Thon09Platform?.confirmDialog;
+    const dialog = window.TenantAppPlatform?.confirmDialog;
     if (dialog?.ask) return dialog.ask(options);
     return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
   };
   const openModal = id => {
-    if (window.Thon09Platform?.modals?.open) {
-      const result = window.Thon09Platform.modals.open(id);
+    if (window.TenantAppPlatform?.modals?.open) {
+      const result = window.TenantAppPlatform.modals.open(id);
       if (result) return result;
     }
     return window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
   };
   const closeModal = id => {
-    if (window.Thon09Platform?.modals?.close) {
-      const result = window.Thon09Platform.modals.close(id);
+    if (window.TenantAppPlatform?.modals?.close) {
+      const result = window.TenantAppPlatform.modals.close(id);
       if (result) return result;
     }
     return window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
@@ -129,9 +129,9 @@
   }
 
   function registerPublicAssetPlatformActions() {
-    if (window.__thon09PublicAssetActionsRegistered || !window.Thon09Platform?.actions) return;
-    window.__thon09PublicAssetActionsRegistered = true;
-    window.Thon09Platform.actions
+    if (window.__tenantAppPublicAssetActionsRegistered || !window.TenantAppPlatform?.actions) return;
+    window.__tenantAppPublicAssetActionsRegistered = true;
+    window.TenantAppPlatform.actions
       .register({ key: 'publicAssets.detail', handler: ({ dataset }) => run(() => openDetail(Number(dataset.id || 0))) })
       .register({ key: 'publicAssets.edit', handler: ({ dataset }) => run(() => openForm(Number(dataset.id || 0))) })
       .register({ key: 'publicAssets.delete', handler: ({ dataset }) => run(() => remove(Number(dataset.id || 0))) })
@@ -170,7 +170,7 @@
       event.preventDefault();
       run(() => saveMaintenance(event.currentTarget));
     });
-    document.addEventListener('thon09:screen-change', event => {
+    document.addEventListener('tenant:screen-change', event => {
       if (event.detail?.screen === 'publicAssets') run(load);
       if (event.detail?.screen === 'gis') scheduleGisLayer();
     });
@@ -257,7 +257,7 @@
     renderDashboard(dashboard, inventoryDashboard);
     renderRows(list);
     renderPager(list);
-    window.thon09ApplyAccessControls?.();
+    window.TenantAppApplyAccessControls?.();
   }
 
   function renderDashboard(data = {}, inventory = {}) {
@@ -490,7 +490,7 @@
   function updatePhoto(url, temp = false) { const host = $('#publicAssetPhotoPreview'); if (!host) return; host.innerHTML = url ? (temp ? `<img src="${safe(url)}" style="width:100%;max-height:180px;object-fit:cover" alt="Ảnh công trình">` : imageMarkup(url, 'Ảnh công trình', 'style="width:100%;max-height:180px;object-fit:cover"')) : '<span class="text-muted small">Chưa có ảnh công trình</span>'; if (url && !temp) hydratePublicAssetImages(host); $('#publicAssetDeletePhotoBtn')?.classList.toggle('d-none', !url || temp); if (temp) setTimeout(() => URL.revokeObjectURL(url), 5000); }
   function updateGps(item) { const host = $('#publicAssetGpsMeta'); if (!host) return; host.textContent = gpsText(item) !== EMPTY ? `Vị trí: ${gpsText(item)}` : 'Chưa có vị trí GPS'; }
   function useGps() { if (!navigator.geolocation) return toast('Thiết bị không hỗ trợ GPS', 'warning'); navigator.geolocation.getCurrentPosition(position => { const form = $('#publicAssetForm'); if (!form) return; form.elements.latitude.value = position.coords.latitude.toFixed(8); form.elements.longitude.value = position.coords.longitude.toFixed(8); form.elements.gps_accuracy.value = position.coords.accuracy ? position.coords.accuracy.toFixed(2) : ''; updateGps({ latitude: form.elements.latitude.value, longitude: form.elements.longitude.value, gps_updated_at: 'sẽ cập nhật khi lưu' }); }, error => toast(error.message || 'Không lấy được GPS', 'danger'), { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }); }
-  function pickMap() { const activate = () => { const map = window.App?.gis?.map; if (!map) return toast('Bản đồ GIS chưa sẵn sàng', 'warning'); toast('Click một điểm trên bản đồ để chọn vị trí', 'info'); map.once('click', event => { const form = $('#publicAssetForm'); if (!form) return; form.elements.latitude.value = event.latlng.lat.toFixed(8); form.elements.longitude.value = event.latlng.lng.toFixed(8); updateGps({ latitude: form.elements.latitude.value, longitude: form.elements.longitude.value, gps_updated_at: 'sẽ cập nhật khi lưu' }); window.Thon09NavigationController?.navigate('publicAssets'); openModal('publicAssetFormModal'); }); }; closeModal('publicAssetFormModal'); window.Thon09NavigationController?.navigate('gis'); setTimeout(activate, 700); }
+  function pickMap() { const activate = () => { const map = window.App?.gis?.map; if (!map) return toast('Bản đồ GIS chưa sẵn sàng', 'warning'); toast('Click một điểm trên bản đồ để chọn vị trí', 'info'); map.once('click', event => { const form = $('#publicAssetForm'); if (!form) return; form.elements.latitude.value = event.latlng.lat.toFixed(8); form.elements.longitude.value = event.latlng.lng.toFixed(8); updateGps({ latitude: form.elements.latitude.value, longitude: form.elements.longitude.value, gps_updated_at: 'sẽ cập nhật khi lưu' }); window.TenantAppNavigationController?.navigate('publicAssets'); openModal('publicAssetFormModal'); }); }; closeModal('publicAssetFormModal'); window.TenantAppNavigationController?.navigate('gis'); setTimeout(activate, 700); }
   async function remove(id) { if (!can('delete')) return toast('Không có quyền xóa', 'warning'); if (!await confirmAction({ title: 'Xác nhận xóa công trình', message: 'Xóa công trình này?', confirmLabel: 'Xóa', tone: 'danger' })) return; await request(`${API}/${id}`, { method: 'DELETE' }); toast('Đã xóa công trình', 'success'); await load(); run(refreshGisLayer); }
   function wrapGisLoader() { if (window.__publicAssetsGisWrapped) return; window.__publicAssetsGisWrapped = true; const original = window.loadGisMap; if (typeof original === 'function') window.loadGisMap = async function (...args) { const result = await original.apply(this, args); scheduleGisLayer(); return result; }; }
   function scheduleGisLayer() { setTimeout(() => run(refreshGisLayer), 250); }

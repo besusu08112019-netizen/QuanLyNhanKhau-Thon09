@@ -83,13 +83,13 @@ final class Citizen extends BaseModel
         $this->ensureHealthInsuranceSchema();
         $identity = trim($identity);
         if ($identity === '') return null;
-        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.identity_number=:identity AND c.status <> "DELETED"', ['identity' => $identity]);
+        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.identity_number=:identity AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens'), $this->withTenant(['identity' => $identity]));
     }
 
     public function find(int $id): ?array
     {
         $this->ensureHealthInsuranceSchema();
-        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url, NULLIF(c.father_name, "") AS father_display_name, NULLIF(c.mother_name, "") AS mother_display_name FROM citizens c INNER JOIN households h ON h.id=c.household_id LEFT JOIN v_household_member_counts v ON v.household_id=h.id WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $id]);
+        return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url, NULLIF(c.father_name, "") AS father_display_name, NULLIF(c.mother_name, "") AS mother_display_name FROM citizens c INNER JOIN households h ON h.id=c.household_id LEFT JOIN v_household_member_counts v ON v.household_id=h.id WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens'), $this->withTenant(['id' => $id]));
     }
 
     public function create(array $data, int $userId): array
@@ -103,6 +103,8 @@ final class Citizen extends BaseModel
         $values = [':code',':household_id',':full_name',':gender',':dob',':identity',':issue_date',':issue_place',':relationship',':ethnicity',':religion',':occupation',':father_name',':mother_name',':phone',':residency',':current_address',':education',':marital',':life',':presence','"ACTIVE"',':user'];
         foreach ($this->activeExtendedColumns() as $column) { $columns[] = $column; $values[] = ':' . $column; }
         foreach ($this->activeHealthInsuranceColumns() as $column) { $columns[] = $column; $values[] = ':' . $column; }
+        $this->addTenantInsert('citizens', $columns, $params);
+        if (in_array('village_id', $columns, true)) $values[] = ':village_id';
         $id = $this->insert('INSERT INTO citizens (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         $this->syncHouseholdHead((int) $params['household_id']);
         return $this->find($id);
@@ -120,7 +122,7 @@ final class Citizen extends BaseModel
         $sets = ['citizen_code=:code','household_id=:household_id','full_name=:full_name','gender=:gender','date_of_birth=:dob','identity_number=:identity','identity_issue_date=:issue_date','identity_issue_place=:issue_place','relationship=:relationship','ethnicity=:ethnicity','religion=:religion','occupation=:occupation','father_name=:father_name','mother_name=:mother_name','phone=:phone','residency_status=:residency','current_address=:current_address','education_level=:education','marital_status=:marital','life_status=:life','presence_status=:presence','updated_by=:user'];
         foreach ($this->activeExtendedColumns() as $column) $sets[] = $column . '=:' . $column;
         foreach ($this->activeHealthInsuranceColumns() as $column) $sets[] = $column . '=:' . $column;
-        $this->execute('UPDATE citizens SET ' . implode(',', $sets) . ' WHERE id=:id', $params);
+        $this->execute('UPDATE citizens SET ' . implode(',', $sets) . ' WHERE id=:id AND ' . $this->tenantWhere('citizens'), $this->withTenant($params));
         $this->syncHouseholdHead((int) $before['household_id']);
         $this->syncHouseholdHead((int) $params['household_id']);
         return $this->find($id);
@@ -130,9 +132,9 @@ final class Citizen extends BaseModel
     {
         $person = $this->find($id);
         if (!$person) throw new \RuntimeException('Không tìm thấy nhân khẩu');
-        $activeMovements = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM movements WHERE citizen_id = :id AND status <> "DELETED"', ['id' => $id])['total'];
+        $activeMovements = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM movements WHERE citizen_id = :id AND status <> "DELETED" AND ' . $this->tenantWhere('movements'), $this->withTenant(['id' => $id]))['total'];
         if ($activeMovements > 0) throw new \RuntimeException('Nhân khẩu đang có dữ liệu biến động liên quan. Vui lòng xử lý dữ liệu liên kết trước khi xóa.');
-        $this->execute('UPDATE citizens SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE citizens SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id AND ' . $this->tenantWhere('citizens'), $this->withTenant(['id' => $id, 'user' => $userId]));
         $this->syncHouseholdHead((int) $person['household_id']);
     }
 
@@ -153,7 +155,7 @@ final class Citizen extends BaseModel
 
     public function restore(int $id, int $userId): void
     {
-        $this->execute('UPDATE citizens SET status="ACTIVE", deleted_at=NULL, deleted_by=NULL, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE citizens SET status="ACTIVE", deleted_at=NULL, deleted_by=NULL, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('citizens'), $this->withTenant(['id' => $id, 'user' => $userId]));
         $person = $this->find($id);
         if ($person) $this->syncHouseholdHead((int) $person['household_id']);
     }
@@ -164,7 +166,9 @@ final class Citizen extends BaseModel
         $where = $isTemporaryAbsence
             ? [$this->statistics()->temporaryAbsenceCitizenCondition('c'), $this->statistics()->temporaryAbsenceHouseholdCondition('h')]
             : [$this->statistics()->citizenCondition('c'), $this->statistics()->householdCondition('h')];
-        $params = [];
+        $params = $this->withTenant();
+        $where[] = $this->tenantWhere('c', 'citizens');
+        $where[] = $this->tenantWhere('h', 'households');
         if (!empty($filters['status'])) { $where[] = 'c.life_status = :life_status'; $params['life_status'] = $filters['status']; }
         if (!empty($filters['presenceStatus']) && !$isTemporaryAbsence) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
         if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
@@ -384,8 +388,9 @@ final class Citizen extends BaseModel
     private function ensureSingleHead(int $householdId, ?int $ignoreId, string $relationship): void
     {
         if ($relationship !== 'Chủ hộ') return;
-        $params = ['household_id' => $householdId];
+        $params = $this->withTenant(['household_id' => $householdId]);
         $sql = 'SELECT id, full_name FROM citizens WHERE household_id=:household_id AND relationship="Chủ hộ" AND status <> "DELETED"';
+        $sql .= ' AND ' . $this->tenantWhere('citizens');
         if ($ignoreId) { $sql .= ' AND id <> :id'; $params['id'] = $ignoreId; }
         $head = $this->fetchOne($sql, $params);
         if ($head) throw new \RuntimeException('Hộ này đã có Chủ hộ: ' . $head['full_name']);
@@ -394,25 +399,26 @@ final class Citizen extends BaseModel
     private function ensureUniqueIdentity(?string $identity, ?int $ignoreId = null): void
     {
         if (!$identity) return;
-        $params = ['identity' => $identity];
-        $sql = 'SELECT id FROM citizens WHERE identity_number=:identity AND status <> "DELETED"';
+        $params = $this->withTenant(['identity' => $identity]);
+        $sql = 'SELECT id FROM citizens WHERE identity_number=:identity AND status <> "DELETED" AND ' . $this->tenantWhere('citizens');
         if ($ignoreId) { $sql .= ' AND id <> :id'; $params['id'] = $ignoreId; }
         if ($this->fetchOne($sql, $params)) throw new \RuntimeException('CCCD đã tồn tại');
     }
 
     private function nextCode(int $householdId): string
     {
-        $prefix = 'H09-NK';
-        $count = (int) ($this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE citizen_code LIKE :prefix', ['prefix' => $prefix . '%'])['total'] ?? 0) + 1;
+        $prefix = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) \App\Core\TenantContext::current()['code'])) ?: 'TENANT';
+        $prefix .= '-NK';
+        $count = (int) ($this->fetchOne('SELECT COUNT(*) AS total FROM citizens WHERE citizen_code LIKE :prefix AND ' . $this->tenantWhere('citizens'), $this->withTenant(['prefix' => $prefix . '%']))['total'] ?? 0) + 1;
         do { $code = $prefix . str_pad((string) $count++, 5, '0', STR_PAD_LEFT); }
-        while ($this->fetchOne('SELECT id FROM citizens WHERE citizen_code=:code', ['code' => $code]));
+        while ($this->fetchOne('SELECT id FROM citizens WHERE citizen_code=:code AND ' . $this->tenantWhere('citizens'), $this->withTenant(['code' => $code])));
         return $code;
     }
 
     private function syncHouseholdHead(int $householdId): void
     {
-        $head = $this->fetchOne('SELECT id, full_name FROM citizens WHERE household_id=:household_id AND relationship="Chủ hộ" AND status <> "DELETED" ORDER BY id LIMIT 1', ['household_id' => $householdId]);
-        $this->execute('UPDATE households SET head_citizen_id=:head_id, head_citizen_name=:head_name WHERE id=:household_id', ['household_id' => $householdId, 'head_id' => $head['id'] ?? null, 'head_name' => $head['full_name'] ?? null]);
+        $head = $this->fetchOne('SELECT id, full_name FROM citizens WHERE household_id=:household_id AND relationship="Chủ hộ" AND status <> "DELETED" AND ' . $this->tenantWhere('citizens') . ' ORDER BY id LIMIT 1', $this->withTenant(['household_id' => $householdId]));
+        $this->execute('UPDATE households SET head_citizen_id=:head_id, head_citizen_name=:head_name WHERE id=:household_id AND ' . $this->tenantWhere('households'), $this->withTenant(['household_id' => $householdId, 'head_id' => $head['id'] ?? null, 'head_name' => $head['full_name'] ?? null]));
     }
 
     private function relationship(mixed $value): string { $text = trim((string) $value); return $text === 'Chủ hộ' ? 'Chủ hộ' : ($text ?: 'Khác'); }

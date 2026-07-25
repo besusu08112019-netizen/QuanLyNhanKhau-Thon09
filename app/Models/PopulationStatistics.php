@@ -189,6 +189,9 @@ final class PopulationStatistics extends BaseModel
     private function notDeletedCondition(string $table, string $alias): string
     {
         $conditions = [];
+        if ($this->tenantColumnExists($table)) {
+            $conditions[] = $alias . '.village_id = ' . $this->tenantId();
+        }
         if ($this->columnExists($table, 'status')) {
             $conditions[] = '(' . $alias . ".status IS NULL OR " . $alias . ".status <> 'DELETED')";
         }

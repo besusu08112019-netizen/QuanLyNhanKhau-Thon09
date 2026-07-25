@@ -13,13 +13,13 @@
   const debounce = (fn, delay) => { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; };
 
   const can = action => {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (service?.can) return service.can('photo_gallery', action, window.App?.user);
-    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('photo_gallery', action) : true;
+    return typeof window.TenantAppCanAccess === 'function' ? window.TenantAppCanAccess('photo_gallery', action) : true;
   };
 
-  const openModal = id => window.Thon09Platform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
-  const closeModal = id => window.Thon09Platform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
+  const openModal = id => window.TenantAppPlatform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
+  const closeModal = id => window.TenantAppPlatform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
   const authHeaders = () => { const h = {}; if (window.App?.token) h.Authorization = `Bearer ${window.App.token}`; if (window.App?.csrfToken) h['X-CSRF-Token'] = window.App.csrfToken; return h; };
 
   async function loadAuthorizedImage(url) {
@@ -57,7 +57,7 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
-  document.addEventListener('thon09:screen-change', event => { if (event.detail?.screen === 'photoGallery') run(load); });
+  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'photoGallery') run(load); });
 
   function init() {
     registerActions();
@@ -65,9 +65,9 @@
   }
 
   function registerActions() {
-    if (window.__thon09PhotoGalleryActionsRegistered || !window.Thon09Platform?.actions) return;
-    window.__thon09PhotoGalleryActionsRegistered = true;
-    window.Thon09Platform.actions
+    if (window.__TenantAppPhotoGalleryActionsRegistered || !window.TenantAppPlatform?.actions) return;
+    window.__TenantAppPhotoGalleryActionsRegistered = true;
+    window.TenantAppPlatform.actions
       .register({ key: 'photoGallery.upload', handler: () => run(openUpload) })
       .register({ key: 'photoGallery.album.create', handler: () => run(openAlbum) })
       .register({ key: 'photoGallery.detail', handler: ({ dataset }) => run(() => openDetail(Number(dataset.id || 0))) })
@@ -178,7 +178,7 @@
       renderGrid(list);
       renderPager(list);
       setLoading(false, '');
-      window.thon09ApplyAccessControls?.();
+      window.TenantAppApplyAccessControls?.();
     } catch (error) {
       renderDashboard({});
       renderGrid({ items: [], total: 0 });

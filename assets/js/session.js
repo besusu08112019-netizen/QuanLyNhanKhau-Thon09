@@ -5,13 +5,13 @@
   }
 
   function syncAuthCookie() {
-    const token = App.token || localStorage.getItem('thon09_token') || '';
+    const token = App.token || localStorage.getItem(tenantStorageKey('token')) || '';
     if (!token) return clearAuthCookie();
-    document.cookie = 'thon09_token=' + encodeURIComponent(token) + authCookieAttributes(21600);
+    document.cookie = tenantStorageKey('token') + '=' + encodeURIComponent(token) + authCookieAttributes(21600);
   }
 
   function clearAuthCookie() {
-    document.cookie = 'thon09_token=' + authCookieAttributes(0);
+    document.cookie = tenantStorageKey('token') + '=' + authCookieAttributes(0);
   }
 
   window.syncAuthCookie = syncAuthCookie;
@@ -21,9 +21,9 @@
     App.token = '';
     App.user = null;
     App.csrfToken = '';
-    localStorage.removeItem('thon09_token');
-    localStorage.removeItem('thon09_user');
-    localStorage.removeItem('thon09_csrf');
+    localStorage.removeItem(tenantStorageKey('token'));
+    localStorage.removeItem(tenantStorageKey('user'));
+    localStorage.removeItem(tenantStorageKey('csrf'));
     clearAuthCookie();
     showLogin();
   }
@@ -32,7 +32,7 @@
 
   window.logout = async function logout() {
     const token = App.token;
-    const csrfToken = App.csrfToken || localStorage.getItem('thon09_csrf') || '';
+    const csrfToken = App.csrfToken || localStorage.getItem(tenantStorageKey('csrf')) || '';
     clearSession();
     if (!token) return;
     try {

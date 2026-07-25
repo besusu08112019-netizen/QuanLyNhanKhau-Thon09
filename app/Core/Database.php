@@ -94,18 +94,13 @@ final class Database
 
     private static function config(): array
     {
-        $localConfig = BASE_PATH . '/config/database.php';
         $exampleConfig = BASE_PATH . '/config/database.example.php';
-
-        if (is_file($localConfig)) {
-            return require $localConfig;
-        }
 
         if (is_file($exampleConfig)) {
             return require $exampleConfig;
         }
 
-        throw new DatabaseException('Không tìm thấy cấu hình cơ sở dữ liệu. Vui lòng tạo file .env hoặc config/database.php từ file mẫu.');
+        throw new DatabaseException('Khong tim thay cau hinh co so du lieu. Vui long tao file .env tu .env.example.');
     }
 
     private static function connect(string $dsn, array $config): PDO

@@ -8,20 +8,20 @@ final class TenantConfig
 {
     private static ?array $databaseSettings = null;
     private static ?array $publicSettings = null;
-    private static bool $envLoaded = false;
 
     public static function defaults(): array
     {
-        self::loadEnvFiles();
-        $hamlet = self::env('TENANT_HAMLET_NAME', '');
-        $commune = self::env('TENANT_COMMUNE_NAME', '');
-        $unit = self::env('TENANT_UNIT_NAME', self::joinUnit($hamlet, $commune));
+        self::loadEnv();
+        $village = TenantContext::current();
+        $hamlet = self::env('TENANT_HAMLET_NAME', (string) ($village['name'] ?? ''));
+        $commune = self::env('TENANT_COMMUNE_NAME', (string) ($village['commune_name'] ?? ''));
+        $unit = self::env('TENANT_UNIT_NAME', (string) ($village['unit_name'] ?? self::joinUnit($hamlet, $commune)));
         $systemName = self::env('APP_NAME', self::env('TENANT_SYSTEM_NAME', 'He thong Quan ly Hanh chinh'));
-        $copyright = self::env('TENANT_COPYRIGHT', $unit !== '' ? '© ' . $unit : '');
+        $copyright = self::env('TENANT_COPYRIGHT', $unit !== '' ? '(c) ' . $unit : '');
 
         return [
             'systemName' => $systemName,
-            'logoUrl' => self::env('TENANT_LOGO_URL', ''),
+            'logoUrl' => self::env('TENANT_LOGO_URL', (string) ($village['logo_url'] ?? '')),
             'backgroundUrl' => self::env('TENANT_BACKGROUND_URL', ''),
             'backgroundImages' => self::env('TENANT_BACKGROUND_IMAGES', ''),
             'backgroundInterval' => self::env('TENANT_BACKGROUND_INTERVAL', '6000'),
@@ -35,15 +35,15 @@ final class TenantConfig
             'historyTitle' => self::env('TENANT_HISTORY_TITLE', ''),
             'hamletHistory' => self::env('TENANT_HISTORY', ''),
             'introduction' => self::env('TENANT_INTRODUCTION', ''),
-            'phone' => self::env('TENANT_PHONE', ''),
-            'email' => self::env('TENANT_EMAIL', ''),
-            'address' => self::env('TENANT_ADDRESS', ''),
+            'phone' => self::env('TENANT_PHONE', (string) ($village['phone'] ?? '')),
+            'email' => self::env('TENANT_EMAIL', (string) ($village['email'] ?? '')),
+            'address' => self::env('TENANT_ADDRESS', (string) ($village['address'] ?? '')),
             'website' => self::env('TENANT_WEBSITE', self::env('APP_URL', '')),
             'copyright' => $copyright,
             'reportSigner' => self::env('TENANT_REPORT_SIGNER', ''),
             'supportEmail' => self::env('SUPPORT_EMAIL', ''),
             'maintenanceMessage' => self::env('MAINTENANCE_MESSAGE', ''),
-            'themeColor' => self::env('TENANT_THEME_COLOR', '#0b6b3a'),
+            'themeColor' => self::env('TENANT_THEME_COLOR', (string) ($village['theme_color'] ?? '#0b6b3a')),
             'backgroundColor' => self::env('TENANT_BACKGROUND_COLOR', '#eef3f8'),
             'manifestId' => self::env('TENANT_MANIFEST_ID', '/pwa/app'),
         ];
@@ -92,7 +92,14 @@ final class TenantConfig
         if (self::$databaseSettings !== null) return self::$databaseSettings;
 
         try {
-            $stmt = Database::pdo()->query('SELECT setting_key, setting_value FROM settings');
+            $pdo = Database::pdo();
+            if (self::columnExists('settings', 'village_id')) {
+                $stmt = $pdo->prepare('SELECT setting_key, setting_value FROM settings WHERE village_id = :village_id');
+                $stmt->execute(['village_id' => TenantContext::id()]);
+            } else {
+                $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
+            }
+
             $settings = [];
             foreach ($stmt->fetchAll() as $row) {
                 $settings[(string) $row['setting_key']] = (string) ($row['setting_value'] ?? '');
@@ -105,34 +112,22 @@ final class TenantConfig
 
     private static function env(string $key, string $default = ''): string
     {
-        self::loadEnvFiles();
-        $value = getenv($key);
-        if ($value !== false && $value !== '') return (string) $value;
-        if (isset($_ENV[$key]) && $_ENV[$key] !== '') return (string) $_ENV[$key];
-        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return (string) $_SERVER[$key];
-        return $default;
+        self::loadEnv();
+        return (string) \env($key, $default);
     }
 
-    private static function loadEnvFiles(): void
+    private static function loadEnv(): void
     {
-        if (self::$envLoaded) return;
-        self::$envLoaded = true;
+        $envFile = BASE_PATH . '/config/env.php';
+        if (is_file($envFile)) require_once $envFile;
+        \env_load(BASE_PATH);
+    }
 
-        foreach ([BASE_PATH . '/.env', dirname(BASE_PATH) . '/.env'] as $path) {
-            if (!is_file($path) || !is_readable($path)) continue;
-            foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
-                $line = trim($line);
-                if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
-                [$key, $value] = array_map('trim', explode('=', $line, 2));
-                if ($key === '') continue;
-                $value = trim($value, " \t\n\r\0\x0B\"'");
-                if (getenv($key) === false || getenv($key) === '') {
-                    putenv($key . '=' . $value);
-                    $_ENV[$key] = $value;
-                    $_SERVER[$key] = $value;
-                }
-            }
-        }
+    private static function columnExists(string $table, string $column): bool
+    {
+        $stmt = Database::pdo()->prepare('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column');
+        $stmt->execute(['table' => $table, 'column' => $column]);
+        return (int) ($stmt->fetch()['total'] ?? 0) > 0;
     }
 
     private static function joinUnit(string $hamlet, string $commune): string

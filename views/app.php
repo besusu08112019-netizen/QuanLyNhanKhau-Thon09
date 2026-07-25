@@ -22,7 +22,22 @@
   <link rel="stylesheet" href="/assets/css/app.min.css">
   <link rel="stylesheet" href="/assets/css/mobile-design-system-v2.min.css">
   <link rel="stylesheet" href="/assets/css/print.min.css" media="print">
-  <script>window.AppSettings={{APP_SETTINGS_JSON}};</script>
+  <script>
+    window.AppSettings={{APP_SETTINGS_JSON}};
+    (function () {
+      var settings = window.AppSettings || {};
+      var raw = String(settings.tenantNamespace || location.host || 'tenant').toLowerCase();
+      var namespace = raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
+      window.TenantRuntime = window.TenantRuntime || {};
+      window.TenantRuntime.namespace = namespace;
+      window.tenantStorageKey = window.tenantStorageKey || function (key) {
+        return namespace + '_' + String(key || '').replace(/^_+/, '');
+      };
+      window.tenantEventName = window.tenantEventName || function (name) {
+        return 'tenant:' + String(name || '').replace(/^:+/, '');
+      };
+    })();
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Bỏ qua điều hướng</a>

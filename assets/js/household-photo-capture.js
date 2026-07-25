@@ -1,6 +1,6 @@
 (function () {
-  if (window.__thon09HouseholdPhotoCaptureLoaded) return;
-  window.__thon09HouseholdPhotoCaptureLoaded = true;
+  if (window.__TenantAppHouseholdPhotoCaptureLoaded) return;
+  window.__TenantAppHouseholdPhotoCaptureLoaded = true;
 
   const MAX_SIDE = 1280;
   const JPEG_QUALITY = 0.8;
@@ -25,14 +25,14 @@
   }
 
   function closeModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(qs('#' + id))?.hide();
   }
 
   function currentCsrfToken() {
     return window.App?.csrfToken
-      || localStorage.getItem('thon09_csrf')
+      || localStorage.getItem(tenantStorageKey('csrf'))
       || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
       || window.csrfToken
       || window.CSRF_TOKEN
@@ -43,13 +43,13 @@
     const value = String(token || '').trim();
     if (!value) return;
     if (window.App) window.App.csrfToken = value;
-    localStorage.setItem('thon09_csrf', value);
+    localStorage.setItem(tenantStorageKey('csrf'), value);
   }
 
   function registerHouseholdPhotoActions() {
-    const actions = window.Thon09Platform && window.Thon09Platform.actions;
-    if (window.__thon09HouseholdPhotoActionsRegistered || !actions || typeof actions.register !== 'function') return;
-    window.__thon09HouseholdPhotoActionsRegistered = true;
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
+    if (window.__TenantAppHouseholdPhotoActionsRegistered || !actions || typeof actions.register !== 'function') return;
+    window.__TenantAppHouseholdPhotoActionsRegistered = true;
       actions
         .register('householdPhoto.capture', context => {
           const input = context.target?.closest?.('.household-photo-widget')?.querySelector('[data-household-photo-capture-input]');
@@ -65,7 +65,7 @@
 
   function authHeaders(extra = {}, method = 'GET') {
     const headers = Object.assign({ Accept: 'application/json' }, extra);
-    const bearer = window.App?.token || localStorage.getItem('thon09_token') || '';
+    const bearer = window.App?.token || localStorage.getItem(tenantStorageKey('token')) || '';
     if (bearer) headers.Authorization = 'Bearer ' + bearer;
     if (!['GET', 'HEAD', 'OPTIONS'].includes(String(method || 'GET').toUpperCase())) {
       const token = currentCsrfToken();
@@ -219,8 +219,8 @@
   async function openPreview(file) {
     if (!file) return;
     const id = Number(file.id || 0);
-    if (id > 0 && typeof window.thon09PreviewFile === 'function') {
-      window.thon09PreviewFile(id);
+    if (id > 0 && typeof window.TenantAppPreviewFile === 'function') {
+      window.TenantAppPreviewFile(id);
       return;
     }
     const url = filePreviewUrl(file);
@@ -316,8 +316,8 @@
       gis.lastAllMarkersKey = '';
       gis.allMarkersLoaded = false;
     }
-    if (typeof window.thon09LoadGisHouseholdMarkers === 'function') {
-      window.thon09LoadGisHouseholdMarkers('', { force: true });
+    if (typeof window.TenantAppLoadGisHouseholdMarkers === 'function') {
+      window.TenantAppLoadGisHouseholdMarkers('', { force: true });
     } else if (typeof window.loadGisMap === 'function') {
       window.loadGisMap();
     }
@@ -395,7 +395,7 @@
     fileInput.addEventListener('change', () => handleFile(fileInput.files && fileInput.files[0]));
     captureInput.addEventListener('change', () => handleFile(captureInput.files && captureInput.files[0]));
     loadExistingPhoto(getHouseholdIdFromForm());
-    document.dispatchEvent(new CustomEvent('thon09:household-photo-ready'));
+    document.dispatchEvent(new CustomEvent('tenant:household-photo-ready'));
   }
 
   async function enhancedSaveHousehold(event) {
@@ -452,7 +452,7 @@
     hookHouseholdForm();
   }
 
-  window.thon09EnhanceHouseholdPhotoCapture = boot;
+  window.TenantAppEnhanceHouseholdPhotoCapture = boot;
 
   document.addEventListener('shown.bs.modal', event => {
     if (event.target?.id !== 'householdModal') return;

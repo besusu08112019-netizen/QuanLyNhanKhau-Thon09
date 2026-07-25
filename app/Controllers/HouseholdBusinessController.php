@@ -154,7 +154,7 @@ final class HouseholdBusinessController extends BaseController
 
     private function debugRequest(string $context, array $input): void
     {
-        $value = strtolower((string) (getenv('APP_DEBUG') ?: getenv('THON09_DEBUG') ?: ''));
+        $value = strtolower((string) (getenv('APP_DEBUG') ?: ''));
         if (!in_array($value, ['1', 'true', 'yes', 'on'], true)) return;
         error_log('[HOUSEHOLD_BUSINESS_REQUEST] ' . json_encode(['context' => $context, 'input' => $input], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }

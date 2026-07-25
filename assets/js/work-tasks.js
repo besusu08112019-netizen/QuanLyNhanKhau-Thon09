@@ -14,7 +14,7 @@
 
   async function request(url, options = {}) {
     if (typeof window.api === 'function') return window.api(url, options);
-    const token = window.App?.token || localStorage.getItem('thon09_token') || '';
+    const token = window.App?.token || localStorage.getItem(tenantStorageKey('token')) || '';
     const headers = { Accept: 'application/json' };
     if (token) headers.Authorization = 'Bearer ' + token;
     if (window.App?.csrfToken) headers['X-CSRF-Token'] = window.App.csrfToken;
@@ -28,17 +28,17 @@
   }
 
   const can = action => {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (service?.can) return service.can('work_tasks', action, window.App?.user);
-    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('work_tasks', action) : true;
+    return typeof window.TenantAppCanAccess === 'function' ? window.TenantAppCanAccess('work_tasks', action) : true;
   };
-  const openModal = id => window.Thon09Platform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
-  const closeModal = id => window.Thon09Platform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
+  const openModal = id => window.TenantAppPlatform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
+  const closeModal = id => window.TenantAppPlatform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
   const run = fn => Promise.resolve().then(fn).catch(error => toast(error.message || 'Thao tác không thành công', 'danger'));
   const debounce = (fn, delay) => { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; };
 
   document.addEventListener('DOMContentLoaded', init);
-  document.addEventListener('thon09:screen-change', event => { if (event.detail?.screen === 'workTasks') run(load); });
+  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'workTasks') run(load); });
 
   function init() {
     registerActions();
@@ -46,9 +46,9 @@
   }
 
   function registerActions() {
-    if (window.__thon09WorkTasksActionsRegistered || !window.Thon09Platform?.actions) return;
-    window.__thon09WorkTasksActionsRegistered = true;
-    window.Thon09Platform.actions
+    if (window.__TenantAppWorkTasksActionsRegistered || !window.TenantAppPlatform?.actions) return;
+    window.__TenantAppWorkTasksActionsRegistered = true;
+    window.TenantAppPlatform.actions
       .register({ key: 'workTasks.create', handler: () => run(() => openForm()) })
       .register({ key: 'workTasks.detail', handler: ({ dataset }) => run(() => openDetail(Number(dataset.id || 0))) })
       .register({ key: 'workTasks.edit', handler: ({ dataset }) => run(() => openForm(Number(dataset.id || 0))) })
@@ -159,8 +159,8 @@
     renderDashboard(dashboard);
     renderRows(list);
     renderPager(list);
-    window.thon09ApplyAccessControls?.();
-    window.thon09SyncResponsiveTableLabels?.($('#workTasksScreen'));
+    window.TenantAppApplyAccessControls?.();
+    window.TenantAppSyncResponsiveTableLabels?.($('#workTasksScreen'));
   }
 
   function renderDashboard(data = {}) {

@@ -31,7 +31,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 {
   const request = read('app/Core/Request.php');
-  assert.doesNotMatch(request, /\$_COOKIE\['thon09_token'\]/);
+  assert.doesNotMatch(request, /\$_COOKIE\['tenantStorageKey('token')'\]/);
   assert.match(request, /\^\[a-f0-9\]\{64\}\$/);
 }
 

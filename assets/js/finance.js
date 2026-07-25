@@ -27,16 +27,16 @@
   }
 
   const can = action => {
-    const service = window.Thon09Platform?.permissions;
+    const service = window.TenantAppPlatform?.permissions;
     if (service?.can) return service.can('finance', action, window.App?.user);
-    return typeof window.thon09CanAccess === 'function' ? window.thon09CanAccess('finance', action) : true;
+    return typeof window.TenantAppCanAccess === 'function' ? window.TenantAppCanAccess('finance', action) : true;
   };
-  const openModal = id => window.Thon09Platform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
-  const closeModal = id => window.Thon09Platform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
+  const openModal = id => window.TenantAppPlatform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
+  const closeModal = id => window.TenantAppPlatform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
-  document.addEventListener('thon09:screen-change', event => { if (event.detail?.screen === 'finance') run(load); });
+  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'finance') run(load); });
 
   function init() {
     registerActions();
@@ -44,9 +44,9 @@
   }
 
   function registerActions() {
-    if (window.__thon09FinanceActionsRegistered || !window.Thon09Platform?.actions) return;
-    window.__thon09FinanceActionsRegistered = true;
-    window.Thon09Platform.actions
+    if (window.__TenantAppFinanceActionsRegistered || !window.TenantAppPlatform?.actions) return;
+    window.__TenantAppFinanceActionsRegistered = true;
+    window.TenantAppPlatform.actions
       .register({ key: 'finance.create', handler: ({ dataset }) => run(() => openForm(null, dataset.type || 'INCOME')) })
       .register({ key: 'finance.detail', handler: ({ dataset }) => run(() => openDetail(Number(dataset.id || 0))) })
       .register({ key: 'finance.edit', handler: ({ dataset }) => run(() => openForm(Number(dataset.id || 0))) })
@@ -166,8 +166,8 @@
       renderRows(list);
       renderPager(list);
       setLoading(false, '');
-      window.thon09ApplyAccessControls?.();
-      window.thon09SyncResponsiveTableLabels?.($('#financeScreen'));
+      window.TenantAppApplyAccessControls?.();
+      window.TenantAppSyncResponsiveTableLabels?.($('#financeScreen'));
     } catch (error) {
       renderDashboard({});
       renderRows({ items: [], total: 0 });

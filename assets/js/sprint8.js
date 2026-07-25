@@ -5,19 +5,19 @@
 
   function registerModal(id) {
     const modal = document.querySelector('#' + id);
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (modal && service?.registerBootstrap) service.registerBootstrap(id, '#' + id);
     return modal;
   }
 
   function openModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.open && service.open(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.show();
   }
 
   function closeModal(id) {
-    const service = window.Thon09Platform?.modals;
+    const service = window.TenantAppPlatform?.modals;
     if (service?.close && service.close(id)) return;
     window.bootstrap?.Modal?.getOrCreateInstance?.(document.querySelector('#' + id))?.hide();
   }
@@ -29,7 +29,7 @@
     patchUserManagementUi();
   });
 
-  document.addEventListener('thon09:auth-state', event => {
+  document.addEventListener('tenant:auth-state', event => {
     if (!event.detail?.authenticated) return;
     registerSprint8Actions();
     ensureSprint8Modals();
@@ -38,9 +38,9 @@
   });
 
   function registerSprint8Actions() {
-    const actions = window.Thon09Platform && window.Thon09Platform.actions;
-    if (window.__thon09Sprint8ActionsRegistered || !actions || typeof actions.register !== 'function') return;
-    window.__thon09Sprint8ActionsRegistered = true;
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
+    if (window.__TenantAppSprint8ActionsRegistered || !actions || typeof actions.register !== 'function') return;
+    window.__TenantAppSprint8ActionsRegistered = true;
     actions
       .register('sprint8.person.edit', context => {
         const id = Number(context.dataset.id || currentPersonDetail?.id || 0);
@@ -212,15 +212,15 @@
   }
 
   function printPersonDetail(row) {
-    if (!window.Thon09Print) return showToast('Print Framework is not ready', 'warning');
-    window.Thon09Print.render({
-      title: 'Phi?u th?ng tin nh?n kh?u',
+    if (!window.TenantAppPrint) return showToast('Print Framework is not ready', 'warning');
+    window.TenantAppPrint.render({
+      title: 'Phieu thong tin nhan khau',
       type: 'citizen-detail',
       orientation: 'portrait',
       paperSize: 'A4',
       headers: ['Th?ng tin', 'Gi? tr?'],
-      rows: personPrintRows(row),
-      filters: { 'Nh?n kh?u': row.full_name || '', 'M? nh?n kh?u': row.citizen_code || '', 'M? h?': row.household_code || '' },
+      headers: ['Thong tin', 'Gia tri'],
+      filters: { 'Nhan khau': row.full_name || '', 'Ma nhan khau': row.citizen_code || '', 'Ma ho': row.household_code || '' },
       repeatHeader: true,
       showFooter: true,
       showSummary: false,
@@ -230,15 +230,15 @@
 
   function personPrintRows(row) {
     return [
-      ['M? h?', row.household_code],
-      ['M? nh?n kh?u', row.citizen_code],
-      ['H? v? t?n', row.full_name],
-      ['Ng?y sinh', formatDate(row.date_of_birth)],
-      ['Tu?i', ageText(row.date_of_birth)],
-      ['Gi?i t?nh', row.gender],
-      ['CCCD/S? ??nh danh', row.identity_number || row.personal_id || row.national_id],
-      ['S? ?i?n tho?i', row.phone],
-      ['Quan h? v?i ch? h?', row.relationship],
+      ['Ma ho', row.household_code],
+      ['Ma nhan khau', row.citizen_code],
+      ['Ho va ten', row.full_name],
+      ['Ngay sinh', formatDate(row.date_of_birth)],
+      ['Tuoi', ageText(row.date_of_birth)],
+      ['Gioi tinh', row.gender],
+      ['CCCD/So dinh danh', row.identity_number || row.personal_id || row.national_id],
+      ['So dien thoai', row.phone],
+      ['Quan he voi chu ho', row.relationship],
       ['D?n t?c', row.ethnicity],
       ['Ngh? nghi?p', row.occupation],
       ['H?c v?n', row.education_level],

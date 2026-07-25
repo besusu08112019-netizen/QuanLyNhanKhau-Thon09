@@ -9,7 +9,7 @@
   const toast = (message, type = 'info') => typeof window.showToast === 'function' ? window.showToast(message, type) : console[type === 'danger' ? 'error' : 'log'](message);
 
   document.addEventListener('DOMContentLoaded', init);
-  document.addEventListener('thon09:auth-state', event => {
+  document.addEventListener('tenant:auth-state', event => {
     if (event.detail?.authenticated === false) clear();
     else load();
   });
@@ -45,9 +45,9 @@
   }
 
   function registerActions() {
-    const actions = window.Thon09Platform?.actions;
-    if (!actions || window.__thon09NotificationActionsRegistered) return;
-    window.__thon09NotificationActionsRegistered = true;
+    const actions = window.TenantAppPlatform?.actions;
+    if (!actions || window.__TenantAppNotificationActionsRegistered) return;
+    window.__TenantAppNotificationActionsRegistered = true;
     actions
       .register({ key: 'notifications.toggle', handler: toggle })
       .register({ key: 'notifications.read', handler: ({ dataset }) => markRead(dataset.key || '', true) })
@@ -116,7 +116,7 @@
     if (!key) return;
     await api(`${API}/${encodeURIComponent(key)}/read`, { method: 'POST' });
     const item = state.items.find(row => row.key === key);
-    if (navigate && item?.screen) window.Thon09NavigationController?.navigate(item.screen);
+    if (navigate && item?.screen) window.TenantAppNavigationController?.navigate(item.screen);
     await load();
   }
 

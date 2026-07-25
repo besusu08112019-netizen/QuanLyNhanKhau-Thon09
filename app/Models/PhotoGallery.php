@@ -59,13 +59,15 @@ CREATE TABLE IF NOT EXISTS photo_gallery_items (
   CONSTRAINT fk_photo_gallery_items_album FOREIGN KEY (album_id) REFERENCES photo_gallery_albums(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        $this->ensureTenantColumn('photo_gallery_albums');
+        $this->ensureTenantColumn('photo_gallery_items');
     }
 
     public function catalogs(): array
     {
         $this->ensureSchema();
-        $albums = $this->fetchAll('SELECT id, album_code, name FROM photo_gallery_albums WHERE status <> "DELETED" ORDER BY name ASC');
-        $tags = $this->fetchAll('SELECT DISTINCT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(tags_text, ",", n.n), ",", -1)) AS tag FROM photo_gallery_items JOIN (SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10) n WHERE status <> "DELETED" AND tags_text IS NOT NULL AND tags_text <> "" HAVING tag <> "" ORDER BY tag ASC LIMIT 100');
+        $albums = $this->fetchAll('SELECT id, album_code, name FROM photo_gallery_albums WHERE status <> "DELETED" AND ' . $this->tenantWhere('photo_gallery_albums') . ' ORDER BY name ASC', $this->withTenant());
+        $tags = $this->fetchAll('SELECT DISTINCT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(tags_text, ",", n.n), ",", -1)) AS tag FROM photo_gallery_items JOIN (SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10) n WHERE status <> "DELETED" AND ' . $this->tenantWhere('photo_gallery_items') . ' AND tags_text IS NOT NULL AND tags_text <> "" HAVING tag <> "" ORDER BY tag ASC LIMIT 100', $this->withTenant());
         return [
             'albums' => array_map(fn($r) => ['value' => (string)$r['id'], 'label' => (string)$r['name'], 'code' => (string)$r['album_code']], $albums),
             'tags' => array_map(fn($r) => ['value' => (string)$r['tag'], 'label' => (string)$r['tag']], $tags),
@@ -100,7 +102,7 @@ SQL);
     public function albums(): array
     {
         $this->ensureSchema();
-        $rows = $this->fetchAll('SELECT pga.*, COUNT(pgi.id) AS photo_count FROM photo_gallery_albums pga LEFT JOIN photo_gallery_items pgi ON pgi.album_id=pga.id AND pgi.status <> "DELETED" WHERE pga.status <> "DELETED" GROUP BY pga.id ORDER BY pga.name ASC');
+        $rows = $this->fetchAll('SELECT pga.*, COUNT(pgi.id) AS photo_count FROM photo_gallery_albums pga LEFT JOIN photo_gallery_items pgi ON pgi.album_id=pga.id AND pgi.status <> "DELETED" AND ' . $this->tenantWhere('pgi', 'photo_gallery_items') . ' WHERE pga.status <> "DELETED" AND ' . $this->tenantWhere('pga', 'photo_gallery_albums') . ' GROUP BY pga.id ORDER BY pga.name ASC', $this->withTenant());
         return ['items' => array_map(fn($r) => $this->normalizeAlbum($r), $rows)];
     }
 
@@ -109,20 +111,23 @@ SQL);
         $this->ensureSchema();
         $name = trim((string)($data['name'] ?? ''));
         if ($name === '') throw new \RuntimeException($this->u('T\u00ean album l\u00e0 b\u1eaft bu\u1ed9c'));
-        $id = $this->insert('INSERT INTO photo_gallery_albums (album_code, name, description, created_by, updated_by) VALUES (:album_code,:name,:description,:created_by,:updated_by)', [
+        $params = [
             'album_code' => $this->nextAlbumCode(),
             'name' => mb_substr($name, 0, 255),
             'description' => $this->nullable($data['description'] ?? ''),
             'created_by' => $userId,
             'updated_by' => $userId,
-        ]);
+        ];
+        $columns = ['album_code', 'name', 'description', 'created_by', 'updated_by'];
+        $this->addTenantInsert('photo_gallery_albums', $columns, $params);
+        $id = $this->insert('INSERT INTO photo_gallery_albums (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return $this->findAlbum($id);
     }
 
     public function findAlbum(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT pga.*, COUNT(pgi.id) AS photo_count FROM photo_gallery_albums pga LEFT JOIN photo_gallery_items pgi ON pgi.album_id=pga.id AND pgi.status <> "DELETED" WHERE pga.id=:id AND pga.status <> "DELETED" GROUP BY pga.id', ['id' => $id]);
+        $row = $this->fetchOne('SELECT pga.*, COUNT(pgi.id) AS photo_count FROM photo_gallery_albums pga LEFT JOIN photo_gallery_items pgi ON pgi.album_id=pga.id AND pgi.status <> "DELETED" AND ' . $this->tenantWhere('pgi', 'photo_gallery_items') . ' WHERE pga.id=:id AND pga.status <> "DELETED" AND ' . $this->tenantWhere('pga', 'photo_gallery_albums') . ' GROUP BY pga.id', $this->withTenant(['id' => $id]));
         return $row ? $this->normalizeAlbum($row) : null;
     }
 
@@ -133,7 +138,7 @@ SQL);
         if ($title === '') $title = basename((string)($data['original_name'] ?? 'Ảnh'));
         $albumId = (int)($data['album_id'] ?? 0);
         if ($albumId > 0 && !$this->findAlbum($albumId)) throw new \RuntimeException($this->u('Album kh\u00f4ng h\u1ee3p l\u1ec7'));
-        $id = $this->insert('INSERT INTO photo_gallery_items (album_id, title, description, original_name, stored_name, file_path, mime_type, file_size, event_date, area_code, source_module, source_id, tags_text, created_by, updated_by) VALUES (:album_id,:title,:description,:original_name,:stored_name,:file_path,:mime_type,:file_size,:event_date,:area_code,:source_module,:source_id,:tags_text,:created_by,:updated_by)', [
+        $params = [
             'album_id' => $albumId > 0 ? $albumId : null,
             'title' => mb_substr($title, 0, 255),
             'description' => $this->nullable($data['description'] ?? ''),
@@ -149,14 +154,17 @@ SQL);
             'tags_text' => $this->tags($data['tags'] ?? $data['tags_text'] ?? ''),
             'created_by' => $userId,
             'updated_by' => $userId,
-        ]);
+        ];
+        $columns = ['album_id', 'title', 'description', 'original_name', 'stored_name', 'file_path', 'mime_type', 'file_size', 'event_date', 'area_code', 'source_module', 'source_id', 'tags_text', 'created_by', 'updated_by'];
+        $this->addTenantInsert('photo_gallery_items', $columns, $params);
+        $id = $this->insert('INSERT INTO photo_gallery_items (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return $this->findItem($id);
     }
 
     public function findItem(int $id): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT pgi.*, pga.name AS album_name, pga.album_code FROM photo_gallery_items pgi LEFT JOIN photo_gallery_albums pga ON pga.id=pgi.album_id WHERE pgi.id=:id AND pgi.status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT pgi.*, pga.name AS album_name, pga.album_code FROM photo_gallery_items pgi LEFT JOIN photo_gallery_albums pga ON pga.id=pgi.album_id WHERE pgi.id=:id AND pgi.status <> "DELETED" AND ' . $this->tenantWhere('pgi', 'photo_gallery_items') . ' AND (pga.id IS NULL OR ' . $this->tenantWhere('pga', 'photo_gallery_albums') . ')', $this->withTenant(['id' => $id]));
         return $row ? $this->normalizeItem($row) : null;
     }
 
@@ -166,7 +174,7 @@ SQL);
         if (!$existing) return null;
         $albumId = (int)($data['album_id'] ?? $data['albumId'] ?? 0);
         if ($albumId > 0 && !$this->findAlbum($albumId)) throw new \RuntimeException($this->u('Album kh\u00f4ng h\u1ee3p l\u1ec7'));
-        $this->execute('UPDATE photo_gallery_items SET album_id=:album_id, title=:title, description=:description, event_date=:event_date, area_code=:area_code, source_module=:source_module, source_id=:source_id, tags_text=:tags_text, updated_by=:updated_by WHERE id=:id AND status <> "DELETED"', [
+        $this->execute('UPDATE photo_gallery_items SET album_id=:album_id, title=:title, description=:description, event_date=:event_date, area_code=:area_code, source_module=:source_module, source_id=:source_id, tags_text=:tags_text, updated_by=:updated_by WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('photo_gallery_items'), $this->withTenant([
             'id' => $id,
             'album_id' => $albumId > 0 ? $albumId : null,
             'title' => mb_substr(trim((string)($data['title'] ?? $existing['title'])), 0, 255),
@@ -177,25 +185,25 @@ SQL);
             'source_id' => ((int)($data['source_id'] ?? 0)) > 0 ? (int)$data['source_id'] : null,
             'tags_text' => $this->tags($data['tags'] ?? $data['tags_text'] ?? ''),
             'updated_by' => $userId,
-        ]);
+        ]));
         return $this->findItem($id);
     }
 
     public function softDeleteItem(int $id, int $userId): void
     {
-        $this->execute('UPDATE photo_gallery_items SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id', ['id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE photo_gallery_items SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('photo_gallery_items'), $this->withTenant(['id' => $id, 'user' => $userId]));
     }
 
     public function itemPath(int $id): ?string
     {
-        $row = $this->fetchOne('SELECT file_path FROM photo_gallery_items WHERE id=:id AND status <> "DELETED"', ['id' => $id]);
+        $row = $this->fetchOne('SELECT file_path FROM photo_gallery_items WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('photo_gallery_items'), $this->withTenant(['id' => $id]));
         return $row ? (string)$row['file_path'] : null;
     }
 
     private function where(array $filters, bool $withOrder = true): array
     {
-        $where = ['pgi.status <> "DELETED"'];
-        $params = [];
+        $where = ['pgi.status <> "DELETED"', $this->tenantWhere('pgi', 'photo_gallery_items'), '(pga.id IS NULL OR ' . $this->tenantWhere('pga', 'photo_gallery_albums') . ')'];
+        $params = $this->withTenant();
         $search = trim((string)($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $where[] = '(LOWER(pgi.title) LIKE :q OR LOWER(pgi.description) LIKE :q OR LOWER(pgi.original_name) LIKE :q OR LOWER(pgi.tags_text) LIKE :q OR LOWER(pga.name) LIKE :q)';
@@ -248,7 +256,7 @@ SQL);
         return ['id' => (int)$row['id'], 'album_code' => (string)$row['album_code'], 'name' => (string)$row['name'], 'description' => (string)($row['description'] ?? ''), 'photo_count' => (int)($row['photo_count'] ?? 0)];
     }
 
-    private function nextAlbumCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM photo_gallery_albums'); return 'ALB09-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 4, '0', STR_PAD_LEFT); }
+    private function nextAlbumCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM photo_gallery_albums WHERE ' . $this->tenantWhere('photo_gallery_albums'), $this->withTenant()); return 'ALB-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 4, '0', STR_PAD_LEFT); }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : mb_substr($value, 0, 500); }
     private function dateOrNull(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) ? $value : null; }
     private function source(mixed $value): ?string { $value = preg_replace('/[^a-z0-9_]/', '', strtolower((string)$value)); return $value !== '' ? $value : null; }

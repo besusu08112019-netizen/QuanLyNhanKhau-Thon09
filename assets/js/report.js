@@ -6,8 +6,8 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c]));
   const fmt = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
-  const token = () => (window.App && App.token) || localStorage.getItem('thon09_token') || '';
-  const csrf = () => (window.App && App.csrfToken) || localStorage.getItem('thon09_csrf') || '';
+  const token = () => (window.App && App.token) || localStorage.getItem(tenantStorageKey('token')) || '';
+  const csrf = () => (window.App && App.csrfToken) || localStorage.getItem(tenantStorageKey('csrf')) || '';
   const REPORT_ENDPOINTS = Object.freeze({
     center: '/api/reports/center',
     bi: '/api/reports/bi',
@@ -105,18 +105,18 @@
   };
 
   document.addEventListener('DOMContentLoaded', bindSmartReporting);
-  document.addEventListener('thon09:screen-change', event => {
+  document.addEventListener('tenant:screen-change', event => {
     ensureModuleReportButtons();
     if (event.detail?.screen === 'reports') initSmartReporting(true);
   });
 
   function isReportsActive() {
-    return (window.Thon09Platform?.navigation?.current?.()?.screenId || window.App?.screen || document.querySelector('.screen.active')?.id?.replace(/Screen$/, '')) === 'reports';
+    return (window.TenantAppPlatform?.navigation?.current?.()?.screenId || window.App?.screen || document.querySelector('.screen.active')?.id?.replace(/Screen$/, '')) === 'reports';
   }
 
   function bindSmartReporting() {
-    if (window.__thon09SmartReportingBound) return;
-    window.__thon09SmartReportingBound = true;
+    if (window.__TenantAppSmartReportingBound) return;
+    window.__TenantAppSmartReportingBound = true;
     const form = $('#reportForm');
     if (!form) return;
     ensureReportTypes();
@@ -140,7 +140,7 @@
   }
 
   function registerReportPlatformActions() {
-    const actions = window.Thon09Platform && window.Thon09Platform.actions;
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
     if (!actions || typeof actions.register !== 'function') return;
     actions.register('reports.refresh', () => initSmartReporting(true));
     actions.register('reports.template.save', saveTemplate);
@@ -190,7 +190,7 @@
 
   async function initSmartReporting(force = false) {
     if (!isReportsActive()) return;
-    if (typeof window.thon09CanAccess === 'function' && !window.thon09CanAccess('reports', 'read')) return;
+    if (typeof window.TenantAppCanAccess === 'function' && !window.TenantAppCanAccess('reports', 'read')) return;
     ensureReportTypes();
     if (!token()) return;
     if (state.loaded && !force) return;
@@ -271,7 +271,7 @@
     }
   }
 
-  window.loadReport = window.thon09ViewReport = async function loadReport() {
+  window.loadReport = window.TenantAppViewReport = async function loadReport() {
     setActions(false);
     setTitle('Báo cáo');
     setCount('Đang tải dữ liệu...');
@@ -352,8 +352,8 @@
 
   function openReportType(type) {
     const reportType = type || 'summary';
-    const navigate = window.Thon09NavigationController?.navigate || window.Thon09Platform?.navigation?.navigate;
-    if (typeof navigate === 'function') navigate.call(window.Thon09NavigationController || window.Thon09Platform.navigation, 'reports');
+    const navigate = window.TenantAppNavigationController?.navigate || window.TenantAppPlatform?.navigation?.navigate;
+    if (typeof navigate === 'function') navigate.call(window.TenantAppNavigationController || window.TenantAppPlatform.navigation, 'reports');
     setTimeout(() => selectReportType(reportType, true), 80);
   }
 
@@ -421,8 +421,8 @@
 
   async function printReport() {
     const report = state.report || await loadReport();
-    if (!window.Thon09Print) return toast('Print Framework is not ready', 'warning');
-    const popup = window.Thon09Print.render(reportConfig(report));
+    if (!window.TenantAppPrint) return toast('Print Framework is not ready', 'warning');
+    const popup = window.TenantAppPrint.render(reportConfig(report));
     if (!popup) toast('Print popup was blocked', 'warning');
   }
 

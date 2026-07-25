@@ -5,6 +5,7 @@ define('APP_ROOT', __DIR__);
 define('APP_ASSET_VERSION', 'gis-esri-tilelayer-reset-20260719-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
+require_once BASE_PATH . '/config/env.php';
 
 function send_security_headers(): void
 {
@@ -26,6 +27,7 @@ use App\Core\Request;
 use App\Core\Router;
 use App\Core\Response;
 use App\Core\TenantConfig;
+use App\Core\TenantContext;
 use App\Controllers\AgricultureProductionController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
@@ -60,6 +62,8 @@ use App\Controllers\WorkCalendarController;
 use App\Controllers\WorkTaskController;
 
 Autoloader::register();
+env_load(BASE_PATH);
+TenantContext::boot();
 
 function reject_oversized_api_request(): void
 {
@@ -690,6 +694,11 @@ if (!str_starts_with($request->path(), '/api')) {
         $tenantMark = trim((string) ($tenantSettings['unitName'] ?? ''));
     }
     $tenantMark = mb_strtoupper(mb_substr($tenantMark !== '' ? $tenantMark : 'DV', 0, 3, 'UTF-8'), 'UTF-8');
+    $tenantNamespaceSource = strtolower((string) (TenantContext::host() ?: ($_SERVER['HTTP_HOST'] ?? 'tenant')));
+    $tenantNamespace = preg_replace('/[^a-z0-9]+/', '_', $tenantNamespaceSource) ?: 'tenant';
+    $tenantSettings['tenantNamespace'] = trim($tenantNamespace, '_') ?: 'tenant';
+    $tenantSettings['tenantHost'] = TenantContext::host();
+    $tenantSettings['villageId'] = TenantContext::villageId();
     $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     $html = strtr($html, [
         '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'He thong Quan ly Hanh chinh')),

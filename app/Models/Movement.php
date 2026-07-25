@@ -26,9 +26,9 @@ final class Movement extends BaseModel
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$sqlWhere, $params] = $this->where($filters);
         try {
-            $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere", $params)['total'];
+            $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id AND " . $this->tenantWhere('c', 'citizens') . " LEFT JOIN households h ON h.id=m.household_id AND " . $this->tenantWhere('h', 'households') . " $sqlWhere", $params)['total'];
             $order = $this->listOrder($filters, ['effective_date' => 'm.effective_date', 'type' => 'm.type', 'full_name' => 'c.full_name', 'household_code' => 'h.household_code', 'status' => 'm.status'], 'effective_date', 'DESC', ['m.id DESC']);
-            $items = $this->fetchAll("SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id $sqlWhere $order LIMIT $pageSize OFFSET $offset", $params);
+            $items = $this->fetchAll("SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id AND " . $this->tenantWhere('c', 'citizens') . " LEFT JOIN households h ON h.id=m.household_id AND " . $this->tenantWhere('h', 'households') . " $sqlWhere $order LIMIT $pageSize OFFSET $offset", $params);
         } catch (\Throwable $e) {
             return $this->fallbackPaginate($filters, $page, $pageSize, $offset, $e);
         }
@@ -62,12 +62,13 @@ final class Movement extends BaseModel
         $status = $this->firstExistingColumn('movements', ['status']);
 
         $joins = '';
-        if ($citizenId) $joins .= ' LEFT JOIN citizens c ON c.id=m.' . $citizenId;
-        if ($householdId) $joins .= ' LEFT JOIN households h ON h.id=m.' . $householdId;
+        if ($citizenId) $joins .= ' LEFT JOIN citizens c ON c.id=m.' . $citizenId . ' AND ' . $this->tenantWhere('c', 'citizens');
+        if ($householdId) $joins .= ' LEFT JOIN households h ON h.id=m.' . $householdId . ' AND ' . $this->tenantWhere('h', 'households');
         $where = [];
         $params = [];
         if ($status) $where[] = 'COALESCE(m.' . $status . ', "ACTIVE") <> "DELETED"';
         else $where[] = '1=1';
+        $where[] = $this->tenantWhere('m', 'movements');
         if (!empty($filters['type']) && $type) { $where[] = 'm.' . $type . ' = :type'; $params['type'] = $filters['type']; }
         if (!empty($filters['dateFrom']) && $effectiveDate) { $where[] = 'm.' . $effectiveDate . ' >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo']) && $effectiveDate) { $where[] = 'm.' . $effectiveDate . ' <= :date_to'; $params['date_to'] = $filters['dateTo']; }
@@ -130,7 +131,7 @@ final class Movement extends BaseModel
 
     public function find(int $id): ?array
     {
-        return $this->fetchOne('SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id LEFT JOIN households h ON h.id=m.household_id WHERE m.id=:id AND m.status <> "DELETED"', ['id' => $id]);
+        return $this->fetchOne('SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id AND ' . $this->tenantWhere('c', 'citizens') . ' LEFT JOIN households h ON h.id=m.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE m.id=:id AND m.status <> "DELETED" AND ' . $this->tenantWhere('m', 'movements'), $this->withTenant(['id' => $id]));
     }
 
     public function create(array $data, int $userId): array
@@ -168,14 +169,18 @@ final class Movement extends BaseModel
                 $values[] = ':' . $column;
             }
         }
+        $this->addTenantInsert('movements', $columns, $params);
+        if (in_array('village_id', $columns, true)) {
+            $values[] = ':village_id';
+        }
         $id = $this->insert('INSERT INTO movements (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         return $this->find($id) ?: ['id' => $id] + $params;
     }
 
     private function where(array $filters): array
     {
-        $where = ['m.status <> "DELETED"'];
-        $params = [];
+        $where = ['m.status <> "DELETED"', $this->tenantWhere('m', 'movements')];
+        $params = $this->withTenant();
         if (!empty($filters['type'])) { $where[] = 'm.type = :type'; $params['type'] = $filters['type']; }
         if (!empty($filters['dateFrom'])) { $where[] = 'm.effective_date >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'm.effective_date <= :date_to'; $params['date_to'] = $filters['dateTo']; }
@@ -210,7 +215,7 @@ final class Movement extends BaseModel
     {
         $citizenId = (int) ($data['citizenId'] ?? $data['citizen_id'] ?? 0);
         if ($citizenId <= 0) throw new \RuntimeException('Nhân khẩu là bắt buộc khi ghi biến động');
-        $citizen = $this->fetchOne('SELECT c.id, c.household_id, c.full_name, c.citizen_code, c.identity_number FROM citizens c WHERE c.id=:id AND c.status <> "DELETED"', ['id' => $citizenId]);
+        $citizen = $this->fetchOne('SELECT c.id, c.household_id, c.full_name, c.citizen_code, c.identity_number FROM citizens c WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens'), $this->withTenant(['id' => $citizenId]));
         if (!$citizen) throw new \RuntimeException('Không tìm thấy nhân khẩu để ghi biến động');
 
         $type = strtoupper((string) ($data['type'] ?? 'OTHER'));

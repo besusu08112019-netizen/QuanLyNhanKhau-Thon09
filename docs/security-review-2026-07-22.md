@@ -64,7 +64,7 @@ Fix: added HSTS on HTTPS responses and explicit denial of executable extensions 
 
 ### Low: Cookie token fallback weakened bearer-token auth model
 
-Evidence: `Request::bearerToken()` accepted `thon09_token` from `$_COOKIE`.
+Evidence: `Request::bearerToken()` accepted `tenantStorageKey('token')` from `$_COOKIE`.
 
 Risk: cookie-carried tokens become ambient credentials and increase CSRF/session-hijack blast radius.
 

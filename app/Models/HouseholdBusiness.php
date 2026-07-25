@@ -670,7 +670,7 @@ SQL);
 
     private function debugEnabled(): bool
     {
-        $value = strtolower((string) (getenv('APP_DEBUG') ?: getenv('THON09_DEBUG') ?: ''));
+        $value = strtolower((string) (getenv('APP_DEBUG') ?: ''));
         return in_array($value, ['1', 'true', 'yes', 'on'], true);
     }
 

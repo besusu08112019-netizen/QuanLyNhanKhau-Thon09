@@ -1,6 +1,6 @@
 (function () {
-  if (window.__thon09HouseholdPhotoGpsLoaded) return;
-  window.__thon09HouseholdPhotoGpsLoaded = true;
+  if (window.__TenantAppHouseholdPhotoGpsLoaded) return;
+  window.__TenantAppHouseholdPhotoGpsLoaded = true;
 
   const state = {
     lastPosition: null,
@@ -64,7 +64,7 @@
       source: 'GPS',
       capturedAt: new Date().toISOString(),
     };
-    window.__thon09LastHouseholdPhotoGps = state.lastPosition;
+    window.__TenantAppLastHouseholdPhotoGps = state.lastPosition;
 
     const sourceSelect = form.querySelector('[name="locationSource"], [name="location_source"]');
     if (sourceSelect) sourceSelect.value = 'GPS';
@@ -80,11 +80,11 @@
     if (!input.id) input.id = 'householdPhoto';
     if (!input.accept) input.accept = 'image/*';
 
-    if (input.dataset.thon09PhotoPrepared === '1') return;
-    input.dataset.thon09PhotoPrepared = '1';
+    if (input.dataset.TenantAppPhotoPrepared === '1') return;
+    input.dataset.TenantAppPhotoPrepared = '1';
 
-    if (typeof window.thon09EnhanceHouseholdPhotoCapture === 'function') {
-      window.thon09EnhanceHouseholdPhotoCapture();
+    if (typeof window.TenantAppEnhanceHouseholdPhotoCapture === 'function') {
+      window.TenantAppEnhanceHouseholdPhotoCapture();
     }
   }
 
@@ -141,7 +141,7 @@
     );
   }
 
-  window.thon09RequestHouseholdPhotoGps = function thon09RequestHouseholdPhotoGps(target) {
+  window.TenantAppRequestHouseholdPhotoGps = function TenantAppRequestHouseholdPhotoGps(target) {
     requestCurrentPosition(formOf(target));
   };
 
