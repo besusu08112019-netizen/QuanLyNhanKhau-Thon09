@@ -120,6 +120,7 @@
           <button id="aiSpeechCloseBtn" class="ai-speech-icon-btn" type="button" aria-label="&#272;&oacute;ng"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <textarea id="aiSpeechText" class="form-control ai-speech-text" rows="4" placeholder="V&#259;n b&#7843;n t&#7915; gi&#7885;ng n&oacute;i s&#7869; hi&#7875;n th&#7883; &#7903; &#273;&acirc;y"></textarea>
+        <div class="ai-intent-preview" id="aiIntentPreview" aria-live="polite">Ch&#432;a nh&#7853;n di&#7879;n &yacute; &#273;&#7883;nh.</div>
         <div class="ai-speech-status-row">
           <span id="aiSpeechStatus" class="ai-speech-status">S&#7861;n s&agrave;ng nghe.</span>
           <div class="ai-speech-actions">
@@ -776,6 +777,7 @@
   <script charset="utf-8" src="/assets/js/print-framework.min.js"></script>
   <script charset="utf-8" src="/assets/js/app-platform.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-speech.min.js"></script>
+  <script charset="utf-8" src="/assets/js/ai-intent.min.js"></script>
   <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>
   <script charset="utf-8" src="/assets/js/csrf.min.js"></script>
   <script charset="utf-8" src="/assets/js/session.min.js"></script>

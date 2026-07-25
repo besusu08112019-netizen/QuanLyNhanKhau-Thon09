@@ -6,6 +6,7 @@
   "scripts": {
     "check:js": "node -e \"const fs=require('fs'),cp=require('child_process'),path=require('path');let failed=false;function walk(d){for(const f of fs.readdirSync(d)){const p=path.join(d,f);if(fs.statSync(p).isDirectory())walk(p);else if(p.endsWith('.js')){const r=cp.spawnSync(process.execPath,['--check',p],{stdio:'inherit'});if(r.status)failed=true;}}}walk('assets/js');process.exit(failed?1:0)\"",
     "test:ai-foundation": "php tests/ai-foundation-smoke.php",
+    "test:ai-intent": "php tests/ai-intent-smoke.php && node tests/ai-intent.test.js",
     "test:ai-speech": "node tests/ai-speech.test.js",
     "test:browser": "playwright test",
     "test:platform": "node tests/app-platform.test.js",

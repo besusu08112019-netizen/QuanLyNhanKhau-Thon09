@@ -20,6 +20,7 @@ assert.doesNotMatch(speech, /location\.(href|assign|replace)/);
 assert.match(appView, /id="aiSpeechToggleBtn"/);
 assert.match(appView, /id="aiSpeechPanel"/);
 assert.match(appView, /src="\/assets\/js\/ai-speech\.min\.js"/);
+assert.match(appView, /src="\/assets\/js\/ai-speech\.min\.js"[\s\S]+src="\/assets\/js\/ai-intent\.min\.js"/);
 assert.match(buildAssets, /assets\/js\/ai-speech\.js/);
 
 console.log('AI speech checks passed');
