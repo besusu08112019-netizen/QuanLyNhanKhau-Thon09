@@ -535,14 +535,21 @@ final class Dashboard extends BaseModel
 
     public function householdDashboard(array $filters = []): array
     {
-        $m = $this->metrics($filters);
+        $errors = [];
+        $m = $this->safeWidget('households.metrics', fn() => $this->metrics($filters), $this->defaultMetrics(), $errors);
+        $charts = [
+            'households' => $this->safeWidget('households.chart', fn() => $this->householdChart($filters), [], $errors),
+            'gps' => $this->safeWidget('households.gps', fn() => $this->gpsProgressChart($filters), [], $errors),
+            'profiles' => $this->safeWidget('households.profiles', fn() => $this->profileProgressChart($filters), [], $errors),
+        ];
+        $top = $this->safeWidget('households.tasks', fn() => $this->tasks($filters), [], $errors);
         return ['module'=>'households','title'=>'Dashboard Hộ dân','kpis'=>[
             $this->kpi('Tổng số hộ',$m['total_households']??0,'hộ','fa-house-chimney','green'),
             $this->kpi('Hộ nghèo',$m['poor_households']??0,'hộ','fa-hand-holding-heart','orange'),
             $this->kpi('Hộ cận nghèo',$m['near_poor_households']??0,'hộ','fa-hands-holding','pink'),
             $this->kpi('Hộ chính sách',$m['policy_households']??0,'hộ','fa-award','purple'),
             $this->kpi('Hộ có công',$m['meritorious_households']??0,'hộ','fa-medal','blue'),
-        ],'charts'=>['households'=>$this->householdChart($filters),'gps'=>$this->gpsProgressChart($filters),'profiles'=>$this->profileProgressChart($filters)],'top'=>$this->tasks($filters),'generatedAt'=>date('c')];
+        ],'charts'=>$charts,'top'=>$top,'widgetErrors'=>$errors,'generatedAt'=>date('c')];
     }
 
     public function populationDashboard(array $filters = []): array

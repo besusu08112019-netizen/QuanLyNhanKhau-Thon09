@@ -100,10 +100,12 @@
       renderImportResult(payload.data, refreshAfter);
       if (refreshAfter) {
         showToast('Đã xử lý Import');
-        if (typeof loadDashboard === 'function') loadDashboard();
-        if (typeof loadHouseholds === 'function') loadHouseholds();
-        if (typeof loadPersons === 'function') loadPersons();
-        if (typeof refreshLoginConfig === 'function') refreshLoginConfig();
+        await Promise.allSettled([
+          typeof loadDashboard === 'function' ? loadDashboard() : null,
+          typeof loadHouseholds === 'function' ? loadHouseholds() : null,
+          typeof loadPersons === 'function' ? loadPersons() : null,
+          typeof refreshLoginConfig === 'function' ? refreshLoginConfig() : null
+        ]);
         window.dispatchEvent(new CustomEvent('tenant:data-mutated', { detail: { module: 'import' } }));
       }
     } catch (error) {
