@@ -624,6 +624,10 @@ body { background: var(--surface); font-size: 14px; line-height: 1.55; }
 .ai-speech-icon-btn { width: 34px; height: 34px; border: 0; border-radius: 10px; background: #f8fafc; color: #475569; display: grid; place-items: center; }
 .ai-speech-text { min-height: 112px; resize: vertical; }
 .ai-intent-preview { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: #f8fafc; color: var(--muted); font-size: 13px; font-weight: 700; }
+.ai-conversation-log { display: grid; gap: 6px; max-height: 156px; margin-top: 10px; overflow: auto; }
+.ai-conversation-item { max-width: 92%; padding: 8px 10px; border-radius: 10px; font-size: 13px; line-height: 1.35; }
+.ai-conversation-user { justify-self: end; background: #e8f5ee; color: var(--brand-strong); }
+.ai-conversation-assistant { justify-self: start; background: #f8fafc; color: #475569; }
 .ai-speech-status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
 .ai-speech-status { min-width: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
 .ai-speech-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }

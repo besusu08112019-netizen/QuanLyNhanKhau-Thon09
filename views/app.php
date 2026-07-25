@@ -121,9 +121,11 @@
         </div>
         <textarea id="aiSpeechText" class="form-control ai-speech-text" rows="4" placeholder="V&#259;n b&#7843;n t&#7915; gi&#7885;ng n&oacute;i s&#7869; hi&#7875;n th&#7883; &#7903; &#273;&acirc;y"></textarea>
         <div class="ai-intent-preview" id="aiIntentPreview" aria-live="polite">Ch&#432;a nh&#7853;n di&#7879;n &yacute; &#273;&#7883;nh.</div>
+        <div id="aiConversationLog" class="ai-conversation-log" aria-live="polite"></div>
         <div class="ai-speech-status-row">
           <span id="aiSpeechStatus" class="ai-speech-status">S&#7861;n s&agrave;ng nghe.</span>
           <div class="ai-speech-actions">
+            <button id="aiConversationClearBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-comments"></i> X&oacute;a h&#7897;i tho&#7841;i</button>
             <button id="aiSpeechClearBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-eraser"></i> X&oacute;a</button>
             <button id="aiSpeechMicBtn" class="btn btn-success btn-sm ai-speech-mic" type="button" aria-pressed="false"><i class="fa-solid fa-microphone"></i> <span>B&#7855;t &#273;&#7847;u nghe</span></button>
           </div>
@@ -778,6 +780,7 @@
   <script charset="utf-8" src="/assets/js/app-platform.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-speech.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-intent.min.js"></script>
+  <script charset="utf-8" src="/assets/js/ai-conversation.min.js"></script>
   <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>
   <script charset="utf-8" src="/assets/js/csrf.min.js"></script>
   <script charset="utf-8" src="/assets/js/session.min.js"></script>

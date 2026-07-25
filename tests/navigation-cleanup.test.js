@@ -43,6 +43,9 @@ const allowedClickListeners = new Map([
     "close.addEventListener('click', closePanel);",
     "clear.addEventListener('click', function () {"
   ]],
+  ['assets/js/ai-conversation.js', [
+    "clear.addEventListener('click', function () {"
+  ]],
   ['assets/js/gis-household-location.js', [
     "document.addEventListener('click', event => {",
     "button.addEventListener('click', event => {"
