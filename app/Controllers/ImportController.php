@@ -420,7 +420,7 @@ final class ImportController extends BaseController
     private function normalizeIdentity(string $value): string
     {
         $digits = preg_replace('/\D+/', '', trim($value)) ?? '';
-        if (strlen($digits) === 11 && str_starts_with($digits, '3')) return '0' . $digits;
+        if (strlen($digits) === 11) return '0' . $digits;
         return $digits;
     }
     private function validPhone(string $value): bool { return (bool) preg_match('/^0\d{9,10}$/', $this->normalizePhone($value)); }
