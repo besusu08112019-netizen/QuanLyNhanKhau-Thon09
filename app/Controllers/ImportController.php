@@ -416,7 +416,16 @@ final class ImportController extends BaseController
     }
 
     private function validIdentity(string $value): bool { return (bool) preg_match('/^\d{9}(\d{3})?$/', preg_replace('/\D+/', '', $value)); }
-    private function validPhone(string $value): bool { return (bool) preg_match('/^0\d{9,10}$/', preg_replace('/\D+/', '', $value)); }
+    private function validPhone(string $value): bool { return (bool) preg_match('/^0\d{9,10}$/', $this->normalizePhone($value)); }
+
+    private function normalizePhone(string $value): string
+    {
+        $raw = trim($value);
+        $digits = preg_replace('/\D+/', '', $raw) ?? '';
+        if ($digits === '' || preg_match('/^0+$/', $digits)) return '';
+        if (strlen($digits) === 9 && preg_match('/^[35789]/', $digits)) return '0' . $digits;
+        return $digits;
+    }
     private function citizenCodeExists(string $code): bool
     {
         $row = Database::pdo()->prepare('SELECT COUNT(*) FROM citizens WHERE citizen_code = :code AND village_id = :village_id AND status <> "DELETED"');
@@ -431,7 +440,7 @@ final class ImportController extends BaseController
                 'householdCode' => strtoupper(trim((string) ($data['householdCode'] ?? ''))),
                 'headCitizenName' => trim((string) ($data['headCitizenName'] ?? '')),
                 'address' => trim((string) ($data['address'] ?? '')),
-                'phone' => trim((string) ($data['phone'] ?? '')),
+                'phone' => $this->normalizePhone((string) ($data['phone'] ?? '')),
                 'householdType' => trim((string) ($data['householdType'] ?? '')),
                 'meritoriousFamily' => $data['meritoriousFamily'] ?? 0,
                 'poorHousehold' => $data['poorHousehold'] ?? 0,
@@ -447,7 +456,7 @@ final class ImportController extends BaseController
             'gender' => $data['gender'] ?? 'Nam',
             'dateOfBirth' => $data['dateOfBirth'] ?? '',
             'identityNumber' => trim((string) ($data['identityNumber'] ?? '')),
-            'phone' => trim((string) ($data['phone'] ?? '')),
+            'phone' => $this->normalizePhone((string) ($data['phone'] ?? '')),
             'relationship' => $data['relationship'] ?? 'Khác',
             'fatherName' => trim((string) ($data['fatherName'] ?? '')),
             'motherName' => trim((string) ($data['motherName'] ?? '')),
