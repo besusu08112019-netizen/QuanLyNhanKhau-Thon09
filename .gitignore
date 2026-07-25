@@ -15,6 +15,7 @@ error_log
 *.sql.zip
 *.bak
 *.tmp
+.tmp/
 work/
 outputs/
 runtime-ui-audit.out
@@ -27,6 +28,7 @@ config/database.local.php
 storage/*
 !storage/.gitkeep
 cache/*
+sessions/
 logs/*
 backups/
 uploads/*
