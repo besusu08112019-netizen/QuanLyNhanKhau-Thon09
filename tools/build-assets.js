@@ -40,6 +40,7 @@ const assets = [
   ['assets/js/i18n.js', 'assets/js/i18n.min.js', compactJs],
   ['assets/js/print-framework.js', 'assets/js/print-framework.min.js', compactJs],
   ['assets/js/app-platform.js', 'assets/js/app-platform.min.js', compactJs],
+  ['assets/js/ai-speech.js', 'assets/js/ai-speech.min.js', compactJs],
   ['assets/js/mobile-component-library.js', 'assets/js/mobile-component-library.min.js', compactJs],
   ['assets/js/admin.utf8.js', 'assets/js/admin.utf8.min.js', compactJs],
   ['assets/js/admin-panel.js', 'assets/js/admin-panel.min.js', compactJs],
