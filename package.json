@@ -9,6 +9,7 @@
     "test:ai-conversation": "php tests/ai-conversation-smoke.php && node tests/ai-conversation.test.js",
     "test:ai-intent": "php tests/ai-intent-smoke.php && node tests/ai-intent.test.js",
     "test:ai-speech": "node tests/ai-speech.test.js",
+    "test:ai-tools": "php tests/ai-tool-framework-smoke.php",
     "test:browser": "playwright test",
     "test:platform": "node tests/app-platform.test.js",
     "test:navigation-cleanup": "node tests/navigation-cleanup.test.js",
