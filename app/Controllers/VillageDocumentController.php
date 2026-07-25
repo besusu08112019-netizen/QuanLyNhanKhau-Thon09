@@ -19,10 +19,10 @@ final class VillageDocumentController extends BaseController
         $this->documents = new VillageDocument();
     }
 
-    public function index(): void { $this->requirePermission('documents', 'read'); $this->ok($this->documents->paginate($this->filters())); }
-    public function catalogs(): void { $this->requirePermission('documents', 'read'); $this->ok($this->documents->catalogs()); }
-    public function dashboard(): void { $this->requirePermission('documents', 'read'); $this->ok($this->documents->dashboard($this->filters())); }
-    public function report(): void { $this->requirePermission('documents', 'read'); $this->ok($this->documents->report($this->filters())); }
+    public function index(): void { $this->requirePermission('documents', 'read'); $this->okOrFallback(fn() => $this->documents->paginate($this->filters()), $this->emptyPage(), 'documents.index'); }
+    public function catalogs(): void { $this->requirePermission('documents', 'read'); $this->okOrFallback(fn() => $this->documents->catalogs(), ['categories' => [], 'statuses' => [], 'years' => []], 'documents.catalogs'); }
+    public function dashboard(): void { $this->requirePermission('documents', 'read'); $this->okOrFallback(fn() => $this->documents->dashboard($this->filters()), ['metrics' => []], 'documents.dashboard'); }
+    public function report(): void { $this->requirePermission('documents', 'read'); $this->okOrFallback(fn() => $this->documents->report($this->filters()), ['title' => 'Báo cáo văn bản', 'headers' => [], 'rows' => [], 'totalRows' => 0], 'documents.report'); }
 
     public function show(string $id): void
     {

@@ -32,6 +32,25 @@ abstract class BaseController
         Response::ok($data);
     }
 
+    protected function okOrFallback(callable $callback, mixed $fallback, string $context): void
+    {
+        try {
+            $this->ok($callback());
+        } catch (Throwable $e) {
+            error_log('[OPTIONAL_API_FALLBACK] ' . json_encode([
+                'context' => $context,
+                'type' => get_class($e),
+                'message' => $e->getMessage(),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            $this->ok($fallback);
+        }
+    }
+
+    protected function emptyPage(): array
+    {
+        return ['items' => [], 'page' => 1, 'pageSize' => 20, 'total' => 0, 'totalPages' => 1];
+    }
+
     protected function fail(string $message, int $status = 400): void
     {
         Response::error($message, $status);

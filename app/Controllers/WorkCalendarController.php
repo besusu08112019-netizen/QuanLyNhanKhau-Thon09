@@ -19,10 +19,10 @@ final class WorkCalendarController extends BaseController
         $this->calendar = new WorkCalendar();
     }
 
-    public function index(): void { $this->requirePermission('work_calendar', 'read'); $this->ok($this->calendar->paginate($this->filters())); }
-    public function catalogs(): void { $this->requirePermission('work_calendar', 'read'); $this->ok($this->calendar->catalogs()); }
-    public function dashboard(): void { $this->requirePermission('work_calendar', 'read'); $this->ok($this->calendar->dashboard($this->filters())); }
-    public function report(): void { $this->requirePermission('work_calendar', 'read'); $this->ok($this->calendar->report($this->filters())); }
+    public function index(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->paginate($this->filters()), $this->emptyPage(), 'work_calendar.index'); }
+    public function catalogs(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->catalogs(), ['categories' => [], 'statuses' => [], 'attendance_statuses' => []], 'work_calendar.catalogs'); }
+    public function dashboard(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->dashboard($this->filters()), ['metrics' => [], 'charts' => []], 'work_calendar.dashboard'); }
+    public function report(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->report($this->filters()), ['title' => 'Báo cáo lịch công tác', 'headers' => [], 'rows' => [], 'totalRows' => 0], 'work_calendar.report'); }
 
     public function show(string $id): void
     {

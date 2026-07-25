@@ -18,7 +18,7 @@ final class NotificationController extends BaseController
     public function index(): void
     {
         $user = $this->requirePermission('notification', 'read');
-        $this->ok($this->notifications->list((int)$user['id'], $this->query()));
+        $this->okOrFallback(fn() => $this->notifications->list((int)$user['id'], $this->query()), ['items' => [], 'unread' => 0, 'total' => 0, 'generatedAt' => date('c')], 'notifications.index');
     }
 
     public function read(string $key): void

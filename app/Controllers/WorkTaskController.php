@@ -19,10 +19,10 @@ final class WorkTaskController extends BaseController
         $this->tasks = new WorkTask();
     }
 
-    public function index(): void { $this->requirePermission('work_tasks', 'read'); $this->ok($this->tasks->paginate($this->filters())); }
-    public function catalogs(): void { $this->requirePermission('work_tasks', 'read'); $this->ok($this->tasks->catalogs()); }
-    public function dashboard(): void { $this->requirePermission('work_tasks', 'read'); $this->ok($this->tasks->dashboard($this->filters())); }
-    public function report(): void { $this->requirePermission('work_tasks', 'read'); $this->ok($this->tasks->report($this->filters())); }
+    public function index(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->paginate($this->filters()), $this->emptyPage(), 'work_tasks.index'); }
+    public function catalogs(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->catalogs(), ['categories' => [], 'priorities' => [], 'statuses' => [], 'related_modules' => []], 'work_tasks.catalogs'); }
+    public function dashboard(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->dashboard($this->filters()), ['metrics' => [], 'charts' => []], 'work_tasks.dashboard'); }
+    public function report(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->report($this->filters()), ['title' => 'Báo cáo công việc', 'headers' => [], 'rows' => [], 'totalRows' => 0, 'summary' => []], 'work_tasks.report'); }
 
     public function show(string $id): void
     {

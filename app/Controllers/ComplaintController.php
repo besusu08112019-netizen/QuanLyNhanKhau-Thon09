@@ -18,9 +18,9 @@ final class ComplaintController extends BaseController
         $this->complaints = new Complaint();
     }
 
-    public function index(): void { $this->requirePermission('complaints', 'read'); $this->ok($this->complaints->paginate($this->filters())); }
-    public function catalogs(): void { $this->requirePermission('complaints', 'read'); $this->ok($this->complaints->catalogs()); }
-    public function dashboard(): void { $this->requirePermission('complaints', 'read'); $this->ok($this->complaints->dashboard($this->filters())); }
+    public function index(): void { $this->requirePermission('complaints', 'read'); $this->okOrFallback(fn() => $this->complaints->paginate($this->filters()), $this->emptyPage(), 'complaints.index'); }
+    public function catalogs(): void { $this->requirePermission('complaints', 'read'); $this->okOrFallback(fn() => $this->complaints->catalogs(), ['categories' => [], 'priorities' => [], 'statuses' => [], 'ratings' => [], 'linkTypes' => []], 'complaints.catalogs'); }
+    public function dashboard(): void { $this->requirePermission('complaints', 'read'); $this->okOrFallback(fn() => $this->complaints->dashboard($this->filters()), ['metrics' => [], 'charts' => []], 'complaints.dashboard'); }
     public function gis(): void { $this->requirePermission('complaints', 'read'); $this->ok(['items' => $this->complaints->gisFeatures($this->filters())]); }
     public function householdSearch(): void { $this->requirePermission('complaints', 'read'); $this->ok(['items' => $this->complaints->householdSearch((string)$this->query('q', $this->query('search', '')))]); }
     public function citizenSearch(): void { $this->requirePermission('complaints', 'read'); $this->ok(['items' => $this->complaints->citizenSearch((string)$this->query('q', $this->query('search', '')), (int)$this->query('household_id', $this->query('householdId', 0)) ?: null)]); }

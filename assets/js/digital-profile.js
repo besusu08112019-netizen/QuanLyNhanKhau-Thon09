@@ -1,4 +1,5 @@
 (() => {
+  const legacyShowHousehold = window.showHousehold;
   const legacyShowPerson = window.showPerson;
   const sectionOptions = {
     household: [
@@ -273,7 +274,10 @@
       $('#detailBody').innerHTML = renderProfile(profile);
       bindProfileActions(profile);
       openModal('detailModal');
-    } catch (error) { show(error.message, 'danger'); }
+    } catch (error) {
+      if (typeof legacyShowHousehold === 'function') return legacyShowHousehold(id);
+      show(error.message, 'danger');
+    }
   };
 
   window.showPerson = async function showPersonDigitalProfile(id) {
@@ -661,7 +665,10 @@
       bindHouseholdTabs(profile, entityId);
       refreshUiEnhancements($('#detailBody') || document);
       openModal('detailModal');
-    } catch (error) { show(error.message, 'danger'); }
+    } catch (error) {
+      if (typeof legacyShowHousehold === 'function') return legacyShowHousehold(id);
+      show(error.message, 'danger');
+    }
   };
 
   async function loadHouseholdBusinessActivities(id) {
