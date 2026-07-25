@@ -538,9 +538,29 @@ final class ImportController extends BaseController
 
     private function headerKey(string $value): string
     {
-        $value = trim(mb_strtolower($value));
+        $value = trim(mb_strtolower(Encoding::repairMojibake($value)));
+        $value = $this->removeVietnameseMarks($value);
         $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) ?: $value;
         return preg_replace('/[^a-z0-9 ]+/', '', $ascii) ?: $value;
+    }
+
+    private function removeVietnameseMarks(string $value): string
+    {
+        $groups = [
+            'a' => '&#224;&#225;&#7843;&#227;&#7841;&#259;&#7857;&#7855;&#7859;&#7861;&#7863;&#226;&#7847;&#7845;&#7849;&#7851;&#7853;',
+            'd' => '&#273;',
+            'e' => '&#232;&#233;&#7867;&#7869;&#7865;&#234;&#7873;&#7871;&#7875;&#7877;&#7879;',
+            'i' => '&#236;&#237;&#7881;&#297;&#7883;',
+            'o' => '&#242;&#243;&#7887;&#245;&#7885;&#244;&#7891;&#7889;&#7893;&#7895;&#7897;&#417;&#7901;&#7899;&#7903;&#7905;&#7907;',
+            'u' => '&#249;&#250;&#7911;&#361;&#7909;&#432;&#7915;&#7913;&#7917;&#7919;&#7921;',
+            'y' => '&#7923;&#253;&#7927;&#7929;&#7925;',
+        ];
+
+        foreach ($groups as $ascii => $entities) {
+            $chars = preg_split('//u', html_entity_decode($entities, ENT_QUOTES | ENT_HTML5, 'UTF-8'), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            if ($chars) $value = str_replace($chars, $ascii, $value);
+        }
+        return $value;
     }
 
     private function dateValue(string $value): string
