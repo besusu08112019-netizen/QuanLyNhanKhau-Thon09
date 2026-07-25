@@ -210,6 +210,92 @@ function execute_sql_file(PDO $pdo, string $path): int
     return $count;
 }
 
+function install_table_exists(PDO $pdo, string $table): bool
+{
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table');
+    $stmt->execute(['table' => $table]);
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+function ensure_auth_tables(PDO $pdo): void
+{
+    if (!install_table_exists($pdo, 'villages')) {
+        $pdo->exec('CREATE TABLE IF NOT EXISTS `villages` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `code` VARCHAR(50) NOT NULL,
+          `name` VARCHAR(190) NOT NULL,
+          `unit_name` VARCHAR(190) NULL,
+          `commune_name` VARCHAR(190) NULL,
+          `domain` VARCHAR(190) NULL,
+          `subdomain` VARCHAR(190) NULL,
+          `logo_url` VARCHAR(500) NULL,
+          `theme_color` VARCHAR(20) NULL,
+          `address` VARCHAR(500) NULL,
+          `phone` VARCHAR(50) NULL,
+          `email` VARCHAR(190) NULL,
+          `status` ENUM("ACTIVE","INACTIVE") NOT NULL DEFAULT "ACTIVE",
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `uq_villages_code_install` (`code`),
+          UNIQUE KEY `uq_villages_domain_install` (`domain`),
+          UNIQUE KEY `uq_villages_subdomain_install` (`subdomain`),
+          KEY `idx_villages_status_install` (`status`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    }
+
+    if (!install_table_exists($pdo, 'users')) {
+        $pdo->exec('CREATE TABLE IF NOT EXISTS `users` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `village_id` BIGINT UNSIGNED NOT NULL,
+          `email` VARCHAR(190) NOT NULL,
+          `display_name` VARCHAR(190) NOT NULL,
+          `password_hash` VARCHAR(255) NULL,
+          `role` ENUM("SUPER_ADMIN","ADMIN","OFFICER","VIEWER") NOT NULL DEFAULT "VIEWER",
+          `status` ENUM("ACTIVE","INACTIVE","DELETED") NOT NULL DEFAULT "ACTIVE",
+          `last_login_at` DATETIME NULL,
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `created_by` BIGINT UNSIGNED NULL,
+          `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+          `updated_by` BIGINT UNSIGNED NULL,
+          `deleted_at` DATETIME NULL,
+          `deleted_by` BIGINT UNSIGNED NULL,
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `uq_users_village_email_install` (`village_id`, `email`),
+          KEY `idx_users_role_install` (`role`),
+          KEY `idx_users_status_install` (`status`),
+          KEY `idx_users_village_install` (`village_id`),
+          CONSTRAINT `fk_users_village_install` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    }
+
+    if (!install_table_exists($pdo, 'user_sessions')) {
+        $pdo->exec('CREATE TABLE IF NOT EXISTS `user_sessions` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+          `user_id` BIGINT UNSIGNED NOT NULL,
+          `token_hash` CHAR(64) NOT NULL,
+          `ip_address` VARCHAR(45) NULL,
+          `user_agent` VARCHAR(255) NULL,
+          `expires_at` DATETIME NOT NULL,
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `revoked_at` DATETIME NULL,
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `uq_user_sessions_token_hash_install` (`token_hash`),
+          KEY `idx_user_sessions_user_install` (`user_id`),
+          KEY `idx_user_sessions_expires_install` (`expires_at`),
+          KEY `idx_user_sessions_village_install` (`village_id`),
+          CONSTRAINT `fk_user_sessions_user_install` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    }
+
+    foreach (['villages', 'users', 'user_sessions'] as $table) {
+        if (!install_table_exists($pdo, $table)) {
+            throw new RuntimeException('Missing required authentication table after schema import: ' . $table);
+        }
+    }
+}
+
 function write_env_file(string $basePath, array $system, array $db): string
 {
     $appUrl = trim((string)$system['app_url']);
@@ -403,7 +489,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($state['db_tested'])) {
                 throw new RuntimeException('Vui lòng kiểm tra kết nối database trước khi import schema.');
             }
-            $count = execute_sql_file(install_pdo($state['db']), $basePath . '/database/schema.sql');
+            $pdo = install_pdo($state['db']);
+            $count = execute_sql_file($pdo, $basePath . '/database/schema.sql');
+            ensure_auth_tables($pdo);
             $state['schema_imported'] = true;
             $_SESSION['installer'] = $state;
             $messages[] = 'Import schema.sql thành công: ' . $count . ' statements.';
@@ -437,6 +525,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('Vui lòng sinh file .env trước khi tạo admin.');
             }
             $pdo = install_pdo($state['db']);
+            ensure_auth_tables($pdo);
             $villageId = (int)($state['village_id'] ?? 0);
             if ($villageId <= 0) {
                 $villageId = update_default_village($pdo, $state['system']);

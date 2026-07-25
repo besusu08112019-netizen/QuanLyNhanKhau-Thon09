@@ -1705,6 +1705,53 @@ CREATE TABLE IF NOT EXISTS `notification_states` (
   KEY idx_notification_states_user_dismissed (user_id, dismissed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Auth safety block: some shared-host imports continue after a failed statement.
+-- Keep these CREATE IF NOT EXISTS statements near the end so installer/login
+-- still have the required authentication tables after villages exists.
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL,
+  `email` VARCHAR(190) NOT NULL,
+  `display_name` VARCHAR(190) NOT NULL,
+  `password_hash` VARCHAR(255) NULL,
+  `role` ENUM('SUPER_ADMIN','ADMIN','OFFICER','VIEWER') NOT NULL DEFAULT 'VIEWER',
+  `status` ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  `last_login_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` BIGINT UNSIGNED NULL,
+  `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated_by` BIGINT UNSIGNED NULL,
+  `deleted_at` DATETIME NULL,
+  `deleted_by` BIGINT UNSIGNED NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_users_village_email` (`village_id`, `email`),
+  KEY `idx_users_role` (`role`),
+  KEY `idx_users_status` (`status`),
+  KEY `idx_users_village` (`village_id`),
+  CONSTRAINT `fk_users_village_safe` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_users_created_by_safe` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_users_updated_by_safe` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_users_deleted_by_safe` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_sessions` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `token_hash` CHAR(64) NOT NULL,
+  `ip_address` VARCHAR(45) NULL,
+  `user_agent` VARCHAR(255) NULL,
+  `expires_at` DATETIME NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `revoked_at` DATETIME NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_user_sessions_token_hash_safe` (`token_hash`),
+  KEY `idx_user_sessions_user_safe` (`user_id`),
+  KEY `idx_user_sessions_expires_safe` (`expires_at`),
+  KEY `idx_user_sessions_village_safe` (`village_id`),
+  CONSTRAINT `fk_user_sessions_user_safe` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP VIEW IF EXISTS `v_household_member_counts`;
 CREATE VIEW `v_household_member_counts` AS
 SELECT
