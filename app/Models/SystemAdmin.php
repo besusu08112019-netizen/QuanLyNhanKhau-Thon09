@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Core\RuntimePaths;
 use App\Core\TenantConfig;
 use Throwable;
 
@@ -118,7 +119,7 @@ final class SystemAdmin extends BaseModel
             ['key' => 'cache', 'label' => 'Cache', 'stats' => $this->pathStats($this->cacheRoot())],
             ['key' => 'sessions', 'label' => 'Session hết hạn', 'stats' => ['files' => 0, 'bytes' => 0, 'expired' => $this->expiredSessionCount(), 'label' => $this->expiredSessionCount() . ' phiên']],
             ['key' => 'logs', 'label' => 'Log', 'stats' => $this->pathStats($this->logsRoot())],
-            ['key' => 'tmp', 'label' => 'File tạm', 'stats' => $this->pathStats(sys_get_temp_dir())],
+            ['key' => 'tmp', 'label' => 'File tạm', 'stats' => $this->pathStats($this->tempRoot())],
         ]];
     }
 
@@ -127,7 +128,7 @@ final class SystemAdmin extends BaseModel
         return match ($target) {
             'cache' => $this->cleanupDirectory($this->cacheRoot()),
             'sessions' => ['removed' => $this->execute('UPDATE user_sessions SET revoked_at = NOW() WHERE revoked_at IS NULL AND expires_at <= NOW()'), 'bytes' => 0, 'label' => '0 B'],
-            'tmp' => $this->cleanupDirectory(sys_get_temp_dir(), true),
+            'tmp' => $this->cleanupDirectory($this->tempRoot(), true),
             default => throw new \RuntimeException('Không hỗ trợ dọn dẹp mục này'),
         };
     }
@@ -173,10 +174,11 @@ final class SystemAdmin extends BaseModel
     private function activeSessionCount(): int { return $this->tableExists('user_sessions') ? $this->countTable('user_sessions', 'revoked_at IS NULL AND expires_at > NOW()') : 0; }
     private function expiredSessionCount(): int { return $this->tableExists('user_sessions') ? $this->countTable('user_sessions', 'revoked_at IS NULL AND expires_at <= NOW()') : 0; }
     private function tableExists(string $table): bool { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]); return (int) ($row['total'] ?? 0) > 0; }
-    private function uploadRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? BASE_PATH . '/uploads')), '/'); }
-    private function storageRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['storage_path'] ?? BASE_PATH . '/storage')), '/'); }
+    private function uploadRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? RuntimePaths::uploadRoot())), '/'); }
+    private function storageRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['storage_path'] ?? RuntimePaths::storageRoot())), '/'); }
     private function cacheRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['cache_path'] ?? $this->storageRoot() . '/cache')), '/'); }
     private function logsRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['logs_path'] ?? $this->storageRoot() . '/logs')), '/'); }
+    private function tempRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['temp_path'] ?? RuntimePaths::tempRoot())), '/'); }
     private function appConfig(): array { return is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : []; }
     private function bytes(int|float|null $bytes): string { $bytes = max(0, (float) ($bytes ?? 0)); foreach (['B','KB','MB','GB','TB'] as $unit) { if ($bytes < 1024 || $unit === 'TB') return round($bytes, $unit === 'B' ? 0 : 2) . ' ' . $unit; $bytes /= 1024; } return '0 B'; }
     private function uptimeLabel(): string { if (function_exists('sys_getloadavg')) { $load = @sys_getloadavg(); if ($load) return 'Load ' . implode(' / ', array_map(fn($v) => round((float) $v, 2), $load)); } return 'Đang hoạt động'; }

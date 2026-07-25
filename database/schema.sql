@@ -1,10 +1,8 @@
-﻿-- Multi-tenant administrative management schema
--- Sprint 1: database design for PHP 8.2 migration
+-- Fresh install schema for the multi-tenant village management system
+-- Import this file into an empty MySQL/MariaDB database before database/seed.sql.
+-- This file intentionally contains schema objects only and no real village data.
 
-SET NAMES utf8mb4;
-SET time_zone = '+07:00';
-
-CREATE TABLE `villages` (
+CREATE TABLE IF NOT EXISTS `villages` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `code` VARCHAR(50) NOT NULL,
   `name` VARCHAR(190) NOT NULL,
@@ -27,7 +25,7 @@ CREATE TABLE `villages` (
   KEY `idx_villages_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `village_id` BIGINT UNSIGNED NOT NULL,
   `email` VARCHAR(190) NOT NULL,
@@ -53,8 +51,9 @@ CREATE TABLE `users` (
   CONSTRAINT `fk_users_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `user_sessions` (
+CREATE TABLE IF NOT EXISTS `user_sessions` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
   `user_id` BIGINT UNSIGNED NOT NULL,
   `token_hash` CHAR(64) NOT NULL,
   `ip_address` VARCHAR(45) NULL,
@@ -66,10 +65,11 @@ CREATE TABLE `user_sessions` (
   UNIQUE KEY `uq_user_sessions_token_hash` (`token_hash`),
   KEY `idx_user_sessions_user` (`user_id`),
   KEY `idx_user_sessions_expires` (`expires_at`),
-  CONSTRAINT `fk_user_sessions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_user_sessions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  KEY `idx_user_sessions_village` (`village_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `households` (
+CREATE TABLE IF NOT EXISTS `households` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `village_id` BIGINT UNSIGNED NOT NULL,
   `household_code` VARCHAR(50) NOT NULL,
@@ -78,6 +78,13 @@ CREATE TABLE `households` (
   `address` VARCHAR(255) NOT NULL,
   `phone` VARCHAR(30) NULL,
   `area_code` VARCHAR(50) NULL,
+  `household_type` VARCHAR(50) NULL,
+  `latitude` DECIMAL(10,8) NULL,
+  `longitude` DECIMAL(11,8) NULL,
+  `location_accuracy` INT NULL,
+  `location_source` ENUM('MANUAL','GPS') NOT NULL DEFAULT 'MANUAL',
+  `location_updated_at` DATETIME NULL,
+  `location_updated_by` BIGINT UNSIGNED NULL,
   `member_count` INT UNSIGNED NOT NULL DEFAULT 0,
   `meritorious_family` TINYINT(1) NOT NULL DEFAULT 0,
   `poor_household` TINYINT(1) NOT NULL DEFAULT 0,
@@ -102,16 +109,19 @@ CREATE TABLE `households` (
   KEY `idx_households_policy` (`meritorious_family`, `poor_household`, `near_poor_household`, `disabled_household`),
   CONSTRAINT `fk_households_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_households_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_households_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_households_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  KEY `idx_households_household_type` (`household_type`),
+  KEY `idx_households_location` (`latitude`, `longitude`),
+  KEY `idx_households_area_location` (`area_code`, `latitude`, `longitude`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `citizens` (
+CREATE TABLE IF NOT EXISTS `citizens` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `village_id` BIGINT UNSIGNED NOT NULL,
   `citizen_code` VARCHAR(50) NOT NULL,
   `household_id` BIGINT UNSIGNED NOT NULL,
   `full_name` VARCHAR(190) NOT NULL,
-  `gender` ENUM('Nam','Ná»¯','KhÃ¡c') NOT NULL,
+  `gender` ENUM('Nam','Nữ','Khác') NOT NULL,
   `date_of_birth` DATE NOT NULL,
   `identity_number` VARCHAR(20) NULL,
   `identity_issue_date` DATE NULL,
@@ -122,6 +132,26 @@ CREATE TABLE `citizens` (
   `occupation` VARCHAR(120) NULL,
   `father_name` VARCHAR(255) NULL,
   `mother_name` VARCHAR(255) NULL,
+  `party_member` TINYINT(1) NOT NULL DEFAULT 0,
+  `youth_union_member` TINYINT(1) NOT NULL DEFAULT 0,
+  `women_union_member` TINYINT(1) NOT NULL DEFAULT 0,
+  `farmers_union_member` TINYINT(1) NOT NULL DEFAULT 0,
+  `veterans_union_member` TINYINT(1) NOT NULL DEFAULT 0,
+  `elderly_union_member` TINYINT(1) NOT NULL DEFAULT 0,
+  `meritorious_person` TINYINT(1) NOT NULL DEFAULT 0,
+  `martyr_relative` TINYINT(1) NOT NULL DEFAULT 0,
+  `wounded_soldier` TINYINT(1) NOT NULL DEFAULT 0,
+  `sick_soldier` TINYINT(1) NOT NULL DEFAULT 0,
+  `disabled_person` TINYINT(1) NOT NULL DEFAULT 0,
+  `social_assistance` TINYINT(1) NOT NULL DEFAULT 0,
+  `employed` TINYINT(1) NOT NULL DEFAULT 0,
+  `unemployed` TINYINT(1) NOT NULL DEFAULT 0,
+  `freelance_labor` TINYINT(1) NOT NULL DEFAULT 0,
+  `out_province_labor` TINYINT(1) NOT NULL DEFAULT 0,
+  `foreign_labor` TINYINT(1) NOT NULL DEFAULT 0,
+  `pupil` TINYINT(1) NOT NULL DEFAULT 0,
+  `student` TINYINT(1) NOT NULL DEFAULT 0,
+  `retired` TINYINT(1) NOT NULL DEFAULT 0,
   `phone` VARCHAR(30) NULL,
   `residency_status` ENUM('PERMANENT','TEMPORARY') NOT NULL DEFAULT 'PERMANENT' COMMENT 'PERMANENT=Thuong tru, TEMPORARY=Tam tru',
   `current_address` VARCHAR(255) NULL,
@@ -163,10 +193,7 @@ CREATE TABLE `citizens` (
   CONSTRAINT `fk_citizens_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE `households`
-  ADD CONSTRAINT `fk_households_head_citizen` FOREIGN KEY (`head_citizen_id`) REFERENCES `citizens` (`id`) ON DELETE SET NULL;
-
-CREATE TABLE `movements` (
+CREATE TABLE IF NOT EXISTS `movements` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `village_id` BIGINT UNSIGNED NOT NULL,
   `citizen_id` BIGINT UNSIGNED NOT NULL,
@@ -200,7 +227,7 @@ CREATE TABLE `movements` (
   CONSTRAINT `fk_movements_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `permissions` (
+CREATE TABLE IF NOT EXISTS `permissions` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `role` ENUM('SUPER_ADMIN','ADMIN','OFFICER','VIEWER') NOT NULL,
   `module` VARCHAR(50) NOT NULL,
@@ -217,7 +244,19 @@ CREATE TABLE `permissions` (
   CONSTRAINT `fk_permissions_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `audit_logs` (
+CREATE TABLE IF NOT EXISTS `settings` (
+  `village_id` BIGINT UNSIGNED NOT NULL,
+  `setting_key` VARCHAR(100) NOT NULL,
+  `setting_value` TEXT NULL,
+  `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated_by` BIGINT UNSIGNED NULL,
+  PRIMARY KEY (`village_id`, `setting_key`),
+  CONSTRAINT `fk_settings_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_settings_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  KEY `idx_settings_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `audit_logs` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `village_id` BIGINT UNSIGNED NOT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -239,18 +278,7 @@ CREATE TABLE `audit_logs` (
   CONSTRAINT `fk_audit_logs_actor` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `settings` (
-  `village_id` BIGINT UNSIGNED NOT NULL,
-  `setting_key` VARCHAR(100) NOT NULL,
-  `setting_value` TEXT NULL,
-  `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `updated_by` BIGINT UNSIGNED NULL,
-  PRIMARY KEY (`village_id`, `setting_key`),
-  CONSTRAINT `fk_settings_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
-  CONSTRAINT `fk_settings_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `backups` (
+CREATE TABLE IF NOT EXISTS `backups` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `village_id` BIGINT UNSIGNED NOT NULL,
   `file_name` VARCHAR(255) NOT NULL,
@@ -272,7 +300,7 @@ CREATE TABLE `backups` (
   CONSTRAINT `fk_backups_restored_by` FOREIGN KEY (`restored_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `import_batches` (
+CREATE TABLE IF NOT EXISTS `import_batches` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `village_id` BIGINT UNSIGNED NOT NULL,
   `type` ENUM('HOUSEHOLD','CITIZEN') NOT NULL,
@@ -296,8 +324,9 @@ CREATE TABLE `import_batches` (
   CONSTRAINT `fk_import_batches_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `import_errors` (
+CREATE TABLE IF NOT EXISTS `import_errors` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
   `batch_id` BIGINT UNSIGNED NOT NULL,
   `row_number` INT UNSIGNED NOT NULL,
   `message` TEXT NOT NULL,
@@ -305,10 +334,11 @@ CREATE TABLE `import_errors` (
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_import_errors_batch` (`batch_id`),
-  CONSTRAINT `fk_import_errors_batch` FOREIGN KEY (`batch_id`) REFERENCES `import_batches` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_import_errors_batch` FOREIGN KEY (`batch_id`) REFERENCES `import_batches` (`id`) ON DELETE CASCADE,
+  KEY `idx_import_errors_village` (`village_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `export_files` (
+CREATE TABLE IF NOT EXISTS `export_files` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `village_id` BIGINT UNSIGNED NOT NULL,
   `type` ENUM('EXCEL','PDF','PRINT') NOT NULL,
@@ -327,108 +357,12 @@ CREATE TABLE `export_files` (
   CONSTRAINT `fk_export_files_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE OR REPLACE VIEW `v_household_member_counts` AS
-SELECT
-  h.id AS household_id,
-  COUNT(c.id) AS total_members,
-  SUM(CASE WHEN c.presence_status = 'AT_HOME' AND c.status <> 'DELETED' THEN 1 ELSE 0 END) AS at_home_count,
-  SUM(CASE WHEN c.presence_status = 'AWAY' AND c.status <> 'DELETED' THEN 1 ELSE 0 END) AS away_count
-FROM households h
-LEFT JOIN citizens c ON c.household_id = h.id AND c.status <> 'DELETED'
-GROUP BY h.id;
-
-CREATE OR REPLACE VIEW `v_dashboard_summary` AS
-SELECT
-  (SELECT COUNT(*) FROM households WHERE status <> 'DELETED') AS total_households,
-  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED') AS total_citizens,
-  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND gender = 'Nam') AS total_male,
-  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND gender = 'Ná»¯') AS total_female,
-  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND life_status = 'ALIVE') AS active_citizens,
-  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND residency_status = 'TEMPORARY') AS temporary_residence,
-  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND presence_status = 'AWAY') AS temporary_absence;
-
-
-
--- Tai khoan quan tri dau tien se duoc tao bang man hinh cai dat o Sprint 2.
--- Khong seed password mac dinh trong file SQL de tranh mat an toan.
-
--- Sprint 19: Household production and business module
-CREATE TABLE IF NOT EXISTS `household_business` (
+CREATE TABLE IF NOT EXISTS `file_attachments` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `village_id` BIGINT UNSIGNED NOT NULL,
-  `household_id` BIGINT UNSIGNED NOT NULL,
-  `business_type` ENUM('RESIDENT','PRODUCTION','BUSINESS','BOTH') NOT NULL DEFAULT 'RESIDENT',
-  `economic_type` VARCHAR(120) NULL,
-  `main_products` TEXT NULL,
-  `business_scale` VARCHAR(120) NULL,
-  `is_ocop` TINYINT(1) NOT NULL DEFAULT 0,
-  `ocop_product` VARCHAR(255) NULL,
-  `ocop_star` TINYINT UNSIGNED NULL,
-  `food_safety_certified` TINYINT(1) NOT NULL DEFAULT 0,
-  `food_safety_certificate_no` VARCHAR(120) NULL,
-  `food_safety_expired_date` DATE NULL,
-  `social_insurance` TINYINT(1) NOT NULL DEFAULT 0,
-  `insured_workers` INT UNSIGNED NOT NULL DEFAULT 0,
-  `business_name` VARCHAR(255) NULL,
-  `owner_name` VARCHAR(255) NULL,
-  `production_sector` VARCHAR(255) NULL,
-  `business_sector` VARCHAR(255) NULL,
-  `business_license` VARCHAR(100) NULL,
-  `license_date` DATE NULL,
-  `license_place` VARCHAR(255) NULL,
-  `tax_code` VARCHAR(50) NULL,
-  `start_date` DATE NULL,
-  `worker_count` INT UNSIGNED NOT NULL DEFAULT 0,
-  `annual_revenue` DECIMAL(18,2) NULL,
-  `phone` VARCHAR(30) NULL,
-  `email` VARCHAR(150) NULL,
-  `address` VARCHAR(500) NULL,
-  `latitude` DECIMAL(10,8) NULL,
-  `longitude` DECIMAL(11,8) NULL,
-  `gps_source` ENUM('household','activity') NOT NULL DEFAULT 'household',
-  `status` ENUM('ACTIVE','INACTIVE','SUSPENDED','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  `note` TEXT NULL,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `created_by` BIGINT UNSIGNED NULL,
-  `updated_by` BIGINT UNSIGNED NULL,
-  `deleted_at` DATETIME NULL,
-  `deleted_by` BIGINT UNSIGNED NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_household_business_household` (`household_id`),
-  KEY `idx_household_business_type` (`business_type`),
-  KEY `idx_household_business_status` (`status`),
-  KEY `idx_household_business_sector` (`production_sector`, `business_sector`),
-  KEY `idx_household_business_license` (`business_license`),
-  KEY `idx_household_business_tax` (`tax_code`),
-  KEY `idx_household_business_location` (`latitude`, `longitude`),
-  KEY `idx_household_business_village` (`village_id`),
-  CONSTRAINT `fk_household_business_village` FOREIGN KEY (`village_id`) REFERENCES `villages` (`id`) ON DELETE RESTRICT,
-  CONSTRAINT `fk_household_business_household` FOREIGN KEY (`household_id`) REFERENCES `households` (`id`) ON DELETE RESTRICT,
-  CONSTRAINT `fk_household_business_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_household_business_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_household_business_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `household_business_catalogs` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `catalog_type` VARCHAR(50) NOT NULL,
-  `value` VARCHAR(150) NOT NULL,
-  `label` VARCHAR(150) NOT NULL,
-  `sort_order` INT UNSIGNED NOT NULL DEFAULT 0,
-  `status` ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_hb_catalog` (`catalog_type`, `value`),
-  KEY `idx_hb_catalog_type` (`catalog_type`, `status`, `sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `household_business_files` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `household_business_id` BIGINT UNSIGNED NOT NULL,
-  `file_kind` ENUM('IMAGE','DOCUMENT') NOT NULL,
-  `category` VARCHAR(120) NOT NULL,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  `module` VARCHAR(50) NOT NULL,
+  `entity_id` BIGINT UNSIGNED NOT NULL,
+  `file_type` ENUM('PHOTO','DOCUMENT','LOGO','BACKGROUND','OTHER') NOT NULL DEFAULT 'OTHER',
   `original_name` VARCHAR(255) NOT NULL,
   `stored_name` VARCHAR(255) NOT NULL,
   `file_path` VARCHAR(500) NOT NULL,
@@ -440,10 +374,1346 @@ CREATE TABLE IF NOT EXISTS `household_business_files` (
   `deleted_at` DATETIME NULL,
   `deleted_by` BIGINT UNSIGNED NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_hb_files_business` (`household_business_id`, `status`, `file_kind`),
-  KEY `idx_hb_files_category` (`category`),
-  CONSTRAINT `fk_hb_files_business` FOREIGN KEY (`household_business_id`) REFERENCES `household_business` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_hb_files_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_hb_files_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  KEY `idx_file_attachments_entity` (`module`, `entity_id`),
+  KEY `idx_file_attachments_type` (`file_type`),
+  CONSTRAINT `fk_file_attachments_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_file_attachments_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  KEY `idx_file_attachments_village` (`village_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `profile_notes` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  `module` ENUM('household','citizen') NOT NULL,
+  `entity_id` BIGINT UNSIGNED NOT NULL,
+  `section` VARCHAR(80) NOT NULL DEFAULT 'general',
+  `title` VARCHAR(255) NOT NULL,
+  `content` LONGTEXT NULL,
+  `status` ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` BIGINT UNSIGNED NULL,
+  `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated_by` BIGINT UNSIGNED NULL,
+  `deleted_at` DATETIME NULL,
+  `deleted_by` BIGINT UNSIGNED NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_profile_notes_entity` (`module`, `entity_id`, `section`, `status`),
+  KEY `idx_profile_notes_created_by` (`created_by`),
+  CONSTRAINT `fk_profile_notes_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_profile_notes_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_profile_notes_deleted_by` FOREIGN KEY (`deleted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  KEY `idx_profile_notes_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `report_templates` (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, name VARCHAR(150) NOT NULL, type VARCHAR(80) NOT NULL, filters_json JSON NULL, is_default TINYINT(1) NOT NULL DEFAULT 0, status VARCHAR(20) NOT NULL DEFAULT "ACTIVE", created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NULL, INDEX idx_report_templates_user (user_id, status), INDEX idx_report_templates_default (user_id, is_default)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `gis_areas` (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            village_id BIGINT UNSIGNED NOT NULL,
+            name VARCHAR(150) NOT NULL,
+            area_code VARCHAR(100) NOT NULL,
+            color VARCHAR(20) DEFAULT "#0f8a4b",
+            note TEXT NULL,
+            polygon LONGTEXT NULL,
+            geometry_json LONGTEXT NULL,
+            sort_order INT DEFAULT 0,
+            status VARCHAR(20) DEFAULT "ACTIVE",
+            created_by INT NULL,
+            updated_by INT NULL,
+            deleted_by INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+            deleted_at TIMESTAMP NULL DEFAULT NULL,
+            INDEX idx_gis_area_code (area_code),
+            INDEX idx_gis_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `household_business` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL,
+  household_id BIGINT UNSIGNED NOT NULL,
+  business_type ENUM('RESIDENT','PRODUCTION','BUSINESS','BOTH') NOT NULL DEFAULT 'RESIDENT',
+  business_name VARCHAR(255) NULL,
+  owner_name VARCHAR(255) NULL,
+  production_sector VARCHAR(255) NULL,
+  business_sector VARCHAR(255) NULL,
+  business_license VARCHAR(100) NULL,
+  license_date DATE NULL,
+  license_place VARCHAR(255) NULL,
+  tax_code VARCHAR(50) NULL,
+  start_date DATE NULL,
+  worker_count INT UNSIGNED NOT NULL DEFAULT 0,
+  annual_revenue DECIMAL(18,2) NULL,
+  phone VARCHAR(30) NULL,
+  email VARCHAR(150) NULL,
+  address VARCHAR(500) NULL,
+  latitude DECIMAL(10,8) NULL,
+  longitude DECIMAL(11,8) NULL,
+  gps_source ENUM('household','activity') NOT NULL DEFAULT 'household',
+  status ENUM('ACTIVE','INACTIVE','SUSPENDED','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_household_business_household (household_id),
+  KEY idx_household_business_type (business_type),
+  KEY idx_household_business_status (status),
+  KEY idx_household_business_sector (production_sector, business_sector),
+  KEY idx_household_business_license (business_license),
+  KEY idx_household_business_tax (tax_code),
+  KEY idx_household_business_location (latitude, longitude),
+  CONSTRAINT fk_household_business_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT,
+  KEY `idx_household_business_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `household_business_catalogs` (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, catalog_type VARCHAR(50) NOT NULL, value VARCHAR(150) NOT NULL, label VARCHAR(150) NOT NULL, sort_order INT UNSIGNED NOT NULL DEFAULT 0, status ENUM("ACTIVE","INACTIVE") NOT NULL DEFAULT "ACTIVE", created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_hb_catalog (catalog_type, value), KEY idx_hb_catalog_type (catalog_type, status, sort_order)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `household_business_files` (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, household_business_id BIGINT UNSIGNED NOT NULL, file_kind ENUM("IMAGE","DOCUMENT") NOT NULL, category VARCHAR(120) NOT NULL, original_name VARCHAR(255) NOT NULL, stored_name VARCHAR(255) NOT NULL, file_path VARCHAR(500) NOT NULL, mime_type VARCHAR(120) NOT NULL, file_size BIGINT UNSIGNED NOT NULL DEFAULT 0, status ENUM("ACTIVE","DELETED") NOT NULL DEFAULT "ACTIVE", created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, created_by BIGINT UNSIGNED NULL, deleted_at DATETIME NULL, deleted_by BIGINT UNSIGNED NULL, KEY idx_hb_files_business (household_business_id, status, file_kind), KEY idx_hb_files_category (category), CONSTRAINT fk_hb_files_business FOREIGN KEY (household_business_id) REFERENCES household_business(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `livestock` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  household_id BIGINT UNSIGNED NOT NULL,
+  animal_type VARCHAR(80) NOT NULL,
+  breed VARCHAR(120) NULL,
+  quantity INT UNSIGNED NOT NULL DEFAULT 0,
+  vaccinated TINYINT(1) NOT NULL DEFAULT 0,
+  vaccine_date DATE NULL,
+  disease_status ENUM('NONE','SUSPECTED','INFECTED','RECOVERED') NOT NULL DEFAULT 'NONE',
+  barn_area VARCHAR(255) NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_livestock_household (household_id),
+  KEY idx_livestock_animal_type (animal_type),
+  KEY idx_livestock_status (status),
+  KEY idx_livestock_vaccinated (vaccinated),
+  CONSTRAINT fk_livestock_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT,
+  KEY `idx_livestock_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `vehicles` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  vehicle_code VARCHAR(40) NULL,
+  household_id BIGINT UNSIGNED NOT NULL,
+  owner_citizen_id BIGINT UNSIGNED NULL,
+  owner_name VARCHAR(180) NULL,
+  vehicle_type VARCHAR(80) NOT NULL,
+  detail_type VARCHAR(120) NULL,
+  brand VARCHAR(120) NULL,
+  model VARCHAR(120) NULL,
+  version_name VARCHAR(120) NULL,
+  license_plate VARCHAR(40) NULL,
+  frame_number VARCHAR(80) NULL,
+  engine_number VARCHAR(80) NULL,
+  registration_date DATE NULL,
+  registration_place VARCHAR(180) NULL,
+  manufacture_year SMALLINT UNSIGNED NULL,
+  color VARCHAR(80) NULL,
+  usage_status ENUM('USING','INACTIVE','SOLD','LIQUIDATED','DAMAGED','LOST') NOT NULL DEFAULT 'USING',
+  has_insurance TINYINT(1) NOT NULL DEFAULT 0,
+  insurance_expiry_date DATE NULL,
+  has_inspection TINYINT(1) NOT NULL DEFAULT 0,
+  inspection_expiry_date DATE NULL,
+  vehicle_photo_path VARCHAR(255) NULL,
+  plate_photo_path VARCHAR(255) NULL,
+  registration_photo_path VARCHAR(255) NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_vehicles_household (household_id),
+  KEY idx_vehicles_code (vehicle_code),
+  KEY idx_vehicles_owner_citizen (owner_citizen_id),
+  KEY idx_vehicles_type (vehicle_type),
+  KEY idx_vehicles_plate (license_plate),
+  KEY idx_vehicles_status (status),
+  CONSTRAINT fk_vehicles_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT,
+  KEY `idx_vehicles_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `houses` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  household_id BIGINT UNSIGNED NOT NULL,
+  house_code VARCHAR(40) NOT NULL UNIQUE,
+  house_name VARCHAR(255) NULL,
+  address VARCHAR(500) NULL,
+  house_type VARCHAR(120) NULL,
+  structure_type VARCHAR(120) NULL,
+  floors INT UNSIGNED NOT NULL DEFAULT 1,
+  land_area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  building_area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  floor_area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  build_year INT UNSIGNED NULL,
+  renovated_year INT UNSIGNED NULL,
+  `condition` VARCHAR(80) NULL,
+  solidity VARCHAR(80) NULL,
+  `usage` VARCHAR(120) NULL,
+  legal_status VARCHAR(120) NULL,
+  electric_meter VARCHAR(120) NULL,
+  water_meter VARCHAR(120) NULL,
+  internet TINYINT(1) NOT NULL DEFAULT 0,
+  security_camera TINYINT(1) NOT NULL DEFAULT 0,
+  fire_extinguisher TINYINT(1) NOT NULL DEFAULT 0,
+  fire_risk VARCHAR(30) NOT NULL DEFAULT 'LOW',
+  latitude DECIMAL(11,8) NULL,
+  longitude DECIMAL(11,8) NULL,
+  gps_accuracy DECIMAL(10,2) NULL,
+  notes TEXT NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_houses_household (household_id),
+  KEY idx_houses_type (house_type),
+  KEY idx_houses_condition (`condition`),
+  KEY idx_houses_fire_risk (fire_risk),
+  KEY idx_houses_status (status),
+  CONSTRAINT fk_houses_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT,
+  KEY `idx_houses_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `house_structures` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  house_id BIGINT UNSIGNED NOT NULL,
+  structure_type VARCHAR(120) NOT NULL,
+  structure_name VARCHAR(255) NULL,
+  area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  build_year INT UNSIGNED NULL,
+  `condition` VARCHAR(80) NULL,
+  notes TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_house_structures_house (house_id),
+  KEY idx_house_structures_type (structure_type),
+  CONSTRAINT fk_house_structures_house FOREIGN KEY (house_id) REFERENCES houses(id) ON DELETE CASCADE,
+  KEY `idx_house_structures_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `house_photos` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  house_id BIGINT UNSIGNED NOT NULL,
+  file_path VARCHAR(500) NOT NULL,
+  stored_name VARCHAR(255) NULL,
+  original_name VARCHAR(255) NULL,
+  mime_type VARCHAR(120) NULL,
+  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  photo_type VARCHAR(120) NULL,
+  description VARCHAR(500) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_house_photos_house (house_id),
+  KEY idx_house_photos_type (photo_type),
+  CONSTRAINT fk_house_photos_house FOREIGN KEY (house_id) REFERENCES houses(id) ON DELETE CASCADE,
+  KEY `idx_house_photos_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `agri_stakeholders` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  stakeholder_type ENUM('VILLAGE_HOUSEHOLD','OUTSIDE_PERSON','BUSINESS','COOPERATIVE','ORGANIZATION') NOT NULL DEFAULT 'VILLAGE_HOUSEHOLD',
+  household_id BIGINT UNSIGNED NULL,
+  name VARCHAR(255) NOT NULL,
+  identity_number VARCHAR(80) NULL,
+  tax_code VARCHAR(80) NULL,
+  phone VARCHAR(50) NULL,
+  address VARCHAR(500) NULL,
+  note TEXT NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_agri_stakeholders_household (household_id),
+  KEY idx_agri_stakeholders_name (name),
+  CONSTRAINT fk_agri_stakeholders_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE SET NULL,
+  KEY `idx_agri_stakeholders_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `agri_land_parcels` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  parcel_code VARCHAR(40) NOT NULL UNIQUE,
+  map_sheet_no VARCHAR(80) NULL,
+  parcel_no VARCHAR(80) NULL,
+  field_area VARCHAR(255) NULL,
+  field_name VARCHAR(255) NULL,
+  land_type VARCHAR(120) NULL,
+  legal_area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  actual_area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  cultivated_area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  abandoned_area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  owner_id BIGINT UNSIGNED NOT NULL,
+  producer_id BIGINT UNSIGNED NOT NULL,
+  usage_form ENUM('SELF','LEASE_OUT','LEASE_IN','BORROW','PARTNERSHIP') NOT NULL DEFAULT 'SELF',
+  latitude DECIMAL(11,8) NULL,
+  longitude DECIMAL(11,8) NULL,
+  polygon_geojson LONGTEXT NULL,
+  status ENUM('ACTIVE','IDLE','LEASED','ABANDONED','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_agri_parcels_owner (owner_id),
+  KEY idx_agri_parcels_producer (producer_id),
+  KEY idx_agri_parcels_status (status),
+  KEY idx_agri_parcels_field (field_area),
+  CONSTRAINT fk_agri_parcels_owner FOREIGN KEY (owner_id) REFERENCES agri_stakeholders(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_agri_parcels_producer FOREIGN KEY (producer_id) REFERENCES agri_stakeholders(id) ON DELETE RESTRICT,
+  KEY `idx_agri_land_parcels_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `agri_production_plots` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  parcel_id BIGINT UNSIGNED NOT NULL,
+  plot_code VARCHAR(80) NULL,
+  plot_name VARCHAR(160) NOT NULL,
+  area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  status ENUM('ACTIVE','IDLE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_agri_plots_parcel (parcel_id),
+  CONSTRAINT fk_agri_plots_parcel FOREIGN KEY (parcel_id) REFERENCES agri_land_parcels(id) ON DELETE CASCADE,
+  KEY `idx_agri_production_plots_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `agri_crop_seasons` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  plot_id BIGINT UNSIGNED NOT NULL,
+  season_name VARCHAR(80) NOT NULL,
+  crop VARCHAR(120) NOT NULL,
+  variety VARCHAR(160) NULL,
+  area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  land_prep_date DATE NULL,
+  sowing_date DATE NULL,
+  transplant_date DATE NULL,
+  fertilizer_date DATE NULL,
+  pesticide_date DATE NULL,
+  expected_harvest_date DATE NULL,
+  actual_harvest_date DATE NULL,
+  yield_value DECIMAL(14,2) NOT NULL DEFAULT 0,
+  output_value DECIMAL(14,2) NOT NULL DEFAULT 0,
+  sale_price DECIMAL(14,2) NOT NULL DEFAULT 0,
+  revenue DECIMAL(14,2) NOT NULL DEFAULT 0,
+  cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+  profit DECIMAL(14,2) NOT NULL DEFAULT 0,
+  status ENUM('PLANNED','IN_PROGRESS','HARVESTED','CANCELLED','DELETED') NOT NULL DEFAULT 'IN_PROGRESS',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_agri_seasons_plot (plot_id),
+  KEY idx_agri_seasons_crop (crop),
+  KEY idx_agri_seasons_name (season_name),
+  CONSTRAINT fk_agri_seasons_plot FOREIGN KEY (plot_id) REFERENCES agri_production_plots(id) ON DELETE CASCADE,
+  KEY `idx_agri_crop_seasons_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `agri_production_logs` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  season_id BIGINT UNSIGNED NOT NULL,
+  activity_type VARCHAR(50) NOT NULL,
+  activity_date DATE NOT NULL,
+  actor_name VARCHAR(255) NULL,
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  KEY idx_agri_logs_season (season_id),
+  CONSTRAINT fk_agri_logs_season FOREIGN KEY (season_id) REFERENCES agri_crop_seasons(id) ON DELETE CASCADE,
+  KEY `idx_agri_production_logs_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `agri_damages` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  parcel_id BIGINT UNSIGNED NOT NULL,
+  season_id BIGINT UNSIGNED NULL,
+  damage_type VARCHAR(50) NOT NULL,
+  event_date DATE NOT NULL,
+  affected_area DECIMAL(14,2) NOT NULL DEFAULT 0,
+  damage_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+  estimated_output_loss DECIMAL(14,2) NOT NULL DEFAULT 0,
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_agri_damages_parcel (parcel_id),
+  KEY idx_agri_damages_season (season_id),
+  CONSTRAINT fk_agri_damages_parcel FOREIGN KEY (parcel_id) REFERENCES agri_land_parcels(id) ON DELETE CASCADE,
+  CONSTRAINT fk_agri_damages_season FOREIGN KEY (season_id) REFERENCES agri_crop_seasons(id) ON DELETE SET NULL,
+  KEY `idx_agri_damages_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `agri_files` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  parcel_id BIGINT UNSIGNED NULL,
+  season_id BIGINT UNSIGNED NULL,
+  damage_id BIGINT UNSIGNED NULL,
+  file_kind ENUM('IMAGE','DOCUMENT') NOT NULL DEFAULT 'IMAGE',
+  category VARCHAR(120) NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  storage_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(120) NULL,
+  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  KEY idx_agri_files_parcel (parcel_id),
+  KEY idx_agri_files_season (season_id),
+  KEY idx_agri_files_damage (damage_id),
+  CONSTRAINT fk_agri_files_parcel FOREIGN KEY (parcel_id) REFERENCES agri_land_parcels(id) ON DELETE CASCADE,
+  CONSTRAINT fk_agri_files_season FOREIGN KEY (season_id) REFERENCES agri_crop_seasons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_agri_files_damage FOREIGN KEY (damage_id) REFERENCES agri_damages(id) ON DELETE CASCADE,
+  KEY `idx_agri_files_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `public_asset_types` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  category VARCHAR(120) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  icon VARCHAR(80) NOT NULL DEFAULT 'fa-building-columns',
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_public_asset_types_name (name),
+  KEY idx_public_asset_types_category (category),
+  KEY idx_public_asset_types_active (is_active),
+  KEY `idx_public_asset_types_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `public_assets` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  asset_code VARCHAR(40) NOT NULL UNIQUE,
+  asset_name VARCHAR(255) NOT NULL,
+  type_id BIGINT UNSIGNED NULL,
+  type_name VARCHAR(180) NULL,
+  category VARCHAR(120) NULL,
+  area_code VARCHAR(80) NULL,
+  campus_area DECIMAL(14,2) NULL,
+  building_area DECIMAL(14,2) NULL,
+  address VARCHAR(500) NULL,
+  latitude DECIMAL(11,8) NULL,
+  longitude DECIMAL(11,8) NULL,
+  gps_accuracy DECIMAL(10,2) NULL,
+  cover_photo_url VARCHAR(500) NULL,
+  description TEXT NULL,
+  managing_unit VARCHAR(255) NULL,
+  manager_name VARCHAR(255) NULL,
+  manager_phone VARCHAR(80) NULL,
+  note TEXT NULL,
+  status ENUM('ACTIVE','REPAIRING','SUSPENDED','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_public_assets_type (type_id),
+  KEY idx_public_assets_area (area_code),
+  KEY idx_public_assets_campus_area (campus_area),
+  KEY idx_public_assets_status (status),
+  KEY idx_public_assets_location (latitude, longitude),
+  CONSTRAINT fk_public_assets_type FOREIGN KEY (type_id) REFERENCES public_asset_types(id) ON DELETE SET NULL,
+  KEY `idx_public_assets_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `public_asset_inventory_groups` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  name VARCHAR(180) NOT NULL,
+  parent_name VARCHAR(180) NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_public_asset_inventory_groups_name (name),
+  KEY idx_public_asset_inventory_groups_active (is_active),
+  KEY idx_public_asset_inventory_groups_parent (parent_name),
+  KEY `idx_public_asset_inventory_groups_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `public_asset_inventory_items` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  public_asset_id BIGINT UNSIGNED NOT NULL,
+  inventory_code VARCHAR(60) NOT NULL,
+  item_name VARCHAR(255) NOT NULL,
+  group_id BIGINT UNSIGNED NULL,
+  group_name VARCHAR(180) NULL,
+  quantity DECIMAL(14,2) NOT NULL DEFAULT 1,
+  unit VARCHAR(80) NULL,
+  condition_status ENUM('NEW','GOOD','IN_USE','MAINTENANCE','LIGHT_DAMAGE','HEAVY_DAMAGE','NEEDS_REPAIR','LIQUIDATED','DELETED') NOT NULL DEFAULT 'IN_USE',
+  start_use_date DATE NULL,
+  location_in_asset VARCHAR(255) NULL,
+  note TEXT NULL,
+  photo_url VARCHAR(500) NULL,
+  status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  UNIQUE KEY uq_public_asset_inventory_code (inventory_code),
+  KEY idx_public_asset_inventory_asset (public_asset_id),
+  KEY idx_public_asset_inventory_group (group_id),
+  KEY idx_public_asset_inventory_condition (condition_status),
+  KEY idx_public_asset_inventory_status (status),
+  CONSTRAINT fk_public_asset_inventory_asset FOREIGN KEY (public_asset_id) REFERENCES public_assets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_public_asset_inventory_group FOREIGN KEY (group_id) REFERENCES public_asset_inventory_groups(id) ON DELETE SET NULL,
+  KEY `idx_public_asset_inventory_items_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `public_asset_maintenance_schedules` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  public_asset_id BIGINT UNSIGNED NOT NULL,
+  inventory_item_id BIGINT UNSIGNED NULL,
+  maintenance_code VARCHAR(60) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  scheduled_date DATE NOT NULL,
+  completed_at DATETIME NULL,
+  manager_name VARCHAR(255) NULL,
+  cost DECIMAL(15,2) NULL,
+  status ENUM('SCHEDULED','DONE','CANCELLED') NOT NULL DEFAULT 'SCHEDULED',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  UNIQUE KEY uq_public_asset_maintenance_code (maintenance_code),
+  KEY idx_public_asset_maintenance_asset (public_asset_id),
+  KEY idx_public_asset_maintenance_item (inventory_item_id),
+  KEY idx_public_asset_maintenance_status (status),
+  KEY idx_public_asset_maintenance_due (scheduled_date),
+  CONSTRAINT fk_public_asset_maintenance_asset FOREIGN KEY (public_asset_id) REFERENCES public_assets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_public_asset_maintenance_item FOREIGN KEY (inventory_item_id) REFERENCES public_asset_inventory_items(id) ON DELETE SET NULL,
+  KEY `idx_public_asset_maintenance_schedules_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contribution_categories` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  contribution_type VARCHAR(80) NULL,
+  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  unit VARCHAR(40) NOT NULL DEFAULT 'VND/ho',
+  collection_cycle VARCHAR(40) NOT NULL DEFAULT 'YEARLY',
+  custom_cycle VARCHAR(180) NULL,
+  target_config_json JSON NULL,
+  exemption_config_json JSON NULL,
+  is_required TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY `idx_contribution_categories_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contribution_campaigns` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  category_id BIGINT UNSIGNED NULL,
+  contribution_name VARCHAR(180) NOT NULL,
+  contribution_type VARCHAR(80) NULL,
+  year SMALLINT UNSIGNED NOT NULL,
+  period_name VARCHAR(80) NULL,
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  unit VARCHAR(40) NOT NULL DEFAULT 'VNĐ/hộ',
+  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
+  start_date DATE NULL,
+  due_date DATE NULL,
+  target_config_json JSON NULL,
+  exemption_config_json JSON NULL,
+  note TEXT NULL,
+  status ENUM('ACTIVE','CLOSED','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_contribution_campaign_year (year),
+  KEY idx_contribution_campaign_status (status),
+  KEY idx_contribution_campaign_category (category_id),
+  KEY `idx_contribution_campaigns_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contribution_rate_rules` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  campaign_id BIGINT UNSIGNED NOT NULL,
+  rule_name VARCHAR(180) NOT NULL,
+  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  target_config_json JSON NULL,
+  effective_from DATE NULL,
+  effective_to DATE NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_contribution_rate_campaign (campaign_id),
+  KEY `idx_contribution_rate_rules_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contribution_rule_templates` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  template_code VARCHAR(80) NOT NULL UNIQUE,
+  category_name VARCHAR(180) NOT NULL,
+  contribution_name VARCHAR(180) NULL,
+  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  unit VARCHAR(40) NOT NULL DEFAULT 'VNĐ/hộ',
+  target_config_json JSON NULL,
+  exemption_config_json JSON NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY `idx_contribution_rule_templates_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contribution_exemption_policies` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  campaign_id BIGINT UNSIGNED NULL,
+  policy_code VARCHAR(80) NOT NULL,
+  policy_name VARCHAR(180) NOT NULL,
+  policy_type ENUM('FULL','PARTIAL','PERSON') NOT NULL DEFAULT 'PERSON',
+  exemption_config_json JSON NULL,
+  amount DECIMAL(14,2) NULL,
+  percent DECIMAL(5,2) NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  approved_by VARCHAR(180) NULL,
+  approved_at DATE NULL,
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_contribution_policy_campaign (campaign_id),
+  KEY `idx_contribution_exemption_policies_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `household_contributions` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  campaign_id BIGINT UNSIGNED NOT NULL,
+  household_id BIGINT UNSIGNED NOT NULL,
+  payment_status ENUM('UNPAID','PAID','PARTIAL','EXEMPT','REDUCED') NOT NULL DEFAULT 'UNPAID',
+  expected_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  gross_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  exempt_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  discount_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  paid_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  debt_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  eligible_count INT UNSIGNED NOT NULL DEFAULT 0,
+  exempt_count INT UNSIGNED NOT NULL DEFAULT 0,
+  chargeable_count INT UNSIGNED NOT NULL DEFAULT 0,
+  paid_at DATE NULL,
+  collector_name VARCHAR(180) NULL,
+  payment_method VARCHAR(40) NULL,
+  receipt_number VARCHAR(80) NULL,
+  calculation_note JSON NULL,
+  note TEXT NULL,
+  status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  UNIQUE KEY `uniq_household_contribution` (`village_id`, `campaign_id`, `household_id`),
+  KEY idx_household_contributions_household (household_id),
+  KEY idx_household_contributions_status (payment_status),
+  KEY idx_household_contributions_campaign (campaign_id),
+  KEY `idx_household_contributions_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contribution_receipts` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  contribution_id BIGINT UNSIGNED NOT NULL,
+  campaign_id BIGINT UNSIGNED NOT NULL,
+  household_id BIGINT UNSIGNED NOT NULL,
+  receipt_number VARCHAR(80) NULL,
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  paid_at DATE NULL,
+  collector_name VARCHAR(180) NULL,
+  payment_method VARCHAR(80) NULL,
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  KEY idx_contribution_receipts_contribution (contribution_id),
+  KEY idx_contribution_receipts_campaign (campaign_id),
+  KEY idx_contribution_receipts_household (household_id),
+  KEY `idx_contribution_receipts_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contribution_payment_history` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  contribution_id BIGINT UNSIGNED NOT NULL,
+  campaign_id BIGINT UNSIGNED NOT NULL,
+  household_id BIGINT UNSIGNED NOT NULL,
+  action VARCHAR(60) NOT NULL DEFAULT 'PAYMENT',
+  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  payment_status VARCHAR(40) NOT NULL,
+  paid_at DATE NULL,
+  collector_name VARCHAR(180) NULL,
+  receipt_number VARCHAR(80) NULL,
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  KEY idx_contribution_history_contribution (contribution_id),
+  KEY idx_contribution_history_campaign (campaign_id),
+  KEY idx_contribution_history_household (household_id),
+  KEY `idx_contribution_payment_history_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contribution_adjustment_history` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  contribution_id BIGINT UNSIGNED NULL,
+  campaign_id BIGINT UNSIGNED NOT NULL,
+  household_id BIGINT UNSIGNED NULL,
+  before_json JSON NULL,
+  after_json JSON NULL,
+  reason TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  KEY idx_contribution_adjustment_campaign (campaign_id),
+  KEY idx_contribution_adjustment_contribution (contribution_id),
+  KEY `idx_contribution_adjustment_history_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `complaint_categories` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(60) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_complaint_categories_active (is_active),
+  KEY `idx_complaint_categories_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `complaint_priorities` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_complaint_priorities_active (is_active),
+  KEY `idx_complaint_priorities_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `complaint_statuses` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(60) NOT NULL,
+  name VARCHAR(160) NOT NULL,
+  marker_color VARCHAR(20) NOT NULL DEFAULT 'red',
+  is_terminal TINYINT(1) NOT NULL DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_complaint_statuses_active (is_active),
+  KEY idx_complaint_statuses_terminal (is_terminal),
+  KEY `idx_complaint_statuses_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `complaints` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  complaint_code VARCHAR(40) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  detail TEXT NOT NULL,
+  received_at DATETIME NOT NULL,
+  receiver_user_id BIGINT UNSIGNED NULL,
+  receiver_name VARCHAR(255) NULL,
+  reporter_name VARCHAR(255) NOT NULL,
+  reporter_phone VARCHAR(40) NULL,
+  household_id BIGINT UNSIGNED NULL,
+  citizen_id BIGINT UNSIGNED NULL,
+  category_id BIGINT UNSIGNED NULL,
+  priority_id BIGINT UNSIGNED NULL,
+  status_id BIGINT UNSIGNED NULL,
+  assigned_user_id BIGINT UNSIGNED NULL,
+  assigned_name VARCHAR(255) NULL,
+  due_at DATETIME NULL,
+  latitude DECIMAL(11,8) NULL,
+  longitude DECIMAL(11,8) NULL,
+  gps_accuracy DECIMAL(10,2) NULL,
+  result_rating ENUM('SATISFIED','NEEDS_MORE','DISAGREE') NULL,
+  result_note TEXT NULL,
+  closed_at DATETIME NULL,
+  soft_status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_complaints_search (complaint_code, title),
+  KEY idx_complaints_category (category_id),
+  KEY idx_complaints_priority (priority_id),
+  KEY idx_complaints_status (status_id),
+  KEY idx_complaints_assigned (assigned_user_id),
+  KEY idx_complaints_receiver (receiver_user_id),
+  KEY idx_complaints_household (household_id),
+  KEY idx_complaints_citizen (citizen_id),
+  KEY idx_complaints_received (received_at),
+  KEY idx_complaints_due (due_at),
+  KEY idx_complaints_location (latitude, longitude),
+  KEY idx_complaints_soft_status (soft_status),
+  CONSTRAINT fk_complaints_category FOREIGN KEY (category_id) REFERENCES complaint_categories(id) ON DELETE SET NULL,
+  CONSTRAINT fk_complaints_priority FOREIGN KEY (priority_id) REFERENCES complaint_priorities(id) ON DELETE SET NULL,
+  CONSTRAINT fk_complaints_status FOREIGN KEY (status_id) REFERENCES complaint_statuses(id) ON DELETE SET NULL,
+  KEY `idx_complaints_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `complaint_links` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  complaint_id BIGINT UNSIGNED NOT NULL,
+  target_type VARCHAR(60) NOT NULL,
+  target_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  label VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  UNIQUE KEY uq_complaint_links_target (complaint_id, target_type, target_id, label),
+  KEY idx_complaint_links_target (target_type, target_id),
+  CONSTRAINT fk_complaint_links_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE,
+  KEY `idx_complaint_links_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `complaint_attachments` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  complaint_id BIGINT UNSIGNED NOT NULL,
+  history_id BIGINT UNSIGNED NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  file_kind ENUM('IMAGE','VIDEO','PDF','OTHER') NOT NULL DEFAULT 'OTHER',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_complaint_attachments_complaint (complaint_id),
+  KEY idx_complaint_attachments_history (history_id),
+  KEY idx_complaint_attachments_kind (file_kind),
+  CONSTRAINT fk_complaint_attachments_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE,
+  KEY `idx_complaint_attachments_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `complaint_histories` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  complaint_id BIGINT UNSIGNED NOT NULL,
+  actor_user_id BIGINT UNSIGNED NULL,
+  actor_name VARCHAR(255) NULL,
+  content TEXT NOT NULL,
+  status_id BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_complaint_histories_complaint (complaint_id),
+  KEY idx_complaint_histories_status (status_id),
+  CONSTRAINT fk_complaint_histories_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE,
+  CONSTRAINT fk_complaint_histories_status FOREIGN KEY (status_id) REFERENCES complaint_statuses(id) ON DELETE SET NULL,
+  KEY `idx_complaint_histories_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `complaint_assignments` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  complaint_id BIGINT UNSIGNED NOT NULL,
+  assignee_user_id BIGINT UNSIGNED NULL,
+  assignee_name VARCHAR(255) NOT NULL,
+  assigned_at DATETIME NOT NULL,
+  due_at DATETIME NULL,
+  note TEXT NULL,
+  assigned_by BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_complaint_assignments_complaint (complaint_id),
+  KEY idx_complaint_assignments_assignee (assignee_user_id),
+  KEY idx_complaint_assignments_due (due_at),
+  CONSTRAINT fk_complaint_assignments_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE,
+  KEY `idx_complaint_assignments_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `work_task_categories` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(80) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_work_task_categories_active (is_active),
+  KEY `idx_work_task_categories_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `work_task_priorities` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_work_task_priorities_active (is_active),
+  KEY `idx_work_task_priorities_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `work_task_statuses` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(60) NOT NULL,
+  name VARCHAR(160) NOT NULL,
+  progress_percent TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  is_terminal TINYINT(1) NOT NULL DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_work_task_statuses_active (is_active),
+  KEY idx_work_task_statuses_terminal (is_terminal),
+  KEY `idx_work_task_statuses_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `work_tasks` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  task_code VARCHAR(40) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  category_id BIGINT UNSIGNED NULL,
+  priority_id BIGINT UNSIGNED NULL,
+  status_id BIGINT UNSIGNED NULL,
+  assigned_user_id BIGINT UNSIGNED NULL,
+  assigned_name VARCHAR(255) NULL,
+  start_at DATETIME NULL,
+  due_at DATETIME NULL,
+  completed_at DATETIME NULL,
+  progress_percent TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  related_module VARCHAR(80) NULL,
+  related_id BIGINT UNSIGNED NULL,
+  area_code VARCHAR(80) NULL,
+  note TEXT NULL,
+  soft_status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_work_tasks_search (task_code, title),
+  KEY idx_work_tasks_category (category_id),
+  KEY idx_work_tasks_priority (priority_id),
+  KEY idx_work_tasks_status (status_id),
+  KEY idx_work_tasks_assigned (assigned_user_id),
+  KEY idx_work_tasks_due (due_at),
+  KEY idx_work_tasks_area (area_code),
+  KEY idx_work_tasks_related (related_module, related_id),
+  KEY idx_work_tasks_soft_status (soft_status),
+  CONSTRAINT fk_work_tasks_category FOREIGN KEY (category_id) REFERENCES work_task_categories(id) ON DELETE SET NULL,
+  CONSTRAINT fk_work_tasks_priority FOREIGN KEY (priority_id) REFERENCES work_task_priorities(id) ON DELETE SET NULL,
+  CONSTRAINT fk_work_tasks_status FOREIGN KEY (status_id) REFERENCES work_task_statuses(id) ON DELETE SET NULL,
+  KEY `idx_work_tasks_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `work_task_logs` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  task_id BIGINT UNSIGNED NOT NULL,
+  actor_user_id BIGINT UNSIGNED NULL,
+  actor_name VARCHAR(255) NULL,
+  content TEXT NOT NULL,
+  status_id BIGINT UNSIGNED NULL,
+  progress_percent TINYINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_work_task_logs_task (task_id),
+  KEY idx_work_task_logs_status (status_id),
+  CONSTRAINT fk_work_task_logs_task FOREIGN KEY (task_id) REFERENCES work_tasks(id) ON DELETE CASCADE,
+  CONSTRAINT fk_work_task_logs_status FOREIGN KEY (status_id) REFERENCES work_task_statuses(id) ON DELETE SET NULL,
+  KEY `idx_work_task_logs_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `work_task_attachments` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  task_id BIGINT UNSIGNED NOT NULL,
+  log_id BIGINT UNSIGNED NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  file_kind ENUM('IMAGE','VIDEO','PDF','DOCUMENT','OTHER') NOT NULL DEFAULT 'OTHER',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_work_task_attachments_task (task_id),
+  KEY idx_work_task_attachments_log (log_id),
+  KEY idx_work_task_attachments_kind (file_kind),
+  CONSTRAINT fk_work_task_attachments_task FOREIGN KEY (task_id) REFERENCES work_tasks(id) ON DELETE CASCADE,
+  CONSTRAINT fk_work_task_attachments_log FOREIGN KEY (log_id) REFERENCES work_task_logs(id) ON DELETE SET NULL,
+  KEY `idx_work_task_attachments_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `calendar_event_categories` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(80) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  color VARCHAR(20) NOT NULL DEFAULT '#0d6efd',
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_calendar_event_categories_active (is_active),
+  KEY `idx_calendar_event_categories_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `calendar_events` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  event_code VARCHAR(40) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  category_id BIGINT UNSIGNED NULL,
+  location VARCHAR(255) NULL,
+  start_at DATETIME NOT NULL,
+  end_at DATETIME NULL,
+  reminder_at DATETIME NULL,
+  host_user_id BIGINT UNSIGNED NULL,
+  host_name VARCHAR(255) NULL,
+  area_code VARCHAR(80) NULL,
+  status ENUM('SCHEDULED','DONE','CANCELLED') NOT NULL DEFAULT 'SCHEDULED',
+  note TEXT NULL,
+  soft_status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_calendar_events_search (event_code, title),
+  KEY idx_calendar_events_category (category_id),
+  KEY idx_calendar_events_time (start_at, end_at),
+  KEY idx_calendar_events_reminder (reminder_at),
+  KEY idx_calendar_events_host (host_user_id),
+  KEY idx_calendar_events_area (area_code),
+  KEY idx_calendar_events_status (status),
+  KEY idx_calendar_events_soft_status (soft_status),
+  CONSTRAINT fk_calendar_events_category FOREIGN KEY (category_id) REFERENCES calendar_event_categories(id) ON DELETE SET NULL,
+  KEY `idx_calendar_events_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `calendar_event_attendees` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  event_id BIGINT UNSIGNED NOT NULL,
+  attendee_name VARCHAR(255) NOT NULL,
+  phone VARCHAR(40) NULL,
+  role_name VARCHAR(120) NULL,
+  attendance_status ENUM('INVITED','ATTENDED','ABSENT','EXCUSED') NOT NULL DEFAULT 'INVITED',
+  note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_calendar_event_attendees_event (event_id),
+  KEY idx_calendar_event_attendees_status (attendance_status),
+  CONSTRAINT fk_calendar_event_attendees_event FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+  KEY `idx_calendar_event_attendees_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `calendar_event_attachments` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  event_id BIGINT UNSIGNED NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  file_kind ENUM('IMAGE','VIDEO','PDF','DOCUMENT','OTHER') NOT NULL DEFAULT 'OTHER',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_calendar_event_attachments_event (event_id),
+  CONSTRAINT fk_calendar_event_attachments_event FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+  KEY `idx_calendar_event_attachments_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `photo_gallery_albums` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  album_code VARCHAR(60) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  cover_item_id BIGINT UNSIGNED NULL,
+  status ENUM('ACTIVE','ARCHIVED','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_photo_gallery_albums_status (status),
+  KEY idx_photo_gallery_albums_name (name),
+  KEY `idx_photo_gallery_albums_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `photo_gallery_items` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  album_id BIGINT UNSIGNED NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  file_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  taken_at DATETIME NULL,
+  event_date DATE NULL,
+  area_code VARCHAR(80) NULL,
+  source_module VARCHAR(80) NULL,
+  source_id BIGINT UNSIGNED NULL,
+  tags_text VARCHAR(500) NULL,
+  status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_photo_gallery_items_album (album_id),
+  KEY idx_photo_gallery_items_status (status),
+  KEY idx_photo_gallery_items_event_date (event_date),
+  KEY idx_photo_gallery_items_area (area_code),
+  KEY idx_photo_gallery_items_source (source_module, source_id),
+  FULLTEXT KEY ft_photo_gallery_items_search (title, description, original_name, tags_text),
+  CONSTRAINT fk_photo_gallery_items_album FOREIGN KEY (album_id) REFERENCES photo_gallery_albums(id) ON DELETE SET NULL,
+  KEY `idx_photo_gallery_items_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `document_categories` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(80) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_document_categories_active (is_active),
+  KEY `idx_document_categories_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `village_documents` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  document_code VARCHAR(40) NOT NULL,
+  document_number VARCHAR(120) NULL,
+  title VARCHAR(255) NOT NULL,
+  category_id BIGINT UNSIGNED NULL,
+  issuing_unit VARCHAR(255) NULL,
+  signer_name VARCHAR(255) NULL,
+  issued_date DATE NULL,
+  effective_date DATE NULL,
+  area_code VARCHAR(80) NULL,
+  summary TEXT NULL,
+  status ENUM('ACTIVE','ARCHIVED','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_village_documents_number (document_number),
+  KEY idx_village_documents_title (title),
+  KEY idx_village_documents_category (category_id),
+  KEY idx_village_documents_issued (issued_date),
+  KEY idx_village_documents_created (created_at),
+  KEY idx_village_documents_status (status),
+  CONSTRAINT fk_village_documents_category FOREIGN KEY (category_id) REFERENCES document_categories(id) ON DELETE SET NULL,
+  KEY `idx_village_documents_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `village_document_attachments` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  document_id BIGINT UNSIGNED NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(160) NOT NULL,
+  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  file_kind ENUM('PDF','WORD','EXCEL','POWERPOINT','ARCHIVE','DOCUMENT','IMAGE','OTHER') NOT NULL DEFAULT 'DOCUMENT',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_village_document_attachments_document (document_id),
+  CONSTRAINT fk_village_document_attachments_document FOREIGN KEY (document_id) REFERENCES village_documents(id) ON DELETE CASCADE,
+  KEY `idx_village_document_attachments_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `finance_funds` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  fund_code VARCHAR(60) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  opening_balance DECIMAL(16,2) NOT NULL DEFAULT 0,
+  note TEXT NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_finance_funds_status (status),
+  KEY idx_finance_funds_name (name),
+  KEY `idx_finance_funds_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `finance_categories` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  code VARCHAR(80) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  transaction_type ENUM('INCOME','EXPENSE') NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_finance_categories_type (transaction_type),
+  KEY idx_finance_categories_active (is_active),
+  KEY `idx_finance_categories_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `finance_transactions` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  transaction_code VARCHAR(40) NOT NULL,
+  transaction_type ENUM('INCOME','EXPENSE') NOT NULL,
+  fund_id BIGINT UNSIGNED NOT NULL,
+  category_id BIGINT UNSIGNED NULL,
+  amount DECIMAL(16,2) NOT NULL DEFAULT 0,
+  transaction_date DATE NOT NULL,
+  payer_name VARCHAR(180) NULL,
+  receiver_name VARCHAR(180) NULL,
+  payment_method VARCHAR(60) NULL,
+  receipt_number VARCHAR(100) NULL,
+  description TEXT NULL,
+  source_module VARCHAR(80) NULL,
+  source_id BIGINT UNSIGNED NULL,
+  status ENUM('POSTED','CANCELLED','DELETED') NOT NULL DEFAULT 'POSTED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_finance_transactions_type (transaction_type),
+  KEY idx_finance_transactions_fund (fund_id),
+  KEY idx_finance_transactions_category (category_id),
+  KEY idx_finance_transactions_date (transaction_date),
+  KEY idx_finance_transactions_status (status),
+  KEY idx_finance_transactions_receipt (receipt_number),
+  KEY idx_finance_transactions_source (source_module, source_id),
+  CONSTRAINT fk_finance_transactions_fund FOREIGN KEY (fund_id) REFERENCES finance_funds(id),
+  CONSTRAINT fk_finance_transactions_category FOREIGN KEY (category_id) REFERENCES finance_categories(id) ON DELETE SET NULL,
+  KEY `idx_finance_transactions_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `finance_transaction_attachments` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  transaction_id BIGINT UNSIGNED NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  file_kind ENUM('PDF','IMAGE','DOCUMENT','OTHER') NOT NULL DEFAULT 'DOCUMENT',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT UNSIGNED NULL,
+  deleted_at DATETIME NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_finance_attachments_transaction (transaction_id),
+  CONSTRAINT fk_finance_attachments_transaction FOREIGN KEY (transaction_id) REFERENCES finance_transactions(id) ON DELETE CASCADE,
+  KEY `idx_finance_transaction_attachments_village` (`village_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `notification_states` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  village_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  notification_key VARCHAR(160) NOT NULL,
+  read_at DATETIME NULL,
+  dismissed_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_notification_state_user_key (village_id, user_id, notification_key),
+  KEY idx_notification_states_village (village_id),
+  KEY idx_notification_states_user_read (user_id, read_at),
+  KEY idx_notification_states_user_dismissed (user_id, dismissed_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP VIEW IF EXISTS `v_household_member_counts`;
+CREATE VIEW `v_household_member_counts` AS
+SELECT
+  h.`id` AS `household_id`,
+  h.`village_id` AS `village_id`,
+  COUNT(c.`id`) AS `total_members`,
+  SUM(CASE WHEN COALESCE(c.`presence_status`, 'AT_HOME') = 'AT_HOME' AND COALESCE(c.`life_status`, 'ALIVE') <> 'DECEASED' THEN 1 ELSE 0 END) AS `at_home_count`,
+  SUM(CASE WHEN COALESCE(c.`presence_status`, 'AT_HOME') = 'AWAY' AND COALESCE(c.`life_status`, 'ALIVE') <> 'DECEASED' THEN 1 ELSE 0 END) AS `away_count`
+FROM `households` h
+LEFT JOIN `citizens` c ON c.`household_id` = h.`id` AND c.`village_id` = h.`village_id` AND c.`status` <> 'DELETED'
+WHERE h.`status` <> 'DELETED'
+GROUP BY h.`id`, h.`village_id`;

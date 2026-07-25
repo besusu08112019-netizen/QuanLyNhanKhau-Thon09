@@ -247,7 +247,7 @@ SQL);
             $value = trim((string) ($filters[$key] ?? ''));
             if ($value !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) { $where[] = "COALESCE(d.issued_date, DATE(d.created_at)) $op :$key"; $params[$key] = $value; }
         }
-        return ['WHERE ' . implode(' AND ', $where), $params];
+        return ['WHERE ' . implode(' AND ', $where), $this->withTenant($params)];
     }
 
     private function selectSql(): string

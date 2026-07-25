@@ -7,12 +7,14 @@ if (!function_exists('env_load')) {
 
         $basePath ??= defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
         $basePath = rtrim(str_replace('\\', '/', $basePath), '/');
-        if (isset($loaded[$basePath])) {
-            return $loaded[$basePath];
+        $host = env_current_host();
+        $cacheKey = $basePath . '|' . $host;
+        if (isset($loaded[$cacheKey])) {
+            return $loaded[$cacheKey];
         }
 
         $sources = [];
-        foreach ([$basePath . '/.env', dirname($basePath) . '/.env'] as $path) {
+        foreach (env_candidate_files($basePath, $host) as $path) {
             if (!is_file($path) || !is_readable($path)) {
                 continue;
             }
@@ -30,15 +32,36 @@ if (!function_exists('env_load')) {
                 }
 
                 $value = trim($value, " \t\n\r\0\x0B\"'");
-                if (getenv($key) === false || getenv($key) === '') {
-                    putenv($key . '=' . $value);
-                    $_ENV[$key] = $value;
-                    $_SERVER[$key] = $value;
-                }
+                putenv($key . '=' . $value);
+                $_ENV[$key] = $value;
+                $_SERVER[$key] = $value;
             }
         }
 
-        return $loaded[$basePath] = $sources;
+        return $loaded[$cacheKey] = $sources;
+    }
+}
+
+if (!function_exists('env_current_host')) {
+    function env_current_host(): string
+    {
+        $host = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? getenv('APP_HOST') ?: '')));
+        $host = preg_replace('/:\d+$/', '', $host) ?? $host;
+        return preg_replace('/[^a-z0-9.-]/', '', $host) ?? '';
+    }
+}
+
+if (!function_exists('env_candidate_files')) {
+    function env_candidate_files(string $basePath, string $host = ''): array
+    {
+        $files = [];
+        $files[] = dirname($basePath) . '/.env';
+        $files[] = $basePath . '/.env';
+        if ($host !== '') {
+            $files[] = dirname($basePath) . '/.env.' . $host;
+            $files[] = $basePath . '/.env.' . $host;
+        }
+        return array_values(array_unique($files));
     }
 }
 

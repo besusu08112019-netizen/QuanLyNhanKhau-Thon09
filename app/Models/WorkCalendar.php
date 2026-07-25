@@ -297,7 +297,7 @@ SQL);
             $where[] = '(e.event_code LIKE :q OR e.title LIKE :q OR e.description LIKE :q OR e.location LIKE :q OR e.host_name LIKE :q OR e.area_code LIKE :q)';
             $params['q'] = '%' . $search . '%';
         }
-        return ['WHERE ' . implode(' AND ', $where), $params];
+        return ['WHERE ' . implode(' AND ', $where), $this->withTenant($params)];
     }
 
     private function fromSql(): string { return 'FROM calendar_events e LEFT JOIN calendar_event_categories c ON c.id=e.category_id'; }

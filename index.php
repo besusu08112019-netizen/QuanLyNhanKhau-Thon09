@@ -25,6 +25,7 @@ use App\Core\Autoloader;
 use App\Core\BaseModel;
 use App\Core\Request;
 use App\Core\Router;
+use App\Core\RuntimePaths;
 use App\Core\Response;
 use App\Core\TenantConfig;
 use App\Core\TenantContext;
@@ -63,7 +64,19 @@ use App\Controllers\WorkTaskController;
 
 Autoloader::register();
 env_load(BASE_PATH);
+configure_tenant_php_session();
 TenantContext::boot();
+
+function configure_tenant_php_session(): void
+{
+    if (session_status() !== PHP_SESSION_NONE) return;
+    $config = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
+    $sessionPath = (string) ($config['session_path'] ?? RuntimePaths::sessionRoot());
+    if (is_dir($sessionPath) && is_writable($sessionPath)) {
+        session_save_path($sessionPath);
+    }
+    session_name('qh_session_' . substr(hash('sha256', RuntimePaths::host()), 0, 16));
+}
 
 function reject_oversized_api_request(): void
 {
@@ -142,7 +155,8 @@ function api_log_exception(Throwable $e, array $payload): void
     ];
     $line = '[API_EXCEPTION] ' . json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
     error_log($line);
-    $dir = BASE_PATH . '/storage';
+    $config = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
+    $dir = (string) ($config['logs_path'] ?? RuntimePaths::logsRoot());
     if (is_dir($dir) && is_writable($dir)) {
         @file_put_contents($dir . '/api-errors.log', $line, FILE_APPEND | LOCK_EX);
     }

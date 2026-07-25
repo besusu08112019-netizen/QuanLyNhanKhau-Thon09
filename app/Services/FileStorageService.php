@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Core\RuntimePaths;
+
 final class FileStorageService
 {
     public const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
@@ -273,12 +275,12 @@ final class FileStorageService
 
     private function uploadRoot(): string
     {
-        return rtrim(str_replace('\\', '/', (string) $this->appConfig('upload_path', BASE_PATH . '/uploads')), '/');
+        return rtrim(str_replace('\\', '/', (string) $this->appConfig('upload_path', RuntimePaths::uploadRoot())), '/');
     }
 
     private function storageRoot(): string
     {
-        return rtrim(str_replace('\\', '/', (string) $this->appConfig('storage_path', BASE_PATH . '/storage')), '/');
+        return rtrim(str_replace('\\', '/', (string) $this->appConfig('storage_path', RuntimePaths::storageRoot())), '/');
     }
 
     private function appConfig(string $key, mixed $default): mixed

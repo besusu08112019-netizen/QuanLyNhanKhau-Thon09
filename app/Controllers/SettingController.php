@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
+use App\Core\RuntimePaths;
 use App\Core\TenantConfig;
 use App\Models\SystemSetting;
 
@@ -254,7 +255,7 @@ final class SettingController extends BaseController
     private function uploadRoot(): string
     {
         $config = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
-        return rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? BASE_PATH . '/uploads')), '/');
+        return rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? RuntimePaths::uploadRoot())), '/');
     }
 
     private function loginMetrics(array $metrics): array

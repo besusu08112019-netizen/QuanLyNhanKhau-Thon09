@@ -335,7 +335,7 @@ SQL);
             $where[] = '(t.task_code LIKE :q OR t.title LIKE :q OR t.description LIKE :q OR t.assigned_name LIKE :q OR t.area_code LIKE :q OR t.note LIKE :q)';
             $params['q'] = '%' . $search . '%';
         }
-        return ['WHERE ' . implode(' AND ', $where), $params];
+        return ['WHERE ' . implode(' AND ', $where), $this->withTenant($params)];
     }
 
     private function params(array $data, int $userId, ?array $existing): array

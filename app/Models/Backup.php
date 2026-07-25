@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Core\RuntimePaths;
 use PDO;
 
 final class Backup extends BaseModel
@@ -32,8 +33,12 @@ final class Backup extends BaseModel
         $sql = self::BACKUP_HEADER . "\n-- Created at: " . date('c') . "\n-- Signature: " . $this->backupSignature($body) . "\n" . $body;
         $fileName = 'Backup_' . date('Ymd_Hi') . '.sql';
         $checksum = hash('sha256', $sql);
+        $backupPath = $this->backupRoot() . '/' . $fileName;
+        if (@file_put_contents($backupPath, $sql, LOCK_EX) === false) {
+            throw new \RuntimeException('Cannot write tenant backup file');
+        }
         $columns = ['file_name', 'file_path', 'file_size', 'checksum', 'status', 'created_by'];
-        $params = ['file_name' => $fileName, 'file_path' => 'download://' . $fileName, 'file_size' => strlen($sql), 'checksum' => $checksum, 'status' => 'SUCCESS', 'created_by' => $userId];
+        $params = ['file_name' => $fileName, 'file_path' => 'backups/' . $fileName, 'file_size' => strlen($sql), 'checksum' => $checksum, 'status' => 'SUCCESS', 'created_by' => $userId];
         $this->addTenantInsert('backups', $columns, $params);
         $this->insert('INSERT INTO backups (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         return ['fileName' => $fileName, 'content' => $sql, 'size' => strlen($sql), 'checksum' => $checksum];
@@ -95,6 +100,12 @@ final class Backup extends BaseModel
         }
         $body = preg_replace('/^-- Quan Ly Hanh Chinh backup\r?\n-- Created at:.*\r?\n-- Signature:\s*[a-f0-9]{64}\r?\n/mi', '', $sql, 1);
         return is_string($body) && hash_equals(strtolower($matches[1]), $this->backupSignature($body));
+    }
+
+    private function backupRoot(): string
+    {
+        $config = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
+        return RuntimePaths::backupRoot((string) ($config['backup_path'] ?? ''));
     }
 
     public function paginate(array $filters = []): array

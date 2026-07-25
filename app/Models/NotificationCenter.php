@@ -135,7 +135,16 @@ SQL);
 
     private function count(string $from, string $where, array $params = []): int
     {
-        return (int)(($this->fetchOne("SELECT COUNT(*) AS total FROM $from WHERE $where", $params) ?: [])['total'] ?? 0);
+        return (int)(($this->fetchOne("SELECT COUNT(*) AS total FROM $from WHERE $where", $this->withTenant($params)) ?: [])['total'] ?? 0);
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => $table]
+        );
+        return (int)($row['total'] ?? 0) > 0;
     }
 
     private function states(int $userId, array $keys): array

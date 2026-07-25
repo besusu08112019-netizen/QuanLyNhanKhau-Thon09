@@ -1,36 +1,31 @@
-﻿-- Multi-tenant administrative management seed data
+-- Multi-tenant administrative management seed data
 -- Import after database/schema.sql.
 
-SET NAMES utf8mb4;
-SET time_zone = '+07:00';
 
 INSERT INTO `villages` (`code`, `name`, `unit_name`, `commune_name`, `domain`, `subdomain`, `status`) VALUES
 ('default', 'Ten thon', 'Ten don vi', 'Ten xa', NULL, NULL, 'ACTIVE')
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `unit_name` = VALUES(`unit_name`), `commune_name` = VALUES(`commune_name`);
 
-SET @tenant_default_village_id = (
-  SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1
-);
 
 INSERT INTO `settings` (`village_id`, `setting_key`, `setting_value`) VALUES
-(@tenant_default_village_id, 'unitName', ''),
-(@tenant_default_village_id, 'hamletName', ''),
-(@tenant_default_village_id, 'communeName', ''),
-(@tenant_default_village_id, 'systemName', 'He thong Quan ly Hanh chinh'),
-(@tenant_default_village_id, 'address', ''),
-(@tenant_default_village_id, 'phone', ''),
-(@tenant_default_village_id, 'email', ''),
-(@tenant_default_village_id, 'website', ''),
-(@tenant_default_village_id, 'logoUrl', ''),
-(@tenant_default_village_id, 'backgroundUrl', ''),
-(@tenant_default_village_id, 'backgroundImages', ''),
-(@tenant_default_village_id, 'themeColor', '#0b6b3a'),
-(@tenant_default_village_id, 'backgroundColor', '#eef3f8'),
-(@tenant_default_village_id, 'backupSchedule', 'DAILY'),
-(@tenant_default_village_id, 'reportSigner', ''),
-(@tenant_default_village_id, 'reportTitlePrefix', 'Quan ly nhan khau'),
-(@tenant_default_village_id, 'supportEmail', ''),
-(@tenant_default_village_id, 'maintenanceMessage', '')
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'unitName', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'hamletName', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'communeName', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'systemName', 'He thong Quan ly Hanh chinh'),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'address', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'phone', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'email', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'website', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'logoUrl', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'backgroundUrl', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'backgroundImages', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'themeColor', '#0b6b3a'),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'backgroundColor', '#eef3f8'),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'backupSchedule', 'DAILY'),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'reportSigner', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'reportTitlePrefix', 'Quan ly nhan khau'),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'supportEmail', ''),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'maintenanceMessage', '')
 ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
 INSERT INTO `permissions` (`role`, `module`, `action`, `allowed`) VALUES

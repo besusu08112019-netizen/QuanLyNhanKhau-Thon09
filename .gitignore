@@ -4,6 +4,7 @@ node_modules/
 .env
 .env.*
 !/.env.example
+installed.lock
 .clasp.json.local
 dist/
 build/
@@ -23,13 +24,11 @@ runtime-ui-audit.out
 .well-known/
 config/database.php
 config/database.local.php
-storage/logs/*
-storage/cache/*
-storage/*.log
+storage/*
+!storage/.gitkeep
 cache/*
 logs/*
 backups/
-uploads/tmp/*
 uploads/*
 !uploads/.gitkeep
 !uploads/.htaccess

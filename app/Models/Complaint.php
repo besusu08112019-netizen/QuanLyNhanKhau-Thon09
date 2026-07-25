@@ -444,7 +444,7 @@ SQL);
             $where[] = '(c.complaint_code LIKE :q OR c.title LIKE :q OR c.detail LIKE :q OR c.reporter_name LIKE :q OR c.reporter_phone LIKE :q OR c.assigned_name LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR ct.full_name LIKE :q)';
             $params['q'] = '%' . $search . '%';
         }
-        return ['WHERE ' . implode(' AND ', $where), $params];
+        return ['WHERE ' . implode(' AND ', $where), $this->withTenant($params)];
     }
 
     private function params(array $data, int $userId, string $userName, ?array $existing): array

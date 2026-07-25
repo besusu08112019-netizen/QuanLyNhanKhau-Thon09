@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\BaseController;
+use App\Core\RuntimePaths;
 use App\Models\User;
 
 final class AuthController extends BaseController
@@ -104,7 +105,7 @@ final class AuthController extends BaseController
 
     private function loginBucketPath(): string
     {
-        return BASE_PATH . '/storage/cache/login-rate-limit.json';
+        return RuntimePaths::cacheRoot() . '/login-rate-limit.json';
     }
 
     private function loginKey(string $login): string

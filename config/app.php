@@ -1,13 +1,17 @@
 <?php
 
 require_once __DIR__ . '/env.php';
+require_once dirname(__DIR__) . '/app/Core/RuntimePaths.php';
 
 env_load(dirname(__DIR__));
 
-$uploadPath = (string) env('UPLOAD_PATH', dirname(__DIR__) . '/uploads');
-$storagePath = (string) env('STORAGE_PATH', dirname(__DIR__) . '/storage');
-$cachePath = (string) env('CACHE_PATH', $storagePath . '/cache');
-$logsPath = (string) env('LOGS_PATH', $storagePath . '/logs');
+$uploadPath = \App\Core\RuntimePaths::uploadRoot((string) env('UPLOAD_PATH', ''));
+$storagePath = \App\Core\RuntimePaths::storageRoot((string) env('STORAGE_PATH', ''));
+$cachePath = \App\Core\RuntimePaths::cacheRoot((string) env('CACHE_PATH', ''));
+$logsPath = \App\Core\RuntimePaths::logsRoot((string) env('LOGS_PATH', ''));
+$backupPath = \App\Core\RuntimePaths::backupRoot((string) env('BACKUP_PATH', ''));
+$tempPath = \App\Core\RuntimePaths::tempRoot((string) env('TEMP_PATH', ''));
+$sessionPath = \App\Core\RuntimePaths::sessionRoot((string) env('SESSION_PATH', ''));
 
 $resolveAppKey = static function () use ($uploadPath): string {
     $envKey = trim((string) env('APP_KEY', ''));
@@ -45,6 +49,9 @@ return [
     'storage_path' => $storagePath,
     'cache_path' => $cachePath,
     'logs_path' => $logsPath,
+    'backup_path' => $backupPath,
+    'temp_path' => $tempPath,
+    'session_path' => $sessionPath,
     'mail' => [
         'mailer' => env('MAIL_MAILER', 'smtp'),
         'host' => env('MAIL_HOST', ''),
