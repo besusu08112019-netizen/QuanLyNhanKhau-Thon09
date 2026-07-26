@@ -30,6 +30,7 @@ use App\Core\Response;
 use App\Core\TenantConfig;
 use App\Core\TenantContext;
 use App\Controllers\AgricultureProductionController;
+use App\Controllers\AiToolController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
@@ -623,6 +624,9 @@ $router->post('/api/notifications/{key}/dismiss', [NotificationController::class
 $router->get('/api/insights/search', [InsightController::class, 'search']);
 $router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
 $router->post('/api/insights/ask', [InsightController::class, 'ask']);
+$router->get('/api/ai/tools', [AiToolController::class, 'index']);
+$router->post('/api/ai/tools/execute', [AiToolController::class, 'execute']);
+$router->post('/api/ai/ask', [AiToolController::class, 'ask']);
 $router->get('/api/profiles/household/{id}', [ProfileController::class, 'household']);
 $router->get('/api/profiles/citizen/{id}', [ProfileController::class, 'citizen']);
 $router->get('/api/profiles/timeline/{type}/{id}', [ProfileController::class, 'timeline']);

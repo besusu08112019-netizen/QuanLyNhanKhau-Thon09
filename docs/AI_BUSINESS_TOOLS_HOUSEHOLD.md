@@ -16,6 +16,7 @@ Khong co create, update, delete, import, export hay thao tac ghi du lieu.
 
 - `Ai\Business\HouseholdTool` implements `PermissionAwareAiToolInterface`.
 - Tool nhan repository/model qua constructor de tai su dung `App\Models\Household` khi tich hop runtime.
+- Runtime registry mac dinh dang ky tool qua `Ai\Core\AiRuntimeFactory`.
 - Tool khong tu khoi tao database.
 - Tool yeu cau permission `household:read`.
 - `pageSize` duoc gioi han toi da 50 de tranh truy van qua lon.
@@ -38,9 +39,9 @@ Test dung fake repository, khong ket noi database.
 
 ## Rui ro
 
-- Chua duoc register vao runtime chinh; cac Epic sau se quyet dinh diem dang ky tool.
+- Runtime registry va endpoint execute tool da co; orchestration hoi dap ngon ngu tu nhien se lam o buoc sau.
 - Ket qua phu thuoc contract cua `App\Models\Household`.
-- Chua co ResidentTool nen cac cau hoi ve thanh vien ho chua duoc phuc vu boi tool nay.
+- ResidentTool da co rieng cho cau hoi ve nhan khau/thanh vien.
 
 ## Rollback
 
@@ -52,4 +53,3 @@ Revert commit HouseholdTool de go bo:
 - Script npm tuong ung.
 
 Khong can rollback database vi khong co migration va tool read-only.
-

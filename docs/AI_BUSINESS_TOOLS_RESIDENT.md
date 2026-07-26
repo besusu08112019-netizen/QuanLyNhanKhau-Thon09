@@ -16,6 +16,7 @@ Khong co create, update, delete, restore, import, export hay thao tac ghi du lie
 
 - `Ai\Business\ResidentTool` implements `PermissionAwareAiToolInterface`.
 - Tool nhan repository/model qua constructor de tai su dung `App\Models\Citizen` khi tich hop runtime.
+- Runtime registry mac dinh dang ky tool qua `Ai\Core\AiRuntimeFactory`.
 - Tool khong tu khoi tao database.
 - Tool yeu cau permission `citizen:read`.
 - `pageSize` duoc gioi han toi da 50.
@@ -38,7 +39,7 @@ Test dung fake repository, khong ket noi database.
 
 ## Rui ro
 
-- Chua duoc register vao runtime chinh.
+- Runtime registry va endpoint execute tool da co; orchestration hoi dap ngon ngu tu nhien se lam o buoc sau.
 - Ket qua phu thuoc contract cua `App\Models\Citizen`.
 - Chua co tool ghi du lieu; cac thao tac them/sua/xoa phai doi Epic rieng neu duoc phe duyet.
 
@@ -52,4 +53,3 @@ Revert commit ResidentTool de go bo:
 - Script npm tuong ung.
 
 Khong can rollback database vi khong co migration va tool read-only.
-

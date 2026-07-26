@@ -17,6 +17,7 @@ Khong co create, update, delete, import, export hay thao tac ghi du lieu.
 
 - `Ai\Business\StatisticsTool` implements `PermissionAwareAiToolInterface`.
 - Tool nhan repository/model qua constructor de tai su dung `App\Models\PopulationStatistics` hoac `App\Models\Dashboard` khi tich hop runtime.
+- Runtime registry mac dinh dang ky tool qua `Ai\Core\AiRuntimeFactory`.
 - Tool khong tu khoi tao database.
 - Tool yeu cau permission `statistics:read`.
 - Input chi gom cac filter thong ke an toan.
@@ -41,7 +42,7 @@ Test dung fake repository, khong ket noi database.
 
 ## Rui ro
 
-- Chua duoc register vao runtime chinh.
+- Runtime registry va endpoint execute tool da co; orchestration hoi dap ngon ngu tu nhien se lam o buoc sau.
 - Ket qua phu thuoc contract cua `App\Models\PopulationStatistics` hoac `App\Models\Dashboard`.
 - `summary` co the ton tai chi tren Dashboard model, nen runtime can inject dung model cho action nay.
 
@@ -55,4 +56,3 @@ Revert commit StatisticsTool de go bo:
 - Script npm tuong ung.
 
 Khong can rollback database vi khong co migration va tool read-only.
-
