@@ -144,6 +144,11 @@ $denied = $orchestrator->ask('Thong ke BHYT', ['permissions' => ['household' => 
 orchestrator_assert(($denied['status'] ?? '') === 'failed', 'Denied statistics question must fail.');
 orchestrator_assert(($denied['result']['error'] ?? '') === 'permission_denied', 'Denied question must expose permission_denied.');
 
+$deniedInsight = $orchestrator->ask('Canh bao du lieu bat thuong', ['permissions' => ['dashboard' => ['read' => true], 'household' => ['read' => true]]]);
+orchestrator_assert(($deniedInsight['status'] ?? '') === 'failed', 'Denied insight question must fail.');
+orchestrator_assert(($deniedInsight['result']['error'] ?? '') === 'permission_denied', 'Denied insight question must expose permission_denied.');
+orchestrator_assert(($deniedInsight['result']['meta']['required']['module'] ?? '') === 'citizen', 'Denied insight question must expose missing module.');
+
 $unknown = $orchestrator->ask('xin chao', $context);
 orchestrator_assert(($unknown['status'] ?? '') === 'needs_clarification', 'Unknown question must ask for clarification.');
 orchestrator_assert(($unknown['mode'] ?? '') === 'READ_ONLY', 'Unknown question must stay read-only.');

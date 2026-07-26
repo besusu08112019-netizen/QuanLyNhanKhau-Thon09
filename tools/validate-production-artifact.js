@@ -25,6 +25,28 @@ function walk(dir, base = '') {
   return entries;
 }
 
+function assertProductionSourceClean() {
+  const sourcePatterns = [
+    { pattern: /console\.log\s*\(/, label: 'console.log' },
+    { pattern: /debugger\s*;/, label: 'debugger' },
+    { pattern: /\b(?:TODO|FIXME|HACK)\b/, label: 'TODO/FIXME/HACK' },
+  ];
+  const checkedExtensions = new Set(['.js', '.css', '.php', '.html', '.json', '.webmanifest']);
+
+  for (const rel of walk(artifact)) {
+    const full = path.join(artifact, rel);
+    if (!fs.existsSync(full) || fs.statSync(full).isDirectory()) continue;
+    if (!checkedExtensions.has(path.extname(rel))) continue;
+
+    const source = fs.readFileSync(full, 'utf8');
+    for (const item of sourcePatterns) {
+      if (item.pattern.test(source)) {
+        fail(`Forbidden ${item.label} marker in production artifact: ${rel}`);
+      }
+    }
+  }
+}
+
 if (!fs.existsSync(artifact)) {
   fail('dist/production is missing');
 } else {
@@ -85,6 +107,8 @@ if (!fs.existsSync(artifact)) {
       fail(`Forbidden production artifact entry: ${rel}`);
     }
   }
+
+  assertProductionSourceClean();
 }
 
 if (!process.exitCode) {

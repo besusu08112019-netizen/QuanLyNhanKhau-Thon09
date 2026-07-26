@@ -6,7 +6,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   const num=v=>new Intl.NumberFormat('vi-VN').format(Number(v||0));
   const money=v=>new Intl.NumberFormat('vi-VN').format(Number(v||0));
-  const toast=(m,t='success')=>typeof showToast==='function'?showToast(m,t):console.log(m);
+  const toast=(m,t='success')=>typeof showToast==='function'?showToast(m,t):undefined;
   async function req(url,opt={}){ if(typeof api==='function')return api(url,opt); const token=window.App?.token||localStorage.getItem(tenantStorageKey('token'))||''; const init={method:opt.method||'GET',headers:{Accept:'application/json',Authorization:token?'Bearer '+token:''}}; if(opt.body){init.headers['Content-Type']='application/json';init.body=JSON.stringify(opt.body);} const r=await fetch(url,init); const j=await r.json().catch(()=>null); if(!r.ok||j?.ok===false)throw new Error(j?.error?.message||'Không tải được dữ liệu'); return j?.data??j;}
   function can(action){const role=(window.App?.user?.role||'').toUpperCase(); if(['SUPER_ADMIN','ADMIN'].includes(role))return true; if(role==='OFFICER')return ['read','create','update'].includes(action); if(role==='VIEWER')return action==='read'; return true;}
   document.addEventListener('DOMContentLoaded',init);

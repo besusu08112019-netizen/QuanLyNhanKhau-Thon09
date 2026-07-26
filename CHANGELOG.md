@@ -2,6 +2,29 @@
 
 All notable production release changes are tracked here.
 
+## v1.1.0 - 2026-07-26
+
+### Release scope
+- Completed AI Agent implementation across Epic 1-12 with final independent review, production readiness review, and release audit.
+- AI remains permission-bound, read-only by default, and does not call an external AI provider unless explicitly enabled in future configuration.
+
+### AI capabilities
+- Added AI foundation, router, context manager, conversation flow, intent recognition, tool registry, tool executor, and permission checker.
+- Added read-only business tools for household, resident, statistics, and insight queries.
+- Added voice command orchestration, natural language AI query flow, OCR/camera form autofill, text-to-speech controls, and rule-based analytics alerts.
+
+### Production hardening
+- Hardened AI permission failure handling with explicit `permission_denied` metadata for source-module access.
+- Removed production `console.log` output and debug request logging.
+- Extended production artifact validation to block debug markers, test files, environment files, logs, backups, and SQL dumps.
+- Revalidated PWA/cache behavior, CSP/security headers, runtime directory protection, and production artifact contents.
+
+### Verification
+- `npm.cmd run test:ai-epic12`
+- `npm.cmd run test:browser`
+- `npm.cmd run validate:artifact`
+- `npm.cmd run test:ai-release`
+
 ## v1.0.1 - 2026-07-22
 
 ### Release scope

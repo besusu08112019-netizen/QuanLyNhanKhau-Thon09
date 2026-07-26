@@ -124,6 +124,7 @@ $denied = $executor->execute('resident', ['action' => 'list'], ['permissions' =>
 runtime_tools_assert($denied->ok === false && $denied->error === 'permission_denied', 'Runtime registry must enforce per-module permissions.');
 
 $insightDenied = $executor->execute('insight', ['action' => 'ask', 'question' => 'Co bao nhieu phan anh chua xu ly?'], ['permissions' => ['dashboard' => ['read' => true]]]);
-runtime_tools_assert($insightDenied->ok === false && $insightDenied->error === 'tool_execution_failed', 'Insight source permissions must be enforced.');
+runtime_tools_assert($insightDenied->ok === false && $insightDenied->error === 'permission_denied', 'Insight source permissions must be enforced.');
+runtime_tools_assert(($insightDenied->meta['required']['module'] ?? '') === 'complaints', 'Insight denied result must expose missing source module.');
 
 echo 'AI runtime tools smoke test passed' . PHP_EOL;

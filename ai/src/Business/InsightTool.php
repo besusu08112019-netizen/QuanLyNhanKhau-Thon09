@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ai\Business;
 
 use Ai\Contracts\PermissionAwareAiToolInterface;
+use Ai\Tools\ToolPermissionDeniedException;
 
 final class InsightTool implements PermissionAwareAiToolInterface
 {
@@ -94,7 +95,11 @@ final class InsightTool implements PermissionAwareAiToolInterface
         foreach ($modules as $module) {
             $module = (string) $module;
             if (!(bool) ($permissions[$module]['read'] ?? false)) {
-                throw new \RuntimeException('Missing read permission for ' . $module . '.');
+                throw new ToolPermissionDeniedException([
+                    'module' => $module,
+                    'action' => 'read',
+                    'read_only' => true,
+                ]);
             }
         }
     }

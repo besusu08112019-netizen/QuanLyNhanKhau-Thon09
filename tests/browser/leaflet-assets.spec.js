@@ -1,4 +1,10 @@
 const { test, expect } = require('@playwright/test');
+const fs = require('fs');
+const path = require('path');
+
+const serviceWorkerSource = fs.readFileSync(path.resolve(__dirname, '../../service-worker.js'), 'utf8');
+const pwaVersion = serviceWorkerSource.match(/PWA_VERSION\s*=\s*'([^']+)'/)?.[1];
+if (!pwaVersion) throw new Error('PWA_VERSION not found in service-worker.js');
 
 const leafletAssets = [
   { path: '/assets/vendor/leaflet/leaflet.css', type: /text\/css/ },
@@ -43,7 +49,7 @@ test.describe('Leaflet asset loader', () => {
 
   test('service worker precaches Leaflet assets in the current PWA cache', async ({ page }) => {
     await page.goto('/offline.html', { waitUntil: 'domcontentloaded' });
-    const result = await page.evaluate(async () => {
+    const result = await page.evaluate(async (version) => {
       if (!('serviceWorker' in navigator) || !('caches' in window)) return { supported: false };
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(registrations.map(registration => registration.unregister()));
@@ -61,7 +67,7 @@ test.describe('Leaflet asset loader', () => {
       }
 
       const tenantNamespace = `${location.host}/`.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
-      const expectedStaticCache = `${tenantNamespace}-tenant-pwa-v20260725-multitenant-1-static`;
+      const expectedStaticCache = `${tenantNamespace}-${version}-static`;
       const cacheNames = await caches.keys();
       const staticCache = cacheNames.find(name => name === expectedStaticCache);
       const cache = staticCache ? await caches.open(staticCache) : null;
@@ -78,7 +84,7 @@ test.describe('Leaflet asset loader', () => {
       }
       await registration.unregister();
       return { supported: true, cacheNames, staticCache, expectedStaticCache, cached };
-    });
+    }, pwaVersion);
 
     expect(result.supported).toBe(true);
     expect(result.staticCache).toBe(result.expectedStaticCache);

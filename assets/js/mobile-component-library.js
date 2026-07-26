@@ -822,6 +822,7 @@
       titleLabels: ['Họ và tên', 'Họ tên', 'Ho va ten', 'Ho ten'],
       summaryLabels: ['Chủ hộ', 'Tên chủ hộ', 'Mã hộ', 'Quan hệ', 'Giới tính', 'Tuổi', 'Cư trú', 'Chu ho', 'Ten chu ho', 'Ma ho', 'Quan he', 'Gioi tinh', 'Tuoi', 'Cu tru'],
       metaLabels: ['Chủ hộ', 'Tên chủ hộ', 'Mã hộ', 'Quan hệ', 'Tuổi', 'Giới tính', 'Cư trú', 'Chu ho', 'Ten chu ho', 'Ma ho', 'Quan he', 'Tuoi', 'Gioi tinh', 'Cu tru'],
+      actionMode: 'detailOnly',
       desktopFilter: { searchSelector: '#personSearch', stateKey: 'persons', loaderName: 'loadPersons' },
       primaryAction: { label: 'Thêm nhân khẩu', icon: 'fa-plus', proxy: '#personAddBtn, [data-platform-action="persons.create"]' },
       nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboardPopulation' }, { label: 'Biến động', icon: 'fa-arrows-rotate', action: 'movements' }],
@@ -1542,10 +1543,15 @@
     return cleanLabel(actionLabel(button)).toLowerCase();
   }
 
-  function rowActions(row) {
+  function rowActions(row, meta) {
     var buttons = rowActionButtons(row).filter(function (button) {
       return !button.matches('input, [disabled]');
     });
+    if (meta && meta.actionMode === 'detailOnly') {
+      buttons = buttons.filter(function (button) {
+        return /detail|xem|chi ti/i.test(String(button.getAttribute('data-platform-action') || '') + ' ' + String(button.getAttribute('title') || button.getAttribute('aria-label') || text(button)));
+      });
+    }
     var seen = {};
     return buttons.map(function (button) {
       var identity = actionIdentity(button);
@@ -1753,7 +1759,7 @@
         if (/Tạm vắng|Đi vắng/i.test(joined)) badges.push({ label: 'Tạm vắng', tone: 'danger' });
         if (/Thường trú|Ở nhà/i.test(joined) && !badges.length) badges.push({ label: 'Thường trú', tone: 'success' });
         var title = recordTitle(fields, meta, index);
-        var actions = rowActions(row);
+        var actions = rowActions(row, meta);
         var summaryFields = recordSummaryFields(fields, title, meta);
         return {
           title: title,

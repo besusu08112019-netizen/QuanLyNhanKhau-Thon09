@@ -8,7 +8,7 @@ Thay doi trong Epic nay:
 
 - Them `test:ai-all` de chay lai toan bo test AI tu Epic 1 den Epic 11.
 - Them `test:ai-release` de kiem tra tai lieu, asset, cau hinh bao mat, PWA va production artifact.
-- Them `test:ai-epic12` gom test AI, JS syntax check, build production va validate artifact.
+- Them `test:ai-epic12` gom test AI, release gate, platform regression, navigation cleanup, JS syntax check, build production va validate artifact.
 - Dua cac asset AI minified vao `service-worker.js` precache de PWA/Desktop/Mobile/Tablet co day du runtime AI.
 - Tang version service worker len `tenant-pwa-v20260726-ai-release-1`.
 
@@ -52,6 +52,8 @@ Lenh nay bao gom:
 
 - Unit/smoke test AI tu Epic 1 den Epic 11.
 - Static release readiness test.
+- Platform regression test.
+- Navigation cleanup regression test.
 - JavaScript syntax check.
 - Production build.
 - Production artifact validation.

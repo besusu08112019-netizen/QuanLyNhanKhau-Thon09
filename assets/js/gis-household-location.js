@@ -724,7 +724,6 @@
       activateMarker(marker, row);
     });
     marker.on('popupopen', event => {
-      console.log('popupopen');
       markPopupInteraction(rowId);
       state.openPopupId = rowId;
       disableMapDraggingForPopup();

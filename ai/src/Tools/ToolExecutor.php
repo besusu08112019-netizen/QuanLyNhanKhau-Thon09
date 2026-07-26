@@ -36,6 +36,10 @@ final class ToolExecutor
             return ToolExecutionResult::success($toolName, $result, [
                 'required' => $this->permissionChecker->requirement($tool),
             ]);
+        } catch (ToolPermissionDeniedException $exception) {
+            return ToolExecutionResult::failure($toolName, 'permission_denied', [
+                'required' => $exception->requirement() ?: $this->permissionChecker->requirement($tool),
+            ]);
         } catch (\Throwable $exception) {
             return ToolExecutionResult::failure($toolName, 'tool_execution_failed', [
                 'exception' => $exception::class,
@@ -43,4 +47,3 @@ final class ToolExecutor
         }
     }
 }
-

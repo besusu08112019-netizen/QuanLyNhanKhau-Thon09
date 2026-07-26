@@ -36,6 +36,7 @@
 - Báo cáo, export Excel/PDF và in biểu mẫu.
 - Tài khoản, vai trò, phân quyền, nhật ký, sao lưu và khôi phục SQL.
 - Cấu hình giao diện, logo, ảnh nền và thông tin hệ thống.
+- AI Agent read-only theo permission hiện có: speech, intent, conversation, business tools, query, OCR/camera, text-to-speech và analytics.
 
 ## Phân quyền
 
@@ -90,6 +91,8 @@ FTPS deploy overwrite các file trong artifact và dùng `.ftp-deploy-sync-state
 - `docs/PRODUCTION_DEPLOY_PROCESS.md`: quy trình deploy production duy nhất qua GitHub Actions và FTPS.
 - `docs/RELEASE_REPORT_TEMPLATE.md`: mẫu báo cáo release production sau deploy.
 - `docs/PRODUCTION_CHECKLIST.md`: checklist release production.
+- `docs/AI_FOUNDATION.md` và `docs/AI_ALL_EPICS_ACCEPTANCE_REPORT.md`: kiến trúc AI, phạm vi Epic và nghiệm thu AI.
+- `docs/PRODUCTION_READINESS.md`, `docs/RELEASE_AUDIT.md`: báo cáo readiness/audit trước release.
 - `docs/security-audit-2026-07-05.md`: báo cáo security audit gần nhất.
 - `docs/RELEASE_NOTES_2026-07-05.md`: release notes bản hiện tại.
 
