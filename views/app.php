@@ -131,6 +131,12 @@
             <button id="aiSpeechMicBtn" class="btn btn-success btn-sm ai-speech-mic" type="button" aria-pressed="false"><i class="fa-solid fa-microphone"></i> <span>B&#7855;t &#273;&#7847;u nghe</span></button>
           </div>
         </div>
+        <div class="ai-tts-controls" aria-label="Doc ket qua AI">
+          <button id="aiTtsToggleBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-pressed="false" title="Bat doc ket qua"><i class="fa-solid fa-volume-high"></i></button>
+          <button id="aiTtsStopBtn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Dung doc"><i class="fa-solid fa-volume-xmark"></i></button>
+          <label for="aiTtsRate">Toc do <span id="aiTtsRateValue">1.0x</span></label><input id="aiTtsRate" type="range" min="0.6" max="1.4" step="0.1" value="1">
+          <label for="aiTtsVolume">Am luong <span id="aiTtsVolumeValue">100%</span></label><input id="aiTtsVolume" type="range" min="0" max="1" step="0.1" value="1">
+        </div>
       </aside>
 
       <section id="dashboardScreen" class="screen active dashboard-overview-screen">
@@ -783,6 +789,7 @@
   <script charset="utf-8" src="/assets/js/ai-intent.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-conversation.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-ocr.min.js"></script>
+  <script charset="utf-8" src="/assets/js/ai-tts.min.js"></script>
   <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>
   <script charset="utf-8" src="/assets/js/csrf.min.js"></script>
   <script charset="utf-8" src="/assets/js/session.min.js"></script>

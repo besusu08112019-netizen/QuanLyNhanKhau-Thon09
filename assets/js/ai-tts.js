@@ -1,0 +1,195 @@
+(function () {
+  'use strict';
+
+  if (window.__TenantAiTtsLoaded) return;
+  window.__TenantAiTtsLoaded = true;
+
+  const synth = window.speechSynthesis || null;
+  let enabled = loadSetting('enabled', false) === true;
+  let rate = clamp(Number(loadSetting('rate', 1)), 0.6, 1.4);
+  let volume = clamp(Number(loadSetting('volume', 1)), 0, 1);
+  let voices = [];
+
+  function storageKey(key) {
+    if (typeof window.tenantStorageKey === 'function') return window.tenantStorageKey('ai_tts_' + key);
+    return 'tenant_ai_tts_' + key;
+  }
+
+  function loadSetting(key, fallback) {
+    try {
+      const value = localStorage.getItem(storageKey(key));
+      return value === null ? fallback : JSON.parse(value);
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function saveSetting(key, value) {
+    try {
+      localStorage.setItem(storageKey(key), JSON.stringify(value));
+    } catch (_) {
+      // TTS preferences are optional; speech still works for the current page.
+    }
+  }
+
+  function $(selector) {
+    return document.querySelector(selector);
+  }
+
+  function clamp(value, min, max) {
+    if (!Number.isFinite(value)) return min;
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function supported() {
+    return Boolean(synth && typeof window.SpeechSynthesisUtterance === 'function');
+  }
+
+  function refreshVoices() {
+    voices = supported() ? synth.getVoices() || [] : [];
+  }
+
+  function vietnameseVoice() {
+    return voices.find(voice => /^vi([-_]|$)/i.test(voice.lang || ''))
+      || voices.find(voice => /vietnam|vietnamese|tiếng việt|tieng viet/i.test(voice.name || ''))
+      || null;
+  }
+
+  function sanitizeText(text) {
+    return String(text || '')
+      .replace(/\s*Nguon:\s*.+$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 800);
+  }
+
+  function speak(text, options) {
+    if (!supported()) {
+      setStatus('Trinh duyet khong ho tro doc ket qua.');
+      return false;
+    }
+    const content = sanitizeText(text);
+    if (!content) return false;
+    synth.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(content);
+    utterance.lang = 'vi-VN';
+    utterance.rate = clamp(Number(options && options.rate || rate), 0.6, 1.4);
+    utterance.volume = clamp(Number(options && options.volume || volume), 0, 1);
+    const voice = vietnameseVoice();
+    if (voice) utterance.voice = voice;
+    utterance.onstart = () => setSpeakingState(true);
+    utterance.onend = () => setSpeakingState(false);
+    utterance.onerror = () => {
+      setSpeakingState(false);
+      setStatus('Khong doc duoc ket qua.');
+    };
+    synth.speak(utterance);
+    return true;
+  }
+
+  function stop() {
+    if (synth) synth.cancel();
+    setSpeakingState(false);
+  }
+
+  function lastAssistantText() {
+    const messages = Array.from(document.querySelectorAll('.ai-conversation-assistant .ai-conversation-text'));
+    const last = messages[messages.length - 1];
+    return last ? last.textContent : '';
+  }
+
+  function setStatus(text) {
+    const status = $('#aiSpeechStatus');
+    if (status) status.textContent = text;
+  }
+
+  function setSpeakingState(active) {
+    document.body.classList.toggle('ai-tts-speaking', active);
+    const stopBtn = $('#aiTtsStopBtn');
+    if (stopBtn) stopBtn.disabled = !active;
+    if (active) setStatus('Dang doc ket qua...');
+  }
+
+  function syncControls() {
+    const toggle = $('#aiTtsToggleBtn');
+    const stopBtn = $('#aiTtsStopBtn');
+    const rateInput = $('#aiTtsRate');
+    const volumeInput = $('#aiTtsVolume');
+    if (toggle) {
+      toggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      toggle.classList.toggle('btn-success', enabled);
+      toggle.classList.toggle('btn-outline-secondary', !enabled);
+      toggle.title = enabled ? 'Tat doc ket qua' : 'Bat doc ket qua';
+    }
+    if (stopBtn) stopBtn.disabled = true;
+    if (rateInput) rateInput.value = String(rate);
+    if (volumeInput) volumeInput.value = String(volume);
+    updateValueLabel('#aiTtsRateValue', rate.toFixed(1) + 'x');
+    updateValueLabel('#aiTtsVolumeValue', Math.round(volume * 100) + '%');
+    if (!supported()) {
+      if (toggle) toggle.disabled = true;
+      if (stopBtn) stopBtn.disabled = true;
+    }
+  }
+
+  function updateValueLabel(selector, text) {
+    const element = $(selector);
+    if (element) element.textContent = text;
+  }
+
+  function bind() {
+    refreshVoices();
+    if (synth) synth.onvoiceschanged = refreshVoices;
+    const toggle = $('#aiTtsToggleBtn');
+    const stopBtn = $('#aiTtsStopBtn');
+    const rateInput = $('#aiTtsRate');
+    const volumeInput = $('#aiTtsVolume');
+    if (toggle && toggle.dataset.boundAiTts !== '1') {
+      toggle.dataset.boundAiTts = '1';
+      toggle.addEventListener('click', function () {
+        enabled = !enabled;
+        saveSetting('enabled', enabled);
+        syncControls();
+        if (!enabled) stop();
+        else speak(lastAssistantText());
+      });
+    }
+    if (stopBtn && stopBtn.dataset.boundAiTts !== '1') {
+      stopBtn.dataset.boundAiTts = '1';
+      stopBtn.addEventListener('click', stop);
+    }
+    if (rateInput && rateInput.dataset.boundAiTts !== '1') {
+      rateInput.dataset.boundAiTts = '1';
+      rateInput.addEventListener('input', function () {
+        rate = clamp(Number(rateInput.value), 0.6, 1.4);
+        saveSetting('rate', rate);
+        updateValueLabel('#aiTtsRateValue', rate.toFixed(1) + 'x');
+      });
+    }
+    if (volumeInput && volumeInput.dataset.boundAiTts !== '1') {
+      volumeInput.dataset.boundAiTts = '1';
+      volumeInput.addEventListener('input', function () {
+        volume = clamp(Number(volumeInput.value), 0, 1);
+        saveSetting('volume', volume);
+        updateValueLabel('#aiTtsVolumeValue', Math.round(volume * 100) + '%');
+      });
+    }
+    syncControls();
+  }
+
+  document.addEventListener('tenant:ai-answer', function () {
+    if (!enabled) return;
+    window.setTimeout(() => speak(lastAssistantText()), 0);
+  });
+  document.addEventListener('tenant:ai-conversation-cleared', stop);
+
+  window.TenantAiTts = Object.freeze({
+    speak,
+    stop,
+    supported,
+    settings: () => ({ enabled, rate, volume }),
+  });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
