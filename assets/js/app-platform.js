@@ -5369,7 +5369,7 @@
       try {
         storedOpen = window.localStorage ? window.localStorage.getItem(sidebarGroupStorageKey(key)) : null;
       } catch (error) {}
-      var isOpen = storedOpen === null ? key === 'dashboard' : storedOpen === '1';
+      var isOpen = storedOpen === null ? key === 'dashboard' || key === 'production' : storedOpen === '1';
       sidebarGroupState.set(key, isOpen);
       return isOpen;
     }
