@@ -623,6 +623,7 @@ $router->post('/api/notifications/{key}/read', [NotificationController::class, '
 $router->post('/api/notifications/{key}/dismiss', [NotificationController::class, 'dismiss']);
 $router->get('/api/insights/search', [InsightController::class, 'search']);
 $router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
+$router->get('/api/insights/analytics', [InsightController::class, 'analytics']);
 $router->post('/api/insights/ask', [InsightController::class, 'ask']);
 $router->get('/api/ai/tools', [AiToolController::class, 'index']);
 $router->post('/api/ai/tools/execute', [AiToolController::class, 'execute']);

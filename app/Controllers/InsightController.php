@@ -33,6 +33,15 @@ final class InsightController extends BaseController
         $this->ok($this->insights->smartAlerts());
     }
 
+    public function analytics(): void
+    {
+        $user = $this->requirePermission('dashboard', 'read');
+        $this->requirePermission('household', 'read');
+        $this->requirePermission('citizen', 'read');
+        $this->audit($user, 'insights', 'analytics_readonly', 'Phan tich bat thuong du lieu read-only');
+        $this->ok($this->insights->analytics());
+    }
+
     public function ask(): void
     {
         $user = $this->requirePermission('dashboard', 'read');

@@ -57,7 +57,7 @@ final class ToolOrchestrator
             return $this->planned('resident', ['action' => 'find_by_identity', 'identity' => $match[0]], 0.92, 'identity_number');
         }
 
-        if ($this->hasAny($text, ['chua dong', 'no quy', 'dong quy', 'phan anh', 'chua xu ly', 'dang xu ly', 'bao tri', 'bao duong', 'vat nuoi', 'bien dong', 'thang nay'])) {
+        if ($this->hasAny($text, ['bat thuong', 'canh bao', 'goi y xu ly', 'du lieu thieu', 'ho so thieu', 'chua dong', 'no quy', 'dong quy', 'phan anh', 'chua xu ly', 'dang xu ly', 'bao tri', 'bao duong', 'vat nuoi', 'bien dong', 'thang nay'])) {
             return $this->planned('insight', ['action' => 'ask', 'question' => trim($question)], 0.88, 'operational_insight');
         }
 

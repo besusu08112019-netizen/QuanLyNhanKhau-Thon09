@@ -77,11 +77,17 @@ final class OrchestratorInsightRepository
 {
     public function requiredModulesForQuestion(string $question): array
     {
+        if (str_contains($question, 'bat thuong')) {
+            return ['dashboard', 'household', 'citizen'];
+        }
         return ['complaints'];
     }
 
     public function ask(string $question): array
     {
+        if (str_contains($question, 'bat thuong')) {
+            return ['question' => $question, 'intent' => 'analytics_alerts', 'mode' => 'READ_ONLY', 'answer' => 'Phat hien 2 nhom bat thuong.', 'metrics' => ['high' => 1], 'items' => []];
+        }
         return ['question' => $question, 'intent' => 'open_complaints', 'mode' => 'READ_ONLY', 'answer' => 'Co 3 phan anh chua xu ly.', 'metrics' => ['open' => 3], 'items' => []];
     }
 }
@@ -128,6 +134,11 @@ $complaints = $orchestrator->ask('Co bao nhieu phan anh chua xu ly?', $context);
 orchestrator_assert(($complaints['status'] ?? '') === 'answered', 'Complaint insight question must be answered.');
 orchestrator_assert(($complaints['plan']['tool'] ?? '') === 'insight', 'Complaint question must use insight tool.');
 orchestrator_assert(($complaints['result']['data']['data']['intent'] ?? '') === 'open_complaints', 'Insight intent mismatch.');
+
+$analytics = $orchestrator->ask('Canh bao du lieu bat thuong', $context);
+orchestrator_assert(($analytics['status'] ?? '') === 'answered', 'Analytics insight question must be answered.');
+orchestrator_assert(($analytics['plan']['tool'] ?? '') === 'insight', 'Analytics question must use insight tool.');
+orchestrator_assert(($analytics['result']['data']['data']['intent'] ?? '') === 'analytics_alerts', 'Analytics intent mismatch.');
 
 $denied = $orchestrator->ask('Thong ke BHYT', ['permissions' => ['household' => ['read' => true]]]);
 orchestrator_assert(($denied['status'] ?? '') === 'failed', 'Denied statistics question must fail.');

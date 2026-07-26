@@ -9,6 +9,7 @@ final class SystemInsight extends BaseModel
     public function requiredModulesForQuestion(string $question): array
     {
         return match ($this->intent($question)) {
+            'analytics_alerts' => ['dashboard', 'household', 'citizen'],
             'unpaid_contributions' => ['household', 'contributions'],
             'open_complaints' => ['complaints'],
             'citizens_over_80' => ['citizen', 'household'],
@@ -25,6 +26,7 @@ final class SystemInsight extends BaseModel
         if ($question === '') throw new \RuntimeException('Cau hoi la bat buoc');
         $intent = $this->intent($question);
         $result = match ($intent) {
+            'analytics_alerts' => $this->answerAnalytics(),
             'unpaid_contributions' => $this->answerUnpaidContributions(),
             'open_complaints' => $this->answerOpenComplaints(),
             'citizens_over_80' => $this->answerCitizensOver80(),
@@ -89,9 +91,48 @@ final class SystemInsight extends BaseModel
         ];
     }
 
+    public function analytics(): array
+    {
+        $alerts = $this->smartAlerts();
+        $items = [];
+        $suggestions = [];
+        foreach ($this->analyticsRules() as $rule) {
+            $count = (int) ($alerts[$rule['key']] ?? 0);
+            if ($count <= 0) continue;
+            $items[] = [
+                'key' => $rule['key'],
+                'label' => $rule['label'],
+                'severity' => $rule['severity'],
+                'count' => $count,
+                'module' => $rule['module'],
+                'screen' => $rule['screen'],
+                'suggestion' => $rule['suggestion'],
+            ];
+            $suggestions[] = $rule['suggestion'];
+        }
+
+        $severityOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
+        usort($items, fn(array $a, array $b) => (($severityOrder[$b['severity']] ?? 0) <=> ($severityOrder[$a['severity']] ?? 0)) ?: ((int) $b['count'] <=> (int) $a['count']));
+
+        return [
+            'mode' => 'READ_ONLY',
+            'summary' => $this->analyticsSummary($items),
+            'metrics' => [
+                'total_alerts' => array_sum(array_map(fn($item) => (int) $item['count'], $items)),
+                'high' => count(array_filter($items, fn($item) => $item['severity'] === 'high')),
+                'medium' => count(array_filter($items, fn($item) => $item['severity'] === 'medium')),
+                'low' => count(array_filter($items, fn($item) => $item['severity'] === 'low')),
+            ],
+            'items' => $items,
+            'suggestions' => array_values(array_unique($suggestions)),
+            'generatedAt' => date('c'),
+        ];
+    }
+
     private function intent(string $question): string
     {
         $q = mb_strtolower($this->stripVietnamese($question), 'UTF-8');
+        if (str_contains($q, 'bat thuong') || str_contains($q, 'canh bao') || str_contains($q, 'goi y xu ly') || str_contains($q, 'du lieu thieu') || str_contains($q, 'ho so thieu')) return 'analytics_alerts';
         if (str_contains($q, 'chua dong') || str_contains($q, 'no quy') || str_contains($q, 'dong quy')) return 'unpaid_contributions';
         if (str_contains($q, 'phan anh') && (str_contains($q, 'chua xu ly') || str_contains($q, 'dang xu ly') || str_contains($q, 'bao nhieu'))) return 'open_complaints';
         if ((str_contains($q, '80') || str_contains($q, 'cao tuoi')) && str_contains($q, 'nhan khau')) return 'citizens_over_80';
@@ -156,6 +197,16 @@ final class SystemInsight extends BaseModel
         return ['answer' => "Thang nay co $total bien dong nhan khau.", 'metrics' => ['total' => $total], 'items' => $rows];
     }
 
+    private function answerAnalytics(): array
+    {
+        $analytics = $this->analytics();
+        return [
+            'answer' => $analytics['summary'],
+            'metrics' => $analytics['metrics'],
+            'items' => $analytics['items'],
+        ];
+    }
+
     private function answerOverview(): array
     {
         return ['answer' => 'Tro ly du lieu hien ho tro cau hoi ve ho chua dong quy, phan anh chua xu ly, nhan khau tren 80 tuoi, cong trinh sap bao tri, ho co vat nuoi va bien dong thang nay.', 'metrics' => [], 'items' => []];
@@ -164,6 +215,26 @@ final class SystemInsight extends BaseModel
     private function emptyAnswer(string $message): array
     {
         return ['answer' => $message, 'metrics' => [], 'items' => []];
+    }
+
+    private function analyticsSummary(array $items): string
+    {
+        if (!$items) return 'Chua phat hien bat thuong du lieu noi bat trong cac chi so dang theo doi.';
+        $high = count(array_filter($items, fn($item) => $item['severity'] === 'high'));
+        $total = array_sum(array_map(fn($item) => (int) $item['count'], $items));
+        return "Phat hien $total van de du lieu can ra soat trong " . count($items) . " nhom, trong do co $high nhom uu tien cao.";
+    }
+
+    private function analyticsRules(): array
+    {
+        return [
+            ['key' => 'invalid_identity', 'label' => 'CCCD/SĐD không hợp lệ', 'severity' => 'high', 'module' => 'citizen', 'screen' => 'persons', 'suggestion' => 'Rà soát định dạng CCCD/SĐD và cập nhật lại hồ sơ nhân khẩu.'],
+            ['key' => 'duplicate_identity', 'label' => 'Trùng CCCD/SĐD', 'severity' => 'high', 'module' => 'citizen', 'screen' => 'persons', 'suggestion' => 'Đối chiếu các hồ sơ trùng số định danh trước khi nhập mới hoặc đồng bộ.'],
+            ['key' => 'households_without_members', 'label' => 'Hộ chưa có thành viên', 'severity' => 'high', 'module' => 'household', 'screen' => 'households', 'suggestion' => 'Kiểm tra hộ chưa có thành viên và bổ sung chủ hộ/thành viên nếu hồ sơ còn hiệu lực.'],
+            ['key' => 'missing_identity', 'label' => 'Nhân khẩu thiếu CCCD/SĐD', 'severity' => 'medium', 'module' => 'citizen', 'screen' => 'persons', 'suggestion' => 'Ưu tiên bổ sung CCCD/SĐD cho nhân khẩu đang cư trú.'],
+            ['key' => 'missing_phone', 'label' => 'Nhân khẩu thiếu số điện thoại', 'severity' => 'low', 'module' => 'citizen', 'screen' => 'persons', 'suggestion' => 'Bổ sung số điện thoại liên hệ khi rà soát hồ sơ.'],
+            ['key' => 'missing_area_code', 'label' => 'Hộ thiếu khu vực/xóm', 'severity' => 'medium', 'module' => 'household', 'screen' => 'households', 'suggestion' => 'Cập nhật khu vực/xóm để báo cáo và điều hành theo địa bàn chính xác hơn.'],
+        ];
     }
 
     private function stripVietnamese(string $value): string

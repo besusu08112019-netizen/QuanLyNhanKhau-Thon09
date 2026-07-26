@@ -11,6 +11,8 @@
     "test:ai-epic9": "npm run test:ai-ocr",
     "test:ai-tts": "node tests/ai-tts.test.js",
     "test:ai-epic10": "npm run test:ai-tts",
+    "test:ai-analytics": "node tests/ai-analytics.test.js",
+    "test:ai-epic11": "npm run test:ai-analytics && npm run test:ai-tool-orchestrator",
     "test:ai-operation-center": "node tests/ai-operation-center.test.js",
     "test:ai-epic8": "npm run test:ai-conversation && npm run test:ai-operation-center",
     "test:ai-household-tool": "php tests/ai-household-tool-smoke.php",
