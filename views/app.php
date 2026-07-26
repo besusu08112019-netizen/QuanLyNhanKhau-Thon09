@@ -391,7 +391,7 @@
             <div class="col-lg-3"><label class="form-label" for="agriculturalLandSearch">T&#236;m ki&#7871;m</label><input id="agriculturalLandSearch" class="form-control" placeholder="M&#227; khu, t&#234;n khu, ghi ch&#250;..."></div>
             <div class="col-md-2"><label class="form-label" for="agriculturalLandYearFilter">N&#259;m th&#7889;ng k&#234;</label><select id="agriculturalLandYearFilter" class="form-select"></select></div>
             <div class="col-md-2"><label class="form-label" for="agriculturalLandStatusFilter">Tr&#7841;ng th&#225;i</label><select id="agriculturalLandStatusFilter" class="form-select"><option value="">T&#7845;t c&#7843;</option></select></div>
-            <div class="col-md-2"><label class="form-label" for="agriculturalLandUnitFilter">&#272;&#417;n v&#7883; hi&#7875;n th&#7883;</label><select id="agriculturalLandUnitFilter" class="form-select"></select></div>
+            <div class="col-md-2"><label class="form-label">&#272;&#417;n v&#7883;</label><div class="form-control-plaintext fw-semibold">m&#7851;u</div></div>
             <div class="col-md-2"><label class="form-label" for="agriculturalLandReportMode">B&#225;o c&#225;o</label><select id="agriculturalLandReportMode" class="form-select"><option value="list">Danh s&#225;ch</option><option value="village">To&#224;n th&#244;n</option><option value="zone">Theo khu</option><option value="year">Theo n&#259;m</option><option value="year_compare">So s&#225;nh n&#259;m</option></select></div>
             <div class="col-md-1"><button id="agriculturalLandResetBtn" class="btn btn-outline-secondary w-100" type="button" data-platform-action="agriculturalLand.reset"><i class="fa-solid fa-rotate-left"></i></button></div>
           </div>

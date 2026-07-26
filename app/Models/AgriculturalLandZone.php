@@ -17,12 +17,7 @@ final class AgriculturalLandZone extends BaseModel
         'leased_area',
         'converted_area',
     ];
-    private const UNITS = [
-        'm2' => ['label' => 'm²', 'factor' => 1.0],
-        'sao' => ['label' => 'sào', 'factor' => 360.0],
-        'mau' => ['label' => 'mẫu', 'factor' => 3600.0],
-        'ha' => ['label' => 'ha', 'factor' => 10000.0],
-    ];
+    private const FIXED_UNIT = 'mau';
     private const DEFAULT_USAGE_TYPES = [
         ['LUA', 'Lúa'],
         ['NGO', 'Ngô'],
@@ -43,7 +38,7 @@ CREATE TABLE IF NOT EXISTS agricultural_land_zones (
   village_id BIGINT UNSIGNED NOT NULL DEFAULT 1,
   zone_code VARCHAR(40) NOT NULL,
   zone_name VARCHAR(255) NOT NULL,
-  input_unit ENUM('m2','sao','mau','ha') NOT NULL DEFAULT 'm2',
+  input_unit ENUM('mau') NOT NULL DEFAULT 'mau',
   report_year SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   total_area_m2 DECIMAL(16,4) NOT NULL DEFAULT 0,
   long_term_allocated_area_m2 DECIMAL(16,4) NOT NULL DEFAULT 0,
@@ -79,7 +74,7 @@ SQL);
             $this->ensureColumn(self::ZONES, $field . '_m2', 'DECIMAL(16,4) NOT NULL DEFAULT 0');
         }
         foreach ([
-            'input_unit' => "ENUM('m2','sao','mau','ha') NOT NULL DEFAULT 'm2'",
+            'input_unit' => "ENUM('mau') NOT NULL DEFAULT 'mau'",
             'report_year' => 'SMALLINT UNSIGNED NOT NULL DEFAULT 0',
             'latitude' => 'DECIMAL(11,8) NULL',
             'longitude' => 'DECIMAL(11,8) NULL',
@@ -135,9 +130,7 @@ SQL);
 CREATE TABLE IF NOT EXISTS agricultural_land_settings (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   village_id BIGINT UNSIGNED NOT NULL,
-  default_unit ENUM('m2','sao','mau','ha') NOT NULL DEFAULT 'mau',
-  sao_m2 DECIMAL(10,2) NOT NULL DEFAULT 360,
-  mau_m2 DECIMAL(10,2) NOT NULL DEFAULT 3600,
+  default_unit ENUM('mau') NOT NULL DEFAULT 'mau',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_agricultural_land_settings_village (village_id)
@@ -153,11 +146,11 @@ SQL);
         $yearValues = array_values(array_unique(array_filter(array_map(fn($row) => (int)($row['report_year'] ?? 0), $years))));
         if (!in_array((int)date('Y'), $yearValues, true)) array_unshift($yearValues, (int)date('Y'));
         return [
-            'units' => array_map(fn($key, $item) => ['value' => $key, 'label' => $item['label']], array_keys(self::UNITS), self::UNITS),
+            'units' => [['value' => 'mau', 'label' => 'mẫu']],
             'statuses' => $this->statuses(),
             'years' => $yearValues,
             'usage_types' => $this->usageTypes(false),
-            'default_unit' => $this->settings()['default_unit'],
+            'default_unit' => 'mau',
             'default_year' => (int)date('Y'),
         ];
     }
@@ -165,25 +158,22 @@ SQL);
     public function settings(): array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT default_unit, sao_m2, mau_m2 FROM agricultural_land_settings WHERE ' . $this->tenantWhere(self::SETTINGS), $this->withTenant());
+        $row = $this->fetchOne('SELECT default_unit FROM agricultural_land_settings WHERE ' . $this->tenantWhere(self::SETTINGS), $this->withTenant());
         if (!$row) {
             $this->insert('INSERT INTO agricultural_land_settings (village_id, default_unit) VALUES (:village_id, "mau")', $this->withTenant());
-            $row = $this->fetchOne('SELECT default_unit, sao_m2, mau_m2 FROM agricultural_land_settings WHERE ' . $this->tenantWhere(self::SETTINGS), $this->withTenant());
+            $row = $this->fetchOne('SELECT default_unit FROM agricultural_land_settings WHERE ' . $this->tenantWhere(self::SETTINGS), $this->withTenant());
         }
         return [
-            'default_unit' => $this->validUnit((string)($row['default_unit'] ?? 'mau')),
-            'sao_m2' => (float)($row['sao_m2'] ?? 360),
-            'mau_m2' => (float)($row['mau_m2'] ?? 3600),
+            'default_unit' => 'mau',
         ];
     }
 
     public function updateSettings(array $data): array
     {
         $this->ensureSchema();
-        $unit = $this->validUnit((string)($data['default_unit'] ?? $data['defaultUnit'] ?? 'mau'));
         $this->execute(
             'INSERT INTO agricultural_land_settings (village_id, default_unit) VALUES (:village_id, :default_unit) ON DUPLICATE KEY UPDATE default_unit=VALUES(default_unit), updated_at=NOW()',
-            $this->withTenant(['default_unit' => $unit])
+            $this->withTenant(['default_unit' => 'mau'])
         );
         return $this->settings();
     }
@@ -253,16 +243,15 @@ SQL);
         ], 'zone_code', 'ASC', ['id ASC']);
         $total = (int)(($this->fetchOne("SELECT COUNT(*) AS total FROM agricultural_land_zones WHERE $where", $params) ?: [])['total'] ?? 0);
         $rows = $this->fetchAll("SELECT * FROM agricultural_land_zones WHERE $where $order LIMIT $pageSize OFFSET $offset", $params);
-        $unit = $this->displayUnit($filters);
-        $usageAreas = $this->usageAreasForZones(array_map(fn($row) => (int)$row['id'], $rows), $unit);
-        return $this->paginated(array_map(fn($row) => $this->normalize($row, $unit, $usageAreas[(int)$row['id']] ?? []), $rows), $page, $pageSize, $total, ['unit' => $unit]);
+        $usageAreas = $this->usageAreasForZones(array_map(fn($row) => (int)$row['id'], $rows));
+        return $this->paginated(array_map(fn($row) => $this->normalize($row, $usageAreas[(int)$row['id']] ?? []), $rows), $page, $pageSize, $total, ['unit' => 'mau']);
     }
 
     public function find(int $id, ?string $unit = null): ?array
     {
         $this->ensureSchema();
         $row = $this->fetchOne('SELECT * FROM agricultural_land_zones WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere(self::ZONES), $this->withTenant(['id' => $id]));
-        return $row ? $this->normalize($row, $unit ?: $this->settings()['default_unit']) : null;
+        return $row ? $this->normalize($row) : null;
     }
 
     public function upsert(array $data, int $userId, ?int $id = null): array
@@ -272,7 +261,7 @@ SQL);
         if ($id && !$existing) throw new \RuntimeException('Không tìm thấy khu đất');
         $params = $this->params($data, $userId);
         $this->assertUniqueZoneCodeYear($params['zone_code'], (int)$params['report_year'], $id);
-        $this->assertUsageAreasWithinTotal((array)($data['usage_areas'] ?? $data['usageAreas'] ?? []), $params['input_unit'], (float)$params['total_area_m2']);
+        $this->assertUsageAreasWithinTotal((array)($data['usage_areas'] ?? $data['usageAreas'] ?? []), $params['total_area_m2']);
         if ($id) {
             if ($existing && $params['zone_code'] !== $existing['zone_code']) {
                 throw new \RuntimeException('Mã khu không được thay đổi sau khi tạo');
@@ -282,16 +271,16 @@ SQL);
             foreach (self::AREA_FIELDS as $field) $assignments[] = $field . '_m2=:' . $field . '_m2';
             $assignments = array_merge($assignments, ['latitude=:latitude', 'longitude=:longitude', 'polygon_json=:polygon_json', 'irrigation_note=:irrigation_note', 'production_group_name=:production_group_name', 'main_crop_type=:main_crop_type', 'annual_note=:annual_note', 'note=:note', 'status=:status', 'updated_by=:updated_by']);
             $this->execute('UPDATE agricultural_land_zones SET ' . implode(',', $assignments) . ' WHERE id=:id AND ' . $this->tenantWhere(self::ZONES), $this->withTenant($params));
-            $this->replaceUsageAreas($id, (array)($data['usage_areas'] ?? $data['usageAreas'] ?? []), $params['input_unit'], (float)$params['total_area_m2']);
-            return $this->find($id, $params['input_unit']);
+            $this->replaceUsageAreas($id, (array)($data['usage_areas'] ?? $data['usageAreas'] ?? []), $params['total_area_m2']);
+            return $this->find($id);
         }
         $columns = ['zone_code', 'zone_name', 'input_unit', 'report_year'];
         foreach (self::AREA_FIELDS as $field) $columns[] = $field . '_m2';
         $columns = array_merge($columns, ['latitude', 'longitude', 'polygon_json', 'irrigation_note', 'production_group_name', 'main_crop_type', 'annual_note', 'note', 'status', 'created_by', 'updated_by']);
         $this->addTenantInsert(self::ZONES, $columns, $params);
         $newId = $this->insert('INSERT INTO agricultural_land_zones (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
-        $this->replaceUsageAreas($newId, (array)($data['usage_areas'] ?? $data['usageAreas'] ?? []), $params['input_unit'], (float)$params['total_area_m2']);
-        return $this->find($newId, $params['input_unit']);
+        $this->replaceUsageAreas($newId, (array)($data['usage_areas'] ?? $data['usageAreas'] ?? []), $params['total_area_m2']);
+        return $this->find($newId);
     }
 
     public function softDelete(int $id, int $userId): void
@@ -308,9 +297,9 @@ SQL);
         $filters['report_year'] = (int)($filters['report_year'] ?? $filters['reportYear'] ?? 0) ?: (int)date('Y');
         [$where, $params] = $this->where($filters, true);
         $row = $this->fetchOne("SELECT COUNT(*) AS zones_count, " . $this->sumSelect() . " FROM agricultural_land_zones WHERE $where", $params) ?: [];
-        $unit = $this->displayUnit($filters);
+        $unit = 'mau';
         $metrics = ['zones_count' => (int)($row['zones_count'] ?? 0), 'active_zones' => (int)($row['zones_count'] ?? 0), 'unit' => $unit, 'report_year' => (int)$filters['report_year']];
-        foreach (self::AREA_FIELDS as $field) $metrics[$field] = $this->fromM2((float)($row[$field . '_m2'] ?? 0), $unit);
+        foreach (self::AREA_FIELDS as $field) $metrics[$field] = $this->decimalText($row[$field . '_m2'] ?? 0);
         return [
             'metrics' => $metrics,
             'charts' => [
@@ -320,7 +309,7 @@ SQL);
                     ['label' => 'Đất giao dài hạn', 'value' => $metrics['long_term_allocated_area']],
                     ['label' => 'Đất công ích', 'value' => $metrics['public_utility_area']],
                 ],
-                'by_zone' => array_map(fn($item) => ['label' => $item['zone_name'], 'value' => $this->fromM2((float)$item['total_area_m2'], $unit)], $this->fetchAll("SELECT zone_name, total_area_m2 FROM agricultural_land_zones WHERE $where ORDER BY total_area_m2 DESC, zone_name ASC LIMIT 12", $params)),
+                'by_zone' => array_map(fn($item) => ['label' => $item['zone_name'], 'value' => $this->decimalText($item['total_area_m2'] ?? 0)], $this->fetchAll("SELECT zone_name, total_area_m2 FROM agricultural_land_zones WHERE $where ORDER BY total_area_m2 DESC, zone_name ASC LIMIT 12", $params)),
             ],
         ];
     }
@@ -367,7 +356,7 @@ SQL);
 
     private function yearCompareReport(array $filters): array
     {
-        $unit = $this->displayUnit($filters);
+        $unit = 'mau';
         [$where, $params] = $this->where(['status' => 'ACTIVE'] + $filters, false);
         $rows = $this->fetchAll("SELECT report_year, " . $this->sumSelect() . " FROM agricultural_land_zones WHERE $where GROUP BY report_year ORDER BY report_year ASC", $params);
         return [
@@ -375,11 +364,11 @@ SQL);
             'columns' => ['Năm', 'Tổng diện tích', 'Đất giao dài hạn', 'Đất công ích', 'Đất thuê', 'Đất chuyển đổi'],
             'rows' => array_map(fn($row) => [
                 (string)$row['report_year'],
-                $this->areaText($this->fromM2((float)$row['total_area_m2'], $unit), $unit),
-                $this->areaText($this->fromM2((float)$row['long_term_allocated_area_m2'], $unit), $unit),
-                $this->areaText($this->fromM2((float)$row['public_utility_area_m2'], $unit), $unit),
-                $this->areaText($this->fromM2((float)$row['leased_area_m2'], $unit), $unit),
-                $this->areaText($this->fromM2((float)$row['converted_area_m2'], $unit), $unit),
+                $this->areaText($row['total_area_m2'] ?? 0, $unit),
+                $this->areaText($row['long_term_allocated_area_m2'] ?? 0, $unit),
+                $this->areaText($row['public_utility_area_m2'] ?? 0, $unit),
+                $this->areaText($row['leased_area_m2'] ?? 0, $unit),
+                $this->areaText($row['converted_area_m2'] ?? 0, $unit),
             ], $rows),
             'totalRows' => count($rows),
             'filters' => $filters,
@@ -389,7 +378,6 @@ SQL);
 
     private function params(array $data, int $userId): array
     {
-        $unit = $this->validUnit((string)($data['unit'] ?? $data['input_unit'] ?? $data['inputUnit'] ?? $this->settings()['default_unit']));
         $zoneCode = strtoupper(trim((string)($data['zone_code'] ?? $data['zoneCode'] ?? '')));
         $zoneName = trim((string)($data['zone_name'] ?? $data['zoneName'] ?? ''));
         $latitude = $this->nullableDecimal($data['latitude'] ?? null);
@@ -404,7 +392,7 @@ SQL);
         $params = [
             'zone_code' => $zoneCode,
             'zone_name' => $zoneName,
-            'input_unit' => $unit,
+            'input_unit' => 'mau',
             'report_year' => max(1900, min(2100, (int)($data['report_year'] ?? $data['reportYear'] ?? date('Y')))),
             'latitude' => $latitude,
             'longitude' => $longitude,
@@ -418,8 +406,8 @@ SQL);
             'created_by' => $userId,
             'updated_by' => $userId,
         ];
-        foreach (self::AREA_FIELDS as $field) $params[$field . '_m2'] = $this->toM2($data[$field] ?? $data[$this->camel($field)] ?? 0, $unit);
-        if ($params['total_area_m2'] <= 0) throw new \RuntimeException('Tổng diện tích phải lớn hơn 0');
+        foreach (self::AREA_FIELDS as $field) $params[$field . '_m2'] = $this->areaDecimal($data[$field] ?? $data[$this->camel($field)] ?? 0);
+        if ((float)$params['total_area_m2'] <= 0) throw new \RuntimeException('Tổng diện tích phải lớn hơn 0');
         return $params;
     }
 
@@ -451,14 +439,14 @@ SQL);
         return [implode(' AND ', $where), $params];
     }
 
-    private function normalize(array $row, string $unit, ?array $usageAreas = null): array
+    private function normalize(array $row, ?array $usageAreas = null): array
     {
         $result = [
             'id' => (int)$row['id'],
             'zone_code' => (string)$row['zone_code'],
             'zone_name' => (string)$row['zone_name'],
-            'unit' => $unit,
-            'input_unit' => (string)($row['input_unit'] ?? 'm2'),
+            'unit' => 'mau',
+            'input_unit' => 'mau',
             'report_year' => (int)($row['report_year'] ?? 0),
             'latitude' => $row['latitude'] !== null ? (float)$row['latitude'] : null,
             'longitude' => $row['longitude'] !== null ? (float)$row['longitude'] : null,
@@ -474,27 +462,27 @@ SQL);
             'updated_at' => $row['updated_at'] ?? null,
         ];
         foreach (self::AREA_FIELDS as $field) {
-            $m2 = (float)($row[$field . '_m2'] ?? 0);
-            $result[$field . '_m2'] = $m2;
-            $result[$field] = $this->fromM2($m2, $unit);
+            $value = $this->decimalText($row[$field . '_m2'] ?? 0);
+            $result[$field . '_m2'] = $value;
+            $result[$field] = $value;
             $result[$this->camel($field)] = $result[$field];
         }
-        $result['usage_areas'] = $usageAreas ?? $this->usageAreas((int)$row['id'], $unit);
+        $result['usage_areas'] = $usageAreas ?? $this->usageAreas((int)$row['id']);
         return $result;
     }
 
-    private function replaceUsageAreas(int $zoneId, array $items, string $unit, float $totalAreaM2): void
+    private function replaceUsageAreas(int $zoneId, array $items, string $totalArea): void
     {
         $validTypeIds = $this->validUsageTypeIds(array_map(fn($item) => (int)($item['usage_type_id'] ?? $item['usageTypeId'] ?? $item['id'] ?? 0), $items));
-        $usageTotalM2 = 0.0;
+        $usageTotal = 0.0;
         $pending = [];
         foreach ($items as $item) {
             $typeId = (int)($item['usage_type_id'] ?? $item['usageTypeId'] ?? $item['id'] ?? 0);
             if ($typeId <= 0) continue;
             if (!in_array($typeId, $validTypeIds, true)) throw new \RuntimeException('Loại sử dụng đất không hợp lệ');
-            $area = $this->toM2($item['area'] ?? $item['value'] ?? 0, $unit);
-            $usageTotalM2 += $area;
-            if ($usageTotalM2 > $totalAreaM2 + 0.0001) throw new \RuntimeException('Tổng diện tích cơ cấu sử dụng đất không được lớn hơn tổng diện tích khu');
+            $area = $this->areaDecimal($item['area'] ?? $item['value'] ?? 0);
+            $usageTotal += (float)$area;
+            if ($usageTotal > (float)$totalArea + 0.0001) throw new \RuntimeException('Tổng diện tích cơ cấu sử dụng đất không được lớn hơn tổng diện tích khu');
             $pending[] = ['zone_id' => $zoneId, 'usage_type_id' => $typeId, 'area_m2' => $area];
         }
         $this->execute('DELETE FROM agricultural_land_zone_usage_areas WHERE zone_id=:zone_id AND ' . $this->tenantWhere(self::USAGE_AREAS), $this->withTenant(['zone_id' => $zoneId]));
@@ -505,13 +493,13 @@ SQL);
         }
     }
 
-    private function usageAreas(int $zoneId, string $unit): array
+    private function usageAreas(int $zoneId): array
     {
         $rows = $this->fetchAll('SELECT zua.usage_type_id, lut.code, lut.name, zua.area_m2 FROM agricultural_land_zone_usage_areas zua INNER JOIN land_usage_types lut ON lut.id=zua.usage_type_id WHERE zua.zone_id=:zone_id AND ' . $this->tenantWhere('zua', self::USAGE_AREAS) . ' ORDER BY lut.display_order ASC, lut.name ASC', $this->withTenant(['zone_id' => $zoneId]));
-        return $this->normalizeUsageAreaRows($rows, $unit);
+        return $this->normalizeUsageAreaRows($rows);
     }
 
-    private function usageAreasForZones(array $zoneIds, string $unit): array
+    private function usageAreasForZones(array $zoneIds): array
     {
         $zoneIds = array_values(array_unique(array_filter(array_map('intval', $zoneIds), fn($id) => $id > 0)));
         if ($zoneIds === []) return [];
@@ -534,25 +522,26 @@ SQL);
         foreach ($rows as $row) {
             $zoneId = (int)$row['zone_id'];
             $result[$zoneId] ??= [];
-            $result[$zoneId][(int)$row['usage_type_id']] = $this->normalizeUsageAreaRow($row, $unit);
+            $result[$zoneId][(int)$row['usage_type_id']] = $this->normalizeUsageAreaRow($row);
         }
         return $result;
     }
 
-    private function normalizeUsageAreaRows(array $rows, string $unit): array
+    private function normalizeUsageAreaRows(array $rows): array
     {
         $result = [];
         foreach ($rows as $row) {
             $id = (int)$row['usage_type_id'];
-            $result[$id] = $this->normalizeUsageAreaRow($row, $unit);
+            $result[$id] = $this->normalizeUsageAreaRow($row);
         }
         return $result;
     }
 
-    private function normalizeUsageAreaRow(array $row, string $unit): array
+    private function normalizeUsageAreaRow(array $row): array
     {
         $id = (int)$row['usage_type_id'];
-        return ['usage_type_id' => $id, 'code' => (string)$row['code'], 'name' => (string)$row['name'], 'area_m2' => (float)$row['area_m2'], 'area' => $this->fromM2((float)$row['area_m2'], $unit)];
+        $area = $this->decimalText($row['area_m2'] ?? 0);
+        return ['usage_type_id' => $id, 'code' => (string)$row['code'], 'name' => (string)$row['name'], 'area_m2' => $area, 'area' => $area];
     }
 
     private function validUsageTypeIds(array $ids): array
@@ -589,16 +578,16 @@ SQL);
              ORDER BY lut.display_order ASC, lut.name ASC',
             $params
         );
-        return array_map(fn($row) => ['label' => $row['label'], 'value' => $this->fromM2((float)$row['value_m2'], $unit)], $rows);
+        return array_map(fn($row) => ['label' => $row['label'], 'value' => $this->decimalText($row['value_m2'] ?? 0)], $rows);
     }
 
     private function landFundChart(array $row, string $unit): array
     {
         return [
-            ['label' => 'Đất giao dài hạn', 'value' => $this->fromM2((float)($row['long_term_allocated_area_m2'] ?? 0), $unit)],
-            ['label' => 'Đất công ích', 'value' => $this->fromM2((float)($row['public_utility_area_m2'] ?? 0), $unit)],
-            ['label' => 'Đất thuê', 'value' => $this->fromM2((float)($row['leased_area_m2'] ?? 0), $unit)],
-            ['label' => 'Đất chuyển đổi', 'value' => $this->fromM2((float)($row['converted_area_m2'] ?? 0), $unit)],
+            ['label' => 'Đất giao dài hạn', 'value' => $this->decimalText($row['long_term_allocated_area_m2'] ?? 0)],
+            ['label' => 'Đất công ích', 'value' => $this->decimalText($row['public_utility_area_m2'] ?? 0)],
+            ['label' => 'Đất thuê', 'value' => $this->decimalText($row['leased_area_m2'] ?? 0)],
+            ['label' => 'Đất chuyển đổi', 'value' => $this->decimalText($row['converted_area_m2'] ?? 0)],
         ];
     }
 
@@ -648,19 +637,21 @@ SQL);
 
     private function displayUnit(array $filters): string
     {
-        return $this->validUnit((string)($filters['unit'] ?? $filters['display_unit'] ?? $filters['displayUnit'] ?? $this->settings()['default_unit']));
+        return 'mau';
     }
 
     private function validUnit(string $unit): string
     {
-        return isset(self::UNITS[$unit]) ? $unit : 'mau';
+        return 'mau';
     }
 
-    private function toM2(mixed $value, string $unit): float
+    private function areaDecimal(mixed $value): string
     {
-        $number = (float)str_replace(',', '.', (string)$value);
-        if ($number < 0) throw new \RuntimeException('Diện tích không được âm');
-        return round($number * self::UNITS[$this->validUnit($unit)]['factor'], 4);
+        $text = trim(str_replace(',', '.', (string)$value));
+        if ($text === '') $text = '0';
+        if (!preg_match('/^\d+(?:\.\d{1,4})?$/', $text)) throw new \RuntimeException('Diện tích không hợp lệ');
+        if ((float)$text < 0) throw new \RuntimeException('Diện tích không được âm');
+        return $this->decimalText($text);
     }
 
     private function assertUniqueZoneCodeYear(string $zoneCode, int $reportYear, ?int $id = null): void
@@ -675,21 +666,16 @@ SQL);
         if ($row) throw new \RuntimeException('Mã khu đã tồn tại trong năm thống kê này');
     }
 
-    private function fromM2(float $value, string $unit): float
-    {
-        return round($value / self::UNITS[$this->validUnit($unit)]['factor'], 4);
-    }
-
-    private function assertUsageAreasWithinTotal(array $items, string $unit, float $totalAreaM2): void
+    private function assertUsageAreasWithinTotal(array $items, string $totalArea): void
     {
         $validTypeIds = $this->validUsageTypeIds(array_map(fn($item) => (int)($item['usage_type_id'] ?? $item['usageTypeId'] ?? $item['id'] ?? 0), $items));
-        $usageTotalM2 = 0.0;
+        $usageTotal = 0.0;
         foreach ($items as $item) {
             $typeId = (int)($item['usage_type_id'] ?? $item['usageTypeId'] ?? $item['id'] ?? 0);
             if ($typeId <= 0) continue;
             if (!in_array($typeId, $validTypeIds, true)) throw new \RuntimeException('Loại sử dụng đất không hợp lệ');
-            $usageTotalM2 += $this->toM2($item['area'] ?? $item['value'] ?? 0, $unit);
-            if ($usageTotalM2 > $totalAreaM2 + 0.0001) {
+            $usageTotal += (float)$this->areaDecimal($item['area'] ?? $item['value'] ?? 0);
+            if ($usageTotal > (float)$totalArea + 0.0001) {
                 throw new \RuntimeException('Tổng diện tích cơ cấu sử dụng đất không được lớn hơn tổng diện tích khu');
             }
         }
@@ -697,7 +683,16 @@ SQL);
 
     private function areaText(float|int|string $value, string $unit): string
     {
-        return number_format((float)$value, 2, ',', '.') . ' ' . self::UNITS[$this->validUnit($unit)]['label'];
+        return $this->decimalText($value) . ' mẫu';
+    }
+
+    private function decimalText(mixed $value): string
+    {
+        $text = trim(str_replace(',', '.', (string)$value));
+        if ($text === '') return '0';
+        if (!is_numeric($text)) return '0';
+        $text = rtrim(rtrim($text, '0'), '.');
+        return $text === '' ? '0' : $text;
     }
 
     private function nullable(mixed $value): ?string
