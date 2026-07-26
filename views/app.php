@@ -806,6 +806,7 @@
   <script charset="utf-8" src="/assets/js/vehicles.min.js"></script>
   <script charset="utf-8" src="/assets/js/contributions.min.js"></script>
   <script charset="utf-8" src="/assets/js/agriculture.min.js"></script>
+  <script charset="utf-8" src="/assets/js/agricultural-land.min.js"></script>
   <script charset="utf-8" src="/assets/js/houses.min.js"></script>
   <script charset="utf-8" src="/assets/js/public-assets.min.js"></script>
   <script charset="utf-8" src="/assets/js/complaints.min.js"></script>

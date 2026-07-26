@@ -67,6 +67,7 @@ assert.match(view, /id="agriculturalLandUsageTypeModal"/);
 assert.match(view, /id="agriculturalLandUsageAreaFields"/);
 assert.match(view, /data-platform-action="agriculturalLand\.create"/);
 assert.match(view, /id="agriculturalLandListAddBtn"/);
+assert.match(view, /assets\/js\/agricultural-land\.min\.js/);
 assert.match(platform, /moduleKey: 'agriculturalLand'/);
 assert.match(platform, /permissionScope: 'agricultural_land'/);
 assert.match(platform, /key === 'dashboard' \|\| key === 'production'/);
