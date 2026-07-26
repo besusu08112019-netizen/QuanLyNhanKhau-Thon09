@@ -376,7 +376,7 @@ final class ReportController extends BaseController
     {
         $meta = is_array($report['meta'] ?? null) ? $report['meta'] : [];
         $lines = [];
-        foreach (['period_label', 'prepared_by', 'approved_by', 'report_date'] as $key) {
+        foreach (['period_label', 'business_note', 'prepared_by', 'approved_by', 'report_date'] as $key) {
             $value = trim((string) ($meta[$key] ?? ''));
             if ($value !== '') $lines[] = $value;
         }

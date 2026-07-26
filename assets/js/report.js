@@ -454,7 +454,7 @@
 
   function reportMeta(report) {
     const meta = report.meta || {};
-    const lines = ['period_label','report_date'].map(key => meta[key]).filter(Boolean);
+    const lines = ['period_label','business_note','report_date'].map(key => meta[key]).filter(Boolean);
     return lines.length ? '<div class="report-print-meta">' + lines.map(line => '<div>' + esc(line) + '</div>').join('') + '</div>' : '';
   }
 

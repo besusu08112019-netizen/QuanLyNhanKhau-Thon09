@@ -309,6 +309,9 @@ SQL);
                     ['label' => 'Đất giao dài hạn', 'value' => $metrics['long_term_allocated_area']],
                     ['label' => 'Đất công ích', 'value' => $metrics['public_utility_area']],
                 ],
+                'converted_area' => [
+                    ['label' => 'Diện tích đất giao đã chuyển đổi cơ cấu sản xuất', 'value' => $metrics['converted_area']],
+                ],
                 'by_zone' => array_map(fn($item) => ['label' => $item['zone_name'], 'value' => $this->decimalText($item['total_area_m2'] ?? 0)], $this->fetchAll("SELECT zone_name, total_area_m2 FROM agricultural_land_zones WHERE $where ORDER BY total_area_m2 DESC, zone_name ASC LIMIT 12", $params)),
             ],
         ];
@@ -331,7 +334,7 @@ SQL);
         };
         return [
             'title' => $title,
-            'columns' => array_merge(['Mã khu', 'Tên khu', 'Năm', 'Tổng diện tích', 'Đất giao dài hạn', 'Đất công ích', 'Đất thuê', 'Đất chuyển đổi', 'Trạng thái'], $usageColumns),
+            'columns' => array_merge(['Mã khu', 'Tên khu', 'Năm', 'Tổng diện tích', 'Đất giao dài hạn', 'Đất công ích', 'Đất thuê', 'Đất giao đã chuyển đổi', 'Trạng thái'], $usageColumns),
             'rows' => array_map(function ($row) use ($usageTypes) {
                 $base = [
                     $row['zone_code'], $row['zone_name'], $row['report_year'] ?: '',
@@ -350,7 +353,7 @@ SQL);
             }, $items),
             'totalRows' => count($items),
             'filters' => $filters,
-            'meta' => ['generated_at' => date('c'), 'unit' => $this->displayUnit($filters), 'source' => 'agricultural_land_zones'],
+            'meta' => ['generated_at' => date('c'), 'unit' => $this->displayUnit($filters), 'source' => 'agricultural_land_zones', 'business_note' => 'Đất chuyển đổi là diện tích nằm trong đất giao dài hạn, không phải quỹ đất phát sinh thêm.'],
         ];
     }
 
@@ -361,7 +364,7 @@ SQL);
         $rows = $this->fetchAll("SELECT report_year, " . $this->sumSelect() . " FROM agricultural_land_zones WHERE $where GROUP BY report_year ORDER BY report_year ASC", $params);
         return [
             'title' => 'So sánh quỹ đất nông nghiệp giữa các năm',
-            'columns' => ['Năm', 'Tổng diện tích', 'Đất giao dài hạn', 'Đất công ích', 'Đất thuê', 'Đất chuyển đổi'],
+            'columns' => ['Năm', 'Tổng diện tích', 'Đất giao dài hạn', 'Đất công ích', 'Đất thuê', 'Đất giao đã chuyển đổi'],
             'rows' => array_map(fn($row) => [
                 (string)$row['report_year'],
                 $this->areaText($row['total_area_m2'] ?? 0, $unit),
@@ -372,7 +375,7 @@ SQL);
             ], $rows),
             'totalRows' => count($rows),
             'filters' => $filters,
-            'meta' => ['generated_at' => date('c'), 'unit' => $unit, 'source' => 'agricultural_land_zones'],
+            'meta' => ['generated_at' => date('c'), 'unit' => $unit, 'source' => 'agricultural_land_zones', 'business_note' => 'Đất chuyển đổi là diện tích nằm trong đất giao dài hạn, không phải quỹ đất phát sinh thêm.'],
         ];
     }
 
@@ -408,6 +411,7 @@ SQL);
         ];
         foreach (self::AREA_FIELDS as $field) $params[$field . '_m2'] = $this->areaDecimal($data[$field] ?? $data[$this->camel($field)] ?? 0);
         if ((float)$params['total_area_m2'] <= 0) throw new \RuntimeException('Tổng diện tích phải lớn hơn 0');
+        $this->assertLandFundTotals($params);
         return $params;
     }
 
@@ -587,7 +591,6 @@ SQL);
             ['label' => 'Đất giao dài hạn', 'value' => $this->decimalText($row['long_term_allocated_area_m2'] ?? 0)],
             ['label' => 'Đất công ích', 'value' => $this->decimalText($row['public_utility_area_m2'] ?? 0)],
             ['label' => 'Đất thuê', 'value' => $this->decimalText($row['leased_area_m2'] ?? 0)],
-            ['label' => 'Đất chuyển đổi', 'value' => $this->decimalText($row['converted_area_m2'] ?? 0)],
         ];
     }
 
@@ -678,6 +681,22 @@ SQL);
             if ($usageTotal > (float)$totalArea + 0.0001) {
                 throw new \RuntimeException('Tổng diện tích cơ cấu sử dụng đất không được lớn hơn tổng diện tích khu');
             }
+        }
+    }
+
+    private function assertLandFundTotals(array $params): void
+    {
+        $total = (float)$params['total_area_m2'];
+        $longTerm = (float)$params['long_term_allocated_area_m2'];
+        $publicUtility = (float)$params['public_utility_area_m2'];
+        $leased = (float)$params['leased_area_m2'];
+        $converted = (float)$params['converted_area_m2'];
+        $expected = $longTerm + $publicUtility + $leased;
+        if (abs($total - $expected) > 0.0001) {
+            throw new \RuntimeException('Tổng diện tích phải bằng Đất giao dài hạn + Đất công ích + Đất thuê');
+        }
+        if ($converted > $longTerm + 0.0001) {
+            throw new \RuntimeException('Đất chuyển đổi không được lớn hơn diện tích đất giao dài hạn');
         }
     }
 
