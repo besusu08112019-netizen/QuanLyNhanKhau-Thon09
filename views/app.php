@@ -782,6 +782,7 @@
   <script charset="utf-8" src="/assets/js/ai-speech.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-intent.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-conversation.min.js"></script>
+  <script charset="utf-8" src="/assets/js/ai-ocr.min.js"></script>
   <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>
   <script charset="utf-8" src="/assets/js/csrf.min.js"></script>
   <script charset="utf-8" src="/assets/js/session.min.js"></script>

@@ -43,6 +43,7 @@ const assets = [
   ['assets/js/ai-speech.js', 'assets/js/ai-speech.min.js', compactJs],
   ['assets/js/ai-intent.js', 'assets/js/ai-intent.min.js', compactJs],
   ['assets/js/ai-conversation.js', 'assets/js/ai-conversation.min.js', compactJs],
+  ['assets/js/ai-ocr.js', 'assets/js/ai-ocr.min.js', compactJs],
   ['assets/js/mobile-component-library.js', 'assets/js/mobile-component-library.min.js', compactJs],
   ['assets/js/admin.utf8.js', 'assets/js/admin.utf8.min.js', compactJs],
   ['assets/js/admin-panel.js', 'assets/js/admin-panel.min.js', compactJs],

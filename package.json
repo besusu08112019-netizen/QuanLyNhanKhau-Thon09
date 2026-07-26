@@ -7,6 +7,8 @@
     "check:js": "node -e \"const fs=require('fs'),cp=require('child_process'),path=require('path');let failed=false;function walk(d){for(const f of fs.readdirSync(d)){const p=path.join(d,f);if(fs.statSync(p).isDirectory())walk(p);else if(p.endsWith('.js')){const r=cp.spawnSync(process.execPath,['--check',p],{stdio:'inherit'});if(r.status)failed=true;}}}walk('assets/js');process.exit(failed?1:0)\"",
     "test:ai-foundation": "php tests/ai-foundation-smoke.php",
     "test:ai-conversation": "php tests/ai-conversation-smoke.php && node tests/ai-conversation.test.js",
+    "test:ai-ocr": "node tests/ai-ocr.test.js",
+    "test:ai-epic9": "npm run test:ai-ocr",
     "test:ai-operation-center": "node tests/ai-operation-center.test.js",
     "test:ai-epic8": "npm run test:ai-conversation && npm run test:ai-operation-center",
     "test:ai-household-tool": "php tests/ai-household-tool-smoke.php",
