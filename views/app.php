@@ -19,7 +19,7 @@
   <link rel="apple-touch-startup-image" href="/assets/icons/splash-512.png">
   <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/fontawesome-local.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/app.min.css?v=20260726-ai-ui-2">
+  <link rel="stylesheet" href="/assets/css/app.min.css">
   <link rel="stylesheet" href="/assets/css/mobile-design-system-v2.min.css">
   <link rel="stylesheet" href="/assets/css/print.min.css" media="print">
   <script>
@@ -791,9 +791,9 @@
   <script charset="utf-8" src="/assets/js/i18n.min.js"></script>
   <script charset="utf-8" src="/assets/js/print-framework.min.js"></script>
   <script charset="utf-8" src="/assets/js/app-platform.min.js"></script>
-  <script charset="utf-8" src="/assets/js/ai-speech.min.js?v=20260726-ai-ui-2"></script>
-  <script charset="utf-8" src="/assets/js/ai-intent.min.js?v=20260726-ai-ui-2"></script>
-  <script charset="utf-8" src="/assets/js/ai-conversation.min.js?v=20260726-ai-ui-2"></script>
+  <script charset="utf-8" src="/assets/js/ai-speech.min.js"></script>
+  <script charset="utf-8" src="/assets/js/ai-intent.min.js"></script>
+  <script charset="utf-8" src="/assets/js/ai-conversation.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-ocr.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-tts.min.js"></script>
   <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>

@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'gis-esri-tilelayer-reset-20260719-1');
+define('APP_ASSET_VERSION', 'ai-ui-20260726-2');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 require_once BASE_PATH . '/config/env.php';
@@ -744,6 +744,11 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/i18n.min.js',
         'assets/js/print-framework.min.js',
         'assets/js/app-platform.min.js',
+        'assets/js/ai-speech.min.js',
+        'assets/js/ai-intent.min.js',
+        'assets/js/ai-conversation.min.js',
+        'assets/js/ai-ocr.min.js',
+        'assets/js/ai-tts.min.js',
         'assets/js/mobile-component-library.min.js',
         'assets/js/app.utf8.min.js',
         'assets/js/csrf.min.js',

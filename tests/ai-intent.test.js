@@ -5,6 +5,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const intent = fs.readFileSync(path.join(root, 'assets/js/ai-intent.js'), 'utf8');
 const appView = fs.readFileSync(path.join(root, 'views/app.php'), 'utf8');
+const indexPhp = fs.readFileSync(path.join(root, 'index.php'), 'utf8');
 const buildAssets = fs.readFileSync(path.join(root, 'tools/build-assets.js'), 'utf8');
 
 assert.match(intent, /TenantAiIntent/);
@@ -21,7 +22,8 @@ assert.doesNotMatch(intent, /data-platform-action/);
 assert.doesNotMatch(intent, /location\.(href|assign|replace)/);
 
 assert.match(appView, /id="aiIntentPreview"/);
-assert.match(appView, /src="\/assets\/js\/ai-intent\.min\.js\?v=20260726-ai-ui-2"/);
+assert.match(appView, /src="\/assets\/js\/ai-intent\.min\.js"/);
+assert.match(indexPhp, /'assets\/js\/ai-intent\.min\.js'/);
 assert.match(buildAssets, /assets\/js\/ai-intent\.js/);
 
 console.log('AI intent checks passed');

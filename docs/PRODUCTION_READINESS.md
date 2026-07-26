@@ -53,7 +53,8 @@ Ket qua scan tren cac file thay doi:
 
 - `npm.cmd run build:production` da sinh lai asset minified va `dist/production`.
 - `service-worker.js` da bump `PWA_VERSION` len `tenant-pwa-v20260726-ai-ui-2`.
-- `views/app.php` them query version cho `app.min.css` va cac AI JS de tranh browser/PWA dung asset cu.
+- `index.php` da bump `APP_ASSET_VERSION` len `ai-ui-20260726-2` va dua cac AI JS vao danh sach `versioned_asset`.
+- `views/app.php` dung duong dan asset sach; cache busting do `versioned_asset()` xu ly tap trung.
 - PWA/browser regression da pass voi test cache hien co.
 - UI AI khong them polling, worker rieng hoac cache runtime moi.
 - Khi nguoi dung khong mo AI, chi co them markup/button va listener nhe tren shell.

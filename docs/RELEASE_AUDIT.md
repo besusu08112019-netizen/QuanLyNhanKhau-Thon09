@@ -57,7 +57,7 @@ Da kiem tra:
 
 - Asset AI duoc minify lai bang `tools/build-assets.js`.
 - Production artifact duoc build va validate thanh cong.
-- PWA cache version va asset query version da duoc tang de nguoi dung nhan UI AI moi sau deploy.
+- PWA cache version va `APP_ASSET_VERSION` da duoc tang; cac AI JS duoc dua vao `versioned_asset()` de nguoi dung nhan UI AI moi sau deploy.
 - UI khong them polling, interval nen khong tao tai nen khi AI khong duoc mo.
 - Floating button/panel dung CSS fixed responsive, khong chen vao renderer cua cac module.
 

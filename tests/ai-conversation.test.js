@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, '..');
 const conversation = fs.readFileSync(path.join(root, 'assets/js/ai-conversation.js'), 'utf8');
 const appCss = fs.readFileSync(path.join(root, 'assets/css/app.css'), 'utf8');
 const appView = fs.readFileSync(path.join(root, 'views/app.php'), 'utf8');
+const indexPhp = fs.readFileSync(path.join(root, 'index.php'), 'utf8');
 const buildAssets = fs.readFileSync(path.join(root, 'tools/build-assets.js'), 'utf8');
 
 assert.match(conversation, /TenantAiConversation/);
@@ -44,7 +45,8 @@ assert.doesNotMatch(conversation, /location\.(href|assign|replace)/);
 
 assert.match(appView, /id="aiConversationLog"/);
 assert.match(appView, /id="aiConversationClearBtn"/);
-assert.match(appView, /src="\/assets\/js\/ai-conversation\.min\.js\?v=20260726-ai-ui-2"/);
+assert.match(appView, /src="\/assets\/js\/ai-conversation\.min\.js"/);
+assert.match(indexPhp, /'assets\/js\/ai-conversation\.min\.js'/);
 assert.match(appView, /id="aiAskBtn"/);
 assert.match(appCss, /\.ai-result-preview/);
 assert.match(appCss, /\.ai-source-line/);
