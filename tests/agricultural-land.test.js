@@ -11,6 +11,7 @@ const routes = read('index.php');
 const view = read('views/app.php');
 const platform = read('assets/js/app-platform.js');
 const legacyApp = read('assets/js/app.utf8.min.js');
+const navigationPatches = read('assets/js/view-inline-patches.js');
 const reportController = read('app/Controllers/ReportController.php');
 const reportModel = read('app/Models/Report.php');
 const migration = read('database/migrations/20260726_090000_create_agricultural_land_zones.sql');
@@ -60,6 +61,7 @@ assert.match(platform, /key === 'dashboard' \|\| key === 'production'/);
 assert.match(legacyApp, /agriculturalLand:\s*'agricultural_land'/);
 assert.match(legacyApp, /'agricultural_land','agriculture'/);
 assert.match(legacyApp, /module === 'agricultural_land' && action === 'read'/);
+assert.match(navigationPatches, /el\.querySelector&&el\.querySelector\('button, \[data-platform-action\], a\.btn, \.btn'\)/);
 
 assert.match(reportModel, /agricultural-land/);
 assert.match(reportModel, /agricultural-land-year-compare/);
