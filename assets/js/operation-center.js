@@ -234,9 +234,55 @@
     if (!question) { host.innerHTML = empty('Nhap cau hoi du lieu can tra cuu'); return; }
     loading(host, 'Dang truy van du lieu chi doc');
     try {
-      const data = await apiPost('/api/insights/ask', { question });
-      host.innerHTML = '<div class="operation-ai-answer"><strong>' + esc(data.answer || '') + '</strong><small>Che do: ' + esc(data.mode || 'READ_ONLY') + ' · Intent: ' + esc(data.intent || '') + '</small>' + renderAiItems(data.items || []) + '</div>';
+      const data = normalizeAiAnswer(await apiPost('/api/ai/ask', { question }));
+      host.innerHTML = '<div class="operation-ai-answer"><strong>' + esc(data.answer || '') + '</strong><small>' + esc(sourceLabel(data)) + '</small>' + renderAiMetrics(data.metrics || {}) + renderAiItems(data.items || []) + '</div>';
     } catch (error) { widgetError(host, error); }
+  }
+
+  function normalizeAiAnswer(payload) {
+    const plan = payload.plan || {};
+    const result = payload.result || {};
+    const data = result.data || {};
+    const inner = data.data || data.item || data.items || data;
+    if (plan.tool === 'insight' && data.data) {
+      return {
+        mode: payload.mode || data.data.mode || 'READ_ONLY',
+        tool: plan.tool,
+        intent: data.data.intent || '',
+        answer: data.data.answer || '',
+        metrics: data.data.metrics || {},
+        items: data.data.items || []
+      };
+    }
+    if (plan.tool === 'statistics' && plan.input && plan.input.action === 'counts') {
+      return { mode: payload.mode || 'READ_ONLY', tool: plan.tool, intent: plan.reason || '', answer: 'Tong so: ' + num(inner.total_households) + ' ho, ' + num(inner.total_citizens) + ' nhan khau.', metrics: inner, items: [] };
+    }
+    if (plan.tool === 'statistics' && plan.input && plan.input.action === 'health_insurance') {
+      return { mode: payload.mode || 'READ_ONLY', tool: plan.tool, intent: plan.reason || '', answer: 'BHYT: ' + num(inner.insured) + '/' + num(inner.total) + ' nhan khau, ty le ' + esc(inner.coverage_percent || 0) + '%.', metrics: inner, items: [] };
+    }
+    if (plan.tool === 'household' && data.item) {
+      return { mode: payload.mode || 'READ_ONLY', tool: plan.tool, intent: plan.reason || '', answer: 'Da tim thay ho ' + (data.item.household_code || '') + '.', metrics: {}, items: [data.item] };
+    }
+    if (plan.tool === 'resident' && data.item) {
+      return { mode: payload.mode || 'READ_ONLY', tool: plan.tool, intent: plan.reason || '', answer: 'Da tim thay nhan khau ' + (data.item.full_name || data.item.identity_number || '') + '.', metrics: {}, items: [data.item] };
+    }
+    if (payload.status === 'needs_clarification') {
+      return { mode: payload.mode || 'READ_ONLY', tool: '', intent: '', answer: payload.prompt || 'Can bo sung thong tin.', metrics: {}, items: [] };
+    }
+    return { mode: payload.mode || 'READ_ONLY', tool: plan.tool || '', intent: plan.reason || '', answer: 'Da tra cuu xong du lieu.', metrics: {}, items: Array.isArray(data.items) ? data.items : [] };
+  }
+
+  function sourceLabel(data) {
+    const parts = ['Che do: ' + (data.mode || 'READ_ONLY')];
+    if (data.tool) parts.push('Nguon: ' + data.tool);
+    if (data.intent) parts.push('Intent: ' + data.intent);
+    return parts.join(' - ');
+  }
+
+  function renderAiMetrics(metrics) {
+    const keys = Object.keys(metrics || {}).slice(0, 6);
+    if (!keys.length) return '';
+    return '<div class="operation-metric-grid">' + keys.map(key => metric(key.replace(/_/g, ' '), metrics[key])).join('') + '</div>';
   }
 
   function renderAiItems(items) {

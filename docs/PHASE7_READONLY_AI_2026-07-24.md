@@ -17,7 +17,8 @@
 
 ## API
 
-- `POST /api/insights/ask`
+- Legacy: `POST /api/insights/ask`
+- Current orchestration endpoint: `POST /api/ai/ask`
 
 Request:
 
@@ -25,7 +26,8 @@ Request:
 { "question": "Co bao nhieu phan anh chua xu ly?" }
 ```
 
-Response includes `mode: READ_ONLY`, `intent`, a textual answer, metrics, and up to 20 sample rows.
+Legacy response includes `mode: READ_ONLY`, `intent`, a textual answer, metrics, and up to 20 sample rows.
+Current orchestration response wraps the same read-only answer under `plan` and `result`, so the UI can show the source tool/action without exposing SQL.
 
 ## Security
 
@@ -38,3 +40,4 @@ Response includes `mode: READ_ONLY`, `intent`, a textual answer, metrics, and up
 
 - Added a `Tro ly du lieu chi doc` panel inside Operation Center.
 - Includes example questions and a compact result table.
+- Operation Center and the AI conversation panel now use `/api/ai/ask` for a shared read-only assistant flow.

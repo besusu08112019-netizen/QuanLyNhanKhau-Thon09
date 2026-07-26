@@ -127,6 +127,7 @@
           <div class="ai-speech-actions">
             <button id="aiConversationClearBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-comments"></i> X&oacute;a h&#7897;i tho&#7841;i</button>
             <button id="aiSpeechClearBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-eraser"></i> X&oacute;a</button>
+            <button id="aiAskBtn" class="btn btn-primary btn-sm" type="button" title="G&#7917;i c&acirc;u h&#7887;i"><i class="fa-solid fa-paper-plane"></i></button>
             <button id="aiSpeechMicBtn" class="btn btn-success btn-sm ai-speech-mic" type="button" aria-pressed="false"><i class="fa-solid fa-microphone"></i> <span>B&#7855;t &#273;&#7847;u nghe</span></button>
           </div>
         </div>
