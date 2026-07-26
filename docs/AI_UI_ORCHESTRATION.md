@@ -6,15 +6,19 @@ Epic 8 noi panel nhap giong noi/hoi thoai vao endpoint orchestration read-only c
 
 Thanh phan thay doi:
 
-- `views/app.php`: them nut gui cau hoi `aiAskBtn`.
-- `assets/js/ai-conversation.js`: goi `POST /api/ai/ask`, hien cau tra loi trong conversation log, phat event `tenant:ai-answer`.
+- `views/app.php`: hien nut `Tro ly AI` tren topbar, nut micro noi, cua so hoi thoai AI, nut gui cau hoi `aiAskBtn`, nut thu nho/dong/xoa lich su.
+- `assets/js/ai-speech.js`: dieu khien panel AI, micro noi, trang thai nghe, thu nho/dong panel va phat transcript qua event noi bo.
+- `assets/js/ai-conversation.js`: goi `POST /api/ai/ask`, hien cau tra loi trong conversation log, phat event `tenant:ai-answer`, cap nhat trang thai dang xu ly/dang tra loi.
 - `assets/js/ai-conversation.min.js`: build tu source.
 - `assets/js/operation-center.js`: chuyen hoi dap AI cua trung tam dieu hanh sang `POST /api/ai/ask` va normalize ket qua tool.
-- `assets/css/app.css`: style preview ket qua co cau truc trong panel hoi thoai.
+- `assets/css/app.css`: style topbar AI button, floating mic, panel hoi thoai responsive va preview ket qua co cau truc.
 
 ## Luong hoat dong
 
 - Nguoi dung nhap cau hoi va bam nut gui.
+- Nguoi dung bam `Tro ly AI` de mo cua so hoi thoai hoac bam micro noi de mo va bat dau nghe.
+- Panel ho tro thu nho, dong, xoa lich su hoi thoai va xoa noi dung nhap.
+- Trang thai UI gom san sang, dang nghe, dang xu ly va dang tra loi.
 - Khi speech transcript final duoc nhan dien intent du thong tin, UI tu goi backend mot lan.
 - Neu intent can bo sung thong tin, UI van hien cau hoi clarification cuc bo.
 - Ket qua backend duoc chuyen thanh cau tra loi ngan gon trong log; rieng insight dung truc tiep truong `answer`.
@@ -31,6 +35,8 @@ Thanh phan thay doi:
 - UI chi goi `/api/ai/ask`, endpoint nay van enforce read-only orchestration va RBAC.
 - UI hien nguon tool/action tu response orchestration, khong hien SQL hay chi tiet noi bo.
 - Khong dung `XMLHttpRequest`, khong dung navigation action, khong doi `location`.
+- Floating mic chi kich hoat Web Speech Recognition phia browser; moi truy van du lieu van di qua AI Foundation endpoint va permission hien co.
+- `Permissions-Policy` cho phep `microphone=(self)` de nut micro hoat dong tren chinh ung dung, khong mo microphone cho third-party origin.
 
 ## Kiem thu
 

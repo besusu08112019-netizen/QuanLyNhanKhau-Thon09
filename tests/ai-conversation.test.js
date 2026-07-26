@@ -28,6 +28,8 @@ assert.match(conversation, /metric /);
 assert.match(conversation, /setAskBusy/);
 assert.match(conversation, /aria-busy/);
 assert.match(conversation, /fa-spinner fa-spin/);
+assert.match(conversation, /Đang xử lý/);
+assert.match(conversation, /Đang trả lời/);
 assert.match(conversation, /#aiAskBtn/);
 assert.match(conversation, /userAlreadyAdded/);
 assert.match(conversation, /localStorage/);

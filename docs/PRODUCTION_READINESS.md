@@ -6,98 +6,93 @@ Ket luan: PASS
 
 ## 1. Pham vi
 
-Review duoc thuc hien truoc commit cho toan bo source va production artifact hien tai, bao gom cac thay doi AI Epic 1-12 va cac gate release lien quan.
+Review nay ap dung cho thay doi AI UI tren shell chinh:
 
-## 2. Van de phat hien va da sua
+- Nut `Tro ly AI` tren topbar.
+- Nut micro noi.
+- Cua so hoi thoai AI co nhap text, nhap giong noi, thu nho, dong va xoa lich su.
+- Trang thai san sang, dang nghe, dang xu ly va dang tra loi.
+- Ket noi endpoint AI Foundation hien co, khong viet lai backend va khong sua module nghiep vu.
 
-- Xoa `console.log('popupopen')` khoi `assets/js/gis-household-location.js`.
-- Thay fallback `console.log` bang no-op trong `assets/js/household-business.js` va `assets/js/vehicles.js`.
-- Build lai cac file minified lien quan.
-- Doi comment `hack` trong `assets/vendor/leaflet/leaflet.css` thanh comment trung tinh, khong doi hanh vi CSS.
-- Tang `tools/validate-production-artifact.js` de chan `console.log`, `debugger`, `TODO`, `FIXME`, `HACK` trong production artifact.
-- Xoa cac log/debug runtime local khong tracked: `debug.log`, `tmp-bottom-nav-php.err.log`, `tmp-bottom-nav-php.log`, `storage/api-errors.log`, `.codex-npm-cache/_logs`, `.tmp/.env.backup.fresh-install`.
+## 2. File thay doi
 
-## 3. Debug, TODO, mock va test artifacts
+- `views/app.php`
+- `index.php`
+- `.htaccess`
+- `assets/css/app.css`
+- `assets/css/app.min.css`
+- `assets/js/ai-speech.js`
+- `assets/js/ai-speech.min.js`
+- `assets/js/ai-conversation.js`
+- `assets/js/ai-conversation.min.js`
+- `tests/ai-speech.test.js`
+- `tests/ai-conversation.test.js`
+- `tests/navigation-cleanup.test.js`
+- `docs/AI_UI_ORCHESTRATION.md`
+- `docs/PRODUCTION_READINESS.md`
+- `docs/RELEASE_AUDIT.md`
 
-Ket qua sau khi sua:
+## 3. Debug, TODO va test artifacts
 
-- Production artifact khong con `console.log(...)`.
-- Production artifact khong con `debugger;`.
-- Production artifact khong con marker `TODO`, `FIXME`, `HACK`.
-- Production artifact khong co `.env*`, `.log`, `.bak`, `.sql`, `.map`, `*.spec.js`, `*.test.js`.
-- Thu muc `tests`, `docs`, `tools`, `database`, `node_modules`, `vendor` khong duoc copy vao `dist/production`.
-- Cac file trong `sample-data` la template import duoc app yeu cau va validator kiem tra bat buoc, khong phai mock runtime/test account.
+Ket qua scan tren cac file thay doi:
 
-## 4. API test va tai khoan test
+- Khong co `console.log` trong source runtime moi.
+- Khong co `debugger`.
+- Khong co `TODO`, `FIXME`, `HACK`.
+- Khong them mock data, test account, debug endpoint hoac API test vao runtime.
+- Cac dong `console.log` con lai chi nam trong test runner output cua cac file test.
 
-- Khong co API test file trong production artifact.
-- Khong co `tests/` trong production artifact.
-- Khong phat hien tai khoan test duoc dua vao artifact.
-- `database/seed.sql` va migration SQL khong duoc dua vao production artifact.
+## 4. Development config va .env
 
-## 5. Development config va .env
+- Khong thay doi `.env`, `.env.*`, `.cpanel.yml` hoac cau hinh deployment.
+- Thay doi UI khong them bien moi va khong can secret moi.
+- Production artifact validator da pass, bao gom cac rule loai tru file cam.
 
-- `.env` local van ton tai trong workspace de phuc vu may hien tai, nhung khong tracked boi Git va khong duoc dua vao `dist/production`.
-- `.env.example` la template cau hinh, duoc giu lai trong source nhung khong vao production artifact.
-- Validator production artifact chan `.env`, `.env.*`, `.deploy.env`, log, backup va SQL dump.
-- Production artifact khong chua `package.json`, `package-lock.json`, `composer.json`, `composer.lock`, `tests`, `tools`, `docs`, `node_modules`, `vendor`.
+## 5. Cache va PWA
 
-## 6. Cache va PWA
+- `npm.cmd run build:production` da sinh lai asset minified va `dist/production`.
+- PWA/browser regression da pass voi test cache hien co.
+- UI AI khong them polling, worker rieng hoac cache runtime moi.
+- Khi nguoi dung khong mo AI, chi co them markup/button va listener nhe tren shell.
 
-- `.htaccess` dat cache dai han cho asset tinh: CSS, JS, image.
-- `.htaccess` dat `no-store, no-cache, must-revalidate` cho API, service worker va manifest.
-- `service-worker.js` precache cac asset AI/runtime can thiet theo `PWA_VERSION`.
-- Playwright Leaflet/PWA cache test doc version dong tu `service-worker.js`, khong hardcode version cu.
+## 6. CSP va security headers
 
-## 7. CSP va security headers
+- Khong them inline script moi.
+- Khong them external domain moi.
+- UI speech dung Web Speech Recognition tren browser.
+- UI conversation chi goi `/api/ai/ask` thong qua `window.api` neu co, fallback fetch van gui token/CSRF hien co.
+- `Permissions-Policy` duoc dieu chinh tu `microphone=()` sang `microphone=(self)` trong `index.php` va `.htaccess` de Web Speech hoat dong tren cung origin.
+- Khong thay doi CSP hoac external security headers khac.
 
-Da xac nhan `index.php` va `.htaccess` co cac header chinh:
+## 7. AI permission review
 
-- `Content-Security-Policy`.
-- `X-Content-Type-Options: nosniff`.
-- `X-Frame-Options: SAMEORIGIN`.
-- `Referrer-Policy: same-origin`.
-- `Permissions-Policy`.
-- `Strict-Transport-Security` khi chay HTTPS.
+- `assets/js/ai-speech.js` khong goi network, chi phat event transcript noi bo.
+- `assets/js/ai-conversation.js` chi goi `/api/ai/ask`.
+- Backend AI Foundation van la noi enforce permission va read-only orchestration.
+- UI khong truy cap database truc tiep va khong bo qua RBAC.
+- `localStorage` chi luu lich su hoi thoai ngan gon phia client, toi da 20 message.
 
-Luu y: CSP hien van can `'unsafe-inline'` cho script/style do ung dung hien tai con inline handler/style. Day la rui ro duoc chap nhan tam thoi, khong phai loi moi cua AI.
+## 8. Kiem thu da chay
 
-## 8. Quyen file va thu muc runtime
-
-- `.htaccess` root chan truy cap truc tiep vao `ai`, `app`, `config`, `database`, `docs`, `storage`, `backups`, `tests`, `tools`, `sample-data`, `vendor`, `node_modules`.
-- `storage/.htaccess` co `Require all denied`.
-- `uploads/.htaccess` chan directory listing va deny script executable extensions.
-- Production artifact chi tao runtime dirs can thiet: `storage/cache` va `uploads`.
-
-## 9. AI permission review
-
-Da xac nhan:
-
-- `/api/ai/tools` yeu cau `dashboard:read`.
-- `/api/ai/tools/execute` yeu cau permission cua tung tool qua `PermissionAwareAiToolInterface`.
-- `/api/ai/ask` tao read-only permission context tu permission hien co cua user.
-- `ToolExecutor` tra ve `permission_denied` khi permission checker hoac source permission cua tool tu choi.
-- `InsightTool` khong bo qua permission cua nguon du lieu; neu thieu module source thi tra ve `permission_denied`.
-- AI provider mac dinh disabled trong `ai/config/ai.php`; `external_api` mac dinh `false`.
-- Cac tool AI hien tai read-only; OCR/Speech/TTS chay client-side va khong tu dong ghi database.
-
-## 10. Kiem thu da chay
-
+- `npm.cmd run build:assets` - PASS.
+- `npm.cmd run test:ai-speech` - PASS.
+- `npm.cmd run test:ai-conversation` - PASS.
+- `npm.cmd run test:navigation-cleanup` - PASS.
+- `npm.cmd run check:js` - PASS.
 - `npm.cmd run test:ai-epic12` - PASS.
 - `npm.cmd run test:browser` - PASS, 265 passed, 5 skipped.
-- `npm.cmd run validate:artifact` - PASS.
-- Quet `dist/production` cho debug/dev/test markers - PASS.
-- Node syntax checks trong gate `check:js` - PASS.
 
-## 11. Rui ro con lai
+## 9. Rui ro con lai
 
-- `.env` local con trong workspace nhung da ignored va khong vao artifact. Khong commit file nay.
-- CSP co `'unsafe-inline'` do rang buoc UI hien tai; nen lap epic hardening rieng de chuyen sang nonce/hash khi co thoi gian.
-- 5 Playwright tests dang skip theo dieu kien hien co, khong phai loi production readiness moi.
-- Test data trong source `tests/` va template trong `sample-data/` khong vao runtime test/API artifact; `sample-data` duoc giu nhu template import cho nguoi dung.
+- Trinh duyet khong ho tro Web Speech Recognition se disable micro, nhung van cho nhap text.
+- Viec cap quyen micro phu thuoc trinh duyet/HTTPS/PWA policy; header production da cho phep microphone trong same-origin.
+- CSP hien tai cua ung dung van chap nhan rang buoc san co; thay doi nay khong lam tang surface external.
+- 5 Playwright tests bi skip theo dieu kien hien co, khong phai loi moi cua AI UI.
 
-## 12. Ket luan
+## 10. Rollback
 
-PASS.
+Neu can rollback rieng thay doi AI UI, revert cac file trong muc file thay doi o tren. Backend AI Foundation khong bi thay doi.
 
-Khong con van de production readiness nghiem trong trong production artifact sau khi sua va chay lai gate. Co the de xuat commit sau khi nguoi quan tri xac nhan.
+## 11. Ket luan
+
+PASS. AI UI da san sang production theo pham vi thay doi hien tai.

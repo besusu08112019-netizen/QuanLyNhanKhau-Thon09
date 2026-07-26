@@ -39,8 +39,10 @@ const allowedClickListeners = new Map([
   ]],
   ['assets/js/ai-speech.js', [
     "toggle.addEventListener('click', openPanel);",
+    "floatingMic.addEventListener('click', openAndListen);",
     "mic.addEventListener('click', toggleListening);",
     "close.addEventListener('click', closePanel);",
+    "minimize.addEventListener('click', toggleMinimized);",
     "clear.addEventListener('click', function () {"
   ]],
   ['assets/js/ai-conversation.js', [

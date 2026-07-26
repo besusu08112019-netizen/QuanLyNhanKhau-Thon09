@@ -107,7 +107,7 @@
         </div>
         <div class="topbar-meta ms-auto">
           <span id="topbarClock" class="topbar-clock"><i class="fa-regular fa-calendar"></i> --/--/----</span>
-          <button id="aiSpeechToggleBtn" class="ai-speech-toggle" type="button" aria-label="Nh&#7853;p b&#7857;ng gi&#7885;ng n&oacute;i" aria-pressed="false" title="Nh&#7853;p b&#7857;ng gi&#7885;ng n&oacute;i"><i class="fa-solid fa-microphone"></i></button>
+          <button id="aiSpeechToggleBtn" class="ai-speech-toggle" type="button" aria-label="M&#7903; Tr&#7907; l&yacute; AI" aria-pressed="false" title="Tr&#7907; l&yacute; AI"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Tr&#7907; l&yacute; AI</span></button>
           <button id="notificationBtn" class="gov-notification-btn" type="button" aria-label="Thông báo"><i class="fa-solid fa-bell"></i><span>3</span></button>
           <span id="currentUser" class="topbar-user"></span>
           <button id="logoutBtn" class="btn btn-link btn-sm text-decoration-none px-0">Đăng xuất</button>
@@ -116,28 +116,34 @@
       <div id="loadingBar" class="progress rounded-0 d-none" style="height:3px"><div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div></div>
       <aside id="aiSpeechPanel" class="ai-speech-panel d-none" aria-hidden="true" aria-labelledby="aiSpeechTitle">
         <div class="ai-speech-head">
-          <h2 id="aiSpeechTitle">Nh&#7853;p gi&#7885;ng n&oacute;i</h2>
-          <button id="aiSpeechCloseBtn" class="ai-speech-icon-btn" type="button" aria-label="&#272;&oacute;ng"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <textarea id="aiSpeechText" class="form-control ai-speech-text" rows="4" placeholder="V&#259;n b&#7843;n t&#7915; gi&#7885;ng n&oacute;i s&#7869; hi&#7875;n th&#7883; &#7903; &#273;&acirc;y"></textarea>
-        <div class="ai-intent-preview" id="aiIntentPreview" aria-live="polite">Ch&#432;a nh&#7853;n di&#7879;n &yacute; &#273;&#7883;nh.</div>
-        <div id="aiConversationLog" class="ai-conversation-log" aria-live="polite"></div>
-        <div class="ai-speech-status-row">
-          <span id="aiSpeechStatus" class="ai-speech-status">S&#7861;n s&agrave;ng nghe.</span>
-          <div class="ai-speech-actions">
-            <button id="aiConversationClearBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-comments"></i> X&oacute;a h&#7897;i tho&#7841;i</button>
-            <button id="aiSpeechClearBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-eraser"></i> X&oacute;a</button>
-            <button id="aiAskBtn" class="btn btn-primary btn-sm" type="button" title="G&#7917;i c&acirc;u h&#7887;i"><i class="fa-solid fa-paper-plane"></i></button>
-            <button id="aiSpeechMicBtn" class="btn btn-success btn-sm ai-speech-mic" type="button" aria-pressed="false"><i class="fa-solid fa-microphone"></i> <span>B&#7855;t &#273;&#7847;u nghe</span></button>
+          <h2 id="aiSpeechTitle"><i class="fa-solid fa-wand-magic-sparkles"></i> Tr&#7907; l&yacute; AI</h2>
+          <div class="ai-speech-window-actions">
+            <button id="aiSpeechMinimizeBtn" class="ai-speech-icon-btn" type="button" aria-label="Thu nh&#7887;" title="Thu nh&#7887;"><i class="fa-solid fa-minus"></i></button>
+            <button id="aiSpeechCloseBtn" class="ai-speech-icon-btn" type="button" aria-label="&#272;&oacute;ng" title="&#272;&oacute;ng"><i class="fa-solid fa-xmark"></i></button>
           </div>
         </div>
-        <div class="ai-tts-controls" aria-label="Doc ket qua AI">
-          <button id="aiTtsToggleBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-pressed="false" title="Bat doc ket qua"><i class="fa-solid fa-volume-high"></i></button>
-          <button id="aiTtsStopBtn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Dung doc"><i class="fa-solid fa-volume-xmark"></i></button>
-          <label for="aiTtsRate">Toc do <span id="aiTtsRateValue">1.0x</span></label><input id="aiTtsRate" type="range" min="0.6" max="1.4" step="0.1" value="1">
-          <label for="aiTtsVolume">Am luong <span id="aiTtsVolumeValue">100%</span></label><input id="aiTtsVolume" type="range" min="0" max="1" step="0.1" value="1">
+        <div class="ai-speech-body">
+          <div id="aiConversationLog" class="ai-conversation-log" aria-live="polite"></div>
+          <div class="ai-intent-preview" id="aiIntentPreview" aria-live="polite">Ch&#432;a nh&#7853;n di&#7879;n &yacute; &#273;&#7883;nh.</div>
+          <textarea id="aiSpeechText" class="form-control ai-speech-text" rows="4" placeholder="Nh&#7853;p c&acirc;u h&#7887;i ho&#7863;c d&ugrave;ng micro &#273;&#7875; n&oacute;i v&#7899;i Tr&#7907; l&yacute; AI"></textarea>
+          <div class="ai-speech-status-row">
+            <span id="aiSpeechStatus" class="ai-speech-status">S&#7861;n s&agrave;ng.</span>
+            <div class="ai-speech-actions">
+              <button id="aiConversationClearBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-comments"></i> X&oacute;a h&#7897;i tho&#7841;i</button>
+              <button id="aiSpeechClearBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-eraser"></i> X&oacute;a</button>
+              <button id="aiAskBtn" class="btn btn-primary btn-sm" type="button" title="G&#7917;i c&acirc;u h&#7887;i"><i class="fa-solid fa-paper-plane"></i></button>
+              <button id="aiSpeechMicBtn" class="btn btn-success btn-sm ai-speech-mic" type="button" aria-pressed="false"><i class="fa-solid fa-microphone"></i> <span>B&#7855;t &#273;&#7847;u nghe</span></button>
+            </div>
+          </div>
+          <div class="ai-tts-controls" aria-label="Doc ket qua AI">
+            <button id="aiTtsToggleBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-pressed="false" title="Bat doc ket qua"><i class="fa-solid fa-volume-high"></i></button>
+            <button id="aiTtsStopBtn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Dung doc"><i class="fa-solid fa-volume-xmark"></i></button>
+            <label for="aiTtsRate">Toc do <span id="aiTtsRateValue">1.0x</span></label><input id="aiTtsRate" type="range" min="0.6" max="1.4" step="0.1" value="1">
+            <label for="aiTtsVolume">Am luong <span id="aiTtsVolumeValue">100%</span></label><input id="aiTtsVolume" type="range" min="0" max="1" step="0.1" value="1">
+          </div>
         </div>
       </aside>
+      <button id="aiFloatingMicBtn" class="ai-floating-mic" type="button" aria-label="M&#7903; Tr&#7907; l&yacute; AI b&#7857;ng gi&#7885;ng n&oacute;i" title="Micro AI"><i class="fa-solid fa-microphone"></i></button>
 
       <section id="dashboardScreen" class="screen active dashboard-overview-screen">
         <section class="dashboard-status-row"><div id="dashboardGeneratedAt" class="dashboard-sync-note">Đang cập nhật dữ liệu</div></section>
