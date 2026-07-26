@@ -1,8 +1,6 @@
 ---
-# cPanel Git Version Control deployment.
-# Change only DEPLOYPATH when deploying this shared source to another village site.
 deployment:
   tasks:
     - export DEPLOYPATH=/home/nhhon5mp/thon09.hongphongnb.com/
-    - if [ ! -d "$DEPLOYPATH" ]; then mkdir -p "$DEPLOYPATH"; fi
-    - rsync -rlptD --delete --exclude='.git/' --exclude='.github/' --exclude='.cpanel.yml' --exclude='.env' --exclude='.env.*' --exclude='node_modules/' --exclude='tests/' --exclude='test-results/' --exclude='playwright-report/' --exclude='backups/' --exclude='storage/logs/' --exclude='storage/cache/' --exclude='storage/sessions/' --exclude='storage/install-sessions/' --exclude='storage/install-locks/' --exclude='config/database.php' --exclude='config/database.local.php' --exclude='installed.lock' --exclude='uploads/.app_key' --include='uploads/' --include='uploads/.htaccess' --include='uploads/.gitkeep' --exclude='uploads/**' ./ "$DEPLOYPATH"
+    - /bin/mkdir -p $DEPLOYPATH
+    - /usr/bin/rsync -rlptD --delete --exclude=.git/ --exclude=.github/ --exclude=.cpanel.yml --exclude=.env --exclude=.env.* --exclude=node_modules/ --exclude=tests/ --exclude=test-results/ --exclude=playwright-report/ --exclude=backups/ --exclude=storage/logs/ --exclude=storage/cache/ --exclude=storage/sessions/ --exclude=storage/install-sessions/ --exclude=storage/install-locks/ --exclude=config/database.php --exclude=config/database.local.php --exclude=installed.lock --exclude=uploads/.app_key --include=uploads/ --include=uploads/.htaccess --include=uploads/.gitkeep --exclude=uploads/** ./ $DEPLOYPATH
