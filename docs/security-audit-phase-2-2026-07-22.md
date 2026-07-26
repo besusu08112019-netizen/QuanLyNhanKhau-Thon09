@@ -18,9 +18,7 @@ No Critical finding remains open in this phase.
 - Root cause: aggregate endpoints authorized only with broad `dashboard:read`, then queried and returned household, citizen, GIS, movement, file, and audit-derived data.
 - Affected files:
   - `app/Controllers/OperationCenterController.php`
-  - `app/Controllers/InsightController.php`
   - `app/Models/OperationCenter.php`
-  - `app/Models/SystemInsight.php`
 - Exploit path: a role with `dashboard:read` but without `citizen:read` or `household:read` could call `/api/operation-center/search`, `/api/operation-center/quick-profile`, or `/api/insights/search` and receive citizen identity, phone, address, member, GPS, file metadata, or timeline data.
 - Impact: broken access control / IDOR-style data exposure across personal-data modules.
 - Fix applied: every affected endpoint now requires the relevant source module permission before querying. Quick profile additionally requires `file:read` when returning file metadata, and timeline requires `logs:read` plus `movement:read`.

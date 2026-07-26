@@ -14,7 +14,6 @@ Tất cả module mới phải tương thích với dữ liệu, kiến trúc, p
 - Tái sử dụng Service, Model, API, phân quyền và audit log hiện có.
 - Không tạo mã trùng lặp khi có thể mở rộng abstraction hiện hữu.
 - Mọi API mới phải có authentication, authorization, permission check và audit phù hợp.
-- AI chỉ hỗ trợ tìm kiếm, phân tích và gợi ý; không tự động thay đổi dữ liệu.
 - Mọi tính năng mới phải có kiểm thử trước khi hợp nhất.
 
 ## Phase 1 - Cổng dịch vụ công cho người dân
@@ -64,26 +63,6 @@ Xây dựng ứng dụng Android và iOS hỗ trợ cán bộ làm việc trên 
 - Offline phải có hàng đợi đồng bộ, phát hiện xung đột và nhật ký đồng bộ.
 - Không lưu token hoặc dữ liệu nhạy cảm không mã hóa trên thiết bị.
 
-## Phase 3 - AI hỗ trợ quản lý
-
-### Mục tiêu
-
-Tích hợp AI để hỗ trợ cán bộ trong tìm kiếm, phân tích, tổng hợp và phát hiện bất thường.
-
-### Chức năng
-
-- Tìm kiếm bằng ngôn ngữ tự nhiên.
-- Tóm tắt hồ sơ công dân.
-- Phát hiện dữ liệu bất thường.
-- Gợi ý hồ sơ còn thiếu.
-- Gợi ý báo cáo phù hợp.
-- Trả lời câu hỏi về số liệu thống kê.
-
-### Ràng buộc an toàn
-
-- AI không tự động thêm, sửa, xóa, phê duyệt hoặc thay đổi dữ liệu.
-- Câu trả lời AI phải có nguồn dữ liệu hoặc truy vấn tham chiếu khi phù hợp.
-- Không gửi dữ liệu nhạy cảm ra dịch vụ bên ngoài nếu chưa có cấu hình và phê duyệt triển khai.
 
 ## Phase 4 - Tích hợp bản đồ nâng cao
 

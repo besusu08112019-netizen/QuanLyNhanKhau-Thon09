@@ -1,6 +1,20 @@
-﻿# Changelog
+# Changelog
 
 All notable production release changes are tracked here.
+
+## v1.1.1 - 2026-07-26
+
+### Release scope
+- Removed the AI assistant, AI-only backend, AI UI, AI frontend assets, AI tests, and AI documentation.
+- Kept existing administrative management modules unchanged.
+
+### Production hardening
+- Removed AI API routes and AI production artifact entries.
+- Removed AI assets from service worker precache and centralized asset versioning.
+- Kept database schema unchanged; no migration rollback is included in this release.
+
+### Verification
+- Pending final build, regression, security review, and release audit in `docs/AI_REMOVAL_REPORT.md`.
 
 ## v1.1.0 - 2026-07-26
 
@@ -20,10 +34,8 @@ All notable production release changes are tracked here.
 - Revalidated PWA/cache behavior, CSP/security headers, runtime directory protection, and production artifact contents.
 
 ### Verification
-- `npm.cmd run test:ai-epic12`
 - `npm.cmd run test:browser`
 - `npm.cmd run validate:artifact`
-- `npm.cmd run test:ai-release`
 
 ## v1.0.1 - 2026-07-22
 

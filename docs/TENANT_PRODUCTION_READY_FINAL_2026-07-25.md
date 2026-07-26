@@ -23,7 +23,6 @@ Da bo sung/hoan thien tenant filter va tenant insert cho cac module:
 - `Livestock`
 - `PhotoGallery`
 - `PublicAsset`
-- `SystemInsight`
 - `Vehicle`
 
 Noi dung chinh:
@@ -36,7 +35,6 @@ Noi dung chinh:
 - `Vehicle`: tenant hoa danh sach, chi tiet, theo ho, search household/citizen, insert/update/delete; bo prefix `PT09`.
 - `PhotoGallery`: tenant hoa album/item, catalog, tag, CRUD, download path; bo prefix `ALB09`.
 - `PublicAsset`: tenant hoa public asset, inventory item, maintenance schedule, photo lookup; bo prefix `CT09`.
-- `SystemInsight`: tenant hoa global search, smart alert, unpaid contribution, complaint, elderly citizen, maintenance, livestock, movement insight.
 - `HouseholdContribution`: bo sung `village_id` cho cac bang dong gop va tenant hoa cac helper/category/campaign/tracking/sync chinh.
 
 ### Storage/session/config da co nen tang
@@ -113,7 +111,6 @@ Danh sach file dang thay doi theo `git diff --name-only`:
 - `app/Models/PopulationStatistics.php`
 - `app/Models/PublicAsset.php`
 - `app/Models/SystemAdmin.php`
-- `app/Models/SystemInsight.php`
 - `app/Models/SystemSetting.php`
 - `app/Models/User.php`
 - `app/Models/Vehicle.php`

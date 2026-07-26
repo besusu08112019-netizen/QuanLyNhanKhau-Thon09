@@ -23,7 +23,6 @@ const includeFiles = [
 ];
 
 const includeDirs = [
-  'ai',
   'app',
   'assets',
   'sample-data',

@@ -53,8 +53,6 @@ if (!fs.existsSync(artifact)) {
   for (const rel of [
     'index.php',
     'api/index.php',
-    'ai/bootstrap.php',
-    'ai/config/ai.php',
     'app/Core/Router.php',
     'app/Core/Database.php',
     'app/Controllers/AuthController.php',

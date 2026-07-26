@@ -1,102 +1,45 @@
-# Production Readiness Review
+# Production Readiness - AI Removal
 
-Ngay review: 2026-07-26
+Date: 2026-07-26
 
-Ket luan: PASS
+## Scope
 
-## 1. Pham vi
+This review covers removal of the AI assistant layer from the application shell, API routes, production assets, build artifact, and tests.
 
-Review nay ap dung cho thay doi AI UI tren shell chinh:
+Business modules are intentionally kept unchanged: dashboard, households, citizens, temporary residence/absence, movements, GIS, public works, housing, business, agriculture, livestock, vehicles, contributions, reports, documents, operation center, authentication, authorization, import/export, backup, and restore.
 
-- Nut `Tro ly AI` tren topbar.
-- Nut micro noi.
-- Cua so hoi thoai AI co nhap text, nhap giong noi, thu nho, dong va xoa lich su.
-- Trang thai san sang, dang nghe, dang xu ly va dang tra loi.
-- Ket noi endpoint AI Foundation hien co, khong viet lai backend va khong sua module nghiep vu.
+## Source Review
 
-## 2. File thay doi
+- AI backend directory removed.
+- AI API controller and routes removed.
+- AI UI markup, floating microphone, chat panel, OCR/TTS controls, and scripts removed from `views/app.php`.
+- AI frontend assets removed from `assets/js`.
+- AI styles removed from `assets/css/app.css`.
+- Service worker and asset versioning no longer reference AI assets.
+- Production artifact no longer includes an AI directory.
 
-- `views/app.php`
-- `index.php`
-- `.htaccess`
-- `assets/css/app.css`
-- `assets/css/app.min.css`
-- `assets/js/ai-speech.js`
-- `assets/js/ai-speech.min.js`
-- `assets/js/ai-conversation.js`
-- `assets/js/ai-conversation.min.js`
-- `tests/ai-speech.test.js`
-- `tests/ai-conversation.test.js`
-- `tests/navigation-cleanup.test.js`
-- `service-worker.js`
-- `docs/AI_UI_ORCHESTRATION.md`
-- `docs/PRODUCTION_READINESS.md`
-- `docs/RELEASE_AUDIT.md`
+## Security
 
-## 3. Debug, TODO va test artifacts
+- No AI route remains in `index.php`.
+- No AI permission bypass exists because the AI entry points have been removed.
+- Existing authentication, authorization, CSRF, upload, backup, restore, and audit-log flows are unchanged.
+- Database schema is unchanged.
 
-Ket qua scan tren cac file thay doi:
+## Production Artifact
 
-- Khong co `console.log` trong source runtime moi.
-- Khong co `debugger`.
-- Khong co `TODO`, `FIXME`, `HACK`.
-- Khong them mock data, test account, debug endpoint hoac API test vao runtime.
-- Cac dong `console.log` con lai chi nam trong test runner output cua cac file test.
+- Build process excludes AI assets and AI source.
+- Runtime data exclusions remain unchanged.
+- `uploads`, `.env`, production database config, and runtime storage are not modified by this removal.
 
-## 4. Development config va .env
-
-- Khong thay doi `.env`, `.env.*`, `.cpanel.yml` hoac cau hinh deployment.
-- Thay doi UI khong them bien moi va khong can secret moi.
-- Production artifact validator da pass, bao gom cac rule loai tru file cam.
-
-## 5. Cache va PWA
-
-- `npm.cmd run build:production` da sinh lai asset minified va `dist/production`.
-- `service-worker.js` da bump `PWA_VERSION` len `tenant-pwa-v20260726-ai-ui-2`.
-- `index.php` da bump `APP_ASSET_VERSION` len `ai-ui-20260726-2` va dua cac AI JS vao danh sach `versioned_asset`.
-- `views/app.php` dung duong dan asset sach; cache busting do `versioned_asset()` xu ly tap trung.
-- PWA/browser regression da pass voi test cache hien co.
-- UI AI khong them polling, worker rieng hoac cache runtime moi.
-- Khi nguoi dung khong mo AI, chi co them markup/button va listener nhe tren shell.
-
-## 6. CSP va security headers
-
-- Khong them inline script moi.
-- Khong them external domain moi.
-- UI speech dung Web Speech Recognition tren browser.
-- UI conversation chi goi `/api/ai/ask` thong qua `window.api` neu co, fallback fetch van gui token/CSRF hien co.
-- `Permissions-Policy` duoc dieu chinh tu `microphone=()` sang `microphone=(self)` trong `index.php` va `.htaccess` de Web Speech hoat dong tren cung origin.
-- Khong thay doi CSP hoac external security headers khac.
-
-## 7. AI permission review
-
-- `assets/js/ai-speech.js` khong goi network, chi phat event transcript noi bo.
-- `assets/js/ai-conversation.js` chi goi `/api/ai/ask`.
-- Backend AI Foundation van la noi enforce permission va read-only orchestration.
-- UI khong truy cap database truc tiep va khong bo qua RBAC.
-- `localStorage` chi luu lich su hoi thoai ngan gon phia client, toi da 20 message.
-
-## 8. Kiem thu da chay
+## Verification
 
 - `npm.cmd run build:assets` - PASS.
-- `npm.cmd run test:ai-speech` - PASS.
-- `npm.cmd run test:ai-conversation` - PASS.
-- `npm.cmd run test:navigation-cleanup` - PASS.
-- `npm.cmd run check:js` - PASS.
-- `npm.cmd run test:ai-epic12` - PASS.
+- `npm.cmd run build:production` - PASS.
+- `npm.cmd run validate:artifact` - PASS.
+- `npm.cmd run test:regression` - PASS.
+- PHP syntax lint for remaining PHP files - PASS.
 - `npm.cmd run test:browser` - PASS, 265 passed, 5 skipped.
 
-## 9. Rui ro con lai
+## Status
 
-- Trinh duyet khong ho tro Web Speech Recognition se disable micro, nhung van cho nhap text.
-- Viec cap quyen micro phu thuoc trinh duyet/HTTPS/PWA policy; header production da cho phep microphone trong same-origin.
-- CSP hien tai cua ung dung van chap nhan rang buoc san co; thay doi nay khong lam tang surface external.
-- 5 Playwright tests bi skip theo dieu kien hien co, khong phai loi moi cua AI UI.
-
-## 10. Rollback
-
-Neu can rollback rieng thay doi AI UI, revert cac file trong muc file thay doi o tren. Backend AI Foundation khong bi thay doi.
-
-## 11. Ket luan
-
-PASS. AI UI da san sang production theo pham vi thay doi hien tai.
+PASS for AI removal readiness. Commit remains blocked until administrator confirms `docs/AI_REMOVAL_REPORT.md`.

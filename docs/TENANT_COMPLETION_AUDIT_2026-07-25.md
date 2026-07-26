@@ -86,7 +86,6 @@ Can tiep tuc gan tenant va review logic cho cac module sau. Scan van thay truy v
 - `app/Models/PhotoGallery.php`
 - `app/Models/PublicAsset.php`
 - `app/Models/Report.php`
-- `app/Models/SystemInsight.php`
 - `app/Models/Vehicle.php`
 - Mot so bang phu cua `Complaint`, `WorkTask`, `WorkCalendar`, `VillageDocument` nhu attachments/history/attendees hien dang duoc rang buoc qua parent id, nhung chua co cot `village_id` rieng. Nen bo sung cot tenant neu can truy van truc tiep cac bang nay.
 

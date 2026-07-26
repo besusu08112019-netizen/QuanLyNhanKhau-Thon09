@@ -37,25 +37,6 @@ const allowedClickListeners = new Map([
     "root.addEventListener('click', handler);",
     "root.addEventListener('click', function (event) {"
   ]],
-  ['assets/js/ai-speech.js', [
-    "toggle.addEventListener('click', openPanel);",
-    "floatingMic.addEventListener('click', openAndListen);",
-    "mic.addEventListener('click', toggleListening);",
-    "close.addEventListener('click', closePanel);",
-    "minimize.addEventListener('click', toggleMinimized);",
-    "clear.addEventListener('click', function () {"
-  ]],
-  ['assets/js/ai-conversation.js', [
-    "ask.addEventListener('click', function () {",
-    "clear.addEventListener('click', function () {"
-  ]],
-  ['assets/js/ai-ocr.js', [
-    "panel.addEventListener('click', event => {"
-  ]],
-  ['assets/js/ai-tts.js', [
-    "toggle.addEventListener('click', function () {",
-    "stopBtn.addEventListener('click', stop);"
-  ]],
   ['assets/js/gis-household-location.js', [
     "document.addEventListener('click', event => {",
     "button.addEventListener('click', event => {"

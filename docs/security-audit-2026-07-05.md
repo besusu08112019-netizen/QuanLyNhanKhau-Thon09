@@ -1,4 +1,4 @@
-﻿# Security Audit Report - 2026-07-05
+# Security Audit Report - 2026-07-05
 
 ## Scope
 

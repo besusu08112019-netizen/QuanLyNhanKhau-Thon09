@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'ai-ui-20260726-2');
+define('APP_ASSET_VERSION', '20260726-ai-removal-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 require_once BASE_PATH . '/config/env.php';
@@ -12,7 +12,7 @@ function send_security_headers(): void
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: same-origin');
-    header('Permissions-Policy: geolocation=(self), camera=(self), microphone=(self)');
+    header('Permissions-Policy: geolocation=(self), camera=(self)');
     header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org https://*.openstreetmap.fr https://*.basemaps.cartocdn.com https://*.arcgisonline.com; connect-src 'self'; frame-src 'self' https://www.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
     if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')) {
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
@@ -30,7 +30,6 @@ use App\Core\Response;
 use App\Core\TenantConfig;
 use App\Core\TenantContext;
 use App\Controllers\AgricultureProductionController;
-use App\Controllers\AiToolController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
@@ -43,7 +42,6 @@ use App\Controllers\HouseholdBusinessController;
 use App\Controllers\HouseController;
 use App\Controllers\HouseholdController;
 use App\Controllers\ImportController;
-use App\Controllers\InsightController;
 use App\Controllers\LivestockController;
 use App\Controllers\LogController;
 use App\Controllers\MovementController;
@@ -621,13 +619,6 @@ $router->get('/api/notifications', [NotificationController::class, 'index']);
 $router->post('/api/notifications/read-all', [NotificationController::class, 'readAll']);
 $router->post('/api/notifications/{key}/read', [NotificationController::class, 'read']);
 $router->post('/api/notifications/{key}/dismiss', [NotificationController::class, 'dismiss']);
-$router->get('/api/insights/search', [InsightController::class, 'search']);
-$router->get('/api/insights/alerts', [InsightController::class, 'alerts']);
-$router->get('/api/insights/analytics', [InsightController::class, 'analytics']);
-$router->post('/api/insights/ask', [InsightController::class, 'ask']);
-$router->get('/api/ai/tools', [AiToolController::class, 'index']);
-$router->post('/api/ai/tools/execute', [AiToolController::class, 'execute']);
-$router->post('/api/ai/ask', [AiToolController::class, 'ask']);
 $router->get('/api/profiles/household/{id}', [ProfileController::class, 'household']);
 $router->get('/api/profiles/citizen/{id}', [ProfileController::class, 'citizen']);
 $router->get('/api/profiles/timeline/{type}/{id}', [ProfileController::class, 'timeline']);
@@ -744,11 +735,6 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/i18n.min.js',
         'assets/js/print-framework.min.js',
         'assets/js/app-platform.min.js',
-        'assets/js/ai-speech.min.js',
-        'assets/js/ai-intent.min.js',
-        'assets/js/ai-conversation.min.js',
-        'assets/js/ai-ocr.min.js',
-        'assets/js/ai-tts.min.js',
         'assets/js/mobile-component-library.min.js',
         'assets/js/app.utf8.min.js',
         'assets/js/csrf.min.js',
