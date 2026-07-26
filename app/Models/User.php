@@ -342,6 +342,7 @@ final class User extends BaseModel
     {
         $role = (string) ($user['role'] ?? '');
         if ($role === 'SUPER_ADMIN' || $role === 'ADMIN') return true;
+        if ($module === 'agricultural_land' && in_array($role, ['OFFICER', 'VIEWER'], true)) return $action === 'read';
 
         if ($role === 'VIEWER') {
             return (in_array($module, ['dashboard','household','household_business','agricultural_land','agriculture','livestock','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','report','statistics','gis'], true) && $action === 'read') || ($module === 'notification' && in_array($action, ['read','update'], true));

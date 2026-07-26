@@ -214,6 +214,56 @@
     }).join('') + '</div>';
   }
 
+  function numberField(form, name) {
+    return Number(String(form.elements[name]?.value || '0').replace(',', '.')) || 0;
+  }
+
+  function setFieldError(input, message) {
+    if (!input) return false;
+    input.setCustomValidity(message || '');
+    if (message) input.reportValidity();
+    return !message;
+  }
+
+  function validateForm(form) {
+    Array.from(form.querySelectorAll('input, select, textarea')).forEach(input => input.setCustomValidity(''));
+    const zoneCode = String(form.elements.zone_code?.value || '').trim();
+    const zoneName = String(form.elements.zone_name?.value || '').trim();
+    if (!zoneCode) {
+      toast('Vui lòng nhập mã khu', 'warning');
+      return setFieldError(form.elements.zone_code, 'Vui lòng nhập mã khu');
+    }
+    if (!zoneName) {
+      toast('Vui lòng nhập tên khu', 'warning');
+      return setFieldError(form.elements.zone_name, 'Vui lòng nhập tên khu');
+    }
+    const totalArea = numberField(form, 'total_area');
+    if (totalArea <= 0) {
+      toast('Tổng diện tích phải lớn hơn 0', 'warning');
+      return setFieldError(form.elements.total_area, 'Tổng diện tích phải lớn hơn 0');
+    }
+    for (const name of FUND_FIELDS) {
+      if (numberField(form, name) < 0) {
+        toast('Diện tích không được âm', 'warning');
+        return setFieldError(form.elements[name], 'Diện tích không được âm');
+      }
+    }
+    let usageTotal = 0;
+    for (const input of Array.from(form.querySelectorAll('.agricultural-land-usage-area'))) {
+      const value = Number(String(input.value || '0').replace(',', '.')) || 0;
+      if (value < 0) {
+        toast('Diện tích cơ cấu sử dụng đất không được âm', 'warning');
+        return setFieldError(input, 'Diện tích không được âm');
+      }
+      usageTotal += value;
+    }
+    if (usageTotal > totalArea + 0.0001) {
+      toast('Tổng diện tích các loại sử dụng đất không được lớn hơn tổng diện tích khu', 'warning');
+      return setFieldError(form.elements.total_area, 'Tổng cơ cấu sử dụng đất đang lớn hơn tổng diện tích khu');
+    }
+    return true;
+  }
+
   async function openForm(id) {
     if (!can(id ? 'update' : 'create')) return toast('Tài khoản không có quyền thực hiện thao tác này', 'warning');
     await ensureCatalogs();
@@ -250,6 +300,10 @@
   async function save(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    if (!validateForm(form)) {
+      form.classList.add('was-validated');
+      return;
+    }
     if (!form.checkValidity()) {
       form.classList.add('was-validated');
       return;

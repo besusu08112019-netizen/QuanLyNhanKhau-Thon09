@@ -29,6 +29,7 @@ final class Permission extends BaseModel
         foreach ($rows as $row) {
             $role = $row['role'];
             if (!isset($matrix[$role]) || in_array($role, ['SUPER_ADMIN','ADMIN'], true)) continue;
+            if (($row['module'] ?? '') === 'agricultural_land' && in_array($role, ['OFFICER','VIEWER'], true) && ($row['action'] ?? '') !== 'read') continue;
             $matrix[$role]['permissions'][$row['module']][$row['action']] = (bool) $row['allowed'];
         }
         $matrix['SUPER_ADMIN']['adminNote'] = 'Toàn quyền hệ thống.';

@@ -7,7 +7,7 @@
   var filterStates = Object.create(null);
   var enabledModuleScreens = [
     'householdsScreen', 'personsScreen', 'temporaryResidenceScreen', 'temporaryAbsenceScreen', 'movementsScreen',
-    'gisScreen', 'publicAssetsScreen', 'housesScreen', 'vehiclesScreen',
+    'gisScreen', 'publicAssetsScreen', 'housesScreen', 'vehiclesScreen', 'agriculturalLandScreen',
     'businessHouseholdsScreen', 'contributionsScreen', 'agricultureScreen', 'livestockScreen', 'reportsScreen',
     'operationCenterScreen', 'importScreen', 'exportExcelScreen', 'printFormsScreen',
     'systemAdminScreen', 'usersScreen', 'permissionsScreen', 'logsScreen', 'backupsScreen', 'restoreScreen', 'settingsScreen', 'appearanceScreen'
@@ -851,6 +851,16 @@
       primaryAction: { label: 'Thêm cơ sở', icon: 'fa-plus', proxy: '#businessHouseholdAddBtn, [data-platform-action="businessHouseholds.openCreate"]' },
       nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboardBusiness' }, { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }]
     },
+    agriculturalLandScreen: {
+      title: 'Quỹ đất',
+      overviewMode: 'compact',
+      eyebrow: 'Quỹ đất nông nghiệp',
+      icon: 'fa-map',
+      subtitle: 'Quản lý tổng diện tích đất nông nghiệp theo từng khu',
+      search: 'Tìm mã khu, tên khu, ghi chú...',
+      primaryAction: { label: 'Thêm khu đất', icon: 'fa-plus', proxy: '#agriculturalLandListAddBtn, #agriculturalLandAddBtn, [data-platform-action="agriculturalLand.create"]' },
+      nav: [{ label: 'Nông nghiệp', icon: 'fa-seedling', action: 'agriculture' }, { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }]
+    },
     vehiclesScreen: {
       title: 'Xe cộ',
       overviewMode: 'compact',
@@ -1070,6 +1080,7 @@
     vehiclesScreen: { label: 'Danh sách xe', unit: 'xe', totalSelector: '#vehiclesTotal' },
     livestockScreen: { label: 'Danh sách vật nuôi', unit: 'con', totalSelector: '#livestockTotalCount' },
     agricultureScreen: { label: 'Danh sách thửa', unit: 'thửa', totalSelector: '#agriTotalCount' },
+    agriculturalLandScreen: { label: 'Danh sách khu đất', unit: 'khu', totalSelector: '#agriculturalLandTotal' },
     businessHouseholdsScreen: { label: 'Danh sách hộ kinh doanh', unit: 'hộ', totalSelector: '#businessHouseholdTotalCount' },
     contributionsScreen: { label: 'Danh sách khoản thu', unit: 'khoản' },
     reportsScreen: { label: 'Danh sách báo cáo', unit: 'báo cáo', totalSelector: '#reportCount' },
