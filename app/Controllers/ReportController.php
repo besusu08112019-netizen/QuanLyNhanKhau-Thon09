@@ -81,7 +81,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'export');
         $type = $this->reportType();
-        $this->requireReportSourcePermissions($type);
+        $this->requireReportSourcePermissions($type, 'export');
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'export', 'Xuất Excel báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadExcel($report);
@@ -91,7 +91,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'print');
         $type = $this->reportType();
-        $this->requireReportSourcePermissions($type);
+        $this->requireReportSourcePermissions($type, 'print');
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'print', 'In báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->ok($report);
@@ -101,7 +101,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'export');
         $type = $this->reportType();
-        $this->requireReportSourcePermissions($type);
+        $this->requireReportSourcePermissions($type, 'export');
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'export', 'Xuất PDF báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadPdf($report);
@@ -112,7 +112,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'export');
         $type = $this->reportType();
-        $this->requireReportSourcePermissions($type);
+        $this->requireReportSourcePermissions($type, 'export');
         $report = $this->reports->build($type, $this->filters());
         $this->audit($user, 'report', 'export', 'Xuất Word báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadWord($report);
@@ -170,10 +170,10 @@ final class ReportController extends BaseController
         return $type === '' ? 'summary' : $type;
     }
 
-    private function requireReportSourcePermissions(string $type): void
+    private function requireReportSourcePermissions(string $type, string $operation = 'read'): void
     {
         foreach ($this->sourceModulesForReportType($type) as $module) {
-            $this->requirePermission($module, 'read');
+            $this->requirePermission($module, $module === 'agricultural_land' ? $operation : 'read');
         }
     }
 
@@ -186,6 +186,7 @@ final class ReportController extends BaseController
             str_starts_with($type, 'livestock') => ['livestock'],
             str_starts_with($type, 'vehicle') || str_starts_with($type, 'vehicles') => ['vehicles'],
             str_starts_with($type, 'contribution') || str_starts_with($type, 'household-contribution') => ['contributions'],
+            str_starts_with($type, 'agricultural-land') || str_starts_with($type, 'agricultural_land') => ['agricultural_land'],
             str_starts_with($type, 'agriculture') => ['agriculture'],
             str_starts_with($type, 'house-') || str_starts_with($type, 'houses') => ['houses'],
             str_starts_with($type, 'public-asset') || str_starts_with($type, 'public-assets') => ['public_assets'],
@@ -223,6 +224,9 @@ final class ReportController extends BaseController
             'season' => $this->nullableQuery('season'),
             'status' => $this->nullableQuery('status'),
             'year' => $this->nullableQuery('year'),
+            'report_year' => $this->nullableQueryAny('report_year', ['reportYear']),
+            'zone_code' => $this->nullableQueryAny('zone_code', ['zoneCode']),
+            'unit' => $this->nullableQueryAny('unit', ['displayUnit', 'display_unit']),
             'campaign_id' => $this->nullableQueryAny('campaign_id', ['campaignId']),
             'campaignId' => $this->nullableQueryAny('campaignId', ['campaign_id']),
             'payment_status' => $this->nullableQueryAny('payment_status', ['paymentStatus']),

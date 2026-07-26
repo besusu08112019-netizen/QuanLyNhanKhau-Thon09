@@ -1,0 +1,438 @@
+(function () {
+  'use strict';
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const API = '/api/agricultural-land';
+  const FUND_FIELDS = ['total_area', 'long_term_allocated_area', 'public_utility_area', 'leased_area', 'converted_area'];
+  const reportTypes = {
+    list: 'agricultural-land',
+    village: 'agricultural-land-village',
+    zone: 'agricultural-land-zone',
+    year: 'agricultural-land-year',
+    year_compare: 'agricultural-land-year-compare',
+  };
+  const state = { page: 1, pageSize: 20, search: '', status: '', report_year: '', unit: '', sort: 'zone_code', direction: 'ASC', catalogs: null };
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+  }
+
+  function num(value) {
+    return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 }).format(Number(value || 0));
+  }
+
+  function unitLabel(unit) {
+    const match = (state.catalogs?.units || []).find(item => item.value === unit);
+    return match?.label || unit || '';
+  }
+
+  function toast(message, type = 'success') {
+    if (typeof showToast === 'function') showToast(message, type);
+  }
+
+  function can(action) {
+    const service = window.TenantAppPlatform?.permissions;
+    if (service?.can) return service.can('agricultural_land', action, window.App?.user);
+    if (typeof window.TenantAppCanAccess === 'function') return window.TenantAppCanAccess('agricultural_land', action);
+    const role = (window.App?.user?.role || '').toUpperCase();
+    if (['SUPER_ADMIN', 'ADMIN'].includes(role)) return true;
+    return action === 'read';
+  }
+
+  async function request(url, options = {}) {
+    if (typeof api === 'function') return api(url, options);
+    const headers = { Accept: 'application/json' };
+    if (window.App?.token) headers.Authorization = 'Bearer ' + window.App.token;
+    if (window.App?.csrfToken) headers['X-CSRF-Token'] = window.App.csrfToken;
+    const init = { method: options.method || 'GET', headers };
+    if (options.body) {
+      headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify(options.body);
+    }
+    const response = await fetch(url, init);
+    const json = await response.json().catch(() => null);
+    if (!response.ok || json?.ok === false) throw new Error(json?.error?.message || json?.message || 'Không tải được dữ liệu');
+    return json?.data ?? json;
+  }
+
+  function openModal(id) {
+    if (window.TenantAppPlatform?.modals?.open) return window.TenantAppPlatform.modals.open(id);
+    return window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
+  }
+
+  function closeModal(id) {
+    if (window.TenantAppPlatform?.modals?.close) return window.TenantAppPlatform.modals.close(id);
+    return window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
+  }
+
+  function confirmAction(options) {
+    const dialog = window.TenantAppPlatform?.confirmDialog;
+    if (dialog?.ask) return dialog.ask(options);
+    return Promise.resolve(typeof window.confirm === 'function' ? window.confirm(options.message || 'Xác nhận thao tác?') : false);
+  }
+
+  function debounce(fn, ms) {
+    let timer;
+    return function () {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, arguments), ms);
+    };
+  }
+
+  function fillSelect(selector, items, firstLabel) {
+    const select = $(selector);
+    if (!select) return;
+    select.innerHTML = (firstLabel == null ? '' : '<option value="">' + esc(firstLabel) + '</option>') + (items || []).map(item => '<option value="' + esc(item.value) + '">' + esc(item.label) + '</option>').join('');
+  }
+
+  function fillYearSelect() {
+    const select = $('#agriculturalLandYearFilter');
+    if (!select) return;
+    const currentYear = Number(state.catalogs?.default_year || new Date().getFullYear());
+    const years = new Set((state.catalogs?.years || []).map(Number).filter(Boolean));
+    for (let year = currentYear - 2; year <= currentYear + 3; year += 1) years.add(year);
+    select.innerHTML = Array.from(years).sort((a, b) => b - a).map(year => '<option value="' + year + '">' + year + '</option>').join('');
+    state.report_year = state.report_year || String(currentYear);
+    select.value = state.report_year;
+  }
+
+  async function ensureCatalogs(force = false) {
+    if (state.catalogs && !force) return state.catalogs;
+    state.catalogs = await request(API + '/catalogs', { cacheTtl: 60000 });
+    fillSelect('#agriculturalLandStatusFilter', state.catalogs.statuses, 'Tất cả');
+    fillSelect('#agriculturalLandStatusInput', state.catalogs.statuses, null);
+    fillSelect('#agriculturalLandUnitFilter', state.catalogs.units, null);
+    fillSelect('#agriculturalLandUnitInput', state.catalogs.units, null);
+    fillYearSelect();
+    state.unit = state.unit || state.catalogs.default_unit || 'mau';
+    $('#agriculturalLandUnitFilter') && ($('#agriculturalLandUnitFilter').value = state.unit);
+    return state.catalogs;
+  }
+
+  function params() {
+    const query = new URLSearchParams({ page: state.page, pageSize: state.pageSize, sort: state.sort, direction: state.direction });
+    ['search', 'status', 'report_year', 'unit'].forEach(key => { if (state[key]) query.set(key, state[key]); });
+    return query;
+  }
+
+  async function load() {
+    if (!$('#agriculturalLandScreen') || !can('read')) return;
+    await ensureCatalogs();
+    try {
+      const data = await request(API + '?' + params().toString(), { cacheTtl: 3000 });
+      renderRows(data);
+      renderPager(data);
+      await renderDashboard();
+      window.TenantAppApplyAccessControls?.();
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  async function renderDashboard() {
+    const host = $('#agriculturalLandDashboard');
+    if (!host) return;
+    const data = await request(API + '/dashboard?' + params().toString(), { cacheTtl: 5000 });
+    const m = data.metrics || {};
+    const label = unitLabel(m.unit || state.unit);
+    const cards = [
+      ['Tổng diện tích', m.total_area, 'fa-ruler-combined'],
+      ['Đất giao dài hạn', m.long_term_allocated_area, 'fa-file-signature'],
+      ['Đất công ích', m.public_utility_area, 'fa-landmark'],
+      ['Đất thuê', m.leased_area, 'fa-handshake'],
+      ['Đất chuyển đổi', m.converted_area, 'fa-right-left'],
+      ['Số khu hoạt động', m.active_zones, 'fa-map-location-dot', 'khu'],
+    ];
+    host.innerHTML = cards.map(card => '<article class="livestock-kpi-card"><span><i class="fa-solid ' + card[2] + '"></i></span><div><p>' + esc(card[0]) + '</p><strong>' + num(card[1]) + '</strong><em>' + esc(card[3] || label) + '</em></div></article>').join('');
+    renderCharts(data.charts || {}, m.unit || state.unit);
+  }
+
+  function renderCharts(charts, unit) {
+    const host = $('#agriculturalLandCharts');
+    if (!host) return;
+    host.innerHTML = [
+      chartCard('Cơ cấu quỹ đất', charts.land_fund || [], unit),
+      chartCard('Cơ cấu sử dụng đất', charts.usage || [], unit),
+      chartCard('Giao dài hạn / đất công ích', charts.allocation_ratio || [], unit),
+    ].join('');
+  }
+
+  function chartCard(title, rows, unit) {
+    const max = Math.max(...(rows || []).map(row => Number(row.value || 0)), 1);
+    const body = (rows || []).length
+      ? rows.map(row => {
+        const width = Math.max(3, Math.round(Number(row.value || 0) / max * 100));
+        return '<div class="mb-2"><div class="d-flex justify-content-between gap-2 small"><span>' + esc(row.label) + '</span><strong>' + area(row.value, unit) + '</strong></div><div class="progress" style="height:8px"><div class="progress-bar bg-success" style="width:' + width + '%"></div></div></div>';
+      }).join('')
+      : '<div class="text-muted small">Chưa có dữ liệu</div>';
+    return '<div class="col-lg-4"><article class="content-card h-100"><h3 class="h6 mb-3">' + esc(title) + '</h3>' + body + '</article></div>';
+  }
+
+  function renderRows(data) {
+    const rows = data.items || [];
+    const unit = data.unit || state.unit;
+    $('#agriculturalLandTotal') && ($('#agriculturalLandTotal').textContent = 'Tổng số: ' + num(data.total) + ' khu');
+    const body = $('#agriculturalLandRows');
+    if (!body) return;
+    body.innerHTML = rows.length ? rows.map((row, index) => rowHtml(row, (Number(data.page || 1) - 1) * Number(data.pageSize || state.pageSize) + index + 1, unit)).join('') : '<tr><td colspan="11" class="text-center text-muted py-4">Chưa có dữ liệu khu đất.</td></tr>';
+    if (typeof window.TenantAppSyncResponsiveTableLabels === 'function') window.TenantAppSyncResponsiveTableLabels($('#agriculturalLandScreen') || document);
+  }
+
+  function rowHtml(row, index, unit) {
+    const actions = [
+      '<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="agriculturalLand.detail" data-id="' + Number(row.id) + '" title="Chi tiết"><i class="fa-solid fa-eye"></i></button>',
+      can('update') ? '<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="agriculturalLand.edit" data-id="' + Number(row.id) + '" title="Sửa"><i class="fa-solid fa-pen"></i></button>' : '',
+      can('delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="agriculturalLand.delete" data-id="' + Number(row.id) + '" title="Xóa"><i class="fa-solid fa-trash"></i></button>' : '',
+    ].filter(Boolean).join(' ');
+    return '<tr><td>' + index + '</td><td><strong>' + esc(row.zone_code) + '</strong></td><td>' + esc(row.zone_name) + '<div class="small text-muted">' + esc(row.note || '') + '</div></td><td>' + esc(row.report_year || '') + '</td><td><strong>' + area(row.total_area, unit) + '</strong></td><td>' + area(row.long_term_allocated_area, unit) + '</td><td>' + area(row.public_utility_area, unit) + '</td><td>' + area(row.leased_area, unit) + '</td><td>' + area(row.converted_area, unit) + '</td><td><span class="badge text-bg-light">' + esc(row.status_label) + '</span></td><td class="text-end"><div class="d-flex gap-1 justify-content-end">' + actions + '</div></td></tr>';
+  }
+
+  function area(value, unit) {
+    return num(value) + ' ' + esc(unitLabel(unit));
+  }
+
+  function renderPager(data) {
+    const host = $('#agriculturalLandPager');
+    if (!host) return;
+    const page = Number(data.page || 1);
+    const total = Number(data.totalPages || 1);
+    const pages = [];
+    for (let i = Math.max(1, page - 2); i <= Math.min(total, page + 2); i++) pages.push(i);
+    host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" type="button" ' + (page <= 1 ? 'disabled' : '') + ' data-platform-action="agriculturalLand.page" data-page="' + (page - 1) + '">Trước</button>' + pages.map(item => '<button class="btn btn-sm ' + (item === page ? 'btn-primary' : 'btn-outline-secondary') + '" type="button" data-platform-action="agriculturalLand.page" data-page="' + item + '">' + item + '</button>').join('') + '<button class="btn btn-sm btn-outline-secondary" type="button" ' + (page >= total ? 'disabled' : '') + ' data-platform-action="agriculturalLand.page" data-page="' + (page + 1) + '">Sau</button>';
+  }
+
+  function renderUsageFields(values = {}) {
+    const host = $('#agriculturalLandUsageAreaFields');
+    if (!host) return;
+    const types = (state.catalogs?.usage_types || []).filter(type => type.is_active || values[type.id]);
+    if (!types.length) {
+      host.innerHTML = '<div class="alert alert-warning mb-0">Chưa có loại sử dụng đất. Quản trị cần thêm loại đất trước khi nhập cơ cấu.</div>';
+      return;
+    }
+    host.innerHTML = '<div class="row g-3">' + types.map(type => {
+      const match = values[type.id] || values[String(type.id)] || {};
+      return '<div class="col-md-4"><label class="form-label">' + esc(type.name) + '</label><input name="usage_area_' + Number(type.id) + '" data-usage-type-id="' + Number(type.id) + '" type="number" min="0" step="0.0001" class="form-control agricultural-land-usage-area" value="' + esc(match.area ?? 0) + '"></div>';
+    }).join('') + '</div>';
+  }
+
+  async function openForm(id) {
+    if (!can(id ? 'update' : 'create')) return toast('Tài khoản không có quyền thực hiện thao tác này', 'warning');
+    await ensureCatalogs();
+    const form = $('#agriculturalLandForm');
+    if (!form) return;
+    form.reset();
+    form.classList.remove('was-validated');
+    form.elements.id.value = '';
+    form.elements.report_year.value = state.report_year || new Date().getFullYear();
+    form.elements.unit.value = state.unit || state.catalogs.default_unit || 'mau';
+    form.elements.status.value = 'ACTIVE';
+    form.elements.zone_code.readOnly = false;
+    renderUsageFields();
+    if (id) {
+      const row = await request(API + '/' + encodeURIComponent(id) + '?' + new URLSearchParams({ unit: state.unit }).toString(), { cacheTtl: 0 });
+      setForm(row);
+    }
+    openModal('agriculturalLandModal');
+  }
+
+  function setForm(row) {
+    const form = $('#agriculturalLandForm');
+    if (!form) return;
+    form.elements.id.value = row.id || '';
+    ['zone_code', 'zone_name', 'unit', 'report_year', 'status', 'irrigation_note', 'production_group_name', 'main_crop_type', 'annual_note', 'note'].forEach(name => {
+      const element = form.elements[name];
+      if (element) element.value = name === 'unit' ? (row.unit || row.input_unit || state.unit) : (row[name] ?? '');
+    });
+    form.elements.zone_code.readOnly = true;
+    FUND_FIELDS.forEach(name => { if (form.elements[name]) form.elements[name].value = row[name] ?? 0; });
+    renderUsageFields(row.usage_areas || {});
+  }
+
+  async function save(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+    const id = form.elements.id.value;
+    const payload = Object.fromEntries(new FormData(form).entries());
+    payload.usage_areas = Array.from(form.querySelectorAll('.agricultural-land-usage-area')).map(input => ({ usage_type_id: Number(input.dataset.usageTypeId), area: Number(input.value || 0) }));
+    delete payload.id;
+    Object.keys(payload).filter(key => key.startsWith('usage_area_')).forEach(key => delete payload[key]);
+    try {
+      await request(id ? API + '/' + encodeURIComponent(id) : API, { method: id ? 'PUT' : 'POST', body: payload });
+      closeModal('agriculturalLandModal');
+      toast('Đã lưu khu đất nông nghiệp');
+      await ensureCatalogs(true);
+      await load();
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  async function openDetail(id) {
+    const row = await request(API + '/' + encodeURIComponent(id) + '?' + new URLSearchParams({ unit: state.unit }).toString(), { cacheTtl: 0 });
+    $('#detailTitle') && ($('#detailTitle').textContent = row.zone_code + ' - ' + row.zone_name);
+    const usage = Object.values(row.usage_areas || {}).map(item => [item.name, area(item.area, row.unit)]);
+    const fields = [
+      ['Năm thống kê', row.report_year || ''],
+      ['Tổng diện tích', area(row.total_area, row.unit)],
+      ['Đất giao dài hạn', area(row.long_term_allocated_area, row.unit)],
+      ['Đất công ích', area(row.public_utility_area, row.unit)],
+      ['Đất thuê', area(row.leased_area, row.unit)],
+      ['Đất chuyển đổi', area(row.converted_area, row.unit)],
+      ...usage,
+      ['Trạng thái', row.status_label],
+      ['Kênh mương', row.irrigation_note || 'Chưa cập nhật'],
+      ['Tổ sản xuất', row.production_group_name || 'Chưa cập nhật'],
+      ['Cây chủ lực', row.main_crop_type || 'Chưa cập nhật'],
+      ['Ghi chú', row.note || 'Chưa cập nhật'],
+    ];
+    $('#detailBody') && ($('#detailBody').innerHTML = '<div class="row g-3">' + fields.map(item => '<div class="col-md-6"><strong>' + esc(item[0]) + '</strong><div>' + esc(item[1]) + '</div></div>').join('') + '</div>');
+    openModal('detailModal');
+  }
+
+  async function remove(id) {
+    if (!can('delete')) return toast('Tài khoản không có quyền xóa', 'warning');
+    if (!await confirmAction({ title: 'Xác nhận xóa khu đất', message: 'Xóa khu đất nông nghiệp này?', confirmLabel: 'Xóa', tone: 'danger' })) return;
+    try {
+      await request(API + '/' + encodeURIComponent(id), { method: 'DELETE' });
+      toast('Đã xóa khu đất');
+      await load();
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  function exportReport(format) {
+    if (!can(format === 'print' ? 'print' : 'export')) return toast('Tài khoản không có quyền xuất báo cáo', 'warning');
+    const query = params();
+    const mode = $('#agriculturalLandReportMode')?.value || 'list';
+    if (mode === 'year_compare') query.delete('report_year');
+    query.set('type', reportTypes[mode] || reportTypes.list);
+    const endpoint = format === 'pdf' ? '/api/reports/export-pdf' : (format === 'print' ? '/api/reports/print' : '/api/reports/export-excel');
+    window.open(endpoint + '?' + query.toString(), '_blank', 'noopener');
+  }
+
+  async function openUsageTypes() {
+    if (!can('update')) return toast('Tài khoản không có quyền cấu hình loại đất', 'warning');
+    await ensureCatalogs(true);
+    renderUsageTypeRows();
+    const form = $('#agriculturalLandUsageTypeForm');
+    if (form) {
+      form.reset();
+      form.elements.id.value = '';
+      form.elements.is_active.checked = true;
+    }
+    openModal('agriculturalLandUsageTypeModal');
+  }
+
+  function renderUsageTypeRows() {
+    const body = $('#agriculturalLandUsageTypeRows');
+    if (!body) return;
+    const rows = state.catalogs?.usage_types || [];
+    body.innerHTML = rows.length ? rows.map(type => '<tr><td><strong>' + esc(type.code) + '</strong></td><td>' + esc(type.name) + '</td><td>' + num(type.display_order) + '</td><td><span class="badge text-bg-light">' + (type.is_active ? 'Hoạt động' : 'Ngừng dùng') + '</span></td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="agriculturalLand.usageTypeEdit" data-id="' + Number(type.id) + '"><i class="fa-solid fa-pen"></i></button> <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="agriculturalLand.usageTypeDelete" data-id="' + Number(type.id) + '"><i class="fa-solid fa-trash"></i></button></td></tr>').join('') : '<tr><td colspan="5" class="text-center text-muted">Chưa có loại sử dụng đất</td></tr>';
+  }
+
+  async function saveUsageType(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+    const id = form.elements.id.value;
+    const payload = Object.fromEntries(new FormData(form).entries());
+    payload.is_active = form.elements.is_active.checked ? 1 : 0;
+    delete payload.id;
+    try {
+      await request(API + '/usage-types' + (id ? '/' + encodeURIComponent(id) : ''), { method: id ? 'PUT' : 'POST', body: payload });
+      toast('Đã lưu loại sử dụng đất');
+      await ensureCatalogs(true);
+      renderUsageTypeRows();
+      form.reset();
+      form.elements.id.value = '';
+      form.elements.is_active.checked = true;
+      renderUsageFields();
+      await load();
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  function editUsageType(id) {
+    const form = $('#agriculturalLandUsageTypeForm');
+    const row = (state.catalogs?.usage_types || []).find(type => Number(type.id) === Number(id));
+    if (!form || !row) return;
+    form.elements.id.value = row.id;
+    form.elements.code.value = row.code;
+    form.elements.name.value = row.name;
+    form.elements.display_order.value = row.display_order;
+    form.elements.is_active.checked = !!row.is_active;
+  }
+
+  async function deleteUsageType(id) {
+    if (!can('delete')) return toast('Tài khoản không có quyền xóa loại đất', 'warning');
+    if (!await confirmAction({ title: 'Ngừng sử dụng loại đất', message: 'Loại đất này sẽ bị ẩn khỏi danh sách nhập mới.', confirmLabel: 'Ngừng dùng', tone: 'danger' })) return;
+    try {
+      await request(API + '/usage-types/' + encodeURIComponent(id), { method: 'DELETE' });
+      toast('Đã cập nhật loại sử dụng đất');
+      await ensureCatalogs(true);
+      renderUsageTypeRows();
+      await load();
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  function reset() {
+    Object.assign(state, { page: 1, search: '', status: '', report_year: String(state.catalogs?.default_year || new Date().getFullYear()), sort: 'zone_code', direction: 'ASC' });
+    ['agriculturalLandSearch', 'agriculturalLandStatusFilter'].forEach(id => { const element = $('#' + id); if (element) element.value = ''; });
+    const year = $('#agriculturalLandYearFilter');
+    if (year) year.value = state.report_year;
+    load();
+  }
+
+  function sortBy(key) {
+    if (!key) return;
+    if (state.sort === key) state.direction = state.direction === 'ASC' ? 'DESC' : 'ASC';
+    else { state.sort = key; state.direction = 'ASC'; }
+    load();
+  }
+
+  function registerActions() {
+    const actions = window.TenantAppPlatform?.actions;
+    if (!actions?.register || window.__agriculturalLandActionsRegistered) return;
+    window.__agriculturalLandActionsRegistered = true;
+    actions.register('agriculturalLand.create', () => openForm());
+    actions.register('agriculturalLand.edit', context => openForm(Number(context.dataset.id || 0)));
+    actions.register('agriculturalLand.detail', context => openDetail(Number(context.dataset.id || 0)));
+    actions.register('agriculturalLand.delete', context => remove(Number(context.dataset.id || 0)));
+    actions.register('agriculturalLand.page', context => { state.page = Number(context.dataset.page || 1); load(); });
+    actions.register('agriculturalLand.sort', context => sortBy(context.dataset.sort));
+    actions.register('agriculturalLand.reset', reset);
+    actions.register('agriculturalLand.export', context => exportReport(context.dataset.format || 'excel'));
+    actions.register('agriculturalLand.usageTypes', openUsageTypes);
+    actions.register('agriculturalLand.usageTypeEdit', context => editUsageType(Number(context.dataset.id || 0)));
+    actions.register('agriculturalLand.usageTypeDelete', context => deleteUsageType(Number(context.dataset.id || 0)));
+    if (typeof actions.bind === 'function') actions.bind(document);
+  }
+
+  function init() {
+    window.TenantAppPlatform?.modals?.registerBootstrap?.('agriculturalLandModal', '#agriculturalLandModal');
+    window.TenantAppPlatform?.modals?.registerBootstrap?.('agriculturalLandUsageTypeModal', '#agriculturalLandUsageTypeModal');
+    registerActions();
+    $('#agriculturalLandForm')?.addEventListener('submit', save);
+    $('#agriculturalLandUsageTypeForm')?.addEventListener('submit', saveUsageType);
+    $('#agriculturalLandSearch')?.addEventListener('input', debounce(event => { state.search = event.target.value.trim(); state.page = 1; load(); }, 300));
+    $('#agriculturalLandYearFilter')?.addEventListener('change', event => { state.report_year = event.target.value; state.page = 1; load(); });
+    $('#agriculturalLandStatusFilter')?.addEventListener('change', event => { state.status = event.target.value; state.page = 1; load(); });
+    $('#agriculturalLandUnitFilter')?.addEventListener('change', event => { state.unit = event.target.value; state.page = 1; load(); });
+    $('#agriculturalLandPageSize')?.addEventListener('change', event => { state.pageSize = Number(event.target.value || 20); state.page = 1; load(); });
+    if ($('#agriculturalLandScreen')?.classList.contains('active')) load();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'agriculturalLand') load(); });
+  window.loadAgriculturalLand = load;
+})();

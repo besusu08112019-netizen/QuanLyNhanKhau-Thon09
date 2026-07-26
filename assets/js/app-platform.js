@@ -546,6 +546,8 @@
       public_asset: 'publicAssets',
       public_assets: 'publicAssets',
       publicAssets: 'publicAssets',
+      agricultural_land: 'agriculturalLand',
+      agriculturalLand: 'agriculturalLand',
       complaint: 'complaints',
       complaints: 'complaints',
       workTask: 'work_tasks',
@@ -595,6 +597,7 @@
       import: 'import',
       export: 'report',
       contributions: 'contributions',
+      agriculturalLand: 'agriculturalLand',
       agriculture: 'agriculture',
       livestock: 'livestock',
       gis: 'gis'
@@ -5686,6 +5689,7 @@
       { moduleKey: 'complaints', screenId: 'complaints', path: '/complaints', label: 'Phản ánh - Kiến nghị', mobileLabel: 'Phản ánh', icon: 'fa-comments', permissionScope: 'complaints', loaderName: 'loadComplaints' },
       { moduleKey: 'houses', screenId: 'houses', path: '/houses', label: 'Nhà ở và Công trình', mobileLabel: 'Nhà ở', icon: 'fa-building-user', permissionScope: 'houses', loaderName: 'loadHouses' },
       { moduleKey: 'businessHouseholds', screenId: 'businessHouseholds', path: '/household-businesses', label: 'Hộ sản xuất và kinh doanh', mobileLabel: 'Kinh doanh', icon: 'fa-store', permissionScope: 'businessHouseholds', loaderName: 'loadHouseholdBusiness' },
+      { moduleKey: 'agriculturalLand', screenId: 'agriculturalLand', path: '/agricultural-land', label: 'Quỹ đất nông nghiệp', mobileLabel: 'Quỹ đất', icon: 'fa-map', permissionScope: 'agricultural_land', loaderName: 'loadAgriculturalLand' },
       { moduleKey: 'agriculture', screenId: 'agriculture', path: '/agriculture', label: 'Sản xuất nông nghiệp', mobileLabel: 'Nông nghiệp', icon: 'fa-seedling', permissionScope: 'agriculture', loaderName: 'loadAgriculture' },
       { moduleKey: 'livestock', screenId: 'livestock', path: '/livestock', label: 'Quản lý vật nuôi', mobileLabel: 'Vật nuôi', icon: 'fa-paw', permissionScope: 'livestock', loaderName: 'loadLivestock' },
       { moduleKey: 'vehicles', screenId: 'vehicles', path: '/vehicles', label: 'Quản lý xe cộ', mobileLabel: 'Xe cộ', icon: 'fa-car', permissionScope: 'vehicles' },
@@ -5734,6 +5738,7 @@
       { path: '/public-assets', moduleKey: 'publicAssets', screenId: 'publicAssets', action: 'list' },
       { path: '/complaints', moduleKey: 'complaints', screenId: 'complaints', action: 'list' },
       { path: '/household-businesses', moduleKey: 'businessHouseholds', screenId: 'businessHouseholds', action: 'list' },
+      { path: '/agricultural-land', moduleKey: 'agriculturalLand', screenId: 'agriculturalLand', action: 'list' },
       { path: '/livestock', moduleKey: 'livestock', screenId: 'livestock', action: 'list' },
       { path: '/houses', moduleKey: 'houses', screenId: 'houses', action: 'list' },
       { path: '/vehicles', moduleKey: 'vehicles', screenId: 'vehicles', action: 'list' },
@@ -5765,6 +5770,7 @@
       'movements',
       'publicAssets',
       'businessHouseholds',
+      'agriculturalLand',
       'livestock',
       'houses',
       'vehicles',
@@ -5948,6 +5954,20 @@
         ]
       },
       {
+        moduleKey: 'agriculturalLand',
+        formKey: 'agriculturalLandForm',
+        listKey: 'agriculturalLandList',
+        modalKey: 'agriculturalLandModal',
+        fields: [
+          { name: 'zoneCode', label: 'Mã khu', required: true },
+          { name: 'zoneName', label: 'Tên khu', required: true },
+          { name: 'reportYear', label: 'Năm', type: 'number' },
+          { name: 'totalArea', label: 'Tổng diện tích', type: 'number', defaultValue: 0 },
+          { name: 'unit', label: 'Đơn vị' },
+          { name: 'status', label: 'Trạng thái' }
+        ]
+      },
+      {
         moduleKey: 'livestock',
         formKey: 'livestockForm',
         listKey: 'livestockList',
@@ -6060,7 +6080,7 @@
       { key: 'overview', label: 'Tổng quan', icon: 'fa-tower-broadcast', items: ['operationCenter', 'workTasks', 'workCalendar', 'documents'] },
       { key: 'population', label: 'Quản lý dân cư', icon: 'fa-users', items: ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements'] },
       { key: 'assets', label: 'Quản lý tài sản', icon: 'fa-building-columns', items: ['publicAssets', 'photoGallery', 'houses', 'complaints'] },
-      { key: 'production', label: 'Quản lý sản xuất', icon: 'fa-seedling', items: ['businessHouseholds', 'agriculture', 'livestock'] },
+      { key: 'production', label: 'Quản lý sản xuất', icon: 'fa-seedling', items: ['businessHouseholds', 'agriculturalLand', 'agriculture', 'livestock'] },
       { key: 'vehicles', label: 'Quản lý phương tiện', icon: 'fa-car', items: ['vehicles'] },
       { key: 'finance', label: 'Quản lý tài chính', icon: 'fa-hand-holding-dollar', items: ['contributions', 'finance'] },
       { key: 'gis', label: 'GIS', icon: 'fa-map-location-dot', items: ['gis'] },
@@ -6080,6 +6100,7 @@
       'publicAssets',
       'houses',
       'businessHouseholds',
+      'agriculturalLand',
       'agriculture',
       'livestock',
       'vehicles',

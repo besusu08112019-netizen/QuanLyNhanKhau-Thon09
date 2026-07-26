@@ -2,6 +2,11 @@
 
 All notable production release changes are tracked here.
 
+## Unreleased
+
+### Added
+- Added independent Agricultural Land Fund module for village-level land-zone statistics by year, configurable land usage types, dashboard charts, CRUD, reports, and exports.
+
 ## v1.1.1 - 2026-07-26
 
 ### Release scope

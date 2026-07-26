@@ -29,6 +29,7 @@ use App\Core\RuntimePaths;
 use App\Core\Response;
 use App\Core\TenantConfig;
 use App\Core\TenantContext;
+use App\Controllers\AgriculturalLandZoneController;
 use App\Controllers\AgricultureProductionController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
@@ -333,6 +334,20 @@ $router->post('/api/agriculture/{parcelId}/plots', [AgricultureProductionControl
 $router->post('/api/agriculture/plots/{plotId}/seasons', [AgricultureProductionController::class, 'addSeason']);
 $router->post('/api/agriculture/seasons/{seasonId}/logs', [AgricultureProductionController::class, 'addLog']);
 $router->post('/api/agriculture/{parcelId}/damages', [AgricultureProductionController::class, 'addDamage']);
+$router->get('/api/agricultural-land', [AgriculturalLandZoneController::class, 'index']);
+$router->post('/api/agricultural-land', [AgriculturalLandZoneController::class, 'store']);
+$router->get('/api/agricultural-land/dashboard', [AgriculturalLandZoneController::class, 'dashboard']);
+$router->get('/api/agricultural-land/catalogs', [AgriculturalLandZoneController::class, 'catalogs']);
+$router->get('/api/agricultural-land/settings', [AgriculturalLandZoneController::class, 'settings']);
+$router->put('/api/agricultural-land/settings', [AgriculturalLandZoneController::class, 'updateSettings']);
+$router->get('/api/agricultural-land/usage-types', [AgriculturalLandZoneController::class, 'usageTypes']);
+$router->post('/api/agricultural-land/usage-types', [AgriculturalLandZoneController::class, 'storeUsageType']);
+$router->put('/api/agricultural-land/usage-types/{id}', [AgriculturalLandZoneController::class, 'updateUsageType']);
+$router->delete('/api/agricultural-land/usage-types/{id}', [AgriculturalLandZoneController::class, 'deleteUsageType']);
+$router->get('/api/agricultural-land/report', [AgriculturalLandZoneController::class, 'report']);
+$router->get('/api/agricultural-land/{id}', [AgriculturalLandZoneController::class, 'show']);
+$router->put('/api/agricultural-land/{id}', [AgriculturalLandZoneController::class, 'update']);
+$router->delete('/api/agricultural-land/{id}', [AgriculturalLandZoneController::class, 'destroy']);
 $router->get('/api/houses', [HouseController::class, 'index']);
 $router->post('/api/houses', [HouseController::class, 'store']);
 $router->get('/api/houses/dashboard', [HouseController::class, 'dashboard']);
@@ -760,6 +775,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/vehicles.min.js',
         'assets/js/contributions.min.js',
         'assets/js/agriculture.min.js',
+        'assets/js/agricultural-land.min.js',
         'assets/js/houses.min.js',
         'assets/js/public-assets.min.js',
         'assets/js/complaints.min.js',

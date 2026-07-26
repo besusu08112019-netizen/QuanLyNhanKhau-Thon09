@@ -46,3 +46,15 @@ VALUES
 ('VIEWER','household_business','read',1)
 ON DUPLICATE KEY UPDATE `allowed` = VALUES(`allowed`);
 
+INSERT INTO `permissions` (`role`, `module`, `action`, `allowed`)
+VALUES
+('ADMIN','agricultural_land','read',1),
+('ADMIN','agricultural_land','create',1),
+('ADMIN','agricultural_land','update',1),
+('ADMIN','agricultural_land','delete',1),
+('ADMIN','agricultural_land','export',1),
+('ADMIN','agricultural_land','print',1),
+('OFFICER','agricultural_land','read',1),
+('VIEWER','agricultural_land','read',1)
+ON DUPLICATE KEY UPDATE `allowed` = VALUES(`allowed`);
+

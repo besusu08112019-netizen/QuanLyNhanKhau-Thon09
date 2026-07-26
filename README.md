@@ -34,6 +34,7 @@
 - GIS, khu vực bản đồ, tìm kiếm vị trí hộ và xuất bản đồ.
 - Import dữ liệu hộ/nhân khẩu từ CSV/XLSX theo tên cột.
 - Báo cáo, export Excel/PDF và in biểu mẫu.
+- Quỹ đất nông nghiệp độc lập theo từng khu/năm, loại sử dụng đất cấu hình động, dashboard cộng động và báo cáo/xuất file.
 - Tài khoản, vai trò, phân quyền, nhật ký, sao lưu và khôi phục SQL.
 - Cấu hình giao diện, logo, ảnh nền và thông tin hệ thống.
 

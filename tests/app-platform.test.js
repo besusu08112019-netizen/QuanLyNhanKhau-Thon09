@@ -243,6 +243,7 @@ function screenNode(screenId) {
     'movements',
     'publicAssets',
     'businessHouseholds',
+    'agriculturalLand',
     'livestock',
     'houses',
     'vehicles',
@@ -921,12 +922,13 @@ function screenNode(screenId) {
     'publicAssets',
     'houses',
     'businessHouseholds',
+    'agriculturalLand',
     'agriculture',
     'livestock',
     'vehicles',
     'contributions'
   ].join(','));
-  assert.strictEqual(platform.navigationScopes.resolve('desktopModules').moduleKeys.length, 12);
+  assert.strictEqual(platform.navigationScopes.resolve('desktopModules').moduleKeys.length, 13);
   assert.strictEqual(platform.navigationScopes.resolve('dashboardModules').moduleKeys.join(','), [
     'dashboard',
     'dashboardHouseholds',
@@ -950,8 +952,8 @@ function screenNode(screenId) {
 
   const routeCoverage = platform.navigationRouteCoverage.audit({ navigationScope: 'requiredBusinessModules' });
   assert.strictEqual(routeCoverage.ok, true);
-  assert.strictEqual(routeCoverage.moduleCount, 12);
-  assert.strictEqual(routeCoverage.coveredCount, 12);
+  assert.strictEqual(routeCoverage.moduleCount, 13);
+  assert.strictEqual(routeCoverage.coveredCount, 13);
   assert.strictEqual(routeCoverage.requiredActions.join(','), 'list,create,detail,edit');
 
   const routeBlocked = platform.navigationRouteCoverage.audit({ navigationScope: ['gis'] });
@@ -1295,7 +1297,7 @@ function screenNode(screenId) {
 
   const crudReady = platform.moduleMigration.inspect({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudReady.ready, true);
-  assert.strictEqual(crudReady.moduleCount, 12);
+  assert.strictEqual(crudReady.moduleCount, 13);
   assert.strictEqual(crudReady.issues.length, 0);
   const householdCrudReady = platform.moduleMigration.inspectModule('households', { stage: 'crud', require: { dom: false } });
   assert.strictEqual(householdCrudReady.ready, true);
@@ -1311,12 +1313,12 @@ function screenNode(screenId) {
   assert.strictEqual(crudReportsReady[0].ready, true);
   const crudPlan = platform.moduleMigration.plan({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudPlan.nextModuleKey, 'households');
-  assert.strictEqual(crudPlan.readyModules.length, 12);
+  assert.strictEqual(crudPlan.readyModules.length, 13);
   assert.strictEqual(crudPlan.blockedModules.length, 0);
   const crudQueue = platform.moduleMigration.queue({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudQueue.percentComplete, 0);
-  assert.strictEqual(crudQueue.remainingCount, 12);
-  assert.strictEqual(crudQueue.upcomingModules.length, 12);
+  assert.strictEqual(crudQueue.remainingCount, 13);
+  assert.strictEqual(crudQueue.upcomingModules.length, 13);
   assert.strictEqual(crudQueue.blockedQueue.length, 0);
   const crudBlockers = platform.moduleMigration.blockers({ navigationScope: 'requiredBusinessModules', stage: 'crud', require: { dom: false } });
   assert.strictEqual(crudBlockers.ready, true);

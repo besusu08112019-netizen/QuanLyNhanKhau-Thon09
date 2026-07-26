@@ -1,4 +1,4 @@
-const PWA_VERSION = 'tenant-pwa-v20260726-ai-removal-1';
+const PWA_VERSION = 'tenant-pwa-v20260726-agricultural-land-1';
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
 const TENANT_NAMESPACE = `${self.location.host}${APP_BASE_PATH}`.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
 const CACHE_PREFIX = `${TENANT_NAMESPACE}-${PWA_VERSION}`;
@@ -52,6 +52,7 @@ const STATIC_ASSETS = [
   withBase('assets/js/session.min.js'),
   withBase('assets/js/admin.utf8.min.js'),
   withBase('assets/js/admin-panel.min.js'),
+  withBase('assets/js/agricultural-land.min.js'),
   withBase('assets/js/view-inline-patches.min.js'),
   withBase('assets/js/module-dashboards.min.js'),
   withBase('assets/js/pwa.min.js')
