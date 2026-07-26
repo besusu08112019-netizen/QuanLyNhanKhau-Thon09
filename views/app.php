@@ -19,7 +19,7 @@
   <link rel="apple-touch-startup-image" href="/assets/icons/splash-512.png">
   <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/fontawesome-local.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/app.min.css">
+  <link rel="stylesheet" href="/assets/css/app.min.css?v=20260726-ai-ui-2">
   <link rel="stylesheet" href="/assets/css/mobile-design-system-v2.min.css">
   <link rel="stylesheet" href="/assets/css/print.min.css" media="print">
   <script>
@@ -143,7 +143,7 @@
           </div>
         </div>
       </aside>
-      <button id="aiFloatingMicBtn" class="ai-floating-mic" type="button" aria-label="M&#7903; Tr&#7907; l&yacute; AI b&#7857;ng gi&#7885;ng n&oacute;i" title="Micro AI"><i class="fa-solid fa-microphone"></i></button>
+      <button id="aiFloatingMicBtn" class="ai-floating-mic" type="button" aria-label="M&#7903; Tr&#7907; l&yacute; AI b&#7857;ng gi&#7885;ng n&oacute;i" title="Micro AI"><i class="fa-solid fa-microphone"></i><span>AI</span></button>
 
       <section id="dashboardScreen" class="screen active dashboard-overview-screen">
         <section class="dashboard-status-row"><div id="dashboardGeneratedAt" class="dashboard-sync-note">Đang cập nhật dữ liệu</div></section>
@@ -791,9 +791,9 @@
   <script charset="utf-8" src="/assets/js/i18n.min.js"></script>
   <script charset="utf-8" src="/assets/js/print-framework.min.js"></script>
   <script charset="utf-8" src="/assets/js/app-platform.min.js"></script>
-  <script charset="utf-8" src="/assets/js/ai-speech.min.js"></script>
-  <script charset="utf-8" src="/assets/js/ai-intent.min.js"></script>
-  <script charset="utf-8" src="/assets/js/ai-conversation.min.js"></script>
+  <script charset="utf-8" src="/assets/js/ai-speech.min.js?v=20260726-ai-ui-2"></script>
+  <script charset="utf-8" src="/assets/js/ai-intent.min.js?v=20260726-ai-ui-2"></script>
+  <script charset="utf-8" src="/assets/js/ai-conversation.min.js?v=20260726-ai-ui-2"></script>
   <script charset="utf-8" src="/assets/js/ai-ocr.min.js"></script>
   <script charset="utf-8" src="/assets/js/ai-tts.min.js"></script>
   <script charset="utf-8" src="/assets/js/app.utf8.min.js"></script>

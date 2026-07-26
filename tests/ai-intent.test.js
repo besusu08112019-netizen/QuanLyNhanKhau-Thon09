@@ -21,8 +21,7 @@ assert.doesNotMatch(intent, /data-platform-action/);
 assert.doesNotMatch(intent, /location\.(href|assign|replace)/);
 
 assert.match(appView, /id="aiIntentPreview"/);
-assert.match(appView, /src="\/assets\/js\/ai-intent\.min\.js"/);
+assert.match(appView, /src="\/assets\/js\/ai-intent\.min\.js\?v=20260726-ai-ui-2"/);
 assert.match(buildAssets, /assets\/js\/ai-intent\.js/);
 
 console.log('AI intent checks passed');
-

@@ -50,7 +50,7 @@ const manifest = JSON.parse(read('manifest.webmanifest'));
   assert.match(serviceWorker, new RegExp(minified.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
 
-assert.match(serviceWorker, /tenant-pwa-v20260726-ai-release-1/);
+assert.match(serviceWorker, /tenant-pwa-v20260726-ai-ui-2/);
 assert.match(aiConfig, /'enabled'\s*=>\s*false/);
 assert.match(aiConfig, /'external_api'\s*=>\s*false/);
 assert.match(aiConfig, /'log_sensitive_keys'/);

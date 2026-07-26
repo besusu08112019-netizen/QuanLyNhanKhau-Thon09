@@ -20,6 +20,7 @@ Working tree hien chi co cac file du kien cho thay doi AI UI va bao cao:
 - `tests/ai-speech.test.js`
 - `tests/ai-conversation.test.js`
 - `tests/navigation-cleanup.test.js`
+- `service-worker.js`
 - `docs/AI_UI_ORCHESTRATION.md`
 - `docs/PRODUCTION_READINESS.md`
 - `docs/RELEASE_AUDIT.md`
@@ -56,6 +57,7 @@ Da kiem tra:
 
 - Asset AI duoc minify lai bang `tools/build-assets.js`.
 - Production artifact duoc build va validate thanh cong.
+- PWA cache version va asset query version da duoc tang de nguoi dung nhan UI AI moi sau deploy.
 - UI khong them polling, interval nen khong tao tai nen khi AI khong duoc mo.
 - Floating button/panel dung CSS fixed responsive, khong chen vao renderer cua cac module.
 

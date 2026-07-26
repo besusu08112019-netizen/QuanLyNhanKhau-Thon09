@@ -44,7 +44,7 @@ assert.doesNotMatch(conversation, /location\.(href|assign|replace)/);
 
 assert.match(appView, /id="aiConversationLog"/);
 assert.match(appView, /id="aiConversationClearBtn"/);
-assert.match(appView, /src="\/assets\/js\/ai-conversation\.min\.js"/);
+assert.match(appView, /src="\/assets\/js\/ai-conversation\.min\.js\?v=20260726-ai-ui-2"/);
 assert.match(appView, /id="aiAskBtn"/);
 assert.match(appCss, /\.ai-result-preview/);
 assert.match(appCss, /\.ai-source-line/);

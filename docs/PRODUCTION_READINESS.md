@@ -28,6 +28,7 @@ Review nay ap dung cho thay doi AI UI tren shell chinh:
 - `tests/ai-speech.test.js`
 - `tests/ai-conversation.test.js`
 - `tests/navigation-cleanup.test.js`
+- `service-worker.js`
 - `docs/AI_UI_ORCHESTRATION.md`
 - `docs/PRODUCTION_READINESS.md`
 - `docs/RELEASE_AUDIT.md`
@@ -51,6 +52,8 @@ Ket qua scan tren cac file thay doi:
 ## 5. Cache va PWA
 
 - `npm.cmd run build:production` da sinh lai asset minified va `dist/production`.
+- `service-worker.js` da bump `PWA_VERSION` len `tenant-pwa-v20260726-ai-ui-2`.
+- `views/app.php` them query version cho `app.min.css` va cac AI JS de tranh browser/PWA dung asset cu.
 - PWA/browser regression da pass voi test cache hien co.
 - UI AI khong them polling, worker rieng hoac cache runtime moi.
 - Khi nguoi dung khong mo AI, chi co them markup/button va listener nhe tren shell.
