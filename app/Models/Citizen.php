@@ -18,12 +18,19 @@ final class Citizen extends BaseModel
     ];
 
     private const POLICY_FIELDS = [
-        'meritorious_person' => 'Người có công',
         'martyr_relative' => 'Thân nhân liệt sĩ',
         'wounded_soldier' => 'Thương binh',
         'sick_soldier' => 'Bệnh binh',
+        'chemical_warfare_victim' => 'Người hoạt động kháng chiến bị nhiễm chất độc hóa học',
+        'imprisoned_resistance_activist' => 'Người hoạt động kháng chiến bị địch bắt tù, đày',
+        'youth_volunteer' => 'Thanh niên xung phong',
+        'resistance_hero' => 'Anh hùng LLVTND / Anh hùng Lao động thời kỳ kháng chiến',
+        'revolutionary_activist' => 'Người hoạt động cách mạng',
+    ];
+
+    private const SOCIAL_SECURITY_FIELDS = [
         'disabled_person' => 'Người khuyết tật',
-        'social_assistance' => 'Bảo trợ xã hội',
+        'social_assistance' => 'Đang hưởng trợ cấp xã hội',
     ];
 
     private const HEALTH_INSURANCE_FIELDS = [
@@ -51,7 +58,7 @@ final class Citizen extends BaseModel
 
     public static function extendedFields(): array
     {
-        return self::POLITICAL_FIELDS + self::POLICY_FIELDS + self::HEALTH_INSURANCE_FIELDS + self::LABOR_FIELDS;
+        return self::POLITICAL_FIELDS + self::POLICY_FIELDS + self::SOCIAL_SECURITY_FIELDS + self::HEALTH_INSURANCE_FIELDS + self::LABOR_FIELDS;
     }
 
     public function paginate(array $filters): array
@@ -176,6 +183,10 @@ final class Citizen extends BaseModel
         if (!empty($filters['householdId'])) { $where[] = '(h.household_code = :household OR c.household_id = :household_id)'; $params['household'] = $filters['householdId']; $params['household_id'] = (int) $filters['householdId']; }
         $category = $this->categoryKey($filters['household_type'] ?? $filters['householdType'] ?? $filters['category'] ?? '');
         if ($category !== '') $this->addCategoryWhere($where, $params, $category);
+        $meritoriousFilter = $filters['meritorious_person'] ?? $filters['meritoriousPerson'] ?? null;
+        if ($meritoriousFilter !== null && $meritoriousFilter !== '') {
+            $where[] = $this->meritoriousPolicyCondition('c', $this->boolValue($meritoriousFilter) === 1);
+        }
         foreach ($this->activeExtendedColumns() as $column) {
             $value = $filters[$column] ?? $filters[$this->camel($column)] ?? null;
             if ($value !== null && $value !== '') { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = $this->boolValue($value); }
@@ -193,7 +204,9 @@ final class Citizen extends BaseModel
         if (!empty($filters['ageTo'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= :age_to'; $params['age_to'] = (int) $filters['ageTo']; }
         if (!empty($filters['search'])) {
             $mapped = $this->searchFlag((string) $filters['search']);
-            if ($mapped && $this->columnExists('citizens', $mapped)) {
+            if ($mapped === '__meritorious_policy__') {
+                $where[] = $this->meritoriousPolicyCondition('c');
+            } elseif ($mapped && $this->columnExists('citizens', $mapped)) {
                 $where[] = 'c.' . $mapped . ' = 1';
             } else {
                 $q = '%' . $filters['search'] . '%';
@@ -276,7 +289,8 @@ final class Citizen extends BaseModel
         $columns = [
             'father_name' => 'VARCHAR(255) NULL',
             'mother_name' => 'VARCHAR(255) NULL',
-            'has_health_insurance' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'not_attending_school' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'has_health_insurance' => 'TINYINT(1) NOT NULL DEFAULT 1',
             'health_insurance_number' => 'VARCHAR(20) NULL',
             'health_insurance_group' => 'VARCHAR(100) NULL',
             'health_insurance_start_date' => 'DATE NULL',
@@ -287,6 +301,9 @@ final class Citizen extends BaseModel
             if (!$this->columnExists('citizens', $column)) {
                 $this->execute('ALTER TABLE citizens ADD COLUMN ' . $column . ' ' . $definition);
             }
+        }
+        if ($this->columnExists('citizens', 'has_health_insurance')) {
+            $this->execute('ALTER TABLE citizens MODIFY COLUMN has_health_insurance TINYINT(1) NOT NULL DEFAULT 1');
         }
         $this->createHealthInsuranceIndexIfMissing();
         $this->healthInsuranceSchemaEnsured = true;
@@ -372,11 +389,22 @@ final class Citizen extends BaseModel
         $text = $this->normalize($search);
         $map = [
             'dang vien' => 'party_member', 'doan vien' => 'youth_union_member', 'hoi phu nu' => 'women_union_member', 'nong dan' => 'farmers_union_member', 'cuu chien binh' => 'veterans_union_member', 'nguoi cao tuoi' => 'elderly_union_member',
-            'nguoi co cong' => 'meritorious_person', 'than nhan liet si' => 'martyr_relative', 'thuong binh' => 'wounded_soldier', 'benh binh' => 'sick_soldier', 'khuyet tat' => 'disabled_person', 'bao tro xa hoi' => 'social_assistance', 'bhyt' => 'has_health_insurance', 'bao hiem y te' => 'has_health_insurance',
+            'nguoi co cong' => '__meritorious_policy__', 'than nhan liet si' => 'martyr_relative', 'thuong binh' => 'wounded_soldier', 'benh binh' => 'sick_soldier', 'chat doc hoa hoc' => 'chemical_warfare_victim', 'tu day' => 'imprisoned_resistance_activist', 'thanh nien xung phong' => 'youth_volunteer', 'anh hung' => 'resistance_hero', 'cach mang' => 'revolutionary_activist', 'khuyet tat' => 'disabled_person', 'tro cap xa hoi' => 'social_assistance', 'bao tro xa hoi' => 'social_assistance', 'bhyt' => 'has_health_insurance', 'bao hiem y te' => 'has_health_insurance',
             'co viec lam' => 'employed', 'that nghiep' => 'unemployed', 'lao dong tu do' => 'freelance_labor', 'ngoai tinh' => 'out_province_labor', 'nuoc ngoai' => 'foreign_labor', 'chua di hoc' => 'not_attending_school', 'hoc sinh' => 'pupil', 'sinh vien' => 'student', 'nghi huu' => 'retired',
         ];
         foreach ($map as $needle => $column) if (str_contains($text, $needle)) return $column;
         return null;
+    }
+
+    private function meritoriousPolicyCondition(string $alias, bool $positive = true): string
+    {
+        $parts = [];
+        foreach (array_keys(self::POLICY_FIELDS) as $column) {
+            if ($this->columnExists('citizens', $column)) $parts[] = $alias . '.' . $column . ' = 1';
+        }
+        if (!$parts) return $positive ? '0=1' : '1=1';
+        $condition = '(' . implode(' OR ', $parts) . ')';
+        return $positive ? $condition : 'NOT ' . $condition;
     }
     private function normalize(string $value): string
     {
@@ -391,8 +419,8 @@ final class Citizen extends BaseModel
         match ($category) {
             'poor' => $where[] = 'h.poor_household = 1',
             'near_poor' => $where[] = 'h.near_poor_household = 1',
-            'meritorious' => $where[] = 'h.meritorious_family = 1',
-            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND h.meritorious_family = 0 AND h.disabled_household = 0',
+            'meritorious' => $where[] = $this->meritoriousHouseholdExists('h'),
+            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND h.disabled_household = 0',
             'other' => $where[] = 'h.disabled_household = 1',
             'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
             default => null,
@@ -405,6 +433,13 @@ final class Citizen extends BaseModel
         $where[] = '(h.note LIKE :household_category_label OR h.note LIKE :household_category_key)';
         $params['household_category_label'] = '%' . $label . '%';
         $params['household_category_key'] = '%' . str_replace('_', ' ', $category) . '%';
+    }
+
+    private function meritoriousHouseholdExists(string $alias): string
+    {
+        $citizenPolicy = $this->meritoriousPolicyCondition('mhc');
+        if ($citizenPolicy === '0=1') return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens mhc WHERE mhc.household_id=' . $alias . '.id AND ' . $this->statistics()->citizenCondition('mhc') . ' AND ' . $citizenPolicy . ')';
     }
 
     private function categoryKey(mixed $value): string

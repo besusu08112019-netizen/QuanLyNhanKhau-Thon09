@@ -202,12 +202,16 @@
 
   function policyLabels(row) {
     const labels = [];
-    if (Number(row.meritorious_person) === 1) labels.push('Người có công');
     if (Number(row.martyr_relative) === 1) labels.push('Thân nhân liệt sĩ');
     if (Number(row.wounded_soldier) === 1) labels.push('Thương binh');
     if (Number(row.sick_soldier) === 1) labels.push('Bệnh binh');
+    if (Number(row.chemical_warfare_victim) === 1) labels.push('Người hoạt động kháng chiến bị nhiễm chất độc hóa học');
+    if (Number(row.imprisoned_resistance_activist) === 1) labels.push('Người hoạt động kháng chiến bị địch bắt tù, đày');
+    if (Number(row.youth_volunteer) === 1) labels.push('Thanh niên xung phong');
+    if (Number(row.resistance_hero) === 1) labels.push('Anh hùng LLVTND / Anh hùng Lao động thời kỳ kháng chiến');
+    if (Number(row.revolutionary_activist) === 1) labels.push('Người hoạt động cách mạng');
     if (Number(row.disabled_person) === 1) labels.push('Người khuyết tật');
-    if (Number(row.social_assistance) === 1) labels.push('Bảo trợ xã hội');
+    if (Number(row.social_assistance) === 1) labels.push('Đang hưởng trợ cấp xã hội');
     return labels;
   }
 

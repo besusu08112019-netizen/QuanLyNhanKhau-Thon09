@@ -93,11 +93,20 @@
   }
 
 
-  const digitalCitizenFields = [
+  const politicalCitizenFields = [
     ['partyMember','Dang vien'], ['youthUnionMember','Doan vien Thanh nien'], ['womenUnionMember','Hoi vien Hoi Phu nu'], ['farmersUnionMember','Hoi vien Hoi Nong dan'], ['veteransUnionMember','Hoi vien Hoi Cuu chien binh'], ['elderlyUnionMember','Hoi vien Hoi Nguoi cao tuoi'],
-    ['meritoriousPerson','Nguoi co cong'], ['martyrRelative','Than nhan liet si'], ['woundedSoldier','Thuong binh'], ['sickSoldier','Benh binh'], ['disabledPerson','Nguoi khuyet tat'], ['socialAssistance','Bao tro xa hoi'],
+  ];
+  const policyCitizenFields = [
+    ['martyrRelative','Than nhan liet si'], ['woundedSoldier','Thuong binh'], ['sickSoldier','Benh binh'], ['chemicalWarfareVictim','Nguoi hoat dong khang chien bi nhiem chat doc hoa hoc'],
+    ['imprisonedResistanceActivist','Nguoi hoat dong khang chien bi dich bat tu, day'], ['youthVolunteer','Thanh nien xung phong'], ['resistanceHero','Anh hung LLVTND / Anh hung Lao dong thoi ky khang chien'], ['revolutionaryActivist','Nguoi hoat dong cach mang'],
+  ];
+  const socialSecurityCitizenFields = [
+    ['disabledPerson','Nguoi khuyet tat'], ['socialAssistance','Dang huong tro cap xa hoi'],
+  ];
+  const laborCitizenFields = [
     ['employed','Co viec lam'], ['unemployed','That nghiep'], ['freelanceLabor','Lao dong tu do'], ['outProvinceLabor','Lao dong ngoai tinh'], ['foreignLabor','Lao dong nuoc ngoai'], ['notAttendingSchool','Chua di hoc'], ['pupil','Hoc sinh'], ['student','Sinh vien'], ['retired','Nghi huu'],
   ];
+  const digitalCitizenFields = [...politicalCitizenFields, ...policyCitizenFields, ...socialSecurityCitizenFields, ...laborCitizenFields];
 
   function setupDigitalGovernmentFeatures() {
     setupDigitalCitizenForm();
@@ -111,10 +120,11 @@
     const bodyRow = form?.querySelector('.modal-body .row');
     if (!form || !bodyRow) return;
     ensurePersonProfileTabs(form, bodyRow);
-    if (form.querySelector('[data-digital-citizen-fields]')) return;
-    const group = (title, fields) => '<div class="col-12" data-digital-citizen-fields><div class="border rounded p-3"><div class="fw-semibold mb-2">' + title + '</div><div class="row g-2">' + fields.map(([name,label]) => '<div class="col-md-3 col-sm-6 form-check ms-2"><input class="form-check-input" type="checkbox" name="' + name + '" id="' + name + '"><label class="form-check-label" for="' + name + '">' + label + '</label></div>').join('') + '</div></div></div>';
-    bodyRow.insertAdjacentHTML('beforeend', group('Chinh tri - Xa hoi', digitalCitizenFields.slice(0,6)) + group('Chinh sach', digitalCitizenFields.slice(6,12)) + group('Lao dong', digitalCitizenFields.slice(12)));
     bindPersonAgeDefaults(form);
+    if (!form.querySelector('[data-digital-citizen-fields]')) {
+      const group = (title, fields) => '<div class="col-12" data-digital-citizen-fields><div class="border rounded p-3"><div class="fw-semibold mb-2">' + title + '</div><div class="row g-2">' + fields.map(([name,label]) => '<div class="col-md-3 col-sm-6 form-check ms-2"><input class="form-check-input" type="checkbox" name="' + name + '" id="' + name + '"><label class="form-check-label" for="' + name + '">' + label + '</label></div>').join('') + '</div></div></div>';
+      bodyRow.insertAdjacentHTML('beforeend', group('Chinh tri - Xa hoi', politicalCitizenFields) + group('DOI TUONG CHINH SACH', policyCitizenFields) + group('AN SINH XA HOI', socialSecurityCitizenFields) + group('Lao dong', laborCitizenFields));
+    }
     const originalOpen = window.openPersonForm;
     if (typeof originalOpen === 'function' && !originalOpen.__digitalWrapped) {
       window.openPersonForm = async function digitalOpenPersonForm(id = null) {
@@ -141,10 +151,24 @@
     if (!form || form.dataset.ageDefaultsBound === '1') return;
     form.dataset.ageDefaultsBound = '1';
     const dob = form.elements.dateOfBirth;
-    if (!dob) return;
-    dob.addEventListener('change', () => {
+    form.addEventListener('input', event => {
+      if (event.target?.name === 'dateOfBirth' && !form.elements.id?.value) applyPersonAgeDefaults(form);
+    });
+    form.addEventListener('change', event => {
+      if (event.target?.name === 'dateOfBirth' && !form.elements.id?.value) applyPersonAgeDefaults(form);
+    });
+    form.addEventListener('reset', () => {
+      setTimeout(() => {
+        if (!form.elements.id?.value) {
+          clearPersonAgeDefaults(form);
+          syncBridgeHealthInsuranceFields(form);
+        }
+      }, 0);
+    });
+    form.closest('.modal')?.addEventListener('shown.bs.modal', () => {
       if (!form.elements.id?.value) applyPersonAgeDefaults(form);
     });
+    if (dob?.value && !form.elements.id?.value) applyPersonAgeDefaults(form);
   }
 
   function calculatePersonAge(dateOfBirth) {
@@ -174,6 +198,14 @@
     ['healthInsuranceNumber','healthInsuranceGroup','healthInsuranceStartDate','healthInsuranceEndDate','healthInsuranceFacility'].forEach(name => {
       if (form?.elements?.[name]) form.elements[name].disabled = !active;
     });
+  }
+
+  function clearPersonAgeDefaults(form) {
+    ['notAttendingSchool', 'pupil', 'student', 'employed'].forEach(name => {
+      const el = form?.elements?.[name];
+      if (el) el.checked = false;
+    });
+    if (form?.elements?.hasHealthInsurance) form.elements.hasHealthInsurance.checked = false;
   }
 
   function applyPersonAgeDefaults(form) {

@@ -286,7 +286,7 @@ final class DigitalProfile extends BaseModel
     {
         return [
             'party_member' => 'Đảng viên', 'youth_union_member' => 'Đoàn viên Thanh niên', 'women_union_member' => 'Hội viên Hội Phụ nữ', 'farmers_union_member' => 'Hội viên Hội Nông dân', 'veterans_union_member' => 'Hội viên Hội Cựu chiến binh', 'elderly_union_member' => 'Hội viên Hội Người cao tuổi',
-            'meritorious_person' => 'Người có công', 'martyr_relative' => 'Thân nhân liệt sĩ', 'wounded_soldier' => 'Thương binh', 'sick_soldier' => 'Bệnh binh', 'disabled_person' => 'Người khuyết tật', 'social_assistance' => 'Bảo trợ xã hội',
+            'martyr_relative' => 'Thân nhân liệt sĩ', 'wounded_soldier' => 'Thương binh', 'sick_soldier' => 'Bệnh binh', 'chemical_warfare_victim' => 'Người hoạt động kháng chiến bị nhiễm chất độc hóa học', 'imprisoned_resistance_activist' => 'Người hoạt động kháng chiến bị địch bắt tù, đày', 'youth_volunteer' => 'Thanh niên xung phong', 'resistance_hero' => 'Anh hùng LLVTND / Anh hùng Lao động thời kỳ kháng chiến', 'revolutionary_activist' => 'Người hoạt động cách mạng', 'disabled_person' => 'Người khuyết tật', 'social_assistance' => 'Đang hưởng trợ cấp xã hội',
             'employed' => 'Có việc làm', 'unemployed' => 'Thất nghiệp', 'freelance_labor' => 'Lao động tự do', 'out_province_labor' => 'Lao động ngoài tỉnh', 'foreign_labor' => 'Lao động nước ngoài', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu',
         ];
     }

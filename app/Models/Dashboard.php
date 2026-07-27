@@ -9,6 +9,47 @@ final class Dashboard extends BaseModel
 {
     private ?PopulationStatistics $statistics = null;
 
+    private const MERITORIOUS_POLICY_COLUMNS = [
+        'martyr_relative',
+        'wounded_soldier',
+        'sick_soldier',
+        'chemical_warfare_victim',
+        'imprisoned_resistance_activist',
+        'youth_volunteer',
+        'resistance_hero',
+        'revolutionary_activist',
+    ];
+
+    private const CITIZEN_FLAG_COLUMNS = [
+        'has_health_insurance',
+        'party_member',
+        'youth_union_member',
+        'women_union_member',
+        'farmers_union_member',
+        'veterans_union_member',
+        'elderly_union_member',
+        'meritorious_person',
+        'martyr_relative',
+        'wounded_soldier',
+        'sick_soldier',
+        'chemical_warfare_victim',
+        'imprisoned_resistance_activist',
+        'youth_volunteer',
+        'resistance_hero',
+        'revolutionary_activist',
+        'disabled_person',
+        'social_assistance',
+        'employed',
+        'unemployed',
+        'freelance_labor',
+        'out_province_labor',
+        'foreign_labor',
+        'not_attending_school',
+        'pupil',
+        'student',
+        'retired',
+    ];
+
     public function summary(array $filters = []): array
     {
         $errors = [];
@@ -110,7 +151,7 @@ final class Dashboard extends BaseModel
             'production_business_households' => 0,
             'business_worker_total' => 0,
         ];
-        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','not_attending_school','pupil','student','retired'] as $key) {
+        foreach (self::CITIZEN_FLAG_COLUMNS as $key) {
             $metrics[$key . '_count'] = 0;
             $metrics[$key . '_percent'] = 0;
         }
@@ -179,7 +220,8 @@ final class Dashboard extends BaseModel
     public function povertyChart(array $filters = []): array
     {
         [$where, $params] = $this->householdWhere($filters);
-        $row = $this->fetchOne("SELECT COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN h.meritorious_family=1 THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND h.meritorious_family=0 AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal, COALESCE(SUM(CASE WHEN h.disabled_household=1 THEN 1 ELSE 0 END),0) AS other FROM households h $where", $params) ?: [];
+        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
+        $row = $this->fetchOne("SELECT COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND NOT $meritoriousHouseholdExpr AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal, COALESCE(SUM(CASE WHEN h.disabled_household=1 THEN 1 ELSE 0 END),0) AS other FROM households h $where", $params) ?: [];
         return [
             ['label' => 'Hộ nghèo', 'value' => (int) ($row['poor'] ?? 0)],
             ['label' => 'Hộ cận nghèo', 'value' => (int) ($row['near_poor'] ?? 0)],
@@ -734,9 +776,13 @@ final class Dashboard extends BaseModel
         if ($filters['dateTo']) { $where[] = 'DATE(c.created_at) <= :citizen_date_to'; $params['citizen_date_to'] = $filters['dateTo']; }
         $category = $this->categoryKey($filters['householdType']);
         if ($category) $this->addCategoryWhere($where, $params, $category);
-        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','not_attending_school','pupil','student','retired'] as $column) {
+        foreach (self::CITIZEN_FLAG_COLUMNS as $column) {
             $value = $rawFilters[$column] ?? $rawFilters[$this->camel($column)] ?? null;
-            if ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $value; }
+            if ($column === 'meritorious_person' && $value !== null && $value !== '') {
+                $where[] = $this->meritoriousCitizenExpression('c', (int) $value === 1);
+            } elseif ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) {
+                $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $value;
+            }
         }
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
@@ -761,8 +807,8 @@ final class Dashboard extends BaseModel
         match ($category) {
             'poor' => $where[] = 'h.poor_household = 1',
             'near_poor' => $where[] = 'h.near_poor_household = 1',
-            'meritorious' => $where[] = 'h.meritorious_family = 1',
-            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND h.meritorious_family = 0 AND h.disabled_household = 0',
+            'meritorious' => $where[] = $this->meritoriousHouseholdExists('h'),
+            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND h.disabled_household = 0',
             'other' => $where[] = 'h.disabled_household = 1',
             'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
             default => null,
@@ -804,10 +850,33 @@ final class Dashboard extends BaseModel
 
     private function flagSelects(string $alias): string
     {
-        $columns = ['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','not_attending_school','pupil','student','retired'];
         $parts = [];
-        foreach ($columns as $column) $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
+        foreach (self::CITIZEN_FLAG_COLUMNS as $column) {
+            if ($column === 'meritorious_person') {
+                $parts[] = ', COALESCE(SUM(CASE WHEN ' . $this->meritoriousCitizenExpression($alias) . " THEN 1 ELSE 0 END),0) AS $column";
+            } else {
+                $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
+            }
+        }
         return implode('', $parts);
+    }
+
+    private function meritoriousCitizenExpression(string $alias, bool $positive = true): string
+    {
+        $parts = [];
+        foreach (self::MERITORIOUS_POLICY_COLUMNS as $column) {
+            if ($this->columnExists('citizens', $column)) $parts[] = $alias . '.' . $column . '=1';
+        }
+        if (!$parts) return $positive ? '0=1' : '1=1';
+        $expression = '(' . implode(' OR ', $parts) . ')';
+        return $positive ? $expression : 'NOT ' . $expression;
+    }
+
+    private function meritoriousHouseholdExists(string $alias): string
+    {
+        $citizenPolicy = $this->meritoriousCitizenExpression('dhc');
+        if ($citizenPolicy === '0=1') return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens dhc WHERE dhc.household_id=' . $alias . '.id AND ' . $this->activeCitizenCondition('dhc') . ' AND ' . $citizenPolicy . ')';
     }
 
     private function tableExists(string $table): bool

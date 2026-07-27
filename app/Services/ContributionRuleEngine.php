@@ -184,13 +184,21 @@ final class ContributionRuleEngine
             if ($condition === 'CHILDREN' && (($this->age($member['date_of_birth'] ?? null) ?? 999) < 16)) return true;
             if ($condition === 'ELDERLY' && (($this->age($member['date_of_birth'] ?? null) ?? 0) >= 60)) return true;
             if ($condition === 'DISABLED' && (int) ($member['disabled_person'] ?? 0) === 1) return true;
-            if ($condition === 'MERITORIOUS' && ((int) ($member['meritorious_person'] ?? 0) === 1 || (int) ($household['meritorious_family'] ?? 0) === 1)) return true;
+            if ($condition === 'MERITORIOUS' && $this->isMeritoriousMember($member)) return true;
             if ($condition === 'ACTIVE_SOLDIER' && $this->textHas($member, ['bộ đội', 'bo doi', 'quân nhân', 'quan nhan', 'military', 'soldier'])) return true;
             if ($condition === 'SOCIAL_ASSISTANCE' && (int) ($member['social_assistance'] ?? 0) === 1) return true;
             if ($condition === 'POOR_HOUSEHOLD' && (int) ($household['poor_household'] ?? 0) === 1) return true;
             if ($condition === 'NEAR_POOR_HOUSEHOLD' && (int) ($household['near_poor_household'] ?? 0) === 1) return true;
             if ($condition === 'POLICY' && $this->noteHas($household, ['chính sách', 'chinh sach', 'policy'])) return true;
             if (in_array($condition, ['COMMUNE_DECISION', 'HAMLET_DECISION', 'OTHER'], true) && $this->noteHas($household, ['miễn', 'mien', 'quyết định', 'quyet dinh'])) return true;
+        }
+        return false;
+    }
+
+    private function isMeritoriousMember(array $member): bool
+    {
+        foreach (['martyr_relative','wounded_soldier','sick_soldier','chemical_warfare_victim','imprisoned_resistance_activist','youth_volunteer','resistance_hero','revolutionary_activist'] as $field) {
+            if ((int) ($member[$field] ?? 0) === 1) return true;
         }
         return false;
     }
@@ -268,6 +276,7 @@ final class ContributionRuleEngine
             'AGE_GTE' => (($this->age($member['date_of_birth'] ?? null) ?? -1) >= (int) ($rule['value'] ?? $rule['age'] ?? 0)),
             'AGE_LT' => (($this->age($member['date_of_birth'] ?? null) ?? 999) < (int) ($rule['value'] ?? $rule['age'] ?? 0)),
             'BOOLEAN_TRUE' => $field !== '' && (int) ($actual ?? 0) === 1,
+            'MERITORIOUS' => $this->isMeritoriousMember($member),
             'FIELD_EQUALS' => $field !== '' && strtoupper((string) $actual) === strtoupper((string) ($rule['value'] ?? '')),
             'TEXT_CONTAINS' => $field !== '' && $this->containsAny((string) ($actual ?? ''), (array) ($rule['values'] ?? [$rule['value'] ?? ''])),
             'TEXT_ANY_CONTAINS' => $this->textHas($source, (array) ($rule['values'] ?? [$rule['value'] ?? ''])),

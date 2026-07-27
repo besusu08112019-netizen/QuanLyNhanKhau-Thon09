@@ -18,6 +18,11 @@ final class PopulationStatistics extends BaseModel
         'martyr_relative',
         'wounded_soldier',
         'sick_soldier',
+        'chemical_warfare_victim',
+        'imprisoned_resistance_activist',
+        'youth_volunteer',
+        'resistance_hero',
+        'revolutionary_activist',
         'disabled_person',
         'social_assistance',
         'employed',
@@ -29,6 +34,17 @@ final class PopulationStatistics extends BaseModel
         'pupil',
         'student',
         'retired',
+    ];
+
+    private const MERITORIOUS_POLICY_COLUMNS = [
+        'martyr_relative',
+        'wounded_soldier',
+        'sick_soldier',
+        'chemical_warfare_victim',
+        'imprisoned_resistance_activist',
+        'youth_volunteer',
+        'resistance_hero',
+        'revolutionary_activist',
     ];
 
     public function householdCondition(string $alias = 'h'): string
@@ -112,7 +128,8 @@ final class PopulationStatistics extends BaseModel
         [$householdWhere, $householdParams] = $this->householdWhere($filters);
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
 
-        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor_households, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor_households, COALESCE(SUM(CASE WHEN h.meritorious_family=1 THEN 1 ELSE 0 END),0) AS meritorious_households, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy_households, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND h.meritorious_family=0 AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal_households FROM households h $householdWhere", $householdParams) ?: [];
+        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
+        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor_households, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor_households, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious_households, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy_households, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND NOT $meritoriousHouseholdExpr AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal_households FROM households h $householdWhere", $householdParams) ?: [];
 
         $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female_count, COALESCE(SUM(CASE WHEN c.relationship='Chủ hộ' THEN 1 ELSE 0 END),0) AS household_head_count, COALESCE(SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END),0) AS active_citizens, COALESCE(SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary_residence_count, COALESCE(SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END),0) AS temporary_absence_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly_count, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END),0) AS working_age_count" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
 
@@ -254,7 +271,9 @@ final class PopulationStatistics extends BaseModel
         if ($category) $this->addCategoryWhere($where, $params, $category);
         foreach (self::CITIZEN_FLAG_COLUMNS as $column) {
             $value = $rawFilters[$column] ?? $rawFilters[$this->camel($column)] ?? null;
-            if ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) {
+            if ($column === 'meritorious_person' && $value !== null && $value !== '') {
+                $where[] = $this->meritoriousCitizenExpression('c', (int) $value === 1);
+            } elseif ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) {
                 $where[] = 'c.' . $column . ' = :' . $column;
                 $params[$column] = (int) $value;
             }
@@ -293,8 +312,8 @@ final class PopulationStatistics extends BaseModel
         match ($category) {
             'poor' => $where[] = 'h.poor_household = 1',
             'near_poor' => $where[] = 'h.near_poor_household = 1',
-            'meritorious' => $where[] = 'h.meritorious_family = 1',
-            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND h.meritorious_family = 0 AND h.disabled_household = 0',
+            'meritorious' => $where[] = $this->meritoriousHouseholdExists('h'),
+            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND h.disabled_household = 0',
             'other' => $where[] = 'h.disabled_household = 1',
             'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
             default => null,
@@ -337,9 +356,31 @@ final class PopulationStatistics extends BaseModel
     {
         $parts = [];
         foreach (self::CITIZEN_FLAG_COLUMNS as $column) {
-            $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
+            if ($column === 'meritorious_person') {
+                $parts[] = ', COALESCE(SUM(CASE WHEN ' . $this->meritoriousCitizenExpression($alias) . " THEN 1 ELSE 0 END),0) AS $column";
+            } else {
+                $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
+            }
         }
         return implode('', $parts);
+    }
+
+    private function meritoriousCitizenExpression(string $alias, bool $positive = true): string
+    {
+        $parts = [];
+        foreach (self::MERITORIOUS_POLICY_COLUMNS as $column) {
+            if ($this->columnExists('citizens', $column)) $parts[] = $alias . '.' . $column . '=1';
+        }
+        if (!$parts) return $positive ? '0=1' : '1=1';
+        $expression = '(' . implode(' OR ', $parts) . ')';
+        return $positive ? $expression : 'NOT ' . $expression;
+    }
+
+    private function meritoriousHouseholdExists(string $alias): string
+    {
+        $citizenPolicy = $this->meritoriousCitizenExpression('mc');
+        if ($citizenPolicy === '0=1') return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens mc WHERE mc.household_id=' . $alias . '.id AND ' . $this->citizenCondition('mc') . ' AND ' . $citizenPolicy . ')';
     }
 
     private function camel(string $column): string

@@ -1205,7 +1205,7 @@ SQL);
                 ['rule' => 'FIELD_EQUALS', 'scope' => 'person', 'field' => 'presence_status', 'value' => 'AWAY', 'label' => 'Người đi vắng'],
                 ['rule' => 'AGE_GTE', 'value' => 80, 'label' => 'Người từ 80 tuổi trở lên'],
                 ['rule' => 'BOOLEAN_TRUE', 'scope' => 'person', 'field' => 'disabled_person', 'label' => 'Người khuyết tật'],
-                ['rule' => 'BOOLEAN_TRUE', 'scope' => 'person', 'field' => 'meritorious_person', 'label' => 'Người thuộc diện chính sách/người có công'],
+                ['rule' => 'MERITORIOUS', 'scope' => 'person', 'label' => 'Người thuộc đối tượng chính sách/người có công'],
                 ['rule' => 'TEXT_ANY_CONTAINS', 'scope' => 'person', 'values' => ['bộ đội', 'bo doi', 'quân nhân', 'quan nhan', 'military', 'soldier'], 'label' => 'Bộ đội đang phục vụ'],
             ],
             'household_discounts' => [

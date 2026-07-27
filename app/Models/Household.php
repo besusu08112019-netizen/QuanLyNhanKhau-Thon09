@@ -8,6 +8,17 @@ final class Household extends BaseModel
 {
     private ?PopulationStatistics $statistics = null;
 
+    private const MERITORIOUS_POLICY_COLUMNS = [
+        'martyr_relative',
+        'wounded_soldier',
+        'sick_soldier',
+        'chemical_warfare_victim',
+        'imprisoned_resistance_activist',
+        'youth_volunteer',
+        'resistance_hero',
+        'revolutionary_activist',
+    ];
+
     public const CATEGORY_OPTIONS = [
         'poor' => 'Hộ nghèo',
         'near_poor' => 'Hộ cận nghèo',
@@ -24,13 +35,15 @@ final class Household extends BaseModel
         [$sqlWhere, $params] = $this->where($filters);
         $total = (int) $this->fetchOne("SELECT COUNT(*) AS total FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere", $params)['total'];
         $order = $this->listOrder($filters, ['household_code' => 'h.household_code', 'head_citizen_name' => 'h.head_citizen_name', 'area_code' => 'h.area_code', 'status' => 'h.status'], 'household_code', 'ASC', ['h.id ASC']);
-        $items = $this->fetchAll("SELECT h.id, h.household_code, h.head_citizen_id, h.head_citizen_name, h.address, h.phone, h.area_code, h.meritorious_family, h.poor_household, h.near_poor_household, h.disabled_household, h.note, h.status, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere $order LIMIT $pageSize OFFSET $offset", $params);
+        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
+        $items = $this->fetchAll("SELECT h.id, h.household_code, h.head_citizen_id, h.head_citizen_name, h.address, h.phone, h.area_code, $meritoriousHouseholdExpr AS meritorious_policy, h.meritorious_family, h.poor_household, h.near_poor_household, h.disabled_household, h.note, h.status, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id $sqlWhere $order LIMIT $pageSize OFFSET $offset", $params);
         return $this->paginated(array_map(fn($row) => $this->withPhoto($this->withCategory($row)), $items), $page, $pageSize, $total);
     }
 
     public function find(int $id): ?array
     {
-        $row = $this->fetchOne('SELECT h.*, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id WHERE h.id = :id AND h.status <> "DELETED" AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $id]));
+        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
+        $row = $this->fetchOne('SELECT h.*, ' . $meritoriousHouseholdExpr . ' AS meritorious_policy, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id = h.id WHERE h.id = :id AND h.status <> "DELETED" AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $id]));
         return $row ? $this->withPhoto($this->withCategory($row)) : null;
     }
 
@@ -146,8 +159,8 @@ final class Household extends BaseModel
         match ($category) {
             'poor' => $where[] = 'h.poor_household = 1',
             'near_poor' => $where[] = 'h.near_poor_household = 1',
-            'meritorious' => $where[] = 'h.meritorious_family = 1',
-            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND h.meritorious_family = 0 AND h.disabled_household = 0',
+            'meritorious' => $where[] = $this->meritoriousHouseholdExists('h'),
+            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND h.disabled_household = 0',
             'other' => $where[] = 'h.disabled_household = 1',
             'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category, $prefix),
             default => null,
@@ -210,7 +223,7 @@ final class Household extends BaseModel
     {
         if ((int) ($row['poor_household'] ?? 0) === 1) return self::CATEGORY_OPTIONS['poor'];
         if ((int) ($row['near_poor_household'] ?? 0) === 1) return self::CATEGORY_OPTIONS['near_poor'];
-        if ((int) ($row['meritorious_family'] ?? 0) === 1) return self::CATEGORY_OPTIONS['meritorious'];
+        if ((int) ($row['meritorious_policy'] ?? 0) === 1) return self::CATEGORY_OPTIONS['meritorious'];
         if ((int) ($row['disabled_household'] ?? 0) === 1) return self::CATEGORY_OPTIONS['other'];
         $noteKey = $this->categoryKey((string) ($row['note'] ?? ''));
         if ($noteKey && isset(self::CATEGORY_OPTIONS[$noteKey])) return self::CATEGORY_OPTIONS[$noteKey];
@@ -311,5 +324,21 @@ final class Household extends BaseModel
         $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
         if ($converted !== false) $value = $converted;
         return trim(preg_replace('/[^a-z0-9]+/', ' ', $value));
+    }
+
+    private function meritoriousCitizenExpression(string $alias): string
+    {
+        $parts = [];
+        foreach (self::MERITORIOUS_POLICY_COLUMNS as $column) {
+            if ($this->columnExists('citizens', $column)) $parts[] = $alias . '.' . $column . '=1';
+        }
+        return $parts ? '(' . implode(' OR ', $parts) . ')' : '0=1';
+    }
+
+    private function meritoriousHouseholdExists(string $alias): string
+    {
+        $citizenPolicy = $this->meritoriousCitizenExpression('mhc');
+        if ($citizenPolicy === '0=1') return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens mhc WHERE mhc.household_id=' . $alias . '.id AND ' . $this->statistics()->citizenCondition('mhc') . ' AND ' . $citizenPolicy . ')';
     }
 }
