@@ -286,9 +286,19 @@ final class GisArea extends BaseModel
         return array_values(array_filter(array_map(function ($point) {
             if (!is_array($point)) return null;
             if (isset($point['lat'], $point['lng'])) return ['lat' => (float) $point['lat'], 'lng' => (float) $point['lng']];
-            if (isset($point[0], $point[1])) return ['lat' => (float) $point[1], 'lng' => (float) $point[0]];
+            if (isset($point[0], $point[1])) return $this->normalizeCoordinatePair($point);
             return null;
         }, $input)));
+    }
+
+    private function normalizeCoordinatePair(array $point): ?array
+    {
+        $first = (float) $point[0];
+        $second = (float) $point[1];
+        if (abs($first) <= 90 && abs($second) <= 180 && abs($second) > 90) return ['lat' => $first, 'lng' => $second];
+        if (abs($second) <= 90 && abs($first) <= 180) return ['lat' => $second, 'lng' => $first];
+        if (abs($first) <= 90 && abs($second) <= 180) return ['lat' => $first, 'lng' => $second];
+        return null;
     }
 
     private function toGeoJson(array $polygon): array

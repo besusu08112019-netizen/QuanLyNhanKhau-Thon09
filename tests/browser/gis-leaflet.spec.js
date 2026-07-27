@@ -340,6 +340,40 @@ test('leaflet GIS renders GeoJSON area polygon and highlights selected area', as
   expect(after.style.pane).toBe('gisAreaPane');
 });
 
+test('leaflet GIS renders saved area polygons returned as latitude-longitude arrays', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  const result = await page.evaluate(() => {
+    window.App.gis.polygonManager.render({
+      areas: [{
+        id: 22,
+        name: 'Khu lat lng',
+        area_code: 'LL',
+        color: '#0f8a4b',
+        geometry: [
+          [20.250, 105.970],
+          [20.252, 105.971],
+          [20.251, 105.973],
+          [20.250, 105.970]
+        ],
+        stats: { households: 0, citizens: 0 }
+      }]
+    }, true);
+    const layer = window.App.gis.areaLayerMap.get('22');
+    return {
+      exists: Boolean(layer),
+      inGroup: Boolean(layer && window.App.gis.layerGroup.hasLayer(layer)),
+      points: layer?.points || [],
+      fitBounds: window.App.gis.map.lastFitBounds
+    };
+  });
+  expect(result.exists).toBe(true);
+  expect(result.inGroup).toBe(true);
+  expect(result.points.length).toBe(4);
+  expect(result.points[0]).toEqual([20.25, 105.97]);
+  expect(result.fitBounds.bounds[0]).toEqual([20.25, 105.97]);
+});
+
 test('mobile GIS keeps the shared desktop panel controls available', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const apiLog = [];
