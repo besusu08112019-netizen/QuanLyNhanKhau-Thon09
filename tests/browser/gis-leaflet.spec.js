@@ -142,6 +142,7 @@ function leafletStub() {
       }
       function tileLayer(url, opts){ return { url, opts: opts || {}, events: {}, on(name, cb){ this.events[name] = cb; return this; }, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
       function imageOverlay(url, bounds, opts){ const overlay = evented({ url, bounds, opts: opts || {} }); overlay.addTo = function(group){ group && group.addLayer && group.addLayer(this); setTimeout(() => this.fire('load'), 0); return this; }; return overlay; }
+      function svg(opts){ return { opts: opts || {}, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
       function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p._path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; p.toGeoJSON = function(){ return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [this.points.map(pt => Array.isArray(pt) ? [pt[1], pt[0]] : [pt.lng, pt.lat])] } }; }; p.editing = { enabled: false, enable(){ this.enabled = true; } }; return p; }
       function circle(latlng, opts){ const c = makeMarker(latlng, opts); c.setRadius = function(radius){ this.radius = radius; return this; }; return c; }
       function divIcon(opts){ return Object.assign({ createIcon(){ return document.createElement('div'); }, createShadow(){ return null; } }, opts || {}); }
@@ -159,7 +160,7 @@ function leafletStub() {
         };
         return group;
       }
-      window.L = { map: makeMap, tileLayer, imageOverlay, featureGroup: layerGroup, layerGroup, markerClusterGroup, popup: makePopup, marker: makeMarker, circle, polygon, divIcon, Control: { Draw: DrawControl }, Draw: { Polygon: DrawPolygon, Event: { CREATED: 'draw:created', EDITED: 'draw:edited' } }, DomEvent: { disableClickPropagation(){}, disableScrollPropagation(){}, stopPropagation(){} } };
+      window.L = { map: makeMap, tileLayer, imageOverlay, svg, featureGroup: layerGroup, layerGroup, markerClusterGroup, popup: makePopup, marker: makeMarker, circle, polygon, divIcon, Control: { Draw: DrawControl }, Draw: { Polygon: DrawPolygon, Event: { CREATED: 'draw:created', EDITED: 'draw:edited' } }, DomEvent: { disableClickPropagation(){}, disableScrollPropagation(){}, stopPropagation(){} } };
     })();
   `;
 }
@@ -243,6 +244,7 @@ test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page
   await boot(page, apiLog);
   await page.evaluate(() => window.startGisDraw(false));
   const result = await page.evaluate(() => {
+    const drawShapeOptions = window.App.gis.activeDrawHandler?.opts?.shapeOptions || {};
     const layer = window.L.polygon([[20.251, 105.971], [20.252, 105.972], [20.253, 105.971]]);
     window.App.gis.map.fire(window.L.Draw.Event.CREATED, { layer });
     return {
@@ -251,6 +253,7 @@ test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page
       saveDisabled: document.querySelector('#gisSaveBtn')?.disabled,
       dirty: window.App.gis.areaDirty,
       style: layer.style,
+      drawRendererPane: drawShapeOptions.renderer?.opts?.pane || null,
       editingEnabled: Boolean(layer.editing?.enabled)
     };
   });
@@ -260,6 +263,7 @@ test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page
   expect(result.dirty).toBe(true);
   expect(result.style).toMatchObject({ color: '#0f8a4b', fillColor: '#0f8a4b', weight: 3 });
   expect(result.style.fillOpacity).toBeCloseTo(0.35);
+  expect(result.drawRendererPane).toBe('gisAreaPane');
   expect(result.editingEnabled).toBe(true);
 });
 
@@ -318,11 +322,12 @@ test('leaflet GIS renders GeoJSON area polygon and highlights selected area', as
   await boot(page, apiLog);
   const before = await page.evaluate(() => {
     const layer = window.App.gis.areaLayerMap.get('11');
-    return { count: window.App.gis.areaLayerMap.size, points: layer?.points?.length || 0, style: layer?.style || null };
+    return { count: window.App.gis.areaLayerMap.size, points: layer?.points?.length || 0, style: layer?.style || null, rendererPane: layer?.style?.renderer?.opts?.pane || null };
   });
   expect(before.count).toBe(1);
   expect(before.points).toBeGreaterThanOrEqual(3);
   expect(before.style.pane).toBe('gisAreaPane');
+  expect(before.rendererPane).toBe('gisAreaPane');
   expect(before.style.weight).toBe(3);
   expect(before.style.fillOpacity).toBeCloseTo(0.14);
 

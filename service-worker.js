@@ -1,4 +1,4 @@
-const PWA_VERSION = 'tenant-pwa-v20260727-gis-polygon-1';
+const PWA_VERSION = 'tenant-pwa-v20260727-gis-polygon-renderer-1';
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
 const TENANT_NAMESPACE = `${self.location.host}${APP_BASE_PATH}`.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
 const CACHE_PREFIX = `${TENANT_NAMESPACE}-${PWA_VERSION}`;
