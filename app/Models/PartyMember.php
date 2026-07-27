@@ -216,9 +216,9 @@ SQL);
     {
         if ($mode === 'official') $filters['member_type'] = 'OFFICIAL';
         if ($mode === 'probationary') $filters['member_type'] = 'PROBATIONARY';
-        $filters['page'] = 1;
-        $filters['pageSize'] = 100;
-        $items = $this->paginate($filters)['items'];
+        $this->ensureSchema();
+        [$where, $params, $order] = $this->where($filters);
+        $items = array_map(fn($row) => $this->normalize($row), $this->fetchAll($this->selectSql() . " $where $order", $params));
         $title = match ($mode) {
             'branch' => 'Báo cáo Đảng viên theo chi bộ',
             'age' => 'Báo cáo Đảng viên theo độ tuổi',
@@ -229,7 +229,36 @@ SQL);
             'status' => 'Báo cáo tình trạng sinh hoạt Đảng',
             default => 'Danh sách Đảng viên',
         };
-        return ['title' => $title, 'headers' => ['Mã NK','Họ tên','Ngày sinh','Giới tính','Mã ĐV','Số thẻ','Chi bộ','Chức vụ','Loại','Tình trạng','Ngày vào Đảng','Địa chỉ'], 'rows' => array_map(fn($r) => [$r['citizen_code'], $r['full_name'], $this->date($r['date_of_birth']), $r['gender'], $r['party_member_code'], $r['party_card_number'], $r['branch_name'], $r['party_position'], $r['member_type_label'], $r['activity_status_label'], $this->date($r['joined_party_date']), $r['address']], $items), 'totalRows' => count($items), 'filters' => $filters, 'generatedAt' => date('c')];
+        $rows = [];
+        foreach ($items as $index => $r) {
+            $rows[] = [
+                $index + 1,
+                $r['full_name'],
+                $r['party_member_code'],
+                $r['branch_name'],
+                $r['party_position'],
+                $r['member_type_label'],
+                $r['activity_status_label'],
+                $this->date($r['joined_party_date']),
+                $this->date($r['official_party_date']),
+                $r['gender'],
+                $this->date($r['date_of_birth']),
+            ];
+        }
+        return [
+            'title' => $title,
+            'headers' => ['STT','Họ tên','Mã Đảng viên','Chi bộ','Chức vụ','Loại Đảng viên','Tình trạng','Ngày vào Đảng','Ngày chính thức','Giới tính','Ngày sinh'],
+            'rows' => $rows,
+            'totalRows' => count($items),
+            'filters' => $filters,
+            'summary' => ['Tổng số Đảng viên' => count($items)],
+            'meta' => [
+                'period_label' => $this->filterSummary($filters),
+                'report_date' => 'Ngày xuất: ' . date('d/m/Y H:i:s'),
+            ],
+            'orientation' => 'portrait',
+            'generatedAt' => date('c')
+        ];
     }
 
     private function selectSql(): string
@@ -297,6 +326,29 @@ SQL);
             'note' => $this->nullable($data['note'] ?? null),
             'user' => $userId,
         ];
+    }
+
+    private function filterSummary(array $filters): string
+    {
+        $labels = [];
+        $map = [
+            'branch_name' => 'Chi bộ',
+            'member_type' => 'Loại Đảng viên',
+            'activity_status' => 'Tình trạng',
+            'party_position' => 'Chức vụ',
+            'gender' => 'Giới tính',
+            'age_from' => 'Tuổi từ',
+            'age_to' => 'Tuổi đến',
+            'search' => 'Từ khóa',
+        ];
+        foreach ($map as $key => $label) {
+            $value = trim((string) ($filters[$key] ?? $filters[lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $key))))] ?? ''));
+            if ($value === '') continue;
+            if ($key === 'member_type') $value = self::MEMBER_TYPES[strtoupper($value)] ?? $value;
+            if ($key === 'activity_status') $value = self::STATUS_LABELS[strtoupper($value)] ?? $value;
+            $labels[] = $label . ': ' . $value;
+        }
+        return $labels ? 'Điều kiện lọc: ' . implode('; ', $labels) : 'Điều kiện lọc: Tất cả Đảng viên';
     }
 
     private function normalize(array $row): array

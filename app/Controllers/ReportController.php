@@ -322,7 +322,16 @@ final class ReportController extends BaseController
             foreach ($row as $cell) echo '<td>' . htmlspecialchars((string) $cell, ENT_QUOTES, 'UTF-8') . '</td>';
             echo '</tr>';
         }
-        echo '</tbody></table></body></html>';
+        echo '</tbody></table>';
+        $summary = is_array($report['summary'] ?? null) ? $report['summary'] : ['Tổng số dòng' => (int) ($report['totalRows'] ?? 0)];
+        if ($summary) {
+            echo '<br><table><tbody>';
+            foreach ($summary as $label => $value) {
+                echo '<tr><th>' . htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') . '</th><td>' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '</td></tr>';
+            }
+            echo '</tbody></table>';
+        }
+        echo '</body></html>';
         exit;
     }
 

@@ -267,19 +267,30 @@
     }
   }
 
-  function exportReport(format) {
+  async function exportReport(format) {
     const q = params();
     q.set('type', 'party-members');
     const endpoint = format === 'pdf' ? '/api/reports/export-pdf' : '/api/reports/export-excel';
-    window.open(endpoint + '?' + q.toString(), '_blank', 'noopener');
+    try {
+      await downloadFile(endpoint + '?' + q.toString(), format === 'pdf' ? 'pdf' : 'xlsx');
+      toast(format === 'pdf' ? 'Đã tải file PDF' : 'Đã tải file Excel');
+    } catch (e) {
+      toast(e.message, 'danger');
+    }
   }
 
   async function printReport() {
     const q = params();
     q.set('type', 'party-members');
-    const data = await request('/api/reports/print?' + q.toString());
-    if (window.TenantPrintFramework?.printReport) window.TenantPrintFramework.printReport(data);
-    else window.print();
+    try {
+      const data = await request('/api/reports/print?' + q.toString());
+      const printer = window.TenantAppPrint;
+      if (!printer?.render) return toast('Không tải được mẫu in báo cáo', 'warning');
+      const popup = printer.render(Object.assign({}, data, { type: 'party-members', filters: Object.assign({}, data.filters || {}, Object.fromEntries(q.entries())), orientation: 'portrait', paperSize: 'A4' }));
+      if (!popup) toast('Trình duyệt đang chặn cửa sổ in', 'warning');
+    } catch (e) {
+      toast(e.message, 'danger');
+    }
   }
 
   function collectFilters() {
@@ -329,6 +340,26 @@
     const json = await res.json().catch(() => null);
     if (!res.ok || json?.ok === false) throw new Error(json?.error?.message || 'Không tải được dữ liệu');
     return json?.data ?? json;
+  }
+
+  function downloadFile(url, extension) {
+    if (window.TenantAppExport?.download) return window.TenantAppExport.download(url, { extension });
+    const token = window.App?.token || localStorage.getItem(tenantStorageKey('token')) || '';
+    return fetch(url, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' }).then(async res => {
+      const type = res.headers.get('Content-Type') || '';
+      if (!res.ok || type.includes('application/json')) {
+        const json = type.includes('application/json') ? await res.json().catch(() => null) : null;
+        throw new Error(json?.error?.message || json?.message || 'Không xuất được file báo cáo');
+      }
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'danh_sach_dang_vien_' + Date.now() + '.' + extension;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 30000);
+      link.remove();
+    });
   }
 
   function can(action) {

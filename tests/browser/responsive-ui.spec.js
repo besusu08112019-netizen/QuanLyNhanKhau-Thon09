@@ -18,6 +18,9 @@ async function mockApis(page) {
     if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
     if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {}, generatedAt: new Date().toISOString() });
     if (url.includes('/api/dashboard/')) return payload({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() });
+    if (url.includes('/api/reports/export-excel')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/vnd.ms-excel', 'Content-Disposition': 'attachment; filename="dang_vien.xls"' }, body: 'excel-data' });
+    if (url.includes('/api/reports/export-pdf')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="dang_vien.pdf"' }, body: '%PDF-1.4\n%mock' });
+    if (url.includes('/api/reports/print')) return payload({ title: 'DANH SACH DANG VIEN', headers: ['STT', 'Ho ten'], rows: [[1, 'Nguyen Van A']], totalRows: 1, filters: { type: 'party-members' }, meta: {}, summary: { 'Tong so Dang vien': 1 } });
     if (url.includes('/api/gis/households')) return payload({ items: [], total: 0 });
     if (url.includes('/api/gis/summary')) return payload({ total: 0, located: 0, missing: 0, areas: [] });
     if (url.includes('/api/household-business')) return payload({ items: [], total: 0, page: 1, pageSize: 20, dashboard: {} });
@@ -126,6 +129,47 @@ test.describe('party member detail modal', () => {
       await expect(modal).not.toBeVisible();
     });
   }
+});
+
+test.describe('party member report exports', () => {
+  test('downloads Excel/PDF with Authorization and prints via report template', async ({ page }) => {
+    const exportRequests = [];
+    page.on('request', request => {
+      const url = request.url();
+      if (url.includes('/api/reports/export-')) exportRequests.push({ url, authorization: request.headers().authorization || '' });
+    });
+
+    await openAuthenticatedApp(page, 1366);
+    await page.evaluate(() => {
+      window.__partyPrintCalls = 0;
+      window.__nativePrintCalls = 0;
+      window.print = () => { window.__nativePrintCalls += 1; };
+      window.TenantAppPrint = Object.assign({}, window.TenantAppPrint, {
+        render(config) {
+          window.__partyPrintCalls += 1;
+          window.__partyPrintConfig = config;
+          return {};
+        }
+      });
+    });
+    await page.evaluate(() => window.TenantAppNavigationController?.navigate('partyMembers'));
+    await page.waitForSelector('#partyMemberRows [data-platform-action="partyMembers.detail"]');
+
+    const excelDownload = page.waitForEvent('download');
+    await page.locator('[data-platform-action="partyMembers.export"][data-format="excel"]').click();
+    expect((await excelDownload).suggestedFilename()).toBe('dang_vien.xls');
+
+    const pdfDownload = page.waitForEvent('download');
+    await page.locator('[data-platform-action="partyMembers.export"][data-format="pdf"]').click();
+    expect((await pdfDownload).suggestedFilename()).toBe('dang_vien.pdf');
+
+    await page.locator('[data-platform-action="partyMembers.print"]').click();
+    await expect.poll(() => page.evaluate(() => window.__partyPrintCalls)).toBe(1);
+    expect(await page.evaluate(() => window.__nativePrintCalls)).toBe(0);
+    expect(await page.evaluate(() => window.__partyPrintConfig?.type)).toBe('party-members');
+    expect(exportRequests).toHaveLength(2);
+    expect(exportRequests.every(item => item.authorization === 'Bearer test-token')).toBe(true);
+  });
 });
 
 test.describe('responsive system navigation audit', () => {

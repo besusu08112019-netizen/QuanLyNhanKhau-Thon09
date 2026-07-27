@@ -490,14 +490,24 @@
     }
   }
 
-  function exportReport(format) {
+  async function exportReport(format) {
     if (!can(format === 'print' ? 'print' : 'export')) return toast('Tài khoản không có quyền xuất báo cáo', 'warning');
     const query = params();
     const mode = $('#agriculturalLandReportMode')?.value || 'list';
     if (mode === 'year_compare') query.delete('report_year');
     query.set('type', reportTypes[mode] || reportTypes.list);
     const endpoint = format === 'pdf' ? '/api/reports/export-pdf' : (format === 'print' ? '/api/reports/print' : '/api/reports/export-excel');
-    window.open(endpoint + '?' + query.toString(), '_blank', 'noopener');
+    try {
+      if (format === 'print') {
+        const report = await request(endpoint + '?' + query.toString());
+        const popup = window.TenantAppPrint?.render?.(Object.assign({}, report, { filters: Object.assign({}, report.filters || {}, Object.fromEntries(query.entries())) }));
+        if (!popup) toast('Trình duyệt đang chặn cửa sổ in', 'warning');
+        return;
+      }
+      await window.TenantAppExport?.download(endpoint + '?' + query.toString(), { extension: format === 'pdf' ? 'pdf' : 'xlsx' });
+    } catch (e) {
+      toast(e.message || 'Không xuất được báo cáo', 'danger');
+    }
   }
 
   async function openUsageTypes() {
