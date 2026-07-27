@@ -660,14 +660,19 @@
       return api;
     }
 
+    function isFullAccessRole(user) {
+      var role = String(user && user.role || '').toUpperCase();
+      return role === 'SUPER_ADMIN' || role === 'ADMIN';
+    }
+
     function can(moduleKey, action, user) {
+      if (isFullAccessRole(user)) return true;
       var exact = key(moduleKey, action);
       var wildcard = key(moduleKey, '*');
       var manage = key(moduleKey, ACTION.MANAGE);
       if (rules.has(exact)) return rules.get(exact);
       if (rules.has(manage)) return rules.get(manage);
       if (rules.has(wildcard)) return rules.get(wildcard);
-      if (user && String(user.role || '').toUpperCase() === 'SUPER_ADMIN') return true;
       return false;
     }
 
