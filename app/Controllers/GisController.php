@@ -107,6 +107,7 @@ class GisController extends BaseController
         $payload = $this->jsonPayload(false);
         try {
             $user = $this->requirePermission('gis', 'update');
+            unset($payload['id']);
             $area = $this->areasModel()->save($payload, (int) ($user['id'] ?? 0));
             $this->locationModel()->recalculateAreaCodes();
             $this->writeLog('CREATE', 'gis_areas', (string) ($area['id'] ?? ''), $area);

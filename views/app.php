@@ -284,6 +284,7 @@
               <button id="gisRefreshBtn" class="btn btn-outline-secondary btn-sm" type="button"><i class="fa-solid fa-rotate-right"></i></button>
             </div>
             <div class="gis-actions gis-boundary-toolbar">
+              <button id="gisNewAreaBtn" class="btn btn-outline-success" type="button"><i class="fa-solid fa-plus"></i> Khu v&#7921;c m&#7899;i</button>
               <button id="gisDrawBtn" class="btn btn-success" type="button"><i class="fa-solid fa-draw-polygon"></i> V&#7869; ranh gi&#7899;i</button>
               <button id="gisUndoPointBtn" class="btn btn-outline-secondary d-none" type="button"><i class="fa-solid fa-rotate-left"></i> X&oacute;a &#273;i&#7875;m cu&#7889;i</button>
               <button id="gisRedoDrawBtn" class="btn btn-outline-warning d-none" type="button"><i class="fa-solid fa-eraser"></i> L&agrave;m l&#7841;i</button>

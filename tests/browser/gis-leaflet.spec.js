@@ -206,6 +206,8 @@ async function boot(page, apiLog) {
     if (url.pathname === '/api/auth/me') return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
     if (url.pathname === '/api/dashboard/summary') return payload({ metrics: {}, charts: {} });
     if (url.pathname === '/api/gis/areas' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ areas: [area], summary: { households: 1, located: 1, unlocated: 0 } }); }
+    if (url.pathname === '/api/gis/areas' && method === 'POST') { const body = request.postDataJSON(); apiLog.push({ method, path: url.pathname, body }); return payload({ id: 22, ...body, area_code: body.area_code || 'KV-02', stats: { households: 0, citizens: 0 } }); }
+    if (url.pathname.startsWith('/api/gis/areas/') && method === 'PUT') { const body = request.postDataJSON(); apiLog.push({ method, path: url.pathname, body }); return payload({ id: Number(url.pathname.split('/').pop()), ...body, stats: { households: 0, citizens: 0 } }); }
     if (url.pathname === '/api/gis/households' && method === 'GET') { apiLog.push({ method, path: url.pathname, query: Object.fromEntries(url.searchParams.entries()) }); return payload({ items: [marker], summary: { households: 1, located: 1, unlocated: 0 } }); }
     if (url.pathname === '/api/gis/households/7/detail' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ ...detail, household: { ...detail.household, latitude: savedGps.latitude, longitude: savedGps.longitude, location_accuracy: savedGps.accuracy } }); }
     if (url.pathname === '/api/profiles/household/7' && method === 'GET') { apiLog.push({ method, path: url.pathname }); return payload({ type: 'household', profile: detail.household, members: detail.members, files: [], notes: [], timeline: [], logs: [], sections: {} }); }
@@ -266,6 +268,35 @@ test('leaflet GIS keeps drawn polygon visible after draw created', async ({ page
   expect(result.style.fillOpacity).toBeCloseTo(0.35);
   expect(result.drawRendererPane).toBe('gisAreaPane');
   expect(result.editingEnabled).toBe(true);
+});
+
+test('leaflet GIS creates an additional management area instead of overwriting the selected area', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  await page.locator('#gisAreaList .gis-area-item').first().click();
+  await expect(page.locator('#gisAreaId')).toHaveValue('11');
+
+  await page.locator('#gisDrawBtn').click();
+  await expect(page.locator('#gisAreaId')).toHaveValue('');
+  await expect(page.locator('#gisAreaCode')).toHaveValue('KV-02');
+  await page.locator('#gisAreaName').fill('Khu quản lý 2');
+  const result = await page.evaluate(() => {
+    const layer = window.L.polygon([[20.251, 105.971], [20.252, 105.972], [20.253, 105.971]]);
+    window.App.gis.map.fire(window.L.Draw.Event.CREATED, { layer });
+    return {
+      isNewArea: !document.querySelector('#gisAreaId')?.value,
+      saveDisabled: document.querySelector('#gisSaveBtn')?.disabled
+    };
+  });
+  expect(result.isNewArea).toBe(true);
+  expect(result.saveDisabled).toBe(false);
+
+  await page.locator('#gisSaveBtn').click();
+  await expect.poll(() => apiLog.filter(entry => entry.path === '/api/gis/areas' && entry.method === 'POST').length).toBe(1);
+  expect(apiLog.some(entry => entry.method === 'PUT' && entry.path.startsWith('/api/gis/areas/11'))).toBe(false);
+  const createRequest = apiLog.find(entry => entry.path === '/api/gis/areas' && entry.method === 'POST');
+  expect(createRequest.body.id).toBeUndefined();
+  expect(createRequest.body.area_code).toBe('KV-02');
 });
 
 test('leaflet GIS configures Esri World Imagery as a clean tile basemap', async ({ page }) => {
