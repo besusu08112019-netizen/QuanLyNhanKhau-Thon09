@@ -4,7 +4,9 @@ Google Sheets database gom cac sheet sau.
 
 ## households
 
-`id`, `householdCode`, `headCitizenId`, `address`, `phone`, `areaCode`, `memberCount`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`, `headCitizenName`, `meritoriousFamily`, `poorHousehold`, `nearPoorHousehold`, `disabledHousehold`
+`id`, `householdCode`, `headCitizenId`, `address`, `phone`, `areaCode`, `memberCount`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`, `headCitizenName`, `poorHousehold`, `nearPoorHousehold`
+
+`meritoriousPolicy` và `disabledPolicy` là dữ liệu suy ra từ nhân khẩu, không lưu trong bảng `households`.
 
 ## citizens
 

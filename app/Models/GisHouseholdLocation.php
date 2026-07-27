@@ -163,6 +163,8 @@ final class GisHouseholdLocation extends BaseModel
         [$where, $params] = $this->markerConditions($filters);
         $limit = $this->markerLimit($filters, 1000);
         $photoSql = $this->householdPhotoSql();
+        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
+        $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
         $hasBusinessTable = $this->tableExists('household_business');
         $businessJoin = $hasBusinessTable ? ' LEFT JOIN (
                 SELECT x.household_id,
@@ -192,7 +194,7 @@ final class GisHouseholdLocation extends BaseModel
             'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,
                 h.latitude, h.longitude, h.location_accuracy, h.location_source, h.location_updated_at,
                 h.status,
-                h.poor_household, h.near_poor_household, h.meritorious_family, h.disabled_household,
+                h.poor_household, h.near_poor_household, ' . $meritoriousHouseholdExpr . ' AS meritorious_policy, ' . $disabledHouseholdExpr . ' AS disabled_policy,
                 COALESCE(v.total_members, 0) AS total_members,
                 COALESCE(v.at_home_count, 0) AS at_home_count,
                 COALESCE(v.away_count, 0) AS away_count,
@@ -589,8 +591,8 @@ final class GisHouseholdLocation extends BaseModel
     {
         if ((int) ($row['poor_household'] ?? 0) === 1) return 'Hộ nghèo';
         if ((int) ($row['near_poor_household'] ?? 0) === 1) return 'Hộ cận nghèo';
-        if ((int) ($row['meritorious_family'] ?? 0) === 1) return 'Hộ có công';
-        if ((int) ($row['disabled_household'] ?? 0) === 1) return 'Hộ có người khuyết tật';
+        if ((int) ($row['meritorious_policy'] ?? 0) === 1) return 'Hộ có công';
+        if ((int) ($row['disabled_policy'] ?? 0) === 1) return 'Hộ có người khuyết tật';
         return 'Hộ thường';
     }
 
@@ -662,6 +664,23 @@ final class GisHouseholdLocation extends BaseModel
         } catch (\Throwable $e) {
             error_log('[GIS_LOCATION_INDEX_WARNING] ' . $e->getMessage());
         }
+    }
+
+    private function meritoriousHouseholdExists(string $alias): string
+    {
+        $columns = ['martyr_relative','wounded_soldier','sick_soldier','chemical_warfare_victim','imprisoned_resistance_activist','youth_volunteer','resistance_hero','revolutionary_activist'];
+        $parts = [];
+        foreach ($columns as $column) {
+            if ($this->columnExists('citizens', $column)) $parts[] = 'gmc.' . $column . '=1';
+        }
+        if (!$parts) return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens gmc WHERE gmc.household_id=' . $alias . '.id AND ' . $this->statistics()->citizenCondition('gmc') . ' AND (' . implode(' OR ', $parts) . '))';
+    }
+
+    private function disabledHouseholdExists(string $alias): string
+    {
+        if (!$this->columnExists('citizens', 'disabled_person')) return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens gdc WHERE gdc.household_id=' . $alias . '.id AND ' . $this->statistics()->citizenCondition('gdc') . ' AND gdc.disabled_person=1)';
     }
 }
 

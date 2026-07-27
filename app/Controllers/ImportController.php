@@ -449,10 +449,8 @@ final class ImportController extends BaseController
                 'address' => trim((string) ($data['address'] ?? '')),
                 'phone' => $this->normalizePhone((string) ($data['phone'] ?? '')),
                 'householdType' => trim((string) ($data['householdType'] ?? '')),
-                'meritoriousFamily' => $data['meritoriousFamily'] ?? 0,
                 'poorHousehold' => $data['poorHousehold'] ?? 0,
                 'nearPoorHousehold' => $data['nearPoorHousehold'] ?? 0,
-                'disabledHousehold' => $data['disabledHousehold'] ?? 0,
                 'note' => trim((string) ($data['note'] ?? '')),
             ];
         }
@@ -507,10 +505,8 @@ final class ImportController extends BaseController
             'address' => ['dia chi','thon','dia chi thuong tru'],
             'phone' => ['so dien thoai','dien thoai','sdt','phone'],
             'householdType' => ['dien ho','loai ho','household type','category'],
-            'meritoriousFamily' => ['gia dinh co cong','co cong'],
             'poorHousehold' => ['ho ngheo'],
             'nearPoorHousehold' => ['ho can ngheo','can ngheo'],
-            'disabledHousehold' => ['tan tat','khuyet tat'],
             'note' => ['ghi chu','note'],
             'citizenCode' => ['ma nhan khau','ma cong dan','citizen code','citizencode'],
             'fullName' => ['ho va ten','ho ten','ten nhan khau','full name','fullname','displayname'],

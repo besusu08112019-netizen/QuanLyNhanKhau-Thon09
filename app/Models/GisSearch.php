@@ -6,6 +6,8 @@ use App\Core\BaseModel;
 
 class GisSearch extends BaseModel
 {
+    private ?PopulationStatistics $statistics = null;
+
     public function households(string $query, int $limit = 10): array
     {
         $this->ensureIndexes();
@@ -18,6 +20,8 @@ class GisSearch extends BaseModel
         $limit = min(max($limit, 1), 10);
         $like = '%' . $query . '%';
         $prefix = $query . '%';
+        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
+        $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
 
         $sql = "SELECT
                     h.id,
@@ -34,8 +38,8 @@ class GisSearch extends BaseModel
                     h.status,
                     h.poor_household,
                     h.near_poor_household,
-                    h.meritorious_family,
-                    h.disabled_household,
+                    $meritoriousHouseholdExpr AS meritorious_policy,
+                    $disabledHouseholdExpr AS disabled_policy,
                     COALESCE(v.total_members, 0) AS total_members,
                     COALESCE(v.at_home_count, 0) AS at_home_count,
                     COALESCE(v.away_count, 0) AS away_count,
@@ -127,10 +131,10 @@ class GisSearch extends BaseModel
         if ((int) ($row['near_poor_household'] ?? 0) === 1) {
             return 'Hộ cận nghèo';
         }
-        if ((int) ($row['meritorious_family'] ?? 0) === 1) {
-            return 'Gia đình có công';
+        if ((int) ($row['meritorious_policy'] ?? 0) === 1) {
+            return 'Hộ có công';
         }
-        if ((int) ($row['disabled_household'] ?? 0) === 1) {
+        if ((int) ($row['disabled_policy'] ?? 0) === 1) {
             return 'Hộ có người khuyết tật';
         }
         return 'Không ưu tiên';
@@ -163,5 +167,27 @@ class GisSearch extends BaseModel
     {
         if (!$this->tenantColumnExists($table)) return '1=1';
         return ($alias !== '' ? $alias . '.' : '') . 'village_id = ' . $this->tenantId();
+    }
+
+    private function statistics(): PopulationStatistics
+    {
+        return $this->statistics ??= new PopulationStatistics();
+    }
+
+    private function meritoriousHouseholdExists(string $alias): string
+    {
+        $columns = ['martyr_relative','wounded_soldier','sick_soldier','chemical_warfare_victim','imprisoned_resistance_activist','youth_volunteer','resistance_hero','revolutionary_activist'];
+        $parts = [];
+        foreach ($columns as $column) {
+            if ($this->columnExists('citizens', $column)) $parts[] = 'gmc.' . $column . '=1';
+        }
+        if (!$parts) return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens gmc WHERE gmc.household_id=' . $alias . '.id AND ' . $this->statistics()->citizenCondition('gmc') . ' AND (' . implode(' OR ', $parts) . '))';
+    }
+
+    private function disabledHouseholdExists(string $alias): string
+    {
+        if (!$this->columnExists('citizens', 'disabled_person')) return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens gdc WHERE gdc.household_id=' . $alias . '.id AND ' . $this->statistics()->citizenCondition('gdc') . ' AND gdc.disabled_person=1)';
     }
 }

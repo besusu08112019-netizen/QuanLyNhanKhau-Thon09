@@ -221,14 +221,15 @@ final class Dashboard extends BaseModel
     {
         [$where, $params] = $this->householdWhere($filters);
         $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
-        $row = $this->fetchOne("SELECT COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND NOT $meritoriousHouseholdExpr AND h.disabled_household=0 THEN 1 ELSE 0 END),0) AS normal, COALESCE(SUM(CASE WHEN h.disabled_household=1 THEN 1 ELSE 0 END),0) AS other FROM households h $where", $params) ?: [];
+        $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
+        $row = $this->fetchOne("SELECT COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND NOT $meritoriousHouseholdExpr AND NOT $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS normal, COALESCE(SUM(CASE WHEN $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS other FROM households h $where", $params) ?: [];
         return [
             ['label' => 'Hộ nghèo', 'value' => (int) ($row['poor'] ?? 0)],
             ['label' => 'Hộ cận nghèo', 'value' => (int) ($row['near_poor'] ?? 0)],
             ['label' => 'Hộ chính sách', 'value' => (int) ($row['policy'] ?? 0)],
             ['label' => 'Hộ có công', 'value' => (int) ($row['meritorious'] ?? 0)],
             ['label' => 'Hộ bình thường', 'value' => (int) ($row['normal'] ?? 0)],
-            ['label' => 'Khác', 'value' => (int) ($row['other'] ?? 0)],
+            ['label' => 'Hộ có người khuyết tật', 'value' => (int) ($row['other'] ?? 0)],
         ];
     }
 
@@ -808,8 +809,8 @@ final class Dashboard extends BaseModel
             'poor' => $where[] = 'h.poor_household = 1',
             'near_poor' => $where[] = 'h.near_poor_household = 1',
             'meritorious' => $where[] = $this->meritoriousHouseholdExists('h'),
-            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND h.disabled_household = 0',
-            'other' => $where[] = 'h.disabled_household = 1',
+            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND NOT ' . $this->disabledHouseholdExists('h'),
+            'other' => $where[] = $this->disabledHouseholdExists('h'),
             'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
             default => null,
         };
@@ -877,6 +878,12 @@ final class Dashboard extends BaseModel
         $citizenPolicy = $this->meritoriousCitizenExpression('dhc');
         if ($citizenPolicy === '0=1') return '0=1';
         return 'EXISTS (SELECT 1 FROM citizens dhc WHERE dhc.household_id=' . $alias . '.id AND ' . $this->activeCitizenCondition('dhc') . ' AND ' . $citizenPolicy . ')';
+    }
+
+    private function disabledHouseholdExists(string $alias): string
+    {
+        if (!$this->columnExists('citizens', 'disabled_person')) return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens ddc WHERE ddc.household_id=' . $alias . '.id AND ' . $this->activeCitizenCondition('ddc') . ' AND ddc.disabled_person=1)';
     }
 
     private function tableExists(string $table): bool

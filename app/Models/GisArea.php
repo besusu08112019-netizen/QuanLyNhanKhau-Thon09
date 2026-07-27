@@ -167,7 +167,12 @@ final class GisArea extends BaseModel
 
     private function householdsForMapStats(): array
     {
-        return $this->fetchAll('SELECT h.id, h.household_code, h.latitude, h.longitude, h.poor_household, h.near_poor_household, h.meritorious_family, h.disabled_household,
+        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
+        $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
+
+        return $this->fetchAll('SELECT h.id, h.household_code, h.latitude, h.longitude, h.poor_household, h.near_poor_household,
+            ' . $meritoriousHouseholdExpr . ' AS meritorious_policy,
+            ' . $disabledHouseholdExpr . ' AS disabled_policy,
             COALESCE(v.total_members, 0) AS citizens,
             COALESCE(v.at_home_count, 0) AS at_home,
             COALESCE(v.away_count, 0) AS away,
@@ -177,7 +182,7 @@ final class GisArea extends BaseModel
             LEFT JOIN v_household_member_counts v ON v.household_id = h.id
             LEFT JOIN citizens c ON c.household_id = h.id
             WHERE ' . $this->statistics()->householdCondition('h') . '
-            GROUP BY h.id, h.household_code, h.latitude, h.longitude, h.poor_household, h.near_poor_household, h.meritorious_family, h.disabled_household, v.total_members, v.at_home_count, v.away_count');
+            GROUP BY h.id, h.household_code, h.latitude, h.longitude, h.poor_household, h.near_poor_household, v.total_members, v.at_home_count, v.away_count');
     }
 
     private function statistics(): PopulationStatistics
@@ -189,6 +194,23 @@ final class GisArea extends BaseModel
     {
         if (!$this->tenantColumnExists($table)) return '1=1';
         return ($alias !== '' ? $alias . '.' : '') . 'village_id = ' . $this->tenantId();
+    }
+
+    private function meritoriousHouseholdExists(string $alias): string
+    {
+        $columns = ['martyr_relative','wounded_soldier','sick_soldier','chemical_warfare_victim','imprisoned_resistance_activist','youth_volunteer','resistance_hero','revolutionary_activist'];
+        $parts = [];
+        foreach ($columns as $column) {
+            if ($this->columnExists('citizens', $column)) $parts[] = 'gmc.' . $column . '=1';
+        }
+        if (!$parts) return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens gmc WHERE gmc.household_id=' . $alias . '.id AND ' . $this->statistics()->citizenCondition('gmc') . ' AND (' . implode(' OR ', $parts) . '))';
+    }
+
+    private function disabledHouseholdExists(string $alias): string
+    {
+        if (!$this->columnExists('citizens', 'disabled_person')) return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizens gdc WHERE gdc.household_id=' . $alias . '.id AND ' . $this->statistics()->citizenCondition('gdc') . ' AND gdc.disabled_person=1)';
     }
 
     private function statsForPolygon(array $polygon, array $households): array
