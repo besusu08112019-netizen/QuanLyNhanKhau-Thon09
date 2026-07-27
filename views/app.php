@@ -670,6 +670,7 @@
 
 
 
+  <div class="modal fade party-detail-modal" id="partyMemberDetailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><div><span class="party-detail-eyebrow">Hồ sơ Đảng viên</span><h5 id="partyMemberDetailTitle" class="modal-title">Chi tiết Đảng viên</h5><p id="partyMemberDetailSubtitle" class="mb-0 text-muted"></p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div id="partyMemberDetailBody" class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button></div></div></div></div>
   <div class="modal fade" id="businessHouseholdModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
       <form class="modal-content" id="businessHouseholdForm" novalidate>

@@ -23,7 +23,46 @@ async function mockApis(page) {
     if (url.includes('/api/household-business')) return payload({ items: [], total: 0, page: 1, pageSize: 20, dashboard: {} });
     if (url.includes('/api/party-members/catalogs')) return payload({ member_types: [], statuses: [], branches: [], positions: [] });
     if (url.includes('/api/party-members/dashboard')) return payload({ metrics: {}, charts: {} });
-    if (url.includes('/api/party-members')) return payload({ items: [], total: 0, page: 1, pageSize: 20, totalPages: 1 });
+    if (/\/api\/party-members\/\d+/.test(url)) return payload({
+      id: 1,
+      citizen_id: 10,
+      citizen_code: 'NK001',
+      full_name: 'Nguyen Van A',
+      date_of_birth: '1980-05-12',
+      gender: 'Nam',
+      identity_number: '012345678901',
+      address: 'Thon 09',
+      phone: '0900000000',
+      party_member_code: 'DV001',
+      party_card_number: '123456',
+      joined_party_date: '2005-01-10',
+      official_party_date: '2006-01-10',
+      branch_name: 'Chi bo 1',
+      parent_party_org: 'Dang bo xa',
+      party_position: 'Bi thu',
+      government_position: 'Truong thon',
+      education_level: '12/12',
+      professional_level: 'Dai hoc',
+      political_theory_level: 'Trung cap',
+      member_type_label: 'Dang vien chinh thuc',
+      activity_status_label: 'Dang sinh hoat',
+      note: 'Ho so mau'
+    });
+    if (url.includes('/api/party-members')) return payload({ items: [{
+      id: 1,
+      citizen_code: 'NK001',
+      full_name: 'Nguyen Van A',
+      age: 46,
+      gender: 'Nam',
+      address: 'Thon 09',
+      party_member_code: 'DV001',
+      party_card_number: '123456',
+      branch_name: 'Chi bo 1',
+      party_position: 'Bi thu',
+      member_type_label: 'Dang vien chinh thuc',
+      activity_status_label: 'Dang sinh hoat',
+      joined_party_date: '2005-01-10'
+    }], total: 1, page: 1, pageSize: 20, totalPages: 1 });
     if (url.includes('/api/livestock')) return payload({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
     if (url.includes('/api/agriculture')) return payload({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
     if (url.includes('/api/public-assets/catalogs')) return payload({ types: [], areas: [], statuses: [] });
@@ -68,6 +107,26 @@ async function clickSidebarModule(page, screen) {
   });
   await item.click();
 }
+
+test.describe('party member detail modal', () => {
+  for (const width of [1366, 768, 390]) {
+    test(`opens read-only detail view at ${width}px`, async ({ page }) => {
+      await openAuthenticatedApp(page, width);
+      await page.evaluate(() => window.TenantAppNavigationController?.navigate('partyMembers'));
+      await page.waitForSelector('#partyMemberRows [data-platform-action="partyMembers.detail"]');
+      await page.locator('#partyMemberRows [data-platform-action="partyMembers.detail"]').first().click();
+      const modal = page.locator('#partyMemberDetailModal');
+      await expect(modal).toBeVisible();
+      await expect(modal.locator('#partyMemberDetailTitle')).toHaveText('Nguyen Van A');
+      await expect(modal.locator('.modal-footer .btn-primary')).toHaveCount(0);
+      await expect(modal.locator('input, select, textarea')).toHaveCount(0);
+      const columns = await modal.locator('.party-detail-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+      expect(columns).toBe(width <= 640 ? 1 : 2);
+      await modal.locator('[data-bs-dismiss="modal"]').last().click();
+      await expect(modal).not.toBeVisible();
+    });
+  }
+});
 
 test.describe('responsive system navigation audit', () => {
   test('PWA online status stays out of mobile and tablet layout', async ({ page }) => {
