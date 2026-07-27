@@ -5582,3 +5582,20 @@ body.theme-dark .party-detail-hero h3,body.theme-dark .party-detail-card h4,body
 @media(max-width:820px){.party-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.party-filter-card .btn{width:100%;justify-content:center}.party-members-screen .module-list-head{align-items:flex-start;flex-direction:column}}
 @media(max-width:640px){.party-detail-modal .modal-dialog{width:calc(100vw - 16px);max-width:calc(100vw - 16px);margin:8px auto}.party-detail-grid{grid-template-columns:1fr}.party-detail-hero{grid-template-columns:1fr;padding:14px}.party-detail-row{grid-template-columns:1fr;gap:4px}.party-detail-hero h3{font-size:20px}.party-row-actions{justify-content:flex-start}}
 @media(max-width:520px){.party-kpi-grid{grid-template-columns:1fr}.party-kpi-card{min-height:84px}}
+/* Policy alerts */
+.policy-alert-card{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;margin:0 0 16px;box-shadow:0 8px 24px rgba(124,45,18,.08)}
+.policy-alert-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.policy-alert-head h3{font-size:18px;margin:0;color:#7c2d12;font-weight:800}
+.policy-alert-head span{display:block;color:#9a3412;font-size:13px;margin-top:2px}
+.policy-alert-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.policy-alert-tile{border:1px solid #fdba74;background:#fff;border-radius:8px;padding:12px;text-align:left;min-height:96px;display:flex;flex-direction:column;gap:4px;color:#1f2937}
+.policy-alert-tile:hover{border-color:#f97316;box-shadow:0 6px 18px rgba(249,115,22,.14)}
+.policy-alert-tile span{font-size:13px;font-weight:700;color:#9a3412}
+.policy-alert-tile strong{font-size:28px;line-height:1;color:#c2410c}
+.policy-alert-tile small{font-size:12px;color:#6b7280}
+.policy-alert-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 180px auto auto auto;gap:8px;align-items:center;margin-bottom:12px}
+.policy-person-filter{min-width:260px}
+.policy-person-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;font-size:13px}
+.policy-person-checks label{display:flex;align-items:center;gap:6px;margin:0;white-space:nowrap}
+@media (max-width:1024px){.policy-alert-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.policy-alert-toolbar{grid-template-columns:1fr 1fr}.policy-alert-toolbar .btn{width:100%}}
+@media (max-width:640px){.policy-alert-head{align-items:flex-start;flex-direction:column}.policy-alert-grid{grid-template-columns:1fr}.policy-alert-toolbar{grid-template-columns:1fr}.policy-person-checks{grid-template-columns:1fr}}

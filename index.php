@@ -50,6 +50,7 @@ use App\Controllers\NotificationController;
 use App\Controllers\OperationCenterController;
 use App\Controllers\PartyMemberController;
 use App\Controllers\PermissionController;
+use App\Controllers\PolicyAlertController;
 use App\Controllers\PersonController;
 use App\Controllers\PhotoGalleryController;
 use App\Controllers\ProfileController;
@@ -288,6 +289,14 @@ $router->get('/api/dashboard/search', [DashboardController::class, 'search']);
 $router->get('/api/dashboard/population-chart', [DashboardController::class, 'populationChart']);
 $router->get('/api/dashboard/household-chart', [DashboardController::class, 'householdChart']);
 $router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart']);
+
+$router->get('/api/policy-alerts/summary', [PolicyAlertController::class, 'summary']);
+$router->get('/api/policy-alerts', [PolicyAlertController::class, 'index']);
+$router->get('/api/policy-alerts/report', [PolicyAlertController::class, 'report']);
+$router->get('/api/policy-alerts/print', [PolicyAlertController::class, 'print']);
+$router->get('/api/policy-alerts/export-excel', [PolicyAlertController::class, 'exportExcel']);
+$router->get('/api/policy-alerts/export-pdf', [PolicyAlertController::class, 'exportPdf']);
+$router->post('/api/policy-alerts/{citizenId}/mark', [PolicyAlertController::class, 'mark']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
@@ -801,6 +810,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/documents.min.js',
         'assets/js/finance.min.js',
         'assets/js/photo-gallery.min.js',
+        'assets/js/policy-alerts.min.js',
         'assets/js/view-inline-patches.min.js',
         'assets/js/notifications.min.js',
         'assets/js/module-dashboards.min.js',

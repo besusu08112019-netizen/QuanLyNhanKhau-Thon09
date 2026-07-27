@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Models\PolicyAlert;
 
 final class Citizen extends BaseModel
 {
@@ -202,6 +203,10 @@ final class Citizen extends BaseModel
         if (!empty($filters['bloodType']) && $this->columnExists('citizens', 'blood_type')) { $where[] = 'c.blood_type = :blood_type'; $params['blood_type'] = $filters['bloodType']; }
         if (!empty($filters['ageFrom'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= :age_from'; $params['age_from'] = (int) $filters['ageFrom']; }
         if (!empty($filters['ageTo'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= :age_to'; $params['age_to'] = (int) $filters['ageTo']; }
+        if (!empty($filters['policyAlert'])) {
+            $condition = PolicyAlert::filterCondition((string) $filters['policyAlert'], 'c');
+            if ($condition) $where[] = $condition;
+        }
         if (!empty($filters['search'])) {
             $mapped = $this->searchFlag((string) $filters['search']);
             if ($mapped === '__meritorious_policy__') {

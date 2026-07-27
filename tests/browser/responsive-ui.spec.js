@@ -19,6 +19,44 @@ async function mockApis(page) {
       metrics: {}
     });
     if (url.includes('/api/auth/me')) return payload({ id: 1, email: 'admin@example.test', displayName: 'Admin Test', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    if (url.includes('/api/policy-alerts/summary')) return payload({
+      lookaheadDays: 90,
+      total: 20,
+      items: [
+        { key: 'age_70', label: 'Du 70 tuoi', age: 70, type: 'reached', purpose: 'Ra soat BHYT', count: 12, message: 'Co 12 nguoi tu 70 tuoi tro len can ra soat BHYT.' },
+        { key: 'age_75', label: 'Du 75 tuoi', age: 75, type: 'reached', purpose: 'Ra soat tro cap', count: 4, message: 'Co 4 nguoi tu 75 tuoi tro len can ra soat tro cap.' },
+        { key: 'upcoming_70', label: 'Sap du 70 tuoi', age: 70, type: 'upcoming', purpose: 'Sap den tuoi BHYT', count: 3, message: 'Co 3 nguoi sap du 70 tuoi.' },
+        { key: 'upcoming_75', label: 'Sap du 75 tuoi', age: 75, type: 'upcoming', purpose: 'Sap den tuoi tro cap', count: 1, message: 'Co 1 nguoi sap du 75 tuoi.' }
+      ]
+    });
+    if (/\/api\/policy-alerts\/\d+\/mark/.test(url) && method === 'POST') return payload({ citizen_id: 101, alert_key: 'age_70', reviewed_at: new Date().toISOString(), processed_at: null });
+    if (url.includes('/api/policy-alerts/export-excel')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/vnd.ms-excel', 'Content-Disposition': 'attachment; filename="canh-bao.xls"' }, body: 'excel-data' });
+    if (url.includes('/api/policy-alerts/export-pdf')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="canh-bao.pdf"' }, body: '%PDF-1.4\n%mock' });
+    if (url.includes('/api/policy-alerts/print')) return payload({ title: 'Canh bao chinh sach', headers: ['STT', 'Ho ten'], rows: [[1, 'Nguyen Van B']], totalRows: 1, filters: {}, summary: { total: 1 } });
+    if (url.includes('/api/policy-alerts')) return payload({
+      items: [{
+        id: 101,
+        citizen_code: 'NK101',
+        full_name: 'Nguyen Van B',
+        date_of_birth: '1950-01-10',
+        age: 76,
+        household_code: 'H001',
+        head_citizen_name: 'Nguyen Van C',
+        address: 'Thon 09',
+        has_health_insurance: false,
+        social_assistance: false,
+        reviewed_at: null,
+        processed_at: null,
+        review_note: ''
+      }],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+      totalPages: 1,
+      summary: {
+        items: [{ key: 'age_70', label: 'Du 70 tuoi', message: 'Co 12 nguoi tu 70 tuoi tro len can ra soat BHYT.' }]
+      }
+    });
     if (url.includes('/api/dashboard/summary')) return payload({ metrics: {}, charts: {}, generatedAt: new Date().toISOString() });
     if (url.includes('/api/dashboard/')) return payload({ metrics: {}, charts: {}, kpis: [], generatedAt: new Date().toISOString() });
     if (url.includes('/api/reports/export-excel')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/vnd.ms-excel', 'Content-Disposition': 'attachment; filename="dang_vien.xls"' }, body: 'excel-data' });
@@ -242,6 +280,37 @@ test.describe('work module create modals', () => {
     await expect(page.locator('#workCalendarRows')).toContainText('Kiem tra tao lich');
 
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe('policy alert center', () => {
+  test('shows dashboard widget, opens list, and filters persons by alert type', async ({ page }) => {
+    const personRequests = [];
+    page.on('request', request => {
+      const url = request.url();
+      if (url.includes('/api/persons?')) personRequests.push(url);
+    });
+
+    await openAuthenticatedApp(page, 1366);
+    await expect(page.locator('#policyAlertDashboardCard')).toBeVisible();
+    await expect(page.locator('#policyAlertDashboardCard')).toContainText('12');
+
+    await page.locator('#policyAlertDashboardCard [data-platform-action="policyAlerts.open"][data-type="age_70"]').first().click();
+    await expect(page.locator('#policyAlertModal')).toBeVisible();
+    await expect(page.locator('#policyAlertRows')).toContainText('Nguyen Van B');
+
+    await page.locator('#policyAlertRows [data-platform-action="policyAlerts.mark"][data-status="reviewed"]').first().click();
+    await expect(page.locator('#policyAlertRows')).toContainText('Nguyen Van B');
+
+    await page.locator('#policyAlertModal [data-bs-dismiss="modal"]').first().click();
+    await expect(page.locator('#policyAlertModal')).not.toBeVisible();
+    await page.evaluate(() => window.TenantAppNavigationController?.navigate('persons'));
+    await expect(page.locator('#policyAlertPersonFilters')).toBeVisible();
+    await page.locator('#policyAlertPersonFilters input[value="upcoming_70"]').check();
+    await expect.poll(() => personRequests.some(url => url.includes('policyAlert=upcoming_70'))).toBeTruthy();
+
+    await page.locator('#personFilterReset').click();
+    await expect(page.locator('#policyAlertPersonFilters input[value="upcoming_70"]')).not.toBeChecked();
   });
 });
 

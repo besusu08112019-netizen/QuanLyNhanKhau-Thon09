@@ -1,0 +1,213 @@
+(function () {
+  'use strict';
+
+  const API = '/api/policy-alerts';
+  const state = { type: 'age_70', page: 1, pageSize: 20, search: '', status: 'pending', summary: null };
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+  const safe = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+  const number = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
+  const toast = (message, type = 'info') => typeof window.showToast === 'function' ? window.showToast(message, type) : console[type === 'danger' ? 'error' : 'log'](message);
+
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
+  document.addEventListener('tenant:screen-change', event => {
+    if (event.detail?.screen === 'dashboard') setTimeout(loadSummary, 80);
+    if (event.detail?.screen === 'persons') setTimeout(installPersonFilters, 80);
+  });
+  document.addEventListener('tenant:auth-state', () => setTimeout(loadSummary, 120));
+
+  function init() {
+    registerActions();
+    installModal();
+    installPersonFilters();
+    wrapDashboardLoader();
+    if ($('#dashboardScreen')) loadSummary();
+  }
+
+  function registerActions() {
+    const actions = window.TenantAppPlatform?.actions;
+    if (!actions || window.__TenantPolicyAlertActionsRegistered) return;
+    window.__TenantPolicyAlertActionsRegistered = true;
+    actions
+      .register('policyAlerts.open', ({ dataset }) => openList(dataset.type || 'age_70'))
+      .register('policyAlerts.page', ({ dataset, target }) => !target.disabled && loadList(Number(dataset.page || 1)))
+      .register('policyAlerts.search', () => { state.search = $('#policyAlertSearch')?.value.trim() || ''; loadList(1); })
+      .register('policyAlerts.status', ({ target }) => { state.status = target.value || ''; loadList(1); })
+      .register('policyAlerts.mark', ({ dataset }) => mark(Number(dataset.id || 0), dataset.status || 'reviewed'))
+      .register('policyAlerts.export', ({ dataset }) => exportReport(dataset.format || 'excel'))
+      .register('policyAlerts.print', () => printReport());
+    const previousPersonReset = actions.get?.('personFilters.reset')?.handler;
+    if (previousPersonReset && !window.__TenantPolicyAlertPersonResetWrapped) {
+      window.__TenantPolicyAlertPersonResetWrapped = true;
+      actions.register('personFilters.reset', context => {
+        clearPersonPolicyChecks();
+        return previousPersonReset(context);
+      });
+    }
+    actions.bind?.(document);
+  }
+
+  function wrapDashboardLoader() {
+    if (window.__TenantPolicyAlertDashboardWrapped || typeof window.loadDashboard !== 'function') return;
+    const previousLoadDashboard = window.loadDashboard;
+    window.__TenantPolicyAlertDashboardWrapped = true;
+    window.loadDashboard = async function policyAlertDashboardLoader(...args) {
+      const result = await previousLoadDashboard.apply(this, args);
+      loadSummary();
+      return result;
+    };
+  }
+
+  async function request(url, options = {}) {
+    if (typeof window.api === 'function') return window.api(url, options);
+    const token = window.App?.token || localStorage.getItem(tenantStorageKey('token')) || '';
+    const headers = { Accept: 'application/json' };
+    if (token) headers.Authorization = 'Bearer ' + token;
+    if (window.App?.csrfToken) headers['X-CSRF-Token'] = window.App.csrfToken;
+    const initOptions = { method: options.method || 'GET', headers };
+    if (options.body) { headers['Content-Type'] = 'application/json'; initOptions.body = JSON.stringify(options.body); }
+    const response = await fetch(url, initOptions);
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.ok === false || payload?.success === false) throw new Error(payload?.error?.message || payload?.message || 'Không tải được dữ liệu');
+    return payload?.data ?? payload;
+  }
+
+  async function loadSummary() {
+    try {
+      state.summary = await request(API + '/summary', { cacheTtl: 30000 });
+      renderDashboardCard(state.summary);
+    } catch (_) {
+      renderDashboardCard({ items: [], total: 0 });
+    }
+  }
+
+  function renderDashboardCard(summary) {
+    const screen = $('#dashboardScreen');
+    if (!screen) return;
+    let card = $('#policyAlertDashboardCard');
+    if (!card) {
+      const anchor = $('#dashboardKpis') || $('.dashboard-status-row', screen) || screen;
+      anchor.insertAdjacentHTML(anchor.id === 'dashboardKpis' ? 'beforebegin' : 'afterend', '<section id="policyAlertDashboardCard" class="policy-alert-card"></section>');
+      card = $('#policyAlertDashboardCard');
+    }
+    const items = summary?.items || [];
+    card.innerHTML = '<div class="policy-alert-head"><div><h3><i class="fa-solid fa-triangle-exclamation"></i> Cảnh báo chính sách</h3><span>Tự động tính theo ngày sinh, chỉ hiển thị nhân khẩu đang cư trú và còn sống.</span></div><button class="btn btn-warning btn-sm" type="button" data-platform-action="policyAlerts.open" data-type="age_70">Xem chi tiết</button></div>'
+      + '<div class="policy-alert-grid">'
+      + items.map(item => '<button type="button" class="policy-alert-tile" data-platform-action="policyAlerts.open" data-type="' + safe(item.key) + '"><span>' + safe(item.label) + '</span><strong>' + number(item.count) + '</strong><small>' + safe(item.purpose || item.message || '') + '</small></button>').join('')
+      + '</div>';
+  }
+
+  function installModal() {
+    if ($('#policyAlertModal')) return;
+    document.body.insertAdjacentHTML('beforeend',
+      '<div class="modal fade" id="policyAlertModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">'
+      + '<div class="modal-header"><div><h5 id="policyAlertTitle" class="modal-title">Cảnh báo chính sách</h5><small id="policyAlertSubtitle" class="text-muted"></small></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>'
+      + '<div class="modal-body"><div class="policy-alert-toolbar"><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="policyAlertSearch" class="form-control" placeholder="Tìm họ tên, mã nhân khẩu, mã hộ..."></div><select id="policyAlertStatus" class="form-select"><option value="pending">Chưa xử lý</option><option value="reviewed">Đã rà soát</option><option value="processed">Đã xử lý</option><option value="">Tất cả</option></select><button class="btn btn-outline-success" type="button" data-platform-action="policyAlerts.export" data-format="excel"><i class="fa-solid fa-file-excel"></i> Excel</button><button class="btn btn-outline-danger" type="button" data-platform-action="policyAlerts.export" data-format="pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button><button class="btn btn-outline-secondary" type="button" data-platform-action="policyAlerts.print"><i class="fa-solid fa-print"></i> In</button></div><div class="table-responsive"><table class="table module-table align-middle mb-0"><thead><tr><th>Họ tên</th><th>Ngày sinh</th><th>Tuổi</th><th>Chủ hộ</th><th>Địa chỉ</th><th>BHYT</th><th>Trợ cấp</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead><tbody id="policyAlertRows"></tbody></table></div><div id="policyAlertPager" class="pager module-pager"></div></div>'
+      + '<div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button></div></div></div></div>');
+    $('#policyAlertSearch')?.addEventListener('input', debounce(() => window.TenantAppPlatform?.actions?.dispatch('policyAlerts.search'), 300));
+    $('#policyAlertStatus')?.addEventListener('change', event => window.TenantAppPlatform?.actions?.dispatch('policyAlerts.status', { target: event.target }));
+    window.TenantAppPlatform?.modals?.registerBootstrap?.('policyAlertModal', '#policyAlertModal');
+  }
+
+  async function openList(type) {
+    installModal();
+    state.type = type;
+    state.page = 1;
+    state.search = '';
+    state.status = 'pending';
+    if ($('#policyAlertSearch')) $('#policyAlertSearch').value = '';
+    if ($('#policyAlertStatus')) $('#policyAlertStatus').value = 'pending';
+    window.TenantAppPlatform?.modals?.open?.('policyAlertModal') || window.bootstrap?.Modal?.getOrCreateInstance?.($('#policyAlertModal'))?.show();
+    await loadList(1);
+  }
+
+  async function loadList(page = state.page) {
+    state.page = page;
+    const params = new URLSearchParams({ type: state.type, page: state.page, pageSize: state.pageSize, status: state.status, search: state.search });
+    const data = await request(API + '?' + params.toString(), { cacheTtl: 5000 });
+    const current = (data.summary?.items || state.summary?.items || []).find(item => item.key === state.type) || {};
+    $('#policyAlertTitle').textContent = current.label || 'Cảnh báo chính sách';
+    $('#policyAlertSubtitle').textContent = current.message || '';
+    renderRows(data.items || []);
+    renderPager(data);
+  }
+
+  function renderRows(rows) {
+    const tbody = $('#policyAlertRows');
+    if (!tbody) return;
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu phù hợp.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(row => '<tr><td><strong>' + safe(row.full_name) + '</strong><br><small>' + safe(row.citizen_code) + '</small></td><td>' + safe(row.date_of_birth) + '</td><td>' + number(row.age) + '</td><td>' + safe(row.head_citizen_name) + '<br><small>' + safe(row.household_code) + '</small></td><td>' + safe(row.address) + '</td><td>' + (row.has_health_insurance ? '<span class="badge bg-success">Có</span>' : '<span class="badge bg-warning text-dark">Chưa có</span>') + '</td><td>' + (row.social_assistance ? '<span class="badge bg-success">Đang hưởng</span>' : '<span class="badge bg-light text-dark border">Chưa hưởng</span>') + '</td><td>' + statusBadge(row) + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="policyAlerts.mark" data-id="' + row.id + '" data-status="reviewed">Đã rà soát</button> <button class="btn btn-sm btn-success" type="button" data-platform-action="policyAlerts.mark" data-id="' + row.id + '" data-status="processed">Đã xử lý</button></td></tr>').join('');
+  }
+
+  function statusBadge(row) {
+    if (row.processed_at) return '<span class="badge bg-success">Đã xử lý</span>';
+    if (row.reviewed_at) return '<span class="badge bg-info text-dark">Đã rà soát</span>';
+    return '<span class="badge bg-warning text-dark">Chưa xử lý</span>';
+  }
+
+  function renderPager(data) {
+    const host = $('#policyAlertPager');
+    if (!host) return;
+    const totalPages = Number(data.totalPages || 1);
+    const page = Number(data.page || 1);
+    if (totalPages <= 1) { host.innerHTML = ''; return; }
+    host.innerHTML = '<div class="d-flex gap-2 justify-content-end flex-wrap"><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="policyAlerts.page" data-page="' + Math.max(1, page - 1) + '" ' + (page <= 1 ? 'disabled' : '') + '>Trước</button><span class="px-2">' + page + ' / ' + totalPages + '</span><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="policyAlerts.page" data-page="' + Math.min(totalPages, page + 1) + '" ' + (page >= totalPages ? 'disabled' : '') + '>Sau</button></div>';
+  }
+
+  async function mark(id, status) {
+    if (!id) return;
+    await request(API + '/' + id + '/mark', { method: 'POST', body: { alert_key: state.type, status } });
+    toast(status === 'processed' ? 'Đã đánh dấu xử lý' : 'Đã đánh dấu rà soát', 'success');
+    await loadList(state.page);
+    await loadSummary();
+  }
+
+  function exportReport(format) {
+    const params = new URLSearchParams({ type: state.type, status: state.status, search: state.search });
+    const token = window.App?.token || localStorage.getItem(tenantStorageKey('token')) || '';
+    fetch(API + (format === 'pdf' ? '/export-pdf?' : '/export-excel?') + params.toString(), { headers: { Authorization: 'Bearer ' + token } })
+      .then(response => { if (!response.ok) throw new Error('Không xuất được báo cáo'); return response.blob(); })
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'canh-bao-chinh-sach.' + (format === 'pdf' ? 'pdf' : 'xls');
+        document.body.appendChild(link);
+        link.click();
+        URL.revokeObjectURL(link.href);
+        link.remove();
+      })
+      .catch(error => toast(error.message, 'danger'));
+  }
+
+  async function printReport() {
+    const params = new URLSearchParams({ type: state.type, status: state.status, search: state.search });
+    const report = await request(API + '/print?' + params.toString());
+    if (!window.TenantAppPrint?.render) return toast('Print Framework chưa sẵn sàng', 'warning');
+    window.TenantAppPrint.render({ title: report.title, type: 'policy-alerts', paperSize: 'A4', headers: report.headers, rows: report.rows, totalRows: report.totalRows, filters: report.filters, summary: report.summary, repeatHeader: true, showFooter: true, showSignature: true });
+  }
+
+  function installPersonFilters() {
+    const grid = $('.person-quick-filter-grid');
+    if (!grid || $('#policyAlertPersonFilters')) return;
+    grid.insertAdjacentHTML('beforeend', '<div id="policyAlertPersonFilters" class="person-field policy-person-filter"><label>Cảnh báo chính sách</label><div class="policy-person-checks"><label><input type="checkbox" value="upcoming_70"> Sắp đủ 70</label><label><input type="checkbox" value="age_70"> Đủ 70</label><label><input type="checkbox" value="upcoming_75"> Sắp đủ 75</label><label><input type="checkbox" value="age_75"> Đủ 75</label></div><input type="hidden" data-person-filter="policyAlert" name="policyAlert"></div>');
+    $$('#policyAlertPersonFilters input[type="checkbox"]').forEach(input => input.addEventListener('change', event => {
+      $$('#policyAlertPersonFilters input[type="checkbox"]').forEach(other => { if (other !== event.target) other.checked = false; });
+      const hidden = $('#policyAlertPersonFilters input[type="hidden"]');
+      hidden.value = event.target.checked ? event.target.value : '';
+      window.App.persons.page = 1;
+      window.loadPersons?.();
+    }));
+  }
+
+  function clearPersonPolicyChecks() {
+    $$('#policyAlertPersonFilters input[type="checkbox"]').forEach(input => { input.checked = false; });
+  }
+
+  function debounce(fn, delay) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+  }
+})();

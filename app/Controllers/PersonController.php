@@ -147,6 +147,7 @@ final class PersonController extends BaseController
             'gender' => $this->query('gender', ''),
             'ageFrom' => $this->query('ageFrom', $this->query('age_from', '')),
             'ageTo' => $this->query('ageTo', $this->query('age_to', '')),
+            'policyAlert' => $this->query('policyAlert', $this->query('policy_alert', '')),
             'ethnicity' => $this->query('ethnicity', ''),
             'religion' => $this->query('religion', ''),
             'occupation' => $this->query('occupation', ''),

@@ -72,6 +72,7 @@ const assets = [
   ['assets/js/documents.js', 'assets/js/documents.min.js', compactJs],
   ['assets/js/finance.js', 'assets/js/finance.min.js', compactJs],
   ['assets/js/photo-gallery.js', 'assets/js/photo-gallery.min.js', compactJs],
+  ['assets/js/policy-alerts.js', 'assets/js/policy-alerts.min.js', compactJs],
   ['assets/js/notifications.js', 'assets/js/notifications.min.js', compactJs],
   ['assets/js/module-dashboards.js', 'assets/js/module-dashboards.min.js', compactJs],
   ['assets/js/vehicles.js', 'assets/js/vehicles.min.js', compactJs],
