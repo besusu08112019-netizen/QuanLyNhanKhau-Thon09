@@ -96,7 +96,7 @@
   const digitalCitizenFields = [
     ['partyMember','Dang vien'], ['youthUnionMember','Doan vien Thanh nien'], ['womenUnionMember','Hoi vien Hoi Phu nu'], ['farmersUnionMember','Hoi vien Hoi Nong dan'], ['veteransUnionMember','Hoi vien Hoi Cuu chien binh'], ['elderlyUnionMember','Hoi vien Hoi Nguoi cao tuoi'],
     ['meritoriousPerson','Nguoi co cong'], ['martyrRelative','Than nhan liet si'], ['woundedSoldier','Thuong binh'], ['sickSoldier','Benh binh'], ['disabledPerson','Nguoi khuyet tat'], ['socialAssistance','Bao tro xa hoi'],
-    ['employed','Co viec lam'], ['unemployed','That nghiep'], ['freelanceLabor','Lao dong tu do'], ['outProvinceLabor','Lao dong ngoai tinh'], ['foreignLabor','Lao dong nuoc ngoai'], ['pupil','Hoc sinh'], ['student','Sinh vien'], ['retired','Nghi huu'],
+    ['employed','Co viec lam'], ['unemployed','That nghiep'], ['freelanceLabor','Lao dong tu do'], ['outProvinceLabor','Lao dong ngoai tinh'], ['foreignLabor','Lao dong nuoc ngoai'], ['notAttendingSchool','Chua di hoc'], ['pupil','Hoc sinh'], ['student','Sinh vien'], ['retired','Nghi huu'],
   ];
 
   function setupDigitalGovernmentFeatures() {
@@ -114,6 +114,7 @@
     if (form.querySelector('[data-digital-citizen-fields]')) return;
     const group = (title, fields) => '<div class="col-12" data-digital-citizen-fields><div class="border rounded p-3"><div class="fw-semibold mb-2">' + title + '</div><div class="row g-2">' + fields.map(([name,label]) => '<div class="col-md-3 col-sm-6 form-check ms-2"><input class="form-check-input" type="checkbox" name="' + name + '" id="' + name + '"><label class="form-check-label" for="' + name + '">' + label + '</label></div>').join('') + '</div></div></div>';
     bodyRow.insertAdjacentHTML('beforeend', group('Chinh tri - Xa hoi', digitalCitizenFields.slice(0,6)) + group('Chinh sach', digitalCitizenFields.slice(6,12)) + group('Lao dong', digitalCitizenFields.slice(12)));
+    bindPersonAgeDefaults(form);
     const originalOpen = window.openPersonForm;
     if (typeof originalOpen === 'function' && !originalOpen.__digitalWrapped) {
       window.openPersonForm = async function digitalOpenPersonForm(id = null) {
@@ -128,10 +129,65 @@
             const el = targetForm?.elements[name];
             if (el) el.checked = Number(row[snake] ?? row[name] ?? 0) > 0;
           });
+        } else {
+          applyPersonAgeDefaults(targetForm);
         }
       };
       window.openPersonForm.__digitalWrapped = true;
     }
+  }
+
+  function bindPersonAgeDefaults(form) {
+    if (!form || form.dataset.ageDefaultsBound === '1') return;
+    form.dataset.ageDefaultsBound = '1';
+    const dob = form.elements.dateOfBirth;
+    if (!dob) return;
+    dob.addEventListener('change', () => {
+      if (!form.elements.id?.value) applyPersonAgeDefaults(form);
+    });
+  }
+
+  function calculatePersonAge(dateOfBirth) {
+    const raw = String(dateOfBirth || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+    const birth = new Date(raw + 'T00:00:00');
+    if (Number.isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDelta = today.getMonth() - birth.getMonth();
+    if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birth.getDate())) age -= 1;
+    return age >= 0 ? age : null;
+  }
+
+  function ageDefaultFlags(age) {
+    if (age === null) return null;
+    if (age <= 2) return { notAttendingSchool: 1, pupil: 0, student: 0, employed: 0, hasHealthInsurance: 1 };
+    if (age <= 17) return { notAttendingSchool: 0, pupil: 1, student: 0, employed: 0, hasHealthInsurance: 1 };
+    if (age <= 21) return { notAttendingSchool: 0, pupil: 0, student: 1, employed: 0, hasHealthInsurance: 1 };
+    return { notAttendingSchool: 0, pupil: 0, student: 0, employed: 1, hasHealthInsurance: 1 };
+  }
+
+  function syncBridgeHealthInsuranceFields(form) {
+    const active = !!form?.elements?.hasHealthInsurance?.checked;
+    const details = form?.querySelector('[data-health-insurance-fields]');
+    if (details) details.classList.toggle('d-none', !active);
+    ['healthInsuranceNumber','healthInsuranceGroup','healthInsuranceStartDate','healthInsuranceEndDate','healthInsuranceFacility'].forEach(name => {
+      if (form?.elements?.[name]) form.elements[name].disabled = !active;
+    });
+  }
+
+  function applyPersonAgeDefaults(form) {
+    if (!form) return;
+    const defaults = ageDefaultFlags(calculatePersonAge(form.elements.dateOfBirth?.value));
+    if (!defaults) return;
+    ['notAttendingSchool', 'pupil', 'student', 'employed'].forEach(name => {
+      const el = form.elements[name];
+      if (el) el.checked = !!defaults[name];
+    });
+    if (form.elements.unemployed) form.elements.unemployed.checked = false;
+    const bhyt = form.elements.hasHealthInsurance;
+    if (bhyt) bhyt.checked = !!defaults.hasHealthInsurance;
+    syncBridgeHealthInsuranceFields(form);
   }
 
   const personProfileGroups = [

@@ -25,6 +25,7 @@ final class PopulationStatistics extends BaseModel
         'freelance_labor',
         'out_province_labor',
         'foreign_labor',
+        'not_attending_school',
         'pupil',
         'student',
         'retired',

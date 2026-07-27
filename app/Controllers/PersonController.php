@@ -30,6 +30,7 @@ final class PersonController extends BaseController
         'freelance_labor' => ['freelanceLabor'],
         'out_province_labor' => ['outProvinceLabor'],
         'foreign_labor' => ['foreignLabor'],
+        'not_attending_school' => ['notAttendingSchool', 'not_school', 'notSchool'],
         'pupil' => ['pupil'],
         'student' => ['student'],
         'retired' => ['retired'],

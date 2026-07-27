@@ -110,7 +110,7 @@ final class Dashboard extends BaseModel
             'production_business_households' => 0,
             'business_worker_total' => 0,
         ];
-        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $key) {
+        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','not_attending_school','pupil','student','retired'] as $key) {
             $metrics[$key . '_count'] = 0;
             $metrics[$key . '_percent'] = 0;
         }
@@ -201,7 +201,7 @@ final class Dashboard extends BaseModel
     public function laborChart(array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        $columns = ['employed','unemployed','pupil','student','retired'];
+        $columns = ['employed','unemployed','not_attending_school','pupil','student','retired'];
         $selects = ['c.occupation'];
         foreach ($columns as $column) {
             $selects[] = ($this->columnExists('citizens', $column) ? "c.$column" : "0") . " AS $column";
@@ -231,6 +231,7 @@ final class Dashboard extends BaseModel
     private function laborGroup(array $row): string
     {
         $occupation = $this->normalize((string) ($row['occupation'] ?? ''));
+        if ((int) ($row['not_attending_school'] ?? 0) === 1 || str_contains($occupation, 'chua di hoc')) return 'Chưa đi học';
         if ((int) ($row['pupil'] ?? 0) === 1 || str_contains($occupation, 'hoc sinh')) return 'Học sinh';
         if ((int) ($row['student'] ?? 0) === 1 || str_contains($occupation, 'sinh vien')) return 'Sinh viên';
         if ((int) ($row['retired'] ?? 0) === 1 || str_contains($occupation, 'nghi huu') || str_contains($occupation, 'huu tri')) return 'Nghỉ hưu';
@@ -733,7 +734,7 @@ final class Dashboard extends BaseModel
         if ($filters['dateTo']) { $where[] = 'DATE(c.created_at) <= :citizen_date_to'; $params['citizen_date_to'] = $filters['dateTo']; }
         $category = $this->categoryKey($filters['householdType']);
         if ($category) $this->addCategoryWhere($where, $params, $category);
-        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $column) {
+        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','not_attending_school','pupil','student','retired'] as $column) {
             $value = $rawFilters[$column] ?? $rawFilters[$this->camel($column)] ?? null;
             if ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $value; }
         }
@@ -803,7 +804,7 @@ final class Dashboard extends BaseModel
 
     private function flagSelects(string $alias): string
     {
-        $columns = ['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'];
+        $columns = ['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','not_attending_school','pupil','student','retired'];
         $parts = [];
         foreach ($columns as $column) $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
         return implode('', $parts);

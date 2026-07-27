@@ -149,6 +149,7 @@ CREATE TABLE IF NOT EXISTS `citizens` (
   `freelance_labor` TINYINT(1) NOT NULL DEFAULT 0,
   `out_province_labor` TINYINT(1) NOT NULL DEFAULT 0,
   `foreign_labor` TINYINT(1) NOT NULL DEFAULT 0,
+  `not_attending_school` TINYINT(1) NOT NULL DEFAULT 0,
   `pupil` TINYINT(1) NOT NULL DEFAULT 0,
   `student` TINYINT(1) NOT NULL DEFAULT 0,
   `retired` TINYINT(1) NOT NULL DEFAULT 0,

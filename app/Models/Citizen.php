@@ -43,6 +43,7 @@ final class Citizen extends BaseModel
         'freelance_labor' => 'Lao động tự do',
         'out_province_labor' => 'Lao động ngoài tỉnh',
         'foreign_labor' => 'Lao động nước ngoài',
+        'not_attending_school' => 'Chưa đi học',
         'pupil' => 'Học sinh',
         'student' => 'Sinh viên',
         'retired' => 'Nghỉ hưu',
@@ -240,7 +241,14 @@ final class Citizen extends BaseModel
             'presence' => $this->presence($data['presenceStatus'] ?? $data['presence_status'] ?? $fallback['presence_status'] ?? 'AT_HOME'),
             'user' => $userId,
         ];
-        foreach ($this->activeExtendedColumns() as $column) $params[$column] = $this->boolValue($data[$column] ?? $data[$this->camel($column)] ?? $fallback[$column] ?? 0);
+        $laborFields = ['not_attending_school','pupil','student','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','retired'];
+        $ageDefaults = $fallback === null && !$this->anyFieldProvided($data, $laborFields) ? $this->ageDefaultFlags((string) $dob) : [];
+        foreach ($this->activeExtendedColumns() as $column) {
+            $camel = $this->camel($column);
+            $params[$column] = $this->fieldProvided($data, $column)
+                ? $this->boolValue($data[$column] ?? $data[$camel] ?? 0)
+                : $this->boolValue($fallback[$column] ?? $ageDefaults[$column] ?? 0);
+        }
         $this->applyHealthInsuranceParams($params, $data, $fallback);
         return $params;
     }
@@ -296,7 +304,9 @@ final class Citizen extends BaseModel
     {
         $active = $this->activeHealthInsuranceColumns();
         if (!$active) return;
-        $has = $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? $fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? 0);
+        $has = $this->fieldProvided($data, 'has_health_insurance')
+            ? $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? 0)
+            : $this->boolValue($fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? ($fallback === null ? 1 : 0));
         $params['has_health_insurance'] = $has;
         $params['health_insurance_number'] = $has ? $this->nullableString($data['health_insurance_number'] ?? $data['healthInsuranceNumber'] ?? $fallback['health_insurance_number'] ?? null, 20) : null;
         $params['health_insurance_group'] = $has ? $this->healthInsuranceGroup($data['health_insurance_group'] ?? $data['healthInsuranceGroup'] ?? $fallback['health_insurance_group'] ?? null) : null;
@@ -329,13 +339,41 @@ final class Citizen extends BaseModel
 
     private function boolValue(mixed $value): int { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['1','true','yes','co','có','x'], true) ? 1 : 0; }
     private function camel(string $column): string { return preg_replace_callback('/_([a-z])/', fn($m) => strtoupper($m[1]), $column); }
+    private function fieldProvided(array $data, string $column): bool
+    {
+        $camel = $this->camel($column);
+        if (array_key_exists($column, $data) || array_key_exists($camel, $data)) return true;
+        if ($column === 'has_health_insurance') return array_key_exists('health_insurance', $data) || array_key_exists('healthInsurance', $data);
+        if ($column === 'not_attending_school') return array_key_exists('not_school', $data) || array_key_exists('notSchool', $data);
+        return false;
+    }
+
+    private function anyFieldProvided(array $data, array $columns): bool
+    {
+        foreach ($columns as $column) {
+            if ($this->fieldProvided($data, $column)) return true;
+        }
+        return false;
+    }
+
+    private function ageDefaultFlags(string $dateOfBirth): array
+    {
+        $birth = \DateTimeImmutable::createFromFormat('!Y-m-d', $dateOfBirth);
+        if (!$birth) return [];
+        $age = $birth->diff(new \DateTimeImmutable('today'))->y;
+        if ($age <= 2) return ['not_attending_school' => 1, 'pupil' => 0, 'student' => 0, 'employed' => 0];
+        if ($age <= 17) return ['not_attending_school' => 0, 'pupil' => 1, 'student' => 0, 'employed' => 0];
+        if ($age <= 21) return ['not_attending_school' => 0, 'pupil' => 0, 'student' => 1, 'employed' => 0];
+        return ['not_attending_school' => 0, 'pupil' => 0, 'student' => 0, 'employed' => 1];
+    }
+
     private function searchFlag(string $search): ?string
     {
         $text = $this->normalize($search);
         $map = [
             'dang vien' => 'party_member', 'doan vien' => 'youth_union_member', 'hoi phu nu' => 'women_union_member', 'nong dan' => 'farmers_union_member', 'cuu chien binh' => 'veterans_union_member', 'nguoi cao tuoi' => 'elderly_union_member',
             'nguoi co cong' => 'meritorious_person', 'than nhan liet si' => 'martyr_relative', 'thuong binh' => 'wounded_soldier', 'benh binh' => 'sick_soldier', 'khuyet tat' => 'disabled_person', 'bao tro xa hoi' => 'social_assistance', 'bhyt' => 'has_health_insurance', 'bao hiem y te' => 'has_health_insurance',
-            'co viec lam' => 'employed', 'that nghiep' => 'unemployed', 'lao dong tu do' => 'freelance_labor', 'ngoai tinh' => 'out_province_labor', 'nuoc ngoai' => 'foreign_labor', 'hoc sinh' => 'pupil', 'sinh vien' => 'student', 'nghi huu' => 'retired',
+            'co viec lam' => 'employed', 'that nghiep' => 'unemployed', 'lao dong tu do' => 'freelance_labor', 'ngoai tinh' => 'out_province_labor', 'nuoc ngoai' => 'foreign_labor', 'chua di hoc' => 'not_attending_school', 'hoc sinh' => 'pupil', 'sinh vien' => 'student', 'nghi huu' => 'retired',
         ];
         foreach ($map as $needle => $column) if (str_contains($text, $needle)) return $column;
         return null;

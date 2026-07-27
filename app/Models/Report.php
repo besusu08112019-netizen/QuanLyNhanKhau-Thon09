@@ -262,10 +262,10 @@ final class Report extends BaseModel
 
     public function laborReport(array $filters = []): array
     {
-        $columns = ['employed' => 'Có việc làm', 'unemployed' => 'Chưa có việc làm', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu', 'other' => 'Khác'];
+        $columns = ['employed' => 'Có việc làm', 'unemployed' => 'Chưa có việc làm', 'not_attending_school' => 'Chưa đi học', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu', 'other' => 'Khác'];
         [$where, $params] = $this->citizenWhere($filters);
         $selects = ['c.occupation'];
-        foreach (['employed','unemployed','pupil','student','retired'] as $column) $selects[] = ($this->columnExists('citizens', $column) ? "c.$column" : '0') . " AS $column";
+        foreach (['employed','unemployed','not_attending_school','pupil','student','retired'] as $column) $selects[] = ($this->columnExists('citizens', $column) ? "c.$column" : '0') . " AS $column";
         $rows = $this->fetchAll('SELECT ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $where", $params);
         $groups = array_fill_keys(array_keys($columns), 0);
         foreach ($rows as $row) $groups[$this->laborGroup($row)]++;
@@ -332,7 +332,7 @@ final class Report extends BaseModel
         if (!empty($filters['ethnicity'])) { $where[] = 'c.ethnicity LIKE :ethnicity'; $params['ethnicity'] = '%' . $filters['ethnicity'] . '%'; }
         if (!empty($filters['religion'])) { $where[] = 'c.religion LIKE :religion'; $params['religion'] = '%' . $filters['religion'] . '%'; }
         if (!empty($filters['occupation'])) { $where[] = 'c.occupation LIKE :occupation'; $params['occupation'] = '%' . $filters['occupation'] . '%'; }
-        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'] as $column) {
+        foreach (['has_health_insurance','party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','not_attending_school','pupil','student','retired'] as $column) {
             if (($filters[$column] ?? null) !== null && $filters[$column] !== '' && $this->columnExists('citizens', $column)) { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $filters[$column]; }
         }
         return ['WHERE ' . implode(' AND ', $where), $params];
@@ -400,6 +400,7 @@ final class Report extends BaseModel
     private function laborGroup(array $row): string
     {
         $occupation = $this->normalize((string) ($row['occupation'] ?? ''));
+        if ((int) ($row['not_attending_school'] ?? 0) === 1 || str_contains($occupation, 'chua di hoc')) return 'not_attending_school';
         if ((int) ($row['pupil'] ?? 0) === 1 || str_contains($occupation, 'hoc sinh')) return 'pupil';
         if ((int) ($row['student'] ?? 0) === 1 || str_contains($occupation, 'sinh vien')) return 'student';
         if ((int) ($row['retired'] ?? 0) === 1 || str_contains($occupation, 'nghi huu') || str_contains($occupation, 'huu tri')) return 'retired';
@@ -422,7 +423,7 @@ final class Report extends BaseModel
 
     private function flagSelects(string $alias): string
     {
-        $columns = ['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','pupil','student','retired'];
+        $columns = ['party_member','youth_union_member','women_union_member','farmers_union_member','veterans_union_member','elderly_union_member','meritorious_person','martyr_relative','wounded_soldier','sick_soldier','disabled_person','social_assistance','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','not_attending_school','pupil','student','retired'];
         $parts = [];
         foreach ($columns as $column) $parts[] = ', ' . ($this->columnExists('citizens', $column) ? "SUM($alias.$column=1)" : '0') . " AS $column";
         return implode('', $parts);
