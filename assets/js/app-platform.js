@@ -600,6 +600,8 @@
       agriculturalLand: 'agriculturalLand',
       agriculture: 'agriculture',
       livestock: 'livestock',
+      partyMembers: 'party_members',
+      party_members: 'party_members',
       gis: 'gis'
     };
     var actionAliases = {
@@ -5693,6 +5695,7 @@
       { moduleKey: 'agriculturalLand', screenId: 'agriculturalLand', path: '/agricultural-land', label: 'Quỹ đất nông nghiệp', mobileLabel: 'Quỹ đất', icon: 'fa-map', permissionScope: 'agricultural_land', loaderName: 'loadAgriculturalLand' },
       { moduleKey: 'agriculture', screenId: 'agriculture', path: '/agriculture', label: 'Sản xuất nông nghiệp', mobileLabel: 'Nông nghiệp', icon: 'fa-seedling', permissionScope: 'agriculture', loaderName: 'loadAgriculture' },
       { moduleKey: 'livestock', screenId: 'livestock', path: '/livestock', label: 'Quản lý vật nuôi', mobileLabel: 'Vật nuôi', icon: 'fa-paw', permissionScope: 'livestock', loaderName: 'loadLivestock' },
+      { moduleKey: 'partyMembers', screenId: 'partyMembers', path: '/party-members', label: 'Quản lý Đảng viên', mobileLabel: 'Đảng viên', icon: 'fa-flag', permissionScope: 'party_members', loaderName: 'loadPartyMembers' },
       { moduleKey: 'vehicles', screenId: 'vehicles', path: '/vehicles', label: 'Quản lý xe cộ', mobileLabel: 'Xe cộ', icon: 'fa-car', permissionScope: 'vehicles' },
       { moduleKey: 'contributions', screenId: 'contributions', path: '/contributions', label: 'Đóng góp hộ', mobileLabel: 'Đóng góp', icon: 'fa-hand-holding-dollar', permissionScope: 'contributions' },
       { moduleKey: 'gis', screenId: 'gis', path: '/gis', label: 'GIS', icon: 'fa-map-location-dot', permissionScope: 'gis', loaderName: 'loadGisMap' },
@@ -5733,6 +5736,7 @@
       { path: '/households/:id', moduleKey: 'households', screenId: 'households', action: 'detail' },
       { path: '/households/:id/edit', moduleKey: 'households', screenId: 'households', action: 'edit' },
       { path: '/persons', moduleKey: 'persons', screenId: 'persons', action: 'list' },
+      { path: '/party-members', moduleKey: 'partyMembers', screenId: 'partyMembers', action: 'list' },
       { path: '/temporary-residence', moduleKey: 'temporaryResidence', screenId: 'temporaryResidence', action: 'list' },
       { path: '/temporary-absence', moduleKey: 'temporaryAbsence', screenId: 'temporaryAbsence', action: 'list' },
       { path: '/movements', moduleKey: 'movements', screenId: 'movements', action: 'list' },
@@ -6079,7 +6083,7 @@
     [
       { key: 'dashboard', label: 'Dashboard', icon: 'fa-gauge-high', items: ['dashboard', 'dashboardHouseholds', 'dashboardPopulation', 'dashboardBusiness', 'dashboardVehicles', 'dashboardLivestock', 'dashboardGis', 'dashboardReports'] },
       { key: 'overview', label: 'Tổng quan', icon: 'fa-tower-broadcast', items: ['operationCenter', 'workTasks', 'workCalendar', 'documents'] },
-      { key: 'population', label: 'Quản lý dân cư', icon: 'fa-users', items: ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements'] },
+      { key: 'population', label: 'Quản lý dân cư', icon: 'fa-users', items: ['households', 'persons', 'partyMembers', 'temporaryResidence', 'temporaryAbsence', 'movements'] },
       { key: 'assets', label: 'Quản lý tài sản', icon: 'fa-building-columns', items: ['publicAssets', 'photoGallery', 'houses', 'complaints'] },
       { key: 'production', label: 'Quản lý sản xuất', icon: 'fa-seedling', items: ['businessHouseholds', 'agriculturalLand', 'agriculture', 'livestock'] },
       { key: 'vehicles', label: 'Quản lý phương tiện', icon: 'fa-car', items: ['vehicles'] },

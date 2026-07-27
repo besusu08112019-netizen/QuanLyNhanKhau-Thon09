@@ -188,6 +188,7 @@ final class ReportController extends BaseController
             str_starts_with($type, 'contribution') || str_starts_with($type, 'household-contribution') => ['contributions'],
             str_starts_with($type, 'agricultural-land') || str_starts_with($type, 'agricultural_land') => ['agricultural_land'],
             str_starts_with($type, 'agriculture') => ['agriculture'],
+            str_starts_with($type, 'party-members') || str_starts_with($type, 'party_member') => ['party_members'],
             str_starts_with($type, 'house-') || str_starts_with($type, 'houses') => ['houses'],
             str_starts_with($type, 'public-asset') || str_starts_with($type, 'public-assets') => ['public_assets'],
             str_starts_with($type, 'gis') => ['gis', 'household'],
@@ -233,6 +234,10 @@ final class ReportController extends BaseController
             'paymentStatus' => $this->nullableQueryAny('paymentStatus', ['payment_status']),
             'area_code' => $this->nullableQueryAny('area_code', ['areaCode', 'area']),
             'areaCode' => $this->nullableQueryAny('areaCode', ['area_code', 'area']),
+            'branch_name' => $this->nullableQueryAny('branch_name', ['branch']),
+            'member_type' => $this->nullableQueryAny('member_type', ['memberType']),
+            'activity_status' => $this->nullableQueryAny('activity_status', ['activityStatus', 'status']),
+            'party_position' => $this->nullableQueryAny('party_position', ['position']),
             'contribution_name' => $this->nullableQueryAny('contribution_name', ['contributionName']),
             'contributionName' => $this->nullableQueryAny('contributionName', ['contribution_name']),
         ];

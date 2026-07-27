@@ -1,10 +1,10 @@
 const { test, expect } = require('@playwright/test');
 
 const widths = [320, 360, 375, 390, 412, 414, 430, 768, 820, 853, 912, 1024, 1280, 1440, 1920];
-const moduleOrderScreens = ['households', 'persons', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
+const moduleOrderScreens = ['households', 'persons', 'partyMembers', 'temporaryResidence', 'temporaryAbsence', 'movements', 'publicAssets', 'houses', 'businessHouseholds', 'agriculture', 'livestock', 'vehicles', 'contributions'];
 const mobileScreens = moduleOrderScreens;
 const bottomNavScreens = ['dashboard', 'households', 'persons', 'gis', 'reports'];
-const qaScreens = ['dashboard', 'households', 'persons', 'gis', 'reports', 'contributions', 'vehicles', 'businessHouseholds', 'agriculture', 'livestock', 'publicAssets', 'houses', 'operationCenter', 'import', 'exportExcel', 'printForms', 'systemAdmin', 'users', 'permissions', 'logs', 'backups', 'restore', 'settings', 'appearance'];
+const qaScreens = ['dashboard', 'households', 'persons', 'partyMembers', 'gis', 'reports', 'contributions', 'vehicles', 'businessHouseholds', 'agriculture', 'livestock', 'publicAssets', 'houses', 'operationCenter', 'import', 'exportExcel', 'printForms', 'systemAdmin', 'users', 'permissions', 'logs', 'backups', 'restore', 'settings', 'appearance'];
 
 async function mockApis(page) {
   await page.route('**/api/**', async (route) => {
@@ -21,6 +21,9 @@ async function mockApis(page) {
     if (url.includes('/api/gis/households')) return payload({ items: [], total: 0 });
     if (url.includes('/api/gis/summary')) return payload({ total: 0, located: 0, missing: 0, areas: [] });
     if (url.includes('/api/household-business')) return payload({ items: [], total: 0, page: 1, pageSize: 20, dashboard: {} });
+    if (url.includes('/api/party-members/catalogs')) return payload({ member_types: [], statuses: [], branches: [], positions: [] });
+    if (url.includes('/api/party-members/dashboard')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/party-members')) return payload({ items: [], total: 0, page: 1, pageSize: 20, totalPages: 1 });
     if (url.includes('/api/livestock')) return payload({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
     if (url.includes('/api/agriculture')) return payload({ items: [], total: 0, page: 1, pageSize: 20, kpis: {} });
     if (url.includes('/api/public-assets/catalogs')) return payload({ types: [], areas: [], statuses: [] });
@@ -95,6 +98,7 @@ test.describe('responsive system navigation audit', () => {
 
   for (const width of widths) {
     test(`main modules do not overflow at ${width}px`, async ({ page }) => {
+      test.setTimeout(60000);
       await openAuthenticatedApp(page, width);
 
       for (const screen of mobileScreens) {
@@ -211,6 +215,7 @@ test.describe('responsive system navigation audit', () => {
   });
 
   test('filter icons follow desktop and compact responsive contract', async ({ page }) => {
+    test.setTimeout(60000);
     for (const width of [1024, 1366]) {
       await openAuthenticatedApp(page, width);
       for (const screen of mobileScreens) {
@@ -284,6 +289,7 @@ test.describe('responsive system navigation audit', () => {
   });
 
   test('module navigation clicks activate the requested screens', async ({ page }) => {
+    test.setTimeout(60000);
     await openAuthenticatedApp(page, 390);
     const isMobile = await page.evaluate(() => window.innerWidth <= 820);
 
@@ -543,5 +549,3 @@ test.describe('responsive system navigation audit', () => {
     }
   });
 });
-
-

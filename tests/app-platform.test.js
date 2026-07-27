@@ -167,7 +167,7 @@ function screenNode(screenId) {
   assert.strictEqual(systemAdmin.screenId, 'systemAdmin');
 
   const populationModules = platform.menu.modulesForMenu('population').map((item) => item.moduleKey);
-  assert.strictEqual(populationModules.join(','), 'households,persons,temporaryResidence,temporaryAbsence,movements');
+  assert.strictEqual(populationModules.join(','), 'households,persons,partyMembers,temporaryResidence,temporaryAbsence,movements');
 
   const mobileScreens = platform.menuRenderer.mobileScreens();
   assert.strictEqual(
@@ -238,6 +238,7 @@ function screenNode(screenId) {
   const requiredModules = [
     'households',
     'persons',
+    'partyMembers',
     'temporaryResidence',
     'temporaryAbsence',
     'movements',
@@ -942,6 +943,7 @@ function screenNode(screenId) {
   assert.strictEqual(platform.navigationScopes.resolve('population').moduleKeys.join(','), [
     'households',
     'persons',
+    'partyMembers',
     'temporaryResidence',
     'temporaryAbsence',
     'movements'

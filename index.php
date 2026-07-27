@@ -48,6 +48,7 @@ use App\Controllers\LogController;
 use App\Controllers\MovementController;
 use App\Controllers\NotificationController;
 use App\Controllers\OperationCenterController;
+use App\Controllers\PartyMemberController;
 use App\Controllers\PermissionController;
 use App\Controllers\PersonController;
 use App\Controllers\PhotoGalleryController;
@@ -512,6 +513,16 @@ $router->get('/api/livestock/{id}', [LivestockController::class, 'show']);
 $router->put('/api/livestock/{id}', [LivestockController::class, 'update']);
 $router->delete('/api/livestock/{id}', [LivestockController::class, 'destroy']);
 
+$router->get('/api/party-members', [PartyMemberController::class, 'index']);
+$router->post('/api/party-members', [PartyMemberController::class, 'store']);
+$router->get('/api/party-members/dashboard', [PartyMemberController::class, 'dashboard']);
+$router->get('/api/party-members/catalogs', [PartyMemberController::class, 'catalogs']);
+$router->get('/api/party-members/citizen-search', [PartyMemberController::class, 'citizenSearch']);
+$router->post('/api/party-members/{id}/restore', [PartyMemberController::class, 'restore']);
+$router->get('/api/party-members/{id}', [PartyMemberController::class, 'show']);
+$router->put('/api/party-members/{id}', [PartyMemberController::class, 'update']);
+$router->delete('/api/party-members/{id}', [PartyMemberController::class, 'destroy']);
+
 $router->get('/api/citizens', [PersonController::class, 'index']);
 $router->post('/api/citizens', [PersonController::class, 'store']);
 $router->get('/api/citizens/{id}', [PersonController::class, 'show']);
@@ -777,6 +788,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/digital-profile.min.js',
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
+        'assets/js/party-members.min.js',
         'assets/js/vehicles.min.js',
         'assets/js/contributions.min.js',
         'assets/js/agriculture.min.js',

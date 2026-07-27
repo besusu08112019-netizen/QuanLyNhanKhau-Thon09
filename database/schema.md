@@ -16,6 +16,12 @@ Google Sheets database gom cac sheet sau.
 
 `id`, `citizenId`, `householdId`, `type`, `fromAddress`, `toAddress`, `reason`, `effectiveDate`, `documentNumber`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`
 
+## party_members
+
+`id`, `villageId`, `citizenId`, `partyMemberCode`, `partyCardNumber`, `joinedPartyDate`, `officialPartyDate`, `branchName`, `parentPartyOrg`, `partyPosition`, `governmentPosition`, `educationLevel`, `professionalLevel`, `politicalTheoryLevel`, `memberType`, `activityStatus`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`
+
+Moi ban ghi lien ket 1-1 voi mot `citizens.id`. Ho ten, ngay sinh, gioi tinh, CCCD, dien thoai va dia chi duoc doc truc tiep tu bang `citizens`, khong nhap tay trong bang nay.
+
 ## users
 
 `id`, `email`, `displayName`, `role`, `status`, `lastLoginAt`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`

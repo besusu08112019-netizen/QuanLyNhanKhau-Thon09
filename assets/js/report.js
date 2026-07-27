@@ -52,6 +52,14 @@
     ['livestock-vaccinated', 'Vat nuoi da tiem phong'],
     ['livestock-unvaccinated', 'Vat nuoi chua tiem phong'],
     ['livestock-disease', 'Vat nuoi co dich benh'],
+    ['party-members', 'Dang vien - Danh sach'],
+    ['party-members-branch', 'Dang vien theo chi bo'],
+    ['party-members-age', 'Dang vien theo do tuoi'],
+    ['party-members-gender', 'Dang vien theo gioi tinh'],
+    ['party-members-position', 'Dang vien theo chuc vu'],
+    ['party-members-official', 'Dang vien chinh thuc'],
+    ['party-members-probationary', 'Dang vien du bi'],
+    ['party-members-status', 'Dang vien theo tinh trang'],
     ['vehicles', 'Xe co - Danh sach'],
     ['vehicles-by-type', 'Xe co theo loai'],
     ['vehicles-missing-plate', 'Xe chua co bien so'],
@@ -100,6 +108,7 @@
     businessHouseholds: { screen: 'businessHouseholdsScreen', type: 'household-business-production' },
     agriculture: { screen: 'agricultureScreen', type: 'agriculture' },
     livestock: { screen: 'livestockScreen', type: 'livestock' },
+    partyMembers: { screen: 'partyMembersScreen', type: 'party-members' },
     vehicles: { screen: 'vehiclesScreen', type: 'vehicles' },
     contributions: { screen: 'contributionsScreen', type: 'contributions-list' }
   };
