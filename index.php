@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260726-ai-removal-1');
+define('APP_ASSET_VERSION', '20260727-gis-permission-1');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 require_once BASE_PATH . '/config/env.php';
@@ -270,6 +270,7 @@ $router->post('/api/login', [AuthController::class, 'login']);
 $router->post('/api/logout', [AuthController::class, 'logout']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
 $router->post('/api/auth/logout', [AuthController::class, 'logout']);
+$router->post('/api/auth/keepalive', [AuthController::class, 'keepAlive']);
 $router->get('/api/me', [AuthController::class, 'me']);
 
 $router->get('/api/dashboard', [DashboardController::class, 'summary']);
@@ -724,6 +725,10 @@ if (!str_starts_with($request->path(), '/api')) {
     $tenantSettings['tenantNamespace'] = trim($tenantNamespace, '_') ?: 'tenant';
     $tenantSettings['tenantHost'] = TenantContext::host();
     $tenantSettings['villageId'] = TenantContext::villageId();
+    $appConfig = require BASE_PATH . '/config/app.php';
+    $tenantSettings['sessionTtlSeconds'] = (int) $appConfig['session_ttl_seconds'];
+    $tenantSettings['idleTimeoutSeconds'] = (int) $appConfig['idle_timeout_seconds'];
+    $tenantSettings['idleWarningSeconds'] = (int) $appConfig['idle_warning_seconds'];
     $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     $html = strtr($html, [
         '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'He thong Quan ly Hanh chinh')),

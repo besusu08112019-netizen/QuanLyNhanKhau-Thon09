@@ -46,8 +46,21 @@ final class AuthController extends BaseController
         $this->verifyCsrfToken();
         $token = $this->request->bearerToken();
         if ($token) $this->users()->revoke($token);
+        $this->destroyPhpSession();
         $this->audit($user, 'user', 'read', 'Dang xuat he thong', $user['id']);
         $this->ok(['loggedOutAt' => date('c')]);
+    }
+
+    public function keepAlive(): void
+    {
+        $user = $this->user();
+        $this->verifyCsrfToken();
+        $token = $this->request->bearerToken();
+        if (!$token) {
+            $this->fail('Vui long dang nhap', 401);
+        }
+        $this->users()->touchSession($token);
+        $this->ok(['activeUntil' => date('c', time() + $this->idleTimeoutSeconds()), 'user' => $this->users()->publicUser($user)]);
     }
 
     public function me(): void
@@ -111,6 +124,37 @@ final class AuthController extends BaseController
     private function loginKey(string $login): string
     {
         return hash('sha256', strtolower(trim($login)) . '|' . $this->clientIp());
+    }
+
+    private function idleTimeoutSeconds(): int
+    {
+        $config = require BASE_PATH . '/config/app.php';
+        return max(2, (int) $config['idle_timeout_seconds']);
+    }
+
+    private function destroyPhpSession(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        $_SESSION = [];
+        $params = session_get_cookie_params();
+        if (session_name() !== '') {
+            setcookie(session_name(), '', [
+                'expires' => time() - 42000,
+                'path' => $params['path'] ?: '/',
+                'domain' => $params['domain'] ?? '',
+                'secure' => (bool) ($params['secure'] ?? false),
+                'httponly' => (bool) ($params['httponly'] ?? true),
+                'samesite' => $params['samesite'] ?? 'Lax',
+            ]);
+        }
+        @session_destroy();
     }
 
     private function clientIp(): string

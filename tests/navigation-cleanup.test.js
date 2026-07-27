@@ -55,6 +55,12 @@ const allowedClickListeners = new Map([
     "btn.addEventListener('click', promptInstall);",
     "banner.querySelector('button').addEventListener('click', applyServiceWorkerUpdate);"
   ]],
+  ['assets/js/session.js', [
+    "warningModalEl.querySelector('[data-idle-continue]').addEventListener('click', () => recordActivity(true));",
+    "warningModalEl.querySelector('[data-idle-logout]').addEventListener('click', () => performLogout('manual'));",
+    "document.addEventListener('click', event => {",
+    "document.addEventListener('click', logoutClickListener, true);"
+  ]],
   ['assets/js/vehicles.js', [
     "$('#vehicleResetBtn').addEventListener('click'",
     "$('#vehicleAddBtn')?.addEventListener('click'",

@@ -1868,7 +1868,12 @@ function screenNode(screenId) {
   const platform = loadPlatform().window.TenantAppPlatform;
   assert.strictEqual(platform.permissions.can('households', platform.ACTION.VIEW, { role: 'SUPER_ADMIN' }), true);
   platform.permissions.set('households', platform.ACTION.DELETE, false);
-  assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'SUPER_ADMIN' }), false);
+  assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'SUPER_ADMIN' }), true);
+  assert.strictEqual(platform.permissions.can('households', platform.ACTION.DELETE, { role: 'ADMIN' }), true);
+  platform.permissions.set('gis', platform.ACTION.EDIT, false);
+  assert.strictEqual(platform.permissions.can('gis', 'update', { role: 'SUPER_ADMIN' }), true);
+  assert.strictEqual(platform.permissions.can('gis', 'update', { role: 'ADMIN' }), true);
+  assert.strictEqual(platform.permissions.can('gis', 'update', { role: 'OFFICER' }), false);
   assert.strictEqual(platform.permissions.normalizeModule('public-assets'), 'publicAssets');
   assert.strictEqual(platform.permissions.normalizeAction('update'), platform.ACTION.EDIT);
   platform.permissions.setMany({
@@ -2383,7 +2388,7 @@ function screenNode(screenId) {
   platform.permissions.set('households', platform.ACTION.DELETE, false);
   const deleteOperation = platform.crud.operationFor('households', 'delete', { role: 'SUPER_ADMIN' });
   assert.strictEqual(deleteOperation.enabled, true);
-  assert.strictEqual(deleteOperation.allowed, false);
+  assert.strictEqual(deleteOperation.allowed, true);
 
   const workflow = platform.crud.workflowFor('households');
   assert.strictEqual(workflow.config.rowActions.join(','), 'detail,edit');

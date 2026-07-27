@@ -291,7 +291,7 @@ final class User extends BaseModel
         $this->execute('UPDATE users SET last_login_at = NOW() WHERE id = :id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $user['id']]));
         $token = bin2hex(random_bytes(32));
         $config = require BASE_PATH . '/config/app.php';
-        $ttl = (int) ($config['session_ttl_seconds'] ?? 21600);
+        $ttl = min((int) $config['session_ttl_seconds'], max(2, (int) $config['idle_timeout_seconds']));
         $this->insert('INSERT INTO user_sessions (user_id, token_hash, ip_address, user_agent, expires_at) VALUES (:user_id, :token_hash, :ip, :agent, DATE_ADD(NOW(), INTERVAL :ttl SECOND))', ['user_id' => $user['id'], 'token_hash' => hash('sha256', $token), 'ip' => $_SERVER['REMOTE_ADDR'] ?? null, 'agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255), 'ttl' => $ttl]);
         $user = $this->findById((int) $user['id']);
         return ['token' => $token, 'csrfToken' => $this->csrfToken($token), 'expiresIn' => $ttl, 'user' => $this->publicUser($user)];
@@ -312,6 +312,13 @@ final class User extends BaseModel
     public function revoke(string $token): void
     {
         $this->execute('UPDATE user_sessions SET revoked_at = NOW() WHERE token_hash = :hash', ['hash' => hash('sha256', $token)]);
+    }
+
+    public function touchSession(string $token): void
+    {
+        $config = require BASE_PATH . '/config/app.php';
+        $ttl = min((int) $config['session_ttl_seconds'], max(2, (int) $config['idle_timeout_seconds']));
+        $this->execute('UPDATE user_sessions SET expires_at = DATE_ADD(NOW(), INTERVAL :ttl SECOND) WHERE token_hash = :hash AND revoked_at IS NULL AND expires_at > NOW()', ['ttl' => $ttl, 'hash' => hash('sha256', $token)]);
     }
 
     public function publicUser(?array $user): ?array

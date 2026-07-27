@@ -11,6 +11,9 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(auth, /assertLoginAllowed/);
   assert.match(auth, /recordLoginFailure/);
   assert.match(auth, /Too many login attempts/);
+  assert.match(auth, /destroyPhpSession/);
+  assert.match(auth, /session_destroy/);
+  assert.match(auth, /function keepAlive/);
 }
 
 {
@@ -46,6 +49,9 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(index, /redact_security_uri/);
   assert.match(index, /Strict-Transport-Security/);
   assert.match(index, /function versioned_asset/);
+  assert.match(index, /idleTimeoutSeconds/);
+  assert.match(index, /idleWarningSeconds/);
+  assert.match(index, /\/api\/auth\/keepalive/);
   assert.match(index, /'assets\/vendor\/bootstrap\/bootstrap\.min\.css'/);
   assert.match(index, /'assets\/vendor\/bootstrap\/bootstrap\.bundle\.min\.js'/);
   assert.match(index, /'assets\/css\/print\.min\.css'/);
@@ -64,6 +70,13 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.doesNotMatch(appView, /<meta\s+property=["']og:description["']/i);
   assert.doesNotMatch(appView, /<meta\s+name=["']twitter:description["']/i);
   const appJs = read('assets/js/app.utf8.min.js');
+  const sessionJs = read('assets/js/session.js');
+  assert.match(sessionJs, /BroadcastChannel/);
+  assert.match(sessionJs, /IDLE|idleTimeoutWarningModal|last_activity_at/);
+  assert.match(sessionJs, /\/api\/auth\/logout/);
+  assert.match(sessionJs, /\/api\/auth\/keepalive/);
+  assert.match(sessionJs, /contextmenu/);
+  assert.match(sessionJs, /Phiên làm việc đã hết hạn do không có hoạt động/);
   const passwordToggleBlock = appJs.match(/const toggle = \$\('\[data-password-toggle\]'[\s\S]+?hydrateLoginIntro\(\);/);
   assert.ok(passwordToggleBlock, 'login password toggle block must be present');
   assert.match(passwordToggleBlock[0], /password\.type = visible \? 'password' : 'text'/);
@@ -85,6 +98,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(users, /assertRoleAssignmentAllowed/);
   assert.match(users, /actorIsSuperAdmin/);
   assert.match(users, /\['SUPER_ADMIN', 'ADMIN'\]/);
+  assert.match(users, /function touchSession/);
+  assert.match(users, /expires_at = DATE_ADD\(NOW\(\), INTERVAL :ttl SECOND\)/);
 }
 
 {

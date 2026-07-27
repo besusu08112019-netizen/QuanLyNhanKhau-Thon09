@@ -1,12 +1,15 @@
 const { defineConfig, devices } = require('@playwright/test');
 
+const host = process.env.PW_PHP_HOST || '127.0.0.1';
+const port = process.env.PW_PHP_PORT || '8080';
+
 module.exports = defineConfig({
   testDir: './tests/browser',
   timeout: 30000,
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   use: {
-    baseURL: 'http://127.0.0.1:8080',
+    baseURL: `http://${host}:${port}`,
     trace: 'retain-on-failure'
   },
   globalSetup: './tests/browser/global-setup.js',

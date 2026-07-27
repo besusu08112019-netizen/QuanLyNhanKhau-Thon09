@@ -660,13 +660,9 @@
       return api;
     }
 
-    function isFullAccessRole(user) {
-      var role = String(user && user.role || '').toUpperCase();
-      return role === 'SUPER_ADMIN' || role === 'ADMIN';
-    }
-
     function can(moduleKey, action, user) {
-      if (isFullAccessRole(user)) return true;
+      var role = String(user && user.role || '').toUpperCase();
+      if (role === 'SUPER_ADMIN' || role === 'ADMIN') return true;
       var exact = key(moduleKey, action);
       var wildcard = key(moduleKey, '*');
       var manage = key(moduleKey, ACTION.MANAGE);

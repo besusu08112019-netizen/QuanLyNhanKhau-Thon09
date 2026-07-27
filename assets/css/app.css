@@ -275,6 +275,8 @@ body.theme-dark .advanced-filter-panel { background: #111827; }
 .permission-check { cursor: pointer; }
 .toast { border-radius: 8px; }
 .modal-content { border-radius: 8px; }
+#idleTimeoutWarningModal .idle-timeout-dialog { max-width: min(420px, calc(100vw - 16px)); margin: 12px auto; }
+#idleTimeoutWarningModal .modal-content { max-height: calc(100vh - 24px); overflow: auto; }
 
 @media (min-width: 1200px) {
   .dashboard-filter .row { align-items: end; }

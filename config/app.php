@@ -45,6 +45,8 @@ return [
     'timezone' => env('APP_TIMEZONE', 'Asia/Ho_Chi_Minh'),
     'debug' => filter_var(env('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN),
     'session_ttl_seconds' => (int) env('SESSION_TTL_SECONDS', 21600),
+    'idle_timeout_seconds' => max(2, (int) env('IDLE_TIMEOUT_SECONDS', 900)),
+    'idle_warning_seconds' => max(1, (int) env('IDLE_WARNING_SECONDS', 60)),
     'upload_path' => $uploadPath,
     'storage_path' => $storagePath,
     'cache_path' => $cachePath,

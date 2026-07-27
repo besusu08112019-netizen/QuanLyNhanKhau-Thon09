@@ -477,6 +477,58 @@ test('leaflet GIS shows current user location automatically and GPS button pans 
   expect(apiLog.filter(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location')).toEqual([]);
 });
 
+test('Super Admin can update household GIS location even when a stale frontend GIS deny rule exists', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  await page.evaluate(() => {
+    window.TenantAppPlatform.permissions.set('gis', 'update', false);
+    window.TenantAppGisRelocateHousehold(7);
+  });
+  await expect.poll(() => apiLog.filter(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location').length).toBe(1);
+  const saveRequest = apiLog.find(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location');
+  expect(saveRequest.body.source).toBe('GPS');
+  expect(saveRequest.body.accuracy).toBe(5);
+});
+
+test('Super Admin can update household GIS location before legacy permission fallback is available', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  await page.evaluate(() => {
+    window.TenantAppPlatform.permissions.clear();
+    window.TenantAppCanAccess = undefined;
+    window.tenantAppCanAccess = undefined;
+    window.TenantAppGisRelocateHousehold(7);
+  });
+  await expect.poll(() => apiLog.filter(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location').length).toBe(1);
+});
+
+test('Super Admin can pick and save household GIS location from the map before fallback permissions load', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  await page.evaluate(() => {
+    window.TenantAppPlatform.permissions.clear();
+    window.TenantAppCanAccess = undefined;
+    window.tenantAppCanAccess = undefined;
+    window.TenantAppPlatform.confirmDialog.ask = () => Promise.resolve(true);
+    let form = document.getElementById('householdForm');
+    if (!form) {
+      form = document.createElement('form');
+      form.id = 'householdForm';
+      const id = document.createElement('input');
+      id.name = 'id';
+      form.appendChild(id);
+      document.body.appendChild(form);
+    }
+    form.elements.id.value = '7';
+    window.TenantAppPlatform.actions.dispatch('householdLocation.pick');
+    window.App.gis.map.fire('click', { latlng: { lat: 20.258, lng: 105.981 } });
+  });
+  await expect.poll(() => apiLog.find(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location')?.body.source).toBe('MANUAL');
+  const saveRequest = apiLog.find(item => item.method === 'PUT' && item.path === '/api/gis/households/7/location');
+  expect(saveRequest.body.latitude).toBe(20.258);
+  expect(saveRequest.body.longitude).toBe(105.981);
+});
+
 test('leaflet GIS keeps popup open and switches cluster to flat markers at max zoom', async ({ page }) => {
   const apiLog = [];
   await boot(page, apiLog);
@@ -691,4 +743,3 @@ test('GIS v3 dashboard, heatmap, drag marker, measure tools and unified search w
   expect(Number(focused.lat)).toBeCloseTo(20.256, 3);
   expect(Number(focused.lng)).toBeCloseTo(105.977, 3);
 });
-
