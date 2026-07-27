@@ -94,8 +94,9 @@ SQL);
     public function catalogs(): array
     {
         $this->ensureSchema();
+        $categories = $this->uniqueCatalogRows($this->fetchAll('SELECT id, code, name, color FROM calendar_event_categories WHERE is_active=1 ORDER BY sort_order ASC, id ASC'));
         return [
-            'categories' => array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name'], 'color' => (string)$r['color']], $this->fetchAll('SELECT id, code, name, color FROM calendar_event_categories WHERE is_active=1 ORDER BY sort_order ASC, name ASC')),
+            'categories' => array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name'], 'color' => (string)$r['color']], $categories),
             'statuses' => [
                 ['value' => 'SCHEDULED', 'label' => 'Đã lên lịch'],
                 ['value' => 'DONE', 'label' => 'Đã hoàn thành'],
@@ -252,6 +253,20 @@ SQL);
             $this->execute('INSERT INTO calendar_event_categories (code,name,color,sort_order) VALUES (:code,:name,:color,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), color=VALUES(color), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'color' => $color, 'sort_order' => $order]);
             $order += 10;
         }
+    }
+
+    private function uniqueCatalogRows(array $rows): array
+    {
+        $seen = [];
+        $unique = [];
+        foreach ($rows as $row) {
+            $key = strtolower(trim((string)($row['code'] ?? '')));
+            if ($key === '') $key = (string)($row['id'] ?? count($unique));
+            if (isset($seen[$key])) continue;
+            $seen[$key] = true;
+            $unique[] = $row;
+        }
+        return $unique;
     }
 
     private function params(array $data, int $userId, string $userName): array

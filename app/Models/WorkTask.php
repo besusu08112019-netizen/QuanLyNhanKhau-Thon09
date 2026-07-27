@@ -399,12 +399,28 @@ SQL);
 
     private function catalog(string $table): array
     {
-        return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name']], $this->fetchAll("SELECT id, code, name FROM $table WHERE is_active=1 ORDER BY sort_order ASC, name ASC"));
+        $rows = $this->uniqueCatalogRows($this->fetchAll("SELECT id, code, name FROM $table WHERE is_active=1 ORDER BY sort_order ASC, id ASC"));
+        return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name']], $rows);
     }
 
     private function statusCatalog(): array
     {
-        return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name'], 'progress_percent' => (int)$r['progress_percent'], 'is_terminal' => (bool)$r['is_terminal']], $this->fetchAll('SELECT id, code, name, progress_percent, is_terminal FROM work_task_statuses WHERE is_active=1 ORDER BY sort_order ASC, name ASC'));
+        $rows = $this->uniqueCatalogRows($this->fetchAll('SELECT id, code, name, progress_percent, is_terminal FROM work_task_statuses WHERE is_active=1 ORDER BY sort_order ASC, id ASC'));
+        return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name'], 'progress_percent' => (int)$r['progress_percent'], 'is_terminal' => (bool)$r['is_terminal']], $rows);
+    }
+
+    private function uniqueCatalogRows(array $rows): array
+    {
+        $seen = [];
+        $unique = [];
+        foreach ($rows as $row) {
+            $key = strtoupper(trim((string)($row['code'] ?? '')));
+            if ($key === '') $key = (string)($row['id'] ?? count($unique));
+            if (isset($seen[$key])) continue;
+            $seen[$key] = true;
+            $unique[] = $row;
+        }
+        return $unique;
     }
 
     private function logs(int $id): array

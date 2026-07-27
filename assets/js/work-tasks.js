@@ -131,7 +131,7 @@
     if (!select) return;
     const current = select.value;
     select.innerHTML = first ? `<option value="">${safe(first)}</option>` : '';
-    items.forEach(item => {
+    uniqueOptions(items).forEach(item => {
       const option = document.createElement('option');
       option.value = item.value;
       option.textContent = item.label;
@@ -140,6 +140,16 @@
       select.appendChild(option);
     });
     if ([...select.options].some(option => option.value === current)) select.value = current;
+  }
+
+  function uniqueOptions(items = []) {
+    const seen = new Set();
+    return items.filter(item => {
+      const key = String(item.code || item.value || item.label || '').trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   function readFilters() {

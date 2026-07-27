@@ -24,7 +24,22 @@ async function mockApis(page) {
     if (url.includes('/api/reports/export-excel')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/vnd.ms-excel', 'Content-Disposition': 'attachment; filename="dang_vien.xls"' }, body: 'excel-data' });
     if (url.includes('/api/reports/export-pdf')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="dang_vien.pdf"' }, body: '%PDF-1.4\n%mock' });
     if (url.includes('/api/reports/print')) return payload({ title: 'DANH SACH DANG VIEN', headers: ['STT', 'Ho ten'], rows: [[1, 'Nguyen Van A']], totalRows: 1, filters: { type: 'party-members' }, meta: {}, summary: { 'Tong so Dang vien': 1 } });
-    if (url.includes('/api/work-tasks/catalogs')) return payload({ categories: [], priorities: [], statuses: [], related_modules: [] });
+    if (url.includes('/api/work-tasks/catalogs')) return payload({
+      categories: [
+        { value: '1', code: 'other', label: 'Khac' },
+        { value: '2', code: 'other', label: 'Khac' }
+      ],
+      priorities: [
+        { value: '1', code: 'URGENT', label: 'Khan cap' },
+        { value: '2', code: 'URGENT', label: 'Khan cap' },
+        { value: '3', code: 'HIGH', label: 'Cao' }
+      ],
+      statuses: [
+        { value: '1', code: 'NEW', label: 'Moi tao', progress_percent: 0 },
+        { value: '2', code: 'NEW', label: 'Moi tao', progress_percent: 0 }
+      ],
+      related_modules: []
+    });
     if (url.includes('/api/work-tasks/dashboard')) return payload({ metrics: {}, charts: {} });
     if (url.includes('/api/work-tasks') && method === 'POST') {
       const requestBody = await route.request().postDataJSON();
@@ -33,7 +48,13 @@ async function mockApis(page) {
       return payload(saved);
     }
     if (url.includes('/api/work-tasks')) return payload({ items: workTasksItems, total: workTasksItems.length, page: 1, pageSize: 20, totalPages: 1 });
-    if (url.includes('/api/work-calendar/catalogs')) return payload({ categories: [], statuses: [{ value: 'SCHEDULED', label: 'Da len lich' }] });
+    if (url.includes('/api/work-calendar/catalogs')) return payload({
+      categories: [
+        { value: '1', code: 'meeting', label: 'Hop' },
+        { value: '2', code: 'meeting', label: 'Hop' }
+      ],
+      statuses: [{ value: 'SCHEDULED', label: 'Da len lich' }]
+    });
     if (url.includes('/api/work-calendar/dashboard')) return payload({ metrics: {}, charts: {} });
     if (url.includes('/api/work-calendar') && method === 'POST') {
       const requestBody = await route.request().postDataJSON();
@@ -203,6 +224,8 @@ test.describe('work module create modals', () => {
     await page.waitForSelector('[data-platform-action="workTasks.create"]');
     await page.locator('[data-platform-action="workTasks.create"]').click();
     await expect(page.locator('#workTaskModal')).toBeVisible();
+    await expect(page.locator('#workTaskPriorityInput option[data-code="URGENT"]')).toHaveCount(1);
+    await expect(page.locator('#workTaskStatusInput option[data-code="NEW"]')).toHaveCount(1);
     await page.locator('#workTaskModal input[name="title"]').fill('Kiem tra tao cong viec');
     await page.locator('#workTaskModal button[type="submit"]').click();
     await expect(page.locator('#workTaskModal')).not.toBeVisible();
@@ -212,6 +235,7 @@ test.describe('work module create modals', () => {
     await page.waitForSelector('[data-platform-action="workCalendar.create"]');
     await page.locator('[data-platform-action="workCalendar.create"]').click();
     await expect(page.locator('#workCalendarModal')).toBeVisible();
+    await expect(page.locator('#workCalendarCategoryInput option[data-code="meeting"]')).toHaveCount(1);
     await page.locator('#workCalendarModal input[name="title"]').fill('Kiem tra tao lich');
     await page.locator('#workCalendarModal button[type="submit"]').click();
     await expect(page.locator('#workCalendarModal')).not.toBeVisible();
