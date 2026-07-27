@@ -37,8 +37,10 @@
   const run = fn => Promise.resolve().then(fn).catch(error => toast(error.message || 'Thao tác không thành công', 'danger'));
   const debounce = (fn, delay) => { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; };
 
-  document.addEventListener('DOMContentLoaded', init);
-  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'workTasks') run(load); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  document.addEventListener('tenant:platform-ready', init);
+  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'workTasks') { registerActions(); run(load); } });
 
   function init() {
     registerActions();
@@ -60,6 +62,7 @@
       .register({ key: 'workTasks.log.add', handler: () => run(addLog) })
       .register({ key: 'workTasks.attachment.delete', handler: ({ dataset }) => run(() => deleteAttachment(Number(dataset.id || 0))) })
       .register({ key: 'workTasks.export', handler: ({ dataset }) => exportReport(dataset.format || 'excel') });
+    window.TenantAppPlatform.actions.bind?.(document);
   }
 
   function shell() {
@@ -85,7 +88,13 @@
       detailModal()
     ].join('');
     bind();
+    registerModals();
     state.ready = true;
+  }
+
+  function registerModals() {
+    window.TenantAppPlatform?.modals?.registerBootstrap?.('workTaskModal', '#workTaskModal');
+    window.TenantAppPlatform?.modals?.registerBootstrap?.('workTaskDetailModal', '#workTaskDetailModal');
   }
 
   function formModal() {

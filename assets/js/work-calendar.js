@@ -36,8 +36,10 @@
   const openModal = id => window.TenantAppPlatform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
   const closeModal = id => window.TenantAppPlatform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
 
-  document.addEventListener('DOMContentLoaded', init);
-  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'workCalendar') run(load); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  document.addEventListener('tenant:platform-ready', init);
+  document.addEventListener('tenant:screen-change', event => { if (event.detail?.screen === 'workCalendar') { registerActions(); run(load); } });
 
   function init() {
     registerActions();
@@ -57,6 +59,7 @@
       .register({ key: 'workCalendar.page', handler: ({ dataset, target }) => !target.disabled && run(() => { state.page = Number(dataset.page || 1); return load(); }) })
       .register({ key: 'workCalendar.attachment.delete', handler: ({ dataset }) => run(() => deleteAttachment(Number(dataset.id || 0))) })
       .register({ key: 'workCalendar.export', handler: ({ dataset }) => exportReport(dataset.format || 'excel') });
+    window.TenantAppPlatform.actions.bind?.(document);
   }
 
   function shell() {
@@ -80,7 +83,13 @@
       detailModal()
     ].join('');
     bind();
+    registerModals();
     state.ready = true;
+  }
+
+  function registerModals() {
+    window.TenantAppPlatform?.modals?.registerBootstrap?.('workCalendarModal', '#workCalendarModal');
+    window.TenantAppPlatform?.modals?.registerBootstrap?.('workCalendarDetailModal', '#workCalendarDetailModal');
   }
 
   function formModal() {

@@ -7,8 +7,11 @@ const bottomNavScreens = ['dashboard', 'households', 'persons', 'gis', 'reports'
 const qaScreens = ['dashboard', 'households', 'persons', 'partyMembers', 'gis', 'reports', 'contributions', 'vehicles', 'businessHouseholds', 'agriculture', 'livestock', 'publicAssets', 'houses', 'operationCenter', 'import', 'exportExcel', 'printForms', 'systemAdmin', 'users', 'permissions', 'logs', 'backups', 'restore', 'settings', 'appearance'];
 
 async function mockApis(page) {
+  const workTasksItems = [];
+  const workCalendarItems = [];
   await page.route('**/api/**', async (route) => {
     const url = route.request().url();
+    const method = route.request().method();
     const payload = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
 
     if (url.includes('/api/public/login-config')) return payload({
@@ -21,6 +24,24 @@ async function mockApis(page) {
     if (url.includes('/api/reports/export-excel')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/vnd.ms-excel', 'Content-Disposition': 'attachment; filename="dang_vien.xls"' }, body: 'excel-data' });
     if (url.includes('/api/reports/export-pdf')) return route.fulfill({ status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="dang_vien.pdf"' }, body: '%PDF-1.4\n%mock' });
     if (url.includes('/api/reports/print')) return payload({ title: 'DANH SACH DANG VIEN', headers: ['STT', 'Ho ten'], rows: [[1, 'Nguyen Van A']], totalRows: 1, filters: { type: 'party-members' }, meta: {}, summary: { 'Tong so Dang vien': 1 } });
+    if (url.includes('/api/work-tasks/catalogs')) return payload({ categories: [], priorities: [], statuses: [], related_modules: [] });
+    if (url.includes('/api/work-tasks/dashboard')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/work-tasks') && method === 'POST') {
+      const requestBody = await route.request().postDataJSON();
+      const saved = Object.assign({ id: workTasksItems.length + 1, task_code: `CV${String(workTasksItems.length + 1).padStart(3, '0')}`, progress_percent: 0 }, requestBody);
+      workTasksItems.unshift(saved);
+      return payload(saved);
+    }
+    if (url.includes('/api/work-tasks')) return payload({ items: workTasksItems, total: workTasksItems.length, page: 1, pageSize: 20, totalPages: 1 });
+    if (url.includes('/api/work-calendar/catalogs')) return payload({ categories: [], statuses: [{ value: 'SCHEDULED', label: 'Da len lich' }] });
+    if (url.includes('/api/work-calendar/dashboard')) return payload({ metrics: {}, charts: {} });
+    if (url.includes('/api/work-calendar') && method === 'POST') {
+      const requestBody = await route.request().postDataJSON();
+      const saved = Object.assign({ id: workCalendarItems.length + 1, event_code: `LC${String(workCalendarItems.length + 1).padStart(3, '0')}`, status: 'SCHEDULED' }, requestBody);
+      workCalendarItems.unshift(saved);
+      return payload(saved);
+    }
+    if (url.includes('/api/work-calendar')) return payload({ items: workCalendarItems, total: workCalendarItems.length, page: 1, pageSize: 20, totalPages: 1 });
     if (url.includes('/api/gis/households')) return payload({ items: [], total: 0 });
     if (url.includes('/api/gis/summary')) return payload({ total: 0, located: 0, missing: 0, areas: [] });
     if (url.includes('/api/household-business')) return payload({ items: [], total: 0, page: 1, pageSize: 20, dashboard: {} });
@@ -169,6 +190,34 @@ test.describe('party member report exports', () => {
     expect(await page.evaluate(() => window.__partyPrintConfig?.type)).toBe('party-members');
     expect(exportRequests).toHaveLength(2);
     expect(exportRequests.every(item => item.authorization === 'Bearer test-token')).toBe(true);
+  });
+});
+
+test.describe('work module create modals', () => {
+  test('opens task and calendar create modals from toolbar buttons', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await openAuthenticatedApp(page, 1366);
+
+    await page.evaluate(() => window.TenantAppNavigationController?.navigate('workTasks'));
+    await page.waitForSelector('[data-platform-action="workTasks.create"]');
+    await page.locator('[data-platform-action="workTasks.create"]').click();
+    await expect(page.locator('#workTaskModal')).toBeVisible();
+    await page.locator('#workTaskModal input[name="title"]').fill('Kiem tra tao cong viec');
+    await page.locator('#workTaskModal button[type="submit"]').click();
+    await expect(page.locator('#workTaskModal')).not.toBeVisible();
+    await expect(page.locator('#workTasksRows')).toContainText('Kiem tra tao cong viec');
+
+    await page.evaluate(() => window.TenantAppNavigationController?.navigate('workCalendar'));
+    await page.waitForSelector('[data-platform-action="workCalendar.create"]');
+    await page.locator('[data-platform-action="workCalendar.create"]').click();
+    await expect(page.locator('#workCalendarModal')).toBeVisible();
+    await page.locator('#workCalendarModal input[name="title"]').fill('Kiem tra tao lich');
+    await page.locator('#workCalendarModal button[type="submit"]').click();
+    await expect(page.locator('#workCalendarModal')).not.toBeVisible();
+    await expect(page.locator('#workCalendarRows')).toContainText('Kiem tra tao lich');
+
+    expect(errors).toEqual([]);
   });
 });
 
