@@ -27,6 +27,10 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const base = read('app/Core/BaseController.php');
   assert.match(base, /function requireSuperAdmin/);
   assert.match(base, /SUPER_ADMIN/);
+  const baseModel = read('app/Core/BaseModel.php');
+  assert.match(baseModel, /paramsForSql/);
+  assert.match(baseModel, /isset\(\$placeholders\['village_id'\]\)/);
+  assert.match(baseModel, /TenantContext::id\(\)/);
 }
 
 {
@@ -105,6 +109,25 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(reports, /sourceModulesForReportType/);
   assert.match(reports, /bi-dashboard/);
   assert.match(reports, /public_assets/);
+}
+
+{
+  const householdBusiness = read('app/Models/HouseholdBusiness.php');
+  const tenantScopedFunctions = [
+    'householdSummaries',
+    'find',
+    'findAllByHousehold',
+    'searchHouseholds',
+    'where',
+    'params',
+    'files',
+    'file',
+  ];
+  for (const functionName of tenantScopedFunctions) {
+    const block = householdBusiness.match(new RegExp(`function ${functionName}\\([\\s\\S]+?\\n    }`));
+    assert.ok(block, `${functionName} must be present in HouseholdBusiness`);
+    assert.match(block[0], /tenantWhere\(/, `${functionName} must enforce tenant scope`);
+  }
 }
 
 {
@@ -241,6 +264,21 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
     files.indexOf("$user = $this->requirePermission('file', 'upload');") < files.indexOf('$this->storage->validateEntity($entityType, $entityId);'),
     'file uploads must authenticate before entity validation'
   );
+  for (const controller of [
+    'app/Controllers/ComplaintController.php',
+    'app/Controllers/FinanceController.php',
+    'app/Controllers/HouseholdBusinessController.php',
+    'app/Controllers/WorkCalendarController.php',
+    'app/Controllers/WorkTaskController.php',
+  ]) {
+    const source = read(controller);
+    const dispositionLines = source.split(/\r?\n/).filter((line) => line.includes('Content-Disposition:'));
+    for (const line of dispositionLines) {
+      assert.doesNotMatch(line, /addslashes\(/);
+      if (line.includes('basename(')) assert.match(line, /rawurlencode\(basename\(/);
+    }
+    assert.match(source, /Content-Disposition:[\s\S]*?rawurlencode\(basename\(/);
+  }
 }
 
 {

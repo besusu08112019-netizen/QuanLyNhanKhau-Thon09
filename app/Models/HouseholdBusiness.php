@@ -165,7 +165,7 @@ SQL);
     {
         $householdIds = array_values(array_unique(array_filter(array_map('intval', $householdIds), fn($id) => $id > 0)));
         if (!$householdIds) return [];
-        $params = [];
+        $params = $this->withTenant();
         $placeholders = [];
         foreach ($householdIds as $index => $id) {
             $key = 'hh_' . $index;
@@ -177,7 +177,7 @@ SQL);
             "SELECT h.id AS household_id_real, h.household_code, h.head_citizen_name, h.phone AS household_phone, h.address AS household_address, h.area_code, h.latitude AS household_latitude, h.longitude AS household_longitude, COALESCE(v.total_members,0) AS member_count
              FROM households h
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             WHERE h.id IN ($in) AND h.status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE')",
+             WHERE h.id IN ($in) AND h.status NOT IN ('DELETED','ENDED','MERGED','TRANSFERRED_OUT','MOVED_OUT','INACTIVE') AND " . $this->tenantWhere('h', 'households'),
             $params
         );
         $activityRows = $this->fetchAll(
@@ -185,7 +185,7 @@ SQL);
              FROM household_business hb
              INNER JOIN households h ON h.id = hb.household_id
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             WHERE hb.household_id IN ($in) AND hb.status <> 'DELETED'
+             WHERE hb.household_id IN ($in) AND hb.status <> 'DELETED' AND " . $this->tenantWhere('hb', 'household_business') . " AND " . $this->tenantWhere('h', 'households') . "
              ORDER BY hb.household_id ASC, COALESCE(hb.updated_at, hb.created_at) DESC, hb.id DESC",
             $params
         );
@@ -213,8 +213,8 @@ SQL);
              FROM household_business hb
              INNER JOIN households h ON h.id = hb.household_id
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             WHERE hb.id = :id AND hb.status <> "DELETED" AND h.status <> "DELETED"',
-            ['id' => $id]
+             WHERE hb.id = :id AND hb.status <> "DELETED" AND h.status <> "DELETED" AND ' . $this->tenantWhere('hb', 'household_business') . ' AND ' . $this->tenantWhere('h', 'households'),
+            $this->withTenant(['id' => $id])
         );
         return $row ? $this->normalize($row) : null;
     }
@@ -233,9 +233,9 @@ SQL);
              FROM household_business hb
              INNER JOIN households h ON h.id = hb.household_id
              LEFT JOIN v_household_member_counts v ON v.household_id = h.id
-             WHERE hb.household_id = :id AND hb.status <> "DELETED" AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
+             WHERE hb.household_id = :id AND hb.status <> "DELETED" AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE") AND ' . $this->tenantWhere('hb', 'household_business') . ' AND ' . $this->tenantWhere('h', 'households') . '
              ORDER BY COALESCE(hb.updated_at, hb.created_at) DESC, hb.id DESC',
-            ['id' => $householdId]
+            $this->withTenant(['id' => $householdId])
         );
         return array_map(fn($row) => $this->normalize($row), $rows);
     }
@@ -252,10 +252,11 @@ SQL);
              LEFT JOIN (
                 SELECT hb.household_id, COUNT(*) AS business_count
                 FROM household_business hb
-                WHERE hb.status <> "DELETED"
+                WHERE hb.status <> "DELETED" AND ' . $this->tenantWhere('hb', 'household_business') . '
                 GROUP BY hb.household_id
              ) bc ON bc.household_id = h.id
              WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
+               AND ' . $this->tenantWhere('h', 'households') . '
                AND (
                     LOWER(h.household_code) LIKE :household_code
                  OR LOWER(h.head_citizen_name) LIKE :head_name
@@ -263,7 +264,7 @@ SQL);
                )
              ORDER BY h.household_code ASC
              LIMIT ' . max(1, min(20, $limit)),
-            ['household_code' => $keyword, 'head_name' => $keyword, 'address' => $keyword]
+            $this->withTenant(['household_code' => $keyword, 'head_name' => $keyword, 'address' => $keyword])
         );
         return array_map(fn($row) => [
             'id' => (int) $row['id'],
@@ -404,8 +405,8 @@ SQL);
 
     private function where(array $filters): array
     {
-        $where = ['hb.status <> "DELETED"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")'];
-        $params = [];
+        $where = ['hb.status <> "DELETED"', 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', $this->tenantWhere('hb', 'household_business'), $this->tenantWhere('h', 'households')];
+        $params = $this->withTenant();
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $searchKeyword = '%' . mb_strtolower($search, 'UTF-8') . '%';
@@ -569,7 +570,7 @@ SQL);
     {
         $householdId = (int) ($data['household_id'] ?? $data['householdId'] ?? 0);
         if ($householdId <= 0) throw new \RuntimeException('Hộ gia đình là bắt buộc');
-        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND h.status <> "DELETED"', ['id' => $householdId])) throw new \RuntimeException('Không tìm thấy hộ gia đình liên kết');
+        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND h.status <> "DELETED" AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('Không tìm thấy hộ gia đình liên kết');
         $workerCount = max(0, (int) ($data['worker_count'] ?? $data['workerCount'] ?? 0));
         $isOcop = $this->boolValue($data['is_ocop'] ?? $data['isOcop'] ?? 0);
         $ocopStar = $isOcop ? (int) ($data['ocop_star'] ?? $data['ocopStar'] ?? 0) : null;
@@ -747,16 +748,16 @@ SQL);
     public function files(int $businessId, string $kind = ''): array
     {
         $this->ensureSchema();
-        $params = ['id' => $businessId];
-        $where = 'hbf.household_business_id=:id AND hbf.status="ACTIVE"';
+        $params = $this->withTenant(['id' => $businessId]);
+        $where = 'hbf.household_business_id=:id AND hbf.status="ACTIVE" AND ' . $this->tenantWhere('hb', 'household_business') . ' AND ' . $this->tenantWhere('h', 'households');
         if ($kind !== '') { $where .= ' AND hbf.file_kind=:kind'; $params['kind'] = strtoupper($kind); }
-        return array_map(fn($r) => $this->normalizeFile($r), $this->fetchAll("SELECT hbf.*, u.display_name AS uploaded_by_name, u.email AS uploaded_by_email FROM household_business_files hbf LEFT JOIN users u ON u.id=hbf.created_by WHERE $where ORDER BY hbf.created_at DESC, hbf.id DESC", $params));
+        return array_map(fn($r) => $this->normalizeFile($r), $this->fetchAll("SELECT hbf.*, u.display_name AS uploaded_by_name, u.email AS uploaded_by_email FROM household_business_files hbf INNER JOIN household_business hb ON hb.id=hbf.household_business_id INNER JOIN households h ON h.id=hb.household_id LEFT JOIN users u ON u.id=hbf.created_by WHERE $where ORDER BY hbf.created_at DESC, hbf.id DESC", $params));
     }
 
     public function file(int $fileId): ?array
     {
         $this->ensureSchema();
-        $row = $this->fetchOne('SELECT hbf.*, hb.household_id FROM household_business_files hbf INNER JOIN household_business hb ON hb.id=hbf.household_business_id WHERE hbf.id=:id AND hbf.status="ACTIVE" AND hb.status <> "DELETED"', ['id' => $fileId]);
+        $row = $this->fetchOne('SELECT hbf.*, hb.household_id FROM household_business_files hbf INNER JOIN household_business hb ON hb.id=hbf.household_business_id INNER JOIN households h ON h.id=hb.household_id WHERE hbf.id=:id AND hbf.status="ACTIVE" AND hb.status <> "DELETED" AND ' . $this->tenantWhere('hb', 'household_business') . ' AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $fileId]));
         return $row ? $this->normalizeFile($row) : null;
     }
 

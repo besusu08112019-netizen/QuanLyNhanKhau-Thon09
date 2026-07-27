@@ -125,7 +125,7 @@ abstract class BaseModel
 
     private static function paramsForSql(string $sql, array $params): array
     {
-        if ($params === [] || array_is_list($params)) {
+        if ($params !== [] && array_is_list($params)) {
             return $params;
         }
 
@@ -134,7 +134,12 @@ abstract class BaseModel
             return [];
         }
 
-        return array_intersect_key($params, array_flip(array_unique($matches[1])));
+        $placeholders = array_flip(array_unique($matches[1]));
+        if (isset($placeholders['village_id']) && !array_key_exists('village_id', $params)) {
+            $params['village_id'] = TenantContext::id();
+        }
+
+        return array_intersect_key($params, $placeholders);
     }
 
     protected function page(int $page, int $pageSize): array

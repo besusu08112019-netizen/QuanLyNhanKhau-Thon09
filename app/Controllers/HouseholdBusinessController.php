@@ -162,7 +162,7 @@ final class HouseholdBusinessController extends BaseController
         if (!$download && !$storage->canPreview($file['mime_type'])) $download = true;
         header('Content-Type: ' . $file['mime_type']);
         header('Content-Length: ' . filesize($path));
-        header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . addslashes($file['original_name']) . '"');
+        header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . rawurlencode(basename((string)$file['original_name'])) . '"');
         readfile($path);
         exit;
     }

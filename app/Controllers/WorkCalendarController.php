@@ -146,7 +146,7 @@ final class WorkCalendarController extends BaseController
         header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));
-        header('Content-Disposition: ' . ($preview ? 'inline' : 'attachment') . '; filename="' . basename((string)$file['original_name']) . '"');
+        header('Content-Disposition: ' . ($preview ? 'inline' : 'attachment') . '; filename="' . rawurlencode(basename((string)$file['original_name'])) . '"');
         readfile($path);
         exit;
     }
