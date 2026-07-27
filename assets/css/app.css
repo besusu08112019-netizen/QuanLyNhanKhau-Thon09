@@ -5494,3 +5494,45 @@ body.theme-dark.app-authenticated .mobile-bottom-nav button.active {
 .photo-gallery-tags{display:flex;flex-wrap:wrap;gap:4px;min-height:22px}
 .photo-gallery-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:auto}
 @media (max-width:575.98px){.photo-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.photo-gallery-meta{padding:8px}.photo-gallery-meta strong{font-size:.85rem}}
+
+/* Report UX optimization */
+.report-workspace{display:grid;grid-template-columns:minmax(280px,30%) minmax(0,1fr);gap:18px;align-items:start}
+.report-workspace-side,.report-workspace-main{display:grid;gap:14px;min-width:0}
+.report-workspace-side{position:sticky;top:12px;align-self:start}
+.report-workspace-side .report-tools-grid,.report-workspace-side .report-center-grid{display:grid;grid-template-columns:1fr;gap:12px;margin:0}
+.report-workspace-side .smart-report-filter-grid{grid-template-columns:1fr}
+.report-workspace-side .report-filter-toolbar{grid-template-columns:1fr}
+.report-workspace-side .report-view-btn{width:100%}
+.report-workspace-side .report-group-grid{grid-template-columns:1fr;max-height:340px;overflow:auto;padding-right:2px}
+.report-workspace-side .report-group-item{min-height:86px}
+.report-workspace-main .smart-report-bi{margin:0}
+.report-workspace-main .report-result-card{margin:0;scroll-margin-top:16px}
+.report-collapsible-card{padding:0;overflow:hidden}
+.report-collapsible-toggle{width:100%;min-height:48px;border:0;background:#fff;color:#344054;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;font-weight:850;text-align:left}
+.report-collapsible-toggle i{color:var(--brand);transition:transform .18s ease}
+.report-collapsible-card.is-open>.report-collapsible-toggle i{transform:rotate(90deg)}
+.report-collapsible-body{display:none;padding:0 14px 14px}
+.report-collapsible-card.is-open>.report-collapsible-body{display:block}
+.smart-report-bi.report-collapsible-card .report-collapsible-toggle{min-height:58px}
+.smart-report-bi.report-collapsible-card .report-collapsible-toggle h3{margin:0;color:var(--brand);font-size:16px;font-weight:850}
+.smart-report-bi.report-collapsible-card .report-collapsible-toggle span span{display:block;color:#667085;font-size:13px;font-weight:600;margin-top:3px}
+.report-filter-summary{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px;border:1px solid #d8e8dc;border-radius:10px;background:#f5fbf7}
+.report-filter-summary strong{display:block;color:var(--brand);font-size:13px;margin-bottom:8px}
+.report-filter-summary-tags{display:flex;flex-wrap:wrap;gap:6px}
+.report-filter-summary-tags span{display:inline-flex;align-items:center;max-width:100%;padding:5px 8px;border-radius:8px;background:#fff;border:1px solid #dbe8df;color:#475467;font-size:12px;overflow-wrap:anywhere}
+.report-filter-summary-tags b{color:#344054;margin-right:4px}
+.report-filter-collapsed .report-filter-toolbar,.report-filter-collapsed .report-filter-grid{display:none}
+.report-loading-state{min-height:220px;display:grid;place-items:center;gap:12px;color:#667085;background:#fbfdfb}
+.report-loading-state>div{width:min(520px,86%);display:grid;gap:10px}
+.report-loading-state span{height:16px;border-radius:999px;background:linear-gradient(90deg,#edf2ef 0%,#dce8e0 45%,#edf2ef 90%);background-size:220% 100%;animation:reportSkeleton 1.1s ease-in-out infinite}
+.report-loading-state span:nth-child(2){width:82%}
+.report-loading-state span:nth-child(3){width:64%}
+.report-loading-state p{margin:0;font-size:14px;font-weight:750}
+@keyframes reportSkeleton{from{background-position:100% 0}to{background-position:-100% 0}}
+body.theme-dark .report-collapsible-toggle{background:#1f2937;color:#e5e7eb}
+body.theme-dark .report-filter-summary{background:#12251b;border-color:#2f513d}
+body.theme-dark .report-filter-summary-tags span{background:#1f2937;border-color:#344155;color:#e5e7eb}
+body.theme-dark .report-filter-summary-tags b{color:#cbd5e1}
+body.theme-dark .report-loading-state{background:#111827}
+@media(max-width:1180px){.report-workspace{grid-template-columns:1fr}.report-workspace-side{position:static}.report-workspace-side .report-group-grid{max-height:none}.report-workspace-side .smart-report-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.report-workspace{gap:12px}.report-workspace-side .smart-report-filter-grid{grid-template-columns:1fr}.report-filter-summary{flex-direction:column}.report-filter-summary .btn{width:100%}.report-collapsible-toggle{min-height:46px}}

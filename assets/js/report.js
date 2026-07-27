@@ -122,11 +122,14 @@
     ensureReportTypes();
     setTimeout(ensureReportTypes, 0);
     setTimeout(ensureReportTypes, 80);
+    enhanceReportLayout();
     form.addEventListener('submit', event => { event.preventDefault(); event.stopImmediatePropagation(); loadReport(); }, true);
     form.addEventListener('change', event => {
       if (event.target?.name === 'type') {
         state.report = null;
         setActions(false);
+        expandReportFilters();
+        updateFilterSummary();
       }
       scheduleBiRefresh();
     });
@@ -150,6 +153,8 @@
     actions.register('reports.type.select', context => selectReportType(context.dataset.reportType));
     actions.register('reports.type.open', context => selectReportType(context.dataset.reportType, true));
     actions.register('reports.module.open', context => openReportType(context.dataset.reportType || context.dataset.moduleReportType));
+    actions.register('reports.filters.edit', expandReportFilters);
+    actions.register('reports.panel.toggle', context => toggleReportPanel(context.target));
     actions.register('reports.print', printReport);
     actions.register('reports.export.excel', () => downloadReport(REPORT_ENDPOINTS.exportExcel, 'xls', 'Đã xuất Excel'));
     actions.register('reports.export.pdf', () => downloadReport(REPORT_ENDPOINTS.exportPdf, 'pdf', 'Đã xuất PDF'));
@@ -190,6 +195,7 @@
 
   async function initSmartReporting(force = false) {
     if (!isReportsActive()) return;
+    enhanceReportLayout();
     if (typeof window.TenantAppCanAccess === 'function' && !window.TenantAppCanAccess('reports', 'read')) return;
     ensureReportTypes();
     if (!token()) return;
@@ -239,6 +245,137 @@
     return out;
   }
 
+  function enhanceReportLayout() {
+    const screen = $('#reportsScreen');
+    const form = $('#reportForm');
+    const centerGrid = screen ? $('.report-center-grid', screen) : null;
+    const center = screen ? $('.smart-report-center', screen) : null;
+    const bi = screen ? $('.smart-report-bi', screen) : null;
+    const tools = screen ? $('.report-tools-grid', screen) : null;
+    const result = screen ? $('.smart-report-result-card', screen) : null;
+    if (!screen || !form || !center || !bi || !tools || !result) return;
+
+    result.id ||= 'reportResultCard';
+    $('#reportTitle')?.setAttribute('tabindex', '-1');
+
+    if (!$('.report-workspace', screen)) {
+      const workspace = document.createElement('div');
+      workspace.className = 'report-workspace';
+      const side = document.createElement('aside');
+      side.className = 'report-workspace-side';
+      const main = document.createElement('main');
+      main.className = 'report-workspace-main';
+      screen.insertBefore(workspace, screen.firstElementChild);
+      workspace.append(side, main);
+      side.append(center, form, tools);
+      main.append(bi, result);
+      centerGrid?.remove();
+    }
+
+    ensureFilterSummary(form);
+    ensurePanelToggle(bi, 'Dashboard BI', true);
+    $$('.report-template-card', tools).forEach(card => ensurePanelToggle(card, card.querySelector('h3')?.textContent || 'Mau bao cao', false));
+    updateFilterSummary();
+  }
+
+  function ensureFilterSummary(form) {
+    if ($('#reportFilterSummary', form)) return;
+    const summary = document.createElement('div');
+    summary.id = 'reportFilterSummary';
+    summary.className = 'report-filter-summary d-none';
+    summary.setAttribute('aria-live', 'polite');
+    form.insertBefore(summary, form.firstElementChild);
+  }
+
+  function ensurePanelToggle(card, title, initiallyOpen) {
+    if (card.dataset.reportCollapsibleReady === '1') return;
+    card.dataset.reportCollapsibleReady = '1';
+    card.classList.add('report-collapsible-card');
+    const body = document.createElement('div');
+    body.className = 'report-collapsible-body';
+    while (card.firstChild) body.appendChild(card.firstChild);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'report-collapsible-toggle';
+    button.setAttribute('aria-expanded', initiallyOpen ? 'true' : 'false');
+    button.dataset.platformAction = 'reports.panel.toggle';
+    button.innerHTML = '<span><i class="fa-solid fa-chevron-right"></i> ' + esc(title) + '</span>';
+    card.append(button, body);
+    setPanelOpen(card, initiallyOpen);
+  }
+
+  function toggleReportPanel(target) {
+    const card = target?.closest?.('.report-collapsible-card');
+    if (card) setPanelOpen(card, !card.classList.contains('is-open'));
+  }
+
+  function setPanelOpen(card, open) {
+    card.classList.toggle('is-open', open);
+    card.querySelector('.report-collapsible-toggle')?.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function setBiOpen(open) {
+    const bi = $('.smart-report-bi');
+    if (bi) setPanelOpen(bi, open);
+  }
+
+  function collapseReportFilters() {
+    const form = $('#reportForm');
+    if (!form) return;
+    updateFilterSummary();
+    form.classList.add('report-filter-collapsed');
+    $('#reportFilterSummary', form)?.classList.remove('d-none');
+  }
+
+  function expandReportFilters() {
+    const form = $('#reportForm');
+    if (!form) return;
+    form.classList.remove('report-filter-collapsed');
+    $('#reportFilterSummary', form)?.classList.add('d-none');
+    $('#reportTypeSelect')?.focus({ preventScroll: true });
+  }
+
+  function updateFilterSummary() {
+    const form = $('#reportForm');
+    const target = $('#reportFilterSummary', form || document);
+    if (!form || !target) return;
+    const labels = {
+      type: 'Loai bao cao',
+      dateFrom: 'Tu ngay',
+      dateTo: 'Den ngay',
+      area: 'Khu vuc',
+      householdCode: 'Ma ho',
+      headName: 'Chu ho',
+      citizen: 'Nhan khau',
+      gender: 'Gioi tinh',
+      ageFrom: 'Tuoi tu',
+      ageTo: 'Tuoi den',
+      occupation: 'Nghe nghiep',
+      category: 'Dien ho',
+      residencyStatus: 'Cu tru',
+      presenceStatus: 'Hien dien',
+      gpsStatus: 'GPS',
+      digitalProfileStatus: 'Ho so so',
+      party_member: 'Dang vien',
+      youth_union_member: 'Doan vien'
+    };
+    const items = [];
+    new FormData(form).forEach((value, key) => {
+      const text = String(value ?? '').trim();
+      if (!text) return;
+      const field = form.elements[key];
+      let display = text;
+      if (field?.tagName === 'SELECT') display = field.selectedOptions?.[0]?.textContent?.trim() || text;
+      if (field?.type === 'checkbox') display = 'Co';
+      items.push([labels[key] || key, display]);
+    });
+    if (!items.some(([label]) => label === labels.type)) {
+      const select = $('#reportTypeSelect');
+      if (select) items.unshift([labels.type, select.selectedOptions?.[0]?.textContent?.trim() || select.value || 'Tong hop']);
+    }
+    target.innerHTML = '<div><strong>Bo loc dang ap dung</strong><div class="report-filter-summary-tags">' + items.slice(0, 10).map(([label, value]) => '<span><b>' + esc(label) + ':</b> ' + esc(value) + '</span>').join('') + '</div></div><button class="btn btn-outline-primary btn-sm" type="button" data-platform-action="reports.filters.edit"><i class="fa-solid fa-pen-to-square"></i> Chinh sua bo loc</button>';
+  }
+
   async function loadCenter() {
     try {
       const data = await smartApi(REPORT_ENDPOINTS.center);
@@ -272,21 +409,27 @@
   }
 
   window.loadReport = window.TenantAppViewReport = async function loadReport() {
+    enhanceReportLayout();
     setActions(false);
     setTitle('Báo cáo');
     setCount('Đang tải dữ liệu...');
-    renderBox('#reportPreview', '<div class="report-empty-state">Đang sinh báo cáo...</div>');
+    renderBox('#reportPreview', reportLoading());
+    scrollToReportResult(false);
     try {
       const report = await smartApi(reportEndpoint('summary', reportQuery()));
       state.report = report;
       setTitle(report.title || 'Báo cáo');
       setCount(fmt(report.totalRows || 0) + ' dòng');
-      renderBox('#reportPreview', reportHeader(report) + reportMeta(report) + reportTable(report));
+      renderBox('#reportPreview', reportMeta(report) + reportTable(report) + reportSignatures(report));
       setActions(true);
+      collapseReportFilters();
+      setBiOpen(false);
+      scrollToReportResult(true);
       return report;
     } catch (error) {
       setCount('Không sinh được báo cáo');
       renderBox('#reportPreview', '<div class="alert alert-danger mb-0">' + esc(error.message) + '</div>');
+      scrollToReportResult(true);
       throw error;
     }
   };
@@ -448,7 +591,7 @@
 
   function reportTable(report) {
     const headers = (report.headers || []).map(header => '<th>' + esc(header) + '</th>').join('');
-    const rows = (report.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + esc(cell) + '</td>').join('') + '</tr>').join('') || '<tr><td colspan="' + Math.max(1, (report.headers || []).length) + '" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+    const rows = (report.rows || []).map(row => '<tr>' + row.map(cell => '<td>' + esc(cell) + '</td>').join('') + '</tr>').join('') || '<tr><td colspan="' + Math.max(1, (report.headers || []).length) + '" class="text-center text-muted py-4">Khong co du lieu phu hop voi dieu kien loc.</td></tr>';
     return '<table class="table report-table align-middle mb-0"><thead><tr>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
@@ -460,6 +603,17 @@
 
   function reportHeader(report) {
     return '<div class="report-print-unit">' + esc(reportUnitName(report)) + '</div><div class="report-print-title">' + esc(report.title || 'Báo cáo') + '</div>';
+  }
+
+  function reportLoading() {
+    return '<div class="report-loading-state" aria-live="polite"><div><span></span><span></span><span></span></div><p>Dang tai bao cao...</p></div>';
+  }
+
+  function scrollToReportResult(focusTitle) {
+    const target = $('#reportResultCard') || $('.smart-report-result-card');
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (focusTitle) setTimeout(() => $('#reportTitle')?.focus({ preventScroll: true }), 260);
   }
 
   function reportUnitName(report) {
