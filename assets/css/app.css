@@ -3753,6 +3753,11 @@ body.app-authenticated.modal-open #householdsScreen.active .module-action-row,
 html, body, .app-shell, main, .screen { max-width: 100%; }
 body { overflow-x: hidden; text-rendering: optimizeLegibility; }
 img, svg, canvas, video { max-width: 100%; }
+.leaflet-container .leaflet-pane > svg,
+.leaflet-container .leaflet-pane > canvas {
+  max-width: none !important;
+  max-height: none !important;
+}
 img { height: auto; object-fit: cover; }
 button, input, select, textarea { font: inherit; min-width: 0; }
 .form-control, .form-select, .btn { border-radius: 10px; }

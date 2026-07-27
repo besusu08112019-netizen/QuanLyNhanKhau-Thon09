@@ -122,6 +122,7 @@ function leafletStub() {
       }
       function makeMap(id, opts){
         const el = typeof id === 'string' ? document.getElementById(id) : id;
+        if (el) el.classList.add('leaflet-container');
         const map = evented({ el, options: opts || {}, zoom: 14, center: { lat: 20.2506, lng: 105.9748 }, layers: new Set(), panes: new Map() });
         map.setView = function(center, zoom){ if (center) this.center = Array.isArray(center) ? { lat: center[0], lng: center[1] } : center; if (zoom) this.zoom = zoom; return this; };
         map.getZoom = function(){ return this.zoom; };
@@ -142,7 +143,7 @@ function leafletStub() {
       }
       function tileLayer(url, opts){ return { url, opts: opts || {}, events: {}, on(name, cb){ this.events[name] = cb; return this; }, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
       function imageOverlay(url, bounds, opts){ const overlay = evented({ url, bounds, opts: opts || {} }); overlay.addTo = function(group){ group && group.addLayer && group.addLayer(this); setTimeout(() => this.fire('load'), 0); return this; }; return overlay; }
-      function svg(opts){ return { opts: opts || {}, addTo(map){ this.map = map; map && map.addLayer && map.addLayer(this); return this; } }; }
+      function svg(opts){ return { opts: opts || {}, addTo(map){ this.map = map; this._container = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); const pane = map?.getPane?.(this.opts.pane || 'overlayPane'); if (pane) pane.appendChild(this._container); map && map.addLayer && map.addLayer(this); return this; } }; }
       function polygon(points, opts){ const p = makeMarker(points && points[0] ? points[0] : [0,0], opts); p.points = points || []; p.style = { ...(opts || {}) }; p._path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.bindTooltip = function(){ return this; }; p.getLatLngs = function(){ return [this.points.map(pt => Array.isArray(pt) ? { lat: pt[0], lng: pt[1] } : pt)]; }; p.setStyle = function(style){ this.style = { ...this.style, ...(style || {}) }; return this; }; p.bringToFront = function(){ this.front = true; return this; }; p.toGeoJSON = function(){ return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [this.points.map(pt => Array.isArray(pt) ? [pt[1], pt[0]] : [pt.lng, pt.lat])] } }; }; p.editing = { enabled: false, enable(){ this.enabled = true; } }; return p; }
       function circle(latlng, opts){ const c = makeMarker(latlng, opts); c.setRadius = function(radius){ this.radius = radius; return this; }; return c; }
       function divIcon(opts){ return Object.assign({ createIcon(){ return document.createElement('div'); }, createShadow(){ return null; } }, opts || {}); }
@@ -343,6 +344,25 @@ test('leaflet GIS renders GeoJSON area polygon and highlights selected area', as
   expect(after.style).toMatchObject({ color: '#1976D2', fillColor: '#1976D2', weight: 5, opacity: 1 });
   expect(after.style.fillOpacity).toBeCloseTo(0.34);
   expect(after.style.pane).toBe('gisAreaPane');
+});
+
+test('leaflet GIS custom vector panes are not constrained by responsive media CSS', async ({ page }) => {
+  const apiLog = [];
+  await boot(page, apiLog);
+  const result = await page.evaluate(() => {
+    const paneSvg = document.querySelector('.gisAreaPane > svg');
+    const pane = window.App.gis.map.getPane('gisAreaPane');
+    return {
+      hasPaneSvg: Boolean(paneSvg),
+      paneClass: pane?.className || '',
+      maxWidth: paneSvg ? getComputedStyle(paneSvg).maxWidth : null,
+      maxHeight: paneSvg ? getComputedStyle(paneSvg).maxHeight : null
+    };
+  });
+  expect(result.hasPaneSvg).toBe(true);
+  expect(result.paneClass).toContain('gisAreaPane');
+  expect(result.maxWidth).toBe('none');
+  expect(result.maxHeight).toBe('none');
 });
 
 test('leaflet GIS renders saved area polygons returned as latitude-longitude arrays', async ({ page }) => {
