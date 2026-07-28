@@ -41,6 +41,14 @@ const list = jsonResponse(runIndex('hongphongnb.com', 'GET', '/api/control-cente
 assert.strictEqual(list.ok, true);
 assert.ok(Array.isArray(list.data.items));
 
+const controlCenterHtml = runIndex('hongphongnb.com', 'GET', '/');
+assert.match(controlCenterHtml, /id="addUnitButton"/);
+assert.match(controlCenterHtml, /id="unitModal"/);
+assert.match(controlCenterHtml, /id="unitForm"/);
+assert.match(controlCenterHtml, /id="unitSearch"/);
+assert.match(controlCenterHtml, /\/api\/control-center\/units/);
+new Function([...controlCenterHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]).join('\n'));
+
 const createWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'POST', '/api/control-center/units'));
 assert.strictEqual(createWithoutToken.ok, false);
 assert.match(createWithoutToken.message, /dang nhap/);
