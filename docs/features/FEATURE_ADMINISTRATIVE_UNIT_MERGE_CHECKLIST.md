@@ -34,8 +34,19 @@ Ghi chu: checklist nay duoc commit rieng sau khi tao, nen commit tai lieu review
 - `tests/administrative-unit-management.test.js`
 - `tests/control-center-authorization.test.php`
 - `views/control-center.php`
+- `docs/features/FEATURE_ADMINISTRATIVE_UNIT_CODE_REVIEW.md`
 - `docs/features/FEATURE_ADMINISTRATIVE_UNIT_PRODUCTION_REVIEW.md`
+- `docs/features/FEATURE_ADMINISTRATIVE_UNIT_QA_REVIEW.md`
 - `docs/features/FEATURE_ADMINISTRATIVE_UNIT_MERGE_CHECKLIST.md`
+
+## Review Process
+
+PASS.
+
+- Code Review: PASS.
+- QA Review: PASS.
+- Production Review: PASS.
+- Merge Checklist: PASS.
 
 ## Scope Confirmed
 
