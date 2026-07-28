@@ -101,6 +101,33 @@ jobs:
       - name: Validate production artifact
         run: npm run validate:artifact
 
+      - name: Create Control Center production env
+        shell: bash
+        env:
+          DB_HOST: ${{ secrets.DB_HOST || vars.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT || vars.DB_PORT }}
+          DB_SOCKET: ${{ secrets.DB_SOCKET || vars.DB_SOCKET }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE || vars.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME || vars.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_CHARSET: ${{ secrets.DB_CHARSET || vars.DB_CHARSET }}
+        run: |
+          {
+            echo "APP_NAME=HONG PHONG COMMUNITY PLATFORM"
+            echo "APP_URL=https://hongphongnb.com"
+            echo "DB_HOST=${DB_HOST}"
+            echo "DB_PORT=${DB_PORT:-3306}"
+            if [ -n "${DB_SOCKET}" ]; then echo "DB_SOCKET=${DB_SOCKET}"; fi
+            echo "DB_DATABASE=${DB_DATABASE}"
+            echo "DB_USERNAME=${DB_USERNAME}"
+            echo "DB_PASSWORD=${DB_PASSWORD}"
+            echo "DB_CHARSET=${DB_CHARSET:-utf8mb4}"
+            echo "PLATFORM_ADMIN_ENABLED=true"
+            echo "PLATFORM_ADMIN_DOMAINS=hongphongnb.com,admin.hongphongnb.com"
+            echo "PLATFORM_DEFAULT_PORTAL=CONTROL_CENTER"
+            echo "PLATFORM_TENANT_DOMAIN_PATTERN=*.hongphongnb.com"
+          } > dist/production/.env
+
       - name: Upload production artifact for audit
         uses: actions/upload-artifact@v4
         with:
@@ -118,15 +145,13 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: ./dist/production/
-          server-dir: ./
-          state-name: .ftp-deploy-sync-state-utf8.json
+          server-dir: ../public_html/
+          state-name: .ftp-deploy-control-center-state.json
           log-level: verbose
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
-            .env
-            .env.*
             config/database.php
             uploads/**
             !uploads/.htaccess
