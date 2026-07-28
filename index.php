@@ -32,6 +32,7 @@ use App\Core\TenantConfig;
 use App\Core\TenantContext;
 use App\Controllers\AgriculturalLandZoneController;
 use App\Controllers\AgricultureProductionController;
+use App\Controllers\AdministrativeUnitController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
@@ -273,12 +274,32 @@ if ($request->path() === '/favicon.ico') {
 }
 
 if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api')) {
-    if ($request->method() === 'GET' && str_starts_with($request->path(), '/api/control-center/')) {
+    if (str_starts_with($request->path(), '/api/control-center/')) {
         $controller = new ControlCenterController($request);
+        $unitsController = new AdministrativeUnitController($request);
+        $path = $request->path();
+        $method = $request->method();
+        if ($method === 'GET' && $path === '/api/control-center/units') {
+            $unitsController->index();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/units') {
+            $unitsController->store();
+        }
+        if ($method === 'GET' && preg_match('#^/api/control-center/units/(\d+)$#', $path, $matches)) {
+            $unitsController->show($matches[1]);
+        }
+        if ($method === 'PUT' && preg_match('#^/api/control-center/units/(\d+)$#', $path, $matches)) {
+            $unitsController->update($matches[1]);
+        }
+        if ($method === 'PATCH' && preg_match('#^/api/control-center/units/(\d+)/lock$#', $path, $matches)) {
+            $unitsController->lock($matches[1]);
+        }
+        if ($method === 'PATCH' && preg_match('#^/api/control-center/units/(\d+)/activate$#', $path, $matches)) {
+            $unitsController->activate($matches[1]);
+        }
         match ($request->path()) {
             '/api/control-center/status' => $controller->status(),
             '/api/control-center/dashboard' => $controller->dashboard(),
-            '/api/control-center/units' => $controller->units(),
             '/api/control-center/accounts' => $controller->accounts(),
             '/api/control-center/monitoring' => $controller->monitoring(),
             default => Response::error('API Community Control Center khong ton tai', 404),
