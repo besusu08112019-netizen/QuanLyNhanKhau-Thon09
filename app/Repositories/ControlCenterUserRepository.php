@@ -192,6 +192,11 @@ final class ControlCenterUserRepository
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $parts = ['u.email LIKE :q_email', 'u.display_name LIKE :q_name', 'u.role LIKE :q_role', 'u.status LIKE :q_status', 'v.name LIKE :q_unit', 'v.code LIKE :q_unit_code'];
+            $labelRole = $this->sourceRoleFromSearch($search);
+            if ($labelRole !== null) {
+                $parts[] = 'u.role = :q_label_role';
+                $params['q_label_role'] = $labelRole;
+            }
             if ($this->hasColumn('username')) {
                 $parts[] = 'u.username LIKE :q_username';
                 $params['q_username'] = '%' . $search . '%';
@@ -302,6 +307,26 @@ final class ControlCenterUserRepository
             'OFFICER' => 'STAFF',
             'VIEWER' => 'VIEWER',
         ][$sourceRole] ?? $sourceRole;
+    }
+
+    private function sourceRoleFromSearch(string $search): ?string
+    {
+        $normalized = strtolower(trim($search));
+        foreach ([
+            'quan tri he thong' => 'SUPER_ADMIN',
+            'system_admin' => 'SUPER_ADMIN',
+            'quan tri thon' => 'ADMIN',
+            'village_admin' => 'ADMIN',
+            'can bo nhap lieu' => 'OFFICER',
+            'staff' => 'OFFICER',
+            'chi xem' => 'VIEWER',
+            'viewer' => 'VIEWER',
+        ] as $label => $role) {
+            if (str_contains($label, $normalized) || str_contains($normalized, $label)) {
+                return $role;
+            }
+        }
+        return null;
     }
 
     private function deviceLabel(string $userAgent): ?string

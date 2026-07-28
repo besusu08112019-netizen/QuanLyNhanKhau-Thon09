@@ -96,6 +96,9 @@ final class ControlCenterUserService
     {
         $actor = $this->authorization->authorize('control_center.users.reset_password');
         $user = $this->findExisting($id);
+        if ((string) $user['role'] === 'SYSTEM_ADMIN' && (int) $user['id'] !== (int) $actor['id']) {
+            throw new InvalidArgumentException('Chua cho phep reset mat khau SYSTEM_ADMIN khac trong feature nay');
+        }
         $password = (string) ($input['password'] ?? '');
         $this->assertPassword($password);
         $updated = $this->repository->resetPassword($id, $password, (int) $actor['id']);
