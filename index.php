@@ -36,6 +36,7 @@ use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
 use App\Controllers\ContributionController;
+use App\Controllers\ControlCenterController;
 use App\Controllers\DashboardController;
 use App\Controllers\FileController;
 use App\Controllers\FinanceController;
@@ -272,13 +273,16 @@ if ($request->path() === '/favicon.ico') {
 }
 
 if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api')) {
-    if ($request->method() === 'GET' && $request->path() === '/api/control-center/status') {
-        Response::ok([
-            'portal' => PortalContext::type(),
-            'host' => PortalContext::host(),
-            'status' => 'ready',
-            'phase' => 'phase1',
-        ]);
+    if ($request->method() === 'GET' && str_starts_with($request->path(), '/api/control-center/')) {
+        $controller = new ControlCenterController($request);
+        match ($request->path()) {
+            '/api/control-center/status' => $controller->status(),
+            '/api/control-center/dashboard' => $controller->dashboard(),
+            '/api/control-center/units' => $controller->units(),
+            '/api/control-center/accounts' => $controller->accounts(),
+            '/api/control-center/monitoring' => $controller->monitoring(),
+            default => Response::error('API Community Control Center khong ton tai', 404),
+        };
     }
     Response::error('API nghiep vu tenant khong kha dung tren Community Control Center', 404);
 }
