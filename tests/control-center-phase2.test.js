@@ -69,9 +69,10 @@ assert.ok(monitoring.data.healthCheck);
 
 const controlCenterHtml = runIndex('hongphongnb.com', '/');
 assert.match(controlCenterHtml, /Community Control Center/);
-assert.match(controlCenterHtml, /Dashboard tong/);
-assert.match(controlCenterHtml, /Don vi hanh chinh/);
-assert.match(controlCenterHtml, /Tai khoan he thong/);
+assert.match(controlCenterHtml, /Tong quan/);
+assert.match(controlCenterHtml, /Don vi/);
+assert.match(controlCenterHtml, /Nguoi dung/);
+assert.match(controlCenterHtml, /Phan quyen/);
 assert.match(controlCenterHtml, /Monitoring/);
 assert.doesNotMatch(controlCenterHtml, /id="loginView"/);
 

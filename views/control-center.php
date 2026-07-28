@@ -601,24 +601,29 @@
       <div class="cc-brand">
         <div class="cc-brand-mark">CC</div>
         <div>
-          <div class="cc-brand-title">Community Control Center</div>
-          <div class="cc-brand-subtitle">CONTROL_CENTER</div>
+          <div class="cc-brand-title">HONG PHONG COMMUNITY PLATFORM</div>
+          <div class="cc-brand-subtitle">Community Control Center</div>
         </div>
       </div>
       <nav class="cc-nav" aria-label="Control Center">
-        <button class="active" type="button" data-section="dashboard"><i class="fa-solid fa-chart-line"></i>Dashboard tong</button>
-        <button type="button" data-section="units"><i class="fa-solid fa-sitemap"></i>Don vi hanh chinh</button>
-        <button type="button" data-section="accounts"><i class="fa-solid fa-users-gear"></i>Tai khoan he thong</button>
+        <button class="active" type="button" data-section="dashboard"><i class="fa-solid fa-chart-line"></i>Tong quan</button>
+        <button type="button" data-section="units"><i class="fa-solid fa-sitemap"></i>Don vi</button>
+        <button type="button" data-section="accounts"><i class="fa-solid fa-users-gear"></i>Nguoi dung</button>
         <button type="button" data-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phan quyen</button>
+        <button type="button" data-section="dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</button>
         <button type="button" data-section="monitoring"><i class="fa-solid fa-heart-pulse"></i>Monitoring</button>
+        <button type="button" data-section="audit"><i class="fa-solid fa-clock-rotate-left"></i>Audit</button>
+        <button type="button" data-section="configuration"><i class="fa-solid fa-gear"></i>Cau hinh</button>
+        <button type="button" data-section="notifications"><i class="fa-solid fa-bell"></i>Thong bao</button>
+        <button type="button" data-section="ai"><i class="fa-solid fa-wand-magic-sparkles"></i>AI</button>
       </nav>
     </aside>
 
     <main class="cc-main">
       <header class="cc-header">
         <div>
-          <h1 class="cc-title" id="sectionTitle">Dashboard tong</h1>
-          <div class="cc-meta" id="portalMeta">Community Control Center - {{APP_NAME}}</div>
+          <h1 class="cc-title" id="sectionTitle">Tong quan</h1>
+          <div class="cc-meta" id="portalMeta">HONG PHONG COMMUNITY PLATFORM - Community Control Center</div>
         </div>
         <div class="cc-header-actions">
           <input class="cc-input cc-global-search" type="search" id="globalSearch" placeholder="Tim nhanh: dashboard, don vi, tai khoan, phan quyen">
@@ -631,6 +636,18 @@
       <div class="cc-content">
         <section class="cc-section active" id="dashboardSection">
           <div class="metric-grid" id="metricGrid"></div>
+          <div class="metric-grid">
+            <article class="metric-card">
+              <div class="metric-label">Hoat dong gan day</div>
+              <div class="metric-value" style="font-size:18px">Dang phat trien</div>
+              <div class="metric-note">Se hien cac thay doi quan trong trong Control Center.</div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-label">Canh bao</div>
+              <div class="metric-value" style="font-size:18px">Dang phat trien</div>
+              <div class="metric-note">Se tong hop canh bao van hanh va cau hinh.</div>
+            </article>
+          </div>
           <div class="cc-panel">
             <div class="cc-panel-header">
               <h2 class="cc-panel-title">Thao tac nhanh</h2>
@@ -758,6 +775,46 @@
 
         <section class="cc-section" id="monitoringSection">
           <div class="monitor-grid" id="monitorGrid"></div>
+        </section>
+
+        <section class="cc-section" id="auditSection">
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <h2 class="cc-panel-title">Audit</h2>
+              <span class="cc-badge warn">Dang phat trien</span>
+            </div>
+            <div class="cc-state">Se dung de truy vet ai da thay doi du lieu, thay doi luc nao va tren don vi nao.</div>
+          </div>
+        </section>
+
+        <section class="cc-section" id="configurationSection">
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <h2 class="cc-panel-title">Cau hinh</h2>
+              <span class="cc-badge warn">Dang phat trien</span>
+            </div>
+            <div class="cc-state">Se quan ly cau hinh chung cua Community Control Center va nen tang.</div>
+          </div>
+        </section>
+
+        <section class="cc-section" id="notificationsSection">
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <h2 class="cc-panel-title">Thong bao</h2>
+              <span class="cc-badge warn">Dang phat trien</span>
+            </div>
+            <div class="cc-state">Se dieu phoi thong tin, thong bao noi bo va canh bao van hanh.</div>
+          </div>
+        </section>
+
+        <section class="cc-section" id="aiSection">
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <h2 class="cc-panel-title">AI</h2>
+              <span class="cc-badge warn">Dang phat trien</span>
+            </div>
+            <div class="cc-state">Se ho tro tim kiem, tong hop va goi y thao tac trong pham vi duoc cap quyen.</div>
+          </div>
         </section>
       </div>
 
@@ -910,14 +967,22 @@
       units: document.getElementById('unitsSection'),
       accounts: document.getElementById('accountsSection'),
       permissions: document.getElementById('permissionsSection'),
-      monitoring: document.getElementById('monitoringSection')
+      monitoring: document.getElementById('monitoringSection'),
+      audit: document.getElementById('auditSection'),
+      configuration: document.getElementById('configurationSection'),
+      notifications: document.getElementById('notificationsSection'),
+      ai: document.getElementById('aiSection')
     };
     const sectionTitles = {
-      dashboard: 'Dashboard tong',
-      units: 'Don vi hanh chinh',
-      accounts: 'Tai khoan he thong',
+      dashboard: 'Tong quan',
+      units: 'Don vi',
+      accounts: 'Nguoi dung',
       permissions: 'Phan quyen',
-      monitoring: 'Monitoring'
+      monitoring: 'Monitoring',
+      audit: 'Audit',
+      configuration: 'Cau hinh',
+      notifications: 'Thong bao',
+      ai: 'AI'
     };
 
     document.querySelectorAll('.cc-nav button').forEach((button) => {
@@ -1085,9 +1150,9 @@
     async function loadDashboard() {
       const data = await api('/api/control-center/dashboard');
       const metrics = [
-        ['Tong don vi', nf.format(data.totalUnits), 'Don vi dang quan ly'],
+        ['Tong so don vi', nf.format(data.totalUnits), 'Don vi dang quan ly'],
         ['Tong ho', nf.format(data.totalHouseholds), 'Tong hop toan he thong'],
-        ['Tong nhan khau', nf.format(data.totalCitizens), 'Khong hien thi du lieu ca nhan'],
+        ['Tong nguoi dung', nf.format(accountState.items.length), 'Tai khoan trong Community Control Center'],
         ['Tong tre em', nf.format(data.totalChildren), 'So lieu tong hop'],
         ['Tong nguoi cao tuoi', nf.format(data.totalElderly), 'Theo cau hinh chinh sach hien co'],
         ['Tong lao dong', nf.format(data.totalWorkers), 'Theo truong lao dong hien co'],
@@ -1666,10 +1731,11 @@
     }
 
     async function loadControlCenter() {
-      await Promise.all([loadDashboard(), loadUnits(), loadAccounts(), loadPermissions(), loadMonitoring()]).catch((error) => {
+      await Promise.all([loadUnits(), loadAccounts(), loadPermissions(), loadMonitoring()]).catch((error) => {
         document.getElementById('healthBadge').textContent = 'DEGRADED';
         document.getElementById('healthBadge').className = 'cc-badge warn';
       });
+      await loadDashboard().catch(() => {});
     }
 
     restoreSession().then((restored) => {
@@ -1693,7 +1759,11 @@
         ['units', ['don vi', 'thon', 'xa', 'administrative']],
         ['accounts', ['tai khoan', 'nguoi dung', 'user']],
         ['permissions', ['phan quyen', 'permission', 'quyen']],
-        ['monitoring', ['monitoring', 'health', 'trang thai']]
+        ['monitoring', ['monitoring', 'health', 'trang thai']],
+        ['audit', ['audit', 'lich su', 'truy vet']],
+        ['configuration', ['cau hinh', 'config', 'settings']],
+        ['notifications', ['thong bao', 'notification']],
+        ['ai', ['ai', 'tro ly']]
       ];
       const match = targets.find(([, terms]) => terms.some((term) => query.includes(term) || term.includes(query)));
       if (match) {
