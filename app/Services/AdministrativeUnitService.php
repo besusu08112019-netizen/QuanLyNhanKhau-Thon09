@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Core\Authorization\ControlCenterAuthorizationInterface;
+use App\Core\Database;
 use App\Repositories\AdministrativeUnitRepository;
 use InvalidArgumentException;
+use PDO;
+use PDOException;
 use RuntimeException;
 use Throwable;
 
@@ -86,6 +89,35 @@ final class AdministrativeUnitService
         return $updated;
     }
 
+    public function checkConnection(int $id): array
+    {
+        $actor = $this->authorization->authorize('control_center.units.update');
+        $unit = $this->find($id);
+        if (($unit['status'] ?? '') !== 'ACTIVE') {
+            $updated = $this->repository->updateHealth($id, 'LOCKED', 'Tenant is inactive');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiem tra ket noi don vi dang khoa', ['status' => 'LOCKED']);
+            return $updated;
+        }
+
+        $database = trim((string) ($unit['databaseName'] ?? ''));
+        if ($database === '') {
+            $updated = $this->repository->updateHealth($id, 'UNKNOWN', 'Database name is missing');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiem tra ket noi don vi thieu database', ['status' => 'UNKNOWN']);
+            return $updated;
+        }
+
+        try {
+            $this->connectTenantDatabase($unit);
+            $updated = $this->repository->updateHealth($id, 'CONNECTED');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiem tra ket noi don vi thanh cong', ['status' => 'CONNECTED']);
+            return $updated;
+        } catch (PDOException $e) {
+            $updated = $this->repository->updateHealth($id, 'DISCONNECTED', 'Database connection failed');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiem tra ket noi don vi that bai', ['status' => 'DISCONNECTED'], 'WARN');
+            return $updated;
+        }
+    }
+
     private function validate(array $input, bool $creating = true): array
     {
         $data = [];
@@ -123,6 +155,25 @@ final class AdministrativeUnitService
             if (array_key_exists($field, $input)) {
                 $data[$field] = $this->nullableHost($input[$field], $field);
             }
+        }
+
+        if (array_key_exists('database_name', $input)) {
+            $data['database_name'] = $this->nullableDatabaseName($input['database_name']);
+        }
+        if (array_key_exists('database_host', $input)) {
+            $data['database_host'] = $this->nullableDatabaseHost($input['database_host']);
+        }
+        if (array_key_exists('version', $input)) {
+            $data['version'] = $this->nullableText($input['version'], 50, 'version');
+        }
+        if (array_key_exists('connection_status', $input)) {
+            $connectionStatus = strtoupper(trim((string) $input['connection_status']));
+            if (!in_array($connectionStatus, ['CONNECTED', 'DISCONNECTED', 'UNKNOWN', 'LOCKED'], true)) {
+                throw new InvalidArgumentException('Trang thai ket noi khong hop le');
+            }
+            $data['connection_status'] = $connectionStatus;
+        } elseif ($creating) {
+            $data['connection_status'] = 'UNKNOWN';
         }
 
         if (array_key_exists('logo', $input)) {
@@ -195,5 +246,48 @@ final class AdministrativeUnitService
             return $logo;
         }
         throw new InvalidArgumentException('Logo khong hop le');
+    }
+
+    private function nullableDatabaseName(mixed $value): ?string
+    {
+        $name = trim((string) ($value ?? ''));
+        if ($name === '') {
+            return null;
+        }
+        if (!preg_match('/^[a-zA-Z0-9_]{1,190}$/', $name)) {
+            throw new InvalidArgumentException('Ten database khong hop le');
+        }
+        return $name;
+    }
+
+    private function nullableDatabaseHost(mixed $value): ?string
+    {
+        $host = trim((string) ($value ?? ''));
+        if ($host === '') {
+            return null;
+        }
+        if (mb_strlen($host, 'UTF-8') > 190 || str_contains($host, '/') || str_contains($host, '?')) {
+            throw new InvalidArgumentException('Database host khong hop le');
+        }
+        return $host;
+    }
+
+    private function connectTenantDatabase(array $unit): void
+    {
+        $current = Database::diagnostics()['config'] ?? [];
+        $host = trim((string) ($unit['databaseHost'] ?? '')) ?: (string) ($current['host'] ?? 'localhost');
+        $database = trim((string) ($unit['databaseName'] ?? ''));
+        $username = (string) env(['TENANT_REGISTRY_DB_USERNAME', 'DB_USERNAME', 'DB_USER']);
+        $password = (string) env(['TENANT_REGISTRY_DB_PASSWORD', 'DB_PASSWORD', 'DB_PASS'], '');
+        $charset = (string) env(['TENANT_REGISTRY_DB_CHARSET', 'DB_CHARSET'], 'utf8mb4');
+        $port = (int) env(['TENANT_REGISTRY_DB_PORT', 'DB_PORT'], '3306');
+        $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=%s', $host, $port, $database, $charset);
+        $pdo = new PDO($dsn, $username, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => true,
+            PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci',
+        ]);
+        $pdo->query('SELECT 1');
     }
 }

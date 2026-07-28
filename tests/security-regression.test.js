@@ -285,6 +285,26 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 }
 
 {
+  const repository = read('app/Repositories/AdministrativeUnitRepository.php');
+  assert.match(repository, /database_name/);
+  assert.match(repository, /database_host/);
+  assert.match(repository, /connection_status/);
+  assert.match(repository, /function updateHealth/);
+  const service = read('app/Services/AdministrativeUnitService.php');
+  assert.match(service, /function checkConnection/);
+  assert.match(service, /TENANT_REGISTRY_DB_USERNAME/);
+  assert.match(service, /Database connection failed/);
+  const controller = read('app/Controllers/AdministrativeUnitController.php');
+  assert.match(controller, /function checkConnection/);
+  const index = read('index.php');
+  assert.match(index, /check-connection/);
+  const controlCenter = read('views/control-center.php');
+  assert.match(controlCenter, /Mo Portal/);
+  assert.match(controlCenter, /Kiem tra/);
+  assert.match(controlCenter, /unitDatabaseName/);
+}
+
+{
   const files = read('app/Controllers/FileController.php');
   assert.match(files, /image\/svg\+xml/);
   assert.match(files, /Content-Security-Policy/);

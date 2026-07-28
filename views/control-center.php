@@ -684,10 +684,11 @@
                     <th>Ma</th>
                     <th>Ten don vi</th>
                     <th>Domain</th>
+                    <th>Database</th>
                     <th>Trang thai</th>
                     <th>Nguoi quan ly</th>
                     <th>Phien ban</th>
-                    <th>Health</th>
+                    <th>Ket noi</th>
                     <th>Thao tac</th>
                   </tr>
                 </thead>
@@ -859,6 +860,18 @@
           <div class="cc-field">
             <label for="unitSubdomain">Subdomain</label>
             <input class="cc-input" id="unitSubdomain" name="subdomain" maxlength="190" placeholder="thon09.hongphongnb.com" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitDatabaseHost">Database Host</label>
+            <input class="cc-input" id="unitDatabaseHost" name="database_host" maxlength="190" placeholder="localhost" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitDatabaseName">Database</label>
+            <input class="cc-input" id="unitDatabaseName" name="database_name" maxlength="190" placeholder="nhhon5mp_thon09" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitVersion">Phien ban</label>
+            <input class="cc-input" id="unitVersion" name="version" maxlength="50" placeholder="v2.0" autocomplete="off">
           </div>
           <div class="cc-field full">
             <label for="unitLogo">Logo URL</label>
@@ -1041,8 +1054,8 @@
     function badge(value) {
       const span = document.createElement('span');
       span.className = 'cc-badge';
-      if (value === 'LOCKED' || value === 'DEGRADED') span.classList.add('warn');
-      if (value === 'ERROR') span.classList.add('danger');
+      if (value === 'LOCKED' || value === 'DEGRADED' || value === 'UNKNOWN') span.classList.add('warn');
+      if (value === 'ERROR' || value === 'DISCONNECTED') span.classList.add('danger');
       span.textContent = value || 'UNKNOWN';
       return span;
     }
@@ -1165,7 +1178,7 @@
 
     async function loadUnits() {
       const body = document.getElementById('unitsBody');
-      body.replaceChildren(stateRow(8, 'Dang tai du lieu...'));
+      body.replaceChildren(stateRow(9, 'Dang tai du lieu...'));
       setUnitsAlert('');
       const params = new URLSearchParams();
       const search = document.getElementById('unitSearch').value.trim();
@@ -1176,15 +1189,23 @@
       unitState.items = data.items || [];
       const rows = unitState.items.map((unit) => {
         const tr = document.createElement('tr');
-        const cells = [unit.code || '-', unit.name, unit.domain || '-', unit.status, unit.manager, unit.version || '-', unit.healthStatus];
+        const cells = [unit.code || '-', unit.name, unit.domain || '-', unit.databaseName || '-', unit.status, unit.manager, unit.version || '-', unit.healthStatus || 'UNKNOWN'];
         cells.forEach((cell, index) => {
           const td = document.createElement('td');
-          if (index === 3 || index === 6) td.appendChild(badge(cell));
+          if (index === 4 || index === 7) td.appendChild(badge(cell));
           else td.textContent = cell;
           tr.appendChild(td);
         });
         const actions = document.createElement('td');
         actions.className = 'cc-row-actions';
+        if (unit.domain) {
+          const portal = actionButton('Mo Portal', 'fa-arrow-up-right-from-square');
+          portal.addEventListener('click', () => window.open('https://' + unit.domain, '_blank', 'noopener'));
+          actions.appendChild(portal);
+        }
+        const check = actionButton('Kiem tra', 'fa-plug-circle-check');
+        check.addEventListener('click', () => checkUnitConnection(unit));
+        actions.appendChild(check);
         const edit = actionButton('Sua', 'fa-pen-to-square');
         edit.addEventListener('click', () => openUnitModal(unit));
         actions.appendChild(edit);
@@ -1200,7 +1221,7 @@
         tr.appendChild(actions);
         return tr;
       });
-      body.replaceChildren(...(rows.length ? rows : [emptyRow(8)]));
+      body.replaceChildren(...(rows.length ? rows : [emptyRow(9)]));
     }
 
     async function loadAccounts() {
@@ -1467,6 +1488,9 @@
       document.getElementById('unitCommuneName').value = unit?.communeName || '';
       document.getElementById('unitDomain').value = unit?.domain || '';
       document.getElementById('unitSubdomain').value = unit?.subdomain || '';
+      document.getElementById('unitDatabaseHost').value = unit?.databaseHost || '';
+      document.getElementById('unitDatabaseName').value = unit?.databaseName || '';
+      document.getElementById('unitVersion').value = unit?.version || '';
       document.getElementById('unitLogo').value = unit?.logo || '';
       document.getElementById('unitStatus').value = unit?.status || 'ACTIVE';
       setFormError('');
@@ -1485,6 +1509,9 @@
         commune_name: formValue('unitCommuneName') || null,
         domain: formValue('unitDomain') || null,
         subdomain: formValue('unitSubdomain') || null,
+        database_host: formValue('unitDatabaseHost') || null,
+        database_name: formValue('unitDatabaseName') || null,
+        version: formValue('unitVersion') || null,
         logo: formValue('unitLogo') || null,
         status: formValue('unitStatus') || 'ACTIVE',
         type: 'VILLAGE'
@@ -1499,6 +1526,9 @@
       }
       if (!payload.name || payload.name.length > 190) {
         return 'Ten don vi la bat buoc va khong vuot qua 190 ky tu';
+      }
+      if (payload.database_name && !/^[a-zA-Z0-9_]{1,190}$/.test(payload.database_name)) {
+        return 'Ten database chi gom chu, so va dau gach duoi';
       }
       return '';
     }
@@ -1545,6 +1575,17 @@
         await loadUnits();
       } catch (error) {
         setUnitsAlert(error.message || 'Khong cap nhat duoc trang thai don vi');
+      }
+    }
+
+    async function checkUnitConnection(unit) {
+      setUnitsAlert('Dang kiem tra ket noi ' + (unit.name || unit.code || '') + '...');
+      try {
+        await api('/api/control-center/units/' + encodeURIComponent(unit.id) + '/check-connection', { method: 'PATCH' });
+        setUnitsAlert('Da cap nhat trang thai ket noi cho ' + (unit.name || unit.code || 'don vi'));
+        await loadUnits();
+      } catch (error) {
+        setUnitsAlert(error.message || 'Khong kiem tra duoc ket noi don vi');
       }
     }
 

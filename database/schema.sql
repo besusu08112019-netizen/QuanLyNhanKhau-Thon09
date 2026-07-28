@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS `villages` (
   `unit_name` VARCHAR(190) NULL,
   `commune_name` VARCHAR(190) NULL,
   `domain` VARCHAR(190) NULL,
+  `database_name` VARCHAR(190) NULL,
+  `database_host` VARCHAR(190) NULL,
   `subdomain` VARCHAR(190) NULL,
   `logo_url` VARCHAR(500) NULL,
   `theme_color` VARCHAR(20) NULL,
@@ -16,13 +18,18 @@ CREATE TABLE IF NOT EXISTS `villages` (
   `phone` VARCHAR(50) NULL,
   `email` VARCHAR(190) NULL,
   `status` ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  `version` VARCHAR(50) NULL,
+  `connection_status` ENUM('CONNECTED','DISCONNECTED','UNKNOWN','LOCKED') NOT NULL DEFAULT 'UNKNOWN',
+  `last_checked_at` DATETIME NULL,
+  `last_error` VARCHAR(255) NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_villages_code` (`code`),
   UNIQUE KEY `uq_villages_domain` (`domain`),
   UNIQUE KEY `uq_villages_subdomain` (`subdomain`),
-  KEY `idx_villages_status` (`status`)
+  KEY `idx_villages_status` (`status`),
+  KEY `idx_villages_connection_status` (`connection_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `users` (

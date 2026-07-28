@@ -341,6 +341,9 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         if ($method === 'PATCH' && preg_match('#^/api/control-center/units/(\d+)/activate$#', $path, $matches)) {
             $unitsController->activate($matches[1]);
         }
+        if ($method === 'PATCH' && preg_match('#^/api/control-center/units/(\d+)/check-connection$#', $path, $matches)) {
+            $unitsController->checkConnection($matches[1]);
+        }
         if ($method === 'GET' && $path === '/api/control-center/users') {
             $usersController->index();
         }

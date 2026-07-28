@@ -56,6 +56,11 @@ final class AdministrativeUnitController extends BaseController
         $this->respond(fn(): array => $this->service->activate((int) $id));
     }
 
+    public function checkConnection(string $id): void
+    {
+        $this->respond(fn(): array => $this->service->checkConnection((int) $id));
+    }
+
     private function respond(callable $callback): void
     {
         try {

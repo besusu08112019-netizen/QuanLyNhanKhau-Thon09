@@ -1,0 +1,7 @@
+ALTER TABLE `villages`
+  ADD COLUMN IF NOT EXISTS `database_name` VARCHAR(190) NULL AFTER `domain`,
+  ADD COLUMN IF NOT EXISTS `database_host` VARCHAR(190) NULL AFTER `database_name`,
+  ADD COLUMN IF NOT EXISTS `version` VARCHAR(50) NULL AFTER `status`,
+  ADD COLUMN IF NOT EXISTS `connection_status` ENUM('CONNECTED','DISCONNECTED','UNKNOWN','LOCKED') NOT NULL DEFAULT 'UNKNOWN' AFTER `version`,
+  ADD COLUMN IF NOT EXISTS `last_checked_at` DATETIME NULL AFTER `connection_status`,
+  ADD COLUMN IF NOT EXISTS `last_error` VARCHAR(255) NULL AFTER `last_checked_at`;
