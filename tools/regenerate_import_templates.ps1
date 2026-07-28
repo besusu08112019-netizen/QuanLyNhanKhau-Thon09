@@ -117,6 +117,11 @@ function ConvertTo-CsvLine([string[]] $Values) {
   }) -join ','
 }
 
+function Write-Utf8NoBomText([string] $Path, [string] $Content) {
+  $encoding = New-Object System.Text.UTF8Encoding $false
+  [System.IO.File]::WriteAllText($Path, $Content, $encoding)
+}
+
 function Write-Utf8BomCsv([string] $Path, [string[]] $Headers, [object[]] $Rows) {
   $lines = @((ConvertTo-CsvLine $Headers))
   foreach ($row in $Rows) {
@@ -129,6 +134,7 @@ function Write-Utf8BomCsv([string] $Path, [string[]] $Headers, [object[]] $Rows)
 
 function XmlEscape([string] $Value) {
   if ($null -eq $Value) { return '' }
+  $Value = [regex]::Replace($Value, '[\x00-\x08\x0B\x0C\x0E-\x1F]', '')
   return [System.Security.SecurityElement]::Escape($Value)
 }
 
@@ -155,6 +161,8 @@ function New-SheetXml([object[]] $Rows, [int[]] $Widths) {
   $sb = New-Object System.Text.StringBuilder
   [void]$sb.AppendLine('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
   [void]$sb.AppendLine('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">')
+  [void]$sb.AppendLine('<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>')
+  [void]$sb.AppendLine('<sheetFormatPr defaultRowHeight="15"/>')
   if ($Widths.Count -gt 0) {
     [void]$sb.AppendLine('<cols>')
     for ($i = 0; $i -lt $Widths.Count; $i++) {
@@ -163,7 +171,6 @@ function New-SheetXml([object[]] $Rows, [int[]] $Widths) {
     }
     [void]$sb.AppendLine('</cols>')
   }
-  [void]$sb.AppendLine('<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>')
   [void]$sb.AppendLine('<sheetData>')
   for ($r = 0; $r -lt $Rows.Count; $r++) {
     $rowNumber = $r + 1
@@ -182,6 +189,39 @@ function New-SheetXml([object[]] $Rows, [int[]] $Widths) {
   return $sb.ToString()
 }
 
+function Assert-XlsxPackage([string] $Path) {
+  Add-Type -AssemblyName System.IO.Compression
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $zip = [System.IO.Compression.ZipFile]::OpenRead($Path)
+  try {
+    foreach ($entryName in @('xl/workbook.xml', 'xl/styles.xml', 'xl/worksheets/sheet1.xml', 'xl/worksheets/sheet2.xml', 'xl/worksheets/sheet3.xml')) {
+      $entry = $zip.GetEntry($entryName)
+      if ($null -eq $entry) { throw "XLSX package is missing $entryName" }
+      $reader = New-Object System.IO.StreamReader($entry.Open(), [System.Text.Encoding]::UTF8)
+      try {
+        [xml]$xml = $reader.ReadToEnd()
+      } finally {
+        $reader.Close()
+      }
+
+      if ($entryName -like 'xl/worksheets/*') {
+        $children = @($xml.worksheet.ChildNodes | Where-Object { $_.NodeType -eq [System.Xml.XmlNodeType]::Element } | ForEach-Object { $_.LocalName })
+        $expectedOrder = @('sheetPr', 'dimension', 'sheetViews', 'sheetFormatPr', 'cols', 'sheetData', 'sheetProtection', 'protectedRanges', 'scenarios', 'autoFilter', 'sortState', 'dataConsolidate', 'customSheetViews', 'mergeCells', 'phoneticPr', 'conditionalFormatting', 'dataValidations', 'hyperlinks', 'printOptions', 'pageMargins', 'pageSetup', 'headerFooter', 'rowBreaks', 'colBreaks', 'customProperties', 'cellWatches', 'ignoredErrors', 'smartTags', 'drawing', 'legacyDrawing', 'legacyDrawingHF', 'picture', 'oleObjects', 'controls', 'webPublishItems', 'tableParts', 'extLst')
+        $last = -1
+        foreach ($child in $children) {
+          $index = [Array]::IndexOf($expectedOrder, $child)
+          if ($index -lt 0) { throw "$entryName has unexpected worksheet child <$child>" }
+          if ($index -lt $last) { throw "$entryName has invalid worksheet child order near <$child>" }
+          $last = $index
+        }
+        if (-not ($children -contains 'sheetData')) { throw "$entryName is missing sheetData" }
+      }
+    }
+  } finally {
+    $zip.Dispose()
+  }
+}
+
 function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers, [object[]] $Rows) {
   $workDir = Join-Path $tempRoot ([System.IO.Path]::GetFileNameWithoutExtension($Path))
   if (Test-Path $workDir) {
@@ -198,7 +238,7 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
   New-Item -ItemType Directory -Force -Path (Join-Path $workDir 'xl\_rels') | Out-Null
   New-Item -ItemType Directory -Force -Path (Join-Path $workDir 'xl\worksheets') | Out-Null
 
-  @'
+  Write-Utf8NoBomText (Join-Path $workDir '[Content_Types].xml') @'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -209,16 +249,16 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
   <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
 </Types>
-'@ | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir '[Content_Types].xml')
+'@
 
-  @'
+  Write-Utf8NoBomText (Join-Path $workDir '_rels\.rels') @'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
 </Relationships>
-'@ | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir '_rels\.rels')
+'@
 
-  @"
+  Write-Utf8NoBomText (Join-Path $workDir 'xl\workbook.xml') @"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheets>
@@ -227,9 +267,9 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
     <sheet name="DanhMuc" sheetId="3" r:id="rId3"/>
   </sheets>
 </workbook>
-"@ | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\workbook.xml')
+"@
 
-  @'
+  Write-Utf8NoBomText (Join-Path $workDir 'xl\_rels\workbook.xml.rels') @'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
@@ -237,9 +277,9 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
   <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>
-'@ | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\_rels\workbook.xml.rels')
+'@
 
-  @'
+  Write-Utf8NoBomText (Join-Path $workDir 'xl\styles.xml') @'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts>
@@ -249,7 +289,7 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
   <cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="49" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyNumberFormat="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>
-'@ | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\styles.xml')
+'@
 
   $dataWidths = @()
   foreach ($h in $Headers) { $dataWidths += [Math]::Min([Math]::Max($h.Length + 4, 14), 28) }
@@ -258,9 +298,9 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
   foreach ($row in $Rows) {
     $dataRows += ,$row
   }
-  New-SheetXml -Rows $dataRows -Widths $dataWidths | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\worksheets\sheet1.xml')
-  New-SheetXml -Rows $guideRows -Widths @(28, 96) | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\worksheets\sheet2.xml')
-  New-SheetXml -Rows $catalogRows -Widths @(28, 120) | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\worksheets\sheet3.xml')
+  Write-Utf8NoBomText (Join-Path $workDir 'xl\worksheets\sheet1.xml') (New-SheetXml -Rows $dataRows -Widths $dataWidths)
+  Write-Utf8NoBomText (Join-Path $workDir 'xl\worksheets\sheet2.xml') (New-SheetXml -Rows $guideRows -Widths @(28, 96))
+  Write-Utf8NoBomText (Join-Path $workDir 'xl\worksheets\sheet3.xml') (New-SheetXml -Rows $catalogRows -Widths @(28, 120))
 
   if (Test-Path $Path) { Remove-Item -LiteralPath $Path -Force }
   Add-Type -AssemblyName System.IO.Compression
@@ -276,6 +316,7 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
   } finally {
     $zip.Dispose()
   }
+  Assert-XlsxPackage $Path
 }
 
 function Write-HtmlXls([string] $Path, [string[]] $Headers, [object[]] $Rows) {
