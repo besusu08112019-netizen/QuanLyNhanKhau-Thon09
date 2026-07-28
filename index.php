@@ -270,6 +270,19 @@ if ($request->path() === '/favicon.ico') {
     }
     exit;
 }
+
+if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api')) {
+    if ($request->method() === 'GET' && $request->path() === '/api/control-center/status') {
+        Response::ok([
+            'portal' => PortalContext::type(),
+            'host' => PortalContext::host(),
+            'status' => 'ready',
+            'phase' => 'phase1',
+        ]);
+    }
+    Response::error('API nghiep vu tenant khong kha dung tren Community Control Center', 404);
+}
+
 $router = new Router($request);
 
 $router->get('/api/public/login-config', [SettingController::class, 'publicLoginConfig']);
