@@ -41,6 +41,15 @@ const listWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'GET', '/api/c
 assert.strictEqual(listWithoutToken.ok, false);
 assert.match(listWithoutToken.message, /dang nhap/);
 
+const controlCenterHtml = runIndex('hongphongnb.com', 'GET', '/');
+assert.match(controlCenterHtml, /id="addAccountButton"/);
+assert.match(controlCenterHtml, /id="accountModal"/);
+assert.match(controlCenterHtml, /id="passwordModal"/);
+assert.match(controlCenterHtml, /id="accountSearch"/);
+assert.match(controlCenterHtml, /Chua dang nhap/);
+assert.doesNotMatch(controlCenterHtml, /api\/control-center\/users\/\{id\}/);
+new Function([...controlCenterHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]).join('\n'));
+
 const createWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'POST', '/api/control-center/users'));
 assert.strictEqual(createWithoutToken.ok, false);
 assert.match(createWithoutToken.message, /dang nhap/);

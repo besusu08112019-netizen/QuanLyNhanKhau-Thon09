@@ -548,16 +548,39 @@
           <div class="cc-panel">
             <div class="cc-panel-header">
               <h2 class="cc-panel-title">Quan ly tai khoan he thong</h2>
-              <span class="cc-meta">Chua mo phan quyen chi tiet</span>
+              <button class="cc-btn primary" type="button" id="addAccountButton"><i class="fa-solid fa-user-plus"></i>Them tai khoan</button>
             </div>
+            <div class="cc-toolbar">
+              <input class="cc-input" type="search" id="accountSearch" placeholder="Tim username, ho ten, email, vai tro, don vi">
+              <select class="cc-select" id="accountRoleFilter" aria-label="Loc vai tro">
+                <option value="">Tat ca vai tro</option>
+                <option value="SYSTEM_ADMIN">Quan tri he thong</option>
+                <option value="VILLAGE_ADMIN">Quan tri thon</option>
+                <option value="STAFF">Can bo nhap lieu</option>
+                <option value="VIEWER">Chi xem</option>
+              </select>
+              <select class="cc-select" id="accountStatusFilter" aria-label="Loc trang thai">
+                <option value="">Tat ca trang thai</option>
+                <option value="ACTIVE">Dang su dung</option>
+                <option value="INACTIVE">Ngung su dung</option>
+              </select>
+              <button class="cc-btn" type="button" id="refreshAccountsButton"><i class="fa-solid fa-rotate"></i>Tai lai</button>
+            </div>
+            <div class="cc-alert" id="accountsAlert"></div>
             <div class="cc-table-wrap">
               <table class="cc-table">
                 <thead>
                   <tr>
-                    <th>Role</th>
-                    <th>Ten hien thi</th>
-                    <th>So tai khoan</th>
+                    <th>Ten</th>
+                    <th>Vai tro</th>
+                    <th>Don vi</th>
                     <th>Trang thai</th>
+                    <th>Dang nhap cuoi</th>
+                    <th>IP cuoi</th>
+                    <th>Thiet bi cuoi</th>
+                    <th>Thoi gian tao</th>
+                    <th>Nguoi tao</th>
+                    <th>Thao tac</th>
                   </tr>
                 </thead>
                 <tbody id="accountsBody"></tbody>
@@ -627,6 +650,93 @@
     </div>
   </div>
 
+  <div class="cc-modal-backdrop" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle">
+    <div class="cc-modal">
+      <div class="cc-modal-header">
+        <h2 class="cc-modal-title" id="accountModalTitle">Them tai khoan</h2>
+        <button class="cc-btn" type="button" id="closeAccountModalButton" aria-label="Dong"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="accountForm" novalidate>
+        <div class="cc-form">
+          <input type="hidden" id="accountId">
+          <div class="cc-field">
+            <label for="accountDisplayName">Ho ten *</label>
+            <input class="cc-input" id="accountDisplayName" name="display_name" required maxlength="190" autocomplete="name">
+          </div>
+          <div class="cc-field">
+            <label for="accountEmail">Email *</label>
+            <input class="cc-input" id="accountEmail" name="email" type="email" required maxlength="190" autocomplete="email">
+          </div>
+          <div class="cc-field">
+            <label for="accountUsername">Username *</label>
+            <input class="cc-input" id="accountUsername" name="username" required maxlength="60" pattern="[a-z0-9._-]{3,60}" autocomplete="username">
+          </div>
+          <div class="cc-field">
+            <label for="accountRole">Vai tro *</label>
+            <select class="cc-select" id="accountRole" name="role" required>
+              <option value="VILLAGE_ADMIN">Quan tri thon</option>
+              <option value="STAFF">Can bo nhap lieu</option>
+              <option value="VIEWER">Chi xem</option>
+              <option value="SYSTEM_ADMIN">Quan tri he thong</option>
+              <option value="COMMUNE_ADMIN" disabled>Quan tri xa (sau)</option>
+            </select>
+          </div>
+          <div class="cc-field">
+            <label for="accountUnit">Don vi *</label>
+            <select class="cc-select" id="accountUnit" name="unit_id" required></select>
+          </div>
+          <div class="cc-field">
+            <label for="accountStatus">Trang thai</label>
+            <select class="cc-select" id="accountStatus" name="status">
+              <option value="ACTIVE">Dang su dung</option>
+              <option value="INACTIVE">Ngung su dung</option>
+            </select>
+          </div>
+          <div class="cc-field account-password-field">
+            <label for="accountPassword">Mat khau *</label>
+            <input class="cc-input" id="accountPassword" name="password" type="password" minlength="8" autocomplete="new-password">
+          </div>
+          <div class="cc-field">
+            <label for="accountPhone">Dien thoai</label>
+            <input class="cc-input" id="accountPhone" name="phone" maxlength="50" autocomplete="tel">
+          </div>
+          <div class="cc-field full">
+            <label for="accountPosition">Chuc vu</label>
+            <input class="cc-input" id="accountPosition" name="position" maxlength="190" autocomplete="organization-title">
+          </div>
+        </div>
+        <div class="cc-form-error" id="accountFormError"></div>
+        <div class="cc-modal-footer">
+          <button class="cc-btn" type="button" id="cancelAccountButton">Huy</button>
+          <button class="cc-btn primary" type="submit" id="saveAccountButton"><i class="fa-solid fa-floppy-disk"></i>Luu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="cc-modal-backdrop" id="passwordModal" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+    <div class="cc-modal">
+      <div class="cc-modal-header">
+        <h2 class="cc-modal-title" id="passwordModalTitle">Reset mat khau</h2>
+        <button class="cc-btn" type="button" id="closePasswordModalButton" aria-label="Dong"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="passwordForm" novalidate>
+        <div class="cc-form">
+          <input type="hidden" id="passwordAccountId">
+          <div class="cc-field full">
+            <label for="newPassword">Mat khau moi *</label>
+            <input class="cc-input" id="newPassword" name="password" type="password" minlength="8" required autocomplete="new-password">
+          </div>
+        </div>
+        <div class="cc-form-error" id="passwordFormError"></div>
+        <div class="cc-modal-footer">
+          <button class="cc-btn" type="button" id="cancelPasswordButton">Huy</button>
+          <button class="cc-btn primary" type="submit" id="savePasswordButton"><i class="fa-solid fa-key"></i>Cap nhat</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const sections = {
       dashboard: document.getElementById('dashboardSection'),
@@ -661,6 +771,18 @@
       items: [],
       editing: null,
       loading: false
+    };
+    const accountState = {
+      items: [],
+      editing: null,
+      passwordTarget: null
+    };
+    const roleLabels = {
+      SYSTEM_ADMIN: 'Quan tri he thong',
+      VILLAGE_ADMIN: 'Quan tri thon',
+      STAFF: 'Can bo nhap lieu',
+      VIEWER: 'Chi xem',
+      COMMUNE_ADMIN: 'Quan tri xa'
     };
 
     function metric(label, value, note = '') {
@@ -762,18 +884,62 @@
     }
 
     async function loadAccounts() {
-      const data = await api('/api/control-center/accounts');
-      const rows = (data.roles || []).map((role) => {
-        const tr = document.createElement('tr');
-        [role.code, role.name, nf.format(role.users), role.status].forEach((cell, index) => {
-          const td = document.createElement('td');
-          if (index === 3) td.appendChild(badge(cell));
-          else td.textContent = cell;
-          tr.appendChild(td);
+      const body = document.getElementById('accountsBody');
+      body.replaceChildren(stateRow(10, 'Dang tai du lieu...'));
+      setAccountsAlert('');
+      const params = new URLSearchParams();
+      const search = document.getElementById('accountSearch').value.trim();
+      const role = document.getElementById('accountRoleFilter').value;
+      const status = document.getElementById('accountStatusFilter').value;
+      if (search) params.set('search', search);
+      if (role) params.set('role', role);
+      if (status) params.set('status', status);
+      try {
+        const data = await api('/api/control-center/users' + (params.toString() ? '?' + params.toString() : ''));
+        accountState.items = data.items || [];
+        const rows = accountState.items.map((account) => {
+          const tr = document.createElement('tr');
+          const name = document.createElement('td');
+          const primary = document.createElement('div');
+          primary.textContent = account.displayName || account.username || account.email;
+          const secondary = document.createElement('div');
+          secondary.className = 'cc-meta';
+          secondary.textContent = account.email || account.username || '';
+          name.append(primary, secondary);
+          tr.appendChild(name);
+
+          [roleLabels[account.role] || account.role, account.unitName || '-', account.status, account.lastLoginLabel || account.lastLoginAt || 'Chua dang nhap', account.lastIp || '-', account.lastDevice || '-', account.createdAt || '-', account.createdBy || '-'].forEach((cell, index) => {
+            const td = document.createElement('td');
+            if (index === 2) td.appendChild(badge(cell));
+            else td.textContent = cell;
+            tr.appendChild(td);
+          });
+
+          const actions = document.createElement('td');
+          actions.className = 'cc-row-actions';
+          const edit = actionButton('Sua', 'fa-user-pen');
+          edit.addEventListener('click', () => openAccountModal(account));
+          actions.appendChild(edit);
+          const password = actionButton('Mat khau', 'fa-key');
+          password.addEventListener('click', () => openPasswordModal(account));
+          actions.appendChild(password);
+          if (account.status === 'ACTIVE') {
+            const deactivate = actionButton('Ngung', 'fa-user-slash', 'danger');
+            deactivate.addEventListener('click', () => changeAccountStatus(account, 'deactivate'));
+            actions.appendChild(deactivate);
+          } else {
+            const activate = actionButton('Kich hoat', 'fa-user-check');
+            activate.addEventListener('click', () => changeAccountStatus(account, 'activate'));
+            actions.appendChild(activate);
+          }
+          tr.appendChild(actions);
+          return tr;
         });
-        return tr;
-      });
-      document.getElementById('accountsBody').replaceChildren(...rows);
+        body.replaceChildren(...(rows.length ? rows : [emptyRow(10)]));
+      } catch (error) {
+        body.replaceChildren(emptyRow(10));
+        setAccountsAlert(error.message || 'Khong tai duoc danh sach tai khoan');
+      }
     }
 
     async function loadMonitoring() {
@@ -817,6 +983,12 @@
 
     function setUnitsAlert(message) {
       const alert = document.getElementById('unitsAlert');
+      alert.textContent = message || '';
+      alert.classList.toggle('active', Boolean(message));
+    }
+
+    function setAccountsAlert(message) {
+      const alert = document.getElementById('accountsAlert');
       alert.textContent = message || '';
       alert.classList.toggle('active', Boolean(message));
     }
@@ -916,6 +1088,180 @@
       }
     }
 
+    async function ensureAccountUnitOptions(selectedId = '') {
+      let units = unitState.items || [];
+      if (!units.length) {
+        try {
+          const data = await api('/api/control-center/units');
+          units = data.items || [];
+          unitState.items = units;
+        } catch (error) {
+          units = [];
+        }
+      }
+      const select = document.getElementById('accountUnit');
+      const options = units.map((unit) => {
+        const option = document.createElement('option');
+        option.value = unit.id;
+        option.textContent = unit.name || unit.code || ('Don vi #' + unit.id);
+        if (String(unit.id) === String(selectedId)) option.selected = true;
+        return option;
+      });
+      if (!options.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Chua co don vi';
+        options.push(option);
+      }
+      select.replaceChildren(...options);
+    }
+
+    async function openAccountModal(account = null) {
+      accountState.editing = account;
+      document.getElementById('accountModalTitle').textContent = account ? 'Sua tai khoan' : 'Them tai khoan';
+      document.getElementById('accountId').value = account?.id || '';
+      document.getElementById('accountDisplayName').value = account?.displayName || '';
+      document.getElementById('accountEmail').value = account?.email || '';
+      document.getElementById('accountUsername').value = account?.username || '';
+      document.getElementById('accountRole').value = account?.role || 'VILLAGE_ADMIN';
+      document.getElementById('accountStatus').value = account?.status || 'ACTIVE';
+      document.getElementById('accountPhone').value = account?.phone || '';
+      document.getElementById('accountPosition').value = account?.position || '';
+      document.getElementById('accountPassword').value = '';
+      document.querySelector('.account-password-field').style.display = account ? 'none' : 'grid';
+      document.getElementById('accountPassword').required = !account;
+      await ensureAccountUnitOptions(account?.unitId || '');
+      setAccountFormError('');
+      document.getElementById('accountModal').classList.add('active');
+      document.getElementById('accountDisplayName').focus();
+    }
+
+    function closeAccountModal() {
+      document.getElementById('accountModal').classList.remove('active');
+      accountState.editing = null;
+    }
+
+    function accountPayload() {
+      const payload = {
+        username: formValue('accountUsername').toLowerCase(),
+        email: formValue('accountEmail').toLowerCase(),
+        display_name: formValue('accountDisplayName'),
+        role: formValue('accountRole'),
+        status: formValue('accountStatus') || 'ACTIVE',
+        unit_id: Number(formValue('accountUnit') || 0),
+        phone: formValue('accountPhone') || null,
+        position: formValue('accountPosition') || null
+      };
+      const password = formValue('accountPassword');
+      if (password) payload.password = password;
+      return payload;
+    }
+
+    function validateAccountForm(payload, creating) {
+      if (!payload.display_name) return 'Ho ten la bat buoc';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email || '')) return 'Email khong hop le';
+      if (!/^[a-z0-9._-]{3,60}$/.test(payload.username || '')) return 'Username khong hop le';
+      if (!['SYSTEM_ADMIN', 'VILLAGE_ADMIN', 'STAFF', 'VIEWER'].includes(payload.role)) return 'Vai tro khong hop le';
+      if (!['ACTIVE', 'INACTIVE'].includes(payload.status)) return 'Trang thai khong hop le';
+      if (!payload.unit_id) return 'Don vi la bat buoc';
+      if (creating && (!payload.password || payload.password.length < 8)) return 'Mat khau toi thieu 8 ky tu';
+      return '';
+    }
+
+    function setAccountFormError(message) {
+      const error = document.getElementById('accountFormError');
+      error.textContent = message || '';
+      error.classList.toggle('active', Boolean(message));
+    }
+
+    async function saveAccount(event) {
+      event.preventDefault();
+      const button = document.getElementById('saveAccountButton');
+      const payload = accountPayload();
+      const validation = validateAccountForm(payload, !accountState.editing);
+      if (validation) {
+        setAccountFormError(validation);
+        return;
+      }
+      button.disabled = true;
+      setAccountFormError('');
+      try {
+        if (accountState.editing) {
+          await api('/api/control-center/users/' + encodeURIComponent(accountState.editing.id), { method: 'PUT', body: payload });
+        } else {
+          await api('/api/control-center/users', { method: 'POST', body: payload });
+        }
+        closeAccountModal();
+        await loadAccounts();
+      } catch (error) {
+        setAccountFormError(error.message || 'Khong luu duoc tai khoan');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function changeAccountStatus(account, action) {
+      const message = action === 'deactivate' ? 'Xac nhan ngung su dung tai khoan nay?' : 'Xac nhan kich hoat tai khoan nay?';
+      if (!confirm(message)) return;
+      setAccountsAlert('');
+      try {
+        await api('/api/control-center/users/' + encodeURIComponent(account.id) + '/' + action, { method: 'PATCH' });
+        await loadAccounts();
+      } catch (error) {
+        setAccountsAlert(error.message || 'Khong cap nhat duoc trang thai tai khoan');
+      }
+    }
+
+    function openPasswordModal(account) {
+      accountState.passwordTarget = account;
+      document.getElementById('passwordModalTitle').textContent = 'Reset mat khau - ' + (account.displayName || account.email);
+      document.getElementById('passwordAccountId').value = account.id;
+      document.getElementById('newPassword').value = '';
+      setPasswordFormError('');
+      document.getElementById('passwordModal').classList.add('active');
+      document.getElementById('newPassword').focus();
+    }
+
+    function closePasswordModal() {
+      document.getElementById('passwordModal').classList.remove('active');
+      accountState.passwordTarget = null;
+    }
+
+    function setPasswordFormError(message) {
+      const error = document.getElementById('passwordFormError');
+      error.textContent = message || '';
+      error.classList.toggle('active', Boolean(message));
+    }
+
+    async function savePassword(event) {
+      event.preventDefault();
+      const password = formValue('newPassword');
+      if (password.length < 8) {
+        setPasswordFormError('Mat khau toi thieu 8 ky tu');
+        return;
+      }
+      const button = document.getElementById('savePasswordButton');
+      button.disabled = true;
+      setPasswordFormError('');
+      try {
+        await api('/api/control-center/users/' + encodeURIComponent(accountState.passwordTarget.id) + '/reset-password', { method: 'PATCH', body: { password } });
+        closePasswordModal();
+        await loadAccounts();
+      } catch (error) {
+        setPasswordFormError(error.message || 'Khong cap nhat duoc mat khau');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function suggestUsername() {
+      const username = document.getElementById('accountUsername');
+      if (username.value.trim() !== '' || accountState.editing) return;
+      const source = formValue('accountEmail') || formValue('accountDisplayName');
+      const suggested = source.split('@')[0].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9._-]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 60);
+      if (suggested.length >= 3) username.value = suggested;
+    }
+
     function formatBytes(value) {
       const bytes = Number(value || 0);
       if (bytes <= 0) return '0 B';
@@ -944,6 +1290,31 @@
     document.getElementById('cancelUnitButton').addEventListener('click', closeUnitModal);
     document.getElementById('unitModal').addEventListener('click', (event) => {
       if (event.target.id === 'unitModal') closeUnitModal();
+    });
+    document.getElementById('addAccountButton').addEventListener('click', () => openAccountModal());
+    document.getElementById('refreshAccountsButton').addEventListener('click', () => loadAccounts());
+    document.getElementById('accountRoleFilter').addEventListener('change', () => loadAccounts());
+    document.getElementById('accountStatusFilter').addEventListener('change', () => loadAccounts());
+    document.getElementById('accountSearch').addEventListener('input', (() => {
+      let timer = null;
+      return () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => loadAccounts(), 250);
+      };
+    })());
+    document.getElementById('accountForm').addEventListener('submit', saveAccount);
+    document.getElementById('closeAccountModalButton').addEventListener('click', closeAccountModal);
+    document.getElementById('cancelAccountButton').addEventListener('click', closeAccountModal);
+    document.getElementById('accountModal').addEventListener('click', (event) => {
+      if (event.target.id === 'accountModal') closeAccountModal();
+    });
+    document.getElementById('accountEmail').addEventListener('blur', suggestUsername);
+    document.getElementById('accountDisplayName').addEventListener('blur', suggestUsername);
+    document.getElementById('passwordForm').addEventListener('submit', savePassword);
+    document.getElementById('closePasswordModalButton').addEventListener('click', closePasswordModal);
+    document.getElementById('cancelPasswordButton').addEventListener('click', closePasswordModal);
+    document.getElementById('passwordModal').addEventListener('click', (event) => {
+      if (event.target.id === 'passwordModal') closePasswordModal();
     });
   </script>
 </body>
