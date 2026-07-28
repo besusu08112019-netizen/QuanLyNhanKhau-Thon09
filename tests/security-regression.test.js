@@ -44,6 +44,10 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 {
   const index = read('index.php');
+  assert.match(index, /TenantRegistryStatusService/);
+  assert.match(index, /function enforce_tenant_registry_status/);
+  assert.match(index, /PortalContext::isTenant\(\)/);
+  assert.match(index, /Response::json\(\[[\s\S]+423/);
   assert.match(index, /reject_oversized_api_request/);
   assert.match(index, /redact_security_value/);
   assert.match(index, /redact_security_uri/);
@@ -249,6 +253,10 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(gitignore, /\.ftp-deploy-control-center-state\.json/);
   assert.ok(!fs.existsSync(path.join(root, '.ftp-deploy-sync-state-utf8.json')), 'deploy state file must not be committed');
   assert.ok(!fs.existsSync(path.join(root, '.ftp-deploy-control-center-state.json')), 'control center deploy state file must not be committed');
+  const envExample = read('.env.example');
+  assert.match(envExample, /CONTROL_CENTER_DB_HOST/);
+  assert.match(envExample, /CONTROL_CENTER_DB_DATABASE/);
+  assert.match(envExample, /CONTROL_CENTER_DB_USERNAME/);
 }
 
 {

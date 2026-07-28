@@ -72,6 +72,7 @@ use App\Controllers\WorkTaskController;
 use App\Config\CitizenPolicyDefaults;
 use App\Services\HealthInsuranceDefaultService;
 use App\Services\StudentStatusService;
+use App\Services\TenantRegistryStatusService;
 
 Autoloader::register();
 env_load(BASE_PATH);
@@ -225,6 +226,34 @@ function api_exception_status(Throwable $e): int
 
 reject_oversized_api_request();
 $request = Request::capture();
+
+function enforce_tenant_registry_status(Request $request): void
+{
+    if (!PortalContext::isTenant() || !str_starts_with($request->path(), '/api/')) {
+        return;
+    }
+
+    $status = (new TenantRegistryStatusService())->statusForHost(PortalContext::host());
+    if (($status['active'] ?? false) === true) {
+        return;
+    }
+
+    Response::json([
+        'ok' => false,
+        'success' => false,
+        'message' => (string) ($status['message'] ?? 'Don vi dang bi khoa'),
+        'errors' => [],
+        'error' => [
+            'message' => (string) ($status['message'] ?? 'Don vi dang bi khoa'),
+            'reason' => (string) ($status['reason'] ?? 'tenant_locked'),
+            'tenant' => $status['tenant'] ?? null,
+        ],
+        'status' => 423,
+    ], 423);
+}
+
+enforce_tenant_registry_status($request);
+
 set_exception_handler(function (Throwable $e) use ($request): void {
     if (str_starts_with($request->path(), '/api')) {
         $status = api_exception_status($e);
