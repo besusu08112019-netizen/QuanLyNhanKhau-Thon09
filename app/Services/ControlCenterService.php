@@ -52,8 +52,8 @@ final class ControlCenterService
             'database_health'
         );
 
-        $storagePath = RuntimePaths::storageRoot();
-        $logsPath = RuntimePaths::logsRoot();
+        $storagePath = BASE_PATH . '/storage/' . RuntimePaths::tenantKey();
+        $logsPath = $storagePath . '/logs';
 
         return [
             'version' => defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1',
