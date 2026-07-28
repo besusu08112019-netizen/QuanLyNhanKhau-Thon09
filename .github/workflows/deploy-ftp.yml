@@ -153,8 +153,6 @@ jobs:
             **/.git*/**
             **/node_modules/**
             config/database.php
-            uploads/**
-            !uploads/.htaccess
             storage/cache/**
             !storage/.htaccess
             backups/**
