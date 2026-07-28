@@ -21,6 +21,7 @@ outputs/
 runtime-ui-audit.out
 .ftp-deploy-sync-state.json
 .ftp-deploy-sync-state-utf8.json
+.ftp-deploy-control-center-state.json
 .ftpquota
 .well-known/
 config/database.php

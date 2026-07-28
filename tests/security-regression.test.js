@@ -197,8 +197,12 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(deploy, /protocol:\s*ftps\b/);
   assert.match(deploy, /actions\/upload-artifact@v4/);
   assert.match(deploy, /name:\s*production-artifact/);
-  assert.match(deploy, /server-dir:\s*\.\/?/);
-  assert.match(deploy, /state-name:\s*\.ftp-deploy-sync-state-utf8\.json/);
+  assert.ok(deploy.indexOf('Upload production artifact for audit') < deploy.indexOf('Create Control Center production env'), 'audit artifact must be uploaded before production .env is created');
+  assert.ok(deploy.indexOf('Create Control Center production env') < deploy.indexOf('Deploy to hosting via FTPS'), 'production .env must be created only immediately before FTPS deploy');
+  assert.match(deploy, /server-dir:\s*\.\.\/public_html\//);
+  assert.doesNotMatch(deploy, /server-dir:\s*\.\.\/thon09\.hongphongnb\.com\//);
+  assert.doesNotMatch(deploy, /server-dir:\s*\.\.\/thon10\.hongphongnb\.com\//);
+  assert.match(deploy, /state-name:\s*\.ftp-deploy-control-center-state\.json/);
   assert.match(deploy, /log-level:\s*verbose/);
   assert.match(deploy, /\.env/);
   const cpanel = read('.cpanel.yml');
@@ -242,7 +246,9 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(v21Checklist, /Release Checklist/);
   const gitignore = read('.gitignore');
   assert.match(gitignore, /\.ftp-deploy-sync-state-utf8\.json/);
+  assert.match(gitignore, /\.ftp-deploy-control-center-state\.json/);
   assert.ok(!fs.existsSync(path.join(root, '.ftp-deploy-sync-state-utf8.json')), 'deploy state file must not be committed');
+  assert.ok(!fs.existsSync(path.join(root, '.ftp-deploy-control-center-state.json')), 'control center deploy state file must not be committed');
 }
 
 {

@@ -101,6 +101,14 @@ jobs:
       - name: Validate production artifact
         run: npm run validate:artifact
 
+      - name: Upload production artifact for audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-artifact
+          path: dist/production/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Create Control Center production env
         shell: bash
         env:
@@ -127,14 +135,6 @@ jobs:
             echo "PLATFORM_DEFAULT_PORTAL=CONTROL_CENTER"
             echo "PLATFORM_TENANT_DOMAIN_PATTERN=*.hongphongnb.com"
           } > dist/production/.env
-
-      - name: Upload production artifact for audit
-        uses: actions/upload-artifact@v4
-        with:
-          name: production-artifact
-          path: dist/production/
-          if-no-files-found: error
-          retention-days: 14
 
       - name: Deploy to hosting via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
