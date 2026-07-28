@@ -70,7 +70,7 @@ Epic: Community Control Center
 
 | Feature | Muc tieu | Nhom | Uu tien | Phu thuoc | Trang thai |
 | --- | --- | --- | --- | --- | --- |
-| User Management | Quan ly tai khoan he thong tap trung de can bo van hanh khong phai thao tac truc tiep database. | NOW | Critical | Administrative Unit Management | READY |
+| User Management | Quan ly tai khoan he thong tap trung de can bo van hanh khong phai thao tac truc tiep database. | NOW | Critical | Administrative Unit Management | DONE |
 
 ## Release 6: Permission and Scope
 
@@ -78,7 +78,7 @@ Epic: Community Control Center
 
 | Feature | Muc tieu | Nhom | Uu tien | Phu thuoc | Trang thai |
 | --- | --- | --- | --- | --- | --- |
-| Permission Management | Quan ly quyen theo module/action thay vi hard-code. | NEXT | High | User Management | PLANNED |
+| Permission Management | Quan ly quyen theo module/action thay vi hard-code. | NEXT | High | User Management | READY |
 | Role Management | Quan ly nhom vai tro he thong theo chuan platform role. | NEXT | High | Permission Management | PLANNED |
 | Scope Management | Gioi han quyen theo don vi hanh chinh. | NEXT | High | Administrative Unit Management, Role Management | PLANNED |
 
@@ -143,10 +143,10 @@ Epic: Intelligence and Insights
 
 ## Current Focus
 
-- Feature vua dong: `Administrative Unit Management` = `DONE`.
-- Feature tiep theo: `User Management` = `NOW` / `READY`.
-- Chua bat dau implementation `User Management`.
-- Sau khi `User Management` hoan thanh, chi cap nhat trang thai: `Permission Management` -> `READY`.
+- Feature vua dong: `User Management` = `DONE`.
+- Feature tiep theo: `Permission Management` = `NEXT` / `READY`.
+- Chua bat dau implementation `Permission Management`.
+- Feature `Permission Management` bat dau bang Product Review va Blueprint, khong code khi chua duoc phe duyet.
 
 ## Product Priority Rule
 
