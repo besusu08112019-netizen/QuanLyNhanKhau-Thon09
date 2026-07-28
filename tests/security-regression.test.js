@@ -286,12 +286,18 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 {
   const policyAlerts = read('assets/js/policy-alerts.js');
+  const policyConfig = read('config/policy_alerts.php');
   assert.match(policyAlerts, /const SUMMARY_SCREENS = new Set\(\['dashboard', 'persons', 'households'\]\)/);
+  assert.match(policyAlerts, /Cảnh báo chính sách/);
+  assert.match(policyAlerts, /Tự động tính theo ngày sinh, chỉ hiển thị nhân khẩu đang cư trú và còn sống\./);
+  assert.match(policyConfig, /Rà soát chính sách BHYT/);
+  assert.match(policyConfig, /Sắp đến tuổi rà soát trợ cấp/);
   assert.match(policyAlerts, /isSummaryScreen\(currentScreen\(\)\)/);
   assert.match(policyAlerts, /removeDashboardCard\(\)/);
   assert.doesNotMatch(policyAlerts, /if \(\$\('#dashboardScreen'\)\) loadSummary\(\);/);
   assert.doesNotMatch(policyAlerts, /document\.addEventListener\('tenant:auth-state', \(\) => setTimeout\(loadSummary/);
   assert.doesNotMatch(policyAlerts, /function init\(\) \{[\s\S]*?installModal\(\);[\s\S]*?wrapDashboardLoader/);
+  assert.doesNotMatch(policyAlerts + policyConfig, /Cáº|Tá»|KhÃ|ChÆ|Æ°|Ä‘|Ä|ngÃ|chÃ|xÃ|trÃ/);
 }
 
 {
