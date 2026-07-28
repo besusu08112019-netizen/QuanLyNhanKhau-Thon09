@@ -77,6 +77,34 @@ const allowedClickListeners = new Map([
     "sheet.addEventListener('click', function (event) {",
     "paginationHost.addEventListener('click', function (event) {",
     "button.addEventListener('click', fallback.handler);"
+  ]],
+  ['views/control-center.php', [
+    "button.addEventListener('click', () => activateSection(button.dataset.section));",
+    "edit.addEventListener('click', () => openUnitModal(unit));",
+    "lock.addEventListener('click', () => changeUnitStatus(unit, 'lock'));",
+    "activate.addEventListener('click', () => changeUnitStatus(unit, 'activate'));",
+    "edit.addEventListener('click', () => openAccountModal(account));",
+    "password.addEventListener('click', () => openPasswordModal(account));",
+    "deactivate.addEventListener('click', () => changeAccountStatus(account, 'deactivate'));",
+    "activate.addEventListener('click', () => changeAccountStatus(account, 'activate'));",
+    "button.addEventListener('click', () => {",
+    "document.getElementById('logoutButton').addEventListener('click', logout);",
+    "button.addEventListener('click', () => activateSection(button.dataset.goSection));",
+    "document.getElementById('addUnitButton').addEventListener('click', () => openUnitModal());",
+    "document.getElementById('refreshUnitsButton').addEventListener('click', () => loadUnits().catch((error) => setUnitsAlert(error.message)));",
+    "document.getElementById('closeUnitModalButton').addEventListener('click', closeUnitModal);",
+    "document.getElementById('cancelUnitButton').addEventListener('click', closeUnitModal);",
+    "document.getElementById('unitModal').addEventListener('click', (event) => {",
+    "document.getElementById('addAccountButton').addEventListener('click', () => openAccountModal());",
+    "document.getElementById('refreshAccountsButton').addEventListener('click', () => loadAccounts());",
+    "document.getElementById('closeAccountModalButton').addEventListener('click', closeAccountModal);",
+    "document.getElementById('cancelAccountButton').addEventListener('click', closeAccountModal);",
+    "document.getElementById('accountModal').addEventListener('click', (event) => {",
+    "document.getElementById('closePasswordModalButton').addEventListener('click', closePasswordModal);",
+    "document.getElementById('cancelPasswordButton').addEventListener('click', closePasswordModal);",
+    "document.getElementById('passwordModal').addEventListener('click', (event) => {",
+    "document.getElementById('refreshPermissionsButton').addEventListener('click', () => loadPermissions());",
+    "document.getElementById('savePermissionsButton').addEventListener('click', savePermissions);"
   ]]
 ]);
 
