@@ -20,6 +20,7 @@ const includeFiles = [
   'storage/.htaccess',
   'uploads/.htaccess',
   'views/app.php',
+  'views/control-center.php',
 ];
 
 const includeDirs = [

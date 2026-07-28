@@ -59,6 +59,7 @@ if (!fs.existsSync(artifact)) {
     'app/Controllers/GisController.php',
     'app/Controllers/ReportController.php',
     'views/app.php',
+    'views/control-center.php',
     '.htaccess',
     'uploads/.htaccess',
     'storage/.htaccess',
