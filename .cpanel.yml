@@ -1,9 +1,16 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/nhhon5mp/thon09.hongphongnb.com
+    - export DEPLOYPATH=/home/nhhon5mp/public_html
     - /bin/mkdir -p $DEPLOYPATH
     - /bin/mkdir -p "$DEPLOYPATH/uploads" "$DEPLOYPATH/storage/logs" "$DEPLOYPATH/storage/cache" "$DEPLOYPATH/storage/sessions" "$DEPLOYPATH/storage/install-sessions" "$DEPLOYPATH/storage/install-locks"
     - /bin/tar --exclude='./.git' --exclude='./.github' --exclude='./.cpanel.yml' --exclude='./.env' --exclude='./.env.*' --exclude='./node_modules' --exclude='./tests' --exclude='./test-results' --exclude='./playwright-report' --exclude='./backups' --exclude='./storage/logs' --exclude='./storage/cache' --exclude='./storage/sessions' --exclude='./storage/install-sessions' --exclude='./storage/install-locks' --exclude='./config/database.php' --exclude='./config/database.local.php' --exclude='./installed.lock' --exclude='./uploads' -cf - . | /bin/tar -xf - -C "$DEPLOYPATH"
     - /usr/bin/find "$DEPLOYPATH" -type d -exec /bin/chmod 755 {} \;
     - /usr/bin/find "$DEPLOYPATH" -type f -exec /bin/chmod 644 {} \;
+    - /usr/bin/test -f "$DEPLOYPATH/index.php"
+    - /usr/bin/test -f "$DEPLOYPATH/.htaccess"
+    - /usr/bin/test -d "$DEPLOYPATH/app"
+    - /usr/bin/test -d "$DEPLOYPATH/assets"
+    - /usr/bin/test -d "$DEPLOYPATH/api"
+    - /usr/bin/test -d "$DEPLOYPATH/views"
+    - /bin/ls -la "$DEPLOYPATH"
