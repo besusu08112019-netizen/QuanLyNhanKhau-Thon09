@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $sampleDir = Join-Path $root 'sample-data'
@@ -72,13 +72,29 @@ $personHeaders = @(
   'Noi dang ky kham chua benh'
 )
 
+$householdSampleRows = @(
+  @('HD001', 'Nguyễn Văn An', 'Thôn 9, Xã Minh Châu', '0912345678', 'THON09', 'Ho binh thuong', 'Khong', 'Khong', 'Hộ mẫu có nhiều thế hệ'),
+  @('HD002', 'Trần Thị Bình', 'Thôn 9, Xã Minh Châu', '0987654321', 'THON09', 'Ho can ngheo', 'Khong', 'Co', 'Hộ mẫu cận nghèo'),
+  @('HD003', 'Lê Văn Cường', 'Thôn 9, Xã Minh Châu', '0901122334', 'THON09', 'Ho chinh sach', 'Khong', 'Khong', 'Hộ mẫu chính sách')
+)
+
+$personSampleRows = @(
+  @('HD001', 'NK001', 'Nguyễn Văn An', 'Nam', '1950-05-12', '001050000001', '2018-04-01', 'Công an tỉnh', '0912345678', 'Chu ho', '', '', 'Kinh', 'Khong', 'Nguoi cao tuoi (70+)', 'Trung hoc', 'Da ket hon', 'Thuong tru', 'O nha', 'Con song', 'Thôn 9, Xã Minh Châu', 'Khong', 'Khong', 'Khong', 'Khong', 'Co', 'Co', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Co', '', '', 'Nguoi cao tuoi', '2026-01-01', '2026-12-31', 'Trạm y tế xã Minh Châu'),
+  @('HD001', 'NK002', 'Nguyễn Thị Lan', 'Nu', '1955-07-22', '001055000002', '2018-04-01', 'Công an tỉnh', '0912345679', 'Vo', '', '', 'Kinh', 'Khong', 'Nghi huu', 'Trung hoc', 'Da ket hon', 'Thuong tru', 'O nha', 'Con song', 'Thôn 9, Xã Minh Châu', 'Khong', 'Khong', 'Co', 'Khong', 'Khong', 'Co', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Co', 'Co', 'HT3012345678901', 'Nguoi huong luong huu', '2026-01-01', '2026-12-31', 'Trạm y tế xã Minh Châu'),
+  @('HD001', 'NK003', 'Nguyễn Văn Bình', 'Nam', '1988-03-10', '001088000003', '2020-06-15', 'Cục CSQLHC về TTXH', '0912345680', '', 'Nguyễn Văn An', 'Nguyễn Thị Lan', 'Kinh', 'Khong', 'Cong nhan', 'THPT', 'Da ket hon', 'Thuong tru', 'O nha', 'Con song', 'Thôn 9, Xã Minh Châu', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Co', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', '', '', '', '', '', ''),
+  @('HD001', 'NK004', 'Phạm Thị Hoa', 'Nu', '1990-09-18', '001090000004', '2021-02-20', 'Cục CSQLHC về TTXH', '0912345681', '', '', '', 'Kinh', 'Khong', 'Lao dong tu do', 'THPT', 'Da ket hon', 'Thuong tru', 'O nha', 'Con song', 'Thôn 9, Xã Minh Châu', 'Khong', 'Khong', 'Co', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Co', 'Khong', 'Co', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Co', 'HG4012345678901', 'Ho gia dinh', '2026-01-01', '2026-12-31', 'Trạm y tế xã Minh Châu'),
+  @('HD001', 'NK005', 'Nguyễn Minh Châu', 'Nu', '2013-11-05', '001113000005', '2025-08-10', 'Công an tỉnh', '', '', 'Nguyễn Văn Bình', 'Phạm Thị Hoa', 'Kinh', 'Khong', 'Hoc sinh', 'Hoc sinh', 'Chua ket hon', 'Thuong tru', 'O nha', 'Con song', 'Thôn 9, Xã Minh Châu', 'Khong', 'Co', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Co', 'Khong', 'Khong', '', '', 'Hoc sinh - Sinh vien', '2026-01-01', '2026-12-31', 'Trạm y tế xã Minh Châu'),
+  @('HD002', 'NK006', 'Trần Thị Bình', 'Nu', '1975-02-14', '001075000006', '2019-03-12', 'Công an tỉnh', '0987654321', 'Chu ho', '', '', 'Kinh', 'Khong', 'Nong nghiep', 'THCS', 'Doc than', 'Thuong tru', 'O nha', 'Con song', 'Thôn 9, Xã Minh Châu', 'Khong', 'Khong', 'Co', 'Co', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Co', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', 'Khong', '', '', '', '', '')
+)
+
 $guideRows = @(
   @('Noi dung', 'Huong dan'),
   @('Dong du lieu', 'Nhap du lieu tu dong 2 cua sheet HoDan hoac NhanKhau. Khong doi ten sheet du lieu.'),
   @('Cot bat buoc ho dan', 'Ma ho, Dia chi. Ten chu ho nen nhap de ho so de tra cuu.'),
   @('Cot bat buoc nhan khau', 'Ma ho, Ho va ten, Ngay sinh. Ma ho phai ton tai truoc khi import nhan khau.'),
   @('Ngay thang', 'Dung dd/MM/yyyy hoac yyyy-MM-dd. CCCD, so dien thoai, ma ho, ma BHYT de dang Text.'),
-  @('Cot Co/Khong', 'Nhap Co, Khong, 1, 0, X. Neu bo trong thi hieu la Khong, rieng BHYT bo trong mac dinh la Co.'),
+  @('Cot Co/Khong', 'Nhap Co, Khong, 1, 0, X. Neu bo trong thi hieu la Khong. BHYT chi mac dinh Co theo cot Nghe nghiep khi la Hoc sinh hoac Nguoi cao tuoi (70+).'),
+  @('Quan he voi chu ho', 'Co the de trong. Sau import he thong chi tu suy luan trong cung ho khi du du lieu bo/me/chu ho va khong ghi de gia tri da nhap.'),
   @('Ho co cong/khuyet tat', 'Khong nhap o mau ho dan. He thong tu suy ra tu cac cot chinh sach cua nhan khau trong ho.')
 )
 
@@ -101,8 +117,12 @@ function ConvertTo-CsvLine([string[]] $Values) {
   }) -join ','
 }
 
-function Write-Utf8BomCsv([string] $Path, [string[]] $Headers) {
-  $content = (ConvertTo-CsvLine $Headers) + "`r`n"
+function Write-Utf8BomCsv([string] $Path, [string[]] $Headers, [object[]] $Rows) {
+  $lines = @((ConvertTo-CsvLine $Headers))
+  foreach ($row in $Rows) {
+    $lines += (ConvertTo-CsvLine $row)
+  }
+  $content = ($lines -join "`r`n") + "`r`n"
   $encoding = New-Object System.Text.UTF8Encoding $true
   [System.IO.File]::WriteAllText($Path, $content, $encoding)
 }
@@ -110,6 +130,14 @@ function Write-Utf8BomCsv([string] $Path, [string[]] $Headers) {
 function XmlEscape([string] $Value) {
   if ($null -eq $Value) { return '' }
   return [System.Security.SecurityElement]::Escape($Value)
+}
+
+function Assert-RowWidths([string] $Name, [string[]] $Headers, [object[]] $Rows) {
+  for ($i = 0; $i -lt $Rows.Count; $i++) {
+    if ($Rows[$i].Count -ne $Headers.Count) {
+      throw ("{0} sample row {1} has {2} cells, expected {3}." -f $Name, ($i + 1), $Rows[$i].Count, $Headers.Count)
+    }
+  }
 }
 
 function ColumnName([int] $Index) {
@@ -154,7 +182,7 @@ function New-SheetXml([object[]] $Rows, [int[]] $Widths) {
   return $sb.ToString()
 }
 
-function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers) {
+function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers, [object[]] $Rows) {
   $workDir = Join-Path $tempRoot ([System.IO.Path]::GetFileNameWithoutExtension($Path))
   if (Test-Path $workDir) {
     $resolved = [System.IO.Path]::GetFullPath($workDir)
@@ -225,7 +253,12 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
 
   $dataWidths = @()
   foreach ($h in $Headers) { $dataWidths += [Math]::Min([Math]::Max($h.Length + 4, 14), 28) }
-  New-SheetXml -Rows (,$Headers) -Widths $dataWidths | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\worksheets\sheet1.xml')
+  $dataRows = @()
+  $dataRows += ,$Headers
+  foreach ($row in $Rows) {
+    $dataRows += ,$row
+  }
+  New-SheetXml -Rows $dataRows -Widths $dataWidths | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\worksheets\sheet1.xml')
   New-SheetXml -Rows $guideRows -Widths @(28, 96) | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\worksheets\sheet2.xml')
   New-SheetXml -Rows $catalogRows -Widths @(28, 120) | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $workDir 'xl\worksheets\sheet3.xml')
 
@@ -245,9 +278,14 @@ function Write-Xlsx([string] $Path, [string] $DataSheetName, [string[]] $Headers
   }
 }
 
-function Write-HtmlXls([string] $Path, [string[]] $Headers) {
+function Write-HtmlXls([string] $Path, [string[]] $Headers, [object[]] $Rows) {
   $headerHtml = ($Headers | ForEach-Object { '<th>' + (XmlEscape $_) + '</th>' }) -join ''
-  $html = '<html><head><meta charset="utf-8"></head><body><table border="1"><tr>' + $headerHtml + '</tr></table></body></html>'
+  $rowHtml = ''
+  foreach ($row in $Rows) {
+    $cells = ($row | ForEach-Object { '<td>' + (XmlEscape $_) + '</td>' }) -join ''
+    $rowHtml += '<tr>' + $cells + '</tr>'
+  }
+  $html = '<html><head><meta charset="utf-8"></head><body><table border="1"><tr>' + $headerHtml + '</tr>' + $rowHtml + '</table></body></html>'
   $encoding = New-Object System.Text.UTF8Encoding $true
   [System.IO.File]::WriteAllText($Path, $html, $encoding)
 }
@@ -259,8 +297,8 @@ function Write-XmlSpreadsheet([string] $Path) {
   [void]$sb.AppendLine('<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">')
   [void]$sb.AppendLine('  <Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0F766E" ss:Pattern="Solid"/></Style><Style ss:ID="Text"><NumberFormat ss:Format="@"/></Style></Styles>')
   foreach ($sheet in @(
-    @{ Name = 'HoDan'; Headers = $householdHeaders },
-    @{ Name = 'NhanKhau'; Headers = $personHeaders }
+    @{ Name = 'HoDan'; Headers = $householdHeaders; Rows = $householdSampleRows },
+    @{ Name = 'NhanKhau'; Headers = $personHeaders; Rows = $personSampleRows }
   )) {
     [void]$sb.AppendLine(('  <Worksheet ss:Name="{0}"><Table>' -f $sheet.Name))
     [void]$sb.AppendLine('    <Row>')
@@ -268,6 +306,13 @@ function Write-XmlSpreadsheet([string] $Path) {
       [void]$sb.AppendLine(('      <Cell ss:StyleID="Header"><Data ss:Type="String">{0}</Data></Cell>' -f (XmlEscape $header)))
     }
     [void]$sb.AppendLine('    </Row>')
+    foreach ($row in $sheet.Rows) {
+      [void]$sb.AppendLine('    <Row>')
+      foreach ($cell in $row) {
+        [void]$sb.AppendLine(('      <Cell ss:StyleID="Text"><Data ss:Type="String">{0}</Data></Cell>' -f (XmlEscape $cell)))
+      }
+      [void]$sb.AppendLine('    </Row>')
+    }
     [void]$sb.AppendLine('  </Table></Worksheet>')
   }
   [void]$sb.AppendLine('</Workbook>')
@@ -278,15 +323,18 @@ function Write-XmlSpreadsheet([string] $Path) {
 New-Item -ItemType Directory -Force -Path $sampleDir | Out-Null
 New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
 
-Write-Utf8BomCsv (Join-Path $sampleDir 'import_household_template.csv') $householdHeaders
-Write-Utf8BomCsv (Join-Path $sampleDir 'import_person_template.csv') $personHeaders
-Write-Utf8BomCsv (Join-Path $sampleDir 'import-template.csv') $personHeaders
+Assert-RowWidths 'HoDan' $householdHeaders $householdSampleRows
+Assert-RowWidths 'NhanKhau' $personHeaders $personSampleRows
 
-Write-Xlsx (Join-Path $sampleDir 'Mau_Import_HoDan.xlsx') 'HoDan' $householdHeaders
-Write-Xlsx (Join-Path $sampleDir 'Mau_Import_NhanKhau.xlsx') 'NhanKhau' $personHeaders
+Write-Utf8BomCsv (Join-Path $sampleDir 'import_household_template.csv') $householdHeaders $householdSampleRows
+Write-Utf8BomCsv (Join-Path $sampleDir 'import_person_template.csv') $personHeaders $personSampleRows
+Write-Utf8BomCsv (Join-Path $sampleDir 'import-template.csv') $personHeaders $personSampleRows
 
-Write-HtmlXls (Join-Path $sampleDir 'Mau_Import_HoDan_ChinhQuyenSo.xls') $householdHeaders
-Write-HtmlXls (Join-Path $sampleDir 'Mau_Import_NhanKhau_ChinhQuyenSo.xls') $personHeaders
+Write-Xlsx (Join-Path $sampleDir 'Mau_Import_HoDan.xlsx') 'HoDan' $householdHeaders $householdSampleRows
+Write-Xlsx (Join-Path $sampleDir 'Mau_Import_NhanKhau.xlsx') 'NhanKhau' $personHeaders $personSampleRows
+
+Write-HtmlXls (Join-Path $sampleDir 'Mau_Import_HoDan_ChinhQuyenSo.xls') $householdHeaders $householdSampleRows
+Write-HtmlXls (Join-Path $sampleDir 'Mau_Import_NhanKhau_ChinhQuyenSo.xls') $personHeaders $personSampleRows
 Write-XmlSpreadsheet (Join-Path $sampleDir 'import_template_tenant.xls')
 
 if (Test-Path $tempRoot) {
