@@ -26,6 +26,7 @@ use App\Core\BaseModel;
 use App\Core\Request;
 use App\Core\Router;
 use App\Core\RuntimePaths;
+use App\Core\PortalContext;
 use App\Core\Response;
 use App\Core\TenantConfig;
 use App\Core\TenantContext;
@@ -35,6 +36,7 @@ use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
 use App\Controllers\ContributionController;
+use App\Controllers\ControlCenterController;
 use App\Controllers\DashboardController;
 use App\Controllers\FileController;
 use App\Controllers\FinanceController;
@@ -70,7 +72,10 @@ use App\Services\StudentStatusService;
 Autoloader::register();
 env_load(BASE_PATH);
 configure_tenant_php_session();
-TenantContext::boot();
+PortalContext::boot();
+if (PortalContext::isTenant()) {
+    TenantContext::boot();
+}
 
 function configure_tenant_php_session(): void
 {
@@ -266,6 +271,22 @@ if ($request->path() === '/favicon.ico') {
     }
     exit;
 }
+
+if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api')) {
+    if ($request->method() === 'GET' && str_starts_with($request->path(), '/api/control-center/')) {
+        $controller = new ControlCenterController($request);
+        match ($request->path()) {
+            '/api/control-center/status' => $controller->status(),
+            '/api/control-center/dashboard' => $controller->dashboard(),
+            '/api/control-center/units' => $controller->units(),
+            '/api/control-center/accounts' => $controller->accounts(),
+            '/api/control-center/monitoring' => $controller->monitoring(),
+            default => Response::error('API Community Control Center khong ton tai', 404),
+        };
+    }
+    Response::error('API nghiep vu tenant khong kha dung tren Community Control Center', 404);
+}
+
 $router = new Router($request);
 
 $router->get('/api/public/login-config', [SettingController::class, 'publicLoginConfig']);
@@ -731,6 +752,35 @@ if (!str_starts_with($request->path(), '/api')) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
     header('Expires: 0');
+
+    if (PortalContext::isControlCenter()) {
+        $html = file_get_contents(BASE_PATH . '/views/control-center.php');
+        if ($html === false) {
+            http_response_code(500);
+            echo 'Khong tai duoc giao dien Community Control Center.';
+            exit;
+        }
+
+        $settings = [
+            'portal' => PortalContext::type(),
+            'host' => PortalContext::host(),
+            'appName' => env_value('APP_NAME') ?: 'Community Control Center',
+            'sessionTtlSeconds' => (int) (env_value('SESSION_TTL_SECONDS') ?: 21600),
+            'idleTimeoutSeconds' => (int) (env_value('IDLE_TIMEOUT_SECONDS') ?: 900),
+            'idleWarningSeconds' => (int) (env_value('IDLE_WARNING_SECONDS') ?: 60),
+        ];
+        $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        $html = strtr($html, [
+            '{{APP_NAME}}' => $escapeHtml((string) ($settings['appName'] ?? 'Community Control Center')),
+            '{{APP_SETTINGS_JSON}}' => json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
+            'assets/vendor/bootstrap/bootstrap.min.css' => versioned_asset('assets/vendor/bootstrap/bootstrap.min.css'),
+            'assets/vendor/fontawesome-local.css' => versioned_asset('assets/vendor/fontawesome-local.css'),
+            'assets/css/app.min.css' => versioned_asset('assets/css/app.min.css'),
+        ]);
+        echo $html;
+        exit;
+    }
+
     $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);

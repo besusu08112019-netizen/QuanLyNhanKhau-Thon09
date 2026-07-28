@@ -12,7 +12,7 @@ Kết luận tổng thể:
 - Kiến trúc đạt yêu cầu để chuẩn bị Phase 1 ở mức thiết kế.
 - Không còn quyết định kiến trúc mở sau Architecture Freeze.
 - Phase 1 chỉ được phép triển khai `PortalContext` và route guard; không sửa Business Modules.
-- Chỉ được bắt đầu Phase 1 sau khi người phụ trách phê duyệt Architecture Freeze.
+- Architecture Freeze đã được người phụ trách phê duyệt.
 
 ## Checklist nguyên tắc bắt buộc
 
@@ -121,13 +121,13 @@ Phase 1 chỉ được bắt đầu khi các điều kiện sau đạt:
 
 - Checklist 8 nguyên tắc bắt buộc không còn mục `Chưa đạt`.
 - Tài liệu kiến trúc đã được chấp thuận.
-- Architecture Freeze được phê duyệt.
+- Architecture Freeze đã được phê duyệt.
 - Có test plan tối thiểu cho domain routing và route guard.
 - Có rollback flag cho Admin Portal.
 
 Trạng thái hiện tại:
 
 - Checklist kiến trúc: Đạt ở mức thiết kế.
-- Architecture Freeze: chờ phê duyệt.
-- Sẵn sàng chuẩn bị Phase 1 sau khi Architecture Freeze được phê duyệt.
+- Architecture Freeze: đã phê duyệt.
+- Sẵn sàng chuẩn bị Phase 1.
 - Chưa được triển khai code runtime cho đến khi người phụ trách xác nhận bắt đầu Phase 1.
