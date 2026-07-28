@@ -64,6 +64,7 @@ use App\Controllers\VillageDocumentController;
 use App\Controllers\WorkCalendarController;
 use App\Controllers\WorkTaskController;
 use App\Config\CitizenPolicyDefaults;
+use App\Services\HealthInsuranceDefaultService;
 use App\Services\StudentStatusService;
 
 Autoloader::register();
@@ -754,9 +755,12 @@ if (!str_starts_with($request->path(), '/api')) {
     $tenantSettings['citizenPolicyDefaults'] = [
         'bhytDefaultAge' => CitizenPolicyDefaults::BHYT_DEFAULT_AGE,
         'socialAllowanceDefaultAge' => CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE,
+        'elderlyOccupationDefaultAge' => CitizenPolicyDefaults::ELDERLY_OCCUPATION_DEFAULT_AGE,
         'academicYearStartMonth' => StudentStatusService::ACADEMIC_YEAR_START_MONTH,
         'studentMaxAcademicAge' => StudentStatusService::STUDENT_MAX_ACADEMIC_AGE,
         'studentLabel' => StudentStatusService::STUDENT_LABEL,
+        'elderlyOccupationLabel' => HealthInsuranceDefaultService::ELDERLY_OCCUPATION,
+        'healthInsuranceDefaultOccupations' => HealthInsuranceDefaultService::eligibleOccupations(),
     ];
     $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     $html = strtr($html, [

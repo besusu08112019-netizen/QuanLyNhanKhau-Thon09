@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Config\CitizenPolicyDefaults;
 use App\Core\BaseModel;
 use App\Models\PolicyAlert;
+use App\Services\HealthInsuranceDefaultService;
 use App\Services\StudentStatusService;
 
 final class Citizen extends BaseModel
@@ -244,6 +245,7 @@ final class Citizen extends BaseModel
         if ($fullName === '') throw new \RuntimeException('Họ và tên là bắt buộc');
         if (!$dob || !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $dob)) throw new \RuntimeException('Ngày sinh không hợp lệ');
         $studentDefaults = $fallback === null ? StudentStatusService::defaultFieldsForDateOfBirth((string) $dob) : [];
+        $occupationDefault = $fallback === null ? HealthInsuranceDefaultService::defaultOccupationForDateOfBirth((string) $dob) : null;
         $params = [
             'code' => strtoupper(trim((string) ($data['citizenCode'] ?? $data['citizen_code'] ?? $fallback['citizen_code'] ?? ''))),
             'household_id' => (int) $householdRow['id'],
@@ -256,7 +258,7 @@ final class Citizen extends BaseModel
             'relationship' => $this->relationship($data['relationship'] ?? $data['memberType'] ?? $data['member_type'] ?? $fallback['relationship'] ?? 'Khác'),
             'ethnicity' => trim((string) ($data['ethnicity'] ?? $fallback['ethnicity'] ?? '')) ?: null,
             'religion' => trim((string) ($data['religion'] ?? $fallback['religion'] ?? '')) ?: null,
-            'occupation' => trim((string) ($data['occupation'] ?? $fallback['occupation'] ?? $studentDefaults['occupation'] ?? '')) ?: null,
+            'occupation' => trim((string) ($data['occupation'] ?? $fallback['occupation'] ?? $occupationDefault ?? '')) ?: null,
             'father_name' => $this->nullableString($data['fatherName'] ?? $data['father_name'] ?? $fallback['father_name'] ?? null, 255),
             'mother_name' => $this->nullableString($data['motherName'] ?? $data['mother_name'] ?? $fallback['mother_name'] ?? null, 255),
             'phone' => trim((string) ($data['phone'] ?? $fallback['phone'] ?? '')) ?: null,
@@ -285,7 +287,7 @@ final class Citizen extends BaseModel
                 ? $this->boolValue($data[$column] ?? $data[$camel] ?? 0)
                 : $this->boolValue($fallback[$column] ?? $ageDefaults[$column] ?? 0);
         }
-        $this->applyHealthInsuranceParams($params, $data, $fallback);
+        $this->applyHealthInsuranceParams($params, $data, $fallback, $params['occupation'] ?? null);
         return $params;
     }
 
@@ -340,14 +342,20 @@ final class Citizen extends BaseModel
         }
     }
 
-    private function applyHealthInsuranceParams(array &$params, array $data, ?array $fallback): void
+    private function applyHealthInsuranceParams(array &$params, array $data, ?array $fallback, ?string $occupation): void
     {
         $active = $this->activeHealthInsuranceColumns();
         if (!$active) return;
-        $policyDefaults = $fallback === null ? CitizenPolicyDefaults::defaultsForAge($this->ageFromDate((string) ($data['dateOfBirth'] ?? $data['date_of_birth'] ?? null))) : [];
-        $has = $this->fieldProvided($data, 'has_health_insurance')
-            ? $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? 0)
-            : $this->boolValue($fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? $policyDefaults['has_health_insurance'] ?? 0);
+        $occupationDefault = HealthInsuranceDefaultService::defaultForLaborOccupation($occupation);
+        if ($this->fieldProvided($data, 'has_health_insurance')) {
+            $has = $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? 0);
+        } elseif ($fallback === null) {
+            $has = $this->boolValue($occupationDefault ?? 0);
+        } elseif ($occupationDefault === 1 && $this->occupationChanged($data, $fallback, $occupation)) {
+            $has = 1;
+        } else {
+            $has = $this->boolValue($fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? 0);
+        }
         $params['has_health_insurance'] = $has;
         $params['health_insurance_number'] = $has ? $this->nullableString($data['health_insurance_number'] ?? $data['healthInsuranceNumber'] ?? $fallback['health_insurance_number'] ?? null, 20) : null;
         $params['health_insurance_group'] = $has ? $this->healthInsuranceGroup($data['health_insurance_group'] ?? $data['healthInsuranceGroup'] ?? $fallback['health_insurance_group'] ?? null) : null;
@@ -395,6 +403,12 @@ final class Citizen extends BaseModel
             if ($this->fieldProvided($data, $column)) return true;
         }
         return false;
+    }
+
+    private function occupationChanged(array $data, array $fallback, ?string $occupation): bool
+    {
+        if (!$this->fieldProvided($data, 'occupation')) return false;
+        return HealthInsuranceDefaultService::normalize($occupation) !== HealthInsuranceDefaultService::normalize($fallback['occupation'] ?? null);
     }
 
     private function ageFromDate(string $dateOfBirth): ?int
