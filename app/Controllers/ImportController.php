@@ -8,6 +8,7 @@ use App\Core\Encoding;
 use App\Core\TenantContext;
 use App\Models\Citizen;
 use App\Models\Household;
+use App\Services\HouseholdRelationshipInferenceService;
 
 final class ImportController extends BaseController
 {
@@ -61,6 +62,8 @@ final class ImportController extends BaseController
         $skipped = 0;
         $errors = $result['errors'];
         $rolledBack = false;
+        $relationshipInferenceHouseholds = [];
+        $relationshipInferenceUpdated = 0;
 
         if (!empty($errors)) {
             $payload = ['type' => $type, 'total' => count($rows), 'success' => 0, 'skipped' => 0, 'failed' => count($errors), 'rolledBack' => false, 'warnings' => $result['warnings'] ?? [], 'errors' => $errors];
@@ -85,11 +88,21 @@ final class ImportController extends BaseController
                             $this->households->create($item['data'], (int) $user['id']);
                         }
                     } else {
-                        $existing = !empty($item['data']['identityNumber']) ? $this->citizens->findByIdentity((string) $item['data']['identityNumber']) : null;
+                        $data = $item['data'];
+                        $relationshipNeedsInference = !empty($data['relationshipNeedsInference']);
+                        $existing = !empty($data['identityNumber']) ? $this->citizens->findByIdentity((string) $data['identityNumber']) : null;
                         if ($existing) {
-                            $this->citizens->update((int) $existing['id'], $item['data'], (int) $user['id']);
+                            if ($relationshipNeedsInference) unset($data['relationship']);
+                            $saved = $this->citizens->update((int) $existing['id'], $data, (int) $user['id']);
                         } else {
-                            $this->citizens->create($item['data'], (int) $user['id']);
+                            $saved = $this->citizens->create($data, (int) $user['id']);
+                        }
+                        $householdId = (int) ($saved['household_id'] ?? 0);
+                        if ($relationshipNeedsInference && $householdId > 0) {
+                            $headName = trim((string) ($data['headCitizenName'] ?? ''));
+                            if (!isset($relationshipInferenceHouseholds[$householdId]) || $headName !== '') {
+                                $relationshipInferenceHouseholds[$householdId] = $headName;
+                            }
                         }
                     }
                     $success++;
@@ -103,6 +116,12 @@ final class ImportController extends BaseController
                 $rolledBack = true;
                 $success = 0;
             } else {
+                if ($type === 'person' && $relationshipInferenceHouseholds) {
+                    $inference = new HouseholdRelationshipInferenceService();
+                    foreach ($relationshipInferenceHouseholds as $householdId => $headName) {
+                        $relationshipInferenceUpdated += $inference->inferForHousehold((int) $householdId, $headName !== '' ? $headName : null);
+                    }
+                }
                 $db->commit();
             }
         } catch (\Throwable $e) {
@@ -113,6 +132,7 @@ final class ImportController extends BaseController
         }
 
         $payload = ['type' => $type, 'total' => count($rows), 'success' => $success, 'skipped' => $skipped, 'failed' => count($errors), 'rolledBack' => $rolledBack, 'warnings' => $result['warnings'] ?? [], 'errors' => $errors];
+        if ($type === 'person') $payload['relationshipInferred'] = $relationshipInferenceUpdated;
         $this->audit($user, 'import', 'import', 'Import dữ liệu', null, $payload, count($errors) ? 'WARN' : 'INFO');
         $this->ok($payload);
     }
@@ -467,7 +487,9 @@ final class ImportController extends BaseController
             'identityIssueDate' => $data['identityIssueDate'] ?? null,
             'identityIssuePlace' => trim((string) ($data['identityIssuePlace'] ?? '')),
             'phone' => $this->normalizePhone((string) ($data['phone'] ?? '')),
-            'relationship' => $data['relationship'] ?? 'Khác',
+            'headCitizenName' => trim((string) ($data['headCitizenName'] ?? '')),
+            'relationship' => $this->hasImportValue($data, 'relationship') ? trim((string) $data['relationship']) : 'Chưa xác định',
+            'relationshipNeedsInference' => !$this->hasImportValue($data, 'relationship'),
             'fatherName' => trim((string) ($data['fatherName'] ?? '')),
             'motherName' => trim((string) ($data['motherName'] ?? '')),
             'ethnicity' => $data['ethnicity'] ?? 'Kinh',
