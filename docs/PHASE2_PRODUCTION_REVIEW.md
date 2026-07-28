@@ -8,6 +8,16 @@ Ket luan: PASS
 
 Phase 2 du dieu kien cho buoc xem xet merge, nhung khong duoc chuyen sang Phase 3 truoc khi nguoi phu trach xac nhan.
 
+Pham vi chinh thuc cua Phase 2 theo Master Development Specification v1.0:
+
+- Community Control Center Layout.
+- Dashboard tong read-only.
+- Quan ly don vi read-only.
+- Quan ly tai khoan he thong read-only.
+- Monitoring co ban read-only.
+
+Day la Roadmap Change da duoc xac nhan, khong phai Architecture Change va khong can ADR.
+
 ## 1. Pham vi review
 
 Commit Phase 2:
@@ -211,7 +221,7 @@ Gioi han kiem thu:
 
 ## 10. Architecture Compliance
 
-Ket qua: PASS voi rui ro roadmap can ghi nhan
+Ket qua: PASS
 
 Tuan thu:
 
@@ -221,13 +231,8 @@ Tuan thu:
 - Service/Repository la duong truy cap du lieu bat buoc.
 - Business Modules khong bi copy, khong bi refactor.
 - Database hien tai khong bi thay doi.
-
-Rui ro roadmap:
-
-- Architecture Freeze truoc do ghi roadmap Phase 2 la Control Center Shell, Phase 3 la Quan ly don vi, Phase 4 la Dashboard tong, Phase 6 la Monitoring.
-- Yeu cau Phase 2 moi da mo rong acceptance criteria de gom Dashboard tong, Quan ly don vi, Quan ly tai khoan he thong va Monitoring co ban.
-- Review nay xem day la scope Phase 2 da duoc nguoi phu trach phe duyet trong yeu cau trien khai, khong phai thay doi core architecture.
-- Neu to chuc ap dung roadmap freeze theo nghia tuyet doi, can lap ADR hoac cap nhat roadmap truoc merge. Khong can sua runtime neu ADR chi xac nhan dieu chinh thu tu trien khai.
+- Master Development Specification v1.0 xac nhan Phase 2 bao gom layout, dashboard tong read-only, quan ly don vi read-only, quan ly tai khoan he thong read-only va monitoring co ban read-only.
+- Dieu chinh nay la Roadmap Change, khong phai Architecture Change, nen khong can ADR.
 
 ## 11. Technical Debt
 
@@ -326,4 +331,4 @@ Khuyen nghi:
 - Khong push/merge tu dong.
 - Khong chuyen sang Phase 3.
 - Truoc deploy production can smoke test tren moi truong co DB that cho login/logout/session/token/permission va so lieu aggregate.
-- Neu can tuan thu roadmap freeze theo thu tu tuyet doi, lap ADR ngan de xac nhan scope Phase 2 da duoc day som theo yeu cau moi.
+- Master Development Specification v1.0 da dong bo pham vi Phase 2 read-only, khong con mau thuan tai lieu ve roadmap.
