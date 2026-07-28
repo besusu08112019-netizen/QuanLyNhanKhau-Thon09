@@ -1,76 +1,75 @@
-<?xml version="1.0"?>
+ï»¿<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-  <Styles>
-    <Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#D9EAF7" ss:Pattern="Solid"/></Style>
-    <Style ss:ID="Text"><NumberFormat ss:Format="@"/></Style>
-  </Styles>
-  <Worksheet ss:Name="HoDan">
-    <Table>
-      <Row>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Mã h?</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Tên ch? h?</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Ð?a ch?</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">S? di?n tho?i</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Gia dình có công</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">H? nghèo</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">H? c?n nghèo</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Tàn t?t</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Ghi chú</Data></Cell>
-      </Row>
-      <Row>
-        <Cell ss:StyleID="Text"><Data ss:Type="String">HH0-001</Data></Cell>
-        <Cell><Data ss:Type="String">Nguy?n Van A</Data></Cell>
-        <Cell><Data ss:Type="String">Thon mau, Xa mau</Data></Cell>
-        <Cell ss:StyleID="Text"><Data ss:Type="String">0912345678</Data></Cell>
-        <Cell><Data ss:Type="String">Không</Data></Cell>
-        <Cell><Data ss:Type="String">Không</Data></Cell>
-        <Cell><Data ss:Type="String">Không</Data></Cell>
-        <Cell><Data ss:Type="String">Không</Data></Cell>
-        <Cell><Data ss:Type="String"></Data></Cell>
-      </Row>
-    </Table>
-  </Worksheet>
-  <Worksheet ss:Name="NhanKhau">
-    <Table>
-      <Row>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Mã nhân kh?u</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Mã h?</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">H? và tên</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Gi?i tính</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Ngày sinh</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">CCCD</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Quan h? v?i ch? h?</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Dân t?c</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Tôn giáo</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Ngh? nghi?p</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">H?c v?n</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Hôn nhân</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Thu?ng trú</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Hi?n t?i</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Tr?ng thái</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Ð?a ch? hi?n t?i</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">S? di?n tho?i</Data></Cell>
-      </Row>
-      <Row>
-        <Cell ss:StyleID="Text"><Data ss:Type="String">NK-001</Data></Cell>
-        <Cell ss:StyleID="Text"><Data ss:Type="String">HH0-001</Data></Cell>
-        <Cell><Data ss:Type="String">Nguy?n Van A</Data></Cell>
-        <Cell><Data ss:Type="String">Nam</Data></Cell>
-        <Cell ss:StyleID="Text"><Data ss:Type="String">01/01/1980</Data></Cell>
-        <Cell ss:StyleID="Text"><Data ss:Type="String">012345678901</Data></Cell>
-        <Cell><Data ss:Type="String">Ch? h?</Data></Cell>
-        <Cell><Data ss:Type="String">Kinh</Data></Cell>
-        <Cell><Data ss:Type="String">Không</Data></Cell>
-        <Cell><Data ss:Type="String">Nông nghi?p</Data></Cell>
-        <Cell><Data ss:Type="String">Trung h?c ph? thông</Data></Cell>
-        <Cell><Data ss:Type="String">Ðã k?t hôn</Data></Cell>
-        <Cell><Data ss:Type="String">Thu?ng trú</Data></Cell>
-        <Cell><Data ss:Type="String">? nhà</Data></Cell>
-        <Cell><Data ss:Type="String">Còn s?ng</Data></Cell>
-        <Cell><Data ss:Type="String">Thon mau, Xa mau</Data></Cell>
-        <Cell ss:StyleID="Text"><Data ss:Type="String">0912345678</Data></Cell>
-      </Row>
-    </Table>
-  </Worksheet>
+  <Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0F766E" ss:Pattern="Solid"/></Style><Style ss:ID="Text"><NumberFormat ss:Format="@"/></Style></Styles>
+  <Worksheet ss:Name="HoDan"><Table>
+    <Row>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma ho</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ten chu ho</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Dia chi</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">So dien thoai</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma dia ban</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Dien ho</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho ngheo</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho can ngheo</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ghi chu</Data></Cell>
+    </Row>
+  </Table></Worksheet>
+  <Worksheet ss:Name="NhanKhau"><Table>
+    <Row>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma ho</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma nhan khau</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho va ten</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Gioi tinh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngay sinh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">CCCD</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngay cap CCCD</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Noi cap CCCD</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">So dien thoai</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Quan he voi chu ho</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho ten bo</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho ten me</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Dan toc</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ton giao</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nghe nghiep</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoc van</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hon nhan</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Thuong tru</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hien tai</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Trang thai</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Dia chi hien tai</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Dang vien</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Doan vien Thanh nien</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoi vien Hoi Phu nu</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoi vien Hoi Nong dan</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoi vien Cuu chien binh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoi vien Nguoi cao tuoi</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nguoi co cong</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Than nhan liet si</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Thuong binh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Benh binh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nhiem chat doc hoa hoc</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nguoi bi dich bat tu day</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Thanh nien xung phong</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Anh hung khang chien</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nguoi hoat dong cach mang</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nguoi khuyet tat</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Bao tro xa hoi</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Co viec lam</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">That nghiep</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao dong tu do</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao dong ngoai tinh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao dong nuoc ngoai</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Chua di hoc</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoc sinh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Sinh vien</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nghi huu</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma so BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nhom BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngay bat dau BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngay het han BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Noi dang ky kham chua benh</Data></Cell>
+    </Row>
+  </Table></Worksheet>
 </Workbook>

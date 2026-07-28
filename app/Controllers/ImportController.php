@@ -341,7 +341,9 @@ final class ImportController extends BaseController
                 }
             }
         }
-        foreach (['dateOfBirth'] as $dateField) if (!empty($data[$dateField])) $data[$dateField] = $this->dateValue($data[$dateField]);
+        foreach (['dateOfBirth', 'identityIssueDate', 'healthInsuranceStartDate', 'healthInsuranceEndDate'] as $dateField) {
+            if (!empty($data[$dateField])) $data[$dateField] = $this->dateValue($data[$dateField]);
+        }
         return $data;
     }
 
@@ -448,6 +450,7 @@ final class ImportController extends BaseController
                 'headCitizenName' => trim((string) ($data['headCitizenName'] ?? '')),
                 'address' => trim((string) ($data['address'] ?? '')),
                 'phone' => $this->normalizePhone((string) ($data['phone'] ?? '')),
+                'areaCode' => strtoupper(trim((string) ($data['areaCode'] ?? ''))),
                 'householdType' => trim((string) ($data['householdType'] ?? '')),
                 'poorHousehold' => $data['poorHousehold'] ?? 0,
                 'nearPoorHousehold' => $data['nearPoorHousehold'] ?? 0,
@@ -461,6 +464,8 @@ final class ImportController extends BaseController
             'gender' => $data['gender'] ?? 'Nam',
             'dateOfBirth' => $data['dateOfBirth'] ?? '',
             'identityNumber' => $this->normalizeIdentity((string) ($data['identityNumber'] ?? '')),
+            'identityIssueDate' => $data['identityIssueDate'] ?? null,
+            'identityIssuePlace' => trim((string) ($data['identityIssuePlace'] ?? '')),
             'phone' => $this->normalizePhone((string) ($data['phone'] ?? '')),
             'relationship' => $data['relationship'] ?? 'Khác',
             'fatherName' => trim((string) ($data['fatherName'] ?? '')),
@@ -484,6 +489,11 @@ final class ImportController extends BaseController
             'martyrRelative' => $this->yesNo($data['martyrRelative'] ?? 0),
             'woundedSoldier' => $this->yesNo($data['woundedSoldier'] ?? 0),
             'sickSoldier' => $this->yesNo($data['sickSoldier'] ?? 0),
+            'chemicalWarfareVictim' => $this->yesNo($data['chemicalWarfareVictim'] ?? 0),
+            'imprisonedResistanceActivist' => $this->yesNo($data['imprisonedResistanceActivist'] ?? 0),
+            'youthVolunteer' => $this->yesNo($data['youthVolunteer'] ?? 0),
+            'resistanceHero' => $this->yesNo($data['resistanceHero'] ?? 0),
+            'revolutionaryActivist' => $this->yesNo($data['revolutionaryActivist'] ?? 0),
             'disabledPerson' => $this->yesNo($data['disabledPerson'] ?? 0),
             'socialAssistance' => $this->yesNo($data['socialAssistance'] ?? 0),
             'employed' => $this->yesNo($data['employed'] ?? 0),
@@ -491,9 +501,16 @@ final class ImportController extends BaseController
             'freelanceLabor' => $this->yesNo($data['freelanceLabor'] ?? 0),
             'outProvinceLabor' => $this->yesNo($data['outProvinceLabor'] ?? 0),
             'foreignLabor' => $this->yesNo($data['foreignLabor'] ?? 0),
+            'notAttendingSchool' => $this->yesNo($data['notAttendingSchool'] ?? 0),
             'pupil' => $this->yesNo($data['pupil'] ?? 0),
             'student' => $this->yesNo($data['student'] ?? 0),
             'retired' => $this->yesNo($data['retired'] ?? 0),
+            'hasHealthInsurance' => array_key_exists('hasHealthInsurance', $data) && trim((string) $data['hasHealthInsurance']) !== '' ? $this->yesNo($data['hasHealthInsurance']) : 1,
+            'healthInsuranceNumber' => trim((string) ($data['healthInsuranceNumber'] ?? '')),
+            'healthInsuranceGroup' => trim((string) ($data['healthInsuranceGroup'] ?? '')),
+            'healthInsuranceStartDate' => $data['healthInsuranceStartDate'] ?? null,
+            'healthInsuranceEndDate' => $data['healthInsuranceEndDate'] ?? null,
+            'healthInsuranceFacility' => trim((string) ($data['healthInsuranceFacility'] ?? '')),
         ];
     }
 
@@ -504,6 +521,7 @@ final class ImportController extends BaseController
             'headCitizenName' => ['chu ho','ten chu ho','ho ten chu ho'],
             'address' => ['dia chi','thon','dia chi thuong tru'],
             'phone' => ['so dien thoai','dien thoai','sdt','phone'],
+            'areaCode' => ['ma dia ban','ma khu vuc','ma thon','area code','areacode'],
             'householdType' => ['dien ho','loai ho','household type','category'],
             'poorHousehold' => ['ho ngheo'],
             'nearPoorHousehold' => ['ho can ngheo','can ngheo'],
@@ -513,6 +531,8 @@ final class ImportController extends BaseController
             'gender' => ['gioi tinh'],
             'dateOfBirth' => ['ngay sinh','nam sinh','date of birth','dateofbirth','dob'],
             'identityNumber' => ['cccd','cmnd','so cccd','so cmnd','identitynumber','identity'],
+            'identityIssueDate' => ['ngay cap cccd','ngay cap cmnd','ngay cap','identity issue date','identityissuedate'],
+            'identityIssuePlace' => ['noi cap cccd','noi cap cmnd','noi cap','identity issue place','identityissueplace'],
             'relationship' => ['quan he voi chu ho','quan he'],
             'fatherName' => ['ho ten bo','ten bo','bo','father name','fathername'],
             'motherName' => ['ho ten me','ten me','me','mother name','mothername'],
@@ -535,6 +555,11 @@ final class ImportController extends BaseController
             'martyrRelative' => ['than nhan liet si','than nhan liet sy'],
             'woundedSoldier' => ['thuong binh'],
             'sickSoldier' => ['benh binh'],
+            'chemicalWarfareVictim' => ['nhiem chat doc hoa hoc','chat doc hoa hoc','chemical warfare victim','chemicalwarfarevictim'],
+            'imprisonedResistanceActivist' => ['nguoi bi dich bat tu day','bi bat tu day','tu day','imprisoned resistance activist','imprisonedresistanceactivist'],
+            'youthVolunteer' => ['thanh nien xung phong','youth volunteer','youthvolunteer'],
+            'resistanceHero' => ['anh hung luc luong vu trang','anh hung lao dong','anh hung khang chien','resistance hero','resistancehero'],
+            'revolutionaryActivist' => ['nguoi hoat dong cach mang','hoat dong cach mang','revolutionary activist','revolutionaryactivist'],
             'disabledPerson' => ['nguoi khuyet tat','khuyet tat'],
             'socialAssistance' => ['bao tro xa hoi'],
             'employed' => ['co viec lam','viec lam'],
@@ -542,9 +567,16 @@ final class ImportController extends BaseController
             'freelanceLabor' => ['lao dong tu do'],
             'outProvinceLabor' => ['lao dong ngoai tinh','ngoai tinh'],
             'foreignLabor' => ['lao dong nuoc ngoai','nuoc ngoai'],
+            'notAttendingSchool' => ['chua di hoc','not attending school','notattendingschool'],
             'pupil' => ['hoc sinh'],
             'student' => ['sinh vien'],
             'retired' => ['nghi huu'],
+            'hasHealthInsurance' => ['bhyt','bao hiem y te','co bhyt','has health insurance','hashealthinsurance'],
+            'healthInsuranceNumber' => ['ma so bhyt','so the bhyt','health insurance number','healthinsurancenumber'],
+            'healthInsuranceGroup' => ['nhom bhyt','doi tuong bhyt','health insurance group','healthinsurancegroup'],
+            'healthInsuranceStartDate' => ['ngay bat dau bhyt','bhyt tu ngay','health insurance start date','healthinsurancestartdate'],
+            'healthInsuranceEndDate' => ['ngay het han bhyt','bhyt den ngay','health insurance end date','healthinsuranceenddate'],
+            'healthInsuranceFacility' => ['noi dang ky kham chua benh','noi kcb ban dau','co so kham chua benh bhyt','health insurance facility','healthinsurancefacility'],
         ];
     }
 
