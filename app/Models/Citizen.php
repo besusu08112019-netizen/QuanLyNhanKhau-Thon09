@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Config\CitizenPolicyDefaults;
 use App\Core\BaseModel;
 use App\Models\PolicyAlert;
 
@@ -260,7 +261,12 @@ final class Citizen extends BaseModel
             'user' => $userId,
         ];
         $laborFields = ['not_attending_school','pupil','student','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','retired'];
-        $ageDefaults = $fallback === null && !$this->anyFieldProvided($data, $laborFields) ? $this->ageDefaultFlags((string) $dob) : [];
+        $ageDefaults = [];
+        if ($fallback === null) {
+            $age = $this->ageFromDate((string) $dob);
+            if (!$this->anyFieldProvided($data, $laborFields)) $ageDefaults = $this->laborDefaultFlags($age);
+            $ageDefaults += CitizenPolicyDefaults::defaultsForAge($age);
+        }
         foreach ($this->activeExtendedColumns() as $column) {
             $camel = $this->camel($column);
             $params[$column] = $this->fieldProvided($data, $column)
@@ -326,9 +332,10 @@ final class Citizen extends BaseModel
     {
         $active = $this->activeHealthInsuranceColumns();
         if (!$active) return;
+        $policyDefaults = $fallback === null ? CitizenPolicyDefaults::defaultsForAge($this->ageFromDate((string) ($data['dateOfBirth'] ?? $data['date_of_birth'] ?? null))) : [];
         $has = $this->fieldProvided($data, 'has_health_insurance')
             ? $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? 0)
-            : $this->boolValue($fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? ($fallback === null ? 1 : 0));
+            : $this->boolValue($fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? $policyDefaults['has_health_insurance'] ?? 0);
         $params['has_health_insurance'] = $has;
         $params['health_insurance_number'] = $has ? $this->nullableString($data['health_insurance_number'] ?? $data['healthInsuranceNumber'] ?? $fallback['health_insurance_number'] ?? null, 20) : null;
         $params['health_insurance_group'] = $has ? $this->healthInsuranceGroup($data['health_insurance_group'] ?? $data['healthInsuranceGroup'] ?? $fallback['health_insurance_group'] ?? null) : null;
@@ -378,11 +385,16 @@ final class Citizen extends BaseModel
         return false;
     }
 
-    private function ageDefaultFlags(string $dateOfBirth): array
+    private function ageFromDate(string $dateOfBirth): ?int
     {
         $birth = \DateTimeImmutable::createFromFormat('!Y-m-d', $dateOfBirth);
-        if (!$birth) return [];
-        $age = $birth->diff(new \DateTimeImmutable('today'))->y;
+        if (!$birth) return null;
+        return $birth->diff(new \DateTimeImmutable('today'))->y;
+    }
+
+    private function laborDefaultFlags(?int $age): array
+    {
+        if ($age === null) return [];
         if ($age <= 2) return ['not_attending_school' => 1, 'pupil' => 0, 'student' => 0, 'employed' => 0];
         if ($age <= 17) return ['not_attending_school' => 0, 'pupil' => 1, 'student' => 0, 'employed' => 0];
         if ($age <= 21) return ['not_attending_school' => 0, 'pupil' => 0, 'student' => 1, 'employed' => 0];

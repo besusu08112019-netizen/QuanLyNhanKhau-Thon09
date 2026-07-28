@@ -63,6 +63,7 @@ use App\Controllers\VehicleController;
 use App\Controllers\VillageDocumentController;
 use App\Controllers\WorkCalendarController;
 use App\Controllers\WorkTaskController;
+use App\Config\CitizenPolicyDefaults;
 
 Autoloader::register();
 env_load(BASE_PATH);
@@ -749,6 +750,10 @@ if (!str_starts_with($request->path(), '/api')) {
     $tenantSettings['sessionTtlSeconds'] = (int) $appConfig['session_ttl_seconds'];
     $tenantSettings['idleTimeoutSeconds'] = (int) $appConfig['idle_timeout_seconds'];
     $tenantSettings['idleWarningSeconds'] = (int) $appConfig['idle_warning_seconds'];
+    $tenantSettings['citizenPolicyDefaults'] = [
+        'bhytDefaultAge' => CitizenPolicyDefaults::BHYT_DEFAULT_AGE,
+        'socialAllowanceDefaultAge' => CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE,
+    ];
     $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     $html = strtr($html, [
         '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'He thong Quan ly Hanh chinh')),

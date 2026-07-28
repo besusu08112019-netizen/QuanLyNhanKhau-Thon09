@@ -457,7 +457,7 @@ final class ImportController extends BaseController
                 'note' => trim((string) ($data['note'] ?? '')),
             ];
         }
-        return [
+        $normalized = [
             'householdCode' => strtoupper(trim((string) ($data['householdCode'] ?? ''))),
             'citizenCode' => strtoupper(trim((string) ($data['citizenCode'] ?? ''))),
             'fullName' => trim((string) ($data['fullName'] ?? '')),
@@ -495,7 +495,6 @@ final class ImportController extends BaseController
             'resistanceHero' => $this->yesNo($data['resistanceHero'] ?? 0),
             'revolutionaryActivist' => $this->yesNo($data['revolutionaryActivist'] ?? 0),
             'disabledPerson' => $this->yesNo($data['disabledPerson'] ?? 0),
-            'socialAssistance' => $this->yesNo($data['socialAssistance'] ?? 0),
             'employed' => $this->yesNo($data['employed'] ?? 0),
             'unemployed' => $this->yesNo($data['unemployed'] ?? 0),
             'freelanceLabor' => $this->yesNo($data['freelanceLabor'] ?? 0),
@@ -505,13 +504,24 @@ final class ImportController extends BaseController
             'pupil' => $this->yesNo($data['pupil'] ?? 0),
             'student' => $this->yesNo($data['student'] ?? 0),
             'retired' => $this->yesNo($data['retired'] ?? 0),
-            'hasHealthInsurance' => array_key_exists('hasHealthInsurance', $data) && trim((string) $data['hasHealthInsurance']) !== '' ? $this->yesNo($data['hasHealthInsurance']) : 1,
             'healthInsuranceNumber' => trim((string) ($data['healthInsuranceNumber'] ?? '')),
             'healthInsuranceGroup' => trim((string) ($data['healthInsuranceGroup'] ?? '')),
             'healthInsuranceStartDate' => $data['healthInsuranceStartDate'] ?? null,
             'healthInsuranceEndDate' => $data['healthInsuranceEndDate'] ?? null,
             'healthInsuranceFacility' => trim((string) ($data['healthInsuranceFacility'] ?? '')),
         ];
+        if ($this->hasImportValue($data, 'socialAssistance')) {
+            $normalized['socialAssistance'] = $this->yesNo($data['socialAssistance']);
+        }
+        if ($this->hasImportValue($data, 'hasHealthInsurance')) {
+            $normalized['hasHealthInsurance'] = $this->yesNo($data['hasHealthInsurance']);
+        }
+        return $normalized;
+    }
+
+    private function hasImportValue(array $data, string $field): bool
+    {
+        return array_key_exists($field, $data) && trim((string) $data[$field]) !== '';
     }
 
     private function aliases(): array

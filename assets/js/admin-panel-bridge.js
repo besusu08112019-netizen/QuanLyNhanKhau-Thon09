@@ -106,6 +106,7 @@
   const laborCitizenFields = [
     ['employed','Co viec lam'], ['unemployed','That nghiep'], ['freelanceLabor','Lao dong tu do'], ['outProvinceLabor','Lao dong ngoai tinh'], ['foreignLabor','Lao dong nuoc ngoai'], ['notAttendingSchool','Chua di hoc'], ['pupil','Hoc sinh'], ['student','Sinh vien'], ['retired','Nghi huu'],
   ];
+  const citizenPolicyDefaults = window.AppSettings?.citizenPolicyDefaults || {};
   const digitalCitizenFields = [...politicalCitizenFields, ...policyCitizenFields, ...socialSecurityCitizenFields, ...laborCitizenFields];
 
   function setupDigitalGovernmentFeatures() {
@@ -131,7 +132,7 @@
         await originalOpen(id);
         const targetForm = document.querySelector('#personForm');
         resetPersonProfileTabs(targetForm, id);
-        digitalCitizenFields.forEach(([name]) => { const el = targetForm?.elements[name]; if (el) el.checked = false; });
+        digitalCitizenFields.forEach(([name]) => { const el = targetForm?.elements[name]; if (el) { el.checked = false; delete el.dataset.userEditedPolicyDefault; } });
         if (id) {
           const row = await api('/api/persons/' + id);
           digitalCitizenFields.forEach(([name]) => {
@@ -156,6 +157,9 @@
     });
     form.addEventListener('change', event => {
       if (event.target?.name === 'dateOfBirth' && !form.elements.id?.value) applyPersonAgeDefaults(form);
+      if (['hasHealthInsurance', 'socialAssistance'].includes(event.target?.name)) {
+        event.target.dataset.userEditedPolicyDefault = '1';
+      }
     });
     form.addEventListener('reset', () => {
       setTimeout(() => {
@@ -185,10 +189,14 @@
 
   function ageDefaultFlags(age) {
     if (age === null) return null;
-    if (age <= 2) return { notAttendingSchool: 1, pupil: 0, student: 0, employed: 0, hasHealthInsurance: 1 };
-    if (age <= 17) return { notAttendingSchool: 0, pupil: 1, student: 0, employed: 0, hasHealthInsurance: 1 };
-    if (age <= 21) return { notAttendingSchool: 0, pupil: 0, student: 1, employed: 0, hasHealthInsurance: 1 };
-    return { notAttendingSchool: 0, pupil: 0, student: 0, employed: 1, hasHealthInsurance: 1 };
+    const policy = {
+      hasHealthInsurance: Number.isFinite(Number(citizenPolicyDefaults.bhytDefaultAge)) && age >= Number(citizenPolicyDefaults.bhytDefaultAge) ? 1 : 0,
+      socialAssistance: Number.isFinite(Number(citizenPolicyDefaults.socialAllowanceDefaultAge)) && age >= Number(citizenPolicyDefaults.socialAllowanceDefaultAge) ? 1 : 0,
+    };
+    if (age <= 2) return { notAttendingSchool: 1, pupil: 0, student: 0, employed: 0, ...policy };
+    if (age <= 17) return { notAttendingSchool: 0, pupil: 1, student: 0, employed: 0, ...policy };
+    if (age <= 21) return { notAttendingSchool: 0, pupil: 0, student: 1, employed: 0, ...policy };
+    return { notAttendingSchool: 0, pupil: 0, student: 0, employed: 1, ...policy };
   }
 
   function syncBridgeHealthInsuranceFields(form) {
@@ -206,6 +214,7 @@
       if (el) el.checked = false;
     });
     if (form?.elements?.hasHealthInsurance) form.elements.hasHealthInsurance.checked = false;
+    if (form?.elements?.socialAssistance) form.elements.socialAssistance.checked = false;
   }
 
   function applyPersonAgeDefaults(form) {
@@ -218,7 +227,9 @@
     });
     if (form.elements.unemployed) form.elements.unemployed.checked = false;
     const bhyt = form.elements.hasHealthInsurance;
-    if (bhyt) bhyt.checked = !!defaults.hasHealthInsurance;
+    if (bhyt && bhyt.dataset.userEditedPolicyDefault !== '1') bhyt.checked = !!defaults.hasHealthInsurance;
+    const socialAssistance = form.elements.socialAssistance;
+    if (socialAssistance && socialAssistance.dataset.userEditedPolicyDefault !== '1') socialAssistance.checked = !!defaults.socialAssistance;
     syncBridgeHealthInsuranceFields(form);
   }
 
