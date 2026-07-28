@@ -1,0 +1,430 @@
+# Feature Blueprint: User Management
+
+Ngay tao: 2026-07-28
+
+Release: Release 5
+
+Epic: Community Control Center
+
+Feature: User Management
+
+Trang thai: Cho review
+
+Phan loai thay doi: Implementation Change. Khong phai Architecture Change. Khong can ADR neu trien khai dung Architecture Freeze va Master Development Charter v2.0.
+
+## 1. Feature Goal
+
+User Management cho phep `SYSTEM_ADMIN` quan ly tai khoan he thong trong Community Control Center.
+
+Feature nay giai quyet:
+
+- Quan ly danh sach tai khoan tap trung.
+- Tao tai khoan quan tri/nhan su van hanh cho cac don vi.
+- Cap nhat thong tin co ban va trang thai tai khoan.
+- Khoa/kich hoat tai khoan khi can.
+- Reset mat khau theo quy trinh quan tri.
+
+Doi tuong su dung:
+
+- `SYSTEM_ADMIN`: duoc xem, tao, sua, khoa/kich hoat va reset mat khau tai khoan trong Control Center.
+
+Gia tri mang lai:
+
+- Tao nen cho Permission, Scope va SSO o cac Feature sau.
+- Giam thao tac truc tiep database khi quan ly tai khoan.
+- Dam bao moi thao tac ghi tai khoan duoc guard va audit.
+
+## 2. Business Flow
+
+### List Accounts
+
+- Actor vao Control Center.
+- He thong kiem tra authorization `control_center.users.read`.
+- He thong lay danh sach tai khoan theo filter.
+- UI hien metadata tai khoan, khong hien password hash, token, session secret.
+
+### Create Account
+
+Dieu kien hop le:
+
+- Actor co `control_center.users.create`.
+- `username`, `email`, `display_name`, `password`, `role`, `status` hop le.
+- `username` va `email` khong trung voi tai khoan chua xoa.
+- Role nam trong danh sach duoc Feature cho phep.
+
+Ket qua:
+
+- Tai khoan moi duoc tao.
+- Password duoc hash bang co che hien co.
+- Audit ghi `user.created`.
+
+### Update Account
+
+Dieu kien hop le:
+
+- Actor co `control_center.users.update`.
+- Tai khoan ton tai.
+- Khong sua truc tiep password qua update metadata; reset password dung endpoint rieng.
+- Khong ha cap/khoa tai khoan `SYSTEM_ADMIN` cuoi cung neu logic hien co chua dam bao an toan.
+
+Ket qua:
+
+- Metadata tai khoan duoc cap nhat.
+- Audit ghi `user.updated`.
+
+### Lock Account
+
+Dieu kien hop le:
+
+- Actor co `control_center.users.lock`.
+- Tai khoan ton tai.
+- Khong khoa tai khoan dang thuc hien thao tac.
+- Khong khoa tai khoan `SYSTEM_ADMIN` cuoi cung.
+
+Ket qua:
+
+- Status chuyen sang `INACTIVE`.
+- Session dang hoat dong cua tai khoan bi revoke neu co co che hien co phu hop.
+- Audit ghi `user.locked`.
+
+### Activate Account
+
+Dieu kien hop le:
+
+- Actor co `control_center.users.activate`.
+- Tai khoan ton tai.
+- Tai khoan dang `INACTIVE`.
+
+Ket qua:
+
+- Status chuyen sang `ACTIVE`.
+- Audit ghi `user.activated`.
+
+### Reset Password
+
+Dieu kien hop le:
+
+- Actor co `control_center.users.reset_password`.
+- Tai khoan ton tai.
+- Password moi dat policy.
+- Khong reset password cua `SYSTEM_ADMIN` khac neu chua co quy tac an toan duoc phe duyet.
+
+Ket qua:
+
+- Password hash duoc cap nhat.
+- Session cu cua tai khoan bi revoke neu co the thuc hien bang co che hien co.
+- Audit ghi `user.password_reset`.
+
+## 3. UI Flow
+
+- Them section `Tai khoan he thong` trong Control Center tu trang hien co.
+- Hien danh sach tai khoan voi pagination.
+- Toolbar gom tim kiem, filter role, filter status, nut them tai khoan.
+- Modal them/sua tai khoan.
+- Action tung dong:
+  - Sua.
+  - Khoa hoac kich hoat.
+  - Reset mat khau.
+- Error hien tai form/section.
+- Empty state khi chua co tai khoan.
+- Loading state khi tai danh sach va submit form.
+
+## 4. Navigation
+
+- Su dung navigation Control Center hien co.
+- Khong tao Tenant route.
+- Khong thay doi Tenant Portal menu.
+- Khong hard-code menu moi ngoai scope Control Center hien tai neu ModuleRegistry chua duoc trien khai day du.
+
+## 5. API Design
+
+Tat ca endpoint nam trong Control Center:
+
+- `GET /api/control-center/users`
+- `GET /api/control-center/users/{id}`
+- `POST /api/control-center/users`
+- `PUT /api/control-center/users/{id}`
+- `PATCH /api/control-center/users/{id}/lock`
+- `PATCH /api/control-center/users/{id}/activate`
+- `PATCH /api/control-center/users/{id}/reset-password`
+
+Khong thay doi API tenant hien co:
+
+- `/api/users`
+- `/api/permissions`
+- `/api/auth/*`
+
+## 6. Request
+
+### Create
+
+```json
+{
+  "username": "commune_admin",
+  "email": "commune.admin@example.com",
+  "display_name": "Commune Admin",
+  "password": "minimum-8-chars",
+  "role": "COMMUNE_ADMIN",
+  "status": "ACTIVE",
+  "unit_id": 1
+}
+```
+
+### Update
+
+```json
+{
+  "username": "commune_admin",
+  "email": "commune.admin@example.com",
+  "display_name": "Commune Admin",
+  "role": "COMMUNE_ADMIN",
+  "status": "ACTIVE",
+  "unit_id": 1
+}
+```
+
+### Reset Password
+
+```json
+{
+  "password": "minimum-8-chars"
+}
+```
+
+## 7. Response
+
+Danh sach:
+
+```json
+{
+  "items": [],
+  "page": 1,
+  "pageSize": 20,
+  "total": 0,
+  "totalPages": 1
+}
+```
+
+Item:
+
+```json
+{
+  "id": 1,
+  "username": "commune_admin",
+  "email": "commune.admin@example.com",
+  "displayName": "Commune Admin",
+  "role": "COMMUNE_ADMIN",
+  "sourceRole": "ADMIN",
+  "status": "ACTIVE",
+  "unitId": 1,
+  "unitName": "Thon 09",
+  "lastLoginAt": null,
+  "createdAt": "2026-07-28T00:00:00+07:00"
+}
+```
+
+## 8. Validation
+
+Bat buoc:
+
+- `username`
+- `email`
+- `display_name`
+- `role`
+- `status`
+- `password` khi tao/reset
+
+Unique:
+
+- `username`
+- `email`
+
+Quy tac:
+
+- `username`: 3-60 ky tu, chi gom chu thuong/so/dau cham/gach ngang/gach duoi.
+- `email`: dung email format.
+- `display_name`: khong rong.
+- `password`: toi thieu 8 ky tu, toi da theo policy hien co.
+- `status`: `ACTIVE` hoac `INACTIVE`.
+- `role`: chi cho cac platform role duoc Feature phe duyet.
+
+Role mapping tam thoi de tranh migration:
+
+- `SYSTEM_ADMIN` -> `SUPER_ADMIN`
+- `VILLAGE_ADMIN` -> `ADMIN`
+- `STAFF` -> `OFFICER`
+- `VIEWER` -> `VIEWER`
+
+`COMMUNE_ADMIN` chua co source role rieng trong schema hien tai. Implementation phai chon mot trong hai huong truoc khi code:
+
+- Khong cho tao `COMMUNE_ADMIN` trong Feature nay, chi hien disabled/pending.
+- Hoac map tam co kiem soat vao `ADMIN` kem `unit_id` scope neu schema hien co dap ung.
+
+Neu can schema/role enum moi thi dung lai va lap Migration Plan, khong tu y thay doi database.
+
+## 9. Permission
+
+Trong Feature nay chua trien khai Permission System day du.
+
+Guard toi thieu:
+
+- Write API chi cho `SYSTEM_ADMIN`.
+- Read API Control Center chi cho `SYSTEM_ADMIN` neu truy cap du lieu tai khoan that.
+- Feature phu thuoc Authorization Interface, khong phu thuoc truc tiep `SUPER_ADMIN`.
+
+Permission keys du kien:
+
+- `control_center.users.read`
+- `control_center.users.create`
+- `control_center.users.update`
+- `control_center.users.lock`
+- `control_center.users.activate`
+- `control_center.users.reset_password`
+
+## 10. Audit
+
+Bat buoc audit:
+
+- `user.created`
+- `user.updated`
+- `user.locked`
+- `user.activated`
+- `user.password_reset`
+
+Audit khong ghi:
+
+- Password plaintext.
+- Password hash.
+- Token.
+- CSRF.
+- Session secret.
+
+## 11. Repository
+
+Tao hoac bo sung repository rieng cho Control Center User Management.
+
+Repository chi lam:
+
+- Doc users.
+- Tao users.
+- Cap nhat users.
+- Cap nhat status.
+- Cap nhat password hash.
+- Revoke session neu can.
+
+Repository khong chua business rule.
+
+Su dung bang hien co:
+
+- `users`
+- `user_sessions`
+- `villages` de hien unit metadata neu can.
+
+Khong thay doi database schema trong Blueprint nay neu khong co Migration Plan duoc phe duyet.
+
+## 12. Service
+
+Tao `ControlCenterUserService` hoac service tuong duong.
+
+Service chiu trach nhiem:
+
+- Authorization orchestration.
+- Validation.
+- Role mapping platform/source role.
+- Goi repository.
+- Goi audit.
+- Khong duplicate Business Module logic.
+
+Can xem xet tai su dung `App\Models\User` neu khong gay phu thuoc TenantContext sai cho Control Center.
+
+## 13. Controller
+
+Tao `ControlCenterUserController` hoac controller ten tuong duong trong namespace hien co.
+
+Controller chi lam:
+
+- Parse input/query.
+- Goi service.
+- Map exception thanh HTTP response.
+- Khong query database.
+- Khong chua business logic.
+
+## 14. Error Handling
+
+- 401: chua dang nhap.
+- 403: khong co quyen.
+- 419: CSRF invalid.
+- 404: tai khoan khong ton tai.
+- 422: validation error.
+- 500: loi khong mong doi, khong expose secret.
+
+## 15. Empty State
+
+- Danh sach trong: hien `Chua co tai khoan hien thi`.
+- Filter khong co ket qua: hien `Khong tim thay tai khoan phu hop`.
+
+## 16. Loading State
+
+- Hien loading row khi load list.
+- Disable submit button khi dang luu.
+- Disable action button dang xu ly.
+
+## 17. Rollback
+
+Rollback bang revert cac commit cua Feature User Management.
+
+Neu khong co migration:
+
+- Khong can rollback database.
+
+Neu co migration duoc phe duyet rieng:
+
+- Migration Plan phai co rollback SQL rieng truoc khi code.
+
+## 18. Test Case
+
+Unit/Smoke:
+
+- List users tren Control Center.
+- Create khong token bi tu choi.
+- Create co token nhung thieu CSRF bi tu choi.
+- Create validation fail voi email sai/password ngan/role sai.
+- Update validation fail voi user khong ton tai.
+- Lock/activate khong token bi tu choi.
+- Tenant domain khong truy cap duoc `/api/control-center/users`.
+- Domain goc khong truy cap duoc API tenant.
+
+Regression:
+
+- Tenant login/logout/session khong doi.
+- Tenant User API hien co khong doi.
+- Control Center Administrative Unit Management van PASS.
+- Control Center Phase 1/2 tests van PASS.
+
+## 19. Production Impact
+
+Du kien LOW neu khong migration.
+
+- Tenant Portal khong thay doi.
+- Business Modules khong thay doi.
+- API tenant khong thay doi.
+- Database schema khong thay doi.
+- Write actions duoc guard va audit.
+
+Rui ro:
+
+- Role mapping giua platform role va source role hien co can chot truoc implementation.
+- `App\Models\User` hien phu thuoc TenantContext, can tranh dung sai trong Control Center.
+- Khong duoc vo tinh expose password hash/token/session data.
+
+## 20. Future Extension
+
+Feature nay tao nen cho:
+
+- Permission System.
+- Role Management.
+- Scope Management.
+- SSO.
+- Audit nang cao.
+
+Khong trien khai cac muc tren trong Feature nay.
