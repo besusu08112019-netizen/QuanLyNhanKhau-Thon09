@@ -36,6 +36,7 @@ use App\Controllers\AdministrativeUnitController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
+use App\Controllers\ControlCenterUserController;
 use App\Controllers\ContributionController;
 use App\Controllers\ControlCenterController;
 use App\Controllers\DashboardController;
@@ -277,6 +278,7 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
     if (str_starts_with($request->path(), '/api/control-center/')) {
         $controller = new ControlCenterController($request);
         $unitsController = new AdministrativeUnitController($request);
+        $usersController = new ControlCenterUserController($request);
         $path = $request->path();
         $method = $request->method();
         if ($method === 'GET' && $path === '/api/control-center/units') {
@@ -296,6 +298,27 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         }
         if ($method === 'PATCH' && preg_match('#^/api/control-center/units/(\d+)/activate$#', $path, $matches)) {
             $unitsController->activate($matches[1]);
+        }
+        if ($method === 'GET' && $path === '/api/control-center/users') {
+            $usersController->index();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/users') {
+            $usersController->store();
+        }
+        if ($method === 'GET' && preg_match('#^/api/control-center/users/(\d+)$#', $path, $matches)) {
+            $usersController->show($matches[1]);
+        }
+        if ($method === 'PUT' && preg_match('#^/api/control-center/users/(\d+)$#', $path, $matches)) {
+            $usersController->update($matches[1]);
+        }
+        if ($method === 'PATCH' && preg_match('#^/api/control-center/users/(\d+)/deactivate$#', $path, $matches)) {
+            $usersController->deactivate($matches[1]);
+        }
+        if ($method === 'PATCH' && preg_match('#^/api/control-center/users/(\d+)/activate$#', $path, $matches)) {
+            $usersController->activate($matches[1]);
+        }
+        if ($method === 'PATCH' && preg_match('#^/api/control-center/users/(\d+)/reset-password$#', $path, $matches)) {
+            $usersController->resetPassword($matches[1]);
         }
         match ($request->path()) {
             '/api/control-center/status' => $controller->status(),
