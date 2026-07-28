@@ -156,3 +156,40 @@ jobs:
             storage/cache/**
             !storage/.htaccess
             backups/**
+
+      - name: Verify public_html deployment
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+          from ftplib import FTP_TLS
+
+          required = {'.htaccess', 'index.php', 'app', 'assets', 'api', 'config', 'views'}
+          server = os.environ['FTP_SERVER']
+          username = os.environ['FTP_USERNAME']
+          password = os.environ['FTP_PASSWORD']
+
+          with FTP_TLS(server, timeout=30) as ftp:
+              ftp.login(username, password)
+              ftp.prot_p()
+              ftp.cwd('../public_html')
+              names = sorted(ftp.nlst())
+
+          print('public_html contents:')
+          for name in names:
+              print(f'- {name}')
+
+          normalized = {name.rstrip('/') for name in names}
+          missing = sorted(required - normalized)
+          if missing:
+              print('Missing required public_html entries: ' + ', '.join(missing), file=sys.stderr)
+              sys.exit(1)
+          if normalized <= {'.well-known'}:
+              print('public_html only contains .well-known', file=sys.stderr)
+              sys.exit(1)
+          PY
