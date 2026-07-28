@@ -1040,5 +1040,5 @@ Chỉ được bắt đầu Phase 1 khi:
 
 Trạng thái sau tài liệu freeze:
 
-- Được phép chuẩn bị Phase 1 sau khi người phụ trách phê duyệt Architecture Freeze.
-- Chưa được code runtime khi chưa có phê duyệt rõ ràng.
+- Architecture Freeze đã được người phụ trách phê duyệt.
+- Phase 1 được phép triển khai theo đúng phạm vi đã khóa.

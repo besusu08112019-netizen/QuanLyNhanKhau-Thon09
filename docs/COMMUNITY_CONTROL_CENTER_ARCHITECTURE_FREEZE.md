@@ -2,7 +2,7 @@
 
 Ngày freeze: 2026-07-28
 
-Trạng thái: Chờ phê duyệt
+Trạng thái: Đã phê duyệt
 
 Phạm vi:
 
@@ -355,7 +355,7 @@ Trạng thái hiện tại:
 
 - Architecture Design: hoàn tất.
 - Architecture Review Checklist: hoàn tất.
-- Architecture Freeze: chờ phê duyệt.
+- Architecture Freeze: đã phê duyệt.
 - Phase 1: chưa bắt đầu.
 
 ## 17. Quy trình thay đổi sau Freeze

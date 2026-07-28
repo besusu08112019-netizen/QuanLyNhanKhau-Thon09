@@ -87,6 +87,9 @@ FTPS deploy overwrite các file trong artifact và dùng `.ftp-deploy-sync-state
 
 ## Tài liệu liên quan
 
+- `docs/COMMUNITY_CONTROL_CENTER_ARCHITECTURE.md`: kiến trúc Community Control Center Platform đã freeze.
+- `docs/COMMUNITY_CONTROL_CENTER_ARCHITECTURE_REVIEW_CHECKLIST.md`: checklist review kiến trúc trước Phase 1.
+- `docs/COMMUNITY_CONTROL_CENTER_ARCHITECTURE_FREEZE.md`: biên bản Architecture Freeze.
 - `docs/DEPLOY_LINUX_HOSTING.md`: hướng dẫn triển khai Linux/cPanel.
 - `docs/PRODUCTION_DEPLOY_PROCESS.md`: quy trình deploy production duy nhất qua GitHub Actions và FTPS.
 - `docs/RELEASE_REPORT_TEMPLATE.md`: mẫu báo cáo release production sau deploy.
