@@ -105,25 +105,69 @@ final class AdministrativeUnitRepository
         if ($this->hasColumn('connection_status')) {
             $sets[] = 'connection_status = :connection_status';
         }
-        $stmt = $this->db()->prepare('UPDATE villages SET ' . implode(', ', $sets) . ' WHERE id = :id');
         $params = ['id' => $id, 'status' => $status];
         if ($this->hasColumn('connection_status')) {
             $params['connection_status'] = $status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED';
         }
+        if ($this->hasColumn('website_status')) {
+            $sets[] = 'website_status = :website_status';
+            $params['website_status'] = $status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED';
+        }
+        if ($this->hasColumn('database_status')) {
+            $sets[] = 'database_status = :database_status';
+            $params['database_status'] = $status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED';
+        }
+        $stmt = $this->db()->prepare('UPDATE villages SET ' . implode(', ', $sets) . ' WHERE id = :id');
         $stmt->execute($params);
         return $this->find($id) ?? [];
     }
 
-    public function updateHealth(int $id, string $connectionStatus, ?string $error = null): array
+    public function updateDatabaseHealth(int $id, string $databaseStatus, ?string $error = null): array
     {
         $sets = [];
         $params = ['id' => $id];
         if ($this->hasColumn('connection_status')) {
             $sets[] = 'connection_status = :connection_status';
-            $params['connection_status'] = $connectionStatus;
+            $params['connection_status'] = $databaseStatus;
+        }
+        if ($this->hasColumn('database_status')) {
+            $sets[] = 'database_status = :database_status';
+            $params['database_status'] = $databaseStatus;
         }
         if ($this->hasColumn('last_checked_at')) {
             $sets[] = 'last_checked_at = NOW()';
+        }
+        if ($this->hasColumn('last_database_checked_at')) {
+            $sets[] = 'last_database_checked_at = NOW()';
+        }
+        if ($this->hasColumn('last_error')) {
+            $sets[] = 'last_error = :last_error';
+            $params['last_error'] = $error;
+        }
+        if ($sets) {
+            $stmt = $this->db()->prepare('UPDATE villages SET ' . implode(', ', $sets) . ' WHERE id = :id');
+            $stmt->execute($params);
+        }
+        return $this->find($id) ?? [];
+    }
+
+    public function updateWebsiteHealth(int $id, string $websiteStatus, string $sslStatus, ?string $error = null): array
+    {
+        $sets = [];
+        $params = ['id' => $id];
+        if ($this->hasColumn('website_status')) {
+            $sets[] = 'website_status = :website_status';
+            $params['website_status'] = $websiteStatus;
+        }
+        if ($this->hasColumn('ssl_status')) {
+            $sets[] = 'ssl_status = :ssl_status';
+            $params['ssl_status'] = $sslStatus;
+        }
+        if ($this->hasColumn('last_checked_at')) {
+            $sets[] = 'last_checked_at = NOW()';
+        }
+        if ($this->hasColumn('last_website_checked_at')) {
+            $sets[] = 'last_website_checked_at = NOW()';
         }
         if ($this->hasColumn('last_error')) {
             $sets[] = 'last_error = :last_error';
@@ -200,10 +244,23 @@ final class AdministrativeUnitRepository
     {
         $databaseName = $this->hasColumn('database_name') ? 'v.database_name' : 'NULL AS database_name';
         $databaseHost = $this->hasColumn('database_host') ? 'v.database_host' : 'NULL AS database_host';
+        $databaseCharset = $this->hasColumn('database_charset') ? 'v.database_charset' : 'NULL AS database_charset';
         $version = $this->hasColumn('version') ? 'v.version AS registry_version' : 'NULL AS registry_version';
+        $appVersion = $this->hasColumn('app_version') ? 'v.app_version' : 'NULL AS app_version';
+        $buildVersion = $this->hasColumn('build_version') ? 'v.build_version' : 'NULL AS build_version';
+        $schemaVersion = $this->hasColumn('schema_version') ? 'v.schema_version' : 'NULL AS schema_version';
         $connectionStatus = $this->hasColumn('connection_status') ? 'v.connection_status' : 'NULL AS connection_status';
+        $websiteStatus = $this->hasColumn('website_status') ? 'v.website_status' : 'NULL AS website_status';
+        $databaseStatus = $this->hasColumn('database_status') ? 'v.database_status' : 'NULL AS database_status';
+        $sslStatus = $this->hasColumn('ssl_status') ? 'v.ssl_status' : 'NULL AS ssl_status';
+        $storageUsage = $this->hasColumn('storage_usage_bytes') ? 'v.storage_usage_bytes' : 'NULL AS storage_usage_bytes';
         $lastCheckedAt = $this->hasColumn('last_checked_at') ? 'v.last_checked_at' : 'NULL AS last_checked_at';
+        $lastWebsiteCheckedAt = $this->hasColumn('last_website_checked_at') ? 'v.last_website_checked_at' : 'NULL AS last_website_checked_at';
+        $lastDatabaseCheckedAt = $this->hasColumn('last_database_checked_at') ? 'v.last_database_checked_at' : 'NULL AS last_database_checked_at';
+        $lastBackupAt = $this->hasColumn('last_backup_at') ? 'v.last_backup_at' : 'NULL AS last_backup_at';
         $lastError = $this->hasColumn('last_error') ? 'v.last_error' : 'NULL AS last_error';
+        $managerName = $this->hasColumn('manager_name') ? 'v.manager_name AS registry_manager_name' : 'NULL AS registry_manager_name';
+        $notes = $this->hasColumn('notes') ? 'v.notes' : 'NULL AS notes';
         return "
             SELECT
                 v.id,
@@ -217,10 +274,23 @@ final class AdministrativeUnitRepository
                 v.status,
                 $databaseName,
                 $databaseHost,
+                $databaseCharset,
                 $version,
+                $appVersion,
+                $buildVersion,
+                $schemaVersion,
                 $connectionStatus,
+                $websiteStatus,
+                $databaseStatus,
+                $sslStatus,
+                $storageUsage,
                 $lastCheckedAt,
+                $lastWebsiteCheckedAt,
+                $lastDatabaseCheckedAt,
+                $lastBackupAt,
                 $lastError,
+                $managerName,
+                $notes,
                 v.created_at,
                 v.updated_at,
                 COUNT(DISTINCT h.id) AS household_count,
@@ -245,13 +315,25 @@ final class AdministrativeUnitRepository
             'subdomain' => (string) ($row['subdomain'] ?? ''),
             'databaseName' => (string) ($row['database_name'] ?? ''),
             'databaseHost' => (string) ($row['database_host'] ?? ''),
+            'databaseCharset' => (string) ($row['database_charset'] ?: 'utf8mb4'),
             'logo' => (string) ($row['logo_url'] ?? ''),
             'status' => $status,
-            'manager' => 'Chua gan',
-            'version' => (string) ($row['registry_version'] ?: (defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1')),
+            'manager' => (string) ($row['registry_manager_name'] ?: 'Chua gan'),
+            'version' => (string) ($row['registry_version'] ?: $row['app_version'] ?: (defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1')),
+            'appVersion' => (string) ($row['app_version'] ?? ''),
+            'buildVersion' => (string) ($row['build_version'] ?? ''),
+            'schemaVersion' => (string) ($row['schema_version'] ?? ''),
             'healthStatus' => (string) ($row['connection_status'] ?: ($status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED')),
+            'websiteStatus' => (string) ($row['website_status'] ?: ($status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED')),
+            'databaseStatus' => (string) ($row['database_status'] ?: ($row['connection_status'] ?: ($status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED'))),
+            'sslStatus' => (string) ($row['ssl_status'] ?: 'UNKNOWN'),
+            'storageUsageBytes' => $row['storage_usage_bytes'] !== null ? (int) $row['storage_usage_bytes'] : null,
             'lastCheckedAt' => $row['last_checked_at'] ?? null,
+            'lastWebsiteCheckedAt' => $row['last_website_checked_at'] ?? null,
+            'lastDatabaseCheckedAt' => $row['last_database_checked_at'] ?? null,
+            'lastBackupAt' => $row['last_backup_at'] ?? null,
             'lastError' => (string) ($row['last_error'] ?? ''),
+            'notes' => (string) ($row['notes'] ?? ''),
             'households' => (int) ($row['household_count'] ?? 0),
             'citizens' => (int) ($row['citizen_count'] ?? 0),
             'createdAt' => $row['created_at'] ?? null,
@@ -284,8 +366,19 @@ final class AdministrativeUnitRepository
         return [
             'database_name' => 'database_name',
             'database_host' => 'database_host',
+            'database_charset' => 'database_charset',
             'version' => 'version',
+            'app_version' => 'app_version',
+            'build_version' => 'build_version',
+            'schema_version' => 'schema_version',
             'connection_status' => 'connection_status',
+            'website_status' => 'website_status',
+            'database_status' => 'database_status',
+            'ssl_status' => 'ssl_status',
+            'storage_usage_bytes' => 'storage_usage_bytes',
+            'last_backup_at' => 'last_backup_at',
+            'manager_name' => 'manager_name',
+            'notes' => 'notes',
         ];
     }
 

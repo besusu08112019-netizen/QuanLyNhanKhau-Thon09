@@ -687,8 +687,9 @@
                     <th>Database</th>
                     <th>Trang thai</th>
                     <th>Nguoi quan ly</th>
+                    <th>Website</th>
+                    <th>Database</th>
                     <th>Phien ban</th>
-                    <th>Ket noi</th>
                     <th>Thao tac</th>
                   </tr>
                 </thead>
@@ -870,12 +871,32 @@
             <input class="cc-input" id="unitDatabaseName" name="database_name" maxlength="190" placeholder="nhhon5mp_thon09" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitVersion">Phien ban</label>
-            <input class="cc-input" id="unitVersion" name="version" maxlength="50" placeholder="v2.0" autocomplete="off">
+            <label for="unitDatabaseCharset">Database Charset</label>
+            <input class="cc-input" id="unitDatabaseCharset" name="database_charset" maxlength="50" placeholder="utf8mb4" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitAppVersion">Phien ban ung dung</label>
+            <input class="cc-input" id="unitAppVersion" name="app_version" maxlength="50" placeholder="v2.0" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitBuildVersion">Build Version</label>
+            <input class="cc-input" id="unitBuildVersion" name="build_version" maxlength="100" placeholder="20260727-gis-multi-area-1" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitSchemaVersion">Schema Version</label>
+            <input class="cc-input" id="unitSchemaVersion" name="schema_version" maxlength="50" placeholder="20260729" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitManagerName">Nguoi quan ly</label>
+            <input class="cc-input" id="unitManagerName" name="manager_name" maxlength="190" placeholder="Chua gan" autocomplete="off">
           </div>
           <div class="cc-field full">
             <label for="unitLogo">Logo URL</label>
             <input class="cc-input" id="unitLogo" name="logo" maxlength="500" placeholder="/assets/logo.png" autocomplete="off">
+          </div>
+          <div class="cc-field full">
+            <label for="unitNotes">Ghi chu</label>
+            <textarea class="cc-input" id="unitNotes" name="notes" maxlength="2000" rows="3" placeholder="Thong tin van hanh, lich backup, nguoi phu trach..."></textarea>
           </div>
         </div>
         <div class="cc-form-error" id="unitFormError"></div>
@@ -1054,8 +1075,8 @@
     function badge(value) {
       const span = document.createElement('span');
       span.className = 'cc-badge';
-      if (value === 'LOCKED' || value === 'DEGRADED' || value === 'UNKNOWN') span.classList.add('warn');
-      if (value === 'ERROR' || value === 'DISCONNECTED') span.classList.add('danger');
+      if (value === 'LOCKED' || value === 'DEGRADED' || value === 'UNKNOWN' || value === 'NOT_APPLICABLE') span.classList.add('warn');
+      if (value === 'ERROR' || value === 'DISCONNECTED' || value === 'OFFLINE' || value === 'INVALID') span.classList.add('danger');
       span.textContent = value || 'UNKNOWN';
       return span;
     }
@@ -1164,6 +1185,11 @@
       const data = await api('/api/control-center/dashboard');
       const metrics = [
         ['Tong so don vi', nf.format(data.totalUnits), 'Don vi dang quan ly'],
+        ['Tenant dang hoat dong', nf.format(data.activeUnits || 0), 'Theo Tenant Registry'],
+        ['Website Online', nf.format(data.websiteOnlineUnits || 0), 'Tenant co website dang truy cap duoc'],
+        ['Database OK', nf.format(data.databaseConnectedUnits || 0), 'Tenant ket noi database thanh cong'],
+        ['Tenant loi website', nf.format(data.websiteOfflineUnits || 0), 'Can kiem tra domain/hosting'],
+        ['Tenant loi database', nf.format(data.databaseDisconnectedUnits || 0), 'Can kiem tra cau hinh database'],
         ['Tong ho', nf.format(data.totalHouseholds), 'Tong hop toan he thong'],
         ['Tong nguoi dung', nf.format(accountState.items.length), 'Tai khoan trong Community Control Center'],
         ['Tong tre em', nf.format(data.totalChildren), 'So lieu tong hop'],
@@ -1178,7 +1204,7 @@
 
     async function loadUnits() {
       const body = document.getElementById('unitsBody');
-      body.replaceChildren(stateRow(9, 'Dang tai du lieu...'));
+      body.replaceChildren(stateRow(10, 'Dang tai du lieu...'));
       setUnitsAlert('');
       const params = new URLSearchParams();
       const search = document.getElementById('unitSearch').value.trim();
@@ -1189,10 +1215,10 @@
       unitState.items = data.items || [];
       const rows = unitState.items.map((unit) => {
         const tr = document.createElement('tr');
-        const cells = [unit.code || '-', unit.name, unit.domain || '-', unit.databaseName || '-', unit.status, unit.manager, unit.version || '-', unit.healthStatus || 'UNKNOWN'];
+        const cells = [unit.code || '-', unit.name, unit.domain || '-', unit.databaseName || '-', unit.status, unit.manager, unit.websiteStatus || 'UNKNOWN', unit.databaseStatus || unit.healthStatus || 'UNKNOWN', unit.version || '-'];
         cells.forEach((cell, index) => {
           const td = document.createElement('td');
-          if (index === 4 || index === 7) td.appendChild(badge(cell));
+          if (index === 4 || index === 6 || index === 7) td.appendChild(badge(cell));
           else td.textContent = cell;
           tr.appendChild(td);
         });
@@ -1200,12 +1226,15 @@
         actions.className = 'cc-row-actions';
         if (unit.domain) {
           const portal = actionButton('Mo Portal', 'fa-arrow-up-right-from-square');
-          portal.addEventListener('click', () => window.open('https://' + unit.domain, '_blank', 'noopener'));
+          portal.addEventListener('click', () => openTenantPortal(unit));
           actions.appendChild(portal);
         }
-        const check = actionButton('Kiem tra', 'fa-plug-circle-check');
-        check.addEventListener('click', () => checkUnitConnection(unit));
-        actions.appendChild(check);
+        const checkWebsite = actionButton('Website', 'fa-globe');
+        checkWebsite.addEventListener('click', () => checkUnitWebsite(unit));
+        actions.appendChild(checkWebsite);
+        const checkDatabase = actionButton('Database', 'fa-database');
+        checkDatabase.addEventListener('click', () => checkUnitConnection(unit));
+        actions.appendChild(checkDatabase);
         const edit = actionButton('Sua', 'fa-pen-to-square');
         edit.addEventListener('click', () => openUnitModal(unit));
         actions.appendChild(edit);
@@ -1221,7 +1250,7 @@
         tr.appendChild(actions);
         return tr;
       });
-      body.replaceChildren(...(rows.length ? rows : [emptyRow(9)]));
+      body.replaceChildren(...(rows.length ? rows : [emptyRow(10)]));
     }
 
     async function loadAccounts() {
@@ -1423,7 +1452,43 @@
       ];
       document.getElementById('healthBadge').textContent = data.healthCheck.status;
       document.getElementById('healthBadge').className = data.healthCheck.status === 'OK' ? 'cc-badge' : 'cc-badge warn';
-      document.getElementById('monitorGrid').replaceChildren(...items.map(([label, value]) => metric(label, value || '-', '')));
+      const tenantPanel = document.createElement('div');
+      tenantPanel.className = 'cc-panel full';
+      const header = document.createElement('div');
+      header.className = 'cc-panel-header';
+      const title = document.createElement('h2');
+      title.className = 'cc-panel-title';
+      title.textContent = 'Trang thai Tenant';
+      header.appendChild(title);
+      const tableWrap = document.createElement('div');
+      tableWrap.className = 'cc-table-wrap';
+      const table = document.createElement('table');
+      table.className = 'cc-table';
+      const head = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      ['Tenant', 'Domain', 'Website', 'Database', 'SSL', 'Phien ban', 'Lan kiem tra', 'Loi gan nhat'].forEach((label) => {
+        const th = document.createElement('th');
+        th.textContent = label;
+        headRow.appendChild(th);
+      });
+      head.appendChild(headRow);
+      const body = document.createElement('tbody');
+      (data.tenants || []).forEach((tenant) => {
+        const tr = document.createElement('tr');
+        const values = [tenant.name || tenant.code, tenant.domain || '-', tenant.websiteStatus || 'UNKNOWN', tenant.databaseStatus || 'UNKNOWN', tenant.sslStatus || 'UNKNOWN', tenant.version || '-', tenant.lastCheckedAt || '-', tenant.lastError || '-'];
+        values.forEach((value, index) => {
+          const td = document.createElement('td');
+          if (index >= 2 && index <= 4) td.appendChild(badge(value));
+          else td.textContent = value;
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+      if (!(data.tenants || []).length) body.appendChild(emptyRow(8));
+      table.append(head, body);
+      tableWrap.appendChild(table);
+      tenantPanel.append(header, tableWrap);
+      document.getElementById('monitorGrid').replaceChildren(...items.map(([label, value]) => metric(label, value || '-', '')), tenantPanel);
     }
 
     function emptyRow(colspan) {
@@ -1490,8 +1555,13 @@
       document.getElementById('unitSubdomain').value = unit?.subdomain || '';
       document.getElementById('unitDatabaseHost').value = unit?.databaseHost || '';
       document.getElementById('unitDatabaseName').value = unit?.databaseName || '';
-      document.getElementById('unitVersion').value = unit?.version || '';
+      document.getElementById('unitDatabaseCharset').value = unit?.databaseCharset || 'utf8mb4';
+      document.getElementById('unitAppVersion').value = unit?.appVersion || unit?.version || '';
+      document.getElementById('unitBuildVersion').value = unit?.buildVersion || '';
+      document.getElementById('unitSchemaVersion').value = unit?.schemaVersion || '';
+      document.getElementById('unitManagerName').value = unit?.manager === 'Chua gan' ? '' : (unit?.manager || '');
       document.getElementById('unitLogo').value = unit?.logo || '';
+      document.getElementById('unitNotes').value = unit?.notes || '';
       document.getElementById('unitStatus').value = unit?.status || 'ACTIVE';
       setFormError('');
       document.getElementById('unitModal').classList.add('active');
@@ -1511,7 +1581,12 @@
         subdomain: formValue('unitSubdomain') || null,
         database_host: formValue('unitDatabaseHost') || null,
         database_name: formValue('unitDatabaseName') || null,
-        version: formValue('unitVersion') || null,
+        database_charset: formValue('unitDatabaseCharset') || null,
+        app_version: formValue('unitAppVersion') || null,
+        build_version: formValue('unitBuildVersion') || null,
+        schema_version: formValue('unitSchemaVersion') || null,
+        manager_name: formValue('unitManagerName') || null,
+        notes: formValue('unitNotes') || null,
         logo: formValue('unitLogo') || null,
         status: formValue('unitStatus') || 'ACTIVE',
         type: 'VILLAGE'
@@ -1529,6 +1604,9 @@
       }
       if (payload.database_name && !/^[a-zA-Z0-9_]{1,190}$/.test(payload.database_name)) {
         return 'Ten database chi gom chu, so va dau gach duoi';
+      }
+      if (payload.database_charset && !/^[a-z0-9_]{1,50}$/.test(payload.database_charset)) {
+        return 'Database charset khong hop le';
       }
       return '';
     }
@@ -1579,13 +1657,36 @@
     }
 
     async function checkUnitConnection(unit) {
-      setUnitsAlert('Dang kiem tra ket noi ' + (unit.name || unit.code || '') + '...');
+      setUnitsAlert('Dang kiem tra database ' + (unit.name || unit.code || '') + '...');
       try {
         await api('/api/control-center/units/' + encodeURIComponent(unit.id) + '/check-connection', { method: 'PATCH' });
-        setUnitsAlert('Da cap nhat trang thai ket noi cho ' + (unit.name || unit.code || 'don vi'));
+        setUnitsAlert('Da cap nhat trang thai database cho ' + (unit.name || unit.code || 'don vi'));
         await loadUnits();
       } catch (error) {
-        setUnitsAlert(error.message || 'Khong kiem tra duoc ket noi don vi');
+        setUnitsAlert(error.message || 'Khong kiem tra duoc database don vi');
+      }
+    }
+
+    async function checkUnitWebsite(unit) {
+      setUnitsAlert('Dang kiem tra website ' + (unit.name || unit.code || '') + '...');
+      try {
+        await api('/api/control-center/units/' + encodeURIComponent(unit.id) + '/check-website', { method: 'PATCH' });
+        setUnitsAlert('Da cap nhat trang thai website cho ' + (unit.name || unit.code || 'don vi'));
+        await loadUnits();
+      } catch (error) {
+        setUnitsAlert(error.message || 'Khong kiem tra duoc website don vi');
+      }
+    }
+
+    async function openTenantPortal(unit) {
+      const popup = window.open('', '_blank', 'noopener');
+      try {
+        const data = await api('/api/control-center/units/' + encodeURIComponent(unit.id) + '/open-portal', { method: 'POST' });
+        if (popup) popup.location = data.url;
+        else window.location.href = data.url;
+      } catch (error) {
+        if (popup) popup.close();
+        setUnitsAlert(error.message || 'Khong mo duoc Tenant Portal');
       }
     }
 

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS `villages` (
   `domain` VARCHAR(190) NULL,
   `database_name` VARCHAR(190) NULL,
   `database_host` VARCHAR(190) NULL,
+  `database_charset` VARCHAR(50) NULL DEFAULT 'utf8mb4',
   `subdomain` VARCHAR(190) NULL,
   `logo_url` VARCHAR(500) NULL,
   `theme_color` VARCHAR(20) NULL,
@@ -19,9 +20,21 @@ CREATE TABLE IF NOT EXISTS `villages` (
   `email` VARCHAR(190) NULL,
   `status` ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
   `version` VARCHAR(50) NULL,
+  `app_version` VARCHAR(50) NULL,
+  `build_version` VARCHAR(100) NULL,
+  `schema_version` VARCHAR(50) NULL,
   `connection_status` ENUM('CONNECTED','DISCONNECTED','UNKNOWN','LOCKED') NOT NULL DEFAULT 'UNKNOWN',
+  `website_status` ENUM('ONLINE','OFFLINE','UNKNOWN','LOCKED') NOT NULL DEFAULT 'UNKNOWN',
+  `database_status` ENUM('CONNECTED','DISCONNECTED','UNKNOWN','LOCKED') NOT NULL DEFAULT 'UNKNOWN',
+  `ssl_status` ENUM('VALID','INVALID','UNKNOWN','NOT_APPLICABLE') NOT NULL DEFAULT 'UNKNOWN',
+  `storage_usage_bytes` BIGINT UNSIGNED NULL,
   `last_checked_at` DATETIME NULL,
+  `last_website_checked_at` DATETIME NULL,
+  `last_database_checked_at` DATETIME NULL,
+  `last_backup_at` DATETIME NULL,
   `last_error` VARCHAR(255) NULL,
+  `manager_name` VARCHAR(190) NULL,
+  `notes` TEXT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -29,7 +42,9 @@ CREATE TABLE IF NOT EXISTS `villages` (
   UNIQUE KEY `uq_villages_domain` (`domain`),
   UNIQUE KEY `uq_villages_subdomain` (`subdomain`),
   KEY `idx_villages_status` (`status`),
-  KEY `idx_villages_connection_status` (`connection_status`)
+  KEY `idx_villages_connection_status` (`connection_status`),
+  KEY `idx_villages_website_status` (`website_status`),
+  KEY `idx_villages_database_status` (`database_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `users` (

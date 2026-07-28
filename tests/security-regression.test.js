@@ -288,20 +288,33 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const repository = read('app/Repositories/AdministrativeUnitRepository.php');
   assert.match(repository, /database_name/);
   assert.match(repository, /database_host/);
+  assert.match(repository, /database_charset/);
+  assert.match(repository, /website_status/);
+  assert.match(repository, /database_status/);
+  assert.match(repository, /ssl_status/);
   assert.match(repository, /connection_status/);
-  assert.match(repository, /function updateHealth/);
+  assert.match(repository, /function updateDatabaseHealth/);
+  assert.match(repository, /function updateWebsiteHealth/);
   const service = read('app/Services/AdministrativeUnitService.php');
   assert.match(service, /function checkConnection/);
+  assert.match(service, /function checkWebsite/);
+  assert.match(service, /function openPortal/);
   assert.match(service, /TENANT_REGISTRY_DB_USERNAME/);
   assert.match(service, /Database connection failed/);
   const controller = read('app/Controllers/AdministrativeUnitController.php');
   assert.match(controller, /function checkConnection/);
+  assert.match(controller, /function checkWebsite/);
+  assert.match(controller, /function openPortal/);
   const index = read('index.php');
   assert.match(index, /check-connection/);
+  assert.match(index, /check-website/);
+  assert.match(index, /open-portal/);
   const controlCenter = read('views/control-center.php');
   assert.match(controlCenter, /Mo Portal/);
-  assert.match(controlCenter, /Kiem tra/);
+  assert.match(controlCenter, /Website/);
+  assert.match(controlCenter, /Database/);
   assert.match(controlCenter, /unitDatabaseName/);
+  assert.match(controlCenter, /unitDatabaseCharset/);
 }
 
 {

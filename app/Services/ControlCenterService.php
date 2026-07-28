@@ -46,6 +46,7 @@ final class ControlCenterService
 
     public function monitoring(): array
     {
+        $units = $this->withFallback(fn(): array => $this->repository->units(), [], 'tenant_monitoring');
         $database = $this->withFallback(
             fn(): array => $this->repository->databaseHealth(),
             ['ok' => false, 'error' => ['message' => 'Database diagnostics unavailable']],
@@ -79,6 +80,19 @@ final class ControlCenterService
                 'status' => ($database['ok'] ?? false) ? 'OK' : 'DEGRADED',
                 'checkedAt' => date('c'),
             ],
+            'tenants' => array_map(static fn(array $unit): array => [
+                'id' => $unit['id'],
+                'code' => $unit['code'],
+                'name' => $unit['name'],
+                'domain' => $unit['domain'],
+                'status' => $unit['status'],
+                'websiteStatus' => $unit['websiteStatus'] ?? 'UNKNOWN',
+                'databaseStatus' => $unit['databaseStatus'] ?? 'UNKNOWN',
+                'sslStatus' => $unit['sslStatus'] ?? 'UNKNOWN',
+                'version' => $unit['version'] ?? '',
+                'lastCheckedAt' => $unit['lastCheckedAt'] ?? null,
+                'lastError' => $unit['lastError'] ?? '',
+            ], $units),
         ];
     }
 

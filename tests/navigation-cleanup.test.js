@@ -80,7 +80,9 @@ const allowedClickListeners = new Map([
   ]],
   ['views/control-center.php', [
     "button.addEventListener('click', () => activateSection(button.dataset.section));",
-    "portal.addEventListener('click', () => window.open('https://' + unit.domain, '_blank', 'noopener'));",
+    "portal.addEventListener('click', () => openTenantPortal(unit));",
+    "checkWebsite.addEventListener('click', () => checkUnitWebsite(unit));",
+    "checkDatabase.addEventListener('click', () => checkUnitConnection(unit));",
     "check.addEventListener('click', () => checkUnitConnection(unit));",
     "edit.addEventListener('click', () => openUnitModal(unit));",
     "lock.addEventListener('click', () => changeUnitStatus(unit, 'lock'));",
