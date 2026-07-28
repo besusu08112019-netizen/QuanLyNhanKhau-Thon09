@@ -23,6 +23,7 @@ Feature nay giai quyet:
 - Cap nhat thong tin co ban va trang thai tai khoan.
 - Khoa/kich hoat tai khoan khi can.
 - Reset mat khau theo quy trinh quan tri.
+- Khong xoa tai khoan de giu lich su va audit.
 
 Doi tuong su dung:
 
@@ -42,6 +43,8 @@ Gia tri mang lai:
 - He thong kiem tra authorization `control_center.users.read`.
 - He thong lay danh sach tai khoan theo filter.
 - UI hien metadata tai khoan, khong hien password hash, token, session secret.
+- Cot danh sach uu tien theo thu tu: Ten -> Vai tro -> Don vi -> Trang thai -> Dang nhap cuoi.
+- Neu tai khoan chua tung dang nhap, hien `Chua dang nhap`.
 
 ### Create Account
 
@@ -51,6 +54,10 @@ Dieu kien hop le:
 - `username`, `email`, `display_name`, `password`, `role`, `status` hop le.
 - `username` va `email` khong trung voi tai khoan chua xoa.
 - Role nam trong danh sach duoc Feature cho phep.
+- Status khi tao chi nam trong `ACTIVE`, `INACTIVE`.
+- Mac dinh status la `ACTIVE` neu nguoi dung khong chon.
+- Username co the duoc goi y tu email hoac ho ten de giam nhap lieu.
+- Don vi duoc chon tu danh sach Administrative Unit hien co.
 
 Ket qua:
 
@@ -72,20 +79,20 @@ Ket qua:
 - Metadata tai khoan duoc cap nhat.
 - Audit ghi `user.updated`.
 
-### Lock Account
+### Deactivate Account
 
 Dieu kien hop le:
 
-- Actor co `control_center.users.lock`.
+- Actor co `control_center.users.update`.
 - Tai khoan ton tai.
-- Khong khoa tai khoan dang thuc hien thao tac.
-- Khong khoa tai khoan `SYSTEM_ADMIN` cuoi cung.
+- Khong vo hieu hoa tai khoan dang thuc hien thao tac.
+- Khong vo hieu hoa tai khoan `SYSTEM_ADMIN` cuoi cung.
 
 Ket qua:
 
 - Status chuyen sang `INACTIVE`.
 - Session dang hoat dong cua tai khoan bi revoke neu co co che hien co phu hop.
-- Audit ghi `user.locked`.
+- Audit ghi `user.deactivated`.
 
 ### Activate Account
 
@@ -115,19 +122,44 @@ Ket qua:
 - Session cu cua tai khoan bi revoke neu co the thuc hien bang co che hien co.
 - Audit ghi `user.password_reset`.
 
+### No Delete
+
+- Feature nay khong ho tro xoa tai khoan.
+- Khong co nut xoa tren UI.
+- Khong co endpoint delete trong Control Center User Management.
+- Khong set `DELETED` trong Feature nay.
+- Lich su audit va thong tin tai khoan duoc giu lai.
+
 ## 3. UI Flow
 
 - Them section `Tai khoan he thong` trong Control Center tu trang hien co.
 - Hien danh sach tai khoan voi pagination.
 - Toolbar gom tim kiem, filter role, filter status, nut them tai khoan.
 - Modal them/sua tai khoan.
+- Modal reset mat khau rieng, khong tron vao form sua thong tin.
 - Action tung dong:
   - Sua.
-  - Khoa hoac kich hoat.
+  - Vo hieu hoa hoac kich hoat.
   - Reset mat khau.
+- Khong co action xoa.
 - Error hien tai form/section.
 - Empty state khi chua co tai khoan.
 - Loading state khi tai danh sach va submit form.
+
+Cot danh sach tai khoan:
+
+1. Ten.
+2. Vai tro.
+3. Don vi.
+4. Trang thai.
+5. Dang nhap cuoi.
+6. IP cuoi.
+7. Thiet bi cuoi.
+8. Thoi gian tao.
+9. Nguoi tao.
+10. Thao tac.
+
+Email khong la cot dau tien. Email co the hien phu ben duoi ten hoac trong tooltip/detail.
 
 ## 4. Navigation
 
@@ -144,8 +176,8 @@ Tat ca endpoint nam trong Control Center:
 - `GET /api/control-center/users/{id}`
 - `POST /api/control-center/users`
 - `PUT /api/control-center/users/{id}`
-- `PATCH /api/control-center/users/{id}/lock`
 - `PATCH /api/control-center/users/{id}/activate`
+- `PATCH /api/control-center/users/{id}/deactivate`
 - `PATCH /api/control-center/users/{id}/reset-password`
 
 Khong thay doi API tenant hien co:
@@ -164,7 +196,7 @@ Khong thay doi API tenant hien co:
   "email": "commune.admin@example.com",
   "display_name": "Commune Admin",
   "password": "minimum-8-chars",
-  "role": "COMMUNE_ADMIN",
+  "role": "VILLAGE_ADMIN",
   "status": "ACTIVE",
   "unit_id": 1
 }
@@ -177,7 +209,7 @@ Khong thay doi API tenant hien co:
   "username": "commune_admin",
   "email": "commune.admin@example.com",
   "display_name": "Commune Admin",
-  "role": "COMMUNE_ADMIN",
+  "role": "VILLAGE_ADMIN",
   "status": "ACTIVE",
   "unit_id": 1
 }
@@ -213,13 +245,17 @@ Item:
   "username": "commune_admin",
   "email": "commune.admin@example.com",
   "displayName": "Commune Admin",
-  "role": "COMMUNE_ADMIN",
+  "role": "VILLAGE_ADMIN",
   "sourceRole": "ADMIN",
   "status": "ACTIVE",
   "unitId": 1,
   "unitName": "Thon 09",
   "lastLoginAt": null,
-  "createdAt": "2026-07-28T00:00:00+07:00"
+  "lastLoginLabel": "Chua dang nhap",
+  "lastIp": null,
+  "lastDevice": null,
+  "createdAt": "2026-07-28T00:00:00+07:00",
+  "createdBy": "System Admin"
 }
 ```
 
@@ -257,10 +293,19 @@ Role mapping tam thoi de tranh migration:
 
 `COMMUNE_ADMIN` chua co source role rieng trong schema hien tai. Implementation phai chon mot trong hai huong truoc khi code:
 
-- Khong cho tao `COMMUNE_ADMIN` trong Feature nay, chi hien disabled/pending.
-- Hoac map tam co kiem soat vao `ADMIN` kem `unit_id` scope neu schema hien co dap ung.
+- Khong cho tao `COMMUNE_ADMIN` trong Feature nay, chi hien disabled/future.
+- Khong map tam `COMMUNE_ADMIN` vao `ADMIN` neu chua co Scope/Permission chinh thuc.
 
 Neu can schema/role enum moi thi dung lai va lap Migration Plan, khong tu y thay doi database.
+
+Tim kiem ho tro:
+
+- Username.
+- Ho ten.
+- Email.
+- Vai tro.
+- Don vi.
+- Trang thai.
 
 ## 9. Permission
 
@@ -277,8 +322,8 @@ Permission keys du kien:
 - `control_center.users.read`
 - `control_center.users.create`
 - `control_center.users.update`
-- `control_center.users.lock`
 - `control_center.users.activate`
+- `control_center.users.deactivate`
 - `control_center.users.reset_password`
 
 ## 10. Audit
@@ -287,9 +332,9 @@ Bat buoc audit:
 
 - `user.created`
 - `user.updated`
-- `user.locked`
 - `user.activated`
 - `user.password_reset`
+- `user.deactivated`
 
 Audit khong ghi:
 
@@ -310,6 +355,8 @@ Repository chi lam:
 - Cap nhat users.
 - Cap nhat status.
 - Cap nhat password hash.
+- Doc last login IP/device tu `user_sessions` neu du lieu hien co co san.
+- Doc nguoi tao tu `users.created_by` neu du lieu hien co co san.
 - Revoke session neu can.
 
 Repository khong chua business rule.
@@ -358,10 +405,17 @@ Controller chi lam:
 - 422: validation error.
 - 500: loi khong mong doi, khong expose secret.
 
+Loi nghiep vu can hien ro:
+
+- Khong duoc vo hieu hoa tai khoan dang dang nhap.
+- Khong duoc vo hieu hoa `SYSTEM_ADMIN` cuoi cung.
+- `COMMUNE_ADMIN` chua san sang trong Feature nay.
+
 ## 15. Empty State
 
 - Danh sach trong: hien `Chua co tai khoan hien thi`.
 - Filter khong co ket qua: hien `Khong tim thay tai khoan phu hop`.
+- Tai khoan chua tung dang nhap: hien `Chua dang nhap`.
 
 ## 16. Loading State
 
@@ -389,8 +443,12 @@ Unit/Smoke:
 - Create khong token bi tu choi.
 - Create co token nhung thieu CSRF bi tu choi.
 - Create validation fail voi email sai/password ngan/role sai.
+- Create `COMMUNE_ADMIN` bi tu choi hoac disabled theo UI.
 - Update validation fail voi user khong ton tai.
-- Lock/activate khong token bi tu choi.
+- Search theo username/ho ten/email/vai tro/don vi/trang thai.
+- Last login null hien `Chua dang nhap`.
+- Deactivate/activate khong token bi tu choi.
+- Khong co DELETE endpoint/action.
 - Tenant domain khong truy cap duoc `/api/control-center/users`.
 - Domain goc khong truy cap duoc API tenant.
 
@@ -426,5 +484,6 @@ Feature nay tao nen cho:
 - Scope Management.
 - SSO.
 - Audit nang cao.
+- `LOCKED` va `PENDING` sau khi Permission, Role, Scope va SSO hoan thanh.
 
 Khong trien khai cac muc tren trong Feature nay.
