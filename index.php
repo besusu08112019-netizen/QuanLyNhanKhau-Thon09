@@ -36,6 +36,8 @@ use App\Controllers\AdministrativeUnitController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
+use App\Controllers\ControlCenterAuthController;
+use App\Controllers\ControlCenterPermissionController;
 use App\Controllers\ControlCenterUserController;
 use App\Controllers\ContributionController;
 use App\Controllers\ControlCenterController;
@@ -277,10 +279,21 @@ if ($request->path() === '/favicon.ico') {
 if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api')) {
     if (str_starts_with($request->path(), '/api/control-center/')) {
         $controller = new ControlCenterController($request);
+        $authController = new ControlCenterAuthController($request);
         $unitsController = new AdministrativeUnitController($request);
         $usersController = new ControlCenterUserController($request);
+        $permissionsController = new ControlCenterPermissionController($request);
         $path = $request->path();
         $method = $request->method();
+        if ($method === 'POST' && $path === '/api/control-center/login') {
+            $authController->login();
+        }
+        if ($method === 'GET' && $path === '/api/control-center/me') {
+            $authController->me();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/logout') {
+            $authController->logout();
+        }
         if ($method === 'GET' && $path === '/api/control-center/units') {
             $unitsController->index();
         }
@@ -319,6 +332,15 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         }
         if ($method === 'PATCH' && preg_match('#^/api/control-center/users/(\d+)/reset-password$#', $path, $matches)) {
             $usersController->resetPassword($matches[1]);
+        }
+        if ($method === 'GET' && $path === '/api/control-center/permissions') {
+            $permissionsController->index();
+        }
+        if ($method === 'PUT' && $path === '/api/control-center/permissions') {
+            $permissionsController->update();
+        }
+        if ($method === 'PATCH' && $path === '/api/control-center/permissions/reset') {
+            $permissionsController->reset();
         }
         match ($request->path()) {
             '/api/control-center/status' => $controller->status(),

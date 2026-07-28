@@ -113,6 +113,19 @@
       gap: 16px;
     }
 
+    .cc-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .cc-global-search {
+      width: min(360px, 38vw);
+      min-width: 220px;
+    }
+
     .cc-title {
       margin: 0;
       font-size: 20px;
@@ -144,6 +157,12 @@
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .metric-card,
@@ -362,10 +381,85 @@
       display: block;
     }
 
+    .cc-login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #f4f6f9;
+    }
+
+    .cc-login-screen.hidden {
+      display: none;
+    }
+
+    .cc-login-card {
+      width: min(420px, 100%);
+      background: #ffffff;
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      padding: 22px;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+      display: grid;
+      gap: 14px;
+    }
+
+    .cc-login-card h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .cc-login-card p {
+      margin: 0;
+      color: var(--cc-muted);
+      font-size: 14px;
+    }
+
     .cc-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
+    }
+
+    .permission-grid {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .permission-groups {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .permission-groups button {
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      background: #ffffff;
+      min-height: 40px;
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .permission-groups button.active {
+      border-color: var(--cc-brand);
+      color: var(--cc-brand);
+      background: #ecfdf3;
+    }
+
+    .permission-cell {
+      text-align: center;
+    }
+
+    .permission-toggle {
+      width: 20px;
+      height: 20px;
     }
 
     .cc-table th,
@@ -458,9 +552,13 @@
 
       .metric-grid,
       .monitor-grid,
+      .permission-grid,
       .cc-toolbar,
-      .cc-form {
+      .cc-form,
+      .cc-global-search {
         grid-template-columns: 1fr;
+        width: 100%;
+        min-width: 0;
       }
 
       .cc-table {
@@ -477,6 +575,27 @@
   </script>
 </head>
 <body>
+  <div class="cc-login-screen" id="loginScreen">
+    <form class="cc-login-card" id="loginForm" novalidate>
+      <div class="cc-brand">
+        <div class="cc-brand-mark">CC</div>
+        <div>
+          <h1>Community Control Center</h1>
+          <p>Dang nhap de dieu hanh Hong Phong Community Platform.</p>
+        </div>
+      </div>
+      <div class="cc-field">
+        <label for="loginUsername">Tai khoan hoac email</label>
+        <input class="cc-input" id="loginUsername" name="username" autocomplete="username" required>
+      </div>
+      <div class="cc-field">
+        <label for="loginPassword">Mat khau</label>
+        <input class="cc-input" id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="cc-form-error active" id="loginError"></div>
+      <button class="cc-btn primary" type="submit" id="loginButton"><i class="fa-solid fa-right-to-bracket"></i>Dang nhap</button>
+    </form>
+  </div>
   <div class="control-center">
     <aside class="cc-sidebar">
       <div class="cc-brand">
@@ -490,6 +609,7 @@
         <button class="active" type="button" data-section="dashboard"><i class="fa-solid fa-chart-line"></i>Dashboard tong</button>
         <button type="button" data-section="units"><i class="fa-solid fa-sitemap"></i>Don vi hanh chinh</button>
         <button type="button" data-section="accounts"><i class="fa-solid fa-users-gear"></i>Tai khoan he thong</button>
+        <button type="button" data-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phan quyen</button>
         <button type="button" data-section="monitoring"><i class="fa-solid fa-heart-pulse"></i>Monitoring</button>
       </nav>
     </aside>
@@ -500,12 +620,28 @@
           <h1 class="cc-title" id="sectionTitle">Dashboard tong</h1>
           <div class="cc-meta" id="portalMeta">Community Control Center - {{APP_NAME}}</div>
         </div>
-        <span class="cc-badge" id="healthBadge">Dang kiem tra</span>
+        <div class="cc-header-actions">
+          <input class="cc-input cc-global-search" type="search" id="globalSearch" placeholder="Tim nhanh: dashboard, don vi, tai khoan, phan quyen">
+          <span class="cc-meta" id="currentUserLabel">Chua dang nhap</span>
+          <span class="cc-badge" id="healthBadge">Dang kiem tra</span>
+          <button class="cc-btn" type="button" id="logoutButton"><i class="fa-solid fa-right-from-bracket"></i>Dang xuat</button>
+        </div>
       </header>
 
       <div class="cc-content">
         <section class="cc-section active" id="dashboardSection">
           <div class="metric-grid" id="metricGrid"></div>
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <h2 class="cc-panel-title">Thao tac nhanh</h2>
+              <span class="cc-meta">Mo nhanh cac nang luc dieu hanh dang san sang</span>
+            </div>
+            <div class="cc-state quick-actions">
+              <button class="cc-btn" type="button" data-go-section="units"><i class="fa-solid fa-sitemap"></i>Quan ly don vi</button>
+              <button class="cc-btn" type="button" data-go-section="accounts"><i class="fa-solid fa-users-gear"></i>Quan ly tai khoan</button>
+              <button class="cc-btn" type="button" data-go-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phan quyen</button>
+            </div>
+          </div>
         </section>
 
         <section class="cc-section" id="unitsSection">
@@ -585,6 +721,37 @@
                 </thead>
                 <tbody id="accountsBody"></tbody>
               </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="cc-section" id="permissionsSection">
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <div>
+                <h2 class="cc-panel-title">Phan quyen Community Control Center</h2>
+                <div class="cc-meta">Kiem soat menu, module, button, action va API trong Control Center.</div>
+              </div>
+              <button class="cc-btn primary" type="button" id="savePermissionsButton" disabled><i class="fa-solid fa-floppy-disk"></i>Luu thay doi</button>
+            </div>
+            <div class="cc-toolbar">
+              <input class="cc-input" type="search" id="permissionSearch" placeholder="Tim permission, module, action">
+              <select class="cc-select" id="permissionRoleFilter" aria-label="Loc vai tro">
+                <option value="">Tat ca vai tro</option>
+              </select>
+              <button class="cc-btn" type="button" id="refreshPermissionsButton"><i class="fa-solid fa-rotate"></i>Tai lai</button>
+            </div>
+            <div class="cc-alert" id="permissionsAlert"></div>
+            <div class="permission-grid">
+              <div class="cc-panel">
+                <div class="permission-groups" id="permissionGroups"></div>
+              </div>
+              <div class="cc-table-wrap">
+                <table class="cc-table">
+                  <thead id="permissionsHead"></thead>
+                  <tbody id="permissionsBody"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>
@@ -742,24 +909,28 @@
       dashboard: document.getElementById('dashboardSection'),
       units: document.getElementById('unitsSection'),
       accounts: document.getElementById('accountsSection'),
+      permissions: document.getElementById('permissionsSection'),
       monitoring: document.getElementById('monitoringSection')
     };
     const sectionTitles = {
       dashboard: 'Dashboard tong',
       units: 'Don vi hanh chinh',
       accounts: 'Tai khoan he thong',
+      permissions: 'Phan quyen',
       monitoring: 'Monitoring'
     };
 
     document.querySelectorAll('.cc-nav button').forEach((button) => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('.cc-nav button').forEach((item) => item.classList.remove('active'));
-        button.classList.add('active');
-        Object.values(sections).forEach((section) => section.classList.remove('active'));
-        sections[button.dataset.section].classList.add('active');
-        document.getElementById('sectionTitle').textContent = sectionTitles[button.dataset.section];
-      });
+      button.addEventListener('click', () => activateSection(button.dataset.section));
     });
+
+    function activateSection(section) {
+      if (!sections[section]) return;
+      document.querySelectorAll('.cc-nav button').forEach((item) => item.classList.toggle('active', item.dataset.section === section));
+      Object.values(sections).forEach((item) => item.classList.remove('active'));
+      sections[section].classList.add('active');
+      document.getElementById('sectionTitle').textContent = sectionTitles[section];
+    }
 
     const nf = new Intl.NumberFormat('vi-VN');
     const percent = (value) => `${Number(value || 0).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`;
@@ -776,6 +947,13 @@
       items: [],
       editing: null,
       passwordTarget: null
+    };
+    const permissionState = {
+      roles: [],
+      groups: [],
+      matrix: [],
+      pending: new Map(),
+      activeGroup: ''
     };
     const roleLabels = {
       SYSTEM_ADMIN: 'Quan tri he thong',
@@ -813,6 +991,49 @@
       return headers;
     }
 
+    function setSession(result) {
+      window.App = window.App || {};
+      window.App.token = result?.token || '';
+      window.App.csrfToken = result?.csrfToken || '';
+      window.App.user = result?.user || null;
+      if (window.App.token) {
+        localStorage.setItem(storageKey('token'), window.App.token);
+        localStorage.setItem(storageKey('csrf'), window.App.csrfToken || '');
+      } else {
+        localStorage.removeItem(storageKey('token'));
+        localStorage.removeItem(storageKey('csrf'));
+      }
+      renderAuthState();
+    }
+
+    function renderAuthState() {
+      const user = window.App?.user || null;
+      const loggedIn = Boolean(window.App?.token && user);
+      document.getElementById('loginScreen').classList.toggle('hidden', loggedIn);
+      document.getElementById('currentUserLabel').textContent = loggedIn ? `${user.displayName || user.email} - ${roleLabels[user.role] || user.role}` : 'Chua dang nhap';
+    }
+
+    async function restoreSession() {
+      const token = localStorage.getItem(storageKey('token')) || '';
+      const csrf = localStorage.getItem(storageKey('csrf')) || '';
+      if (!token) {
+        renderAuthState();
+        return false;
+      }
+      window.App = window.App || {};
+      window.App.token = token;
+      window.App.csrfToken = csrf;
+      try {
+        const user = await api('/api/control-center/me');
+        window.App.user = user;
+        renderAuthState();
+        return true;
+      } catch (error) {
+        setSession(null);
+        return false;
+      }
+    }
+
     async function api(path, options = {}) {
       const method = options.method || 'GET';
       const headers = authHeaders(method);
@@ -825,6 +1046,40 @@
       const payload = await response.json();
       if (!payload.ok) throw new Error(payload.message || 'Request failed');
       return payload.data;
+    }
+
+    async function login(event) {
+      event.preventDefault();
+      const button = document.getElementById('loginButton');
+      const error = document.getElementById('loginError');
+      const username = formValue('loginUsername');
+      const password = formValue('loginPassword');
+      if (!username || !password) {
+        error.textContent = 'Vui long nhap tai khoan va mat khau';
+        return;
+      }
+      button.disabled = true;
+      error.textContent = '';
+      try {
+        const result = await api('/api/control-center/login', { method: 'POST', body: { username, password } });
+        setSession(result);
+        await loadControlCenter();
+      } catch (loginError) {
+        error.textContent = loginError.message || 'Dang nhap khong thanh cong';
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function logout() {
+      try {
+        await api('/api/control-center/logout', { method: 'POST' });
+      } catch (error) {
+        // Local logout must still clear stale credentials.
+      }
+      setSession(null);
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginUsername').focus();
     }
 
     async function loadDashboard() {
@@ -942,6 +1197,133 @@
       }
     }
 
+    async function loadPermissions() {
+      const head = document.getElementById('permissionsHead');
+      const body = document.getElementById('permissionsBody');
+      body.replaceChildren(stateRow(2, 'Dang tai phan quyen...'));
+      try {
+        const data = await api('/api/control-center/permissions');
+        permissionState.roles = data.roles || [];
+        permissionState.groups = data.groups || [];
+        permissionState.matrix = data.matrix || [];
+        permissionState.pending.clear();
+        if (!permissionState.activeGroup && permissionState.groups.length) {
+          permissionState.activeGroup = permissionState.groups[0].id;
+        }
+        renderPermissionRoleFilter();
+        renderPermissionGroups();
+        renderPermissions();
+        setPermissionsAlert('');
+      } catch (error) {
+        head.replaceChildren();
+        body.replaceChildren(stateRow(2, 'Khong tai duoc phan quyen'));
+        setPermissionsAlert(error.message || 'Khong tai duoc phan quyen');
+      }
+    }
+
+    function renderPermissionRoleFilter() {
+      const select = document.getElementById('permissionRoleFilter');
+      const current = select.value;
+      const options = [new Option('Tat ca vai tro', '')].concat(permissionState.roles.map((role) => new Option(role.label || role.role, role.role)));
+      select.replaceChildren(...options);
+      select.value = current;
+    }
+
+    function renderPermissionGroups() {
+      const holder = document.getElementById('permissionGroups');
+      const groups = permissionState.groups.map((group) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = group.name || group.id;
+        button.classList.toggle('active', group.id === permissionState.activeGroup);
+        button.addEventListener('click', () => {
+          permissionState.activeGroup = group.id;
+          renderPermissionGroups();
+          renderPermissions();
+        });
+        return button;
+      });
+      holder.replaceChildren(...(groups.length ? groups : [stateMessage('Chua co permission')]));
+    }
+
+    function renderPermissions() {
+      const head = document.getElementById('permissionsHead');
+      const body = document.getElementById('permissionsBody');
+      const roleFilter = document.getElementById('permissionRoleFilter').value;
+      const search = document.getElementById('permissionSearch').value.trim().toLowerCase();
+      const group = permissionState.groups.find((item) => item.id === permissionState.activeGroup) || permissionState.groups[0];
+      const roles = permissionState.roles.filter((role) => !roleFilter || role.role === roleFilter);
+      const permissions = (group?.permissions || []).filter((permission) => {
+        const haystack = `${permission.key} ${permission.label} ${permission.action}`.toLowerCase();
+        return !search || haystack.includes(search);
+      });
+
+      const headerRow = document.createElement('tr');
+      ['Quyen'].concat(roles.map((role) => role.label || role.role)).forEach((label) => {
+        const th = document.createElement('th');
+        th.textContent = label;
+        headerRow.appendChild(th);
+      });
+      head.replaceChildren(headerRow);
+
+      const rows = permissions.map((permission) => {
+        const tr = document.createElement('tr');
+        const name = document.createElement('td');
+        const primary = document.createElement('div');
+        primary.textContent = permission.label || permission.key;
+        const secondary = document.createElement('div');
+        secondary.className = 'cc-meta';
+        secondary.textContent = permission.key;
+        name.append(primary, secondary);
+        tr.appendChild(name);
+
+        roles.forEach((role) => {
+          const td = document.createElement('td');
+          td.className = 'permission-cell';
+          const item = matrixItem(role.role, permission.key);
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.className = 'permission-toggle';
+          checkbox.checked = item.allowed;
+          checkbox.disabled = item.locked;
+          checkbox.title = item.locked ? 'Quyen cot loi khong the tat' : '';
+          checkbox.addEventListener('change', () => {
+            permissionState.pending.set(role.role + '|' + permission.key, {
+              role: role.role,
+              permission: permission.key,
+              allowed: checkbox.checked
+            });
+            document.getElementById('savePermissionsButton').disabled = permissionState.pending.size === 0;
+          });
+          td.appendChild(checkbox);
+          tr.appendChild(td);
+        });
+        return tr;
+      });
+      body.replaceChildren(...(rows.length ? rows : [emptyRow(Math.max(1, roles.length + 1))]));
+    }
+
+    function matrixItem(role, permission) {
+      const pending = permissionState.pending.get(role + '|' + permission);
+      if (pending) return { allowed: pending.allowed, locked: false };
+      return permissionState.matrix.find((item) => item.role === role && item.permission === permission) || { allowed: false, locked: false };
+    }
+
+    async function savePermissions() {
+      const button = document.getElementById('savePermissionsButton');
+      if (permissionState.pending.size === 0) return;
+      button.disabled = true;
+      setPermissionsAlert('');
+      try {
+        await api('/api/control-center/permissions', { method: 'PUT', body: { items: Array.from(permissionState.pending.values()) } });
+        await loadPermissions();
+      } catch (error) {
+        setPermissionsAlert(error.message || 'Khong luu duoc phan quyen');
+      } finally {
+        button.disabled = permissionState.pending.size === 0;
+      }
+    }
+
     async function loadMonitoring() {
       const data = await api('/api/control-center/monitoring');
       const usedBytes = Math.max(0, Number(data.storage.totalBytes || 0) - Number(data.storage.freeBytes || 0));
@@ -972,6 +1354,13 @@
       return tr;
     }
 
+    function stateMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'cc-state';
+      div.textContent = text;
+      return div;
+    }
+
     function actionButton(label, icon, variant = '') {
       const button = document.createElement('button');
       button.type = 'button';
@@ -989,6 +1378,12 @@
 
     function setAccountsAlert(message) {
       const alert = document.getElementById('accountsAlert');
+      alert.textContent = message || '';
+      alert.classList.toggle('active', Boolean(message));
+    }
+
+    function setPermissionsAlert(message) {
+      const alert = document.getElementById('permissionsAlert');
       alert.textContent = message || '';
       alert.classList.toggle('active', Boolean(message));
     }
@@ -1270,11 +1665,42 @@
       return `${(bytes / (1024 ** index)).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
     }
 
-    Promise.all([loadDashboard(), loadUnits(), loadAccounts(), loadMonitoring()]).catch((error) => {
-      document.getElementById('healthBadge').textContent = 'DEGRADED';
-      document.getElementById('healthBadge').className = 'cc-badge warn';
+    async function loadControlCenter() {
+      await Promise.all([loadDashboard(), loadUnits(), loadAccounts(), loadPermissions(), loadMonitoring()]).catch((error) => {
+        document.getElementById('healthBadge').textContent = 'DEGRADED';
+        document.getElementById('healthBadge').className = 'cc-badge warn';
+      });
+    }
+
+    restoreSession().then((restored) => {
+      if (restored) {
+        loadControlCenter();
+      } else {
+        document.getElementById('loginUsername').focus();
+      }
     });
 
+    document.getElementById('loginForm').addEventListener('submit', login);
+    document.getElementById('logoutButton').addEventListener('click', logout);
+    document.querySelectorAll('[data-go-section]').forEach((button) => {
+      button.addEventListener('click', () => activateSection(button.dataset.goSection));
+    });
+    document.getElementById('globalSearch').addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      const query = event.currentTarget.value.trim().toLowerCase();
+      const targets = [
+        ['dashboard', ['dashboard', 'tong quan', 'thong ke']],
+        ['units', ['don vi', 'thon', 'xa', 'administrative']],
+        ['accounts', ['tai khoan', 'nguoi dung', 'user']],
+        ['permissions', ['phan quyen', 'permission', 'quyen']],
+        ['monitoring', ['monitoring', 'health', 'trang thai']]
+      ];
+      const match = targets.find(([, terms]) => terms.some((term) => query.includes(term) || term.includes(query)));
+      if (match) {
+        activateSection(match[0]);
+        event.currentTarget.blur();
+      }
+    });
     document.getElementById('addUnitButton').addEventListener('click', () => openUnitModal());
     document.getElementById('refreshUnitsButton').addEventListener('click', () => loadUnits().catch((error) => setUnitsAlert(error.message)));
     document.getElementById('unitStatusFilter').addEventListener('change', () => loadUnits().catch((error) => setUnitsAlert(error.message)));
@@ -1316,6 +1742,16 @@
     document.getElementById('passwordModal').addEventListener('click', (event) => {
       if (event.target.id === 'passwordModal') closePasswordModal();
     });
+    document.getElementById('refreshPermissionsButton').addEventListener('click', () => loadPermissions());
+    document.getElementById('savePermissionsButton').addEventListener('click', savePermissions);
+    document.getElementById('permissionRoleFilter').addEventListener('change', renderPermissions);
+    document.getElementById('permissionSearch').addEventListener('input', (() => {
+      let timer = null;
+      return () => {
+        clearTimeout(timer);
+        timer = setTimeout(renderPermissions, 250);
+      };
+    })());
   </script>
 </body>
 </html>
