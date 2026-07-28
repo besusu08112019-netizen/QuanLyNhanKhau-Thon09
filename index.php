@@ -385,6 +385,7 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
             '/api/control-center/dashboard' => $controller->dashboard(),
             '/api/control-center/accounts' => $controller->accounts(),
             '/api/control-center/monitoring' => $controller->monitoring(),
+            '/api/control-center/audit' => $controller->audit(),
             default => Response::error('API Community Control Center khong ton tai', 404),
         };
     }

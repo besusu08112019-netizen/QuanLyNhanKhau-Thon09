@@ -309,12 +309,20 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(index, /check-connection/);
   assert.match(index, /check-website/);
   assert.match(index, /open-portal/);
+  assert.match(index, /\/api\/control-center\/audit/);
   const controlCenter = read('views/control-center.php');
   assert.match(controlCenter, /Mo Portal/);
   assert.match(controlCenter, /Website/);
   assert.match(controlCenter, /Database/);
   assert.match(controlCenter, /unitDatabaseName/);
   assert.match(controlCenter, /unitDatabaseCharset/);
+  assert.match(controlCenter, /Cong viec can xu ly hom nay/);
+  assert.match(controlCenter, /operationsList/);
+  assert.match(controlCenter, /auditTenantFilter/);
+  const controlCenterRepo = read('app/Repositories/ControlCenterRepository.php');
+  assert.match(controlCenterRepo, /operationItems/);
+  assert.match(controlCenterRepo, /recentAudit/);
+  assert.match(controlCenterRepo, /function audit/);
 }
 
 {

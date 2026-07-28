@@ -36,6 +36,8 @@ final class ControlCenterRepository
             'totalWorkers' => $this->count('citizens', $citizenWhere . " AND (employed = 1 OR freelance_labor = 1 OR out_province_labor = 1 OR foreign_labor = 1)"),
             'totalPartyMembers' => $this->partyMemberCount(),
             'healthInsuranceRate' => $totalCitizens > 0 ? round(($insuredCitizens / $totalCitizens) * 100, 1) : 0.0,
+            'operations' => $this->operationItems(),
+            'recentActivity' => $this->recentAudit(6),
         ];
     }
 
@@ -153,6 +155,43 @@ final class ControlCenterRepository
         return Database::diagnostics();
     }
 
+    public function audit(array $filters = []): array
+    {
+        if (!$this->tableExists('audit_logs')) {
+            return ['items' => []];
+        }
+
+        $where = ['1=1'];
+        $params = [];
+        $villageId = (int) ($filters['village_id'] ?? 0);
+        if ($villageId > 0) {
+            $where[] = 'a.village_id = :village_id';
+            $params['village_id'] = $villageId;
+        }
+        $level = strtoupper(trim((string) ($filters['level'] ?? '')));
+        if (in_array($level, ['INFO', 'WARN', 'ERROR'], true)) {
+            $where[] = 'a.level = :level';
+            $params['level'] = $level;
+        }
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $where[] = '(a.actor_email LIKE :search OR a.action LIKE :search OR a.message LIKE :search OR v.name LIKE :search)';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $stmt = $this->db()->prepare(
+            'SELECT a.id, a.village_id, v.name AS tenant_name, v.code AS tenant_code, a.created_at,
+                    a.actor_email, a.module, a.action, a.level, a.message, a.metadata
+             FROM audit_logs a
+             LEFT JOIN villages v ON v.id = a.village_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY a.created_at DESC, a.id DESC
+             LIMIT 100'
+        );
+        $stmt->execute($params);
+        return ['items' => array_map([$this, 'normalizeAuditRow'], $stmt->fetchAll() ?: [])];
+    }
+
     private function partyMemberCount(): int
     {
         if ($this->tableExists('party_members')) {
@@ -203,6 +242,93 @@ final class ControlCenterRepository
             'version' => (string) $row['version'],
             'total' => (int) $row['total'],
         ], $rows ?: []);
+    }
+
+    private function operationItems(): array
+    {
+        $items = [];
+        $currentVersion = defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '';
+        foreach ($this->units() as $unit) {
+            $tenant = [
+                'id' => $unit['id'],
+                'code' => $unit['code'],
+                'name' => $unit['name'],
+                'domain' => $unit['domain'],
+                'manager' => $unit['manager'],
+            ];
+
+            $website = (string) ($unit['websiteStatus'] ?? 'UNKNOWN');
+            if (in_array($website, ['OFFLINE', 'UNKNOWN'], true)) {
+                $items[] = $this->operationItem($website === 'OFFLINE' ? 'HIGH' : 'MEDIUM', 'website', $tenant, $website === 'OFFLINE' ? 'Website dang offline' : 'Website chua duoc kiem tra', 'check_website');
+            }
+
+            $database = (string) ($unit['databaseStatus'] ?? 'UNKNOWN');
+            if (in_array($database, ['DISCONNECTED', 'UNKNOWN'], true)) {
+                $items[] = $this->operationItem($database === 'DISCONNECTED' ? 'HIGH' : 'MEDIUM', 'database', $tenant, $database === 'DISCONNECTED' ? 'Database mat ket noi' : 'Database chua duoc kiem tra', 'check_database');
+            }
+
+            $ssl = (string) ($unit['sslStatus'] ?? 'UNKNOWN');
+            if ($ssl === 'INVALID') {
+                $items[] = $this->operationItem('HIGH', 'ssl', $tenant, 'SSL khong hop le', 'check_website');
+            }
+
+            if (empty($unit['lastBackupAt'])) {
+                $items[] = $this->operationItem('MEDIUM', 'backup', $tenant, 'Chua co thong tin backup gan nhat', 'view_unit');
+            }
+
+            $version = (string) ($unit['version'] ?? '');
+            if ($currentVersion !== '' && $version !== '' && $version !== $currentVersion) {
+                $items[] = $this->operationItem('LOW', 'version', $tenant, 'Tenant khac phien ban hien tai', 'view_unit');
+            }
+        }
+
+        usort($items, static fn(array $a, array $b): int => ($a['rank'] <=> $b['rank']) ?: strcmp($a['tenant']['code'], $b['tenant']['code']));
+        return array_slice($items, 0, 12);
+    }
+
+    private function operationItem(string $severity, string $type, array $tenant, string $message, string $primaryAction): array
+    {
+        $rank = ['HIGH' => 1, 'MEDIUM' => 2, 'LOW' => 3][$severity] ?? 4;
+        return [
+            'severity' => $severity,
+            'rank' => $rank,
+            'type' => $type,
+            'tenant' => $tenant,
+            'message' => $message,
+            'primaryAction' => $primaryAction,
+        ];
+    }
+
+    private function recentAudit(int $limit): array
+    {
+        if (!$this->tableExists('audit_logs')) {
+            return [];
+        }
+        $stmt = $this->db()->prepare(
+            'SELECT a.id, a.village_id, v.name AS tenant_name, v.code AS tenant_code, a.created_at,
+                    a.actor_email, a.module, a.action, a.level, a.message, a.metadata
+             FROM audit_logs a
+             LEFT JOIN villages v ON v.id = a.village_id
+             ORDER BY a.created_at DESC, a.id DESC
+             LIMIT ' . max(1, min(20, $limit))
+        );
+        $stmt->execute();
+        return array_map([$this, 'normalizeAuditRow'], $stmt->fetchAll() ?: []);
+    }
+
+    private function normalizeAuditRow(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'tenantId' => (int) ($row['village_id'] ?? 0),
+            'tenantName' => (string) ($row['tenant_name'] ?: $row['tenant_code'] ?: 'He thong'),
+            'createdAt' => $row['created_at'] ?? null,
+            'actor' => (string) ($row['actor_email'] ?: 'He thong'),
+            'module' => (string) ($row['module'] ?? ''),
+            'action' => (string) ($row['action'] ?? ''),
+            'level' => (string) ($row['level'] ?? 'INFO'),
+            'message' => (string) ($row['message'] ?? ''),
+        ];
     }
 
     private function count(string $table, string $where = '1=1'): int

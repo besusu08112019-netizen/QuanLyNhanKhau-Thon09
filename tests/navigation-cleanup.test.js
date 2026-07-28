@@ -84,6 +84,8 @@ const allowedClickListeners = new Map([
     "checkWebsite.addEventListener('click', () => checkUnitWebsite(unit));",
     "checkDatabase.addEventListener('click', () => checkUnitConnection(unit));",
     "check.addEventListener('click', () => checkUnitConnection(unit));",
+    "check.addEventListener('click', () => checkUnitWebsite(unit));",
+    "view.addEventListener('click', () => {",
     "edit.addEventListener('click', () => openUnitModal(unit));",
     "lock.addEventListener('click', () => changeUnitStatus(unit, 'lock'));",
     "activate.addEventListener('click', () => changeUnitStatus(unit, 'activate'));",
@@ -93,6 +95,7 @@ const allowedClickListeners = new Map([
     "activate.addEventListener('click', () => changeAccountStatus(account, 'activate'));",
     "button.addEventListener('click', () => {",
     "document.getElementById('logoutButton').addEventListener('click', logout);",
+    "document.getElementById('refreshOperationsButton').addEventListener('click', () => loadDashboard().catch(() => {}));",
     "button.addEventListener('click', () => activateSection(button.dataset.goSection));",
     "document.getElementById('addUnitButton').addEventListener('click', () => openUnitModal());",
     "document.getElementById('refreshUnitsButton').addEventListener('click', () => loadUnits().catch((error) => setUnitsAlert(error.message)));",
@@ -108,7 +111,8 @@ const allowedClickListeners = new Map([
     "document.getElementById('cancelPasswordButton').addEventListener('click', closePasswordModal);",
     "document.getElementById('passwordModal').addEventListener('click', (event) => {",
     "document.getElementById('refreshPermissionsButton').addEventListener('click', () => loadPermissions());",
-    "document.getElementById('savePermissionsButton').addEventListener('click', savePermissions);"
+    "document.getElementById('savePermissionsButton').addEventListener('click', savePermissions);",
+    "document.getElementById('refreshAuditButton').addEventListener('click', () => loadAudit());"
   ]]
 ]);
 

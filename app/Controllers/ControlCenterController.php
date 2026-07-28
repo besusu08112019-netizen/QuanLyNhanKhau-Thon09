@@ -42,6 +42,11 @@ final class ControlCenterController extends BaseController
         $this->respond($this->service->monitoring());
     }
 
+    public function audit(): void
+    {
+        $this->respond($this->service->audit($this->query()));
+    }
+
     private function respond(array $data): void
     {
         Response::ok([

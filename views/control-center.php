@@ -165,6 +165,33 @@
       flex-wrap: wrap;
     }
 
+    .operation-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .operation-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--cc-border);
+      background: #fff;
+    }
+
+    .operation-title {
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .operation-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .metric-card,
     .cc-panel {
       background: var(--cc-panel);
@@ -555,6 +582,7 @@
       .permission-grid,
       .cc-toolbar,
       .cc-form,
+      .operation-item,
       .cc-global-search {
         grid-template-columns: 1fr;
         width: 100%;
@@ -635,18 +663,23 @@
 
       <div class="cc-content">
         <section class="cc-section active" id="dashboardSection">
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <div>
+                <h2 class="cc-panel-title">Cong viec can xu ly hom nay</h2>
+                <div class="cc-meta">Uu tien cac su co can nguoi quan tri xu ly ngay.</div>
+              </div>
+              <button class="cc-btn" type="button" id="refreshOperationsButton"><i class="fa-solid fa-rotate"></i>Kiem tra lai</button>
+            </div>
+            <div class="operation-list" id="operationsList"></div>
+          </div>
           <div class="metric-grid" id="metricGrid"></div>
-          <div class="metric-grid">
-            <article class="metric-card">
-              <div class="metric-label">Hoat dong gan day</div>
-              <div class="metric-value" style="font-size:18px">Dang phat trien</div>
-              <div class="metric-note">Se hien cac thay doi quan trong trong Control Center.</div>
-            </article>
-            <article class="metric-card">
-              <div class="metric-label">Canh bao</div>
-              <div class="metric-value" style="font-size:18px">Dang phat trien</div>
-              <div class="metric-note">Se tong hop canh bao van hanh va cau hinh.</div>
-            </article>
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <h2 class="cc-panel-title">Hoat dong gan day</h2>
+              <button class="cc-btn" type="button" data-go-section="audit"><i class="fa-solid fa-clock-rotate-left"></i>Xem Audit</button>
+            </div>
+            <div class="operation-list" id="recentActivityList"></div>
           </div>
           <div class="cc-panel">
             <div class="cc-panel-header">
@@ -783,9 +816,35 @@
           <div class="cc-panel">
             <div class="cc-panel-header">
               <h2 class="cc-panel-title">Audit</h2>
-              <span class="cc-badge warn">Dang phat trien</span>
+              <button class="cc-btn" type="button" id="refreshAuditButton"><i class="fa-solid fa-rotate"></i>Tai lai</button>
             </div>
-            <div class="cc-state">Se dung de truy vet ai da thay doi du lieu, thay doi luc nao va tren don vi nao.</div>
+            <div class="cc-toolbar">
+              <select class="cc-select" id="auditTenantFilter" aria-label="Loc Tenant">
+                <option value="">Tat ca Tenant</option>
+              </select>
+              <select class="cc-select" id="auditLevelFilter" aria-label="Loc muc do">
+                <option value="">Tat ca muc do</option>
+                <option value="INFO">INFO</option>
+                <option value="WARN">WARN</option>
+                <option value="ERROR">ERROR</option>
+              </select>
+              <input class="cc-input" type="search" id="auditSearch" placeholder="Tim actor, hanh dong, tenant">
+            </div>
+            <div class="cc-table-wrap">
+              <table class="cc-table">
+                <thead>
+                  <tr>
+                    <th>Thoi gian</th>
+                    <th>Tenant</th>
+                    <th>Nguoi thuc hien</th>
+                    <th>Hanh dong</th>
+                    <th>Muc do</th>
+                    <th>Ket qua</th>
+                  </tr>
+                </thead>
+                <tbody id="auditBody"></tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -1054,6 +1113,7 @@
       pending: new Map(),
       activeGroup: ''
     };
+    const auditState = { items: [] };
     const roleLabels = {
       SYSTEM_ADMIN: 'Quan tri he thong',
       VILLAGE_ADMIN: 'Quan tri thon',
@@ -1075,10 +1135,30 @@
     function badge(value) {
       const span = document.createElement('span');
       span.className = 'cc-badge';
-      if (value === 'LOCKED' || value === 'DEGRADED' || value === 'UNKNOWN' || value === 'NOT_APPLICABLE') span.classList.add('warn');
-      if (value === 'ERROR' || value === 'DISCONNECTED' || value === 'OFFLINE' || value === 'INVALID') span.classList.add('danger');
-      span.textContent = value || 'UNKNOWN';
+      if (value === 'LOCKED' || value === 'DEGRADED' || value === 'UNKNOWN' || value === 'NOT_APPLICABLE' || value === 'MEDIUM') span.classList.add('warn');
+      if (value === 'ERROR' || value === 'DISCONNECTED' || value === 'OFFLINE' || value === 'INVALID' || value === 'HIGH') span.classList.add('danger');
+      span.textContent = statusLabel(value);
       return span;
+    }
+
+    function statusLabel(value) {
+      const labels = {
+        UNKNOWN: 'Chua kiem tra',
+        ONLINE: 'Online',
+        OFFLINE: 'Offline',
+        CONNECTED: 'Database OK',
+        DISCONNECTED: 'Database loi',
+        LOCKED: 'Da khoa',
+        VALID: 'SSL OK',
+        INVALID: 'SSL loi',
+        NOT_APPLICABLE: 'Khong ap dung',
+        ACTIVE: 'Dang hoat dong',
+        INACTIVE: 'Da khoa',
+        HIGH: 'Cao',
+        MEDIUM: 'Trung binh',
+        LOW: 'Thap'
+      };
+      return labels[value] || value || 'Chua kiem tra';
     }
 
     function authHeaders(method) {
@@ -1200,6 +1280,88 @@
       ];
       const grid = document.getElementById('metricGrid');
       grid.replaceChildren(...metrics.map((item) => metric(item[0], item[1], item[2])));
+      renderOperations(data.operations || []);
+      renderRecentActivity(data.recentActivity || []);
+    }
+
+    function renderOperations(items) {
+      const holder = document.getElementById('operationsList');
+      if (!items.length) {
+        holder.replaceChildren(stateMessage('Hom nay chua co viec can xu ly ngay.'));
+        return;
+      }
+      holder.replaceChildren(...items.map((item) => {
+        const row = document.createElement('div');
+        row.className = 'operation-item';
+        const main = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'operation-title';
+        title.textContent = (item.message || 'Can xu ly') + ' - ' + (item.tenant?.name || item.tenant?.code || 'Tenant');
+        const meta = document.createElement('div');
+        meta.className = 'cc-meta';
+        meta.textContent = 'Muc do: ' + statusLabel(item.severity) + ' | Nguoi phu trach: ' + (item.tenant?.manager || 'Chua gan');
+        main.append(title, meta);
+        const actions = document.createElement('div');
+        actions.className = 'operation-actions';
+        const unit = operationUnit(item);
+        if (item.primaryAction === 'check_website') {
+          const check = actionButton('Kiem tra Website', 'fa-globe');
+          check.addEventListener('click', () => checkUnitWebsite(unit));
+          actions.appendChild(check);
+        } else if (item.primaryAction === 'check_database') {
+          const check = actionButton('Kiem tra Database', 'fa-database');
+          check.addEventListener('click', () => checkUnitConnection(unit));
+          actions.appendChild(check);
+        }
+        const view = actionButton('Xem Tenant', 'fa-sitemap');
+        view.addEventListener('click', () => {
+          activateSection('units');
+          document.getElementById('unitSearch').value = item.tenant?.code || item.tenant?.name || '';
+          loadUnits().catch((error) => setUnitsAlert(error.message));
+        });
+        actions.appendChild(view);
+        if (item.tenant?.domain) {
+          const portal = actionButton('Mo Portal', 'fa-arrow-up-right-from-square');
+          portal.addEventListener('click', () => openTenantPortal(unit));
+          actions.appendChild(portal);
+        }
+        row.append(main, actions);
+        return row;
+      }));
+    }
+
+    function operationUnit(item) {
+      return {
+        id: item.tenant?.id,
+        code: item.tenant?.code,
+        name: item.tenant?.name,
+        domain: item.tenant?.domain
+      };
+    }
+
+    function renderRecentActivity(items) {
+      const holder = document.getElementById('recentActivityList');
+      if (!items.length) {
+        holder.replaceChildren(stateMessage('Chua co hoat dong quan tri gan day.'));
+        return;
+      }
+      holder.replaceChildren(...items.map((item) => {
+        const row = document.createElement('div');
+        row.className = 'operation-item';
+        const main = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'operation-title';
+        title.textContent = item.message || item.action || 'Hoat dong';
+        const meta = document.createElement('div');
+        meta.className = 'cc-meta';
+        meta.textContent = `${item.createdAt || '-'} | ${item.tenantName || 'He thong'} | ${item.actor || '-'}`;
+        main.append(title, meta);
+        const actions = document.createElement('div');
+        actions.className = 'operation-actions';
+        actions.appendChild(badge(item.level || 'INFO'));
+        row.append(main, actions);
+        return row;
+      }));
     }
 
     async function loadUnits() {
@@ -1489,6 +1651,39 @@
       tableWrap.appendChild(table);
       tenantPanel.append(header, tableWrap);
       document.getElementById('monitorGrid').replaceChildren(...items.map(([label, value]) => metric(label, value || '-', '')), tenantPanel);
+    }
+
+    async function loadAudit() {
+      const body = document.getElementById('auditBody');
+      body.replaceChildren(stateRow(6, 'Dang tai audit...'));
+      const params = new URLSearchParams();
+      const tenant = document.getElementById('auditTenantFilter').value;
+      const level = document.getElementById('auditLevelFilter').value;
+      const search = document.getElementById('auditSearch').value.trim();
+      if (tenant) params.set('village_id', tenant);
+      if (level) params.set('level', level);
+      if (search) params.set('search', search);
+      const data = await api('/api/control-center/audit' + (params.toString() ? '?' + params.toString() : ''));
+      auditState.items = data.items || [];
+      const rows = auditState.items.map((item) => {
+        const tr = document.createElement('tr');
+        [item.createdAt || '-', item.tenantName || '-', item.actor || '-', item.action || '-', item.level || 'INFO', item.message || '-'].forEach((value, index) => {
+          const td = document.createElement('td');
+          if (index === 4) td.appendChild(badge(value));
+          else td.textContent = value;
+          tr.appendChild(td);
+        });
+        return tr;
+      });
+      body.replaceChildren(...(rows.length ? rows : [emptyRow(6)]));
+    }
+
+    function renderAuditTenantFilter() {
+      const select = document.getElementById('auditTenantFilter');
+      const current = select.value;
+      const options = [new Option('Tat ca Tenant', '')].concat((unitState.items || []).map((unit) => new Option(unit.name || unit.code, unit.id)));
+      select.replaceChildren(...options);
+      select.value = current;
     }
 
     function emptyRow(colspan) {
@@ -1877,6 +2072,8 @@
         document.getElementById('healthBadge').textContent = 'DEGRADED';
         document.getElementById('healthBadge').className = 'cc-badge warn';
       });
+      renderAuditTenantFilter();
+      await loadAudit().catch(() => {});
       await loadDashboard().catch(() => {});
     }
 
@@ -1890,6 +2087,7 @@
 
     document.getElementById('loginForm').addEventListener('submit', login);
     document.getElementById('logoutButton').addEventListener('click', logout);
+    document.getElementById('refreshOperationsButton').addEventListener('click', () => loadDashboard().catch(() => {}));
     document.querySelectorAll('[data-go-section]').forEach((button) => {
       button.addEventListener('click', () => activateSection(button.dataset.goSection));
     });
@@ -1962,6 +2160,16 @@
       return () => {
         clearTimeout(timer);
         timer = setTimeout(renderPermissions, 250);
+      };
+    })());
+    document.getElementById('refreshAuditButton').addEventListener('click', () => loadAudit());
+    document.getElementById('auditTenantFilter').addEventListener('change', () => loadAudit());
+    document.getElementById('auditLevelFilter').addEventListener('change', () => loadAudit());
+    document.getElementById('auditSearch').addEventListener('input', (() => {
+      let timer = null;
+      return () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => loadAudit(), 250);
       };
     })());
   </script>

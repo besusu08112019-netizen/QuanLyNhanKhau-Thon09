@@ -96,6 +96,11 @@ final class ControlCenterService
         ];
     }
 
+    public function audit(array $filters = []): array
+    {
+        return $this->withFallback(fn(): array => $this->repository->audit($filters), ['items' => []], 'audit');
+    }
+
     public function status(): array
     {
         return [
