@@ -285,6 +285,16 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 }
 
 {
+  const policyAlerts = read('assets/js/policy-alerts.js');
+  assert.match(policyAlerts, /const SUMMARY_SCREENS = new Set\(\['dashboard', 'persons', 'households'\]\)/);
+  assert.match(policyAlerts, /isSummaryScreen\(currentScreen\(\)\)/);
+  assert.match(policyAlerts, /removeDashboardCard\(\)/);
+  assert.doesNotMatch(policyAlerts, /if \(\$\('#dashboardScreen'\)\) loadSummary\(\);/);
+  assert.doesNotMatch(policyAlerts, /document\.addEventListener\('tenant:auth-state', \(\) => setTimeout\(loadSummary/);
+  assert.doesNotMatch(policyAlerts, /function init\(\) \{[\s\S]*?installModal\(\);[\s\S]*?wrapDashboardLoader/);
+}
+
+{
   const repository = read('app/Repositories/AdministrativeUnitRepository.php');
   assert.match(repository, /database_name/);
   assert.match(repository, /database_host/);

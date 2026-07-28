@@ -9,20 +9,25 @@
   const number = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
   const toast = (message, type = 'info') => typeof window.showToast === 'function' ? window.showToast(message, type) : console[type === 'danger' ? 'error' : 'log'](message);
   const policyDefaults = window.AppSettings?.citizenPolicyDefaults || {};
+  const SUMMARY_SCREENS = new Set(['dashboard', 'persons', 'households']);
+  const PERSON_FILTER_SCREENS = new Set(['persons']);
 
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
   document.addEventListener('tenant:screen-change', event => {
-    if (event.detail?.screen === 'dashboard') setTimeout(loadSummary, 80);
-    if (event.detail?.screen === 'persons') setTimeout(installPersonFilters, 80);
+    const screen = normalizeScreen(event.detail?.screen);
+    if (isSummaryScreen(screen)) setTimeout(loadSummary, 80);
+    else removeDashboardCard();
+    if (isPersonFilterScreen(screen)) setTimeout(installPersonFilters, 80);
   });
-  document.addEventListener('tenant:auth-state', () => setTimeout(loadSummary, 120));
+  document.addEventListener('tenant:auth-state', () => {
+    if (isSummaryScreen(currentScreen())) setTimeout(loadSummary, 120);
+  });
 
   function init() {
     registerActions();
-    installModal();
-    installPersonFilters();
     wrapDashboardLoader();
-    if ($('#dashboardScreen')) loadSummary();
+    if (isSummaryScreen(currentScreen())) loadSummary();
+    if (isPersonFilterScreen(currentScreen())) installPersonFilters();
   }
 
   function registerActions() {
@@ -54,7 +59,7 @@
     window.__TenantPolicyAlertDashboardWrapped = true;
     window.loadDashboard = async function policyAlertDashboardLoader(...args) {
       const result = await previousLoadDashboard.apply(this, args);
-      loadSummary();
+      if (isSummaryScreen(currentScreen())) loadSummary();
       return result;
     };
   }
@@ -74,6 +79,10 @@
   }
 
   async function loadSummary() {
+    if (!isSummaryScreen(currentScreen())) {
+      removeDashboardCard();
+      return;
+    }
     try {
       state.summary = await request(API + '/summary', { cacheTtl: 30000 });
       renderDashboardCard(state.summary);
@@ -83,12 +92,17 @@
   }
 
   function renderDashboardCard(summary) {
-    const screen = $('#dashboardScreen');
+    if (!isSummaryScreen(currentScreen())) {
+      removeDashboardCard();
+      return;
+    }
+    const screen = policyScreen();
     if (!screen) return;
     let card = $('#policyAlertDashboardCard');
-    if (!card) {
-      const anchor = $('#dashboardKpis') || $('.dashboard-status-row', screen) || screen;
-      anchor.insertAdjacentHTML(anchor.id === 'dashboardKpis' ? 'beforebegin' : 'afterend', '<section id="policyAlertDashboardCard" class="policy-alert-card"></section>');
+    if (!card || !screen.contains(card)) {
+      removeDashboardCard();
+      const anchor = policyAnchor(screen);
+      anchor.insertAdjacentHTML(policyInsertPosition(anchor), '<section id="policyAlertDashboardCard" class="policy-alert-card"></section>');
       card = $('#policyAlertDashboardCard');
     }
     const items = summary?.items || [];
@@ -96,6 +110,24 @@
       + '<div class="policy-alert-grid">'
       + items.map(item => '<button type="button" class="policy-alert-tile" data-platform-action="policyAlerts.open" data-type="' + safe(item.key) + '"><span>' + safe(item.label) + '</span><strong>' + number(item.count) + '</strong><small>' + safe(item.purpose || item.message || '') + '</small></button>').join('')
       + '</div>';
+  }
+
+  function removeDashboardCard() {
+    $('#policyAlertDashboardCard')?.remove();
+  }
+
+  function policyScreen() {
+    return $('#' + currentScreen() + 'Screen');
+  }
+
+  function policyAnchor(screen) {
+    if (!screen) return document.body;
+    if (screen.id === 'dashboardScreen') return $('#dashboardKpis') || $('.dashboard-status-row', screen) || screen;
+    return $('.content-card', screen) || screen;
+  }
+
+  function policyInsertPosition(anchor) {
+    return anchor?.classList?.contains('screen') ? 'afterbegin' : 'beforebegin';
   }
 
   function installModal() {
@@ -111,6 +143,7 @@
   }
 
   async function openList(type) {
+    if (!isSummaryScreen(currentScreen())) return;
     installModal();
     state.type = type;
     state.page = 1;
@@ -191,6 +224,7 @@
   }
 
   function installPersonFilters() {
+    if (!isPersonFilterScreen(currentScreen())) return;
     const grid = $('.person-quick-filter-grid');
     if (!grid || $('#policyAlertPersonFilters')) return;
     const bhytAge = Number(policyDefaults.bhytDefaultAge || '');
@@ -208,6 +242,27 @@
   }
   function clearPersonPolicyChecks() {
     $$('#policyAlertPersonFilters input[type="checkbox"]').forEach(input => { input.checked = false; });
+  }
+
+  function currentScreen() {
+    const appScreen = normalizeScreen(window.App?.screen);
+    if (appScreen) return appScreen;
+    const active = $('.screen.active, [data-screen-id].active');
+    if (active?.dataset?.screenId) return normalizeScreen(active.dataset.screenId);
+    if (active?.id) return normalizeScreen(active.id.replace(/Screen$/, ''));
+    return '';
+  }
+
+  function normalizeScreen(screen) {
+    return String(screen || '').replace(/Screen$/, '');
+  }
+
+  function isSummaryScreen(screen) {
+    return SUMMARY_SCREENS.has(normalizeScreen(screen));
+  }
+
+  function isPersonFilterScreen(screen) {
+    return PERSON_FILTER_SCREENS.has(normalizeScreen(screen));
   }
 
   function debounce(fn, delay) {
