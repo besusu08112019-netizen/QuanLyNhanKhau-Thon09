@@ -132,7 +132,8 @@
         await originalOpen(id);
         const targetForm = document.querySelector('#personForm');
         resetPersonProfileTabs(targetForm, id);
-        digitalCitizenFields.forEach(([name]) => { const el = targetForm?.elements[name]; if (el) { el.checked = false; delete el.dataset.userEditedPolicyDefault; } });
+        digitalCitizenFields.forEach(([name]) => { const el = targetForm?.elements[name]; if (el) { el.checked = false; delete el.dataset.userEditedPolicyDefault; delete el.dataset.userEditedStudentDefault; } });
+        ['educationLevel', 'occupation'].forEach(name => { const el = targetForm?.elements[name]; if (el) delete el.dataset.userEditedStudentDefault; });
         if (id) {
           const row = await api('/api/persons/' + id);
           digitalCitizenFields.forEach(([name]) => {
@@ -160,6 +161,9 @@
       if (['hasHealthInsurance', 'socialAssistance'].includes(event.target?.name)) {
         event.target.dataset.userEditedPolicyDefault = '1';
       }
+      if (['educationLevel', 'occupation', 'notAttendingSchool', 'pupil', 'student', 'employed', 'unemployed'].includes(event.target?.name)) {
+        event.target.dataset.userEditedStudentDefault = '1';
+      }
     });
     form.addEventListener('reset', () => {
       setTimeout(() => {
@@ -175,28 +179,27 @@
     if (dob?.value && !form.elements.id?.value) applyPersonAgeDefaults(form);
   }
 
-  function calculatePersonAge(dateOfBirth) {
+  function calculateAcademicAge(dateOfBirth) {
     const raw = String(dateOfBirth || '').trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
-    const birth = new Date(raw + 'T00:00:00');
-    if (Number.isNaN(birth.getTime())) return null;
+    const birthYear = Number(raw.slice(0, 4));
+    if (!Number.isFinite(birthYear)) return null;
     const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDelta = today.getMonth() - birth.getMonth();
-    if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birth.getDate())) age -= 1;
+    const startMonth = Number(citizenPolicyDefaults.academicYearStartMonth) || 8;
+    const academicYear = (today.getMonth() + 1) >= startMonth ? today.getFullYear() : today.getFullYear() - 1;
+    const age = academicYear - birthYear;
     return age >= 0 ? age : null;
   }
 
   function ageDefaultFlags(age) {
     if (age === null) return null;
+    const studentMaxAge = Number(citizenPolicyDefaults.studentMaxAcademicAge);
+    const isPupil = Number.isFinite(studentMaxAge) && age <= studentMaxAge;
     const policy = {
       hasHealthInsurance: Number.isFinite(Number(citizenPolicyDefaults.bhytDefaultAge)) && age >= Number(citizenPolicyDefaults.bhytDefaultAge) ? 1 : 0,
       socialAssistance: Number.isFinite(Number(citizenPolicyDefaults.socialAllowanceDefaultAge)) && age >= Number(citizenPolicyDefaults.socialAllowanceDefaultAge) ? 1 : 0,
     };
-    if (age <= 2) return { notAttendingSchool: 1, pupil: 0, student: 0, employed: 0, ...policy };
-    if (age <= 17) return { notAttendingSchool: 0, pupil: 1, student: 0, employed: 0, ...policy };
-    if (age <= 21) return { notAttendingSchool: 0, pupil: 0, student: 1, employed: 0, ...policy };
-    return { notAttendingSchool: 0, pupil: 0, student: 0, employed: 1, ...policy };
+    return { notAttendingSchool: 0, pupil: isPupil ? 1 : 0, student: 0, employed: 0, isPupil, ...policy };
   }
 
   function syncBridgeHealthInsuranceFields(form) {
@@ -213,19 +216,33 @@
       const el = form?.elements?.[name];
       if (el) el.checked = false;
     });
+    ['educationLevel', 'occupation'].forEach(name => {
+      const el = form?.elements?.[name];
+      if (el) el.value = '';
+    });
     if (form?.elements?.hasHealthInsurance) form.elements.hasHealthInsurance.checked = false;
     if (form?.elements?.socialAssistance) form.elements.socialAssistance.checked = false;
   }
 
   function applyPersonAgeDefaults(form) {
     if (!form) return;
-    const defaults = ageDefaultFlags(calculatePersonAge(form.elements.dateOfBirth?.value));
+    const defaults = ageDefaultFlags(calculateAcademicAge(form.elements.dateOfBirth?.value));
     if (!defaults) return;
     ['notAttendingSchool', 'pupil', 'student', 'employed'].forEach(name => {
       const el = form.elements[name];
-      if (el) el.checked = !!defaults[name];
+      if (el && el.dataset.userEditedStudentDefault !== '1') el.checked = !!defaults[name];
     });
-    if (form.elements.unemployed) form.elements.unemployed.checked = false;
+    if (form.elements.unemployed && form.elements.unemployed.dataset.userEditedStudentDefault !== '1') form.elements.unemployed.checked = false;
+    const studentLabel = citizenPolicyDefaults.studentLabel || 'Hoc sinh';
+    ['educationLevel', 'occupation'].forEach(name => {
+      const el = form.elements[name];
+      if (!el || el.dataset.userEditedStudentDefault === '1') return;
+      if (defaults.isPupil) {
+        el.value = studentLabel;
+      } else if (el.value === studentLabel) {
+        el.value = '';
+      }
+    });
     const bhyt = form.elements.hasHealthInsurance;
     if (bhyt && bhyt.dataset.userEditedPolicyDefault !== '1') bhyt.checked = !!defaults.hasHealthInsurance;
     const socialAssistance = form.elements.socialAssistance;

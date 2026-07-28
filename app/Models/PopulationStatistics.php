@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Services\StudentStatusService;
 
 final class PopulationStatistics extends BaseModel
 {
@@ -275,6 +276,8 @@ final class PopulationStatistics extends BaseModel
             $value = $rawFilters[$column] ?? $rawFilters[$this->camel($column)] ?? null;
             if ($column === 'meritorious_person' && $value !== null && $value !== '') {
                 $where[] = $this->meritoriousCitizenExpression('c', (int) $value === 1);
+            } elseif ($column === 'pupil' && $value !== null && $value !== '') {
+                $where[] = ((int) $value === 1 ? '' : 'NOT ') . StudentStatusService::studentSql('c');
             } elseif ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) {
                 $where[] = 'c.' . $column . ' = :' . $column;
                 $params[$column] = (int) $value;
@@ -360,6 +363,8 @@ final class PopulationStatistics extends BaseModel
         foreach (self::CITIZEN_FLAG_COLUMNS as $column) {
             if ($column === 'meritorious_person') {
                 $parts[] = ', COALESCE(SUM(CASE WHEN ' . $this->meritoriousCitizenExpression($alias) . " THEN 1 ELSE 0 END),0) AS $column";
+            } elseif ($column === 'pupil') {
+                $parts[] = ', COALESCE(SUM(CASE WHEN ' . StudentStatusService::studentSql($alias) . " THEN 1 ELSE 0 END),0) AS $column";
             } else {
                 $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
             }

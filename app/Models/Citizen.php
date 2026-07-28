@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Config\CitizenPolicyDefaults;
 use App\Core\BaseModel;
 use App\Models\PolicyAlert;
+use App\Services\StudentStatusService;
 
 final class Citizen extends BaseModel
 {
@@ -191,7 +192,13 @@ final class Citizen extends BaseModel
         }
         foreach ($this->activeExtendedColumns() as $column) {
             $value = $filters[$column] ?? $filters[$this->camel($column)] ?? null;
-            if ($value !== null && $value !== '') { $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = $this->boolValue($value); }
+            if ($value !== null && $value !== '') {
+                if ($column === 'pupil') {
+                    $where[] = ((int) $this->boolValue($value) === 1 ? '' : 'NOT ') . StudentStatusService::studentSql('c');
+                } else {
+                    $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = $this->boolValue($value);
+                }
+            }
         }
         if (!empty($filters['gender'])) { $where[] = 'c.gender = :gender'; $params['gender'] = $filters['gender']; }
         if (!empty($filters['ethnicity'])) { $where[] = 'c.ethnicity LIKE :ethnicity'; $params['ethnicity'] = '%' . $filters['ethnicity'] . '%'; }
@@ -236,6 +243,7 @@ final class Citizen extends BaseModel
         $dob = $data['dateOfBirth'] ?? $data['date_of_birth'] ?? $fallback['date_of_birth'] ?? null;
         if ($fullName === '') throw new \RuntimeException('Họ và tên là bắt buộc');
         if (!$dob || !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $dob)) throw new \RuntimeException('Ngày sinh không hợp lệ');
+        $studentDefaults = $fallback === null ? StudentStatusService::defaultFieldsForDateOfBirth((string) $dob) : [];
         $params = [
             'code' => strtoupper(trim((string) ($data['citizenCode'] ?? $data['citizen_code'] ?? $fallback['citizen_code'] ?? ''))),
             'household_id' => (int) $householdRow['id'],
@@ -248,13 +256,13 @@ final class Citizen extends BaseModel
             'relationship' => $this->relationship($data['relationship'] ?? $data['memberType'] ?? $data['member_type'] ?? $fallback['relationship'] ?? 'Khác'),
             'ethnicity' => trim((string) ($data['ethnicity'] ?? $fallback['ethnicity'] ?? '')) ?: null,
             'religion' => trim((string) ($data['religion'] ?? $fallback['religion'] ?? '')) ?: null,
-            'occupation' => trim((string) ($data['occupation'] ?? $fallback['occupation'] ?? '')) ?: null,
+            'occupation' => trim((string) ($data['occupation'] ?? $fallback['occupation'] ?? $studentDefaults['occupation'] ?? '')) ?: null,
             'father_name' => $this->nullableString($data['fatherName'] ?? $data['father_name'] ?? $fallback['father_name'] ?? null, 255),
             'mother_name' => $this->nullableString($data['motherName'] ?? $data['mother_name'] ?? $fallback['mother_name'] ?? null, 255),
             'phone' => trim((string) ($data['phone'] ?? $fallback['phone'] ?? '')) ?: null,
             'residency' => $this->residency($data['residency_status'] ?? $data['permanentAddress'] ?? $fallback['residency_status'] ?? 'PERMANENT'),
             'current_address' => trim((string) ($data['currentAddress'] ?? $data['current_address'] ?? $fallback['current_address'] ?? '')) ?: null,
-            'education' => trim((string) ($data['educationLevel'] ?? $data['education_level'] ?? $fallback['education_level'] ?? '')) ?: null,
+            'education' => trim((string) ($data['educationLevel'] ?? $data['education_level'] ?? $fallback['education_level'] ?? $studentDefaults['education'] ?? '')) ?: null,
             'marital' => trim((string) ($data['maritalStatus'] ?? $data['marital_status'] ?? $fallback['marital_status'] ?? '')) ?: null,
             'life' => $this->life($data['status'] ?? $data['life_status'] ?? $fallback['life_status'] ?? 'ALIVE'),
             'presence' => $this->presence($data['presenceStatus'] ?? $data['presence_status'] ?? $fallback['presence_status'] ?? 'AT_HOME'),
@@ -264,7 +272,11 @@ final class Citizen extends BaseModel
         $ageDefaults = [];
         if ($fallback === null) {
             $age = $this->ageFromDate((string) $dob);
-            if (!$this->anyFieldProvided($data, $laborFields)) $ageDefaults = $this->laborDefaultFlags($age);
+            if (!$this->anyFieldProvided($data, array_merge($laborFields, ['occupation','education_level']))) {
+                foreach (['not_attending_school','pupil','student','employed'] as $column) {
+                    if (array_key_exists($column, $studentDefaults)) $ageDefaults[$column] = $studentDefaults[$column];
+                }
+            }
             $ageDefaults += CitizenPolicyDefaults::defaultsForAge($age);
         }
         foreach ($this->activeExtendedColumns() as $column) {
@@ -390,15 +402,6 @@ final class Citizen extends BaseModel
         $birth = \DateTimeImmutable::createFromFormat('!Y-m-d', $dateOfBirth);
         if (!$birth) return null;
         return $birth->diff(new \DateTimeImmutable('today'))->y;
-    }
-
-    private function laborDefaultFlags(?int $age): array
-    {
-        if ($age === null) return [];
-        if ($age <= 2) return ['not_attending_school' => 1, 'pupil' => 0, 'student' => 0, 'employed' => 0];
-        if ($age <= 17) return ['not_attending_school' => 0, 'pupil' => 1, 'student' => 0, 'employed' => 0];
-        if ($age <= 21) return ['not_attending_school' => 0, 'pupil' => 0, 'student' => 1, 'employed' => 0];
-        return ['not_attending_school' => 0, 'pupil' => 0, 'student' => 0, 'employed' => 1];
     }
 
     private function searchFlag(string $search): ?string

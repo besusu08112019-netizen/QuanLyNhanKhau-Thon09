@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Services\StudentStatusService;
 
 final class Report extends BaseModel
 {
@@ -339,7 +340,8 @@ final class Report extends BaseModel
         $columns = ['employed' => 'Có việc làm', 'unemployed' => 'Chưa có việc làm', 'not_attending_school' => 'Chưa đi học', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu', 'other' => 'Khác'];
         [$where, $params] = $this->citizenWhere($filters);
         $selects = ['c.occupation'];
-        foreach (['employed','unemployed','not_attending_school','pupil','student','retired'] as $column) $selects[] = ($this->columnExists('citizens', $column) ? "c.$column" : '0') . " AS $column";
+        foreach (['employed','unemployed','not_attending_school','student','retired'] as $column) $selects[] = ($this->columnExists('citizens', $column) ? "c.$column" : '0') . " AS $column";
+        $selects[] = 'CASE WHEN ' . StudentStatusService::studentSql('c') . ' THEN 1 ELSE 0 END AS pupil';
         $rows = $this->fetchAll('SELECT ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $where", $params);
         $groups = array_fill_keys(array_keys($columns), 0);
         foreach ($rows as $row) $groups[$this->laborGroup($row)]++;
@@ -409,6 +411,8 @@ final class Report extends BaseModel
         foreach (self::CITIZEN_FLAG_COLUMNS as $column) {
             if ($column === 'meritorious_person' && ($filters[$column] ?? null) !== null && $filters[$column] !== '') {
                 $where[] = $this->meritoriousCitizenExpression('c', (int) $filters[$column] === 1);
+            } elseif ($column === 'pupil' && ($filters[$column] ?? null) !== null && $filters[$column] !== '') {
+                $where[] = ((int) $filters[$column] === 1 ? '' : 'NOT ') . StudentStatusService::studentSql('c');
             } elseif (($filters[$column] ?? null) !== null && $filters[$column] !== '' && $this->columnExists('citizens', $column)) {
                 $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $filters[$column];
             }
@@ -479,7 +483,7 @@ final class Report extends BaseModel
     {
         $occupation = $this->normalize((string) ($row['occupation'] ?? ''));
         if ((int) ($row['not_attending_school'] ?? 0) === 1 || str_contains($occupation, 'chua di hoc')) return 'not_attending_school';
-        if ((int) ($row['pupil'] ?? 0) === 1 || str_contains($occupation, 'hoc sinh')) return 'pupil';
+        if ((int) ($row['pupil'] ?? 0) === 1) return 'pupil';
         if ((int) ($row['student'] ?? 0) === 1 || str_contains($occupation, 'sinh vien')) return 'student';
         if ((int) ($row['retired'] ?? 0) === 1 || str_contains($occupation, 'nghi huu') || str_contains($occupation, 'huu tri')) return 'retired';
         if ((int) ($row['unemployed'] ?? 0) === 1 || str_contains($occupation, 'that nghiep') || str_contains($occupation, 'chua co viec') || str_contains($occupation, 'khong co viec')) return 'unemployed';
@@ -505,6 +509,8 @@ final class Report extends BaseModel
         foreach (self::CITIZEN_FLAG_COLUMNS as $column) {
             if ($column === 'meritorious_person') {
                 $parts[] = ', SUM(' . $this->meritoriousCitizenExpression($alias) . ") AS $column";
+            } elseif ($column === 'pupil') {
+                $parts[] = ', SUM(' . StudentStatusService::studentSql($alias) . ") AS $column";
             } else {
                 $parts[] = ', ' . ($this->columnExists('citizens', $column) ? "SUM($alias.$column=1)" : '0') . " AS $column";
             }

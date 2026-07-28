@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\BaseModel;
 use App\Core\TenantConfig;
+use App\Services\StudentStatusService;
 
 final class Dashboard extends BaseModel
 {
@@ -244,11 +245,12 @@ final class Dashboard extends BaseModel
     public function laborChart(array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        $columns = ['employed','unemployed','not_attending_school','pupil','student','retired'];
+        $columns = ['employed','unemployed','not_attending_school','student','retired'];
         $selects = ['c.occupation'];
         foreach ($columns as $column) {
             $selects[] = ($this->columnExists('citizens', $column) ? "c.$column" : "0") . " AS $column";
         }
+        $selects[] = 'CASE WHEN ' . StudentStatusService::studentSql('c') . ' THEN 1 ELSE 0 END AS pupil';
 
         $rows = $this->fetchAll('SELECT ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params);
         $groups = [
@@ -275,7 +277,7 @@ final class Dashboard extends BaseModel
     {
         $occupation = $this->normalize((string) ($row['occupation'] ?? ''));
         if ((int) ($row['not_attending_school'] ?? 0) === 1 || str_contains($occupation, 'chua di hoc')) return 'Chưa đi học';
-        if ((int) ($row['pupil'] ?? 0) === 1 || str_contains($occupation, 'hoc sinh')) return 'Học sinh';
+        if ((int) ($row['pupil'] ?? 0) === 1) return 'Học sinh';
         if ((int) ($row['student'] ?? 0) === 1 || str_contains($occupation, 'sinh vien')) return 'Sinh viên';
         if ((int) ($row['retired'] ?? 0) === 1 || str_contains($occupation, 'nghi huu') || str_contains($occupation, 'huu tri')) return 'Nghỉ hưu';
         if ((int) ($row['unemployed'] ?? 0) === 1 || str_contains($occupation, 'that nghiep') || str_contains($occupation, 'chua co viec') || str_contains($occupation, 'khong co viec')) return 'Chưa có việc làm';
@@ -289,7 +291,12 @@ final class Dashboard extends BaseModel
         if (!in_array($column, ['occupation','education_level','ethnicity','religion'], true)) return [];
         if (!$this->columnExists('citizens', $column)) return [];
         [$where, $params] = $this->citizenWhere($filters);
-        return $this->fetchAll("SELECT COALESCE(NULLIF(c.$column,''),'Khác') AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params);
+        $labelSql = "COALESCE(NULLIF(c.$column,''),'Khác')";
+        if (in_array($column, ['occupation', 'education_level'], true)) {
+            $studentSql = StudentStatusService::studentSql('c');
+            $labelSql = "CASE WHEN $studentSql THEN 'Học sinh' WHEN LOWER(COALESCE(c.$column,'')) LIKE '%học sinh%' THEN 'Khác' ELSE COALESCE(NULLIF(c.$column,''),'Khác') END";
+        }
+        return $this->fetchAll("SELECT $labelSql AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params);
     }
 
     public function quickSearch(array $filters = []): array
@@ -781,6 +788,8 @@ final class Dashboard extends BaseModel
             $value = $rawFilters[$column] ?? $rawFilters[$this->camel($column)] ?? null;
             if ($column === 'meritorious_person' && $value !== null && $value !== '') {
                 $where[] = $this->meritoriousCitizenExpression('c', (int) $value === 1);
+            } elseif ($column === 'pupil' && $value !== null && $value !== '') {
+                $where[] = ((int) $value === 1 ? '' : 'NOT ') . StudentStatusService::studentSql('c');
             } elseif ($value !== null && $value !== '' && $this->columnExists('citizens', $column)) {
                 $where[] = 'c.' . $column . ' = :' . $column; $params[$column] = (int) $value;
             }
@@ -855,6 +864,8 @@ final class Dashboard extends BaseModel
         foreach (self::CITIZEN_FLAG_COLUMNS as $column) {
             if ($column === 'meritorious_person') {
                 $parts[] = ', COALESCE(SUM(CASE WHEN ' . $this->meritoriousCitizenExpression($alias) . " THEN 1 ELSE 0 END),0) AS $column";
+            } elseif ($column === 'pupil') {
+                $parts[] = ', COALESCE(SUM(CASE WHEN ' . StudentStatusService::studentSql($alias) . " THEN 1 ELSE 0 END),0) AS $column";
             } else {
                 $parts[] = ', COALESCE(' . ($this->columnExists('citizens', $column) ? "SUM(CASE WHEN $alias.$column=1 THEN 1 ELSE 0 END)" : '0') . ",0) AS $column";
             }

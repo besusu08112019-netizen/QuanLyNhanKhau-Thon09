@@ -472,8 +472,6 @@ final class ImportController extends BaseController
             'motherName' => trim((string) ($data['motherName'] ?? '')),
             'ethnicity' => $data['ethnicity'] ?? 'Kinh',
             'religion' => $data['religion'] ?? 'Không',
-            'occupation' => $data['occupation'] ?? 'Khác',
-            'educationLevel' => $data['educationLevel'] ?? 'Khác',
             'maritalStatus' => $data['maritalStatus'] ?? 'Khác',
             'residency_status' => $this->residencyValue((string) ($data['residency_status'] ?? 'PERMANENT')),
             'presenceStatus' => $this->presenceValue((string) ($data['presenceStatus'] ?? 'AT_HOME')),
@@ -495,15 +493,6 @@ final class ImportController extends BaseController
             'resistanceHero' => $this->yesNo($data['resistanceHero'] ?? 0),
             'revolutionaryActivist' => $this->yesNo($data['revolutionaryActivist'] ?? 0),
             'disabledPerson' => $this->yesNo($data['disabledPerson'] ?? 0),
-            'employed' => $this->yesNo($data['employed'] ?? 0),
-            'unemployed' => $this->yesNo($data['unemployed'] ?? 0),
-            'freelanceLabor' => $this->yesNo($data['freelanceLabor'] ?? 0),
-            'outProvinceLabor' => $this->yesNo($data['outProvinceLabor'] ?? 0),
-            'foreignLabor' => $this->yesNo($data['foreignLabor'] ?? 0),
-            'notAttendingSchool' => $this->yesNo($data['notAttendingSchool'] ?? 0),
-            'pupil' => $this->yesNo($data['pupil'] ?? 0),
-            'student' => $this->yesNo($data['student'] ?? 0),
-            'retired' => $this->yesNo($data['retired'] ?? 0),
             'healthInsuranceNumber' => trim((string) ($data['healthInsuranceNumber'] ?? '')),
             'healthInsuranceGroup' => trim((string) ($data['healthInsuranceGroup'] ?? '')),
             'healthInsuranceStartDate' => $data['healthInsuranceStartDate'] ?? null,
@@ -515,6 +504,12 @@ final class ImportController extends BaseController
         }
         if ($this->hasImportValue($data, 'hasHealthInsurance')) {
             $normalized['hasHealthInsurance'] = $this->yesNo($data['hasHealthInsurance']);
+        }
+        foreach (['occupation', 'educationLevel'] as $field) {
+            if ($this->hasImportValue($data, $field)) $normalized[$field] = trim((string) $data[$field]);
+        }
+        foreach (['employed','unemployed','freelanceLabor','outProvinceLabor','foreignLabor','notAttendingSchool','pupil','student','retired'] as $field) {
+            if ($this->hasImportValue($data, $field)) $normalized[$field] = $this->yesNo($data[$field]);
         }
         return $normalized;
     }
