@@ -220,6 +220,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(cpanel, /--exclude='\.\/\.git'/);
   assert.match(cpanel, /--exclude='\.\/\.env'/);
   assert.match(cpanel, /--exclude='\.\/uploads'/);
+  assert.match(cpanel, /PLATFORM_ADMIN_ENABLED=false/);
+  assert.match(cpanel, /PLATFORM_DEFAULT_PORTAL=PUBLIC/);
   const artifact = read('tools/build-production-artifact.js');
   assert.match(artifact, /Forbidden production artifact entries/);
   assert.match(artifact, /'\.git'/);
