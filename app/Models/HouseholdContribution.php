@@ -739,7 +739,7 @@ SQL);
             ];
             $this->execute(
                 'INSERT INTO household_contributions (village_id, campaign_id, household_id, payment_status, expected_amount, gross_amount, exempt_amount, discount_amount, paid_amount, amount, debt_amount, eligible_count, exempt_count, chargeable_count, calculation_note)
-                 VALUES (:tenant_village_id,:campaign_id,:household_id,:payment_status,:expected_amount,:gross_amount,:exempt_amount,:discount_amount,:paid_amount,:amount,:debt_amount,:eligible_count,:exempt_count,:chargeable_count,:calculation_note)
+                 VALUES (:village_id,:campaign_id,:household_id,:payment_status,:expected_amount,:gross_amount,:exempt_amount,:discount_amount,:paid_amount,:amount,:debt_amount,:eligible_count,:exempt_count,:chargeable_count,:calculation_note)
                  ON DUPLICATE KEY UPDATE payment_status=VALUES(payment_status), expected_amount=VALUES(expected_amount), gross_amount=VALUES(gross_amount), exempt_amount=VALUES(exempt_amount), discount_amount=VALUES(discount_amount), paid_amount=VALUES(paid_amount), amount=VALUES(amount), debt_amount=VALUES(debt_amount), eligible_count=VALUES(eligible_count), exempt_count=VALUES(exempt_count), chargeable_count=VALUES(chargeable_count), calculation_note=VALUES(calculation_note), status="ACTIVE", updated_at=CURRENT_TIMESTAMP',
                 $this->withTenant($params)
             );
@@ -1013,7 +1013,7 @@ SQL);
             if ($name === '') continue;
             $this->execute(
                 'INSERT INTO contribution_categories (village_id, code, name, contribution_type, unit_type, amount, unit, collection_cycle, target_config_json, exemption_config_json, status, note, created_by, updated_by)
-                 VALUES (:tenant_village_id,:code,:name,:contribution_type,:unit_type,:amount,:unit,:collection_cycle,:target_config_json,:exemption_config_json,:status,:note,:created_by,:updated_by)',
+                 VALUES (:village_id,:code,:name,:contribution_type,:unit_type,:amount,:unit,:collection_cycle,:target_config_json,:exemption_config_json,:status,:note,:created_by,:updated_by)',
                 $this->withTenant([
                     'code' => $this->categoryCodeFromName($name),
                     'name' => $name,
@@ -1267,24 +1267,24 @@ SQL);
 
     private function upsertRateRule(int $campaignId, array $params): void
     {
-        $this->execute('INSERT INTO contribution_rate_rules (village_id, campaign_id, rule_name, unit_type, amount, target_config_json, effective_from, effective_to) VALUES (:tenant_village_id,:campaign_id,:rule_name,:unit_type,:amount,:target_config_json,:effective_from,:effective_to)', $this->withTenant(['campaign_id' => $campaignId, 'rule_name' => $params['contribution_name'], 'unit_type' => $params['unit_type'], 'amount' => $params['amount'], 'target_config_json' => $params['target_config_json'], 'effective_from' => $params['start_date'], 'effective_to' => $params['due_date']]));
+        $this->execute('INSERT INTO contribution_rate_rules (village_id, campaign_id, rule_name, unit_type, amount, target_config_json, effective_from, effective_to) VALUES (:village_id,:campaign_id,:rule_name,:unit_type,:amount,:target_config_json,:effective_from,:effective_to)', $this->withTenant(['campaign_id' => $campaignId, 'rule_name' => $params['contribution_name'], 'unit_type' => $params['unit_type'], 'amount' => $params['amount'], 'target_config_json' => $params['target_config_json'], 'effective_from' => $params['start_date'], 'effective_to' => $params['due_date']]));
     }
 
     private function writePaymentHistory(int $contributionId, array $params, int $userId): void
     {
         if ($contributionId <= 0) return;
-        $this->execute('INSERT INTO contribution_payment_history (village_id, contribution_id, campaign_id, household_id, action, amount, payment_status, paid_at, collector_name, receipt_number, note, created_by) VALUES (:tenant_village_id,:contribution_id,:campaign_id,:household_id,"PAYMENT",:amount,:payment_status,:paid_at,:collector_name,:receipt_number,:note,:created_by)', $this->withTenant(['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'amount' => $params['paid_amount'], 'payment_status' => $params['payment_status'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'receipt_number' => $params['receipt_number'], 'note' => $params['note'], 'created_by' => $userId]));
+        $this->execute('INSERT INTO contribution_payment_history (village_id, contribution_id, campaign_id, household_id, action, amount, payment_status, paid_at, collector_name, receipt_number, note, created_by) VALUES (:village_id,:contribution_id,:campaign_id,:household_id,"PAYMENT",:amount,:payment_status,:paid_at,:collector_name,:receipt_number,:note,:created_by)', $this->withTenant(['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'amount' => $params['paid_amount'], 'payment_status' => $params['payment_status'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'receipt_number' => $params['receipt_number'], 'note' => $params['note'], 'created_by' => $userId]));
     }
 
     private function writeReceipt(int $contributionId, array $params, int $userId): void
     {
         if ($contributionId <= 0) return;
-        $this->execute('INSERT INTO contribution_receipts (village_id, contribution_id, campaign_id, household_id, receipt_number, amount, paid_at, collector_name, payment_method, note, created_by) VALUES (:tenant_village_id,:contribution_id,:campaign_id,:household_id,:receipt_number,:amount,:paid_at,:collector_name,:payment_method,:note,:created_by)', $this->withTenant(['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'receipt_number' => $params['receipt_number'], 'amount' => $params['paid_amount'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'payment_method' => $params['payment_method'] ?? 'CASH', 'note' => $params['note'], 'created_by' => $userId]));
+        $this->execute('INSERT INTO contribution_receipts (village_id, contribution_id, campaign_id, household_id, receipt_number, amount, paid_at, collector_name, payment_method, note, created_by) VALUES (:village_id,:contribution_id,:campaign_id,:household_id,:receipt_number,:amount,:paid_at,:collector_name,:payment_method,:note,:created_by)', $this->withTenant(['contribution_id' => $contributionId, 'campaign_id' => $params['campaign_id'], 'household_id' => $params['household_id'], 'receipt_number' => $params['receipt_number'], 'amount' => $params['paid_amount'], 'paid_at' => $params['paid_at'], 'collector_name' => $params['collector_name'], 'payment_method' => $params['payment_method'] ?? 'CASH', 'note' => $params['note'], 'created_by' => $userId]));
     }
 
     private function writeAdjustment(int $campaignId, ?int $householdId, mixed $before, mixed $after, int $userId, string $reason): void
     {
-        $this->execute('INSERT INTO contribution_adjustment_history (village_id, campaign_id, household_id, before_json, after_json, reason, created_by) VALUES (:tenant_village_id,:campaign_id,:household_id,:before_json,:after_json,:reason,:created_by)', $this->withTenant(['campaign_id' => $campaignId, 'household_id' => $householdId, 'before_json' => json_encode($before, JSON_UNESCAPED_UNICODE), 'after_json' => json_encode($after, JSON_UNESCAPED_UNICODE), 'reason' => $reason, 'created_by' => $userId]));
+        $this->execute('INSERT INTO contribution_adjustment_history (village_id, campaign_id, household_id, before_json, after_json, reason, created_by) VALUES (:village_id,:campaign_id,:household_id,:before_json,:after_json,:reason,:created_by)', $this->withTenant(['campaign_id' => $campaignId, 'household_id' => $householdId, 'before_json' => json_encode($before, JSON_UNESCAPED_UNICODE), 'after_json' => json_encode($after, JSON_UNESCAPED_UNICODE), 'reason' => $reason, 'created_by' => $userId]));
     }
 
     private function activeHouseholdCount(): int
