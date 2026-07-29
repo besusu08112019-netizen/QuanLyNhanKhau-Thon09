@@ -25,6 +25,7 @@ jobs:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          TENANT_PARITY_LOGIN_JSON: ${{ secrets.TENANT_PARITY_LOGIN_JSON }}
           DB_HOST: ${{ secrets.DB_HOST || vars.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT || vars.DB_PORT }}
           DB_DATABASE: ${{ secrets.DB_DATABASE || vars.DB_DATABASE }}
@@ -39,7 +40,18 @@ jobs:
               missing=1
             fi
           done
+          if [ -z "${TENANT_PARITY_LOGIN_JSON}" ]; then
+            echo "::error::TENANT_PARITY_LOGIN_JSON is missing. Add per-tenant smoke-login credentials for post-deploy acceptance."
+            missing=1
+          fi
           exit "$missing"
+
+      - name: Setup PHP for deployment checks
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, json
+          coverage: none
 
       - name: Create production env file
         shell: bash
@@ -193,3 +205,12 @@ jobs:
               print('public_html only contains .well-known', file=sys.stderr)
               sys.exit(1)
           PY
+
+      - name: Verify all tenants received the deployed source
+        shell: bash
+        env:
+          TENANT_PARITY_URLS: ${{ vars.TENANT_PARITY_URLS || 'https://thon09.hongphongnb.com,https://thon10.hongphongnb.com,https://ccc01.hongphongnb.com' }}
+          TENANT_PARITY_LOGIN_JSON: ${{ secrets.TENANT_PARITY_LOGIN_JSON }}
+          TENANT_PARITY_REQUIRE_LOGIN: '1'
+          TENANT_PARITY_REQUIRED_MODULES: ${{ vars.TENANT_PARITY_REQUIRED_MODULES }}
+        run: php tools/tenant_parity_check.php

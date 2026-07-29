@@ -5,10 +5,12 @@ Tai lieu nay huong dan trien khai mot thon moi tu cung mot repository/source cod
 ## Nguyen tac
 
 - Chi duy tri mot repository va mot source code.
+- Moi thay doi source code deploy mot lan phai tu dong ap dung cho tat ca tenant.
 - Moi thon co database rieng, domain/subdomain rieng va `.env` rieng.
 - Khong tao branch hoac ban source rieng cho tung thon.
 - Website cua thon nao chi cau hinh toi database cua thon do.
 - Ten thon, logo, dia chi, lien he, banner va mau giao dien lay tu `.env` hoac bang `settings`.
+- Khong copy, merge hoac dong bo database, uploads, storage, cache, session, logo, background hoac tenant config giua cac tenant khi deploy source.
 
 ## Tao thon moi
 
@@ -58,6 +60,9 @@ DB_CHARSET=utf8mb4
 3. Build/deploy cung artifact len cac hosting.
 4. Moi hosting giu nguyen `.env`, `uploads/`, `storage/` va database rieng.
 5. Chay migration tren tung database tenant neu release co thay doi schema.
+6. Kiem tra Thon 09, Thon 10 va tenant-test cung nhan mot source version, module version, Dashboard version va Policy Engine version.
+7. Kiem tra dang nhap, Dashboard, Health Check va module moi tren tat ca tenant.
+8. Chi danh dau deployment PASS khi tat ca tenant cung version va cung co module moi. Neu mot tenant thieu tinh nang moi, day la loi deployment.
 
 ## Settings can cap nhat cho moi thon
 

@@ -117,6 +117,56 @@ backups/**
 
 ## Production QA After Deploy
 
+Production is a shared-source multi-tenant system. One commit and one deploy must update the source code used by every tenant. Tenant-specific data must remain isolated.
+
+Source changes that must reach every tenant in the same deploy:
+
+```text
+New features
+Bug fixes
+UI changes
+Modules
+Dashboard
+Policy Engine
+Business rules
+Executive Dashboard
+Data Quality
+Work Management
+```
+
+Never synchronize these tenant-specific assets or runtime states as part of source deploy:
+
+```text
+Database
+Data
+Logo
+Background
+Unit name
+Domain
+Uploads
+Storage
+Cache
+Session
+Tenant .env/config
+```
+
+After FTPS finishes, the workflow must run `tools/tenant_parity_check.php` for:
+
+```text
+https://thon09.hongphongnb.com
+https://thon10.hongphongnb.com
+https://ccc01.hongphongnb.com
+```
+
+The deployment is PASS only when every tenant returns the same source asset version, login works, authenticated `/api/me` works, and public JSON endpoints return valid JSON. If one tenant has an older source version or is missing a module introduced by the release, treat it as a deployment failure, not a business-rule issue.
+
+Configure `TENANT_PARITY_LOGIN_JSON` as a GitHub Actions secret with per-tenant smoke-test credentials. Optional repository/environment variables:
+
+```text
+TENANT_PARITY_URLS
+TENANT_PARITY_REQUIRED_MODULES
+```
+
 Run QA after every successful deploy:
 
 ```text
@@ -143,6 +193,13 @@ API
 HTTP status
 Authentication
 Permission
+Tenant source parity
+Thon 09 version
+Thon 10 version
+tenant-test version
+Dashboard on all tenants
+Health Check on all tenants
+New module visible on all tenants
 Mobile
 Responsive
 Bottom navigation
@@ -190,6 +247,11 @@ Excel: PASS/FAIL/BLOCKED
 PDF: PASS/FAIL/BLOCKED
 Print: PASS/FAIL/BLOCKED
 API: PASS/FAIL/BLOCKED
+Tenant source parity: PASS/FAIL
+Thon 09: PASS/FAIL
+Thon 10: PASS/FAIL
+tenant-test: PASS/FAIL
+Module parity: PASS/FAIL
 Mobile: PASS/FAIL/BLOCKED
 Desktop: PASS/FAIL/BLOCKED
 PWA: PASS/FAIL/BLOCKED
