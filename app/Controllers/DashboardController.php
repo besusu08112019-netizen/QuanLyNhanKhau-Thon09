@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Models\Dashboard;
+use App\Services\ExecutiveDashboardService;
 
 final class DashboardController extends BaseController
 {
@@ -19,6 +20,12 @@ final class DashboardController extends BaseController
     {
         $this->requirePermission('dashboard', 'read');
         $this->ok($this->dashboard->summary($this->query()));
+    }
+
+    public function executive(): void
+    {
+        $this->requirePermission('dashboard', 'read');
+        $this->ok((new ExecutiveDashboardService())->summary($this->query()));
     }
 
     public function search(): void

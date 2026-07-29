@@ -421,6 +421,7 @@ $router->get('/api/me', [AuthController::class, 'me']);
 
 $router->get('/api/dashboard', [DashboardController::class, 'summary']);
 $router->get('/api/dashboard/summary', [DashboardController::class, 'summary']);
+$router->get('/api/dashboard/executive', [DashboardController::class, 'executive']);
 $router->get('/api/dashboard/overview', [DashboardController::class, 'overview']);
 $router->get('/api/dashboard/households', [DashboardController::class, 'households']);
 $router->get('/api/dashboard/population', [DashboardController::class, 'population']);
