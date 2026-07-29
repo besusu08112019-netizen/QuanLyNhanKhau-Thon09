@@ -75,6 +75,7 @@ const assets = [
   ['assets/js/policy-alerts.js', 'assets/js/policy-alerts.min.js', compactJs],
   ['assets/js/notifications.js', 'assets/js/notifications.min.js', compactJs],
   ['assets/js/module-dashboards.js', 'assets/js/module-dashboards.min.js', compactJs],
+  ['assets/js/data-quality.js', 'assets/js/data-quality.min.js', compactJs],
   ['assets/js/vehicles.js', 'assets/js/vehicles.min.js', compactJs],
   ['assets/js/contributions.js', 'assets/js/contributions.min.js', compactJs],
   ['assets/js/agricultural-land.js', 'assets/js/agricultural-land.min.js', compactJs],

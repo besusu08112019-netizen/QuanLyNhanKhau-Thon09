@@ -579,6 +579,8 @@
       dashboardReports: 'dashboard',
       operationCenter: 'dashboard',
       operation_center: 'dashboard',
+      dataQuality: 'report',
+      data_quality: 'report',
       reports: 'report',
       report: 'report',
       users: 'user',
@@ -5699,6 +5701,7 @@
       { moduleKey: 'vehicles', screenId: 'vehicles', path: '/vehicles', label: 'Quản lý xe cộ', mobileLabel: 'Xe cộ', icon: 'fa-car', permissionScope: 'vehicles' },
       { moduleKey: 'contributions', screenId: 'contributions', path: '/contributions', label: 'Đóng góp hộ', mobileLabel: 'Đóng góp', icon: 'fa-hand-holding-dollar', permissionScope: 'contributions' },
       { moduleKey: 'gis', screenId: 'gis', path: '/gis', label: 'GIS', icon: 'fa-map-location-dot', permissionScope: 'gis', loaderName: 'loadGisMap' },
+      { moduleKey: 'dataQuality', screenId: 'dataQuality', path: '/data-quality', label: 'Chất lượng dữ liệu', mobileLabel: 'Dữ liệu', icon: 'fa-shield-heart', permissionScope: 'reports', loaderName: 'loadDataQuality' },
       { moduleKey: 'reports', screenId: 'reports', path: '/reports', label: 'Báo cáo', icon: 'fa-chart-pie', permissionScope: 'reports', loaderName: 'TenantAppViewReport' },
       { moduleKey: 'import', screenId: 'import', path: '/import', label: 'Import dữ liệu', icon: 'fa-file-import', permissionScope: 'import' },
       { moduleKey: 'exportExcel', screenId: 'exportExcel', path: '/export-excel', label: 'Xuất Excel', icon: 'fa-file-export', permissionScope: 'export' },
@@ -5750,6 +5753,7 @@
       { path: '/agriculture', moduleKey: 'agriculture', screenId: 'agriculture', action: 'list' },
       { path: '/contributions', moduleKey: 'contributions', screenId: 'contributions', action: 'list' },
       { path: '/gis', moduleKey: 'gis', screenId: 'gis', action: 'list' },
+      { path: '/data-quality', moduleKey: 'dataQuality', screenId: 'dataQuality', action: 'list' },
       { path: '/reports', moduleKey: 'reports', screenId: 'reports', action: 'list' },
       { path: '/import', moduleKey: 'import', screenId: 'import', action: 'list' },
       { path: '/export-excel', moduleKey: 'exportExcel', screenId: 'exportExcel', action: 'list' },
@@ -6090,7 +6094,7 @@
       { key: 'finance', label: 'Quản lý tài chính', icon: 'fa-hand-holding-dollar', items: ['contributions', 'finance'] },
       { key: 'gis', label: 'GIS', icon: 'fa-map-location-dot', items: ['gis'] },
       { key: 'reports', label: 'Báo cáo', icon: 'fa-chart-pie', items: ['reports'] },
-      { key: 'data', label: 'Dữ liệu', icon: 'fa-file-import', items: ['import', 'exportExcel', 'printForms'] },
+      { key: 'data', label: 'Dữ liệu', icon: 'fa-file-import', items: ['dataQuality', 'import', 'exportExcel', 'printForms'] },
       { key: 'system', label: 'Hệ thống', icon: 'fa-user-shield', items: ['systemAdmin', 'users', 'permissions', 'logs', 'backups', 'restore', 'settings', 'appearance'] }
     ].forEach(function (menu) {
       menus.register(menu);

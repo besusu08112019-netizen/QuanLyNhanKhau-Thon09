@@ -41,6 +41,7 @@ use App\Controllers\ControlCenterPermissionController;
 use App\Controllers\ControlCenterUserController;
 use App\Controllers\ContributionController;
 use App\Controllers\ControlCenterController;
+use App\Controllers\DataQualityController;
 use App\Controllers\DashboardController;
 use App\Controllers\FileController;
 use App\Controllers\FinanceController;
@@ -434,6 +435,10 @@ $router->get('/api/dashboard/search', [DashboardController::class, 'search']);
 $router->get('/api/dashboard/population-chart', [DashboardController::class, 'populationChart']);
 $router->get('/api/dashboard/household-chart', [DashboardController::class, 'householdChart']);
 $router->get('/api/dashboard/age-chart', [DashboardController::class, 'ageChart']);
+
+$router->get('/api/data-quality/summary', [DataQualityController::class, 'summary']);
+$router->get('/api/data-quality/issues', [DataQualityController::class, 'issues']);
+$router->get('/api/data-quality/issue', [DataQualityController::class, 'issueDetail']);
 
 $router->get('/api/policy-alerts/summary', [PolicyAlertController::class, 'summary']);
 $router->get('/api/policy-alerts', [PolicyAlertController::class, 'index']);

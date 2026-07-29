@@ -566,6 +566,67 @@
         </div>
       </section>
 
+      <section id="dataQualityScreen" class="screen data-quality-screen">
+        <div class="data-quality-hero">
+          <div>
+            <span class="data-quality-eyebrow">Trung tâm vận hành dữ liệu</span>
+            <h2>Chất lượng dữ liệu</h2>
+            <p>Phát hiện hồ sơ thiếu, dữ liệu bất thường và các việc cần ưu tiên xử lý. Module chỉ đọc dữ liệu và không tự động sửa hồ sơ.</p>
+          </div>
+          <div class="data-quality-hero-actions">
+            <button id="dataQualityRefreshBtn" class="btn btn-success" type="button" data-platform-action="dataQuality.refresh"><i class="fa-solid fa-rotate"></i> Kiểm tra lại</button>
+          </div>
+        </div>
+
+        <div id="dataQualityKpis" class="data-quality-kpi-grid" aria-live="polite"></div>
+
+        <div class="data-quality-grid">
+          <section class="content-card data-quality-panel">
+            <div class="data-quality-panel-head">
+              <div>
+                <h3>Nhóm lỗi</h3>
+                <span>Ưu tiên theo mức ảnh hưởng đến thống kê, chính sách và vận hành.</span>
+              </div>
+            </div>
+            <div id="dataQualityGroups" class="data-quality-group-grid"></div>
+          </section>
+
+          <section class="content-card data-quality-panel">
+            <div class="data-quality-panel-head data-quality-filter-head">
+              <div>
+                <h3>Danh sách lỗi</h3>
+                <span id="dataQualityGeneratedAt">Chưa kiểm tra</span>
+              </div>
+              <div class="data-quality-filters">
+                <select id="dataQualitySeverityFilter" class="form-select form-select-sm" aria-label="Lọc mức độ">
+                  <option value="">Tất cả mức độ</option>
+                  <option value="CRITICAL">Critical</option>
+                  <option value="HIGH">High</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="LOW">Low</option>
+                </select>
+                <select id="dataQualityGroupFilter" class="form-select form-select-sm" aria-label="Lọc nhóm lỗi">
+                  <option value="">Tất cả nhóm</option>
+                </select>
+              </div>
+            </div>
+            <div id="dataQualityIssues" class="data-quality-issue-list"></div>
+          </section>
+        </div>
+
+        <section class="content-card data-quality-panel data-quality-detail-panel">
+          <div class="data-quality-panel-head">
+            <div>
+              <h3>Hồ sơ liên quan</h3>
+              <span>Chọn một lỗi để mở nhanh danh sách hồ sơ cần rà soát.</span>
+            </div>
+          </div>
+          <div id="dataQualityIssueDetail" class="data-quality-detail-body">
+            <div class="data-quality-empty">Chưa chọn lỗi cần xem chi tiết.</div>
+          </div>
+        </section>
+      </section>
+
       <section id="reportsScreen" class="screen report-screen smart-report-screen">
         <div class="report-center-grid">
           <section class="content-card smart-report-center">
@@ -821,6 +882,7 @@
   <script charset="utf-8" src="/assets/js/complaints.min.js"></script>
   <script charset="utf-8" src="/assets/js/policy-alerts.min.js"></script>
   <script charset="utf-8" src="/assets/js/module-dashboards.min.js"></script>
+  <script charset="utf-8" src="/assets/js/data-quality.min.js"></script>
   <script charset="utf-8" src="/assets/js/mobile-component-library.min.js"></script>
   <script charset="utf-8" src="/assets/js/pwa.min.js"></script>
 </body>
