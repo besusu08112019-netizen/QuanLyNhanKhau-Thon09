@@ -880,6 +880,7 @@
   <script charset="utf-8" src="/assets/js/houses.min.js"></script>
   <script charset="utf-8" src="/assets/js/public-assets.min.js"></script>
   <script charset="utf-8" src="/assets/js/complaints.min.js"></script>
+  <script charset="utf-8" src="/assets/js/work-tasks.min.js"></script>
   <script charset="utf-8" src="/assets/js/policy-alerts.min.js"></script>
   <script charset="utf-8" src="/assets/js/module-dashboards.min.js"></script>
   <script charset="utf-8" src="/assets/js/data-quality.min.js"></script>

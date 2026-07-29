@@ -2,7 +2,7 @@
   'use strict';
 
   const API = '/api/data-quality';
-  const state = { summary: null, selectedIssue: '' };
+  const state = { summary: null, selectedIssue: '', sourceTasks: {} };
 
   function qs(selector, root) { return (root || document).querySelector(selector); }
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[c])); }
@@ -39,6 +39,7 @@
       renderSummary();
       renderIssues();
       renderEmptyDetail();
+      hydrateIssueTasks();
       return state.summary;
     } catch (error) {
       renderError(error);
@@ -128,10 +129,63 @@
       '</div>' +
       '<div class="data-quality-issue-side">' +
       '<strong>' + num(issue.count) + '</strong>' +
+      issueWorkTaskActions(issue) +
       '<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="dataQuality.issueDetail" data-issue-code="' + esc(issue.code) + '">Xem hồ sơ</button>' +
       '</div>' +
       '</article>'
     )).join('');
+  }
+
+  function issueWorkTaskActions(issue) {
+    const ref = dataQualitySourceRef(issue);
+    const task = state.sourceTasks[ref];
+    if (task && task.id) {
+      return '<span class="badge bg-success">Đã tạo công việc</span>' +
+        '<button class="btn btn-sm btn-success" type="button" data-platform-action="dataQuality.openWorkTask" data-source-ref="' + esc(ref) + '">Mở công việc</button>';
+    }
+    return '<button class="btn btn-sm btn-outline-success" type="button" data-platform-action="dataQuality.createWorkTask" data-issue-code="' + esc(issue.code) + '"><i class="fa-solid fa-list-check"></i> Tạo công việc</button>';
+  }
+
+  function dataQualitySourceRef(issue) {
+    return 'data_quality:' + String(issue?.code || '').trim();
+  }
+
+  async function hydrateIssueTasks() {
+    const issues = state.summary?.issues || [];
+    const refs = issues.map(dataQualitySourceRef).filter(Boolean);
+    if (!refs.length || !window.WorkTaskQuickCreate?.findBySource) return;
+    await Promise.all(refs.map(async ref => {
+      try { state.sourceTasks[ref] = await window.WorkTaskQuickCreate.findBySource(ref); }
+      catch (_) { state.sourceTasks[ref] = null; }
+    }));
+    renderIssues();
+  }
+
+  function createWorkTaskFromIssue(code) {
+    const issue = (state.summary?.issues || []).find(item => item.code === code);
+    if (!issue) return toast('Không tìm thấy lỗi cần xử lý', 'warning');
+    const ref = dataQualitySourceRef(issue);
+    window.WorkTaskQuickCreate?.open({
+      sourceType: 'Data Quality',
+      sourceId: issue.code,
+      sourceModule: 'data_quality',
+      sourceTitle: issue.name || issue.code,
+      sourceRef: ref,
+      sourceUrl: '/data-quality?issue=' + encodeURIComponent(issue.code),
+      relatedModule: 'data_quality',
+      title: 'Rà soát dữ liệu: ' + (issue.name || issue.code),
+      description: [
+        issue.description || '',
+        issue.impact ? 'Ảnh hưởng: ' + issue.impact : '',
+        issue.suggestion ? 'Gợi ý xử lý: ' + issue.suggestion : '',
+        'Số hồ sơ liên quan: ' + num(issue.count),
+      ].filter(Boolean).join('\n'),
+      priority: issue.severity,
+      action: issue.suggestion || 'Mở danh sách hồ sơ liên quan và rà soát.',
+      citizens: ['citizen', 'identity', 'policy', 'labor', 'student'].includes(issue.group) ? num(issue.count) + ' hồ sơ' : '',
+      households: ['household', 'relation', 'gis'].includes(issue.group) ? num(issue.count) + ' hồ sơ' : '',
+      categoryCode: 'other',
+    });
   }
 
   async function loadIssueDetail(code) {
@@ -227,6 +281,8 @@
     actions
       .register('dataQuality.refresh', () => loadDataQuality().then(() => toast('Đã kiểm tra lại chất lượng dữ liệu', 'success')).catch(() => {}))
       .register('dataQuality.issueDetail', context => loadIssueDetail(context.dataset.issueCode || ''))
+      .register('dataQuality.createWorkTask', context => createWorkTaskFromIssue(context.dataset.issueCode || ''))
+      .register('dataQuality.openWorkTask', context => window.WorkTaskQuickCreate?.openTaskBySource(context.dataset.sourceRef || ''))
       .register('dataQuality.filterGroup', context => {
         const select = qs('#dataQualityGroupFilter');
         if (select) select.value = context.dataset.group || '';
@@ -245,6 +301,9 @@
     });
     document.addEventListener('tenant:auth-state', event => {
       if (event.detail && event.detail.authenticated && isActive()) loadDataQuality();
+    });
+    document.addEventListener('work-tasks:changed', () => {
+      if (state.summary) hydrateIssueTasks();
     });
   }
 

@@ -138,6 +138,9 @@ SQL);
                 ['value' => '', 'label' => 'Không liên kết'],
                 ['value' => 'household', 'label' => 'Hộ gia đình'],
                 ['value' => 'citizen', 'label' => 'Nhân khẩu'],
+                ['value' => 'risk_warning', 'label' => 'Cảnh báo vận hành'],
+                ['value' => 'data_quality', 'label' => 'Chất lượng dữ liệu'],
+                ['value' => 'executive_dashboard', 'label' => 'Dashboard điều hành'],
                 ['value' => 'public_asset', 'label' => 'Công trình công cộng'],
                 ['value' => 'house', 'label' => 'Nhà ở'],
                 ['value' => 'business', 'label' => 'Hộ sản xuất kinh doanh'],
@@ -322,6 +325,22 @@ SQL);
         if ($area !== '') {
             $where[] = 't.area_code LIKE :area_code';
             $params['area_code'] = '%' . $area . '%';
+        }
+        $relatedModule = $this->targetType((string)($filters['related_module'] ?? $filters['relatedModule'] ?? ''));
+        if ($relatedModule !== null) {
+            $where[] = 't.related_module = :related_module';
+            $params['related_module'] = $relatedModule;
+        }
+        $relatedId = $this->nullableInt($filters['related_id'] ?? $filters['relatedId'] ?? null);
+        if ($relatedId !== null) {
+            $where[] = 't.related_id = :related_id';
+            $params['related_id'] = $relatedId;
+        }
+        $sourceRef = trim((string)($filters['source_ref'] ?? $filters['sourceRef'] ?? ''));
+        if ($sourceRef !== '') {
+            $sourceRef = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $sourceRef);
+            $where[] = 't.note LIKE :source_ref';
+            $params['source_ref'] = '%SOURCE_REF:' . $sourceRef . '%';
         }
         $from = trim((string)($filters['date_from'] ?? $filters['dateFrom'] ?? ''));
         $to = trim((string)($filters['date_to'] ?? $filters['dateTo'] ?? ''));

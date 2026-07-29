@@ -349,6 +349,8 @@ body.theme-dark .advanced-filter-panel { background: #111827; }
 .executive-warning-item strong { font-size: 14px; color: var(--dashboard-text); }
 .executive-warning-item small { grid-column: 2; color: var(--dashboard-muted); line-height: 1.35; }
 .executive-warning-item em { grid-column: 2; color: var(--dashboard-green); font-style: normal; font-weight: 700; font-size: 12px; }
+.executive-warning-actions { grid-column: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.executive-warning-list > .executive-warning-actions { margin: -4px 0 4px 126px; }
 .executive-warning-severity { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
 .executive-warning-high { background: #fee2e2; color: #b91c1c; }
 .executive-warning-medium { background: #ffedd5; color: #c2410c; }
@@ -392,6 +394,7 @@ body.theme-dark .dashboard-hero-row p, body.theme-dark .dashboard-side-stat smal
 }
 @media (max-width: 900px) { .dashboard-overview-screen { padding: 20px 16px 28px; } .dashboard-hero-row { align-items: flex-start; flex-direction: column; } .dashboard-sync-note { border-radius: 12px; white-space: normal; } .dashboard-age-layout, .dashboard-party-layout, .dashboard-gender-layout { grid-template-columns: 1fr; } .dashboard-panel { min-height: auto; } .dashboard-line-months { grid-template-columns: repeat(3, 1fr); row-gap: 4px; } .executive-warning-item { grid-template-columns: 1fr; } .executive-warning-item small, .executive-warning-item em { grid-column: 1; }
 }
+@media (max-width: 900px) { .executive-warning-list > .executive-warning-actions { margin-left: 0; } }
 @media (max-width: 620px) { .dashboard-kpi-grid { grid-template-columns: 1fr; } .dashboard-kpi-value { margin-left: 0; } .dashboard-panel-head { align-items: flex-start; flex-direction: column; } .dashboard-donut { width: 200px; height: 200px; } .dashboard-donut::after { inset: 54px; } .dashboard-donut-center { inset: 62px; } .topbar { padding: 12px 16px; }
 }
 @media (max-width: 620px) { .module-check-grid { grid-template-columns: 1fr; max-height: 260px; }
