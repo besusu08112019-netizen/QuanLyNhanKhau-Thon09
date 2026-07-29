@@ -2,8 +2,8 @@
 
 namespace App\Repositories;
 
-use App\Config\CitizenPolicyDefaults;
 use App\Core\Database;
+use App\Policies\AgePolicy;
 use PDO;
 
 final class ControlCenterRepository
@@ -31,8 +31,8 @@ final class ControlCenterRepository
             'versions' => $this->tenantVersions(),
             'totalHouseholds' => $this->count('households', "status <> 'DELETED'"),
             'totalCitizens' => $totalCitizens,
-            'totalChildren' => $this->count('citizens', $citizenWhere . ' AND TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) < 16'),
-            'totalElderly' => $this->count('citizens', $citizenWhere . ' AND TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ' . CitizenPolicyDefaults::ELDERLY_OCCUPATION_DEFAULT_AGE),
+            'totalChildren' => $this->count('citizens', $citizenWhere . ' AND ' . AgePolicy::childConditionSql('citizens')),
+            'totalElderly' => $this->count('citizens', $citizenWhere . ' AND ' . AgePolicy::statisticalElderlyConditionSql('citizens')),
             'totalWorkers' => $this->count('citizens', $citizenWhere . " AND (employed = 1 OR freelance_labor = 1 OR out_province_labor = 1 OR foreign_labor = 1)"),
             'totalPartyMembers' => $this->partyMemberCount(),
             'healthInsuranceRate' => $totalCitizens > 0 ? round(($insuredCitizens / $totalCitizens) * 100, 1) : 0.0,

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Policies\AgePolicy;
 
 final class OperationCenter extends BaseModel
 {
@@ -141,7 +142,7 @@ final class OperationCenter extends BaseModel
             $whereArea = $area !== '' ? ' AND h.area_code = :area' : '';
             $params = $area !== '' ? ['area' => $area] : [];
             $households = $this->fetchOne('SELECT COUNT(*) AS total_households, COALESCE(SUM(h.poor_household=1),0) AS poor_households, COALESCE(SUM(h.near_poor_household=1),0) AS near_poor_households FROM households h WHERE ' . $this->activeHouseholdCondition('h') . $whereArea, $params) ?: [];
-            $citizens = $this->fetchOne('SELECT COUNT(c.id) AS total_citizens, COALESCE(SUM(c.gender="Nam"),0) AS male_count, COALESCE(SUM(c.gender="Nữ"),0) AS female_count, COALESCE(SUM(TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16),0) AS children_count, COALESCE(SUM(TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60),0) AS elderly_count, COALESCE(SUM(' . ($this->columnExists('citizens', 'party_member') ? 'c.party_member=1' : '0') . '),0) AS party_member_count FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE ' . $this->activeCitizenCondition('c') . ' AND ' . $this->activeHouseholdCondition('h') . $whereArea, $params) ?: [];
+            $citizens = $this->fetchOne('SELECT COUNT(c.id) AS total_citizens, COALESCE(SUM(c.gender="Nam"),0) AS male_count, COALESCE(SUM(c.gender="Nữ"),0) AS female_count, COALESCE(SUM(' . AgePolicy::childConditionSql('c') . '),0) AS children_count, COALESCE(SUM(' . AgePolicy::statisticalElderlyConditionSql('c') . '),0) AS elderly_count, COALESCE(SUM(' . ($this->columnExists('citizens', 'party_member') ? 'c.party_member=1' : '0') . '),0) AS party_member_count FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE ' . $this->activeCitizenCondition('c') . ' AND ' . $this->activeHouseholdCondition('h') . $whereArea, $params) ?: [];
             $areas = $this->fetchAll('SELECT COALESCE(NULLIF(area_code,""),"Chưa phân khu") AS area_code, COUNT(*) AS total FROM households h WHERE ' . $this->activeHouseholdCondition('h') . ' GROUP BY area_code ORDER BY area_code');
             $gps = $this->gpsProgress($params, $whereArea);
             $profile = $this->profileProgress($params, $whereArea);

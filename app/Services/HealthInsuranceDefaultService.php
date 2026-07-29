@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Config\CitizenPolicyDefaults;
+use App\Policies\AgePolicy;
 
 final class HealthInsuranceDefaultService
 {
     public const STUDENT_OCCUPATION = 'Học sinh';
-    public const ELDERLY_OCCUPATION = 'Người cao tuổi (70+)';
+    public const ELDERLY_OCCUPATION = 'Người cao tuổi (' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE . '+)';
 
     public static function defaultForLaborOccupation(?string $occupation): ?int
     {
@@ -27,8 +27,8 @@ final class HealthInsuranceDefaultService
         $student = StudentStatusService::defaultFieldsForDateOfBirth($dateOfBirth, $date);
         if (!empty($student['occupation'])) return $student['occupation'];
 
-        $age = self::ageFromDate($dateOfBirth, $date);
-        if ($age !== null && $age >= CitizenPolicyDefaults::ELDERLY_OCCUPATION_DEFAULT_AGE) {
+        $age = AgePolicy::ageFromDate($dateOfBirth, $date);
+        if (AgePolicy::hasDefaultHealthInsurance($age)) {
             return self::ELDERLY_OCCUPATION;
         }
 
@@ -37,7 +37,7 @@ final class HealthInsuranceDefaultService
 
     public static function eligibleOccupationKeys(): array
     {
-        return ['hoc sinh', 'nguoi cao tuoi 70', 'nguoi cao tuoi 70+', 'elderly 70'];
+        return ['hoc sinh', 'nguoi cao tuoi ' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE, 'nguoi cao tuoi ' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE . '+', 'elderly ' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE];
     }
 
     public static function normalize(?string $value): string
@@ -70,11 +70,4 @@ final class HealthInsuranceDefaultService
         return $value;
     }
 
-    private static function ageFromDate(?string $dateOfBirth, ?\DateTimeInterface $date = null): ?int
-    {
-        $birth = \DateTimeImmutable::createFromFormat('!Y-m-d', trim((string) $dateOfBirth));
-        if (!$birth) return null;
-        $date ??= new \DateTimeImmutable('today');
-        return (int) $birth->diff($date)->y;
-    }
 }

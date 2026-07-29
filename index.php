@@ -70,6 +70,7 @@ use App\Controllers\VillageDocumentController;
 use App\Controllers\WorkCalendarController;
 use App\Controllers\WorkTaskController;
 use App\Config\CitizenPolicyDefaults;
+use App\Policies\AgePolicy;
 use App\Services\HealthInsuranceDefaultService;
 use App\Services\StudentStatusService;
 use App\Services\TenantRegistryStatusService;
@@ -932,6 +933,14 @@ if (!str_starts_with($request->path(), '/api')) {
         'elderlyOccupationDefaultAge' => CitizenPolicyDefaults::ELDERLY_OCCUPATION_DEFAULT_AGE,
         'academicYearStartMonth' => StudentStatusService::ACADEMIC_YEAR_START_MONTH,
         'studentMaxAcademicAge' => StudentStatusService::STUDENT_MAX_ACADEMIC_AGE,
+        'ageBand05Max' => AgePolicy::AGE_BAND_0_5_MAX,
+        'ageBand614Min' => AgePolicy::AGE_BAND_6_14_MIN,
+        'ageBand614Max' => AgePolicy::AGE_BAND_6_14_MAX,
+        'ageBand1517Min' => AgePolicy::AGE_BAND_15_17_MIN,
+        'ageBand1517Max' => AgePolicy::AGE_BAND_15_17_MAX,
+        'ageBand1859Min' => AgePolicy::AGE_BAND_18_59_MIN,
+        'ageBand1859Max' => AgePolicy::AGE_BAND_18_59_MAX,
+        'statisticalElderlyMinAge' => AgePolicy::STATISTICAL_ELDERLY_MIN_AGE,
         'studentLabel' => StudentStatusService::STUDENT_LABEL,
         'elderlyOccupationLabel' => HealthInsuranceDefaultService::ELDERLY_OCCUPATION,
         'healthInsuranceDefaultOccupations' => HealthInsuranceDefaultService::eligibleOccupations(),

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Policies\AgePolicy;
 use App\Services\StudentStatusService;
 
 final class Report extends BaseModel
@@ -154,8 +155,8 @@ final class Report extends BaseModel
             'meritorious-people', 'meritorious', 'meritorious_person', 'nguoi-co-cong' => $this->meritoriousCitizenReport($filters),
             'disabled-people', 'disabled', 'disabled_person', 'disability', 'nguoi-khuyet-tat' => $this->flagCitizenReport('Báo cáo Người khuyết tật', 'disabled_person', 'Người khuyết tật', $filters),
             'labor', 'labour', 'lao-dong' => $this->laborReport($filters),
-            'elderly', 'nguoi-cao-tuoi' => $this->ageRangeReport('Báo cáo Người cao tuổi', 60, null, $filters),
-            'children', 'tre-em' => $this->ageRangeReport('Báo cáo Trẻ em', null, 15, $filters),
+            'elderly', 'nguoi-cao-tuoi' => $this->ageRangeReport('Báo cáo Người cao tuổi', AgePolicy::STATISTICAL_ELDERLY_MIN_AGE, null, $filters),
+            'children', 'tre-em' => $this->ageRangeReport('Báo cáo Trẻ em', null, AgePolicy::CHILD_MAX_INCLUSIVE_AGE, $filters),
             'poor-households', 'poor_households', 'poor', 'ho-ngheo' => $this->householdCategoryReport('Báo cáo Hộ nghèo', 'poor', $filters),
             'near-poor-households', 'near_poor_households', 'near_poor', 'ho-can-ngheo' => $this->householdCategoryReport('Báo cáo Hộ cận nghèo', 'near_poor', $filters),
             'special' => $this->specialHouseholdReport($filters),
@@ -167,7 +168,7 @@ final class Report extends BaseModel
     {
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
         [$householdWhere, $householdParams] = $this->householdWhere($filters);
-        $citizens = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN gender='Nam' THEN 1 ELSE 0 END),0) AS male, COALESCE(SUM(CASE WHEN gender='Nữ' THEN 1 ELSE 0 END),0) AS female, COALESCE(SUM(CASE WHEN residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary, COALESCE(SUM(CASE WHEN presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 16 THEN 1 ELSE 0 END),0) AS children, COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 60 THEN 1 ELSE 0 END),0) AS elderly" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $citizenWhere", $citizenParams) ?: [];
+        $citizens = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN gender='Nam' THEN 1 ELSE 0 END),0) AS male, COALESCE(SUM(CASE WHEN gender='Nữ' THEN 1 ELSE 0 END),0) AS female, COALESCE(SUM(CASE WHEN residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary, COALESCE(SUM(CASE WHEN presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away, COALESCE(SUM(CASE WHEN " . AgePolicy::childConditionSql('c') . " THEN 1 ELSE 0 END),0) AS children, COALESCE(SUM(CASE WHEN " . AgePolicy::statisticalElderlyConditionSql('c') . " THEN 1 ELSE 0 END),0) AS elderly" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $citizenWhere", $citizenParams) ?: [];
         $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
         $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
         $households = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS disabled, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN poor_household=0 AND near_poor_household=0 AND NOT $meritoriousHouseholdExpr AND NOT $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS normal FROM households h $householdWhere", $householdParams) ?: [];
@@ -244,7 +245,8 @@ final class Report extends BaseModel
     public function ageReport(array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        $rows = $this->fetchAll("SELECT CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= 5 THEN '0-5 tuổi' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= 14 THEN '6-14 tuổi' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= 17 THEN '15-17 tuổi' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= 59 THEN '18-59 tuổi' ELSE 'Từ 60 tuổi trở lên' END AS label, COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY MIN(TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()))", $params);
+        $ageSql = AgePolicy::ageSql('c');
+        $rows = $this->fetchAll("SELECT CASE WHEN $ageSql <= " . AgePolicy::AGE_BAND_0_5_MAX . " THEN '0-5 tuổi' WHEN $ageSql <= " . AgePolicy::AGE_BAND_6_14_MAX . " THEN '6-14 tuổi' WHEN $ageSql <= " . AgePolicy::AGE_BAND_15_17_MAX . " THEN '15-17 tuổi' WHEN $ageSql <= " . AgePolicy::AGE_BAND_18_59_MAX . " THEN '18-59 tuổi' ELSE 'Từ 60 tuổi trở lên' END AS label, COUNT(*) AS total FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY MIN($ageSql)", $params);
         return $this->table('Báo cáo theo độ tuổi', ['Độ tuổi', 'Số lượng'], array_map(fn($r) => [$r['label'], (int) $r['total']], $rows), $filters);
     }
 
@@ -353,8 +355,8 @@ final class Report extends BaseModel
     public function ageRangeReport(string $title, ?int $from, ?int $to, array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        if ($from !== null) { $where .= ' AND TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= :age_from_report'; $params['age_from_report'] = $from; }
-        if ($to !== null) { $where .= ' AND TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= :age_to_report'; $params['age_to_report'] = $to; }
+        if ($from !== null) { $where .= ' AND ' . AgePolicy::ageSql('c') . ' >= :age_from_report'; $params['age_from_report'] = $from; }
+        if ($to !== null) { $where .= ' AND ' . AgePolicy::ageSql('c') . ' <= :age_to_report'; $params['age_to_report'] = $to; }
         $rows = $this->fetchAll("SELECT h.household_code, c.citizen_code, c.full_name, c.gender, c.date_of_birth, c.identity_number, c.phone FROM citizens c INNER JOIN households h ON h.id=c.household_id $where ORDER BY c.date_of_birth, c.full_name", $params);
         return $this->table($title, ['Mã hộ','Mã nhân khẩu','Họ tên','Giới tính','Ngày sinh','CCCD','Số điện thoại'], array_map(fn($r) => [$r['household_code'], $r['citizen_code'], $r['full_name'], $r['gender'], $this->date($r['date_of_birth']), $r['identity_number'], $r['phone']], $rows), $filters);
     }
@@ -403,8 +405,8 @@ final class Report extends BaseModel
         $category = $this->categoryKey($filters['household_type'] ?? $filters['householdType'] ?? $filters['category'] ?? '');
         if ($category) $this->addCategoryWhere($where, $params, $category);
         if (!empty($filters['gender'])) { $where[] = 'c.gender = :gender'; $params['gender'] = $filters['gender']; }
-        if (!empty($filters['ageFrom'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= :age_from'; $params['age_from'] = (int) $filters['ageFrom']; }
-        if (!empty($filters['ageTo'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= :age_to'; $params['age_to'] = (int) $filters['ageTo']; }
+        if (!empty($filters['ageFrom'])) { $where[] = AgePolicy::ageSql('c') . ' >= :age_from'; $params['age_from'] = (int) $filters['ageFrom']; }
+        if (!empty($filters['ageTo'])) { $where[] = AgePolicy::ageSql('c') . ' <= :age_to'; $params['age_to'] = (int) $filters['ageTo']; }
         if (!empty($filters['ethnicity'])) { $where[] = 'c.ethnicity LIKE :ethnicity'; $params['ethnicity'] = '%' . $filters['ethnicity'] . '%'; }
         if (!empty($filters['religion'])) { $where[] = 'c.religion LIKE :religion'; $params['religion'] = '%' . $filters['religion'] . '%'; }
         if (!empty($filters['occupation'])) { $where[] = 'c.occupation LIKE :occupation'; $params['occupation'] = '%' . $filters['occupation'] . '%'; }

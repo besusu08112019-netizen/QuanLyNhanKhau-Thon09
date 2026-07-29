@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Config\CitizenPolicyDefaults;
 use App\Core\BaseModel;
 use App\Models\PolicyAlert;
+use App\Policies\AgePolicy;
 use App\Services\HealthInsuranceDefaultService;
 use App\Services\StudentStatusService;
 
@@ -210,8 +211,8 @@ final class Citizen extends BaseModel
         if (!empty($filters['workplace']) && $this->columnExists('citizens', 'workplace')) { $where[] = 'c.workplace LIKE :workplace'; $params['workplace'] = '%' . $filters['workplace'] . '%'; }
         if (!empty($filters['nationality']) && $this->columnExists('citizens', 'nationality')) { $where[] = 'c.nationality LIKE :nationality'; $params['nationality'] = '%' . $filters['nationality'] . '%'; }
         if (!empty($filters['bloodType']) && $this->columnExists('citizens', 'blood_type')) { $where[] = 'c.blood_type = :blood_type'; $params['blood_type'] = $filters['bloodType']; }
-        if (!empty($filters['ageFrom'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= :age_from'; $params['age_from'] = (int) $filters['ageFrom']; }
-        if (!empty($filters['ageTo'])) { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= :age_to'; $params['age_to'] = (int) $filters['ageTo']; }
+        if (!empty($filters['ageFrom'])) { $where[] = AgePolicy::ageSql('c') . ' >= :age_from'; $params['age_from'] = (int) $filters['ageFrom']; }
+        if (!empty($filters['ageTo'])) { $where[] = AgePolicy::ageSql('c') . ' <= :age_to'; $params['age_to'] = (int) $filters['ageTo']; }
         if (!empty($filters['policyAlert'])) {
             $condition = PolicyAlert::filterCondition((string) $filters['policyAlert'], 'c');
             if ($condition) $where[] = $condition;
@@ -273,7 +274,7 @@ final class Citizen extends BaseModel
         $laborFields = ['not_attending_school','pupil','student','employed','unemployed','freelance_labor','out_province_labor','foreign_labor','retired'];
         $ageDefaults = [];
         if ($fallback === null) {
-            $age = $this->ageFromDate((string) $dob);
+            $age = AgePolicy::ageFromDate((string) $dob);
             if (!$this->anyFieldProvided($data, array_merge($laborFields, ['occupation','education_level']))) {
                 foreach (['not_attending_school','pupil','student','employed'] as $column) {
                     if (array_key_exists($column, $studentDefaults)) $ageDefaults[$column] = $studentDefaults[$column];
@@ -409,13 +410,6 @@ final class Citizen extends BaseModel
     {
         if (!$this->fieldProvided($data, 'occupation')) return false;
         return HealthInsuranceDefaultService::normalize($occupation) !== HealthInsuranceDefaultService::normalize($fallback['occupation'] ?? null);
-    }
-
-    private function ageFromDate(string $dateOfBirth): ?int
-    {
-        $birth = \DateTimeImmutable::createFromFormat('!Y-m-d', $dateOfBirth);
-        if (!$birth) return null;
-        return $birth->diff(new \DateTimeImmutable('today'))->y;
     }
 
     private function searchFlag(string $search): ?string

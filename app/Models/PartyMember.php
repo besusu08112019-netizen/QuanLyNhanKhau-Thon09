@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Policies\AgePolicy;
 
 final class PartyMember extends BaseModel
 {
@@ -184,7 +185,7 @@ SQL);
                 COALESCE(SUM(CASE WHEN pm.activity_status='RETIRED' THEN 1 ELSE 0 END),0) AS retired,
                 COALESCE(SUM(CASE WHEN pm.activity_status IN ('EXEMPT','TEMP_EXEMPT') THEN 1 ELSE 0 END),0) AS exempt,
                 COALESCE(SUM(CASE WHEN pm.activity_status IN ('TRANSFERRED_OUT','TRANSFERRED_IN') THEN 1 ELSE 0 END),0) AS transferred,
-                COALESCE(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, COALESCE(pm.official_party_date, pm.joined_party_date), CURDATE()) >= 30 AND MOD(TIMESTAMPDIFF(YEAR, COALESCE(pm.official_party_date, pm.joined_party_date), CURDATE()), 5)=0 THEN 1 ELSE 0 END),0) AS badge_due
+                COALESCE(SUM(CASE WHEN ' . AgePolicy::yearsSinceSql('COALESCE(pm.official_party_date, pm.joined_party_date)') . ' >= ' . AgePolicy::PARTY_BADGE_MIN_YEARS . ' AND MOD(' . AgePolicy::yearsSinceSql('COALESCE(pm.official_party_date, pm.joined_party_date)') . ', ' . AgePolicy::PARTY_BADGE_INTERVAL_YEARS . ')=0 THEN 1 ELSE 0 END),0) AS badge_due
              FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where",
             $params
         ) ?: [];
@@ -206,7 +207,7 @@ SQL);
         $this->ensureSchema();
         [$where, $params] = $this->where($filters, false);
         return [
-            'age' => $this->fetchAll("SELECT CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 30 THEN 'Dưới 30' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 40 THEN '30-39' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 50 THEN '40-49' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) < 60 THEN '50-59' ELSE '60+' END AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY MIN(TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()))", $params),
+            'age' => $this->fetchAll("SELECT CASE WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_UNDER_30_MAX_EXCLUSIVE . " THEN 'Dưới 30' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_30_39_MAX_EXCLUSIVE . " THEN '30-39' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_40_49_MAX_EXCLUSIVE . " THEN '40-49' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_50_59_MAX_EXCLUSIVE . " THEN '50-59' ELSE '60+' END AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY MIN(" . AgePolicy::ageSql('c') . ")", $params),
             'gender' => $this->fetchAll("SELECT COALESCE(NULLIF(c.gender,''),'Khác') AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY value DESC", $params),
             'branch' => $this->fetchAll("SELECT COALESCE(NULLIF(pm.branch_name,''),'Chưa cập nhật') AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 12", $params),
         ];
@@ -288,9 +289,9 @@ SQL);
             if (in_array($column, ['branch_name', 'party_position'], true)) $params[$param] = $value;
         }
         $ageFrom = trim((string) ($filters['age_from'] ?? $filters['ageFrom'] ?? ''));
-        if ($ageFrom !== '') { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= :age_from'; $params['age_from'] = (int) $ageFrom; }
+        if ($ageFrom !== '') { $where[] = '' . AgePolicy::ageSql('c') . ' >= :age_from'; $params['age_from'] = (int) $ageFrom; }
         $ageTo = trim((string) ($filters['age_to'] ?? $filters['ageTo'] ?? ''));
-        if ($ageTo !== '') { $where[] = 'TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= :age_to'; $params['age_to'] = (int) $ageTo; }
+        if ($ageTo !== '') { $where[] = '' . AgePolicy::ageSql('c') . ' <= :age_to'; $params['age_to'] = (int) $ageTo; }
         $sortMap = ['full_name' => 'c.full_name', 'party_member_code' => 'pm.party_member_code', 'branch_name' => 'pm.branch_name', 'party_position' => 'pm.party_position', 'member_type' => 'pm.member_type', 'activity_status' => 'pm.activity_status', 'joined_party_date' => 'pm.joined_party_date'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
         if ($withOrder) $result[] = $this->listOrder($filters, $sortMap, 'full_name', 'ASC', ['pm.id DESC']);
@@ -415,8 +416,7 @@ SQL);
 
     private function age(mixed $date): ?int
     {
-        if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}/', (string) $date)) return null;
-        try { return (int) (new \DateTimeImmutable((string) $date))->diff(new \DateTimeImmutable('today'))->y; } catch (\Throwable) { return null; }
+        return AgePolicy::ageFromDate(is_scalar($date) ? (string) $date : null);
     }
 
     private function date(?string $value): string

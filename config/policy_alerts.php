@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'lookahead_days' => 90,
+    'lookahead_days' => \App\Policies\AgePolicy::UPCOMING_POLICY_LOOKAHEAD_DAYS,
     'alerts' => [
         'age_70' => [
             'label' => 'Đủ ' . \App\Config\CitizenPolicyDefaults::BHYT_DEFAULT_AGE . ' tuổi',
@@ -23,14 +23,14 @@ return [
             'age' => \App\Config\CitizenPolicyDefaults::BHYT_DEFAULT_AGE,
             'type' => 'upcoming',
             'purpose' => 'Sắp đến tuổi rà soát BHYT',
-            'message' => 'Có %d người sẽ đủ ' . \App\Config\CitizenPolicyDefaults::BHYT_DEFAULT_AGE . ' tuổi trong vòng 90 ngày.',
+            'message' => 'Có %d người sẽ đủ ' . \App\Config\CitizenPolicyDefaults::BHYT_DEFAULT_AGE . ' tuổi trong vòng ' . \App\Policies\AgePolicy::UPCOMING_POLICY_LOOKAHEAD_DAYS . ' ngày.',
         ],
         'upcoming_75' => [
             'label' => 'Sắp đủ ' . \App\Config\CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE . ' tuổi',
             'age' => \App\Config\CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE,
             'type' => 'upcoming',
             'purpose' => 'Sắp đến tuổi rà soát trợ cấp',
-            'message' => 'Có %d người sẽ đủ ' . \App\Config\CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE . ' tuổi trong vòng 90 ngày.',
+            'message' => 'Có %d người sẽ đủ ' . \App\Config\CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE . ' tuổi trong vòng ' . \App\Policies\AgePolicy::UPCOMING_POLICY_LOOKAHEAD_DAYS . ' ngày.',
         ],
     ],
 ];

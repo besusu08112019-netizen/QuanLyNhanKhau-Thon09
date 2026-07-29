@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Policies\AgePolicy;
 use App\Core\SimplePdf;
 use App\Core\TenantConfig;
 
@@ -16,10 +17,10 @@ final class PolicyAlert extends BaseModel
         $config = self::configData();
         $alert = $config['alerts'][$key] ?? null;
         if (!$alert) return null;
-        $ageExpr = "TIMESTAMPDIFF(YEAR,$alias.date_of_birth,CURDATE())";
+        $ageExpr = AgePolicy::ageSql($alias);
         if (($alert['type'] ?? '') === 'upcoming') {
-            $targetDate = self::targetDateExpr($alias, (int) $alert['age']);
-            return "$ageExpr < " . (int) $alert['age'] . " AND DATEDIFF($targetDate,CURDATE()) BETWEEN 0 AND " . (int) ($config['lookahead_days'] ?? 90);
+            $targetDate = AgePolicy::targetDateSql($alias, (int) $alert['age']);
+            return "$ageExpr < " . (int) $alert['age'] . " AND DATEDIFF($targetDate,CURDATE()) BETWEEN 0 AND " . (int) ($config['lookahead_days'] ?? AgePolicy::UPCOMING_POLICY_LOOKAHEAD_DAYS);
         }
         $condition = "$ageExpr >= " . (int) $alert['age'];
         if (!empty($alert['exclude_if_flag'])) $condition .= " AND COALESCE($alias." . preg_replace('/[^a-z_]/', '', $alert['exclude_if_flag']) . ',0)=0';
@@ -199,7 +200,7 @@ SQL);
 
     private function selectSql(): string
     {
-        return 'SELECT c.id, c.citizen_code, c.full_name, c.date_of_birth, TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) AS age, c.phone, c.has_health_insurance, c.social_assistance, h.household_code, h.head_citizen_name, COALESCE(NULLIF(c.current_address,""),h.address) AS address, r.reviewed_at, r.processed_at, r.note AS review_note';
+        return 'SELECT c.id, c.citizen_code, c.full_name, c.date_of_birth, ' . AgePolicy::ageSql('c') . ' AS age, c.phone, c.has_health_insurance, c.social_assistance, h.household_code, h.head_citizen_name, COALESCE(NULLIF(c.current_address,""),h.address) AS address, r.reviewed_at, r.processed_at, r.note AS review_note';
     }
 
     private function normalize(array $row): array
@@ -223,7 +224,7 @@ SQL);
 
     private function lookaheadDays(): int
     {
-        return (int) ($this->config()['lookahead_days'] ?? 90);
+        return (int) ($this->config()['lookahead_days'] ?? AgePolicy::UPCOMING_POLICY_LOOKAHEAD_DAYS);
     }
 
     private function lowerLabel(string $label): string
@@ -239,12 +240,7 @@ SQL);
     private static function configData(): array
     {
         $path = BASE_PATH . '/config/policy_alerts.php';
-        return is_file($path) ? require $path : ['lookahead_days' => 90, 'alerts' => []];
-    }
-
-    private static function targetDateExpr(string $alias, int $age): string
-    {
-        return "DATE_ADD($alias.date_of_birth, INTERVAL $age YEAR)";
+        return is_file($path) ? require $path : ['lookahead_days' => AgePolicy::UPCOMING_POLICY_LOOKAHEAD_DAYS, 'alerts' => []];
     }
 
     private function statistics(): PopulationStatistics

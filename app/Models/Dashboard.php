@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Policies\AgePolicy;
 use App\Core\TenantConfig;
 use App\Services\StudentStatusService;
 
@@ -196,7 +197,8 @@ final class Dashboard extends BaseModel
     public function ageChart(array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        return $this->fetchAll("SELECT CASE WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) <= 5 THEN '0-5 tuổi' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 6 AND 14 THEN '6-14 tuổi' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 15 AND 17 THEN '15-17 tuổi' WHEN TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) BETWEEN 18 AND 59 THEN '18-59 tuổi' ELSE 'Từ 60 tuổi trở lên' END AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY MIN(TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()))", $params);
+        $ageSql = AgePolicy::ageSql('c');
+        return $this->fetchAll("SELECT CASE WHEN $ageSql <= " . AgePolicy::AGE_BAND_0_5_MAX . " THEN '0-5 tuổi' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_6_14_MIN . ' AND ' . AgePolicy::AGE_BAND_6_14_MAX . " THEN '6-14 tuổi' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_15_17_MIN . ' AND ' . AgePolicy::AGE_BAND_15_17_MAX . " THEN '15-17 tuổi' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_18_59_MIN . ' AND ' . AgePolicy::AGE_BAND_18_59_MAX . " THEN '18-59 tuổi' ELSE 'Từ 60 tuổi trở lên' END AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY MIN($ageSql)", $params);
     }
 
     public function residencyChart(array $filters = []): array

@@ -72,6 +72,11 @@ final class ImportController extends BaseController
             return;
         }
 
+        if ($type === 'person') {
+            // DDL statements implicitly commit MySQL transactions, so prepare optional citizen schema before import transaction.
+            $this->citizens->ensureHealthInsuranceSchema();
+        }
+
         $db = Database::pdo();
         $db->beginTransaction();
         try {

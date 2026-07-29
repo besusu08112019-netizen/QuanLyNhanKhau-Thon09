@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Policies\AgePolicy;
 
 final class GisHouseholdLocation extends BaseModel
 {
@@ -45,9 +46,9 @@ final class GisHouseholdLocation extends BaseModel
              LEFT JOIN (
                 SELECT c.household_id,
                     SUM(CASE WHEN c.party_member = 1 THEN 1 ELSE 0 END) AS party_members,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) < 16 THEN 1 ELSE 0 END) AS children_count,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) >= 60 THEN 1 ELSE 0 END) AS elderly_count,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END) AS working_age_count,
+                    SUM(CASE WHEN ' . AgePolicy::childConditionSql('c') . ' THEN 1 ELSE 0 END) AS children_count,
+                    SUM(CASE WHEN ' . AgePolicy::statisticalElderlyConditionSql('c') . ' THEN 1 ELSE 0 END) AS elderly_count,
+                    SUM(CASE WHEN ' . AgePolicy::workingAgeConditionSql('c') . ' THEN 1 ELSE 0 END) AS working_age_count,
                     SUM(CASE WHEN c.residency_status = "PERMANENT" THEN 1 ELSE 0 END) AS permanent_count,
                     SUM(CASE WHEN c.residency_status = "TEMPORARY" THEN 1 ELSE 0 END) AS temporary_count,
                     SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count
@@ -214,9 +215,9 @@ final class GisHouseholdLocation extends BaseModel
              LEFT JOIN (
                 SELECT c.household_id,
                     SUM(CASE WHEN c.party_member = 1 THEN 1 ELSE 0 END) AS party_members,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) < 16 THEN 1 ELSE 0 END) AS children_count,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) >= 60 THEN 1 ELSE 0 END) AS elderly_count,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END) AS working_age_count,
+                    SUM(CASE WHEN ' . AgePolicy::childConditionSql('c') . ' THEN 1 ELSE 0 END) AS children_count,
+                    SUM(CASE WHEN ' . AgePolicy::statisticalElderlyConditionSql('c') . ' THEN 1 ELSE 0 END) AS elderly_count,
+                    SUM(CASE WHEN ' . AgePolicy::workingAgeConditionSql('c') . ' THEN 1 ELSE 0 END) AS working_age_count,
                     SUM(CASE WHEN c.residency_status = "PERMANENT" THEN 1 ELSE 0 END) AS permanent_count,
                     SUM(CASE WHEN c.residency_status = "TEMPORARY" THEN 1 ELSE 0 END) AS temporary_count,
                     SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count
@@ -346,9 +347,9 @@ final class GisHouseholdLocation extends BaseModel
              LEFT JOIN (
                 SELECT c.household_id,
                     SUM(CASE WHEN c.party_member = 1 THEN 1 ELSE 0 END) AS party_members,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) < 16 THEN 1 ELSE 0 END) AS children_count,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) >= 60 THEN 1 ELSE 0 END) AS elderly_count,
-                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, c.date_of_birth, CURDATE()) BETWEEN 16 AND 59 THEN 1 ELSE 0 END) AS working_age_count,
+                    SUM(CASE WHEN ' . AgePolicy::childConditionSql('c') . ' THEN 1 ELSE 0 END) AS children_count,
+                    SUM(CASE WHEN ' . AgePolicy::statisticalElderlyConditionSql('c') . ' THEN 1 ELSE 0 END) AS elderly_count,
+                    SUM(CASE WHEN ' . AgePolicy::workingAgeConditionSql('c') . ' THEN 1 ELSE 0 END) AS working_age_count,
                     SUM(CASE WHEN c.residency_status = \"PERMANENT\" THEN 1 ELSE 0 END) AS permanent_count,
                     SUM(CASE WHEN c.residency_status = \"TEMPORARY\" THEN 1 ELSE 0 END) AS temporary_count,
                     SUM(CASE WHEN c.employed = 1 OR c.freelance_labor = 1 OR c.out_province_labor = 1 OR c.foreign_labor = 1 THEN 1 ELSE 0 END) AS labor_count

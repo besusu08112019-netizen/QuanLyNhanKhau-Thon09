@@ -2,8 +2,12 @@
 
 namespace App\Services;
 
+use App\Policies\AgePolicy;
+
 final class ContributionRuleEngine
 {
+    // TODO: Move to Policy Engine under Contribution/Employment Policy.
+    // This is a contribution-specific retirement-age rule, not the shared statistical working-age rule.
     private const LABOR_AGE = [
         'min_years' => 15,
         'male_start_year' => 2021,
@@ -162,8 +166,8 @@ final class ContributionRuleEngine
         foreach ($conditions as $condition) {
             if ($condition === 'LABOR_AGE' && $this->isLaborAge($member)) return true;
             if ($condition === 'NON_LABOR_AGE' && !$this->isLaborAge($member)) return true;
-            if ($condition === 'CHILDREN' && $age !== null && $age < 16) return true;
-            if ($condition === 'ELDERLY' && $age !== null && $age >= 60) return true;
+            if ($condition === 'CHILDREN' && AgePolicy::isChildAge($age)) return true;
+            if ($condition === 'ELDERLY' && AgePolicy::isStatisticalElderlyAge($age)) return true;
             if ($condition === 'AGE_FROM' && $age !== null && $age >= (int) ($config['age_from'] ?? 0)) return true;
             if ($condition === 'AGE_RANGE' && $age !== null && $age >= (int) ($config['age_from'] ?? 0) && $age <= (int) ($config['age_to'] ?? 200)) return true;
             if ($condition === 'OTHER') return true;
@@ -181,8 +185,8 @@ final class ContributionRuleEngine
             if ($condition === 'PRESENCE_AWAY' && $this->evaluateRule($member, $household, ['rule' => 'FIELD_EQUALS', 'scope' => 'person', 'field' => 'presence_status', 'value' => 'AWAY'])) return true;
             if ($condition === 'AGE_FROM_CONFIG' && $this->evaluateRule($member, $household, ['rule' => 'AGE_GTE', 'value' => (int) ($config['age_from'] ?? 0)])) return true;
             if ($condition === 'NON_LABOR_AGE' && !$this->isLaborAge($member)) return true;
-            if ($condition === 'CHILDREN' && (($this->age($member['date_of_birth'] ?? null) ?? 999) < 16)) return true;
-            if ($condition === 'ELDERLY' && (($this->age($member['date_of_birth'] ?? null) ?? 0) >= 60)) return true;
+            if ($condition === 'CHILDREN' && AgePolicy::isChildAge($this->age($member['date_of_birth'] ?? null))) return true;
+            if ($condition === 'ELDERLY' && AgePolicy::isStatisticalElderlyAge($this->age($member['date_of_birth'] ?? null))) return true;
             if ($condition === 'DISABLED' && (int) ($member['disabled_person'] ?? 0) === 1) return true;
             if ($condition === 'MERITORIOUS' && $this->isMeritoriousMember($member)) return true;
             if ($condition === 'ACTIVE_SOLDIER' && $this->textHas($member, ['bộ đội', 'bo doi', 'quân nhân', 'quan nhan', 'military', 'soldier'])) return true;
@@ -286,6 +290,7 @@ final class ContributionRuleEngine
 
     private function isLaborAge(array $member): bool
     {
+        // TODO: Move to Policy Engine with Contribution/Employment Policy.
         $ageMonths = $this->ageMonths($member['date_of_birth'] ?? null);
         if ($ageMonths === null || $ageMonths < self::LABOR_AGE['min_years'] * 12) return false;
         $gender = (string) ($member['gender'] ?? '');
@@ -306,17 +311,13 @@ final class ContributionRuleEngine
 
     private function age(mixed $date): ?int
     {
-        if (!$date) return null;
-        try {
-            $dob = new \DateTimeImmutable((string) $date);
-            return (int) $dob->diff(new \DateTimeImmutable('today'))->y;
-        } catch (\Throwable) {
-            return null;
-        }
+        return AgePolicy::ageFromDate(is_scalar($date) ? (string) $date : null);
     }
 
     private function ageMonths(mixed $date): ?int
     {
+        // TODO: Move to Policy Engine with Contribution/Employment Policy.
+        // Month-precise retirement checks are outside Sprint 1 Age Policy.
         if (!$date) return null;
         try {
             $dob = new \DateTimeImmutable((string) $date);

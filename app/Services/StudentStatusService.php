@@ -2,28 +2,26 @@
 
 namespace App\Services;
 
+use App\Policies\AgePolicy;
+
 final class StudentStatusService
 {
-    public const ACADEMIC_YEAR_START_MONTH = 8;
-    public const STUDENT_MAX_ACADEMIC_AGE = 17;
+    public const ACADEMIC_YEAR_START_MONTH = AgePolicy::ACADEMIC_YEAR_START_MONTH;
+    public const STUDENT_MAX_ACADEMIC_AGE = AgePolicy::STUDENT_MAX_ACADEMIC_AGE;
     public const STUDENT_LABEL = 'Học sinh';
 
     public static function academicYear(?\DateTimeInterface $date = null): int
     {
-        $date ??= new \DateTimeImmutable('today');
-        $year = (int) $date->format('Y');
-        $month = (int) $date->format('n');
-        return $month >= self::ACADEMIC_YEAR_START_MONTH ? $year : $year - 1;
+        return AgePolicy::academicYear($date);
     }
 
     public static function statusForDateOfBirth(?string $dateOfBirth, ?\DateTimeInterface $date = null): array
     {
-        $birthYear = self::birthYear($dateOfBirth);
         $academicYear = self::academicYear($date);
-        $academicAge = $birthYear === null ? null : $academicYear - $birthYear;
+        $academicAge = AgePolicy::academicAgeForDateOfBirth($dateOfBirth, $date);
 
         return [
-            'isStudent' => $academicAge !== null && $academicAge <= self::STUDENT_MAX_ACADEMIC_AGE,
+            'isStudent' => AgePolicy::isStudentAcademicAge($academicAge),
             'academicYear' => $academicYear,
             'academicAge' => $academicAge,
         ];
@@ -46,25 +44,17 @@ final class StudentStatusService
 
     public static function studentSql(string $alias = 'c'): string
     {
-        $academicYear = self::academicYearSql();
-        return "($academicYear - YEAR($alias.date_of_birth) <= " . self::STUDENT_MAX_ACADEMIC_AGE . ")";
+        return AgePolicy::studentConditionSql($alias);
     }
 
     public static function academicAgeSql(string $alias = 'c'): string
     {
-        return '(' . self::academicYearSql() . ' - YEAR(' . $alias . '.date_of_birth))';
+        return AgePolicy::academicAgeSql($alias);
     }
 
     public static function academicYearSql(): string
     {
-        return '(CASE WHEN MONTH(CURDATE()) >= ' . self::ACADEMIC_YEAR_START_MONTH . ' THEN YEAR(CURDATE()) ELSE YEAR(CURDATE()) - 1 END)';
+        return AgePolicy::academicYearSql();
     }
 
-    private static function birthYear(?string $dateOfBirth): ?int
-    {
-        $raw = trim((string) $dateOfBirth);
-        if (preg_match('/^(\d{4})-\d{2}-\d{2}$/', $raw, $m)) return (int) $m[1];
-        if (preg_match('/^\d{4}$/', $raw)) return (int) $raw;
-        return null;
-    }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Policies\AgePolicy;
 
 final class DigitalProfile extends BaseModel
 {
@@ -326,8 +327,7 @@ final class DigitalProfile extends BaseModel
 
     private function age(mixed $date): ?int
     {
-        if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}/', (string) $date)) return null;
-        try { return (int) (new \DateTimeImmutable((string) $date))->diff(new \DateTimeImmutable('today'))->y; } catch (\Throwable) { return null; }
+        return AgePolicy::ageFromDate(is_scalar($date) ? (string) $date : null);
     }
 
     private function maskIdentity(string $identity): string
