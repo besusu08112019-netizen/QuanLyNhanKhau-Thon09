@@ -295,7 +295,128 @@ Rollback: revert predicate replacement commit by module.
 
 Rollback: ignore tenant overrides and use default definitions.
 
-## 6. Test Plan For Future Refactor
+## 6. Policy Test Suite
+
+Policy Test Suite is the shared test foundation for every Policy Engine sprint. It is intentionally lightweight and uses plain PHP so policy tests can run without adding runtime dependencies or changing production logic.
+
+### 6.1 Directory Structure
+
+Policy tests live under `tests/policies/`:
+
+```text
+tests/policies/
+  age/
+  insurance/
+  social-support/
+  education/
+  employment/
+  household/
+  warning/
+  statistics/
+  import/
+  fixtures/
+  helpers/
+  bootstrap.php
+  run.php
+```
+
+Each policy group owns one directory. New policy tests must be added to the matching directory instead of creating a separate test framework.
+
+### 6.2 Test Runner
+
+- `tests/policies/run.php` discovers files ending with `Test.php`.
+- `tests/policies/bootstrap.php` provides the shared test registry and assertions.
+- `tests/age-policy.test.php` remains as a compatibility wrapper and delegates to the shared runner.
+
+Standard commands:
+
+```bash
+composer run test:policies
+composer run test:policy-regression
+php tests/policies/run.php
+php tests/policies/run.php age
+```
+
+Every policy sprint must run:
+
+- Unit Test.
+- Policy Test Suite.
+- Regression Test.
+- Multi-tenant Test.
+
+### 6.3 Shared Helpers
+
+Shared fixtures live in `tests/policies/helpers/PolicyFixtures.php`.
+
+Current helper factories:
+
+- `createHousehold()`
+- `createCitizen()`
+- `createStudent()`
+- `createSenior()`
+- `createDisabled()`
+
+Future policy groups should extend these shared helpers only when the same setup is useful across multiple policies. One-off setup should stay inside the specific policy test file.
+
+### 6.4 Test Matrix
+
+The canonical policy matrix lives in `tests/policies/fixtures/PolicyTestMatrix.php`.
+
+Current age boundary set:
+
+- 0
+- 5
+- 6
+- 17
+- 18
+- 59
+- 60
+- 69
+- 70
+- 74
+- 75
+- 90
+
+Future policy sprints may add rows to the matrix, but must not change existing expected values unless the Product Owner approves a deliberate behavior change.
+
+### 6.5 Golden Dataset
+
+The shared golden dataset lives in `tests/policies/fixtures/PolicyGoldenDataset.php`.
+
+Purpose:
+
+- Provide stable representative citizens for all policy groups.
+- Detect unintended changes after each sprint.
+- Make cross-policy behavior explicit before production acceptance.
+
+Rules:
+
+- Add new expected fields when a policy needs them.
+- Do not remove or silently change existing expectations.
+- If a policy intentionally changes output, document the reason in that sprint report and update the dataset in the same commit.
+
+### 6.6 Adding A New Policy Test
+
+To add a policy test:
+
+1. Put the test file in the matching policy directory, for example `tests/policies/insurance/InsurancePolicyTest.php`.
+2. Name the file with the suffix `Test.php`.
+3. Register cases with `policy_test('case name', function (): void { ... });`.
+4. Use `PolicyFixtures`, `PolicyTestMatrix`, and `PolicyGoldenDataset` when possible.
+5. Run `composer run test:policies`.
+
+Do not create a new runner, assertion library, fixture convention, or policy-specific framework unless there is a real limitation in the existing suite.
+
+### 6.7 Regression Contract
+
+Before any policy sprint is committed:
+
+- Policy suite must pass.
+- Existing automated regression must pass.
+- TenantResolver/multi-tenant tests must pass.
+- Production/Staging acceptance must pass on at least Thon 09 and Thon 10 when production behavior is affected.
+
+## 7. Test Plan For Future Refactor
 
 Minimum tests per policy group:
 
@@ -314,7 +435,7 @@ Acceptance criteria before replacing legacy logic:
 - Dashboard, Report, Import, Export, PDF, Excel still pass smoke tests.
 - No additional policy queries on modules that do not display policy warnings.
 
-## 7. Production Risk
+## 8. Production Risk
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
@@ -325,7 +446,7 @@ Acceptance criteria before replacing legacy logic:
 | Encoding regression | Policy labels show mojibake. | Keep strings UTF-8 and add UI verification for policy components. |
 | Performance regression | Dashboard/report slower. | Measure query count/time before and after predicate migration. |
 
-## 8. Safe Rollback Strategy
+## 9. Safe Rollback Strategy
 
 For every future refactor step:
 
@@ -336,7 +457,7 @@ For every future refactor step:
 5. If mismatch or production risk appears, disable new policy path and fall back to legacy logic.
 6. Do not remove legacy helper methods until after production acceptance.
 
-## 9. Recommendation
+## 10. Recommendation
 
 Proceed with Policy Engine, but start with tests and shadow mode. Do not immediately rewrite Dashboard, Report, Citizen, Import, or PolicyAlert.
 

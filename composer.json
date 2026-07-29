@@ -23,6 +23,8 @@
     "sort-packages": true
   },
   "scripts": {
-    "check:php": "php -l index.php"
+    "check:php": "php -l index.php",
+    "test:policies": "php tests/policies/run.php",
+    "test:policy-regression": "php tests/policies/run.php"
   }
 }
