@@ -60,9 +60,7 @@ final class TenantContext
 
     public static function host(): string
     {
-        $host = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? self::env('APP_HOST', ''))));
-        $host = preg_replace('/:\d+$/', '', $host) ?? $host;
-        return $host !== '' ? $host : 'localhost';
+        return TenantResolver::host((string) ($_SERVER['HTTP_HOST'] ?? self::env('APP_HOST', '')));
     }
 
     public static function reset(): void

@@ -76,6 +76,13 @@ if (!function_exists('env_load')) {
     }
 }
 
+if (!class_exists(\App\Core\TenantResolver::class)) {
+    $tenantResolverFile = dirname(__DIR__) . '/app/Core/TenantResolver.php';
+    if (is_file($tenantResolverFile)) {
+        require_once $tenantResolverFile;
+    }
+}
+
 if (!function_exists('env_current_host')) {
     function env_current_host(): string
     {
@@ -105,6 +112,13 @@ if (!function_exists('env_host_candidates')) {
             $host = preg_replace('/[^a-z0-9.-]/', '', $host) ?? '';
             if ($host !== '' && !in_array($host, $hosts, true)) {
                 $hosts[] = $host;
+            }
+            if ($host !== '' && class_exists(\App\Core\TenantResolver::class)) {
+                foreach (\App\Core\TenantResolver::candidateKeys($host) as $candidate) {
+                    if ($candidate !== '' && !in_array($candidate, $hosts, true)) {
+                        $hosts[] = $candidate;
+                    }
+                }
             }
         }
 
