@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Policies\AgePolicy;
+use App\Policies\InsurancePolicy;
 use PDO;
 
 final class ControlCenterRepository
@@ -16,7 +17,7 @@ final class ControlCenterRepository
     {
         $citizenWhere = $this->activeCitizenWhere();
         $totalCitizens = $this->count('citizens', $citizenWhere);
-        $insuredCitizens = $this->count('citizens', $citizenWhere . ' AND has_health_insurance = 1');
+        $insuredCitizens = $this->count('citizens', $citizenWhere . ' AND ' . InsurancePolicy::enrolledConditionSql('citizens'));
 
         return [
             'totalUnits' => $this->count('villages', '1=1'),

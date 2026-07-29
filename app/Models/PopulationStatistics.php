@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\BaseModel;
 use App\Policies\AgePolicy;
+use App\Policies\InsurancePolicy;
 use App\Services\StudentStatusService;
 
 final class PopulationStatistics extends BaseModel
@@ -192,8 +193,8 @@ final class PopulationStatistics extends BaseModel
         [$where, $params] = $this->citizenWhere($filters);
         $hasColumn = $this->columnExists('citizens', 'has_health_insurance');
         $endColumn = $this->columnExists('citizens', 'health_insurance_end_date');
-        $hasExpr = $hasColumn ? 'c.has_health_insurance=1' : '0=1';
-        $effectiveExpr = $endColumn ? "($hasExpr AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE()))" : $hasExpr;
+        $hasExpr = InsurancePolicy::enrolledConditionSql('c', $hasColumn);
+        $effectiveExpr = InsurancePolicy::effectiveConditionSql('c', $hasColumn, $endColumn);
         $row = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN $hasExpr THEN 1 ELSE 0 END),0) AS enrolled, COALESCE(SUM(CASE WHEN $effectiveExpr THEN 1 ELSE 0 END),0) AS effective FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params) ?: [];
         $total = (int) ($row['total'] ?? 0);
         $enrolled = (int) ($row['enrolled'] ?? 0);

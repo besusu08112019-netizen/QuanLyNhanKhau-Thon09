@@ -2,72 +2,35 @@
 
 namespace App\Services;
 
-use App\Policies\AgePolicy;
+use App\Policies\InsurancePolicy;
 
 final class HealthInsuranceDefaultService
 {
-    public const STUDENT_OCCUPATION = 'Học sinh';
-    public const ELDERLY_OCCUPATION = 'Người cao tuổi (' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE . '+)';
+    public const STUDENT_OCCUPATION = InsurancePolicy::STUDENT_OCCUPATION;
+    public const ELDERLY_OCCUPATION = InsurancePolicy::ELDERLY_OCCUPATION;
 
     public static function defaultForLaborOccupation(?string $occupation): ?int
     {
-        $key = self::normalize($occupation);
-        if ($key === '') return null;
-
-        return in_array($key, self::eligibleOccupationKeys(), true) ? 1 : null;
+        return InsurancePolicy::defaultForLaborOccupation($occupation);
     }
 
     public static function eligibleOccupations(): array
     {
-        return [self::STUDENT_OCCUPATION, self::ELDERLY_OCCUPATION];
+        return InsurancePolicy::eligibleOccupations();
     }
 
     public static function defaultOccupationForDateOfBirth(?string $dateOfBirth, ?\DateTimeInterface $date = null): ?string
     {
-        $student = StudentStatusService::defaultFieldsForDateOfBirth($dateOfBirth, $date);
-        if (!empty($student['occupation'])) return $student['occupation'];
-
-        $age = AgePolicy::ageFromDate($dateOfBirth, $date);
-        if (AgePolicy::hasDefaultHealthInsurance($age)) {
-            return self::ELDERLY_OCCUPATION;
-        }
-
-        return null;
+        return InsurancePolicy::defaultOccupationForDateOfBirth($dateOfBirth, $date);
     }
 
     public static function eligibleOccupationKeys(): array
     {
-        return ['hoc sinh', 'nguoi cao tuoi ' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE, 'nguoi cao tuoi ' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE . '+', 'elderly ' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE];
+        return InsurancePolicy::eligibleOccupationKeys();
     }
 
     public static function normalize(?string $value): string
     {
-        $text = mb_strtolower(trim((string) $value), 'UTF-8');
-        if ($text === '') return '';
-        $text = self::removeVietnameseMarks($text);
-        $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
-        if ($converted !== false) $text = $converted;
-        return trim(preg_replace('/[^a-z0-9+]+/', ' ', $text) ?? $text);
+        return InsurancePolicy::normalize($value);
     }
-
-    private static function removeVietnameseMarks(string $value): string
-    {
-        $groups = [
-            'a' => '&#224;&#225;&#7843;&#227;&#7841;&#259;&#7857;&#7855;&#7859;&#7861;&#7863;&#226;&#7847;&#7845;&#7849;&#7851;&#7853;',
-            'd' => '&#273;',
-            'e' => '&#232;&#233;&#7867;&#7869;&#7865;&#234;&#7873;&#7871;&#7875;&#7877;&#7879;',
-            'i' => '&#236;&#237;&#7881;&#297;&#7883;',
-            'o' => '&#242;&#243;&#7887;&#245;&#7885;&#244;&#7891;&#7889;&#7893;&#7895;&#7897;&#417;&#7901;&#7899;&#7903;&#7905;&#7907;',
-            'u' => '&#249;&#250;&#7911;&#361;&#7909;&#432;&#7915;&#7913;&#7917;&#7919;&#7921;',
-            'y' => '&#7923;&#253;&#7927;&#7929;&#7925;',
-        ];
-
-        foreach ($groups as $ascii => $entities) {
-            $chars = preg_split('//u', html_entity_decode($entities, ENT_QUOTES | ENT_HTML5, 'UTF-8'), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-            if ($chars) $value = str_replace($chars, $ascii, $value);
-        }
-
-        return $value;
-    }
-
 }

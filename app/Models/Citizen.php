@@ -6,7 +6,7 @@ use App\Config\CitizenPolicyDefaults;
 use App\Core\BaseModel;
 use App\Models\PolicyAlert;
 use App\Policies\AgePolicy;
-use App\Services\HealthInsuranceDefaultService;
+use App\Policies\InsurancePolicy;
 use App\Services\StudentStatusService;
 
 final class Citizen extends BaseModel
@@ -246,7 +246,7 @@ final class Citizen extends BaseModel
         if ($fullName === '') throw new \RuntimeException('Họ và tên là bắt buộc');
         if (!$dob || !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $dob)) throw new \RuntimeException('Ngày sinh không hợp lệ');
         $studentDefaults = $fallback === null ? StudentStatusService::defaultFieldsForDateOfBirth((string) $dob) : [];
-        $occupationDefault = $fallback === null ? HealthInsuranceDefaultService::defaultOccupationForDateOfBirth((string) $dob) : null;
+        $occupationDefault = $fallback === null ? InsurancePolicy::defaultOccupationForDateOfBirth((string) $dob) : null;
         $params = [
             'code' => strtoupper(trim((string) ($data['citizenCode'] ?? $data['citizen_code'] ?? $fallback['citizen_code'] ?? ''))),
             'household_id' => (int) $householdRow['id'],
@@ -347,7 +347,7 @@ final class Citizen extends BaseModel
     {
         $active = $this->activeHealthInsuranceColumns();
         if (!$active) return;
-        $occupationDefault = HealthInsuranceDefaultService::defaultForLaborOccupation($occupation);
+        $occupationDefault = InsurancePolicy::defaultForLaborOccupation($occupation);
         if ($this->fieldProvided($data, 'has_health_insurance')) {
             $has = $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? 0);
         } elseif ($fallback === null) {
@@ -409,7 +409,7 @@ final class Citizen extends BaseModel
     private function occupationChanged(array $data, array $fallback, ?string $occupation): bool
     {
         if (!$this->fieldProvided($data, 'occupation')) return false;
-        return HealthInsuranceDefaultService::normalize($occupation) !== HealthInsuranceDefaultService::normalize($fallback['occupation'] ?? null);
+        return InsurancePolicy::normalize($occupation) !== InsurancePolicy::normalize($fallback['occupation'] ?? null);
     }
 
     private function searchFlag(string $search): ?string

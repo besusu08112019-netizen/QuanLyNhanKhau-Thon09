@@ -71,7 +71,7 @@ use App\Controllers\WorkCalendarController;
 use App\Controllers\WorkTaskController;
 use App\Config\CitizenPolicyDefaults;
 use App\Policies\AgePolicy;
-use App\Services\HealthInsuranceDefaultService;
+use App\Policies\InsurancePolicy;
 use App\Services\StudentStatusService;
 use App\Services\TenantRegistryStatusService;
 
@@ -928,7 +928,7 @@ if (!str_starts_with($request->path(), '/api')) {
     $tenantSettings['idleTimeoutSeconds'] = (int) $appConfig['idle_timeout_seconds'];
     $tenantSettings['idleWarningSeconds'] = (int) $appConfig['idle_warning_seconds'];
     $tenantSettings['citizenPolicyDefaults'] = [
-        'bhytDefaultAge' => CitizenPolicyDefaults::BHYT_DEFAULT_AGE,
+        'bhytDefaultAge' => InsurancePolicy::DEFAULT_AGE,
         'socialAllowanceDefaultAge' => CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE,
         'elderlyOccupationDefaultAge' => CitizenPolicyDefaults::ELDERLY_OCCUPATION_DEFAULT_AGE,
         'academicYearStartMonth' => StudentStatusService::ACADEMIC_YEAR_START_MONTH,
@@ -942,8 +942,8 @@ if (!str_starts_with($request->path(), '/api')) {
         'ageBand1859Max' => AgePolicy::AGE_BAND_18_59_MAX,
         'statisticalElderlyMinAge' => AgePolicy::STATISTICAL_ELDERLY_MIN_AGE,
         'studentLabel' => StudentStatusService::STUDENT_LABEL,
-        'elderlyOccupationLabel' => HealthInsuranceDefaultService::ELDERLY_OCCUPATION,
-        'healthInsuranceDefaultOccupations' => HealthInsuranceDefaultService::eligibleOccupations(),
+        'elderlyOccupationLabel' => InsurancePolicy::ELDERLY_OCCUPATION,
+        'healthInsuranceDefaultOccupations' => InsurancePolicy::eligibleOccupations(),
     ];
     $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     $html = strtr($html, [

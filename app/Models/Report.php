@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\BaseModel;
 use App\Policies\AgePolicy;
+use App\Policies\InsurancePolicy;
 use App\Services\StudentStatusService;
 
 final class Report extends BaseModel
@@ -309,9 +310,11 @@ final class Report extends BaseModel
     {
         (new Citizen())->ensureHealthInsuranceSchema();
         [$where, $params] = $this->citizenWhere($filters);
-        if ($mode === 'missing') $where .= ' AND COALESCE(c.has_health_insurance,0)=0';
-        if ($mode === 'expired') $where .= ' AND COALESCE(c.has_health_insurance,0)=1 AND c.health_insurance_end_date IS NOT NULL AND c.health_insurance_end_date < CURDATE()';
-        if ($mode === 'expiring') $where .= ' AND COALESCE(c.has_health_insurance,0)=1 AND c.health_insurance_end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)';
+        $hasColumn = $this->columnExists('citizens', 'has_health_insurance');
+        $endColumn = $this->columnExists('citizens', 'health_insurance_end_date');
+        if ($mode === 'missing') $where .= ' AND ' . InsurancePolicy::missingConditionSql('c', $hasColumn);
+        if ($mode === 'expired') $where .= ' AND ' . InsurancePolicy::expiredConditionSql('c', $hasColumn, $endColumn);
+        if ($mode === 'expiring') $where .= ' AND ' . InsurancePolicy::expiringConditionSql('c', $hasColumn, $endColumn);
         $rows = $this->fetchAll("SELECT h.household_code, h.area_code, c.citizen_code, c.full_name, c.gender, c.date_of_birth, c.identity_number, c.health_insurance_number, c.health_insurance_group, c.health_insurance_end_date, c.health_insurance_facility FROM citizens c INNER JOIN households h ON h.id=c.household_id $where ORDER BY h.household_code, c.full_name", $params);
         $title = [
             'missing' => 'Danh sách chưa tham gia BHYT',
@@ -325,7 +328,10 @@ final class Report extends BaseModel
     {
         (new Citizen())->ensureHealthInsuranceSchema();
         [$where, $params] = $this->citizenWhere($filters);
-        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.area_code, COUNT(c.id) AS total, SUM(COALESCE(c.has_health_insurance,0)=1) AS enrolled, SUM(COALESCE(c.has_health_insurance,0)=0) AS missing, SUM(COALESCE(c.has_health_insurance,0)=1 AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE())) AS effective FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY h.id, h.household_code, h.head_citizen_name, h.area_code ORDER BY h.household_code", $params);
+        $enrolled = InsurancePolicy::enrolledConditionSql('c');
+        $missing = InsurancePolicy::missingConditionSql('c');
+        $effective = InsurancePolicy::effectiveConditionSql('c');
+        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.area_code, COUNT(c.id) AS total, SUM($enrolled) AS enrolled, SUM($missing) AS missing, SUM($effective) AS effective FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY h.id, h.household_code, h.head_citizen_name, h.area_code ORDER BY h.household_code", $params);
         return $this->table('Thống kê BHYT theo hộ', ['Mã hộ','Chủ hộ','Khu vực','Tổng nhân khẩu','Có BHYT','Còn hiệu lực','Chưa tham gia','Tỷ lệ bao phủ'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['area_code'], (int) $r['total'], (int) $r['enrolled'], (int) $r['effective'], (int) $r['missing'], $this->percent((int) $r['effective'], max(1, (int) $r['total']))], $rows), $filters);
     }
 
@@ -333,7 +339,10 @@ final class Report extends BaseModel
     {
         (new Citizen())->ensureHealthInsuranceSchema();
         [$where, $params] = $this->citizenWhere($filters);
-        $rows = $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'Chưa phân khu') AS area, COUNT(c.id) AS total, SUM(COALESCE(c.has_health_insurance,0)=1) AS enrolled, SUM(COALESCE(c.has_health_insurance,0)=0) AS missing, SUM(COALESCE(c.has_health_insurance,0)=1 AND (c.health_insurance_end_date IS NULL OR c.health_insurance_end_date >= CURDATE())) AS effective FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY area ORDER BY area", $params);
+        $enrolled = InsurancePolicy::enrolledConditionSql('c');
+        $missing = InsurancePolicy::missingConditionSql('c');
+        $effective = InsurancePolicy::effectiveConditionSql('c');
+        $rows = $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'Chưa phân khu') AS area, COUNT(c.id) AS total, SUM($enrolled) AS enrolled, SUM($missing) AS missing, SUM($effective) AS effective FROM citizens c INNER JOIN households h ON h.id=c.household_id $where GROUP BY area ORDER BY area", $params);
         return $this->table('Thống kê BHYT theo khu vực', ['Khu vực','Tổng nhân khẩu','Có BHYT','Còn hiệu lực','Chưa tham gia','Tỷ lệ bao phủ'], array_map(fn($r) => [$r['area'], (int) $r['total'], (int) $r['enrolled'], (int) $r['effective'], (int) $r['missing'], $this->percent((int) $r['effective'], max(1, (int) $r['total']))], $rows), $filters);
     }
 
