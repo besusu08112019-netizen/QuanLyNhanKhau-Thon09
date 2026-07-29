@@ -1,32 +1,54 @@
 # Deployment
 
-## Thong tin Apps Script
+Production deployment uses one shared source codebase.
 
-- Script ID: `10g6OZEUePpkorwHPtJ9BS2Jc9UcyKjhVJqqAsVyPLCHZIbwU8o5_T_3B`
-- Runtime: V8
-- Timezone: Asia/Ho_Chi_Minh
+## Target Model
 
-## Cau hinh clasp
+```text
+GitHub
+-> deploy once
+-> shared source
+-> tenant domains resolve by host
+-> each tenant loads its own configuration and database
+```
 
-`.clasp.json` tro toi Script ID production. `.claspignore` chi day manifest va ma nguon Apps Script len Google.
+Deploying source for one tenant only is not allowed.
 
-## Khoi tao database
+## Production Rules
 
-Sau khi `clasp push`, vao Apps Script Editor va chay `setup()` mot lan. Ham nay:
+- Do not copy source between tenant folders.
+- Do not deploy separately for each tenant.
+- Do not hard-code tenant domains or database names in source.
+- Do not overwrite tenant `.env.*` files during source deploy.
+- Do not delete tenant uploads, backups, logs, or databases during deploy.
 
-- Tao Google Sheets database neu chua co.
-- Tao day du cac bang theo schema.
-- Seed quyen mac dinh cho ADMIN, OFFICER, VIEWER.
-- Tao tai khoan SUPER_ADMIN dau tien tu email nguoi chay.
+## Required Checks Before Deploy
 
-## Deploy WebApp
+1. `git status` must show only approved changes.
+2. Search source for real tenant identifiers before release.
+3. Confirm no tenant-specific database or domain is hard-coded.
+4. Confirm migration plan, if schema changes are included.
+5. Confirm rollback plan.
 
-Deploy dang WebApp. Tai khoan deploy can co quyen truy cap Spreadsheet va Drive folder do ung dung tao ra.
+## Required Checks After Deploy
 
-## Backup
+At minimum verify:
 
-Module Backup tao ban sao Spreadsheet tren Google Drive va ghi metadata vao bang `backups`.
+- Tenant 09 login.
+- Tenant 10 login.
+- Dashboard loads for both tenants.
+- CRUD works for a representative tenant-scoped module.
+- Upload path is tenant-isolated.
+- Export/PDF still works.
+- No tenant sees data from another tenant.
 
-## PDF
+## Rollback
 
-Module PDF tao file tu template HtmlService va luu vao Drive folder production.
+Rollback source by redeploying the previous known-good commit or tag.
+
+Do not rollback by copying a tenant-specific source folder over the shared
+source. Tenant data, tenant env files, and tenant uploads must be preserved.
+
+If a schema migration was applied, use the migration rollback plan for the
+specific release. Do not drop or truncate tenant databases during source
+rollback.

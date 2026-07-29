@@ -1,38 +1,87 @@
-# Architecture
+# System Architecture
 
-He thong ap dung Clean Architecture trong gioi han runtime Google Apps Script.
+Hong Phong Community Platform uses one shared PHP source codebase for all tenants.
+Each tenant is resolved at runtime by domain and receives isolated configuration,
+database, storage, cache, session, and logs.
 
-## Domain
+## Stable Baseline
 
-`src/server/domain` dinh nghia schema, enum, validation va chuan hoa entity. Lop nay khong phu thuoc Google Sheets hay giao dien.
+Release baseline: `v2.0.0` - Multi-Tenant Stable.
 
-## Application
+The following foundation components are frozen unless a production issue or an
+approved change requires modification:
 
-`src/server/application` chua use case nghiep vu:
+- `TenantResolver`
+- Tenant Registry
+- Env Loader
+- Multi-tenant routing
+- Shared-source deployment
+- Database isolation
+- Storage isolation
 
-- Quan ly ho
-- Quan ly nhan khau
-- Quan ly bien dong
-- Bao cao
-- Xuat PDF
-- Sao luu
-- Phan quyen
-- Nguoi dung
-- Logs
+Any change to these components must include impact analysis, rollback plan, and
+multi-tenant regression testing.
 
-## Infrastructure
+## Runtime Flow
 
-`src/server/infrastructure` trien khai Google Sheets repository, LockService va cac dich vu nen tang Google Workspace.
+```text
+HTTP request
+-> TenantResolver
+-> Env Loader
+-> TenantContext
+-> Database connection for resolved tenant
+-> Controller
+-> Service
+-> Repository
+-> Tenant database
+```
 
-## Interface
+## Core Components
 
-`src/server/interface` gom WebApp entrypoint va API controller. Client chi goi `api(action, payload)`, server chiu trach nhiem kiem tra quyen, goi use case va ghi log.
+### TenantResolver
 
-## Data Flow
+`app/Core/TenantResolver.php` normalizes the request host and derives the tenant
+candidate key. It must not hard-code tenant names, domains, or database names.
 
-1. Nguoi dung thao tac tren HtmlService WebApp.
-2. Client goi `google.script.run.api(action, payload)`.
-3. API controller xac thuc quyen.
-4. Use case xu ly nghiep vu.
-5. Repository doc/ghi Google Sheets.
-6. Logger ghi audit trail vao bang `logs`.
+### Env Loader
+
+`config/env.php` loads shared configuration and tenant-specific configuration
+from host candidates. Tenant secrets stay outside Git.
+
+### TenantContext
+
+`app/Core/TenantContext.php` resolves tenant metadata inside the active tenant
+database and provides the current tenant id/code to runtime code.
+
+### Database Isolation
+
+Each tenant uses its own database. Runtime code must never select a database by
+hard-coded tenant name. Database configuration is loaded through the resolved
+tenant environment.
+
+### Storage Isolation
+
+Uploads, cache, sessions, logs, temporary files, and backups must be separated
+per tenant. Shared source code must not imply shared tenant data.
+
+## Application Layers
+
+```text
+Portal/UI
+-> Controller
+-> Service
+-> Repository
+-> Database
+```
+
+Controllers handle HTTP concerns only. Business logic belongs in services.
+Repositories perform data access. Views and UI components must not query the
+database directly.
+
+## Development Rules
+
+- Do not hard-code tenant code, domain, database, upload path, or document root.
+- Do not create tenant-specific source branches or folders.
+- Do not write functionality for only one tenant.
+- Use TenantResolver and tenant configuration for all tenant-specific behavior.
+- A single deploy must update all tenants using the shared source.
