@@ -91,7 +91,7 @@ Can tiep tuc gan tenant va review logic cho cac module sau. Scan van thay truy v
 
 ## Hard-code con ton tai
 
-- Con nhieu token `thon09`/`Thon09` trong frontend, test, PWA va `.htaccess` duoi dang global namespace, event name, localStorage key, cache tag, test host.
+- Con nhieu token `tenant_a`/`TenantA` trong frontend, test, PWA va `.htaccess` duoi dang global namespace, event name, localStorage key, cache tag, test host.
 - Cac token nay khong phai du lieu thon hien thi truc tiep, nhung van la no ky thuat branding/source-name. Neu muc tieu la khong con dau vet Thon 09 trong source, can co phase rieng doi namespace frontend co test day du.
 
 ## Kiem thu da chay

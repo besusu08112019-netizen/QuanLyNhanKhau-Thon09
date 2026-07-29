@@ -53,7 +53,7 @@ const update = jsonResponse(runIndex('hongphongnb.com', '/api/control-center/per
 assert.strictEqual(update.ok, false);
 assert.match(update.message, /dang nhap/i);
 
-const tenantBlocked = jsonResponse(runIndex('thon09.hongphongnb.com', '/api/control-center/permissions'));
+const tenantBlocked = jsonResponse(runIndex('tenant-a.hongphongnb.com', '/api/control-center/permissions'));
 assert.strictEqual(tenantBlocked.ok, false);
 
 console.log('Control Center MVP smoke tests passed.');

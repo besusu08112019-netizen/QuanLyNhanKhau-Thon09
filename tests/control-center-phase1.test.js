@@ -48,7 +48,7 @@ const controlCenterHtml = runIndex('hongphongnb.com', '/');
 assert.match(controlCenterHtml, /Community Control Center/);
 assert.match(controlCenterHtml, /CONTROL_CENTER/);
 
-const tenantHtml = runIndex('thon09.hongphongnb.com', '/');
+const tenantHtml = runIndex('tenant-a.hongphongnb.com', '/');
 assert.match(tenantHtml, /id="loginView"/);
 assert.doesNotMatch(tenantHtml, /Phase 1 Shell/);
 

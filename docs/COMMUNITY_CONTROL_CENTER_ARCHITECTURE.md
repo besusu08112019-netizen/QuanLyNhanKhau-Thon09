@@ -393,8 +393,8 @@ Tương lai:
 
 ```text
 CONTROL_CENTER -> central database/reporting adapter
-TENANT thon09 -> tenant database profile thon09
-TENANT thon10 -> tenant database profile thon10
+TENANT tenant_a -> tenant database profile tenant_a
+TENANT tenant_b -> tenant database profile tenant_b
 ```
 
 Business Modules không gọi database config trực tiếp. Chúng dùng Core database abstraction hiện tại và sau này được resolver cấp connection phù hợp.
@@ -542,7 +542,7 @@ Ví dụ SYSTEM_ADMIN chuyển sang Thôn 09:
 
 ```text
 portal = CONTROL_CENTER
-tenant_id = thon09
+tenant_id = tenant_a
 user_id = system_admin_id
 action = sso_issue
 message = Super Admin tạo SSO ticket vào Thôn 09
@@ -552,7 +552,7 @@ Khi tenant consume ticket:
 
 ```text
 portal = TENANT
-tenant_id = thon09
+tenant_id = tenant_a
 user_id = system_admin_id
 impersonated_by_user_id = system_admin_id
 action = sso_consume
@@ -577,7 +577,7 @@ Luồng:
    - bound với tenant đích
    - bound với actor
 4. Browser redirect sang tenant:
-   - `https://thon09.hongphongnb.com/sso/consume?ticket=...`
+   - `https://tenant-a.example.domain/sso/consume?ticket=...`
 5. Tenant consume ticket:
    - kiểm tra hash
    - kiểm tra chưa dùng
@@ -949,9 +949,9 @@ Rủi ro:
 Kiểm thử routing:
 
 - `hongphongnb.com` render Admin Portal.
-- `thon09.hongphongnb.com` render Tenant Portal.
+- `tenant-a.example.domain` render Tenant Portal.
 - `hongphongnb.com/api/citizens` bị chặn.
-- `thon09.hongphongnb.com/api/admin/overview` bị chặn.
+- `tenant-a.example.domain/api/admin/overview` bị chặn.
 
 Kiểm thử auth:
 

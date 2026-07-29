@@ -6,7 +6,7 @@ Trang thai: **CHUA PASS PRODUCTION**.
 
 Khong duoc deploy production o phase nay vi van con blocker:
 
-1. Hard-code frontend/PWA/test namespace `thon09`, `Thon09*`, `H09`, `CT09` con xuat hien tren nhieu file JS, service worker, `.htaccess`, workflow CI, test fixtures va tai lieu cu.
+1. Hard-code frontend/PWA/test namespace `tenant_a`, `TenantA*`, `H09`, `CT09` con xuat hien tren nhieu file JS, service worker, `.htaccess`, workflow CI, test fixtures va tai lieu cu.
 2. Chua co moi truong DB thuc te cho Tenant A/Tenant B de chay kich ban dang nhap, them/sua/xoa, import/export, upload, GIS, dashboard, bao cao, thong ke, notification va xac nhan khong ro ri du lieu.
 3. `HouseholdContribution` da duoc bo sung tenant cho cac luong chinh, nhung module nay co nhieu luong phu/backfill/history phuc tap; can them mot pass audit SQL rieng truoc khi coi la 100%.
 
@@ -64,16 +64,16 @@ Chua chay duoc:
 Lenh audit:
 
 ```powershell
-Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\|node_modules|vendor|public\\uploads|storage\\logs|cache' } | Select-String -Pattern 'Thôn 09|Thon 09|thon09|H09|nhankhauthon09|CT09|ALB09|PC09|PT09|NN09|NO09' -CaseSensitive:$false
+Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\|node_modules|vendor|public\\uploads|storage\\logs|cache' } | Select-String -Pattern 'Thôn 09|Thon 09|tenant_a|H09|nhankhautenant_a|CT09|ALB09|PC09|PT09|NN09|NO09' -CaseSensitive:$false
 ```
 
 Ket qua van co nhieu vi tri, gom:
 
-- `.htaccess`: env/cache key `thon09_*`, icon path `thon09-logo`.
-- `service-worker.js`: log/tag `Thon09 PWA`, `thon09-background-sync`, `thon09-system`.
-- `assets/js/*`: namespace va localStorage key dang dung `Thon09*`, `thon09_*`.
-- `tests/*`: fixtures va browser tests dang hard-code `thon09_token`, `thon09_csrf`, `H09`, `CT09`.
-- `docs/*`: tai lieu lich su con nhac `Thon09Platform`/`thon09`.
+- `.htaccess`: env/cache key `tenant_a_*`, icon path `tenant_a-logo`.
+- `service-worker.js`: log/tag `TenantA PWA`, `tenant_a-background-sync`, `tenant_a-system`.
+- `assets/js/*`: namespace va localStorage key dang dung `TenantA*`, `tenant_a_*`.
+- `tests/*`: fixtures va browser tests dang hard-code `tenant_a_token`, `tenant_a_csrf`, `H09`, `CT09`.
+- `docs/*`: tai lieu lich su con nhac `TenantAPlatform`/`tenant_a`.
 
 Day la blocker vi yeu cau phase final la khong con bat ky gia tri hard-code lien quan Thon 09.
 
@@ -135,10 +135,10 @@ Build production cung tao/cap nhat cac file `assets/**/*.min.*` va `dist/product
 
 ## Viec can xu ly truoc production
 
-1. Doi frontend namespace/localStorage/cache/session key tu `thon09` sang namespace tenant dong, vi du `TenantContext.appNamespace` hoac host-derived namespace.
+1. Doi frontend namespace/localStorage/cache/session key tu `tenant_a` sang namespace tenant dong, vi du `TenantContext.appNamespace` hoac host-derived namespace.
 2. Doi service worker cache/tag/sync/notification namespace sang tenant-aware.
-3. Doi `.htaccess` env name va icon path khong chua `thon09`.
-4. Cap nhat test fixtures de khong dung `H09`, `CT09`, `thon09_token`.
+3. Doi `.htaccess` env name va icon path khong chua `tenant_a`.
+4. Cap nhat test fixtures de khong dung `H09`, `CT09`, `tenant_a_token`.
 5. Chay audit SQL lan 2 cho `HouseholdContribution`, `Report`, import/export, backup/restore va history tables.
 6. Tao DB test Tenant A/Tenant B, import schema, seed villages, cau hinh host rieng va chay integration test data isolation.
 7. Chi khi hard-code scan sach va multi-tenant integration test PASS moi duoc doi trang thai thanh PASS PRODUCTION.

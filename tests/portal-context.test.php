@@ -40,13 +40,13 @@ PortalContext::reset();
 assert_same(PortalContext::CONTROL_CENTER, PortalContext::type(), 'Root domain must resolve to Control Center when enabled.');
 assert_same(true, PortalContext::isControlCenter(), 'Control Center helper must be true for root domain.');
 
-$_SERVER['HTTP_HOST'] = 'thon09.hongphongnb.com';
+$_SERVER['HTTP_HOST'] = 'tenant-a.hongphongnb.com';
 PortalContext::reset();
 assert_same(PortalContext::TENANT, PortalContext::type(), 'Tenant subdomain must resolve to Tenant portal.');
 assert_same(true, PortalContext::isTenant(), 'Tenant helper must be true for tenant subdomain.');
 
 set_env_value('PLATFORM_ADMIN_ENABLED', 'false');
-$_SERVER['HTTP_HOST'] = 'thon10.hongphongnb.com';
+$_SERVER['HTTP_HOST'] = 'tenant-b.hongphongnb.com';
 PortalContext::reset();
 assert_same(PortalContext::TENANT, PortalContext::type(), 'Tenant subdomain must stay Tenant while platform admin is disabled.');
 

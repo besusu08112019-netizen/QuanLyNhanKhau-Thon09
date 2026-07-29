@@ -53,7 +53,7 @@ Giảm thiểu:
 
 - Fail closed khi host không xác định.
 - Test bắt buộc `hongphongnb.com/api/citizens` phải bị chặn.
-- Test bắt buộc `thon09.hongphongnb.com/api/admin/overview` phải bị chặn.
+- Test bắt buộc `tenant-a.example.domain/api/admin/overview` phải bị chặn.
 
 2. Session/token hiện tại đang tenant-scoped bằng `village_id`.
 

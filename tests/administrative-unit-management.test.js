@@ -65,7 +65,7 @@ const activateWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'PATCH', '
 assert.strictEqual(activateWithoutToken.ok, false);
 assert.match(activateWithoutToken.message, /dang nhap/);
 
-const tenantBlocked = jsonResponse(runIndex('thon09.hongphongnb.com', 'GET', '/api/control-center/units'));
+const tenantBlocked = jsonResponse(runIndex('tenant-a.hongphongnb.com', 'GET', '/api/control-center/units'));
 assert.strictEqual(tenantBlocked.ok, false);
 
 const tenantApiBlockedOnRoot = jsonResponse(runIndex('hongphongnb.com', 'GET', '/api/households'));

@@ -915,11 +915,11 @@
           </div>
           <div class="cc-field">
             <label for="unitDomain">Domain</label>
-            <input class="cc-input" id="unitDomain" name="domain" maxlength="190" placeholder="thon09.hongphongnb.com" autocomplete="off">
+            <input class="cc-input" id="unitDomain" name="domain" maxlength="190" placeholder="tenant.example.domain" autocomplete="off">
           </div>
           <div class="cc-field">
             <label for="unitSubdomain">Subdomain</label>
-            <input class="cc-input" id="unitSubdomain" name="subdomain" maxlength="190" placeholder="thon09.hongphongnb.com" autocomplete="off">
+            <input class="cc-input" id="unitSubdomain" name="subdomain" maxlength="190" placeholder="tenant.example.domain" autocomplete="off">
           </div>
           <div class="cc-field">
             <label for="unitDatabaseHost">Database Host</label>
@@ -927,7 +927,7 @@
           </div>
           <div class="cc-field">
             <label for="unitDatabaseName">Database</label>
-            <input class="cc-input" id="unitDatabaseName" name="database_name" maxlength="190" placeholder="nhhon5mp_thon09" autocomplete="off">
+            <input class="cc-input" id="unitDatabaseName" name="database_name" maxlength="190" placeholder="database_name" autocomplete="off">
           </div>
           <div class="cc-field">
             <label for="unitDatabaseCharset">Database Charset</label>

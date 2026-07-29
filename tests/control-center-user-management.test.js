@@ -74,7 +74,7 @@ const deleteNotSupported = jsonResponse(runIndex('hongphongnb.com', 'DELETE', '/
 assert.strictEqual(deleteNotSupported.ok, false);
 assert.match(deleteNotSupported.message, /khong ton tai/);
 
-const tenantBlocked = jsonResponse(runIndex('thon09.hongphongnb.com', 'GET', '/api/control-center/users'));
+const tenantBlocked = jsonResponse(runIndex('tenant-a.hongphongnb.com', 'GET', '/api/control-center/users'));
 assert.strictEqual(tenantBlocked.ok, false);
 
 const tenantApiBlockedOnRoot = jsonResponse(runIndex('hongphongnb.com', 'GET', '/api/users'));

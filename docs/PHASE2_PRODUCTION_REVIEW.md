@@ -210,7 +210,7 @@ Ket qua: PASS
 Da xac nhan:
 
 - Tenant Portal van render `views/app.php`.
-- Tenant subdomain `thon09.hongphongnb.com` van hien login view.
+- Tenant subdomain `tenant-a.example.domain` van hien login view.
 - Khi `PLATFORM_ADMIN_ENABLED=false`, domain goc quay ve tenant-compatible behavior.
 - Khong sua UI/API/session/permission/business logic tenant.
 - Khong sua module import/export/PDF/Excel.

@@ -80,7 +80,7 @@ const blockedTenantApi = jsonResponse(runIndex('hongphongnb.com', '/api/citizens
 assert.strictEqual(blockedTenantApi.ok, false);
 assert.match(blockedTenantApi.message, /tenant khong kha dung/);
 
-const tenantHtml = runIndex('thon09.hongphongnb.com', '/');
+const tenantHtml = runIndex('tenant-a.hongphongnb.com', '/');
 assert.match(tenantHtml, /id="loginView"/);
 assert.doesNotMatch(tenantHtml, /Community Control Center Platform/);
 
