@@ -31,7 +31,8 @@ set_env_value('PLATFORM_DEFAULT_PORTAL', PortalContext::TENANT);
 
 $_SERVER['HTTP_HOST'] = 'hongphongnb.com';
 PortalContext::reset();
-assert_same(PortalContext::TENANT, PortalContext::type(), 'Admin domain must remain tenant-compatible while platform admin is disabled.');
+assert_same(PortalContext::PUBLIC, PortalContext::type(), 'Admin domain must fail closed while platform admin is disabled.');
+assert_same(true, PortalContext::isPublic(), 'Public helper must be true for disabled admin domain.');
 
 set_env_value('PLATFORM_ADMIN_ENABLED', 'true');
 $_SERVER['HTTP_HOST'] = 'hongphongnb.com';
@@ -43,6 +44,11 @@ $_SERVER['HTTP_HOST'] = 'thon09.hongphongnb.com';
 PortalContext::reset();
 assert_same(PortalContext::TENANT, PortalContext::type(), 'Tenant subdomain must resolve to Tenant portal.');
 assert_same(true, PortalContext::isTenant(), 'Tenant helper must be true for tenant subdomain.');
+
+set_env_value('PLATFORM_ADMIN_ENABLED', 'false');
+$_SERVER['HTTP_HOST'] = 'thon10.hongphongnb.com';
+PortalContext::reset();
+assert_same(PortalContext::TENANT, PortalContext::type(), 'Tenant subdomain must stay Tenant while platform admin is disabled.');
 
 $_SERVER['HTTP_HOST'] = 'unknown.example';
 set_env_value('PLATFORM_DEFAULT_PORTAL', PortalContext::TENANT);

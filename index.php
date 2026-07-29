@@ -254,6 +254,20 @@ function enforce_tenant_registry_status(Request $request): void
 
 enforce_tenant_registry_status($request);
 
+if (PortalContext::isPublic() && str_starts_with($request->path(), '/api')) {
+    Response::json([
+        'ok' => false,
+        'success' => false,
+        'message' => 'Community Control Center is disabled.',
+        'errors' => [],
+        'error' => [
+            'message' => 'Community Control Center is disabled.',
+            'reason' => 'control_center_disabled',
+        ],
+        'status' => 404,
+    ], 404);
+}
+
 set_exception_handler(function (Throwable $e) use ($request): void {
     if (str_starts_with($request->path(), '/api')) {
         $status = api_exception_status($e);
@@ -857,6 +871,11 @@ if (!str_starts_with($request->path(), '/api')) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
     header('Expires: 0');
+
+    if (PortalContext::isPublic()) {
+        echo '<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center dang tam dung trien khai tren moi truong Production. Tenant Portal van hoat dong tren cac subdomain rieng.</p><div class="status">Production rollback active</div></main></body></html>';
+        exit;
+    }
 
     if (PortalContext::isControlCenter()) {
         $html = file_get_contents(BASE_PATH . '/views/control-center.php');

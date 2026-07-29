@@ -25,16 +25,22 @@ final class PortalContext
 
         $host = self::host();
         $adminEnabled = self::boolEnv('PLATFORM_ADMIN_ENABLED', false);
-        $adminDomains = self::csvEnv('PLATFORM_ADMIN_DOMAINS');
+        $adminDomains = self::rootAwareAdminDomains();
         $tenantPattern = trim((string) self::env('PLATFORM_TENANT_DOMAIN_PATTERN', ''));
         $defaultPortal = self::portalType((string) self::env('PLATFORM_DEFAULT_PORTAL', self::TENANT), self::TENANT);
 
         $type = $defaultPortal;
         $matchedBy = 'default';
+        $adminDomainMatched = in_array($host, $adminDomains, true);
 
-        if ($adminEnabled && in_array($host, $adminDomains, true)) {
-            $type = self::CONTROL_CENTER;
-            $matchedBy = 'admin_domain';
+        if ($adminDomainMatched) {
+            if ($adminEnabled) {
+                $type = self::CONTROL_CENTER;
+                $matchedBy = 'admin_domain';
+            } else {
+                $type = self::PUBLIC;
+                $matchedBy = 'admin_domain_disabled';
+            }
         } elseif ($tenantPattern !== '' && self::matchesTenantPattern($host, $tenantPattern)) {
             $type = self::TENANT;
             $matchedBy = 'tenant_pattern';
@@ -61,6 +67,11 @@ final class PortalContext
     public static function isTenant(): bool
     {
         return self::type() === self::TENANT;
+    }
+
+    public static function isPublic(): bool
+    {
+        return self::type() === self::PUBLIC;
     }
 
     public static function host(): string
@@ -100,6 +111,18 @@ final class PortalContext
             explode(',', $raw)
         );
         return array_values(array_filter(array_unique($items), static fn(string $value): bool => $value !== ''));
+    }
+
+    private static function rootAwareAdminDomains(): array
+    {
+        $domains = self::csvEnv('PLATFORM_ADMIN_DOMAINS');
+        $rootDomain = strtolower(trim((string) self::env('PLATFORM_ROOT_DOMAIN', '')));
+        $rootDomain = preg_replace('/:\d+$/', '', $rootDomain) ?? $rootDomain;
+        if ($rootDomain !== '') {
+            $domains[] = $rootDomain;
+            $domains[] = 'www.' . $rootDomain;
+        }
+        return array_values(array_filter(array_unique($domains), static fn(string $value): bool => $value !== ''));
     }
 
     private static function boolEnv(string $key, bool $default): bool
