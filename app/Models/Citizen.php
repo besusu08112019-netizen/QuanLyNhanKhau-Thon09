@@ -6,6 +6,7 @@ use App\Config\CitizenPolicyDefaults;
 use App\Core\BaseModel;
 use App\Models\PolicyAlert;
 use App\Policies\AgePolicy;
+use App\Policies\HouseholdRelationPolicy;
 use App\Policies\InsurancePolicy;
 use App\Services\StudentStatusService;
 
@@ -256,7 +257,7 @@ final class Citizen extends BaseModel
             'identity' => trim((string) ($data['identityNumber'] ?? $data['identity_number'] ?? $fallback['identity_number'] ?? '')) ?: null,
             'issue_date' => $data['identityIssueDate'] ?? $data['identity_issue_date'] ?? $fallback['identity_issue_date'] ?? null,
             'issue_place' => trim((string) ($data['identityIssuePlace'] ?? $data['identity_issue_place'] ?? $fallback['identity_issue_place'] ?? '')) ?: null,
-            'relationship' => $this->relationship($data['relationship'] ?? $data['memberType'] ?? $data['member_type'] ?? $fallback['relationship'] ?? 'Khác'),
+            'relationship' => $this->relationship($data['relationship'] ?? $data['memberType'] ?? $data['member_type'] ?? $fallback['relationship'] ?? HouseholdRelationPolicy::OTHER_RELATIVE, $data['gender'] ?? $fallback['gender'] ?? null),
             'ethnicity' => trim((string) ($data['ethnicity'] ?? $fallback['ethnicity'] ?? '')) ?: null,
             'religion' => trim((string) ($data['religion'] ?? $fallback['religion'] ?? '')) ?: null,
             'occupation' => trim((string) ($data['occupation'] ?? $fallback['occupation'] ?? $occupationDefault ?? '')) ?: null,
@@ -528,7 +529,7 @@ final class Citizen extends BaseModel
         $this->execute('UPDATE households SET head_citizen_id=:head_id, head_citizen_name=:head_name WHERE id=:household_id AND ' . $this->tenantWhere('households'), $this->withTenant(['household_id' => $householdId, 'head_id' => $head['id'] ?? null, 'head_name' => $head['full_name'] ?? null]));
     }
 
-    private function relationship(mixed $value): string { $text = trim((string) $value); return $text === 'Chủ hộ' ? 'Chủ hộ' : ($text ?: 'Khác'); }
+    private function relationship(mixed $value, mixed $gender = null): string { return HouseholdRelationPolicy::normalizeRelationship($value, $gender); }
     private function residency(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['temporary','temporary_residence','tạm trú','tam tru'], true) ? 'TEMPORARY' : 'PERMANENT'; }
     private function presence(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['away','đi vắng','di vang','tam vang','tạm vắng'], true) ? 'AWAY' : 'AT_HOME'; }
     private function life(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['deceased','dead','đã chết','da chet'], true) ? 'DECEASED' : 'ALIVE'; }

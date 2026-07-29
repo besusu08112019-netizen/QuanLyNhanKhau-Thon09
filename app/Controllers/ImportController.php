@@ -8,6 +8,7 @@ use App\Core\Encoding;
 use App\Core\TenantContext;
 use App\Models\Citizen;
 use App\Models\Household;
+use App\Policies\HouseholdRelationPolicy;
 use App\Services\HouseholdRelationshipInferenceService;
 
 final class ImportController extends BaseController
@@ -493,7 +494,7 @@ final class ImportController extends BaseController
             'identityIssuePlace' => trim((string) ($data['identityIssuePlace'] ?? '')),
             'phone' => $this->normalizePhone((string) ($data['phone'] ?? '')),
             'headCitizenName' => trim((string) ($data['headCitizenName'] ?? '')),
-            'relationship' => $this->hasImportValue($data, 'relationship') ? trim((string) $data['relationship']) : 'Chưa xác định',
+            'relationship' => $this->hasImportValue($data, 'relationship') ? HouseholdRelationPolicy::normalizeRelationship($data['relationship'], $data['gender'] ?? null) : HouseholdRelationPolicy::UNKNOWN,
             'relationshipNeedsInference' => !$this->hasImportValue($data, 'relationship'),
             'fatherName' => trim((string) ($data['fatherName'] ?? '')),
             'motherName' => trim((string) ($data['motherName'] ?? '')),
