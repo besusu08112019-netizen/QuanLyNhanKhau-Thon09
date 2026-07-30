@@ -254,6 +254,10 @@
       align-items: center;
     }
 
+    .tenant-toolbar {
+      grid-template-columns: minmax(220px, 1fr) 160px 160px 150px 120px auto;
+    }
+
     .cc-input,
     .cc-select {
       width: 100%;
@@ -306,6 +310,46 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+    }
+
+    .cc-pagination {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid var(--cc-line);
+      flex-wrap: wrap;
+    }
+
+    .tenant-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 16px;
+    }
+
+    .tenant-detail-item {
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .tenant-detail-item.full {
+      grid-column: 1 / -1;
+    }
+
+    .tenant-detail-label {
+      color: var(--cc-muted);
+      font-size: 12px;
+      font-weight: 750;
+      margin-bottom: 4px;
+    }
+
+    .tenant-detail-value {
+      overflow-wrap: anywhere;
+      font-weight: 700;
     }
 
     .cc-state {
@@ -704,6 +748,8 @@
       .monitor-grid,
       .permission-grid,
       .cc-toolbar,
+      .tenant-toolbar,
+      .tenant-detail-grid,
       .cc-form,
       .operation-item,
       .cc-global-search {
@@ -759,6 +805,7 @@
       <nav class="cc-nav" aria-label="Control Center">
         <button class="active" type="button" data-section="dashboard"><i class="fa-solid fa-chart-line"></i>Tổng quan</button>
         <button type="button" data-section="units"><i class="fa-solid fa-sitemap"></i>Đơn vị</button>
+        <button type="button" data-section="tenants"><i class="fa-solid fa-building-user"></i>Tenant</button>
         <button type="button" data-section="accounts"><i class="fa-solid fa-users-gear"></i>Người dùng</button>
         <button type="button" data-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phân quyền</button>
         <button type="button" data-section="executive"><i class="fa-solid fa-gauge-high"></i>Bảng điều hành</button>
@@ -811,6 +858,7 @@
             </div>
             <div class="cc-state quick-actions">
               <button class="cc-btn" type="button" data-go-section="units"><i class="fa-solid fa-sitemap"></i>Quản lý đơn vị</button>
+              <button class="cc-btn" type="button" data-go-section="tenants"><i class="fa-solid fa-building-user"></i>Quản lý Tenant</button>
               <button class="cc-btn" type="button" data-go-section="accounts"><i class="fa-solid fa-users-gear"></i>Quản lý tài khoản</button>
               <button class="cc-btn" type="button" data-go-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phân quyền</button>
             </div>
@@ -877,6 +925,72 @@
                 </thead>
                 <tbody id="unitsBody"></tbody>
               </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="cc-section" id="tenantsSection">
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <div>
+                <h2 class="cc-panel-title">Quản lý Tenant</h2>
+                <div class="cc-meta">Quản lý thông tin Tenant, trạng thái, phiên bản, dung lượng và nhật ký hoạt động.</div>
+              </div>
+              <button class="cc-btn primary" type="button" id="addTenantButton" data-tenant-permission="tenant.create"><i class="fa-solid fa-plus"></i>Thêm Tenant</button>
+            </div>
+            <div class="cc-toolbar tenant-toolbar">
+              <input class="cc-input" type="search" id="tenantSearch" placeholder="Tìm mã, tên, domain, database">
+              <select class="cc-select" id="tenantStatusFilter" aria-label="Lọc trạng thái">
+                <option value="">Tất cả trạng thái</option>
+                <option value="ACTIVE">Hoạt động</option>
+                <option value="READY">Sẵn sàng</option>
+                <option value="LOCKED">Đã khóa</option>
+                <option value="DISABLED">Đã tắt</option>
+                <option value="MAINTENANCE">Bảo trì</option>
+                <option value="FAILED">Lỗi</option>
+                <option value="DELETED">Đã xóa mềm</option>
+              </select>
+              <select class="cc-select" id="tenantVersionFilter" aria-label="Lọc phiên bản">
+                <option value="">Tất cả phiên bản</option>
+              </select>
+              <select class="cc-select" id="tenantSort" aria-label="Sắp xếp">
+                <option value="updated">Cập nhật mới nhất</option>
+                <option value="name">Tên Tenant</option>
+                <option value="status">Trạng thái</option>
+                <option value="code">Mã Tenant</option>
+                <option value="storage">Dung lượng</option>
+              </select>
+              <select class="cc-select" id="tenantDirection" aria-label="Chiều sắp xếp">
+                <option value="DESC">Giảm dần</option>
+                <option value="ASC">Tăng dần</option>
+              </select>
+              <button class="cc-btn" type="button" id="refreshTenantsButton"><i class="fa-solid fa-rotate"></i>Tải lại</button>
+            </div>
+            <div class="cc-alert" id="tenantsAlert"></div>
+            <div class="cc-table-wrap">
+              <table class="cc-table">
+                <thead>
+                  <tr>
+                    <th>Mã</th>
+                    <th>Tên Tenant</th>
+                    <th>Domain</th>
+                    <th>Database</th>
+                    <th>Trạng thái</th>
+                    <th>Phiên bản</th>
+                    <th>Dung lượng</th>
+                    <th>Cập nhật</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="tenantsBody"></tbody>
+              </table>
+            </div>
+            <div class="cc-pagination" id="tenantsPagination">
+              <span class="cc-meta" id="tenantsPageInfo">Chưa có dữ liệu</span>
+              <div class="cc-row-actions">
+                <button class="cc-btn" type="button" id="tenantPrevPageButton"><i class="fa-solid fa-chevron-left"></i>Trước</button>
+                <button class="cc-btn" type="button" id="tenantNextPageButton">Sau<i class="fa-solid fa-chevron-right"></i></button>
+              </div>
             </div>
           </div>
         </section>
@@ -1152,6 +1266,128 @@
     </div>
   </div>
 
+  <div class="cc-modal-backdrop" id="tenantModal" role="dialog" aria-modal="true" aria-labelledby="tenantModalTitle">
+    <div class="cc-modal">
+      <div class="cc-modal-header">
+        <h2 class="cc-modal-title" id="tenantModalTitle">Thêm Tenant</h2>
+        <button class="cc-btn" type="button" id="closeTenantModalButton" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="tenantForm" novalidate>
+        <div class="cc-form">
+          <input type="hidden" id="tenantId">
+          <div class="cc-field">
+            <label for="tenantCode">Mã Tenant *</label>
+            <input class="cc-input" id="tenantCode" name="code" required maxlength="50" pattern="[a-z0-9_-]{2,50}" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantName">Tên Tenant *</label>
+            <input class="cc-input" id="tenantName" name="name" required maxlength="190" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantUnitName">Tên đơn vị</label>
+            <input class="cc-input" id="tenantUnitName" name="unit_name" maxlength="190" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantCommuneName">Xã/Phường</label>
+            <input class="cc-input" id="tenantCommuneName" name="commune_name" maxlength="190" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantDomain">Domain</label>
+            <input class="cc-input" id="tenantDomain" name="domain" maxlength="190" placeholder="thon09.hongphongnb.com" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantSubdomain">Subdomain</label>
+            <input class="cc-input" id="tenantSubdomain" name="subdomain" maxlength="190" placeholder="thon09.hongphongnb.com" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantDatabaseHost">Database host *</label>
+            <input class="cc-input" id="tenantDatabaseHost" name="database_host" maxlength="190" placeholder="localhost" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantDatabaseName">Database name *</label>
+            <input class="cc-input" id="tenantDatabaseName" name="database_name" maxlength="190" placeholder="database_name" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantDatabaseCharset">Database charset</label>
+            <input class="cc-input" id="tenantDatabaseCharset" name="database_charset" maxlength="50" placeholder="utf8mb4" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantStatus">Trạng thái</label>
+            <select class="cc-select" id="tenantStatus" name="status">
+              <option value="READY">Sẵn sàng</option>
+              <option value="ACTIVE">Hoạt động</option>
+              <option value="MAINTENANCE">Bảo trì</option>
+              <option value="DISABLED">Đã tắt</option>
+              <option value="FAILED">Lỗi</option>
+            </select>
+          </div>
+          <div class="cc-field">
+            <label for="tenantAppVersion">Phiên bản ứng dụng</label>
+            <input class="cc-input" id="tenantAppVersion" name="app_version" maxlength="50" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantBuildVersion">Phiên bản build</label>
+            <input class="cc-input" id="tenantBuildVersion" name="build_version" maxlength="100" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantSchemaVersion">Phiên bản schema</label>
+            <input class="cc-input" id="tenantSchemaVersion" name="schema_version" maxlength="50" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantStorageQuotaBytes">Dung lượng giới hạn (bytes)</label>
+            <input class="cc-input" id="tenantStorageQuotaBytes" name="storage_quota_bytes" type="number" min="0" step="1" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="tenantManagerName">Người quản lý</label>
+            <input class="cc-input" id="tenantManagerName" name="manager_name" maxlength="190" autocomplete="off">
+          </div>
+          <div class="cc-field full">
+            <label for="tenantNotes">Ghi chú</label>
+            <textarea class="cc-input" id="tenantNotes" name="notes" maxlength="2000" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="cc-form-error" id="tenantFormError"></div>
+        <div class="cc-modal-footer">
+          <button class="cc-btn" type="button" id="cancelTenantButton">Hủy</button>
+          <button class="cc-btn primary" type="submit" id="saveTenantButton"><i class="fa-solid fa-floppy-disk"></i>Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="cc-modal-backdrop" id="tenantDetailModal" role="dialog" aria-modal="true" aria-labelledby="tenantDetailTitle">
+    <div class="cc-modal">
+      <div class="cc-modal-header">
+        <h2 class="cc-modal-title" id="tenantDetailTitle">Chi tiết Tenant</h2>
+        <button class="cc-btn" type="button" id="closeTenantDetailButton" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="tenant-detail-grid" id="tenantDetailGrid"></div>
+      <div class="cc-panel" style="border-left:0;border-right:0;border-bottom:0;border-radius:0">
+        <div class="cc-panel-header">
+          <h3 class="cc-panel-title">Activity</h3>
+          <button class="cc-btn" type="button" id="refreshTenantActivityButton"><i class="fa-solid fa-rotate"></i>Tải lại</button>
+        </div>
+        <div class="cc-table-wrap">
+          <table class="cc-table">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Người thực hiện</th>
+                <th>Hành động</th>
+                <th>Mức độ</th>
+                <th>Nội dung</th>
+              </tr>
+            </thead>
+            <tbody id="tenantActivityBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="cc-modal-footer">
+        <button class="cc-btn" type="button" id="closeTenantDetailFooterButton">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <div class="cc-modal-backdrop" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle">
     <div class="cc-modal">
       <div class="cc-modal-header">
@@ -1244,6 +1480,7 @@
       dashboard: document.getElementById('dashboardSection'),
       executive: document.getElementById('executiveSection'),
       units: document.getElementById('unitsSection'),
+      tenants: document.getElementById('tenantsSection'),
       accounts: document.getElementById('accountsSection'),
       permissions: document.getElementById('permissionsSection'),
       monitoring: document.getElementById('monitoringSection'),
@@ -1256,6 +1493,7 @@
       dashboard: 'Tổng quan',
       executive: 'Bảng điều hành',
       units: 'Đơn vị',
+      tenants: 'Tenant',
       accounts: 'Người dùng',
       permissions: 'Phân quyền',
       monitoring: 'Giám sát',
@@ -1293,6 +1531,17 @@
       preflightReady: false,
       createdJob: null
     };
+    const tenantState = {
+      items: [],
+      editing: null,
+      detail: null,
+      activityTarget: null,
+      page: 1,
+      perPage: 25,
+      total: 0,
+      totalPages: 1,
+      loading: false
+    };
     const accountState = {
       items: [],
       editing: null,
@@ -1327,8 +1576,8 @@
     function badge(value) {
       const span = document.createElement('span');
       span.className = 'cc-badge';
-      if (value === 'LOCKED' || value === 'DEGRADED' || value === 'UNKNOWN' || value === 'NOT_APPLICABLE' || value === 'MEDIUM') span.classList.add('warn');
-      if (value === 'ERROR' || value === 'DISCONNECTED' || value === 'OFFLINE' || value === 'INVALID' || value === 'HIGH') span.classList.add('danger');
+      if (value === 'LOCKED' || value === 'DEGRADED' || value === 'UNKNOWN' || value === 'NOT_APPLICABLE' || value === 'MEDIUM' || value === 'MAINTENANCE') span.classList.add('warn');
+      if (value === 'ERROR' || value === 'DISCONNECTED' || value === 'OFFLINE' || value === 'INVALID' || value === 'HIGH' || value === 'DELETED' || value === 'FAILED') span.classList.add('danger');
       span.textContent = statusLabel(value);
       return span;
     }
@@ -1350,6 +1599,7 @@
         ERROR: 'Lỗi',
         NOT_APPLICABLE: 'Không áp dụng',
         READY: 'Sẵn sàng',
+        DELETED: 'Đã xóa mềm',
         CREATING: 'Đang tạo',
         FAILED: 'Lỗi',
         DISABLED: 'Đã khóa',
@@ -1654,6 +1904,333 @@
       body.replaceChildren(...(rows.length ? rows : [emptyRow(10)]));
     }
 
+    async function loadTenants() {
+      const body = document.getElementById('tenantsBody');
+      body.replaceChildren(stateRow(9, 'Đang tải danh sách Tenant...'));
+      setTenantsAlert('');
+      tenantState.loading = true;
+      const params = new URLSearchParams();
+      const search = document.getElementById('tenantSearch').value.trim();
+      const status = document.getElementById('tenantStatusFilter').value;
+      const version = document.getElementById('tenantVersionFilter').value;
+      const sort = document.getElementById('tenantSort').value;
+      const direction = document.getElementById('tenantDirection').value;
+      if (search) params.set('search', search);
+      if (status) params.set('status', status);
+      if (version) params.set('version', version);
+      if (sort) params.set('sort', sort);
+      if (direction) params.set('direction', direction);
+      params.set('page', String(tenantState.page));
+      params.set('per_page', String(tenantState.perPage));
+      if (status === 'DELETED') params.set('include_deleted', '1');
+
+      try {
+        const data = await api('/api/control-center/tenants?' + params.toString());
+        tenantState.items = data.items || [];
+        const pagination = data.pagination || {};
+        tenantState.page = Number(pagination.page || tenantState.page || 1);
+        tenantState.total = Number(pagination.total || tenantState.items.length || 0);
+        tenantState.totalPages = Number(pagination.totalPages || 1);
+        renderTenantVersionFilter();
+        renderTenantRows();
+        renderTenantPagination();
+        applyTenantPermissions();
+      } catch (error) {
+        tenantState.items = [];
+        body.replaceChildren(emptyRow(9));
+        setTenantsAlert(error.message || 'Không tải được danh sách Tenant');
+      } finally {
+        tenantState.loading = false;
+      }
+    }
+
+    function renderTenantRows() {
+      const body = document.getElementById('tenantsBody');
+      const rows = tenantState.items.map((tenant) => {
+        const tr = document.createElement('tr');
+        const cells = [
+          tenant.code || '-',
+          tenant.name || '-',
+          tenant.domain || tenant.subdomain || '-',
+          tenant.databaseName || '-',
+          tenant.status || 'UNKNOWN',
+          tenant.appVersion || tenant.buildVersion || tenant.schemaVersion || '-',
+          tenantStorageLabel(tenant),
+          tenant.updatedAt || tenant.lastStatusChangedAt || '-'
+        ];
+        cells.forEach((cell, index) => {
+          const td = document.createElement('td');
+          if (index === 4) td.appendChild(badge(cell));
+          else td.textContent = cell;
+          tr.appendChild(td);
+        });
+        const actions = document.createElement('td');
+        actions.className = 'cc-row-actions';
+        const view = actionButton('Xem', 'fa-eye');
+        view.addEventListener('click', () => openTenantDetail(tenant));
+        actions.appendChild(view);
+        if (canTenant('tenant.update') && tenant.status !== 'DELETED') {
+          const edit = actionButton('Sửa', 'fa-pen-to-square');
+          edit.dataset.tenantPermission = 'tenant.update';
+          edit.addEventListener('click', () => openTenantModal(tenant));
+          actions.appendChild(edit);
+        }
+        if (canTenant('tenant.lock') && !['LOCKED', 'DELETED'].includes(tenant.status)) {
+          const lock = actionButton('Khóa', 'fa-lock', 'danger');
+          lock.dataset.tenantPermission = 'tenant.lock';
+          lock.addEventListener('click', () => lockTenant(tenant));
+          actions.appendChild(lock);
+        }
+        if (canTenant('tenant.unlock') && tenant.status === 'LOCKED') {
+          const unlock = actionButton('Mở khóa', 'fa-unlock');
+          unlock.dataset.tenantPermission = 'tenant.unlock';
+          unlock.addEventListener('click', () => unlockTenant(tenant));
+          actions.appendChild(unlock);
+        }
+        if (canTenant('tenant.delete') && tenant.status !== 'DELETED') {
+          const remove = actionButton('Xóa mềm', 'fa-trash', 'danger');
+          remove.dataset.tenantPermission = 'tenant.delete';
+          remove.addEventListener('click', () => deleteTenant(tenant));
+          actions.appendChild(remove);
+        }
+        tr.appendChild(actions);
+        return tr;
+      });
+      body.replaceChildren(...(rows.length ? rows : [emptyRow(9)]));
+    }
+
+    function renderTenantPagination() {
+      document.getElementById('tenantsPageInfo').textContent = tenantState.total
+        ? `Trang ${tenantState.page}/${tenantState.totalPages} - ${nf.format(tenantState.total)} Tenant`
+        : 'Chưa có Tenant phù hợp';
+      document.getElementById('tenantPrevPageButton').disabled = tenantState.page <= 1 || tenantState.loading;
+      document.getElementById('tenantNextPageButton').disabled = tenantState.page >= tenantState.totalPages || tenantState.loading;
+    }
+
+    function renderTenantVersionFilter() {
+      const select = document.getElementById('tenantVersionFilter');
+      const current = select.value;
+      const versions = Array.from(new Set((tenantState.items || []).map((tenant) => tenant.appVersion || '').filter(Boolean))).sort();
+      const options = [new Option('Tất cả phiên bản', '')].concat(versions.map((version) => new Option(version, version)));
+      select.replaceChildren(...options);
+      select.value = versions.includes(current) ? current : '';
+    }
+
+    function tenantStorageLabel(tenant) {
+      const used = tenant.storageUsageBytes;
+      const quota = tenant.storageQuotaBytes;
+      if (used === null && quota === null) return '-';
+      if (quota) return `${formatBytes(used || 0)} / ${formatBytes(quota)}`;
+      return formatBytes(used || 0);
+    }
+
+    function openTenantModal(tenant = null) {
+      tenantState.editing = tenant;
+      document.getElementById('tenantModalTitle').textContent = tenant ? 'Sửa Tenant' : 'Thêm Tenant';
+      document.getElementById('tenantId').value = tenant?.id || '';
+      document.getElementById('tenantCode').value = tenant?.code || '';
+      document.getElementById('tenantCode').disabled = Boolean(tenant);
+      document.getElementById('tenantName').value = tenant?.name || '';
+      document.getElementById('tenantUnitName').value = tenant?.unitName || '';
+      document.getElementById('tenantCommuneName').value = tenant?.communeName || '';
+      document.getElementById('tenantDomain').value = tenant?.domain || '';
+      document.getElementById('tenantSubdomain').value = tenant?.subdomain || '';
+      document.getElementById('tenantDatabaseHost').value = tenant?.databaseHost || '';
+      document.getElementById('tenantDatabaseName').value = tenant?.databaseName || '';
+      document.getElementById('tenantDatabaseCharset').value = tenant?.databaseCharset || 'utf8mb4';
+      document.getElementById('tenantStatus').value = ['READY', 'ACTIVE', 'MAINTENANCE', 'DISABLED', 'FAILED'].includes(tenant?.storedStatus || tenant?.status) ? (tenant?.storedStatus || tenant?.status) : 'READY';
+      document.getElementById('tenantAppVersion').value = tenant?.appVersion || '';
+      document.getElementById('tenantBuildVersion').value = tenant?.buildVersion || '';
+      document.getElementById('tenantSchemaVersion').value = tenant?.schemaVersion || '';
+      document.getElementById('tenantStorageQuotaBytes').value = tenant?.storageQuotaBytes ?? '';
+      document.getElementById('tenantManagerName').value = tenant?.managerName || '';
+      document.getElementById('tenantNotes').value = tenant?.notes || '';
+      setTenantFormError('');
+      document.getElementById('tenantModal').classList.add('active');
+      document.getElementById(tenant ? 'tenantName' : 'tenantCode').focus();
+    }
+
+    function closeTenantModal() {
+      document.getElementById('tenantModal').classList.remove('active');
+      tenantState.editing = null;
+    }
+
+    function tenantPayload() {
+      const payload = {
+        name: formValue('tenantName'),
+        unit_name: formValue('tenantUnitName') || null,
+        commune_name: formValue('tenantCommuneName') || null,
+        domain: formValue('tenantDomain') || null,
+        subdomain: formValue('tenantSubdomain') || null,
+        database_host: formValue('tenantDatabaseHost') || null,
+        database_name: formValue('tenantDatabaseName') || null,
+        database_charset: formValue('tenantDatabaseCharset') || null,
+        status: formValue('tenantStatus') || 'READY',
+        app_version: formValue('tenantAppVersion') || null,
+        build_version: formValue('tenantBuildVersion') || null,
+        schema_version: formValue('tenantSchemaVersion') || null,
+        storage_quota_bytes: formValue('tenantStorageQuotaBytes') || null,
+        manager_name: formValue('tenantManagerName') || null,
+        notes: formValue('tenantNotes') || null
+      };
+      if (!tenantState.editing) payload.code = formValue('tenantCode').toLowerCase();
+      return payload;
+    }
+
+    function validateTenantForm(payload) {
+      if (!tenantState.editing && !/^[a-z0-9_-]{2,50}$/.test(payload.code || '')) return 'Mã Tenant không hợp lệ';
+      if (!payload.name || payload.name.length > 190) return 'Tên Tenant là bắt buộc và không vượt quá 190 ký tự';
+      if (!payload.domain && !payload.subdomain) return 'Tenant cần có domain hoặc subdomain';
+      if (!payload.database_host) return 'Database host là bắt buộc';
+      if (!payload.database_name || !/^[a-zA-Z0-9_]{1,190}$/.test(payload.database_name)) return 'Database name không hợp lệ';
+      if (payload.database_charset && !/^[a-z0-9_]{1,50}$/.test(payload.database_charset)) return 'Database charset không hợp lệ';
+      if (payload.storage_quota_bytes !== null && (!/^\d+$/.test(String(payload.storage_quota_bytes)) || Number(payload.storage_quota_bytes) < 0)) return 'Dung lượng giới hạn không hợp lệ';
+      return '';
+    }
+
+    async function saveTenant(event) {
+      event.preventDefault();
+      const button = document.getElementById('saveTenantButton');
+      const payload = tenantPayload();
+      const validation = validateTenantForm(payload);
+      if (validation) {
+        setTenantFormError(validation);
+        return;
+      }
+      button.disabled = true;
+      setTenantFormError('');
+      try {
+        if (tenantState.editing) {
+          await api('/api/control-center/tenants/' + encodeURIComponent(tenantState.editing.id), { method: 'PUT', body: payload });
+          setTenantsAlert('Đã cập nhật Tenant');
+        } else {
+          await api('/api/control-center/tenants', { method: 'POST', body: payload });
+          tenantState.page = 1;
+          setTenantsAlert('Đã thêm Tenant');
+        }
+        closeTenantModal();
+        await loadTenants();
+      } catch (error) {
+        setTenantFormError(error.message || 'Không lưu được Tenant');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function openTenantDetail(tenant) {
+      tenantState.detail = tenant;
+      tenantState.activityTarget = tenant;
+      document.getElementById('tenantDetailTitle').textContent = 'Chi tiết Tenant - ' + (tenant.name || tenant.code || tenant.id);
+      renderTenantDetail(tenant);
+      document.getElementById('tenantDetailModal').classList.add('active');
+      await loadTenantActivity(tenant).catch((error) => {
+        document.getElementById('tenantActivityBody').replaceChildren(stateRow(5, error.message || 'Không tải được Activity'));
+      });
+    }
+
+    function renderTenantDetail(tenant) {
+      const items = [
+        ['Mã Tenant', tenant.code || '-'],
+        ['Tên Tenant', tenant.name || '-'],
+        ['Tên đơn vị', tenant.unitName || '-'],
+        ['Xã/Phường', tenant.communeName || '-'],
+        ['Domain', tenant.domain || '-'],
+        ['Subdomain', tenant.subdomain || '-'],
+        ['Database', tenant.databaseName || '-'],
+        ['Trạng thái', statusLabel(tenant.status || '')],
+        ['Phiên bản ứng dụng', tenant.appVersion || '-'],
+        ['Phiên bản build', tenant.buildVersion || '-'],
+        ['Phiên bản schema', tenant.schemaVersion || '-'],
+        ['Dung lượng', tenantStorageLabel(tenant)],
+        ['Trang web', statusLabel(tenant.websiteStatus || 'UNKNOWN')],
+        ['Database status', statusLabel(tenant.databaseStatus || 'UNKNOWN')],
+        ['SSL', statusLabel(tenant.sslStatus || 'UNKNOWN')],
+        ['Người quản lý', tenant.managerName || '-'],
+        ['Cập nhật', tenant.updatedAt || '-'],
+        ['Ghi chú', tenant.notes || '-', 'full']
+      ];
+      const nodes = items.map(([label, value, wide]) => {
+        const item = document.createElement('div');
+        item.className = 'tenant-detail-item' + (wide ? ' full' : '');
+        const title = document.createElement('div');
+        title.className = 'tenant-detail-label';
+        title.textContent = label;
+        const content = document.createElement('div');
+        content.className = 'tenant-detail-value';
+        content.textContent = value;
+        item.append(title, content);
+        return item;
+      });
+      document.getElementById('tenantDetailGrid').replaceChildren(...nodes);
+    }
+
+    async function loadTenantActivity(tenant = tenantState.activityTarget) {
+      if (!tenant) return;
+      const body = document.getElementById('tenantActivityBody');
+      body.replaceChildren(stateRow(5, 'Đang tải Activity...'));
+      const data = await api('/api/control-center/tenants/' + encodeURIComponent(tenant.id) + '/activity');
+      const rows = (data.items || []).map((item) => {
+        const tr = document.createElement('tr');
+        [item.createdAt || '-', item.actor || '-', item.action || '-', item.severity || 'INFO', item.message || '-'].forEach((value, index) => {
+          const td = document.createElement('td');
+          if (index === 3) td.appendChild(badge(value));
+          else td.textContent = value;
+          tr.appendChild(td);
+        });
+        return tr;
+      });
+      body.replaceChildren(...(rows.length ? rows : [emptyRow(5)]));
+    }
+
+    function closeTenantDetail() {
+      document.getElementById('tenantDetailModal').classList.remove('active');
+      tenantState.detail = null;
+      tenantState.activityTarget = null;
+    }
+
+    async function lockTenant(tenant) {
+      const reason = prompt('Nhập lý do khóa Tenant');
+      if (reason === null) return;
+      if (!reason.trim()) {
+        setTenantsAlert('Lý do khóa Tenant là bắt buộc');
+        return;
+      }
+      try {
+        await api('/api/control-center/tenants/' + encodeURIComponent(tenant.id) + '/lock', { method: 'PATCH', body: { reason: reason.trim() } });
+        setTenantsAlert('Đã khóa Tenant');
+        await loadTenants();
+      } catch (error) {
+        setTenantsAlert(error.message || 'Không khóa được Tenant');
+      }
+    }
+
+    async function unlockTenant(tenant) {
+      if (!confirm('Xác nhận mở khóa Tenant này?')) return;
+      try {
+        await api('/api/control-center/tenants/' + encodeURIComponent(tenant.id) + '/unlock', { method: 'PATCH', body: { targetStatus: 'ACTIVE' } });
+        setTenantsAlert('Đã mở khóa Tenant');
+        await loadTenants();
+      } catch (error) {
+        setTenantsAlert(error.message || 'Không mở khóa được Tenant');
+      }
+    }
+
+    async function deleteTenant(tenant) {
+      const confirmation = prompt('Nhập mã Tenant để xác nhận xóa mềm');
+      if (confirmation === null) return;
+      if (confirmation.trim() !== tenant.code) {
+        setTenantsAlert('Mã Tenant xác nhận không khớp');
+        return;
+      }
+      try {
+        await api('/api/control-center/tenants/' + encodeURIComponent(tenant.id), { method: 'DELETE', body: { confirmation: confirmation.trim() } });
+        setTenantsAlert('Đã xóa mềm Tenant');
+        await loadTenants();
+      } catch (error) {
+        setTenantsAlert(error.message || 'Không xóa mềm được Tenant');
+      }
+    }
+
     async function loadAccounts() {
       const body = document.getElementById('accountsBody');
       body.replaceChildren(stateRow(10, 'Đang tải dữ liệu...'));
@@ -1732,6 +2309,7 @@
         renderPermissionRoleFilter();
         renderPermissionGroups();
         renderPermissions();
+        applyTenantPermissions();
         setPermissionsAlert('');
       } catch (error) {
         head.replaceChildren();
@@ -1826,6 +2404,35 @@
       const pending = permissionState.pending.get(role + '|' + permission);
       if (pending) return { allowed: pending.allowed, locked: false };
       return permissionState.matrix.find((item) => item.role === role && item.permission === permission) || { allowed: false, locked: false };
+    }
+
+    function currentPlatformRole() {
+      const role = (window.App?.user?.role || '').toUpperCase();
+      return {
+        SUPER_ADMIN: 'SYSTEM_ADMIN',
+        ADMIN: 'VILLAGE_ADMIN',
+        OFFICER: 'STAFF',
+        VIEWER: 'VIEWER',
+        SYSTEM_ADMIN: 'SYSTEM_ADMIN',
+        VILLAGE_ADMIN: 'VILLAGE_ADMIN',
+        STAFF: 'STAFF'
+      }[role] || role;
+    }
+
+    function canTenant(permission) {
+      if (!permission) return true;
+      const role = currentPlatformRole();
+      if (role === 'SYSTEM_ADMIN') return true;
+      const item = permissionState.matrix.find((entry) => entry.role === role && entry.permission === permission);
+      return Boolean(item?.allowed);
+    }
+
+    function applyTenantPermissions() {
+      document.querySelectorAll('[data-tenant-permission]').forEach((element) => {
+        const allowed = canTenant(element.dataset.tenantPermission);
+        element.hidden = !allowed;
+        if ('disabled' in element) element.disabled = !allowed;
+      });
     }
 
     async function savePermissions() {
@@ -1974,6 +2581,18 @@
       const alert = document.getElementById('unitsAlert');
       alert.textContent = message || '';
       alert.classList.toggle('active', Boolean(message));
+    }
+
+    function setTenantsAlert(message) {
+      const alert = document.getElementById('tenantsAlert');
+      alert.textContent = message || '';
+      alert.classList.toggle('active', Boolean(message));
+    }
+
+    function setTenantFormError(message) {
+      const error = document.getElementById('tenantFormError');
+      error.textContent = message || '';
+      error.classList.toggle('active', Boolean(message));
     }
 
     function setTenantInstallerActions(job) {
@@ -2630,7 +3249,8 @@
     }
 
     async function loadControlCenter() {
-      await Promise.all([loadUnits(), loadAccounts(), loadPermissions(), loadMonitoring()]).catch((error) => {
+      await loadPermissions().catch((error) => setPermissionsAlert(error.message || 'Không tải được phân quyền'));
+      await Promise.all([loadUnits(), loadTenants(), loadAccounts(), loadMonitoring()]).catch((error) => {
         document.getElementById('healthBadge').textContent = statusLabel('DEGRADED');
         document.getElementById('healthBadge').className = 'cc-badge warn';
       });
@@ -2661,6 +3281,7 @@
         ['executive', ['bảng điều hành', 'bang dieu hanh', 'executive']],
         ['dashboard', ['dashboard', 'tổng quan', 'thống kê', 'tong quan', 'thong ke']],
         ['units', ['đơn vị', 'thôn', 'xã', 'don vi', 'thon', 'xa', 'administrative']],
+        ['tenants', ['tenant', 'domain', 'database', 'trang web']],
         ['accounts', ['tài khoản', 'người dùng', 'tai khoan', 'nguoi dung', 'user']],
         ['permissions', ['phân quyền', 'quyền', 'phan quyen', 'permission', 'quyen']],
         ['monitoring', ['giám sát', 'monitoring', 'health', 'trạng thái', 'trang thai']],
@@ -2701,6 +3322,58 @@
     document.getElementById('unitModal').addEventListener('click', (event) => {
       if (event.target.id === 'unitModal') closeUnitModal();
     });
+    document.getElementById('addTenantButton').addEventListener('click', () => openTenantModal());
+    document.getElementById('refreshTenantsButton').addEventListener('click', () => loadTenants());
+    document.getElementById('tenantStatusFilter').addEventListener('change', () => {
+      tenantState.page = 1;
+      loadTenants();
+    });
+    document.getElementById('tenantVersionFilter').addEventListener('change', () => {
+      tenantState.page = 1;
+      loadTenants();
+    });
+    document.getElementById('tenantSort').addEventListener('change', () => {
+      tenantState.page = 1;
+      loadTenants();
+    });
+    document.getElementById('tenantDirection').addEventListener('change', () => {
+      tenantState.page = 1;
+      loadTenants();
+    });
+    document.getElementById('tenantSearch').addEventListener('input', (() => {
+      let timer = null;
+      return () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          tenantState.page = 1;
+          loadTenants();
+        }, 250);
+      };
+    })());
+    document.getElementById('tenantPrevPageButton').addEventListener('click', () => {
+      if (tenantState.page <= 1) return;
+      tenantState.page -= 1;
+      loadTenants();
+    });
+    document.getElementById('tenantNextPageButton').addEventListener('click', () => {
+      if (tenantState.page >= tenantState.totalPages) return;
+      tenantState.page += 1;
+      loadTenants();
+    });
+    document.getElementById('tenantForm').addEventListener('submit', saveTenant);
+    document.getElementById('closeTenantModalButton').addEventListener('click', closeTenantModal);
+    document.getElementById('cancelTenantButton').addEventListener('click', closeTenantModal);
+    document.getElementById('tenantModal').addEventListener('click', (event) => {
+      if (event.target.id === 'tenantModal') closeTenantModal();
+    });
+    document.getElementById('closeTenantDetailButton').addEventListener('click', closeTenantDetail);
+    document.getElementById('closeTenantDetailFooterButton').addEventListener('click', closeTenantDetail);
+    document.getElementById('tenantDetailModal').addEventListener('click', (event) => {
+      if (event.target.id === 'tenantDetailModal') closeTenantDetail();
+    });
+    document.getElementById('refreshTenantActivityButton').addEventListener('click', () => loadTenantActivity().catch((error) => {
+      document.getElementById('tenantActivityBody').replaceChildren(stateRow(5, error.message || 'Không tải được Activity'));
+    }));
     document.getElementById('addAccountButton').addEventListener('click', () => openAccountModal());
     document.getElementById('refreshAccountsButton').addEventListener('click', () => loadAccounts());
     document.getElementById('accountRoleFilter').addEventListener('change', () => loadAccounts());

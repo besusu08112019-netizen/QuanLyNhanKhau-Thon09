@@ -14,7 +14,9 @@ final class ControlCenterPermissionRepository
         $rows = $this->fetchAll(
             'SELECT role, module, action, allowed
              FROM permissions
-             WHERE module LIKE "control_center.%"'
+             WHERE module LIKE "control_center.%"
+                OR module = "tenant"
+                OR module LIKE "tenant.%"'
         );
 
         $overrides = [];
@@ -98,7 +100,7 @@ final class ControlCenterPermissionRepository
     private function splitPermission(string $permission): array
     {
         $parts = explode('.', $permission);
-        if (count($parts) < 3) {
+        if (count($parts) < 2) {
             throw new \InvalidArgumentException('Quyền không hợp lệ');
         }
         $action = array_pop($parts);

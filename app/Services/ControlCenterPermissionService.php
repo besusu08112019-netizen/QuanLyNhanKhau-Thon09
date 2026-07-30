@@ -27,6 +27,18 @@ final class ControlCenterPermissionService
                 'control_center.units.activate' => 'Kích hoạt đơn vị',
             ],
         ],
+        'tenants' => [
+            'name' => 'Quản lý Tenant',
+            'permissions' => [
+                'tenant.view' => 'Xem Tenant',
+                'tenant.create' => 'Thêm Tenant',
+                'tenant.update' => 'Sửa Tenant',
+                'tenant.lock' => 'Khóa Tenant',
+                'tenant.unlock' => 'Mở khóa Tenant',
+                'tenant.delete' => 'Xóa Tenant',
+                'tenant.activity.view' => 'Xem nhật ký Tenant',
+            ],
+        ],
         'users' => [
             'name' => 'Tài khoản hệ thống',
             'permissions' => [

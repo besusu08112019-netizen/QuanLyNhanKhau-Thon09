@@ -66,6 +66,7 @@ use App\Controllers\ReportController;
 use App\Controllers\SettingController;
 use App\Controllers\SystemAdminController;
 use App\Controllers\TenantInstallerController;
+use App\Controllers\TenantManagementController;
 use App\Controllers\UserController;
 use App\Controllers\VehicleController;
 use App\Controllers\VillageDocumentController;
@@ -328,6 +329,7 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         $authController = new ControlCenterAuthController($request);
         $unitsController = new AdministrativeUnitController($request);
         $tenantInstallerController = new TenantInstallerController($request);
+        $tenantsController = new TenantManagementController($request);
         $usersController = new ControlCenterUserController($request);
         $permissionsController = new ControlCenterPermissionController($request);
         $path = $request->path();
@@ -346,6 +348,12 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         }
         if ($method === 'POST' && $path === '/api/control-center/units') {
             $unitsController->store();
+        }
+        if ($method === 'GET' && $path === '/api/control-center/tenants') {
+            $tenantsController->index();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/tenants') {
+            $tenantsController->store();
         }
         if ($method === 'POST' && $path === '/api/control-center/tenant-installer') {
             $tenantInstallerController->start();
@@ -388,6 +396,24 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         }
         if ($method === 'POST' && preg_match('#^/api/control-center/units/(\d+)/open-portal$#', $path, $matches)) {
             $unitsController->openPortal($matches[1]);
+        }
+        if ($method === 'GET' && preg_match('#^/api/control-center/tenants/(\d+)/activity$#', $path, $matches)) {
+            $tenantsController->activity($matches[1]);
+        }
+        if ($method === 'GET' && preg_match('#^/api/control-center/tenants/(\d+)$#', $path, $matches)) {
+            $tenantsController->show($matches[1]);
+        }
+        if ($method === 'PUT' && preg_match('#^/api/control-center/tenants/(\d+)$#', $path, $matches)) {
+            $tenantsController->update($matches[1]);
+        }
+        if ($method === 'PATCH' && preg_match('#^/api/control-center/tenants/(\d+)/lock$#', $path, $matches)) {
+            $tenantsController->lock($matches[1]);
+        }
+        if ($method === 'PATCH' && preg_match('#^/api/control-center/tenants/(\d+)/unlock$#', $path, $matches)) {
+            $tenantsController->unlock($matches[1]);
+        }
+        if ($method === 'DELETE' && preg_match('#^/api/control-center/tenants/(\d+)$#', $path, $matches)) {
+            $tenantsController->destroy($matches[1]);
         }
         if ($method === 'GET' && $path === '/api/control-center/users') {
             $usersController->index();

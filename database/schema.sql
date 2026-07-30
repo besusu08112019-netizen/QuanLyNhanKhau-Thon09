@@ -37,6 +37,13 @@ CREATE TABLE IF NOT EXISTS `villages` (
   `notes` TEXT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` DATETIME NULL,
+  `locked_at` DATETIME NULL,
+  `locked_by` BIGINT UNSIGNED NULL,
+  `lock_reason` VARCHAR(255) NULL,
+  `storage_quota_bytes` BIGINT UNSIGNED NULL,
+  `last_status_changed_at` DATETIME NULL,
+  `last_status_changed_by` BIGINT UNSIGNED NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_villages_code` (`code`),
   UNIQUE KEY `uq_villages_domain` (`domain`),
@@ -44,7 +51,9 @@ CREATE TABLE IF NOT EXISTS `villages` (
   KEY `idx_villages_status` (`status`),
   KEY `idx_villages_connection_status` (`connection_status`),
   KEY `idx_villages_website_status` (`website_status`),
-  KEY `idx_villages_database_status` (`database_status`)
+  KEY `idx_villages_database_status` (`database_status`),
+  KEY `idx_villages_deleted_at` (`deleted_at`),
+  KEY `idx_villages_locked_at` (`locked_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `users` (
