@@ -65,6 +65,7 @@ use App\Controllers\PublicAssetController;
 use App\Controllers\ReportController;
 use App\Controllers\SettingController;
 use App\Controllers\SystemAdminController;
+use App\Controllers\TenantInstallerController;
 use App\Controllers\UserController;
 use App\Controllers\VehicleController;
 use App\Controllers\VillageDocumentController;
@@ -260,10 +261,10 @@ if (PortalContext::isPublic() && str_starts_with($request->path(), '/api')) {
     Response::json([
         'ok' => false,
         'success' => false,
-        'message' => 'Community Control Center is disabled.',
+        'message' => 'Community Control Center đang bị tắt.',
         'errors' => [],
         'error' => [
-            'message' => 'Community Control Center is disabled.',
+            'message' => 'Community Control Center đang bị tắt.',
             'reason' => 'control_center_disabled',
         ],
         'status' => 404,
@@ -326,6 +327,7 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         $controller = new ControlCenterController($request);
         $authController = new ControlCenterAuthController($request);
         $unitsController = new AdministrativeUnitController($request);
+        $tenantInstallerController = new TenantInstallerController($request);
         $usersController = new ControlCenterUserController($request);
         $permissionsController = new ControlCenterPermissionController($request);
         $path = $request->path();
@@ -344,6 +346,27 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         }
         if ($method === 'POST' && $path === '/api/control-center/units') {
             $unitsController->store();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/tenant-installer') {
+            $tenantInstallerController->start();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/tenant-installer/preflight') {
+            $tenantInstallerController->preflight();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/tenant-installer/database-check') {
+            $tenantInstallerController->databaseCheck();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/tenant-installer/dry-run') {
+            $tenantInstallerController->dryRun();
+        }
+        if ($method === 'GET' && preg_match('#^/api/control-center/tenant-installer/(\d+)$#', $path, $matches)) {
+            $tenantInstallerController->show($matches[1]);
+        }
+        if ($method === 'POST' && preg_match('#^/api/control-center/tenant-installer/(\d+)/retry$#', $path, $matches)) {
+            $tenantInstallerController->retry($matches[1]);
+        }
+        if ($method === 'POST' && preg_match('#^/api/control-center/tenant-installer/(\d+)/rollback$#', $path, $matches)) {
+            $tenantInstallerController->rollback($matches[1]);
         }
         if ($method === 'GET' && preg_match('#^/api/control-center/units/(\d+)$#', $path, $matches)) {
             $unitsController->show($matches[1]);
@@ -401,11 +424,11 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
             '/api/control-center/dashboard' => $controller->dashboard(),
             '/api/control-center/accounts' => $controller->accounts(),
             '/api/control-center/monitoring' => $controller->monitoring(),
-            '/api/control-center/audit' => $controller->audit(),
-            default => Response::error('API Community Control Center khong ton tai', 404),
+            '/api/control-center/audit' => $controller->auditLogs(),
+            default => Response::error('API Community Control Center không tồn tại', 404),
         };
     }
-    Response::error('API nghiep vu tenant khong kha dung tren Community Control Center', 404);
+    Response::error('API nghiệp vụ đơn vị không khả dụng trên Community Control Center', 404);
 }
 
 $router = new Router($request);
@@ -880,7 +903,7 @@ if (!str_starts_with($request->path(), '/api')) {
     header('Expires: 0');
 
     if (PortalContext::isPublic()) {
-        echo '<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center dang tam dung trien khai tren moi truong Production. Tenant Portal van hoat dong tren cac subdomain rieng.</p><div class="status">Production rollback active</div></main></body></html>';
+        echo '<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center đang ở chế độ bảo trì cấu hình. Cổng đơn vị vẫn hoạt động trên các tên miền phụ riêng.</p><div class="status">Chế độ bảo trì</div></main></body></html>';
         exit;
     }
 
@@ -888,7 +911,7 @@ if (!str_starts_with($request->path(), '/api')) {
         $html = file_get_contents(BASE_PATH . '/views/control-center.php');
         if ($html === false) {
             http_response_code(500);
-            echo 'Khong tai duoc giao dien Community Control Center.';
+            echo 'Không tải được giao diện Community Control Center.';
             exit;
         }
 
@@ -953,7 +976,7 @@ if (!str_starts_with($request->path(), '/api')) {
     ];
     $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     $html = strtr($html, [
-        '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'He thong Quan ly Hanh chinh')),
+        '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'Hệ thống Quản lý Hành chính')),
         '{{UNIT_NAME}}' => $escapeHtml(TenantConfig::unitName($tenantSettings)),
         '{{HAMLET_NAME}}' => $escapeHtml((string) ($tenantSettings['hamletName'] ?? '')),
         '{{COMMUNE_NAME}}' => $escapeHtml((string) ($tenantSettings['communeName'] ?? '')),

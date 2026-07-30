@@ -15,42 +15,22 @@ if (!function_exists('env_load')) {
         }
 
         $sources = [];
-        $diagnostics = [
-            'http_host' => $_SERVER['HTTP_HOST'] ?? null,
-            'server_name' => $_SERVER['SERVER_NAME'] ?? null,
-            'app_host_env' => getenv('APP_HOST') ?: null,
-            'document_root' => $_SERVER['DOCUMENT_ROOT'] ?? null,
-            'base_path' => $basePath,
-            'host_candidates' => $hosts,
-            'files' => [],
-            'loaded_sources' => [],
-            'parsed' => [],
-        ];
 
         foreach (env_candidate_files($basePath, $hosts) as $path) {
-            $diagnostics['files'][] = [
-                'path' => $path,
-                'exists' => is_file($path),
-                'readable' => is_readable($path),
-            ];
             if (!is_file($path) || !is_readable($path)) {
                 continue;
             }
 
             $sources[] = $path;
-            $parsedKeys = [];
-            $skipped = 0;
             foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
                 $line = trim($line);
                 if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
-                    $skipped++;
                     continue;
                 }
 
                 [$key, $value] = array_map('trim', explode('=', $line, 2));
                 $key = preg_replace('/^\xEF\xBB\xBF/', '', $key) ?? $key;
                 if ($key === '') {
-                    $skipped++;
                     continue;
                 }
 
@@ -58,19 +38,8 @@ if (!function_exists('env_load')) {
                 putenv($key . '=' . $value);
                 $_ENV[$key] = $value;
                 $_SERVER[$key] = $value;
-                $parsedKeys[] = $key;
             }
-            $diagnostics['loaded_sources'][] = $path;
-            $diagnostics['parsed'][] = [
-                'path' => $path,
-                'keys_count' => count($parsedKeys),
-                'skipped_lines' => $skipped,
-                'db_keys' => env_db_key_report(),
-            ];
         }
-
-        $diagnostics['final_db_keys'] = env_db_key_report();
-        env_log_diagnostics($diagnostics);
 
         return $loaded[$cacheKey] = $sources;
     }
@@ -141,40 +110,6 @@ if (!function_exists('env_candidate_files')) {
             $files[] = $basePath . '/.env.' . $host;
         }
         return array_values(array_unique($files));
-    }
-}
-
-if (!function_exists('env_db_key_report')) {
-    function env_db_key_report(): array
-    {
-        $keys = ['DB_HOST', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD'];
-        $report = [];
-        foreach ($keys as $key) {
-            $value = getenv($key);
-            if ($value === false && isset($_ENV[$key])) {
-                $value = $_ENV[$key];
-            }
-            if ($value === false && isset($_SERVER[$key])) {
-                $value = $_SERVER[$key];
-            }
-            $value = $value === false ? '' : (string) $value;
-            $report[$key] = [
-                'present' => $value !== '',
-                'length' => strlen($value),
-            ];
-        }
-        return $report;
-    }
-}
-
-if (!function_exists('env_log_diagnostics')) {
-    function env_log_diagnostics(array $diagnostics): void
-    {
-        if (defined('ENV_LOADER_LOGGED')) {
-            return;
-        }
-        define('ENV_LOADER_LOGGED', true);
-        error_log('[ENV_LOAD_DIAGNOSTICS] ' . json_encode($diagnostics, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 }
 

@@ -20,14 +20,14 @@ final class ControlCenterSuperAdminAuthorization implements ControlCenterAuthori
     {
         $token = $this->request->bearerToken();
         if (!$token) {
-            throw new ControlCenterAuthorizationException('Vui long dang nhap', 401);
+            throw new ControlCenterAuthorizationException('Vui lòng đăng nhập', 401);
         }
 
         $this->verifyCsrfToken($token);
 
         $user = $this->findUserByToken($token);
         if (!$user || (string) ($user['role'] ?? '') !== self::SOURCE_ROLE) {
-            throw new ControlCenterAuthorizationException('Khong co quyen thuc hien thao tac', 403);
+            throw new ControlCenterAuthorizationException('Không có quyền thực hiện thao tác', 403);
         }
 
         return [
@@ -49,7 +49,7 @@ final class ControlCenterSuperAdminAuthorization implements ControlCenterAuthori
         $submitted = (string) $this->request->header('x-csrf-token', '');
         $expected = $this->csrfToken($token);
         if ($submitted === '' || !hash_equals($expected, $submitted)) {
-            throw new ControlCenterAuthorizationException('CSRF token khong hop le', 419);
+            throw new ControlCenterAuthorizationException('CSRF token không hợp lệ', 419);
         }
     }
 

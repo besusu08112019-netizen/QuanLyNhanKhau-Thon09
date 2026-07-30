@@ -31,11 +31,11 @@ final class AuthController extends BaseController
             $users = new User();
             $result = $users->login($login, (string) $this->input('password', ''));
             $this->clearLoginFailures($login);
-            $this->audit($result['user'], 'user', 'read', 'Dang nhap he thong', $result['user']['id']);
+            $this->auditLogin($result['user'], 'read', 'Dang nhap he thong', $result['user']['id']);
             $this->ok($result);
         } catch (\Throwable) {
             $this->recordLoginFailure($login);
-            $this->audit(null, 'user', 'login_failed', 'Dang nhap that bai', null, ['login_hash' => hash('sha256', strtolower(trim($login))), 'ip' => $this->clientIp(), 'user_agent' => $this->userAgent()], 'WARN');
+            $this->auditLogin(null, 'login_failed', 'Dang nhap that bai', null, ['login_hash' => hash('sha256', strtolower(trim($login))), 'ip' => $this->clientIp(), 'user_agent' => $this->userAgent()], 'WARN');
             $this->fail('Invalid account or password', 401);
         }
     }
@@ -124,6 +124,15 @@ final class AuthController extends BaseController
     private function loginKey(string $login): string
     {
         return hash('sha256', strtolower(trim($login)) . '|' . $this->clientIp());
+    }
+
+    private function auditLogin(?array $user, string $action, string $message, mixed $entityId = null, array $metadata = [], string $level = 'INFO'): void
+    {
+        try {
+            $this->audit($user, 'user', $action, $message, $entityId, $metadata, $level);
+        } catch (\Throwable $e) {
+            error_log('[AUTH_AUDIT_ERROR] ' . $e->getMessage());
+        }
     }
 
     private function idleTimeoutSeconds(): int

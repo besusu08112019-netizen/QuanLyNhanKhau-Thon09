@@ -13,7 +13,7 @@ use Throwable;
 
 final class AdministrativeUnitService
 {
-    private const STATUSES = ['ACTIVE', 'INACTIVE'];
+    private const STATUSES = ['READY', 'DISABLED', 'MAINTENANCE', 'FAILED', 'CREATING', 'ACTIVE', 'INACTIVE'];
 
     public function __construct(
         private AdministrativeUnitRepository $repository,
@@ -39,7 +39,7 @@ final class AdministrativeUnitService
     {
         $unit = $this->repository->find($id);
         if (!$unit) {
-            throw new RuntimeException('Khong tim thay don vi');
+            throw new RuntimeException('Không tìm thấy đơn vị');
         }
         return $unit;
     }
@@ -50,7 +50,7 @@ final class AdministrativeUnitService
         $data = $this->validate($input);
         $this->assertUnique($data);
         $unit = $this->repository->create($data);
-        $this->audit->write($actor, 'unit.created', (int) ($unit['id'] ?? 0), 'Tao don vi hanh chinh', ['code' => $unit['code'] ?? null]);
+        $this->audit->write($actor, 'unit.created', (int) ($unit['id'] ?? 0), 'Tạo đơn vị hành chính', ['code' => $unit['code'] ?? null]);
         return $unit;
     }
 
@@ -61,7 +61,7 @@ final class AdministrativeUnitService
         $data = $this->validate($input, false);
         $this->assertUnique($data, $id);
         $unit = $this->repository->update($id, $data);
-        $this->audit->write($actor, 'unit.updated', $id, 'Cap nhat don vi hanh chinh', ['fields' => array_keys($data)]);
+        $this->audit->write($actor, 'unit.updated', $id, 'Cập nhật đơn vị hành chính', ['fields' => array_keys($data)]);
         return $unit;
     }
 
@@ -69,11 +69,11 @@ final class AdministrativeUnitService
     {
         $actor = $this->authorization->authorize('control_center.units.lock');
         $unit = $this->find($id);
-        if (($unit['status'] ?? '') !== 'ACTIVE') {
-            throw new InvalidArgumentException('Don vi khong o trang thai co the khoa');
+        if (!in_array((string) ($unit['status'] ?? ''), ['READY', 'ACTIVE'], true)) {
+            throw new InvalidArgumentException('Đơn vị không ở trạng thái có thể khóa');
         }
-        $updated = $this->repository->setStatus($id, 'INACTIVE');
-        $this->audit->write($actor, 'unit.locked', $id, 'Khoa don vi hanh chinh', ['code' => $unit['code'] ?? null]);
+        $updated = $this->repository->setStatus($id, 'DISABLED');
+        $this->audit->write($actor, 'unit.locked', $id, 'Khóa đơn vị hành chính', ['code' => $unit['code'] ?? null]);
         return $updated;
     }
 
@@ -81,11 +81,11 @@ final class AdministrativeUnitService
     {
         $actor = $this->authorization->authorize('control_center.units.activate');
         $unit = $this->find($id);
-        if (($unit['status'] ?? '') === 'ACTIVE') {
-            throw new InvalidArgumentException('Don vi da duoc kich hoat');
+        if (in_array((string) ($unit['status'] ?? ''), ['READY', 'ACTIVE'], true)) {
+            throw new InvalidArgumentException('Đơn vị đã được kích hoạt');
         }
         $updated = $this->repository->setStatus($id, 'ACTIVE');
-        $this->audit->write($actor, 'unit.activated', $id, 'Kich hoat don vi hanh chinh', ['code' => $unit['code'] ?? null]);
+        $this->audit->write($actor, 'unit.activated', $id, 'Kích hoạt đơn vị hành chính', ['code' => $unit['code'] ?? null]);
         return $updated;
     }
 
@@ -93,27 +93,27 @@ final class AdministrativeUnitService
     {
         $actor = $this->authorization->authorize('control_center.units.update');
         $unit = $this->find($id);
-        if (($unit['status'] ?? '') !== 'ACTIVE') {
-            $updated = $this->repository->updateDatabaseHealth($id, 'LOCKED', 'Tenant is inactive');
-            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiem tra ket noi don vi dang khoa', ['status' => 'LOCKED']);
+        if (!in_array((string) ($unit['status'] ?? ''), ['READY', 'ACTIVE'], true)) {
+            $updated = $this->repository->updateDatabaseHealth($id, 'LOCKED', 'Đơn vị đang bị khóa');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiểm tra kết nối đơn vị đang khóa', ['status' => 'LOCKED']);
             return $updated;
         }
 
         $database = trim((string) ($unit['databaseName'] ?? ''));
         if ($database === '') {
-            $updated = $this->repository->updateDatabaseHealth($id, 'UNKNOWN', 'Database name is missing');
-            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiem tra ket noi don vi thieu database', ['status' => 'UNKNOWN']);
+            $updated = $this->repository->updateDatabaseHealth($id, 'UNKNOWN', 'Thiếu tên cơ sở dữ liệu');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiểm tra kết nối đơn vị thiếu cơ sở dữ liệu', ['status' => 'UNKNOWN']);
             return $updated;
         }
 
         try {
             $this->connectTenantDatabase($unit);
             $updated = $this->repository->updateDatabaseHealth($id, 'CONNECTED');
-            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiem tra ket noi don vi thanh cong', ['status' => 'CONNECTED']);
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiểm tra kết nối đơn vị thành công', ['status' => 'CONNECTED']);
             return $updated;
         } catch (PDOException $e) {
-            $updated = $this->repository->updateDatabaseHealth($id, 'DISCONNECTED', 'Database connection failed');
-            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiem tra ket noi don vi that bai', ['status' => 'DISCONNECTED'], 'WARN');
+            $updated = $this->repository->updateDatabaseHealth($id, 'DISCONNECTED', 'Không kết nối được cơ sở dữ liệu');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiểm tra kết nối đơn vị thất bại', ['status' => 'DISCONNECTED'], 'WARN');
             return $updated;
         }
     }
@@ -122,22 +122,22 @@ final class AdministrativeUnitService
     {
         $actor = $this->authorization->authorize('control_center.units.update');
         $unit = $this->find($id);
-        if (($unit['status'] ?? '') !== 'ACTIVE') {
-            $updated = $this->repository->updateWebsiteHealth($id, 'LOCKED', 'UNKNOWN', 'Tenant is inactive');
-            $this->audit->write($actor, 'unit.website_checked', $id, 'Kiem tra website don vi dang khoa', ['status' => 'LOCKED']);
+        if (!in_array((string) ($unit['status'] ?? ''), ['READY', 'ACTIVE'], true)) {
+            $updated = $this->repository->updateWebsiteHealth($id, 'LOCKED', 'UNKNOWN', 'Đơn vị đang bị khóa');
+            $this->audit->write($actor, 'unit.website_checked', $id, 'Kiểm tra trang web đơn vị đang khóa', ['status' => 'LOCKED']);
             return $updated;
         }
 
         $domain = trim((string) ($unit['domain'] ?? ''));
         if ($domain === '') {
-            $updated = $this->repository->updateWebsiteHealth($id, 'UNKNOWN', 'UNKNOWN', 'Domain is missing');
-            $this->audit->write($actor, 'unit.website_checked', $id, 'Kiem tra website don vi thieu domain', ['status' => 'UNKNOWN']);
+            $updated = $this->repository->updateWebsiteHealth($id, 'UNKNOWN', 'UNKNOWN', 'Thiếu tên miền');
+            $this->audit->write($actor, 'unit.website_checked', $id, 'Kiểm tra trang web đơn vị thiếu tên miền', ['status' => 'UNKNOWN']);
             return $updated;
         }
 
         $result = $this->probeWebsite($domain);
         $updated = $this->repository->updateWebsiteHealth($id, $result['websiteStatus'], $result['sslStatus'], $result['error']);
-        $this->audit->write($actor, 'unit.website_checked', $id, 'Kiem tra website don vi', [
+        $this->audit->write($actor, 'unit.website_checked', $id, 'Kiểm tra trang web đơn vị', [
             'website_status' => $result['websiteStatus'],
             'ssl_status' => $result['sslStatus'],
             'http_code' => $result['httpCode'],
@@ -151,10 +151,10 @@ final class AdministrativeUnitService
         $unit = $this->find($id);
         $domain = trim((string) ($unit['domain'] ?? ''));
         if ($domain === '') {
-            throw new InvalidArgumentException('Don vi chua co domain');
+            throw new InvalidArgumentException('Đơn vị chưa có tên miền');
         }
         $url = 'https://' . $domain;
-        $this->audit->write($actor, 'unit.portal_opened', $id, 'Mo Tenant Portal tu Community Control Center', ['domain' => $domain]);
+        $this->audit->write($actor, 'unit.portal_opened', $id, 'Mở cổng đơn vị từ Community Control Center', ['domain' => $domain]);
         return ['url' => $url];
     }
 
@@ -165,7 +165,7 @@ final class AdministrativeUnitService
         if ($creating || array_key_exists('code', $input)) {
             $code = strtolower(trim((string) ($input['code'] ?? '')));
             if ($code === '' || !preg_match('/^[a-z0-9_-]{2,50}$/', $code)) {
-                throw new InvalidArgumentException('Ma don vi khong hop le');
+                throw new InvalidArgumentException('Mã đơn vị không hợp lệ');
             }
             $data['code'] = $code;
         }
@@ -173,7 +173,7 @@ final class AdministrativeUnitService
         if ($creating || array_key_exists('name', $input)) {
             $name = trim((string) ($input['name'] ?? ''));
             if ($name === '' || mb_strlen($name, 'UTF-8') > 190) {
-                throw new InvalidArgumentException('Ten don vi khong hop le');
+                throw new InvalidArgumentException('Tên đơn vị không hợp lệ');
             }
             $data['name'] = $name;
         }
@@ -181,7 +181,7 @@ final class AdministrativeUnitService
         if (array_key_exists('type', $input)) {
             $type = strtoupper(trim((string) $input['type']));
             if ($type !== 'VILLAGE') {
-                throw new InvalidArgumentException('Loai don vi chua duoc ho tro trong feature nay');
+                throw new InvalidArgumentException('Loại đơn vị chưa được hỗ trợ trong tính năng này');
             }
         }
 
@@ -228,7 +228,7 @@ final class AdministrativeUnitService
         if (array_key_exists('connection_status', $input)) {
             $connectionStatus = strtoupper(trim((string) $input['connection_status']));
             if (!in_array($connectionStatus, ['CONNECTED', 'DISCONNECTED', 'UNKNOWN', 'LOCKED'], true)) {
-                throw new InvalidArgumentException('Trang thai ket noi khong hop le');
+                throw new InvalidArgumentException('Trạng thái kết nối không hợp lệ');
             }
             $data['connection_status'] = $connectionStatus;
         } elseif ($creating) {
@@ -242,11 +242,11 @@ final class AdministrativeUnitService
         if (array_key_exists('status', $input)) {
             $status = strtoupper(trim((string) $input['status']));
             if (!in_array($status, self::STATUSES, true)) {
-                throw new InvalidArgumentException('Trang thai don vi khong hop le');
+                throw new InvalidArgumentException('Trạng thái đơn vị không hợp lệ');
             }
             $data['status'] = $status;
         } elseif ($creating) {
-            $data['status'] = 'ACTIVE';
+            $data['status'] = 'READY';
         }
 
         return $data;
@@ -255,13 +255,13 @@ final class AdministrativeUnitService
     private function assertUnique(array $data, ?int $ignoreId = null): void
     {
         if (isset($data['code']) && $this->repository->existsByCode($data['code'], $ignoreId)) {
-            throw new InvalidArgumentException('Ma don vi da ton tai');
+            throw new InvalidArgumentException('Mã đơn vị đã tồn tại');
         }
         if (isset($data['domain']) && $data['domain'] !== '' && $this->repository->existsByDomain($data['domain'], $ignoreId)) {
-            throw new InvalidArgumentException('Domain da ton tai');
+            throw new InvalidArgumentException('Tên miền đã tồn tại');
         }
         if (isset($data['subdomain']) && $data['subdomain'] !== '' && $this->repository->existsBySubdomain($data['subdomain'], $ignoreId)) {
-            throw new InvalidArgumentException('Subdomain da ton tai');
+            throw new InvalidArgumentException('Tên miền phụ đã tồn tại');
         }
     }
 
@@ -272,7 +272,7 @@ final class AdministrativeUnitService
             return null;
         }
         if (mb_strlen($text, 'UTF-8') > $max) {
-            throw new InvalidArgumentException($field . ' khong hop le');
+            throw new InvalidArgumentException($field . ' không hợp lệ');
         }
         return $text;
     }
@@ -284,10 +284,10 @@ final class AdministrativeUnitService
             return null;
         }
         if (str_contains($host, '://') || str_contains($host, '/') || str_contains($host, '?')) {
-            throw new InvalidArgumentException($field . ' khong hop le');
+            throw new InvalidArgumentException($field . ' không hợp lệ');
         }
         if (!preg_match('/^(?=.{1,190}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])$/', $host)) {
-            throw new InvalidArgumentException($field . ' khong hop le');
+            throw new InvalidArgumentException($field . ' không hợp lệ');
         }
         return $host;
     }
@@ -299,12 +299,12 @@ final class AdministrativeUnitService
             return null;
         }
         if (str_contains($logo, '..') || preg_match('/[\x00-\x1F]/', $logo) || mb_strlen($logo, 'UTF-8') > 500) {
-            throw new InvalidArgumentException('Logo khong hop le');
+            throw new InvalidArgumentException('Logo không hợp lệ');
         }
         if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://') || str_starts_with($logo, '/')) {
             return $logo;
         }
-        throw new InvalidArgumentException('Logo khong hop le');
+        throw new InvalidArgumentException('Logo không hợp lệ');
     }
 
     private function nullableDatabaseName(mixed $value): ?string
@@ -314,7 +314,7 @@ final class AdministrativeUnitService
             return null;
         }
         if (!preg_match('/^[a-zA-Z0-9_]{1,190}$/', $name)) {
-            throw new InvalidArgumentException('Ten database khong hop le');
+            throw new InvalidArgumentException('Tên cơ sở dữ liệu không hợp lệ');
         }
         return $name;
     }
@@ -326,7 +326,7 @@ final class AdministrativeUnitService
             return null;
         }
         if (mb_strlen($host, 'UTF-8') > 190 || str_contains($host, '/') || str_contains($host, '?')) {
-            throw new InvalidArgumentException('Database host khong hop le');
+            throw new InvalidArgumentException('Máy chủ cơ sở dữ liệu không hợp lệ');
         }
         return $host;
     }
@@ -338,7 +338,7 @@ final class AdministrativeUnitService
             return null;
         }
         if (!preg_match('/^[a-z0-9_]{1,50}$/', $charset)) {
-            throw new InvalidArgumentException('Database charset khong hop le');
+            throw new InvalidArgumentException('Bảng mã cơ sở dữ liệu không hợp lệ');
         }
         return $charset;
     }
@@ -346,12 +346,13 @@ final class AdministrativeUnitService
     private function connectTenantDatabase(array $unit): void
     {
         $current = Database::diagnostics()['config'] ?? [];
-        $host = trim((string) ($unit['databaseHost'] ?? '')) ?: (string) ($current['host'] ?? 'localhost');
+        $tenantConfig = $this->tenantDatabaseConfig((string) ($unit['domain'] ?? ''));
+        $host = trim((string) ($unit['databaseHost'] ?? '')) ?: (string) ($tenantConfig['host'] ?? $current['host'] ?? 'localhost');
         $database = trim((string) ($unit['databaseName'] ?? ''));
-        $username = (string) env(['TENANT_REGISTRY_DB_USERNAME', 'DB_USERNAME', 'DB_USER']);
-        $password = (string) env(['TENANT_REGISTRY_DB_PASSWORD', 'DB_PASSWORD', 'DB_PASS'], '');
-        $charset = trim((string) ($unit['databaseCharset'] ?? '')) ?: (string) env(['TENANT_REGISTRY_DB_CHARSET', 'DB_CHARSET'], 'utf8mb4');
-        $port = (int) env(['TENANT_REGISTRY_DB_PORT', 'DB_PORT'], '3306');
+        $username = (string) ($tenantConfig['username'] ?? env(['TENANT_REGISTRY_DB_USERNAME', 'DB_USERNAME', 'DB_USER']));
+        $password = (string) ($tenantConfig['password'] ?? env(['TENANT_REGISTRY_DB_PASSWORD', 'DB_PASSWORD', 'DB_PASS'], ''));
+        $charset = trim((string) ($unit['databaseCharset'] ?? '')) ?: (string) ($tenantConfig['charset'] ?? env(['TENANT_REGISTRY_DB_CHARSET', 'DB_CHARSET'], 'utf8mb4'));
+        $port = (int) ($tenantConfig['port'] ?? env(['TENANT_REGISTRY_DB_PORT', 'DB_PORT'], '3306'));
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=%s', $host, $port, $database, $charset);
         $pdo = new PDO($dsn, $username, $password, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -360,6 +361,47 @@ final class AdministrativeUnitService
             PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci',
         ]);
         $pdo->query('SELECT 1');
+    }
+
+    private function tenantDatabaseConfig(string $domain): array
+    {
+        $domain = strtolower(trim($domain));
+        $domain = preg_replace('/:\d+$/', '', $domain) ?? $domain;
+        $domain = preg_replace('/[^a-z0-9.-]/', '', $domain) ?? '';
+        if ($domain === '') {
+            return [];
+        }
+
+        $path = BASE_PATH . '/.env.' . $domain;
+        if (!is_file($path) || !is_readable($path)) {
+            return [];
+        }
+
+        $values = [];
+        foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+                continue;
+            }
+            [$key, $value] = array_map('trim', explode('=', $line, 2));
+            $key = preg_replace('/^\xEF\xBB\xBF/', '', $key) ?? $key;
+            $values[$key] = trim($value, " \t\n\r\0\x0B\"'");
+        }
+
+        $database = $values['DB_DATABASE'] ?? $values['DB_NAME'] ?? '';
+        $username = $values['DB_USERNAME'] ?? $values['DB_USER'] ?? '';
+        if ($database === '' || $username === '') {
+            return [];
+        }
+
+        return [
+            'host' => $values['DB_HOST'] ?? 'localhost',
+            'port' => (int) ($values['DB_PORT'] ?? 3306),
+            'database' => $database,
+            'username' => $username,
+            'password' => $values['DB_PASSWORD'] ?? $values['DB_PASS'] ?? '',
+            'charset' => $values['DB_CHARSET'] ?? 'utf8mb4',
+        ];
     }
 
     private function probeWebsite(string $domain): array
@@ -409,7 +451,7 @@ final class AdministrativeUnitService
                 return $result;
             }
         }
-        $result['error'] = 'Website check failed';
+        $result['error'] = 'Kiểm tra trang web thất bại';
         return $result;
     }
 }

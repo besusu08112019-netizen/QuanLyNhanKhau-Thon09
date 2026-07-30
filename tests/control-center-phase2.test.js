@@ -69,23 +69,23 @@ assert.ok(monitoring.data.healthCheck);
 
 const controlCenterHtml = runIndex('hongphongnb.com', '/');
 assert.match(controlCenterHtml, /Community Control Center/);
-assert.match(controlCenterHtml, /Tong quan/);
-assert.match(controlCenterHtml, /Don vi/);
-assert.match(controlCenterHtml, /Nguoi dung/);
-assert.match(controlCenterHtml, /Phan quyen/);
-assert.match(controlCenterHtml, /Monitoring/);
+assert.match(controlCenterHtml, /Tổng quan/);
+assert.match(controlCenterHtml, /Đơn vị/);
+assert.match(controlCenterHtml, /Người dùng/);
+assert.match(controlCenterHtml, /Phân quyền/);
+assert.match(controlCenterHtml, /Giám sát/);
 assert.doesNotMatch(controlCenterHtml, /id="loginView"/);
 
 const blockedTenantApi = jsonResponse(runIndex('hongphongnb.com', '/api/citizens'));
 assert.strictEqual(blockedTenantApi.ok, false);
-assert.match(blockedTenantApi.message, /tenant khong kha dung/);
+assert.match(blockedTenantApi.message, /đơn vị không khả dụng/i);
 
 const tenantHtml = runIndex('tenant-a.hongphongnb.com', '/');
 assert.match(tenantHtml, /id="loginView"/);
 assert.doesNotMatch(tenantHtml, /Community Control Center Platform/);
 
 const rollbackHtml = runIndex('hongphongnb.com', '/', { PLATFORM_ADMIN_ENABLED: 'false' });
-assert.match(rollbackHtml, /id="loginView"/);
-assert.doesNotMatch(rollbackHtml, /Community Control Center Platform/);
+assert.match(rollbackHtml, /Chế độ bảo trì/);
+assert.doesNotMatch(rollbackHtml, /Production rollback active/);
 
 console.log('Control Center Phase 2 smoke tests passed.');

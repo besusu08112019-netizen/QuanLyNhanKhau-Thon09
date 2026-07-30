@@ -366,7 +366,13 @@
     .cc-modal-footer {
       border-top: 1px solid var(--cc-line);
       border-bottom: 0;
+      flex-wrap: wrap;
       justify-content: flex-end;
+    }
+
+    .cc-modal-footer .cc-btn {
+      white-space: normal;
+      text-align: center;
     }
 
     .cc-modal-title {
@@ -405,6 +411,123 @@
     }
 
     .cc-form-error.active {
+      display: block;
+    }
+
+    .preflight-panel {
+      display: none;
+      margin: 0 16px 14px;
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .preflight-panel.active {
+      display: block;
+    }
+
+    .preflight-status {
+      padding: 10px 12px;
+      font-weight: 800;
+      border-bottom: 1px solid var(--cc-line);
+    }
+
+    .preflight-status.ready {
+      color: #067647;
+      background: #ecfdf3;
+    }
+
+    .preflight-status.failed {
+      color: var(--cc-danger);
+      background: #fff1f3;
+    }
+
+    .preflight-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .preflight-item {
+      display: grid;
+      grid-template-columns: 24px minmax(150px, 1fr) minmax(180px, 1.4fr);
+      gap: 8px;
+      padding: 9px 12px;
+      border-top: 1px solid var(--cc-line);
+      font-size: 13px;
+    }
+
+    .preflight-item:first-child {
+      border-top: 0;
+    }
+
+    .preflight-icon.pass {
+      color: #067647;
+    }
+
+    .preflight-icon.fail {
+      color: var(--cc-danger);
+    }
+
+    .preflight-fix {
+      color: var(--cc-muted);
+    }
+
+    .tenant-wizard {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      padding: 14px 16px 0;
+    }
+
+    .tenant-wizard-step {
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      padding: 8px;
+      color: var(--cc-muted);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
+      min-width: 0;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .tenant-wizard-step.active {
+      border-color: var(--cc-primary);
+      color: var(--cc-primary);
+      background: #ecfdf3;
+    }
+
+    .tenant-wizard-step.done {
+      color: #067647;
+      background: #f6fef9;
+    }
+
+    .wizard-page {
+      display: none;
+    }
+
+    .wizard-page.active {
+      display: contents;
+    }
+
+    .preflight-panel.wizard-page.active,
+    .tenant-result.wizard-page.active {
+      display: block;
+    }
+
+    .tenant-result {
+      display: none;
+      margin: 0 16px 14px;
+      padding: 12px;
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      background: #f8fafc;
+      color: var(--cc-text);
+      font-weight: 700;
+    }
+
+    .tenant-result.active {
       display: block;
     }
 
@@ -609,19 +732,19 @@
         <div class="cc-brand-mark">CC</div>
         <div>
           <h1>Community Control Center</h1>
-          <p>Dang nhap de dieu hanh Hong Phong Community Platform.</p>
+          <p>Đăng nhập để điều hành Hong Phong Community Platform.</p>
         </div>
       </div>
       <div class="cc-field">
-        <label for="loginUsername">Tai khoan hoac email</label>
+        <label for="loginUsername">Tài khoản hoặc email</label>
         <input class="cc-input" id="loginUsername" name="username" autocomplete="username" required>
       </div>
       <div class="cc-field">
-        <label for="loginPassword">Mat khau</label>
+        <label for="loginPassword">Mật khẩu</label>
         <input class="cc-input" id="loginPassword" name="password" type="password" autocomplete="current-password" required>
       </div>
       <div class="cc-form-error active" id="loginError"></div>
-      <button class="cc-btn primary" type="submit" id="loginButton"><i class="fa-solid fa-right-to-bracket"></i>Dang nhap</button>
+      <button class="cc-btn primary" type="submit" id="loginButton"><i class="fa-solid fa-right-to-bracket"></i>Đăng nhập</button>
     </form>
   </div>
   <div class="control-center">
@@ -634,30 +757,30 @@
         </div>
       </div>
       <nav class="cc-nav" aria-label="Control Center">
-        <button class="active" type="button" data-section="dashboard"><i class="fa-solid fa-chart-line"></i>Tong quan</button>
-        <button type="button" data-section="units"><i class="fa-solid fa-sitemap"></i>Don vi</button>
-        <button type="button" data-section="accounts"><i class="fa-solid fa-users-gear"></i>Nguoi dung</button>
-        <button type="button" data-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phan quyen</button>
-        <button type="button" data-section="dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</button>
-        <button type="button" data-section="monitoring"><i class="fa-solid fa-heart-pulse"></i>Monitoring</button>
-        <button type="button" data-section="audit"><i class="fa-solid fa-clock-rotate-left"></i>Audit</button>
-        <button type="button" data-section="configuration"><i class="fa-solid fa-gear"></i>Cau hinh</button>
-        <button type="button" data-section="notifications"><i class="fa-solid fa-bell"></i>Thong bao</button>
-        <button type="button" data-section="ai"><i class="fa-solid fa-wand-magic-sparkles"></i>AI</button>
+        <button class="active" type="button" data-section="dashboard"><i class="fa-solid fa-chart-line"></i>Tổng quan</button>
+        <button type="button" data-section="units"><i class="fa-solid fa-sitemap"></i>Đơn vị</button>
+        <button type="button" data-section="accounts"><i class="fa-solid fa-users-gear"></i>Người dùng</button>
+        <button type="button" data-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phân quyền</button>
+        <button type="button" data-section="executive"><i class="fa-solid fa-gauge-high"></i>Bảng điều hành</button>
+        <button type="button" data-section="monitoring"><i class="fa-solid fa-heart-pulse"></i>Giám sát</button>
+        <button type="button" data-section="audit"><i class="fa-solid fa-clock-rotate-left"></i>Nhật ký</button>
+        <button type="button" data-section="configuration"><i class="fa-solid fa-gear"></i>Cấu hình</button>
+        <button type="button" data-section="notifications"><i class="fa-solid fa-bell"></i>Thông báo</button>
+        <button type="button" data-section="ai"><i class="fa-solid fa-wand-magic-sparkles"></i>Trợ lý thông minh</button>
       </nav>
     </aside>
 
     <main class="cc-main">
       <header class="cc-header">
         <div>
-          <h1 class="cc-title" id="sectionTitle">Tong quan</h1>
+          <h1 class="cc-title" id="sectionTitle">Tổng quan</h1>
           <div class="cc-meta" id="portalMeta">HONG PHONG COMMUNITY PLATFORM - Community Control Center</div>
         </div>
         <div class="cc-header-actions">
-          <input class="cc-input cc-global-search" type="search" id="globalSearch" placeholder="Tim nhanh: dashboard, don vi, tai khoan, phan quyen">
-          <span class="cc-meta" id="currentUserLabel">Chua dang nhap</span>
-          <span class="cc-badge" id="healthBadge">Dang kiem tra</span>
-          <button class="cc-btn" type="button" id="logoutButton"><i class="fa-solid fa-right-from-bracket"></i>Dang xuat</button>
+          <input class="cc-input cc-global-search" type="search" id="globalSearch" placeholder="Tìm nhanh: bảng điều hành, đơn vị, tài khoản, phân quyền">
+          <span class="cc-meta" id="currentUserLabel">Chưa đăng nhập</span>
+          <span class="cc-badge" id="healthBadge">Đang kiểm tra</span>
+          <button class="cc-btn" type="button" id="logoutButton"><i class="fa-solid fa-right-from-bracket"></i>Đăng xuất</button>
         </div>
       </header>
 
@@ -666,64 +789,90 @@
           <div class="cc-panel">
             <div class="cc-panel-header">
               <div>
-                <h2 class="cc-panel-title">Cong viec can xu ly hom nay</h2>
-                <div class="cc-meta">Uu tien cac su co can nguoi quan tri xu ly ngay.</div>
+                <h2 class="cc-panel-title">Công việc cần xử lý hôm nay</h2>
+                <div class="cc-meta">Ưu tiên các sự cố cần người quản trị xử lý ngay.</div>
               </div>
-              <button class="cc-btn" type="button" id="refreshOperationsButton"><i class="fa-solid fa-rotate"></i>Kiem tra lai</button>
+              <button class="cc-btn" type="button" id="refreshOperationsButton"><i class="fa-solid fa-rotate"></i>Kiểm tra lại</button>
             </div>
             <div class="operation-list" id="operationsList"></div>
           </div>
           <div class="metric-grid" id="metricGrid"></div>
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">Hoat dong gan day</h2>
-              <button class="cc-btn" type="button" data-go-section="audit"><i class="fa-solid fa-clock-rotate-left"></i>Xem Audit</button>
+              <h2 class="cc-panel-title">Hoạt động gần đây</h2>
+              <button class="cc-btn" type="button" data-go-section="audit"><i class="fa-solid fa-clock-rotate-left"></i>Xem nhật ký</button>
             </div>
             <div class="operation-list" id="recentActivityList"></div>
           </div>
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">Thao tac nhanh</h2>
-              <span class="cc-meta">Mo nhanh cac nang luc dieu hanh dang san sang</span>
+              <h2 class="cc-panel-title">Thao tác nhanh</h2>
+              <span class="cc-meta">Mở nhanh các năng lực điều hành đang sẵn sàng</span>
             </div>
             <div class="cc-state quick-actions">
-              <button class="cc-btn" type="button" data-go-section="units"><i class="fa-solid fa-sitemap"></i>Quan ly don vi</button>
-              <button class="cc-btn" type="button" data-go-section="accounts"><i class="fa-solid fa-users-gear"></i>Quan ly tai khoan</button>
-              <button class="cc-btn" type="button" data-go-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phan quyen</button>
+              <button class="cc-btn" type="button" data-go-section="units"><i class="fa-solid fa-sitemap"></i>Quản lý đơn vị</button>
+              <button class="cc-btn" type="button" data-go-section="accounts"><i class="fa-solid fa-users-gear"></i>Quản lý tài khoản</button>
+              <button class="cc-btn" type="button" data-go-section="permissions"><i class="fa-solid fa-shield-halved"></i>Phân quyền</button>
             </div>
+          </div>
+        </section>
+
+        <section class="cc-section" id="executiveSection">
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <div>
+                <h2 class="cc-panel-title">Bảng điều hành</h2>
+                <div class="cc-meta">Tổng hợp tình trạng vận hành toàn bộ Community Control Center.</div>
+              </div>
+              <button class="cc-btn" type="button" id="refreshExecutiveButton"><i class="fa-solid fa-rotate"></i>Kiểm tra lại</button>
+            </div>
+            <div class="metric-grid" id="executiveMetricGrid"></div>
+          </div>
+          <div class="cc-panel">
+            <div class="cc-panel-header">
+              <h2 class="cc-panel-title">Tình trạng vận hành</h2>
+            </div>
+            <div class="monitor-grid" id="executiveHealthGrid"></div>
           </div>
         </section>
 
         <section class="cc-section" id="unitsSection">
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">Quan ly don vi hanh chinh</h2>
-              <button class="cc-btn primary" type="button" id="addUnitButton"><i class="fa-solid fa-plus"></i>Them don vi</button>
+              <h2 class="cc-panel-title">Quản lý đơn vị hành chính</h2>
+              <button class="cc-btn primary" type="button" id="addUnitButton"><i class="fa-solid fa-plus"></i>Thêm đơn vị</button>
             </div>
             <div class="cc-toolbar">
-              <input class="cc-input" type="search" id="unitSearch" placeholder="Tim theo ma, ten, domain">
-              <select class="cc-select" id="unitStatusFilter" aria-label="Loc trang thai">
-                <option value="">Tat ca trang thai</option>
-                <option value="ACTIVE">Dang hoat dong</option>
-                <option value="INACTIVE">Da khoa</option>
+              <input class="cc-input" type="search" id="unitSearch" placeholder="Tìm theo mã, tên, tên miền">
+              <select class="cc-select" id="unitStatusFilter" aria-label="Lọc trạng thái">
+                <option value="">Tất cả trạng thái</option>
+                <option value="READY">Sẵn sàng</option>
+                <option value="CREATING">Đang tạo</option>
+                <option value="FAILED">Lỗi</option>
+                <option value="DISABLED">Đã khóa</option>
+                <option value="MAINTENANCE">Bảo trì</option>
               </select>
-              <button class="cc-btn" type="button" id="refreshUnitsButton"><i class="fa-solid fa-rotate"></i>Tai lai</button>
+              <button class="cc-btn" type="button" id="refreshUnitsButton"><i class="fa-solid fa-rotate"></i>Tải lại</button>
             </div>
             <div class="cc-alert" id="unitsAlert"></div>
+            <div class="cc-row-actions" id="tenantInstallerActions" style="display:none;margin-bottom:12px">
+              <button class="cc-btn" type="button" id="retryTenantInstallButton"><i class="fa-solid fa-rotate-right"></i>Thử lại</button>
+              <button class="cc-btn danger" type="button" id="rollbackTenantInstallButton"><i class="fa-solid fa-clock-rotate-left"></i>Hoàn tác</button>
+            </div>
             <div class="cc-table-wrap">
               <table class="cc-table">
                 <thead>
                   <tr>
-                    <th>Ma</th>
-                    <th>Ten don vi</th>
-                    <th>Domain</th>
-                    <th>Database</th>
-                    <th>Trang thai</th>
-                    <th>Nguoi quan ly</th>
-                    <th>Website</th>
-                    <th>Database</th>
-                    <th>Phien ban</th>
-                    <th>Thao tac</th>
+                    <th>Mã</th>
+                    <th>Tên đơn vị</th>
+                    <th>Tên miền</th>
+                    <th>Cơ sở dữ liệu</th>
+                    <th>Trạng thái</th>
+                    <th>Người quản lý</th>
+                    <th>Trang web</th>
+                    <th>Cơ sở dữ liệu</th>
+                    <th>Phiên bản</th>
+                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody id="unitsBody"></tbody>
@@ -735,40 +884,40 @@
         <section class="cc-section" id="accountsSection">
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">Quan ly tai khoan he thong</h2>
-              <button class="cc-btn primary" type="button" id="addAccountButton"><i class="fa-solid fa-user-plus"></i>Them tai khoan</button>
+              <h2 class="cc-panel-title">Quản lý tài khoản hệ thống</h2>
+              <button class="cc-btn primary" type="button" id="addAccountButton"><i class="fa-solid fa-user-plus"></i>Thêm tài khoản</button>
             </div>
             <div class="cc-toolbar">
-              <input class="cc-input" type="search" id="accountSearch" placeholder="Tim username, ho ten, email, vai tro, don vi">
-              <select class="cc-select" id="accountRoleFilter" aria-label="Loc vai tro">
-                <option value="">Tat ca vai tro</option>
-                <option value="SYSTEM_ADMIN">Quan tri he thong</option>
-                <option value="VILLAGE_ADMIN">Quan tri thon</option>
-                <option value="STAFF">Can bo nhap lieu</option>
-                <option value="VIEWER">Chi xem</option>
+              <input class="cc-input" type="search" id="accountSearch" placeholder="Tìm tên đăng nhập, họ tên, email, vai trò, đơn vị">
+              <select class="cc-select" id="accountRoleFilter" aria-label="Lọc vai trò">
+                <option value="">Tất cả vai trò</option>
+                <option value="SYSTEM_ADMIN">Quản trị hệ thống</option>
+                <option value="VILLAGE_ADMIN">Quản trị thôn</option>
+                <option value="STAFF">Cán bộ nhập liệu</option>
+                <option value="VIEWER">Chỉ xem</option>
               </select>
-              <select class="cc-select" id="accountStatusFilter" aria-label="Loc trang thai">
-                <option value="">Tat ca trang thai</option>
-                <option value="ACTIVE">Dang su dung</option>
-                <option value="INACTIVE">Ngung su dung</option>
+              <select class="cc-select" id="accountStatusFilter" aria-label="Lọc trạng thái">
+                <option value="">Tất cả trạng thái</option>
+                <option value="ACTIVE">Đang sử dụng</option>
+                <option value="INACTIVE">Ngừng sử dụng</option>
               </select>
-              <button class="cc-btn" type="button" id="refreshAccountsButton"><i class="fa-solid fa-rotate"></i>Tai lai</button>
+              <button class="cc-btn" type="button" id="refreshAccountsButton"><i class="fa-solid fa-rotate"></i>Tải lại</button>
             </div>
             <div class="cc-alert" id="accountsAlert"></div>
             <div class="cc-table-wrap">
               <table class="cc-table">
                 <thead>
                   <tr>
-                    <th>Ten</th>
-                    <th>Vai tro</th>
-                    <th>Don vi</th>
-                    <th>Trang thai</th>
-                    <th>Dang nhap cuoi</th>
-                    <th>IP cuoi</th>
-                    <th>Thiet bi cuoi</th>
-                    <th>Thoi gian tao</th>
-                    <th>Nguoi tao</th>
-                    <th>Thao tac</th>
+                    <th>Tên</th>
+                    <th>Vai trò</th>
+                    <th>Đơn vị</th>
+                    <th>Trạng thái</th>
+                    <th>Đăng nhập cuối</th>
+                    <th>Địa chỉ IP cuối</th>
+                    <th>Thiết bị cuối</th>
+                    <th>Thời gian tạo</th>
+                    <th>Người tạo</th>
+                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody id="accountsBody"></tbody>
@@ -781,17 +930,17 @@
           <div class="cc-panel">
             <div class="cc-panel-header">
               <div>
-                <h2 class="cc-panel-title">Phan quyen Community Control Center</h2>
-                <div class="cc-meta">Kiem soat menu, module, button, action va API trong Control Center.</div>
+                <h2 class="cc-panel-title">Phân quyền Community Control Center</h2>
+                <div class="cc-meta">Kiểm soát trình đơn, phân hệ, nút, thao tác và API trong Control Center.</div>
               </div>
-              <button class="cc-btn primary" type="button" id="savePermissionsButton" disabled><i class="fa-solid fa-floppy-disk"></i>Luu thay doi</button>
+              <button class="cc-btn primary" type="button" id="savePermissionsButton" disabled><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>
             </div>
             <div class="cc-toolbar">
-              <input class="cc-input" type="search" id="permissionSearch" placeholder="Tim permission, module, action">
-              <select class="cc-select" id="permissionRoleFilter" aria-label="Loc vai tro">
-                <option value="">Tat ca vai tro</option>
+              <input class="cc-input" type="search" id="permissionSearch" placeholder="Tìm quyền, phân hệ, thao tác">
+              <select class="cc-select" id="permissionRoleFilter" aria-label="Lọc vai trò">
+                <option value="">Tất cả vai trò</option>
               </select>
-              <button class="cc-btn" type="button" id="refreshPermissionsButton"><i class="fa-solid fa-rotate"></i>Tai lai</button>
+              <button class="cc-btn" type="button" id="refreshPermissionsButton"><i class="fa-solid fa-rotate"></i>Tải lại</button>
             </div>
             <div class="cc-alert" id="permissionsAlert"></div>
             <div class="permission-grid">
@@ -815,31 +964,31 @@
         <section class="cc-section" id="auditSection">
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">Audit</h2>
-              <button class="cc-btn" type="button" id="refreshAuditButton"><i class="fa-solid fa-rotate"></i>Tai lai</button>
+              <h2 class="cc-panel-title">Nhật ký kiểm toán</h2>
+              <button class="cc-btn" type="button" id="refreshAuditButton"><i class="fa-solid fa-rotate"></i>Tải lại</button>
             </div>
             <div class="cc-toolbar">
-              <select class="cc-select" id="auditTenantFilter" aria-label="Loc Tenant">
-                <option value="">Tat ca Tenant</option>
+              <select class="cc-select" id="auditTenantFilter" aria-label="Lọc đơn vị">
+                <option value="">Tất cả đơn vị</option>
               </select>
-              <select class="cc-select" id="auditLevelFilter" aria-label="Loc muc do">
-                <option value="">Tat ca muc do</option>
-                <option value="INFO">INFO</option>
-                <option value="WARN">WARN</option>
-                <option value="ERROR">ERROR</option>
+              <select class="cc-select" id="auditLevelFilter" aria-label="Lọc mức độ">
+                <option value="">Tất cả mức độ</option>
+                <option value="INFO">Thông tin</option>
+                <option value="WARN">Cảnh báo</option>
+                <option value="ERROR">Lỗi</option>
               </select>
-              <input class="cc-input" type="search" id="auditSearch" placeholder="Tim actor, hanh dong, tenant">
+              <input class="cc-input" type="search" id="auditSearch" placeholder="Tìm người thực hiện, hành động, đơn vị">
             </div>
             <div class="cc-table-wrap">
               <table class="cc-table">
                 <thead>
                   <tr>
-                    <th>Thoi gian</th>
-                    <th>Tenant</th>
-                    <th>Nguoi thuc hien</th>
-                    <th>Hanh dong</th>
-                    <th>Muc do</th>
-                    <th>Ket qua</th>
+                    <th>Thời gian</th>
+                    <th>Đơn vị</th>
+                    <th>Người thực hiện</th>
+                    <th>Hành động</th>
+                    <th>Mức độ</th>
+                    <th>Kết quả</th>
                   </tr>
                 </thead>
                 <tbody id="auditBody"></tbody>
@@ -851,36 +1000,36 @@
         <section class="cc-section" id="configurationSection">
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">Cau hinh</h2>
-              <span class="cc-badge warn">Dang phat trien</span>
+              <h2 class="cc-panel-title">Cấu hình</h2>
+              <span class="cc-badge warn">Đang phát triển</span>
             </div>
-            <div class="cc-state">Se quan ly cau hinh chung cua Community Control Center va nen tang.</div>
+            <div class="cc-state">Sẽ quản lý cấu hình chung của Community Control Center và nền tảng.</div>
           </div>
         </section>
 
         <section class="cc-section" id="notificationsSection">
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">Thong bao</h2>
-              <span class="cc-badge warn">Dang phat trien</span>
+              <h2 class="cc-panel-title">Thông báo</h2>
+              <span class="cc-badge warn">Đang phát triển</span>
             </div>
-            <div class="cc-state">Se dieu phoi thong tin, thong bao noi bo va canh bao van hanh.</div>
+            <div class="cc-state">Sẽ điều phối thông tin, thông báo nội bộ và cảnh báo vận hành.</div>
           </div>
         </section>
 
         <section class="cc-section" id="aiSection">
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">AI</h2>
-              <span class="cc-badge warn">Dang phat trien</span>
+              <h2 class="cc-panel-title">Trợ lý thông minh</h2>
+              <span class="cc-badge warn">Đang phát triển</span>
             </div>
-            <div class="cc-state">Se ho tro tim kiem, tong hop va goi y thao tac trong pham vi duoc cap quyen.</div>
+            <div class="cc-state">Sẽ hỗ trợ tìm kiếm, tổng hợp và gợi ý thao tác trong phạm vi được cấp quyền.</div>
           </div>
         </section>
       </div>
 
       <footer class="cc-footer">
-        Community Control Center Platform. Tenant Portal va Business Modules duoc giu tach biet.
+        Nền tảng Community Control Center. Cổng đơn vị và các phân hệ nghiệp vụ được giữ tách biệt.
       </footer>
     </main>
   </div>
@@ -888,80 +1037,116 @@
   <div class="cc-modal-backdrop" id="unitModal" role="dialog" aria-modal="true" aria-labelledby="unitModalTitle">
     <div class="cc-modal">
       <div class="cc-modal-header">
-        <h2 class="cc-modal-title" id="unitModalTitle">Them don vi</h2>
-        <button class="cc-btn" type="button" id="closeUnitModalButton" aria-label="Dong"><i class="fa-solid fa-xmark"></i></button>
+        <h2 class="cc-modal-title" id="unitModalTitle">Thêm đơn vị</h2>
+        <button class="cc-btn" type="button" id="closeUnitModalButton" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="unitForm" novalidate>
+        <div class="tenant-wizard" id="tenantWizard">
+          <div class="tenant-wizard-step active" data-wizard-indicator="1">1. Đơn vị</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="2">2. Cơ sở dữ liệu</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="3">3. Tiền kiểm</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="4">4. Tạo đơn vị</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="5">5. Kiểm tra</div>
+        </div>
         <div class="cc-form">
           <input type="hidden" id="unitId">
+          <div class="wizard-page active" data-wizard-page="1">
           <div class="cc-field">
-            <label for="unitCode">Ma don vi *</label>
+            <label for="unitCode">Mã đơn vị *</label>
             <input class="cc-input" id="unitCode" name="code" required maxlength="50" pattern="[a-z0-9_-]{2,50}" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitName">Ten don vi *</label>
+            <label for="unitName">Tên đơn vị *</label>
             <input class="cc-input" id="unitName" name="name" required maxlength="190" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitCommuneName">Xa/Phuong</label>
+            <label for="unitCommuneName">Xã/Phường</label>
             <input class="cc-input" id="unitCommuneName" name="commune_name" maxlength="190" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitStatus">Trang thai</label>
+            <label for="unitStatus">Trạng thái</label>
             <select class="cc-select" id="unitStatus" name="status">
-              <option value="ACTIVE">Dang hoat dong</option>
-              <option value="INACTIVE">Da khoa</option>
+              <option value="READY">Sẵn sàng</option>
+              <option value="CREATING">Đang tạo</option>
+              <option value="FAILED">Lỗi</option>
+              <option value="DISABLED">Đã khóa</option>
+              <option value="MAINTENANCE">Bảo trì</option>
             </select>
           </div>
           <div class="cc-field">
-            <label for="unitDomain">Domain</label>
-            <input class="cc-input" id="unitDomain" name="domain" maxlength="190" placeholder="tenant.example.domain" autocomplete="off">
+            <label for="unitDomain">Tên miền</label>
+            <input class="cc-input" id="unitDomain" name="domain" maxlength="190" placeholder="thon09.hongphongnb.com" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitSubdomain">Subdomain</label>
-            <input class="cc-input" id="unitSubdomain" name="subdomain" maxlength="190" placeholder="tenant.example.domain" autocomplete="off">
+            <label for="unitSubdomain">Tên miền phụ</label>
+            <input class="cc-input" id="unitSubdomain" name="subdomain" maxlength="190" placeholder="thon09.hongphongnb.com" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitDatabaseHost">Database Host</label>
-            <input class="cc-input" id="unitDatabaseHost" name="database_host" maxlength="190" placeholder="localhost" autocomplete="off">
-          </div>
-          <div class="cc-field">
-            <label for="unitDatabaseName">Database</label>
-            <input class="cc-input" id="unitDatabaseName" name="database_name" maxlength="190" placeholder="database_name" autocomplete="off">
-          </div>
-          <div class="cc-field">
-            <label for="unitDatabaseCharset">Database Charset</label>
-            <input class="cc-input" id="unitDatabaseCharset" name="database_charset" maxlength="50" placeholder="utf8mb4" autocomplete="off">
-          </div>
-          <div class="cc-field">
-            <label for="unitAppVersion">Phien ban ung dung</label>
+            <label for="unitAppVersion">Phiên bản ứng dụng</label>
             <input class="cc-input" id="unitAppVersion" name="app_version" maxlength="50" placeholder="v2.0" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitBuildVersion">Build Version</label>
+            <label for="unitBuildVersion">Phiên bản bản dựng</label>
             <input class="cc-input" id="unitBuildVersion" name="build_version" maxlength="100" placeholder="20260727-gis-multi-area-1" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitSchemaVersion">Schema Version</label>
+            <label for="unitSchemaVersion">Phiên bản lược đồ</label>
             <input class="cc-input" id="unitSchemaVersion" name="schema_version" maxlength="50" placeholder="20260729" autocomplete="off">
           </div>
           <div class="cc-field">
-            <label for="unitManagerName">Nguoi quan ly</label>
-            <input class="cc-input" id="unitManagerName" name="manager_name" maxlength="190" placeholder="Chua gan" autocomplete="off">
+            <label for="unitManagerName">Người quản lý</label>
+            <input class="cc-input" id="unitManagerName" name="manager_name" maxlength="190" placeholder="Chưa gán" autocomplete="off">
           </div>
           <div class="cc-field full">
-            <label for="unitLogo">Logo URL</label>
+            <label for="unitLogo">Đường dẫn logo</label>
             <input class="cc-input" id="unitLogo" name="logo" maxlength="500" placeholder="/assets/logo.png" autocomplete="off">
           </div>
           <div class="cc-field full">
-            <label for="unitNotes">Ghi chu</label>
-            <textarea class="cc-input" id="unitNotes" name="notes" maxlength="2000" rows="3" placeholder="Thong tin van hanh, lich backup, nguoi phu trach..."></textarea>
+            <label for="unitNotes">Ghi chú</label>
+            <textarea class="cc-input" id="unitNotes" name="notes" maxlength="2000" rows="3" placeholder="Thông tin vận hành, lịch sao lưu, người phụ trách..."></textarea>
+          </div>
+          </div>
+          <div class="wizard-page" data-wizard-page="2">
+          <div class="cc-field">
+            <label for="unitDatabaseHost">Máy chủ cơ sở dữ liệu</label>
+            <input class="cc-input" id="unitDatabaseHost" name="database_host" maxlength="190" placeholder="localhost" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitDatabaseName">Tên cơ sở dữ liệu</label>
+            <input class="cc-input" id="unitDatabaseName" name="database_name" maxlength="190" placeholder="database_name" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitDatabaseUsername">Người dùng cơ sở dữ liệu</label>
+            <input class="cc-input" id="unitDatabaseUsername" name="database_username" maxlength="190" placeholder="nguoi_dung_csdl" autocomplete="off">
+          </div>
+          <div class="cc-field">
+            <label for="unitDatabasePassword">Mật khẩu cơ sở dữ liệu</label>
+            <input class="cc-input" id="unitDatabasePassword" name="database_password" type="password" autocomplete="new-password">
+          </div>
+          <div class="cc-field">
+            <label for="unitDatabaseCharset">Bảng mã cơ sở dữ liệu</label>
+            <input class="cc-input" id="unitDatabaseCharset" name="database_charset" maxlength="50" placeholder="utf8mb4" autocomplete="off">
+          </div>
           </div>
         </div>
         <div class="cc-form-error" id="unitFormError"></div>
+        <div class="preflight-panel wizard-page" id="tenantDatabasePanel" data-wizard-page="2">
+          <div class="preflight-status failed" id="tenantDatabaseStatus">Chưa kiểm tra cơ sở dữ liệu</div>
+          <div class="preflight-list" id="tenantDatabaseList"></div>
+        </div>
+        <div class="preflight-panel wizard-page" id="tenantPreflightPanel" data-wizard-page="3">
+          <div class="preflight-status failed" id="tenantPreflightStatus">Chưa chạy tiền kiểm</div>
+          <div class="preflight-list" id="tenantPreflightList"></div>
+        </div>
+        <div class="tenant-result wizard-page" id="tenantCreatePanel" data-wizard-page="4">Sẵn sàng tạo đơn vị</div>
+        <div class="tenant-result wizard-page" id="tenantHealthPanel" data-wizard-page="5">Chưa chạy kiểm tra sức khỏe</div>
         <div class="cc-modal-footer">
-          <button class="cc-btn" type="button" id="cancelUnitButton">Huy</button>
-          <button class="cc-btn primary" type="submit" id="saveUnitButton"><i class="fa-solid fa-floppy-disk"></i>Luu</button>
+          <button class="cc-btn" type="button" id="cancelUnitButton">Hủy</button>
+          <button class="cc-btn" type="button" id="wizardBackButton">Quay lại</button>
+          <button class="cc-btn" type="button" id="wizardNextButton">Tiếp</button>
+          <button class="cc-btn" type="button" id="databaseCheckButton"><i class="fa-solid fa-plug-circle-check"></i>Kiểm tra kết nối cơ sở dữ liệu</button>
+          <button class="cc-btn" type="button" id="preflightUnitButton"><i class="fa-solid fa-shield-halved"></i>Tiền kiểm</button>
+          <button class="cc-btn primary" type="submit" id="saveUnitButton" disabled><i class="fa-solid fa-floppy-disk"></i>Tạo đơn vị</button>
         </div>
       </form>
     </div>
@@ -970,14 +1155,14 @@
   <div class="cc-modal-backdrop" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle">
     <div class="cc-modal">
       <div class="cc-modal-header">
-        <h2 class="cc-modal-title" id="accountModalTitle">Them tai khoan</h2>
-        <button class="cc-btn" type="button" id="closeAccountModalButton" aria-label="Dong"><i class="fa-solid fa-xmark"></i></button>
+        <h2 class="cc-modal-title" id="accountModalTitle">Thêm tài khoản</h2>
+        <button class="cc-btn" type="button" id="closeAccountModalButton" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="accountForm" novalidate>
         <div class="cc-form">
           <input type="hidden" id="accountId">
           <div class="cc-field">
-            <label for="accountDisplayName">Ho ten *</label>
+            <label for="accountDisplayName">Họ tên *</label>
             <input class="cc-input" id="accountDisplayName" name="display_name" required maxlength="190" autocomplete="name">
           </div>
           <div class="cc-field">
@@ -985,47 +1170,47 @@
             <input class="cc-input" id="accountEmail" name="email" type="email" required maxlength="190" autocomplete="email">
           </div>
           <div class="cc-field">
-            <label for="accountUsername">Username *</label>
+            <label for="accountUsername">Tên đăng nhập *</label>
             <input class="cc-input" id="accountUsername" name="username" required maxlength="60" pattern="[a-z0-9._-]{3,60}" autocomplete="username">
           </div>
           <div class="cc-field">
-            <label for="accountRole">Vai tro *</label>
+            <label for="accountRole">Vai trò *</label>
             <select class="cc-select" id="accountRole" name="role" required>
-              <option value="VILLAGE_ADMIN">Quan tri thon</option>
-              <option value="STAFF">Can bo nhap lieu</option>
-              <option value="VIEWER">Chi xem</option>
-              <option value="SYSTEM_ADMIN">Quan tri he thong</option>
-              <option value="COMMUNE_ADMIN" disabled>Quan tri xa (sau)</option>
+              <option value="VILLAGE_ADMIN">Quản trị thôn</option>
+              <option value="STAFF">Cán bộ nhập liệu</option>
+              <option value="VIEWER">Chỉ xem</option>
+              <option value="SYSTEM_ADMIN">Quản trị hệ thống</option>
+              <option value="COMMUNE_ADMIN" disabled>Quản trị xã (sau)</option>
             </select>
           </div>
           <div class="cc-field">
-            <label for="accountUnit">Don vi *</label>
+            <label for="accountUnit">Đơn vị *</label>
             <select class="cc-select" id="accountUnit" name="unit_id" required></select>
           </div>
           <div class="cc-field">
-            <label for="accountStatus">Trang thai</label>
+            <label for="accountStatus">Trạng thái</label>
             <select class="cc-select" id="accountStatus" name="status">
-              <option value="ACTIVE">Dang su dung</option>
-              <option value="INACTIVE">Ngung su dung</option>
+              <option value="ACTIVE">Đang sử dụng</option>
+              <option value="INACTIVE">Ngừng sử dụng</option>
             </select>
           </div>
           <div class="cc-field account-password-field">
-            <label for="accountPassword">Mat khau *</label>
+            <label for="accountPassword">Mật khẩu *</label>
             <input class="cc-input" id="accountPassword" name="password" type="password" minlength="8" autocomplete="new-password">
           </div>
           <div class="cc-field">
-            <label for="accountPhone">Dien thoai</label>
+            <label for="accountPhone">Điện thoại</label>
             <input class="cc-input" id="accountPhone" name="phone" maxlength="50" autocomplete="tel">
           </div>
           <div class="cc-field full">
-            <label for="accountPosition">Chuc vu</label>
+            <label for="accountPosition">Chức vụ</label>
             <input class="cc-input" id="accountPosition" name="position" maxlength="190" autocomplete="organization-title">
           </div>
         </div>
         <div class="cc-form-error" id="accountFormError"></div>
         <div class="cc-modal-footer">
-          <button class="cc-btn" type="button" id="cancelAccountButton">Huy</button>
-          <button class="cc-btn primary" type="submit" id="saveAccountButton"><i class="fa-solid fa-floppy-disk"></i>Luu</button>
+          <button class="cc-btn" type="button" id="cancelAccountButton">Hủy</button>
+          <button class="cc-btn primary" type="submit" id="saveAccountButton"><i class="fa-solid fa-floppy-disk"></i>Lưu</button>
         </div>
       </form>
     </div>
@@ -1034,21 +1219,21 @@
   <div class="cc-modal-backdrop" id="passwordModal" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
     <div class="cc-modal">
       <div class="cc-modal-header">
-        <h2 class="cc-modal-title" id="passwordModalTitle">Reset mat khau</h2>
-        <button class="cc-btn" type="button" id="closePasswordModalButton" aria-label="Dong"><i class="fa-solid fa-xmark"></i></button>
+        <h2 class="cc-modal-title" id="passwordModalTitle">Đặt lại mật khẩu</h2>
+        <button class="cc-btn" type="button" id="closePasswordModalButton" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="passwordForm" novalidate>
         <div class="cc-form">
           <input type="hidden" id="passwordAccountId">
           <div class="cc-field full">
-            <label for="newPassword">Mat khau moi *</label>
+            <label for="newPassword">Mật khẩu mới *</label>
             <input class="cc-input" id="newPassword" name="password" type="password" minlength="8" required autocomplete="new-password">
           </div>
         </div>
         <div class="cc-form-error" id="passwordFormError"></div>
         <div class="cc-modal-footer">
-          <button class="cc-btn" type="button" id="cancelPasswordButton">Huy</button>
-          <button class="cc-btn primary" type="submit" id="savePasswordButton"><i class="fa-solid fa-key"></i>Cap nhat</button>
+          <button class="cc-btn" type="button" id="cancelPasswordButton">Hủy</button>
+          <button class="cc-btn primary" type="submit" id="savePasswordButton"><i class="fa-solid fa-key"></i>Cập nhật</button>
         </div>
       </form>
     </div>
@@ -1057,6 +1242,7 @@
   <script>
     const sections = {
       dashboard: document.getElementById('dashboardSection'),
+      executive: document.getElementById('executiveSection'),
       units: document.getElementById('unitsSection'),
       accounts: document.getElementById('accountsSection'),
       permissions: document.getElementById('permissionsSection'),
@@ -1067,15 +1253,16 @@
       ai: document.getElementById('aiSection')
     };
     const sectionTitles = {
-      dashboard: 'Tong quan',
-      units: 'Don vi',
-      accounts: 'Nguoi dung',
-      permissions: 'Phan quyen',
-      monitoring: 'Monitoring',
-      audit: 'Audit',
-      configuration: 'Cau hinh',
-      notifications: 'Thong bao',
-      ai: 'AI'
+      dashboard: 'Tổng quan',
+      executive: 'Bảng điều hành',
+      units: 'Đơn vị',
+      accounts: 'Người dùng',
+      permissions: 'Phân quyền',
+      monitoring: 'Giám sát',
+      audit: 'Nhật ký',
+      configuration: 'Cấu hình',
+      notifications: 'Thông báo',
+      ai: 'Trợ lý thông minh'
     };
 
     document.querySelectorAll('.cc-nav button').forEach((button) => {
@@ -1099,7 +1286,12 @@
     const unitState = {
       items: [],
       editing: null,
-      loading: false
+      loading: false,
+      installerJobId: null,
+      wizardStep: 1,
+      databaseReady: false,
+      preflightReady: false,
+      createdJob: null
     };
     const accountState = {
       items: [],
@@ -1115,11 +1307,11 @@
     };
     const auditState = { items: [] };
     const roleLabels = {
-      SYSTEM_ADMIN: 'Quan tri he thong',
-      VILLAGE_ADMIN: 'Quan tri thon',
-      STAFF: 'Can bo nhap lieu',
-      VIEWER: 'Chi xem',
-      COMMUNE_ADMIN: 'Quan tri xa'
+      SYSTEM_ADMIN: 'Quản trị hệ thống',
+      VILLAGE_ADMIN: 'Quản trị thôn',
+      STAFF: 'Cán bộ nhập liệu',
+      VIEWER: 'Chỉ xem',
+      COMMUNE_ADMIN: 'Quản trị xã'
     };
 
     function metric(label, value, note = '') {
@@ -1143,22 +1335,37 @@
 
     function statusLabel(value) {
       const labels = {
-        UNKNOWN: 'Chua kiem tra',
-        ONLINE: 'Online',
-        OFFLINE: 'Offline',
+        UNKNOWN: 'Chưa kiểm tra',
+        OK: 'Bình thường',
+        ONLINE: 'Trực tuyến',
+        OFFLINE: 'Ngoại tuyến',
         CONNECTED: 'Database OK',
-        DISCONNECTED: 'Database loi',
-        LOCKED: 'Da khoa',
-        VALID: 'SSL OK',
-        INVALID: 'SSL loi',
-        NOT_APPLICABLE: 'Khong ap dung',
-        ACTIVE: 'Dang hoat dong',
-        INACTIVE: 'Da khoa',
+        DISCONNECTED: 'Cơ sở dữ liệu lỗi',
+        LOCKED: 'Đã khóa',
+        VALID: 'SSL hợp lệ',
+        INVALID: 'SSL lỗi',
+        DEGRADED: 'Suy giảm',
+        INFO: 'Thông tin',
+        WARN: 'Cảnh báo',
+        ERROR: 'Lỗi',
+        NOT_APPLICABLE: 'Không áp dụng',
+        READY: 'Sẵn sàng',
+        CREATING: 'Đang tạo',
+        FAILED: 'Lỗi',
+        DISABLED: 'Đã khóa',
+        MAINTENANCE: 'Bảo trì',
+        DRY_RUN_PASSED: 'Chạy thử đạt',
+        WAITING_MANUAL: 'Chờ thao tác thủ công',
+        RUNNING: 'Đang chạy',
+        DONE: 'Hoàn tất',
+        ROLLED_BACK: 'Đã hoàn tác',
+        ACTIVE: 'Đang hoạt động',
+        INACTIVE: 'Đã khóa',
         HIGH: 'Cao',
-        MEDIUM: 'Trung binh',
-        LOW: 'Thap'
+        MEDIUM: 'Trung bình',
+        LOW: 'Thấp'
       };
-      return labels[value] || value || 'Chua kiem tra';
+      return labels[value] || value || 'Chưa kiểm tra';
     }
 
     function authHeaders(method) {
@@ -1189,7 +1396,7 @@
       const user = window.App?.user || null;
       const loggedIn = Boolean(window.App?.token && user);
       document.getElementById('loginScreen').classList.toggle('hidden', loggedIn);
-      document.getElementById('currentUserLabel').textContent = loggedIn ? `${user.displayName || user.email} - ${roleLabels[user.role] || user.role}` : 'Chua dang nhap';
+      document.getElementById('currentUserLabel').textContent = loggedIn ? `${user.displayName || user.email} - ${roleLabels[user.role] || user.role}` : 'Chưa đăng nhập';
     }
 
     async function restoreSession() {
@@ -1223,7 +1430,7 @@
       }
       const response = await fetch(path, init);
       const payload = await response.json();
-      if (!payload.ok) throw new Error(payload.message || 'Request failed');
+      if (!payload.ok) throw new Error(payload.message || 'Yêu cầu không thành công');
       return payload.data;
     }
 
@@ -1234,7 +1441,7 @@
       const username = formValue('loginUsername');
       const password = formValue('loginPassword');
       if (!username || !password) {
-        error.textContent = 'Vui long nhap tai khoan va mat khau';
+        error.textContent = 'Vui lòng nhập tài khoản và mật khẩu';
         return;
       }
       button.disabled = true;
@@ -1244,7 +1451,7 @@
         setSession(result);
         await loadControlCenter();
       } catch (loginError) {
-        error.textContent = loginError.message || 'Dang nhap khong thanh cong';
+        error.textContent = loginError.message || 'Đăng nhập không thành công';
       } finally {
         button.disabled = false;
       }
@@ -1264,30 +1471,62 @@
     async function loadDashboard() {
       const data = await api('/api/control-center/dashboard');
       const metrics = [
-        ['Tong so don vi', nf.format(data.totalUnits), 'Don vi dang quan ly'],
-        ['Tenant dang hoat dong', nf.format(data.activeUnits || 0), 'Theo Tenant Registry'],
-        ['Website Online', nf.format(data.websiteOnlineUnits || 0), 'Tenant co website dang truy cap duoc'],
-        ['Database OK', nf.format(data.databaseConnectedUnits || 0), 'Tenant ket noi database thanh cong'],
-        ['Tenant loi website', nf.format(data.websiteOfflineUnits || 0), 'Can kiem tra domain/hosting'],
-        ['Tenant loi database', nf.format(data.databaseDisconnectedUnits || 0), 'Can kiem tra cau hinh database'],
-        ['Tong ho', nf.format(data.totalHouseholds), 'Tong hop toan he thong'],
-        ['Tong nguoi dung', nf.format(accountState.items.length), 'Tai khoan trong Community Control Center'],
-        ['Tong tre em', nf.format(data.totalChildren), 'So lieu tong hop'],
-        ['Tong nguoi cao tuoi', nf.format(data.totalElderly), 'Theo cau hinh chinh sach hien co'],
-        ['Tong lao dong', nf.format(data.totalWorkers), 'Theo truong lao dong hien co'],
-        ['Tong Dang vien', nf.format(data.totalPartyMembers), 'So lieu tong hop'],
-        ['Tong ty le BHYT', percent(data.healthInsuranceRate), 'Tren nhan khau con song']
+        ['Tổng số đơn vị', nf.format(data.totalUnits), 'Đơn vị đang quản lý'],
+        ['Đơn vị đang hoạt động', nf.format(data.activeUnits || 0), 'Theo registry đơn vị'],
+        ['Trang web trực tuyến', nf.format(data.websiteOnlineUnits || 0), 'Đơn vị có trang web đang truy cập được'],
+        ['Cơ sở dữ liệu OK', nf.format(data.databaseConnectedUnits || 0), 'Đơn vị kết nối cơ sở dữ liệu thành công'],
+        ['Đơn vị lỗi trang web', nf.format(data.websiteOfflineUnits || 0), 'Cần kiểm tra tên miền/máy chủ lưu trữ'],
+        ['Đơn vị lỗi cơ sở dữ liệu', nf.format(data.databaseDisconnectedUnits || 0), 'Cần kiểm tra cấu hình cơ sở dữ liệu'],
+        ['Tổng hộ', nf.format(data.totalHouseholds), 'Tổng hợp toàn hệ thống'],
+        ['Tổng người dùng', nf.format(accountState.items.length), 'Tài khoản trong Community Control Center'],
+        ['Tổng trẻ em', nf.format(data.totalChildren), 'Số liệu tổng hợp'],
+        ['Tổng người cao tuổi', nf.format(data.totalElderly), 'Theo cấu hình chính sách hiện có'],
+        ['Tổng lao động', nf.format(data.totalWorkers), 'Theo trường lao động hiện có'],
+        ['Tổng Đảng viên', nf.format(data.totalPartyMembers), 'Số liệu tổng hợp'],
+        ['Tổng tỷ lệ BHYT', percent(data.healthInsuranceRate), 'Trên nhân khẩu còn sống']
       ];
       const grid = document.getElementById('metricGrid');
       grid.replaceChildren(...metrics.map((item) => metric(item[0], item[1], item[2])));
       renderOperations(data.operations || []);
       renderRecentActivity(data.recentActivity || []);
+      renderExecutiveDashboard(data);
+    }
+
+    function renderExecutiveDashboard(data) {
+      const grid = document.getElementById('executiveMetricGrid');
+      if (!grid) return;
+      const healthGrid = document.getElementById('executiveHealthGrid');
+      const executiveMetrics = [
+        ['Đơn vị đang hoạt động', nf.format(data.activeUnits || 0), 'Đơn vị đang ở trạng thái hoạt động'],
+        ['Trang web trực tuyến', nf.format(data.websiteOnlineUnits || 0), 'Trang web truy cập được qua HTTPS'],
+        ['Database OK', nf.format(data.databaseConnectedUnits || 0), 'Database kết nối thành công'],
+        ['Cần xử lý', nf.format((data.operations || []).length), 'Cảnh báo vận hành cần theo dõi']
+      ];
+      const healthItems = [
+        ['Tổng đơn vị', nf.format(data.totalUnits || 0)],
+        ['Đơn vị bị khóa', nf.format(data.lockedUnits || 0)],
+        ['Trang web lỗi', nf.format(data.websiteOfflineUnits || 0)],
+        ['Cơ sở dữ liệu lỗi', nf.format(data.databaseDisconnectedUnits || 0)],
+        ['Bản sao lưu gần nhất', data.latestBackupAt || 'Chưa có dữ liệu'],
+        ['Phiên bản', formatVersions(data.versions)]
+      ];
+      grid.replaceChildren(...executiveMetrics.map((item) => metric(item[0], item[1], item[2])));
+      if (healthGrid) healthGrid.replaceChildren(...healthItems.map(([label, value]) => metric(label, value || '-', '')));
+    }
+
+    function formatVersions(versions) {
+      if (!Array.isArray(versions) || versions.length === 0) return '-';
+      return versions.map((item) => {
+        if (typeof item === 'string') return item;
+        if (!item || typeof item !== 'object') return String(item || '-');
+        return item.version || item.appVersion || item.buildVersion || item.code || item.name || '-';
+      }).filter((item) => item && item !== '-').join(', ') || '-';
     }
 
     function renderOperations(items) {
       const holder = document.getElementById('operationsList');
       if (!items.length) {
-        holder.replaceChildren(stateMessage('Hom nay chua co viec can xu ly ngay.'));
+        holder.replaceChildren(stateMessage('Hôm nay chưa có việc cần xử lý ngay.'));
         return;
       }
       holder.replaceChildren(...items.map((item) => {
@@ -1296,24 +1535,24 @@
         const main = document.createElement('div');
         const title = document.createElement('div');
         title.className = 'operation-title';
-        title.textContent = (item.message || 'Can xu ly') + ' - ' + (item.tenant?.name || item.tenant?.code || 'Tenant');
+        title.textContent = (item.message || 'Cần xử lý') + ' - ' + (item.tenant?.name || item.tenant?.code || 'Đơn vị');
         const meta = document.createElement('div');
         meta.className = 'cc-meta';
-        meta.textContent = 'Muc do: ' + statusLabel(item.severity) + ' | Nguoi phu trach: ' + (item.tenant?.manager || 'Chua gan');
+        meta.textContent = 'Mức độ: ' + statusLabel(item.severity) + ' | Người phụ trách: ' + (item.tenant?.manager || 'Chưa gán');
         main.append(title, meta);
         const actions = document.createElement('div');
         actions.className = 'operation-actions';
         const unit = operationUnit(item);
         if (item.primaryAction === 'check_website') {
-          const check = actionButton('Kiem tra Website', 'fa-globe');
+          const check = actionButton('Kiểm tra trang web', 'fa-globe');
           check.addEventListener('click', () => checkUnitWebsite(unit));
           actions.appendChild(check);
         } else if (item.primaryAction === 'check_database') {
-          const check = actionButton('Kiem tra Database', 'fa-database');
+          const check = actionButton('Kiểm tra cơ sở dữ liệu', 'fa-database');
           check.addEventListener('click', () => checkUnitConnection(unit));
           actions.appendChild(check);
         }
-        const view = actionButton('Xem Tenant', 'fa-sitemap');
+        const view = actionButton('Xem đơn vị', 'fa-sitemap');
         view.addEventListener('click', () => {
           activateSection('units');
           document.getElementById('unitSearch').value = item.tenant?.code || item.tenant?.name || '';
@@ -1321,7 +1560,7 @@
         });
         actions.appendChild(view);
         if (item.tenant?.domain) {
-          const portal = actionButton('Mo Portal', 'fa-arrow-up-right-from-square');
+          const portal = actionButton('Mở cổng đơn vị', 'fa-arrow-up-right-from-square');
           portal.addEventListener('click', () => openTenantPortal(unit));
           actions.appendChild(portal);
         }
@@ -1342,7 +1581,7 @@
     function renderRecentActivity(items) {
       const holder = document.getElementById('recentActivityList');
       if (!items.length) {
-        holder.replaceChildren(stateMessage('Chua co hoat dong quan tri gan day.'));
+        holder.replaceChildren(stateMessage('Chưa có hoạt động quản trị gần đây.'));
         return;
       }
       holder.replaceChildren(...items.map((item) => {
@@ -1351,10 +1590,10 @@
         const main = document.createElement('div');
         const title = document.createElement('div');
         title.className = 'operation-title';
-        title.textContent = item.message || item.action || 'Hoat dong';
+        title.textContent = item.message || item.action || 'Hoạt động';
         const meta = document.createElement('div');
         meta.className = 'cc-meta';
-        meta.textContent = `${item.createdAt || '-'} | ${item.tenantName || 'He thong'} | ${item.actor || '-'}`;
+        meta.textContent = `${item.createdAt || '-'} | ${item.tenantName || 'Hệ thống'} | ${item.actor || '-'}`;
         main.append(title, meta);
         const actions = document.createElement('div');
         actions.className = 'operation-actions';
@@ -1366,7 +1605,7 @@
 
     async function loadUnits() {
       const body = document.getElementById('unitsBody');
-      body.replaceChildren(stateRow(10, 'Dang tai du lieu...'));
+      body.replaceChildren(stateRow(10, 'Đang tải dữ liệu...'));
       setUnitsAlert('');
       const params = new URLSearchParams();
       const search = document.getElementById('unitSearch').value.trim();
@@ -1387,25 +1626,25 @@
         const actions = document.createElement('td');
         actions.className = 'cc-row-actions';
         if (unit.domain) {
-          const portal = actionButton('Mo Portal', 'fa-arrow-up-right-from-square');
+          const portal = actionButton('Mở cổng đơn vị', 'fa-arrow-up-right-from-square');
           portal.addEventListener('click', () => openTenantPortal(unit));
           actions.appendChild(portal);
         }
-        const checkWebsite = actionButton('Website', 'fa-globe');
+        const checkWebsite = actionButton('Trang web', 'fa-globe');
         checkWebsite.addEventListener('click', () => checkUnitWebsite(unit));
         actions.appendChild(checkWebsite);
-        const checkDatabase = actionButton('Database', 'fa-database');
+        const checkDatabase = actionButton('Cơ sở dữ liệu', 'fa-database');
         checkDatabase.addEventListener('click', () => checkUnitConnection(unit));
         actions.appendChild(checkDatabase);
-        const edit = actionButton('Sua', 'fa-pen-to-square');
+        const edit = actionButton('Sửa', 'fa-pen-to-square');
         edit.addEventListener('click', () => openUnitModal(unit));
         actions.appendChild(edit);
-        if (unit.status === 'ACTIVE') {
-          const lock = actionButton('Khoa', 'fa-lock', 'danger');
+        if (unit.status === 'READY' || unit.status === 'ACTIVE') {
+          const lock = actionButton('Khóa', 'fa-lock', 'danger');
           lock.addEventListener('click', () => changeUnitStatus(unit, 'lock'));
           actions.appendChild(lock);
         } else {
-          const activate = actionButton('Kich hoat', 'fa-unlock');
+          const activate = actionButton('Kích hoạt', 'fa-unlock');
           activate.addEventListener('click', () => changeUnitStatus(unit, 'activate'));
           actions.appendChild(activate);
         }
@@ -1417,7 +1656,7 @@
 
     async function loadAccounts() {
       const body = document.getElementById('accountsBody');
-      body.replaceChildren(stateRow(10, 'Dang tai du lieu...'));
+      body.replaceChildren(stateRow(10, 'Đang tải dữ liệu...'));
       setAccountsAlert('');
       const params = new URLSearchParams();
       const search = document.getElementById('accountSearch').value.trim();
@@ -1440,7 +1679,7 @@
           name.append(primary, secondary);
           tr.appendChild(name);
 
-          [roleLabels[account.role] || account.role, account.unitName || '-', account.status, account.lastLoginLabel || account.lastLoginAt || 'Chua dang nhap', account.lastIp || '-', account.lastDevice || '-', account.createdAt || '-', account.createdBy || '-'].forEach((cell, index) => {
+          [roleLabels[account.role] || account.role, account.unitName || '-', account.status, account.lastLoginLabel || account.lastLoginAt || 'Chưa đăng nhập', account.lastIp || '-', account.lastDevice || '-', account.createdAt || '-', account.createdBy || '-'].forEach((cell, index) => {
             const td = document.createElement('td');
             if (index === 2) td.appendChild(badge(cell));
             else td.textContent = cell;
@@ -1449,18 +1688,21 @@
 
           const actions = document.createElement('td');
           actions.className = 'cc-row-actions';
-          const edit = actionButton('Sua', 'fa-user-pen');
+          const view = actionButton('Xem', 'fa-eye');
+          view.addEventListener('click', () => viewAccount(account));
+          actions.appendChild(view);
+          const edit = actionButton('Sửa', 'fa-user-pen');
           edit.addEventListener('click', () => openAccountModal(account));
           actions.appendChild(edit);
-          const password = actionButton('Mat khau', 'fa-key');
+          const password = actionButton('Mật khẩu', 'fa-key');
           password.addEventListener('click', () => openPasswordModal(account));
           actions.appendChild(password);
           if (account.status === 'ACTIVE') {
-            const deactivate = actionButton('Ngung', 'fa-user-slash', 'danger');
+            const deactivate = actionButton('Ngừng', 'fa-user-slash', 'danger');
             deactivate.addEventListener('click', () => changeAccountStatus(account, 'deactivate'));
             actions.appendChild(deactivate);
           } else {
-            const activate = actionButton('Kich hoat', 'fa-user-check');
+            const activate = actionButton('Kích hoạt', 'fa-user-check');
             activate.addEventListener('click', () => changeAccountStatus(account, 'activate'));
             actions.appendChild(activate);
           }
@@ -1470,14 +1712,14 @@
         body.replaceChildren(...(rows.length ? rows : [emptyRow(10)]));
       } catch (error) {
         body.replaceChildren(emptyRow(10));
-        setAccountsAlert(error.message || 'Khong tai duoc danh sach tai khoan');
+        setAccountsAlert(error.message || 'Không tải được danh sách tài khoản');
       }
     }
 
     async function loadPermissions() {
       const head = document.getElementById('permissionsHead');
       const body = document.getElementById('permissionsBody');
-      body.replaceChildren(stateRow(2, 'Dang tai phan quyen...'));
+      body.replaceChildren(stateRow(2, 'Đang tải phân quyền...'));
       try {
         const data = await api('/api/control-center/permissions');
         permissionState.roles = data.roles || [];
@@ -1493,15 +1735,15 @@
         setPermissionsAlert('');
       } catch (error) {
         head.replaceChildren();
-        body.replaceChildren(stateRow(2, 'Khong tai duoc phan quyen'));
-        setPermissionsAlert(error.message || 'Khong tai duoc phan quyen');
+        body.replaceChildren(stateRow(2, 'Không tải được phân quyền'));
+        setPermissionsAlert(error.message || 'Không tải được phân quyền');
       }
     }
 
     function renderPermissionRoleFilter() {
       const select = document.getElementById('permissionRoleFilter');
       const current = select.value;
-      const options = [new Option('Tat ca vai tro', '')].concat(permissionState.roles.map((role) => new Option(role.label || role.role, role.role)));
+      const options = [new Option('Tất cả vai trò', '')].concat(permissionState.roles.map((role) => new Option(role.label || role.role, role.role)));
       select.replaceChildren(...options);
       select.value = current;
     }
@@ -1520,7 +1762,7 @@
         });
         return button;
       });
-      holder.replaceChildren(...(groups.length ? groups : [stateMessage('Chua co permission')]));
+      holder.replaceChildren(...(groups.length ? groups : [stateMessage('Chưa có quyền')]));
     }
 
     function renderPermissions() {
@@ -1536,7 +1778,7 @@
       });
 
       const headerRow = document.createElement('tr');
-      ['Quyen'].concat(roles.map((role) => role.label || role.role)).forEach((label) => {
+      ['Quyền'].concat(roles.map((role) => role.label || role.role)).forEach((label) => {
         const th = document.createElement('th');
         th.textContent = label;
         headerRow.appendChild(th);
@@ -1563,7 +1805,7 @@
           checkbox.className = 'permission-toggle';
           checkbox.checked = item.allowed;
           checkbox.disabled = item.locked;
-          checkbox.title = item.locked ? 'Quyen cot loi khong the tat' : '';
+          checkbox.title = item.locked ? 'Quyền cốt lõi không thể tắt' : '';
           checkbox.addEventListener('change', () => {
             permissionState.pending.set(role.role + '|' + permission.key, {
               role: role.role,
@@ -1595,7 +1837,7 @@
         await api('/api/control-center/permissions', { method: 'PUT', body: { items: Array.from(permissionState.pending.values()) } });
         await loadPermissions();
       } catch (error) {
-        setPermissionsAlert(error.message || 'Khong luu duoc phan quyen');
+        setPermissionsAlert(error.message || 'Không lưu được phân quyền');
       } finally {
         button.disabled = permissionState.pending.size === 0;
       }
@@ -1605,14 +1847,14 @@
       const data = await api('/api/control-center/monitoring');
       const usedBytes = Math.max(0, Number(data.storage.totalBytes || 0) - Number(data.storage.freeBytes || 0));
       const items = [
-        ['Version', data.version],
-        ['Runtime', `PHP ${data.runtime.phpVersion}`],
-        ['Database Status', data.database.ok ? 'Connected' : 'Unavailable'],
-        ['Storage', `${formatBytes(usedBytes)} / ${formatBytes(data.storage.totalBytes)}`],
-        ['Storage Writable', data.storage.writable ? 'OK' : 'DEGRADED'],
-        ['Health Check', data.healthCheck.status]
+        ['Phiên bản', data.version],
+        ['Môi trường chạy', `PHP ${data.runtime.phpVersion}`],
+        ['Trạng thái cơ sở dữ liệu', data.database.ok ? 'Đã kết nối' : 'Không khả dụng'],
+        ['Lưu trữ', `${formatBytes(usedBytes)} / ${formatBytes(data.storage.totalBytes)}`],
+        ['Quyền ghi lưu trữ', data.storage.writable ? 'Bình thường' : 'Suy giảm'],
+        ['Kiểm tra sức khỏe', data.healthCheck.status]
       ];
-      document.getElementById('healthBadge').textContent = data.healthCheck.status;
+      document.getElementById('healthBadge').textContent = statusLabel(data.healthCheck.status);
       document.getElementById('healthBadge').className = data.healthCheck.status === 'OK' ? 'cc-badge' : 'cc-badge warn';
       const tenantPanel = document.createElement('div');
       tenantPanel.className = 'cc-panel full';
@@ -1620,7 +1862,7 @@
       header.className = 'cc-panel-header';
       const title = document.createElement('h2');
       title.className = 'cc-panel-title';
-      title.textContent = 'Trang thai Tenant';
+      title.textContent = 'Trạng thái đơn vị';
       header.appendChild(title);
       const tableWrap = document.createElement('div');
       tableWrap.className = 'cc-table-wrap';
@@ -1628,7 +1870,7 @@
       table.className = 'cc-table';
       const head = document.createElement('thead');
       const headRow = document.createElement('tr');
-      ['Tenant', 'Domain', 'Website', 'Database', 'SSL', 'Phien ban', 'Lan kiem tra', 'Loi gan nhat'].forEach((label) => {
+        ['Đơn vị', 'Tên miền', 'Trang web', 'Cơ sở dữ liệu', 'SSL', 'Phiên bản', 'Lần kiểm tra', 'Lỗi gần nhất'].forEach((label) => {
         const th = document.createElement('th');
         th.textContent = label;
         headRow.appendChild(th);
@@ -1655,7 +1897,7 @@
 
     async function loadAudit() {
       const body = document.getElementById('auditBody');
-      body.replaceChildren(stateRow(6, 'Dang tai audit...'));
+      body.replaceChildren(stateRow(6, 'Đang tải nhật ký...'));
       const params = new URLSearchParams();
       const tenant = document.getElementById('auditTenantFilter').value;
       const level = document.getElementById('auditLevelFilter').value;
@@ -1681,13 +1923,13 @@
     function renderAuditTenantFilter() {
       const select = document.getElementById('auditTenantFilter');
       const current = select.value;
-      const options = [new Option('Tat ca Tenant', '')].concat((unitState.items || []).map((unit) => new Option(unit.name || unit.code, unit.id)));
+      const options = [new Option('Tất cả đơn vị', '')].concat((unitState.items || []).map((unit) => new Option(unit.name || unit.code, unit.id)));
       select.replaceChildren(...options);
       select.value = current;
     }
 
     function emptyRow(colspan) {
-      return stateRow(colspan, 'Chua co du lieu hien thi');
+      return stateRow(colspan, 'Chưa có dữ liệu hiển thị');
     }
 
     function stateRow(colspan, text) {
@@ -1716,10 +1958,29 @@
       return button;
     }
 
+    function viewAccount(account) {
+      alert([
+        'Tên: ' + (account.displayName || account.username || account.email || '-'),
+        'Thư điện tử: ' + (account.email || '-'),
+        'Đơn vị: ' + (account.unitName || '-'),
+        'Vai trò: ' + (roleLabels[account.role] || account.role || '-'),
+        'Trạng thái: ' + statusLabel(account.status || ''),
+        'Đăng nhập cuối: ' + (account.lastLoginLabel || account.lastLoginAt || 'Chưa đăng nhập'),
+        'Người tạo: ' + (account.createdBy || '-')
+      ].join('\n'));
+    }
+
     function setUnitsAlert(message) {
       const alert = document.getElementById('unitsAlert');
       alert.textContent = message || '';
       alert.classList.toggle('active', Boolean(message));
+    }
+
+    function setTenantInstallerActions(job) {
+      const holder = document.getElementById('tenantInstallerActions');
+      const canAct = job && ['FAILED', 'WAITING_MANUAL'].includes(job.status);
+      unitState.installerJobId = canAct ? job.id : null;
+      holder.style.display = canAct ? 'flex' : 'none';
     }
 
     function setAccountsAlert(message) {
@@ -1740,7 +2001,7 @@
 
     function openUnitModal(unit = null) {
       unitState.editing = unit;
-      document.getElementById('unitModalTitle').textContent = unit ? 'Sua don vi' : 'Them don vi';
+      document.getElementById('unitModalTitle').textContent = unit ? 'Sửa đơn vị' : 'Thêm đơn vị';
       document.getElementById('unitId').value = unit?.id || '';
       document.getElementById('unitCode').value = unit?.code || '';
       document.getElementById('unitCode').disabled = Boolean(unit);
@@ -1750,15 +2011,35 @@
       document.getElementById('unitSubdomain').value = unit?.subdomain || '';
       document.getElementById('unitDatabaseHost').value = unit?.databaseHost || '';
       document.getElementById('unitDatabaseName').value = unit?.databaseName || '';
+      document.getElementById('unitDatabaseUsername').value = '';
+      document.getElementById('unitDatabasePassword').value = '';
       document.getElementById('unitDatabaseCharset').value = unit?.databaseCharset || 'utf8mb4';
       document.getElementById('unitAppVersion').value = unit?.appVersion || unit?.version || '';
       document.getElementById('unitBuildVersion').value = unit?.buildVersion || '';
       document.getElementById('unitSchemaVersion').value = unit?.schemaVersion || '';
-      document.getElementById('unitManagerName').value = unit?.manager === 'Chua gan' ? '' : (unit?.manager || '');
+      document.getElementById('unitManagerName').value = unit?.manager === 'Chưa gán' || unit?.manager === 'Chua gan' ? '' : (unit?.manager || '');
       document.getElementById('unitLogo').value = unit?.logo || '';
       document.getElementById('unitNotes').value = unit?.notes || '';
-      document.getElementById('unitStatus').value = unit?.status || 'ACTIVE';
+      document.getElementById('unitStatus').value = unit?.status || 'READY';
+      document.getElementById('unitDatabaseUsername').closest('.cc-field').style.display = unit ? 'none' : '';
+      document.getElementById('unitDatabasePassword').closest('.cc-field').style.display = unit ? 'none' : '';
+      unitState.wizardStep = 1;
+      unitState.databaseReady = Boolean(unit);
+      unitState.preflightReady = Boolean(unit);
+      unitState.createdJob = null;
+      document.getElementById('preflightUnitButton').style.display = unit ? 'none' : '';
+      document.getElementById('saveUnitButton').disabled = !unit;
+      document.getElementById('saveUnitButton').querySelector('span')?.remove();
+      document.getElementById('saveUnitButton').innerHTML = '<i class="fa-solid fa-floppy-disk"></i>' + (unit ? 'Lưu' : 'Tạo đơn vị');
       setFormError('');
+      renderDatabaseCheck(null);
+      renderPreflight(null);
+      document.getElementById('tenantCreatePanel').textContent = 'Sẵn sàng tạo đơn vị';
+      document.getElementById('tenantCreatePanel').classList.remove('active');
+      document.getElementById('tenantHealthPanel').textContent = 'Chưa chạy kiểm tra sức khỏe';
+      document.getElementById('tenantHealthPanel').classList.remove('active');
+      setTenantInstallerActions(null);
+      updateTenantWizard();
       document.getElementById('unitModal').classList.add('active');
       document.getElementById(unit ? 'unitName' : 'unitCode').focus();
     }
@@ -1776,6 +2057,8 @@
         subdomain: formValue('unitSubdomain') || null,
         database_host: formValue('unitDatabaseHost') || null,
         database_name: formValue('unitDatabaseName') || null,
+        database_username: formValue('unitDatabaseUsername') || null,
+        database_password: formValue('unitDatabasePassword') || null,
         database_charset: formValue('unitDatabaseCharset') || null,
         app_version: formValue('unitAppVersion') || null,
         build_version: formValue('unitBuildVersion') || null,
@@ -1783,7 +2066,7 @@
         manager_name: formValue('unitManagerName') || null,
         notes: formValue('unitNotes') || null,
         logo: formValue('unitLogo') || null,
-        status: formValue('unitStatus') || 'ACTIVE',
+        status: formValue('unitStatus') || 'READY',
         type: 'VILLAGE'
       };
       if (!unitState.editing) payload.code = formValue('unitCode').toLowerCase();
@@ -1792,16 +2075,45 @@
 
     function validateUnitForm(payload) {
       if (!unitState.editing && !/^[a-z0-9_-]{2,50}$/.test(payload.code || '')) {
-        return 'Ma don vi chi gom chu thuong, so, dau gach ngang/gach duoi va tu 2 den 50 ky tu';
+        return 'Mã đơn vị chỉ gồm chữ thường, số, dấu gạch ngang/gạch dưới và từ 2 đến 50 ký tự';
       }
       if (!payload.name || payload.name.length > 190) {
-        return 'Ten don vi la bat buoc va khong vuot qua 190 ky tu';
+        return 'Tên đơn vị là bắt buộc và không vượt quá 190 ký tự';
       }
       if (payload.database_name && !/^[a-zA-Z0-9_]{1,190}$/.test(payload.database_name)) {
-        return 'Ten database chi gom chu, so va dau gach duoi';
+        return 'Tên cơ sở dữ liệu chỉ gồm chữ, số và dấu gạch dưới';
+      }
+      if (!unitState.editing && !payload.database_username) {
+        return 'Người dùng cơ sở dữ liệu là bắt buộc để khởi tạo đơn vị';
       }
       if (payload.database_charset && !/^[a-z0-9_]{1,50}$/.test(payload.database_charset)) {
-        return 'Database charset khong hop le';
+        return 'Bảng mã cơ sở dữ liệu không hợp lệ';
+      }
+      return '';
+    }
+
+    function validateTenantWizardStep(payload, step) {
+      if (step === 1) {
+        if (!unitState.editing && !/^[a-z0-9_-]{2,50}$/.test(payload.code || '')) {
+          return 'Mã đơn vị chỉ gồm chữ thường, số, dấu gạch ngang/gạch dưới và từ 2 đến 50 ký tự';
+        }
+        if (!payload.name || payload.name.length > 190) {
+          return 'Tên đơn vị là bắt buộc và không vượt quá 190 ký tự';
+        }
+        if (!payload.domain && !payload.subdomain) {
+          return 'Tên miền hoặc tên miền phụ là bắt buộc';
+        }
+      }
+      if (step === 2) {
+        if (!payload.database_host) return 'Máy chủ cơ sở dữ liệu là bắt buộc';
+        if (!payload.database_name || !/^[a-zA-Z0-9_]{1,190}$/.test(payload.database_name)) {
+          return 'Tên cơ sở dữ liệu chỉ gồm chữ, số và dấu gạch dưới';
+        }
+        if (!payload.database_username) return 'Người dùng cơ sở dữ liệu là bắt buộc';
+        if (!payload.database_password) return 'Mật khẩu cơ sở dữ liệu là bắt buộc';
+        if (payload.database_charset && !/^[a-z0-9_]{1,50}$/.test(payload.database_charset)) {
+          return 'Bảng mã cơ sở dữ liệu không hợp lệ';
+        }
       }
       return '';
     }
@@ -1810,6 +2122,110 @@
       const error = document.getElementById('unitFormError');
       error.textContent = message || '';
       error.classList.toggle('active', Boolean(message));
+    }
+
+    function renderChecklist(result, panelId, statusId, listId, readyText, idleText) {
+      const panel = document.getElementById(panelId);
+      const status = document.getElementById(statusId);
+      const list = document.getElementById(listId);
+      list.innerHTML = '';
+      if (!result) {
+        if (!panel.classList.contains('wizard-page')) panel.classList.remove('active');
+        status.textContent = idleText;
+        status.className = 'preflight-status failed';
+        return;
+      }
+      panel.classList.add('active');
+      status.textContent = result.ready ? readyText : 'Lỗi';
+      status.className = 'preflight-status ' + (result.ready ? 'ready' : 'failed');
+      (result.items || []).forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'preflight-item';
+        const icon = document.createElement('div');
+        icon.className = 'preflight-icon ' + (item.status === 'PASS' ? 'pass' : 'fail');
+        icon.textContent = item.status === 'PASS' ? '✓' : '!';
+        const label = document.createElement('div');
+        label.textContent = item.label || item.key || '';
+        const detail = document.createElement('div');
+        detail.textContent = item.status === 'PASS' ? (item.message || 'Đạt') : ((item.message || 'Không đạt') + (item.fix ? ' - ' + item.fix : ''));
+        if (item.status !== 'PASS') detail.className = 'preflight-fix';
+        row.append(icon, label, detail);
+        list.appendChild(row);
+      });
+    }
+
+    function renderDatabaseCheck(result) {
+      renderChecklist(result, 'tenantDatabasePanel', 'tenantDatabaseStatus', 'tenantDatabaseList', 'Cơ sở dữ liệu sẵn sàng', 'Chưa kiểm tra cơ sở dữ liệu');
+    }
+
+    function renderPreflight(result) {
+      renderChecklist(result, 'tenantPreflightPanel', 'tenantPreflightStatus', 'tenantPreflightList', 'Sẵn sàng tạo đơn vị', 'Chưa chạy tiền kiểm');
+    }
+
+    function resetTenantReadiness() {
+      if (unitState.editing) return;
+      unitState.databaseReady = false;
+      unitState.preflightReady = false;
+      unitState.createdJob = null;
+      document.getElementById('saveUnitButton').disabled = true;
+      renderDatabaseCheck(null);
+      renderPreflight(null);
+      document.getElementById('tenantCreatePanel').textContent = 'Sẵn sàng tạo đơn vị';
+      document.getElementById('tenantCreatePanel').classList.remove('active');
+      document.getElementById('tenantHealthPanel').textContent = 'Chưa chạy kiểm tra sức khỏe';
+      document.getElementById('tenantHealthPanel').classList.remove('active');
+      updateTenantWizard();
+    }
+
+    function setTenantWizardStep(step) {
+      unitState.wizardStep = Math.max(1, Math.min(5, step));
+      updateTenantWizard();
+    }
+
+    function updateTenantWizard() {
+      document.getElementById('tenantWizard').style.display = unitState.editing ? 'none' : 'grid';
+      if (unitState.editing) {
+        document.querySelectorAll('[data-wizard-page]').forEach((page) => {
+          const pageNo = Number(page.dataset.wizardPage);
+          page.classList.toggle('active', pageNo === 1 || pageNo === 2);
+        });
+        document.getElementById('wizardBackButton').style.display = 'none';
+        document.getElementById('wizardNextButton').style.display = 'none';
+        document.getElementById('databaseCheckButton').style.display = 'none';
+        document.getElementById('preflightUnitButton').style.display = 'none';
+        document.getElementById('saveUnitButton').style.display = '';
+        document.getElementById('saveUnitButton').disabled = false;
+        return;
+      }
+      document.querySelectorAll('[data-wizard-page]').forEach((page) => {
+        page.classList.toggle('active', Number(page.dataset.wizardPage) === unitState.wizardStep);
+      });
+      document.querySelectorAll('[data-wizard-indicator]').forEach((item) => {
+        const step = Number(item.dataset.wizardIndicator);
+        item.classList.toggle('active', step === unitState.wizardStep);
+        item.classList.toggle('done', step < unitState.wizardStep);
+      });
+      document.getElementById('wizardBackButton').style.display = unitState.editing || unitState.wizardStep === 1 ? 'none' : '';
+      document.getElementById('wizardNextButton').style.display = unitState.editing || unitState.wizardStep >= 3 ? 'none' : '';
+      document.getElementById('databaseCheckButton').style.display = !unitState.editing && unitState.wizardStep === 2 ? '' : 'none';
+      document.getElementById('preflightUnitButton').style.display = !unitState.editing && unitState.wizardStep === 3 ? '' : 'none';
+      document.getElementById('saveUnitButton').style.display = unitState.editing || unitState.wizardStep === 4 ? '' : 'none';
+      document.getElementById('saveUnitButton').disabled = unitState.editing ? false : !unitState.preflightReady;
+    }
+
+    function nextTenantWizardStep() {
+      const payload = unitPayload();
+      const validation = validateTenantWizardStep(payload, unitState.wizardStep);
+      if (validation) {
+        setFormError(validation);
+        return;
+      }
+      if (unitState.wizardStep === 2 && !unitState.databaseReady) {
+        setFormError('Cần kiểm tra kết nối cơ sở dữ liệu đạt trước khi sang bước tiền kiểm');
+        return;
+      }
+      setFormError('');
+      setTenantWizardStep(unitState.wizardStep + 1);
     }
 
     async function saveUnit(event) {
@@ -1827,12 +2243,93 @@
         if (unitState.editing) {
           await api('/api/control-center/units/' + encodeURIComponent(unitState.editing.id), { method: 'PUT', body: payload });
         } else {
-          await api('/api/control-center/units', { method: 'POST', body: payload });
+          if (!unitState.preflightReady) {
+            throw new Error('Cần tiền kiểm đạt trước khi tạo đơn vị');
+          }
+          const result = await api('/api/control-center/tenant-installer', { method: 'POST', body: payload });
+          unitState.createdJob = result;
+          document.getElementById('tenantCreatePanel').textContent = tenantInstallMessage(result);
+          document.getElementById('tenantCreatePanel').classList.add('active');
+          document.getElementById('tenantHealthPanel').textContent = result.status === 'READY' ? 'Sẵn sàng. Kiểm tra sức khỏe đạt.' : tenantInstallMessage(result);
+          document.getElementById('tenantHealthPanel').classList.add('active');
+          setUnitsAlert(tenantInstallMessage(result));
+          setTenantInstallerActions(result);
+          setTenantWizardStep(result.status === 'READY' ? 5 : 4);
+          await loadUnits();
+          return;
         }
         closeUnitModal();
         await loadUnits();
       } catch (error) {
-        setFormError(error.message || 'Khong luu duoc don vi');
+        setFormError(error.message || 'Không lưu được đơn vị');
+      } finally {
+        button.disabled = unitState.editing ? false : !unitState.preflightReady;
+      }
+    }
+
+    async function checkTenantDatabaseConnection() {
+      if (unitState.editing) return;
+      const button = document.getElementById('databaseCheckButton');
+      const payload = unitPayload();
+      const validation = validateUnitForm(payload);
+      if (validation) {
+        setFormError(validation);
+        return;
+      }
+      button.disabled = true;
+      unitState.databaseReady = false;
+      unitState.preflightReady = false;
+      setFormError('');
+      try {
+        const result = await api('/api/control-center/tenant-installer/database-check', { method: 'POST', body: payload });
+        renderDatabaseCheck(result);
+        unitState.databaseReady = Boolean(result.ready);
+        if (!result.ready) {
+          setFormError(result.message || 'Kiểm tra cơ sở dữ liệu còn mục không đạt');
+          return;
+        }
+        setFormError('Cơ sở dữ liệu sẵn sàng. Có thể chuyển sang bước tiền kiểm.');
+      } catch (error) {
+        renderDatabaseCheck(null);
+        setFormError(error.message || 'Không kiểm tra được cơ sở dữ liệu');
+      } finally {
+        button.disabled = false;
+        updateTenantWizard();
+      }
+    }
+
+    async function preflightUnitInstall() {
+      if (unitState.editing) return;
+      const button = document.getElementById('preflightUnitButton');
+      const saveButton = document.getElementById('saveUnitButton');
+      const payload = unitPayload();
+      const validation = validateUnitForm(payload);
+      if (validation) {
+        setFormError(validation);
+        return;
+      }
+      if (!unitState.databaseReady) {
+        setFormError('Cần kiểm tra kết nối cơ sở dữ liệu đạt trước khi tiền kiểm');
+        return;
+      }
+      button.disabled = true;
+      saveButton.disabled = true;
+      unitState.preflightReady = false;
+      setFormError('');
+      try {
+        const result = await api('/api/control-center/tenant-installer/preflight', { method: 'POST', body: payload });
+        renderPreflight(result);
+        unitState.preflightReady = Boolean(result.ready);
+        saveButton.disabled = !unitState.preflightReady;
+        if (!result.ready) {
+          setFormError(result.message || 'Tiền kiểm còn mục không đạt');
+          return;
+        }
+        setFormError('Sẵn sàng tạo đơn vị. Có thể bấm Tạo đơn vị.');
+        setTenantWizardStep(4);
+      } catch (error) {
+        renderPreflight(null);
+        setFormError(error.message || 'Tiền kiểm không thành công');
       } finally {
         button.disabled = false;
       }
@@ -1840,36 +2337,101 @@
 
     async function changeUnitStatus(unit, action) {
       const isLock = action === 'lock';
-      const message = isLock ? 'Xac nhan khoa don vi nay?' : 'Xac nhan kich hoat don vi nay?';
+      const message = isLock ? 'Xác nhận khóa đơn vị này?' : 'Xác nhận kích hoạt đơn vị này?';
       if (!confirm(message)) return;
       setUnitsAlert('');
       try {
         await api('/api/control-center/units/' + encodeURIComponent(unit.id) + '/' + action, { method: 'PATCH' });
         await loadUnits();
       } catch (error) {
-        setUnitsAlert(error.message || 'Khong cap nhat duoc trang thai don vi');
+        setUnitsAlert(error.message || 'Không cập nhật được trạng thái đơn vị');
+      }
+    }
+
+    function installerStepLabel(step) {
+      const labels = {
+        validate_input: 'kiểm tra dữ liệu',
+        check_domain: 'kiểm tra tên miền',
+        check_database_connection: 'kiểm tra kết nối cơ sở dữ liệu',
+        verify_database_ready: 'xác minh cơ sở dữ liệu',
+        initialize_database: 'khởi tạo cơ sở dữ liệu',
+        import_schema: 'nạp cấu trúc dữ liệu',
+        import_seed: 'nạp dữ liệu mẫu',
+        create_tenant_record: 'ghi nhận đơn vị',
+        create_admin: 'tạo tài khoản quản trị',
+        write_config: 'ghi cấu hình',
+        create_storage: 'tạo lưu trữ',
+        health_check: 'kiểm tra sức khỏe',
+        mark_ready: 'đánh dấu sẵn sàng'
+      };
+      return labels[step] || step || '';
+    }
+
+    function tenantInstallMessage(job) {
+      const step = installerStepLabel(job.currentStep || '');
+      const base = `Khởi tạo đơn vị ${statusLabel(job.status || '')}: ${job.progressPercent || 0}%${step ? ' - ' + step : ''}`;
+      if (job.status === 'DRY_RUN_PASSED') {
+        return base + '. Chạy thử đạt.';
+      }
+      if (job.status === 'READY') {
+        const admin = job.result?.generatedAdminEmail ? ` Quản trị: ${job.result.generatedAdminEmail} / ${job.result.generatedAdminPassword}` : '';
+        return base + '. Hoàn thành.' + admin;
+      }
+      if (job.status === 'WAITING_MANUAL') {
+        const sql = job.manualAction?.sql ? ` SQL: ${job.manualAction.sql}` : '';
+        return base + '. Cần thao tác thủ công: ' + (job.errorMessage || 'Kiểm tra chi tiết') + sql;
+      }
+      if (job.status === 'FAILED') {
+        return base + '. Lỗi: ' + (job.errorMessage || 'Không rõ nguyên nhân');
+      }
+      return base;
+    }
+
+    async function retryTenantInstall() {
+      if (!unitState.installerJobId) return;
+      setUnitsAlert('Đang thử lại khởi tạo đơn vị...');
+      try {
+        const result = await api('/api/control-center/tenant-installer/' + encodeURIComponent(unitState.installerJobId) + '/retry', { method: 'POST' });
+        setUnitsAlert(tenantInstallMessage(result));
+        setTenantInstallerActions(result);
+        await loadUnits();
+      } catch (error) {
+        setUnitsAlert(error.message || 'Không thử lại được khởi tạo đơn vị');
+      }
+    }
+
+    async function rollbackTenantInstall() {
+      if (!unitState.installerJobId || !confirm('Hoàn tác tiến trình cài đặt đơn vị này?')) return;
+      setUnitsAlert('Đang hoàn tác khởi tạo đơn vị...');
+      try {
+        const result = await api('/api/control-center/tenant-installer/' + encodeURIComponent(unitState.installerJobId) + '/rollback', { method: 'POST' });
+        setUnitsAlert(tenantInstallMessage(result));
+        setTenantInstallerActions(null);
+        await loadUnits();
+      } catch (error) {
+        setUnitsAlert(error.message || 'Không hoàn tác được khởi tạo đơn vị');
       }
     }
 
     async function checkUnitConnection(unit) {
-      setUnitsAlert('Dang kiem tra database ' + (unit.name || unit.code || '') + '...');
+      setUnitsAlert('Đang kiểm tra cơ sở dữ liệu ' + (unit.name || unit.code || '') + '...');
       try {
         await api('/api/control-center/units/' + encodeURIComponent(unit.id) + '/check-connection', { method: 'PATCH' });
-        setUnitsAlert('Da cap nhat trang thai database cho ' + (unit.name || unit.code || 'don vi'));
+        setUnitsAlert('Đã cập nhật trạng thái cơ sở dữ liệu cho ' + (unit.name || unit.code || 'đơn vị'));
         await loadUnits();
       } catch (error) {
-        setUnitsAlert(error.message || 'Khong kiem tra duoc database don vi');
+        setUnitsAlert(error.message || 'Không kiểm tra được cơ sở dữ liệu đơn vị');
       }
     }
 
     async function checkUnitWebsite(unit) {
-      setUnitsAlert('Dang kiem tra website ' + (unit.name || unit.code || '') + '...');
+      setUnitsAlert('Đang kiểm tra trang web ' + (unit.name || unit.code || '') + '...');
       try {
         await api('/api/control-center/units/' + encodeURIComponent(unit.id) + '/check-website', { method: 'PATCH' });
-        setUnitsAlert('Da cap nhat trang thai website cho ' + (unit.name || unit.code || 'don vi'));
+        setUnitsAlert('Đã cập nhật trạng thái trang web cho ' + (unit.name || unit.code || 'đơn vị'));
         await loadUnits();
       } catch (error) {
-        setUnitsAlert(error.message || 'Khong kiem tra duoc website don vi');
+        setUnitsAlert(error.message || 'Không kiểm tra được trang web đơn vị');
       }
     }
 
@@ -1881,7 +2443,7 @@
         else window.location.href = data.url;
       } catch (error) {
         if (popup) popup.close();
-        setUnitsAlert(error.message || 'Khong mo duoc Tenant Portal');
+        setUnitsAlert(error.message || 'Không mở được cổng đơn vị');
       }
     }
 
@@ -1900,14 +2462,14 @@
       const options = units.map((unit) => {
         const option = document.createElement('option');
         option.value = unit.id;
-        option.textContent = unit.name || unit.code || ('Don vi #' + unit.id);
+        option.textContent = unit.name || unit.code || ('Đơn vị #' + unit.id);
         if (String(unit.id) === String(selectedId)) option.selected = true;
         return option;
       });
       if (!options.length) {
         const option = document.createElement('option');
         option.value = '';
-        option.textContent = 'Chua co don vi';
+        option.textContent = 'Chưa có đơn vị';
         options.push(option);
       }
       select.replaceChildren(...options);
@@ -1915,7 +2477,7 @@
 
     async function openAccountModal(account = null) {
       accountState.editing = account;
-      document.getElementById('accountModalTitle').textContent = account ? 'Sua tai khoan' : 'Them tai khoan';
+      document.getElementById('accountModalTitle').textContent = account ? 'Sửa tài khoản' : 'Thêm tài khoản';
       document.getElementById('accountId').value = account?.id || '';
       document.getElementById('accountDisplayName').value = account?.displayName || '';
       document.getElementById('accountEmail').value = account?.email || '';
@@ -1955,13 +2517,13 @@
     }
 
     function validateAccountForm(payload, creating) {
-      if (!payload.display_name) return 'Ho ten la bat buoc';
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email || '')) return 'Email khong hop le';
-      if (!/^[a-z0-9._-]{3,60}$/.test(payload.username || '')) return 'Username khong hop le';
-      if (!['SYSTEM_ADMIN', 'VILLAGE_ADMIN', 'STAFF', 'VIEWER'].includes(payload.role)) return 'Vai tro khong hop le';
-      if (!['ACTIVE', 'INACTIVE'].includes(payload.status)) return 'Trang thai khong hop le';
-      if (!payload.unit_id) return 'Don vi la bat buoc';
-      if (creating && (!payload.password || payload.password.length < 8)) return 'Mat khau toi thieu 8 ky tu';
+      if (!payload.display_name) return 'Họ tên là bắt buộc';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email || '')) return 'Email không hợp lệ';
+      if (!/^[a-z0-9._-]{3,60}$/.test(payload.username || '')) return 'Tên đăng nhập không hợp lệ';
+      if (!['SYSTEM_ADMIN', 'VILLAGE_ADMIN', 'STAFF', 'VIEWER'].includes(payload.role)) return 'Vai trò không hợp lệ';
+      if (!['ACTIVE', 'INACTIVE'].includes(payload.status)) return 'Trạng thái không hợp lệ';
+      if (!payload.unit_id) return 'Đơn vị là bắt buộc';
+      if (creating && (!payload.password || payload.password.length < 8)) return 'Mật khẩu tối thiểu 8 ký tự';
       return '';
     }
 
@@ -1991,27 +2553,27 @@
         closeAccountModal();
         await loadAccounts();
       } catch (error) {
-        setAccountFormError(error.message || 'Khong luu duoc tai khoan');
+        setAccountFormError(error.message || 'Không lưu được tài khoản');
       } finally {
         button.disabled = false;
       }
     }
 
     async function changeAccountStatus(account, action) {
-      const message = action === 'deactivate' ? 'Xac nhan ngung su dung tai khoan nay?' : 'Xac nhan kich hoat tai khoan nay?';
+      const message = action === 'deactivate' ? 'Xác nhận ngừng sử dụng tài khoản này?' : 'Xác nhận kích hoạt tài khoản này?';
       if (!confirm(message)) return;
       setAccountsAlert('');
       try {
         await api('/api/control-center/users/' + encodeURIComponent(account.id) + '/' + action, { method: 'PATCH' });
         await loadAccounts();
       } catch (error) {
-        setAccountsAlert(error.message || 'Khong cap nhat duoc trang thai tai khoan');
+        setAccountsAlert(error.message || 'Không cập nhật được trạng thái tài khoản');
       }
     }
 
     function openPasswordModal(account) {
       accountState.passwordTarget = account;
-      document.getElementById('passwordModalTitle').textContent = 'Reset mat khau - ' + (account.displayName || account.email);
+      document.getElementById('passwordModalTitle').textContent = 'Đặt lại mật khẩu - ' + (account.displayName || account.email);
       document.getElementById('passwordAccountId').value = account.id;
       document.getElementById('newPassword').value = '';
       setPasswordFormError('');
@@ -2034,7 +2596,7 @@
       event.preventDefault();
       const password = formValue('newPassword');
       if (password.length < 8) {
-        setPasswordFormError('Mat khau toi thieu 8 ky tu');
+        setPasswordFormError('Mật khẩu tối thiểu 8 ký tự');
         return;
       }
       const button = document.getElementById('savePasswordButton');
@@ -2045,7 +2607,7 @@
         closePasswordModal();
         await loadAccounts();
       } catch (error) {
-        setPasswordFormError(error.message || 'Khong cap nhat duoc mat khau');
+        setPasswordFormError(error.message || 'Không cập nhật được mật khẩu');
       } finally {
         button.disabled = false;
       }
@@ -2069,7 +2631,7 @@
 
     async function loadControlCenter() {
       await Promise.all([loadUnits(), loadAccounts(), loadPermissions(), loadMonitoring()]).catch((error) => {
-        document.getElementById('healthBadge').textContent = 'DEGRADED';
+        document.getElementById('healthBadge').textContent = statusLabel('DEGRADED');
         document.getElementById('healthBadge').className = 'cc-badge warn';
       });
       renderAuditTenantFilter();
@@ -2088,6 +2650,7 @@
     document.getElementById('loginForm').addEventListener('submit', login);
     document.getElementById('logoutButton').addEventListener('click', logout);
     document.getElementById('refreshOperationsButton').addEventListener('click', () => loadDashboard().catch(() => {}));
+    document.getElementById('refreshExecutiveButton').addEventListener('click', () => loadDashboard().catch(() => {}));
     document.querySelectorAll('[data-go-section]').forEach((button) => {
       button.addEventListener('click', () => activateSection(button.dataset.goSection));
     });
@@ -2095,15 +2658,16 @@
       if (event.key !== 'Enter') return;
       const query = event.currentTarget.value.trim().toLowerCase();
       const targets = [
-        ['dashboard', ['dashboard', 'tong quan', 'thong ke']],
-        ['units', ['don vi', 'thon', 'xa', 'administrative']],
-        ['accounts', ['tai khoan', 'nguoi dung', 'user']],
-        ['permissions', ['phan quyen', 'permission', 'quyen']],
-        ['monitoring', ['monitoring', 'health', 'trang thai']],
-        ['audit', ['audit', 'lich su', 'truy vet']],
-        ['configuration', ['cau hinh', 'config', 'settings']],
-        ['notifications', ['thong bao', 'notification']],
-        ['ai', ['ai', 'tro ly']]
+        ['executive', ['bảng điều hành', 'bang dieu hanh', 'executive']],
+        ['dashboard', ['dashboard', 'tổng quan', 'thống kê', 'tong quan', 'thong ke']],
+        ['units', ['đơn vị', 'thôn', 'xã', 'don vi', 'thon', 'xa', 'administrative']],
+        ['accounts', ['tài khoản', 'người dùng', 'tai khoan', 'nguoi dung', 'user']],
+        ['permissions', ['phân quyền', 'quyền', 'phan quyen', 'permission', 'quyen']],
+        ['monitoring', ['giám sát', 'monitoring', 'health', 'trạng thái', 'trang thai']],
+        ['audit', ['nhật ký', 'kiểm toán', 'audit', 'lịch sử', 'truy vết', 'lich su', 'truy vet']],
+        ['configuration', ['cấu hình', 'cau hinh', 'config', 'settings']],
+        ['notifications', ['thông báo', 'thong bao', 'notification']],
+        ['ai', ['ai', 'trợ lý', 'tro ly']]
       ];
       const match = targets.find(([, terms]) => terms.some((term) => query.includes(term) || term.includes(query)));
       if (match) {
@@ -2112,8 +2676,14 @@
       }
     });
     document.getElementById('addUnitButton').addEventListener('click', () => openUnitModal());
+    document.getElementById('wizardBackButton').addEventListener('click', () => setTenantWizardStep(unitState.wizardStep - 1));
+    document.getElementById('wizardNextButton').addEventListener('click', nextTenantWizardStep);
+    document.getElementById('databaseCheckButton').addEventListener('click', checkTenantDatabaseConnection);
+    document.getElementById('preflightUnitButton').addEventListener('click', preflightUnitInstall);
     document.getElementById('refreshUnitsButton').addEventListener('click', () => loadUnits().catch((error) => setUnitsAlert(error.message)));
     document.getElementById('unitStatusFilter').addEventListener('change', () => loadUnits().catch((error) => setUnitsAlert(error.message)));
+    document.getElementById('retryTenantInstallButton').addEventListener('click', retryTenantInstall);
+    document.getElementById('rollbackTenantInstallButton').addEventListener('click', rollbackTenantInstall);
     document.getElementById('unitSearch').addEventListener('input', (() => {
       let timer = null;
       return () => {
@@ -2122,6 +2692,10 @@
       };
     })());
     document.getElementById('unitForm').addEventListener('submit', saveUnit);
+    document.querySelectorAll('#unitForm input, #unitForm select, #unitForm textarea').forEach((input) => {
+      input.addEventListener('input', resetTenantReadiness);
+      input.addEventListener('change', resetTenantReadiness);
+    });
     document.getElementById('closeUnitModalButton').addEventListener('click', closeUnitModal);
     document.getElementById('cancelUnitButton').addEventListener('click', closeUnitModal);
     document.getElementById('unitModal').addEventListener('click', (event) => {

@@ -39,46 +39,46 @@ function jsonResponse(stdout) {
 
 const listWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'GET', '/api/control-center/users'));
 assert.strictEqual(listWithoutToken.ok, false);
-assert.match(listWithoutToken.message, /dang nhap/);
+assert.match(listWithoutToken.message, /đăng nhập/i);
 
 const controlCenterHtml = runIndex('hongphongnb.com', 'GET', '/');
 assert.match(controlCenterHtml, /id="addAccountButton"/);
 assert.match(controlCenterHtml, /id="accountModal"/);
 assert.match(controlCenterHtml, /id="passwordModal"/);
 assert.match(controlCenterHtml, /id="accountSearch"/);
-assert.match(controlCenterHtml, /Chua dang nhap/);
+assert.match(controlCenterHtml, /Chưa đăng nhập/);
 assert.doesNotMatch(controlCenterHtml, /api\/control-center\/users\/\{id\}/);
 new Function([...controlCenterHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]).join('\n'));
 
 const createWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'POST', '/api/control-center/users'));
 assert.strictEqual(createWithoutToken.ok, false);
-assert.match(createWithoutToken.message, /dang nhap/);
+assert.match(createWithoutToken.message, /đăng nhập/i);
 
 const updateWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'PUT', '/api/control-center/users/1'));
 assert.strictEqual(updateWithoutToken.ok, false);
-assert.match(updateWithoutToken.message, /dang nhap/);
+assert.match(updateWithoutToken.message, /đăng nhập/i);
 
 const deactivateWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'PATCH', '/api/control-center/users/1/deactivate'));
 assert.strictEqual(deactivateWithoutToken.ok, false);
-assert.match(deactivateWithoutToken.message, /dang nhap/);
+assert.match(deactivateWithoutToken.message, /đăng nhập/i);
 
 const activateWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'PATCH', '/api/control-center/users/1/activate'));
 assert.strictEqual(activateWithoutToken.ok, false);
-assert.match(activateWithoutToken.message, /dang nhap/);
+assert.match(activateWithoutToken.message, /đăng nhập/i);
 
 const resetWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'PATCH', '/api/control-center/users/1/reset-password'));
 assert.strictEqual(resetWithoutToken.ok, false);
-assert.match(resetWithoutToken.message, /dang nhap/);
+assert.match(resetWithoutToken.message, /đăng nhập/i);
 
 const deleteNotSupported = jsonResponse(runIndex('hongphongnb.com', 'DELETE', '/api/control-center/users/1'));
 assert.strictEqual(deleteNotSupported.ok, false);
-assert.match(deleteNotSupported.message, /khong ton tai/);
+assert.match(deleteNotSupported.message, /không tồn tại/i);
 
 const tenantBlocked = jsonResponse(runIndex('tenant-a.hongphongnb.com', 'GET', '/api/control-center/users'));
 assert.strictEqual(tenantBlocked.ok, false);
 
 const tenantApiBlockedOnRoot = jsonResponse(runIndex('hongphongnb.com', 'GET', '/api/users'));
 assert.strictEqual(tenantApiBlockedOnRoot.ok, false);
-assert.match(tenantApiBlockedOnRoot.message, /tenant khong kha dung/);
+assert.match(tenantApiBlockedOnRoot.message, /đơn vị không khả dụng/i);
 
 console.log('Control Center User Management smoke tests passed.');

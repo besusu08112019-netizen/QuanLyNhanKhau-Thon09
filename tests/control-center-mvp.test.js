@@ -43,15 +43,15 @@ assert.match(html, /data-section="accounts"/);
 assert.match(html, /data-section="permissions"/);
 assert.match(html, /id="permissionsSection"/);
 assert.match(html, /id="logoutButton"/);
-assert.match(html, /Phan quyen Community Control Center/);
+assert.match(html, /Phân quyền Community Control Center/);
 
 const permissions = jsonResponse(runIndex('hongphongnb.com', '/api/control-center/permissions'));
 assert.strictEqual(permissions.ok, false);
-assert.match(permissions.message, /dang nhap/i);
+assert.match(permissions.message, /đăng nhập/i);
 
 const update = jsonResponse(runIndex('hongphongnb.com', '/api/control-center/permissions', 'PUT'));
 assert.strictEqual(update.ok, false);
-assert.match(update.message, /dang nhap/i);
+assert.match(update.message, /đăng nhập/i);
 
 const tenantBlocked = jsonResponse(runIndex('tenant-a.hongphongnb.com', '/api/control-center/permissions'));
 assert.strictEqual(tenantBlocked.ok, false);

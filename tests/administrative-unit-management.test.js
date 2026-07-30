@@ -51,25 +51,25 @@ new Function([...controlCenterHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].ma
 
 const createWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'POST', '/api/control-center/units'));
 assert.strictEqual(createWithoutToken.ok, false);
-assert.match(createWithoutToken.message, /dang nhap/);
+assert.match(createWithoutToken.message, /đăng nhập/i);
 
 const updateWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'PUT', '/api/control-center/units/1'));
 assert.strictEqual(updateWithoutToken.ok, false);
-assert.match(updateWithoutToken.message, /dang nhap/);
+assert.match(updateWithoutToken.message, /đăng nhập/i);
 
 const lockWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'PATCH', '/api/control-center/units/1/lock'));
 assert.strictEqual(lockWithoutToken.ok, false);
-assert.match(lockWithoutToken.message, /dang nhap/);
+assert.match(lockWithoutToken.message, /đăng nhập/i);
 
 const activateWithoutToken = jsonResponse(runIndex('hongphongnb.com', 'PATCH', '/api/control-center/units/1/activate'));
 assert.strictEqual(activateWithoutToken.ok, false);
-assert.match(activateWithoutToken.message, /dang nhap/);
+assert.match(activateWithoutToken.message, /đăng nhập/i);
 
 const tenantBlocked = jsonResponse(runIndex('tenant-a.hongphongnb.com', 'GET', '/api/control-center/units'));
 assert.strictEqual(tenantBlocked.ok, false);
 
 const tenantApiBlockedOnRoot = jsonResponse(runIndex('hongphongnb.com', 'GET', '/api/households'));
 assert.strictEqual(tenantApiBlockedOnRoot.ok, false);
-assert.match(tenantApiBlockedOnRoot.message, /tenant khong kha dung/);
+assert.match(tenantApiBlockedOnRoot.message, /đơn vị không khả dụng/i);
 
 console.log('Administrative Unit Management smoke tests passed.');

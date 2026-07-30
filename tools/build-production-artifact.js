@@ -17,6 +17,8 @@ const includeFiles = [
   'api/index.php',
   'config/app.php',
   'config/database.example.php',
+  'config/env.php',
+  'config/policy_alerts.php',
   'storage/.htaccess',
   'uploads/.htaccess',
   'views/app.php',

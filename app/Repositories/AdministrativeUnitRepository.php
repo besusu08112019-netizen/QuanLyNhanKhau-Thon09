@@ -49,7 +49,7 @@ final class AdministrativeUnitRepository
             'domain' => $data['domain'] ?? null,
             'subdomain' => $data['subdomain'] ?? null,
             'logo_url' => $data['logo'] ?? null,
-            'status' => $data['status'] ?? 'ACTIVE',
+            'status' => $data['status'] ?? 'READY',
         ];
         foreach ($this->optionalColumnMap() as $input => $column) {
             if ($this->hasColumn($column)) {
@@ -107,15 +107,15 @@ final class AdministrativeUnitRepository
         }
         $params = ['id' => $id, 'status' => $status];
         if ($this->hasColumn('connection_status')) {
-            $params['connection_status'] = $status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED';
+            $params['connection_status'] = in_array($status, ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED';
         }
         if ($this->hasColumn('website_status')) {
             $sets[] = 'website_status = :website_status';
-            $params['website_status'] = $status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED';
+            $params['website_status'] = in_array($status, ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED';
         }
         if ($this->hasColumn('database_status')) {
             $sets[] = 'database_status = :database_status';
-            $params['database_status'] = $status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED';
+            $params['database_status'] = in_array($status, ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED';
         }
         $stmt = $this->db()->prepare('UPDATE villages SET ' . implode(', ', $sets) . ' WHERE id = :id');
         $stmt->execute($params);
@@ -217,7 +217,8 @@ final class AdministrativeUnitRepository
         $params = [];
 
         $status = strtoupper(trim((string) ($filters['status'] ?? '')));
-        if (in_array($status, ['ACTIVE', 'INACTIVE'], true)) {
+        if ($status === 'INACTIVE') $status = 'DISABLED';
+        if (in_array($status, ['ACTIVE', 'READY', 'DISABLED', 'CREATING', 'FAILED', 'MAINTENANCE'], true)) {
             $where[] = 'v.status = :status';
             $params['status'] = $status;
         }
@@ -318,14 +319,14 @@ final class AdministrativeUnitRepository
             'databaseCharset' => (string) ($row['database_charset'] ?: 'utf8mb4'),
             'logo' => (string) ($row['logo_url'] ?? ''),
             'status' => $status,
-            'manager' => (string) ($row['registry_manager_name'] ?: 'Chua gan'),
+            'manager' => (string) ($row['registry_manager_name'] ?: 'Chưa gán'),
             'version' => (string) ($row['registry_version'] ?: $row['app_version'] ?: (defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1')),
             'appVersion' => (string) ($row['app_version'] ?? ''),
             'buildVersion' => (string) ($row['build_version'] ?? ''),
             'schemaVersion' => (string) ($row['schema_version'] ?? ''),
-            'healthStatus' => (string) ($row['connection_status'] ?: ($status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED')),
-            'websiteStatus' => (string) ($row['website_status'] ?: ($status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED')),
-            'databaseStatus' => (string) ($row['database_status'] ?: ($row['connection_status'] ?: ($status === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED'))),
+            'healthStatus' => (string) ($row['connection_status'] ?: (in_array($status, ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED')),
+            'websiteStatus' => (string) ($row['website_status'] ?: (in_array($status, ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED')),
+            'databaseStatus' => (string) ($row['database_status'] ?: ($row['connection_status'] ?: (in_array($status, ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED'))),
             'sslStatus' => (string) ($row['ssl_status'] ?: 'UNKNOWN'),
             'storageUsageBytes' => $row['storage_usage_bytes'] !== null ? (int) $row['storage_usage_bytes'] : null,
             'lastCheckedAt' => $row['last_checked_at'] ?? null,

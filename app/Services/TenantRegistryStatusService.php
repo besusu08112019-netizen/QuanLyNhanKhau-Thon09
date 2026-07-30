@@ -42,7 +42,7 @@ final class TenantRegistryStatusService
         }
 
         $status = strtoupper((string) ($row['status'] ?? ''));
-        if ($status !== 'ACTIVE') {
+        if (!in_array($status, ['READY', 'ACTIVE'], true)) {
             return $this->locked('tenant_locked', 'Don vi dang bi khoa tren Community Control Center', $row);
         }
 

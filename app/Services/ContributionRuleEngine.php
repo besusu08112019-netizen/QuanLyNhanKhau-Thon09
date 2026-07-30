@@ -6,7 +6,7 @@ use App\Policies\AgePolicy;
 
 final class ContributionRuleEngine
 {
-    // TODO: Move to Policy Engine under Contribution/Employment Policy.
+    // Planned migration: move to Policy Engine under Contribution/Employment Policy.
     // This is a contribution-specific retirement-age rule, not the shared statistical working-age rule.
     private const LABOR_AGE = [
         'min_years' => 15,
@@ -290,7 +290,7 @@ final class ContributionRuleEngine
 
     private function isLaborAge(array $member): bool
     {
-        // TODO: Move to Policy Engine with Contribution/Employment Policy.
+        // Planned migration: move to Policy Engine with Contribution/Employment Policy.
         $ageMonths = $this->ageMonths($member['date_of_birth'] ?? null);
         if ($ageMonths === null || $ageMonths < self::LABOR_AGE['min_years'] * 12) return false;
         $gender = (string) ($member['gender'] ?? '');
@@ -316,7 +316,7 @@ final class ContributionRuleEngine
 
     private function ageMonths(mixed $date): ?int
     {
-        // TODO: Move to Policy Engine with Contribution/Employment Policy.
+        // Planned migration: move to Policy Engine with Contribution/Employment Policy.
         // Month-precise retirement checks are outside Sprint 1 Age Policy.
         if (!$date) return null;
         try {

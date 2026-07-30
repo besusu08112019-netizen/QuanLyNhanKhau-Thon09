@@ -30,7 +30,7 @@ final class TenantContext
 
             $stmt = $pdo->prepare(
                 'SELECT * FROM villages
-                 WHERE status = "ACTIVE"
+                 WHERE status IN ("ACTIVE", "READY")
                    AND (domain = :host OR subdomain = :host OR code = :fallback_code)
                  ORDER BY CASE WHEN domain = :host THEN 0 WHEN subdomain = :host THEN 1 ELSE 2 END
                  LIMIT 1'

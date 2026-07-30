@@ -42,7 +42,7 @@ final class ControlCenterController extends BaseController
         $this->respond($this->service->monitoring());
     }
 
-    public function audit(): void
+    public function auditLogs(): void
     {
         $this->respond($this->service->audit($this->query()));
     }

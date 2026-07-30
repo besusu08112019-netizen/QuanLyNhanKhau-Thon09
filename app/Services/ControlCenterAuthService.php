@@ -14,12 +14,12 @@ final class ControlCenterAuthService
     {
         $login = strtolower(trim($login));
         if ($login === '' || strlen($password) < 1 || strlen($password) > 1024) {
-            throw new RuntimeException('Invalid account or password');
+            throw new RuntimeException('Tài khoản hoặc mật khẩu không đúng');
         }
 
         $user = $this->findLoginUser($login);
         if (!$user || (string) $user['status'] !== 'ACTIVE' || !password_verify($password, (string) $user['password_hash'])) {
-            throw new RuntimeException('Invalid account or password');
+            throw new RuntimeException('Tài khoản hoặc mật khẩu không đúng');
         }
 
         if (password_needs_rehash((string) $user['password_hash'], PASSWORD_DEFAULT)) {
@@ -59,7 +59,7 @@ final class ControlCenterAuthService
     {
         $user = $this->findByToken($token);
         if (!$user) {
-            throw new RuntimeException('Vui long dang nhap');
+            throw new RuntimeException('Vui lòng đăng nhập');
         }
         return $this->publicUser($user);
     }

@@ -53,7 +53,7 @@ jobs:
           extensions: curl, json
           coverage: none
 
-      - name: Create production env file
+      - name: Create deploy database env file
         shell: bash
         env:
           DB_HOST: ${{ secrets.DB_HOST || vars.DB_HOST }}
@@ -121,7 +121,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Create rollback production env
+      - name: Create production env
         shell: bash
         env:
           DB_HOST: ${{ secrets.DB_HOST || vars.DB_HOST }}
@@ -142,9 +142,9 @@ jobs:
             echo "DB_USERNAME=${DB_USERNAME}"
             echo "DB_PASSWORD=${DB_PASSWORD}"
             echo "DB_CHARSET=${DB_CHARSET:-utf8mb4}"
-            echo "PLATFORM_ADMIN_ENABLED=false"
+            echo "PLATFORM_ADMIN_ENABLED=true"
             echo "PLATFORM_ADMIN_DOMAINS=hongphongnb.com,admin.hongphongnb.com"
-            echo "PLATFORM_DEFAULT_PORTAL=PUBLIC"
+            echo "PLATFORM_DEFAULT_PORTAL=TENANT"
             echo "PLATFORM_TENANT_DOMAIN_PATTERN={code}.hongphongnb.com"
           } > dist/production/.env
 

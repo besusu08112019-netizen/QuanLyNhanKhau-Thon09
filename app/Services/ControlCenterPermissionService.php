@@ -9,39 +9,40 @@ use InvalidArgumentException;
 final class ControlCenterPermissionService
 {
     private const ROLES = [
-        'SYSTEM_ADMIN' => 'Quan tri he thong',
-        'VILLAGE_ADMIN' => 'Quan tri thon',
-        'STAFF' => 'Can bo nhap lieu',
-        'VIEWER' => 'Chi xem',
+        'SYSTEM_ADMIN' => 'Quản trị hệ thống',
+        'VILLAGE_ADMIN' => 'Quản trị thôn',
+        'STAFF' => 'Cán bộ nhập liệu',
+        'VIEWER' => 'Chỉ xem',
     ];
 
     private const GROUPS = [
         'units' => [
-            'name' => 'Don vi hanh chinh',
+            'name' => 'Đơn vị hành chính',
             'permissions' => [
-                'control_center.units.read' => 'Xem don vi',
-                'control_center.units.create' => 'Them don vi',
-                'control_center.units.update' => 'Sua don vi',
-                'control_center.units.lock' => 'Khoa don vi',
-                'control_center.units.activate' => 'Kich hoat don vi',
+                'control_center.units.read' => 'Xem đơn vị',
+                'control_center.units.create' => 'Thêm đơn vị',
+                'control_center.units.install' => 'Cài đặt tenant',
+                'control_center.units.update' => 'Sửa đơn vị',
+                'control_center.units.lock' => 'Khóa đơn vị',
+                'control_center.units.activate' => 'Kích hoạt đơn vị',
             ],
         ],
         'users' => [
-            'name' => 'Tai khoan he thong',
+            'name' => 'Tài khoản hệ thống',
             'permissions' => [
-                'control_center.users.read' => 'Xem tai khoan',
-                'control_center.users.create' => 'Them tai khoan',
-                'control_center.users.update' => 'Sua tai khoan',
-                'control_center.users.deactivate' => 'Ngung tai khoan',
-                'control_center.users.activate' => 'Kich hoat tai khoan',
-                'control_center.users.reset_password' => 'Reset mat khau',
+                'control_center.users.read' => 'Xem tài khoản',
+                'control_center.users.create' => 'Thêm tài khoản',
+                'control_center.users.update' => 'Sửa tài khoản',
+                'control_center.users.deactivate' => 'Ngừng tài khoản',
+                'control_center.users.activate' => 'Kích hoạt tài khoản',
+                'control_center.users.reset_password' => 'Đặt lại mật khẩu',
             ],
         ],
         'permissions' => [
-            'name' => 'Phan quyen',
+            'name' => 'Phân quyền',
             'permissions' => [
-                'control_center.permissions.read' => 'Xem phan quyen',
-                'control_center.permissions.update' => 'Cap nhat phan quyen',
+                'control_center.permissions.read' => 'Xem phân quyền',
+                'control_center.permissions.update' => 'Cập nhật phân quyền',
             ],
         ],
         'dashboard' => [
@@ -51,13 +52,13 @@ final class ControlCenterPermissionService
             ],
         ],
         'operations' => [
-            'name' => 'Van hanh sau',
+            'name' => 'Vận hành sau',
             'permissions' => [
-                'control_center.monitoring.read' => 'Xem monitoring',
-                'control_center.audit.read' => 'Xem audit',
-                'control_center.configuration.read' => 'Xem cau hinh',
-                'control_center.notification.read' => 'Xem thong bao',
-                'control_center.ai.read' => 'Dung AI',
+                'control_center.monitoring.read' => 'Xem giám sát',
+                'control_center.audit.read' => 'Xem nhật ký',
+                'control_center.configuration.read' => 'Xem cấu hình',
+                'control_center.notification.read' => 'Xem thông báo',
+                'control_center.ai.read' => 'Dùng AI',
             ],
         ],
     ];
@@ -96,7 +97,7 @@ final class ControlCenterPermissionService
             $allowed = (bool) ($item['allowed'] ?? false);
             $this->assertMutable($role, $permission, $allowed);
             $this->repository->set($role, $permission, $allowed, (int) $actor['id']);
-            $this->audit?->write($actor, 'permission.updated', null, 'Cap nhat phan quyen', [
+            $this->audit?->write($actor, 'permission.updated', null, 'Cập nhật phân quyền', [
                 'role' => $role,
                 'permission' => $permission,
                 'allowed' => $allowed,
@@ -112,7 +113,7 @@ final class ControlCenterPermissionService
         $permission = $this->validatePermission((string) ($input['permission'] ?? ''));
         $this->assertMutable($role, $permission, $this->defaultAllowed($role, $permission));
         $this->repository->reset($role, $permission);
-        $this->audit?->write($actor, 'permission.reset', null, 'Khoi phuc phan quyen mac dinh', [
+        $this->audit?->write($actor, 'permission.reset', null, 'Khôi phục phân quyền mặc định', [
             'role' => $role,
             'permission' => $permission,
         ]);
@@ -180,7 +181,7 @@ final class ControlCenterPermissionService
     {
         $role = strtoupper(trim($role));
         if (!array_key_exists($role, self::ROLES)) {
-            throw new InvalidArgumentException('Role khong hop le');
+            throw new InvalidArgumentException('Vai trò không hợp lệ');
         }
         return $role;
     }
@@ -193,20 +194,20 @@ final class ControlCenterPermissionService
                 return $permission;
             }
         }
-        throw new InvalidArgumentException('Permission khong hop le');
+        throw new InvalidArgumentException('Quyền không hợp lệ');
     }
 
     private function assertMutable(string $role, string $permission, bool $allowed): void
     {
         if ($role === 'SYSTEM_ADMIN' && in_array($permission, self::CORE_SYSTEM_ADMIN_PERMISSIONS, true) && !$allowed) {
-            throw new InvalidArgumentException('Khong duoc tat quyen quan tri cot loi');
+            throw new InvalidArgumentException('Không được tắt quyền quản trị cốt lõi');
         }
     }
 
     private function requireActor(string $permission): array
     {
         if (!$this->authorization) {
-            throw new InvalidArgumentException('Authorization chua san sang');
+            throw new InvalidArgumentException('Authorization chưa sẵn sàng');
         }
         return $this->authorization->authorize($permission);
     }

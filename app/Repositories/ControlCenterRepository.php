@@ -21,13 +21,13 @@ final class ControlCenterRepository
 
         return [
             'totalUnits' => $this->count('villages', '1=1'),
-            'activeUnits' => $this->count('villages', "status = 'ACTIVE'"),
-            'inactiveUnits' => $this->count('villages', "status <> 'ACTIVE'"),
+            'activeUnits' => $this->count('villages', "status IN ('READY','ACTIVE')"),
+            'inactiveUnits' => $this->count('villages', "status NOT IN ('READY','ACTIVE')"),
             'websiteOnlineUnits' => $this->tenantStatusCount('website_status', 'ONLINE'),
             'websiteOfflineUnits' => $this->tenantStatusCount('website_status', 'OFFLINE'),
             'databaseConnectedUnits' => $this->tenantStatusCount('database_status', 'CONNECTED'),
             'databaseDisconnectedUnits' => $this->tenantStatusCount('database_status', 'DISCONNECTED'),
-            'lockedUnits' => $this->count('villages', "status <> 'ACTIVE'"),
+            'lockedUnits' => $this->count('villages', "status NOT IN ('READY','ACTIVE')"),
             'latestBackupAt' => $this->latestTenantValue('last_backup_at'),
             'versions' => $this->tenantVersions(),
             'totalHouseholds' => $this->count('households', "status <> 'DELETED'"),
@@ -107,14 +107,14 @@ final class ControlCenterRepository
             'databaseCharset' => (string) ($row['database_charset'] ?: 'utf8mb4'),
             'logo' => (string) ($row['logo_url'] ?? ''),
             'status' => (string) $row['status'],
-            'manager' => (string) ($row['registry_manager_name'] ?: $row['manager_name'] ?: 'Chua gan'),
+            'manager' => (string) ($row['registry_manager_name'] ?: $row['manager_name'] ?: 'Chưa gán'),
             'version' => (string) ($row['app_version'] ?: (defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1')),
             'appVersion' => (string) ($row['app_version'] ?? ''),
             'buildVersion' => (string) ($row['build_version'] ?? ''),
             'schemaVersion' => (string) ($row['schema_version'] ?? ''),
-            'healthStatus' => (string) ($row['database_status'] ?: ($row['status'] === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED')),
-            'websiteStatus' => (string) ($row['website_status'] ?: ($row['status'] === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED')),
-            'databaseStatus' => (string) ($row['database_status'] ?: ($row['status'] === 'ACTIVE' ? 'UNKNOWN' : 'LOCKED')),
+            'healthStatus' => (string) ($row['database_status'] ?: (in_array((string) $row['status'], ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED')),
+            'websiteStatus' => (string) ($row['website_status'] ?: (in_array((string) $row['status'], ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED')),
+            'databaseStatus' => (string) ($row['database_status'] ?: (in_array((string) $row['status'], ['READY', 'ACTIVE'], true) ? 'UNKNOWN' : 'LOCKED')),
             'sslStatus' => (string) ($row['ssl_status'] ?: 'UNKNOWN'),
             'lastCheckedAt' => $row['last_checked_at'] ?? null,
             'lastBackupAt' => $row['last_backup_at'] ?? null,
@@ -146,7 +146,7 @@ final class ControlCenterRepository
                 'code' => $role['code'],
                 'name' => $role['name'],
                 'users' => $total,
-                'status' => 'ACTIVE',
+                'status' => 'READY',
             ];
         }, $roles);
     }
@@ -260,26 +260,26 @@ final class ControlCenterRepository
 
             $website = (string) ($unit['websiteStatus'] ?? 'UNKNOWN');
             if (in_array($website, ['OFFLINE', 'UNKNOWN'], true)) {
-                $items[] = $this->operationItem($website === 'OFFLINE' ? 'HIGH' : 'MEDIUM', 'website', $tenant, $website === 'OFFLINE' ? 'Website dang offline' : 'Website chua duoc kiem tra', 'check_website');
+                $items[] = $this->operationItem($website === 'OFFLINE' ? 'HIGH' : 'MEDIUM', 'website', $tenant, $website === 'OFFLINE' ? 'Website đang offline' : 'Website chưa được kiểm tra', 'check_website');
             }
 
             $database = (string) ($unit['databaseStatus'] ?? 'UNKNOWN');
             if (in_array($database, ['DISCONNECTED', 'UNKNOWN'], true)) {
-                $items[] = $this->operationItem($database === 'DISCONNECTED' ? 'HIGH' : 'MEDIUM', 'database', $tenant, $database === 'DISCONNECTED' ? 'Database mat ket noi' : 'Database chua duoc kiem tra', 'check_database');
+                $items[] = $this->operationItem($database === 'DISCONNECTED' ? 'HIGH' : 'MEDIUM', 'database', $tenant, $database === 'DISCONNECTED' ? 'Database mất kết nối' : 'Database chưa được kiểm tra', 'check_database');
             }
 
             $ssl = (string) ($unit['sslStatus'] ?? 'UNKNOWN');
             if ($ssl === 'INVALID') {
-                $items[] = $this->operationItem('HIGH', 'ssl', $tenant, 'SSL khong hop le', 'check_website');
+                $items[] = $this->operationItem('HIGH', 'ssl', $tenant, 'SSL không hợp lệ', 'check_website');
             }
 
             if (empty($unit['lastBackupAt'])) {
-                $items[] = $this->operationItem('MEDIUM', 'backup', $tenant, 'Chua co thong tin backup gan nhat', 'view_unit');
+                $items[] = $this->operationItem('MEDIUM', 'backup', $tenant, 'Chưa có thông tin backup gần nhất', 'view_unit');
             }
 
             $version = (string) ($unit['version'] ?? '');
             if ($currentVersion !== '' && $version !== '' && $version !== $currentVersion) {
-                $items[] = $this->operationItem('LOW', 'version', $tenant, 'Tenant khac phien ban hien tai', 'view_unit');
+                $items[] = $this->operationItem('LOW', 'version', $tenant, 'Tenant khác phiên bản hiện tại', 'view_unit');
             }
         }
 
@@ -322,9 +322,9 @@ final class ControlCenterRepository
         return [
             'id' => (int) $row['id'],
             'tenantId' => (int) ($row['village_id'] ?? 0),
-            'tenantName' => (string) ($row['tenant_name'] ?: $row['tenant_code'] ?: 'He thong'),
+            'tenantName' => (string) ($row['tenant_name'] ?: $row['tenant_code'] ?: 'Hệ thống'),
             'createdAt' => $row['created_at'] ?? null,
-            'actor' => (string) ($row['actor_email'] ?: 'He thong'),
+            'actor' => (string) ($row['actor_email'] ?: 'Hệ thống'),
             'module' => (string) ($row['module'] ?? ''),
             'action' => (string) ($row['action'] ?? ''),
             'level' => (string) ($row['level'] ?? 'INFO'),

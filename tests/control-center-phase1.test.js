@@ -42,7 +42,7 @@ assert.strictEqual(status.data.status, 'ready');
 
 const blocked = firstJson(runIndex('hongphongnb.com', '/api/citizens'));
 assert.strictEqual(blocked.ok, false);
-assert.match(blocked.message, /tenant khong kha dung/);
+assert.match(blocked.message, /đơn vị không khả dụng/i);
 
 const controlCenterHtml = runIndex('hongphongnb.com', '/');
 assert.match(controlCenterHtml, /Community Control Center/);
@@ -53,7 +53,7 @@ assert.match(tenantHtml, /id="loginView"/);
 assert.doesNotMatch(tenantHtml, /Phase 1 Shell/);
 
 const compatibilityHtml = runIndex('hongphongnb.com', '/', { PLATFORM_ADMIN_ENABLED: 'false' });
-assert.match(compatibilityHtml, /id="loginView"/);
-assert.doesNotMatch(compatibilityHtml, /Phase 1 Shell/);
+assert.match(compatibilityHtml, /Chế độ bảo trì/);
+assert.doesNotMatch(compatibilityHtml, /Production rollback active/);
 
 console.log('Control Center Phase 1 smoke tests passed.');
