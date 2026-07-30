@@ -1,6 +1,28 @@
 # Deployment
 
-Production deployment uses one shared source codebase.
+Deployment uses one shared source codebase per environment. Production and
+Staging must be isolated from each other.
+
+## Environment Flow
+
+```text
+Developer
+-> Local
+-> GitHub
+-> Staging
+-> Production
+```
+
+Long-term branch flow:
+
+```text
+feature/*
+-> develop
+-> staging
+-> main
+```
+
+Only `staging` deploys Staging. Only `main` deploys Production.
 
 ## Target Model
 
@@ -28,6 +50,24 @@ Current production DocumentRoot:
 The active production source is therefore:
 
 - `/home/nhhon5mp/public_html`
+
+## Current Staging Source
+
+Staging is an official multi-tenant environment, but the hosting resources are
+currently `Infrastructure Pending`.
+
+Preferred staging hosts:
+
+- `ccc-staging.hongphongnb.com`
+- `thon09-staging.hongphongnb.com`
+- `thon10-staging.hongphongnb.com`
+
+Preferred staging source:
+
+- `/home/nhhon5mp/staging_public_html`
+
+Staging must use separate databases, uploads, cache, sessions, logs, and
+backups. See `docs/STAGING_ENVIRONMENT.md`.
 
 All production checks must inspect this source only.
 
@@ -59,6 +99,14 @@ They may only be inspected when an explicit rollback investigation requires it.
 - Do not overwrite tenant `.env.*` files during source deploy.
 - Do not delete tenant uploads, backups, logs, or databases during deploy.
 
+## Staging Rules
+
+- Do not point Staging at `/home/nhhon5mp/public_html`.
+- Do not use the production database.
+- Do not use production uploads, cache, sessions, logs, or backups.
+- Do not deploy Staging from `main`.
+- Do not promote to Production until Staging PASS is recorded.
+
 ## Required Checks Before Deploy
 
 1. `git status` must show only approved changes.
@@ -68,6 +116,13 @@ They may only be inspected when an explicit rollback investigation requires it.
 5. Confirm no tenant-specific database or domain is hard-coded.
 6. Confirm migration plan, if schema changes are included.
 7. Confirm rollback plan.
+
+For Staging, also confirm:
+
+1. `staging` branch contains the intended release candidate.
+2. Staging GitHub environment uses only `STAGING_*` secrets and variables.
+3. Staging tenant databases are isolated from production databases.
+4. Staging tenant URLs resolve to the staging DocumentRoot.
 
 ## Required Checks After Deploy
 
@@ -80,6 +135,9 @@ At minimum verify:
 - Upload path is tenant-isolated.
 - Export/PDF still works.
 - No tenant sees data from another tenant.
+
+For Staging, verify the same behavior against staging tenants only. Staging
+verification must not mutate production data.
 
 ## Rollback
 

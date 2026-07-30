@@ -27,6 +27,7 @@ jobs:
           STAGING_FTP_PASSWORD: ${{ secrets.STAGING_FTP_PASSWORD }}
           STAGING_FTP_SERVER_DIR: ${{ vars.STAGING_FTP_SERVER_DIR }}
           STAGING_APP_URL: ${{ vars.STAGING_APP_URL }}
+          STAGING_TENANT_PARITY_URLS: ${{ vars.STAGING_TENANT_PARITY_URLS }}
           STAGING_DB_HOST: ${{ secrets.STAGING_DB_HOST || vars.STAGING_DB_HOST }}
           STAGING_DB_DATABASE: ${{ secrets.STAGING_DB_DATABASE || vars.STAGING_DB_DATABASE }}
           STAGING_DB_USERNAME: ${{ secrets.STAGING_DB_USERNAME || vars.STAGING_DB_USERNAME }}
@@ -137,9 +138,9 @@ jobs:
             echo "DB_PASSWORD=${STAGING_DB_PASSWORD}"
             echo "DB_CHARSET=${STAGING_DB_CHARSET:-utf8mb4}"
             echo "PLATFORM_ADMIN_ENABLED=true"
-            echo "PLATFORM_ADMIN_DOMAINS=${STAGING_PLATFORM_ADMIN_DOMAINS:-staging.hongphongnb.com,ccc-staging.hongphongnb.com}"
+            echo "PLATFORM_ADMIN_DOMAINS=${STAGING_PLATFORM_ADMIN_DOMAINS:-ccc-staging.hongphongnb.com,staging.hongphongnb.com}"
             echo "PLATFORM_DEFAULT_PORTAL=TENANT"
-            echo "PLATFORM_TENANT_DOMAIN_PATTERN=${STAGING_PLATFORM_TENANT_DOMAIN_PATTERN:-{code}.staging.hongphongnb.com}"
+            echo "PLATFORM_TENANT_DOMAIN_PATTERN=${STAGING_PLATFORM_TENANT_DOMAIN_PATTERN:-{code}-staging.hongphongnb.com}"
             if [ -n "${STAGING_UPLOAD_PATH}" ]; then echo "UPLOAD_PATH=${STAGING_UPLOAD_PATH}"; fi
             if [ -n "${STAGING_STORAGE_PATH}" ]; then echo "STORAGE_PATH=${STAGING_STORAGE_PATH}"; fi
             if [ -n "${STAGING_CACHE_PATH}" ]; then echo "CACHE_PATH=${STAGING_CACHE_PATH}"; fi
@@ -186,3 +187,17 @@ jobs:
         run: |
           curl -fsS "${STAGING_APP_URL}" -o /tmp/staging-home.html
           grep -q 'Community Control Center' /tmp/staging-home.html
+
+      - name: Verify staging tenant source parity
+        shell: bash
+        env:
+          TENANT_PARITY_URLS: ${{ vars.STAGING_TENANT_PARITY_URLS }}
+          TENANT_PARITY_LOGIN_JSON: ${{ secrets.STAGING_TENANT_PARITY_LOGIN_JSON }}
+          TENANT_PARITY_REQUIRE_LOGIN: ${{ vars.STAGING_TENANT_PARITY_REQUIRE_LOGIN || '0' }}
+          TENANT_PARITY_REQUIRED_MODULES: ${{ vars.STAGING_TENANT_PARITY_REQUIRED_MODULES }}
+        run: |
+          if [ -z "${TENANT_PARITY_URLS}" ]; then
+            echo "STAGING_TENANT_PARITY_URLS is not configured; skipping tenant parity until staging tenants are provisioned."
+            exit 0
+          fi
+          php tools/tenant_parity_check.php
