@@ -3,12 +3,12 @@
   const configuredTimeoutSeconds = Number(settings.idleTimeoutSeconds);
   const configuredWarningSeconds = Number(settings.idleWarningSeconds);
   if (!Number.isFinite(configuredTimeoutSeconds) || !Number.isFinite(configuredWarningSeconds)) return;
-  const timeoutSeconds = Math.max(2, configuredTimeoutSeconds);
-  const warningSeconds = Math.min(Math.max(1, configuredWarningSeconds), timeoutSeconds - 1);
-  const timeoutMs = timeoutSeconds * 1000;
-  const warningMs = warningSeconds * 1000;
-  const warningLeadMs = Math.max(0, timeoutMs - warningMs);
-  const keepAliveIntervalMs = Math.max(1000, Math.min(60000, Math.floor(timeoutMs / 2)));
+  let timeoutSeconds = Math.max(2, configuredTimeoutSeconds);
+  let warningSeconds = Math.min(Math.max(1, configuredWarningSeconds), Math.max(1, Math.floor(timeoutSeconds / 2)), timeoutSeconds - 1);
+  let timeoutMs = timeoutSeconds * 1000;
+  let warningMs = warningSeconds * 1000;
+  let warningLeadMs = sessionWarningLead(timeoutMs, warningMs);
+  let keepAliveIntervalMs = Math.max(1000, Math.min(60000, Math.floor(timeoutMs / 2)));
   const activityEvents = ['mousemove', 'mousedown', 'click', 'contextmenu', 'touchstart', 'touchmove', 'scroll', 'keydown', 'pointerdown', 'pointermove'];
   const channelName = tenantEventName('auth-session');
   const activityKey = tenantStorageKey('last_activity_at');
@@ -28,6 +28,48 @@
   let warningModalEl = null;
   let broadcastChannel = null;
 
+  function applySessionTiming(nextTimeoutSeconds, nextWarningSeconds = configuredWarningSeconds) {
+    const nextTimeout = Number(nextTimeoutSeconds);
+    if (!Number.isFinite(nextTimeout) || nextTimeout < 2) return;
+    timeoutSeconds = Math.max(2, nextTimeout);
+    const fallbackWarning = Math.min(Number(nextWarningSeconds) || configuredWarningSeconds, Math.max(1, Math.floor(timeoutSeconds / 2)));
+    warningSeconds = Math.min(Math.max(1, Number(fallbackWarning) || 1), timeoutSeconds - 1);
+    timeoutMs = timeoutSeconds * 1000;
+    warningMs = warningSeconds * 1000;
+    warningLeadMs = sessionWarningLead(timeoutMs, warningMs);
+    keepAliveIntervalMs = Math.max(1000, Math.min(60000, Math.floor(timeoutMs / 2)));
+    syncAuthCookie();
+    if (isAuthenticated()) scheduleIdleTimers();
+  }
+
+  function sessionWarningLead(nextTimeoutMs, nextWarningMs) {
+    const configuredLeadMs = Math.max(0, nextTimeoutMs - nextWarningMs);
+    if (nextTimeoutMs <= 10000) {
+      return Math.min(Math.max(0, nextTimeoutMs - 1000), Math.max(configuredLeadMs, 2200));
+    }
+    return configuredLeadMs;
+  }
+
+  function bindLoginTimingObserver() {
+    if (window.__tenantSessionLoginTimingObserver || typeof window.fetch !== 'function') return;
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = function sessionAwareFetch(input, init) {
+      const responsePromise = nativeFetch(input, init);
+      responsePromise.then(response => {
+        try {
+          const url = new URL(response.url, location.href);
+          if (url.pathname !== '/api/auth/login' || !response.ok) return;
+          response.clone().json().then(payload => {
+            const data = payload && (payload.data || payload);
+            if (data && data.expiresIn) applySessionTiming(data.expiresIn, data.idleWarningSeconds);
+          }).catch(() => {});
+        } catch (_) {}
+      }).catch(() => {});
+      return responsePromise;
+    };
+    window.__tenantSessionLoginTimingObserver = true;
+  }
+
   function authCookieAttributes(maxAge) {
     const secure = location.protocol === 'https:' ? '; Secure' : '';
     return '; path=/; SameSite=Lax; max-age=' + Number(maxAge || 0) + secure;
@@ -44,6 +86,7 @@
   }
 
   window.syncAuthCookie = syncAuthCookie;
+  bindLoginTimingObserver();
   syncAuthCookie();
 
   function postSessionMessage(message) {

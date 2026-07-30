@@ -7,8 +7,9 @@
   var filterStates = Object.create(null);
   var enabledModuleScreens = [
     'householdsScreen', 'personsScreen', 'temporaryResidenceScreen', 'temporaryAbsenceScreen', 'movementsScreen',
+    'partyMembersScreen', 'workTasksScreen', 'workCalendarScreen', 'documentsScreen', 'financeScreen',
     'gisScreen', 'publicAssetsScreen', 'housesScreen', 'vehiclesScreen', 'agriculturalLandScreen',
-    'businessHouseholdsScreen', 'contributionsScreen', 'agricultureScreen', 'livestockScreen', 'reportsScreen',
+    'businessHouseholdsScreen', 'contributionsScreen', 'agricultureScreen', 'livestockScreen', 'photoGalleryScreen', 'complaintsScreen', 'dataQualityScreen', 'reportsScreen',
     'operationCenterScreen', 'importScreen', 'exportExcelScreen', 'printFormsScreen',
     'systemAdminScreen', 'usersScreen', 'permissionsScreen', 'logsScreen', 'backupsScreen', 'restoreScreen', 'settingsScreen', 'appearanceScreen'
   ];
@@ -831,6 +832,110 @@
         { key: 'temporaryAbsence', label: 'Tạm vắng', icon: 'fa-person-walking-arrow-right', match: 'Tạm vắng', tone: 'danger' }
       ]
     },
+    partyMembersScreen: {
+      title: 'Đảng viên',
+      overviewMode: 'full',
+      eyebrow: 'Chi bộ',
+      icon: 'fa-flag',
+      subtitle: 'Hồ sơ Đảng viên, chi bộ, chức vụ và tình trạng sinh hoạt',
+      search: 'Tìm họ tên, mã Đảng viên, chi bộ...',
+      titleLabels: ['Họ tên', 'Họ và tên', 'Ho ten', 'Ho va ten'],
+      summaryLabels: ['Mã ĐV', 'Chi bộ', 'Chức vụ', 'Loại', 'Tình trạng', 'Ngày vào Đảng', 'Ma DV', 'Chi bo', 'Chuc vu', 'Loai', 'Tinh trang', 'Ngay vao Dang'],
+      metaLabels: ['Mã ĐV', 'Chi bộ', 'Chức vụ', 'Tình trạng', 'Ma DV', 'Chi bo', 'Chuc vu', 'Tinh trang'],
+      primaryAction: { label: 'Thêm Đảng viên', icon: 'fa-plus', proxy: '#partyMemberAddBtn, [data-platform-action="partyMembers.openCreate"]' },
+      nav: [{ label: 'Nhân khẩu', icon: 'fa-users', action: 'persons' }, { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }]
+    },
+    workTasksScreen: {
+      title: 'Công việc',
+      overviewMode: 'compact',
+      eyebrow: 'Điều hành',
+      icon: 'fa-list-check',
+      subtitle: 'Giao việc, tiến độ, ưu tiên và trạng thái xử lý',
+      search: 'Tìm mã việc, nội dung, người phụ trách...',
+      titleLabels: ['Công việc', 'Tiêu đề', 'Nội dung', 'Mã việc', 'Cong viec', 'Tieu de', 'Noi dung', 'Ma viec'],
+      summaryLabels: ['Mã', 'Loại', 'Trạng thái', 'Ưu tiên', 'Tiến độ', 'Hạn xử lý', 'Ma', 'Loai', 'Trang thai', 'Uu tien', 'Tien do', 'Han xu ly'],
+      metaLabels: ['Mã', 'Trạng thái', 'Ưu tiên', 'Tiến độ', 'Ma', 'Trang thai', 'Uu tien', 'Tien do'],
+      primaryAction: { label: 'Thêm công việc', icon: 'fa-plus', proxy: '#workTaskAddBtn, [data-platform-action="workTasks.create"]' },
+      nav: [{ label: 'Lịch', icon: 'fa-calendar-days', action: 'workCalendar' }, { label: 'Điều hành', icon: 'fa-tower-broadcast', action: 'operationCenter' }]
+    },
+    workCalendarScreen: {
+      title: 'Lịch',
+      overviewMode: 'compact',
+      eyebrow: 'Điều hành',
+      icon: 'fa-calendar-days',
+      subtitle: 'Lịch họp, trực, sự kiện và hoạt động theo thời gian',
+      search: 'Tìm lịch, nội dung, địa điểm...',
+      titleLabels: ['Lịch', 'Tiêu đề', 'Nội dung', 'Sự kiện', 'Mã lịch', 'Lich', 'Tieu de', 'Noi dung', 'Su kien', 'Ma lich'],
+      summaryLabels: ['Mã', 'Thời gian', 'Trạng thái', 'Địa điểm', 'Loại', 'Ma', 'Thoi gian', 'Trang thai', 'Dia diem', 'Loai'],
+      metaLabels: ['Mã', 'Thời gian', 'Trạng thái', 'Địa điểm', 'Ma', 'Thoi gian', 'Trang thai', 'Dia diem'],
+      primaryAction: { label: 'Thêm lịch', icon: 'fa-plus', proxy: '#workCalendarAddBtn, [data-platform-action="workCalendar.create"]' },
+      nav: [{ label: 'Công việc', icon: 'fa-list-check', action: 'workTasks' }, { label: 'Điều hành', icon: 'fa-tower-broadcast', action: 'operationCenter' }]
+    },
+    documentsScreen: {
+      title: 'Văn bản',
+      overviewMode: 'compact',
+      eyebrow: 'Điều hành',
+      icon: 'fa-file-lines',
+      subtitle: 'Thông báo, quyết định, công văn, kế hoạch và file đính kèm',
+      search: 'Tìm tiêu đề, số văn bản, loại văn bản...',
+      titleLabels: ['Tiêu đề', 'Số văn bản', 'Tên văn bản', 'Tieu de', 'So van ban', 'Ten van ban'],
+      summaryLabels: ['Số văn bản', 'Loại', 'Trạng thái', 'Ngày ban hành', 'Người tải lên', 'So van ban', 'Loai', 'Trang thai', 'Ngay ban hanh', 'Nguoi tai len'],
+      metaLabels: ['Số văn bản', 'Loại', 'Trạng thái', 'Ngày ban hành', 'So van ban', 'Loai', 'Trang thai', 'Ngay ban hanh'],
+      primaryAction: { label: 'Thêm văn bản', icon: 'fa-plus', proxy: '#documentAddBtn, [data-platform-action="documents.create"]' },
+      nav: [{ label: 'Công việc', icon: 'fa-list-check', action: 'workTasks' }, { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }]
+    },
+    financeScreen: {
+      title: 'Thu chi',
+      overviewMode: 'full',
+      eyebrow: 'Tài chính',
+      icon: 'fa-coins',
+      subtitle: 'Quản lý phiếu thu, phiếu chi, quỹ và chứng từ đính kèm',
+      search: 'Tìm mã phiếu, nội dung, người nộp...',
+      titleLabels: ['Nội dung', 'Mã phiếu', 'Số chứng từ', 'Noi dung', 'Ma phieu', 'So chung tu'],
+      summaryLabels: ['Loại', 'Số tiền', 'Quỹ', 'Danh mục', 'Trạng thái', 'Ngày thu chi', 'Loai', 'So tien', 'Quy', 'Danh muc', 'Trang thai', 'Ngay thu chi'],
+      metaLabels: ['Loại', 'Số tiền', 'Quỹ', 'Trạng thái', 'Ngày thu chi', 'Loai', 'So tien', 'Quy', 'Trang thai', 'Ngay thu chi'],
+      primaryAction: { label: 'Thêm phiếu', icon: 'fa-plus', proxy: '#financeAddBtn, [data-platform-action="finance.create"]' },
+      nav: [{ label: 'Đóng góp', icon: 'fa-hand-holding-dollar', action: 'contributions' }, { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }]
+    },
+    photoGalleryScreen: {
+      title: 'Kho ảnh',
+      overviewMode: 'compact',
+      eyebrow: 'Tư liệu',
+      icon: 'fa-images',
+      subtitle: 'Album, hình ảnh hoạt động, tag và tìm kiếm tư liệu',
+      search: 'Tìm album, ảnh, tag...',
+      titleLabels: ['Tiêu đề', 'Album', 'Tên ảnh', 'Tieu de', 'Ten anh'],
+      summaryLabels: ['Album', 'Ngày chụp', 'Tag', 'Trạng thái', 'Album', 'Ngay chup', 'Trang thai'],
+      metaLabels: ['Album', 'Ngày chụp', 'Tag', 'Trạng thái', 'Ngay chup', 'Trang thai'],
+      primaryAction: { label: 'Thêm ảnh', icon: 'fa-plus', proxy: '#photoGalleryAddBtn, [data-platform-action="photoGallery.create"]' },
+      nav: [{ label: 'Văn bản', icon: 'fa-file-lines', action: 'documents' }, { label: 'Báo cáo', icon: 'fa-chart-pie', action: 'reports' }]
+    },
+    complaintsScreen: {
+      title: 'Phản ánh',
+      overviewMode: 'compact',
+      eyebrow: 'Tiếp nhận',
+      icon: 'fa-comments',
+      subtitle: 'Phản ánh, kiến nghị, phân công và trạng thái xử lý',
+      search: 'Tìm mã, tiêu đề, người phản ánh...',
+      titleLabels: ['Tiêu đề', 'Mã', 'Người phản ánh', 'Tieu de', 'Ma', 'Nguoi phan anh'],
+      summaryLabels: ['Mã', 'Loại', 'Ưu tiên', 'Trạng thái', 'Phụ trách', 'Hạn xử lý', 'Ma', 'Loai', 'Uu tien', 'Trang thai', 'Phu trach', 'Han xu ly'],
+      metaLabels: ['Mã', 'Loại', 'Ưu tiên', 'Trạng thái', 'Ma', 'Loai', 'Uu tien', 'Trang thai'],
+      primaryAction: { label: 'Thêm phản ánh', icon: 'fa-plus', proxy: '#complaintsAddBtn, [data-platform-action="complaints.create"]' },
+      nav: [{ label: 'Điều hành', icon: 'fa-tower-broadcast', action: 'operationCenter' }, { label: 'Công việc', icon: 'fa-list-check', action: 'workTasks' }]
+    },
+    dataQualityScreen: {
+      title: 'Chất lượng dữ liệu',
+      overviewMode: 'compact',
+      eyebrow: 'Dữ liệu',
+      icon: 'fa-shield-halved',
+      subtitle: 'Phát hiện hồ sơ thiếu, dữ liệu bất thường và việc cần xử lý',
+      search: 'Tìm loại lỗi, hồ sơ, mức độ...',
+      titleLabels: ['Vấn đề', 'Hồ sơ', 'Loại lỗi', 'Van de', 'Ho so', 'Loai loi'],
+      summaryLabels: ['Mức độ', 'Trạng thái', 'Module', 'Ngày phát hiện', 'Muc do', 'Trang thai', 'Ngay phat hien'],
+      metaLabels: ['Mức độ', 'Trạng thái', 'Module', 'Muc do', 'Trang thai'],
+      primaryAction: { label: 'Làm mới', icon: 'fa-rotate-right', proxy: '[data-platform-action="dataQuality.refresh"]' },
+      nav: [{ label: 'Dashboard', icon: 'fa-chart-simple', action: 'dashboard' }, { label: 'Nhân khẩu', icon: 'fa-id-card', action: 'persons' }]
+    },
     gisScreen: {
       title: 'GIS',
       overviewMode: 'full',
@@ -1069,6 +1174,14 @@
   };
 
   var MODULE_LIST_META = {
+    partyMembersScreen: { label: 'Danh sách Đảng viên', unit: 'hồ sơ', totalSelector: '#partyMemberTotalCount' },
+    workTasksScreen: { label: 'Danh sách công việc', unit: 'công việc' },
+    workCalendarScreen: { label: 'Danh sách lịch', unit: 'lịch' },
+    documentsScreen: { label: 'Danh sách văn bản', unit: 'văn bản', totalSelector: '#documentsTotalCount' },
+    financeScreen: { label: 'Danh sách thu chi', unit: 'phiếu', totalSelector: '#financeTotalCount' },
+    photoGalleryScreen: { label: 'Danh sách ảnh', unit: 'ảnh', totalSelector: '#photoGalleryTotalCount' },
+    complaintsScreen: { label: 'Danh sách phản ánh', unit: 'phản ánh', totalSelector: '#complaintsTotalCount' },
+    dataQualityScreen: { label: 'Danh sách vấn đề', unit: 'vấn đề', totalSelector: '#dataQualityIssueCount' },
     householdsScreen: { label: 'Danh sách hộ', unit: 'hộ', totalSelector: '#householdTotalCount' },
     personsScreen: { label: 'Danh sách nhân khẩu', unit: 'nhân khẩu', totalSelector: '#personTotalCount' },
     temporaryResidenceScreen: { label: 'Danh sách tạm trú', unit: 'nhân khẩu' },

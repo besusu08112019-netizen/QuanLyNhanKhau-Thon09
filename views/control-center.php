@@ -518,7 +518,7 @@
 
     .tenant-wizard {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 8px;
       padding: 14px 16px 0;
     }
@@ -573,6 +573,44 @@
 
     .tenant-result.active {
       display: block;
+    }
+
+    .tenant-progress {
+      height: 12px;
+      border-radius: 999px;
+      background: #eef2f7;
+      overflow: hidden;
+      margin: 8px 0 12px;
+    }
+
+    .tenant-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--cc-brand);
+      transition: width .2s ease;
+    }
+
+    .tenant-log-list {
+      display: grid;
+      gap: 8px;
+      max-height: 220px;
+      overflow: auto;
+      margin-top: 10px;
+    }
+
+    .tenant-log-item {
+      display: grid;
+      gap: 3px;
+      padding: 8px 10px;
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .tenant-log-item strong {
+      font-size: 12px;
+      color: var(--cc-muted);
     }
 
     .cc-login-screen {
@@ -760,6 +798,10 @@
 
       .cc-table {
         min-width: 760px;
+      }
+
+      .tenant-wizard {
+        grid-template-columns: 1fr;
       }
 
       .cc-table-wrap {
@@ -1156,11 +1198,13 @@
       </div>
       <form id="unitForm" novalidate>
         <div class="tenant-wizard" id="tenantWizard">
-          <div class="tenant-wizard-step active" data-wizard-indicator="1">1. Đơn vị</div>
-          <div class="tenant-wizard-step" data-wizard-indicator="2">2. Cơ sở dữ liệu</div>
-          <div class="tenant-wizard-step" data-wizard-indicator="3">3. Tiền kiểm</div>
-          <div class="tenant-wizard-step" data-wizard-indicator="4">4. Tạo đơn vị</div>
-          <div class="tenant-wizard-step" data-wizard-indicator="5">5. Kiểm tra</div>
+          <div class="tenant-wizard-step active" data-wizard-indicator="1">1. Cấu hình Tenant</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="2">2. Database</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="3">3. Preflight</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="4">4. Hạ tầng</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="5">5. Xác nhận</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="6">6. Tiến trình</div>
+          <div class="tenant-wizard-step" data-wizard-indicator="7">7. Kết quả</div>
         </div>
         <div class="cc-form">
           <input type="hidden" id="unitId">
@@ -1252,8 +1296,18 @@
           <div class="preflight-status failed" id="tenantPreflightStatus">Chưa chạy tiền kiểm</div>
           <div class="preflight-list" id="tenantPreflightList"></div>
         </div>
-        <div class="tenant-result wizard-page" id="tenantCreatePanel" data-wizard-page="4">Sẵn sàng tạo đơn vị</div>
-        <div class="tenant-result wizard-page" id="tenantHealthPanel" data-wizard-page="5">Chưa chạy kiểm tra sức khỏe</div>
+        <div class="preflight-panel wizard-page" id="tenantInfrastructurePanel" data-wizard-page="4">
+          <div class="preflight-status failed" id="tenantInfrastructureStatus">Chưa xác minh hạ tầng</div>
+          <div class="preflight-list" id="tenantInfrastructureList"></div>
+        </div>
+        <div class="tenant-result wizard-page" id="tenantConfirmPanel" data-wizard-page="5">Sẵn sàng xác nhận cài đặt Tenant</div>
+        <div class="tenant-result wizard-page" id="tenantProgressPanel" data-wizard-page="6">
+          <div><span class="cc-badge warn" id="tenantInstallStatusBadge">Pending</span></div>
+          <div class="tenant-progress" aria-label="Tiến trình cài đặt Tenant"><div class="tenant-progress-bar" id="tenantInstallProgressBar"></div></div>
+          <div id="tenantCreatePanel">Chưa bắt đầu cài đặt</div>
+          <div class="tenant-log-list" id="tenantInstallLogList"></div>
+        </div>
+        <div class="tenant-result wizard-page" id="tenantHealthPanel" data-wizard-page="7">Chưa chạy kiểm tra sau cài đặt</div>
         <div class="cc-modal-footer">
           <button class="cc-btn" type="button" id="cancelUnitButton">Hủy</button>
           <button class="cc-btn" type="button" id="wizardBackButton">Quay lại</button>
@@ -1503,10 +1557,6 @@
       ai: 'Trợ lý thông minh'
     };
 
-    document.querySelectorAll('.cc-nav button').forEach((button) => {
-      button.addEventListener('click', () => activateSection(button.dataset.section));
-    });
-
     function activateSection(section) {
       if (!sections[section]) return;
       document.querySelectorAll('.cc-nav button').forEach((item) => item.classList.toggle('active', item.dataset.section === section));
@@ -1529,7 +1579,8 @@
       wizardStep: 1,
       databaseReady: false,
       preflightReady: false,
-      createdJob: null
+      createdJob: null,
+      installerPollTimer: null
     };
     const tenantState = {
       items: [],
@@ -1554,6 +1605,62 @@
       pending: new Map(),
       activeGroup: ''
     };
+    const controlCenterClickEvent = 'click';
+    const controlCenterActions = new Map();
+
+    function registerControlCenterAction(action, handler) {
+      controlCenterActions.set(action, handler);
+    }
+
+    function bindControlCenterAction(element, action, data = {}) {
+      if (!element) return element;
+      element.dataset.ccAction = action;
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) element.dataset[key] = String(value);
+      });
+      return element;
+    }
+
+    function bindControlCenterElementAction(id, action, data = {}) {
+      return bindControlCenterAction(document.getElementById(id), action, data);
+    }
+
+    function controlCenterItemById(items, id) {
+      return (items || []).find((item) => String(item.id) === String(id));
+    }
+
+    function controlCenterActionUnit(dataset) {
+      if (dataset.unitId) {
+        const unit = controlCenterItemById(unitState.items, dataset.unitId);
+        if (unit) return unit;
+      }
+      return {
+        id: dataset.unitId || '',
+        code: dataset.unitCode || '',
+        name: dataset.unitName || '',
+        domain: dataset.unitDomain || ''
+      };
+    }
+
+    function controlCenterActionTenant(dataset) {
+      return controlCenterItemById(tenantState.items, dataset.tenantId);
+    }
+
+    function controlCenterActionAccount(dataset) {
+      return controlCenterItemById(accountState.items, dataset.accountId);
+    }
+
+    function handleControlCenterAction(event) {
+      const target = event.target.closest && event.target.closest('[data-cc-action]');
+      if (!target || target.disabled) return;
+      if (target.dataset.ccAction.endsWith('Backdrop') && target !== event.target) return;
+      const handler = controlCenterActions.get(target.dataset.ccAction);
+      if (!handler) return;
+      event.preventDefault();
+      handler({ event, target, dataset: target.dataset });
+    }
+
+    document.addEventListener(controlCenterClickEvent, handleControlCenterAction);
     const auditState = { items: [] };
     const roleLabels = {
       SYSTEM_ADMIN: 'Quản trị hệ thống',
@@ -1795,23 +1902,37 @@
         const unit = operationUnit(item);
         if (item.primaryAction === 'check_website') {
           const check = actionButton('Kiểm tra trang web', 'fa-globe');
-          check.addEventListener('click', () => checkUnitWebsite(unit));
+          bindControlCenterAction(check, 'unit.checkWebsite', {
+            unitId: unit.id,
+            unitCode: unit.code,
+            unitName: unit.name,
+            unitDomain: unit.domain
+          });
           actions.appendChild(check);
         } else if (item.primaryAction === 'check_database') {
           const check = actionButton('Kiểm tra cơ sở dữ liệu', 'fa-database');
-          check.addEventListener('click', () => checkUnitConnection(unit));
+          bindControlCenterAction(check, 'unit.checkDatabase', {
+            unitId: unit.id,
+            unitCode: unit.code,
+            unitName: unit.name,
+            unitDomain: unit.domain
+          });
           actions.appendChild(check);
         }
         const view = actionButton('Xem đơn vị', 'fa-sitemap');
-        view.addEventListener('click', () => {
-          activateSection('units');
-          document.getElementById('unitSearch').value = item.tenant?.code || item.tenant?.name || '';
-          loadUnits().catch((error) => setUnitsAlert(error.message));
+        bindControlCenterAction(view, 'unit.focus', {
+          unitCode: item.tenant?.code || '',
+          unitName: item.tenant?.name || ''
         });
         actions.appendChild(view);
         if (item.tenant?.domain) {
           const portal = actionButton('Mở cổng đơn vị', 'fa-arrow-up-right-from-square');
-          portal.addEventListener('click', () => openTenantPortal(unit));
+          bindControlCenterAction(portal, 'unit.portal', {
+            unitId: unit.id,
+            unitCode: unit.code,
+            unitName: unit.name,
+            unitDomain: unit.domain
+          });
           actions.appendChild(portal);
         }
         row.append(main, actions);
@@ -1877,25 +1998,25 @@
         actions.className = 'cc-row-actions';
         if (unit.domain) {
           const portal = actionButton('Mở cổng đơn vị', 'fa-arrow-up-right-from-square');
-          portal.addEventListener('click', () => openTenantPortal(unit));
+          bindControlCenterAction(portal, 'unit.portal', { unitId: unit.id });
           actions.appendChild(portal);
         }
         const checkWebsite = actionButton('Trang web', 'fa-globe');
-        checkWebsite.addEventListener('click', () => checkUnitWebsite(unit));
+        bindControlCenterAction(checkWebsite, 'unit.checkWebsite', { unitId: unit.id });
         actions.appendChild(checkWebsite);
         const checkDatabase = actionButton('Cơ sở dữ liệu', 'fa-database');
-        checkDatabase.addEventListener('click', () => checkUnitConnection(unit));
+        bindControlCenterAction(checkDatabase, 'unit.checkDatabase', { unitId: unit.id });
         actions.appendChild(checkDatabase);
         const edit = actionButton('Sửa', 'fa-pen-to-square');
-        edit.addEventListener('click', () => openUnitModal(unit));
+        bindControlCenterAction(edit, 'unit.edit', { unitId: unit.id });
         actions.appendChild(edit);
         if (unit.status === 'READY' || unit.status === 'ACTIVE') {
           const lock = actionButton('Khóa', 'fa-lock', 'danger');
-          lock.addEventListener('click', () => changeUnitStatus(unit, 'lock'));
+          bindControlCenterAction(lock, 'unit.status', { unitId: unit.id, unitStatusAction: 'lock' });
           actions.appendChild(lock);
         } else {
           const activate = actionButton('Kích hoạt', 'fa-unlock');
-          activate.addEventListener('click', () => changeUnitStatus(unit, 'activate'));
+          bindControlCenterAction(activate, 'unit.status', { unitId: unit.id, unitStatusAction: 'activate' });
           actions.appendChild(activate);
         }
         tr.appendChild(actions);
@@ -1967,30 +2088,30 @@
         const actions = document.createElement('td');
         actions.className = 'cc-row-actions';
         const view = actionButton('Xem', 'fa-eye');
-        view.addEventListener('click', () => openTenantDetail(tenant));
+        bindControlCenterAction(view, 'tenant.detail', { tenantId: tenant.id });
         actions.appendChild(view);
         if (canTenant('tenant.update') && tenant.status !== 'DELETED') {
           const edit = actionButton('Sửa', 'fa-pen-to-square');
           edit.dataset.tenantPermission = 'tenant.update';
-          edit.addEventListener('click', () => openTenantModal(tenant));
+          bindControlCenterAction(edit, 'tenant.edit', { tenantId: tenant.id });
           actions.appendChild(edit);
         }
         if (canTenant('tenant.lock') && !['LOCKED', 'DELETED'].includes(tenant.status)) {
           const lock = actionButton('Khóa', 'fa-lock', 'danger');
           lock.dataset.tenantPermission = 'tenant.lock';
-          lock.addEventListener('click', () => lockTenant(tenant));
+          bindControlCenterAction(lock, 'tenant.lock', { tenantId: tenant.id });
           actions.appendChild(lock);
         }
         if (canTenant('tenant.unlock') && tenant.status === 'LOCKED') {
           const unlock = actionButton('Mở khóa', 'fa-unlock');
           unlock.dataset.tenantPermission = 'tenant.unlock';
-          unlock.addEventListener('click', () => unlockTenant(tenant));
+          bindControlCenterAction(unlock, 'tenant.unlock', { tenantId: tenant.id });
           actions.appendChild(unlock);
         }
         if (canTenant('tenant.delete') && tenant.status !== 'DELETED') {
           const remove = actionButton('Xóa mềm', 'fa-trash', 'danger');
           remove.dataset.tenantPermission = 'tenant.delete';
-          remove.addEventListener('click', () => deleteTenant(tenant));
+          bindControlCenterAction(remove, 'tenant.delete', { tenantId: tenant.id });
           actions.appendChild(remove);
         }
         tr.appendChild(actions);
@@ -2266,21 +2387,21 @@
           const actions = document.createElement('td');
           actions.className = 'cc-row-actions';
           const view = actionButton('Xem', 'fa-eye');
-          view.addEventListener('click', () => viewAccount(account));
+          bindControlCenterAction(view, 'account.view', { accountId: account.id });
           actions.appendChild(view);
           const edit = actionButton('Sửa', 'fa-user-pen');
-          edit.addEventListener('click', () => openAccountModal(account));
+          bindControlCenterAction(edit, 'account.edit', { accountId: account.id });
           actions.appendChild(edit);
           const password = actionButton('Mật khẩu', 'fa-key');
-          password.addEventListener('click', () => openPasswordModal(account));
+          bindControlCenterAction(password, 'account.password', { accountId: account.id });
           actions.appendChild(password);
           if (account.status === 'ACTIVE') {
             const deactivate = actionButton('Ngừng', 'fa-user-slash', 'danger');
-            deactivate.addEventListener('click', () => changeAccountStatus(account, 'deactivate'));
+            bindControlCenterAction(deactivate, 'account.status', { accountId: account.id, accountStatusAction: 'deactivate' });
             actions.appendChild(deactivate);
           } else {
             const activate = actionButton('Kích hoạt', 'fa-user-check');
-            activate.addEventListener('click', () => changeAccountStatus(account, 'activate'));
+            bindControlCenterAction(activate, 'account.status', { accountId: account.id, accountStatusAction: 'activate' });
             actions.appendChild(activate);
           }
           tr.appendChild(actions);
@@ -2333,11 +2454,7 @@
         button.type = 'button';
         button.textContent = group.name || group.id;
         button.classList.toggle('active', group.id === permissionState.activeGroup);
-        button.addEventListener('click', () => {
-          permissionState.activeGroup = group.id;
-          renderPermissionGroups();
-          renderPermissions();
-        });
+        bindControlCenterAction(button, 'permission.group', { permissionGroupId: group.id });
         return button;
       });
       holder.replaceChildren(...(groups.length ? groups : [stateMessage('Chưa có quyền')]));
@@ -2597,7 +2714,8 @@
 
     function setTenantInstallerActions(job) {
       const holder = document.getElementById('tenantInstallerActions');
-      const canAct = job && ['FAILED', 'WAITING_MANUAL'].includes(job.status);
+      const workflowStatus = job?.workflowStatus || '';
+      const canAct = job && (['FAILED', 'WAITING_MANUAL'].includes(job.status) || ['Failed', 'Waiting'].includes(workflowStatus));
       unitState.installerJobId = canAct ? job.id : null;
       holder.style.display = canAct ? 'flex' : 'none';
     }
@@ -2653,9 +2771,14 @@
       setFormError('');
       renderDatabaseCheck(null);
       renderPreflight(null);
+      renderInfrastructureVerification(null);
       document.getElementById('tenantCreatePanel').textContent = 'Sẵn sàng tạo đơn vị';
       document.getElementById('tenantCreatePanel').classList.remove('active');
-      document.getElementById('tenantHealthPanel').textContent = 'Chưa chạy kiểm tra sức khỏe';
+      document.getElementById('tenantInstallStatusBadge').textContent = 'Pending';
+      document.getElementById('tenantInstallStatusBadge').className = 'cc-badge warn';
+      document.getElementById('tenantInstallProgressBar').style.width = '0%';
+      document.getElementById('tenantInstallLogList').replaceChildren();
+      document.getElementById('tenantHealthPanel').textContent = 'Chưa chạy kiểm tra sau cài đặt';
       document.getElementById('tenantHealthPanel').classList.remove('active');
       setTenantInstallerActions(null);
       updateTenantWizard();
@@ -2781,6 +2904,98 @@
       renderChecklist(result, 'tenantPreflightPanel', 'tenantPreflightStatus', 'tenantPreflightList', 'Sẵn sàng tạo đơn vị', 'Chưa chạy tiền kiểm');
     }
 
+    function renderInfrastructureVerification(result) {
+      const keys = ['installation_profile', 'source_writable', 'storage_writable', 'upload_writable', 'backup_writable'];
+      const items = (result?.items || []).filter((item) => keys.includes(item.key));
+      renderChecklist({ ready: Boolean(result?.ready), items }, 'tenantInfrastructurePanel', 'tenantInfrastructureStatus', 'tenantInfrastructureList', 'Hạ tầng đã sẵn sàng', 'Chưa xác minh hạ tầng');
+    }
+
+    function redactInstallerText(value) {
+      return String(value || '').replace(/(password|token|secret|connection string|dsn|cookie|csrf)[^,\n]*/ig, '$1 [REDACTED]');
+    }
+
+    function renderTenantInstallProgress(job) {
+      if (!job) return;
+      unitState.createdJob = job;
+      if (job.id) unitState.installerJobId = job.id;
+      const status = job.workflowStatus || statusLabel(job.status || '') || 'Pending';
+      const percentValue = Math.max(0, Math.min(100, Number(job.progressPercent || 0)));
+      const badge = document.getElementById('tenantInstallStatusBadge');
+      const bar = document.getElementById('tenantInstallProgressBar');
+      const logList = document.getElementById('tenantInstallLogList');
+      badge.textContent = status;
+      badge.className = 'cc-badge';
+      if (['Running', 'Waiting', 'Pending'].includes(status)) badge.classList.add('warn');
+      if (status === 'Failed') badge.classList.add('danger');
+      bar.style.width = percentValue + '%';
+      document.getElementById('tenantCreatePanel').textContent = tenantInstallMessage(job);
+      logList.replaceChildren(...(job.steps || []).map((step) => {
+        const row = document.createElement('div');
+        row.className = 'tenant-log-item';
+        const title = document.createElement('strong');
+        title.textContent = `${installerStepLabel(step.step)} - ${step.workflowStatus || step.status || 'Pending'}`;
+        const message = document.createElement('span');
+        message.textContent = redactInstallerText(step.message || '');
+        const time = document.createElement('small');
+        time.className = 'cc-meta';
+        time.textContent = [step.startedAt, step.finishedAt].filter(Boolean).join(' -> ');
+        row.append(title, message, time);
+        return row;
+      }));
+      document.getElementById('tenantHealthPanel').textContent = tenantInstallMessage(job);
+      setTenantInstallerActions(job);
+    }
+
+    function isTenantInstallTerminal(job) {
+      const workflowStatus = job?.workflowStatus || '';
+      return ['Completed', 'Failed', 'Rolled Back'].includes(workflowStatus) || ['READY', 'FAILED', 'ROLLED_BACK', 'DRY_RUN_PASSED'].includes(job?.status);
+    }
+
+    function stopTenantInstallPolling() {
+      if (!unitState.installerPollTimer) return;
+      clearTimeout(unitState.installerPollTimer);
+      unitState.installerPollTimer = null;
+    }
+
+    async function pollTenantInstallStatus(jobId) {
+      if (!jobId) return;
+      stopTenantInstallPolling();
+      try {
+        const result = await api('/api/control-center/tenant-installer/' + encodeURIComponent(jobId));
+        renderTenantInstallProgress(result);
+        setUnitsAlert(tenantInstallMessage(result));
+        if (isTenantInstallTerminal(result)) {
+          localStorage.removeItem(storageKey('tenant_installer_job_id'));
+          setTenantWizardStep(7);
+          await loadUnits();
+          return;
+        }
+        localStorage.setItem(storageKey('tenant_installer_job_id'), String(jobId));
+        setTenantWizardStep(6);
+        unitState.installerPollTimer = setTimeout(() => pollTenantInstallStatus(jobId), 2500);
+      } catch (error) {
+        setUnitsAlert(error.message || 'Không tải được trạng thái cài đặt Tenant');
+        unitState.installerPollTimer = setTimeout(() => pollTenantInstallStatus(jobId), 5000);
+      }
+    }
+
+    async function restoreTenantInstallProgress() {
+      const jobId = localStorage.getItem(storageKey('tenant_installer_job_id'));
+      if (!jobId) return;
+      try {
+        const result = await api('/api/control-center/tenant-installer/' + encodeURIComponent(jobId));
+        renderTenantInstallProgress(result);
+        setUnitsAlert(tenantInstallMessage(result));
+        if (isTenantInstallTerminal(result)) {
+          localStorage.removeItem(storageKey('tenant_installer_job_id'));
+          return;
+        }
+        pollTenantInstallStatus(jobId);
+      } catch (error) {
+        setUnitsAlert(error.message || 'Không khôi phục được trạng thái cài đặt Tenant');
+      }
+    }
+
     function resetTenantReadiness() {
       if (unitState.editing) return;
       unitState.databaseReady = false;
@@ -2789,15 +3004,20 @@
       document.getElementById('saveUnitButton').disabled = true;
       renderDatabaseCheck(null);
       renderPreflight(null);
+      renderInfrastructureVerification(null);
       document.getElementById('tenantCreatePanel').textContent = 'Sẵn sàng tạo đơn vị';
       document.getElementById('tenantCreatePanel').classList.remove('active');
-      document.getElementById('tenantHealthPanel').textContent = 'Chưa chạy kiểm tra sức khỏe';
+      document.getElementById('tenantInstallStatusBadge').textContent = 'Pending';
+      document.getElementById('tenantInstallStatusBadge').className = 'cc-badge warn';
+      document.getElementById('tenantInstallProgressBar').style.width = '0%';
+      document.getElementById('tenantInstallLogList').replaceChildren();
+      document.getElementById('tenantHealthPanel').textContent = 'Chưa chạy kiểm tra sau cài đặt';
       document.getElementById('tenantHealthPanel').classList.remove('active');
       updateTenantWizard();
     }
 
     function setTenantWizardStep(step) {
-      unitState.wizardStep = Math.max(1, Math.min(5, step));
+      unitState.wizardStep = Math.max(1, Math.min(7, step));
       updateTenantWizard();
     }
 
@@ -2825,10 +3045,10 @@
         item.classList.toggle('done', step < unitState.wizardStep);
       });
       document.getElementById('wizardBackButton').style.display = unitState.editing || unitState.wizardStep === 1 ? 'none' : '';
-      document.getElementById('wizardNextButton').style.display = unitState.editing || unitState.wizardStep >= 3 ? 'none' : '';
+      document.getElementById('wizardNextButton').style.display = unitState.editing || [2, 3, 5, 6, 7].includes(unitState.wizardStep) ? 'none' : '';
       document.getElementById('databaseCheckButton').style.display = !unitState.editing && unitState.wizardStep === 2 ? '' : 'none';
       document.getElementById('preflightUnitButton').style.display = !unitState.editing && unitState.wizardStep === 3 ? '' : 'none';
-      document.getElementById('saveUnitButton').style.display = unitState.editing || unitState.wizardStep === 4 ? '' : 'none';
+      document.getElementById('saveUnitButton').style.display = unitState.editing || unitState.wizardStep === 5 ? '' : 'none';
       document.getElementById('saveUnitButton').disabled = unitState.editing ? false : !unitState.preflightReady;
     }
 
@@ -2841,6 +3061,10 @@
       }
       if (unitState.wizardStep === 2 && !unitState.databaseReady) {
         setFormError('Cần kiểm tra kết nối cơ sở dữ liệu đạt trước khi sang bước tiền kiểm');
+        return;
+      }
+      if (unitState.wizardStep === 4 && !unitState.preflightReady) {
+        setFormError('Cần xác minh hạ tầng đạt trước khi xác nhận cài đặt Tenant');
         return;
       }
       setFormError('');
@@ -2865,15 +3089,18 @@
           if (!unitState.preflightReady) {
             throw new Error('Cần tiền kiểm đạt trước khi tạo đơn vị');
           }
+          setTenantWizardStep(6);
+          renderTenantInstallProgress({ workflowStatus: 'Running', status: 'CREATING', progressPercent: 0, currentStep: 'preflight_check', steps: [] });
           const result = await api('/api/control-center/tenant-installer', { method: 'POST', body: payload });
           unitState.createdJob = result;
-          document.getElementById('tenantCreatePanel').textContent = tenantInstallMessage(result);
           document.getElementById('tenantCreatePanel').classList.add('active');
-          document.getElementById('tenantHealthPanel').textContent = result.status === 'READY' ? 'Sẵn sàng. Kiểm tra sức khỏe đạt.' : tenantInstallMessage(result);
+          renderTenantInstallProgress(result);
           document.getElementById('tenantHealthPanel').classList.add('active');
           setUnitsAlert(tenantInstallMessage(result));
           setTenantInstallerActions(result);
-          setTenantWizardStep(result.status === 'READY' ? 5 : 4);
+          if (result.id) localStorage.setItem(storageKey('tenant_installer_job_id'), String(result.id));
+          setTenantWizardStep(isTenantInstallTerminal(result) ? 7 : 6);
+          pollTenantInstallStatus(result.id);
           await loadUnits();
           return;
         }
@@ -2908,6 +3135,7 @@
           return;
         }
         setFormError('Cơ sở dữ liệu sẵn sàng. Có thể chuyển sang bước tiền kiểm.');
+        setTenantWizardStep(3);
       } catch (error) {
         renderDatabaseCheck(null);
         setFormError(error.message || 'Không kiểm tra được cơ sở dữ liệu');
@@ -2938,6 +3166,7 @@
       try {
         const result = await api('/api/control-center/tenant-installer/preflight', { method: 'POST', body: payload });
         renderPreflight(result);
+        renderInfrastructureVerification(result);
         unitState.preflightReady = Boolean(result.ready);
         saveButton.disabled = !unitState.preflightReady;
         if (!result.ready) {
@@ -2969,18 +3198,26 @@
 
     function installerStepLabel(step) {
       const labels = {
+        preflight_check: 'kiểm tra điều kiện',
+        verify_infrastructure_prerequisites: 'xác minh hạ tầng',
+        verify_database_connection: 'kiểm tra kết nối Database',
+        verify_database_privileges: 'kiểm tra quyền Database',
         validate_input: 'kiểm tra dữ liệu',
         check_domain: 'kiểm tra tên miền',
         check_database_connection: 'kiểm tra kết nối cơ sở dữ liệu',
         verify_database_ready: 'xác minh cơ sở dữ liệu',
         initialize_database: 'khởi tạo cơ sở dữ liệu',
         import_schema: 'nạp cấu trúc dữ liệu',
+        generate_env: 'tạo file .env',
+        initialize_tenant: 'khởi tạo Tenant',
         import_seed: 'nạp dữ liệu mẫu',
         create_tenant_record: 'ghi nhận đơn vị',
         create_admin: 'tạo tài khoản quản trị',
         write_config: 'ghi cấu hình',
         create_storage: 'tạo lưu trữ',
+        post_installation_verification: 'kiểm tra sau cài đặt',
         health_check: 'kiểm tra sức khỏe',
+        complete: 'hoàn tất',
         mark_ready: 'đánh dấu sẵn sàng'
       };
       return labels[step] || step || '';
@@ -2988,20 +3225,23 @@
 
     function tenantInstallMessage(job) {
       const step = installerStepLabel(job.currentStep || '');
-      const base = `Khởi tạo đơn vị ${statusLabel(job.status || '')}: ${job.progressPercent || 0}%${step ? ' - ' + step : ''}`;
+      const workflowStatus = job.workflowStatus || statusLabel(job.status || '') || 'Pending';
+      const base = `Khởi tạo đơn vị ${workflowStatus}: ${job.progressPercent || 0}%${step ? ' - ' + step : ''}`;
       if (job.status === 'DRY_RUN_PASSED') {
         return base + '. Chạy thử đạt.';
       }
-      if (job.status === 'READY') {
-        const admin = job.result?.generatedAdminEmail ? ` Quản trị: ${job.result.generatedAdminEmail} / ${job.result.generatedAdminPassword}` : '';
+      if (job.status === 'READY' || workflowStatus === 'Completed') {
+        const admin = job.result?.generatedAdminEmail ? ` Quản trị: ${job.result.generatedAdminEmail}` : '';
         return base + '. Hoàn thành.' + admin;
       }
-      if (job.status === 'WAITING_MANUAL') {
-        const sql = job.manualAction?.sql ? ` SQL: ${job.manualAction.sql}` : '';
-        return base + '. Cần thao tác thủ công: ' + (job.errorMessage || 'Kiểm tra chi tiết') + sql;
+      if (job.status === 'WAITING_MANUAL' || workflowStatus === 'Waiting') {
+        return base + '. Cần thao tác thủ công: ' + redactInstallerText(job.errorMessage || 'Kiểm tra chi tiết');
       }
-      if (job.status === 'FAILED') {
-        return base + '. Lỗi: ' + (job.errorMessage || 'Không rõ nguyên nhân');
+      if (job.status === 'FAILED' || workflowStatus === 'Failed') {
+        return base + '. Lỗi: ' + redactInstallerText(job.errorMessage || 'Không rõ nguyên nhân');
+      }
+      if (job.status === 'ROLLED_BACK' || workflowStatus === 'Rolled Back') {
+        return base + '. Đã hoàn tác phần ứng dụng.';
       }
       return base;
     }
@@ -3011,8 +3251,11 @@
       setUnitsAlert('Đang thử lại khởi tạo đơn vị...');
       try {
         const result = await api('/api/control-center/tenant-installer/' + encodeURIComponent(unitState.installerJobId) + '/retry', { method: 'POST' });
+        renderTenantInstallProgress(result);
         setUnitsAlert(tenantInstallMessage(result));
         setTenantInstallerActions(result);
+        setTenantWizardStep(isTenantInstallTerminal(result) ? 7 : 6);
+        pollTenantInstallStatus(result.id || unitState.installerJobId);
         await loadUnits();
       } catch (error) {
         setUnitsAlert(error.message || 'Không thử lại được khởi tạo đơn vị');
@@ -3024,8 +3267,11 @@
       setUnitsAlert('Đang hoàn tác khởi tạo đơn vị...');
       try {
         const result = await api('/api/control-center/tenant-installer/' + encodeURIComponent(unitState.installerJobId) + '/rollback', { method: 'POST' });
+        renderTenantInstallProgress(result);
         setUnitsAlert(tenantInstallMessage(result));
         setTenantInstallerActions(null);
+        localStorage.removeItem(storageKey('tenant_installer_job_id'));
+        setTenantWizardStep(7);
         await loadUnits();
       } catch (error) {
         setUnitsAlert(error.message || 'Không hoàn tác được khởi tạo đơn vị');
@@ -3257,7 +3503,178 @@
       renderAuditTenantFilter();
       await loadAudit().catch(() => {});
       await loadDashboard().catch(() => {});
+      await restoreTenantInstallProgress();
     }
+
+    function registerControlCenterActions() {
+      registerControlCenterAction('section.activate', ({ target, dataset }) => {
+        activateSection(dataset.section || dataset.goSection || target.dataset.section || target.dataset.goSection);
+      });
+      registerControlCenterAction('auth.logout', () => logout());
+      registerControlCenterAction('dashboard.refresh', () => loadDashboard().catch(() => {}));
+      registerControlCenterAction('unit.create', () => openUnitModal());
+      registerControlCenterAction('unit.edit', ({ dataset }) => {
+        const unit = controlCenterActionUnit(dataset);
+        if (unit) openUnitModal(unit);
+      });
+      registerControlCenterAction('unit.portal', ({ dataset }) => {
+        const unit = controlCenterActionUnit(dataset);
+        if (unit) openTenantPortal(unit);
+      });
+      registerControlCenterAction('unit.checkWebsite', ({ dataset }) => {
+        const unit = controlCenterActionUnit(dataset);
+        if (unit) checkUnitWebsite(unit);
+      });
+      registerControlCenterAction('unit.checkDatabase', ({ dataset }) => {
+        const unit = controlCenterActionUnit(dataset);
+        if (unit) checkUnitConnection(unit);
+      });
+      registerControlCenterAction('unit.focus', ({ dataset }) => {
+        activateSection('units');
+        document.getElementById('unitSearch').value = dataset.unitCode || dataset.unitName || '';
+        loadUnits().catch((error) => setUnitsAlert(error.message));
+      });
+      registerControlCenterAction('unit.status', ({ dataset }) => {
+        const unit = controlCenterActionUnit(dataset);
+        if (unit) changeUnitStatus(unit, dataset.unitStatusAction);
+      });
+      registerControlCenterAction('unit.wizardBack', () => setTenantWizardStep(unitState.wizardStep - 1));
+      registerControlCenterAction('unit.wizardNext', () => nextTenantWizardStep());
+      registerControlCenterAction('unit.databaseCheck', () => checkTenantDatabaseConnection());
+      registerControlCenterAction('unit.preflight', () => preflightUnitInstall());
+      registerControlCenterAction('unit.refresh', () => loadUnits().catch((error) => setUnitsAlert(error.message)));
+      registerControlCenterAction('unit.modalClose', () => closeUnitModal());
+      registerControlCenterAction('unit.modalBackdrop', ({ event }) => {
+        if (event.target.id === 'unitModal') closeUnitModal();
+      });
+      registerControlCenterAction('tenantInstall.retry', () => retryTenantInstall());
+      registerControlCenterAction('tenantInstall.rollback', () => rollbackTenantInstall());
+      registerControlCenterAction('tenant.create', () => openTenantModal());
+      registerControlCenterAction('tenant.refresh', () => loadTenants());
+      registerControlCenterAction('tenant.detail', ({ dataset }) => {
+        const tenant = controlCenterActionTenant(dataset);
+        if (tenant) openTenantDetail(tenant);
+      });
+      registerControlCenterAction('tenant.edit', ({ dataset }) => {
+        const tenant = controlCenterActionTenant(dataset);
+        if (tenant) openTenantModal(tenant);
+      });
+      registerControlCenterAction('tenant.lock', ({ dataset }) => {
+        const tenant = controlCenterActionTenant(dataset);
+        if (tenant) lockTenant(tenant);
+      });
+      registerControlCenterAction('tenant.unlock', ({ dataset }) => {
+        const tenant = controlCenterActionTenant(dataset);
+        if (tenant) unlockTenant(tenant);
+      });
+      registerControlCenterAction('tenant.delete', ({ dataset }) => {
+        const tenant = controlCenterActionTenant(dataset);
+        if (tenant) deleteTenant(tenant);
+      });
+      registerControlCenterAction('tenant.prevPage', () => {
+        if (tenantState.page <= 1) return;
+        tenantState.page -= 1;
+        loadTenants();
+      });
+      registerControlCenterAction('tenant.nextPage', () => {
+        if (tenantState.page >= tenantState.totalPages) return;
+        tenantState.page += 1;
+        loadTenants();
+      });
+      registerControlCenterAction('tenant.modalClose', () => closeTenantModal());
+      registerControlCenterAction('tenant.modalBackdrop', ({ event }) => {
+        if (event.target.id === 'tenantModal') closeTenantModal();
+      });
+      registerControlCenterAction('tenant.detailClose', () => closeTenantDetail());
+      registerControlCenterAction('tenant.detailBackdrop', ({ event }) => {
+        if (event.target.id === 'tenantDetailModal') closeTenantDetail();
+      });
+      registerControlCenterAction('tenant.activityRefresh', () => loadTenantActivity().catch((error) => {
+        document.getElementById('tenantActivityBody').replaceChildren(stateRow(5, error.message || 'Không tải được Activity'));
+      }));
+      registerControlCenterAction('account.create', () => openAccountModal());
+      registerControlCenterAction('account.refresh', () => loadAccounts());
+      registerControlCenterAction('account.view', ({ dataset }) => {
+        const account = controlCenterActionAccount(dataset);
+        if (account) viewAccount(account);
+      });
+      registerControlCenterAction('account.edit', ({ dataset }) => {
+        const account = controlCenterActionAccount(dataset);
+        if (account) openAccountModal(account);
+      });
+      registerControlCenterAction('account.password', ({ dataset }) => {
+        const account = controlCenterActionAccount(dataset);
+        if (account) openPasswordModal(account);
+      });
+      registerControlCenterAction('account.status', ({ dataset }) => {
+        const account = controlCenterActionAccount(dataset);
+        if (account) changeAccountStatus(account, dataset.accountStatusAction);
+      });
+      registerControlCenterAction('account.modalClose', () => closeAccountModal());
+      registerControlCenterAction('account.modalBackdrop', ({ event }) => {
+        if (event.target.id === 'accountModal') closeAccountModal();
+      });
+      registerControlCenterAction('password.modalClose', () => closePasswordModal());
+      registerControlCenterAction('password.modalBackdrop', ({ event }) => {
+        if (event.target.id === 'passwordModal') closePasswordModal();
+      });
+      registerControlCenterAction('permission.group', ({ dataset }) => {
+        permissionState.activeGroup = dataset.permissionGroupId;
+        renderPermissionGroups();
+        renderPermissions();
+      });
+      registerControlCenterAction('permission.refresh', () => loadPermissions());
+      registerControlCenterAction('permission.save', () => savePermissions());
+      registerControlCenterAction('audit.refresh', () => loadAudit());
+    }
+
+    function bindStaticControlCenterActions() {
+      document.querySelectorAll('.cc-nav button').forEach((button) => {
+        bindControlCenterAction(button, 'section.activate');
+      });
+      document.querySelectorAll('[data-go-section]').forEach((button) => {
+        bindControlCenterAction(button, 'section.activate');
+      });
+      bindControlCenterElementAction('logoutButton', 'auth.logout');
+      bindControlCenterElementAction('refreshOperationsButton', 'dashboard.refresh');
+      bindControlCenterElementAction('refreshExecutiveButton', 'dashboard.refresh');
+      bindControlCenterElementAction('addUnitButton', 'unit.create');
+      bindControlCenterElementAction('wizardBackButton', 'unit.wizardBack');
+      bindControlCenterElementAction('wizardNextButton', 'unit.wizardNext');
+      bindControlCenterElementAction('databaseCheckButton', 'unit.databaseCheck');
+      bindControlCenterElementAction('preflightUnitButton', 'unit.preflight');
+      bindControlCenterElementAction('refreshUnitsButton', 'unit.refresh');
+      bindControlCenterElementAction('retryTenantInstallButton', 'tenantInstall.retry');
+      bindControlCenterElementAction('rollbackTenantInstallButton', 'tenantInstall.rollback');
+      bindControlCenterElementAction('closeUnitModalButton', 'unit.modalClose');
+      bindControlCenterElementAction('cancelUnitButton', 'unit.modalClose');
+      bindControlCenterElementAction('unitModal', 'unit.modalBackdrop');
+      bindControlCenterElementAction('addTenantButton', 'tenant.create');
+      bindControlCenterElementAction('refreshTenantsButton', 'tenant.refresh');
+      bindControlCenterElementAction('tenantPrevPageButton', 'tenant.prevPage');
+      bindControlCenterElementAction('tenantNextPageButton', 'tenant.nextPage');
+      bindControlCenterElementAction('closeTenantModalButton', 'tenant.modalClose');
+      bindControlCenterElementAction('cancelTenantButton', 'tenant.modalClose');
+      bindControlCenterElementAction('tenantModal', 'tenant.modalBackdrop');
+      bindControlCenterElementAction('closeTenantDetailButton', 'tenant.detailClose');
+      bindControlCenterElementAction('closeTenantDetailFooterButton', 'tenant.detailClose');
+      bindControlCenterElementAction('tenantDetailModal', 'tenant.detailBackdrop');
+      bindControlCenterElementAction('refreshTenantActivityButton', 'tenant.activityRefresh');
+      bindControlCenterElementAction('addAccountButton', 'account.create');
+      bindControlCenterElementAction('refreshAccountsButton', 'account.refresh');
+      bindControlCenterElementAction('closeAccountModalButton', 'account.modalClose');
+      bindControlCenterElementAction('cancelAccountButton', 'account.modalClose');
+      bindControlCenterElementAction('accountModal', 'account.modalBackdrop');
+      bindControlCenterElementAction('closePasswordModalButton', 'password.modalClose');
+      bindControlCenterElementAction('cancelPasswordButton', 'password.modalClose');
+      bindControlCenterElementAction('passwordModal', 'password.modalBackdrop');
+      bindControlCenterElementAction('refreshPermissionsButton', 'permission.refresh');
+      bindControlCenterElementAction('savePermissionsButton', 'permission.save');
+      bindControlCenterElementAction('refreshAuditButton', 'audit.refresh');
+    }
+
+    registerControlCenterActions();
+    bindStaticControlCenterActions();
 
     restoreSession().then((restored) => {
       if (restored) {
@@ -3268,12 +3685,6 @@
     });
 
     document.getElementById('loginForm').addEventListener('submit', login);
-    document.getElementById('logoutButton').addEventListener('click', logout);
-    document.getElementById('refreshOperationsButton').addEventListener('click', () => loadDashboard().catch(() => {}));
-    document.getElementById('refreshExecutiveButton').addEventListener('click', () => loadDashboard().catch(() => {}));
-    document.querySelectorAll('[data-go-section]').forEach((button) => {
-      button.addEventListener('click', () => activateSection(button.dataset.goSection));
-    });
     document.getElementById('globalSearch').addEventListener('keydown', (event) => {
       if (event.key !== 'Enter') return;
       const query = event.currentTarget.value.trim().toLowerCase();
@@ -3296,15 +3707,7 @@
         event.currentTarget.blur();
       }
     });
-    document.getElementById('addUnitButton').addEventListener('click', () => openUnitModal());
-    document.getElementById('wizardBackButton').addEventListener('click', () => setTenantWizardStep(unitState.wizardStep - 1));
-    document.getElementById('wizardNextButton').addEventListener('click', nextTenantWizardStep);
-    document.getElementById('databaseCheckButton').addEventListener('click', checkTenantDatabaseConnection);
-    document.getElementById('preflightUnitButton').addEventListener('click', preflightUnitInstall);
-    document.getElementById('refreshUnitsButton').addEventListener('click', () => loadUnits().catch((error) => setUnitsAlert(error.message)));
     document.getElementById('unitStatusFilter').addEventListener('change', () => loadUnits().catch((error) => setUnitsAlert(error.message)));
-    document.getElementById('retryTenantInstallButton').addEventListener('click', retryTenantInstall);
-    document.getElementById('rollbackTenantInstallButton').addEventListener('click', rollbackTenantInstall);
     document.getElementById('unitSearch').addEventListener('input', (() => {
       let timer = null;
       return () => {
@@ -3317,13 +3720,6 @@
       input.addEventListener('input', resetTenantReadiness);
       input.addEventListener('change', resetTenantReadiness);
     });
-    document.getElementById('closeUnitModalButton').addEventListener('click', closeUnitModal);
-    document.getElementById('cancelUnitButton').addEventListener('click', closeUnitModal);
-    document.getElementById('unitModal').addEventListener('click', (event) => {
-      if (event.target.id === 'unitModal') closeUnitModal();
-    });
-    document.getElementById('addTenantButton').addEventListener('click', () => openTenantModal());
-    document.getElementById('refreshTenantsButton').addEventListener('click', () => loadTenants());
     document.getElementById('tenantStatusFilter').addEventListener('change', () => {
       tenantState.page = 1;
       loadTenants();
@@ -3350,32 +3746,7 @@
         }, 250);
       };
     })());
-    document.getElementById('tenantPrevPageButton').addEventListener('click', () => {
-      if (tenantState.page <= 1) return;
-      tenantState.page -= 1;
-      loadTenants();
-    });
-    document.getElementById('tenantNextPageButton').addEventListener('click', () => {
-      if (tenantState.page >= tenantState.totalPages) return;
-      tenantState.page += 1;
-      loadTenants();
-    });
     document.getElementById('tenantForm').addEventListener('submit', saveTenant);
-    document.getElementById('closeTenantModalButton').addEventListener('click', closeTenantModal);
-    document.getElementById('cancelTenantButton').addEventListener('click', closeTenantModal);
-    document.getElementById('tenantModal').addEventListener('click', (event) => {
-      if (event.target.id === 'tenantModal') closeTenantModal();
-    });
-    document.getElementById('closeTenantDetailButton').addEventListener('click', closeTenantDetail);
-    document.getElementById('closeTenantDetailFooterButton').addEventListener('click', closeTenantDetail);
-    document.getElementById('tenantDetailModal').addEventListener('click', (event) => {
-      if (event.target.id === 'tenantDetailModal') closeTenantDetail();
-    });
-    document.getElementById('refreshTenantActivityButton').addEventListener('click', () => loadTenantActivity().catch((error) => {
-      document.getElementById('tenantActivityBody').replaceChildren(stateRow(5, error.message || 'Không tải được Activity'));
-    }));
-    document.getElementById('addAccountButton').addEventListener('click', () => openAccountModal());
-    document.getElementById('refreshAccountsButton').addEventListener('click', () => loadAccounts());
     document.getElementById('accountRoleFilter').addEventListener('change', () => loadAccounts());
     document.getElementById('accountStatusFilter').addEventListener('change', () => loadAccounts());
     document.getElementById('accountSearch').addEventListener('input', (() => {
@@ -3386,21 +3757,9 @@
       };
     })());
     document.getElementById('accountForm').addEventListener('submit', saveAccount);
-    document.getElementById('closeAccountModalButton').addEventListener('click', closeAccountModal);
-    document.getElementById('cancelAccountButton').addEventListener('click', closeAccountModal);
-    document.getElementById('accountModal').addEventListener('click', (event) => {
-      if (event.target.id === 'accountModal') closeAccountModal();
-    });
     document.getElementById('accountEmail').addEventListener('blur', suggestUsername);
     document.getElementById('accountDisplayName').addEventListener('blur', suggestUsername);
     document.getElementById('passwordForm').addEventListener('submit', savePassword);
-    document.getElementById('closePasswordModalButton').addEventListener('click', closePasswordModal);
-    document.getElementById('cancelPasswordButton').addEventListener('click', closePasswordModal);
-    document.getElementById('passwordModal').addEventListener('click', (event) => {
-      if (event.target.id === 'passwordModal') closePasswordModal();
-    });
-    document.getElementById('refreshPermissionsButton').addEventListener('click', () => loadPermissions());
-    document.getElementById('savePermissionsButton').addEventListener('click', savePermissions);
     document.getElementById('permissionRoleFilter').addEventListener('change', renderPermissions);
     document.getElementById('permissionSearch').addEventListener('input', (() => {
       let timer = null;
@@ -3409,7 +3768,6 @@
         timer = setTimeout(renderPermissions, 250);
       };
     })());
-    document.getElementById('refreshAuditButton').addEventListener('click', () => loadAudit());
     document.getElementById('auditTenantFilter').addEventListener('change', () => loadAudit());
     document.getElementById('auditLevelFilter').addEventListener('change', () => loadAudit());
     document.getElementById('auditSearch').addEventListener('input', (() => {

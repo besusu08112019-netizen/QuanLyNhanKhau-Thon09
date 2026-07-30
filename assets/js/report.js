@@ -211,7 +211,7 @@
     if (state.loaded && !force) return;
     state.loaded = true;
     await Promise.allSettled([loadCenter(), loadTemplates(), loadBi()]);
-    if (!state.report) loadReport().catch(() => {});
+    if (!state.report) loadReport({ collapseFilters: false }).catch(() => {});
   }
 
   async function smartApi(url, options = {}) {
@@ -417,7 +417,8 @@
     }
   }
 
-  window.loadReport = window.TenantAppViewReport = async function loadReport() {
+  window.loadReport = window.TenantAppViewReport = async function loadReport(options = {}) {
+    const shouldCollapseFilters = options.collapseFilters !== false;
     enhanceReportLayout();
     setActions(false);
     setTitle('Báo cáo');
@@ -431,7 +432,8 @@
       setCount(fmt(report.totalRows || 0) + ' dòng');
       renderBox('#reportPreview', reportMeta(report) + reportTable(report) + reportSignatures(report));
       setActions(true);
-      collapseReportFilters();
+      if (shouldCollapseFilters) collapseReportFilters();
+      else expandReportFilters();
       setBiOpen(false);
       scrollToReportResult(true);
       return report;

@@ -196,8 +196,11 @@ test.describe('party member detail modal', () => {
     test(`opens read-only detail view at ${width}px`, async ({ page }) => {
       await openAuthenticatedApp(page, width);
       await page.evaluate(() => window.TenantAppNavigationController?.navigate('partyMembers'));
-      await page.waitForSelector('#partyMemberRows [data-platform-action="partyMembers.detail"]');
-      await page.locator('#partyMemberRows [data-platform-action="partyMembers.detail"]').first().click();
+      const detailAction = width <= 1024
+        ? page.locator('.app-v2-record-actions button[aria-label="Xem"]').first()
+        : page.locator('#partyMemberRows [data-platform-action="partyMembers.detail"]').first();
+      await expect(detailAction).toBeVisible();
+      await detailAction.click();
       const modal = page.locator('#partyMemberDetailModal');
       await expect(modal).toBeVisible();
       await expect(modal.locator('#partyMemberDetailTitle')).toHaveText('Nguyen Van A');

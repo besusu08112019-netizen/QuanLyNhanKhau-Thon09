@@ -708,6 +708,10 @@
     color: var(--app-color-primary);
   }
 
+  body.app-authenticated .app-v2-global-fab {
+    bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+  }
+
   body.app-authenticated .app-v2-drawer,
   body.app-authenticated .app-v2-modal {
     position: fixed;
@@ -768,6 +772,10 @@
 
   body.app-authenticated .app-v2-module-screen {
     display: grid;
+  }
+
+  body.app-authenticated :where(.app-v2-dashboard, .app-v2-module-dashboard, .app-v2-module-screen) {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
   body.app-authenticated .app-v2-dashboard-layout {
@@ -848,12 +856,21 @@
     display: none;
   }
 
-  body.app-authenticated .app-v2-module-screen ~ :where(.content-card, .toolbar, .admin-heading, .action-grid, .operation-shell, .operation-panel, .system-admin-shell, .import-shell, .module-filter-card, .module-list-card, .person-search-card, .person-list-card, .report-page-head, .report-filter-card, .report-result-card, .agri-kpi-grid, .agri-filter-card, .agri-toolbar, .agri-table-card, .houses-kpi-grid, .houses-filter-card, .houses-toolbar, .houses-list-card, .livestock-kpi-grid, .livestock-filter-card, .livestock-toolbar, .livestock-list-card, .module-placeholder-hero, .module-placeholder-grid, .module-placeholder-actions, .report-layout, .smart-report-grid) {
+  body.app-authenticated .app-v2-module-screen ~ :where(.content-card, .toolbar, .admin-heading, .action-grid, .operation-shell, .operation-panel, .system-admin-shell, .import-shell, .module-filter-card, .module-list-card, .person-search-card, .person-list-card, .report-page-head, .report-filter-card, .report-result-card, .report-center-grid, .report-tools-grid, .agri-kpi-grid, .agri-filter-card, .agri-toolbar, .agri-table-card, .houses-kpi-grid, .houses-filter-card, .houses-toolbar, .houses-list-card, .livestock-kpi-grid, .livestock-filter-card, .livestock-toolbar, .livestock-list-card, .module-placeholder-hero, .module-placeholder-grid, .module-placeholder-actions, .report-layout, .smart-report-grid) {
     display: none;
   }
 
-  body.app-authenticated .app-v2-module-screen ~ * :where(.module-placeholder-grid, .module-placeholder-actions, .operation-log-filters, .system-admin-grid, .system-admin-kpis, .system-admin-panel, .agri-table-card, .houses-list-card, .livestock-list-card, .module-list-card, .table-responsive) {
+  body.app-authenticated .app-v2-module-screen ~ * :where(.module-placeholder-grid, .module-placeholder-actions, .operation-log-filters, .system-admin-grid, .system-admin-kpis, .system-admin-panel, .agri-table-card, .houses-list-card, .livestock-list-card, .module-list-card, .report-preview, .table-responsive),
+  body.app-authenticated .screen:has(> .app-v2-module-screen) > :not(.app-v2-module-screen) :where(.table-responsive table) {
     display: none;
+  }
+
+  body.app-authenticated :where(#documentsScreen, #financeScreen, #workCalendarScreen):has(.app-v2-module-screen) :where(.module-list-card, .table-responsive, .work-calendar-grid) {
+    display: none;
+  }
+
+  body.app-authenticated :where(#documentsScreen, #financeScreen, #workCalendarScreen):has(.app-v2-module-screen) .app-v2-module-screen {
+    display: grid;
   }
 
   body.app-authenticated .app-v2-record-card {
@@ -1073,6 +1090,10 @@ body.app-authenticated .app-v2-record-card[data-app-v2-primary-proxy]:focus-visi
 
   body.app-authenticated .app-v2-stat-value {
     font-size: 24px;
+  }
+
+  body.app-authenticated .app-v2-global-fab {
+    display: none;
   }
 }
 
