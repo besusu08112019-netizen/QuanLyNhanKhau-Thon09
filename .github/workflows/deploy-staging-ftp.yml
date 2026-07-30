@@ -1,0 +1,188 @@
+name: Deploy to Staging FTP
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+concurrency:
+  group: staging-ftp
+  cancel-in-progress: false
+
+jobs:
+  ftp-deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Validate staging secrets
+        shell: bash
+        env:
+          STAGING_FTP_SERVER: ${{ secrets.STAGING_FTP_SERVER }}
+          STAGING_FTP_USERNAME: ${{ secrets.STAGING_FTP_USERNAME }}
+          STAGING_FTP_PASSWORD: ${{ secrets.STAGING_FTP_PASSWORD }}
+          STAGING_FTP_SERVER_DIR: ${{ vars.STAGING_FTP_SERVER_DIR }}
+          STAGING_APP_URL: ${{ vars.STAGING_APP_URL }}
+          STAGING_DB_HOST: ${{ secrets.STAGING_DB_HOST || vars.STAGING_DB_HOST }}
+          STAGING_DB_DATABASE: ${{ secrets.STAGING_DB_DATABASE || vars.STAGING_DB_DATABASE }}
+          STAGING_DB_USERNAME: ${{ secrets.STAGING_DB_USERNAME || vars.STAGING_DB_USERNAME }}
+          STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+        run: |
+          missing=0
+          for name in STAGING_FTP_SERVER STAGING_FTP_USERNAME STAGING_FTP_PASSWORD STAGING_FTP_SERVER_DIR STAGING_APP_URL STAGING_DB_HOST STAGING_DB_DATABASE STAGING_DB_USERNAME STAGING_DB_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is missing. Configure it in the staging GitHub environment before deploying."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Setup PHP for staging checks
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, fileinfo, json, mbstring, pdo, pdo_mysql, simplexml, zip
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JavaScript dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run staging pre-deploy checks
+        run: |
+          npm run check:js
+          node tests/tenant-management-api.test.js
+          node tests/tenant-management-ui.test.js
+          php tests/control-center-authorization.test.php
+          node tests/control-center-mvp.test.js
+          node tests/control-center-phase2.test.js
+          node tests/administrative-unit-management.test.js
+          find . -path './dist' -prune -o -path './node_modules' -prune -o -path './vendor' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Tenant Management browser smoke
+        run: npx playwright test tests/browser/tenant-management-ui.spec.js
+
+      - name: Bust staging asset cache
+        shell: bash
+        env:
+          ASSET_VERSION: staging-${{ github.run_number }}-${{ github.run_attempt }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ['ASSET_VERSION']
+          index_path = Path('index.php')
+          text = index_path.read_text(encoding='utf-8')
+          updated = re.sub(
+              r"define\('APP_ASSET_VERSION',\s*'[^']+'\);",
+              f"define('APP_ASSET_VERSION', '{version}');",
+              text,
+              count=1,
+          )
+          if updated == text:
+              raise SystemExit('APP_ASSET_VERSION was not found in index.php')
+          index_path.write_text(updated, encoding='utf-8')
+          print(f'Updated APP_ASSET_VERSION to {version}')
+          PY
+
+      - name: Build staging artifact
+        run: npm run build:production
+
+      - name: Validate staging artifact source
+        run: npm run validate:artifact
+
+      - name: Create staging env
+        shell: bash
+        env:
+          STAGING_APP_NAME: ${{ vars.STAGING_APP_NAME || 'HONG PHONG COMMUNITY PLATFORM' }}
+          STAGING_APP_URL: ${{ vars.STAGING_APP_URL }}
+          STAGING_APP_KEY: ${{ secrets.STAGING_APP_KEY }}
+          STAGING_DB_HOST: ${{ secrets.STAGING_DB_HOST || vars.STAGING_DB_HOST }}
+          STAGING_DB_PORT: ${{ secrets.STAGING_DB_PORT || vars.STAGING_DB_PORT }}
+          STAGING_DB_SOCKET: ${{ secrets.STAGING_DB_SOCKET || vars.STAGING_DB_SOCKET }}
+          STAGING_DB_DATABASE: ${{ secrets.STAGING_DB_DATABASE || vars.STAGING_DB_DATABASE }}
+          STAGING_DB_USERNAME: ${{ secrets.STAGING_DB_USERNAME || vars.STAGING_DB_USERNAME }}
+          STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          STAGING_DB_CHARSET: ${{ secrets.STAGING_DB_CHARSET || vars.STAGING_DB_CHARSET }}
+          STAGING_PLATFORM_ADMIN_DOMAINS: ${{ vars.STAGING_PLATFORM_ADMIN_DOMAINS }}
+          STAGING_PLATFORM_TENANT_DOMAIN_PATTERN: ${{ vars.STAGING_PLATFORM_TENANT_DOMAIN_PATTERN }}
+          STAGING_UPLOAD_PATH: ${{ vars.STAGING_UPLOAD_PATH }}
+          STAGING_STORAGE_PATH: ${{ vars.STAGING_STORAGE_PATH }}
+          STAGING_CACHE_PATH: ${{ vars.STAGING_CACHE_PATH }}
+          STAGING_LOGS_PATH: ${{ vars.STAGING_LOGS_PATH }}
+        run: |
+          {
+            echo "APP_NAME=${STAGING_APP_NAME}"
+            echo "APP_URL=${STAGING_APP_URL}"
+            if [ -n "${STAGING_APP_KEY}" ]; then echo "APP_KEY=${STAGING_APP_KEY}"; fi
+            echo "APP_DEBUG=false"
+            echo "DB_HOST=${STAGING_DB_HOST}"
+            echo "DB_PORT=${STAGING_DB_PORT:-3306}"
+            if [ -n "${STAGING_DB_SOCKET}" ]; then echo "DB_SOCKET=${STAGING_DB_SOCKET}"; fi
+            echo "DB_DATABASE=${STAGING_DB_DATABASE}"
+            echo "DB_USERNAME=${STAGING_DB_USERNAME}"
+            echo "DB_PASSWORD=${STAGING_DB_PASSWORD}"
+            echo "DB_CHARSET=${STAGING_DB_CHARSET:-utf8mb4}"
+            echo "PLATFORM_ADMIN_ENABLED=true"
+            echo "PLATFORM_ADMIN_DOMAINS=${STAGING_PLATFORM_ADMIN_DOMAINS:-staging.hongphongnb.com,ccc-staging.hongphongnb.com}"
+            echo "PLATFORM_DEFAULT_PORTAL=TENANT"
+            echo "PLATFORM_TENANT_DOMAIN_PATTERN=${STAGING_PLATFORM_TENANT_DOMAIN_PATTERN:-{code}.staging.hongphongnb.com}"
+            if [ -n "${STAGING_UPLOAD_PATH}" ]; then echo "UPLOAD_PATH=${STAGING_UPLOAD_PATH}"; fi
+            if [ -n "${STAGING_STORAGE_PATH}" ]; then echo "STORAGE_PATH=${STAGING_STORAGE_PATH}"; fi
+            if [ -n "${STAGING_CACHE_PATH}" ]; then echo "CACHE_PATH=${STAGING_CACHE_PATH}"; fi
+            if [ -n "${STAGING_LOGS_PATH}" ]; then echo "LOGS_PATH=${STAGING_LOGS_PATH}"; fi
+          } > dist/production/.env
+
+      - name: Ensure staging runtime directories
+        shell: bash
+        run: |
+          mkdir -p dist/production/uploads dist/production/storage/cache dist/production/storage/logs dist/production/storage/sessions
+          touch dist/production/uploads/.gitkeep dist/production/storage/cache/.gitkeep dist/production/storage/logs/.gitkeep dist/production/storage/sessions/.gitkeep
+
+      - name: Upload staging artifact for audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-artifact
+          path: dist/production/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Deploy to staging via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.STAGING_FTP_SERVER }}
+          username: ${{ secrets.STAGING_FTP_USERNAME }}
+          password: ${{ secrets.STAGING_FTP_PASSWORD }}
+          protocol: ftps
+          port: ${{ vars.STAGING_FTP_PORT || 21 }}
+          local-dir: ./dist/production/
+          server-dir: ${{ vars.STAGING_FTP_SERVER_DIR }}
+          state-name: .ftp-deploy-staging-state.json
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            config/database.php
+            backups/**
+
+      - name: Verify staging deployment responds
+        shell: bash
+        env:
+          STAGING_APP_URL: ${{ vars.STAGING_APP_URL }}
+        run: |
+          curl -fsS "${STAGING_APP_URL}" -o /tmp/staging-home.html
+          grep -q 'Community Control Center' /tmp/staging-home.html
