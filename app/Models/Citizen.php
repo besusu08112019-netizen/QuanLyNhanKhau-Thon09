@@ -368,10 +368,7 @@ final class Citizen extends BaseModel
                  student=0,
                  employed=0,
                  unemployed=0,
-                 occupation=CASE
-                    WHEN occupation IS NULL OR TRIM(occupation) = "" OR LOWER(TRIM(occupation)) IN ("khac", "khác") THEN :student_label
-                    ELSE occupation
-                 END
+                 occupation=:student_label
              WHERE status <> "DELETED"
                AND date_of_birth IS NOT NULL
                AND ' . $studentCondition . '
@@ -381,9 +378,7 @@ final class Citizen extends BaseModel
                     OR COALESCE(student,0)<>0
                     OR COALESCE(employed,0)<>0
                     OR COALESCE(unemployed,0)<>0
-                    OR occupation IS NULL
-                    OR TRIM(occupation) = ""
-                    OR LOWER(TRIM(occupation)) IN ("khac", "khác")
+                    OR occupation <> :student_label
                )',
             ['student_label' => StudentStatusService::STUDENT_LABEL]
         );
