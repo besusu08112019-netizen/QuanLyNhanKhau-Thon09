@@ -1,0 +1,491 @@
+(function () {
+  'use strict';
+
+  const API = '/api/poverty';
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const state = {
+    page: 1,
+    pageSize: 20,
+    search: '',
+    period_id: '',
+    poverty_type: '',
+    record_status: '',
+    area_code: '',
+    year: '',
+    list: '',
+    sort: 'effective_from',
+    direction: 'DESC',
+    catalogs: null,
+    householdSuggestions: []
+  };
+  let registered = false;
+  let householdPatched = false;
+
+  registerPlatform();
+  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('tenant:screen-change', event => {
+    if (event.detail?.screen === 'povertyManagement') load();
+  });
+
+  function init() {
+    registerPlatform();
+    ensureDom();
+    bindEvents();
+    patchHouseholdDetail();
+    if ($('#povertyManagementScreen')?.classList.contains('active')) load();
+  }
+
+  function registerPlatform() {
+    if (registered) return;
+    const p = window.TenantAppPlatform;
+    if (!p) return;
+    registered = true;
+    p.modules?.upsert?.({ moduleKey: 'povertyManagement', screenId: 'povertyManagement', path: '/poverty', label: 'Hộ nghèo / cận nghèo', mobileLabel: 'Hộ nghèo', icon: 'fa-hand-holding-heart', permissionScope: 'poverty', loaderName: 'loadPovertyManagement' });
+    p.routes?.upsert?.({ path: '/poverty', moduleKey: 'povertyManagement', screenId: 'povertyManagement', action: 'list' });
+    const population = p.menus?.get?.('population');
+    if (population && !String(population.items || '').includes('povertyManagement')) {
+      p.menus.upsert?.(Object.assign({}, population, { items: [...(population.items || []), 'povertyManagement'] }));
+    }
+    p.menuRenderer?.renderAll?.();
+  }
+
+  function ensureDom() {
+    const main = $('#mainContent') || $('.main-area');
+    if (main && !$('#povertyManagementScreen')) {
+      main.insertAdjacentHTML('beforeend', screenHtml());
+    }
+    if (!$('#povertyRecordModal')) document.body.insertAdjacentHTML('beforeend', recordModalHtml() + periodModalHtml() + detailModalHtml());
+    ['povertyRecordModal', 'povertyPeriodModal', 'povertyDetailModal'].forEach(registerModal);
+    registerActions();
+  }
+
+  function bindEvents() {
+    $('#povertyRecordForm')?.addEventListener('submit', saveRecord);
+    $('#povertyPeriodForm')?.addEventListener('submit', savePeriod);
+    $('#povertyHouseholdSearch')?.addEventListener('input', debounce(searchHouseholds, 250));
+    document.addEventListener('pointerdown', event => {
+      if (!event.target.closest('#povertyHouseholdSuggestions') && event.target.id !== 'povertyHouseholdSearch') {
+        $('#povertyHouseholdSuggestions')?.classList.add('d-none');
+      }
+    });
+    ['povertySearch', 'povertyYearFilter'].forEach(id => {
+      $('#' + id)?.addEventListener('input', debounce(() => { collectFilters(); state.page = 1; load(); }, 300));
+    });
+    ['povertyPeriodFilter', 'povertyTypeFilter', 'povertyStatusFilter', 'povertyAreaFilter', 'povertyListFilter', 'povertyPageSize'].forEach(id => {
+      $('#' + id)?.addEventListener('change', () => { collectFilters(); state.page = 1; load(); });
+    });
+  }
+
+  function registerActions() {
+    const actions = window.TenantAppPlatform?.actions;
+    if (!actions?.register) return;
+    actions.register('poverty.refresh', () => load());
+    actions.register('poverty.reset', resetFilters);
+    actions.register('poverty.openRecord', () => openRecordForm());
+    actions.register('poverty.openPeriod', () => openPeriodForm());
+    actions.register('poverty.periods', () => renderPeriods());
+    actions.register('poverty.records', () => load());
+    actions.register('poverty.report', () => renderReport());
+    actions.register('poverty.selectHousehold', context => selectHousehold(state.householdSuggestions.find(item => String(item.id) === String(context.dataset.id))));
+    actions.register('poverty.detail', context => openDetail(Number(context.dataset.id || 0)));
+    actions.register('poverty.editRecord', context => openRecordForm(Number(context.dataset.id || 0)));
+    actions.register('poverty.deleteRecord', context => deleteRecord(Number(context.dataset.id || 0)));
+    actions.register('poverty.editPeriod', context => openPeriodForm(Number(context.dataset.id || 0)));
+    actions.register('poverty.deletePeriod', context => deletePeriod(Number(context.dataset.id || 0)));
+    actions.register('poverty.page', context => { state.page = Number(context.dataset.page || 1); load(); });
+    actions.register('poverty.sort', context => sortBy(context.dataset.sort));
+    actions.register('poverty.export', context => exportReport(context.dataset.format || 'excel'));
+    actions.register('poverty.print', printReport);
+    actions.bind?.(document);
+  }
+
+  async function load() {
+    ensureDom();
+    if (!can('read')) return;
+    await ensureCatalogs();
+    collectFilters();
+    await Promise.all([renderDashboard(), renderRecords()]);
+  }
+
+  async function ensureCatalogs(force = false) {
+    if (state.catalogs && !force) return state.catalogs;
+    state.catalogs = await request(API + '/catalogs', { cacheTtl: 60000 });
+    fill('#povertyPeriodFilter', state.catalogs.periods, 'Tất cả');
+    fill('#povertyRecordPeriod', state.catalogs.periods, 'Chọn giai đoạn');
+    fill('#povertyTypeFilter', state.catalogs.poverty_types, 'Tất cả');
+    fill('#povertyRecordType', state.catalogs.poverty_types, 'Chọn loại hộ');
+    fill('#povertyStatusFilter', state.catalogs.record_statuses, 'Tất cả');
+    fill('#povertyRecordStatus', state.catalogs.record_statuses, 'Chọn trạng thái');
+    fill('#povertyAreaFilter', state.catalogs.areas, 'Tất cả');
+    fill('#povertyPeriodStatus', state.catalogs.period_statuses, 'Chọn trạng thái');
+    return state.catalogs;
+  }
+
+  async function renderDashboard() {
+    const host = $('#povertyDashboard');
+    if (!host) return;
+    const data = await request(API + '/dashboard?' + params().toString(), { cacheTtl: 4000 });
+    const m = data.metrics || {};
+    host.innerHTML = [
+      ['Tổng hộ nghèo', m.poor, 'fa-house-circle-exclamation'],
+      ['Tổng hộ cận nghèo', m.near_poor, 'fa-house-circle-check'],
+      ['Hộ mới phát sinh', m.new_entries, 'fa-arrow-trend-up'],
+      ['Hộ thoát nghèo', m.escaped_poor, 'fa-person-walking-arrow-right'],
+      ['Hộ thoát cận nghèo', m.escaped_near_poor, 'fa-route'],
+      ['Tỷ lệ hộ nghèo', (m.poor_rate || 0) + '%', 'fa-percent']
+    ].map(card).join('');
+    const trend = $('#povertyTrend');
+    if (trend) trend.innerHTML = (data.trend || []).length ? (data.trend || []).map(row => '<div class="d-flex justify-content-between border-bottom py-1"><span>' + esc(row.year) + '</span><strong>Nghèo: ' + num(row.poor) + ' · Cận nghèo: ' + num(row.near_poor) + '</strong></div>').join('') : '<div class="text-muted">Chưa có dữ liệu biến động theo năm.</div>';
+  }
+
+  async function renderRecords() {
+    const body = $('#povertyRows');
+    if (!body) return;
+    const data = await request(API + '/records?' + params().toString(), { cacheTtl: 2000 });
+    $('#povertyTotal') && ($('#povertyTotal').textContent = 'Tổng số: ' + num(data.total || 0) + ' bản ghi');
+    body.innerHTML = (data.items || []).length ? data.items.map(rowHtml).join('') : '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có bản ghi hộ nghèo/cận nghèo</td></tr>';
+    renderPager(data);
+    if (typeof window.TenantAppSyncResponsiveTableLabels === 'function') window.TenantAppSyncResponsiveTableLabels($('#povertyManagementScreen') || document);
+  }
+
+  function rowHtml(row) {
+    const id = Number(row.id || 0);
+    const actions = [
+      '<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="poverty.detail" data-id="' + id + '" title="Xem"><i class="fa-solid fa-eye"></i></button>',
+      can('update') ? '<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="poverty.editRecord" data-id="' + id + '" title="Sửa"><i class="fa-solid fa-pen"></i></button>' : '',
+      can('delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="poverty.deleteRecord" data-id="' + id + '" title="Xóa"><i class="fa-solid fa-trash"></i></button>' : ''
+    ].filter(Boolean).join(' ');
+    return '<tr><td data-label="Mã hộ"><strong>' + esc(row.household_code) + '</strong><div class="text-muted small">' + esc(row.head_citizen_name || '') + '</div></td><td data-label="Khu">' + esc(row.area_code || '') + '</td><td data-label="Giai đoạn">' + esc(row.period_name || '') + '</td><td data-label="Loại hộ"><span class="badge text-bg-light">' + esc(row.poverty_type_label || '') + '</span></td><td data-label="Từ ngày">' + esc(date(row.effective_from)) + '</td><td data-label="Đến ngày">' + esc(date(row.effective_to)) + '</td><td data-label="Trạng thái">' + esc(row.status_label || '') + '</td><td data-label="Quyết định">' + esc(row.decision_number || '') + '</td><td data-label="Thao tác" class="text-end"><div class="d-flex gap-1 justify-content-end">' + actions + '</div></td></tr>';
+  }
+
+  function renderPager(data) {
+    const host = $('#povertyPager');
+    if (!host) return;
+    const page = Number(data.page || 1), totalPages = Number(data.totalPages || 1);
+    const pages = [];
+    for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) pages.push(i);
+    host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" type="button" ' + (page <= 1 ? 'disabled' : '') + ' data-platform-action="poverty.page" data-page="' + (page - 1) + '">Trước</button>' + pages.map(item => '<button class="btn btn-sm ' + (item === page ? 'btn-primary' : 'btn-outline-secondary') + '" type="button" data-platform-action="poverty.page" data-page="' + item + '">' + item + '</button>').join('') + '<button class="btn btn-sm btn-outline-secondary" type="button" ' + (page >= totalPages ? 'disabled' : '') + ' data-platform-action="poverty.page" data-page="' + (page + 1) + '">Sau</button>';
+  }
+
+  async function renderPeriods() {
+    await ensureCatalogs(true);
+    const data = await request(API + '/periods?pageSize=100', { cacheTtl: 0 });
+    const body = $('#povertyRows');
+    if (!body) return;
+    $('#povertyTotal') && ($('#povertyTotal').textContent = 'Giai đoạn: ' + num(data.total || 0));
+    body.innerHTML = (data.items || []).length ? data.items.map(periodRow).join('') : '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có giai đoạn</td></tr>';
+    $('#povertyPager') && ($('#povertyPager').innerHTML = '');
+  }
+
+  function periodRow(row) {
+    const id = Number(row.id || 0);
+    return '<tr><td colspan="2" data-label="Tên"><strong>' + esc(row.name) + '</strong></td><td data-label="Bắt đầu">' + esc(date(row.start_date)) + '</td><td data-label="Kết thúc">' + esc(date(row.end_date)) + '</td><td data-label="Trạng thái"><span class="badge text-bg-light">' + esc(row.status_label || '') + '</span></td><td colspan="3" data-label="Ghi chú">' + esc(row.note || '') + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="poverty.editPeriod" data-id="' + id + '"><i class="fa-solid fa-pen"></i></button> ' + (can('delete') ? '<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="poverty.deletePeriod" data-id="' + id + '"><i class="fa-solid fa-trash"></i></button>' : '') + '</td></tr>';
+  }
+
+  async function renderReport() {
+    const report = await request(API + '/report?' + params().toString(), { cacheTtl: 0 });
+    const body = $('#povertyRows');
+    if (!body) return;
+    $('#povertyTotal') && ($('#povertyTotal').textContent = 'Báo cáo: ' + num(report.totalRows || 0) + ' dòng');
+    body.innerHTML = (report.rows || []).length ? report.rows.map(cols => '<tr>' + cols.slice(1).map((value, index) => '<td data-label="' + esc(report.headers[index + 1] || '') + '">' + esc(value) + '</td>').join('') + '<td></td></tr>').join('') : '<tr><td colspan="9" class="text-center text-muted py-4">Chưa có dữ liệu báo cáo</td></tr>';
+    $('#povertyPager') && ($('#povertyPager').innerHTML = Object.entries(report.summary || {}).map(([key, value]) => '<span class="badge text-bg-light me-1">' + esc(key) + ': ' + esc(value) + '</span>').join(''));
+  }
+
+  async function openRecordForm(id = 0) {
+    if (!can(id ? 'update' : 'create')) return toast('Tài khoản không có quyền thao tác', 'warning');
+    await ensureCatalogs();
+    const form = $('#povertyRecordForm');
+    if (!form) return;
+    form.reset();
+    form.elements.id.value = '';
+    form.elements.household_id.value = '';
+    $('#povertyHouseholdSearch').disabled = false;
+    $('#povertyHouseholdSelected').textContent = '';
+    if (id) {
+      const row = await request(API + '/records/' + encodeURIComponent(id), { cacheTtl: 0 });
+      setForm(form, row);
+      form.elements.household_id.value = row.household_id || '';
+      $('#povertyHouseholdSearch').value = [row.household_code, row.head_citizen_name].filter(Boolean).join(' - ');
+      $('#povertyHouseholdSearch').disabled = true;
+      $('#povertyHouseholdSelected').textContent = row.address || '';
+    }
+    openModal('povertyRecordModal');
+  }
+
+  async function openPeriodForm(id = 0) {
+    if (!can(id ? 'update' : 'create')) return toast('Tài khoản không có quyền thao tác', 'warning');
+    await ensureCatalogs();
+    const form = $('#povertyPeriodForm');
+    if (!form) return;
+    form.reset();
+    form.elements.id.value = '';
+    if (id) setForm(form, await request(API + '/periods/' + encodeURIComponent(id), { cacheTtl: 0 }));
+    openModal('povertyPeriodModal');
+  }
+
+  async function saveRecord(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const body = Object.fromEntries(new FormData(form).entries());
+    if (!body.household_id || !body.period_id || !body.poverty_type || !body.effective_from) return toast('Vui lòng nhập đủ hộ, giai đoạn, loại hộ và ngày bắt đầu', 'warning');
+    try {
+      const id = Number(body.id || 0);
+      await request(API + '/records' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body });
+      closeModal('povertyRecordModal');
+      toast('Đã lưu trạng thái hộ');
+      await ensureCatalogs(true);
+      await load();
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  async function savePeriod(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const body = Object.fromEntries(new FormData(form).entries());
+    try {
+      const id = Number(body.id || 0);
+      await request(API + '/periods' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body });
+      closeModal('povertyPeriodModal');
+      toast('Đã lưu giai đoạn');
+      await ensureCatalogs(true);
+      await renderPeriods();
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  async function deleteRecord(id) {
+    if (!id || !can('delete')) return;
+    if (!await confirmAction({ title: 'Xóa bản ghi', message: 'Bản ghi sẽ được xóa mềm, lịch sử thay đổi vẫn được lưu.', tone: 'danger', confirmLabel: 'Xóa' })) return;
+    await request(API + '/records/' + encodeURIComponent(id), { method: 'DELETE' });
+    toast('Đã xóa bản ghi');
+    load();
+  }
+
+  async function deletePeriod(id) {
+    if (!id || !can('delete')) return;
+    if (!await confirmAction({ title: 'Xóa giai đoạn', message: 'Chỉ xóa được giai đoạn chưa có lịch sử hộ.', tone: 'danger', confirmLabel: 'Xóa' })) return;
+    await request(API + '/periods/' + encodeURIComponent(id), { method: 'DELETE' });
+    toast('Đã xóa giai đoạn');
+    await ensureCatalogs(true);
+    renderPeriods();
+  }
+
+  async function openDetail(id) {
+    if (!id) return;
+    const row = await request(API + '/records/' + encodeURIComponent(id), { cacheTtl: 0 });
+    $('#povertyDetailTitle').textContent = row.household_code + ' - ' + (row.head_citizen_name || '');
+    $('#povertyDetailBody').innerHTML = detailHtml(row);
+    openModal('povertyDetailModal');
+  }
+
+  function detailHtml(row) {
+    return '<div class="row g-3"><div class="col-md-6"><div class="content-card h-100"><h6>Hộ gia đình</h6>' + info('Mã hộ', row.household_code) + info('Chủ hộ', row.head_citizen_name) + info('Khu', row.area_code) + info('Địa chỉ', row.address) + '</div></div><div class="col-md-6"><div class="content-card h-100"><h6>Trạng thái</h6>' + info('Giai đoạn', row.period_name) + info('Loại hộ', row.poverty_type_label) + info('Hiệu lực', [date(row.effective_from), date(row.effective_to)].filter(Boolean).join(' - ')) + info('Quyết định', row.decision_number) + info('Ghi chú', row.note) + '</div></div></div>';
+  }
+
+  async function searchHouseholds() {
+    const input = $('#povertyHouseholdSearch'), host = $('#povertyHouseholdSuggestions'), form = $('#povertyRecordForm');
+    if (!input || !host || !form) return;
+    const q = input.value.trim();
+    form.elements.household_id.value = '';
+    state.householdSuggestions = [];
+    if (q.length < 2) { host.classList.add('d-none'); return; }
+    const data = await request(API + '/households/search?q=' + encodeURIComponent(q), { cacheTtl: 3000 });
+    state.householdSuggestions = data.items || [];
+    host.innerHTML = state.householdSuggestions.length ? state.householdSuggestions.map(item => '<button class="list-group-item list-group-item-action" type="button" data-platform-action="poverty.selectHousehold" data-id="' + Number(item.id) + '"><strong>' + esc(item.household_code) + '</strong> - ' + esc(item.head_citizen_name || '') + '<div class="small text-muted">' + esc(item.address || '') + '</div></button>').join('') : '<div class="list-group-item text-muted">Không tìm thấy hộ gia đình</div>';
+    host.classList.remove('d-none');
+  }
+
+  function selectHousehold(item) {
+    if (!item) return;
+    const form = $('#povertyRecordForm');
+    form.elements.household_id.value = item.id;
+    $('#povertyHouseholdSearch').value = item.household_code + ' - ' + (item.head_citizen_name || '');
+    $('#povertyHouseholdSelected').textContent = item.address || '';
+    $('#povertyHouseholdSuggestions')?.classList.add('d-none');
+  }
+
+  function collectFilters() {
+    state.search = $('#povertySearch')?.value.trim() || '';
+    state.period_id = $('#povertyPeriodFilter')?.value || '';
+    state.poverty_type = $('#povertyTypeFilter')?.value || '';
+    state.record_status = $('#povertyStatusFilter')?.value || '';
+    state.area_code = $('#povertyAreaFilter')?.value || '';
+    state.year = $('#povertyYearFilter')?.value || '';
+    state.list = $('#povertyListFilter')?.value || '';
+    state.pageSize = Number($('#povertyPageSize')?.value || 20);
+  }
+
+  function resetFilters() {
+    ['povertySearch', 'povertyPeriodFilter', 'povertyTypeFilter', 'povertyStatusFilter', 'povertyAreaFilter', 'povertyYearFilter', 'povertyListFilter'].forEach(id => { const el = $('#' + id); if (el) el.value = ''; });
+    Object.assign(state, { page: 1, search: '', period_id: '', poverty_type: '', record_status: '', area_code: '', year: '', list: '' });
+    load();
+  }
+
+  function params() {
+    const q = new URLSearchParams({ page: state.page, pageSize: state.pageSize, sort: state.sort, direction: state.direction });
+    ['search', 'period_id', 'poverty_type', 'record_status', 'area_code', 'year', 'list'].forEach(key => { if (state[key]) q.set(key, state[key]); });
+    return q;
+  }
+
+  function sortBy(key) {
+    if (!key) return;
+    if (state.sort === key) state.direction = state.direction === 'ASC' ? 'DESC' : 'ASC';
+    else { state.sort = key; state.direction = 'ASC'; }
+    load();
+  }
+
+  async function exportReport(format) {
+    try {
+      await downloadFile(API + (format === 'pdf' ? '/export-pdf?' : '/export-excel?') + params().toString(), format === 'pdf' ? 'pdf' : 'xls');
+      toast(format === 'pdf' ? 'Đã tải PDF' : 'Đã tải Excel');
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  async function printReport() {
+    try {
+      const data = await request(API + '/report?' + params().toString(), { cacheTtl: 0 });
+      const printer = window.TenantAppPrint;
+      if (!printer?.render) return toast('Không tải được mẫu in báo cáo', 'warning');
+      const popup = printer.render(Object.assign({}, data, { type: 'poverty', orientation: 'portrait', paperSize: 'A4' }));
+      if (!popup) toast('Trình duyệt đang chặn cửa sổ in', 'warning');
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  function patchHouseholdDetail() {
+    if (householdPatched) return;
+    if (typeof window.showHousehold !== 'function') {
+      setTimeout(patchHouseholdDetail, 300);
+      return;
+    }
+    const original = window.showHousehold;
+    householdPatched = true;
+    window.showHousehold = async function patchedShowHousehold(id) {
+      const result = await original.apply(this, arguments);
+      renderHouseholdPovertyHistory(Number(id || 0));
+      return result;
+    };
+  }
+
+  async function renderHouseholdPovertyHistory(householdId) {
+    const body = $('#detailBody');
+    if (!body || !householdId || !can('read')) return;
+    let host = $('#householdPovertyHistoryTab');
+    if (!host) {
+      body.insertAdjacentHTML('beforeend', '<section id="householdPovertyHistoryTab" class="content-card mt-3"><h6>Lịch sử hộ nghèo / hộ cận nghèo</h6><div id="householdPovertyHistoryRows" class="table-responsive"></div></section>');
+      host = $('#householdPovertyHistoryRows');
+    } else {
+      host = $('#householdPovertyHistoryRows');
+    }
+    if (!host) return;
+    host.innerHTML = '<div class="text-muted">Đang tải lịch sử...</div>';
+    try {
+      const data = await request(API + '/households/' + encodeURIComponent(householdId) + '/history', { cacheTtl: 0 });
+      const items = data.items || [];
+      host.innerHTML = items.length ? '<table class="table table-sm align-middle mb-0"><thead><tr><th>Giai đoạn</th><th>Loại hộ</th><th>Từ ngày</th><th>Đến ngày</th><th>Ghi chú</th></tr></thead><tbody>' + items.map(item => '<tr><td>' + esc(item.period_name) + '</td><td>' + esc(item.poverty_type_label) + '</td><td>' + esc(date(item.effective_from)) + '</td><td>' + esc(date(item.effective_to)) + '</td><td>' + esc(item.note || '') + '</td></tr>').join('') + '</tbody></table>' : '<div class="text-muted">Chưa có lịch sử hộ nghèo/cận nghèo.</div>';
+    } catch (error) {
+      host.innerHTML = '<div class="text-danger">' + esc(error.message) + '</div>';
+    }
+  }
+
+  function screenHtml() {
+    return '<section id="povertyManagementScreen" class="screen household-management-screen poverty-management-screen"><section id="povertyDashboard" class="dashboard-kpi-grid mb-3" aria-label="Thống kê hộ nghèo"></section><section class="content-card mb-3"><div class="row g-2 align-items-end"><div class="col-md-3"><label class="form-label">Tìm kiếm</label><input id="povertySearch" class="form-control" placeholder="Mã hộ, chủ hộ, địa chỉ, quyết định"></div><div class="col-md-2"><label class="form-label">Giai đoạn</label><select id="povertyPeriodFilter" class="form-select"></select></div><div class="col-md-2"><label class="form-label">Năm</label><input id="povertyYearFilter" class="form-control" type="number" min="1900" max="2200" placeholder="2026"></div><div class="col-md-2"><label class="form-label">Loại hộ</label><select id="povertyTypeFilter" class="form-select"></select></div><div class="col-md-2"><label class="form-label">Khu</label><select id="povertyAreaFilter" class="form-select"></select></div><div class="col-md-1"><label class="form-label">Dòng</label><select id="povertyPageSize" class="form-select"><option>20</option><option>50</option><option>100</option></select></div><div class="col-md-3"><label class="form-label">Danh sách</label><select id="povertyListFilter" class="form-select"><option value="">Tất cả</option><option value="poor">Hộ nghèo</option><option value="near_poor">Hộ cận nghèo</option><option value="new_entries">Hộ mới vào diện</option><option value="escaped_poor">Hộ thoát nghèo</option><option value="escaped_near_poor">Hộ thoát cận nghèo</option></select></div><div class="col-md-2"><label class="form-label">Trạng thái</label><select id="povertyStatusFilter" class="form-select"></select></div><div class="col-md-7 d-flex flex-wrap gap-2"><button class="btn btn-primary" type="button" data-platform-action="poverty.refresh"><i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm</button><button class="btn btn-outline-secondary" type="button" data-platform-action="poverty.reset"><i class="fa-solid fa-rotate-right"></i> Đặt lại</button>' + (can('create') ? '<button class="btn btn-success" type="button" data-platform-action="poverty.openRecord"><i class="fa-solid fa-plus"></i> Thêm trạng thái</button><button class="btn btn-outline-primary" type="button" data-platform-action="poverty.openPeriod"><i class="fa-solid fa-calendar-plus"></i> Giai đoạn</button>' : '') + '<button class="btn btn-outline-secondary" type="button" data-platform-action="poverty.periods"><i class="fa-solid fa-calendar-days"></i> DS giai đoạn</button><button class="btn btn-outline-secondary" type="button" data-platform-action="poverty.report"><i class="fa-solid fa-chart-simple"></i> Báo cáo</button><button class="btn btn-outline-success" type="button" data-platform-action="poverty.export" data-format="excel"><i class="fa-solid fa-file-excel"></i> Excel</button><button class="btn btn-outline-danger" type="button" data-platform-action="poverty.export" data-format="pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button><button class="btn btn-outline-secondary" type="button" data-platform-action="poverty.print"><i class="fa-solid fa-print"></i> In</button></div></div></section><section class="content-card"><div class="d-flex justify-content-between align-items-center mb-2"><strong id="povertyTotal">Tổng số: 0 bản ghi</strong><div id="povertyTrend" class="small text-muted"></div></div><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th data-platform-action="poverty.sort" data-sort="household_code">Mã hộ</th><th>Khu</th><th>Giai đoạn</th><th>Loại hộ</th><th data-platform-action="poverty.sort" data-sort="effective_from">Từ ngày</th><th>Đến ngày</th><th>Trạng thái</th><th>Quyết định</th><th class="text-end">Thao tác</th></tr></thead><tbody id="povertyRows"></tbody></table></div><div id="povertyPager" class="pager mt-3"></div></section></section>';
+  }
+
+  function recordModalHtml() {
+    return '<div class="modal fade" id="povertyRecordModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><form id="povertyRecordForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Trạng thái hộ nghèo / cận nghèo</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><input type="hidden" name="household_id"><div class="row g-3"><div class="col-12 position-relative"><label class="form-label">Hộ gia đình</label><input id="povertyHouseholdSearch" class="form-control" autocomplete="off" placeholder="Tìm mã hộ, chủ hộ, địa chỉ" required><div id="povertyHouseholdSuggestions" class="list-group position-absolute w-100 shadow d-none" style="z-index:1060;max-height:260px;overflow:auto"></div><div id="povertyHouseholdSelected" class="form-text"></div></div><div class="col-md-6"><label class="form-label">Giai đoạn</label><select id="povertyRecordPeriod" name="period_id" class="form-select" required></select></div><div class="col-md-6"><label class="form-label">Loại hộ</label><select id="povertyRecordType" name="poverty_type" class="form-select" required></select></div><div class="col-md-6"><label class="form-label">Ngày bắt đầu</label><input name="effective_from" type="date" class="form-control" required></div><div class="col-md-6"><label class="form-label">Ngày kết thúc</label><input name="effective_to" type="date" class="form-control"></div><div class="col-md-6"><label class="form-label">Trạng thái</label><select id="povertyRecordStatus" name="status" class="form-select"></select></div><div class="col-md-6"><label class="form-label">Quyết định</label><input name="decision_number" class="form-control"></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" rows="3" class="form-control"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>';
+  }
+
+  function periodModalHtml() {
+    return '<div class="modal fade" id="povertyPeriodModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><form id="povertyPeriodForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Giai đoạn hộ nghèo / cận nghèo</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="mb-3"><label class="form-label">Tên giai đoạn</label><input name="name" class="form-control" placeholder="2026-2030" required></div><div class="row g-3"><div class="col-md-6"><label class="form-label">Ngày bắt đầu</label><input name="start_date" type="date" class="form-control" required></div><div class="col-md-6"><label class="form-label">Ngày kết thúc</label><input name="end_date" type="date" class="form-control" required></div></div><div class="mt-3"><label class="form-label">Trạng thái</label><select id="povertyPeriodStatus" name="status" class="form-select"></select></div><div class="mt-3"><label class="form-label">Ghi chú</label><textarea name="note" rows="3" class="form-control"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>';
+  }
+
+  function detailModalHtml() {
+    return '<div class="modal fade" id="povertyDetailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 id="povertyDetailTitle" class="modal-title">Chi tiết</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div id="povertyDetailBody" class="modal-body"></div><div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Đóng</button></div></div></div></div>';
+  }
+
+  function setForm(form, row) {
+    Object.entries(row || {}).forEach(([key, value]) => {
+      if (form.elements[key]) form.elements[key].value = value ?? '';
+    });
+  }
+
+  function card(item) {
+    return '<article class="content-card"><div class="d-flex align-items-center gap-3"><span class="app-v2-card-icon"><i class="fa-solid ' + esc(item[2]) + '"></i></span><div><div class="text-muted small">' + esc(item[0]) + '</div><strong class="fs-4">' + esc(item[1] ?? 0) + '</strong></div></div></article>';
+  }
+
+  function info(label, value) {
+    return '<div class="d-flex justify-content-between border-bottom py-2"><span class="text-muted">' + esc(label) + '</span><strong>' + esc(value || 'Chưa cập nhật') + '</strong></div>';
+  }
+
+  function fill(selector, items, first) {
+    const el = $(selector);
+    if (!el) return;
+    const current = el.value;
+    el.innerHTML = '<option value="">' + esc(first || 'Chọn') + '</option>' + (items || []).map(item => '<option value="' + esc(item.value) + '">' + esc(item.label || item.value) + '</option>').join('');
+    el.value = current;
+  }
+
+  async function request(url, options = {}) {
+    if (typeof window.api === 'function') return window.api(url, options);
+    const storageKey = typeof window.tenantStorageKey === 'function' ? window.tenantStorageKey('token') : 'token';
+    const token = window.App?.token || localStorage.getItem(storageKey) || '';
+    const init = { method: options.method || 'GET', headers: { Accept: 'application/json', Authorization: token ? 'Bearer ' + token : '' }, cache: 'no-store' };
+    if (options.body) {
+      init.headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify(options.body);
+    }
+    const res = await fetch(url, init);
+    const json = await res.json().catch(() => null);
+    if (!res.ok || json?.ok === false) throw new Error(json?.error?.message || json?.message || 'Không tải được dữ liệu');
+    return json?.data ?? json;
+  }
+
+  function downloadFile(url, extension) {
+    if (window.TenantAppExport?.download) return window.TenantAppExport.download(url, { extension });
+    const storageKey = typeof window.tenantStorageKey === 'function' ? window.tenantStorageKey('token') : 'token';
+    const token = window.App?.token || localStorage.getItem(storageKey) || '';
+    return fetch(url, { headers: { Authorization: token ? 'Bearer ' + token : '' }, cache: 'no-store' }).then(async res => {
+      const type = res.headers.get('Content-Type') || '';
+      if (!res.ok || type.includes('application/json')) {
+        const json = type.includes('application/json') ? await res.json().catch(() => null) : null;
+        throw new Error(json?.error?.message || json?.message || 'Không xuất được file');
+      }
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'bao_cao_ho_ngheo_can_ngheo_' + Date.now() + '.' + extension;
+      document.body.appendChild(link);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      link.remove();
+    });
+  }
+
+  function can(action) {
+    if (typeof window.TenantAppCanAccess === 'function') return window.TenantAppCanAccess('poverty', action);
+    const role = String(window.App?.user?.role || '').toUpperCase();
+    if (['SUPER_ADMIN', 'ADMIN'].includes(role)) return true;
+    if (role === 'VIEWER') return action === 'read';
+    return ['read', 'create', 'update', 'delete', 'export', 'print'].includes(action);
+  }
+
+  function registerModal(id) { window.TenantAppPlatform?.modals?.registerBootstrap?.(id, '#' + id); }
+  function openModal(id) { return window.TenantAppPlatform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show(); }
+  function closeModal(id) { return window.TenantAppPlatform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide(); }
+  function confirmAction(options) { const dialog = window.TenantAppPlatform?.confirmDialog; if (dialog?.ask) return dialog.ask(options); return Promise.resolve(window.confirm(options.message || 'Xác nhận?')); }
+  function date(value) { if (!value) return ''; const d = new Date(value); return Number.isNaN(d.getTime()) ? String(value) : new Intl.DateTimeFormat('vi-VN').format(d); }
+  function num(value) { return new Intl.NumberFormat('vi-VN').format(Number(value || 0)); }
+  function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  function toast(message, type = 'success') { if (typeof window.showToast === 'function') window.showToast(message, type); }
+  function debounce(fn, ms) { let timer; return function () { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, arguments), ms); }; }
+
+  window.loadPovertyManagement = load;
+  window.openPovertyRecordForm = openRecordForm;
+})();

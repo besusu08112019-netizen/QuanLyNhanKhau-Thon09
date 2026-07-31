@@ -167,7 +167,7 @@ function screenNode(screenId) {
   assert.strictEqual(systemAdmin.screenId, 'systemAdmin');
 
   const populationModules = platform.menu.modulesForMenu('population').map((item) => item.moduleKey);
-  assert.strictEqual(populationModules.join(','), 'households,persons,partyMembers,temporaryResidence,temporaryAbsence,movements');
+  assert.strictEqual(populationModules.join(','), 'households,persons,partyMembers,povertyManagement,temporaryResidence,temporaryAbsence,movements');
 
   const mobileScreens = platform.menuRenderer.mobileScreens();
   assert.strictEqual(
@@ -179,6 +179,7 @@ function screenNode(screenId) {
   assert.strictEqual(platform.modules.get('persons').label, 'Nhân khẩu');
   assert.strictEqual(platform.modules.get('temporaryResidence').label, 'Tạm trú');
   assert.strictEqual(platform.modules.get('temporaryAbsence').label, 'Tạm vắng');
+  assert.strictEqual(platform.modules.get('povertyManagement').permissionScope, 'poverty');
   assert.strictEqual(platform.modules.get('movements').mobileLabel, 'Biến động');
   assert.strictEqual(platform.modules.get('publicAssets').mobileLabel, 'Công trình');
   assert.strictEqual(platform.modules.get('houses').mobileLabel, 'Nhà ở');
@@ -944,6 +945,7 @@ function screenNode(screenId) {
     'households',
     'persons',
     'partyMembers',
+    'povertyManagement',
     'temporaryResidence',
     'temporaryAbsence',
     'movements'

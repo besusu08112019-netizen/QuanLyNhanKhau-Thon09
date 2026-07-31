@@ -49,6 +49,7 @@ use App\Controllers\GisController;
 use App\Controllers\HouseholdBusinessController;
 use App\Controllers\HouseController;
 use App\Controllers\HouseholdController;
+use App\Controllers\HouseholdPovertyController;
 use App\Controllers\ImportController;
 use App\Controllers\LivestockController;
 use App\Controllers\LogController;
@@ -731,6 +732,24 @@ $router->get('/api/party-members/{id}', [PartyMemberController::class, 'show']);
 $router->put('/api/party-members/{id}', [PartyMemberController::class, 'update']);
 $router->delete('/api/party-members/{id}', [PartyMemberController::class, 'destroy']);
 
+$router->get('/api/poverty/catalogs', [HouseholdPovertyController::class, 'catalogs']);
+$router->get('/api/poverty/dashboard', [HouseholdPovertyController::class, 'dashboard']);
+$router->get('/api/poverty/report', [HouseholdPovertyController::class, 'report']);
+$router->get('/api/poverty/export-excel', [HouseholdPovertyController::class, 'exportExcel']);
+$router->get('/api/poverty/export-pdf', [HouseholdPovertyController::class, 'exportPdf']);
+$router->get('/api/poverty/households/search', [HouseholdPovertyController::class, 'householdSearch']);
+$router->get('/api/poverty/households/{householdId}/history', [HouseholdPovertyController::class, 'householdHistory']);
+$router->get('/api/poverty/periods', [HouseholdPovertyController::class, 'periods']);
+$router->post('/api/poverty/periods', [HouseholdPovertyController::class, 'storePeriod']);
+$router->get('/api/poverty/periods/{id}', [HouseholdPovertyController::class, 'showPeriod']);
+$router->put('/api/poverty/periods/{id}', [HouseholdPovertyController::class, 'updatePeriod']);
+$router->delete('/api/poverty/periods/{id}', [HouseholdPovertyController::class, 'deletePeriod']);
+$router->get('/api/poverty/records', [HouseholdPovertyController::class, 'index']);
+$router->post('/api/poverty/records', [HouseholdPovertyController::class, 'store']);
+$router->get('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'show']);
+$router->put('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'update']);
+$router->delete('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'destroy']);
+
 $router->get('/api/citizens', [PersonController::class, 'index']);
 $router->post('/api/citizens', [PersonController::class, 'store']);
 $router->get('/api/citizens/{id}', [PersonController::class, 'show']);
@@ -1049,6 +1068,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
         'assets/js/party-members.min.js',
+        'assets/js/poverty-management.min.js',
         'assets/js/vehicles.min.js',
         'assets/js/contributions.min.js',
         'assets/js/agriculture.min.js',

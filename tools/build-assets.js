@@ -63,6 +63,7 @@ const assets = [
   ['assets/js/household-business.js', 'assets/js/household-business.min.js', compactJs],
   ['assets/js/livestock.js', 'assets/js/livestock.min.js', compactJs],
   ['assets/js/party-members.js', 'assets/js/party-members.min.js', compactJs],
+  ['assets/js/poverty-management.js', 'assets/js/poverty-management.min.js', compactJs],
   ['assets/js/agriculture.js', 'assets/js/agriculture.min.js', compactJs],
   ['assets/js/houses.js', 'assets/js/houses.min.js', compactJs],
   ['assets/js/public-assets.js', 'assets/js/public-assets.min.js', compactJs],

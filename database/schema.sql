@@ -627,6 +627,67 @@ CREATE TABLE IF NOT EXISTS `party_members` (
   KEY `idx_party_members_village` (`village_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `poverty_periods` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  note TEXT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  UNIQUE KEY uq_poverty_periods_village_name (`village_id`, name),
+  KEY idx_poverty_periods_village_status (`village_id`, status),
+  KEY idx_poverty_periods_dates (`village_id`, start_date, end_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `household_poverty_records` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL,
+  household_id BIGINT UNSIGNED NOT NULL,
+  period_id BIGINT UNSIGNED NOT NULL,
+  poverty_type VARCHAR(20) NOT NULL DEFAULT 'NONE',
+  effective_from DATE NOT NULL,
+  effective_to DATE NULL,
+  decision_number VARCHAR(120) NULL,
+  note TEXT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  KEY idx_household_poverty_village_period_type (`village_id`, period_id, poverty_type, status),
+  KEY idx_household_poverty_household_period (`village_id`, household_id, period_id, status),
+  KEY idx_household_poverty_effective (`village_id`, effective_from, effective_to),
+  CONSTRAINT fk_household_poverty_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_household_poverty_period FOREIGN KEY (period_id) REFERENCES poverty_periods(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `poverty_change_logs` (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `village_id` BIGINT UNSIGNED NOT NULL,
+  record_id BIGINT UNSIGNED NULL,
+  household_id BIGINT UNSIGNED NULL,
+  period_id BIGINT UNSIGNED NULL,
+  action VARCHAR(40) NOT NULL,
+  before_json JSON NULL,
+  after_json JSON NULL,
+  actor_user_id BIGINT UNSIGNED NULL,
+  ip_address VARCHAR(64) NULL,
+  user_agent VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_poverty_change_logs_record (`village_id`, record_id),
+  KEY idx_poverty_change_logs_household (`village_id`, household_id),
+  KEY idx_poverty_change_logs_created (`village_id`, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `agricultural_land_zones` (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `village_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
