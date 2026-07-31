@@ -80,10 +80,13 @@ final class PolicyAlert extends BaseModel
             $this->execute("UPDATE policy_alert_reviews SET $sets WHERE id=:id AND " . $this->tenantWhere('policy_alert_reviews'), $params);
         } else {
             $columns = ['citizen_id', 'alert_key', 'reviewed_at', 'reviewed_by', 'processed_at', 'processed_by', 'note'];
+            $this->addTenantInsert('policy_alert_reviews', $columns, $params);
             $values = $status === 'reviewed'
                 ? [':citizen_id', ':alert_key', 'NOW()', ':user_id', 'NULL', 'NULL', ':note']
                 : [':citizen_id', ':alert_key', 'NOW()', ':user_id', 'NOW()', ':user_id', ':note'];
-            $this->addTenantInsert('policy_alert_reviews', $columns, $params);
+            if (in_array('village_id', $columns, true)) {
+                $values[] = ':village_id';
+            }
             $this->insert('INSERT INTO policy_alert_reviews (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         }
         return $this->findReview($citizenId, $alertKey) ?? ['citizen_id' => $citizenId, 'alert_key' => $alertKey];
@@ -187,9 +190,9 @@ SQL);
             self::filterCondition($type, 'c') ?? '1=1',
         ];
         $status = (string) ($filters['status'] ?? '');
-        if ($status === 'reviewed') $where[] = 'r.reviewed_at IS NOT NULL';
+        if ($status === 'reviewed') $where[] = 'r.reviewed_at IS NOT NULL AND r.processed_at IS NULL';
         elseif ($status === 'processed') $where[] = 'r.processed_at IS NOT NULL';
-        elseif ($status === 'pending' || $status === '') $where[] = 'r.processed_at IS NULL';
+        elseif ($status === 'pending') $where[] = 'r.reviewed_at IS NULL AND r.processed_at IS NULL';
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $where[] = '(c.full_name LIKE :q OR c.citizen_code LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q)';

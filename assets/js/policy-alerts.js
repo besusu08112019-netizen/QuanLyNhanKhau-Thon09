@@ -193,10 +193,14 @@
 
   async function mark(id, status) {
     if (!id) return;
-    await request(API + '/' + id + '/mark', { method: 'POST', body: { alert_key: state.type, status } });
-    toast(status === 'processed' ? 'Đã đánh dấu xử lý' : 'Đã đánh dấu rà soát', 'success');
-    await loadList(state.page);
-    await loadSummary();
+    try {
+      await request(API + '/' + id + '/mark', { method: 'POST', body: { alert_key: state.type, status } });
+      toast(status === 'processed' ? 'Đã đánh dấu xử lý' : 'Đã đánh dấu rà soát', 'success');
+      await loadList(state.page);
+      await loadSummary();
+    } catch (error) {
+      toast(error.message || 'Không cập nhật được trạng thái cảnh báo', 'danger');
+    }
   }
 
   function exportReport(format) {
