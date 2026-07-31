@@ -156,6 +156,7 @@ SQL);
                 'UPDATE poverty_periods SET name=:name, start_date=:start_date, end_date=:end_date, note=:note, status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('poverty_periods'),
                 $this->withTenant($params)
             );
+            $this->deactivateOtherActivePeriods($id, $params['status'], $userId);
             return $this->findPeriod($id) ?: [];
         }
 
@@ -169,6 +170,7 @@ SQL);
                 'UPDATE poverty_periods SET start_date=:start_date, end_date=:end_date, note=:note, status=:status, deleted_at=NULL, deleted_by=NULL, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('poverty_periods'),
                 $this->withTenant($params)
             );
+            $this->deactivateOtherActivePeriods((int) $deleted['id'], $params['status'], $userId);
             return $this->findPeriod((int) $deleted['id']) ?: [];
         }
 
@@ -176,7 +178,17 @@ SQL);
         $insert = $params + ['created_by' => $userId, 'updated_by' => $userId];
         $this->addTenantInsert('poverty_periods', $columns, $insert);
         $newId = $this->insert('INSERT INTO poverty_periods (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $insert);
+        $this->deactivateOtherActivePeriods($newId, $params['status'], $userId);
         return $this->findPeriod($newId) ?: [];
+    }
+
+    private function deactivateOtherActivePeriods(int $activeId, string $status, int $userId): void
+    {
+        if ($status !== 'ACTIVE') return;
+        $this->execute(
+            'UPDATE poverty_periods SET status="ENDED", updated_by=:user WHERE id<>:id AND status="ACTIVE" AND ' . $this->tenantWhere('poverty_periods'),
+            $this->withTenant(['id' => $activeId, 'user' => $userId])
+        );
     }
 
     public function deletePeriod(int $id, int $userId): void
