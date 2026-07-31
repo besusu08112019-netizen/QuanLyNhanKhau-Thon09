@@ -8,6 +8,13 @@ Platform.
 One source codebase serves all tenants. Tenant-specific behavior comes from the
 request domain and the resolved tenant configuration.
 
+Production baseline `v2.0.2` formalizes the deployment model:
+
+- 1 Source Code.
+- 1 Database per Tenant.
+- 1 `.env` per Tenant.
+- 1 Domain/Subdomain per Tenant.
+
 ## Tenant Resolution
 
 ```text
@@ -92,3 +99,7 @@ Every feature must pass:
 - Data remains isolated.
 - Deploy once updates all tenants.
 - No tenant-specific hard-code exists in source.
+- No production code is changed directly outside an approved release or emergency fix.
+- Regression checks pass.
+- Security checks pass.
+- Production Verification passes.

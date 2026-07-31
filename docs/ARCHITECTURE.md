@@ -6,7 +6,14 @@ database, storage, cache, session, and logs.
 
 ## Stable Baseline
 
-Release baseline: `v2.0.0` - Multi-Tenant Stable.
+Release baseline: `v2.0.2` - Production Release Baseline.
+
+This baseline defines the supported production deployment model:
+
+- 1 Source Code shared by all tenants.
+- 1 Database per Tenant.
+- 1 `.env` per Tenant.
+- 1 Domain/Subdomain per Tenant.
 
 The following foundation components are frozen unless a production issue or an
 approved change requires modification:
@@ -85,3 +92,7 @@ database directly.
 - Do not write functionality for only one tenant.
 - Use TenantResolver and tenant configuration for all tenant-specific behavior.
 - A single deploy must update all tenants using the shared source.
+- Do not modify Production directly except for approved Critical, security, or service-interruption fixes.
+- Every new feature must remain compatible with the multi-tenant baseline.
+- New work must not affect active tenants.
+- Every release must pass Regression, Security, and Production Verification before publication.

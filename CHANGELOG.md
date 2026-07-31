@@ -7,6 +7,52 @@ All notable production release changes are tracked here.
 ### Added
 - Added independent Agricultural Land Fund module for village-level land-zone statistics by year, configurable land usage types, dashboard charts, CRUD, reports, and exports.
 
+## v2.0.2 - 2026-07-31
+
+### Release scope
+- Established the official Production Release Baseline for the shared-source multi-tenant platform.
+- Confirmed Tenant 09, Tenant 10, and Root Control Center as Production PASS.
+- Marked this release as the stable baseline for future feature development.
+
+### Mobile and tablet UI
+- Standardized Mobile/Tablet layout behavior across production modules.
+- Confirmed unified Design System usage for cards, buttons, forms, popups, filters, navigation, empty states, loading states, and responsive module surfaces.
+- Confirmed Desktop layout remains unaffected by the Mobile/Tablet standardization.
+
+### Multi-Tenant architecture
+- Confirmed the target architecture:
+  - 1 Source Code.
+  - 1 Database per Tenant.
+  - 1 `.env` per Tenant.
+  - 1 Domain/Subdomain per Tenant.
+- Confirmed Tenant 09 and Tenant 10 run through the same shared source with isolated database, environment, branding, and runtime context.
+- Confirmed no tenant-specific hard-code is required to deploy the same release to additional tenants.
+
+### Community Control Center
+- Confirmed Root Control Center Production readiness.
+- Confirmed Tenant Management API and navigation are available on Production.
+- Confirmed Platform Actions are active in Control Center UI.
+
+### Production fixes
+- Fixed Party Member dashboard SQL generation so `/api/party-members/dashboard` no longer returns HTTP 500.
+- Fixed GIS household summary SQL generation so `/api/gis/households?light=1&located=1` no longer returns HTTP 500.
+- Confirmed `/api/control-center/tenants` returns HTTP 200 on Root Control Center.
+
+### Regression and security
+- Regression checks PASS.
+- Security regression checks PASS.
+- Production UI audit PASS.
+- JavaScript syntax checks PASS.
+- PHP lint checks PASS for changed production files.
+
+### Release gate
+- Production: PASS.
+- Multi-Tenant: PASS.
+- Responsive: PASS.
+- Security: PASS.
+- Regression: PASS.
+- No remaining Critical or High blocker at release baseline time.
+
 ## v1.1.1 - 2026-07-26
 
 ### Release scope
