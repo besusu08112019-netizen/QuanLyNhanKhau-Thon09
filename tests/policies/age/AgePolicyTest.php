@@ -37,11 +37,15 @@ policy_test('AgePolicy citizen defaults remain stable', function (): void {
 
 policy_test('AgePolicy student academic year rules remain stable', function (): void {
     $today = new DateTimeImmutable(PolicyTestMatrix::BASE_DATE);
+    $studentDefaults = StudentStatusService::defaultFieldsForDateOfBirth('2009-01-01', $today);
 
     policy_assert_same(2025, StudentStatusService::academicYear(new DateTimeImmutable('2026-07-29')), 'Academic year before August must use previous calendar year.');
     policy_assert_same(2026, StudentStatusService::academicYear(new DateTimeImmutable('2026-08-01')), 'Academic year from August must use current calendar year.');
     policy_assert_true(StudentStatusService::statusForDateOfBirth('2008-01-01', $today)['isStudent'], 'Academic age 17 must be student.');
     policy_assert_false(StudentStatusService::statusForDateOfBirth('2007-01-01', $today)['isStudent'], 'Academic age 18 must not be student.');
+    policy_assert_same('Học sinh', $studentDefaults['occupation'] ?? null, 'School-age citizen must default occupation to student.');
+    policy_assert_same(1, $studentDefaults['pupil'] ?? null, 'School-age citizen must default labor classification to pupil.');
+    policy_assert_same(0, $studentDefaults['employed'] ?? null, 'School-age citizen must not default to employed.');
 });
 
 policy_test('AgePolicy SQL expressions remain backward compatible', function (): void {
