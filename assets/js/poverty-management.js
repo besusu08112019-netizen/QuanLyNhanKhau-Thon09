@@ -20,6 +20,7 @@
   };
   let registered = false;
   let householdPatched = false;
+  let editingRecordSnapshot = null;
 
   registerPlatform();
   document.addEventListener('DOMContentLoaded', init);
@@ -200,10 +201,12 @@
     form.reset();
     form.elements.id.value = '';
     form.elements.household_id.value = '';
+    editingRecordSnapshot = null;
     $('#povertyHouseholdSearch').disabled = false;
     $('#povertyHouseholdSelected').textContent = '';
     if (id) {
       const row = await request(API + '/records/' + encodeURIComponent(id), { cacheTtl: 0 });
+      editingRecordSnapshot = row;
       setForm(form, row);
       form.elements.household_id.value = row.household_id || '';
       $('#povertyHouseholdSearch').value = [row.household_code, row.head_citizen_name].filter(Boolean).join(' - ');
@@ -232,7 +235,12 @@
     if (!body.household_id || !body.period_id || !body.poverty_type || !body.effective_from) return toast('Vui lòng nhập đủ hộ, giai đoạn, loại hộ và ngày bắt đầu', 'warning');
     try {
       const id = Number(body.id || 0);
-      await request(API + '/records' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body });
+      const typeChanged = id && editingRecordSnapshot && body.poverty_type !== editingRecordSnapshot.poverty_type;
+      const periodChanged = id && editingRecordSnapshot && String(body.period_id) !== String(editingRecordSnapshot.period_id);
+      const householdChanged = id && editingRecordSnapshot && String(body.household_id) !== String(editingRecordSnapshot.household_id);
+      const shouldCreateHistory = typeChanged || periodChanged || householdChanged;
+      if (shouldCreateHistory) delete body.id;
+      await request(API + '/records' + (id && !shouldCreateHistory ? '/' + id : ''), { method: id && !shouldCreateHistory ? 'PUT' : 'POST', body });
       closeModal('povertyRecordModal');
       toast('Đã lưu trạng thái hộ');
       await ensureCatalogs(true);

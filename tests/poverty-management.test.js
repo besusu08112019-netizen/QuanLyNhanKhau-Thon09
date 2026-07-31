@@ -56,6 +56,7 @@ assert(ui.includes("moduleKey: 'povertyManagement'"), 'UI must register povertyM
 assert(ui.includes("permissionScope: 'poverty'"), 'UI must use poverty permission scope');
 assert(ui.includes('data-platform-action="poverty.'), 'UI must use Platform Actions');
 assert(ui.includes('function isoDate'), 'UI must normalize date input before API submit');
+assert(ui.includes('editingRecordSnapshot') && ui.includes('shouldCreateHistory'), 'UI must create a new history record when poverty type changes');
 assert(ui.includes('Lịch sử hộ nghèo / hộ cận nghèo'), 'household detail history section is required');
 assert(build.includes('assets/js/poverty-management.js'), 'asset build must include poverty-management.js');
 
