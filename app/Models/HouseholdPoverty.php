@@ -259,7 +259,7 @@ SQL);
         if (!$period) throw new RuntimeException('Không tìm thấy giai đoạn');
         $this->validateRecordDates($params['effective_from'], $params['effective_to'], $period);
         if ((int) $params['household_id'] !== (int) $before['household_id'] || (int) $params['period_id'] !== (int) $before['period_id'] || $params['poverty_type'] !== $before['poverty_type']) {
-            throw new RuntimeException('Không sửa trực tiếp hộ, giai đoạn hoặc loại hộ. Hãy tạo bản ghi mới để giữ lịch sử.');
+            return $this->createRecord($params, $userId, $requestMeta);
         }
         $params['id'] = $id;
         $this->execute(
@@ -522,7 +522,10 @@ SQL);
             $before = $this->normalizeRecord($row);
             $effectiveTo = date('Y-m-d', strtotime($newEffectiveFrom . ' -1 day'));
             if ($effectiveTo < (string) $row['effective_from']) {
-                throw new RuntimeException('Ngày bắt đầu mới phải sau ngày bắt đầu của bản ghi hiệu lực hiện tại');
+                if ($newEffectiveFrom !== (string) $row['effective_from']) {
+                    throw new RuntimeException('Ngày bắt đầu mới phải sau ngày bắt đầu của bản ghi hiệu lực hiện tại');
+                }
+                $effectiveTo = (string) $row['effective_from'];
             }
             $this->execute('UPDATE household_poverty_records SET status="ENDED", effective_to=:effective_to, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('household_poverty_records'), $this->withTenant(['id' => (int) $row['id'], 'effective_to' => $effectiveTo, 'user' => $userId]));
             $after = $this->findRecord((int) $row['id'], true) ?: [];

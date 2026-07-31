@@ -39,6 +39,7 @@ assert(!/\bis_near_poor\b/i.test(householdsTable[0]), 'households must not store
 assert(model.includes('closeCurrentRecord'), 'record changes must close the previous active record');
 assert(model.includes('writeChangeLog'), 'module must write poverty change logs');
 assert(model.includes('tenantWhere'), 'model must use tenant context');
+assert(model.includes('return $this->createRecord($params, $userId, $requestMeta);'), 'PUT record type changes must create a history record instead of failing');
 assert(model.includes('normalizeInputDate'), 'model must normalize browser locale date input');
 assert(/\\d\{1,2\}.*\\\/.*\\d\{1,2\}.*\\\/.*\\d\{4\}/.test(model), 'model must accept slash-formatted dates from browser date inputs');
 assert(model.includes('checkdate($month, $day, $year)'), 'model must validate normalized date input');
