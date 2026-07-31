@@ -180,7 +180,9 @@ SQL);
 
     public function findRecord(int $id, bool $includeDeleted = false): ?array
     {
-        $this->ensureSchema();
+        if (!$this->db->inTransaction()) {
+            $this->ensureSchema();
+        }
         $where = ['hpr.id=:id', $this->tenantWhere('hpr', 'household_poverty_records'), $this->tenantWhere('pp', 'poverty_periods'), $this->tenantWhere('h', 'households')];
         if (!$includeDeleted) $where[] = 'hpr.status <> "DELETED"';
         $row = $this->fetchOne($this->recordSelect() . ' WHERE ' . implode(' AND ', $where), $this->withTenant(['id' => $id]));
