@@ -246,6 +246,8 @@
     event.preventDefault();
     const form = event.currentTarget;
     const body = Object.fromEntries(new FormData(form).entries());
+    body.start_date = isoDate(form.elements.start_date?.value || body.start_date);
+    body.end_date = isoDate(form.elements.end_date?.value || body.end_date);
     try {
       const id = Number(body.id || 0);
       await request(API + '/periods' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body });
@@ -447,6 +449,19 @@
     if (!periodsButton?.parentElement) return;
     periodsButton.insertAdjacentHTML('beforebegin', '<button class="btn btn-success" type="button" data-platform-action="poverty.openRecord"><i class="fa-solid fa-plus"></i> Thêm trạng thái</button><button class="btn btn-outline-primary" type="button" data-platform-action="poverty.openPeriod"><i class="fa-solid fa-calendar-plus"></i> Giai đoạn</button>');
     window.TenantAppPlatform?.actions?.bind?.(screen);
+  }
+
+  function isoDate(value) {
+    const text = String(value || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!match) return text;
+    const first = Number(match[1]);
+    const second = Number(match[2]);
+    const year = match[3];
+    const month = second > 12 ? first : (first > 12 ? second : first);
+    const day = second > 12 ? second : (first > 12 ? first : second);
+    return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
   }
 
   async function request(url, options = {}) {

@@ -39,6 +39,9 @@ assert(!/\bis_near_poor\b/i.test(householdsTable[0]), 'households must not store
 assert(model.includes('closeCurrentRecord'), 'record changes must close the previous active record');
 assert(model.includes('writeChangeLog'), 'module must write poverty change logs');
 assert(model.includes('tenantWhere'), 'model must use tenant context');
+assert(model.includes('normalizeInputDate'), 'model must normalize browser locale date input');
+assert(/\\d\{1,2\}.*\\\/.*\\d\{1,2\}.*\\\/.*\\d\{4\}/.test(model), 'model must accept slash-formatted dates from browser date inputs');
+assert(model.includes('checkdate($month, $day, $year)'), 'model must validate normalized date input');
 assert(!/poor_household|near_poor_household/.test(model), 'new poverty module must not use legacy household flags');
 
 assert(controller.includes("requirePermission('poverty'"), 'controller must enforce poverty permissions');
@@ -48,6 +51,7 @@ assert(permissions.includes("'poverty'"), 'permissions must include poverty modu
 assert(ui.includes("moduleKey: 'povertyManagement'"), 'UI must register povertyManagement module');
 assert(ui.includes("permissionScope: 'poverty'"), 'UI must use poverty permission scope');
 assert(ui.includes('data-platform-action="poverty.'), 'UI must use Platform Actions');
+assert(ui.includes('function isoDate'), 'UI must normalize date input before API submit');
 assert(ui.includes('Lịch sử hộ nghèo / hộ cận nghèo'), 'household detail history section is required');
 assert(build.includes('assets/js/poverty-management.js'), 'asset build must include poverty-management.js');
 
