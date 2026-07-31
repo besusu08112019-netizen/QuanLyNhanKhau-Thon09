@@ -465,7 +465,15 @@
     const screen = $('#policySubjectsScreen');
     if (!screen) return;
     const createButtons = screen.querySelectorAll('[data-platform-action="policySubjects.openRecord"],[data-platform-action="policySubjects.openType"]');
-    if (!can('create')) createButtons.forEach(button => button.remove());
+    if (!can('create')) {
+      createButtons.forEach(button => button.remove());
+      return;
+    }
+    if (!createButtons.length) {
+      const typesButton = screen.querySelector('[data-platform-action="policySubjects.types"]');
+      typesButton?.insertAdjacentHTML('beforebegin', '<button class="btn btn-success" type="button" data-platform-action="policySubjects.openRecord"><i class="fa-solid fa-plus"></i> Thêm hồ sơ</button><button class="btn btn-outline-primary" type="button" data-platform-action="policySubjects.openType"><i class="fa-solid fa-tags"></i> Loại đối tượng</button>');
+      window.TenantAppPlatform?.actions?.bind?.(screen);
+    }
   }
 
   function fill(selector, items, first) {

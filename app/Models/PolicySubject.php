@@ -429,7 +429,9 @@ SQL);
 
     public function attachments(int $recordId): array
     {
-        $this->ensureSchema();
+        if (!$this->db->inTransaction()) {
+            $this->ensureSchema();
+        }
         $rows = $this->fetchAll('SELECT * FROM policy_subject_attachments WHERE record_id=:record_id AND deleted_at IS NULL AND ' . $this->tenantWhere('policy_subject_attachments') . ' ORDER BY created_at DESC, id DESC', $this->withTenant(['record_id' => $recordId]));
         return array_map(fn(array $row) => $this->normalizeAttachment($row), $rows);
     }
