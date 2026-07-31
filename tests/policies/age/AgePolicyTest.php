@@ -54,10 +54,13 @@ policy_test('AgePolicy SQL expressions remain backward compatible', function ():
 
 policy_test('AgePolicy warning thresholds remain stable', function (): void {
     $age70Condition = PolicyAlert::filterCondition('age_70', 'c');
+    $age75Condition = PolicyAlert::filterCondition('age_75', 'c');
     $upcoming70Condition = PolicyAlert::filterCondition('upcoming_70', 'c');
 
     policy_assert_true(is_string($age70Condition) && str_contains($age70Condition, '>= 70'), 'Age 70 policy alert must keep reached age condition.');
     policy_assert_true(is_string($age70Condition) && str_contains($age70Condition, 'COALESCE(c.has_health_insurance,0)=0'), 'Age 70 policy alert must only include missing BHYT records.');
+    policy_assert_true(is_string($age75Condition) && str_contains($age75Condition, '>= 75'), 'Age 75 policy alert must keep reached age condition.');
+    policy_assert_true(is_string($age75Condition) && str_contains($age75Condition, 'COALESCE(c.social_assistance,0)=0'), 'Age 75 policy alert must only include missing social assistance records.');
     policy_assert_true(is_string($upcoming70Condition) && str_contains($upcoming70Condition, 'BETWEEN 0 AND 90'), 'Upcoming age policy alert must keep 90-day lookahead.');
 });
 

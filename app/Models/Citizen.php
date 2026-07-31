@@ -285,9 +285,16 @@ final class Citizen extends BaseModel
         }
         foreach ($this->activeExtendedColumns() as $column) {
             $camel = $this->camel($column);
+            $updatedSocialAssistanceDefault = $column === 'social_assistance'
+                && $fallback !== null
+                && !$this->fieldProvided($data, $column)
+                && $this->fieldProvided($data, 'date_of_birth')
+                && AgePolicy::eligibleForSocialSupport(AgePolicy::ageFromDate((string) $dob));
             $params[$column] = $this->fieldProvided($data, $column)
                 ? $this->boolValue($data[$column] ?? $data[$camel] ?? 0)
-                : $this->boolValue($fallback[$column] ?? $ageDefaults[$column] ?? 0);
+                : ($updatedSocialAssistanceDefault
+                    ? 1
+                    : $this->boolValue($fallback[$column] ?? $ageDefaults[$column] ?? 0));
         }
         $this->applyHealthInsuranceParams($params, $data, $fallback, $params['occupation'] ?? null);
         return $params;
@@ -333,6 +340,7 @@ final class Citizen extends BaseModel
             $this->execute('ALTER TABLE citizens MODIFY COLUMN has_health_insurance TINYINT(1) NOT NULL DEFAULT 1');
             $this->backfillDefaultHealthInsuranceEligibility();
         }
+        $this->backfillDefaultSocialAssistanceEligibility();
         $this->createHealthInsuranceIndexIfMissing();
         $this->healthInsuranceSchemaEnsured = true;
     }
@@ -342,6 +350,14 @@ final class Citizen extends BaseModel
         if (!$this->columnExists('citizens', 'date_of_birth')) return;
         $this->execute(
             'UPDATE citizens SET has_health_insurance=1 WHERE status <> "DELETED" AND date_of_birth IS NOT NULL AND COALESCE(has_health_insurance,0)=0 AND ' . InsurancePolicy::defaultEligibilitySql('citizens')
+        );
+    }
+
+    private function backfillDefaultSocialAssistanceEligibility(): void
+    {
+        if (!$this->columnExists('citizens', 'date_of_birth') || !$this->columnExists('citizens', 'social_assistance')) return;
+        $this->execute(
+            'UPDATE citizens SET social_assistance=1 WHERE status <> "DELETED" AND date_of_birth IS NOT NULL AND COALESCE(social_assistance,0)=0 AND ' . AgePolicy::ageSql('citizens') . ' >= ' . CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE
         );
     }
 
