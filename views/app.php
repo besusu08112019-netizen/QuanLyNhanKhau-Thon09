@@ -873,6 +873,7 @@
   <script charset="utf-8" src="/assets/js/household-business.min.js"></script>
   <script charset="utf-8" src="/assets/js/livestock.min.js"></script>
   <script charset="utf-8" src="/assets/js/party-members.min.js"></script>
+  <script charset="utf-8" src="/assets/js/poverty-management.min.js"></script>
   <script charset="utf-8" src="/assets/js/vehicles.min.js"></script>
   <script charset="utf-8" src="/assets/js/contributions.min.js"></script>
   <script charset="utf-8" src="/assets/js/agriculture.min.js"></script>
