@@ -46,6 +46,7 @@ final class HouseholdPovertyController extends BaseController
             $this->safeAudit($user, 'poverty', 'create', 'Thêm giai đoạn hộ nghèo/cận nghèo', $row['id'] ?? null, ['after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
+            $this->logPovertyException('period.store', $e, (array) $this->input());
             $this->fail($this->safeExceptionMessage('Không lưu được giai đoạn', $e), 422);
         }
     }
@@ -60,6 +61,7 @@ final class HouseholdPovertyController extends BaseController
             $this->safeAudit($user, 'poverty', 'update', 'Cập nhật giai đoạn hộ nghèo/cận nghèo', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
+            $this->logPovertyException('period.update', $e, ['id' => $id] + (array) $this->input());
             $this->fail($this->safeExceptionMessage('Không cập nhật được giai đoạn', $e), 422);
         }
     }
@@ -74,6 +76,7 @@ final class HouseholdPovertyController extends BaseController
             $this->safeAudit($user, 'poverty', 'delete', 'Xóa giai đoạn hộ nghèo/cận nghèo', $id, ['before' => $before]);
             $this->ok(['id' => (int) $id]);
         } catch (Throwable $e) {
+            $this->logPovertyException('period.delete', $e, ['id' => $id]);
             $this->fail($this->safeExceptionMessage('Không xóa được giai đoạn', $e), 422);
         }
     }
@@ -231,5 +234,23 @@ final class HouseholdPovertyController extends BaseController
         } catch (Throwable $e) {
             error_log('[POVERTY_AUDIT_ERROR] ' . $e->getMessage());
         }
+    }
+
+    private function logPovertyException(string $context, Throwable $e, array $payload = []): void
+    {
+        foreach (['password', 'token', 'secret', 'connection_string', 'db_password', 'database_password'] as $key) {
+            unset($payload[$key]);
+        }
+        error_log('[POVERTY_PERIOD_ERROR] ' . json_encode([
+            'context' => $context,
+            'type' => get_class($e),
+            'message' => $e->getMessage(),
+            'previous' => $e->getPrevious() ? [
+                'type' => get_class($e->getPrevious()),
+                'message' => $e->getPrevious()->getMessage(),
+            ] : null,
+            'payload' => $payload,
+            'trace' => $e->getTraceAsString(),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

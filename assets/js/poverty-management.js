@@ -57,6 +57,7 @@
     if (!$('#povertyRecordModal')) document.body.insertAdjacentHTML('beforeend', recordModalHtml() + periodModalHtml() + detailModalHtml());
     ['povertyRecordModal', 'povertyPeriodModal', 'povertyDetailModal'].forEach(registerModal);
     registerActions();
+    syncPermissionActions();
   }
 
   function bindEvents() {
@@ -219,6 +220,7 @@
     if (!form) return;
     form.reset();
     form.elements.id.value = '';
+    if (form.elements.status && !id) form.elements.status.value = 'ACTIVE';
     if (id) setForm(form, await request(API + '/periods/' + encodeURIComponent(id), { cacheTtl: 0 }));
     openModal('povertyPeriodModal');
   }
@@ -430,6 +432,21 @@
     const current = el.value;
     el.innerHTML = '<option value="">' + esc(first || 'Chọn') + '</option>' + (items || []).map(item => '<option value="' + esc(item.value) + '">' + esc(item.label || item.value) + '</option>').join('');
     el.value = current;
+  }
+
+  function syncPermissionActions() {
+    const screen = $('#povertyManagementScreen');
+    if (!screen) return;
+    const createButtons = screen.querySelectorAll('[data-platform-action="poverty.openRecord"],[data-platform-action="poverty.openPeriod"]');
+    if (!can('create')) {
+      createButtons.forEach(button => button.remove());
+      return;
+    }
+    if (createButtons.length) return;
+    const periodsButton = screen.querySelector('[data-platform-action="poverty.periods"]');
+    if (!periodsButton?.parentElement) return;
+    periodsButton.insertAdjacentHTML('beforebegin', '<button class="btn btn-success" type="button" data-platform-action="poverty.openRecord"><i class="fa-solid fa-plus"></i> Thêm trạng thái</button><button class="btn btn-outline-primary" type="button" data-platform-action="poverty.openPeriod"><i class="fa-solid fa-calendar-plus"></i> Giai đoạn</button>');
+    window.TenantAppPlatform?.actions?.bind?.(screen);
   }
 
   async function request(url, options = {}) {
