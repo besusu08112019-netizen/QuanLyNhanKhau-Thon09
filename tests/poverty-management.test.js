@@ -42,6 +42,8 @@ assert(model.includes('tenantWhere'), 'model must use tenant context');
 assert(model.includes('normalizeInputDate'), 'model must normalize browser locale date input');
 assert(/\\d\{1,2\}.*\\\/.*\\d\{1,2\}.*\\\/.*\\d\{4\}/.test(model), 'model must accept slash-formatted dates from browser date inputs');
 assert(model.includes('checkdate($month, $day, $year)'), 'model must validate normalized date input');
+assert(model.includes('status = "DELETED"'), 'period create must handle soft-deleted names blocked by the unique index');
+assert(model.includes('deleted_at=NULL') && model.includes('deleted_by=NULL'), 'period restore must clear soft-delete metadata');
 assert(!/poor_household|near_poor_household/.test(model), 'new poverty module must not use legacy household flags');
 
 assert(controller.includes("requirePermission('poverty'"), 'controller must enforce poverty permissions');

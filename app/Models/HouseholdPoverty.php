@@ -151,6 +151,19 @@ SQL);
             return $this->findPeriod($id) ?: [];
         }
 
+        $deleted = $this->fetchOne(
+            'SELECT id FROM poverty_periods WHERE name=:name AND status = "DELETED" AND ' . $this->tenantWhere('poverty_periods') . ' ORDER BY id DESC LIMIT 1',
+            $this->withTenant(['name' => $params['name']])
+        );
+        if ($deleted) {
+            $params['id'] = (int) $deleted['id'];
+            $this->execute(
+                'UPDATE poverty_periods SET start_date=:start_date, end_date=:end_date, note=:note, status=:status, deleted_at=NULL, deleted_by=NULL, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('poverty_periods'),
+                $this->withTenant($params)
+            );
+            return $this->findPeriod((int) $deleted['id']) ?: [];
+        }
+
         $columns = ['name','start_date','end_date','note','status','created_by','updated_by'];
         $insert = $params + ['created_by' => $userId, 'updated_by' => $userId];
         $this->addTenantInsert('poverty_periods', $columns, $insert);
