@@ -43,7 +43,7 @@ final class HouseholdPovertyController extends BaseController
         $user = $this->requirePermission('poverty', 'create');
         try {
             $row = $this->poverty->savePeriod((array) $this->input(), (int) $user['id']);
-            $this->audit($user, 'poverty', 'create', 'Thêm giai đoạn hộ nghèo/cận nghèo', $row['id'] ?? null, ['after' => $row]);
+            $this->safeAudit($user, 'poverty', 'create', 'Thêm giai đoạn hộ nghèo/cận nghèo', $row['id'] ?? null, ['after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($this->safeExceptionMessage('Không lưu được giai đoạn', $e), 422);
@@ -57,7 +57,7 @@ final class HouseholdPovertyController extends BaseController
         if (!$before) $this->fail('Không tìm thấy giai đoạn', 404);
         try {
             $row = $this->poverty->savePeriod((array) $this->input(), (int) $user['id'], (int) $id);
-            $this->audit($user, 'poverty', 'update', 'Cập nhật giai đoạn hộ nghèo/cận nghèo', $id, ['before' => $before, 'after' => $row]);
+            $this->safeAudit($user, 'poverty', 'update', 'Cập nhật giai đoạn hộ nghèo/cận nghèo', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($this->safeExceptionMessage('Không cập nhật được giai đoạn', $e), 422);
@@ -71,7 +71,7 @@ final class HouseholdPovertyController extends BaseController
         if (!$before) $this->fail('Không tìm thấy giai đoạn', 404);
         try {
             $this->poverty->deletePeriod((int) $id, (int) $user['id']);
-            $this->audit($user, 'poverty', 'delete', 'Xóa giai đoạn hộ nghèo/cận nghèo', $id, ['before' => $before]);
+            $this->safeAudit($user, 'poverty', 'delete', 'Xóa giai đoạn hộ nghèo/cận nghèo', $id, ['before' => $before]);
             $this->ok(['id' => (int) $id]);
         } catch (Throwable $e) {
             $this->fail($this->safeExceptionMessage('Không xóa được giai đoạn', $e), 422);
@@ -97,7 +97,7 @@ final class HouseholdPovertyController extends BaseController
         $user = $this->requirePermission('poverty', 'create');
         try {
             $row = $this->poverty->createRecord((array) $this->input(), (int) $user['id'], $this->requestMeta());
-            $this->audit($user, 'poverty', 'create', 'Thêm trạng thái hộ nghèo/cận nghèo', $row['id'] ?? null, ['after' => $row]);
+            $this->safeAudit($user, 'poverty', 'create', 'Thêm trạng thái hộ nghèo/cận nghèo', $row['id'] ?? null, ['after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($this->safeExceptionMessage('Không lưu được trạng thái hộ', $e), 422);
@@ -111,7 +111,7 @@ final class HouseholdPovertyController extends BaseController
         if (!$before) $this->fail('Không tìm thấy bản ghi hộ nghèo/cận nghèo', 404);
         try {
             $row = $this->poverty->updateRecord((int) $id, (array) $this->input(), (int) $user['id'], $this->requestMeta());
-            $this->audit($user, 'poverty', 'update', 'Cập nhật ghi chú/quyết định hộ nghèo/cận nghèo', $id, ['before' => $before, 'after' => $row]);
+            $this->safeAudit($user, 'poverty', 'update', 'Cập nhật ghi chú/quyết định hộ nghèo/cận nghèo', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($this->safeExceptionMessage('Không cập nhật được trạng thái hộ', $e), 422);
@@ -125,7 +125,7 @@ final class HouseholdPovertyController extends BaseController
         if (!$before) $this->fail('Không tìm thấy bản ghi hộ nghèo/cận nghèo', 404);
         try {
             $this->poverty->deleteRecord((int) $id, (int) $user['id'], $this->requestMeta());
-            $this->audit($user, 'poverty', 'delete', 'Xóa mềm bản ghi hộ nghèo/cận nghèo', $id, ['before' => $before]);
+            $this->safeAudit($user, 'poverty', 'delete', 'Xóa mềm bản ghi hộ nghèo/cận nghèo', $id, ['before' => $before]);
             $this->ok(['id' => (int) $id]);
         } catch (Throwable $e) {
             $this->fail($this->safeExceptionMessage('Không xóa được bản ghi hộ', $e), 422);
@@ -164,7 +164,7 @@ final class HouseholdPovertyController extends BaseController
     {
         $user = $this->requirePermission('poverty', 'export');
         $report = $this->poverty->report($this->filters());
-        $this->audit($user, 'poverty', 'export', 'Xuất Excel báo cáo hộ nghèo/cận nghèo', null, ['totalRows' => $report['totalRows']]);
+        $this->safeAudit($user, 'poverty', 'export', 'Xuất Excel báo cáo hộ nghèo/cận nghèo', null, ['totalRows' => $report['totalRows']]);
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="bao-cao-ho-ngheo-can-ngheo-' . date('Ymd_His') . '.xls"');
         echo "\xEF\xBB\xBF";
@@ -186,7 +186,7 @@ final class HouseholdPovertyController extends BaseController
     {
         $user = $this->requirePermission('poverty', 'export');
         $report = $this->poverty->report($this->filters());
-        $this->audit($user, 'poverty', 'export', 'Xuất PDF báo cáo hộ nghèo/cận nghèo', null, ['totalRows' => $report['totalRows']]);
+        $this->safeAudit($user, 'poverty', 'export', 'Xuất PDF báo cáo hộ nghèo/cận nghèo', null, ['totalRows' => $report['totalRows']]);
         $pdf = new SimplePdf();
         $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
         $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
@@ -222,5 +222,14 @@ final class HouseholdPovertyController extends BaseController
             'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
         ];
+    }
+
+    private function safeAudit(?array $user, string $module, string $action, string $message, mixed $entityId = null, array $metadata = [], string $level = 'INFO'): void
+    {
+        try {
+            $this->audit($user, $module, $action, $message, $entityId, $metadata, $level);
+        } catch (Throwable $e) {
+            error_log('[POVERTY_AUDIT_ERROR] ' . $e->getMessage());
+        }
     }
 }
