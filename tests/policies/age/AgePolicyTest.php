@@ -57,6 +57,7 @@ policy_test('AgePolicy warning thresholds remain stable', function (): void {
     $upcoming70Condition = PolicyAlert::filterCondition('upcoming_70', 'c');
 
     policy_assert_true(is_string($age70Condition) && str_contains($age70Condition, '>= 70'), 'Age 70 policy alert must keep reached age condition.');
+    policy_assert_true(is_string($age70Condition) && str_contains($age70Condition, 'COALESCE(c.has_health_insurance,0)=0'), 'Age 70 policy alert must only include missing BHYT records.');
     policy_assert_true(is_string($upcoming70Condition) && str_contains($upcoming70Condition, 'BETWEEN 0 AND 90'), 'Upcoming age policy alert must keep 90-day lookahead.');
 });
 

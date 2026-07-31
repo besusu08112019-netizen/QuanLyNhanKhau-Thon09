@@ -8,6 +8,7 @@ return [
             'age' => \App\Policies\InsurancePolicy::DEFAULT_AGE,
             'type' => 'reached',
             'purpose' => 'Rà soát chính sách BHYT',
+            'exclude_if_flag' => 'has_health_insurance',
             'message' => 'Có %d người từ ' . \App\Policies\InsurancePolicy::DEFAULT_AGE . ' tuổi trở lên cần rà soát chính sách BHYT.',
         ],
         'age_75' => [
