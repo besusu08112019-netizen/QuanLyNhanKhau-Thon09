@@ -176,6 +176,7 @@ SQL);
     {
         $this->ensureSchema();
         [$where, $params] = $this->where($filters, false);
+        $partyYearsExpr = AgePolicy::yearsSinceSql('COALESCE(pm.official_party_date, pm.joined_party_date)');
         $row = $this->fetchOne(
             "SELECT COUNT(*) AS total,
                 COALESCE(SUM(CASE WHEN pm.member_type='OFFICIAL' THEN 1 ELSE 0 END),0) AS official,
@@ -185,7 +186,7 @@ SQL);
                 COALESCE(SUM(CASE WHEN pm.activity_status='RETIRED' THEN 1 ELSE 0 END),0) AS retired,
                 COALESCE(SUM(CASE WHEN pm.activity_status IN ('EXEMPT','TEMP_EXEMPT') THEN 1 ELSE 0 END),0) AS exempt,
                 COALESCE(SUM(CASE WHEN pm.activity_status IN ('TRANSFERRED_OUT','TRANSFERRED_IN') THEN 1 ELSE 0 END),0) AS transferred,
-                COALESCE(SUM(CASE WHEN ' . AgePolicy::yearsSinceSql('COALESCE(pm.official_party_date, pm.joined_party_date)') . ' >= ' . AgePolicy::PARTY_BADGE_MIN_YEARS . ' AND MOD(' . AgePolicy::yearsSinceSql('COALESCE(pm.official_party_date, pm.joined_party_date)') . ', ' . AgePolicy::PARTY_BADGE_INTERVAL_YEARS . ')=0 THEN 1 ELSE 0 END),0) AS badge_due
+                COALESCE(SUM(CASE WHEN $partyYearsExpr >= " . AgePolicy::PARTY_BADGE_MIN_YEARS . " AND MOD($partyYearsExpr, " . AgePolicy::PARTY_BADGE_INTERVAL_YEARS . ")=0 THEN 1 ELSE 0 END),0) AS badge_due
              FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where",
             $params
         ) ?: [];
