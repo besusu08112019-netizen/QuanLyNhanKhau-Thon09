@@ -59,6 +59,7 @@ use App\Controllers\OperationCenterController;
 use App\Controllers\PartyMemberController;
 use App\Controllers\PermissionController;
 use App\Controllers\PolicyAlertController;
+use App\Controllers\PolicySubjectController;
 use App\Controllers\PersonController;
 use App\Controllers\PhotoGalleryController;
 use App\Controllers\ProfileController;
@@ -750,6 +751,26 @@ $router->get('/api/poverty/records/{id}', [HouseholdPovertyController::class, 's
 $router->put('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'update']);
 $router->delete('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'destroy']);
 
+$router->get('/api/policy-subjects/catalogs', [PolicySubjectController::class, 'catalogs']);
+$router->get('/api/policy-subjects/dashboard', [PolicySubjectController::class, 'dashboard']);
+$router->get('/api/policy-subjects/report', [PolicySubjectController::class, 'report']);
+$router->get('/api/policy-subjects/export-excel', [PolicySubjectController::class, 'exportExcel']);
+$router->get('/api/policy-subjects/export-pdf', [PolicySubjectController::class, 'exportPdf']);
+$router->get('/api/policy-subjects/citizens/search', [PolicySubjectController::class, 'citizenSearch']);
+$router->get('/api/policy-subjects/citizens/{citizenId}/summary', [PolicySubjectController::class, 'citizenSummary']);
+$router->get('/api/policy-subjects/types', [PolicySubjectController::class, 'types']);
+$router->post('/api/policy-subjects/types', [PolicySubjectController::class, 'storeType']);
+$router->put('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'updateType']);
+$router->delete('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'deleteType']);
+$router->get('/api/policy-subjects/records', [PolicySubjectController::class, 'index']);
+$router->post('/api/policy-subjects/records', [PolicySubjectController::class, 'store']);
+$router->get('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'show']);
+$router->put('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'update']);
+$router->delete('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'destroy']);
+$router->get('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'attachments']);
+$router->post('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'uploadAttachment']);
+$router->delete('/api/policy-subjects/attachments/{id}', [PolicySubjectController::class, 'deleteAttachment']);
+
 $router->get('/api/citizens', [PersonController::class, 'index']);
 $router->post('/api/citizens', [PersonController::class, 'store']);
 $router->get('/api/citizens/{id}', [PersonController::class, 'show']);
@@ -1069,6 +1090,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/livestock.min.js',
         'assets/js/party-members.min.js',
         'assets/js/poverty-management.min.js',
+        'assets/js/policy-subjects.min.js',
         'assets/js/vehicles.min.js',
         'assets/js/contributions.min.js',
         'assets/js/agriculture.min.js',
