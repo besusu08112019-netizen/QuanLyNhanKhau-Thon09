@@ -137,10 +137,18 @@ SQL);
         $params = $this->periodParams($data, $userId);
         $this->validatePeriodDates($params['start_date'], $params['end_date']);
         $duplicate = $this->fetchOne(
-            'SELECT id FROM poverty_periods WHERE name=:name AND status <> "DELETED" AND ' . $this->tenantWhere('poverty_periods') . ' AND (:id=0 OR id<>:id) LIMIT 1',
+            'SELECT id, start_date, end_date, note, status FROM poverty_periods WHERE name=:name AND status <> "DELETED" AND ' . $this->tenantWhere('poverty_periods') . ' AND (:id=0 OR id<>:id) LIMIT 1',
             $this->withTenant(['name' => $params['name'], 'id' => (int) ($id ?? 0)])
         );
-        if ($duplicate) throw new RuntimeException('Tên giai đoạn đã tồn tại');
+        if ($duplicate) {
+            $samePeriod = !$id
+                && (string) $duplicate['start_date'] === (string) $params['start_date']
+                && (string) $duplicate['end_date'] === (string) $params['end_date']
+                && (string) $duplicate['status'] === (string) $params['status']
+                && trim((string) ($duplicate['note'] ?? '')) === trim((string) ($params['note'] ?? ''));
+            if ($samePeriod) return $this->findPeriod((int) $duplicate['id']) ?: [];
+            throw new RuntimeException('Tên giai đoạn đã tồn tại');
+        }
 
         if ($id) {
             $params['id'] = $id;

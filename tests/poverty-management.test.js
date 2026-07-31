@@ -44,6 +44,7 @@ assert(/\\d\{1,2\}.*\\\/.*\\d\{1,2\}.*\\\/.*\\d\{4\}/.test(model), 'model must a
 assert(model.includes('checkdate($month, $day, $year)'), 'model must validate normalized date input');
 assert(model.includes('status = "DELETED"'), 'period create must handle soft-deleted names blocked by the unique index');
 assert(model.includes('deleted_at=NULL') && model.includes('deleted_by=NULL'), 'period restore must clear soft-delete metadata');
+assert(model.includes('$samePeriod'), 'period create must be idempotent when the same active period is submitted again');
 assert(!/poor_household|near_poor_household/.test(model), 'new poverty module must not use legacy household flags');
 
 assert(controller.includes("requirePermission('poverty'"), 'controller must enforce poverty permissions');
