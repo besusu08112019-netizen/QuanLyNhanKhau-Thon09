@@ -19,6 +19,15 @@ policy_test('InsurancePolicy occupation eligibility remains stable', function ()
     policy_assert_same('', InsurancePolicy::normalize(null), 'Empty occupation normalization must stay empty.');
 });
 
+policy_test('InsurancePolicy default BHYT eligibility includes students and age 70+', function (): void {
+    $today = new DateTimeImmutable(PolicyTestMatrix::BASE_DATE);
+
+    policy_assert_true(InsurancePolicy::hasDefaultHealthInsuranceForDateOfBirth('2009-01-01', $today), 'Student academic age must be default BHYT eligible.');
+    policy_assert_true(InsurancePolicy::hasDefaultHealthInsuranceForDateOfBirth('1956-07-29', $today), 'Age 70+ must be default BHYT eligible.');
+    policy_assert_false(InsurancePolicy::hasDefaultHealthInsuranceForDateOfBirth('1967-07-29', $today), 'Normal working-age citizen must not be default BHYT eligible.');
+    policy_assert_same('(TIMESTAMPDIFF(YEAR,c.date_of_birth,CURDATE()) >= 70 OR ((CASE WHEN MONTH(CURDATE()) >= 8 THEN YEAR(CURDATE()) ELSE YEAR(CURDATE()) - 1 END) - YEAR(c.date_of_birth) <= 17))', InsurancePolicy::defaultEligibilitySql('c'), 'Default eligibility SQL must include students and age 70+.');
+});
+
 policy_test('InsurancePolicy SQL predicates remain backward compatible', function (): void {
     policy_assert_same('COALESCE(c.has_health_insurance,0)=1', InsurancePolicy::enrolledConditionSql('c'), 'Enrolled SQL must remain stable.');
     policy_assert_same('COALESCE(c.has_health_insurance,0)=0', InsurancePolicy::missingConditionSql('c'), 'Missing SQL must remain stable.');

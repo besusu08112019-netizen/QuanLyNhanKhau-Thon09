@@ -331,9 +331,18 @@ final class Citizen extends BaseModel
         }
         if ($this->columnExists('citizens', 'has_health_insurance')) {
             $this->execute('ALTER TABLE citizens MODIFY COLUMN has_health_insurance TINYINT(1) NOT NULL DEFAULT 1');
+            $this->backfillDefaultHealthInsuranceEligibility();
         }
         $this->createHealthInsuranceIndexIfMissing();
         $this->healthInsuranceSchemaEnsured = true;
+    }
+
+    private function backfillDefaultHealthInsuranceEligibility(): void
+    {
+        if (!$this->columnExists('citizens', 'date_of_birth')) return;
+        $this->execute(
+            'UPDATE citizens SET has_health_insurance=1 WHERE status <> "DELETED" AND date_of_birth IS NOT NULL AND COALESCE(has_health_insurance,0)=0 AND ' . InsurancePolicy::defaultEligibilitySql('citizens')
+        );
     }
 
     private function createHealthInsuranceIndexIfMissing(): void
@@ -349,11 +358,15 @@ final class Citizen extends BaseModel
         $active = $this->activeHealthInsuranceColumns();
         if (!$active) return;
         $occupationDefault = InsurancePolicy::defaultForLaborOccupation($occupation);
+        $dateOfBirth = (string) ($params['dob'] ?? $data['dateOfBirth'] ?? $data['date_of_birth'] ?? $fallback['date_of_birth'] ?? '');
+        $ageDefault = InsurancePolicy::hasDefaultHealthInsuranceForDateOfBirth($dateOfBirth) ? 1 : null;
         if ($this->fieldProvided($data, 'has_health_insurance')) {
             $has = $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? 0);
         } elseif ($fallback === null) {
-            $has = $this->boolValue($occupationDefault ?? 0);
+            $has = $this->boolValue($occupationDefault ?? $ageDefault ?? 0);
         } elseif ($occupationDefault === 1 && $this->occupationChanged($data, $fallback, $occupation)) {
+            $has = 1;
+        } elseif ($ageDefault === 1 && $this->fieldProvided($data, 'date_of_birth')) {
             $has = 1;
         } else {
             $has = $this->boolValue($fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? 0);
