@@ -256,14 +256,9 @@ final class PopulationMovementService
     private function syncHouseholdStatus(int $householdId, int $userId): void
     {
         if ($householdId <= 0) return;
-        $residencyClause = $this->enumAllows('citizens', 'residency_status', 'TRANSFERRED_OUT') ? ' AND residency_status <> "TRANSFERRED_OUT"' : '';
-        $count = (int) ($this->scalar('SELECT COUNT(*) FROM citizens WHERE household_id=:id AND ' . $this->tenantSql('citizens') . ' AND status="ACTIVE" AND life_status="ALIVE"' . $residencyClause, ['id' => $householdId]) ?? 0);
-        if ($count === 0) {
-            $ended = $this->enumAllows('households', 'status', 'ENDED') ? 'ENDED' : 'INACTIVE';
-            $blocked = $this->enumAllows('households', 'status', 'MERGED') ? '("DELETED","MERGED")' : '("DELETED")';
-            $stmt = $this->db->prepare('UPDATE households SET status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantSql('households') . ' AND status NOT IN ' . $blocked);
-            $stmt->execute(['id' => $householdId, 'user' => $userId, 'status' => $ended]);
-        }
+        // A household can legitimately exist with zero current members, for example
+        // after moving/deleting the last citizen. Only explicit household deletion
+        // should mark the household as ended/inactive.
     }
 
     private function recordMovement(array $citizen, string $type, array $payload, int $userId): void
