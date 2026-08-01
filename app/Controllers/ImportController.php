@@ -117,19 +117,13 @@ final class ImportController extends BaseController
                 }
             }
 
-            if (!empty($errors)) {
-                $db->rollBack();
-                $rolledBack = true;
-                $success = 0;
-            } else {
-                if ($type === 'person' && $relationshipInferenceHouseholds) {
-                    $inference = new HouseholdRelationshipInferenceService();
-                    foreach ($relationshipInferenceHouseholds as $householdId => $headName) {
-                        $relationshipInferenceUpdated += $inference->inferForHousehold((int) $householdId, $headName !== '' ? $headName : null);
-                    }
+            if ($type === 'person' && $relationshipInferenceHouseholds) {
+                $inference = new HouseholdRelationshipInferenceService();
+                foreach ($relationshipInferenceHouseholds as $householdId => $headName) {
+                    $relationshipInferenceUpdated += $inference->inferForHousehold((int) $householdId, $headName !== '' ? $headName : null);
                 }
-                $db->commit();
             }
+            $db->commit();
         } catch (\Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             $rolledBack = true;
