@@ -181,7 +181,7 @@ final class ImportController extends BaseController
         while (($values = fgetcsv($handle, 0, $delimiter)) !== false) {
             $line++;
             if (!array_filter($values, fn($value) => trim((string) $value) !== '')) continue;
-            $rows[] = ['row' => $line, 'data' => $this->mapRow($headers, $values)];
+            $rows[] = ['row' => $line, 'data' => $this->mapRow($headers, $values, $line)];
             if (count($rows) > 5000) throw new \RuntimeException('Import file has too many rows');
         }
         fclose($handle);
@@ -232,7 +232,7 @@ final class ImportController extends BaseController
             $values = [];
             for ($index = 0; $index < count($headers); $index++) $values[] = $cells[$index] ?? '';
             if (!array_filter($values, fn($value) => trim((string) $value) !== '')) continue;
-            $rows[] = ['row' => $line, 'data' => $this->mapRow($headers, $values)];
+            $rows[] = ['row' => $line, 'data' => $this->mapRow($headers, $values, $line)];
             if (count($rows) > 5000) throw new \RuntimeException('Import file has too many rows');
         }
         return $rows;
@@ -354,21 +354,25 @@ final class ImportController extends BaseController
         }
     }
 
-    private function mapRow(array $headers, array $values): array
+    private function mapRow(array $headers, array $values, ?int $rowNumber = null): array
     {
         $aliases = $this->aliases();
         $data = [];
+        $dateFields = ['dateOfBirth', 'identityIssueDate', 'healthInsuranceStartDate', 'healthInsuranceEndDate'];
         foreach ($headers as $index => $header) {
             $key = $this->headerKey($this->cleanImportedText((string) $header));
             foreach ($aliases as $field => $names) {
                 if (in_array($key, $names, true)) {
-                    $data[$field] = $this->cleanImportedText((string) ($values[$index] ?? ''));
+                    $rawValue = $values[$index] ?? '';
+                    $data[$field] = in_array($field, $dateFields, true)
+                        ? $rawValue
+                        : $this->cleanImportedText(is_scalar($rawValue) ? (string) $rawValue : '');
                     break;
                 }
             }
         }
-        foreach (['dateOfBirth', 'identityIssueDate', 'healthInsuranceStartDate', 'healthInsuranceEndDate'] as $dateField) {
-            if (!empty($data[$dateField])) $data[$dateField] = $this->dateValue($data[$dateField]);
+        foreach ($dateFields as $dateField) {
+            if (!empty($data[$dateField])) $data[$dateField] = $this->dateValue($data[$dateField], $dateField, $rowNumber);
         }
         return $data;
     }
@@ -640,13 +644,68 @@ final class ImportController extends BaseController
         return $value;
     }
 
-    private function dateValue(string $value): string
+    private function dateValue(mixed $value, ?string $field = null, ?int $rowNumber = null): string
     {
-        $value = trim($value);
-        if (is_numeric($value) && (float) $value > 20000) return gmdate('Y-m-d', ((int) $value - 25569) * 86400);
-        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $value, $m)) return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) return $value;
-        return '';
+        $normalized = '';
+
+        if ($value instanceof \DateTimeInterface) {
+            $normalized = $value->format('Y-m-d');
+            $this->logImportDateNormalization($field, $rowNumber, $value, $normalized);
+            return $normalized;
+        }
+
+        if (is_int($value) || is_float($value) || (is_string($value) && is_numeric(trim($value)))) {
+            $serial = (float) (is_string($value) ? trim($value) : $value);
+            if ($serial > 0) {
+                try {
+                    if (class_exists('PhpOffice\PhpSpreadsheet\Shared\Date')) {
+                        $normalized = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($serial)->format('Y-m-d');
+                    } else {
+                        $normalized = gmdate('Y-m-d', ((int) $serial - 25569) * 86400);
+                    }
+                } catch (\Throwable) {
+                    $normalized = '';
+                }
+            }
+            $this->logImportDateNormalization($field, $rowNumber, $value, $normalized);
+            return $normalized;
+        }
+
+        if (is_string($value)) {
+            $text = trim($value);
+            $formats = ['!Y-m-d', '!d/m/Y', '!j/n/Y', '!Y/m/d'];
+            foreach ($formats as $format) {
+                $date = \DateTimeImmutable::createFromFormat($format, $text);
+                $errors = \DateTimeImmutable::getLastErrors();
+                if ($date instanceof \DateTimeImmutable && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
+                    $normalized = $date->format('Y-m-d');
+                    break;
+                }
+            }
+            $this->logImportDateNormalization($field, $rowNumber, $value, $normalized);
+            return $normalized;
+        }
+
+        $this->logImportDateNormalization($field, $rowNumber, $value, $normalized);
+        return $normalized;
+    }
+
+    private function logImportDateNormalization(?string $field, ?int $rowNumber, mixed $value, string $normalized): void
+    {
+        if ($field !== 'dateOfBirth') return;
+
+        $rawValue = $value instanceof \DateTimeInterface
+            ? $value->format('Y-m-d H:i:s')
+            : (is_scalar($value) || $value === null ? $value : '[non-scalar]');
+
+        error_log('[IMPORT_DATE_OF_BIRTH_NORMALIZE] ' . json_encode([
+            'row' => $rowNumber,
+            'field' => $field,
+            'rawValue' => $rawValue,
+            'type' => gettype($value),
+            'class' => is_object($value) ? get_class($value) : null,
+            'normalized' => $normalized,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     private function yesNo(mixed $value): int { $text = $this->headerKey((string) $value); return in_array($text, ['1','co','yes','true','x'], true) ? 1 : 0; }
