@@ -24,6 +24,24 @@ final class PartyMember extends BaseModel
         'DELETED' => 'Đã xóa',
     ];
 
+    public const PARTY_STATUS_LABELS = [
+        'ACTIVE' => 'Đang sinh hoạt tại chi bộ',
+        'TEMPORARY' => 'Sinh hoạt tạm thời',
+        'EXEMPT' => 'Miễn sinh hoạt Đảng',
+        'AWAY' => 'Đi làm ăn xa',
+        'TRANSFERRED' => 'Chuyển sinh hoạt Đảng',
+        'LEFT_PARTY' => 'Ra khỏi Đảng',
+        'DECEASED' => 'Từ trần',
+    ];
+
+    private const ACTIVE_PARTY_STATUSES = ['ACTIVE', 'TEMPORARY'];
+    private const LEGACY_STATUS_MAP = [
+        'TRANSFERRED_OUT' => 'TRANSFERRED',
+        'TRANSFERRED_IN' => 'TEMPORARY',
+        'TEMP_EXEMPT' => 'EXEMPT',
+        'RETIRED' => 'EXEMPT',
+    ];
+
     public function ensureSchema(): void
     {
         $this->execute(<<<SQL
@@ -44,6 +62,12 @@ CREATE TABLE IF NOT EXISTS party_members (
   political_theory_level VARCHAR(180) NULL,
   member_type VARCHAR(30) NOT NULL DEFAULT 'OFFICIAL',
   activity_status VARCHAR(40) NOT NULL DEFAULT 'ACTIVE',
+  party_status VARCHAR(40) NOT NULL DEFAULT 'ACTIVE',
+  status_changed_at DATE NULL,
+  status_reason TEXT NULL,
+  decision_number VARCHAR(120) NULL,
+  decision_date DATE NULL,
+  transfer_to VARCHAR(255) NULL,
   note TEXT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,11 +81,13 @@ CREATE TABLE IF NOT EXISTS party_members (
   KEY idx_party_members_branch (village_id, branch_name),
   KEY idx_party_members_type (village_id, member_type),
   KEY idx_party_members_activity_status (village_id, activity_status),
+  KEY idx_party_members_party_status (village_id, party_status),
   KEY idx_party_members_position (village_id, party_position),
   KEY idx_party_members_joined_date (joined_party_date),
   CONSTRAINT fk_party_members_citizen FOREIGN KEY (citizen_id) REFERENCES citizens(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        $this->ensureStatusSchema();
         $this->backfillFromCitizens();
     }
 
@@ -71,7 +97,7 @@ SQL);
 
         return [
             'member_types' => $this->options(self::MEMBER_TYPES),
-            'statuses' => $this->options(self::STATUS_LABELS, ['DELETED']),
+            'statuses' => $this->options(self::PARTY_STATUS_LABELS),
             'branches' => $this->distinctOptions('branch_name'),
             'positions' => $this->distinctOptions('party_position'),
             'political_theory_levels' => $this->distinctOptions('political_theory_level'),
@@ -138,18 +164,18 @@ SQL);
         if ($id) {
             $params['id'] = $id;
             $this->execute(
-                'UPDATE party_members SET party_member_code=:party_member_code, party_card_number=:party_card_number, joined_party_date=:joined_party_date, official_party_date=:official_party_date, branch_name=:branch_name, parent_party_org=:parent_party_org, party_position=:party_position, government_position=:government_position, education_level=:education_level, professional_level=:professional_level, political_theory_level=:political_theory_level, member_type=:member_type, activity_status=:activity_status, note=:note, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('party_members'),
+                'UPDATE party_members SET party_member_code=:party_member_code, party_card_number=:party_card_number, joined_party_date=:joined_party_date, official_party_date=:official_party_date, branch_name=:branch_name, parent_party_org=:parent_party_org, party_position=:party_position, government_position=:government_position, education_level=:education_level, professional_level=:professional_level, political_theory_level=:political_theory_level, member_type=:member_type, activity_status=:activity_status, party_status=:party_status, status_changed_at=:status_changed_at, status_reason=:status_reason, decision_number=:decision_number, decision_date=:decision_date, transfer_to=:transfer_to, note=:note, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('party_members'),
                 $this->withTenant($params)
             );
             $row = $this->find($id);
         } else {
-            $columns = ['citizen_id','party_member_code','party_card_number','joined_party_date','official_party_date','branch_name','parent_party_org','party_position','government_position','education_level','professional_level','political_theory_level','member_type','activity_status','note','status','created_by','updated_by'];
+            $columns = ['citizen_id','party_member_code','party_card_number','joined_party_date','official_party_date','branch_name','parent_party_org','party_position','government_position','education_level','professional_level','political_theory_level','member_type','activity_status','party_status','status_changed_at','status_reason','decision_number','decision_date','transfer_to','note','status','created_by','updated_by'];
             $insert = $params + ['status' => 'ACTIVE', 'created_by' => $userId, 'updated_by' => $userId];
             $this->addTenantInsert('party_members', $columns, $insert);
             $newId = $this->insert('INSERT INTO party_members (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $insert);
             $row = $this->find($newId);
         }
-        $this->syncCitizenPartyFlag((int) $params['citizen_id'], true, $userId);
+        $this->syncCitizenPartyFlag((int) $params['citizen_id'], $this->isCurrentPartyMember($params['party_status']), $userId);
         return $row ?: [];
     }
 
@@ -158,7 +184,7 @@ SQL);
         $this->ensureSchema();
         $row = $this->find($id);
         if (!$row) throw new \RuntimeException('Không tìm thấy hồ sơ Đảng viên');
-        $this->execute('UPDATE party_members SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('party_members'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
+        $this->execute('UPDATE party_members SET party_status="LEFT_PARTY", activity_status="LEFT_PARTY", status_changed_at=CURDATE(), status_reason=COALESCE(status_reason,"Chuyển thao tác xóa thành trạng thái ra khỏi Đảng"), updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('party_members'), $this->withTenant(['id' => $id, 'updated_by' => $userId]));
         $this->syncCitizenPartyFlag((int) $row['citizen_id'], false, $userId);
     }
 
@@ -168,14 +194,14 @@ SQL);
         $row = $this->find($id, true);
         if (!$row) throw new \RuntimeException('Không tìm thấy hồ sơ Đảng viên');
         $this->execute('UPDATE party_members SET status="ACTIVE", deleted_at=NULL, deleted_by=NULL, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('party_members'), $this->withTenant(['id' => $id, 'user' => $userId]));
-        $this->syncCitizenPartyFlag((int) $row['citizen_id'], true, $userId);
+        $this->syncCitizenPartyFlag((int) $row['citizen_id'], $this->isCurrentPartyMember($row['party_status'] ?? 'ACTIVE'), $userId);
         return $this->find($id) ?: [];
     }
 
     public function dashboard(array $filters = []): array
     {
         $this->ensureSchema();
-        [$where, $params] = $this->where($filters, false);
+        [$where, $params] = $this->where($filters, false, true);
         $partyYearsExpr = AgePolicy::yearsSinceSql('COALESCE(pm.official_party_date, pm.joined_party_date)');
         $row = $this->fetchOne(
             "SELECT COUNT(*) AS total,
@@ -183,9 +209,9 @@ SQL);
                 COALESCE(SUM(CASE WHEN pm.member_type='PROBATIONARY' THEN 1 ELSE 0 END),0) AS probationary,
                 COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male,
                 COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female,
-                COALESCE(SUM(CASE WHEN pm.activity_status='RETIRED' THEN 1 ELSE 0 END),0) AS retired,
-                COALESCE(SUM(CASE WHEN pm.activity_status IN ('EXEMPT','TEMP_EXEMPT') THEN 1 ELSE 0 END),0) AS exempt,
-                COALESCE(SUM(CASE WHEN pm.activity_status IN ('TRANSFERRED_OUT','TRANSFERRED_IN') THEN 1 ELSE 0 END),0) AS transferred,
+                COALESCE(SUM(CASE WHEN pm.party_status='AWAY' THEN 1 ELSE 0 END),0) AS away,
+                COALESCE(SUM(CASE WHEN pm.party_status='EXEMPT' THEN 1 ELSE 0 END),0) AS exempt,
+                COALESCE(SUM(CASE WHEN pm.party_status='TRANSFERRED' THEN 1 ELSE 0 END),0) AS transferred,
                 COALESCE(SUM(CASE WHEN $partyYearsExpr >= " . AgePolicy::PARTY_BADGE_MIN_YEARS . " AND MOD($partyYearsExpr, " . AgePolicy::PARTY_BADGE_INTERVAL_YEARS . ")=0 THEN 1 ELSE 0 END),0) AS badge_due
              FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where",
             $params
@@ -196,7 +222,7 @@ SQL);
             'probationary' => $row['probationary'] ?? 0,
             'male' => $row['male'] ?? 0,
             'female' => $row['female'] ?? 0,
-            'retired' => $row['retired'] ?? 0,
+            'away' => $row['away'] ?? 0,
             'exempt' => $row['exempt'] ?? 0,
             'transferred' => $row['transferred'] ?? 0,
             'badge_due' => $row['badge_due'] ?? 0,
@@ -206,7 +232,7 @@ SQL);
     public function charts(array $filters = []): array
     {
         $this->ensureSchema();
-        [$where, $params] = $this->where($filters, false);
+        [$where, $params] = $this->where($filters, false, true);
         return [
             'age' => $this->fetchAll("SELECT CASE WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_UNDER_30_MAX_EXCLUSIVE . " THEN 'Dưới 30' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_30_39_MAX_EXCLUSIVE . " THEN '30-39' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_40_49_MAX_EXCLUSIVE . " THEN '40-49' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_50_59_MAX_EXCLUSIVE . " THEN '50-59' ELSE '60+' END AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY MIN(" . AgePolicy::ageSql('c') . ")", $params),
             'gender' => $this->fetchAll("SELECT COALESCE(NULLIF(c.gender,''),'Khác') AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY value DESC", $params),
@@ -218,6 +244,7 @@ SQL);
     {
         if ($mode === 'official') $filters['member_type'] = 'OFFICIAL';
         if ($mode === 'probationary') $filters['member_type'] = 'PROBATIONARY';
+        if ($mode === 'status') $filters['party_status'] = 'ALL';
         $this->ensureSchema();
         [$where, $params, $order] = $this->where($filters);
         $items = array_map(fn($row) => $this->normalize($row), $this->fetchAll($this->selectSql() . " $where $order", $params));
@@ -240,7 +267,9 @@ SQL);
                 $r['branch_name'],
                 $r['party_position'],
                 $r['member_type_label'],
-                $r['activity_status_label'],
+                $r['party_status_label'],
+                $this->date($r['status_changed_at'] ?? null),
+                $r['status_reason'] ?? '',
                 $this->date($r['joined_party_date']),
                 $this->date($r['official_party_date']),
                 $r['gender'],
@@ -249,11 +278,11 @@ SQL);
         }
         return [
             'title' => $title,
-            'headers' => ['STT','Họ tên','Mã Đảng viên','Chi bộ','Chức vụ','Loại Đảng viên','Tình trạng','Ngày vào Đảng','Ngày chính thức','Giới tính','Ngày sinh'],
+            'headers' => ['STT','Họ tên','Mã Đảng viên','Chi bộ','Chức vụ','Loại Đảng viên','Trạng thái','Ngày đổi trạng thái','Lý do','Ngày vào Đảng','Ngày chính thức','Giới tính','Ngày sinh'],
             'rows' => $rows,
             'totalRows' => count($items),
             'filters' => $filters,
-            'summary' => ['Tổng số Đảng viên' => count($items)],
+            'summary' => $mode === 'status' ? $this->statusSummary($filters) : ['Tổng số Đảng viên' => count($items)],
             'meta' => [
                 'period_label' => $this->filterSummary($filters),
                 'report_date' => 'Ngày xuất: ' . date('d/m/Y H:i:s'),
@@ -271,7 +300,7 @@ SQL);
             INNER JOIN households h ON h.id=c.household_id';
     }
 
-    private function where(array $filters, bool $withOrder = true): array
+    private function where(array $filters, bool $withOrder = true, bool $activeOnly = false): array
     {
         $where = ['pm.status <> "DELETED"', 'c.status <> "DELETED"', $this->activeHouseholdWhere('h'), $this->tenantWhere('pm', 'party_members'), $this->tenantWhere('c', 'citizens'), $this->tenantWhere('h', 'households')];
         $params = $this->withTenant();
@@ -280,20 +309,25 @@ SQL);
             $params['q'] = '%' . mb_strtolower($search, 'UTF-8') . '%';
             $where[] = '(LOWER(c.full_name) LIKE :q OR LOWER(c.citizen_code) LIKE :q OR LOWER(COALESCE(c.identity_number,"")) LIKE :q OR LOWER(COALESCE(pm.party_member_code,"")) LIKE :q OR LOWER(COALESCE(pm.party_card_number,"")) LIKE :q OR LOWER(COALESCE(pm.branch_name,"")) LIKE :q)';
         }
-        foreach (['branch_name' => ['branch','branch_name'], 'party_position' => ['position','party_position'], 'gender' => ['gender'], 'member_type' => ['member_type','memberType'], 'activity_status' => ['activity_status','activityStatus','status']] as $column => $keys) {
+        foreach (['branch_name' => ['branch','branch_name'], 'party_position' => ['position','party_position'], 'gender' => ['gender'], 'member_type' => ['member_type','memberType'], 'party_status' => ['party_status','partyStatus','activity_status','activityStatus','status']] as $column => $keys) {
             $value = $this->filterValue($filters, $keys);
             if ($value === '') continue;
+            if ($activeOnly && $column === 'party_status') continue;
+            if ($column === 'party_status' && strtoupper($value) === 'ALL') continue;
             $qualified = $column === 'gender' ? 'c.gender' : 'pm.' . $column;
             $param = preg_replace('/[^a-z_]/', '', $column);
             $where[] = $qualified . ' = :' . $param;
-            $params[$param] = $column === 'gender' ? $value : strtoupper($value);
+            $params[$param] = $column === 'gender' ? $value : ($column === 'party_status' ? $this->normalizePartyStatus($value) : strtoupper($value));
             if (in_array($column, ['branch_name', 'party_position'], true)) $params[$param] = $value;
+        }
+        if ($activeOnly || !$this->hasPartyStatusFilter($filters)) {
+            $where[] = 'pm.party_status IN ("' . implode('","', self::ACTIVE_PARTY_STATUSES) . '")';
         }
         $ageFrom = trim((string) ($filters['age_from'] ?? $filters['ageFrom'] ?? ''));
         if ($ageFrom !== '') { $where[] = '' . AgePolicy::ageSql('c') . ' >= :age_from'; $params['age_from'] = (int) $ageFrom; }
         $ageTo = trim((string) ($filters['age_to'] ?? $filters['ageTo'] ?? ''));
         if ($ageTo !== '') { $where[] = '' . AgePolicy::ageSql('c') . ' <= :age_to'; $params['age_to'] = (int) $ageTo; }
-        $sortMap = ['full_name' => 'c.full_name', 'party_member_code' => 'pm.party_member_code', 'branch_name' => 'pm.branch_name', 'party_position' => 'pm.party_position', 'member_type' => 'pm.member_type', 'activity_status' => 'pm.activity_status', 'joined_party_date' => 'pm.joined_party_date'];
+        $sortMap = ['full_name' => 'c.full_name', 'party_member_code' => 'pm.party_member_code', 'branch_name' => 'pm.branch_name', 'party_position' => 'pm.party_position', 'member_type' => 'pm.member_type', 'activity_status' => 'pm.party_status', 'party_status' => 'pm.party_status', 'joined_party_date' => 'pm.joined_party_date'];
         $result = ['WHERE ' . implode(' AND ', $where), $params];
         if ($withOrder) $result[] = $this->listOrder($filters, $sortMap, 'full_name', 'ASC', ['pm.id DESC']);
         return $result;
@@ -308,8 +342,14 @@ SQL);
         if ($duplicate) throw new \RuntimeException('Nhân khẩu này đã có hồ sơ Đảng viên');
         $memberType = strtoupper(trim((string) ($data['member_type'] ?? $data['memberType'] ?? 'OFFICIAL')));
         if (!isset(self::MEMBER_TYPES[$memberType])) $memberType = 'OFFICIAL';
-        $activityStatus = strtoupper(trim((string) ($data['activity_status'] ?? $data['activityStatus'] ?? 'ACTIVE')));
-        if (!isset(self::STATUS_LABELS[$activityStatus]) || $activityStatus === 'DELETED') $activityStatus = 'ACTIVE';
+        $current = $id ? $this->find($id) : null;
+        $partyStatus = $this->normalizePartyStatus($data['party_status'] ?? $data['partyStatus'] ?? $data['activity_status'] ?? $data['activityStatus'] ?? ($current['party_status'] ?? 'ACTIVE'));
+        $statusChangedAt = $this->dateOrNull($data['status_changed_at'] ?? $data['statusChangedAt'] ?? null);
+        if (!$id || !$current || ($current['party_status'] ?? 'ACTIVE') !== $partyStatus) {
+            $statusChangedAt = $statusChangedAt ?: date('Y-m-d');
+        } else {
+            $statusChangedAt = $statusChangedAt ?: ($current['status_changed_at'] ?? null);
+        }
         return [
             'citizen_id' => $citizenId,
             'party_member_code' => $this->nullable($data['party_member_code'] ?? $data['partyMemberCode'] ?? null),
@@ -324,7 +364,13 @@ SQL);
             'professional_level' => $this->nullable($data['professional_level'] ?? $data['professionalLevel'] ?? null),
             'political_theory_level' => $this->nullable($data['political_theory_level'] ?? $data['politicalTheoryLevel'] ?? null),
             'member_type' => $memberType,
-            'activity_status' => $activityStatus,
+            'activity_status' => $partyStatus,
+            'party_status' => $partyStatus,
+            'status_changed_at' => $statusChangedAt,
+            'status_reason' => $this->nullable($data['status_reason'] ?? $data['statusReason'] ?? null),
+            'decision_number' => $this->nullable($data['decision_number'] ?? $data['decisionNumber'] ?? null),
+            'decision_date' => $this->dateOrNull($data['decision_date'] ?? $data['decisionDate'] ?? null),
+            'transfer_to' => $this->nullable($data['transfer_to'] ?? $data['transferTo'] ?? null),
             'note' => $this->nullable($data['note'] ?? null),
             'user' => $userId,
         ];
@@ -336,7 +382,7 @@ SQL);
         $map = [
             'branch_name' => 'Chi bộ',
             'member_type' => 'Loại Đảng viên',
-            'activity_status' => 'Tình trạng',
+            'party_status' => 'Trạng thái',
             'party_position' => 'Chức vụ',
             'gender' => 'Giới tính',
             'age_from' => 'Tuổi từ',
@@ -347,7 +393,7 @@ SQL);
             $value = trim((string) ($filters[$key] ?? $filters[lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $key))))] ?? ''));
             if ($value === '') continue;
             if ($key === 'member_type') $value = self::MEMBER_TYPES[strtoupper($value)] ?? $value;
-            if ($key === 'activity_status') $value = self::STATUS_LABELS[strtoupper($value)] ?? $value;
+            if ($key === 'party_status') $value = self::PARTY_STATUS_LABELS[$this->normalizePartyStatus($value)] ?? $value;
             $labels[] = $label . ': ' . $value;
         }
         return $labels ? 'Điều kiện lọc: ' . implode('; ', $labels) : 'Điều kiện lọc: Tất cả Đảng viên';
@@ -359,15 +405,18 @@ SQL);
         $row['citizen_id'] = (int) $row['citizen_id'];
         $row['age'] = $this->age($row['date_of_birth'] ?? null);
         $row['member_type_label'] = self::MEMBER_TYPES[$row['member_type'] ?? 'OFFICIAL'] ?? (string) ($row['member_type'] ?? '');
-        $row['activity_status_label'] = self::STATUS_LABELS[$row['activity_status'] ?? 'ACTIVE'] ?? (string) ($row['activity_status'] ?? '');
+        $row['party_status'] = $this->normalizePartyStatus($row['party_status'] ?? $row['activity_status'] ?? 'ACTIVE');
+        $row['party_status_label'] = self::PARTY_STATUS_LABELS[$row['party_status']] ?? (string) $row['party_status'];
+        $row['activity_status'] = $row['party_status'];
+        $row['activity_status_label'] = $row['party_status_label'];
         $row['photo_url'] = null;
         return $row;
     }
 
     private function backfillFromCitizens(): void
     {
-        $this->execute('INSERT IGNORE INTO party_members (village_id, citizen_id, member_type, activity_status, status, created_at, updated_at)
-            SELECT c.village_id, c.id, "OFFICIAL", "ACTIVE", "ACTIVE", NOW(), NOW()
+        $this->execute('INSERT IGNORE INTO party_members (village_id, citizen_id, member_type, activity_status, party_status, status_changed_at, status, created_at, updated_at)
+            SELECT c.village_id, c.id, "OFFICIAL", "ACTIVE", "ACTIVE", CURDATE(), "ACTIVE", NOW(), NOW()
             FROM citizens c
             INNER JOIN households h ON h.id=c.household_id AND h.village_id=c.village_id
             WHERE c.party_member=1 AND c.status <> "DELETED" AND ' . $this->activeHouseholdWhere('h') . ' AND ' . $this->tenantWhere('c', 'citizens') . ' AND ' . $this->tenantWhere('h', 'households'));
@@ -376,6 +425,65 @@ SQL);
     private function syncCitizenPartyFlag(int $citizenId, bool $enabled, int $userId): void
     {
         $this->execute('UPDATE citizens SET party_member=:party_member, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('citizens'), $this->withTenant(['id' => $citizenId, 'party_member' => $enabled ? 1 : 0, 'updated_by' => $userId]));
+    }
+
+    private function ensureStatusSchema(): void
+    {
+        $columns = [
+            'party_status' => 'VARCHAR(40) NOT NULL DEFAULT "ACTIVE" AFTER activity_status',
+            'status_changed_at' => 'DATE NULL AFTER party_status',
+            'status_reason' => 'TEXT NULL AFTER status_changed_at',
+            'decision_number' => 'VARCHAR(120) NULL AFTER status_reason',
+            'decision_date' => 'DATE NULL AFTER decision_number',
+            'transfer_to' => 'VARCHAR(255) NULL AFTER decision_date',
+        ];
+        foreach ($columns as $column => $definition) {
+            if (!$this->columnExists('party_members', $column)) {
+                $this->execute('ALTER TABLE party_members ADD COLUMN ' . $column . ' ' . $definition);
+            }
+        }
+        $this->execute('UPDATE party_members SET party_status = CASE activity_status WHEN "TRANSFERRED_OUT" THEN "TRANSFERRED" WHEN "TRANSFERRED_IN" THEN "TEMPORARY" WHEN "TEMP_EXEMPT" THEN "EXEMPT" WHEN "RETIRED" THEN "EXEMPT" WHEN "DELETED" THEN "LEFT_PARTY" ELSE activity_status END WHERE (party_status IS NULL OR party_status = "" OR (party_status = "ACTIVE" AND activity_status <> "ACTIVE")) AND ' . $this->tenantWhere('party_members'), $this->withTenant());
+        $this->execute('UPDATE party_members SET party_status = "ACTIVE" WHERE party_status NOT IN ("ACTIVE","TEMPORARY","EXEMPT","AWAY","TRANSFERRED","LEFT_PARTY","DECEASED") AND ' . $this->tenantWhere('party_members'), $this->withTenant());
+        $this->execute('UPDATE party_members SET activity_status = party_status WHERE activity_status <> party_status AND ' . $this->tenantWhere('party_members'), $this->withTenant());
+        $this->execute('UPDATE party_members SET status_changed_at = COALESCE(DATE(updated_at), DATE(created_at), CURDATE()) WHERE status_changed_at IS NULL AND ' . $this->tenantWhere('party_members'), $this->withTenant());
+        try {
+            $this->execute('ALTER TABLE party_members ADD INDEX idx_party_members_party_status (village_id, party_status)');
+        } catch (\Throwable) {
+        }
+    }
+
+    private function normalizePartyStatus(mixed $value): string
+    {
+        $status = strtoupper(trim((string) ($value ?? 'ACTIVE')));
+        $status = self::LEGACY_STATUS_MAP[$status] ?? $status;
+        return isset(self::PARTY_STATUS_LABELS[$status]) ? $status : 'ACTIVE';
+    }
+
+    private function hasPartyStatusFilter(array $filters): bool
+    {
+        foreach (['party_status', 'partyStatus', 'activity_status', 'activityStatus', 'status'] as $key) {
+            if (trim((string) ($filters[$key] ?? '')) !== '') return true;
+        }
+        return false;
+    }
+
+    private function isCurrentPartyMember(mixed $status): bool
+    {
+        return in_array($this->normalizePartyStatus($status), self::ACTIVE_PARTY_STATUSES, true);
+    }
+
+    private function statusSummary(array $filters): array
+    {
+        $summary = array_fill_keys(array_values(self::PARTY_STATUS_LABELS), 0);
+        $statusFilters = $filters;
+        $statusFilters['party_status'] = 'ALL';
+        [$where, $params] = $this->where($statusFilters, false);
+        $rows = $this->fetchAll("SELECT pm.party_status, COUNT(*) AS total FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY pm.party_status", $params);
+        foreach ($rows as $row) {
+            $status = $this->normalizePartyStatus($row['party_status'] ?? 'ACTIVE');
+            $summary[self::PARTY_STATUS_LABELS[$status]] = (int) ($row['total'] ?? 0);
+        }
+        return $summary;
     }
 
     private function distinctOptions(string $column): array

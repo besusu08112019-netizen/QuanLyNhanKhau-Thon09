@@ -48,6 +48,7 @@ final class PartyMemberController extends BaseController
         $this->requireInputFields($input, ['citizen_id' => 'Nhân khẩu']);
         $row = $this->members->upsert($input, (int) $user['id']);
         $this->audit($user, 'party_members', 'create', 'Thêm hồ sơ Đảng viên', $row['id'] ?? null, ['before' => null, 'after' => $row]);
+        $this->auditStatusChange($user, $row['id'] ?? null, null, $row);
         $this->ok($row);
     }
 
@@ -58,6 +59,7 @@ final class PartyMemberController extends BaseController
         if (!$before) $this->fail('Không tìm thấy hồ sơ Đảng viên', 404);
         $row = $this->members->upsert((array) $this->input(), (int) $user['id'], (int) $id);
         $this->audit($user, 'party_members', 'update', 'Cập nhật hồ sơ Đảng viên', $id, ['before' => $before, 'after' => $row]);
+        $this->auditStatusChange($user, $id, $before, $row);
         $this->ok($row);
     }
 
@@ -67,15 +69,18 @@ final class PartyMemberController extends BaseController
         $before = $this->members->find((int) $id);
         if (!$before) $this->fail('Không tìm thấy hồ sơ Đảng viên', 404);
         $this->members->softDelete((int) $id, (int) $user['id']);
-        $this->audit($user, 'party_members', 'delete', 'Xóa hồ sơ Đảng viên', $id, ['before' => $before, 'after' => null]);
+        $after = $this->members->find((int) $id);
+        $this->auditStatusChange($user, $id, $before, $after ?: ['party_status' => 'LEFT_PARTY']);
         $this->ok(['id' => (int) $id]);
     }
 
     public function restore(string $id): void
     {
         $user = $this->requirePermission('party_members', 'restore');
+        $before = $this->members->find((int) $id, true);
         $row = $this->members->restore((int) $id, (int) $user['id']);
-        $this->audit($user, 'party_members', 'restore', 'Khôi phục hồ sơ Đảng viên', $id, ['after' => $row]);
+        $this->audit($user, 'party_members', 'restore', 'Khôi phục hồ sơ Đảng viên', $id, ['before' => $before, 'after' => $row]);
+        $this->auditStatusChange($user, $id, $before, $row);
         $this->ok($row);
     }
 
@@ -94,6 +99,7 @@ final class PartyMemberController extends BaseController
             'search' => $this->query('search', $this->query('q', '')),
             'branch_name' => $this->query('branch_name', $this->query('branch', '')),
             'member_type' => $this->query('member_type', $this->query('memberType', '')),
+            'party_status' => $this->query('party_status', $this->query('partyStatus', '')),
             'activity_status' => $this->query('activity_status', $this->query('activityStatus', $this->query('status', ''))),
             'party_position' => $this->query('party_position', $this->query('position', '')),
             'gender' => $this->query('gender', ''),
@@ -102,5 +108,22 @@ final class PartyMemberController extends BaseController
             'sort' => $this->query('sort', 'full_name'),
             'direction' => $this->query('direction', 'ASC'),
         ];
+    }
+
+    private function auditStatusChange(array $user, mixed $entityId, ?array $before, ?array $after): void
+    {
+        $oldStatus = $before['party_status'] ?? $before['activity_status'] ?? null;
+        $newStatus = $after['party_status'] ?? $after['activity_status'] ?? null;
+        if ($oldStatus === $newStatus) return;
+        $this->audit($user, 'party_members', 'status_change', 'Thay đổi trạng thái Đảng viên', $entityId, [
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'changed_by' => $user['id'] ?? null,
+            'changed_at' => date('c'),
+            'reason' => $after['status_reason'] ?? null,
+            'decision_number' => $after['decision_number'] ?? null,
+            'decision_date' => $after['decision_date'] ?? null,
+            'transfer_to' => $after['transfer_to'] ?? null,
+        ]);
     }
 }

@@ -18,7 +18,7 @@ Google Sheets database gom cac sheet sau.
 
 ## party_members
 
-`id`, `villageId`, `citizenId`, `partyMemberCode`, `partyCardNumber`, `joinedPartyDate`, `officialPartyDate`, `branchName`, `parentPartyOrg`, `partyPosition`, `governmentPosition`, `educationLevel`, `professionalLevel`, `politicalTheoryLevel`, `memberType`, `activityStatus`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`
+`id`, `villageId`, `citizenId`, `partyMemberCode`, `partyCardNumber`, `joinedPartyDate`, `officialPartyDate`, `branchName`, `parentPartyOrg`, `partyPosition`, `governmentPosition`, `educationLevel`, `professionalLevel`, `politicalTheoryLevel`, `memberType`, `activityStatus`, `partyStatus`, `statusChangedAt`, `statusReason`, `decisionNumber`, `decisionDate`, `transferTo`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`
 
 Moi ban ghi lien ket 1-1 voi mot `citizens.id`. Ho ten, ngay sinh, gioi tinh, CCCD, dien thoai va dia chi duoc doc truc tiep tu bang `citizens`, khong nhap tay trong bang nay.
 
