@@ -19,6 +19,12 @@ CREATE TABLE IF NOT EXISTS party_members (
   political_theory_level VARCHAR(180) NULL,
   member_type VARCHAR(30) NOT NULL DEFAULT 'OFFICIAL',
   activity_status VARCHAR(40) NOT NULL DEFAULT 'ACTIVE',
+  party_status VARCHAR(40) NOT NULL DEFAULT 'ACTIVE',
+  status_changed_at DATE NULL,
+  status_reason TEXT NULL,
+  decision_number VARCHAR(120) NULL,
+  decision_date DATE NULL,
+  transfer_to VARCHAR(255) NULL,
   note TEXT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -32,13 +38,14 @@ CREATE TABLE IF NOT EXISTS party_members (
   KEY idx_party_members_branch (village_id, branch_name),
   KEY idx_party_members_type (village_id, member_type),
   KEY idx_party_members_activity_status (village_id, activity_status),
+  KEY idx_party_members_party_status (village_id, party_status),
   KEY idx_party_members_position (village_id, party_position),
   KEY idx_party_members_joined_date (joined_party_date),
   CONSTRAINT fk_party_members_citizen FOREIGN KEY (citizen_id) REFERENCES citizens(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT IGNORE INTO party_members (village_id, citizen_id, member_type, activity_status, status, created_at, updated_at)
-SELECT c.village_id, c.id, 'OFFICIAL', 'ACTIVE', 'ACTIVE', NOW(), NOW()
+INSERT IGNORE INTO party_members (village_id, citizen_id, member_type, activity_status, party_status, status_changed_at, status, created_at, updated_at)
+SELECT c.village_id, c.id, 'OFFICIAL', 'ACTIVE', 'ACTIVE', CURDATE(), 'ACTIVE', NOW(), NOW()
 FROM citizens c
 INNER JOIN households h ON h.id = c.household_id AND h.village_id = c.village_id
 WHERE c.party_member = 1
