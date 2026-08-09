@@ -23,6 +23,10 @@ final class PlatformSettingsService
         'identity.favicon_url' => ['group' => 'identity', 'type' => 'string', 'default' => ''],
         'identity.tenant_logo_url' => ['group' => 'identity', 'type' => 'string', 'default' => ''],
         'identity.login_background_url' => ['group' => 'identity', 'type' => 'string', 'default' => ''],
+        'branding.control_center_logo' => ['group' => 'branding', 'type' => 'string', 'default' => ''],
+        'branding.favicon' => ['group' => 'branding', 'type' => 'string', 'default' => ''],
+        'branding.default_tenant_logo' => ['group' => 'branding', 'type' => 'string', 'default' => ''],
+        'branding.default_login_background' => ['group' => 'branding', 'type' => 'string', 'default' => ''],
         'tenant.default_status' => ['group' => 'tenant', 'type' => 'string', 'default' => 'ACTIVE'],
         'tenant.create_database' => ['group' => 'tenant', 'type' => 'boolean', 'default' => true],
         'tenant.run_migrations' => ['group' => 'tenant', 'type' => 'boolean', 'default' => true],
@@ -73,6 +77,7 @@ final class PlatformSettingsService
             'data' => $this->dataStatus($health),
             'system' => $this->systemStatus($health),
             'capabilities' => $this->capabilities($settings),
+            'branding' => (new PlatformBrandingService($this->repository))->publicBranding(),
         ];
     }
 
@@ -173,6 +178,46 @@ final class PlatformSettingsService
         return $this->show();
     }
 
+    public function uploadAsset(string $type, array $file): array
+    {
+        $actor = $this->authorization->authorize('control_center.configuration.update');
+        $branding = new PlatformBrandingService($this->repository);
+        $asset = $branding->storeUploadedAsset($type, $file);
+        $key = $branding->settingKey($type);
+        $this->repository->upsert($key, $asset['stored'], 'string', 'branding', false, (int) $actor['id']);
+        $this->audit->write($actor, 'platform_branding.asset_uploaded', null, 'Cập nhật asset nhận diện nền tảng', [
+            'asset_type' => $type,
+            'key' => $key,
+            'stored' => $asset['stored'],
+            'mime' => $asset['mime'],
+            'size' => $asset['size'],
+        ]);
+        return ['asset' => $asset, 'configuration' => $this->show()];
+    }
+
+    public function resetAsset(string $type): array
+    {
+        $actor = $this->authorization->authorize('control_center.configuration.update');
+        $branding = new PlatformBrandingService($this->repository);
+        $key = $branding->settingKey($type);
+        $old = (string) $this->repository->value($key, '');
+        $this->repository->upsert($key, '', 'string', 'branding', false, (int) $actor['id']);
+        $legacyKeys = [
+            'control_center_logo' => 'identity.logo_url',
+            'favicon' => 'identity.favicon_url',
+            'default_tenant_logo' => 'identity.tenant_logo_url',
+            'default_login_background' => 'identity.login_background_url',
+        ];
+        if (isset($legacyKeys[$type])) {
+            $this->repository->upsert($legacyKeys[$type], '', 'string', 'identity', false, (int) $actor['id']);
+        }
+        $this->audit->write($actor, 'platform_branding.asset_reset', null, 'Khôi phục asset nhận diện nền tảng', [
+            'asset_type' => $type,
+            'key' => $key,
+            'old_configured' => $old !== '',
+        ]);
+        return $this->show();
+    }
     public function settings(bool $includeSecretValues = false): array
     {
         $rows = [];
@@ -267,7 +312,7 @@ final class PlatformSettingsService
     private function capabilities(array $settings): array
     {
         return [
-            'identityUpload' => ['enabled' => false, 'status' => 'NOT_CONFIGURED', 'message' => 'Chưa có upload endpoint riêng cho nhận diện hệ thống'],
+            'identityUpload' => ['enabled' => true, 'status' => 'OK', 'message' => 'Upload ảnh nhận diện chạy qua backend và kiểm tra MIME'],
             'smtpTest' => ['enabled' => false, 'status' => empty($settings['email.smtp_host']['value']) ? 'NOT_CONFIGURED' : 'PENDING_MAILER', 'message' => 'Chỉ bật khi SMTP runtime được cấu hình'],
             'backupNow' => ['enabled' => false, 'status' => 'READ_ONLY', 'message' => 'Module này chỉ kiểm tra trạng thái, không tạo backup giả'],
         ];

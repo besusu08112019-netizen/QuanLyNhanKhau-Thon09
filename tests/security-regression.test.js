@@ -454,4 +454,68 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(installer, /defaultTenantStatus/);
   assert.match(installer, /tenant\.default_status/);  assert.match(migration, /UNIQUE KEY uq_platform_settings_key/);
 }
+{
+  const branding = read('app/Services/PlatformBrandingService.php');
+  assert.match(branding, /control_center_logo/);
+  assert.match(branding, /default_tenant_logo/);
+  assert.match(branding, /default_login_background/);
+  assert.match(branding, /storage\/platform-assets/);
+  assert.match(branding, /move_uploaded_file/);
+  assert.match(branding, /is_uploaded_file/);
+  assert.match(branding, /getimagesize/);
+  assert.match(branding, /new \\finfo\(FILEINFO_MIME_TYPE\)/);
+  assert.match(branding, /php.*phtml.*phar.*cgi.*exe.*js.*html.*svg/s);
+  assert.match(branding, /RemoveHandler/);
+  assert.match(branding, /X-Content-Type-Options|nosniff|resolveAssetPath/s);
+
+  const settings = read('app/Services/PlatformSettingsService.php');
+  assert.match(settings, /branding\.control_center_logo/);
+  assert.match(settings, /branding\.favicon/);
+  assert.match(settings, /branding\.default_tenant_logo/);
+  assert.match(settings, /branding\.default_login_background/);
+  assert.match(settings, /function uploadAsset/);
+  assert.match(settings, /control_center\.configuration\.update/);
+  assert.match(settings, /platform_branding\.asset_uploaded/);
+  assert.match(settings, /platform_branding\.asset_reset/);
+  assert.match(settings, /identityUpload' => \['enabled' => true/);
+
+  const controller = read('app/Controllers/PlatformSettingsController.php');
+  assert.match(controller, /function uploadAsset/);
+  assert.match(controller, /function resetAsset/);
+  assert.match(controller, /function asset\(string \$type, string \$file\)/);
+  assert.match(controller, /Content-Type/);
+  assert.match(controller, /nosniff/);
+
+  const index = read('index.php');
+  assert.match(index, /\/api\/platform\/settings\/assets/);
+  assert.match(index, /\/api\/platform\/assets/);
+  assert.match(index, /PlatformBrandingService/);
+  assert.match(index, /CONTROL_CENTER_LOGO_HTML/);
+  assert.match(index, /PLATFORM_FAVICON_URL/);
+  assert.match(index, /TENANT_LOGO_HTML/);
+  assert.match(index, /LOGIN_BACKGROUND_STYLE/);
+  assert.match(index, /favicon.*PlatformBrandingService/s);
+
+  const cccView = read('views/control-center.php');
+  const identityPane = cccView.match(/if \(id === 'identity'\)[\s\S]+?if \(id === 'tenant'\)/);
+  assert.ok(identityPane, 'identity configuration pane must be present');
+  assert.match(identityPane[0], /brandingAssetCard\('control_center_logo'/);
+  assert.match(identityPane[0], /brandingAssetCard\('favicon'/);
+  assert.match(identityPane[0], /brandingAssetCard\('default_tenant_logo'/);
+  assert.match(identityPane[0], /brandingAssetCard\('default_login_background'/);
+  assert.doesNotMatch(identityPane[0], /identity\.logo_url|identity\.favicon_url|identity\.tenant_logo_url|identity\.login_background_url|Upload ảnh đang/);
+  assert.match(cccView, /data-branding-file/);
+  assert.match(cccView, /uploadPendingBrandingAssets/);
+  assert.match(cccView, /configuration\.chooseAsset/);
+  assert.match(cccView, /configuration\.resetAsset/);
+
+  const tenantConfig = read('app/Core/TenantConfig.php');
+  assert.match(tenantConfig, /PlatformBrandingService/);
+  assert.match(tenantConfig, /default_tenant_logo/);
+  assert.match(tenantConfig, /default_login_background/);
+  assert.match(tenantConfig, /TENANT_LOGO_URL/);
+  const appView = read('views/app.php');
+  assert.match(appView, /TENANT_LOGO_HTML/);
+  assert.match(appView, /LOGIN_BACKGROUND_STYLE/);
+}
 console.log('security regression checks passed');

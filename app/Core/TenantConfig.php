@@ -2,6 +2,7 @@
 
 namespace App\Core;
 
+use App\Services\PlatformBrandingService;
 use Throwable;
 
 final class TenantConfig
@@ -18,11 +19,20 @@ final class TenantConfig
         $unit = self::env('TENANT_UNIT_NAME', (string) ($village['unit_name'] ?? self::joinUnit($hamlet, $commune)));
         $systemName = self::env('APP_NAME', self::env('TENANT_SYSTEM_NAME', 'He thong Quan ly Hanh chinh'));
         $copyright = self::env('TENANT_COPYRIGHT', $unit !== '' ? '(c) ' . $unit : '');
+        $platformBranding = self::platformBranding();
+        $tenantLogoUrl = self::env('TENANT_LOGO_URL', (string) ($village['logo_url'] ?? ''));
+        if ($tenantLogoUrl === '') {
+            $tenantLogoUrl = (string) ($platformBranding['default_tenant_logo']['url'] ?? '');
+        }
+        $tenantBackgroundUrl = self::env('TENANT_BACKGROUND_URL', '');
+        if ($tenantBackgroundUrl === '') {
+            $tenantBackgroundUrl = (string) ($platformBranding['default_login_background']['url'] ?? '');
+        }
 
         return [
             'systemName' => $systemName,
-            'logoUrl' => self::env('TENANT_LOGO_URL', (string) ($village['logo_url'] ?? '')),
-            'backgroundUrl' => self::env('TENANT_BACKGROUND_URL', ''),
+            'logoUrl' => $tenantLogoUrl,
+            'backgroundUrl' => $tenantBackgroundUrl,
             'backgroundImages' => self::env('TENANT_BACKGROUND_IMAGES', ''),
             'backgroundInterval' => self::env('TENANT_BACKGROUND_INTERVAL', '6000'),
             'introImageUrl' => self::env('TENANT_INTRO_IMAGE_URL', ''),
@@ -87,6 +97,14 @@ final class TenantConfig
         return trim((string) ($settings['systemName'] ?? '')) ?: 'Don vi hanh chinh';
     }
 
+    private static function platformBranding(): array
+    {
+        try {
+            return (new PlatformBrandingService())->publicBranding();
+        } catch (Throwable) {
+            return [];
+        }
+    }
     private static function databaseSettings(): array
     {
         if (self::$databaseSettings !== null) return self::$databaseSettings;

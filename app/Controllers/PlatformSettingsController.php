@@ -8,6 +8,7 @@ use App\Core\BaseController;
 use App\Core\Response;
 use App\Repositories\PlatformSettingsRepository;
 use App\Services\ControlCenterAuditService;
+use App\Services\PlatformBrandingService;
 use App\Services\PlatformSettingsService;
 use InvalidArgumentException;
 use Throwable;
@@ -56,6 +57,30 @@ final class PlatformSettingsController extends BaseController
         $this->respond(fn(): array => $this->service->testEmail());
     }
 
+    public function uploadAsset(): void
+    {
+        $this->respond(fn(): array => $this->service->uploadAsset((string) ($_POST['asset_type'] ?? $this->input('asset_type', '')), $_FILES['file'] ?? []));
+    }
+
+    public function resetAsset(): void
+    {
+        $this->respond(fn(): array => $this->service->resetAsset((string) ($this->input('asset_type', $_POST['asset_type'] ?? ''))));
+    }
+
+    public function asset(string $type, string $file): void
+    {
+        try {
+            $asset = (new PlatformBrandingService())->resolveAssetPath($type, $file);
+            header('Content-Type: ' . $asset['mime']);
+            header('X-Content-Type-Options: nosniff');
+            header('Cache-Control: public, max-age=31536000, immutable');
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int) $asset['mtime']) . ' GMT');
+            readfile($asset['path']);
+            exit;
+        } catch (Throwable) {
+            Response::error('Không tìm thấy asset', 404);
+        }
+    }
     public function maintenance(): void
     {
         $this->respond(fn(): array => $this->service->setMaintenance($this->input()));

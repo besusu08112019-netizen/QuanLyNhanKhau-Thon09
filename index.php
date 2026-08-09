@@ -79,6 +79,7 @@ use App\Config\CitizenPolicyDefaults;
 use App\Policies\AgePolicy;
 use App\Policies\InsurancePolicy;
 use App\Services\StudentStatusService;
+use App\Services\PlatformBrandingService;
 
 Autoloader::register();
 env_load(BASE_PATH);
@@ -287,7 +288,27 @@ register_shutdown_function(function () use ($request): void {
     }
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 });
+if ($request->method() === 'GET' && preg_match('#^/api/platform/assets/([a-z_]+)/([a-z0-9.-]+)$#', $request->path(), $matches)) {
+    (new PlatformSettingsController($request))->asset($matches[1], $matches[2]);
+}
+if (PortalContext::isControlCenter() && $request->method() === 'POST' && in_array($request->path(), ['/api/platform/settings/assets', '/api/platform/settings/assets/reset'], true)) {
+    $controller = new PlatformSettingsController($request);
+    if ($request->path() === '/api/platform/settings/assets') {
+        $controller->uploadAsset();
+    } else {
+        $controller->resetAsset();
+    }
+    exit;
+}
 if ($request->path() === '/favicon.ico') {
+    try {
+        $branding = (new PlatformBrandingService())->publicBranding();
+        $stored = (string) ($branding['favicon']['stored'] ?? '');
+        if ($stored !== '') {
+            (new PlatformSettingsController($request))->asset('favicon', basename($stored));
+        }
+    } catch (Throwable) {
+    }
     $faviconPath = __DIR__ . '/favicon.ico';
     header('Content-Type: image/x-icon');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -298,7 +319,6 @@ if ($request->path() === '/favicon.ico') {
     }
     exit;
 }
-
 if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api')) {
     if (str_starts_with($request->path(), '/api/control-center/')) {
         $controller = new ControlCenterController($request);
@@ -421,7 +441,14 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         }
         if ($method === 'PATCH' && $path === '/api/control-center/permissions/reset') {
             $permissionsController->reset();
-        }        if ($method === 'GET' && $path === '/api/control-center/configuration') {
+        }
+        if ($method === 'POST' && ($path === '/api/control-center/configuration/assets' || $path === '/api/platform/settings/assets')) {
+            $platformSettingsController->uploadAsset();
+        }
+        if ($method === 'POST' && ($path === '/api/control-center/configuration/assets/reset' || $path === '/api/platform/settings/assets/reset')) {
+            $platformSettingsController->resetAsset();
+        }
+        if ($method === 'GET' && $path === '/api/control-center/configuration') {
             $platformSettingsController->show();
         }
         if ($method === 'PUT' && $path === '/api/control-center/configuration') {
@@ -956,6 +983,7 @@ if (!str_starts_with($request->path(), '/api')) {
             exit;
         }
 
+        $branding = (new PlatformBrandingService())->publicBranding();
         $settings = [
             'portal' => PortalContext::type(),
             'host' => PortalContext::host(),
@@ -963,11 +991,17 @@ if (!str_starts_with($request->path(), '/api')) {
             'sessionTtlSeconds' => (int) (env_value('SESSION_TTL_SECONDS') ?: 21600),
             'idleTimeoutSeconds' => (int) (env_value('IDLE_TIMEOUT_SECONDS') ?: 900),
             'idleWarningSeconds' => (int) (env_value('IDLE_WARNING_SECONDS') ?: 60),
+            'branding' => $branding,
         ];
         $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        $controlCenterLogoUrl = (string) ($branding['control_center_logo']['url'] ?? '');
+        $controlCenterLogoHtml = $controlCenterLogoUrl !== '' ? '<img src="' . $escapeHtml($controlCenterLogoUrl) . '" alt="Community Control Center logo">' : 'CC';
+        $platformFaviconUrl = (string) ($branding['favicon']['url'] ?? '/favicon.ico');
         $html = strtr($html, [
             '{{APP_NAME}}' => $escapeHtml((string) ($settings['appName'] ?? 'Community Control Center')),
             '{{APP_SETTINGS_JSON}}' => json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
+            '{{CONTROL_CENTER_LOGO_HTML}}' => $controlCenterLogoHtml,
+            '{{PLATFORM_FAVICON_URL}}' => $escapeHtml($platformFaviconUrl),
             'assets/vendor/bootstrap/bootstrap.min.css' => versioned_asset('assets/vendor/bootstrap/bootstrap.min.css'),
             'assets/vendor/fontawesome-local.css' => versioned_asset('assets/vendor/fontawesome-local.css'),
             'assets/css/app.min.css' => versioned_asset('assets/css/app.min.css'),
@@ -1016,6 +1050,17 @@ if (!str_starts_with($request->path(), '/api')) {
         'healthInsuranceDefaultOccupations' => InsurancePolicy::eligibleOccupations(),
     ];
     $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    $tenantLogoUrl = trim((string) ($tenantSettings['logoUrl'] ?? ''));
+    $tenantLogoClass = $tenantLogoUrl !== ''
+        ? 'login-logo login-logo-emblem login-logo-image'
+        : 'login-logo login-logo-emblem';
+    $tenantLogoHtml = $tenantLogoUrl !== ''
+        ? '<img src="' . $escapeHtml($tenantLogoUrl) . '" alt="' . $escapeHtml(TenantConfig::unitName($tenantSettings)) . '">'
+        : '<span></span><span></span><span></span><strong>{{TENANT_MARK}}</strong>';
+    $loginBackgroundUrl = trim((string) ($tenantSettings['backgroundUrl'] ?? ''));
+    $loginBackgroundStyle = $loginBackgroundUrl !== ''
+        ? '--login-bg:linear-gradient(135deg,rgba(4,23,18,.74),rgba(12,87,61,.48)),url(&quot;' . $escapeHtml($loginBackgroundUrl) . '&quot;);'
+        : '';
     $html = strtr($html, [
         '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'Hệ thống Quản lý Hành chính')),
         '{{UNIT_NAME}}' => $escapeHtml(TenantConfig::unitName($tenantSettings)),
@@ -1025,6 +1070,9 @@ if (!str_starts_with($request->path(), '/api')) {
         '{{TENANT_MARK}}' => $escapeHtml($tenantMark),
         '{{THEME_COLOR}}' => $escapeHtml((string) ($tenantSettings['themeColor'] ?? '#0b6b3a')),
         '{{BACKGROUND_COLOR}}' => $escapeHtml((string) ($tenantSettings['backgroundColor'] ?? '#eef3f8')),
+        '{{TENANT_LOGO_CLASS}}' => $tenantLogoClass,
+        '{{TENANT_LOGO_HTML}}' => str_replace('{{TENANT_MARK}}', $escapeHtml($tenantMark), $tenantLogoHtml),
+        '{{LOGIN_BACKGROUND_STYLE}}' => $loginBackgroundStyle,
         '{{APP_SETTINGS_JSON}}' => json_encode($tenantSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
     ]);
     $versionedAssets = [

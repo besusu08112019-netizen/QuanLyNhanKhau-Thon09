@@ -43,16 +43,12 @@
   <a class="skip-link" href="#mainContent">Bỏ qua điều hướng</a>
   <div id="toastHost" class="toast-container position-fixed top-0 end-0 p-3" aria-live="polite" aria-atomic="true"></div>
 
-  <main id="loginView" class="login-view">
+  <main id="loginView" class="login-view" style="{{LOGIN_BACKGROUND_STYLE}}">
     <section class="login-landing" aria-label="Đăng nhập hệ thống quản lý hành chính">
       <section class="login-panel" aria-labelledby="loginSystemName">
         <div class="login-brand" aria-label="{{UNIT_NAME}}">
-          <div id="loginLogo" class="login-logo login-logo-emblem" aria-hidden="true">
-            <span class="logo-flag"><i class="fa-solid fa-star"></i></span>
-            <span class="logo-landmark"><i class="fa-solid fa-landmark"></i></span>
-            <span class="logo-village"><i class="fa-solid fa-house-chimney"></i></span>
-            <span class="logo-name">Thôn</span>
-            <strong id="loginLogoText">{{TENANT_MARK}}</strong>
+          <div id="loginLogo" class="{{TENANT_LOGO_CLASS}}" aria-hidden="true">
+            {{TENANT_LOGO_HTML}}
           </div>
           <div class="login-title-block">
             <p id="loginSystemName">{{APP_NAME}}</p>
@@ -81,12 +77,8 @@
     <aside class="sidebar gov-sidebar">
       <button id="sidebarCollapse" class="sidebar-collapse-btn" type="button" title="Thu gọn Sidebar" aria-label="Thu gọn Sidebar"><i class="fa-solid fa-angle-left"></i></button>
       <div class="sidebar-brand gov-brand">
-        <div id="sidebarLogo" class="sidebar-logo login-logo login-logo-emblem" aria-hidden="true">
-          <span class="logo-flag"><i class="fa-solid fa-star"></i></span>
-          <span class="logo-landmark"><i class="fa-solid fa-landmark"></i></span>
-          <span class="logo-village"><i class="fa-solid fa-house-chimney"></i></span>
-          <span class="logo-name">Thôn</span>
-          <strong id="sidebarLogoText">{{TENANT_MARK}}</strong>
+        <div id="sidebarLogo" class="sidebar-logo {{TENANT_LOGO_CLASS}}" aria-hidden="true">
+          {{TENANT_LOGO_HTML}}
         </div>
         <div>
           <strong id="sidebarSystemName">{{APP_NAME}}</strong>

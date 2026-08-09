@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>{{APP_NAME}}</title>
+  <link rel="icon" href="{{PLATFORM_FAVICON_URL}}">
   <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/fontawesome-local.css" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/app.min.css">
@@ -871,7 +872,51 @@
       .settings-grid,
       .settings-grid.three { grid-template-columns: 1fr; }
     }
-  </style>
+
+    .cc-brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .branding-upload-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .branding-upload-card {
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      background: #fff;
+    }
+
+    .branding-preview {
+      min-height: 132px;
+      border: 1px dashed #cfd6e2;
+      border-radius: 8px;
+      background: #f8fafc;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: var(--cc-muted);
+      font-weight: 700;
+    }
+
+    .branding-preview.wide { min-height: 170px; aspect-ratio: 16 / 6; }
+    .branding-preview img { width: 100%; height: 100%; object-fit: contain; }
+    .branding-preview.wide img { object-fit: cover; }
+    .branding-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .branding-file { display: none; }
+
+    @media (max-width: 900px) {
+      .branding-upload-grid { grid-template-columns: 1fr; }
+    }</style>
   <script>
     window.AppSettings={{APP_SETTINGS_JSON}};
   </script>
@@ -880,7 +925,7 @@
   <div class="cc-login-screen" id="loginScreen">
     <form class="cc-login-card" id="loginForm" novalidate>
       <div class="cc-brand">
-        <div class="cc-brand-mark">CC</div>
+        <div class="cc-brand-mark">{{CONTROL_CENTER_LOGO_HTML}}</div>
         <div>
           <h1>Community Control Center</h1>
           <p>Đăng nhập để điều hành Hong Phong Community Platform.</p>
@@ -901,7 +946,7 @@
   <div class="control-center">
     <aside class="cc-sidebar">
       <div class="cc-brand">
-        <div class="cc-brand-mark">CC</div>
+        <div class="cc-brand-mark">{{CONTROL_CENTER_LOGO_HTML}}</div>
         <div>
           <div class="cc-brand-title">HONG PHONG COMMUNITY PLATFORM</div>
           <div class="cc-brand-subtitle">Community Control Center</div>
@@ -1728,7 +1773,7 @@
 
     document.addEventListener(controlCenterClickEvent, handleControlCenterAction);
     const auditState = { items: [] };
-    const configurationState = { data: null, activeTab: 'general', saving: false };
+    const configurationState = { data: null, activeTab: 'general', saving: false, assetFiles: {} };
 
     const roleLabels = {
       SYSTEM_ADMIN: 'Quản trị hệ thống',
@@ -3593,6 +3638,76 @@
       return '<div class="settings-status-list">' + (items || []).map((item) => '<div class="settings-status-row"><div><strong>' + item.name + '</strong><div class="settings-readonly">' + (item.note || '') + '</div></div>' + badge(item.status || (item.ok ? 'OK' : 'ERROR')).outerHTML + '</div>').join('') + '</div>';
     }
 
+
+    function brandingAsset(type) {
+      return configurationState.data?.branding?.[type] || { url: '', configured: false };
+    }
+
+    function brandingAssetCard(type, label, note, wide = false) {
+      const asset = brandingAsset(type);
+      const pending = configurationState.assetFiles[type];
+      const previewUrl = pending?.previewUrl || asset.url || '';
+      const preview = previewUrl ? '<img src="' + previewUrl.replace(/"/g, '&quot;') + '" alt="' + label + '">' : '<span>Chưa có ảnh</span>';
+      return '<article class="branding-upload-card" data-branding-card="' + type + '"><div><strong>' + label + '</strong><div class="settings-readonly">' + note + '</div></div><div class="branding-preview' + (wide ? ' wide' : '') + '">' + preview + '</div><div class="settings-readonly">' + (pending ? ('Đã chọn: ' + pending.file.name) : (asset.configured ? 'Đang dùng ảnh đã lưu' : 'Đang dùng mặc định')) + '</div><input class="branding-file" id="asset_' + type + '" type="file" data-branding-file="' + type + '" accept="' + brandingAccept(type) + '"><div class="branding-actions"><button class="cc-btn" type="button" data-cc-action="configuration.chooseAsset" data-asset-type="' + type + '"><i class="fa-solid fa-image"></i>' + (asset.configured ? 'Thay ảnh' : 'Chọn ảnh') + '</button><button class="cc-btn danger" type="button" data-cc-action="configuration.resetAsset" data-asset-type="' + type + '"' + (!asset.configured && !pending ? ' disabled' : '') + '><i class="fa-solid fa-rotate-left"></i>Khôi phục mặc định</button></div></article>';
+    }
+
+    function brandingAccept(type) {
+      return type === 'favicon' ? '.png,.ico,image/png,image/x-icon,image/vnd.microsoft.icon' : '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp';
+    }
+
+    async function apiForm(path, formData, options = {}) {
+      const method = options.method || 'POST';
+      const headers = authHeaders(method);
+      const response = await fetch(path, { method, headers, cache: 'no-store', body: formData });
+      const payload = await response.json();
+      if (!payload.ok) throw new Error(payload.message || 'Yêu cầu không thành công');
+      return payload.data;
+    }
+
+    async function uploadPendingBrandingAssets() {
+      const entries = Object.entries(configurationState.assetFiles);
+      for (const [type, record] of entries) {
+        if (!record?.file) continue;
+        const form = new FormData();
+        form.append('asset_type', type);
+        form.append('file', record.file);
+        const result = await apiForm('/api/platform/settings/assets', form);
+        configurationState.data = result.configuration || configurationState.data;
+        if (record.previewUrl) URL.revokeObjectURL(record.previewUrl);
+        delete configurationState.assetFiles[type];
+      }
+    }
+
+    function chooseBrandingAsset(type) {
+      document.getElementById('asset_' + type)?.click();
+    }
+
+    function handleBrandingFileChange(event) {
+      const input = event.target;
+      const type = input?.dataset?.brandingFile;
+      const file = input?.files?.[0];
+      if (!type || !file) return;
+      if (configurationState.assetFiles[type]?.previewUrl) URL.revokeObjectURL(configurationState.assetFiles[type].previewUrl);
+      configurationState.assetFiles[type] = { file, previewUrl: URL.createObjectURL(file) };
+      renderConfiguration();
+    }
+
+    async function resetBrandingAsset(type) {
+      if (configurationState.assetFiles[type]) {
+        if (configurationState.assetFiles[type].previewUrl) URL.revokeObjectURL(configurationState.assetFiles[type].previewUrl);
+        delete configurationState.assetFiles[type];
+        renderConfiguration();
+        return;
+      }
+      if (!confirm('Khôi phục asset này về mặc định?')) return;
+      try {
+        configurationState.data = await api('/api/platform/settings/assets/reset', { method: 'POST', body: { asset_type: type } });
+        setConfigurationAlert('Đã khôi phục mặc định.');
+        renderConfiguration();
+      } catch (error) {
+        setConfigurationAlert(error.message || 'Không khôi phục được asset');
+      }
+    }
     function renderConfiguration() {
       const tabs = document.getElementById('configurationTabs');
       const panes = document.getElementById('configurationPanes');
@@ -3619,9 +3734,12 @@
       if (id === 'identity') {
         const body = '<div class="settings-grid">' +
           configInput('identity.system_name', 'Tên hệ thống') + configInput('identity.short_name', 'Tên rút gọn') +
-          configInput('identity.logo_url', 'Logo Community Control Center') + configInput('identity.favicon_url', 'Favicon') +
-          configInput('identity.tenant_logo_url', 'Logo mặc định tenant') + configInput('identity.login_background_url', 'Hình nền đăng nhập mặc định') +
-          '</div><div class="settings-readonly" style="margin-top:12px">Upload ảnh đang ở trạng thái chưa cấu hình backend; chỉ cho phép lưu đường dẫn đã được quản trị kiểm soát.</div>';
+          '</div><div class="branding-upload-grid" style="margin-top:14px">' +
+          brandingAssetCard('control_center_logo', 'Logo Community Control Center', 'PNG/JPG/JPEG/WEBP, tối đa 2MB') +
+          brandingAssetCard('favicon', 'Favicon', 'PNG/ICO, tối đa 1MB') +
+          brandingAssetCard('default_tenant_logo', 'Logo mặc định tenant', 'Tenant chưa có logo riêng sẽ kế thừa ảnh này') +
+          brandingAssetCard('default_login_background', 'Hình nền đăng nhập mặc định', 'Tenant chưa có hình nền riêng sẽ kế thừa ảnh này', true) +
+          '</div>';
         return settingsCard('Nhận diện hệ thống', 'Quản lý tên và tài sản nhận diện cấp nền tảng.', body, '<button class="cc-btn primary" type="button" data-cc-action="configuration.save" data-group="identity"><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>');
       }
       if (id === 'tenant') {
@@ -3689,6 +3807,7 @@
       });
       try {
         configurationState.data = await api('/api/control-center/configuration', { method: 'PUT', body: { settings } });
+        if (group === 'identity') await uploadPendingBrandingAssets();
         setConfigurationAlert('Đã lưu cấu hình.');
         renderConfiguration();
       } catch (error) {
@@ -3874,6 +3993,8 @@
       registerControlCenterAction('configuration.tab', ({ dataset }) => { configurationState.activeTab = dataset.tab || 'general'; renderConfiguration(); });
       registerControlCenterAction('configuration.refresh', () => loadConfiguration());
       registerControlCenterAction('configuration.save', ({ dataset }) => saveConfigurationGroup(dataset.group));
+      registerControlCenterAction('configuration.chooseAsset', ({ dataset }) => chooseBrandingAsset(dataset.assetType));
+      registerControlCenterAction('configuration.resetAsset', ({ dataset }) => resetBrandingAsset(dataset.assetType));
       registerControlCenterAction('configuration.secret', () => updateSmtpSecret());
       registerControlCenterAction('configuration.maintenance', () => updateMaintenance());
       registerControlCenterAction('configuration.registry', () => runConfigurationCheck('registry'));
@@ -4024,6 +4145,9 @@
     })());
     document.getElementById('auditTenantFilter').addEventListener('change', () => loadAudit());
     document.getElementById('auditLevelFilter').addEventListener('change', () => loadAudit());
+    document.addEventListener('change', (event) => {
+      if (event.target?.matches?.('[data-branding-file]')) handleBrandingFileChange(event);
+    });
     document.getElementById('auditSearch').addEventListener('input', (() => {
       let timer = null;
       return () => {
