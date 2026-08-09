@@ -329,9 +329,9 @@ final class User extends BaseModel
 
     private function findCentralSuperAdminSessionHolder(): array
     {
-        $holder = $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE role="SUPER_ADMIN" AND status <> "DELETED" AND ' . $this->tenantWhere('users') . ' ORDER BY FIELD(status, "ACTIVE", "INACTIVE"), id ASC LIMIT 1', $this->withTenant());
+        $holder = $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE status <> "DELETED" AND ' . $this->tenantWhere('users') . ' ORDER BY FIELD(status, "ACTIVE", "INACTIVE"), FIELD(role, "ADMIN", "SUPER_ADMIN", "OFFICER", "VIEWER"), id ASC LIMIT 1', $this->withTenant());
         if (!$holder) {
-            throw new RuntimeException('Tenant chua co tai khoan Super Admin noi bo de gan session trung tam');
+            throw new RuntimeException('Tenant chua co tai khoan noi bo de gan session trung tam');
         }
         return $holder;
     }
