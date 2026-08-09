@@ -202,7 +202,7 @@
       cache: 'no-store',
       credentials: 'same-origin',
     });
-    if (!response.ok) throw new Error('Khong tai duoc anh ho (' + response.status + ')');
+    if (!response.ok) throw new Error('Không tải được ảnh hộ (' + response.status + ')');
     return URL.createObjectURL(await response.blob());
   }
 

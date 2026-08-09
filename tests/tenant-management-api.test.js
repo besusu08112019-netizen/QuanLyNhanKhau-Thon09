@@ -93,7 +93,7 @@ for (const [method, uri] of [
 ]) {
   const response = runIndex('hongphongnb.com', method, uri);
   assert.strictEqual(response.ok, false, `${method} ${uri} should require authentication`);
-  assert.match(response.message, /đăng nhập|Ä‘Äƒng nháº­p/i);
+  assert.match(response.message, /??ng nh?p/i);
 }
 
 console.log('Tenant Management API stage 2 smoke tests passed.');

@@ -31,6 +31,11 @@ final class SimplePdf
         $this->y -= 20;
     }
 
+    public function useLandscape(): void
+    {
+        // Kept for report controllers that request a wider table layout.
+    }
+
     public function addTable(array $headers, array $rows): void
     {
         $this->line(42, $this->y + 8, 552, $this->y + 8);

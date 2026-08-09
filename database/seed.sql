@@ -3,7 +3,7 @@
 
 
 INSERT INTO `villages` (`code`, `name`, `unit_name`, `commune_name`, `domain`, `subdomain`, `status`) VALUES
-('default', 'Ten thon', 'Ten don vi', 'Ten xa', NULL, NULL, 'ACTIVE')
+('default', 'Tên thôn', 'Tên đơn vị', 'Tên xã', NULL, NULL, 'ACTIVE')
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `unit_name` = VALUES(`unit_name`), `commune_name` = VALUES(`commune_name`);
 
 
@@ -11,7 +11,7 @@ INSERT INTO `settings` (`village_id`, `setting_key`, `setting_value`) VALUES
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'unitName', ''),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'hamletName', ''),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'communeName', ''),
-((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'systemName', 'He thong Quan ly Hanh chinh'),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'systemName', 'Hệ thống Quản lý Hành chính'),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'address', ''),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'phone', ''),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'email', ''),
@@ -23,7 +23,7 @@ INSERT INTO `settings` (`village_id`, `setting_key`, `setting_value`) VALUES
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'backgroundColor', '#eef3f8'),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'backupSchedule', 'DAILY'),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'reportSigner', ''),
-((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'reportTitlePrefix', 'Quan ly nhan khau'),
+((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'reportTitlePrefix', 'Quản lý nhân khẩu'),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'supportEmail', ''),
 ((SELECT `id` FROM `villages` WHERE `code` = 'default' LIMIT 1), 'maintenanceMessage', '')
 ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);

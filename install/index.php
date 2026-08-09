@@ -610,7 +610,7 @@ $db = $state['db'];
         <h2>Nhập thông tin hệ thống</h2>
         <form method="post" class="grid">
           <input type="hidden" name="action" value="save_system">
-          <div class="field"><label>Tên hệ thống</label><input name="system_name" required value="<?= h(field($system, 'system_name', 'He thong Quan ly Hanh chinh')) ?>"></div>
+          <div class="field"><label>Tên hệ thống</label><input name="system_name" required value="<?= h(field($system, 'system_name', 'Hệ thống Quản lý Hành chính')) ?>"></div>
           <div class="field"><label>Mã thôn/tenant</label><input name="village_code" required value="<?= h(field($system, 'village_code', 'default')) ?>"></div>
           <div class="field"><label>Tên thôn</label><input name="village_name" required value="<?= h(field($system, 'village_name')) ?>"></div>
           <div class="field"><label>Tên đơn vị</label><input name="unit_name" required value="<?= h(field($system, 'unit_name')) ?>"></div>

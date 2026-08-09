@@ -132,7 +132,7 @@ abstract class BaseController
     {
         $user = $this->requirePermission($module, $action);
         if (($user['role'] ?? '') !== 'SUPER_ADMIN') {
-            Response::error('Chi tai khoan Super Admin moi duoc thuc hien thao tac nay', 403);
+            Response::error('Chỉ tài khoản Super Admin mới được thực hiện thao tác này', 403);
         }
         return $user;
     }
@@ -155,7 +155,7 @@ abstract class BaseController
             Response::json([
                 'ok' => false,
                 'error' => [
-                    'message' => 'Du lieu QA/UAT/TEST/DEMO khong duoc phep trong production',
+                    'message' => 'Dữ liệu QA/UAT/TEST/DEMO không được phép trong production',
                     'details' => [
                         'module' => $module,
                         'matches' => array_slice($matches, 0, 20),
@@ -177,7 +177,7 @@ abstract class BaseController
             Response::json([
                 'ok' => false,
                 'error' => [
-                    'message' => 'Du lieu gui len khong dung UTF-8, vui long kiem tra nguon nhap/import',
+                    'message' => 'Dữ liệu gửi lên không đúng UTF-8, vui lòng kiểm tra nguồn nhập/import',
                     'details' => [
                         'module' => $module,
                         'matches' => array_slice($matches, 0, 20),

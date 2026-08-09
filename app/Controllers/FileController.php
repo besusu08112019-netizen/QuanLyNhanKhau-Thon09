@@ -72,7 +72,7 @@ final class FileController extends BaseController
     public function show(string $id): void
     {
         $file = $this->files->find((int) $id);
-        if (!$file) $this->fail('Khong tim thay file', 404);
+        if (!$file) $this->fail('Không tìm thấy file', 404);
         $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
         $this->requirePermission('file', 'read');
@@ -83,7 +83,7 @@ final class FileController extends BaseController
     {
         try {
             $file = $this->files->find((int) $id);
-            if (!$file) $this->fail('Khong tim thay file', 404);
+            if (!$file) $this->fail('Không tìm thấy file', 404);
             $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
             $this->requirePermission($this->storage->permissionModule($entityType), 'read');
             $user = $this->requirePermission('file', 'update');
@@ -107,7 +107,7 @@ final class FileController extends BaseController
                 $payload['file_type'] = $input['file_type'] ?? $input['fileType'];
             }
             $updated = $this->files->updateMetadata((int) $id, $payload, (int) $user['id']);
-            $this->audit($user, $entityType, 'update_file', 'Cap nhat thong tin file dinh kem', $file['entity_id'] ?? null, ['file' => (int) $id]);
+            $this->audit($user, $entityType, 'update_file', 'Cập nhật thông tin file đính kèm', $file['entity_id'] ?? null, ['file' => (int) $id]);
             $this->ok($updated ? $this->files->normalizeRow($updated) : null);
         } catch (\Throwable $e) {
             $this->fail($e->getMessage(), 400);
@@ -127,11 +127,11 @@ final class FileController extends BaseController
     public function destroy(string $id): void
     {
         $file = $this->files->find((int) $id);
-        if (!$file) $this->fail('Khong tim thay file', 404);
+        if (!$file) $this->fail('Không tìm thấy file', 404);
         $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
         $user = $this->requireFileMutationPermission($entityType);
         $this->files->softDelete((int) $id, (int) $user['id']);
-        $this->audit($user, $entityType, 'delete_file', 'Xoa file dinh kem', $file['entity_id'] ?? null, ['file' => (int) $id, 'name' => $file['original_name'] ?? $file['file_name'] ?? '']);
+        $this->audit($user, $entityType, 'delete_file', 'Xóa file đính kèm', $file['entity_id'] ?? null, ['file' => (int) $id, 'name' => $file['original_name'] ?? $file['file_name'] ?? '']);
         $this->ok(['id' => (int) $id]);
     }
 
@@ -182,7 +182,7 @@ final class FileController extends BaseController
         $user = $this->user();
         $this->verifyCsrfToken();
         if (!$this->users()->can($user, $module, 'read') || !$this->users()->can($user, 'file', 'delete')) {
-            $this->fail('Khong co quyen xoa file', 403);
+            $this->fail('Không có quyền xóa file', 403);
         }
         return $user;
     }
@@ -190,7 +190,7 @@ final class FileController extends BaseController
     private function streamFile(string $id, bool $download): void
     {
         $file = $this->files->find((int) $id);
-        if (!$file) $this->fail('Khong tim thay file', 404);
+        if (!$file) $this->fail('Không tìm thấy file', 404);
         $entityType = $this->storage->normalizeEntityType((string) ($file['entity_type'] ?? $file['module'] ?? ''));
         $this->requirePermission($this->storage->permissionModule($entityType), 'read');
         $diagnostics = $this->storage->filePathDiagnostics((string) ($file['file_path'] ?? ''));

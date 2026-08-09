@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260809-super-admin-guard');
+define('APP_ASSET_VERSION', 'deploy-utf8-9973b44');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 require_once BASE_PATH . '/config/env.php';
@@ -61,6 +61,7 @@ use App\Controllers\PartyMemberController;
 use App\Controllers\PermissionController;
 use App\Controllers\PlatformSettingsController;
 use App\Controllers\PolicyAlertController;
+use App\Controllers\PolicySubjectController;
 use App\Controllers\PersonController;
 use App\Controllers\PhotoGalleryController;
 use App\Controllers\ProfileController;
@@ -520,6 +521,26 @@ $router->get('/api/policy-alerts/print', [PolicyAlertController::class, 'print']
 $router->get('/api/policy-alerts/export-excel', [PolicyAlertController::class, 'exportExcel']);
 $router->get('/api/policy-alerts/export-pdf', [PolicyAlertController::class, 'exportPdf']);
 $router->post('/api/policy-alerts/{citizenId}/mark', [PolicyAlertController::class, 'mark']);
+
+$router->get('/api/policy-subjects/catalogs', [PolicySubjectController::class, 'catalogs']);
+$router->get('/api/policy-subjects/types', [PolicySubjectController::class, 'types']);
+$router->post('/api/policy-subjects/types', [PolicySubjectController::class, 'storeType']);
+$router->put('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'updateType']);
+$router->delete('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'deleteType']);
+$router->get('/api/policy-subjects/records', [PolicySubjectController::class, 'index']);
+$router->post('/api/policy-subjects/records', [PolicySubjectController::class, 'store']);
+$router->get('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'show']);
+$router->put('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'update']);
+$router->delete('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'destroy']);
+$router->post('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'uploadAttachment']);
+$router->get('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'attachments']);
+$router->delete('/api/policy-subjects/attachments/{id}', [PolicySubjectController::class, 'deleteAttachment']);
+$router->get('/api/policy-subjects/dashboard', [PolicySubjectController::class, 'dashboard']);
+$router->get('/api/policy-subjects/report', [PolicySubjectController::class, 'report']);
+$router->get('/api/policy-subjects/citizen-search', [PolicySubjectController::class, 'citizenSearch']);
+$router->get('/api/policy-subjects/citizens/{citizenId}', [PolicySubjectController::class, 'citizenSummary']);
+$router->get('/api/policy-subjects/export-excel', [PolicySubjectController::class, 'exportExcel']);
+$router->get('/api/policy-subjects/export-pdf', [PolicySubjectController::class, 'exportPdf']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
@@ -1126,6 +1147,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/finance.min.js',
         'assets/js/photo-gallery.min.js',
         'assets/js/policy-alerts.min.js',
+        'assets/js/policy-subjects.min.js',
         'assets/js/view-inline-patches.min.js',
         'assets/js/notifications.min.js',
         'assets/js/module-dashboards.min.js',

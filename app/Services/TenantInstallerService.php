@@ -460,7 +460,7 @@ final class TenantInstallerService
             return ['message' => 'File cấu hình đã tồn tại', 'file' => basename($path)];
         }
         $lines = [
-            'APP_NAME=' . $this->envQuote('He thong Quan ly Hanh chinh'),
+            'APP_NAME=' . $this->envQuote('Hệ thống Quản lý Hành chính'),
             'APP_URL=' . $this->envQuote((string) $input['app_url']),
             'APP_KEY=' . $this->envQuote(bin2hex(random_bytes(32))),
             'APP_TIMEZONE=Asia/Ho_Chi_Minh',

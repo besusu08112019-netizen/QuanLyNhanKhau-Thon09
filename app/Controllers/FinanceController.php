@@ -28,7 +28,7 @@ final class FinanceController extends BaseController
     {
         $this->requirePermission('finance', 'read');
         $row = $this->finance->find((int)$id);
-        if (!$row) $this->fail('Khong tim thay phieu thu chi', 404);
+        if (!$row) $this->fail('Không tìm thấy phiếu thu chi', 404);
         $this->ok($row);
     }
 
@@ -37,7 +37,7 @@ final class FinanceController extends BaseController
         $user = $this->requirePermission('finance', 'create');
         try {
             $row = $this->finance->upsert((array)$this->input(), (int)$user['id']);
-            $this->audit($user, 'finance', 'create', 'Them phieu thu chi', $row['id'], ['after' => $row]);
+            $this->audit($user, 'finance', 'create', 'Thêm phiếu thu chi', $row['id'], ['after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -49,9 +49,9 @@ final class FinanceController extends BaseController
         $user = $this->requirePermission('finance', 'update');
         try {
             $before = $this->finance->find((int)$id);
-            if (!$before) $this->fail('Khong tim thay phieu thu chi', 404);
+            if (!$before) $this->fail('Không tìm thấy phiếu thu chi', 404);
             $row = $this->finance->upsert((array)$this->input(), (int)$user['id'], (int)$id);
-            $this->audit($user, 'finance', 'update', 'Cap nhat phieu thu chi', $id, ['before' => $before, 'after' => $row]);
+            $this->audit($user, 'finance', 'update', 'Cập nhật phiếu thu chi', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -62,25 +62,25 @@ final class FinanceController extends BaseController
     {
         $user = $this->requirePermission('finance', 'delete');
         $before = $this->finance->find((int)$id);
-        if (!$before) $this->fail('Khong tim thay phieu thu chi', 404);
+        if (!$before) $this->fail('Không tìm thấy phiếu thu chi', 404);
         $this->finance->softDelete((int)$id, (int)$user['id']);
-        $this->audit($user, 'finance', 'delete', 'Xoa phieu thu chi', $id, ['before' => $before], 'WARN');
+        $this->audit($user, 'finance', 'delete', 'Xóa phiếu thu chi', $id, ['before' => $before], 'WARN');
         $this->ok(['id' => (int)$id]);
     }
 
     public function uploadAttachment(string $id): void
     {
         $user = $this->requirePermission('finance', 'upload');
-        if (!$this->finance->find((int)$id)) $this->fail('Khong tim thay phieu thu chi', 404);
+        if (!$this->finance->find((int)$id)) $this->fail('Không tìm thấy phiếu thu chi', 404);
         $file = $_FILES['file'] ?? null;
         if (!is_array($file)) $this->fail('Vui long chon file dinh kem', 422);
         $storage = new FileStorageService();
         $info = $storage->inspectUpload($file, $this->fileType($file), 'finance_transaction');
-        if (!$this->allowedMime($info['mime'])) throw new \RuntimeException('Dinh dang file khong duoc ho tro');
+        if (!$this->allowedMime($info['mime'])) throw new \RuntimeException('Định dạng file không được hỗ trợ');
         $stored = $storage->storeUpload($file, 'finance_transaction', $this->categoryForMime($info['mime']), $info['extension']);
         $stored['mime'] = $info['mime'];
         $row = $this->finance->addAttachment((int)$id, $stored, $file, (int)$user['id']);
-        $this->audit($user, 'finance', 'upload', 'Dinh kem chung tu thu chi', $id, ['file' => $row]);
+        $this->audit($user, 'finance', 'upload', 'Đính kèm chứng từ thu chi', $id, ['file' => $row]);
         $this->ok($row);
     }
 
@@ -91,9 +91,9 @@ final class FinanceController extends BaseController
     {
         $user = $this->requirePermission('finance', 'delete');
         $before = $this->finance->attachment((int)$id, (int)$fileId);
-        if (!$before) $this->fail('Khong tim thay file dinh kem', 404);
+        if (!$before) $this->fail('Không tìm thấy file đính kèm', 404);
         $this->finance->deleteAttachment((int)$id, (int)$fileId, (int)$user['id']);
-        $this->audit($user, 'finance', 'delete_attachment', 'Xoa chung tu thu chi', $id, ['file' => $before]);
+        $this->audit($user, 'finance', 'delete_attachment', 'Xóa chứng từ thu chi', $id, ['file' => $before]);
         $this->ok(['id' => (int)$fileId]);
     }
 
@@ -125,7 +125,7 @@ final class FinanceController extends BaseController
         $pdf->addMeta('Tong chi: ' . number_format((float)$report['summary']['total_expense'], 0, ',', '.') . ' VND');
         $pdf->addMeta('Con lai: ' . number_format((float)$report['summary']['balance'], 0, ',', '.') . ' VND');
         $pdf->addTable($report['headers'], $report['rows']);
-        $pdf->addSignatureBlock('Nguoi lap bieu');
+        $pdf->addSignatureBlock('Người lập biểu');
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="bao-cao-thu-chi-' . date('Ymd_His') . '.pdf"');
         echo $pdf->output();
@@ -136,12 +136,12 @@ final class FinanceController extends BaseController
     {
         $this->requirePermission('finance', 'read');
         $file = $this->finance->attachment($id, $fileId);
-        if (!$file) $this->fail('Khong tim thay file dinh kem', 404);
+        if (!$file) $this->fail('Không tìm thấy file đính kèm', 404);
         $storage = new FileStorageService();
         $path = $storage->safeFilePath((string)$file['stored_path']);
         if (!$path || !is_file($path)) $this->fail('File khong con ton tai', 404);
         $mime = mime_content_type($path) ?: (string)$file['mime_type'];
-        if (!$this->allowedMime($mime)) $this->fail('Dinh dang file khong duoc ho tro', 415);
+        if (!$this->allowedMime($mime)) $this->fail('Định dạng file không được hỗ trợ', 415);
         header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));

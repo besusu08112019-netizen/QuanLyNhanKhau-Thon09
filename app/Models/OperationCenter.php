@@ -195,8 +195,8 @@ final class OperationCenter extends BaseModel
                     ['key' => 'population', 'label' => 'Dan cu', 'screen' => 'households', 'items' => [
                         ['label' => 'Tong ho', 'value' => $metrics['households']],
                         ['label' => 'Tong nhan khau', 'value' => $metrics['citizens']],
-                        ['label' => 'Tam tru', 'value' => $metrics['temporary_residence']],
-                        ['label' => 'Tam vang', 'value' => $metrics['temporary_absence']],
+                        ['label' => 'Tạm trú', 'value' => $metrics['temporary_residence']],
+                        ['label' => 'Tạm vắng', 'value' => $metrics['temporary_absence']],
                     ]],
                     ['key' => 'operations', 'label' => 'Dieu hanh', 'screen' => 'workTasks', 'items' => [
                         ['label' => 'Cong viec', 'value' => $metrics['work_tasks']],
@@ -206,9 +206,9 @@ final class OperationCenter extends BaseModel
                     ]],
                     ['key' => 'records', 'label' => 'Ho so va tai san', 'screen' => 'documents', 'items' => [
                         ['label' => 'Van ban', 'value' => $metrics['documents']],
-                        ['label' => 'Cong trinh', 'value' => $metrics['public_assets']],
+                        ['label' => 'Công trình', 'value' => $metrics['public_assets']],
                         ['label' => 'Can bao tri', 'value' => $metrics['maintenance_due']],
-                        ['label' => 'Ho ngheo', 'value' => $metrics['poor_households']],
+                        ['label' => 'Hộ nghèo', 'value' => $metrics['poor_households']],
                     ]],
                     ['key' => 'finance', 'label' => 'Thu chi thang', 'screen' => 'finance', 'items' => [
                         ['label' => 'Thu', 'value' => $finance['finance_income_month']],

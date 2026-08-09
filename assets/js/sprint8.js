@@ -218,13 +218,13 @@
   function printPersonDetail(row) {
     if (!window.TenantAppPrint) return showToast('Print Framework is not ready', 'warning');
     window.TenantAppPrint.render({
-      title: 'Phieu thong tin nhan khau',
+      title: 'Phiếu thông tin nhân khẩu',
       type: 'citizen-detail',
       orientation: 'portrait',
       paperSize: 'A4',
-      headers: ['Th?ng tin', 'Gi? tr?'],
-      headers: ['Thong tin', 'Gia tri'],
-      filters: { 'Nhan khau': row.full_name || '', 'Ma nhan khau': row.citizen_code || '', 'Ma ho': row.household_code || '' },
+      headers: ['Thông tin', 'Giá trị'],
+      headers: ['Thông tin', 'Giá trị'],
+      filters: { 'Nhân khẩu': row.full_name || '', 'Ma nhan khau': row.citizen_code || '', 'Mã hộ': row.household_code || '' },
       repeatHeader: true,
       showFooter: true,
       showSummary: false,
@@ -234,27 +234,27 @@
 
   function personPrintRows(row) {
     return [
-      ['Ma ho', row.household_code],
+      ['Mã hộ', row.household_code],
       ['Ma nhan khau', row.citizen_code],
-      ['Ho va ten', row.full_name],
-      ['Ngay sinh', formatDate(row.date_of_birth)],
+      ['Họ và tên', row.full_name],
+      ['Ngày sinh', formatDate(row.date_of_birth)],
       ['Tuoi', ageText(row.date_of_birth)],
-      ['Gioi tinh', row.gender],
-      ['CCCD/So dinh danh', row.identity_number || row.personal_id || row.national_id],
-      ['So dien thoai', row.phone],
-      ['Quan he voi chu ho', row.relationship],
-      ['D?n t?c', row.ethnicity],
-      ['Ngh? nghi?p', row.occupation],
-      ['H?c v?n', row.education_level],
-      ['H?n nh?n', row.marital_status],
-      ['C? tr?', residencyLabel(row.residency_status)],
-      ['Hi?n t?i', presenceLabel(row.presence_status)],
-      ['Ch? h?', row.head_citizen_name],
-      ['H? t?n b?', row.father_name || row.father_display_name],
-      ['H? t?n m?', row.mother_name || row.mother_display_name],
-      ['??ng vi?n', Number(row.party_member) === 1 ? 'C?' : ''],
-      ['??i t??ng ch?nh s?ch', policyLabels(row).join(', ')],
-      ['Ghi ch?', row.note]
+      ['Giới tính', row.gender],
+      ['CCCD/Số định danh', row.identity_number || row.personal_id || row.national_id],
+      ['Số điện thoại', row.phone],
+      ['Quan hệ với chủ hộ', row.relationship],
+      ['Dân tộc', row.ethnicity],
+      ['Nghề nghiệp', row.occupation],
+      ['Học vấn', row.education_level],
+      ['Hôn nhân', row.marital_status],
+      ['Cư trú', residencyLabel(row.residency_status)],
+      ['Hiện tại', presenceLabel(row.presence_status)],
+      ['Chủ hộ', row.head_citizen_name],
+      ['Họ tên bố', row.father_name || row.father_display_name],
+      ['Họ tên mẹ', row.mother_name || row.mother_display_name],
+      ['Đảng viên', Number(row.party_member) === 1 ? 'Có' : ''],
+      ['Đối tượng chính sách', policyLabels(row).join(', ')],
+      ['Ghi chú', row.note]
     ].filter(item => hasValue(item[1]));
   }
 
@@ -296,14 +296,14 @@
   window.resetUserPassword = async function resetUserPassword(id) {
     const row = await api('/api/users/' + id);
     if (String(row.role || '').toUpperCase() === 'SUPER_ADMIN') {
-      showToast('Tai khoan Super Admin duoc bao ve, khong the dat lai mat khau tai day', 'warning');
+      showToast('Tài khoản Super Admin được bảo vệ, không thể đặt lại mật khẩu tại đây', 'warning');
       return;
     }
-    const password = prompt('Nhap mat khau moi toi thieu 8 ky tu');
+    const password = prompt('Nhập mật khẩu mới tối thiểu 8 ký tự');
     if (!password) return;
-    if (password.length < 8) return showToast('Mat khau toi thieu 8 ky tu', 'warning');
+    if (password.length < 8) return showToast('Mật khẩu tối thiểu 8 ký tự', 'warning');
     await api('/api/users/' + id, { method: 'PUT', body: { displayName: row.displayName, role: row.role, phone: row.phone, position: row.position, password } });
-    showToast('Da dat lai mat khau');
+    showToast('Đã đặt lại mật khẩu');
   };
 
   function formatDateTime(value) { if (!value) return ''; const date = new Date(String(value).replace(' ', 'T')); return Number.isNaN(date.getTime()) ? formatDate(value) : date.toLocaleString('vi-VN'); }

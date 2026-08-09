@@ -64,7 +64,7 @@
     if (options.body) headers['Content-Type'] = 'application/json';
     const response = await fetch(path, { method: options.method || 'GET', headers, body: options.body ? JSON.stringify(options.body) : undefined, cache: 'no-store' });
     const payload = await response.json().catch(() => null);
-    if (!response.ok || payload?.ok === false) throw new Error(payload?.error?.message || payload?.message || 'Khong tai duoc thong bao');
+    if (!response.ok || payload?.ok === false) throw new Error(payload?.error?.message || payload?.message || 'Không tải được thông báo');
     return payload?.data ?? payload;
   }
 

@@ -842,7 +842,7 @@ SQL);
     {
         $categoryId = (int) ($data['category_id'] ?? $data['categoryId'] ?? 0);
         $category = $categoryId > 0 ? $this->findCategory($categoryId) : null;
-        if ($categoryId > 0 && !$category) throw new \RuntimeException('Khong tim thay khoan thu');
+        if ($categoryId > 0 && !$category) throw new \RuntimeException('Không tìm thấy khoản thu');
         $name = trim((string) ($data['contribution_name'] ?? $data['contributionName'] ?? ($category['name'] ?? '')));
         if ($name === '') throw new \RuntimeException('Vui long chon khoan thu truoc khi tao dot thu');
         $year = (int) ($data['year'] ?? date('Y'));

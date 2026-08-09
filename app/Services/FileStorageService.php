@@ -141,7 +141,7 @@ final class FileStorageService
             'zip' => ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'],
         ];
         if (!isset($allowed[$extension])) {
-            throw new \RuntimeException('Dinh dang file khong duoc ho tro');
+            throw new \RuntimeException('Định dạng file không được hỗ trợ');
         }
         $mime = mime_content_type($file['tmp_name']) ?: 'application/octet-stream';
         if (!in_array($mime, $allowed[$extension], true)) {
@@ -149,7 +149,7 @@ final class FileStorageService
         }
         $blocked = ['php', 'phtml', 'phar', 'js', 'mjs', 'html', 'htm', 'exe', 'bat', 'cmd', 'sh', 'com', 'scr', 'msi'];
         if (in_array($extension, $blocked, true)) {
-            throw new \RuntimeException('Dinh dang file thuc thi khong duoc phep');
+            throw new \RuntimeException('Định dạng file thực thi không được phép');
         }
         return ['mime' => $mime, 'extension' => $extension];
     }

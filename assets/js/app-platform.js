@@ -1190,7 +1190,7 @@
       return input(Object.assign({
         type: 'search',
         name: options.name || 'search',
-        placeholder: options.placeholder || 'Tim kiem',
+        placeholder: options.placeholder || 'Tìm kiếm',
         className: options.className || 'form-control platform-search'
       }, options));
     }
@@ -1302,7 +1302,7 @@
       var labels = {
         Loading: config.loadingText || 'Dang tai...',
         Loaded: config.loadedText || '',
-        Empty: config.emptyText || 'Khong co du lieu',
+        Empty: config.emptyText || 'Không có dữ liệu',
         Error: config.errorText || error || 'Khong the tai du lieu'
       };
       return element('div', {
@@ -1347,7 +1347,7 @@
         var emptyRow = element('tr', { className: 'platform-table-empty-row' });
         emptyRow.appendChild(element('td', {
           className: 'platform-table-empty',
-          text: options.emptyText || 'Khong co du lieu',
+          text: options.emptyText || 'Không có dữ liệu',
           attrs: { colspan: String(Math.max(columns.length, 1)) }
         }));
         tbody.appendChild(emptyRow);
@@ -1541,9 +1541,9 @@
       var config = options || {};
       var fields = config.fields || formService.fieldsFor(formKey, sectionKey);
       var labels = {
-        basic: 'Thong tin co ban',
-        linked: 'Thong tin lien ket',
-        extended: 'Thong tin mo rong',
+        basic: 'Thông tin cơ bản',
+        linked: 'Thông tin liên kết',
+        extended: 'Thông tin mở rộng',
         history: 'Lich su',
         attachments: 'Tep dinh kem'
       };
@@ -1651,7 +1651,7 @@
         bulkActions: toArray(record.bulkActions),
         states: Object.assign({
           loading: 'Dang tai...',
-          empty: 'Khong co du lieu',
+          empty: 'Không có dữ liệu',
           error: 'Khong the tai du lieu'
         }, record.states || {})
       });
@@ -1729,7 +1729,7 @@
         children.push(componentService.searchBox({
           name: 'search',
           value: current.search || '',
-          placeholder: list.search.placeholder || config.searchPlaceholder || 'Tim kiem',
+          placeholder: list.search.placeholder || config.searchPlaceholder || 'Tìm kiếm',
           dataset: { listKey: listKey }
         }));
       }
@@ -1758,7 +1758,7 @@
         columns: listService.columnsFor(listKey, config),
         rows: rows || [],
         rowKey: config.rowKey || list.rowKey || 'id',
-        emptyText: list.states && list.states.empty || 'Khong co du lieu',
+        emptyText: list.states && list.states.empty || 'Không có dữ liệu',
         className: config.className || 'table platform-table',
         attrs: { 'data-list-key': listKey }
       });
@@ -2221,9 +2221,9 @@
       }, options.sections || {});
       var tabs = toArray(options.tabs).length ? toArray(options.tabs) : standardSectionOrder.map(function (key) {
         var labels = {
-          basic: 'Thong tin co ban',
-          linked: 'Thong tin lien ket',
-          extended: 'Thong tin mo rong',
+          basic: 'Thông tin cơ bản',
+          linked: 'Thông tin liên kết',
+          extended: 'Thông tin mở rộng',
           history: 'Lich su',
           attachments: 'Tep dinh kem'
         };
@@ -4177,9 +4177,9 @@
     var labels = {
       list: 'Danh sach',
       detail: 'Chi tiet',
-      create: 'Them moi',
+      create: 'Thêm mới',
       edit: 'Chinh sua',
-      delete: 'Xoa',
+      delete: 'Xóa',
       import: 'Import',
       export: 'Export',
       log: 'Nhat ky'

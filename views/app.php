@@ -260,7 +260,7 @@
 
       <section id="financeScreen" class="screen household-management-screen module-placeholder-screen finance-screen">
         <div class="content-card module-filter-card ds-module-shell">
-          <div class="module-page-head"><div><h2>Thu chi</h2><p class="text-muted mb-0">Quan ly quy, phieu thu, phieu chi, chung tu dinh kem va bao cao tai chinh.</p></div></div>
+          <div class="module-page-head"><div><h2>Thu chi</h2><p class="text-muted mb-0">Quản lý quỹ, phiếu thu, phiếu chi, chứng từ đính kèm và báo cáo tài chính.</p></div></div>
           <div class="text-muted py-4">Dang tai module thu chi...</div>
         </div>
       </section>
@@ -313,7 +313,7 @@
         <div class="content-card module-filter-card household-filter-card">
           <div class="household-filter-grid">
             <div class="module-field household-search-field"><label for="householdSearch">Tìm kiếm</label><div class="module-search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input id="householdSearch" class="form-control" placeholder="Tìm mã hộ, chủ hộ, địa chỉ..."></div></div>
-            <div class="module-field"><label for="householdCategoryFilter">Diện hộ</label><select id="householdCategoryFilter" class="form-select"><option value="">Tất cả</option><option value="poor">Hộ nghèo</option><option value="near_poor">Hộ cận nghèo</option><option value="escaped_poverty">Hộ mới thoát nghèo</option><option value="policy">Hộ chính sách</option><option value="meritorious">Hộ có công</option><option value="normal">Hộ bình thường</option><option value="other">Khác</option></select></div>
+            <div class="module-field"><label for="householdCategoryFilter">Diện hộ</label><select id="householdCategoryFilter" class="form-select"><option value="">Tất cả</option><option value="poor">Hộ nghèo</option><option value="near_poor">Hộ cận nghèo</option><option value="average">Hộ trung bình</option><option value="escaped_poverty">Hộ mới thoát nghèo</option><option value="policy">Hộ chính sách</option><option value="meritorious">Hộ có công</option><option value="normal">Hộ bình thường</option><option value="other">Khác</option></select></div>
             <div class="module-field"><label for="householdStatusFilter">Trạng thái</label><select id="householdStatusFilter" class="form-select"><option value="">Tất cả</option><option value="active">Đang quản lý</option><option value="temporary_absence">Có tạm vắng</option><option value="empty_home">Không có người ở nhà</option></select></div>
             <div class="module-field module-page-size-field"><label for="householdPageSize">Hiển thị</label><select id="householdPageSize" class="form-select"><option>20</option><option>50</option><option>100</option></select></div>
             <button id="householdFilterReset" class="btn module-reset-btn" type="button"><i class="fa-solid fa-rotate-right"></i> Làm mới</button>
@@ -685,7 +685,7 @@
             <div class="report-field"><label class="form-label">Tu&#7893;i t&#7915;</label><input name="ageFrom" type="number" min="0" class="form-control"></div>
             <div class="report-field"><label class="form-label">Tu&#7893;i &#273;&#7871;n</label><input name="ageTo" type="number" min="0" class="form-control"></div>
             <div class="report-field"><label class="form-label">Ngh&#7873; nghi&#7879;p</label><input name="occupation" class="form-control" placeholder="Ngh&#7873; nghi&#7879;p"></div>
-            <div class="report-field"><label class="form-label">Di&#7879;n h&#7897;</label><select name="category" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="poor">H&#7897; ngh&#232;o</option><option value="near_poor">H&#7897; c&#7853;n ngh&#232;o</option><option value="meritorious">H&#7897; c&#243; c&#244;ng</option><option value="policy">H&#7897; ch&#237;nh s&#225;ch</option><option value="normal">H&#7897; b&#236;nh th&#432;&#7901;ng</option></select></div>
+            <div class="report-field"><label class="form-label">Di&#7879;n h&#7897;</label><select name="category" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="poor">H&#7897; ngh&#232;o</option><option value="near_poor">H&#7897; c&#7853;n ngh&#232;o</option><option value="average">H&#7897; trung b&#236;nh</option><option value="meritorious">H&#7897; c&#243; c&#244;ng</option><option value="policy">H&#7897; ch&#237;nh s&#225;ch</option><option value="normal">H&#7897; b&#236;nh th&#432;&#7901;ng</option></select></div>
             <div class="report-field"><label class="form-label">C&#432; tr&#250;</label><select name="residencyStatus" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="PERMANENT">Th&#432;&#7901;ng tr&#250;</option><option value="TEMPORARY">T&#7841;m tr&#250;</option></select></div>
             <div class="report-field"><label class="form-label">Hi&#7879;n di&#7879;n</label><select name="presenceStatus" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="AT_HOME">&#7902; nh&#224;</option><option value="AWAY">T&#7841;m v&#7855;ng</option></select></div>
             <div class="report-field"><label class="form-label">GPS</label><select name="gpsStatus" class="form-select"><option value="">T&#7845;t c&#7843;</option><option value="located">&#272;&#227; &#273;&#7883;nh v&#7883;</option><option value="missing">Ch&#432;a &#273;&#7883;nh v&#7883;</option></select></div>
@@ -874,6 +874,7 @@
   <script charset="utf-8" src="/assets/js/complaints.min.js"></script>
   <script charset="utf-8" src="/assets/js/work-tasks.min.js"></script>
   <script charset="utf-8" src="/assets/js/policy-alerts.min.js"></script>
+  <script charset="utf-8" src="/assets/js/policy-subjects.min.js"></script>
   <script charset="utf-8" src="/assets/js/module-dashboards.min.js"></script>
   <script charset="utf-8" src="/assets/js/data-quality.min.js"></script>
   <script charset="utf-8" src="/assets/js/mobile-component-library.min.js"></script>

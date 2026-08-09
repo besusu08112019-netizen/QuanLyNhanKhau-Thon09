@@ -1,8 +1,8 @@
 (() => {
   const householdCategories = [
-    ['', 'Tat ca'],
-    ['poor', 'Ho ngheo'],
-    ['near_poor', 'Ho can ngheo'],
+    ['', 'Tất cả'],
+    ['poor', 'Hộ nghèo'],
+    ['near_poor', 'Hộ cận nghèo'],
     ['escaped_poverty', 'Ho moi thoat ngheo'],
     ['policy', 'Ho chinh sach'],
     ['meritorious', 'Ho co cong'],
@@ -88,23 +88,23 @@
         const id = Number(dataset.id || dataset.householdId || 0);
         if (id && typeof window.deleteHousehold === 'function') window.deleteHousehold(id);
       } })
-      .register({ key: 'household.print', handler: () => window.TenantAppPrint?.currentScreen({ title: 'Phieu ho gia dinh', orientation: 'portrait', showSummary: false }) || showToast('Print Framework is not ready', 'warning') })
+      .register({ key: 'household.print', handler: () => window.TenantAppPrint?.currentScreen({ title: 'Phieu ho gia dinh', orientation: 'portrait', showSummary: false }) || showToast('Khung in chưa sẵn sàng', 'warning') })
       .register({ key: 'reports.view', handler: () => viewReportFromApi() });
   }
 
 
   const politicalCitizenFields = [
-    ['partyMember','Dang vien'], ['youthUnionMember','Doan vien Thanh nien'], ['womenUnionMember','Hoi vien Hoi Phu nu'], ['farmersUnionMember','Hoi vien Hoi Nong dan'], ['veteransUnionMember','Hoi vien Hoi Cuu chien binh'], ['elderlyUnionMember','Hoi vien Hoi Nguoi cao tuoi'],
+    ['partyMember','Đảng viên'], ['youthUnionMember','Đoàn viên Thanh nien'], ['womenUnionMember','Hoi vien Hoi Phu nu'], ['farmersUnionMember','Hoi vien Hoi Nong dan'], ['veteransUnionMember','Hoi vien Hoi Cuu chien binh'], ['elderlyUnionMember','Hoi vien Hoi Người cao tuổi'],
   ];
   const policyCitizenFields = [
-    ['martyrRelative','Than nhan liet si'], ['woundedSoldier','Thuong binh'], ['sickSoldier','Benh binh'], ['chemicalWarfareVictim','Nguoi hoat dong khang chien bi nhiem chat doc hoa hoc'],
-    ['imprisonedResistanceActivist','Nguoi hoat dong khang chien bi dich bat tu, day'], ['youthVolunteer','Thanh nien xung phong'], ['resistanceHero','Anh hung LLVTND / Anh hung Lao dong thoi ky khang chien'], ['revolutionaryActivist','Nguoi hoat dong cach mang'],
+    ['martyrRelative','Thân nhân liệt sĩ'], ['woundedSoldier','Thương binh'], ['sickSoldier','Bệnh binh'], ['chemicalWarfareVictim','Người hoạt động kháng chiến bị nhiễm chất độc hóa học'],
+    ['imprisonedResistanceActivist','Người hoạt động kháng chiến bị địch bắt tù, đày'], ['youthVolunteer','Thanh niên xung phong'], ['resistanceHero','Anh hùng LLVTND / Anh hùng Lao động thời kỳ kháng chiến'], ['revolutionaryActivist','Người hoạt động cách mạng'],
   ];
   const socialSecurityCitizenFields = [
-    ['disabledPerson','Nguoi khuyet tat'], ['socialAssistance','Dang huong tro cap xa hoi'],
+    ['disabledPerson','Người khuyết tật'], ['socialAssistance','Đang hưởng trợ cấp xã hội'],
   ];
   const laborCitizenFields = [
-    ['employed','Co viec lam'], ['unemployed','That nghiep'], ['freelanceLabor','Lao dong tu do'], ['outProvinceLabor','Lao dong ngoai tinh'], ['foreignLabor','Lao dong nuoc ngoai'], ['notAttendingSchool','Chua di hoc'], ['pupil','Hoc sinh'], ['student','Sinh vien'], ['retired','Nghi huu'],
+    ['employed','Co viec lam'], ['unemployed','That nghiep'], ['freelanceLabor','Lao động tu do'], ['outProvinceLabor','Lao động ngoai tinh'], ['foreignLabor','Lao động nuoc ngoai'], ['notAttendingSchool','Chua di hoc'], ['pupil','Hoc sinh'], ['student','Sinh vien'], ['retired','Nghi huu'],
   ];
   const citizenPolicyDefaults = window.AppSettings?.citizenPolicyDefaults || {};
   const digitalCitizenFields = [...politicalCitizenFields, ...policyCitizenFields, ...socialSecurityCitizenFields, ...laborCitizenFields];
@@ -124,7 +124,7 @@
     bindPersonAgeDefaults(form);
     if (!form.querySelector('[data-digital-citizen-fields]')) {
       const group = (title, fields) => '<div class="col-12" data-digital-citizen-fields><div class="border rounded p-3"><div class="fw-semibold mb-2">' + title + '</div><div class="row g-2">' + fields.map(([name,label]) => '<div class="col-md-3 col-sm-6 form-check ms-2"><input class="form-check-input" type="checkbox" name="' + name + '" id="' + name + '"><label class="form-check-label" for="' + name + '">' + label + '</label></div>').join('') + '</div></div></div>';
-      bodyRow.insertAdjacentHTML('beforeend', group('Chinh tri - Xa hoi', politicalCitizenFields) + group('DOI TUONG CHINH SACH', policyCitizenFields) + group('AN SINH XA HOI', socialSecurityCitizenFields) + group('Lao dong', laborCitizenFields));
+      bodyRow.insertAdjacentHTML('beforeend', group('Chinh tri - Xa hoi', politicalCitizenFields) + group('DOI TUONG CHINH SACH', policyCitizenFields) + group('AN SINH XA HOI', socialSecurityCitizenFields) + group('Lao động', laborCitizenFields));
     }
     const originalOpen = window.openPersonForm;
     if (typeof originalOpen === 'function' && !originalOpen.__digitalWrapped) {
@@ -226,7 +226,7 @@
     const key = normalizeDefaultText(value);
     const labels = Array.isArray(citizenPolicyDefaults.healthInsuranceDefaultOccupations)
       ? citizenPolicyDefaults.healthInsuranceDefaultOccupations
-      : ['Hoc sinh', 'Nguoi cao tuoi (70+)'];
+      : ['Hoc sinh', 'Người cao tuổi (70+)'];
     return labels.some(label => normalizeDefaultText(label) === key);
   }
 
@@ -242,7 +242,7 @@
     const age = calculatePersonAge(form.elements.dateOfBirth?.value);
     const elderlyAge = Number(citizenPolicyDefaults.elderlyOccupationDefaultAge);
     if (Number.isFinite(elderlyAge) && age !== null && age >= elderlyAge) {
-      return citizenPolicyDefaults.elderlyOccupationLabel || 'Nguoi cao tuoi (70+)';
+      return citizenPolicyDefaults.elderlyOccupationLabel || 'Người cao tuổi (70+)';
     }
     return '';
   }
@@ -288,7 +288,7 @@
     if (form.elements.unemployed && form.elements.unemployed.dataset.userEditedStudentDefault !== '1') form.elements.unemployed.checked = false;
     const occupationDefault = defaultOccupationForDateOfBirth(form, defaults);
     const studentLabel = citizenPolicyDefaults.studentLabel || 'Hoc sinh';
-    const elderlyLabel = citizenPolicyDefaults.elderlyOccupationLabel || 'Nguoi cao tuoi (70+)';
+    const elderlyLabel = citizenPolicyDefaults.elderlyOccupationLabel || 'Người cao tuổi (70+)';
     ['educationLevel', 'occupation'].forEach(name => {
       const el = form.elements[name];
       if (!el || el.dataset.userEditedStudentDefault === '1') return;
@@ -320,15 +320,15 @@
     const nav = document.createElement('ul');
     nav.className = 'nav nav-tabs mb-3';
     nav.dataset.personProfileTabs = '1';
-    nav.innerHTML = '<li class="nav-item"><button class="nav-link active" type="button" data-platform-action="personProfile.tab" data-person-tab="info">Thong tin</button></li>'
-      + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="personProfile.tab" data-person-tab="files">Ho so so</button></li>'
+    nav.innerHTML = '<li class="nav-item"><button class="nav-link active" type="button" data-platform-action="personProfile.tab" data-person-tab="info">Thông tin</button></li>'
+      + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="personProfile.tab" data-person-tab="files">Hồ sơ số</button></li>'
       + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="personProfile.tab" data-person-tab="timeline">Lich su</button></li>';
     const infoPane = document.createElement('section');
     infoPane.dataset.personPane = 'info';
     const filesPane = document.createElement('section');
     filesPane.dataset.personPane = 'files';
     filesPane.className = 'd-none';
-    filesPane.innerHTML = '<div class="text-muted small py-3">Chon tab Ho so so de tai tai lieu.</div>';
+    filesPane.innerHTML = '<div class="text-muted small py-3">Chon tab Hồ sơ số de tai tai lieu.</div>';
     const timelinePane = document.createElement('section');
     timelinePane.dataset.personPane = 'timeline';
     timelinePane.className = 'd-none';
@@ -364,7 +364,7 @@
       pane.innerHTML = '<div class="alert alert-info py-2 mb-0">Vui long luu nhan khau truoc khi quan ly ho so so.</div>';
       return;
     }
-    pane.innerHTML = '<div class="text-muted small py-3">Dang tai ho so so...</div>';
+    pane.innerHTML = '<div class="text-muted small py-3">Đang tải hồ sơ số...</div>';
     try {
       const files = await api('/api/files?' + new URLSearchParams({ module: 'citizen', entityId: String(id) }).toString());
       pane.innerHTML = renderPersonFileManager(Array.isArray(files) ? files : []);
@@ -386,7 +386,7 @@
 
   function renderPersonFileGroup(key, title, fileType, section, files) {
     const canUpdateCitizen = canAccess('citizen', 'update');
-    const rows = files.length ? files.map(file => '<tr><td><div class="fw-semibold">' + escapeHtml(file.original_name || file.file_name || 'Tep dinh kem') + '</div><div class="small text-muted">' + escapeHtml(file.description || file.profile_section || file.category || '') + '</div></td><td>' + escapeHtml(formatFileSize(file.file_size)) + '</td><td>' + escapeHtml(formatDateTime(file.created_at)) + '</td><td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-platform-action="personProfile.file.preview" data-file-id="' + Number(file.id || 0) + '">Xem</button><button class="btn btn-outline-secondary" type="button" data-platform-action="personProfile.file.download" data-file-id="' + Number(file.id || 0) + '">Tai</button>' + (canUpdateCitizen ? '<button class="btn btn-outline-danger" type="button" data-platform-action="personProfile.file.delete" data-file-id="' + Number(file.id || 0) + '">Xoa</button>' : '') + '</div></td></tr>').join('') : '<tr><td colspan="4" class="text-muted small">Chua co file.</td></tr>';
+    const rows = files.length ? files.map(file => '<tr><td><div class="fw-semibold">' + escapeHtml(file.original_name || file.file_name || 'Tệp đính kèm') + '</div><div class="small text-muted">' + escapeHtml(file.description || file.profile_section || file.category || '') + '</div></td><td>' + escapeHtml(formatFileSize(file.file_size)) + '</td><td>' + escapeHtml(formatDateTime(file.created_at)) + '</td><td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-platform-action="personProfile.file.preview" data-file-id="' + Number(file.id || 0) + '">Xem</button><button class="btn btn-outline-secondary" type="button" data-platform-action="personProfile.file.download" data-file-id="' + Number(file.id || 0) + '">Tải</button>' + (canUpdateCitizen ? '<button class="btn btn-outline-danger" type="button" data-platform-action="personProfile.file.delete" data-file-id="' + Number(file.id || 0) + '">Xóa</button>' : '') + '</div></td></tr>').join('') : '<tr><td colspan="4" class="text-muted small">Chưa có file.</td></tr>';
     return '<section class="border rounded p-3 mb-3" data-profile-file-group="' + key + '"><div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><h6 class="mb-0">' + title + '</h6><div class="d-flex flex-wrap gap-2"><input class="form-control form-control-sm" data-profile-description placeholder="Mo ta"><input type="file" class="d-none" data-profile-file-input data-file-type="' + fileType + '" data-section="' + section + '"><button class="btn btn-sm btn-primary" type="button" data-profile-upload data-platform-action="personProfile.file.upload">Upload</button></div></div><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Ten file</th><th>Dung luong</th><th>Ngay upload</th><th>Thao tac</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
   }
 
@@ -418,7 +418,7 @@
   }
 
   async function deletePersonProfileFile(form, fileId, id) {
-    if (!await confirmAction({ title: 'Xac nhan xoa file', message: 'Xoa file nay?', confirmLabel: 'Xoa file', tone: 'danger' })) return;
+    if (!await confirmAction({ title: 'Xác nhận xóa file', message: 'Xóa file này?', confirmLabel: 'Xóa file', tone: 'danger' })) return;
     try {
       await api('/api/files/' + encodeURIComponent(fileId), { method: 'DELETE' });
       showToast('Da xoa file');
@@ -431,7 +431,7 @@
 
   async function downloadProfileFile(id) {
     const response = await fetch('/api/files/' + encodeURIComponent(id) + '/download', { headers: { Authorization: 'Bearer ' + App.token }, cache: 'no-store' });
-    if (!response.ok) return showToast('Khong tai duoc file', 'danger');
+    if (!response.ok) return showToast('Không tải được file', 'danger');
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -450,7 +450,7 @@
       pane.innerHTML = '<div class="alert alert-info py-2 mb-0">Vui long luu nhan khau truoc khi xem lich su.</div>';
       return;
     }
-    pane.innerHTML = '<div class="text-muted small py-3">Dang tai lich su...</div>';
+    pane.innerHTML = '<div class="text-muted small py-3">Đang tải lịch sử...</div>';
     try {
       const items = await api('/api/timeline/citizen/' + encodeURIComponent(id));
       pane.innerHTML = renderPersonTimeline(Array.isArray(items) ? items : []);
@@ -488,7 +488,7 @@
   function setupDigitalReports() {
     const select = document.querySelector('#reportForm select[name="type"]');
     if (!select) return;
-    const options = [['party_member','Bao cao Dang vien'],['youth_union_member','Bao cao Doan vien'],['meritorious_person','Bao cao Nguoi co cong'],['poor-households','Bao cao Ho ngheo'],['near-poor-households','Bao cao Ho can ngheo'],['labor','Bao cao Lao dong'],['elderly','Bao cao Nguoi cao tuoi'],['children','Bao cao Tre em'],['disabled_person','Bao cao Nguoi khuyet tat']];
+    const options = [['party_member','Báo cáo Đảng viên'],['youth_union_member','Báo cáo Đoàn viên'],['meritorious_person','Báo cáo Người có công'],['poor-households','Báo cáo Hộ nghèo'],['near-poor-households','Báo cáo Hộ cận nghèo'],['labor','Báo cáo Lao động'],['elderly','Báo cáo Người cao tuổi'],['children','Báo cáo Trẻ em'],['disabled_person','Báo cáo Người khuyết tật']];
     options.forEach(([value,label]) => { if (!Array.from(select.options).some(o => o.value === value)) select.insertAdjacentHTML('beforeend', '<option value="' + value + '">' + label + '</option>'); });
   }
 
@@ -498,7 +498,7 @@
     if (document.querySelector('#partyChart')) return;
     const dashboard = document.querySelector('#dashboardScreen');
     if (!dashboard) return;
-    dashboard.insertAdjacentHTML('beforeend', '<div class="row g-3 mt-1" data-digital-charts><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Dang vien</h3><div id="partyChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Doan vien</h3><div id="youthChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Lao dong</h3><div id="laborChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Nghe nghiep</h3><div id="occupationChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Dan toc</h3><div id="ethnicityChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Ton giao</h3><div id="religionChart" class="chart-list"></div></div></div></div>');
+    dashboard.insertAdjacentHTML('beforeend', '<div class="row g-3 mt-1" data-digital-charts><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Đảng viên</h3><div id="partyChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Đoàn viên</h3><div id="youthChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Lao động</h3><div id="laborChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Nghề nghiệp</h3><div id="occupationChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Dân tộc</h3><div id="ethnicityChart" class="chart-list"></div></div></div><div class="col-lg-4"><div class="content-card"><h3 class="section-title">Ton giao</h3><div id="religionChart" class="chart-list"></div></div></div></div>');
   }
 
   function setupHouseholdCategoryFilters() {
@@ -531,10 +531,10 @@
         '<td>' + number(row.away_count || 0) + '</td>' +
         '<td>' + householdPresenceBadge(row) + '</td>' +
         '<td>' + householdBadges(row) + '</td>' +
-        '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="households.detail" data-id="' + row.id + '">Xem</button>' + (canUpdateHousehold ? ' <button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="households.edit" data-id="' + row.id + '">Sua</button>' : '') + (canDeleteHousehold ? ' <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="households.delete" data-id="' + row.id + '">Xa</button>' : '') + '</td>' +
-      '</tr>').join('') || emptyRow(9, 'Khng c d? li?u');
+        '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="households.detail" data-id="' + row.id + '">Xem</button>' + (canUpdateHousehold ? ' <button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="households.edit" data-id="' + row.id + '">Sửa</button>' : '') + (canDeleteHousehold ? ' <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="households.delete" data-id="' + row.id + '">Xóa</button>' : '') + '</td>' +
+      '</tr>').join('') || emptyRow(9, 'Không có dữ liệu');
       renderPager('#householdPager', data, page => { App.households.page = page; window.loadHouseholds(); });
-    } catch (error) { showToast('Khong tai duoc danh sach ho dan: ' + error.message, 'danger'); }
+    } catch (error) { showToast('Không tải được danh sách hộ dân: ' + error.message, 'danger'); }
   }
 
   function setupReportCategoryFilter() {
@@ -543,7 +543,7 @@
     if (form.querySelector('.report-filter-grid')) return;
     if (!form.querySelector('[name="householdType"]')) {
       const viewButtonCol = form.querySelector('button[type="submit"]')?.closest('[class*="col-"]');
-      const html = `<div class="col-md-2"><label class="form-label">Dien ho</label><select name="householdType" class="form-select">${householdCategories.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></div>`;
+      const html = `<div class="col-md-2"><label class="form-label">Diện hộ</label><select name="householdType" class="form-select">${householdCategories.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></div>`;
       (viewButtonCol || form.querySelector('.row')).insertAdjacentHTML('beforebegin', html);
     }
     window.TenantAppViewReport = viewReportFromApi;
@@ -560,13 +560,13 @@
     const countEl = document.querySelector('#reportCount');
     if (!form || !preview) return;
     try {
-      preview.innerHTML = '<p class="text-muted mb-0">Dang tai du lieu...</p>';
+      preview.innerHTML = '<p class="text-muted mb-0">Đang tải dữ liệu...</p>';
       const params = new URLSearchParams(new FormData(form));
       const data = await api('/api/reports/summary?' + params.toString());
-      if (titleEl) titleEl.textContent = data.title || 'Bao cao';
-      if (countEl) countEl.textContent = number(data.totalRows || 0) + ' dong';
+      if (titleEl) titleEl.textContent = data.title || 'Báo cáo';
+      if (countEl) countEl.textContent = number(data.totalRows || 0) + ' dòng';
       preview.innerHTML = reportTable(data.headers || [], data.rows || []);
-      if (printAfter) window.TenantAppPrint?.fromTable(preview.querySelector('table'), { title: data.title || 'Bao cao', type: params.get('type') || '', filters: Object.fromEntries(params.entries()), totalRows: data.totalRows, showSummary: true }) || showToast('Print Framework is not ready', 'warning');
+      if (printAfter) window.TenantAppPrint?.fromTable(preview.querySelector('table'), { title: data.title || 'Báo cáo', type: params.get('type') || '', filters: Object.fromEntries(params.entries()), totalRows: data.totalRows, showSummary: true }) || showToast('Khung in chưa sẵn sàng', 'warning');
     } catch (error) {
       preview.innerHTML = '<div class="alert alert-danger mb-0">' + escapeHtml(error.message) + '</div>';
     }
@@ -582,7 +582,7 @@
 
   function reportTable(headers, rows) {
     const head = headers.map(header => '<th>' + escapeHtml(header) + '</th>').join('');
-    const body = rows.length ? rows.map(row => '<tr>' + row.map(cell => '<td>' + escapeHtml(cell ?? '') + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + Math.max(1, headers.length) + '" class="text-center text-muted py-3">Khong co du lieu</td></tr>';
+    const body = rows.length ? rows.map(row => '<tr>' + row.map(cell => '<td>' + escapeHtml(cell ?? '') + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + Math.max(1, headers.length) + '" class="text-center text-muted py-3">Không có dữ liệu</td></tr>';
     return '<table class="table table-bordered table-hover align-middle mb-0"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
   }
 
@@ -628,7 +628,7 @@ function scheduleCategoryFilterSetup() {
     App.users = App.users || { page: 1, pageSize: 20, search: '' };
     const data = await api('/api/users?' + new URLSearchParams(App.users));
     if (typeof window.renderUserRowsSprint8 === 'function') window.renderUserRowsSprint8(data);
-    else document.querySelector('#userRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.email)}</td><td>${escapeHtml(row.display_name)}</td><td>${roleLabel(row.role)}</td><td>${statusLabel(row.status)}</td><td>${escapeHtml(row.last_login_at || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="users.edit" data-id="${row.id}">Sua</button> <button class="btn btn-sm btn-outline-warning" type="button" data-platform-action="users.toggle" data-id="${row.id}" data-action="${row.status === 'ACTIVE' ? 'lock' : 'unlock'}">${row.status === 'ACTIVE' ? 'Khoa' : 'Mo khoa'}</button> <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="users.delete" data-id="${row.id}">Xoa</button></td></tr>`).join('') || emptyRow(6, 'Chua co nguoi dung');
+    else document.querySelector('#userRows').innerHTML = data.items.map(row => `<tr><td>${escapeHtml(row.email)}</td><td>${escapeHtml(row.display_name)}</td><td>${roleLabel(row.role)}</td><td>${statusLabel(row.status)}</td><td>${escapeHtml(row.last_login_at || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="users.edit" data-id="${row.id}">Sửa</button> <button class="btn btn-sm btn-outline-warning" type="button" data-platform-action="users.toggle" data-id="${row.id}" data-action="${row.status === 'ACTIVE' ? 'lock' : 'unlock'}">${row.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}</button> <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="users.delete" data-id="${row.id}">Xóa</button></td></tr>`).join('') || emptyRow(6, 'Chưa có người dùng');
     renderPager('#userPager', data, page => { App.users.page = page; loadAdminUsers(); });
   }
 
@@ -648,5 +648,5 @@ function scheduleCategoryFilterSetup() {
     renderPager('#backupPager', data, page => { App.backups.page = page; loadAdminBackups(); });
   }
 
-  function statusLabel(status) { return status === 'ACTIVE' ? 'Hoat dong' : status === 'INACTIVE' ? 'Da khoa' : status; }
+  function statusLabel(status) { return status === 'ACTIVE' ? 'Hoat dòng' : status === 'INACTIVE' ? 'Da khoa' : status; }
 })();

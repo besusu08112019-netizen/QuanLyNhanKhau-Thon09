@@ -1,18 +1,18 @@
 ﻿<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-  <Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0F766E" ss:Pattern="Solid"/></Style><Style ss:ID="Text"><NumberFormat ss:Format="@"/></Style></Styles>
+  <Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0F766E" ss:Pattern="Solid"/></Style><Style ss:ID="Text"><NữmberFormat ss:Format="@"/></Style></Styles>
   <Worksheet ss:Name="HoDan"><Table>
     <Row>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma ho</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ten chu ho</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Dia chi</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">So dien thoai</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma dia ban</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Dien ho</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho ngheo</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho can ngheo</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ghi chu</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Mã hộ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Tên chủ hộ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Địa chỉ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Số điện thoại</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Mã địa bàn</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Diện hộ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hộ nghèo</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hộ cận nghèo</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ghi chú</Data></Cell>
     </Row>
     <Row>
       <Cell ss:StyleID="Text"><Data ss:Type="String">HD001</Data></Cell>
@@ -20,9 +20,9 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">0912345678</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">THON09</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Ho binh thuong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Hộ bình thường</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Hộ mẫu có nhiều thế hệ</Data></Cell>
     </Row>
     <Row>
@@ -31,8 +31,8 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">0987654321</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">THON09</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Ho can ngheo</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Hộ cận nghèo</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Hộ mẫu cận nghèo</Data></Cell>
     </Row>
@@ -42,67 +42,67 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">0901122334</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">THON09</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Ho chinh sach</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Hộ chính sách</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Hộ mẫu chính sách</Data></Cell>
     </Row>
   </Table></Worksheet>
   <Worksheet ss:Name="NhanKhau"><Table>
     <Row>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma ho</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma nhan khau</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho va ten</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Gioi tinh</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngay sinh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Mã hộ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Mã nhân khẩu</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Họ và tên</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Giới tính</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngày sinh</Data></Cell>
       <Cell ss:StyleID="Header"><Data ss:Type="String">CCCD</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngay cap CCCD</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Noi cap CCCD</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">So dien thoai</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Quan he voi chu ho</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho ten bo</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ho ten me</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Dan toc</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ton giao</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Nghe nghiep</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoc van</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Hon nhan</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Thuong tru</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Hien tai</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Trang thai</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Dia chi hien tai</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Dang vien</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Doan vien Thanh nien</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoi vien Hoi Phu nu</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoi vien Hoi Nong dan</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoi vien Cuu chien binh</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoi vien Nguoi cao tuoi</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Nguoi co cong</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Than nhan liet si</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Thuong binh</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Benh binh</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Nhiem chat doc hoa hoc</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Nguoi bi dich bat tu day</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Thanh nien xung phong</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Anh hung khang chien</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Nguoi hoat dong cach mang</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Nguoi khuyet tat</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Bao tro xa hoi</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Co viec lam</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">That nghiep</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao dong tu do</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao dong ngoai tinh</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao dong nuoc ngoai</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Chua di hoc</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Hoc sinh</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Sinh vien</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Nghi huu</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngày cấp CCCD</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nơi cấp CCCD</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Số điện thoại</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Quan hệ với chủ hộ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Họ tên bố</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Họ tên mẹ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Dân tộc</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Tôn giáo</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nghề nghiệp</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Học vấn</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hôn nhân</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Thường trú</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hiện tại</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Trạng thái</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Địa chỉ hiện tại</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Đảng viên</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Đoàn viên Thanh niên</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hội viên Hội Phụ nữ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hội viên Hội Nông dân</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hội viên Cựu chiến binh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Hội viên Người cao tuổi</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Người có công</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Thân nhân liệt sĩ</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Thương binh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Bệnh binh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nhiễm chất độc hóa học</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Người bị địch bắt tù đày</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Thanh niên xung phong</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Anh hùng kháng chiến</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Người hoạt động cách mạng</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Người khuyết tật</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Bảo trợ xã hội</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Có việc làm</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Thất nghiệp</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao động tự do</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao động ngoài tỉnh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Lao động nước ngoài</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Chưa đi học</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Học sinh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Sinh viên</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nghỉ hưu</Data></Cell>
       <Cell ss:StyleID="Header"><Data ss:Type="String">BHYT</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ma so BHYT</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Nhom BHYT</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngay bat dau BHYT</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngay het han BHYT</Data></Cell>
-      <Cell ss:StyleID="Header"><Data ss:Type="String">Noi dang ky kham chua benh</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Mã số BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nhóm BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngày bắt đầu BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Ngày hết hạn BHYT</Data></Cell>
+      <Cell ss:StyleID="Header"><Data ss:Type="String">Nơi đăng ký khám chữa bệnh</Data></Cell>
     </Row>
     <Row>
       <Cell ss:StyleID="Text"><Data ss:Type="String">HD001</Data></Cell>
@@ -114,43 +114,43 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">2018-04-01</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Công an tỉnh</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">0912345678</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Chu ho</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Chủ hộ</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Kinh</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Nguoi cao tuoi (70+)</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Trung hoc</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Da ket hon</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Thuong tru</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">O nha</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Con song</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Trung học</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Đã kết hôn</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Thường trú</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Ở nhà</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Còn sống</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
@@ -163,7 +163,7 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">HD001</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">NK002</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Nguyễn Thị Lan</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Nu</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Nữ</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">1955-07-22</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">001055000002</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2018-04-01</Data></Cell>
@@ -173,39 +173,39 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Kinh</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Nghi huu</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Trung hoc</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Da ket hon</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Thuong tru</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">O nha</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Con song</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Nghỉ hưu</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Trung học</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Đã kết hôn</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Thường trú</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Ở nhà</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Còn sống</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">HT3012345678901</Data></Cell>
@@ -228,40 +228,40 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">Nguyễn Văn An</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Nguyễn Thị Lan</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Kinh</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Cong nhan</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Công nhân</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">THPT</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Da ket hon</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Thuong tru</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">O nha</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Con song</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Đã kết hôn</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Thường trú</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Ở nhà</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Còn sống</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
@@ -273,7 +273,7 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">HD001</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">NK004</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Phạm Thị Hoa</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Nu</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Nữ</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">1990-09-18</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">001090000004</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2021-02-20</Data></Cell>
@@ -283,43 +283,43 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Kinh</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Lao dong tu do</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Lao động tự do</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">THPT</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Da ket hon</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Thuong tru</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">O nha</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Con song</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Đã kết hôn</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Thường trú</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Ở nhà</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Còn sống</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">HG4012345678901</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Ho gia dinh</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Hộ gia đình</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2026-01-01</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2026-12-31</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Trạm y tế xã Minh Châu</Data></Cell>
@@ -328,7 +328,7 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">HD001</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">NK005</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Nguyễn Minh Châu</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Nu</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Nữ</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2013-11-05</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">001113000005</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2025-08-10</Data></Cell>
@@ -338,43 +338,43 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">Nguyễn Văn Bình</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Phạm Thị Hoa</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Kinh</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Hoc sinh</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Hoc sinh</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Học sinh</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Học sinh</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Chua ket hon</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Thuong tru</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">O nha</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Con song</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Thường trú</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Ở nhà</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Còn sống</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Hoc sinh - Sinh vien</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Học sinh - Sinh viên</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2026-01-01</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2026-12-31</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Trạm y tế xã Minh Châu</Data></Cell>
@@ -383,51 +383,51 @@
       <Cell ss:StyleID="Text"><Data ss:Type="String">HD002</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">NK006</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Trần Thị Bình</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Nu</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Nữ</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">1975-02-14</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">001075000006</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">2019-03-12</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Công an tỉnh</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">0987654321</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Chu ho</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Chủ hộ</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Kinh</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Nong nghiep</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">THCS</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Doc than</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Thuong tru</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">O nha</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Con song</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Độc thân</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Thường trú</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Ở nhà</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Còn sống</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Thôn 9, Xã Minh Châu</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String">Co</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
-      <Cell ss:StyleID="Text"><Data ss:Type="String">Khong</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
+      <Cell ss:StyleID="Text"><Data ss:Type="String">Không</Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>
       <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>

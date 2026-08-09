@@ -14,7 +14,8 @@ final class HouseholdPoverty extends BaseModel
     ];
 
     public const POVERTY_TYPES = [
-        'NONE' => 'Không thuộc diện',
+        'NONE' => 'Hộ trung bình',
+        'MEDIUM' => 'Hộ trung bình',
         'NEAR_POOR' => 'Hộ cận nghèo',
         'POOR' => 'Hộ nghèo',
     ];
@@ -290,7 +291,8 @@ SQL);
             "SELECT
                 COALESCE(SUM(CASE WHEN hpr.status='ACTIVE' AND hpr.poverty_type='POOR' THEN 1 ELSE 0 END),0) AS poor,
                 COALESCE(SUM(CASE WHEN hpr.status='ACTIVE' AND hpr.poverty_type='NEAR_POOR' THEN 1 ELSE 0 END),0) AS near_poor,
-                COALESCE(SUM(CASE WHEN hpr.poverty_type IN ('POOR','NEAR_POOR') AND YEAR(hpr.effective_from)=:year_filter THEN 1 ELSE 0 END),0) AS new_entries,
+                COALESCE(SUM(CASE WHEN hpr.status='ACTIVE' AND hpr.poverty_type IN ('NONE','MEDIUM') THEN 1 ELSE 0 END),0) AS medium,
+                COALESCE(SUM(CASE WHEN hpr.poverty_type IN ('POOR','NEAR_POOR','MEDIUM','NONE') AND YEAR(hpr.effective_from)=:year_filter THEN 1 ELSE 0 END),0) AS new_entries,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='POOR' AND hpr.status='ENDED' AND hpr.effective_to IS NOT NULL AND YEAR(hpr.effective_to)=:year_filter THEN 1 ELSE 0 END),0) AS escaped_poor,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='NEAR_POOR' AND hpr.status='ENDED' AND hpr.effective_to IS NOT NULL AND YEAR(hpr.effective_to)=:year_filter THEN 1 ELSE 0 END),0) AS escaped_near_poor
              FROM household_poverty_records hpr
@@ -303,7 +305,7 @@ SQL);
             "SELECT YEAR(hpr.effective_from) AS year,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='POOR' THEN 1 ELSE 0 END),0) AS poor,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='NEAR_POOR' THEN 1 ELSE 0 END),0) AS near_poor,
-                COALESCE(SUM(CASE WHEN hpr.poverty_type='NONE' THEN 1 ELSE 0 END),0) AS none_count
+                COALESCE(SUM(CASE WHEN hpr.poverty_type IN ('NONE','MEDIUM') THEN 1 ELSE 0 END),0) AS medium
              FROM household_poverty_records hpr
              INNER JOIN poverty_periods pp ON pp.id=hpr.period_id
              INNER JOIN households h ON h.id=hpr.household_id $where
@@ -315,6 +317,7 @@ SQL);
             'metrics' => [
                 'poor' => (int) ($metrics['poor'] ?? 0),
                 'near_poor' => (int) ($metrics['near_poor'] ?? 0),
+                'medium' => (int) ($metrics['medium'] ?? 0),
                 'new_entries' => (int) ($metrics['new_entries'] ?? 0),
                 'escaped_poor' => (int) ($metrics['escaped_poor'] ?? 0),
                 'escaped_near_poor' => (int) ($metrics['escaped_near_poor'] ?? 0),
@@ -322,11 +325,11 @@ SQL);
                 'poor_rate' => $households > 0 ? round(((int) ($metrics['poor'] ?? 0)) * 100 / $households, 2) : 0,
                 'near_poor_rate' => $households > 0 ? round(((int) ($metrics['near_poor'] ?? 0)) * 100 / $households, 2) : 0,
             ],
-            'trend' => array_map(fn(array $row) => [
+                        'trend' => array_map(fn(array $row) => [
                 'year' => (int) $row['year'],
                 'poor' => (int) $row['poor'],
                 'near_poor' => (int) $row['near_poor'],
-                'none' => (int) $row['none_count'],
+                'medium' => (int) $row['medium'],
             ], $trend),
         ];
     }

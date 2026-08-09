@@ -734,7 +734,7 @@ function screenNode(screenId) {
   assert.strictEqual(crumbs[3].params.id, '42');
 
   const createCrumbs = platform.breadcrumbs.fromModuleAction('persons', 'create');
-  assert.strictEqual(createCrumbs[createCrumbs.length - 1].label, 'Them moi');
+  assert.strictEqual(createCrumbs[createCrumbs.length - 1].label, 'Thêm mới');
 
   const root = {
     textContent: 'old',

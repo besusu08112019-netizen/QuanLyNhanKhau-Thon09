@@ -334,7 +334,7 @@
     const banner = document.createElement('div');
     banner.id = 'pwaUpdateBanner';
     banner.className = 'pwa-update-banner';
-    banner.innerHTML = '<p>?? c? phi?n b?n m?i c?a ?ng d?ng Th?n 09. C?p nh?t ngay?</p><button class="btn btn-success btn-sm" type="button">C?p nh?t</button>';
+    banner.innerHTML = '<p>Có phiên bản mới của ứng dụng. Cập nhật ngay?</p><button class="btn btn-success btn-sm" type="button">Cập nhật</button>';
     banner.querySelector('button').addEventListener('click', applyServiceWorkerUpdate);
     document.body.appendChild(banner);
   }

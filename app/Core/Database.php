@@ -100,7 +100,7 @@ final class Database
             return require $exampleConfig;
         }
 
-        throw new DatabaseException('Khong tim thay cau hinh co so du lieu. Vui long tao file .env tu .env.example.');
+        throw new DatabaseException('Không tìm thấy cấu hình cơ sở dữ liệu. Vui lòng tạo file .env từ .env.example.');
     }
 
     private static function connect(string $dsn, array $config): PDO

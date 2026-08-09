@@ -76,7 +76,7 @@ SQL);
         $this->ensureSchema();
         return [
             'categories' => array_map(fn($r) => ['value' => (string) $r['id'], 'code' => (string) $r['code'], 'label' => (string) $r['name']], $this->fetchAll('SELECT id, code, name FROM document_categories WHERE is_active=1 ORDER BY sort_order ASC, name ASC')),
-            'statuses' => [['value' => 'ACTIVE', 'label' => 'Dang hieu luc'], ['value' => 'ARCHIVED', 'label' => 'Luu tru']],
+            'statuses' => [['value' => 'ACTIVE', 'label' => 'Đang hiệu lực'], ['value' => 'ARCHIVED', 'label' => 'Lưu trữ']],
             'years' => array_map(fn($r) => ['value' => (string) $r['year'], 'label' => (string) $r['year']], $this->fetchAll('SELECT DISTINCT YEAR(COALESCE(issued_date, created_at)) AS year FROM village_documents WHERE status <> "DELETED" AND ' . $this->tenantWhere('village_documents') . ' ORDER BY year DESC')),
         ];
     }
@@ -115,7 +115,7 @@ SQL);
     public function upsert(array $data, int $userId, ?int $id = null): array
     {
         $this->ensureSchema();
-        if ($id && !$this->find($id)) throw new RuntimeException('Khong tim thay van ban');
+        if ($id && !$this->find($id)) throw new RuntimeException('Không tìm thấy văn bản');
         $params = $this->params($data, $userId);
         if ($id) {
             $params['id'] = $id;
@@ -132,7 +132,7 @@ SQL);
     public function deletePermanently(int $id): array
     {
         $row = $this->find($id);
-        if (!$row) throw new RuntimeException('Khong tim thay van ban');
+        if (!$row) throw new RuntimeException('Không tìm thấy văn bản');
         $files = $this->attachments($id);
         $this->execute('DELETE FROM village_document_attachments WHERE document_id=:id', ['id' => $id]);
         $this->execute('DELETE FROM village_documents WHERE id=:id AND ' . $this->tenantWhere('village_documents'), ['id' => $id]);
@@ -141,7 +141,7 @@ SQL);
 
     public function addAttachment(int $id, array $stored, array $file, int $userId): array
     {
-        if (!$this->find($id)) throw new RuntimeException('Khong tim thay van ban');
+        if (!$this->find($id)) throw new RuntimeException('Không tìm thấy văn bản');
         $mime = (string) $stored['mime'];
         $extension = strtolower((string) ($stored['extension'] ?? pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION)));
         $kind = $this->kindForExtension($extension, $mime);
@@ -174,7 +174,7 @@ SQL);
     public function deleteAttachment(int $documentId, int $fileId, int $userId): ?array
     {
         $file = $this->attachment($documentId, $fileId);
-        if (!$file) throw new RuntimeException('Khong tim thay file dinh kem');
+        if (!$file) throw new RuntimeException('Không tìm thấy file đính kèm');
         $this->execute('DELETE FROM village_document_attachments WHERE document_id=:document_id AND id=:id', ['document_id' => $documentId, 'id' => $fileId]);
         return $file;
     }
@@ -194,8 +194,8 @@ SQL);
         [$where, $params] = $this->where($filters);
         $rows = array_map(fn($r) => $this->normalize($r), $this->fetchAll($this->selectSql() . ' ' . $this->fromSql() . " $where ORDER BY d.created_at DESC, d.id DESC", $params));
         return [
-            'title' => 'Bao cao van ban',
-            'headers' => ['Ma', 'So van ban', 'Tieu de', 'Loai', 'Don vi ban hanh', 'Nguoi ky', 'Ngay ban hanh', 'Nguoi tai len', 'Tao luc'],
+            'title' => 'Báo cáo văn bản',
+            'headers' => ['Ma', 'Số văn bản', 'Tiêu đề', 'Loại', 'Đơn vị ban hành', 'Người ký', 'Ngày ban hanh', 'Người tải lên', 'Tạo lúc'],
             'rows' => array_map(fn($r) => [$r['document_code'], $r['document_number'], $r['title'], $r['category_name'], $r['issuing_unit'], $r['signer_name'], $r['issued_date'], $r['created_by_name'], $r['created_at']], $rows),
             'totalRows' => count($rows),
         ];
@@ -209,7 +209,7 @@ SQL);
     private function params(array $data, int $userId): array
     {
         $title = trim((string) ($data['title'] ?? ''));
-        if ($title === '') throw new RuntimeException('Tieu de van ban la bat buoc');
+        if ($title === '') throw new RuntimeException('Tiêu đề van ban la bat buoc');
         $status = strtoupper(trim((string) ($data['status'] ?? 'ACTIVE')));
         if (!in_array($status, ['ACTIVE', 'ARCHIVED'], true)) $status = 'ACTIVE';
         return [
@@ -277,7 +277,7 @@ SQL);
             'area_code' => (string) ($row['area_code'] ?? ''),
             'summary' => (string) ($row['summary'] ?? ''),
             'status' => $status,
-            'status_label' => $status === 'ARCHIVED' ? 'Luu tru' : 'Dang hieu luc',
+            'status_label' => $status === 'ARCHIVED' ? 'Lưu trữ' : 'Đang hiệu lực',
             'attachment_count' => (int) ($row['attachment_count'] ?? 0),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
@@ -322,7 +322,7 @@ SQL);
 
     private function seedCategories(): void
     {
-        $items = [['notice', 'Thong bao'], ['decision', 'Quyet dinh'], ['official_dispatch', 'Cong van'], ['plan', 'Ke hoach'], ['report', 'Bao cao'], ['minutes', 'Bien ban'], ['other', 'Khac']];
+        $items = [['notice', 'Thông báo'], ['decision', 'Quyết định'], ['official_dispatch', 'Công văn'], ['plan', 'Kế hoạch'], ['report', 'Báo cáo'], ['minutes', 'Biên bản'], ['other', 'Khác']];
         $order = 10;
         foreach ($items as [$code, $name]) {
             $this->execute('INSERT INTO document_categories (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]);

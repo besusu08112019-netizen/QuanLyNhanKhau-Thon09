@@ -570,60 +570,60 @@ final class Report extends BaseModel
     {
         return [
             'groups' => [
-                ['key' => 'population', 'title' => 'Bao cao dan cu', 'icon' => 'fa-users', 'description' => 'Nhan khau, gioi tinh, do tuoi, nghe nghiep, BHYT, Dang vien, Doan vien.', 'types' => ['population','health_insurance','health-insurance-missing','health-insurance-expiring','health-insurance-expired','health-insurance-household','health-insurance-area','children','elderly','labor','party_member','youth_union','gender','age']],
-                ['key' => 'household', 'title' => 'Bao cao ho gia dinh', 'icon' => 'fa-house-chimney', 'description' => 'Danh sach ho, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','poor-households','near-poor-households','special']],
-                ['key' => 'contributions', 'title' => 'Bao cao dong gop ho', 'icon' => 'fa-hand-holding-dollar', 'description' => 'Danh sach thu, ky nhan, mien giam, cong no va tong hop dong gop theo dot/nam.', 'types' => ['contributions-list','contributions-collection','contributions-unpaid-list','contributions-partial','contributions-exempt','contributions-summary','contributions-year-summary','contributions-by-contribution']],
-                ['key' => 'household_business', 'title' => 'Bao cao ho san xuat va kinh doanh', 'icon' => 'fa-store', 'description' => 'Danh sach ho san xuat, ho kinh doanh, nganh nghe, trang thai va khu vuc GIS.', 'types' => ['household-business-production','household-business-trade','household-business-sector','household-business-status','household-business-gis','household-business-ocop','household-business-food-safety','household-business-social-insurance','household-business-economic-type','household-business-scale','household-business-product']],
-                ['key' => 'agricultural_land', 'title' => 'Bao cao quy dat nong nghiep', 'icon' => 'fa-map', 'description' => 'Tong hop dien tich dat nong nghiep theo tung khu doc lap voi ho dan va san xuat.', 'types' => ['agricultural-land','agricultural-land-village','agricultural-land-zone','agricultural-land-year','agricultural-land-year-compare']],
-                ['key' => 'agriculture', 'title' => 'Bao cao san xuat nong nghiep', 'icon' => 'fa-seedling', 'description' => 'Danh sach thua dat, chu the san xuat, dien tich, cay trong, mua vu, san luong va thiet hai.', 'types' => ['agriculture','agriculture-producers','agriculture-area','agriculture-crop','agriculture-season','agriculture-production','agriculture-revenue','agriculture-damage']],
-                ['key' => 'livestock', 'title' => 'Bao cao vat nuoi', 'icon' => 'fa-paw', 'description' => 'Danh sach vat nuoi, thong ke theo loai, tiem phong va dich benh.', 'types' => ['livestock','livestock-by-type','livestock-vaccinated','livestock-unvaccinated','livestock-disease']],
-                ['key' => 'party_members', 'title' => 'Bao cao Dang vien', 'icon' => 'fa-flag', 'description' => 'Danh sach Dang vien theo chi bo, do tuoi, gioi tinh, chuc vu, loai va tinh trang sinh hoat.', 'types' => ['party-members','party-members-branch','party-members-age','party-members-gender','party-members-position','party-members-official','party-members-probationary','party-members-status']],
-                ['key' => 'vehicles', 'title' => 'Bao cao xe co', 'icon' => 'fa-car', 'description' => 'Danh sach phuong tien, phan loai, bien so, dang kiem va bao hiem.', 'types' => ['vehicles','vehicles-by-type','vehicles-missing-plate','vehicles-expired-inspection','vehicles-expired-insurance']],
-                ['key' => 'houses', 'title' => 'Bao cao nha o va cong trinh', 'icon' => 'fa-building-user', 'description' => 'Danh sach nha o, nha xuong cap, PCCC, GPS va cong trinh phu.', 'types' => ['houses','houses-degraded','houses-temporary','houses-fire-risk','houses-missing-gps','houses-business','house-structures']],
-                ['key' => 'public_assets', 'title' => 'Bao cao cong trinh cong cong', 'icon' => 'fa-building-columns', 'description' => 'Danh sach cong trinh cong cong, GPS, khu vuc, don vi quan ly va kiem ke tai san.', 'types' => ['public-assets','public-assets-located','public-assets-missing-gps','public-assets-inventory']],
-                ['key' => 'movement', 'title' => 'Bao cao bien dong', 'icon' => 'fa-right-left', 'description' => 'Khai sinh, khai tu, chuyen di, chuyen den, tam tru, tam vang.', 'types' => ['migration','temporary_residence','temporary_absence','births','deaths']],
-                ['key' => 'gis', 'title' => 'Bao cao GIS', 'icon' => 'fa-map-location-dot', 'description' => 'Ho da dinh vi, chua dinh vi, ty le hoan thanh GPS theo khu vuc va thoi gian.', 'types' => ['gis','gis-located','gis-unlocated']],
-                ['key' => 'digital_profile', 'title' => 'Bao cao Ho so so', 'icon' => 'fa-folder-open', 'description' => 'Ho so hoan chinh, thieu anh, thieu giay to va chua hoan thien.', 'types' => ['digital-profile','profile-complete','profile-missing-photo','profile-missing-documents','profile-incomplete']],
-                ['key' => 'operation', 'title' => 'Bao cao dieu hanh', 'icon' => 'fa-tower-broadcast', 'description' => 'Chi tieu nhanh phuc vu dieu hanh va theo doi tien do.', 'types' => ['summary']],
-                ['key' => 'summary', 'title' => 'Bao cao tong hop', 'icon' => 'fa-chart-pie', 'description' => 'Tong hop toan he thong theo nhieu dieu kien loc.', 'types' => ['summary']],
+                ['key' => 'population', 'title' => 'Báo cáo dân cư', 'icon' => 'fa-users', 'description' => 'Nhân khẩu, gioi tinh, do tuoi, nghe nghiep, BHYT, Dang vien, Doan vien.', 'types' => ['population','health_insurance','health-insurance-missing','health-insurance-expiring','health-insurance-expired','health-insurance-household','health-insurance-area','children','elderly','labor','party_member','youth_union','gender','age']],
+                ['key' => 'household', 'title' => 'Báo cáo hộ gia đình', 'icon' => 'fa-house-chimney', 'description' => 'Danh sách hộ, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','poor-households','near-poor-households','special']],
+                ['key' => 'contributions', 'title' => 'Báo cáo đóng góp hộ', 'icon' => 'fa-hand-holding-dollar', 'description' => 'Danh sach thu, ky nhan, mien giam, cong no va tong hop dong gop theo dot/nam.', 'types' => ['contributions-list','contributions-collection','contributions-unpaid-list','contributions-partial','contributions-exempt','contributions-summary','contributions-year-summary','contributions-by-contribution']],
+                ['key' => 'household_business', 'title' => 'Báo cáo hộ sản xuất và kinh doanh', 'icon' => 'fa-store', 'description' => 'Danh sách hộ sản xuất, ho kinh doanh, nganh nghe, trang thai va khu vuc GIS.', 'types' => ['household-business-production','household-business-trade','household-business-sector','household-business-status','household-business-gis','household-business-ocop','household-business-food-safety','household-business-social-insurance','household-business-economic-type','household-business-scale','household-business-product']],
+                ['key' => 'agricultural_land', 'title' => 'Báo cáo quỹ đất nông nghiệp', 'icon' => 'fa-map', 'description' => 'Tong hop dien tich dat nong nghiep theo tung khu doc lap voi ho dan va san xuat.', 'types' => ['agricultural-land','agricultural-land-village','agricultural-land-zone','agricultural-land-year','agricultural-land-year-compare']],
+                ['key' => 'agriculture', 'title' => 'Báo cáo sản xuất nông nghiệp', 'icon' => 'fa-seedling', 'description' => 'Danh sach thua dat, chu the san xuat, dien tich, cay trong, mua vu, san luong va thiet hai.', 'types' => ['agriculture','agriculture-producers','agriculture-area','agriculture-crop','agriculture-season','agriculture-production','agriculture-revenue','agriculture-damage']],
+                ['key' => 'livestock', 'title' => 'Báo cáo vật nuôi', 'icon' => 'fa-paw', 'description' => 'Danh sách vật nuôi, thong ke theo loai, tiem phong va dich benh.', 'types' => ['livestock','livestock-by-type','livestock-vaccinated','livestock-unvaccinated','livestock-disease']],
+                ['key' => 'party_members', 'title' => 'Báo cáo Đảng viên', 'icon' => 'fa-flag', 'description' => 'Danh sách Đảng viên theo chi bo, do tuoi, gioi tinh, chuc vu, loai va tinh trang sinh hoat.', 'types' => ['party-members','party-members-branch','party-members-age','party-members-gender','party-members-position','party-members-official','party-members-probationary','party-members-status']],
+                ['key' => 'vehicles', 'title' => 'Báo cáo xe cộ', 'icon' => 'fa-car', 'description' => 'Danh sách phương tiện, phan loai, bien so, dang kiem va bao hiem.', 'types' => ['vehicles','vehicles-by-type','vehicles-missing-plate','vehicles-expired-inspection','vehicles-expired-insurance']],
+                ['key' => 'houses', 'title' => 'Báo cáo nhà ở và công trình', 'icon' => 'fa-building-user', 'description' => 'Danh sach nha o, nha xuong cap, PCCC, GPS va cong trinh phu.', 'types' => ['houses','houses-degraded','houses-temporary','houses-fire-risk','houses-missing-gps','houses-business','house-structures']],
+                ['key' => 'public_assets', 'title' => 'Báo cáo công trình công cộng', 'icon' => 'fa-building-columns', 'description' => 'Danh sách công trình công cộng, GPS, khu vuc, don vi quan ly va kiem ke tai san.', 'types' => ['public-assets','public-assets-located','public-assets-missing-gps','public-assets-inventory']],
+                ['key' => 'movement', 'title' => 'Báo cáo biến động', 'icon' => 'fa-right-left', 'description' => 'Khai sinh, khai tu, chuyen di, chuyen den, tam tru, tam vang.', 'types' => ['migration','temporary_residence','temporary_absence','births','deaths']],
+                ['key' => 'gis', 'title' => 'Báo cáo GIS', 'icon' => 'fa-map-location-dot', 'description' => 'Ho da dinh vi, chua dinh vi, ty le hoan thanh GPS theo khu vuc va thoi gian.', 'types' => ['gis','gis-located','gis-unlocated']],
+                ['key' => 'digital_profile', 'title' => 'Báo cáo Hồ sơ số', 'icon' => 'fa-folder-open', 'description' => 'Ho so hoan chinh, thieu anh, thieu giay to va chua hoan thien.', 'types' => ['digital-profile','profile-complete','profile-missing-photo','profile-missing-documents','profile-incomplete']],
+                ['key' => 'operation', 'title' => 'Báo cáo điều hành', 'icon' => 'fa-tower-broadcast', 'description' => 'Chi tieu nhanh phuc vu dieu hanh va theo doi tien do.', 'types' => ['summary']],
+                ['key' => 'summary', 'title' => 'Báo cáo tổng hợp', 'icon' => 'fa-chart-pie', 'description' => 'Tong hop toan he thong theo nhieu dieu kien loc.', 'types' => ['summary']],
             ],
             'templates' => [
                 ['key' => 'household-form', 'title' => 'Phieu quan ly ho gia dinh', 'type' => 'household'],
-                ['key' => 'household-list', 'title' => 'Danh sach ho', 'type' => 'household'],
-                ['key' => 'citizen-list', 'title' => 'Danh sach nhan khau', 'type' => 'population'],
-                ['key' => 'children-list', 'title' => 'Danh sach tre em', 'type' => 'children'],
-                ['key' => 'elderly-list', 'title' => 'Danh sach nguoi cao tuoi', 'type' => 'elderly'],
-                ['key' => 'labor-list', 'title' => 'Danh sach lao dong', 'type' => 'labor'],
+                ['key' => 'household-list', 'title' => 'Danh sách hộ', 'type' => 'household'],
+                ['key' => 'citizen-list', 'title' => 'Danh sách nhân khẩu', 'type' => 'population'],
+                ['key' => 'children-list', 'title' => 'Danh sách trẻ em', 'type' => 'children'],
+                ['key' => 'elderly-list', 'title' => 'Danh sách người cao tuổi', 'type' => 'elderly'],
+                ['key' => 'labor-list', 'title' => 'Danh sách lao động', 'type' => 'labor'],
                 ['key' => 'health-insurance-summary', 'title' => 'Thống kê Bảo hiểm y tế', 'type' => 'health_insurance'],
-                ['key' => 'party-list', 'title' => 'Danh sach Dang vien', 'type' => 'party_member'],
-                ['key' => 'poor-list', 'title' => 'Danh sach ho ngheo', 'type' => 'poor-households'],
-                ['key' => 'near-poor-list', 'title' => 'Danh sach ho can ngheo', 'type' => 'near-poor-households'],
-                ['key' => 'contribution-household-list', 'title' => 'Danh sach ho dong gop', 'type' => 'contributions-list'],
-                ['key' => 'contribution-collection-list', 'title' => 'Danh sach thu theo tung dot', 'type' => 'contributions-collection'],
-                ['key' => 'contribution-signature-list', 'title' => 'Danh sach ky nhan dong gop', 'type' => 'contributions-signature'],
-                ['key' => 'contribution-unpaid-list', 'title' => 'Danh sach ho chua hoan thanh nghia vu', 'type' => 'contributions-unpaid-list'],
-                ['key' => 'contribution-exempt-list', 'title' => 'Danh sach ho duoc mien', 'type' => 'contributions-exempt'],
-                ['key' => 'contribution-summary-campaign', 'title' => 'Bao cao tong hop cuoi dot', 'type' => 'contributions-summary'],
-                ['key' => 'contribution-summary-year', 'title' => 'Bao cao tong hop theo nam', 'type' => 'contributions-year-summary'],
-                ['key' => 'household-business-production', 'title' => 'Danh sach ho san xuat', 'type' => 'household-business-production'],
-                ['key' => 'household-business-trade', 'title' => 'Danh sach ho kinh doanh', 'type' => 'household-business-trade'],
-                ['key' => 'agricultural-land-list', 'title' => 'Danh sach khu dat nong nghiep', 'type' => 'agricultural-land'],
-                ['key' => 'agricultural-land-village', 'title' => 'Bao cao quy dat toan thon', 'type' => 'agricultural-land-village'],
-                ['key' => 'agricultural-land-zone', 'title' => 'Bao cao quy dat theo khu', 'type' => 'agricultural-land-zone'],
-                ['key' => 'agricultural-land-year', 'title' => 'Bao cao quy dat theo nam', 'type' => 'agricultural-land-year'],
+                ['key' => 'party-list', 'title' => 'Danh sách Đảng viên', 'type' => 'party_member'],
+                ['key' => 'poor-list', 'title' => 'Danh sách hộ nghèo', 'type' => 'poor-households'],
+                ['key' => 'near-poor-list', 'title' => 'Danh sách hộ cận nghèo', 'type' => 'near-poor-households'],
+                ['key' => 'contribution-household-list', 'title' => 'Danh sách hộ đóng góp', 'type' => 'contributions-list'],
+                ['key' => 'contribution-collection-list', 'title' => 'Danh sách thu theo từng đợt', 'type' => 'contributions-collection'],
+                ['key' => 'contribution-signature-list', 'title' => 'Danh sách ký nhận đóng góp', 'type' => 'contributions-signature'],
+                ['key' => 'contribution-unpaid-list', 'title' => 'Danh sách hộ chưa hoàn thành nghĩa vụ', 'type' => 'contributions-unpaid-list'],
+                ['key' => 'contribution-exempt-list', 'title' => 'Danh sách hộ được miễn', 'type' => 'contributions-exempt'],
+                ['key' => 'contribution-summary-campaign', 'title' => 'Báo cáo tổng hợp cuoi dot', 'type' => 'contributions-summary'],
+                ['key' => 'contribution-summary-year', 'title' => 'Báo cáo tổng hợp theo nam', 'type' => 'contributions-year-summary'],
+                ['key' => 'household-business-production', 'title' => 'Danh sách hộ sản xuất', 'type' => 'household-business-production'],
+                ['key' => 'household-business-trade', 'title' => 'Danh sách hộ kinh doanh', 'type' => 'household-business-trade'],
+                ['key' => 'agricultural-land-list', 'title' => 'Danh sách khu đất nông nghiệp', 'type' => 'agricultural-land'],
+                ['key' => 'agricultural-land-village', 'title' => 'Báo cáo quỹ đất toàn thôn', 'type' => 'agricultural-land-village'],
+                ['key' => 'agricultural-land-zone', 'title' => 'Báo cáo quỹ đất theo khu', 'type' => 'agricultural-land-zone'],
+                ['key' => 'agricultural-land-year', 'title' => 'Báo cáo quỹ đất theo năm', 'type' => 'agricultural-land-year'],
                 ['key' => 'agricultural-land-year-compare', 'title' => 'So sanh quy dat giua cac nam', 'type' => 'agricultural-land-year-compare'],
-                ['key' => 'agriculture-list', 'title' => 'Danh sach thua san xuat nong nghiep', 'type' => 'agriculture'],
-                ['key' => 'agriculture-damage', 'title' => 'Bao cao thiet hai san xuat nong nghiep', 'type' => 'agriculture-damage'],
-                ['key' => 'livestock-list', 'title' => 'Danh sach vat nuoi', 'type' => 'livestock'],
-                ['key' => 'party-members-list', 'title' => 'Danh sach Dang vien', 'type' => 'party-members'],
-                ['key' => 'livestock-disease', 'title' => 'Danh sach ho co dich benh vat nuoi', 'type' => 'livestock-disease'],
-                ['key' => 'vehicles-list', 'title' => 'Danh sach phuong tien', 'type' => 'vehicles'],
+                ['key' => 'agriculture-list', 'title' => 'Danh sách thửa sản xuất nông nghiệp', 'type' => 'agriculture'],
+                ['key' => 'agriculture-damage', 'title' => 'Báo cáo thiệt hại sản xuất nông nghiệp', 'type' => 'agriculture-damage'],
+                ['key' => 'livestock-list', 'title' => 'Danh sách vật nuôi', 'type' => 'livestock'],
+                ['key' => 'party-members-list', 'title' => 'Danh sách Đảng viên', 'type' => 'party-members'],
+                ['key' => 'livestock-disease', 'title' => 'Danh sách hộ có dịch bệnh vật nuôi', 'type' => 'livestock-disease'],
+                ['key' => 'vehicles-list', 'title' => 'Danh sách phương tiện', 'type' => 'vehicles'],
                 ['key' => 'vehicles-expired-inspection', 'title' => 'Phuong tien het han kiem dinh', 'type' => 'vehicles-expired-inspection'],
-                ['key' => 'public-assets-list', 'title' => 'Danh sach cong trinh cong cong', 'type' => 'public-assets'],
-                ['key' => 'public-assets-missing-gps', 'title' => 'Cong trinh chua co GPS', 'type' => 'public-assets-missing-gps'],
+                ['key' => 'public-assets-list', 'title' => 'Danh sách công trình công cộng', 'type' => 'public-assets'],
+                ['key' => 'public-assets-missing-gps', 'title' => 'Công trình chua co GPS', 'type' => 'public-assets-missing-gps'],
                 ['key' => 'public-assets-inventory', 'title' => 'Kiem ke tai san cong trinh', 'type' => 'public-assets-inventory'],
-                ['key' => 'temporary-residence-list', 'title' => 'Danh sach tam tru', 'type' => 'temporary_residence'],
-                ['key' => 'temporary-absence-list', 'title' => 'Danh sach tam vang', 'type' => 'temporary_absence'],
+                ['key' => 'temporary-residence-list', 'title' => 'Danh sách tạm trú', 'type' => 'temporary_residence'],
+                ['key' => 'temporary-absence-list', 'title' => 'Danh sách tạm vắng', 'type' => 'temporary_absence'],
             ],
             'filters' => ['dateFrom','dateTo','area','householdCode','headName','householdId','citizen','gender','ageFrom','ageTo','occupation','health_insurance','has_health_insurance','party_member','youth_union_member','category','residencyStatus','presenceStatus','gpsStatus','digitalProfileStatus'],
             'exports' => ['preview','print','pdf','excel','word'],
@@ -666,8 +666,8 @@ final class Report extends BaseModel
         $lng = $this->columnExists('households', 'longitude') ? 'h.longitude' : 'NULL';
         $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.area_code, $lat AS latitude, $lng AS longitude, h.location_updated_at FROM households h $where ORDER BY h.area_code, h.household_code", $params);
         $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['area_code'], $r['latitude'], $r['longitude'], $this->date($r['location_updated_at'] ?? '')], $rows);
-        $title = $mode === 'located' ? 'Bao cao ho da dinh vi GPS' : ($mode === 'unlocated' ? 'Bao cao ho chua dinh vi GPS' : 'Bao cao GIS ho gia dinh');
-        return $this->table($title, ['Ma ho','Chu ho','Dia chi','Khu vuc','Vi do','Kinh do','Ngay cap nhat GPS'], $body, $filters);
+        $title = $mode === 'located' ? 'Báo cáo hộ đã định vị GPS' : ($mode === 'unlocated' ? 'Báo cáo hộ chưa định vị GPS' : 'Báo cáo GIS hộ gia đình');
+        return $this->table($title, ['Mã hộ','Chủ hộ','Địa chỉ','Khu vực','Vi do','Kinh do','Ngày cap nhat GPS'], $body, $filters);
     }
 
     public function digitalProfileReport(array $filters = [], string $mode = 'all'): array
@@ -690,8 +690,8 @@ final class Report extends BaseModel
         if ($mode === 'incomplete') $rows = array_values(array_filter($rows, fn($r) => (int) ($r['photo_count'] ?? 0) === 0 || (int) ($r['document_count'] ?? 0) === 0));
         if ($mode === 'missing_photo') $rows = array_values(array_filter($rows, fn($r) => (int) ($r['photo_count'] ?? 0) === 0));
         if ($mode === 'missing_documents') $rows = array_values(array_filter($rows, fn($r) => (int) ($r['document_count'] ?? 0) === 0));
-        $title = ['complete' => 'Bao cao ho so so hoan chinh', 'missing_photo' => 'Bao cao ho so thieu anh', 'missing_documents' => 'Bao cao ho so thieu giay to', 'incomplete' => 'Bao cao ho so chua hoan thien'][$mode] ?? 'Bao cao Ho so so';
-        return $this->table($title, ['Ma ho','Chu ho','Dia chi','Khu vuc','So anh','So giay to','Trang thai'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['area_code'], (int) $r['photo_count'], (int) $r['document_count'], ((int) $r['photo_count'] > 0 && (int) $r['document_count'] > 0) ? 'Hoan chinh' : 'Chua hoan thien'], $rows), $filters);
+        $title = ['complete' => 'Báo cáo hồ sơ số hoàn chỉnh', 'missing_photo' => 'Báo cáo hồ sơ thiếu ảnh', 'missing_documents' => 'Báo cáo hồ sơ thiếu giấy tờ', 'incomplete' => 'Báo cáo hồ sơ chưa hoàn thiện'][$mode] ?? 'Báo cáo Hồ sơ số';
+        return $this->table($title, ['Mã hộ','Chủ hộ','Địa chỉ','Khu vực','Số ảnh','Số giấy tờ','Trạng thái'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['area_code'], (int) $r['photo_count'], (int) $r['document_count'], ((int) $r['photo_count'] > 0 && (int) $r['document_count'] > 0) ? 'Hoàn chỉnh' : 'Chưa hoàn thiện'], $rows), $filters);
     }
 
     public function templates(int $userId): array
@@ -703,7 +703,7 @@ final class Report extends BaseModel
     public function saveTemplate(int $userId, array $input): array
     {
         $this->ensureReportTemplatesTable();
-        $name = trim((string) ($input['name'] ?? '')) ?: 'Mau bao cao';
+        $name = trim((string) ($input['name'] ?? '')) ?: 'Mẫu báo cáo';
         $type = trim((string) ($input['type'] ?? 'summary')) ?: 'summary';
         $filters = is_array($input['filters'] ?? null) ? $input['filters'] : [];
         $isDefault = !empty($input['isDefault']) ? 1 : 0;

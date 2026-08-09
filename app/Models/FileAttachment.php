@@ -157,7 +157,7 @@ final class FileAttachment extends BaseModel
         if (array_key_exists('file_name', $data) && $this->columnExists('file_attachments', 'file_name')) {
             $name = trim((string) $data['file_name']);
             if ($name === '') {
-                throw new \RuntimeException('T?n file kh?ng ???c r?ng');
+                throw new \RuntimeException('Tên file không được rỗng');
             }
             $sets[] = 'file_name=:file_name';
             $params['file_name'] = mb_substr($name, 0, 255);

@@ -18,7 +18,7 @@ final class TenantConfig
         $hamlet = self::env('TENANT_HAMLET_NAME', (string) ($village['name'] ?? ''));
         $commune = self::env('TENANT_COMMUNE_NAME', (string) ($village['commune_name'] ?? ''));
         $unit = self::env('TENANT_UNIT_NAME', (string) ($village['unit_name'] ?? self::joinUnit($hamlet, $commune)));
-        $systemName = self::env('APP_NAME', self::env('TENANT_SYSTEM_NAME', 'He thong Quan ly Hanh chinh'));
+        $systemName = self::env('APP_NAME', self::env('TENANT_SYSTEM_NAME', 'Hệ thống Quản lý Hành chính'));
         $copyright = self::globalCopyright();
         $platformBranding = self::platformBranding();
         $tenantLogoUrl = self::env('TENANT_LOGO_URL', (string) ($village['logo_url'] ?? ''));
@@ -40,7 +40,7 @@ final class TenantConfig
             'unitName' => $unit,
             'hamletName' => $hamlet,
             'communeName' => $commune,
-            'slogan' => self::env('TENANT_SLOGAN', 'Vi Nhan dan phuc vu'),
+            'slogan' => self::env('TENANT_SLOGAN', 'Vì Nhân dân phục vụ'),
             'softwareVersion' => self::env('APP_VERSION', 'v2.0'),
             'introTitle' => self::env('TENANT_INTRO_TITLE', ''),
             'historyTitle' => self::env('TENANT_HISTORY_TITLE', ''),
@@ -70,6 +70,7 @@ final class TenantConfig
             if ($value !== null && $value !== '') $merged[$key] = $value;
         }
 
+        $merged = self::normalizeDisplaySettings($merged);
         $merged['copyright'] = self::globalCopyright();
         $merged['unitName'] = self::unitName($merged);
         $merged['appName'] = $merged['systemName'];
@@ -97,7 +98,33 @@ final class TenantConfig
         $combined = self::joinUnit((string) ($settings['hamletName'] ?? ''), (string) ($settings['communeName'] ?? ''));
         if ($combined !== '') return $combined;
 
-        return trim((string) ($settings['systemName'] ?? '')) ?: 'Don vi hanh chinh';
+        return trim((string) ($settings['systemName'] ?? '')) ?: 'Đơn vị hành chính';
+    }
+
+
+    private static function normalizeDisplaySettings(array $settings): array
+    {
+        $legacyValues = [
+            'reportTitlePrefix' => [
+                'Quan ly nhan khau' => 'Quản lý nhân khẩu',
+            ],
+            'systemName' => [
+                'He thong Quan ly Hanh chinh' => 'Hệ thống Quản lý Hành chính',
+                'Há»‡ thá»‘ng Quáº£n lÃ½ HÃ nh chÃ­nh' => 'Hệ thống Quản lý Hành chính',
+            ],
+            'slogan' => [
+                'Vi Nhan dan phuc vu' => 'Vì Nhân dân phục vụ',
+            ],
+        ];
+
+        foreach ($legacyValues as $key => $map) {
+            $value = (string) ($settings[$key] ?? '');
+            if ($value !== '' && isset($map[$value])) {
+                $settings[$key] = $map[$value];
+            }
+        }
+
+        return $settings;
     }
 
     private static function globalCopyright(): string

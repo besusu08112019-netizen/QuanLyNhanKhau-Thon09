@@ -396,7 +396,7 @@ final class ImportController extends BaseController
             $developmentMatches = $this->developmentDataMatches($data);
             if ($developmentMatches) {
                 foreach ($developmentMatches as $match) {
-                    $messages[] = 'Du lieu QA/UAT/TEST/DEMO khong duoc phep trong production: ' . ($match['field'] ?? '') . ' = ' . ($match['marker'] ?? '');
+                    $messages[] = 'D? li?u QA/UAT/TEST/DEMO kh?ng ???c ph?p trong production: ' . ($match['field'] ?? '') . ' = ' . ($match['marker'] ?? '');
                 }
             }
 

@@ -10,7 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(auth, /LOGIN_MAX_FAILURES/);
   assert.match(auth, /assertLoginAllowed/);
   assert.match(auth, /recordLoginFailure/);
-  assert.match(auth, /Too many login attempts/);
+  assert.match(auth, /\u0110\u0103ng nh\u1eadp sai qu\u00e1 nhi\u1ec1u l\u1ea7n/);
   assert.match(auth, /destroyPhpSession/);
   assert.match(auth, /session_destroy/);
   assert.match(auth, /function keepAlive/);
@@ -128,13 +128,13 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const sprint10 = read('assets/js/sprint10.js');
   assert.match(sprint10, /function protectedUserActions10/);
   assert.match(sprint10, /SUPER_ADMIN/);
-  assert.match(sprint10, /Tai khoan Super Admin duoc bao ve/);
-  assert.ok(sprint10.indexOf("const row = await api('/api/users/' + id);") < sprint10.indexOf("const password = prompt('Nhap mat khau moi toi thieu 8 ky tu')"), 'sprint10 must check target role before prompting for reset password');
+  assert.match(sprint10, /Tài khoản Super Admin được bảo vệ/);
+  assert.ok(sprint10.indexOf("const row = await api('/api/users/' + id);") < sprint10.indexOf("const password = prompt('Nhập mật khẩu mới tối thiểu 8 ký tự')"), 'sprint10 must check target role before prompting for reset password');
   const sprint8 = read('assets/js/sprint8.js');
   assert.match(sprint8, /function tenantUserActions8/);
   assert.match(sprint8, /SUPER_ADMIN/);
-  assert.match(sprint8, /Tai khoan Super Admin duoc bao ve/);
-  assert.ok(sprint8.indexOf("const row = await api('/api/users/' + id);") < sprint8.indexOf("const password = prompt('Nhap mat khau moi toi thieu 8 ky tu')"), 'sprint8 must check target role before prompting for reset password');
+  assert.match(sprint8, /Tài khoản Super Admin được bảo vệ/);
+  assert.ok(sprint8.indexOf("const row = await api('/api/users/' + id);") < sprint8.indexOf("const password = prompt('Nhập mật khẩu mới tối thiểu 8 ký tự')"), 'sprint8 must check target role before prompting for reset password');
 }
 
 {

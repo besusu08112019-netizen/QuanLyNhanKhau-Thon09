@@ -400,7 +400,7 @@
     if (!requirePermission('file', 'update')) return;
     const fileName = prompt('Ten file', button.dataset.fileName || '');
     if (fileName === null) return;
-    const description = prompt('Mo ta', button.dataset.fileDescription || '');
+    const description = prompt('Mô tả', button.dataset.fileDescription || '');
     if (description === null) return;
     await api('/api/files/' + encodeURIComponent(button.dataset.fileId || button.dataset.editFile), { method: 'PUT', body: { file_name: fileName, original_name: fileName, description } });
     show('Da cap nhat file dinh kem');
@@ -413,7 +413,7 @@
     if (!requirePermission('file', 'update')) return;
     const fileName = prompt('Ten file', button.dataset.fileName || '');
     if (fileName === null) return;
-    const description = prompt('Mo ta', button.dataset.fileDescription || '');
+    const description = prompt('Mô tả', button.dataset.fileDescription || '');
     if (description === null) return;
     await api('/api/files/' + encodeURIComponent(button.dataset.fileId || button.dataset.editFile), { method: 'PUT', body: { file_name: fileName, original_name: fileName, description } });
     show('Da cap nhat file dinh kem');
@@ -684,7 +684,7 @@
   function renderHouseholdTabbedProfile(profile, id) {
     return '<div class="household-profile-tabs" data-household-profile="' + id + '">'
       + '<ul class="nav nav-tabs mb-3" role="tablist">'
-      + '<li class="nav-item"><button class="nav-link active" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="info">' + t('Thong tin') + '</button></li>'
+      + '<li class="nav-item"><button class="nav-link active" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="info">' + t('Thông tin') + '</button></li>'
       + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="files">' + t('Ho so so') + '</button></li>'
       + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="gallery">' + t('Thu vien anh') + '</button></li>'
       + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="video">Video</button></li>'
@@ -734,7 +734,7 @@
     const row = profile.profile || {};
     if (typeof details === 'function' && typeof memberTable === 'function') {
       return renderHouseholdPhoto(profile) + details([
-        [t('Ma ho'), row.household_code], [t('Chu ho'), row.head_citizen_name], [t('Dia chi'), row.address], [t('So dien thoai'), row.phone],
+        [t('Mã hộ'), row.household_code], [t('Chủ hộ'), row.head_citizen_name], [t('Địa chỉ'), row.address], [t('Số điện thoại'), row.phone],
         [t('O nha'), row.at_home_count || 0], [t('Di vang'), row.away_count || 0], [t('Dien ho'), row.household_type || ''], [t('Ghi chu'), row.note]
       ]) + renderHouseholdBusinessActivities(profile.businessActivities || []) + renderMembers(profile.members || []);
     }
@@ -750,8 +750,8 @@
       + '<td>' + esc(item.economic_type || item.sector_label || item.production_sector || item.business_sector || '') + '</td>'
       + '<td>' + esc(item.status_label || item.status || '') + '</td>'
       + '</tr>').join('');
-    return '<section class="person-info-section mt-3"><div class="person-info-section-title"><i class="fa-solid fa-briefcase"></i><h4>Ho?t ??ng kinh t?</h4></div>'
-      + '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>STT</th><th>T?n c? s?</th><th>Lo?i h?nh</th><th>Ng?nh ngh?</th><th>Tr?ng th?i</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
+    return '<section class="person-info-section mt-3"><div class="person-info-section-title"><i class="fa-solid fa-briefcase"></i><h4>Hoạt động kinh tế</h4></div>'
+      + '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>STT</th><th>Tên cơ sở</th><th>Loại hình</th><th>Ngành nghề</th><th>Trạng thái</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
   }
 
   function bindHouseholdTabs(profile, id) {
@@ -800,7 +800,7 @@
     const files = dataItems(data.items);
     const options = sectionOptions.household.map(([section, fileType, label]) => '<option value="' + esc(section) + '" data-file-type="' + esc(fileType) + '">' + esc(label) + '</option>').join('');
     return '<section class="mb-3" id="digitalProfileFiles"><div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-2 mb-2"><h6 class="mb-0">' + t('Tai lieu dinh kem') + '</h6><div class="input-group input-group-sm" style="max-width:280px"><input class="form-control" data-household-file-search value="' + esc(search) + '" placeholder="' + t('Tim theo ten hoac loai') + '"><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.householdFiles.search" data-household-file-search-btn><i class="fa-solid fa-magnifying-glass"></i></button></div></div>'
-      + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">' + t('Loai tai lieu') + '</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">' + t('Mo ta') + '</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" multiple required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> ' + t('Tai len') + '</button></div></form>'
+      + '<form class="row g-2 align-items-end mb-2" data-profile-upload><div class="col-md-3"><label class="form-label small">' + t('Loại tai lieu') + '</label><select name="profileSection" class="form-select form-select-sm">' + options + '</select></div><div class="col-md-4"><label class="form-label small">' + t('Mô tả') + '</label><input name="description" class="form-control form-control-sm"></div><div class="col-md-3"><label class="form-label small">File</label><input name="file" type="file" class="form-control form-control-sm" multiple required></div><div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="fa-solid fa-upload"></i> ' + t('Tai len') + '</button></div></form>'
       + renderFileTable(files)
       + renderSimplePager(data, 'household-files')
       + '</section>';
@@ -809,7 +809,7 @@
   function renderFileTable(files) {
     files = dataItems(files);
     if (!files.length) return '<div class="text-muted small">' + t('Chua co tai lieu dinh kem') + '</div>';
-    return '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>' + t('Ten hien thi') + '</th><th>' + t('Loai') + '</th><th>' + t('Mo ta') + '</th><th>' + t('Phien ban') + '</th><th>' + t('Ngay tai len') + '</th><th>' + t('Nguoi tai len') + '</th><th>' + t('Dung luong') + '</th><th class="text-end">' + t('Thao tac') + '</th></tr></thead><tbody>'
+    return '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>' + t('Tên hiển thị') + '</th><th>' + t('Loại') + '</th><th>' + t('Mô tả') + '</th><th>' + t('Phiên bản') + '</th><th>' + t('Ngày tải lên') + '</th><th>' + t('Người tải lên') + '</th><th>' + t('Dung lượng') + '</th><th class="text-end">' + t('Thao tác') + '</th></tr></thead><tbody>'
       + files.map(file => '<tr><td>' + esc(file.display_name || file.original_name || file.file_name || '') + '</td><td>' + esc(sectionLabel(file.profile_section || file.category || file.file_type)) + '</td><td>' + esc(file.description || '') + '</td><td>' + esc(file.version || '') + '</td><td>' + esc(dateText(file.created_at)) + '</td><td>' + esc(file.created_by_name || file.created_by_email || file.created_by || '') + '</td><td>' + esc(formatSize(file.file_size)) + '</td><td class="text-end"><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" type="button" data-platform-action="digitalProfile.file.preview" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-eye"></i></button><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.file.download" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-primary" type="button" data-platform-action="digitalProfile.file.edit" data-file-id="' + Number(file.id || 0) + '" data-file-name="' + esc(file.file_name || file.original_name || '') + '" data-file-description="' + esc(file.description || '') + '"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger" type="button" data-platform-action="digitalProfile.file.delete" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></td></tr>').join('')
       + '</tbody></table></div>';
   }
@@ -869,7 +869,7 @@
     try {
       const data = await fetchHouseholdFiles(id, { page, pageSize: 8, fileType: 'VIDEO' });
       const videos = dataItems(data.items);
-      pane.innerHTML = '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Video</h6>' + (videos.length ? '<div class="row g-2">' + videos.map(file => '<div class="col-md-6"><div class="border rounded p-2"><video class="w-100" controls preload="metadata" data-auth-preview="' + Number(file.id || 0) + '"></video><div class="fw-semibold mt-2">' + esc(file.display_name || file.original_name || '') + '</div><div class="small text-muted">' + t('Dung luong') + ': ' + esc(formatSize(file.file_size)) + ' <span data-video-duration></span></div><div class="btn-group btn-group-sm mt-2"><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.file.download" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-danger" type="button" data-platform-action="digitalProfile.file.delete" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div></div>').join('') + '</div>' : '<div class="text-muted small">' + t('Chua co video') + '</div>') + renderSimplePager(data, 'household-video') + '</section>';
+      pane.innerHTML = '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">Video</h6>' + (videos.length ? '<div class="row g-2">' + videos.map(file => '<div class="col-md-6"><div class="border rounded p-2"><video class="w-100" controls preload="metadata" data-auth-preview="' + Number(file.id || 0) + '"></video><div class="fw-semibold mt-2">' + esc(file.display_name || file.original_name || '') + '</div><div class="small text-muted">' + t('Dung lượng') + ': ' + esc(formatSize(file.file_size)) + ' <span data-video-duration></span></div><div class="btn-group btn-group-sm mt-2"><button class="btn btn-outline-secondary" type="button" data-platform-action="digitalProfile.file.download" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-download"></i></button><button class="btn btn-outline-danger" type="button" data-platform-action="digitalProfile.file.delete" data-file-id="' + Number(file.id || 0) + '"><i class="fa-solid fa-trash"></i></button></div></div></div>').join('') + '</div>' : '<div class="text-muted small">' + t('Chua co video') + '</div>') + renderSimplePager(data, 'household-video') + '</section>';
       pane.dataset.loaded = '1';
       pane.dataset.page = String(data.page || page);
       hydrateAuthPreviews(pane);
@@ -883,10 +883,10 @@
     const hasGps = hasValue(row.latitude) && hasValue(row.longitude);
     const mapUrl = hasGps ? 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(row.latitude) + '&mlon=' + encodeURIComponent(row.longitude) + '#map=18/' + encodeURIComponent(row.latitude) + '/' + encodeURIComponent(row.longitude) : '';
     const directionUrl = hasGps ? 'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=;' + encodeURIComponent(row.latitude + ',' + row.longitude) : '';
-    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">' + t('Thong tin GPS / GIS') + '</h6><div class="row g-2">'
+    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">' + t('Thông tin GPS / GIS') + '</h6><div class="row g-2">'
       + '<div class="col-md-6"><div class="border rounded p-2 h-100"><div class="text-muted small">' + t('Toa do hien tai') + '</div><div class="fw-semibold">' + esc(hasGps ? row.latitude + ', ' + row.longitude : t('Chua co toa do GIS')) + '</div></div></div>'
       + '<div class="col-md-3"><div class="border rounded p-2 h-100"><div class="text-muted small">' + t('Nguon') + '</div><div class="fw-semibold">' + esc(row.location_source || '') + '</div></div></div>'
-      + '<div class="col-md-3"><div class="border rounded p-2 h-100"><div class="text-muted small">' + t('Cap nhat') + '</div><div class="fw-semibold">' + esc(dateText(row.location_updated_at)) + '</div></div></div>'
+      + '<div class="col-md-3"><div class="border rounded p-2 h-100"><div class="text-muted small">' + t('Cập nhật') + '</div><div class="fw-semibold">' + esc(dateText(row.location_updated_at)) + '</div></div></div>'
       + '</div><div class="d-flex flex-wrap gap-2 mt-2"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="digitalProfile.gps.open" data-gps-action="gis"><i class="fa-solid fa-map-location-dot"></i> ' + t('Xem tren GIS') + '</button>'
       + (hasGps ? '<a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + esc(mapUrl) + '"><i class="fa-solid fa-map"></i> ' + t('Xem ban do') + '</a><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="' + esc(directionUrl) + '"><i class="fa-solid fa-route"></i> ' + t('Chi duong') + '</a>' : '')
       + '</div><div class="text-muted small mt-2">' + t('Toa do duoc doc tu du lieu GIS cua ho khong tao nguon GPS rieng') + '</div></section>';
@@ -930,7 +930,7 @@
       zoom = Math.max(0.5, Math.min(3, zoom));
       $('.modal-title', modal).textContent = file.display_name || file.original_name || '';
       const img = $('[data-lightbox-image]', modal);
-      loadPreviewBlob(file.id).then(url => { img.src = url; }).catch(() => { img.alt = t('Khong tai duoc anh'); });
+      loadPreviewBlob(file.id).then(url => { img.src = url; }).catch(() => { img.alt = t('Không tải được ảnh'); });
       img.style.transform = 'scale(' + zoom + ')';
       img.style.transformOrigin = 'center center';
     };

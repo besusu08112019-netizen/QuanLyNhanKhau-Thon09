@@ -16,9 +16,9 @@ final class AuthController extends BaseController
         $email = trim((string) $this->input('email', $this->input('username', '')));
         $name = trim((string) $this->input('displayName', $email));
         $password = (string) $this->input('password', '');
-        if (!$email || strlen($password) < 8) $this->fail('Email va mat khau toi thieu 8 ky tu la bat buoc');
+        if (!$email || strlen($password) < 8) $this->fail('Email và mật khẩu tối thiểu 8 ký tự là bắt buộc');
         $user = $this->users()->createFirstAdmin($email, $name, $password);
-        $this->audit($user, 'user', 'create', 'Tao tai khoan quan tri dau tien', $user['id']);
+        $this->audit($user, 'user', 'create', 'Tạo tài khoản quản trị đầu tiên', $user['id']);
         $this->ok($this->users()->publicUser($user));
     }
 
@@ -31,12 +31,12 @@ final class AuthController extends BaseController
             $users = new User();
             $result = $users->login($login, (string) $this->input('password', ''));
             $this->clearLoginFailures($login);
-            $this->auditLogin($result['user'], 'read', 'Dang nhap he thong', $result['user']['id']);
+            $this->auditLogin($result['user'], 'read', 'Đăng nhập hệ thống', $result['user']['id']);
             $this->ok($result);
         } catch (\Throwable) {
             $this->recordLoginFailure($login);
-            $this->auditLogin(null, 'login_failed', 'Dang nhap that bai', null, ['login_hash' => hash('sha256', strtolower(trim($login))), 'ip' => $this->clientIp(), 'user_agent' => $this->userAgent()], 'WARN');
-            $this->fail('Invalid account or password', 401);
+            $this->auditLogin(null, 'login_failed', 'Đăng nhập thất bại', null, ['login_hash' => hash('sha256', strtolower(trim($login))), 'ip' => $this->clientIp(), 'user_agent' => $this->userAgent()], 'WARN');
+            $this->fail('Tài khoản hoặc mật khẩu không đúng', 401);
         }
     }
 
@@ -47,7 +47,7 @@ final class AuthController extends BaseController
         $token = $this->request->bearerToken();
         if ($token) $this->users()->revoke($token);
         $this->destroyPhpSession();
-        $this->audit($user, 'user', 'read', 'Dang xuat he thong', $user['id']);
+        $this->audit($user, 'user', 'read', 'Đăng xuất hệ thống', $user['id']);
         $this->ok(['loggedOutAt' => date('c')]);
     }
 
@@ -57,7 +57,7 @@ final class AuthController extends BaseController
         $this->verifyCsrfToken();
         $token = $this->request->bearerToken();
         if (!$token) {
-            $this->fail('Vui long dang nhap', 401);
+            $this->fail('Vui lòng đăng nhập', 401);
         }
         $this->users()->touchSession($token);
         $this->ok(['activeUntil' => date('c', time() + $this->idleTimeoutSeconds()), 'user' => $this->users()->publicUser($user)]);
@@ -74,7 +74,7 @@ final class AuthController extends BaseController
         $row = $bucket[$this->loginKey($login)] ?? ['count' => 0, 'first' => time()];
         if ((time() - (int) ($row['first'] ?? 0)) > self::LOGIN_WINDOW_SECONDS) return;
         if ((int) ($row['count'] ?? 0) >= self::LOGIN_MAX_FAILURES) {
-            $this->fail('Too many login attempts. Please try again later.', 429);
+            $this->fail('Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau.', 429);
         }
     }
 
