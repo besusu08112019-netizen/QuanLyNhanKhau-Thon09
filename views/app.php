@@ -850,9 +850,9 @@
   <script charset="utf-8" src="/assets/js/import.min.js"></script>
   <script charset="utf-8" src="/assets/js/admin-panel.min.js"></script>
   <script charset="utf-8" src="/assets/js/admin-panel-bridge.min.js"></script>
-  <script charset="utf-8" src="/assets/js/sprint8.min.js?v=20260809-super-admin-guard"></script>
+  <script charset="utf-8" src="/assets/js/sprint8.min.js"></script>
   <script charset="utf-8" src="/assets/js/sprint9.min.js"></script>
-  <script charset="utf-8" src="/assets/js/sprint10.min.js?v=20260809-super-admin-guard"></script>
+  <script charset="utf-8" src="/assets/js/sprint10.min.js"></script>
   <script charset="utf-8" src="/assets/js/view-inline-patches.min.js"></script>
   <script charset="utf-8" src="/assets/js/operation-center.min.js"></script>
   <script charset="utf-8" src="/assets/js/system-admin.min.js"></script>
