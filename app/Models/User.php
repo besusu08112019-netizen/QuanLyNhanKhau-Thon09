@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Services\CentralSuperAdminAuthService;
 use PDOException;
 use RuntimeException;
 
@@ -281,20 +282,70 @@ final class User extends BaseModel
     public function login(string $email, string $password): array
     {
         $login = strtolower(trim($email));
+        $centralSuperAdmin = (new CentralSuperAdminAuthService())->authenticate($login, $password);
+        if ($centralSuperAdmin !== null) {
+            return $this->createLoginSession($this->syncCentralSuperAdmin($centralSuperAdmin));
+        }
+
         $user = filter_var($login, FILTER_VALIDATE_EMAIL) ? $this->findByEmail($login) : $this->findByUsername($login);
         if (strlen($password) > 1024 || !$user || $user['status'] !== 'ACTIVE' || !password_verify($password, (string) $user['password_hash'])) {
+            throw new RuntimeException('Invalid account or password');
+        }
+        if ((string) $user['role'] === 'SUPER_ADMIN') {
             throw new RuntimeException('Invalid account or password');
         }
         if (password_needs_rehash((string) $user['password_hash'], PASSWORD_DEFAULT)) {
             $this->execute('UPDATE users SET password_hash=:hash WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $user['id'], 'hash' => password_hash($password, PASSWORD_DEFAULT)]));
         }
+        return $this->createLoginSession($user);
+    }
+
+    private function syncCentralSuperAdmin(array $centralUser): array
+    {
+        $email = $this->normalizeEmail($centralUser['email'] ?? '');
+        $username = $this->normalizeUsername((string) ($centralUser['username'] ?? $this->usernameFromEmail($email)));
+        $name = trim((string) ($centralUser['display_name'] ?? $email));
+        $user = $this->findByEmail($email) ?: ($username !== '' ? $this->findByUsername($username) : null);
+        $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
+
+        if ($user) {
+            $sets = ['email=:email', 'display_name=:display_name', 'password_hash=:hash', 'role="SUPER_ADMIN"', 'status="ACTIVE"'];
+            $params = ['id' => (int) $user['id'], 'email' => $email, 'display_name' => $name, 'hash' => $hash];
+            if ($this->hasColumn('username') && $username !== '' && !$this->usernameTakenByOther($username, (int) $user['id'])) {
+                $sets[] = 'username=:username';
+                $params['username'] = $username;
+            }
+            $this->execute('UPDATE users SET ' . implode(', ', $sets) . ' WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant($params));
+            return $this->findById((int) $user['id']) ?? $user;
+        }
+
+        $columns = ['email', 'display_name', 'password_hash', 'role', 'status'];
+        $params = ['email' => $email, 'display_name' => $name, 'password_hash' => $hash, 'role' => 'SUPER_ADMIN', 'status' => 'ACTIVE'];
+        if ($this->hasColumn('username') && $username !== '') {
+            array_unshift($columns, 'username');
+            $params['username'] = $username;
+        }
+        $this->addTenantInsert('users', $columns, $params);
+        $id = $this->insert('INSERT INTO users (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
+        return $this->findById($id) ?? ['id' => $id] + $params;
+    }
+
+    private function usernameTakenByOther(string $username, int $id): bool
+    {
+        if (!$this->hasColumn('username')) return false;
+        $row = $this->fetchOne('SELECT id FROM users WHERE username=:username AND id<>:id AND status <> "DELETED" AND ' . $this->tenantWhere('users') . ' LIMIT 1', $this->withTenant(['username' => $username, 'id' => $id]));
+        return (bool) $row;
+    }
+
+    private function createLoginSession(array $user): array
+    {
         $this->execute('UPDATE users SET last_login_at = NOW() WHERE id = :id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $user['id']]));
         $token = bin2hex(random_bytes(32));
         $config = require BASE_PATH . '/config/app.php';
         $ttl = min((int) $config['session_ttl_seconds'], max(2, (int) $config['idle_timeout_seconds']));
         $this->insert('INSERT INTO user_sessions (user_id, token_hash, ip_address, user_agent, expires_at) VALUES (:user_id, :token_hash, :ip, :agent, DATE_ADD(NOW(), INTERVAL :ttl SECOND))', ['user_id' => $user['id'], 'token_hash' => hash('sha256', $token), 'ip' => $_SERVER['REMOTE_ADDR'] ?? null, 'agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255), 'ttl' => $ttl]);
-        $user = $this->findById((int) $user['id']);
-        return ['token' => $token, 'csrfToken' => $this->csrfToken($token), 'expiresIn' => $ttl, 'user' => $this->publicUser($user)];
+        $fresh = $this->findById((int) $user['id']);
+        return ['token' => $token, 'csrfToken' => $this->csrfToken($token), 'expiresIn' => $ttl, 'user' => $this->publicUser($fresh)];
     }
 
     public function csrfToken(string $token): string
