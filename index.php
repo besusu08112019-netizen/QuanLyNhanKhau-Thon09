@@ -30,6 +30,7 @@ use App\Core\PortalContext;
 use App\Core\Response;
 use App\Core\TenantConfig;
 use App\Core\TenantContext;
+use App\Core\TenantGuard;
 use App\Controllers\AgriculturalLandZoneController;
 use App\Controllers\AgricultureProductionController;
 use App\Controllers\AdministrativeUnitController;
@@ -78,7 +79,6 @@ use App\Config\CitizenPolicyDefaults;
 use App\Policies\AgePolicy;
 use App\Policies\InsurancePolicy;
 use App\Services\StudentStatusService;
-use App\Services\TenantRegistryStatusService;
 
 Autoloader::register();
 env_load(BASE_PATH);
@@ -232,33 +232,7 @@ function api_exception_status(Throwable $e): int
 
 reject_oversized_api_request();
 $request = Request::capture();
-
-function enforce_tenant_registry_status(Request $request): void
-{
-    if (!PortalContext::isTenant() || !str_starts_with($request->path(), '/api/')) {
-        return;
-    }
-
-    $status = (new TenantRegistryStatusService())->statusForHost(PortalContext::host());
-    if (($status['active'] ?? false) === true) {
-        return;
-    }
-
-    Response::json([
-        'ok' => false,
-        'success' => false,
-        'message' => (string) ($status['message'] ?? 'Don vi dang bi khoa'),
-        'errors' => [],
-        'error' => [
-            'message' => (string) ($status['message'] ?? 'Don vi dang bi khoa'),
-            'reason' => (string) ($status['reason'] ?? 'tenant_locked'),
-            'tenant' => $status['tenant'] ?? null,
-        ],
-        'status' => 423,
-    ], 423);
-}
-
-enforce_tenant_registry_status($request);
+TenantGuard::enforce($request);
 
 if (PortalContext::isPublic() && str_starts_with($request->path(), '/api')) {
     Response::json([
