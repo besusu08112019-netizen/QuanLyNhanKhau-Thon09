@@ -17,6 +17,7 @@ final class PlatformSettingsService
         'general.locale' => ['group' => 'general', 'type' => 'string', 'default' => 'vi_VN'],
         'general.date_format' => ['group' => 'general', 'type' => 'string', 'default' => 'dd/mm/yyyy'],
         'general.datetime_format' => ['group' => 'general', 'type' => 'string', 'default' => 'dd/mm/yyyy HH:mm'],
+        'general.copyright' => ['group' => 'general', 'type' => 'string', 'default' => GlobalCopyrightService::DEFAULT_VALUE],
         'identity.system_name' => ['group' => 'identity', 'type' => 'string', 'default' => 'HONG PHONG COMMUNITY PLATFORM'],
         'identity.short_name' => ['group' => 'identity', 'type' => 'string', 'default' => 'CCC'],
         'identity.logo_url' => ['group' => 'identity', 'type' => 'string', 'default' => ''],

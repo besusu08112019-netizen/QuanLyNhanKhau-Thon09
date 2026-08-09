@@ -532,6 +532,35 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 }
 
 {
+  const tenantConfig = read('app/Core/TenantConfig.php');
+  assert.match(tenantConfig, /GlobalCopyrightService/);
+  assert.match(tenantConfig, /globalCopyright/);
+  assert.match(tenantConfig, /if \(\$key === 'copyright'\) continue/);
+  assert.doesNotMatch(tenantConfig, /TENANT_COPYRIGHT/);
+  assert.doesNotMatch(tenantConfig, /\(c\) ' \. \$unit/);
+  const globalCopyright = read('app/Services/GlobalCopyrightService.php');
+  assert.match(globalCopyright, /general\.copyright/);
+  assert.ok(globalCopyright.includes('B\u1ea3n quy\u1ec1n thu\u1ed9c v\u1ec1 Th\u00f4n 09')); 
+  assert.match(globalCopyright, /CONTROL_CENTER_DB_DATABASE/);
+  const settings = read('app/Models/SystemSetting.php');
+  const allowedLine = settings.match(/private array \$allowed = \[[^;]+;/);
+  assert.ok(allowedLine, 'SystemSetting allowed list must be present');
+  assert.doesNotMatch(allowedLine[0], /'copyright'/);
+  assert.match(settings, /unset\(\$data\['copyright'\]\)/);
+  const platformSettings = read('app/Services/PlatformSettingsService.php');
+  assert.match(platformSettings, /general\.copyright/);
+  const adminPanel = read('assets/js/admin-panel.js');
+  assert.match(adminPanel, /data-global-setting="copyright"/);
+  assert.match(adminPanel, /delete payload.copyright/);
+  const appJs = read('assets/js/app.utf8.min.js');
+  assert.match(appJs, /setText('#loginCopyright', settings.copyright || '')/);
+  assert.doesNotMatch(appJs, /unitName ? '.*' + unitName/);
+  const migration = read('database/migrations/20260809_150000_global_copyright.sql');
+  assert.match(migration, /general\.copyright/);
+  assert.ok(migration.includes('B\u1ea3n quy\u1ec1n thu\u1ed9c v\u1ec1 Th\u00f4n 09')); 
+}
+
+{
   const repo = read('app/Repositories/ControlCenterUserRepository.php');
   assert.match(repo, /function tenantLocalVillageId\(PDO \$pdo, array \$tenant\): int/);
   assert.match(repo, /'village_id' => \$this->tenantLocalVillageId\(\$pdo, \$tenant\)/);

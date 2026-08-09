@@ -8,7 +8,7 @@ use App\Core\TenantContext;
 
 final class SystemSetting extends BaseModel
 {
-    private array $allowed = ['systemName','logoUrl','backgroundUrl','backgroundImages','backgroundInterval','introImageUrl','unitName','hamletName','communeName','slogan','softwareVersion','introTitle','historyTitle','hamletHistory','introduction','phone','email','address','website','copyright','reportSigner','supportEmail','maintenanceMessage','themeColor','backgroundColor','manifestId'];
+    private array $allowed = ['systemName','logoUrl','backgroundUrl','backgroundImages','backgroundInterval','introImageUrl','unitName','hamletName','communeName','slogan','softwareVersion','introTitle','historyTitle','hamletHistory','introduction','phone','email','address','website','reportSigner','supportEmail','maintenanceMessage','themeColor','backgroundColor','manifestId'];
 
     public function all(): array
     {
@@ -29,6 +29,7 @@ final class SystemSetting extends BaseModel
 
     public function updateMany(array $data, int $userId): array
     {
+        unset($data['copyright']);
         foreach ($this->allowed as $key) {
             if (!array_key_exists($key, $data)) continue;
             $value = $key === 'backgroundImages'

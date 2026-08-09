@@ -3728,6 +3728,7 @@
           configSelect('general.locale', 'Ngôn ngữ mặc định', [['vi_VN', 'Tiếng Việt']]) +
           configSelect('general.date_format', 'Định dạng ngày', [['dd/mm/yyyy', 'dd/mm/yyyy'], ['yyyy-mm-dd', 'yyyy-mm-dd']]) +
           configSelect('general.datetime_format', 'Định dạng ngày giờ', [['dd/mm/yyyy HH:mm', 'dd/mm/yyyy HH:mm'], ['yyyy-mm-dd HH:mm', 'yyyy-mm-dd HH:mm']]) +
+          configInput('general.copyright', 'Copyright toan he thong') +
           '</div>';
         return settingsCard('Cấu hình chung', 'Thông tin hiển thị và thiết lập mặc định của nền tảng.', body, '<button class="cc-btn primary" type="button" data-cc-action="configuration.save" data-group="general"><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>');
       }

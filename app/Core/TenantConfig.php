@@ -2,6 +2,7 @@
 
 namespace App\Core;
 
+use App\Services\GlobalCopyrightService;
 use App\Services\PlatformBrandingService;
 use Throwable;
 
@@ -18,7 +19,7 @@ final class TenantConfig
         $commune = self::env('TENANT_COMMUNE_NAME', (string) ($village['commune_name'] ?? ''));
         $unit = self::env('TENANT_UNIT_NAME', (string) ($village['unit_name'] ?? self::joinUnit($hamlet, $commune)));
         $systemName = self::env('APP_NAME', self::env('TENANT_SYSTEM_NAME', 'He thong Quan ly Hanh chinh'));
-        $copyright = self::env('TENANT_COPYRIGHT', $unit !== '' ? '(c) ' . $unit : '');
+        $copyright = self::globalCopyright();
         $platformBranding = self::platformBranding();
         $tenantLogoUrl = self::env('TENANT_LOGO_URL', (string) ($village['logo_url'] ?? ''));
         if ($tenantLogoUrl === '') {
@@ -65,9 +66,11 @@ final class TenantConfig
 
         $merged = self::defaults();
         foreach (($settings ?? self::databaseSettings()) as $key => $value) {
+            if ($key === 'copyright') continue;
             if ($value !== null && $value !== '') $merged[$key] = $value;
         }
 
+        $merged['copyright'] = self::globalCopyright();
         $merged['unitName'] = self::unitName($merged);
         $merged['appName'] = $merged['systemName'];
         $merged['contactAddress'] = $merged['address'] ?? '';
@@ -95,6 +98,11 @@ final class TenantConfig
         if ($combined !== '') return $combined;
 
         return trim((string) ($settings['systemName'] ?? '')) ?: 'Don vi hanh chinh';
+    }
+
+    private static function globalCopyright(): string
+    {
+        return (new GlobalCopyrightService())->value();
     }
 
     private static function platformBranding(): array
