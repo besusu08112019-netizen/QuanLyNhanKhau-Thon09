@@ -279,21 +279,34 @@
     };
   }
 
+  function tenantUserActions8(row) {
+    if (String(row.role || '').toUpperCase() === 'SUPER_ADMIN') {
+      return '<span class="text-muted small">&#272;&#432;&#7907;c b&#7843;o v&#7879;</span>';
+    }
+    const action = row.status === 'ACTIVE' ? 'lock' : 'unlock';
+    return '<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="users.edit" data-id="' + row.id + '">S&#7917;a</button> <button class="btn btn-sm btn-outline-warning" type="button" data-platform-action="users.toggle" data-id="' + row.id + '" data-action="' + action + '">' + (action === 'lock' ? 'Kh&oacute;a' : 'M&#7903; kh&oacute;a') + '</button> <button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="users.resetPassword" data-id="' + row.id + '">&#272;&#7863;t l&#7841;i m&#7853;t kh&#7849;u</button> <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="users.delete" data-id="' + row.id + '">X&oacute;a</button>';
+  }
+
   window.renderUserRowsSprint8 = function renderUserRowsSprint8(data) {
     const body = document.querySelector('#userRows');
     if (!body) return;
-    body.innerHTML = data.items.map(row => { const action = row.status === 'ACTIVE' ? 'lock' : 'unlock'; return '<tr><td>' + escapeHtml(row.username || '') + '</td><td>' + escapeHtml(row.display_name || row.displayName || '') + '</td><td>' + escapeHtml(row.email || '') + '</td><td>' + escapeHtml(row.phone || '') + '</td><td>' + escapeHtml(row.position || '') + '</td><td>' + roleLabel(row.role) + '</td><td>' + statusLabel(row.status) + '</td><td>' + formatDateTime(row.created_at) + '</td><td>' + formatDateTime(row.last_login_at) + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="users.edit" data-id="' + row.id + '">Sửa</button> <button class="btn btn-sm btn-outline-warning" type="button" data-platform-action="users.toggle" data-id="' + row.id + '" data-action="' + action + '">' + (action === 'lock' ? 'Khóa' : 'Mở khóa') + '</button> <button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="users.resetPassword" data-id="' + row.id + '">Đặt lại mật khẩu</button> <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="users.delete" data-id="' + row.id + '">Xóa</button></td></tr>'; }).join('') || emptyRow(10, 'Chưa có người dùng');
+    body.innerHTML = data.items.map(row => '<tr><td>' + escapeHtml(row.username || '') + '</td><td>' + escapeHtml(row.display_name || row.displayName || '') + '</td><td>' + escapeHtml(row.email || '') + '</td><td>' + escapeHtml(row.phone || '') + '</td><td>' + escapeHtml(row.position || '') + '</td><td>' + roleLabel(row.role) + '</td><td>' + statusLabel(row.status) + '</td><td>' + formatDateTime(row.created_at) + '</td><td>' + formatDateTime(row.last_login_at) + '</td><td class="text-end">' + tenantUserActions8(row) + '</td></tr>').join('') || emptyRow(10, 'Ch&#432;a c&oacute; ng&#432;&#7901;i d&ugrave;ng');
   };
 
   window.resetUserPassword = async function resetUserPassword(id) {
-    const password = prompt('Nhập mật khẩu mới tối thiểu 8 ký tự');
-    if (!password) return;
-    if (password.length < 8) return showToast('Mật khẩu tối thiểu 8 ký tự', 'warning');
     const row = await api('/api/users/' + id);
+    if (String(row.role || '').toUpperCase() === 'SUPER_ADMIN') {
+      showToast('Tai khoan Super Admin duoc bao ve, khong the dat lai mat khau tai day', 'warning');
+      return;
+    }
+    const password = prompt('Nhap mat khau moi toi thieu 8 ky tu');
+    if (!password) return;
+    if (password.length < 8) return showToast('Mat khau toi thieu 8 ky tu', 'warning');
     await api('/api/users/' + id, { method: 'PUT', body: { displayName: row.displayName, role: row.role, phone: row.phone, position: row.position, password } });
-    showToast('Đã đặt lại mật khẩu');
+    showToast('Da dat lai mat khau');
   };
 
   function formatDateTime(value) { if (!value) return ''; const date = new Date(String(value).replace(' ', 'T')); return Number.isNaN(date.getTime()) ? formatDate(value) : date.toLocaleString('vi-VN'); }
   function statusLabel(status) { return status === 'ACTIVE' ? 'Hoạt động' : status === 'INACTIVE' ? 'Đã khóa' : status || ''; }
 })();
+

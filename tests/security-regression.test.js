@@ -113,6 +113,18 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(users, /\['SUPER_ADMIN', 'ADMIN'\]/);
   assert.match(users, /function touchSession/);
   assert.match(users, /expires_at = DATE_ADD\(NOW\(\), INTERVAL :ttl SECOND\)/);
+  assert.match(users, /function changePassword\(int \$id, string \$password, int \$actorId\)/);
+  assert.match(users, /\$user\['role'\] === 'SUPER_ADMIN'/);
+  const sprint10 = read('assets/js/sprint10.js');
+  assert.match(sprint10, /function protectedUserActions10/);
+  assert.match(sprint10, /SUPER_ADMIN/);
+  assert.match(sprint10, /Tai khoan Super Admin duoc bao ve/);
+  assert.ok(sprint10.indexOf("const row = await api('/api/users/' + id);") < sprint10.indexOf("const password = prompt('Nhap mat khau moi toi thieu 8 ky tu')"), 'sprint10 must check target role before prompting for reset password');
+  const sprint8 = read('assets/js/sprint8.js');
+  assert.match(sprint8, /function tenantUserActions8/);
+  assert.match(sprint8, /SUPER_ADMIN/);
+  assert.match(sprint8, /Tai khoan Super Admin duoc bao ve/);
+  assert.ok(sprint8.indexOf("const row = await api('/api/users/' + id);") < sprint8.indexOf("const password = prompt('Nhap mat khau moi toi thieu 8 ky tu')"), 'sprint8 must check target role before prompting for reset password');
 }
 
 {
