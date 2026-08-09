@@ -18,12 +18,7 @@ final class TenantRegistryStatusService
 
         $config = $this->config();
         if (!$config['configured']) {
-            return [
-                'configured' => false,
-                'active' => true,
-                'reason' => 'registry_not_configured',
-                'message' => 'Tenant registry is not configured',
-            ];
+            return $this->locked('registry_not_configured', 'Chua cau hinh Community Control Center Tenant Registry');
         }
 
         try {
@@ -42,7 +37,10 @@ final class TenantRegistryStatusService
         }
 
         $status = strtoupper((string) ($row['status'] ?? ''));
-        if (!in_array($status, ['READY', 'ACTIVE'], true)) {
+        if (!empty($row['deleted_at']) || $status === 'DELETED') {
+            return $this->locked('tenant_deleted', 'Don vi khong con hoat dong tren Community Control Center', $row);
+        }
+        if (!empty($row['locked_at']) || !in_array($status, ['READY', 'ACTIVE'], true)) {
             return $this->locked('tenant_locked', 'Don vi dang bi khoa tren Community Control Center', $row);
         }
 
@@ -58,7 +56,7 @@ final class TenantRegistryStatusService
     {
         $subdomain = explode('.', $host)[0] ?? $host;
         $stmt = $this->db()->prepare(
-            'SELECT id, code, name, domain, subdomain, status, connection_status
+            'SELECT id, code, name, domain, subdomain, status, connection_status, locked_at, deleted_at
              FROM villages
              WHERE domain = :host OR subdomain = :subdomain
              ORDER BY domain = :host_order DESC, id ASC
@@ -148,6 +146,8 @@ final class TenantRegistryStatusService
             'domain' => (string) ($row['domain'] ?? ''),
             'status' => (string) ($row['status'] ?? ''),
             'connectionStatus' => (string) ($row['connection_status'] ?? ''),
+            'lockedAt' => $row['locked_at'] ?? null,
+            'deletedAt' => $row['deleted_at'] ?? null,
         ];
     }
 }

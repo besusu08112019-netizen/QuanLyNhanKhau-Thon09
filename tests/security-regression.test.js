@@ -44,12 +44,18 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 {
   const index = read('index.php');
-  assert.match(index, /TenantRegistryStatusService/);
-  assert.match(index, /function enforce_tenant_registry_status/);
-  assert.match(index, /PortalContext::isTenant\(\)/);
+  assert.ok(index.includes('TenantGuard::enforce($' + 'request)'));
+  assert.doesNotMatch(index, /function enforce_tenant_registry_status/);
   assert.match(index, /PortalContext::isPublic\(\)/);
   assert.match(index, /control_center_disabled/);
-  assert.match(index, /Response::json\(\[[\s\S]+423/);
+  const tenantGuard = read('app/Core/TenantGuard.php');
+  assert.match(tenantGuard, /PortalContext::isTenant\(\)/);
+  assert.match(tenantGuard, /TenantRegistryStatusService/);
+  assert.match(tenantGuard, /Response::json\(\[/);
+  assert.ok(tenantGuard.includes("'error' => $" + 'errorCode'));
+  assert.match(tenantGuard, /TENANT_LOCKED/);
+  assert.match(tenantGuard, /noindex,nofollow/);
+  assert.match(tenantGuard, /no-store, no-cache/);
   assert.match(index, /reject_oversized_api_request/);
   assert.match(index, /redact_security_value/);
   assert.match(index, /redact_security_uri/);
@@ -263,6 +269,13 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(envExample, /CONTROL_CENTER_DB_HOST/);
   assert.match(envExample, /CONTROL_CENTER_DB_DATABASE/);
   assert.match(envExample, /CONTROL_CENTER_DB_USERNAME/);
+  const tenantStatusService = read('app/Services/TenantRegistryStatusService.php');
+  assert.match(tenantStatusService, /locked_at/);
+  assert.match(tenantStatusService, /deleted_at/);
+  assert.match(tenantStatusService, /tenant_not_registered/);
+  assert.match(tenantStatusService, /registry_unavailable/);
+  assert.match(tenantStatusService, /registry_not_configured/);
+  assert.match(tenantStatusService, /locked\('registry_not_configured'/);
 }
 
 {
