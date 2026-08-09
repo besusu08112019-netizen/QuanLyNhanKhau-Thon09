@@ -6,6 +6,7 @@ $urls = parseList(getenv('TENANT_PARITY_URLS') ?: 'https://thon09.hongphongnb.co
 $requiredModules = parseList(getenv('TENANT_PARITY_REQUIRED_MODULES') ?: '');
 $requireLogin = envBool('TENANT_PARITY_REQUIRE_LOGIN', true);
 $credentials = parseCredentials(getenv('TENANT_PARITY_LOGIN_JSON') ?: '{}');
+$registryStatuses = loadControlCenterUnitStatuses();
 
 $failures = [];
 $reports = [];
@@ -23,11 +24,24 @@ foreach ($urls as $url) {
         'login' => 'NOT_RUN',
         'api_me' => 'NOT_RUN',
         'modules' => [],
+        'expected_locked' => false,
     ];
 
     try {
         $home = httpRequest('GET', $baseUrl . '/');
         $report['home_status'] = $home['status'];
+        $expectedLocked = tenantExpectedLocked($registryStatuses, $host);
+        $report['expected_locked'] = $expectedLocked;
+        if ($expectedLocked) {
+            if (in_array($home['status'], [423, 503], true) && tenantLockedBody($home['body'])) {
+                $report['login_config'] = 'LOCKED';
+                $report['login'] = 'LOCKED';
+                $report['api_me'] = 'LOCKED';
+                $reports[] = $report;
+                continue;
+            }
+            $failures[] = "{$host}: expected locked by Community Control Center but home returned HTTP {$home['status']}";
+        }
         if ($home['status'] < 200 || $home['status'] >= 300) {
             $failures[] = "{$host}: home returned HTTP {$home['status']}";
         }
@@ -116,6 +130,63 @@ if ($failures !== []) {
 }
 
 echo "Tenant parity acceptance PASS\n";
+
+function loadControlCenterUnitStatuses(): array
+{
+    try {
+        $response = httpRequest('GET', 'https://hongphongnb.com/api/control-center/units');
+        $json = json_decode($response['body'], true);
+        $items = is_array($json) ? ($json['data']['items'] ?? $json['data']['data'] ?? $json['items'] ?? []) : [];
+        if ($response['status'] < 200 || $response['status'] >= 300 || !is_array($items)) {
+            return [];
+        }
+
+        $statuses = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            foreach (['domain', 'subdomain'] as $field) {
+                $host = normalizeHost((string) ($item[$field] ?? ''));
+                if ($host !== '') {
+                    $statuses[$host] = $item;
+                }
+            }
+        }
+        return $statuses;
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function tenantExpectedLocked(array $statuses, string $host): bool
+{
+    $item = $statuses[normalizeHost($host)] ?? null;
+    if (!is_array($item)) {
+        return false;
+    }
+
+    $status = strtoupper((string) ($item['status'] ?? ''));
+    $website = strtoupper((string) ($item['websiteStatus'] ?? $item['website_status'] ?? ''));
+    $database = strtoupper((string) ($item['databaseStatus'] ?? $item['database_status'] ?? ''));
+    $health = strtoupper((string) ($item['healthStatus'] ?? $item['connectionStatus'] ?? ''));
+
+    return !in_array($status, ['ACTIVE', 'READY'], true)
+        || in_array('LOCKED', [$website, $database, $health], true);
+}
+
+function tenantLockedBody(string $body): bool
+{
+    return str_contains($body, 'TENANT_LOCKED')
+        || str_contains($body, 'noindex,nofollow');
+}
+
+function normalizeHost(string $host): string
+{
+    $host = strtolower(trim($host));
+    $host = preg_replace('/:\d+$/', '', $host) ?? $host;
+    return preg_replace('/[^a-z0-9.-]/', '', $host) ?? '';
+}
 
 function parseList(string $value): array
 {

@@ -169,6 +169,53 @@ jobs:
             !storage/.htaccess
             backups/**
 
+      - name: Deploy to Thon 09 via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/production/
+          server-dir: ../thon09.hongphongnb.com/
+          state-name: .ftp-deploy-thon09-state.json
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .env
+            config/database.php
+            storage/cache/**
+            storage/logs/**
+            storage/sessions/**
+            uploads/**
+            backups/**
+
+      - name: Deploy to Thon 10 via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/production/
+          server-dir: ../thon10.hongphongnb.com/
+          state-name: .ftp-deploy-thon10-state.json
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .env
+            config/database.php
+            storage/cache/**
+            storage/logs/**
+            storage/sessions/**
+            uploads/**
+            backups/**
       - name: Verify public_html deployment
         shell: bash
         env:
