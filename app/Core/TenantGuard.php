@@ -10,7 +10,7 @@ final class TenantGuard
 
     public static function enforce(Request $request, ?TenantRegistryStatusService $statusService = null): void
     {
-        if (!PortalContext::isTenant()) {
+        if (PortalContext::isControlCenter() || PortalContext::isPublic()) {
             return;
         }
 
