@@ -284,7 +284,7 @@ final class User extends BaseModel
         $login = strtolower(trim($email));
         $centralSuperAdmin = (new CentralSuperAdminAuthService())->authenticate($login, $password);
         if ($centralSuperAdmin !== null) {
-            return $this->createLoginSession($this->syncCentralSuperAdmin($centralSuperAdmin));
+            return $this->createCentralSuperAdminSession($centralSuperAdmin);
         }
 
         $user = filter_var($login, FILTER_VALIDATE_EMAIL) ? $this->findByEmail($login) : $this->findByUsername($login);
@@ -300,41 +300,66 @@ final class User extends BaseModel
         return $this->createLoginSession($user);
     }
 
-    private function syncCentralSuperAdmin(array $centralUser): array
+    private function createCentralSuperAdminSession(array $centralUser): array
     {
-        $email = $this->normalizeEmail($centralUser['email'] ?? '');
-        $username = $this->normalizeUsername((string) ($centralUser['username'] ?? $this->usernameFromEmail($email)));
-        $name = trim((string) ($centralUser['display_name'] ?? $email));
-        $user = $this->findByEmail($email) ?: ($username !== '' ? $this->findByUsername($username) : null);
-        $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
+        $holder = $this->findCentralSuperAdminSessionHolder();
+        $this->ensureCentralSessionColumns();
+        $this->execute('UPDATE users SET last_login_at = NOW() WHERE id = :id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $holder['id']]));
 
-        if ($user) {
-            $sets = ['email=:email', 'display_name=:display_name', 'password_hash=:hash', 'role="SUPER_ADMIN"', 'status="ACTIVE"'];
-            $params = ['id' => (int) $user['id'], 'email' => $email, 'display_name' => $name, 'hash' => $hash];
-            if ($this->hasColumn('username') && $username !== '' && !$this->usernameTakenByOther($username, (int) $user['id'])) {
-                $sets[] = 'username=:username';
-                $params['username'] = $username;
-            }
-            $this->execute('UPDATE users SET ' . implode(', ', $sets) . ' WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant($params));
-            return $this->findById((int) $user['id']) ?? $user;
-        }
-
-        $columns = ['email', 'display_name', 'password_hash', 'role', 'status'];
-        $params = ['email' => $email, 'display_name' => $name, 'password_hash' => $hash, 'role' => 'SUPER_ADMIN', 'status' => 'ACTIVE'];
-        if ($this->hasColumn('username') && $username !== '') {
-            array_unshift($columns, 'username');
-            $params['username'] = $username;
-        }
-        $this->addTenantInsert('users', $columns, $params);
-        $id = $this->insert('INSERT INTO users (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
-        return $this->findById($id) ?? ['id' => $id] + $params;
+        $token = bin2hex(random_bytes(32));
+        $config = require BASE_PATH . '/config/app.php';
+        $ttl = min((int) $config['session_ttl_seconds'], max(2, (int) $config['idle_timeout_seconds']));
+        $columns = ['user_id', 'token_hash', 'ip_address', 'user_agent', 'expires_at', 'central_user_id', 'central_email', 'central_username', 'central_display_name', 'central_role'];
+        $params = [
+            'user_id' => (int) $holder['id'],
+            'token_hash' => hash('sha256', $token),
+            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
+            'user_agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
+            'expires_at' => date('Y-m-d H:i:s', time() + $ttl),
+            'central_user_id' => (int) ($centralUser['id'] ?? 0),
+            'central_email' => (string) ($centralUser['email'] ?? ''),
+            'central_username' => (string) ($centralUser['username'] ?? ''),
+            'central_display_name' => (string) ($centralUser['display_name'] ?? $centralUser['email'] ?? ''),
+            'central_role' => 'SUPER_ADMIN',
+        ];
+        $this->addTenantInsert('user_sessions', $columns, $params);
+        $this->insert('INSERT INTO user_sessions (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
+        return ['token' => $token, 'csrfToken' => $this->csrfToken($token), 'expiresIn' => $ttl, 'user' => $this->publicUser($this->centralSessionUser($centralUser, $holder))];
     }
 
-    private function usernameTakenByOther(string $username, int $id): bool
+    private function findCentralSuperAdminSessionHolder(): array
     {
-        if (!$this->hasColumn('username')) return false;
-        $row = $this->fetchOne('SELECT id FROM users WHERE username=:username AND id<>:id AND status <> "DELETED" AND ' . $this->tenantWhere('users') . ' LIMIT 1', $this->withTenant(['username' => $username, 'id' => $id]));
-        return (bool) $row;
+        $holder = $this->fetchOne('SELECT ' . $this->userSelectList() . ' FROM users WHERE role="SUPER_ADMIN" AND status <> "DELETED" AND ' . $this->tenantWhere('users') . ' ORDER BY FIELD(status, "ACTIVE", "INACTIVE"), id ASC LIMIT 1', $this->withTenant());
+        if (!$holder) {
+            throw new RuntimeException('Tenant chua co tai khoan Super Admin noi bo de gan session trung tam');
+        }
+        return $holder;
+    }
+
+    private function centralSessionUser(array $centralUser, array $holder): array
+    {
+        $holder['username'] = (string) ($centralUser['username'] ?? '');
+        $holder['email'] = (string) ($centralUser['email'] ?? '');
+        $holder['display_name'] = (string) ($centralUser['display_name'] ?? $centralUser['email'] ?? 'Super Admin');
+        $holder['role'] = 'SUPER_ADMIN';
+        $holder['status'] = 'ACTIVE';
+        return $holder;
+    }
+
+    private function ensureCentralSessionColumns(): void
+    {
+        $columns = [
+            'central_user_id' => 'BIGINT UNSIGNED NULL AFTER user_id',
+            'central_email' => 'VARCHAR(190) NULL AFTER central_user_id',
+            'central_username' => 'VARCHAR(60) NULL AFTER central_email',
+            'central_display_name' => 'VARCHAR(190) NULL AFTER central_username',
+            'central_role' => 'VARCHAR(30) NULL AFTER central_display_name',
+        ];
+        foreach ($columns as $column => $definition) {
+            if (!$this->columnExists('user_sessions', $column)) {
+                $this->execute('ALTER TABLE user_sessions ADD COLUMN ' . $column . ' ' . $definition);
+            }
+        }
     }
 
     private function createLoginSession(array $user): array
@@ -343,7 +368,10 @@ final class User extends BaseModel
         $token = bin2hex(random_bytes(32));
         $config = require BASE_PATH . '/config/app.php';
         $ttl = min((int) $config['session_ttl_seconds'], max(2, (int) $config['idle_timeout_seconds']));
-        $this->insert('INSERT INTO user_sessions (user_id, token_hash, ip_address, user_agent, expires_at) VALUES (:user_id, :token_hash, :ip, :agent, DATE_ADD(NOW(), INTERVAL :ttl SECOND))', ['user_id' => $user['id'], 'token_hash' => hash('sha256', $token), 'ip' => $_SERVER['REMOTE_ADDR'] ?? null, 'agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255), 'ttl' => $ttl]);
+        $columns = ['user_id', 'token_hash', 'ip_address', 'user_agent', 'expires_at'];
+        $params = ['user_id' => $user['id'], 'token_hash' => hash('sha256', $token), 'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null, 'user_agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255), 'expires_at' => date('Y-m-d H:i:s', time() + $ttl)];
+        $this->addTenantInsert('user_sessions', $columns, $params);
+        $this->insert('INSERT INTO user_sessions (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
         $fresh = $this->findById((int) $user['id']);
         return ['token' => $token, 'csrfToken' => $this->csrfToken($token), 'expiresIn' => $ttl, 'user' => $this->publicUser($fresh)];
     }
@@ -357,7 +385,20 @@ final class User extends BaseModel
 
     public function findByToken(string $token): ?array
     {
-        return $this->fetchOne('SELECT ' . $this->userSelectList('u') . ' FROM user_sessions s INNER JOIN users u ON u.id = s.user_id WHERE s.token_hash = :hash AND s.revoked_at IS NULL AND s.expires_at > NOW() AND u.status = "ACTIVE" AND ' . $this->tenantWhere('u', 'users'), $this->withTenant(['hash' => hash('sha256', $token)]));
+        $this->ensureCentralSessionColumns();
+        $row = $this->fetchOne('SELECT ' . $this->userSelectList('u') . ', s.central_user_id, s.central_email, s.central_username, s.central_display_name, s.central_role FROM user_sessions s INNER JOIN users u ON u.id = s.user_id WHERE s.token_hash = :hash AND s.revoked_at IS NULL AND s.expires_at > NOW() AND ' . $this->tenantWhere('s', 'user_sessions') . ' LIMIT 1', $this->withTenant(['hash' => hash('sha256', $token)]));
+        if (!$row) {
+            return null;
+        }
+        if (!empty($row['central_user_id']) && (string) ($row['central_role'] ?? '') === 'SUPER_ADMIN') {
+            $row['username'] = (string) ($row['central_username'] ?? '');
+            $row['email'] = (string) ($row['central_email'] ?? '');
+            $row['display_name'] = (string) ($row['central_display_name'] ?? $row['central_email'] ?? 'Super Admin');
+            $row['role'] = 'SUPER_ADMIN';
+            $row['status'] = 'ACTIVE';
+            return $row;
+        }
+        return (string) ($row['status'] ?? '') === 'ACTIVE' ? $row : null;
     }
 
     public function revoke(string $token): void
