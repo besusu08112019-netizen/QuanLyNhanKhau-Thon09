@@ -36,6 +36,9 @@ final class ControlCenterUserRepository
         $items = [];
         foreach ($this->registryTenants() as $tenant) {
             foreach ($this->tenantUsers($tenant) as $row) {
+                if ($this->isInternalTenantSuperAdminHolder($tenant, $row)) {
+                    continue;
+                }
                 $items[] = $this->normalizeDirectoryRow($tenant, $row);
             }
         }
@@ -565,10 +568,19 @@ final class ControlCenterUserRepository
     {
         $email = strtolower((string) ($row['email'] ?? ''));
         $name = strtolower((string) ($row['display_name'] ?? ''));
+        if ((string) ($tenant['code'] ?? '') === 'default' && (string) ($row['role'] ?? '') === 'SUPER_ADMIN') {
+            return 'CCC';
+        }
         if ($email === 'admin@hongphongnb.com' || str_contains($name, 'community control center')) {
             return 'CCC';
         }
         return (string) ($tenant['name'] ?: $tenant['code'] ?: $tenant['domain'] ?: 'Tenant');
+    }
+
+    private function isInternalTenantSuperAdminHolder(array $tenant, array $row): bool
+    {
+        $code = (string) ($tenant['code'] ?? '');
+        return $code !== '' && $code !== 'default' && (string) ($row['role'] ?? '') === 'SUPER_ADMIN';
     }
 
     private function matchesDirectoryFilters(array $item, array $filters): bool

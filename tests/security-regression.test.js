@@ -582,6 +582,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(repo, /u\.username AS username/);
   assert.match(repo, /u\.phone AS phone/);
   assert.match(repo, /u\.position AS position/);
+  assert.match(repo, /isInternalTenantSuperAdminHolder/);
+  assert.ok(repo.includes("$code !== '' && $code !== 'default'"));
   assert.doesNotMatch(repo, /if \(!\$this->hasColumn\('username'\)\) \{\s*return false;\s*\}/);
 }
 
