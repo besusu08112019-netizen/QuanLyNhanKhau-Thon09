@@ -66,7 +66,7 @@ final class ControlCenterUserRepository
         $tenantColumns = $this->tenantUserColumns($pdo);
         $columns = ['village_id', 'email', 'display_name', 'password_hash', 'role', 'status', 'created_by'];
         $params = [
-            'village_id' => $data['unit_id'],
+            'village_id' => $this->tenantLocalVillageId($pdo, $tenant),
             'email' => $data['email'],
             'display_name' => $data['display_name'],
             'password_hash' => password_hash($data['password'], PASSWORD_DEFAULT),
@@ -216,7 +216,7 @@ final class ControlCenterUserRepository
         }
         $pdo = $this->tenantPdo($tenant);
         [, $localIgnoreId] = $ignoreId !== null ? $this->decodeDirectoryId($ignoreId) : [0, 0];
-        $params = ['value' => $value, 'unit_id' => $unitId];
+        $params = ['value' => $value, 'unit_id' => $this->tenantLocalVillageId($pdo, $tenant)];
         $sql = 'SELECT id FROM users WHERE ' . $column . ' = :value AND village_id = :unit_id AND status <> "DELETED"';
         if ($ignoreId !== null) {
             $sql .= ' AND id <> :id';
@@ -335,6 +335,80 @@ final class ControlCenterUserRepository
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             return [];
         }
+    }
+
+
+    private function tenantLocalVillageId(PDO $pdo, array $tenant): int
+    {
+        $centralId = (int) ($tenant['id'] ?? 0);
+        $code = trim((string) ($tenant['code'] ?? ''));
+        $domain = trim((string) ($tenant['domain'] ?? ''));
+        $name = trim((string) ($tenant['name'] ?? ''));
+
+        $tableExists = (bool) $pdo->query("SHOW TABLES LIKE 'villages'")->fetchColumn();
+        if (!$tableExists) {
+            throw new \RuntimeException('Tenant database thi?u b?ng villages');
+        }
+
+        $columns = $pdo->query('SHOW COLUMNS FROM villages')->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        $conditions = [];
+        $params = [];
+        if (in_array('code', $columns, true) && $code !== '') {
+            $conditions[] = 'code = :code';
+            $params['code'] = $code;
+        }
+        if (in_array('domain', $columns, true) && $domain !== '') {
+            $conditions[] = 'domain = :domain';
+            $params['domain'] = $domain;
+        }
+        if (in_array('name', $columns, true) && $name !== '') {
+            $conditions[] = 'name = :name';
+            $params['name'] = $name;
+        }
+        if ($conditions !== []) {
+            $stmt = $pdo->prepare('SELECT id FROM villages WHERE ' . implode(' OR ', $conditions) . ' ORDER BY id ASC LIMIT 1');
+            $stmt->execute($params);
+            $id = (int) ($stmt->fetchColumn() ?: 0);
+            if ($id > 0) return $id;
+        }
+
+        $count = (int) $pdo->query('SELECT COUNT(*) FROM villages')->fetchColumn();
+        if ($count === 1) {
+            return (int) $pdo->query('SELECT id FROM villages ORDER BY id ASC LIMIT 1')->fetchColumn();
+        }
+
+        if (in_array('id', $columns, true) && $centralId > 0) {
+            $stmt = $pdo->prepare('SELECT id FROM villages WHERE id = :id LIMIT 1');
+            $stmt->execute(['id' => $centralId]);
+            $id = (int) ($stmt->fetchColumn() ?: 0);
+            if ($id > 0) return $id;
+        }
+
+        $insertColumns = [];
+        $insertParams = [];
+        foreach ([
+            'id' => $centralId > 0 ? $centralId : null,
+            'code' => $code !== '' ? $code : ('tenant-' . ($centralId ?: time())),
+            'name' => $name !== '' ? $name : ($code !== '' ? $code : 'Tenant'),
+            'domain' => $domain !== '' ? $domain : null,
+            'status' => 'ACTIVE',
+            'database_name' => (string) ($tenant['database_name'] ?? ''),
+            'database_host' => (string) ($tenant['database_host'] ?? ''),
+            'database_charset' => (string) ($tenant['database_charset'] ?? ''),
+        ] as $column => $value) {
+            if ($value !== null && in_array($column, $columns, true)) {
+                $insertColumns[] = $column;
+                $insertParams[$column] = $value;
+            }
+        }
+        if (!in_array('name', $insertColumns, true) || !in_array('code', $insertColumns, true)) {
+            throw new \RuntimeException('Kh?ng x?c ??nh ???c village local c?a tenant');
+        }
+
+        $sql = 'INSERT INTO villages (' . implode(',', $insertColumns) . ') VALUES (:' . implode(',:', $insertColumns) . ')';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($insertParams);
+        return (int) ($insertParams['id'] ?? $pdo->lastInsertId());
     }
 
     private function tenantPdo(array $tenant): PDO

@@ -518,4 +518,16 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(appView, /TENANT_LOGO_HTML/);
   assert.match(appView, /LOGIN_BACKGROUND_STYLE/);
 }
+
+{
+  const repo = read('app/Repositories/ControlCenterUserRepository.php');
+  assert.match(repo, /function tenantLocalVillageId\(PDO \$pdo, array \$tenant\): int/);
+  assert.match(repo, /'village_id' => \$this->tenantLocalVillageId\(\$pdo, \$tenant\)/);
+  assert.match(repo, /'unit_id' => \$this->tenantLocalVillageId\(\$pdo, \$tenant\)/);
+  assert.doesNotMatch(repo, /'village_id' => \$data\['unit_id'\]/);
+  assert.match(repo, /SHOW TABLES LIKE 'villages'/);
+  assert.match(repo, /SELECT COUNT\(\*\) FROM villages/);
+  assert.match(repo, /INSERT INTO villages/);
+}
+
 console.log('security regression checks passed');
