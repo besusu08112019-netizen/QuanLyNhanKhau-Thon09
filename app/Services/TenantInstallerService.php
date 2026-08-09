@@ -330,6 +330,7 @@ final class TenantInstallerService
             'database_password' => (string) ($input['database_password'] ?? $input['db_password'] ?? ''),
             'database_charset' => $charset,
             'admin_email' => strtolower(trim((string) ($input['admin_email'] ?? ('admin@' . $domain)))),
+            'admin_username' => $this->adminUsername((string) ($input['admin_username'] ?? $input['admin_email'] ?? ('admin@' . $domain))),
             'admin_name' => trim((string) ($input['admin_name'] ?? 'Quản trị ' . $name)),
             'admin_password' => (string) ($input['admin_password'] ?? ''),
             'app_url' => 'https://' . $domain,
@@ -339,6 +340,18 @@ final class TenantInstallerService
         ];
     }
 
+    private function adminUsername(string $value): string
+    {
+        $base = strtolower(trim($value));
+        if (str_contains($base, '@')) {
+            $base = strstr($base, '@', true) ?: 'admin';
+        }
+        $base = preg_replace('/[^a-z0-9._-]/', '', $base) ?: 'admin';
+        if (strlen($base) < 3) {
+            $base = str_pad($base, 3, '0');
+        }
+        return substr($base, 0, 60);
+    }
     private function checkDomain(array $input): array
     {
         $host = (string) $input['domain'];
@@ -417,13 +430,23 @@ final class TenantInstallerService
         if (strlen($password) < 8) {
             throw new RuntimeException('Mật khẩu quản trị đơn vị tối thiểu 8 ký tự');
         }
-        $stmt = $pdo->prepare('INSERT INTO users (village_id,email,display_name,password_hash,role,status,created_by) VALUES (:village_id,:email,:name,:hash,"ADMIN","ACTIVE",NULL)');
-        $stmt->execute([
+        $columns = ['village_id', 'email', 'display_name', 'password_hash', 'role', 'status', 'created_by'];
+        $params = [
             'village_id' => $villageId,
             'email' => $email,
-            'name' => $input['admin_name'] ?: $email,
-            'hash' => password_hash($password, PASSWORD_DEFAULT),
-        ]);
+            'display_name' => $input['admin_name'] ?: $email,
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            'role' => 'ADMIN',
+            'status' => 'ACTIVE',
+            'created_by' => null,
+        ];
+        $userColumns = array_map('strtolower', $pdo->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN));
+        if (in_array('username', $userColumns, true)) {
+            $columns[] = 'username';
+            $params['username'] = (string) $input['admin_username'];
+        }
+        $stmt = $pdo->prepare('INSERT INTO users (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')');
+        $stmt->execute($params);
         if ($generated) {
             $this->mergeJobResult($jobId, ['generatedAdminEmail' => $email, 'generatedAdminPassword' => $password]);
         }

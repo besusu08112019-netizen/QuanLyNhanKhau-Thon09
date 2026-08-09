@@ -476,7 +476,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(installer, /defaultTenantStatus/);
   assert.match(installer, /tenant\.default_status/);
   assert.doesNotMatch(installer, /INSERT INTO users[\s\S]+"SUPER_ADMIN"/);
-  assert.match(installer, /INSERT INTO users[\s\S]+"ADMIN"/);
+  assert.match(installer, /'role' => 'ADMIN'/);
+  assert.match(installer, /admin_username/);
   assert.match(migration, /UNIQUE KEY uq_platform_settings_key/);
 }
 {
