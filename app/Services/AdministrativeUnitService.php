@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Authorization\ControlCenterAuthorizationInterface;
 use App\Core\Database;
 use App\Repositories\AdministrativeUnitRepository;
+use App\Repositories\PlatformSettingsRepository;
 use InvalidArgumentException;
 use PDO;
 use PDOException;
@@ -13,7 +14,7 @@ use Throwable;
 
 final class AdministrativeUnitService
 {
-    private const STATUSES = ['READY', 'DISABLED', 'MAINTENANCE', 'FAILED', 'CREATING', 'ACTIVE', 'INACTIVE'];
+    private const STATUSES = ['READY', 'DISABLED', 'MAINTENANCE', 'FAILED', 'CREATING', 'ACTIVE', 'INACTIVE', 'PENDING_ACTIVATION'];
 
     public function __construct(
         private AdministrativeUnitRepository $repository,
@@ -246,12 +247,21 @@ final class AdministrativeUnitService
             }
             $data['status'] = $status;
         } elseif ($creating) {
-            $data['status'] = 'READY';
+            $data['status'] = $this->defaultTenantStatus();
         }
 
         return $data;
     }
 
+    private function defaultTenantStatus(): string
+    {
+        try {
+            $status = strtoupper((string) (new PlatformSettingsRepository())->value('tenant.default_status', 'ACTIVE'));
+            return in_array($status, ['ACTIVE', 'PENDING_ACTIVATION'], true) ? $status : 'ACTIVE';
+        } catch (Throwable $e) {
+            return 'ACTIVE';
+        }
+    }
     private function assertUnique(array $data, ?int $ignoreId = null): void
     {
         if (isset($data['code']) && $this->repository->existsByCode($data['code'], $ignoreId)) {

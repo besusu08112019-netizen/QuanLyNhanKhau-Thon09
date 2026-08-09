@@ -2,6 +2,7 @@
 
 namespace App\Core;
 
+use App\Repositories\PlatformSettingsRepository;
 use App\Services\TenantRegistryStatusService;
 
 final class TenantGuard
@@ -14,6 +15,10 @@ final class TenantGuard
             return;
         }
 
+        if (self::platformMaintenanceEnabled()) {
+            self::denyMaintenance($request);
+        }
+
         $status = ($statusService ?? new TenantRegistryStatusService())->statusForHost(PortalContext::host());
         if (($status['active'] ?? false) === true) {
             return;
@@ -21,6 +26,38 @@ final class TenantGuard
 
         self::deny($request, $status);
     }
+
+    private static function platformMaintenanceEnabled(): bool
+    {
+        try {
+            return (bool) (new PlatformSettingsRepository())->value('maintenance.platform_enabled', false);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private static function denyMaintenance(Request $request): void
+    {
+        if (self::expectsJson($request)) {
+            Response::json([
+                'ok' => false,
+                'success' => false,
+                'error' => 'PLATFORM_MAINTENANCE',
+                'message' => 'Hệ thống đang trong chế độ bảo trì.',
+                'errors' => [],
+                'status' => 503,
+            ], 503);
+        }
+
+        http_response_code(503);
+        header('Content-Type: text/html; charset=UTF-8');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        echo '<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hệ thống bảo trì</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f3f6f9;color:#111827;font-family:Arial,sans-serif}.panel{width:min(560px,calc(100% - 32px));background:#fff;border:1px solid #d7dee8;border-radius:8px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:8px;background:#b45309;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;line-height:1.25;margin:0 0 12px;text-transform:uppercase}p{font-size:16px;line-height:1.6;margin:0;color:#4b5563}</style></head><body><main class="panel"><div class="mark">!</div><h1>Hệ thống đang bảo trì</h1><p>Nền tảng đang được bảo trì bởi quản trị hệ thống. Vui lòng quay lại sau.</p></main></body></html>';
+        exit;
+    }
+
 
     private static function deny(Request $request, array $status): void
     {

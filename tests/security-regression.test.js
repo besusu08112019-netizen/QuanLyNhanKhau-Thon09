@@ -410,4 +410,48 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(artifact, /'sitemap\.xml'/);
 }
 
+
+{
+  const index = read('index.php');
+  assert.match(index, /PlatformSettingsController/);
+  assert.match(index, /\/api\/control-center\/configuration/);
+  assert.match(index, /configuration\/secret/);
+  assert.match(index, /configuration\/maintenance/);
+  const repository = read('app/Repositories/PlatformSettingsRepository.php');
+  assert.match(repository, /platform_settings/);
+  assert.match(repository, /is_secret/);
+  assert.match(repository, /CREATE TABLE IF NOT EXISTS platform_settings/);
+  const service = read('app/Services/PlatformSettingsService.php');
+  assert.match(service, /control_center\.configuration\.read/);
+  assert.match(service, /control_center\.configuration\.update/);
+  assert.match(service, /control_center\.configuration\.security/);
+  assert.match(service, /email\.smtp_password/);
+  assert.match(service, /SMTP password updated/);
+  assert.match(service, /tenant\.default_status/);
+  assert.match(service, /files\.allowed_extensions/);
+  assert.match(service, /PLATFORM_MAINTENANCE|maintenance\.platform_enabled/);
+  assert.doesNotMatch(service, /status unavailable\s*=>\s*allow/i);
+  const permissions = read('app/Services/ControlCenterPermissionService.php');
+  assert.match(permissions, /control_center\.configuration\.update/);
+  assert.match(permissions, /control_center\.configuration\.security/);
+  const tenantGuard = read('app/Core/TenantGuard.php');
+  assert.match(tenantGuard, /platformMaintenanceEnabled/);
+  assert.match(tenantGuard, /PLATFORM_MAINTENANCE/);
+  const view = read('views/control-center.php');
+  const configurationSection = view.match(/id="configurationSection"[\s\S]+?id="notificationsSection"/);
+  assert.ok(configurationSection, 'configuration section must be present');
+  assert.doesNotMatch(configurationSection[0], /Đang phát triển|Sẽ quản lý cấu hình/);
+  assert.match(view, /configurationTabs/);
+  assert.match(view, /\/api\/control-center\/configuration/);
+  assert.match(view, /platformMaintenanceToggle/);
+  assert.match(view, /SMTP Password/);
+  const migration = read('database/migrations/20260809_130000_platform_settings.sql');
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS platform_settings/);
+  const adminUnits = read('app/Services/AdministrativeUnitService.php');
+  assert.match(adminUnits, /tenant\.default_status/);
+  assert.match(adminUnits, /PENDING_ACTIVATION/);
+  const installer = read('app/Services/TenantInstallerService.php');
+  assert.match(installer, /defaultTenantStatus/);
+  assert.match(installer, /tenant\.default_status/);  assert.match(migration, /UNIQUE KEY uq_platform_settings_key/);
+}
 console.log('security regression checks passed');

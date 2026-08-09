@@ -59,6 +59,7 @@ use App\Controllers\NotificationController;
 use App\Controllers\OperationCenterController;
 use App\Controllers\PartyMemberController;
 use App\Controllers\PermissionController;
+use App\Controllers\PlatformSettingsController;
 use App\Controllers\PolicyAlertController;
 use App\Controllers\PersonController;
 use App\Controllers\PhotoGalleryController;
@@ -307,6 +308,7 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         $tenantsController = new TenantManagementController($request);
         $usersController = new ControlCenterUserController($request);
         $permissionsController = new ControlCenterPermissionController($request);
+        $platformSettingsController = new PlatformSettingsController($request);
         $path = $request->path();
         $method = $request->method();
         if ($method === 'POST' && $path === '/api/control-center/login') {
@@ -419,6 +421,26 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         }
         if ($method === 'PATCH' && $path === '/api/control-center/permissions/reset') {
             $permissionsController->reset();
+        }        if ($method === 'GET' && $path === '/api/control-center/configuration') {
+            $platformSettingsController->show();
+        }
+        if ($method === 'PUT' && $path === '/api/control-center/configuration') {
+            $platformSettingsController->update();
+        }
+        if ($method === 'PUT' && $path === '/api/control-center/configuration/secret') {
+            $platformSettingsController->updateSecret();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/configuration/check-registry') {
+            $platformSettingsController->checkRegistry();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/configuration/check-backup') {
+            $platformSettingsController->checkBackup();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/configuration/test-email') {
+            $platformSettingsController->testEmail();
+        }
+        if ($method === 'PATCH' && $path === '/api/control-center/configuration/maintenance') {
+            $platformSettingsController->maintenance();
         }
         match ($request->path()) {
             '/api/control-center/status' => $controller->status(),

@@ -69,6 +69,8 @@ final class ControlCenterPermissionService
                 'control_center.monitoring.read' => 'Xem giám sát',
                 'control_center.audit.read' => 'Xem nhật ký',
                 'control_center.configuration.read' => 'Xem cấu hình',
+                'control_center.configuration.update' => 'Cập nhật cấu hình',
+                'control_center.configuration.security' => 'Quản lý cấu hình bảo mật',
                 'control_center.notification.read' => 'Xem thông báo',
                 'control_center.ai.read' => 'Dùng AI',
             ],
@@ -81,6 +83,9 @@ final class ControlCenterPermissionService
         'control_center.users.read',
         'control_center.users.update',
         'control_center.dashboard.read',
+        'control_center.configuration.read',
+        'control_center.configuration.update',
+        'control_center.configuration.security',
     ];
 
     public function __construct(

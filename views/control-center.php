@@ -808,6 +808,69 @@
         overflow-x: auto;
       }
     }
+    .settings-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .settings-tab {
+      border: 1px solid var(--cc-line);
+      background: #fff;
+      color: var(--cc-ink);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .settings-tab.active {
+      border-color: var(--cc-brand);
+      color: var(--cc-brand);
+      background: #ecfdf5;
+    }
+
+    .settings-pane { display: none; gap: 12px; }
+    .settings-pane.active { display: grid; }
+
+    .settings-card {
+      background: var(--cc-panel);
+      border: 1px solid var(--cc-line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .settings-card-head,
+    .settings-card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--cc-line);
+    }
+
+    .settings-card-foot { border-top: 1px solid var(--cc-line); border-bottom: 0; justify-content: flex-end; }
+    .settings-card-title { margin: 0; font-size: 16px; font-weight: 800; }
+    .settings-card-note { margin: 4px 0 0; color: var(--cc-muted); font-size: 13px; }
+    .settings-card-body { padding: 16px; }
+    .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .settings-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .settings-field { display: grid; gap: 6px; }
+    .settings-field label { color: #344054; font-size: 13px; font-weight: 700; }
+    .settings-status-list { display: grid; gap: 10px; }
+    .settings-status-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #eef2f7; }
+    .settings-status-row:last-child { border-bottom: 0; }
+    .settings-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #eef2f7; }
+    .settings-toggle-row:last-child { border-bottom: 0; }
+    .settings-readonly { color: var(--cc-muted); font-size: 13px; }
+    .settings-alert { color: var(--cc-danger); font-size: 13px; min-height: 18px; }
+
+    @media (max-width: 900px) {
+      .settings-grid,
+      .settings-grid.three { grid-template-columns: 1fr; }
+    }
   </style>
   <script>
     window.AppSettings={{APP_SETTINGS_JSON}};
@@ -1156,13 +1219,16 @@
         <section class="cc-section" id="configurationSection">
           <div class="cc-panel">
             <div class="cc-panel-header">
-              <h2 class="cc-panel-title">Cấu hình</h2>
-              <span class="cc-badge warn">Đang phát triển</span>
+              <h2 class="cc-panel-title">Cấu hình nền tảng</h2>
+              <button class="cc-btn" type="button" id="refreshConfigurationButton"><i class="fa-solid fa-rotate"></i>Tải lại</button>
             </div>
-            <div class="cc-state">Sẽ quản lý cấu hình chung của Community Control Center và nền tảng.</div>
+            <div class="settings-card-body">
+              <div class="cc-alert" id="configurationAlert"></div>
+              <div class="settings-tabs" id="configurationTabs" role="tablist"></div>
+            </div>
           </div>
+          <div id="configurationPanes"></div>
         </section>
-
         <section class="cc-section" id="notificationsSection">
           <div class="cc-panel">
             <div class="cc-panel-header">
@@ -1662,6 +1728,8 @@
 
     document.addEventListener(controlCenterClickEvent, handleControlCenterAction);
     const auditState = { items: [] };
+    const configurationState = { data: null, activeTab: 'general', saving: false };
+
     const roleLabels = {
       SYSTEM_ADMIN: 'Quản trị hệ thống',
       VILLAGE_ADMIN: 'Quản trị thôn',
@@ -3485,6 +3553,182 @@
       const suggested = source.split('@')[0].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9._-]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 60);
       if (suggested.length >= 3) username.value = suggested;
     }
+    const configurationTabs = [
+      ['general', 'Cấu hình chung'],
+      ['identity', 'Nhận diện hệ thống'],
+      ['tenant', 'Multi-tenant'],
+      ['security', 'Bảo mật & phiên'],
+      ['data', 'Dữ liệu & sao lưu'],
+      ['files', 'Tệp & tải lên'],
+      ['email', 'Email / Thông báo'],
+      ['system', 'Hệ thống & bảo trì']
+    ];
+
+    function configValue(key, fallback = '') {
+      const item = configurationState.data?.settings?.[key];
+      return item && item.value !== null && item.value !== undefined ? item.value : fallback;
+    }
+
+    function configInput(key, label, type = 'text') {
+      const value = configValue(key, type === 'number' ? 0 : '');
+      return '<div class="settings-field"><label for="cfg_' + key.replace(/[^a-z0-9]/gi, '_') + '">' + label + '</label><input class="cc-input" id="cfg_' + key.replace(/[^a-z0-9]/gi, '_') + '" data-config-key="' + key + '" type="' + type + '" value="' + String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"></div>';
+    }
+
+    function configSelect(key, label, options) {
+      const value = String(configValue(key, ''));
+      const choices = options.map(([optionValue, optionLabel]) => '<option value="' + optionValue + '"' + (value === optionValue ? ' selected' : '') + '>' + optionLabel + '</option>').join('');
+      return '<div class="settings-field"><label for="cfg_' + key.replace(/[^a-z0-9]/gi, '_') + '">' + label + '</label><select class="cc-select" id="cfg_' + key.replace(/[^a-z0-9]/gi, '_') + '" data-config-key="' + key + '">' + choices + '</select></div>';
+    }
+
+    function configCheckbox(key, label) {
+      const checked = configValue(key, false) ? ' checked' : '';
+      return '<label class="settings-toggle-row"><span>' + label + '</span><input type="checkbox" data-config-key="' + key + '"' + checked + '></label>';
+    }
+
+    function settingsCard(title, note, body, footer = '') {
+      return '<article class="settings-card"><div class="settings-card-head"><div><h3 class="settings-card-title">' + title + '</h3><p class="settings-card-note">' + note + '</p></div></div><div class="settings-card-body">' + body + '</div>' + (footer ? '<div class="settings-card-foot">' + footer + '</div>' : '') + '</article>';
+    }
+
+    function renderStatusRows(items) {
+      return '<div class="settings-status-list">' + (items || []).map((item) => '<div class="settings-status-row"><div><strong>' + item.name + '</strong><div class="settings-readonly">' + (item.note || '') + '</div></div>' + badge(item.status || (item.ok ? 'OK' : 'ERROR')).outerHTML + '</div>').join('') + '</div>';
+    }
+
+    function renderConfiguration() {
+      const tabs = document.getElementById('configurationTabs');
+      const panes = document.getElementById('configurationPanes');
+      if (!tabs || !panes) return;
+      tabs.innerHTML = configurationTabs.map(([id, label]) => '<button class="settings-tab' + (configurationState.activeTab === id ? ' active' : '') + '" type="button" data-cc-action="configuration.tab" data-tab="' + id + '">' + label + '</button>').join('');
+      panes.innerHTML = configurationTabs.map(([id]) => '<div class="settings-pane' + (configurationState.activeTab === id ? ' active' : '') + '" data-settings-pane="' + id + '">' + renderConfigurationPane(id) + '</div>').join('');
+    }
+
+    function renderConfigurationPane(id) {
+      if (!configurationState.data) return '<div class="cc-state">Đang tải cấu hình...</div>';
+      if (id === 'general') {
+        const body = '<div class="settings-grid">' +
+          configInput('general.platform_name', 'Tên nền tảng') +
+          configInput('general.admin_name', 'Tên trang quản trị') +
+          configInput('general.parent_unit_name', 'Tên đơn vị cấp trên') +
+          configInput('general.province_name', 'Tỉnh/Thành phố') +
+          configSelect('general.timezone', 'Múi giờ', [['Asia/Ho_Chi_Minh', 'Asia/Ho_Chi_Minh'], ['UTC', 'UTC']]) +
+          configSelect('general.locale', 'Ngôn ngữ mặc định', [['vi_VN', 'Tiếng Việt']]) +
+          configSelect('general.date_format', 'Định dạng ngày', [['dd/mm/yyyy', 'dd/mm/yyyy'], ['yyyy-mm-dd', 'yyyy-mm-dd']]) +
+          configSelect('general.datetime_format', 'Định dạng ngày giờ', [['dd/mm/yyyy HH:mm', 'dd/mm/yyyy HH:mm'], ['yyyy-mm-dd HH:mm', 'yyyy-mm-dd HH:mm']]) +
+          '</div>';
+        return settingsCard('Cấu hình chung', 'Thông tin hiển thị và thiết lập mặc định của nền tảng.', body, '<button class="cc-btn primary" type="button" data-cc-action="configuration.save" data-group="general"><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>');
+      }
+      if (id === 'identity') {
+        const body = '<div class="settings-grid">' +
+          configInput('identity.system_name', 'Tên hệ thống') + configInput('identity.short_name', 'Tên rút gọn') +
+          configInput('identity.logo_url', 'Logo Community Control Center') + configInput('identity.favicon_url', 'Favicon') +
+          configInput('identity.tenant_logo_url', 'Logo mặc định tenant') + configInput('identity.login_background_url', 'Hình nền đăng nhập mặc định') +
+          '</div><div class="settings-readonly" style="margin-top:12px">Upload ảnh đang ở trạng thái chưa cấu hình backend; chỉ cho phép lưu đường dẫn đã được quản trị kiểm soát.</div>';
+        return settingsCard('Nhận diện hệ thống', 'Quản lý tên và tài sản nhận diện cấp nền tảng.', body, '<button class="cc-btn primary" type="button" data-cc-action="configuration.save" data-group="identity"><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>');
+      }
+      if (id === 'tenant') {
+        const mt = configurationState.data.multiTenant || {};
+        const protectedRows = (mt.protectedControls || []).map((item) => '<div class="settings-toggle-row"><span>' + item.label + '<div class="settings-readonly">Được hệ thống bảo vệ - không thể tắt</div></span>' + badge(item.enabled ? 'OK' : 'ERROR').outerHTML + '</div>').join('');
+        const body = '<div class="settings-grid"><div class="settings-field"><label>Chế độ multi-tenant</label><div class="cc-input">Bật</div></div><div class="settings-field"><label>Kiểu nhận diện tenant</label><div class="cc-input">Theo hostname/domain</div></div><div class="settings-field"><label>Domain nền tảng</label><div class="cc-input">' + (mt.rootDomain || '') + '</div></div><div class="settings-field"><label>Quy tắc subdomain</label><div class="cc-input">' + (mt.subdomainRule || '') + '</div></div>' + configSelect('tenant.default_status', 'Trạng thái tenant mới', [['ACTIVE', 'Hoạt động'], ['PENDING_ACTIVATION', 'Chờ kích hoạt']]) + '</div>' +
+          '<div style="margin-top:14px">' + protectedRows + '</div><h3 class="settings-card-title" style="margin-top:16px">Mặc định khi tạo tenant mới</h3>' + configCheckbox('tenant.create_database', 'Tạo database') + configCheckbox('tenant.run_migrations', 'Chạy migration/schema') + configCheckbox('tenant.create_admin_account', 'Tạo tài khoản quản trị tenant') + configCheckbox('tenant.apply_platform_settings', 'Áp dụng cấu hình chung') + configCheckbox('tenant.create_uploads_structure', 'Tạo cấu trúc uploads') + configCheckbox('tenant.audit_log_enabled', 'Cấu hình audit log') + '<h3 class="settings-card-title" style="margin-top:16px">Trạng thái runtime</h3>' + renderStatusRows(mt.components || []);
+        return settingsCard('Multi-tenant', 'Cấu hình dùng chung cho mọi tenant hiện tại và tenant tạo mới.', body, '<button class="cc-btn primary" type="button" data-cc-action="configuration.save" data-group="tenant"><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>');
+      }
+      if (id === 'security') {
+        const body = '<div class="settings-grid">' + configInput('security.idle_timeout_minutes', 'Tự động đăng xuất khi không hoạt động (phút)', 'number') + configInput('security.session_ttl_hours', 'Thời gian sống tối đa session (giờ)', 'number') + configInput('security.max_login_attempts', 'Số lần đăng nhập sai tối đa', 'number') + configInput('security.lockout_minutes', 'Thời gian khóa tạm (phút)', 'number') + '</div>' + renderStatusRows([{name:'Bắt buộc HTTPS',status:'OK'},{name:'Secure Cookie',status:'OK'},{name:'HttpOnly Cookie',status:'OK'},{name:'SameSite Cookie',status:'OK'},{name:'CSRF Protection',status:'OK'},{name:'Session regeneration sau đăng nhập',status:'OK'}]);
+        return settingsCard('Bảo mật & phiên đăng nhập', 'Các thiết lập bảo mật nguy hiểm được backend bảo vệ, không cho tắt trực tiếp từ UI.', body, '<button class="cc-btn primary" type="button" data-cc-action="configuration.save" data-group="security"><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>');
+      }
+      if (id === 'data') {
+        const data = configurationState.data.data || {};
+        const health = data.centralRegistry || {};
+        const body = renderStatusRows([{name:'Central Registry DB',status: health.ok ? 'OK' : 'ERROR', note: health.database || health.message || ''},{name:'Kết nối các tenant DB',status:'NOT_APPLICABLE',note:data.tenantDatabasePolicy || ''},{name:'Backup engine',status:data.backupPolicy?.engineConfigured ? 'OK' : 'NOT_APPLICABLE',note:'Kiểm tra trạng thái thật; không tạo backup giả.'}]);
+        return settingsCard('Dữ liệu & sao lưu', 'Theo dõi registry và chính sách backup nền tảng.', body, '<button class="cc-btn" type="button" data-cc-action="configuration.registry"><i class="fa-solid fa-plug-circle-check"></i>Kiểm tra kết nối</button><button class="cc-btn" type="button" data-cc-action="configuration.backup"><i class="fa-solid fa-database"></i>Kiểm tra trạng thái sao lưu</button>');
+      }
+      if (id === 'files') {
+        const allowed = Array.isArray(configValue('files.allowed_extensions', [])) ? configValue('files.allowed_extensions', []).join(', ') : configValue('files.allowed_extensions', '');
+        const body = '<div class="settings-grid">' + configInput('files.max_file_mb', 'Dung lượng file tối đa (MB)', 'number') + configInput('files.max_image_mb', 'Dung lượng ảnh tối đa (MB)', 'number') + '<div class="settings-field"><label>Loại file cho phép</label><input class="cc-input" data-config-key="files.allowed_extensions" value="' + allowed + '"></div></div><div class="settings-readonly" style="margin-top:12px">Backend chặn php, phtml, phar, cgi, exe, js và các đuôi thực thi khi lưu cấu hình.</div>';
+        return settingsCard('Tệp & tải lên', 'Chính sách file cấp nền tảng để backend sử dụng khi validate upload.', body, '<button class="cc-btn primary" type="button" data-cc-action="configuration.save" data-group="files"><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>');
+      }
+      if (id === 'email') {
+        const body = '<div class="settings-grid">' + configInput('email.system_email', 'Email hệ thống') + configInput('email.sender_name', 'Tên người gửi') + configInput('email.smtp_host', 'SMTP Host') + configInput('email.smtp_port', 'SMTP Port', 'number') + configSelect('email.smtp_encryption', 'Encryption', [['tls','TLS'],['ssl','SSL'],['none','Không mã hóa']]) + configInput('email.smtp_username', 'SMTP Username') + '<div class="settings-field"><label>SMTP Password</label><input class="cc-input" id="smtpSecretValue" type="password" placeholder="' + (configurationState.data.settings['email.smtp_password']?.masked || 'Chưa cấu hình') + '"></div></div><div class="settings-readonly" style="margin-top:12px">Secret không trả plaintext về frontend và không ghi giá trị vào audit log.</div>';
+        return settingsCard('Email / Thông báo', 'Cấu hình email hệ thống và cảnh báo vận hành.', body, '<button class="cc-btn" type="button" data-cc-action="configuration.secret"><i class="fa-solid fa-key"></i>Cập nhật secret</button><button class="cc-btn" type="button" data-cc-action="configuration.testEmail"' + (configurationState.data.capabilities?.smtpTest?.enabled ? '' : ' disabled') + '><i class="fa-solid fa-paper-plane"></i>Gửi email kiểm tra</button><button class="cc-btn primary" type="button" data-cc-action="configuration.save" data-group="email"><i class="fa-solid fa-floppy-disk"></i>Lưu thay đổi</button>');
+      }
+      const system = configurationState.data.system || {};
+      const maintenance = configValue('maintenance.platform_enabled', false);
+      const body = renderStatusRows([{name:'Phiên bản ứng dụng',status:'OK',note:system.version || ''},{name:'Commit đang chạy',status:'OK',note:system.commit || 'Không xác định'},{name:'Môi trường',status:'OK',note:system.environment || ''},{name:'PHP version',status:'OK',note:system.phpVersion || ''},{name:'Database version',status:system.databaseVersion ? 'OK':'UNKNOWN',note:system.databaseVersion || ''},{name:'Thời gian server',status:'OK',note:system.serverTime || ''},{name:'Tenant Guard',status:system.tenantGuard || 'ERROR'},{name:'Central Registry',status:system.centralRegistry || 'ERROR'}]) + '<label class="settings-toggle-row"><span>Chế độ bảo trì toàn nền tảng<div class="settings-readonly">Community Control Center vẫn truy cập được để tắt bảo trì.</div></span><input type="checkbox" id="platformMaintenanceToggle" ' + (maintenance ? 'checked' : '') + '></label>';
+      return settingsCard('Hệ thống & bảo trì', 'Thông tin runtime chỉ đọc và công tắc bảo trì thật ở TenantGuard.', body, '<button class="cc-btn primary" type="button" data-cc-action="configuration.maintenance"><i class="fa-solid fa-screwdriver-wrench"></i>Cập nhật bảo trì</button>');
+    }
+
+    function configurationGroupKeys(group) {
+      return Object.keys(configurationState.data?.settings || {}).filter((key) => configurationState.data.settings[key].group === group && !configurationState.data.settings[key].secret);
+    }
+
+    async function loadConfiguration() {
+      try {
+        configurationState.data = await api('/api/control-center/configuration');
+        setConfigurationAlert('');
+        renderConfiguration();
+      } catch (error) {
+        setConfigurationAlert(error.message || 'Không tải được cấu hình nền tảng');
+      }
+    }
+
+    function setConfigurationAlert(message) {
+      const element = document.getElementById('configurationAlert');
+      if (!element) return;
+      element.textContent = message || '';
+      element.classList.toggle('active', Boolean(message));
+    }
+
+    async function saveConfigurationGroup(group) {
+      if (!configurationState.data) return;
+      const settings = {};
+      configurationGroupKeys(group).forEach((key) => {
+        const field = document.querySelector('[data-config-key="' + key + '"]');
+        if (!field) return;
+        if (field.type === 'checkbox') settings[key] = field.checked;
+        else if (key === 'files.allowed_extensions') settings[key] = field.value.split(/[\s,]+/).filter(Boolean);
+        else settings[key] = field.value;
+      });
+      try {
+        configurationState.data = await api('/api/control-center/configuration', { method: 'PUT', body: { settings } });
+        setConfigurationAlert('Đã lưu cấu hình.');
+        renderConfiguration();
+      } catch (error) {
+        setConfigurationAlert(error.message || 'Không lưu được cấu hình');
+      }
+    }
+
+    async function updateSmtpSecret() {
+      const field = document.getElementById('smtpSecretValue');
+      const value = field ? field.value : '';
+      if (!value) { setConfigurationAlert('Vui lòng nhập SMTP password mới.'); return; }
+      try {
+        configurationState.data = await api('/api/control-center/configuration/secret', { method: 'PUT', body: { key: 'email.smtp_password', value } });
+        setConfigurationAlert('Đã cập nhật SMTP password.');
+        renderConfiguration();
+      } catch (error) {
+        setConfigurationAlert(error.message || 'Không cập nhật được secret');
+      }
+    }
+
+    async function updateMaintenance() {
+      const enabled = Boolean(document.getElementById('platformMaintenanceToggle')?.checked);
+      try {
+        configurationState.data = await api('/api/control-center/configuration/maintenance', { method: 'PATCH', body: { enabled } });
+        setConfigurationAlert(enabled ? 'Đã bật chế độ bảo trì tenant.' : 'Đã tắt chế độ bảo trì tenant.');
+        renderConfiguration();
+      } catch (error) {
+        setConfigurationAlert(error.message || 'Không cập nhật được bảo trì');
+      }
+    }
+
+    async function runConfigurationCheck(kind) {
+      const endpoint = kind === 'backup' ? '/api/control-center/configuration/check-backup' : '/api/control-center/configuration/check-registry';
+      try {
+        const result = await api(endpoint, { method: 'POST' });
+        setConfigurationAlert((result.message || result.status || 'OK'));
+      } catch (error) {
+        setConfigurationAlert(error.message || 'Không kiểm tra được trạng thái');
+      }
+    }
 
     function formatBytes(value) {
       const bytes = Number(value || 0);
@@ -3503,6 +3747,7 @@
       renderAuditTenantFilter();
       await loadAudit().catch(() => {});
       await loadDashboard().catch(() => {});
+      await loadConfiguration().catch(() => {});
       await restoreTenantInstallProgress();
     }
 
@@ -3626,6 +3871,14 @@
       registerControlCenterAction('permission.refresh', () => loadPermissions());
       registerControlCenterAction('permission.save', () => savePermissions());
       registerControlCenterAction('audit.refresh', () => loadAudit());
+      registerControlCenterAction('configuration.tab', ({ dataset }) => { configurationState.activeTab = dataset.tab || 'general'; renderConfiguration(); });
+      registerControlCenterAction('configuration.refresh', () => loadConfiguration());
+      registerControlCenterAction('configuration.save', ({ dataset }) => saveConfigurationGroup(dataset.group));
+      registerControlCenterAction('configuration.secret', () => updateSmtpSecret());
+      registerControlCenterAction('configuration.maintenance', () => updateMaintenance());
+      registerControlCenterAction('configuration.registry', () => runConfigurationCheck('registry'));
+      registerControlCenterAction('configuration.backup', () => runConfigurationCheck('backup'));
+      registerControlCenterAction('configuration.testEmail', async () => { try { await api('/api/control-center/configuration/test-email', { method: 'POST' }); setConfigurationAlert('Đã gửi email kiểm tra.'); } catch (error) { setConfigurationAlert(error.message || 'SMTP chưa sẵn sàng'); } });
     }
 
     function bindStaticControlCenterActions() {
@@ -3671,6 +3924,7 @@
       bindControlCenterElementAction('refreshPermissionsButton', 'permission.refresh');
       bindControlCenterElementAction('savePermissionsButton', 'permission.save');
       bindControlCenterElementAction('refreshAuditButton', 'audit.refresh');
+      bindControlCenterElementAction('refreshConfigurationButton', 'configuration.refresh');
     }
 
     registerControlCenterActions();

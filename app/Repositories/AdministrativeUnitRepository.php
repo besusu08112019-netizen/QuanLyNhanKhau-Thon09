@@ -218,7 +218,7 @@ final class AdministrativeUnitRepository
 
         $status = strtoupper(trim((string) ($filters['status'] ?? '')));
         if ($status === 'INACTIVE') $status = 'DISABLED';
-        if (in_array($status, ['ACTIVE', 'READY', 'DISABLED', 'CREATING', 'FAILED', 'MAINTENANCE'], true)) {
+        if (in_array($status, ['ACTIVE', 'READY', 'DISABLED', 'CREATING', 'FAILED', 'MAINTENANCE', 'PENDING_ACTIVATION'], true)) {
             $where[] = 'v.status = :status';
             $params['status'] = $status;
         }

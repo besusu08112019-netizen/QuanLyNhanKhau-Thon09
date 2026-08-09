@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Repositories\PlatformSettingsRepository;
 use PDO;
 use RuntimeException;
 use Throwable;
@@ -198,7 +199,7 @@ final class TenantInstallerService
         }
 
         if ($villageId > 0) {
-            $this->db()->prepare('DELETE FROM villages WHERE id=:id')->execute(['id' => $villageId]);
+            $this->db()->prepare('DELETE FROM villages WHERE id=:id')->execute(['id' => $villageId, 'status' => $this->defaultTenantStatus()]);
             $rollbackDetails[] = 'registry_deleted';
         }
 
@@ -629,12 +630,21 @@ final class TenantInstallerService
         $villageId = $this->jobVillageId($jobId);
         if ($villageId > 0) {
             $this->db()->prepare(
-                'UPDATE villages SET status="READY", connection_status="CONNECTED", database_status="CONNECTED", website_status="UNKNOWN", last_checked_at=NOW(), last_database_checked_at=NOW(), last_error=NULL WHERE id=:id'
-            )->execute(['id' => $villageId]);
+                'UPDATE villages SET status=:status, connection_status="CONNECTED", database_status="CONNECTED", website_status="UNKNOWN", last_checked_at=NOW(), last_database_checked_at=NOW(), last_error=NULL WHERE id=:id'
+            )->execute(['id' => $villageId, 'status' => $this->defaultTenantStatus()]);
         }
         return ['message' => 'Đơn vị sẵn sàng'];
     }
 
+    private function defaultTenantStatus(): string
+    {
+        try {
+            $status = strtoupper((string) (new PlatformSettingsRepository())->value('tenant.default_status', 'ACTIVE'));
+            return in_array($status, ['ACTIVE', 'PENDING_ACTIVATION'], true) ? $status : 'ACTIVE';
+        } catch (Throwable $e) {
+            return 'ACTIVE';
+        }
+    }
     private function executeSqlFile(PDO $pdo, string $path, string $label): array
     {
         if (!is_readable($path)) {
