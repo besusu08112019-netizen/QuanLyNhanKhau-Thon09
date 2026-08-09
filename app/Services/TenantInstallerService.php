@@ -417,7 +417,7 @@ final class TenantInstallerService
         if (strlen($password) < 8) {
             throw new RuntimeException('Mật khẩu quản trị đơn vị tối thiểu 8 ký tự');
         }
-        $stmt = $pdo->prepare('INSERT INTO users (village_id,email,display_name,password_hash,role,status,created_by) VALUES (:village_id,:email,:name,:hash,"SUPER_ADMIN","ACTIVE",NULL)');
+        $stmt = $pdo->prepare('INSERT INTO users (village_id,email,display_name,password_hash,role,status,created_by) VALUES (:village_id,:email,:name,:hash,"ADMIN","ACTIVE",NULL)');
         $stmt->execute([
             'village_id' => $villageId,
             'email' => $email,
