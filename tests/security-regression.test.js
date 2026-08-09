@@ -528,6 +528,10 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(repo, /SHOW TABLES LIKE 'villages'/);
   assert.match(repo, /SELECT COUNT\(\*\) FROM villages/);
   assert.match(repo, /INSERT INTO villages/);
+  assert.match(repo, /function ensureTenantUserCompatibility/);
+  assert.match(repo, /ALTER TABLE users ADD COLUMN username/);
+  assert.match(repo, /UPDATE users SET username = LOWER\(SUBSTRING_INDEX\(email, '@', 1\)\)/);
+  assert.doesNotMatch(repo, /if \(!\$this->hasColumn\('username'\)\) \{\s*return false;\s*\}/);
 }
 
 console.log('security regression checks passed');

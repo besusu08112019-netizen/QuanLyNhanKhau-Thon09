@@ -63,6 +63,7 @@ final class ControlCenterUserRepository
             throw new \RuntimeException('Không tìm thấy đơn vị');
         }
         $pdo = $this->tenantPdo($tenant);
+        $this->ensureTenantUserCompatibility($pdo);
         $tenantColumns = $this->tenantUserColumns($pdo);
         $columns = ['village_id', 'email', 'display_name', 'password_hash', 'role', 'status', 'created_by'];
         $params = [
@@ -104,6 +105,7 @@ final class ControlCenterUserRepository
             throw new \RuntimeException('Không tìm thấy đơn vị');
         }
         $pdo = $this->tenantPdo($tenant);
+        $this->ensureTenantUserCompatibility($pdo);
         $tenantColumns = $this->tenantUserColumns($pdo);
         $sets = ['email = :email', 'display_name = :display_name', 'role = :role', 'status = :status', 'updated_by = :updated_by'];
         $params = [
@@ -182,9 +184,6 @@ final class ControlCenterUserRepository
 
     public function existsByUsername(string $username, int $unitId, ?int $ignoreId = null): bool
     {
-        if (!$this->hasColumn('username')) {
-            return false;
-        }
         return $this->exists('username', $username, $unitId, $ignoreId);
     }
 
@@ -215,6 +214,7 @@ final class ControlCenterUserRepository
             return false;
         }
         $pdo = $this->tenantPdo($tenant);
+        $this->ensureTenantUserCompatibility($pdo);
         [, $localIgnoreId] = $ignoreId !== null ? $this->decodeDirectoryId($ignoreId) : [0, 0];
         $params = ['value' => $value, 'unit_id' => $this->tenantLocalVillageId($pdo, $tenant)];
         $sql = 'SELECT id FROM users WHERE ' . $column . ' = :value AND village_id = :unit_id AND status <> "DELETED"';
@@ -294,6 +294,7 @@ final class ControlCenterUserRepository
     {
         try {
             $pdo = $this->tenantPdo($tenant);
+            $this->ensureTenantUserCompatibility($pdo);
             $columns = $this->tenantUserColumns($pdo);
             $username = in_array('username', $columns, true) ? 'username' : 'NULL AS username';
             $phone = in_array('phone', $columns, true) ? 'phone' : 'NULL AS phone';
@@ -467,6 +468,19 @@ final class ControlCenterUserRepository
             'password' => $values['DB_PASSWORD'] ?? $values['DB_PASS'] ?? '',
             'charset' => $values['DB_CHARSET'] ?? 'utf8mb4',
         ];
+    }
+
+
+    private function ensureTenantUserCompatibility(PDO $pdo): void
+    {
+        $columns = $this->tenantUserColumns($pdo);
+        if (!in_array('username', $columns, true)) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN username VARCHAR(60) NULL AFTER id');
+            $columns[] = 'username';
+        }
+        if (in_array('username', $columns, true)) {
+            $pdo->exec("UPDATE users SET username = LOWER(SUBSTRING_INDEX(email, '@', 1)) WHERE username IS NULL OR username = ''");
+        }
     }
 
     private function tenantUserColumns(PDO $pdo): array
