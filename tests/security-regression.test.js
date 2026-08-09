@@ -572,6 +572,9 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(repo, /function ensureTenantUserCompatibility/);
   assert.match(repo, /ALTER TABLE users ADD COLUMN username/);
   assert.match(repo, /UPDATE users SET username = LOWER\(SUBSTRING_INDEX\(email, '@', 1\)\)/);
+  assert.match(repo, /u\.username AS username/);
+  assert.match(repo, /u\.phone AS phone/);
+  assert.match(repo, /u\.position AS position/);
   assert.doesNotMatch(repo, /if \(!\$this->hasColumn\('username'\)\) \{\s*return false;\s*\}/);
 }
 

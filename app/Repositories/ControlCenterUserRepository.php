@@ -296,9 +296,9 @@ final class ControlCenterUserRepository
             $pdo = $this->tenantPdo($tenant);
             $this->ensureTenantUserCompatibility($pdo);
             $columns = $this->tenantUserColumns($pdo);
-            $username = in_array('username', $columns, true) ? 'username' : 'NULL AS username';
-            $phone = in_array('phone', $columns, true) ? 'phone' : 'NULL AS phone';
-            $position = in_array('position', $columns, true) ? 'position' : 'NULL AS position';
+            $username = in_array('username', $columns, true) ? 'u.username AS username' : 'NULL AS username';
+            $phone = in_array('phone', $columns, true) ? 'u.phone AS phone' : 'NULL AS phone';
+            $position = in_array('position', $columns, true) ? 'u.position AS position' : 'NULL AS position';
             $createdByJoin = in_array('created_by', $columns, true)
                 ? 'LEFT JOIN users creator ON creator.id = u.created_by'
                 : '';
