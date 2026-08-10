@@ -5,11 +5,12 @@ const { spawn } = require('child_process');
 
 const root = path.resolve(__dirname, '..', '..');
 const outputDir = path.join(root, 'test-results');
-const statePath = path.join(outputDir, 'playwright-server.json');
-const logPath = path.join(outputDir, 'playwright-server.log');
 const host = process.env.PW_PHP_HOST || '127.0.0.1';
 const port = process.env.PW_PHP_PORT || '8080';
 const serverUrl = `http://${host}:${port}`;
+const serverFileSuffix = `${host.replace(/[^a-z0-9.-]/gi, '_')}-${port}`;
+const statePath = path.join(outputDir, `playwright-server-${serverFileSuffix}.json`);
+const logPath = path.join(outputDir, `playwright-server-${serverFileSuffix}.log`);
 
 function ensureOutputDir() {
   fs.mkdirSync(outputDir, { recursive: true });
@@ -48,7 +49,7 @@ async function globalSetup() {
   }
 
   const log = fs.openSync(logPath, 'a');
-  const server = spawn('php', ['-S', `${host}:${port}`], {
+  const server = spawn('php', ['-S', `${host}:${port}`, 'tests/browser/test-router.php'], {
     cwd: root,
     detached: true,
     stdio: ['ignore', log, log],

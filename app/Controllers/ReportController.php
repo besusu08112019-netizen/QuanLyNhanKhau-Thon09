@@ -188,6 +188,7 @@ final class ReportController extends BaseController
             str_starts_with($type, 'contribution') || str_starts_with($type, 'household-contribution') => ['contributions'],
             str_starts_with($type, 'agricultural-land') || str_starts_with($type, 'agricultural_land') => ['agricultural_land'],
             str_starts_with($type, 'agriculture') => ['agriculture'],
+            str_starts_with($type, 'defense-security') || str_starts_with($type, 'nvqs') || str_starts_with($type, 'militia') || str_starts_with($type, 'security-force') => ['defense_security'],
             str_starts_with($type, 'party-members') || str_starts_with($type, 'party_member') => ['party_members'],
             str_starts_with($type, 'house-') || str_starts_with($type, 'houses') => ['houses'],
             str_starts_with($type, 'public-asset') || str_starts_with($type, 'public-assets') => ['public_assets'],

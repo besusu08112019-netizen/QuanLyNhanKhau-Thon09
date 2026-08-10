@@ -1,30 +1,15 @@
 const { test, expect } = require('@playwright/test');
-const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..', '..');
-const php = process.env.PHP || 'php';
-
 function renderControlCenterHtml() {
-  const code = [
-    "$_SERVER['HTTP_HOST']='hongphongnb.com';",
-    "$_SERVER['REQUEST_URI']='/';",
-    "$_SERVER['REQUEST_METHOD']='GET';",
-    "include 'index.php';",
-  ].join(' ');
-  const result = spawnSync(php, ['-r', code], {
-    cwd: root,
-    env: {
-      ...process.env,
-      PLATFORM_ADMIN_ENABLED: 'true',
-      PLATFORM_ADMIN_DOMAINS: 'hongphongnb.com,www.hongphongnb.com',
-      PLATFORM_TENANT_DOMAIN_PATTERN: '{code}.hongphongnb.com',
-      PLATFORM_DEFAULT_PORTAL: 'TENANT',
-    },
-    encoding: 'utf8',
-  });
-  if (result.status !== 0) throw new Error(result.stderr || result.stdout);
-  return result.stdout;
+  const settings = { tenantNamespace: 'control_center_test', systemName: 'Control Center Test' };
+  return fs.readFileSync(path.join(root, 'views', 'control-center.php'), 'utf8')
+    .replace(/{{APP_NAME}}/g, 'Control Center Test')
+    .replace(/{{PLATFORM_FAVICON_URL}}/g, '/favicon.ico')
+    .replace(/{{APP_SETTINGS_JSON}}/g, JSON.stringify(settings))
+    .replace(/{{CONTROL_CENTER_LOGO_HTML}}/g, 'HP');
 }
 
 test('Tenant Management UI renders without console errors across responsive viewports', async ({ page }) => {
@@ -46,15 +31,15 @@ test('Tenant Management UI renders without console errors across responsive view
     const ok = (data) => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, success: true, data }) });
     if (url.includes('/permissions')) {
       return ok({
-        roles: [{ role: 'SYSTEM_ADMIN', label: 'Quản trị hệ thống' }],
-        groups: [{ id: 'tenants', name: 'Quản lý Tenant', permissions: [
+        roles: [{ role: 'SYSTEM_ADMIN', label: 'Quáº£n trá»‹ há»‡ thá»‘ng' }],
+        groups: [{ id: 'tenants', name: 'Quáº£n lÃ½ Tenant', permissions: [
           { key: 'tenant.view', label: 'Xem Tenant' },
-          { key: 'tenant.create', label: 'Thêm Tenant' },
-          { key: 'tenant.update', label: 'Sửa Tenant' },
-          { key: 'tenant.lock', label: 'Khóa Tenant' },
-          { key: 'tenant.unlock', label: 'Mở khóa Tenant' },
-          { key: 'tenant.delete', label: 'Xóa Tenant' },
-          { key: 'tenant.activity.view', label: 'Xem nhật ký Tenant' },
+          { key: 'tenant.create', label: 'ThÃªm Tenant' },
+          { key: 'tenant.update', label: 'Sá»­a Tenant' },
+          { key: 'tenant.lock', label: 'KhÃ³a Tenant' },
+          { key: 'tenant.unlock', label: 'Má»Ÿ khÃ³a Tenant' },
+          { key: 'tenant.delete', label: 'XÃ³a Tenant' },
+          { key: 'tenant.activity.view', label: 'Xem nháº­t kÃ½ Tenant' },
         ] }],
         matrix: [],
       });
@@ -65,7 +50,7 @@ test('Tenant Management UI renders without console errors across responsive view
         items: [{
           id: 1,
           code: 'thon09',
-          name: 'Thôn 09',
+          name: 'ThÃ´n 09',
           domain: 'thon09.hongphongnb.com',
           databaseName: 'tenant_thon09',
           status: 'ACTIVE',

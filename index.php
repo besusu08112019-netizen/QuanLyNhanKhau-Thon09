@@ -44,6 +44,7 @@ use App\Controllers\ContributionController;
 use App\Controllers\ControlCenterController;
 use App\Controllers\DataQualityController;
 use App\Controllers\DashboardController;
+use App\Controllers\DefenseSecurityController;
 use App\Controllers\FileController;
 use App\Controllers\FinanceController;
 use App\Controllers\GisController;
@@ -744,6 +745,26 @@ $router->get('/api/livestock/household/{householdId}', [LivestockController::cla
 $router->get('/api/livestock/{id}', [LivestockController::class, 'show']);
 $router->put('/api/livestock/{id}', [LivestockController::class, 'update']);
 $router->delete('/api/livestock/{id}', [LivestockController::class, 'destroy']);
+
+$router->get('/api/defense-security/catalogs', [DefenseSecurityController::class, 'catalogs']);
+$router->get('/api/defense-security/dashboard', [DefenseSecurityController::class, 'dashboard']);
+$router->get('/api/defense-security/citizen-search', [DefenseSecurityController::class, 'citizenSearch']);
+$router->get('/api/defense-security/citizens/{citizenId}/summary', [DefenseSecurityController::class, 'citizenSummary']);
+$router->get('/api/defense-security/nvqs', [DefenseSecurityController::class, 'nvqsIndex']);
+$router->post('/api/defense-security/nvqs', [DefenseSecurityController::class, 'nvqsStore']);
+$router->get('/api/defense-security/nvqs/{id}', [DefenseSecurityController::class, 'nvqsShow']);
+$router->put('/api/defense-security/nvqs/{id}', [DefenseSecurityController::class, 'nvqsUpdate']);
+$router->delete('/api/defense-security/nvqs/{id}', [DefenseSecurityController::class, 'nvqsDelete']);
+$router->get('/api/defense-security/militia', [DefenseSecurityController::class, 'militiaIndex']);
+$router->post('/api/defense-security/militia', [DefenseSecurityController::class, 'militiaStore']);
+$router->get('/api/defense-security/militia/{id}', [DefenseSecurityController::class, 'militiaShow']);
+$router->put('/api/defense-security/militia/{id}', [DefenseSecurityController::class, 'militiaUpdate']);
+$router->delete('/api/defense-security/militia/{id}', [DefenseSecurityController::class, 'militiaDelete']);
+$router->get('/api/defense-security/security-force', [DefenseSecurityController::class, 'securityForceIndex']);
+$router->post('/api/defense-security/security-force', [DefenseSecurityController::class, 'securityForceStore']);
+$router->get('/api/defense-security/security-force/{id}', [DefenseSecurityController::class, 'securityForceShow']);
+$router->put('/api/defense-security/security-force/{id}', [DefenseSecurityController::class, 'securityForceUpdate']);
+$router->delete('/api/defense-security/security-force/{id}', [DefenseSecurityController::class, 'securityForceDelete']);
 
 $router->get('/api/party-members', [PartyMemberController::class, 'index']);
 $router->post('/api/party-members', [PartyMemberController::class, 'store']);
