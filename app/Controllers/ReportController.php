@@ -184,6 +184,7 @@ final class ReportController extends BaseController
             $type === '' || $type === 'summary' => ['household', 'citizen'],
             str_starts_with($type, 'household-business') || str_starts_with($type, 'business-') => ['household_business'],
             str_starts_with($type, 'livestock') => ['livestock'],
+            str_starts_with($type, 'rural-clean-water') || str_starts_with($type, 'clean-water') => ['rural_clean_water'],
             str_starts_with($type, 'vehicle') || str_starts_with($type, 'vehicles') => ['vehicles'],
             str_starts_with($type, 'contribution') || str_starts_with($type, 'household-contribution') => ['contributions'],
             str_starts_with($type, 'agricultural-land') || str_starts_with($type, 'agricultural_land') => ['agricultural_land'],
@@ -358,7 +359,7 @@ final class ReportController extends BaseController
         header('Content-Type: application/msword; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         echo "\xEF\xBB\xBF";
-        echo '<html><head><meta charset="utf-8"><style>@page{size:A4;margin:16mm 14mm 20mm}body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}td,th{border:1px solid #555;padding:6px;vertical-align:top;word-break:break-word}th{background:#eef2f7}</style></head><body>';
+        echo '<html><head><style>@page{size:A4;margin:16mm 14mm 20mm}body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}td,th{border:1px solid #555;padding:6px;vertical-align:top;word-break:break-word}th{background:#eef2f7}</style></head><body>';
         $this->echoReportHeaderHtml($report);
         $this->echoReportMetaHtml($report);
         echo '<p>Thời gian xuất: ' . date('d/m/Y H:i:s') . '</p><table><thead><tr>';

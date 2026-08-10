@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260729-mt-acceptance-1');
+define('APP_ASSET_VERSION', 'deploy-utf8-9973b44');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 require_once BASE_PATH . '/config/env.php';
@@ -30,6 +30,7 @@ use App\Core\PortalContext;
 use App\Core\Response;
 use App\Core\TenantConfig;
 use App\Core\TenantContext;
+use App\Core\TenantGuard;
 use App\Controllers\AgriculturalLandZoneController;
 use App\Controllers\AgricultureProductionController;
 use App\Controllers\AdministrativeUnitController;
@@ -58,6 +59,7 @@ use App\Controllers\NotificationController;
 use App\Controllers\OperationCenterController;
 use App\Controllers\PartyMemberController;
 use App\Controllers\PermissionController;
+use App\Controllers\PlatformSettingsController;
 use App\Controllers\PolicyAlertController;
 use App\Controllers\PolicySubjectController;
 use App\Controllers\PersonController;
@@ -65,6 +67,7 @@ use App\Controllers\PhotoGalleryController;
 use App\Controllers\ProfileController;
 use App\Controllers\PublicAssetController;
 use App\Controllers\ReportController;
+use App\Controllers\RuralCleanWaterController;
 use App\Controllers\SettingController;
 use App\Controllers\SystemAdminController;
 use App\Controllers\TenantInstallerController;
@@ -78,7 +81,7 @@ use App\Config\CitizenPolicyDefaults;
 use App\Policies\AgePolicy;
 use App\Policies\InsurancePolicy;
 use App\Services\StudentStatusService;
-use App\Services\TenantRegistryStatusService;
+use App\Services\PlatformBrandingService;
 
 Autoloader::register();
 env_load(BASE_PATH);
@@ -232,33 +235,7 @@ function api_exception_status(Throwable $e): int
 
 reject_oversized_api_request();
 $request = Request::capture();
-
-function enforce_tenant_registry_status(Request $request): void
-{
-    if (!PortalContext::isTenant() || !str_starts_with($request->path(), '/api/')) {
-        return;
-    }
-
-    $status = (new TenantRegistryStatusService())->statusForHost(PortalContext::host());
-    if (($status['active'] ?? false) === true) {
-        return;
-    }
-
-    Response::json([
-        'ok' => false,
-        'success' => false,
-        'message' => (string) ($status['message'] ?? 'Don vi dang bi khoa'),
-        'errors' => [],
-        'error' => [
-            'message' => (string) ($status['message'] ?? 'Don vi dang bi khoa'),
-            'reason' => (string) ($status['reason'] ?? 'tenant_locked'),
-            'tenant' => $status['tenant'] ?? null,
-        ],
-        'status' => 423,
-    ], 423);
-}
-
-enforce_tenant_registry_status($request);
+TenantGuard::enforce($request);
 
 if (PortalContext::isPublic() && str_starts_with($request->path(), '/api')) {
     Response::json([
@@ -313,7 +290,27 @@ register_shutdown_function(function () use ($request): void {
     }
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 });
+if ($request->method() === 'GET' && preg_match('#^/api/platform/assets/([a-z_]+)/([a-z0-9.-]+)$#', $request->path(), $matches)) {
+    (new PlatformSettingsController($request))->asset($matches[1], $matches[2]);
+}
+if (PortalContext::isControlCenter() && $request->method() === 'POST' && in_array($request->path(), ['/api/platform/settings/assets', '/api/platform/settings/assets/reset'], true)) {
+    $controller = new PlatformSettingsController($request);
+    if ($request->path() === '/api/platform/settings/assets') {
+        $controller->uploadAsset();
+    } else {
+        $controller->resetAsset();
+    }
+    exit;
+}
 if ($request->path() === '/favicon.ico') {
+    try {
+        $branding = (new PlatformBrandingService())->publicBranding();
+        $stored = (string) ($branding['favicon']['stored'] ?? '');
+        if ($stored !== '') {
+            (new PlatformSettingsController($request))->asset('favicon', basename($stored));
+        }
+    } catch (Throwable) {
+    }
     $faviconPath = __DIR__ . '/favicon.ico';
     header('Content-Type: image/x-icon');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -324,7 +321,6 @@ if ($request->path() === '/favicon.ico') {
     }
     exit;
 }
-
 if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api')) {
     if (str_starts_with($request->path(), '/api/control-center/')) {
         $controller = new ControlCenterController($request);
@@ -334,6 +330,7 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         $tenantsController = new TenantManagementController($request);
         $usersController = new ControlCenterUserController($request);
         $permissionsController = new ControlCenterPermissionController($request);
+        $platformSettingsController = new PlatformSettingsController($request);
         $path = $request->path();
         $method = $request->method();
         if ($method === 'POST' && $path === '/api/control-center/login') {
@@ -447,6 +444,33 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
         if ($method === 'PATCH' && $path === '/api/control-center/permissions/reset') {
             $permissionsController->reset();
         }
+        if ($method === 'POST' && ($path === '/api/control-center/configuration/assets' || $path === '/api/platform/settings/assets')) {
+            $platformSettingsController->uploadAsset();
+        }
+        if ($method === 'POST' && ($path === '/api/control-center/configuration/assets/reset' || $path === '/api/platform/settings/assets/reset')) {
+            $platformSettingsController->resetAsset();
+        }
+        if ($method === 'GET' && $path === '/api/control-center/configuration') {
+            $platformSettingsController->show();
+        }
+        if ($method === 'PUT' && $path === '/api/control-center/configuration') {
+            $platformSettingsController->update();
+        }
+        if ($method === 'PUT' && $path === '/api/control-center/configuration/secret') {
+            $platformSettingsController->updateSecret();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/configuration/check-registry') {
+            $platformSettingsController->checkRegistry();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/configuration/check-backup') {
+            $platformSettingsController->checkBackup();
+        }
+        if ($method === 'POST' && $path === '/api/control-center/configuration/test-email') {
+            $platformSettingsController->testEmail();
+        }
+        if ($method === 'PATCH' && $path === '/api/control-center/configuration/maintenance') {
+            $platformSettingsController->maintenance();
+        }
         match ($request->path()) {
             '/api/control-center/status' => $controller->status(),
             '/api/control-center/dashboard' => $controller->dashboard(),
@@ -498,6 +522,28 @@ $router->get('/api/policy-alerts/print', [PolicyAlertController::class, 'print']
 $router->get('/api/policy-alerts/export-excel', [PolicyAlertController::class, 'exportExcel']);
 $router->get('/api/policy-alerts/export-pdf', [PolicyAlertController::class, 'exportPdf']);
 $router->post('/api/policy-alerts/{citizenId}/mark', [PolicyAlertController::class, 'mark']);
+
+$router->get('/api/policy-subjects/catalogs', [PolicySubjectController::class, 'catalogs']);
+$router->get('/api/policy-subjects/citizens/search', [PolicySubjectController::class, 'citizenSearch']);
+$router->get('/api/policy-subjects/citizens/{citizenId}/summary', [PolicySubjectController::class, 'citizenSummary']);
+$router->get('/api/policy-subjects/types', [PolicySubjectController::class, 'types']);
+$router->post('/api/policy-subjects/types', [PolicySubjectController::class, 'storeType']);
+$router->put('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'updateType']);
+$router->delete('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'deleteType']);
+$router->get('/api/policy-subjects/records', [PolicySubjectController::class, 'index']);
+$router->post('/api/policy-subjects/records', [PolicySubjectController::class, 'store']);
+$router->get('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'show']);
+$router->put('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'update']);
+$router->delete('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'destroy']);
+$router->post('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'uploadAttachment']);
+$router->get('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'attachments']);
+$router->delete('/api/policy-subjects/attachments/{id}', [PolicySubjectController::class, 'deleteAttachment']);
+$router->get('/api/policy-subjects/dashboard', [PolicySubjectController::class, 'dashboard']);
+$router->get('/api/policy-subjects/report', [PolicySubjectController::class, 'report']);
+$router->get('/api/policy-subjects/citizen-search', [PolicySubjectController::class, 'citizenSearch']);
+$router->get('/api/policy-subjects/citizens/{citizenId}', [PolicySubjectController::class, 'citizenSummary']);
+$router->get('/api/policy-subjects/export-excel', [PolicySubjectController::class, 'exportExcel']);
+$router->get('/api/policy-subjects/export-pdf', [PolicySubjectController::class, 'exportPdf']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
@@ -723,6 +769,15 @@ $router->get('/api/livestock/{id}', [LivestockController::class, 'show']);
 $router->put('/api/livestock/{id}', [LivestockController::class, 'update']);
 $router->delete('/api/livestock/{id}', [LivestockController::class, 'destroy']);
 
+$router->get('/api/rural-clean-water', [RuralCleanWaterController::class, 'index']);
+$router->post('/api/rural-clean-water', [RuralCleanWaterController::class, 'store']);
+$router->get('/api/rural-clean-water/dashboard', [RuralCleanWaterController::class, 'dashboard']);
+$router->get('/api/rural-clean-water/catalogs', [RuralCleanWaterController::class, 'catalogs']);
+$router->get('/api/rural-clean-water/household-search', [RuralCleanWaterController::class, 'householdSearch']);
+$router->get('/api/rural-clean-water/household/{householdId}', [RuralCleanWaterController::class, 'byHousehold']);
+$router->get('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'show']);
+$router->put('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'update']);
+$router->delete('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'destroy']);
 $router->get('/api/party-members', [PartyMemberController::class, 'index']);
 $router->post('/api/party-members', [PartyMemberController::class, 'store']);
 $router->get('/api/party-members/dashboard', [PartyMemberController::class, 'dashboard']);
@@ -750,26 +805,6 @@ $router->post('/api/poverty/records', [HouseholdPovertyController::class, 'store
 $router->get('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'show']);
 $router->put('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'update']);
 $router->delete('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'destroy']);
-
-$router->get('/api/policy-subjects/catalogs', [PolicySubjectController::class, 'catalogs']);
-$router->get('/api/policy-subjects/dashboard', [PolicySubjectController::class, 'dashboard']);
-$router->get('/api/policy-subjects/report', [PolicySubjectController::class, 'report']);
-$router->get('/api/policy-subjects/export-excel', [PolicySubjectController::class, 'exportExcel']);
-$router->get('/api/policy-subjects/export-pdf', [PolicySubjectController::class, 'exportPdf']);
-$router->get('/api/policy-subjects/citizens/search', [PolicySubjectController::class, 'citizenSearch']);
-$router->get('/api/policy-subjects/citizens/{citizenId}/summary', [PolicySubjectController::class, 'citizenSummary']);
-$router->get('/api/policy-subjects/types', [PolicySubjectController::class, 'types']);
-$router->post('/api/policy-subjects/types', [PolicySubjectController::class, 'storeType']);
-$router->put('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'updateType']);
-$router->delete('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'deleteType']);
-$router->get('/api/policy-subjects/records', [PolicySubjectController::class, 'index']);
-$router->post('/api/policy-subjects/records', [PolicySubjectController::class, 'store']);
-$router->get('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'show']);
-$router->put('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'update']);
-$router->delete('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'destroy']);
-$router->get('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'attachments']);
-$router->post('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'uploadAttachment']);
-$router->delete('/api/policy-subjects/attachments/{id}', [PolicySubjectController::class, 'deleteAttachment']);
 
 $router->get('/api/citizens', [PersonController::class, 'index']);
 $router->post('/api/citizens', [PersonController::class, 'store']);
@@ -969,7 +1004,7 @@ if (!str_starts_with($request->path(), '/api')) {
     header('Expires: 0');
 
     if (PortalContext::isPublic()) {
-        echo '<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center đang ở chế độ bảo trì cấu hình. Cổng đơn vị vẫn hoạt động trên các tên miền phụ riêng.</p><div class="status">Chế độ bảo trì</div></main></body></html>';
+        echo '<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center đang ở chế độ bảo trì cấu hình. Cổng đơn vị vẫn hoạt động trên các tên miền phụ riêng.</p><div class="status">Chế độ bảo trì</div></main></body></html>';
         exit;
     }
 
@@ -981,6 +1016,7 @@ if (!str_starts_with($request->path(), '/api')) {
             exit;
         }
 
+        $branding = (new PlatformBrandingService())->publicBranding();
         $settings = [
             'portal' => PortalContext::type(),
             'host' => PortalContext::host(),
@@ -988,11 +1024,17 @@ if (!str_starts_with($request->path(), '/api')) {
             'sessionTtlSeconds' => (int) (env_value('SESSION_TTL_SECONDS') ?: 21600),
             'idleTimeoutSeconds' => (int) (env_value('IDLE_TIMEOUT_SECONDS') ?: 900),
             'idleWarningSeconds' => (int) (env_value('IDLE_WARNING_SECONDS') ?: 60),
+            'branding' => $branding,
         ];
         $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        $controlCenterLogoUrl = (string) ($branding['control_center_logo']['url'] ?? '');
+        $controlCenterLogoHtml = $controlCenterLogoUrl !== '' ? '<img src="' . $escapeHtml($controlCenterLogoUrl) . '" alt="Community Control Center logo">' : 'CC';
+        $platformFaviconUrl = (string) ($branding['favicon']['url'] ?? '/favicon.ico');
         $html = strtr($html, [
             '{{APP_NAME}}' => $escapeHtml((string) ($settings['appName'] ?? 'Community Control Center')),
             '{{APP_SETTINGS_JSON}}' => json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
+            '{{CONTROL_CENTER_LOGO_HTML}}' => $controlCenterLogoHtml,
+            '{{PLATFORM_FAVICON_URL}}' => $escapeHtml($platformFaviconUrl),
             'assets/vendor/bootstrap/bootstrap.min.css' => versioned_asset('assets/vendor/bootstrap/bootstrap.min.css'),
             'assets/vendor/fontawesome-local.css' => versioned_asset('assets/vendor/fontawesome-local.css'),
             'assets/css/app.min.css' => versioned_asset('assets/css/app.min.css'),
@@ -1041,6 +1083,17 @@ if (!str_starts_with($request->path(), '/api')) {
         'healthInsuranceDefaultOccupations' => InsurancePolicy::eligibleOccupations(),
     ];
     $escapeHtml = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    $tenantLogoUrl = trim((string) ($tenantSettings['logoUrl'] ?? ''));
+    $tenantLogoClass = $tenantLogoUrl !== ''
+        ? 'login-logo login-logo-emblem login-logo-image'
+        : 'login-logo login-logo-emblem';
+    $tenantLogoHtml = $tenantLogoUrl !== ''
+        ? '<img src="' . $escapeHtml($tenantLogoUrl) . '" alt="' . $escapeHtml(TenantConfig::unitName($tenantSettings)) . '">'
+        : '<span></span><span></span><span></span><strong>{{TENANT_MARK}}</strong>';
+    $loginBackgroundUrl = trim((string) ($tenantSettings['backgroundUrl'] ?? ''));
+    $loginBackgroundStyle = $loginBackgroundUrl !== ''
+        ? '--login-bg:linear-gradient(135deg,rgba(4,23,18,.74),rgba(12,87,61,.48)),url(&quot;' . $escapeHtml($loginBackgroundUrl) . '&quot;);'
+        : '';
     $html = strtr($html, [
         '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'Hệ thống Quản lý Hành chính')),
         '{{UNIT_NAME}}' => $escapeHtml(TenantConfig::unitName($tenantSettings)),
@@ -1050,6 +1103,9 @@ if (!str_starts_with($request->path(), '/api')) {
         '{{TENANT_MARK}}' => $escapeHtml($tenantMark),
         '{{THEME_COLOR}}' => $escapeHtml((string) ($tenantSettings['themeColor'] ?? '#0b6b3a')),
         '{{BACKGROUND_COLOR}}' => $escapeHtml((string) ($tenantSettings['backgroundColor'] ?? '#eef3f8')),
+        '{{TENANT_LOGO_CLASS}}' => $tenantLogoClass,
+        '{{TENANT_LOGO_HTML}}' => str_replace('{{TENANT_MARK}}', $escapeHtml($tenantMark), $tenantLogoHtml),
+        '{{LOGIN_BACKGROUND_STYLE}}' => $loginBackgroundStyle,
         '{{APP_SETTINGS_JSON}}' => json_encode($tenantSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
     ]);
     $versionedAssets = [
@@ -1088,9 +1144,9 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/digital-profile.min.js',
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
+        'assets/js/rural-clean-water.min.js',
         'assets/js/party-members.min.js',
         'assets/js/poverty-management.min.js',
-        'assets/js/policy-subjects.min.js',
         'assets/js/vehicles.min.js',
         'assets/js/contributions.min.js',
         'assets/js/agriculture.min.js',
@@ -1104,6 +1160,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/finance.min.js',
         'assets/js/photo-gallery.min.js',
         'assets/js/policy-alerts.min.js',
+        'assets/js/policy-subjects.min.js',
         'assets/js/view-inline-patches.min.js',
         'assets/js/notifications.min.js',
         'assets/js/module-dashboards.min.js',

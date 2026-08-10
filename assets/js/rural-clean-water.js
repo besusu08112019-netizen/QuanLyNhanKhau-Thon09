@@ -1,0 +1,242 @@
+(() => {
+  'use strict';
+
+  const state = { page: 1, pageSize: 20, sort: 'household_code', direction: 'ASC', catalogs: null, selectedHousehold: null };
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+  const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c]));
+  const fmt = value => new Intl.NumberFormat('vi-VN').format(Number(value || 0));
+  const token = () => (window.App && App.token) || localStorage.getItem(tenantStorageKey('token')) || '';
+  const csrf = () => (window.App && App.csrfToken) || localStorage.getItem(tenantStorageKey('csrf')) || '';
+
+  document.addEventListener('DOMContentLoaded', boot);
+  document.addEventListener('tenant:screen-change', event => {
+    if (event.detail?.screen === 'ruralCleanWater') loadAll();
+  });
+
+  function boot() {
+    registerActions();
+    bindForm();
+    bindHouseholdSearch();
+    if (isActive()) loadAll();
+  }
+
+  function isActive() {
+    return document.getElementById('ruralCleanWaterScreen')?.classList.contains('active');
+  }
+
+  function registerActions() {
+    const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
+    if (!actions || typeof actions.register !== 'function') return;
+    actions.register('ruralCleanWater.search', () => { state.page = 1; loadAll(); });
+    actions.register('ruralCleanWater.reset', resetFilters);
+    actions.register('ruralCleanWater.create', openCreate);
+    actions.register('ruralCleanWater.edit', ctx => edit(ctx.dataset.id));
+    actions.register('ruralCleanWater.delete', ctx => remove(ctx.dataset.id));
+    actions.register('ruralCleanWater.sort', ctx => sort(ctx.dataset.sort));
+    actions.register('ruralCleanWater.selectHousehold', ctx => selectHousehold(ctx.target));
+    actions.register('ruralCleanWater.page', ctx => page(ctx.dataset.direction));
+    actions.register('ruralCleanWater.report', () => openReport('rural-clean-water'));
+  }
+
+  async function api(url, options = {}) {
+    if (typeof window.api === 'function' && !options.raw) {
+      const payload = await window.api(url, options);
+      return payload?.data ?? payload;
+    }
+    const headers = { Accept: 'application/json' };
+    if (options.body) headers['Content-Type'] = 'application/json';
+    if (token()) headers.Authorization = 'Bearer ' + token();
+    if (csrf()) headers['X-CSRF-Token'] = csrf();
+    const res = await fetch(url, { method: options.method || 'GET', headers, body: options.body ? JSON.stringify(options.body) : undefined, cache: 'no-store' });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'Không tải được dữ liệu nước sạch');
+    return json.data?.data ?? json.data ?? {};
+  }
+
+  async function loadAll() {
+    if (!document.getElementById('ruralCleanWaterScreen')) return;
+    try {
+      if (!state.catalogs) await loadCatalogs();
+      await Promise.all([loadDashboard(), loadList()]);
+    } catch (error) {
+      toast(error.message, 'danger');
+    }
+  }
+
+  async function loadCatalogs() {
+    state.catalogs = await api('/api/rural-clean-water/catalogs');
+    fillSelect('#ruralWaterTypeFilter', state.catalogs.connection_types, 'Tất cả');
+    fillSelect('#ruralWaterStatusFilter', state.catalogs.statuses, 'Tất cả trạng thái');
+    fillSelect('#ruralWaterConnectionType', state.catalogs.connection_types);
+    fillSelect('#ruralWaterStatus', state.catalogs.statuses);
+  }
+
+  async function loadDashboard() {
+    const data = await api('/api/rural-clean-water/dashboard?' + query(false));
+    const m = data.metrics || {};
+    $('#ruralWaterDashboard').innerHTML = [
+      ['Hộ có bản ghi', m.connected_households, 'fa-house-circle-check'],
+      ['Bản ghi', m.total_records, 'fa-faucet-drip'],
+      ['Đạt chuẩn', m.clean_standard_records, 'fa-circle-check'],
+      ['Cần sửa chữa', m.needs_repair_records, 'fa-screwdriver-wrench'],
+      ['m3/tháng', m.monthly_usage_m3, 'fa-water'],
+      ['Phí/tháng', m.monthly_fee, 'fa-coins']
+    ].map(([label, value, icon]) => '<article class="content-card rural-water-kpi"><i class="fa-solid ' + icon + '"></i><span>' + esc(label) + '</span><strong>' + fmt(value) + '</strong></article>').join('');
+  }
+
+  async function loadList() {
+    const data = await api('/api/rural-clean-water?' + query(true));
+    $('#ruralWaterTotalCount').textContent = 'Tổng số: ' + fmt(data.total || 0) + ' bản ghi';
+    $('#ruralWaterRows').innerHTML = (data.items || []).map((row, index) => '<tr>' +
+      '<td>' + (index + 1 + ((data.page || 1) - 1) * (data.pageSize || 20)) + '</td>' +
+      '<td>' + esc(row.household_code) + '</td><td>' + esc(row.head_citizen_name) + '</td><td>' + esc(row.area_code) + '</td>' +
+      '<td>' + esc(row.connection_type_label) + '</td><td>' + esc(row.provider_name || row.water_source) + '</td>' +
+      '<td>' + esc(row.meter_number) + '</td><td>' + fmt(row.monthly_usage_m3) + '</td><td>' + fmt(row.monthly_fee) + '</td>' +
+      '<td>' + (row.is_clean_standard ? '<span class="badge bg-success">Đạt</span>' : '<span class="badge bg-secondary">Chưa</span>') + '</td>' +
+      '<td>' + esc(row.status_label) + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" data-platform-action="ruralCleanWater.edit" data-id="' + row.id + '"><i class="fa-solid fa-pen"></i></button> <button class="btn btn-sm btn-outline-danger" data-platform-action="ruralCleanWater.delete" data-id="' + row.id + '"><i class="fa-solid fa-trash"></i></button></td>' +
+      '</tr>').join('') || '<tr><td colspan="12" class="text-center text-muted py-4">Chưa có dữ liệu nước sạch</td></tr>';
+    renderPager(data);
+  }
+
+  function query(withPaging) {
+    const params = new URLSearchParams();
+    const map = {
+      search: '#ruralWaterSearch',
+      connection_type: '#ruralWaterTypeFilter',
+      is_clean_standard: '#ruralWaterStandardFilter',
+      status: '#ruralWaterStatusFilter',
+      area_code: '#ruralWaterAreaFilter'
+    };
+    Object.entries(map).forEach(([key, selector]) => {
+      const value = $(selector)?.value?.trim();
+      if (value) params.set(key, value);
+    });
+    if (withPaging) {
+      params.set('page', state.page);
+      params.set('pageSize', $('#ruralWaterPageSize')?.value || state.pageSize);
+      params.set('sort', state.sort);
+      params.set('direction', state.direction);
+    }
+    return params.toString();
+  }
+
+  function resetFilters() {
+    ['#ruralWaterSearch', '#ruralWaterTypeFilter', '#ruralWaterStandardFilter', '#ruralWaterStatusFilter', '#ruralWaterAreaFilter'].forEach(selector => { const el = $(selector); if (el) el.value = ''; });
+    state.page = 1;
+    loadAll();
+  }
+
+  function openCreate() {
+    const form = $('#ruralCleanWaterForm');
+    form.reset();
+    form.elements.id.value = '';
+    form.elements.household_id.value = '';
+    state.selectedHousehold = null;
+    $('#ruralWaterHouseholdSelected').textContent = '';
+    bootstrap.Modal.getOrCreateInstance($('#ruralCleanWaterModal')).show();
+  }
+
+  async function edit(id) {
+    const row = await api('/api/rural-clean-water/' + encodeURIComponent(id));
+    const form = $('#ruralCleanWaterForm');
+    form.reset();
+    Object.entries(row).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
+    form.elements.is_clean_standard.checked = !!row.is_clean_standard;
+    form.elements.household_id.value = row.household_id;
+    $('#ruralWaterHouseholdSearch').value = [row.household_code, row.head_citizen_name].filter(Boolean).join(' - ');
+    $('#ruralWaterHouseholdSelected').textContent = row.address || '';
+    bootstrap.Modal.getOrCreateInstance($('#ruralCleanWaterModal')).show();
+  }
+
+  function bindForm() {
+    $('#ruralCleanWaterForm')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const data = Object.fromEntries(new FormData(form).entries());
+      data.is_clean_standard = form.elements.is_clean_standard.checked ? 1 : 0;
+      try {
+        const id = data.id;
+        delete data.id;
+        await api('/api/rural-clean-water' + (id ? '/' + encodeURIComponent(id) : ''), { method: id ? 'PUT' : 'POST', body: data });
+        bootstrap.Modal.getOrCreateInstance($('#ruralCleanWaterModal')).hide();
+        await loadAll();
+        toast('Đã lưu dữ liệu nước sạch');
+      } catch (error) {
+        toast(error.message, 'danger');
+      }
+    });
+    $('#ruralWaterPageSize')?.addEventListener('change', () => { state.page = 1; loadList(); });
+  }
+
+  function bindHouseholdSearch() {
+    let timer = null;
+    $('#ruralWaterHouseholdSearch')?.addEventListener('input', event => {
+      clearTimeout(timer);
+      timer = setTimeout(() => searchHouseholds(event.target.value), 250);
+    });
+  }
+
+  async function searchHouseholds(value) {
+    const box = $('#ruralWaterHouseholdSuggestions');
+    if (!box || String(value || '').trim().length < 2) {
+      box?.classList.add('d-none');
+      return;
+    }
+    const data = await api('/api/rural-clean-water/household-search?q=' + encodeURIComponent(value));
+    box.innerHTML = (data.items || []).map(row => '<button type="button" class="list-group-item list-group-item-action" data-platform-action="ruralCleanWater.selectHousehold" data-id="' + row.id + '" data-label="' + esc(row.household_code + ' - ' + row.head_citizen_name) + '" data-address="' + esc(row.address || '') + '"><strong>' + esc(row.household_code) + '</strong> ' + esc(row.head_citizen_name) + '<br><small>' + esc(row.address || '') + '</small></button>').join('');
+    box.classList.toggle('d-none', !(data.items || []).length);
+  }
+
+  async function remove(id) {
+    if (!confirm('Xóa bản ghi nước sạch này?')) return;
+    await api('/api/rural-clean-water/' + encodeURIComponent(id), { method: 'DELETE' });
+    await loadAll();
+    toast('Đã xóa bản ghi nước sạch');
+  }
+
+  function sort(key) {
+    if (state.sort === key) state.direction = state.direction === 'ASC' ? 'DESC' : 'ASC';
+    else { state.sort = key; state.direction = 'ASC'; }
+    loadList();
+  }
+
+  function selectHousehold(button) {
+    if (!button) return;
+    $('#ruralCleanWaterForm').elements.household_id.value = button.dataset.id;
+    $('#ruralWaterHouseholdSearch').value = button.dataset.label;
+    $('#ruralWaterHouseholdSelected').textContent = button.dataset.address || '';
+    $('#ruralWaterHouseholdSuggestions')?.classList.add('d-none');
+  }
+
+  function renderPager(data) {
+    const host = $('#ruralWaterPager');
+    const totalPages = Number(data.totalPages || 1);
+    host.dataset.totalPages = String(totalPages);
+    host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" data-platform-action="ruralCleanWater.page" data-direction="prev" ' + (state.page <= 1 ? 'disabled' : '') + '>Trước</button><span>Trang ' + fmt(state.page) + '/' + fmt(totalPages) + '</span><button class="btn btn-sm btn-outline-secondary" data-platform-action="ruralCleanWater.page" data-direction="next" ' + (state.page >= totalPages ? 'disabled' : '') + '>Sau</button>';
+  }
+
+  function page(direction) {
+    const totalPages = Number($('#ruralWaterPager')?.dataset.totalPages || 1);
+    state.page = direction === 'prev' ? Math.max(1, state.page - 1) : Math.min(totalPages, state.page + 1);
+    loadList();
+  }
+
+  function fillSelect(selector, items, allLabel) {
+    const select = $(selector);
+    if (!select) return;
+    select.innerHTML = (allLabel ? '<option value="">' + esc(allLabel) + '</option>' : '') + (items || []).map(item => '<option value="' + esc(item.value) + '">' + esc(item.label) + '</option>').join('');
+  }
+
+  function openReport(type) {
+    const navigate = window.TenantAppNavigationController?.navigate || window.TenantAppPlatform?.navigation?.navigate;
+    if (typeof navigate === 'function') navigate.call(window.TenantAppNavigationController || window.TenantAppPlatform.navigation, 'reports');
+    setTimeout(() => window.loadReport ? (document.getElementById('reportTypeSelect').value = type, window.loadReport()) : null, 120);
+  }
+
+  function toast(message, variant = 'success') {
+    if (window.App?.toast) return window.App.toast(message, variant);
+    if (window.TenantAppToast) return window.TenantAppToast(message, variant);
+    console[variant === 'danger' ? 'error' : 'log'](message);
+  }
+})();

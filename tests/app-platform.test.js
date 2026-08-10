@@ -17,6 +17,7 @@ function createSandbox() {
       this.type = type;
       this.detail = options && options.detail;
     },
+    HTMLInputElement: function HTMLInputElement() {},
     document: {
       createTextNode(text) {
         return { nodeType: 3, textContent: String(text) };
@@ -46,6 +47,8 @@ function createSandbox() {
           }
         };
       },
+      addEventListener() {},
+      removeEventListener() {},
       dispatchEvent(event) {
         listeners.push(event);
       }
@@ -81,9 +84,15 @@ function createSandbox() {
       }
     }
   };
+  Object.defineProperty(sandbox.HTMLInputElement.prototype, 'value', {
+    configurable: true,
+    get() { return this._value || ''; },
+    set(value) { this._value = String(value || ''); }
+  });
   sandbox.window.window = sandbox.window;
   sandbox.window.document = sandbox.document;
   sandbox.window.CustomEvent = sandbox.CustomEvent;
+  sandbox.window.HTMLInputElement = sandbox.HTMLInputElement;
   sandbox.listeners = listeners;
   sandbox.windowListeners = windowListeners;
   sandbox.historyCalls = historyCalls;
@@ -734,7 +743,7 @@ function screenNode(screenId) {
   assert.strictEqual(crumbs[3].params.id, '42');
 
   const createCrumbs = platform.breadcrumbs.fromModuleAction('persons', 'create');
-  assert.strictEqual(createCrumbs[createCrumbs.length - 1].label, 'Them moi');
+  assert.strictEqual(createCrumbs[createCrumbs.length - 1].label, 'Thêm mới');
 
   const root = {
     textContent: 'old',
