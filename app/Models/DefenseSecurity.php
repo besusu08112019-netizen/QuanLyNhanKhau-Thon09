@@ -139,6 +139,7 @@ SQL);
 
     public function catalogs(): array
     {
+        $this->ensureSchema();
         return [
             'settings' => $this->settings(),
             'yes_no' => $this->pairs(self::YES_NO),
