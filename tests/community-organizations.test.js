@@ -23,6 +23,7 @@ assert.match(model, /active_member_key/);
 assert.match(model, /tenantWhere\('c', 'citizens'\)/);
 assert.match(model, /organizationByCode/);
 assert.match(model, /positionBelongsToOrganization/);
+assert.ok(model.includes('array_merge(, ['), 'endMembership must override existing status and ended_date');
 assert.match(model, /Nhân khẩu này đã có thông tin đang tham gia tổ chức đã chọn/);
 
 for (const route of [
