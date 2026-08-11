@@ -37,6 +37,7 @@ use App\Controllers\AdministrativeUnitController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
+use App\Controllers\CommunityOrganizationController;
 use App\Controllers\ControlCenterAuthController;
 use App\Controllers\ControlCenterPermissionController;
 use App\Controllers\ControlCenterUserController;
@@ -775,7 +776,18 @@ $router->post('/api/party-members/{id}/restore', [PartyMemberController::class, 
 $router->get('/api/party-members/{id}', [PartyMemberController::class, 'show']);
 $router->put('/api/party-members/{id}', [PartyMemberController::class, 'update']);
 $router->delete('/api/party-members/{id}', [PartyMemberController::class, 'destroy']);
-
+$router->get('/api/organizations', [CommunityOrganizationController::class, 'index']);
+$router->post('/api/organizations', [CommunityOrganizationController::class, 'store']);
+$router->get('/api/organizations/dashboard', [CommunityOrganizationController::class, 'dashboard']);
+$router->get('/api/organizations/catalogs', [CommunityOrganizationController::class, 'catalogs']);
+$router->get('/api/organizations/citizen-search', [CommunityOrganizationController::class, 'citizenSearch']);
+$router->get('/api/organizations/citizen/{citizenId}', [CommunityOrganizationController::class, 'byCitizen']);
+$router->get('/api/organizations/report', [CommunityOrganizationController::class, 'report']);
+$router->get('/api/organizations/{id}/history', [CommunityOrganizationController::class, 'history']);
+$router->put('/api/organizations/{id}/end', [CommunityOrganizationController::class, 'end']);
+$router->get('/api/organizations/{id}', [CommunityOrganizationController::class, 'show']);
+$router->put('/api/organizations/{id}', [CommunityOrganizationController::class, 'update']);
+$router->delete('/api/organizations/{id}', [CommunityOrganizationController::class, 'destroy']);
 $router->get('/api/poverty/catalogs', [HouseholdPovertyController::class, 'catalogs']);
 $router->get('/api/poverty/dashboard', [HouseholdPovertyController::class, 'dashboard']);
 $router->get('/api/poverty/report', [HouseholdPovertyController::class, 'report']);
@@ -1133,6 +1145,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
         'assets/js/party-members.min.js',
+        'assets/js/community-organizations.min.js',
         'assets/js/poverty-management.min.js',
         'assets/js/vehicles.min.js',
         'assets/js/contributions.min.js',

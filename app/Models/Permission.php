@@ -7,8 +7,8 @@ use App\Core\BaseModel;
 final class Permission extends BaseModel
 {
     private const ROLES = ['SUPER_ADMIN', 'ADMIN', 'OFFICER', 'VIEWER'];
-    private const MODULES = ['dashboard','household','household_business','agricultural_land','agriculture','livestock','defense_security','party_members','poverty','vehicles','contributions','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','movement','report','statistics','pdf','import','export','print','profile','file','gis','photo','video','gps','notification','user','permission','logs','settings','backup','system_admin'];
-    private const ACTIONS = ['read','create','update','delete','upload','download','import','export','print','approve','restore','backup'];
+    private const MODULES = ['dashboard','household','household_business','agricultural_land','agriculture','livestock','defense_security','party_members','organizations','poverty','vehicles','contributions','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','movement','report','statistics','pdf','import','export','print','profile','file','gis','photo','video','gps','notification','user','permission','logs','settings','backup','system_admin'];
+    private const ACTIONS = ['read','create','update','delete','upload','download','import','export','print','approve','restore','backup','manage'];
 
     public function matrix(): array
     {
@@ -55,8 +55,8 @@ final class Permission extends BaseModel
     {
         if ($role === 'SUPER_ADMIN') return true;
         if ($role === 'ADMIN') return true;
-        if ($role === 'OFFICER') return ($module === 'agricultural_land' && $action === 'read') || (in_array($module, ['dashboard','household','household_business','agriculture','livestock','defense_security','party_members','poverty','vehicles','contributions','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','movement','report'], true) && in_array($action, ['read','create','update','upload','export','restore'], true)) || ($module === 'statistics' && $action === 'read') || ($module === 'notification' && in_array($action, ['read','update'], true)) || ($module === 'gis' && $action === 'read');
-        if ($role === 'VIEWER') return (in_array($module, ['dashboard','household','household_business','agricultural_land','agriculture','livestock','defense_security','party_members','poverty','vehicles','contributions','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','report','statistics','gis'], true) && $action === 'read') || ($module === 'notification' && in_array($action, ['read','update'], true));
+        if ($role === 'OFFICER') return ($module === 'agricultural_land' && $action === 'read') || (in_array($module, ['dashboard','household','household_business','agriculture','livestock','defense_security','party_members','organizations','poverty','vehicles','contributions','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','movement','report'], true) && in_array($action, ['read','create','update','upload','export','restore'], true)) || ($module === 'statistics' && $action === 'read') || ($module === 'notification' && in_array($action, ['read','update'], true)) || ($module === 'gis' && $action === 'read');
+        if ($role === 'VIEWER') return (in_array($module, ['dashboard','household','household_business','agricultural_land','agriculture','livestock','defense_security','party_members','organizations','poverty','vehicles','contributions','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','report','statistics','gis'], true) && $action === 'read') || ($module === 'notification' && in_array($action, ['read','update'], true));
         return false;
     }
 }

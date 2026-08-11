@@ -449,7 +449,7 @@ final class User extends BaseModel
 
         $permission = $this->fetchOne('SELECT allowed FROM permissions WHERE role = :role AND module = :module AND action = :action', ['role' => $role, 'module' => $module, 'action' => $action]);
         if ($permission) return (bool) $permission['allowed'];
-        if ($role === 'OFFICER') return ($module === 'agricultural_land' && $action === 'read') || (in_array($module, ['dashboard','household','household_business','agriculture','livestock','defense_security','party_members','poverty','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','movement','report'], true) && in_array($action, ['read','create','update','upload','export','restore'], true)) || ($module === 'statistics' && $action === 'read') || ($module === 'notification' && in_array($action, ['read','update'], true)) || ($module === 'gis' && $action === 'read');
+        if ($role === 'OFFICER') return ($module === 'agricultural_land' && $action === 'read') || (in_array($module, ['dashboard','household','household_business','agriculture','livestock','defense_security','party_members','organizations','poverty','finance','work_tasks','work_calendar','documents','photo_gallery','houses','public_assets','complaints','citizen','movement','report'], true) && in_array($action, ['read','create','update','upload','export','restore'], true)) || ($module === 'statistics' && $action === 'read') || ($module === 'notification' && in_array($action, ['read','update'], true)) || ($module === 'gis' && $action === 'read');
         return false;
     }
 
