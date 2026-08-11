@@ -330,11 +330,11 @@ SQL);
     {
         $row = $this->find($id);
         if (!$row) throw new RuntimeException('Không tìm thấy hội viên');
-        $input = $row + [
+        $input = array_merge($row, [
             'status' => strtoupper(trim((string) ($data['status'] ?? 'ENDED'))),
             'ended_date' => $this->dateValue($data['ended_date'] ?? $data['endedDate'] ?? date('Y-m-d')),
             'note' => trim((string) ($data['note'] ?? $row['note'] ?? '')),
-        ];
+        ]);
         return $this->upsert($input, $userId, $id);
     }
 
