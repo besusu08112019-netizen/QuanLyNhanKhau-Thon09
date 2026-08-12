@@ -1,0 +1,96 @@
+name: Migration Admin Tooling
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: migration-admin-tooling
+  cancel-in-progress: false
+
+jobs:
+  upload-migration-tooling:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Validate FTP secrets
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          missing=0
+          for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is missing."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Validate migration tooling
+        shell: bash
+        run: |
+          php -l app/Services/TenantMigrationService.php
+          php -l tools/tenant_migrate.php
+          php tests/tenant-migration-service.test.php
+
+          if ! grep -q "PHP_SAPI !== 'cli'" tools/tenant_migrate.php; then
+            echo "::error::tools/tenant_migrate.php must be CLI-only."
+            exit 1
+          fi
+          if ! grep -q "service->audit(\$pdo, true)" tools/tenant_migrate.php; then
+            echo "::error::Default tenant migration audit must call read-only audit mode."
+            exit 1
+          fi
+
+      - name: Build whitelisted admin tooling payload
+        shell: bash
+        run: |
+          rm -rf dist/migration-admin dist/migration-admin-manifest
+          mkdir -p dist/migration-admin/app/Services dist/migration-admin/tools
+          mkdir -p dist/migration-admin-manifest
+          cp app/Services/TenantMigrationService.php dist/migration-admin/app/Services/TenantMigrationService.php
+          cp tools/tenant_migrate.php dist/migration-admin/tools/tenant_migrate.php
+
+          mapfile -t payload < <(find dist/migration-admin -type f | sort)
+          if [ "${#payload[@]}" -ne 2 ]; then
+            echo "::error::Migration admin payload must contain exactly 2 files."
+            printf '%s\n' "${payload[@]}"
+            exit 1
+          fi
+
+          expected=$'dist/migration-admin/app/Services/TenantMigrationService.php\ndist/migration-admin/tools/tenant_migrate.php'
+          actual="$(printf '%s\n' "${payload[@]}")"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Migration admin payload contains non-whitelisted files."
+            printf '%s\n' "${payload[@]}"
+            exit 1
+          fi
+
+          sha256sum "${payload[@]}" | tee dist/migration-admin-manifest/SHA256SUMS.txt
+
+      - name: Upload payload manifest for audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-admin-tooling-manifest
+          path: dist/migration-admin-manifest/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Deploy whitelisted migration tooling via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/migration-admin/
+          server-dir: ../public_html/
+          state-name: .ftp-deploy-migration-admin-state.json
+          log-level: standard
