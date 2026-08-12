@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    echo "Forbidden\n";
+    exit(1);
+}
+
 use App\Core\Autoloader;
 use App\Core\Database;
 use App\Services\TenantMigrationService;
@@ -36,9 +42,10 @@ foreach ($tenants as $tenant) {
     try {
         $pdo = tenantPdo($tenant);
         $before = businessCounts($pdo);
-        $result = $apply ? $service->applyPending($pdo, $label, false) : $service->audit($pdo);
+        $result = $apply ? $service->applyPending($pdo, $label, false) : $service->audit($pdo, true);
         $after = businessCounts($pdo);
         $pending = $apply ? array_values(array_filter($result['results'], static fn(array $row): bool => $row['status'] !== 'SKIPPED')) : $result['pending'];
+        $livestock = livestockAudit($pdo);
         $rows[] = [
             'tenant' => $label,
             'domain' => $tenant['domain'],
@@ -49,6 +56,8 @@ foreach ($tenants as $tenant) {
             'migration' => $apply ? (count($pending) ? 'APPLIED' : 'UP_TO_DATE') : ((int) ($result['pendingCount'] ?? 0) > 0 ? 'PENDING' : 'UP_TO_DATE'),
             'pending' => $pending,
             'features' => featureSummary($pdo),
+            'livestock' => $livestock,
+            'livestockMigrationCompatibility' => livestockMigrationCompatibility($livestock),
             'dataBefore' => $before,
             'dataAfter' => $after,
             'dataUnchanged' => $before === $after,
@@ -191,7 +200,82 @@ function businessCounts(PDO $pdo): array
     }
     return $counts;
 }
+function livestockAudit(PDO $pdo): array
+{
+    $hasLivestock = tableExists($pdo, 'livestock');
+    $hasFacilities = tableExists($pdo, 'livestock_facilities');
+    $livestockColumns = $hasLivestock ? columns($pdo, 'livestock') : [];
+    $facilityColumns = $hasFacilities ? columns($pdo, 'livestock_facilities') : [];
+    $activeCondition = in_array('status', $livestockColumns, true) ? "COALESCE(status,'ACTIVE') <> 'DELETED'" : '1=1';
+    $hasQuantity = in_array('quantity', $livestockColumns, true);
+    $hasAnimalType = in_array('animal_type', $livestockColumns, true);
+    $hasHouseholdId = in_array('household_id', $livestockColumns, true);
+    $summary = [
+        'tables' => [
+            'livestock' => $hasLivestock,
+            'livestock_facilities' => $hasFacilities,
+        ],
+        'columns' => [
+            'livestock' => $livestockColumns,
+            'livestock_facilities' => $facilityColumns,
+        ],
+        'hasGroupsNew' => $hasFacilities
+            && in_array('facility_id', $livestockColumns, true)
+            && in_array('animal_group', $livestockColumns, true),
+        'records' => 0,
+        'households' => 0,
+        'with_household_id' => 0,
+        'missing_household_id' => 0,
+        'total_quantity' => 0.0,
+        'pig_total' => 0.0,
+        'animal_type_totals' => [],
+    ];
 
+    if (!$hasLivestock) {
+        return $summary;
+    }
+
+    $summary['records'] = (int) $pdo->query("SELECT COUNT(*) FROM livestock WHERE $activeCondition")->fetchColumn();
+    if ($hasHouseholdId) {
+        $summary['households'] = (int) $pdo->query("SELECT COUNT(DISTINCT household_id) FROM livestock WHERE $activeCondition AND household_id IS NOT NULL AND household_id > 0")->fetchColumn();
+        $summary['with_household_id'] = (int) $pdo->query("SELECT COUNT(*) FROM livestock WHERE $activeCondition AND household_id IS NOT NULL AND household_id > 0")->fetchColumn();
+        $summary['missing_household_id'] = (int) $pdo->query("SELECT COUNT(*) FROM livestock WHERE $activeCondition AND (household_id IS NULL OR household_id <= 0)")->fetchColumn();
+    }
+    if ($hasQuantity) {
+        $summary['total_quantity'] = (float) $pdo->query("SELECT COALESCE(SUM(quantity),0) FROM livestock WHERE $activeCondition")->fetchColumn();
+    }
+    if ($hasAnimalType && $hasQuantity) {
+        $stmt = $pdo->query("SELECT animal_type, COALESCE(SUM(quantity),0) AS total FROM livestock WHERE $activeCondition GROUP BY animal_type ORDER BY animal_type");
+        foreach ($stmt->fetchAll() as $row) {
+            $type = (string) ($row['animal_type'] ?? '');
+            $total = (float) ($row['total'] ?? 0);
+            $summary['animal_type_totals'][] = ['animal_type' => $type, 'total' => $total];
+            $key = mb_strtolower($type, 'UTF-8');
+            if (str_contains($key, 'lợn') || str_contains($key, 'lon') || str_contains($key, 'heo') || str_contains($key, 'pig') || str_contains($key, 'lã')) {
+                $summary['pig_total'] += $total;
+            }
+        }
+    }
+
+    return $summary;
+}
+
+function livestockMigrationCompatibility(array $audit): string
+{
+    if (($audit['tables']['livestock'] ?? false) === false) {
+        return 'SAFE';
+    }
+    if (($audit['hasGroupsNew'] ?? false) === true) {
+        return 'ALREADY_APPLIED';
+    }
+    $columns = $audit['columns']['livestock'] ?? [];
+    foreach (['id', 'household_id', 'animal_type', 'quantity'] as $required) {
+        if (!in_array($required, $columns, true)) {
+            return 'NEEDS_ADJUSTMENT';
+        }
+    }
+    return 'SAFE';
+}
 function featureSummary(PDO $pdo): array
 {
     return [

@@ -60,9 +60,11 @@ final class TenantMigrationService
         }, $files);
     }
 
-    public function audit(PDO $pdo): array
+    public function audit(PDO $pdo, bool $readOnly = false): array
     {
-        $this->ensureMigrationTable($pdo);
+        if (!$readOnly) {
+            $this->ensureMigrationTable($pdo);
+        }
         $applied = $this->appliedMigrations($pdo);
         $migrations = $this->migrations();
         $pending = [];
