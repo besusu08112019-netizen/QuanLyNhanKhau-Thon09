@@ -7,6 +7,23 @@ on:
         description: 'Git ref containing reviewed migration tooling files'
         required: true
         default: 'baseline/production-host-20260812'
+      mode:
+        description: 'Diagnose FTPS paths or upload reviewed tooling'
+        required: true
+        default: 'diagnose'
+        type: choice
+        options:
+          - diagnose
+          - upload
+      target_root:
+        description: 'Whitelisted remote root for upload mode'
+        required: true
+        default: 'app-root'
+        type: choice
+        options:
+          - app-root
+          - sibling-public-html
+          - public-html-child
 
 concurrency:
   group: migration-admin-tooling
@@ -89,7 +106,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload and verify whitelisted migration tooling via FTPS
+      - name: Diagnose FTPS production roots
         shell: bash
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
@@ -98,14 +115,93 @@ jobs:
         run: |
           python - <<'PY'
           import hashlib
+          import os
+          from ftplib import FTP_TLS, error_perm
+
+          candidates = ['.', 'public_html', '../public_html']
+          files = [
+              'app/Services/TenantMigrationService.php',
+              'tools/tenant_migrate.php',
+          ]
+          markers = [
+              b'tenant-audit-actual-schema-20260812-v2',
+              b'--self-test-json',
+              b'actualSchemaAudit',
+              b'livestockAudit',
+              b'livestockMigrationCompatibility',
+          ]
+
+          def read_file(ftp: FTP_TLS, base: str, rel: str):
+              chunks = []
+              path = f'{base.rstrip("/")}/{rel}' if base != '.' else rel
+              ftp.retrbinary(f'RETR {path}', chunks.append)
+              return b''.join(chunks)
+
+          with FTP_TLS(os.environ['FTP_SERVER'], timeout=60) as ftp:
+              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              ftp.set_pasv(True)
+              login_root = ftp.pwd()
+              print(f'ftp_login_pwd={login_root}')
+              for candidate in candidates:
+                  print(f'candidate={candidate}')
+                  try:
+                      ftp.cwd(login_root)
+                      ftp.cwd(candidate)
+                      print(f'  pwd={ftp.pwd()}')
+                      names = sorted(ftp.nlst())[:40]
+                      print('  entries=' + ','.join(names))
+                  except Exception as exc:
+                      print(f'  list_error={exc.__class__.__name__}: {exc}')
+                  finally:
+                      try:
+                          ftp.cwd(login_root)
+                      except Exception:
+                          pass
+
+                  for rel in files:
+                      try:
+                          data = read_file(ftp, candidate, rel)
+                      except error_perm as exc:
+                          print(f'  {rel}: missing_or_denied={exc}')
+                          continue
+                      except Exception as exc:
+                          print(f'  {rel}: read_error={exc.__class__.__name__}: {exc}')
+                          continue
+                      sha = hashlib.sha256(data).hexdigest()
+                      found = [m.decode('ascii') for m in markers if m in data]
+                      print(f'  {rel}: sha256={sha}; bytes={len(data)}; markers={found}')
+          PY
+
+      - name: Upload and verify whitelisted migration tooling via FTPS
+        if: ${{ inputs.mode == 'upload' }}
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          TARGET_ROOT: ${{ inputs.target_root }}
+        run: |
+          python - <<'PY'
+          import hashlib
           import io
           import os
           from ftplib import FTP_TLS
           from pathlib import Path
 
+          roots = {
+              'app-root': '.',
+              'sibling-public-html': '../public_html',
+              'public-html-child': 'public_html',
+          }
+          root_choice = os.environ['TARGET_ROOT']
+          if root_choice not in roots:
+              raise SystemExit(f'Unsupported target_root: {root_choice}')
+          target_root = roots[root_choice].rstrip('/')
+
           files = [
-              ('dist/migration-admin/app/Services/TenantMigrationService.php', '../public_html/app/Services/TenantMigrationService.php'),
-              ('dist/migration-admin/tools/tenant_migrate.php', '../public_html/tools/tenant_migrate.php'),
+              ('dist/migration-admin/app/Services/TenantMigrationService.php', f'{target_root}/app/Services/TenantMigrationService.php' if target_root != '.' else 'app/Services/TenantMigrationService.php'),
+              ('dist/migration-admin/tools/tenant_migrate.php', f'{target_root}/tools/tenant_migrate.php' if target_root != '.' else 'tools/tenant_migrate.php'),
           ]
           expected = {
               remote: hashlib.sha256(Path(local).read_bytes()).hexdigest()
