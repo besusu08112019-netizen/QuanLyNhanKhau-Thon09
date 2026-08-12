@@ -89,15 +89,65 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Deploy whitelisted migration tooling via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          local-dir: ./dist/migration-admin/
-          server-dir: ../public_html/
-          state-name: .ftp-deploy-migration-admin-state.json
-          log-level: standard
+      - name: Upload and verify whitelisted migration tooling via FTPS
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import io
+          import os
+          from ftplib import FTP_TLS
+          from pathlib import Path
+
+          files = [
+              ('dist/migration-admin/app/Services/TenantMigrationService.php', '../public_html/app/Services/TenantMigrationService.php'),
+              ('dist/migration-admin/tools/tenant_migrate.php', '../public_html/tools/tenant_migrate.php'),
+          ]
+          expected = {
+              remote: hashlib.sha256(Path(local).read_bytes()).hexdigest()
+              for local, remote in files
+          }
+
+          def ensure_dir(ftp: FTP_TLS, directory: str) -> None:
+              current = ftp.pwd()
+              try:
+                  for part in directory.split('/'):
+                      if not part or part == '.':
+                          continue
+                      if part == '..':
+                          ftp.cwd('..')
+                          continue
+                      try:
+                          ftp.cwd(part)
+                      except Exception:
+                          ftp.mkd(part)
+                          ftp.cwd(part)
+              finally:
+                  ftp.cwd(current)
+
+          with FTP_TLS(os.environ['FTP_SERVER'], timeout=60) as ftp:
+              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              ftp.set_pasv(True)
+              for local, remote in files:
+                  remote_dir, remote_name = remote.rsplit('/', 1)
+                  ensure_dir(ftp, remote_dir)
+                  ftp.cwd(remote_dir)
+                  with open(local, 'rb') as handle:
+                      ftp.storbinary(f'STOR {remote_name}', handle)
+                  print(f'uploaded {remote}')
+
+              for _, remote in files:
+                  remote_dir, remote_name = remote.rsplit('/', 1)
+                  ftp.cwd(remote_dir)
+                  buf = io.BytesIO()
+                  ftp.retrbinary(f'RETR {remote_name}', buf.write)
+                  actual = hashlib.sha256(buf.getvalue()).hexdigest()
+                  if actual != expected[remote]:
+                      raise SystemExit(f'hash mismatch for {remote}: expected {expected[remote]} got {actual}')
+                  print(f'verified {remote} sha256={actual}')
+          PY
