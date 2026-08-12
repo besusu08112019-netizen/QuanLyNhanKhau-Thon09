@@ -15,15 +15,6 @@ on:
         options:
           - diagnose
           - upload
-      target_root:
-        description: 'Whitelisted remote root for upload mode'
-        required: true
-        default: 'app-root'
-        type: choice
-        options:
-          - app-root
-          - sibling-public-html
-          - public-html-child
 
 concurrency:
   group: migration-admin-tooling
@@ -40,17 +31,17 @@ jobs:
         with:
           ref: ${{ inputs.tool_ref }}
 
-      - name: Validate FTP secrets
+      - name: Validate migration FTP secrets
         shell: bash
         env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          MIGRATION_FTP_SERVER: ${{ secrets.MIGRATION_FTP_SERVER }}
+          MIGRATION_FTP_USERNAME: ${{ secrets.MIGRATION_FTP_USERNAME }}
+          MIGRATION_FTP_PASSWORD: ${{ secrets.MIGRATION_FTP_PASSWORD }}
         run: |
           missing=0
-          for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD; do
+          for name in MIGRATION_FTP_SERVER MIGRATION_FTP_USERNAME MIGRATION_FTP_PASSWORD; do
             if [ -z "${!name}" ]; then
-              echo "::error::$name is missing."
+              echo "::error::$name is missing. Configure the dedicated Migration Admin FTP secret."
               missing=1
             fi
           done
@@ -106,19 +97,18 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Diagnose FTPS production roots
+      - name: Diagnose migration FTP production root
         shell: bash
         env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          MIGRATION_FTP_SERVER: ${{ secrets.MIGRATION_FTP_SERVER }}
+          MIGRATION_FTP_USERNAME: ${{ secrets.MIGRATION_FTP_USERNAME }}
+          MIGRATION_FTP_PASSWORD: ${{ secrets.MIGRATION_FTP_PASSWORD }}
         run: |
           python - <<'PY'
           import hashlib
           import os
           from ftplib import FTP_TLS, error_perm
 
-          candidates = ['.', 'public_html', '../public_html']
           files = [
               'app/Services/TenantMigrationService.php',
               'tools/tenant_migrate.php',
@@ -131,56 +121,54 @@ jobs:
               b'livestockMigrationCompatibility',
           ]
 
-          def read_file(ftp: FTP_TLS, base: str, rel: str):
+          def read_file(ftp: FTP_TLS, rel: str):
               chunks = []
-              path = f'{base.rstrip("/")}/{rel}' if base != '.' else rel
-              ftp.retrbinary(f'RETR {path}', chunks.append)
+              ftp.retrbinary(f'RETR {rel}', chunks.append)
               return b''.join(chunks)
 
-          with FTP_TLS(os.environ['FTP_SERVER'], timeout=60) as ftp:
-              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+          with FTP_TLS(os.environ['MIGRATION_FTP_SERVER'], timeout=60) as ftp:
+              ftp.login(os.environ['MIGRATION_FTP_USERNAME'], os.environ['MIGRATION_FTP_PASSWORD'])
               ftp.prot_p()
               ftp.set_pasv(True)
               login_root = ftp.pwd()
               print(f'ftp_login_pwd={login_root}')
-              for candidate in candidates:
-                  print(f'candidate={candidate}')
+              names = sorted(ftp.nlst())[:40]
+              print('root_entries=' + ','.join(names))
+
+              for directory in ['app', 'app/Services', 'tools']:
                   try:
                       ftp.cwd(login_root)
-                      ftp.cwd(candidate)
-                      print(f'  pwd={ftp.pwd()}')
-                      names = sorted(ftp.nlst())[:40]
-                      print('  entries=' + ','.join(names))
+                      ftp.cwd(directory)
+                      print(f'{directory}: present')
                   except Exception as exc:
-                      print(f'  list_error={exc.__class__.__name__}: {exc}')
+                      print(f'{directory}: missing_or_denied={exc.__class__.__name__}: {exc}')
                   finally:
                       try:
                           ftp.cwd(login_root)
                       except Exception:
                           pass
 
-                  for rel in files:
-                      try:
-                          data = read_file(ftp, candidate, rel)
-                      except error_perm as exc:
-                          print(f'  {rel}: missing_or_denied={exc}')
-                          continue
-                      except Exception as exc:
-                          print(f'  {rel}: read_error={exc.__class__.__name__}: {exc}')
-                          continue
-                      sha = hashlib.sha256(data).hexdigest()
-                      found = [m.decode('ascii') for m in markers if m in data]
-                      print(f'  {rel}: sha256={sha}; bytes={len(data)}; markers={found}')
+              for rel in files:
+                  try:
+                      data = read_file(ftp, rel)
+                  except error_perm as exc:
+                      print(f'{rel}: missing_or_denied={exc}')
+                      continue
+                  except Exception as exc:
+                      print(f'{rel}: read_error={exc.__class__.__name__}: {exc}')
+                      continue
+                  sha = hashlib.sha256(data).hexdigest()
+                  found = [m.decode('ascii') for m in markers if m in data]
+                  print(f'{rel}: sha256={sha}; bytes={len(data)}; markers={found}')
           PY
 
       - name: Upload and verify whitelisted migration tooling via FTPS
         if: ${{ inputs.mode == 'upload' }}
         shell: bash
         env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          TARGET_ROOT: ${{ inputs.target_root }}
+          MIGRATION_FTP_SERVER: ${{ secrets.MIGRATION_FTP_SERVER }}
+          MIGRATION_FTP_USERNAME: ${{ secrets.MIGRATION_FTP_USERNAME }}
+          MIGRATION_FTP_PASSWORD: ${{ secrets.MIGRATION_FTP_PASSWORD }}
         run: |
           python - <<'PY'
           import hashlib
@@ -189,48 +177,22 @@ jobs:
           from ftplib import FTP_TLS
           from pathlib import Path
 
-          roots = {
-              'app-root': '.',
-              'sibling-public-html': '../public_html',
-              'public-html-child': 'public_html',
-          }
-          root_choice = os.environ['TARGET_ROOT']
-          if root_choice not in roots:
-              raise SystemExit(f'Unsupported target_root: {root_choice}')
-          target_root = roots[root_choice].rstrip('/')
-
           files = [
-              ('dist/migration-admin/app/Services/TenantMigrationService.php', f'{target_root}/app/Services/TenantMigrationService.php' if target_root != '.' else 'app/Services/TenantMigrationService.php'),
-              ('dist/migration-admin/tools/tenant_migrate.php', f'{target_root}/tools/tenant_migrate.php' if target_root != '.' else 'tools/tenant_migrate.php'),
+              ('dist/migration-admin/app/Services/TenantMigrationService.php', 'app/Services/TenantMigrationService.php'),
+              ('dist/migration-admin/tools/tenant_migrate.php', 'tools/tenant_migrate.php'),
           ]
           expected = {
               remote: hashlib.sha256(Path(local).read_bytes()).hexdigest()
               for local, remote in files
           }
 
-          def ensure_dir(ftp: FTP_TLS, root: str, directory: str) -> None:
-              ftp.cwd(root)
-              for part in directory.split('/'):
-                  if not part or part == '.':
-                      continue
-                  if part == '..':
-                      ftp.cwd('..')
-                      continue
-                  try:
-                      ftp.cwd(part)
-                  except Exception:
-                      ftp.mkd(part)
-                      ftp.cwd(part)
-              ftp.cwd(root)
-
-          with FTP_TLS(os.environ['FTP_SERVER'], timeout=60) as ftp:
-              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+          with FTP_TLS(os.environ['MIGRATION_FTP_SERVER'], timeout=60) as ftp:
+              ftp.login(os.environ['MIGRATION_FTP_USERNAME'], os.environ['MIGRATION_FTP_PASSWORD'])
               ftp.prot_p()
               ftp.set_pasv(True)
               root = ftp.pwd()
               for local, remote in files:
                   remote_dir, remote_name = remote.rsplit('/', 1)
-                  ensure_dir(ftp, root, remote_dir)
                   ftp.cwd(root)
                   ftp.cwd(remote_dir)
                   with open(local, 'rb') as handle:
