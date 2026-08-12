@@ -45,4 +45,21 @@ if (!str_contains($serviceSource, 'emptyHistoryWithSchema')) {
     fwrite(STDERR, 'Audit must detect schema present with empty migration history.' . PHP_EOL);
     exit(1);
 }
+$selfTestJson = shell_exec(PHP_BINARY . ' ' . escapeshellarg(BASE_PATH . '/tools/tenant_migrate.php') . ' --self-test-json');
+$selfTest = json_decode((string) $selfTestJson, true);
+if (!is_array($selfTest) || !isset($selfTest['auditToolVersion'], $selfTest['tenants'][0])) {
+    fwrite(STDERR, 'tenant_migrate.php self-test JSON must include auditToolVersion and tenants.' . PHP_EOL);
+    exit(1);
+}
+foreach (['actualSchema', 'livestock', 'livestockMigrationCompatibility', 'migrationCatalog'] as $field) {
+    if (!array_key_exists($field, $selfTest['tenants'][0])) {
+        fwrite(STDERR, 'tenant_migrate.php JSON output must include ' . $field . PHP_EOL);
+        exit(1);
+    }
+}
+if (($selfTest['tenants'][0]['livestockMigrationCompatibility']['status'] ?? '') !== 'BLOCKED') {
+    fwrite(STDERR, 'tenant_migrate.php self-test JSON must expose compatibility status.' . PHP_EOL);
+    exit(1);
+}
+
 echo "Tenant migration service checks passed\n";

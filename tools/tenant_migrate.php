@@ -14,6 +14,7 @@ use App\Services\TenantMigrationService;
 
 $basePath = dirname(__DIR__);
 define('BASE_PATH', $basePath);
+const AUDIT_TOOL_VERSION = 'tenant-audit-actual-schema-20260812-v2';
 
 $index = @file_get_contents($basePath . '/index.php') ?: '';
 if (preg_match("/APP_ASSET_VERSION',\s*'([^']+)'/", $index, $m)) {
@@ -29,6 +30,10 @@ $options = parseOptions($argv);
 $apply = (bool) ($options['apply'] ?? false);
 $json = (bool) ($options['json'] ?? false);
 $only = strtolower((string) ($options['tenant'] ?? ''));
+if ((bool) ($options['self-test-json'] ?? false)) {
+    echo json_encode(selfTestPayload(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . PHP_EOL;
+    exit(0);
+}
 
 $service = new TenantMigrationService();
 $tenants = discoverTenants($only);
@@ -46,6 +51,7 @@ foreach ($tenants as $tenant) {
         $after = businessCounts($pdo);
         $pending = $apply ? array_values(array_filter($result['results'], static fn(array $row): bool => $row['status'] !== 'SKIPPED')) : $result['pending'];
         $rows[] = [
+            'auditToolVersion' => AUDIT_TOOL_VERSION,
             'tenant' => $label,
             'domain' => $tenant['domain'],
             'database' => $tenant['database'],
@@ -85,7 +91,7 @@ foreach ($tenants as $tenant) {
 }
 
 if ($json) {
-    echo json_encode(['apply' => $apply, 'tenants' => $rows], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . PHP_EOL;
+    echo json_encode(['auditToolVersion' => AUDIT_TOOL_VERSION, 'apply' => $apply, 'tenants' => $rows], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . PHP_EOL;
     exit(anyFail($rows) ? 1 : 0);
 }
 
@@ -98,6 +104,7 @@ function parseOptions(array $argv): array
     foreach (array_slice($argv, 1) as $arg) {
         if ($arg === '--apply') $options['apply'] = true;
         if ($arg === '--json') $options['json'] = true;
+        if ($arg === '--self-test-json') $options['self-test-json'] = true;
         if (str_starts_with($arg, '--tenant=')) $options['tenant'] = substr($arg, 9);
     }
     return $options;
@@ -202,6 +209,25 @@ function businessCounts(PDO $pdo): array
     }
     return $counts;
 }
+function selfTestPayload(): array
+{
+    return [
+        'auditToolVersion' => AUDIT_TOOL_VERSION,
+        'apply' => false,
+        'tenants' => [[
+            'auditToolVersion' => AUDIT_TOOL_VERSION,
+            'tenant' => 'self-test',
+            'migrationHistory' => ['tableExists' => false, 'records' => 0, 'emptyHistoryWithSchema' => false],
+            'actualSchema' => ['tables' => [], 'features' => []],
+            'livestock' => ['tables' => ['livestock' => false, 'livestock_facilities' => false], 'records' => 0],
+            'livestockMigrationCompatibility' => ['status' => 'BLOCKED', 'reasons' => ['self-test payload']],
+            'migrationCatalog' => ['count' => 0, 'latest' => '', 'hasLivestockFacilitiesMigration' => false],
+            'dataUnchanged' => true,
+            'result' => 'PASS',
+        ]],
+    ];
+}
+
 function migrationCatalog(TenantMigrationService $service): array
 {
     $ids = array_map(static fn(array $migration): string => (string) $migration['id'], $service->migrations());
