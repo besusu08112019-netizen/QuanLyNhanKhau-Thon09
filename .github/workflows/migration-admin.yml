@@ -112,30 +112,30 @@ jobs:
               for local, remote in files
           }
 
-          def ensure_dir(ftp: FTP_TLS, directory: str) -> None:
-              current = ftp.pwd()
-              try:
-                  for part in directory.split('/'):
-                      if not part or part == '.':
-                          continue
-                      if part == '..':
-                          ftp.cwd('..')
-                          continue
-                      try:
-                          ftp.cwd(part)
-                      except Exception:
-                          ftp.mkd(part)
-                          ftp.cwd(part)
-              finally:
-                  ftp.cwd(current)
+          def ensure_dir(ftp: FTP_TLS, root: str, directory: str) -> None:
+              ftp.cwd(root)
+              for part in directory.split('/'):
+                  if not part or part == '.':
+                      continue
+                  if part == '..':
+                      ftp.cwd('..')
+                      continue
+                  try:
+                      ftp.cwd(part)
+                  except Exception:
+                      ftp.mkd(part)
+                      ftp.cwd(part)
+              ftp.cwd(root)
 
           with FTP_TLS(os.environ['FTP_SERVER'], timeout=60) as ftp:
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.prot_p()
               ftp.set_pasv(True)
+              root = ftp.pwd()
               for local, remote in files:
                   remote_dir, remote_name = remote.rsplit('/', 1)
-                  ensure_dir(ftp, remote_dir)
+                  ensure_dir(ftp, root, remote_dir)
+                  ftp.cwd(root)
                   ftp.cwd(remote_dir)
                   with open(local, 'rb') as handle:
                       ftp.storbinary(f'STOR {remote_name}', handle)
@@ -143,6 +143,7 @@ jobs:
 
               for _, remote in files:
                   remote_dir, remote_name = remote.rsplit('/', 1)
+                  ftp.cwd(root)
                   ftp.cwd(remote_dir)
                   buf = io.BytesIO()
                   ftp.retrbinary(f'RETR {remote_name}', buf.write)
