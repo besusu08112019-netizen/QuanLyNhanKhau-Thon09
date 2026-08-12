@@ -68,13 +68,13 @@ final class Dashboard extends BaseModel
             'hamlets' => $this->safeWidget('charts.hamlets', fn() => $this->hamletChart($filters), [], $errors),
             'monthlyChanges' => $this->safeWidget('charts.monthlyChanges', fn() => $this->monthlyChangeChart($filters), [], $errors),
             'poverty' => $this->safeWidget('charts.poverty', fn() => $this->povertyChart($filters), [], $errors),
-            'partyMembers' => $this->safeWidget('charts.partyMembers', fn() => $this->flagChart($filters, 'party_member', 'Äáº£ng viÃªn'), [], $errors),
-            'youthUnion' => $this->safeWidget('charts.youthUnion', fn() => $this->flagChart($filters, 'youth_union_member', 'ÄoÃ n viÃªn'), [], $errors),
+            'partyMembers' => $this->safeWidget('charts.partyMembers', fn() => $this->flagChart($filters, 'party_member', 'Ã„ÂÃ¡ÂºÂ£ng viÃƒÂªn'), [], $errors),
+            'youthUnion' => $this->safeWidget('charts.youthUnion', fn() => $this->flagChart($filters, 'youth_union_member', 'Ã„ÂoÃƒÂ n viÃƒÂªn'), [], $errors),
             'labor' => $this->safeWidget('charts.labor', fn() => $this->laborChart($filters), [], $errors),
-            'occupations' => $this->safeWidget('charts.occupations', fn() => $this->groupChart($filters, 'occupation', 'Nghá» nghiá»‡p'), [], $errors),
-            'educationLevels' => $this->safeWidget('charts.educationLevels', fn() => $this->groupChart($filters, 'education_level', 'TrÃ¬nh Ä‘á»™ há»c váº¥n'), [], $errors),
-            'ethnicities' => $this->safeWidget('charts.ethnicities', fn() => $this->groupChart($filters, 'ethnicity', 'DÃ¢n tá»™c'), [], $errors),
-            'religions' => $this->safeWidget('charts.religions', fn() => $this->groupChart($filters, 'religion', 'TÃ´n giÃ¡o'), [], $errors),
+            'occupations' => $this->safeWidget('charts.occupations', fn() => $this->groupChart($filters, 'occupation', 'NghÃ¡Â»Â nghiÃ¡Â»â€¡p'), [], $errors),
+            'educationLevels' => $this->safeWidget('charts.educationLevels', fn() => $this->groupChart($filters, 'education_level', 'TrÃƒÂ¬nh Ã„â€˜Ã¡Â»â„¢ hÃ¡Â»Âc vÃ¡ÂºÂ¥n'), [], $errors),
+            'ethnicities' => $this->safeWidget('charts.ethnicities', fn() => $this->groupChart($filters, 'ethnicity', 'DÃƒÂ¢n tÃ¡Â»â„¢c'), [], $errors),
+            'religions' => $this->safeWidget('charts.religions', fn() => $this->groupChart($filters, 'religion', 'TÃƒÂ´n giÃƒÂ¡o'), [], $errors),
             'gpsProgress' => $this->safeWidget('charts.gpsProgress', fn() => $this->gpsProgressChart($filters), [], $errors),
             'profileProgress' => $this->safeWidget('charts.profileProgress', fn() => $this->profileProgressChart($filters), [], $errors),
             'healthInsurance' => $this->safeWidget('charts.healthInsurance', fn() => $this->healthInsuranceChart($filters), [], $errors),
@@ -194,15 +194,15 @@ final class Dashboard extends BaseModel
     {
         $stats = $this->healthInsuranceStats($filters);
         return [
-            ['label' => 'CÃ³ BHYT', 'value' => $stats['insured']],
-            ['label' => 'ChÆ°a cÃ³ BHYT', 'value' => $stats['uninsured']],
+            ['label' => 'CÃƒÂ³ BHYT', 'value' => $stats['insured']],
+            ['label' => 'ChÃ†Â°a cÃƒÂ³ BHYT', 'value' => $stats['uninsured']],
         ];
     }
 
     public function populationChart(array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        return $this->fetchAll("SELECT COALESCE(NULLIF(c.gender,''),'KhÃ¡c') AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY label", $params);
+        return $this->fetchAll("SELECT COALESCE(NULLIF(c.gender,''),'KhÃƒÂ¡c') AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY label", $params);
     }
 
     public function householdChart(array $filters = []): array
@@ -214,13 +214,13 @@ final class Dashboard extends BaseModel
     {
         [$where, $params] = $this->citizenWhere($filters);
         $ageSql = AgePolicy::ageSql('c');
-        return $this->fetchAll("SELECT CASE WHEN $ageSql <= " . AgePolicy::AGE_BAND_0_5_MAX . " THEN '0-5 tuá»•i' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_6_14_MIN . ' AND ' . AgePolicy::AGE_BAND_6_14_MAX . " THEN '6-14 tuá»•i' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_15_17_MIN . ' AND ' . AgePolicy::AGE_BAND_15_17_MAX . " THEN '15-17 tuá»•i' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_18_59_MIN . ' AND ' . AgePolicy::AGE_BAND_18_59_MAX . " THEN '18-59 tuá»•i' ELSE 'Tá»« 60 tuá»•i trá»Ÿ lÃªn' END AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY MIN($ageSql)", $params);
+        return $this->fetchAll("SELECT CASE WHEN $ageSql <= " . AgePolicy::AGE_BAND_0_5_MAX . " THEN '0-5 tuÃ¡Â»â€¢i' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_6_14_MIN . ' AND ' . AgePolicy::AGE_BAND_6_14_MAX . " THEN '6-14 tuÃ¡Â»â€¢i' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_15_17_MIN . ' AND ' . AgePolicy::AGE_BAND_15_17_MAX . " THEN '15-17 tuÃ¡Â»â€¢i' WHEN $ageSql BETWEEN " . AgePolicy::AGE_BAND_18_59_MIN . ' AND ' . AgePolicy::AGE_BAND_18_59_MAX . " THEN '18-59 tuÃ¡Â»â€¢i' ELSE 'TÃ¡Â»Â« 60 tuÃ¡Â»â€¢i trÃ¡Â»Å¸ lÃƒÂªn' END AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY MIN($ageSql)", $params);
     }
 
     public function residencyChart(array $filters = []): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        return $this->fetchAll("SELECT CASE c.residency_status WHEN 'TEMPORARY' THEN 'Táº¡m trÃº' ELSE 'ThÆ°á»ng trÃº' END AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY c.residency_status ORDER BY c.residency_status", $params);
+        return $this->fetchAll("SELECT CASE c.residency_status WHEN 'TEMPORARY' THEN 'TÃ¡ÂºÂ¡m trÃƒÂº' ELSE 'ThÃ†Â°Ã¡Â»Âng trÃƒÂº' END AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY c.residency_status ORDER BY c.residency_status", $params);
     }
 
     public function hamletChart(array $filters = []): array
@@ -253,9 +253,9 @@ final class Dashboard extends BaseModel
     public function flagChart(array $filters, string $column, string $label): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        if (!$this->columnExists('citizens', $column)) return [['label' => $label, 'value' => 0], ['label' => 'CÃ²n láº¡i', 'value' => 0]];
+        if (!$this->columnExists('citizens', $column)) return [['label' => $label, 'value' => 0], ['label' => 'CÃƒÂ²n lÃ¡ÂºÂ¡i', 'value' => 0]];
         $row = $this->fetchOne("SELECT SUM(c.$column=1) AS yes_count, SUM(c.$column=0 OR c.$column IS NULL) AS no_count FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params) ?: [];
-        return [['label' => $label, 'value' => (int) ($row['yes_count'] ?? 0)], ['label' => 'CÃ²n láº¡i', 'value' => (int) ($row['no_count'] ?? 0)]];
+        return [['label' => $label, 'value' => (int) ($row['yes_count'] ?? 0)], ['label' => 'CÃƒÂ²n lÃ¡ÂºÂ¡i', 'value' => (int) ($row['no_count'] ?? 0)]];
     }
 
     public function laborChart(array $filters = []): array
@@ -270,12 +270,12 @@ final class Dashboard extends BaseModel
 
         $rows = $this->fetchAll('SELECT ' . implode(',', $selects) . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $where", $params);
         $groups = [
-            'CÃ³ viá»‡c lÃ m' => 0,
-            'ChÆ°a cÃ³ viá»‡c lÃ m' => 0,
-            'Há»c sinh' => 0,
-            'Sinh viÃªn' => 0,
-            'Nghá»‰ hÆ°u' => 0,
-            'KhÃ¡c' => 0,
+            'CÃƒÂ³ viÃ¡Â»â€¡c lÃƒÂ m' => 0,
+            'ChÃ†Â°a cÃƒÂ³ viÃ¡Â»â€¡c lÃƒÂ m' => 0,
+            'HÃ¡Â»Âc sinh' => 0,
+            'Sinh viÃƒÂªn' => 0,
+            'NghÃ¡Â»â€° hÃ†Â°u' => 0,
+            'KhÃƒÂ¡c' => 0,
         ];
 
         foreach ($rows as $row) {
@@ -292,14 +292,14 @@ final class Dashboard extends BaseModel
     private function laborGroup(array $row): string
     {
         $occupation = $this->normalize((string) ($row['occupation'] ?? ''));
-        if ((int) ($row['not_attending_school'] ?? 0) === 1 || str_contains($occupation, 'chua di hoc')) return 'ChÆ°a Ä‘i há»c';
-        if ((int) ($row['pupil'] ?? 0) === 1) return 'Há»c sinh';
-        if ((int) ($row['student'] ?? 0) === 1 || str_contains($occupation, 'sinh vien')) return 'Sinh viÃªn';
-        if ((int) ($row['retired'] ?? 0) === 1 || str_contains($occupation, 'nghi huu') || str_contains($occupation, 'huu tri')) return 'Nghá»‰ hÆ°u';
-        if ((int) ($row['unemployed'] ?? 0) === 1 || str_contains($occupation, 'that nghiep') || str_contains($occupation, 'chua co viec') || str_contains($occupation, 'khong co viec')) return 'ChÆ°a cÃ³ viá»‡c lÃ m';
-        if ((int) ($row['employed'] ?? 0) === 1) return 'CÃ³ viá»‡c lÃ m';
-        if ($occupation === '' || str_contains($occupation, 'khac') || str_contains($occupation, 'noi tro')) return 'KhÃ¡c';
-        return 'CÃ³ viá»‡c lÃ m';
+        if ((int) ($row['not_attending_school'] ?? 0) === 1 || str_contains($occupation, 'chua di hoc')) return 'ChÃ†Â°a Ã„â€˜i hÃ¡Â»Âc';
+        if ((int) ($row['pupil'] ?? 0) === 1) return 'HÃ¡Â»Âc sinh';
+        if ((int) ($row['student'] ?? 0) === 1 || str_contains($occupation, 'sinh vien')) return 'Sinh viÃƒÂªn';
+        if ((int) ($row['retired'] ?? 0) === 1 || str_contains($occupation, 'nghi huu') || str_contains($occupation, 'huu tri')) return 'NghÃ¡Â»â€° hÃ†Â°u';
+        if ((int) ($row['unemployed'] ?? 0) === 1 || str_contains($occupation, 'that nghiep') || str_contains($occupation, 'chua co viec') || str_contains($occupation, 'khong co viec')) return 'ChÃ†Â°a cÃƒÂ³ viÃ¡Â»â€¡c lÃƒÂ m';
+        if ((int) ($row['employed'] ?? 0) === 1) return 'CÃƒÂ³ viÃ¡Â»â€¡c lÃƒÂ m';
+        if ($occupation === '' || str_contains($occupation, 'khac') || str_contains($occupation, 'noi tro')) return 'KhÃƒÂ¡c';
+        return 'CÃƒÂ³ viÃ¡Â»â€¡c lÃƒÂ m';
     }
 
     public function groupChart(array $filters, string $column, string $fallbackLabel): array
@@ -307,10 +307,10 @@ final class Dashboard extends BaseModel
         if (!in_array($column, ['occupation','education_level','ethnicity','religion'], true)) return [];
         if (!$this->columnExists('citizens', $column)) return [];
         [$where, $params] = $this->citizenWhere($filters);
-        $labelSql = "COALESCE(NULLIF(c.$column,''),'KhÃ¡c')";
+        $labelSql = "COALESCE(NULLIF(c.$column,''),'KhÃƒÂ¡c')";
         if (in_array($column, ['occupation', 'education_level'], true)) {
             $studentSql = StudentStatusService::studentSql('c');
-            $labelSql = "CASE WHEN $studentSql THEN 'Há»c sinh' WHEN LOWER(COALESCE(c.$column,'')) LIKE '%há»c sinh%' THEN 'KhÃ¡c' ELSE COALESCE(NULLIF(c.$column,''),'KhÃ¡c') END";
+            $labelSql = "CASE WHEN $studentSql THEN 'HÃ¡Â»Âc sinh' WHEN LOWER(COALESCE(c.$column,'')) LIKE '%hÃ¡Â»Âc sinh%' THEN 'KhÃƒÂ¡c' ELSE COALESCE(NULLIF(c.$column,''),'KhÃƒÂ¡c') END";
         }
         return $this->fetchAll("SELECT $labelSql AS label, COUNT(*) AS value FROM citizens c INNER JOIN households h ON h.id = c.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params);
     }
@@ -334,7 +334,7 @@ final class Dashboard extends BaseModel
             $items[] = [
                 'type' => 'household',
                 'id' => (int) $row['id'],
-                'title' => $row['head_citizen_name'] ?: ($row['household_code'] ?? 'Há»™ gia Ä‘Ã¬nh'),
+                'title' => $row['head_citizen_name'] ?: ($row['household_code'] ?? 'HÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh'),
                 'subtitle' => trim(($row['household_code'] ?? '') . ' - ' . ($row['address'] ?? ''), ' -'),
                 'phone' => $row['phone'] ?? '',
                 'screen' => 'households',
@@ -352,7 +352,7 @@ final class Dashboard extends BaseModel
             $items[] = [
                 'type' => 'citizen',
                 'id' => (int) $row['id'],
-                'title' => $row['full_name'] ?: ($row['citizen_code'] ?? 'NhÃ¢n kháº©u'),
+                'title' => $row['full_name'] ?: ($row['citizen_code'] ?? 'NhÃƒÂ¢n khÃ¡ÂºÂ©u'),
                 'subtitle' => trim(($row['identity_number'] ?? '') . ' - ' . ($row['household_code'] ?? '') . ' - ' . ($row['current_address'] ?? ''), ' -'),
                 'phone' => $row['phone'] ?? '',
                 'screen' => 'persons',
@@ -365,15 +365,15 @@ final class Dashboard extends BaseModel
     private function alerts(array $filters): array
     {
         $items = [
-            ['key' => 'missing_citizen_photo', 'label' => 'Há»“ sÆ¡ chÆ°a cÃ³ áº£nh', 'count' => $this->missingCitizenPhotoCount($filters), 'priority' => 'high', 'screen' => 'persons'],
-            ['key' => 'missing_gps', 'label' => 'Há»™ chÆ°a Ä‘á»‹nh vá»‹ GPS', 'count' => $this->missingGpsCount($filters), 'priority' => 'high', 'screen' => 'gis'],
-            ['key' => 'missing_identity', 'label' => 'NhÃ¢n kháº©u thiáº¿u CCCD', 'count' => $this->missingCitizenFieldCount($filters, 'identity_number'), 'priority' => 'medium', 'screen' => 'persons'],
-            ['key' => 'missing_birthdate', 'label' => 'NhÃ¢n kháº©u thiáº¿u ngÃ y sinh', 'count' => $this->missingCitizenFieldCount($filters, 'date_of_birth'), 'priority' => 'medium', 'screen' => 'persons'],
-            ['key' => 'recent_movements', 'label' => 'CÃ³ biáº¿n Ä‘á»™ng má»›i', 'count' => $this->movementCount($filters, 7), 'priority' => 'low', 'screen' => 'movements'],
-            ['key' => 'incomplete_profiles', 'label' => 'Há»“ sÆ¡ sá»‘ chÆ°a hoÃ n thiá»‡n', 'count' => $this->incompleteProfileCount($filters), 'priority' => 'medium', 'screen' => 'households'],
+            ['key' => 'missing_citizen_photo', 'label' => 'HÃ¡Â»â€œ sÃ†Â¡ chÃ†Â°a cÃƒÂ³ Ã¡ÂºÂ£nh', 'count' => $this->missingCitizenPhotoCount($filters), 'priority' => 'high', 'screen' => 'persons'],
+            ['key' => 'missing_gps', 'label' => 'HÃ¡Â»â„¢ chÃ†Â°a Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹ GPS', 'count' => $this->missingGpsCount($filters), 'priority' => 'high', 'screen' => 'gis'],
+            ['key' => 'missing_identity', 'label' => 'NhÃƒÂ¢n khÃ¡ÂºÂ©u thiÃ¡ÂºÂ¿u CCCD', 'count' => $this->missingCitizenFieldCount($filters, 'identity_number'), 'priority' => 'medium', 'screen' => 'persons'],
+            ['key' => 'missing_birthdate', 'label' => 'NhÃƒÂ¢n khÃ¡ÂºÂ©u thiÃ¡ÂºÂ¿u ngÃƒÂ y sinh', 'count' => $this->missingCitizenFieldCount($filters, 'date_of_birth'), 'priority' => 'medium', 'screen' => 'persons'],
+            ['key' => 'recent_movements', 'label' => 'CÃƒÂ³ biÃ¡ÂºÂ¿n Ã„â€˜Ã¡Â»â„¢ng mÃ¡Â»â€ºi', 'count' => $this->movementCount($filters, 7), 'priority' => 'low', 'screen' => 'movements'],
+            ['key' => 'incomplete_profiles', 'label' => 'HÃ¡Â»â€œ sÃ†Â¡ sÃ¡Â»â€˜ chÃ†Â°a hoÃƒÂ n thiÃ¡Â»â€¡n', 'count' => $this->incompleteProfileCount($filters), 'priority' => 'medium', 'screen' => 'households'],
         ];
         if ($this->columnExists('citizens', 'identity_expiry_date')) {
-            $items[] = ['key' => 'identity_expiring', 'label' => 'CCCD sáº¯p háº¿t háº¡n', 'count' => $this->identityExpiringCount($filters), 'priority' => 'medium', 'screen' => 'persons'];
+            $items[] = ['key' => 'identity_expiring', 'label' => 'CCCD sÃ¡ÂºÂ¯p hÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n', 'count' => $this->identityExpiringCount($filters), 'priority' => 'medium', 'screen' => 'persons'];
         }
         return $items;
     }
@@ -381,9 +381,9 @@ final class Dashboard extends BaseModel
     private function movementWindows(array $filters): array
     {
         return [
-            'today' => ['label' => 'HÃ´m nay', 'items' => $this->movementTypeCounts($filters, 0)],
-            'sevenDays' => ['label' => '7 ngÃ y gáº§n nháº¥t', 'items' => $this->movementTypeCounts($filters, 7)],
-            'thirtyDays' => ['label' => '30 ngÃ y gáº§n nháº¥t', 'items' => $this->movementTypeCounts($filters, 30)],
+            'today' => ['label' => 'HÃƒÂ´m nay', 'items' => $this->movementTypeCounts($filters, 0)],
+            'sevenDays' => ['label' => '7 ngÃƒÂ y gÃ¡ÂºÂ§n nhÃ¡ÂºÂ¥t', 'items' => $this->movementTypeCounts($filters, 7)],
+            'thirtyDays' => ['label' => '30 ngÃƒÂ y gÃ¡ÂºÂ§n nhÃ¡ÂºÂ¥t', 'items' => $this->movementTypeCounts($filters, 30)],
         ];
     }
 
@@ -435,10 +435,10 @@ final class Dashboard extends BaseModel
     private function tasks(array $filters): array
     {
         return [
-            ['label' => 'Há»™ chÆ°a Ä‘á»‹nh vá»‹', 'count' => $this->missingGpsCount($filters), 'screen' => 'gis', 'action' => 'Má»Ÿ GIS'],
-            ['label' => 'Há»“ sÆ¡ thiáº¿u áº£nh', 'count' => $this->missingCitizenPhotoCount($filters), 'screen' => 'persons', 'action' => 'Má»Ÿ nhÃ¢n kháº©u'],
-            ['label' => 'Há»“ sÆ¡ thiáº¿u GPS', 'count' => $this->missingGpsCount($filters), 'screen' => 'households', 'action' => 'Má»Ÿ há»™'],
-            ['label' => 'Biáº¿n Ä‘á»™ng chÆ°a xÃ¡c nháº­n', 'count' => $this->pendingMovementCount(), 'screen' => 'movements', 'action' => 'Má»Ÿ biáº¿n Ä‘á»™ng'],
+            ['label' => 'HÃ¡Â»â„¢ chÃ†Â°a Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹', 'count' => $this->missingGpsCount($filters), 'screen' => 'gis', 'action' => 'MÃ¡Â»Å¸ GIS'],
+            ['label' => 'HÃ¡Â»â€œ sÃ†Â¡ thiÃ¡ÂºÂ¿u Ã¡ÂºÂ£nh', 'count' => $this->missingCitizenPhotoCount($filters), 'screen' => 'persons', 'action' => 'MÃ¡Â»Å¸ nhÃƒÂ¢n khÃ¡ÂºÂ©u'],
+            ['label' => 'HÃ¡Â»â€œ sÃ†Â¡ thiÃ¡ÂºÂ¿u GPS', 'count' => $this->missingGpsCount($filters), 'screen' => 'households', 'action' => 'MÃ¡Â»Å¸ hÃ¡Â»â„¢'],
+            ['label' => 'BiÃ¡ÂºÂ¿n Ã„â€˜Ã¡Â»â„¢ng chÃ†Â°a xÃƒÂ¡c nhÃ¡ÂºÂ­n', 'count' => $this->pendingMovementCount(), 'screen' => 'movements', 'action' => 'MÃ¡Â»Å¸ biÃ¡ÂºÂ¿n Ã„â€˜Ã¡Â»â„¢ng'],
         ];
     }
 
@@ -446,8 +446,8 @@ final class Dashboard extends BaseModel
     {
         $gis = $this->gisSummary($filters);
         return [
-            ['label' => 'ÄÃ£ Ä‘á»‹nh vá»‹', 'value' => $gis['locatedHouseholds']],
-            ['label' => 'ChÆ°a Ä‘á»‹nh vá»‹', 'value' => $gis['unlocatedHouseholds']],
+            ['label' => 'Ã„ÂÃƒÂ£ Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹', 'value' => $gis['locatedHouseholds']],
+            ['label' => 'ChÃ†Â°a Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹', 'value' => $gis['unlocatedHouseholds']],
         ];
     }
 
@@ -455,8 +455,8 @@ final class Dashboard extends BaseModel
     {
         $profiles = $this->profileSummary($filters);
         return [
-            ['label' => 'Há»“ sÆ¡ cÃ´ng dÃ¢n hoÃ n chá»‰nh', 'value' => (int) round($profiles['citizenComplete']['percent'] ?? 0)],
-            ['label' => 'Há»“ sÆ¡ há»™ hoÃ n chá»‰nh', 'value' => (int) round($profiles['householdComplete']['percent'] ?? 0)],
+            ['label' => 'HÃ¡Â»â€œ sÃ†Â¡ cÃƒÂ´ng dÃƒÂ¢n hoÃƒÂ n chÃ¡Â»â€°nh', 'value' => (int) round($profiles['citizenComplete']['percent'] ?? 0)],
+            ['label' => 'HÃ¡Â»â€œ sÃ†Â¡ hÃ¡Â»â„¢ hoÃƒÂ n chÃ¡Â»â€°nh', 'value' => (int) round($profiles['householdComplete']['percent'] ?? 0)],
         ];
     }
 
@@ -507,12 +507,12 @@ final class Dashboard extends BaseModel
             if (array_key_exists($type, $map)) $map[$type] = (int) $row['value'];
         }
         return [
-            ['key' => 'BIRTH', 'label' => 'Sinh má»›i', 'value' => $map['BIRTH']],
-            ['key' => 'MOVE_IN', 'label' => 'Chuyá»ƒn Ä‘áº¿n', 'value' => $map['MOVE_IN']],
-            ['key' => 'MOVE_OUT', 'label' => 'Chuyá»ƒn Ä‘i', 'value' => $map['MOVE_OUT']],
-            ['key' => 'DEATH', 'label' => 'Qua Ä‘á»i', 'value' => $map['DEATH']],
-            ['key' => 'TEMPORARY_RESIDENCE', 'label' => 'Táº¡m trÃº', 'value' => $map['TEMPORARY_RESIDENCE']],
-            ['key' => 'TEMPORARY_ABSENCE', 'label' => 'Táº¡m váº¯ng', 'value' => $map['TEMPORARY_ABSENCE']],
+            ['key' => 'BIRTH', 'label' => 'Sinh mÃ¡Â»â€ºi', 'value' => $map['BIRTH']],
+            ['key' => 'MOVE_IN', 'label' => 'ChuyÃ¡Â»Æ’n Ã„â€˜Ã¡ÂºÂ¿n', 'value' => $map['MOVE_IN']],
+            ['key' => 'MOVE_OUT', 'label' => 'ChuyÃ¡Â»Æ’n Ã„â€˜i', 'value' => $map['MOVE_OUT']],
+            ['key' => 'DEATH', 'label' => 'Qua Ã„â€˜Ã¡Â»Âi', 'value' => $map['DEATH']],
+            ['key' => 'TEMPORARY_RESIDENCE', 'label' => 'TÃ¡ÂºÂ¡m trÃƒÂº', 'value' => $map['TEMPORARY_RESIDENCE']],
+            ['key' => 'TEMPORARY_ABSENCE', 'label' => 'TÃ¡ÂºÂ¡m vÃ¡ÂºÂ¯ng', 'value' => $map['TEMPORARY_ABSENCE']],
         ];
     }
 
@@ -580,17 +580,17 @@ final class Dashboard extends BaseModel
         $businessCharts = $this->safeWidget('overview.businessCharts', fn() => (new \App\Models\HouseholdBusiness())->charts($filters), [], $errors);
         $vehicleCharts = $this->safeWidget('overview.vehicleCharts', fn() => (new \App\Models\Vehicle())->charts($filters), [], $errors);
         $livestockCharts = $this->safeWidget('overview.livestockCharts', fn() => (new \App\Models\Livestock())->charts($filters), [], $errors);
-        $payload = ['module' => 'overview', 'title' => 'Dashboard Tá»•ng quan', 'kpis' => [
-            $this->kpi('Tá»•ng sá»‘ há»™', $metrics['total_households'] ?? 0, 'há»™', 'fa-house-chimney', 'green'),
-            $this->kpi('Tá»•ng sá»‘ nhÃ¢n kháº©u', $metrics['total_citizens'] ?? 0, 'ngÆ°á»i', 'fa-users', 'blue'),
-            $this->kpi('Tá»•ng sá»‘ há»™ kinh doanh', $business['economic_households'] ?? 0, 'há»™', 'fa-store', 'orange'),
-            $this->kpi('Tá»•ng sá»‘ cÆ¡ sá»Ÿ kinh doanh', $business['establishment_total'] ?? 0, 'cÆ¡ sá»Ÿ', 'fa-briefcase', 'cyan'),
-            $this->kpi('Tá»•ng sá»‘ phÆ°Æ¡ng tiá»‡n', $vehicles['total'] ?? 0, 'xe', 'fa-car', 'purple'),
-            $this->kpi('Tá»•ng sá»‘ há»™ chÄƒn nuÃ´i', $livestock['livestock_households'] ?? 0, 'há»™', 'fa-warehouse', 'green'),
-            $this->kpi('Tá»•ng sá»‘ váº­t nuÃ´i', $livestock['livestock_total'] ?? 0, 'con', 'fa-paw', 'orange'),
-            $this->kpi('Tá»•ng khu vá»±c GIS', $gis['totalAreas'] ?? 0, 'khu', 'fa-map-location-dot', 'cyan'),
-            $this->kpi('Tá»· lá»‡ BHYT', $metrics['health_insurance_coverage_percent'] ?? 0, '%', 'fa-notes-medical', 'green'),
-            $this->kpi('Äáº£ng viÃªn', $metrics['party_member_count'] ?? 0, 'ngÆ°á»i', 'fa-star', 'orange'),
+        $payload = ['module' => 'overview', 'title' => 'Dashboard TÃ¡Â»â€¢ng quan', 'kpis' => [
+            $this->kpi('TÃ¡Â»â€¢ng sÃ¡Â»â€˜ hÃ¡Â»â„¢', $metrics['total_households'] ?? 0, 'hÃ¡Â»â„¢', 'fa-house-chimney', 'green'),
+            $this->kpi('TÃ¡Â»â€¢ng sÃ¡Â»â€˜ nhÃƒÂ¢n khÃ¡ÂºÂ©u', $metrics['total_citizens'] ?? 0, 'ngÃ†Â°Ã¡Â»Âi', 'fa-users', 'blue'),
+            $this->kpi('TÃ¡Â»â€¢ng sÃ¡Â»â€˜ hÃ¡Â»â„¢ kinh doanh', $business['economic_households'] ?? 0, 'hÃ¡Â»â„¢', 'fa-store', 'orange'),
+            $this->kpi('TÃ¡Â»â€¢ng sÃ¡Â»â€˜ cÃ†Â¡ sÃ¡Â»Å¸ kinh doanh', $business['establishment_total'] ?? 0, 'cÃ†Â¡ sÃ¡Â»Å¸', 'fa-briefcase', 'cyan'),
+            $this->kpi('TÃ¡Â»â€¢ng sÃ¡Â»â€˜ phÃ†Â°Ã†Â¡ng tiÃ¡Â»â€¡n', $vehicles['total'] ?? 0, 'xe', 'fa-car', 'purple'),
+            $this->kpi('TÃ¡Â»â€¢ng sÃ¡Â»â€˜ hÃ¡Â»â„¢ chÃ„Æ’n nuÃƒÂ´i', $livestock['livestock_households'] ?? 0, 'hÃ¡Â»â„¢', 'fa-warehouse', 'green'),
+            $this->kpi('TÃ¡Â»â€¢ng sÃ¡Â»â€˜ vÃ¡ÂºÂ­t nuÃƒÂ´i', $livestock['livestock_total'] ?? 0, 'con', 'fa-paw', 'orange'),
+            $this->kpi('TÃ¡Â»â€¢ng khu vÃ¡Â»Â±c GIS', $gis['totalAreas'] ?? 0, 'khu', 'fa-map-location-dot', 'cyan'),
+            $this->kpi('TÃ¡Â»Â· lÃ¡Â»â€¡ BHYT', $metrics['health_insurance_coverage_percent'] ?? 0, '%', 'fa-notes-medical', 'green'),
+            $this->kpi('Ã„ÂÃ¡ÂºÂ£ng viÃƒÂªn', $metrics['party_member_count'] ?? 0, 'ngÃ†Â°Ã¡Â»Âi', 'fa-star', 'orange'),
         ], 'charts' => [
             'households' => $this->safeWidget('overview.households', fn() => $this->householdChart($filters), [], $errors),
             'businessSectors' => $businessCharts['sectors'] ?? [],
@@ -610,30 +610,30 @@ final class Dashboard extends BaseModel
             'profiles' => $this->safeWidget('households.profiles', fn() => $this->profileProgressChart($filters), [], $errors),
         ];
         $top = $this->safeWidget('households.tasks', fn() => $this->tasks($filters), [], $errors);
-        return ['module'=>'households','title'=>'Dashboard Há»™ dÃ¢n','kpis'=>[
-            $this->kpi('Tá»•ng sá»‘ há»™',$m['total_households']??0,'há»™','fa-house-chimney','green'),
-            $this->kpi('Há»™ nghÃ¨o',$m['poor_households']??0,'há»™','fa-hand-holding-heart','orange'),
-            $this->kpi('Há»™ cáº­n nghÃ¨o',$m['near_poor_households']??0,'há»™','fa-hands-holding','pink'),
-            $this->kpi('Há»™ trung bÃ¬nh',$m['medium_households']??0,'há»™','fa-house-circle-check','cyan'),
-            $this->kpi('Há»™ chÃ­nh sÃ¡ch',$m['policy_households']??0,'há»™','fa-award','purple'),
-            $this->kpi('Há»™ cÃ³ cÃ´ng',$m['meritorious_households']??0,'há»™','fa-medal','blue'),
+        return ['module'=>'households','title'=>'Dashboard HÃ¡Â»â„¢ dÃƒÂ¢n','kpis'=>[
+            $this->kpi('TÃ¡Â»â€¢ng sÃ¡Â»â€˜ hÃ¡Â»â„¢',$m['total_households']??0,'hÃ¡Â»â„¢','fa-house-chimney','green'),
+            $this->kpi('HÃ¡Â»â„¢ nghÃƒÂ¨o',$m['poor_households']??0,'hÃ¡Â»â„¢','fa-hand-holding-heart','orange'),
+            $this->kpi('HÃ¡Â»â„¢ cÃ¡ÂºÂ­n nghÃƒÂ¨o',$m['near_poor_households']??0,'hÃ¡Â»â„¢','fa-hands-holding','pink'),
+            $this->kpi('HÃ¡Â»â„¢ trung bÃƒÂ¬nh',$m['medium_households']??0,'hÃ¡Â»â„¢','fa-house-circle-check','cyan'),
+            $this->kpi('HÃ¡Â»â„¢ chÃƒÂ­nh sÃƒÂ¡ch',$m['policy_households']??0,'hÃ¡Â»â„¢','fa-award','purple'),
+            $this->kpi('HÃ¡Â»â„¢ cÃƒÂ³ cÃƒÂ´ng',$m['meritorious_households']??0,'hÃ¡Â»â„¢','fa-medal','blue'),
         ],'charts'=>$charts,'top'=>$top,'widgetErrors'=>$errors,'generatedAt'=>date('c')];
     }
 
     public function populationDashboard(array $filters = []): array
     {
         $m = $this->metrics($filters);
-        return ['module'=>'population','title'=>'Dashboard NhÃ¢n kháº©u','kpis'=>[
-            $this->kpi('Tá»•ng nhÃ¢n kháº©u',$m['total_citizens']??0,'ngÆ°á»i','fa-users','blue'),
-            $this->kpi('Nam',$m['male_count']??0,'ngÆ°á»i','fa-mars','cyan'),
-            $this->kpi('Ná»¯',$m['female_count']??0,'ngÆ°á»i','fa-venus','pink'),
-            $this->kpi('Tráº» em',$m['children_count']??0,'ngÆ°á»i','fa-child-reaching','green'),
-            $this->kpi('NgÆ°á»i cao tuá»•i',$m['elderly_count']??0,'ngÆ°á»i','fa-person-cane','purple'),
-            $this->kpi('Táº¡m trÃº',$m['temporary_residence_count']??$m['temporary_count']??0,'ngÆ°á»i','fa-location-dot','orange'),
-            $this->kpi('Táº¡m váº¯ng',$m['temporary_absence_count']??$m['away_count']??0,'ngÆ°á»i','fa-person-walking-arrow-right','pink'),
-            $this->kpi('BHYT',$m['health_insurance_count']??0,'ngÆ°á»i','fa-notes-medical','green'),
-            $this->kpi('70+ cÃ³ BHYT',$m['elderly_health_insurance_count']??0,'ngÆ°á»i','fa-shield-heart','green'),
-            $this->kpi('75+ hÆ°á»Ÿng BTXH',$m['elderly_social_assistance_count']??0,'ngÆ°á»i','fa-hand-holding-heart','orange'),
+        return ['module'=>'population','title'=>'Dashboard NhÃƒÂ¢n khÃ¡ÂºÂ©u','kpis'=>[
+            $this->kpi('TÃ¡Â»â€¢ng nhÃƒÂ¢n khÃ¡ÂºÂ©u',$m['total_citizens']??0,'ngÃ†Â°Ã¡Â»Âi','fa-users','blue'),
+            $this->kpi('Nam',$m['male_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-mars','cyan'),
+            $this->kpi('NÃ¡Â»Â¯',$m['female_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-venus','pink'),
+            $this->kpi('TrÃ¡ÂºÂ» em',$m['children_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-child-reaching','green'),
+            $this->kpi('NgÃ†Â°Ã¡Â»Âi cao tuÃ¡Â»â€¢i',$m['elderly_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-person-cane','purple'),
+            $this->kpi('TÃ¡ÂºÂ¡m trÃƒÂº',$m['temporary_residence_count']??$m['temporary_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-location-dot','orange'),
+            $this->kpi('TÃ¡ÂºÂ¡m vÃ¡ÂºÂ¯ng',$m['temporary_absence_count']??$m['away_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-person-walking-arrow-right','pink'),
+            $this->kpi('BHYT',$m['health_insurance_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-notes-medical','green'),
+            $this->kpi('70+ cÃƒÂ³ BHYT',$m['elderly_health_insurance_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-shield-heart','green'),
+            $this->kpi('75+ hÃ†Â°Ã¡Â»Å¸ng BTXH',$m['elderly_social_assistance_count']??0,'ngÃ†Â°Ã¡Â»Âi','fa-hand-holding-heart','orange'),
         ],'charts'=>['gender'=>$this->populationChart($filters),'ages'=>$this->ageChart($filters),'labor'=>$this->laborChart($filters),'healthInsurance'=>$this->healthInsuranceChart($filters)],'generatedAt'=>date('c')];
     }
 
@@ -643,13 +643,13 @@ final class Dashboard extends BaseModel
         $stats = $model->dashboard($filters);
         $charts = $model->charts($filters);
         return ['module'=>'business','title'=>'Dashboard Kinh doanh','kpis'=>[
-            $this->kpi('Tá»•ng há»™ kinh doanh',$stats['economic_households']??0,'há»™','fa-house-user','green'),
-            $this->kpi('Tá»•ng cÆ¡ sá»Ÿ kinh doanh',$stats['establishment_total']??0,'cÆ¡ sá»Ÿ','fa-store','blue'),
-            $this->kpi('Há»™ cÃ³ giáº¥y phÃ©p',$this->businessDistinctCount($filters,'hb.business_license IS NOT NULL AND hb.business_license <> ""'),'há»™','fa-file-signature','orange'),
-            $this->kpi('Há»™ cÃ³ mÃ£ sá»‘ thuáº¿',$this->businessDistinctCount($filters,'hb.tax_code IS NOT NULL AND hb.tax_code <> ""'),'há»™','fa-receipt','cyan'),
-            $this->kpi('Há»™ tham gia OCOP',$stats['ocop_households']??0,'há»™','fa-award','purple'),
-            $this->kpi('Há»™ Ä‘áº¡t ATTP',$stats['food_safety_households']??0,'há»™','fa-shield-heart','green'),
-            $this->kpi('Há»™ tham gia BHXH',$stats['social_insurance_households']??0,'há»™','fa-user-shield','blue'),
+            $this->kpi('TÃ¡Â»â€¢ng hÃ¡Â»â„¢ kinh doanh',$stats['economic_households']??0,'hÃ¡Â»â„¢','fa-house-user','green'),
+            $this->kpi('TÃ¡Â»â€¢ng cÃ†Â¡ sÃ¡Â»Å¸ kinh doanh',$stats['establishment_total']??0,'cÃ†Â¡ sÃ¡Â»Å¸','fa-store','blue'),
+            $this->kpi('HÃ¡Â»â„¢ cÃƒÂ³ giÃ¡ÂºÂ¥y phÃƒÂ©p',$this->businessDistinctCount($filters,'hb.business_license IS NOT NULL AND hb.business_license <> ""'),'hÃ¡Â»â„¢','fa-file-signature','orange'),
+            $this->kpi('HÃ¡Â»â„¢ cÃƒÂ³ mÃƒÂ£ sÃ¡Â»â€˜ thuÃ¡ÂºÂ¿',$this->businessDistinctCount($filters,'hb.tax_code IS NOT NULL AND hb.tax_code <> ""'),'hÃ¡Â»â„¢','fa-receipt','cyan'),
+            $this->kpi('HÃ¡Â»â„¢ tham gia OCOP',$stats['ocop_households']??0,'hÃ¡Â»â„¢','fa-award','purple'),
+            $this->kpi('HÃ¡Â»â„¢ Ã„â€˜Ã¡ÂºÂ¡t ATTP',$stats['food_safety_households']??0,'hÃ¡Â»â„¢','fa-shield-heart','green'),
+            $this->kpi('HÃ¡Â»â„¢ tham gia BHXH',$stats['social_insurance_households']??0,'hÃ¡Â»â„¢','fa-user-shield','blue'),
         ],'charts'=>['types'=>$charts['economicTypes']??[],'sectors'=>$charts['sectors']??[],'sectorShare'=>$charts['sectors']??[],'scales'=>$charts['scales']??[]],'top'=>$this->businessTopHouseholds($filters),'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
     }
 
@@ -658,16 +658,16 @@ final class Dashboard extends BaseModel
         $model = new \App\Models\Vehicle();
         $stats = $model->dashboard($filters);
         $charts = $model->charts($filters);
-        return ['module'=>'vehicles','title'=>'Dashboard Xe cá»™','kpis'=>[
-            $this->kpi('Tá»•ng phÆ°Æ¡ng tiá»‡n',$stats['total']??0,'xe','fa-car','green'),
-            $this->kpi('Há»™ cÃ³ phÆ°Æ¡ng tiá»‡n',$stats['households']??0,'há»™','fa-house-user','blue'),
-            $this->kpi('Ã” tÃ´',$stats['cars']??0,'xe','fa-car-side','orange'),
-            $this->kpi('Xe mÃ¡y',$stats['motorbikes']??0,'xe','fa-motorcycle','cyan'),
-            $this->kpi('Xe Ä‘iá»‡n',$stats['electric']??0,'xe','fa-bolt','purple'),
-            $this->kpi('CÃ³ biá»ƒn sá»‘',$stats['with_plate']??0,'xe','fa-id-card','blue'),
-            $this->kpi('KhÃ´ng biá»ƒn sá»‘',$stats['without_plate']??0,'xe','fa-circle-question','orange'),
-            $this->kpi('Háº¿t háº¡n kiá»ƒm Ä‘á»‹nh',$stats['expired_inspection']??0,'xe','fa-triangle-exclamation','pink'),
-            $this->kpi('Háº¿t háº¡n báº£o hiá»ƒm',$stats['expired_insurance']??0,'xe','fa-shield-halved','green'),
+        return ['module'=>'vehicles','title'=>'Dashboard Xe cÃ¡Â»â„¢','kpis'=>[
+            $this->kpi('TÃ¡Â»â€¢ng phÃ†Â°Ã†Â¡ng tiÃ¡Â»â€¡n',$stats['total']??0,'xe','fa-car','green'),
+            $this->kpi('HÃ¡Â»â„¢ cÃƒÂ³ phÃ†Â°Ã†Â¡ng tiÃ¡Â»â€¡n',$stats['households']??0,'hÃ¡Â»â„¢','fa-house-user','blue'),
+            $this->kpi('Ãƒâ€ tÃƒÂ´',$stats['cars']??0,'xe','fa-car-side','orange'),
+            $this->kpi('Xe mÃƒÂ¡y',$stats['motorbikes']??0,'xe','fa-motorcycle','cyan'),
+            $this->kpi('Xe Ã„â€˜iÃ¡Â»â€¡n',$stats['electric']??0,'xe','fa-bolt','purple'),
+            $this->kpi('CÃƒÂ³ biÃ¡Â»Æ’n sÃ¡Â»â€˜',$stats['with_plate']??0,'xe','fa-id-card','blue'),
+            $this->kpi('KhÃƒÂ´ng biÃ¡Â»Æ’n sÃ¡Â»â€˜',$stats['without_plate']??0,'xe','fa-circle-question','orange'),
+            $this->kpi('HÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n kiÃ¡Â»Æ’m Ã„â€˜Ã¡Â»â€¹nh',$stats['expired_inspection']??0,'xe','fa-triangle-exclamation','pink'),
+            $this->kpi('HÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n bÃ¡ÂºÂ£o hiÃ¡Â»Æ’m',$stats['expired_insurance']??0,'xe','fa-shield-halved','green'),
         ],'charts'=>['types'=>$charts['types']??[],'households'=>$charts['households']??[],'areas'=>$charts['areas']??[],'details'=>$charts['details']??[]],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
     }
 
@@ -676,16 +676,18 @@ final class Dashboard extends BaseModel
         $model = new \App\Models\Livestock();
         $stats = $model->dashboard($filters);
         $charts = $model->charts($filters);
-        return ['module'=>'livestock','title'=>'Dashboard ChÄƒn nuÃ´i','kpis'=>[
-            $this->kpi('Tá»•ng há»™ chÄƒn nuÃ´i',$stats['livestock_households']??0,'há»™','fa-warehouse','green'),
-            $this->kpi('Tá»•ng váº­t nuÃ´i',$stats['livestock_total']??0,'con','fa-paw','blue'),
-            $this->kpi('TrÃ¢u',$stats['buffalo_total']??0,'con','fa-circle-dot','orange'),
-            $this->kpi('BÃ²',$stats['cow_total']??0,'con','fa-circle-dot','cyan'),
-            $this->kpi('Lá»£n',$stats['pig_total']??0,'con','fa-circle-dot','purple'),
-            $this->kpi('DÃª',$stats['goat_total']??0,'con','fa-circle-dot','pink'),
-            $this->kpi('Gia cáº§m',$stats['poultry_total']??0,'con','fa-dove','green'),
-            $this->kpi('ÄÃ£ tiÃªm phÃ²ng',$stats['vaccinated_households']??0,'há»™','fa-shield-heart','blue'),
-            $this->kpi('CÃ³ dá»‹ch bá»‡nh',$stats['disease_households']??0,'há»™','fa-triangle-exclamation','orange'),
+        return ['module'=>'livestock','title'=>'Dashboard Chan nuoi','kpis'=>[
+            $this->kpi('Tong ho co chan nuoi',$stats['livestock_households']??0,'ho','fa-house','green'),
+            $this->kpi('Tong co so chan nuoi',$stats['facility_total']??0,'co so','fa-warehouse','blue'),
+            $this->kpi('Tong trang trai',$stats['farm_total']??0,'trang trai','fa-industry','orange'),
+            $this->kpi('Tong dan vat nuoi',$stats['livestock_total']??0,'con','fa-paw','blue'),
+            $this->kpi('Tong dan lon',$stats['pig_total']??0,'con','fa-bacon','purple'),
+            $this->kpi('Lon nai',$stats['pig_sow_total']??0,'con','fa-circle-dot','green'),
+            $this->kpi('Lon thit',$stats['pig_meat_total']??0,'con','fa-circle-dot','orange'),
+            $this->kpi('Lon con',$stats['piglet_total']??0,'con','fa-circle-dot','cyan'),
+            $this->kpi('Lon duc giong',$stats['pig_boar_total']??0,'con','fa-circle-dot','pink'),
+            $this->kpi('Ho nuoi lon',$stats['pig_households']??0,'ho','fa-house-chimney','green'),
+            $this->kpi('Trang trai nuoi lon',$stats['pig_farms']??0,'trang trai','fa-warehouse','purple'),
         ],'charts'=>['types'=>$charts['types']??[],'scale'=>$charts['scale']??[],'areas'=>$charts['areas']??[],'vaccination'=>$charts['vaccination']??[]],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
     }
 
@@ -694,25 +696,25 @@ final class Dashboard extends BaseModel
         $gis = $this->gisSummary($filters);
         $business = (new \App\Models\HouseholdBusiness())->dashboard($filters);
         return ['module'=>'gis','title'=>'Dashboard GIS','kpis'=>[
-            $this->kpi('Há»™ dÃ¢n',$gis['totalHouseholds']??0,'há»™','fa-house-chimney','green'),
-            $this->kpi('Há»™ Ä‘Ã£ Ä‘á»‹nh vá»‹',$gis['locatedHouseholds']??0,'há»™','fa-location-dot','blue'),
-            $this->kpi('Há»™ chÆ°a Ä‘á»‹nh vá»‹',$gis['unlocatedHouseholds']??0,'há»™','fa-map-pin','orange'),
-            $this->kpi('Khu vá»±c GIS',$gis['totalAreas']??0,'khu','fa-draw-polygon','purple'),
-            $this->kpi('Há»™ kinh doanh',$business['economic_households']??0,'há»™','fa-store','cyan'),
-        ],'charts'=>['gps'=>$this->gpsProgressChart($filters),'business'=>(new \App\Models\HouseholdBusiness())->charts($filters)['economicTypes']??[]],'layers'=>['Há»™ dÃ¢n','Há»™ kinh doanh','PhÆ°Æ¡ng tiá»‡n','Trang tráº¡i','Chuá»“ng tráº¡i','Khu vá»±c sáº£n xuáº¥t','Khu vá»±c chÄƒn nuÃ´i'],'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
+            $this->kpi('HÃ¡Â»â„¢ dÃƒÂ¢n',$gis['totalHouseholds']??0,'hÃ¡Â»â„¢','fa-house-chimney','green'),
+            $this->kpi('HÃ¡Â»â„¢ Ã„â€˜ÃƒÂ£ Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹',$gis['locatedHouseholds']??0,'hÃ¡Â»â„¢','fa-location-dot','blue'),
+            $this->kpi('HÃ¡Â»â„¢ chÃ†Â°a Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹',$gis['unlocatedHouseholds']??0,'hÃ¡Â»â„¢','fa-map-pin','orange'),
+            $this->kpi('Khu vÃ¡Â»Â±c GIS',$gis['totalAreas']??0,'khu','fa-draw-polygon','purple'),
+            $this->kpi('HÃ¡Â»â„¢ kinh doanh',$business['economic_households']??0,'hÃ¡Â»â„¢','fa-store','cyan'),
+        ],'charts'=>['gps'=>$this->gpsProgressChart($filters),'business'=>(new \App\Models\HouseholdBusiness())->charts($filters)['economicTypes']??[]],'layers'=>['HÃ¡Â»â„¢ dÃƒÂ¢n','HÃ¡Â»â„¢ kinh doanh','PhÃ†Â°Ã†Â¡ng tiÃ¡Â»â€¡n','Trang trÃ¡ÂºÂ¡i','ChuÃ¡Â»â€œng trÃ¡ÂºÂ¡i','Khu vÃ¡Â»Â±c sÃ¡ÂºÂ£n xuÃ¡ÂºÂ¥t','Khu vÃ¡Â»Â±c chÃ„Æ’n nuÃƒÂ´i'],'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
     }
 
     public function reportsDashboard(array $filters = []): array
     {
-        $reports = ['BÃ¡o cÃ¡o nhÃ¢n kháº©u','BÃ¡o cÃ¡o kinh doanh','BÃ¡o cÃ¡o xe','BÃ¡o cÃ¡o chÄƒn nuÃ´i','BÃ¡o cÃ¡o GIS'];
-        $exports = ['PDF','Excel','In trá»±c tiáº¿p'];
-        $populationReports = array_filter($reports, fn($label) => str_contains($label, 'nhÃ¢n kháº©u'));
-        $domainReports = array_filter($reports, fn($label) => !str_contains($label, 'nhÃ¢n kháº©u') && !str_contains($label, 'GIS'));
-        return ['module'=>'reports','title'=>'Dashboard BÃ¡o cÃ¡o','kpis'=>[
-            $this->kpi('NhÃ³m bÃ¡o cÃ¡o kháº£ dá»¥ng', count($reports), 'nhÃ³m', 'fa-layer-group', 'blue'),
-            $this->kpi('Äá»‹nh dáº¡ng xuáº¥t', count($exports), 'loáº¡i', 'fa-file-export', 'green'),
-            $this->kpi('BÃ¡o cÃ¡o dÃ¢n cÆ°', count($populationReports), 'nhÃ³m', 'fa-users', 'cyan'),
-            $this->kpi('BÃ¡o cÃ¡o nghiá»‡p vá»¥', count($domainReports), 'nhÃ³m', 'fa-chart-pie', 'orange'),
+        $reports = ['BÃƒÂ¡o cÃƒÂ¡o nhÃƒÂ¢n khÃ¡ÂºÂ©u','BÃƒÂ¡o cÃƒÂ¡o kinh doanh','BÃƒÂ¡o cÃƒÂ¡o xe','BÃƒÂ¡o cÃƒÂ¡o chÃ„Æ’n nuÃƒÂ´i','BÃƒÂ¡o cÃƒÂ¡o GIS'];
+        $exports = ['PDF','Excel','In trÃ¡Â»Â±c tiÃ¡ÂºÂ¿p'];
+        $populationReports = array_filter($reports, fn($label) => str_contains($label, 'nhÃƒÂ¢n khÃ¡ÂºÂ©u'));
+        $domainReports = array_filter($reports, fn($label) => !str_contains($label, 'nhÃƒÂ¢n khÃ¡ÂºÂ©u') && !str_contains($label, 'GIS'));
+        return ['module'=>'reports','title'=>'Dashboard BÃƒÂ¡o cÃƒÂ¡o','kpis'=>[
+            $this->kpi('NhÃƒÂ³m bÃƒÂ¡o cÃƒÂ¡o khÃ¡ÂºÂ£ dÃ¡Â»Â¥ng', count($reports), 'nhÃƒÂ³m', 'fa-layer-group', 'blue'),
+            $this->kpi('Ã„ÂÃ¡Â»â€¹nh dÃ¡ÂºÂ¡ng xuÃ¡ÂºÂ¥t', count($exports), 'loÃ¡ÂºÂ¡i', 'fa-file-export', 'green'),
+            $this->kpi('BÃƒÂ¡o cÃƒÂ¡o dÃƒÂ¢n cÃ†Â°', count($populationReports), 'nhÃƒÂ³m', 'fa-users', 'cyan'),
+            $this->kpi('BÃƒÂ¡o cÃƒÂ¡o nghiÃ¡Â»â€¡p vÃ¡Â»Â¥', count($domainReports), 'nhÃƒÂ³m', 'fa-chart-pie', 'orange'),
         ],'reports'=>$reports,'exports'=>$exports,'generatedAt'=>date('c')];
     }
 
@@ -748,7 +750,7 @@ final class Dashboard extends BaseModel
     {
         if (!$this->columnExists('households','latitude') || !$this->columnExists('households','longitude')) return [];
         [$where, $params] = $this->businessWhere($filters);
-        $rows = $this->fetchAll("SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.latitude, h.longitude, COUNT(hb.id) AS activity_count, GROUP_CONCAT(COALESCE(NULLIF(hb.business_name,''), NULLIF(hb.economic_type,''), 'Hoáº¡t Ä‘á»™ng kinh táº¿') ORDER BY hb.id SEPARATOR '; ') AS activities FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where AND h.latitude IS NOT NULL AND h.latitude <> '' AND h.longitude IS NOT NULL AND h.longitude <> '' GROUP BY h.id, h.household_code, h.head_citizen_name, h.latitude, h.longitude LIMIT 200", $params);
+        $rows = $this->fetchAll("SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.latitude, h.longitude, COUNT(hb.id) AS activity_count, GROUP_CONCAT(COALESCE(NULLIF(hb.business_name,''), NULLIF(hb.economic_type,''), 'HoÃ¡ÂºÂ¡t Ã„â€˜Ã¡Â»â„¢ng kinh tÃ¡ÂºÂ¿') ORDER BY hb.id SEPARATOR '; ') AS activities FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where AND h.latitude IS NOT NULL AND h.latitude <> '' AND h.longitude IS NOT NULL AND h.longitude <> '' GROUP BY h.id, h.household_code, h.head_citizen_name, h.latitude, h.longitude LIMIT 200", $params);
         return array_map(fn($r) => ['household_id'=>(int)$r['household_id'],'household_code'=>(string)$r['household_code'],'head_citizen_name'=>(string)$r['head_citizen_name'],'latitude'=>(float)$r['latitude'],'longitude'=>(float)$r['longitude'],'activity_count'=>(int)$r['activity_count'],'activities'=>(string)($r['activities']??'')], $rows);
     }
 
@@ -849,7 +851,7 @@ final class Dashboard extends BaseModel
 
     private function addTextCategoryWhere(array &$where, array &$params, string $category): void
     {
-        $label = ['escaped_poverty' => 'Há»™ má»›i thoÃ¡t nghÃ¨o', 'policy' => 'Há»™ chÃ­nh sÃ¡ch'][$category] ?? $category;
+        $label = ['escaped_poverty' => 'HÃ¡Â»â„¢ mÃ¡Â»â€ºi thoÃƒÂ¡t nghÃƒÂ¨o', 'policy' => 'HÃ¡Â»â„¢ chÃƒÂ­nh sÃƒÂ¡ch'][$category] ?? $category;
         $where[] = '(h.note LIKE :category_label OR h.note LIKE :category_key)';
         $params['category_label'] = '%' . $label . '%';
         $params['category_key'] = '%' . str_replace('_', ' ', $category) . '%';

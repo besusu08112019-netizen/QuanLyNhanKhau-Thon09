@@ -21,82 +21,78 @@
   });
   const reportEndpoint = (name, query) => REPORT_ENDPOINTS[name] + (query ? '?' + query : '');
   const FALLBACK_REPORT_TYPES = [
-    ['summary', 'Bao cao tong hop'],
-    ['population', 'Nhan khau - Danh sach'],
-    ['household', 'Ho gia dinh - Danh sach'],
-    ['temporary_residence', 'Tam tru - Danh sach'],
-    ['temporary_absence', 'Tam vang - Danh sach'],
-    ['migration', 'Bien dong nhan khau'],
-    ['public-assets', 'Cong trinh cong cong - Danh sach'],
-    ['public-assets-located', 'Cong trinh cong cong - Da co GPS'],
-    ['public-assets-missing-gps', 'Cong trinh cong cong - Chua co GPS'],
-    ['public-assets-inventory', 'Cong trinh cong cong - Kiem ke tai san'],
-    ['houses', 'Nha o va cong trinh - Danh sach'],
-    ['houses-degraded', 'Nha o xuong cap'],
-    ['houses-temporary', 'Nha tam'],
-    ['houses-fire-risk', 'Nha nguy co PCCC'],
-    ['houses-missing-gps', 'Nha chua co GPS'],
-    ['household-business-production', 'Ho san xuat'],
-    ['household-business-trade', 'Ho kinh doanh'],
-    ['household-business-sector', 'Ho SXKD theo nganh nghe'],
-    ['household-business-status', 'Ho SXKD theo trang thai'],
-    ['agriculture', 'San xuat nong nghiep - Danh sach'],
-    ['agriculture-producers', 'Chu the san xuat nong nghiep'],
-    ['agriculture-area', 'Dien tich san xuat nong nghiep'],
-    ['agriculture-crop', 'Cay trong'],
-    ['agriculture-season', 'Mua vu'],
-    ['agriculture-production', 'San luong nong nghiep'],
-    ['agriculture-damage', 'Thiet hai nong nghiep'],
-    ['livestock', 'Vat nuoi - Danh sach'],
-    ['livestock-by-type', 'Vat nuoi theo loai'],
-    ['livestock-vaccinated', 'Vat nuoi da tiem phong'],
-    ['livestock-unvaccinated', 'Vat nuoi chua tiem phong'],
-    ['livestock-disease', 'Vat nuoi co dich benh'],
-    ['party-members', 'Dang vien - Danh sach'],
-    ['defense-security', 'Quoc phong - An ninh - Tong hop'],
-    ['defense-security-nvqs', 'Quoc phong - An ninh - Nghia vu quan su'],
-    ['defense-security-upcoming-registration', 'NVQS - Sap den tuoi dang ky'],
-    ['defense-security-registration-age', 'NVQS - Den tuoi dang ky'],
-    ['defense-security-unregistered', 'NVQS - Chua dang ky'],
-    ['defense-security-preliminary', 'NVQS - So tuyen'],
-    ['defense-security-medical', 'NVQS - Kham tuyen'],
-    ['defense-security-eligible', 'NVQS - Du dieu kien'],
-    ['defense-security-deferred', 'NVQS - Tam hoan'],
-    ['defense-security-exempt', 'NVQS - Mien'],
-    ['defense-security-selected', 'NVQS - Trung tuyen'],
-    ['defense-security-enlisted', 'NVQS - Nhap ngu'],
-    ['defense-security-active-service', 'NVQS - Dang tai ngu'],
-    ['defense-security-discharged', 'NVQS - Xuat ngu'],
-    ['defense-security-militia', 'Dan quan tu ve'],
-    ['defense-security-antt', 'ANTT co so'],
-    ['party-members-branch', 'Dang vien theo chi bo'],
-    ['party-members-age', 'Dang vien theo do tuoi'],
-    ['party-members-gender', 'Dang vien theo gioi tinh'],
-    ['party-members-position', 'Dang vien theo chuc vu'],
-    ['party-members-official', 'Dang vien chinh thuc'],
-    ['party-members-probationary', 'Dang vien du bi'],
-    ['party-members-status', 'Dang vien theo tinh trang'],
-    ['vehicles', 'Xe co - Danh sach'],
-    ['vehicles-by-type', 'Xe co theo loai'],
-    ['vehicles-missing-plate', 'Xe chua co bien so'],
-    ['vehicles-expired-inspection', 'Xe het han kiem dinh'],
-    ['vehicles-expired-insurance', 'Xe het han bao hiem'],
-    ['contributions-list', 'Dong gop ho - Danh sach'],
-    ['contributions-collection', 'Dong gop ho - Thu tien'],
-    ['contributions-unpaid-list', 'Dong gop ho - Chua nop'],
-    ['contributions-partial', 'Dong gop ho - Nop mot phan'],
-    ['contributions-exempt', 'Dong gop ho - Mien giam'],
-    ['contributions-summary', 'Dong gop ho - Tong hop'],
-    ['contributions-year-summary', 'Dong gop ho - Tong hop nam'],
-    ['contributions-by-contribution', 'Dong gop ho - Theo khoan thu'],
-    ['gis', 'GIS - Ho gia dinh'],
-    ['gis-located', 'GIS - Da dinh vi'],
-    ['gis-unlocated', 'GIS - Chua dinh vi'],
-    ['digital-profile', 'Ho so so'],
-    ['profile-complete', 'Ho so hoan chinh'],
-    ['profile-missing-photo', 'Ho so thieu anh'],
-    ['profile-missing-documents', 'Ho so thieu giay to'],
-    ['profile-incomplete', 'Ho so chua hoan thien'],
+    ['summary', 'BÃ¡o cÃ¡o tá»•ng há»£p'],
+    ['population', 'NhÃ¢n kháº©u - Danh sÃ¡ch'],
+    ['household', 'Há»™ gia Ä‘Ã¬nh - Danh sÃ¡ch'],
+    ['temporary_residence', 'Táº¡m trÃº - Danh sÃ¡ch'],
+    ['temporary_absence', 'Táº¡m váº¯ng - Danh sÃ¡ch'],
+    ['migration', 'Biáº¿n Ä‘á»™ng nhÃ¢n kháº©u'],
+    ['public-assets', 'CÃ´ng trÃ¬nh cÃ´ng cá»™ng - Danh sÃ¡ch'],
+    ['public-assets-located', 'CÃ´ng trÃ¬nh cÃ´ng cá»™ng - ÄÃ£ cÃ³ GPS'],
+    ['public-assets-missing-gps', 'CÃ´ng trÃ¬nh cÃ´ng cá»™ng - ChÆ°a cÃ³ GPS'],
+    ['public-assets-inventory', 'CÃ´ng trÃ¬nh cÃ´ng cá»™ng - Kiá»ƒm kÃª tÃ i sáº£n'],
+    ['houses', 'NhÃ  á»Ÿ vÃ  cÃ´ng trÃ¬nh - Danh sÃ¡ch'],
+    ['houses-degraded', 'NhÃ  á»Ÿ xuá»‘ng cáº¥p'],
+    ['houses-temporary', 'NhÃ  táº¡m'],
+    ['houses-fire-risk', 'NhÃ  nguy cÆ¡ PCCC'],
+    ['houses-missing-gps', 'NhÃ  chÆ°a cÃ³ GPS'],
+    ['household-business-production', 'Há»™ sáº£n xuáº¥t'],
+    ['household-business-trade', 'Há»™ kinh doanh'],
+    ['household-business-sector', 'Há»™ SXKD theo ngÃ nh nghá»'],
+    ['household-business-status', 'Há»™ SXKD theo tráº¡ng thÃ¡i'],
+    ['agriculture', 'Sáº£n xuáº¥t nÃ´ng nghiá»‡p - Danh sÃ¡ch'],
+    ['agriculture-producers', 'Chá»§ thá»ƒ sáº£n xuáº¥t nÃ´ng nghiá»‡p'],
+    ['agriculture-area', 'Diá»‡n tÃ­ch sáº£n xuáº¥t nÃ´ng nghiá»‡p'],
+    ['agriculture-crop', 'CÃ¢y trá»“ng'],
+    ['agriculture-season', 'MÃ¹a vá»¥'],
+    ['agriculture-production', 'Sáº£n lÆ°á»£ng nÃ´ng nghiá»‡p'],
+    ['agriculture-damage', 'Thiá»‡t háº¡i nÃ´ng nghiá»‡p'],
+    ['livestock', 'Váº­t nuÃ´i - Danh sÃ¡ch'],
+    ['livestock-by-type', 'Váº­t nuÃ´i theo loáº¡i'],
+    ['livestock-vaccinated', 'Váº­t nuÃ´i Ä‘Ã£ tiÃªm phÃ²ng'],
+    ['livestock-unvaccinated', 'Váº­t nuÃ´i chÆ°a tiÃªm phÃ²ng'],
+    ['livestock-disease', 'Váº­t nuÃ´i cÃ³ dá»‹ch bá»‡nh'],
+    ['livestock-pig-farms', 'Danh sÃ¡ch trang tráº¡i lá»£n'],
+    ['livestock-pig-sow', 'Danh sÃ¡ch há»™ nuÃ´i lá»£n nÃ¡i'],
+    ['livestock-pig-meat', 'Danh sÃ¡ch há»™ nuÃ´i lá»£n thá»‹t'],
+    ['livestock-pig-sow-and-meat', 'Há»™ vá»«a nuÃ´i lá»£n nÃ¡i vá»«a nuÃ´i lá»£n thá»‹t'],
+    ['rural-clean-water', 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n - Tá»•ng há»£p NÃ´ng thÃ´n má»›i'],
+    ['rural-clean-water-detail', 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n - Danh sÃ¡ch chi tiáº¿t'],
+    ['rural-clean-water-standard', 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n - Äáº¡t quy chuáº©n'],
+    ['rural-clean-water-hygienic', 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n - Há»£p vá»‡ sinh'],
+    ['rural-clean-water-centralized', 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n - Cáº¥p nÆ°á»›c táº­p trung'],
+    ['rural-clean-water-household-scale', 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n - Quy mÃ´ há»™ gia Ä‘Ã¬nh'],
+    ['rural-clean-water-non-compliant', 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n - KhÃ´ng Ä‘áº¡t quy chuáº©n'],
+    ['rural-clean-water-unknown', 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n - ChÆ°a xÃ¡c Ä‘á»‹nh'],
+    ['party-members', 'Äáº£ng viÃªn - Danh sÃ¡ch'],
+    ['party-members-branch', 'Äáº£ng viÃªn theo chi bá»™'],
+    ['party-members-age', 'Äáº£ng viÃªn theo Ä‘á»™ tuá»•i'],
+    ['party-members-gender', 'Äáº£ng viÃªn theo giá»›i tÃ­nh'],
+    ['party-members-position', 'Äáº£ng viÃªn theo chá»©c vá»¥'],
+    ['party-members-official', 'Äáº£ng viÃªn chÃ­nh thá»©c'],
+    ['party-members-probationary', 'Äáº£ng viÃªn dá»± bá»‹'],
+    ['party-members-status', 'Äáº£ng viÃªn theo tÃ¬nh tráº¡ng'],
+    ['vehicles', 'Xe cá»™ - Danh sÃ¡ch'],
+    ['vehicles-by-type', 'Xe cá»™ theo loáº¡i'],
+    ['vehicles-missing-plate', 'Xe chÆ°a cÃ³ biá»ƒn sá»‘'],
+    ['vehicles-expired-inspection', 'Xe háº¿t háº¡n kiá»ƒm Ä‘á»‹nh'],
+    ['vehicles-expired-insurance', 'Xe háº¿t háº¡n báº£o hiá»ƒm'],
+    ['contributions-list', 'ÄÃ³ng gÃ³p há»™ - Danh sÃ¡ch'],
+    ['contributions-collection', 'ÄÃ³ng gÃ³p há»™ - Thu tiá»n'],
+    ['contributions-unpaid-list', 'ÄÃ³ng gÃ³p há»™ - ChÆ°a ná»™p'],
+    ['contributions-partial', 'ÄÃ³ng gÃ³p há»™ - Ná»™p má»™t pháº§n'],
+    ['contributions-exempt', 'ÄÃ³ng gÃ³p há»™ - Miá»…n giáº£m'],
+    ['contributions-summary', 'ÄÃ³ng gÃ³p há»™ - Tá»•ng há»£p'],
+    ['contributions-year-summary', 'ÄÃ³ng gÃ³p há»™ - Tá»•ng há»£p nÄƒm'],
+    ['contributions-by-contribution', 'ÄÃ³ng gÃ³p há»™ - Theo khoáº£n thu'],
+    ['gis', 'GIS - Há»™ gia Ä‘Ã¬nh'],
+    ['gis-located', 'GIS - ÄÃ£ Ä‘á»‹nh vá»‹'],
+    ['gis-unlocated', 'GIS - ChÆ°a Ä‘á»‹nh vá»‹'],
+    ['digital-profile', 'Há»“ sÆ¡ sá»‘'],
+    ['profile-complete', 'Há»“ sÆ¡ hoÃ n chá»‰nh'],
+    ['profile-missing-photo', 'Há»“ sÆ¡ thiáº¿u áº£nh'],
+    ['profile-missing-documents', 'Há»“ sÆ¡ thiáº¿u giáº¥y tá»'],
+    ['profile-incomplete', 'Há»“ sÆ¡ chÆ°a hoÃ n thiá»‡n'],
     ['health_insurance', 'Bao hiem y te'],
     ['health-insurance-missing', 'Chua tham gia BHYT'],
     ['health-insurance-expiring', 'BHYT sap het han'],
@@ -182,9 +178,9 @@
     actions.register('reports.filters.edit', expandReportFilters);
     actions.register('reports.panel.toggle', context => toggleReportPanel(context.target));
     actions.register('reports.print', printReport);
-    actions.register('reports.export.excel', () => downloadReport(REPORT_ENDPOINTS.exportExcel, 'xls', 'ÄÃ£ xuáº¥t Excel'));
-    actions.register('reports.export.pdf', () => downloadReport(REPORT_ENDPOINTS.exportPdf, 'pdf', 'ÄÃ£ xuáº¥t PDF'));
-    actions.register('reports.export.word', () => downloadReport(REPORT_ENDPOINTS.exportWord, 'doc', 'ÄÃ£ xuáº¥t Word'));
+    actions.register('reports.export.excel', () => downloadReport(REPORT_ENDPOINTS.exportExcel, 'xls', 'Ã„ÂÃƒÂ£ xuÃ¡ÂºÂ¥t Excel'));
+    actions.register('reports.export.pdf', () => downloadReport(REPORT_ENDPOINTS.exportPdf, 'pdf', 'Ã„ÂÃƒÂ£ xuÃ¡ÂºÂ¥t PDF'));
+    actions.register('reports.export.word', () => downloadReport(REPORT_ENDPOINTS.exportWord, 'doc', 'Ã„ÂÃƒÂ£ xuÃ¡ÂºÂ¥t Word'));
   }
 
   function ensureReportTypes() {
@@ -192,11 +188,11 @@
     if (!select) return;
     const value = select.value || 'summary';
     const types = [
-      ['summary', 'BÃ¡o cÃ¡o tá»•ng há»£p'], ['population', 'BÃ¡o cÃ¡o nhÃ¢n kháº©u'], ['household', 'BÃ¡o cÃ¡o há»™ gia Ä‘Ã¬nh'], ['migration', 'BÃ¡o cÃ¡o biáº¿n Ä‘á»™ng'],
-      ['contributions-list', 'ÄÃ³ng gÃ³p - Danh sÃ¡ch há»™'], ['contributions-collection', 'ÄÃ³ng gÃ³p - Danh sÃ¡ch thu tiá»n'], ['contributions-unpaid-list', 'ÄÃ³ng gÃ³p - Há»™ chÆ°a ná»™p'], ['contributions-partial', 'ÄÃ³ng gÃ³p - Há»™ ná»™p má»™t pháº§n'], ['contributions-exempt', 'ÄÃ³ng gÃ³p - Há»™ Ä‘Æ°á»£c miá»…n'], ['contributions-summary', 'ÄÃ³ng gÃ³p - Tá»•ng há»£p cuá»‘i Ä‘á»£t'], ['contributions-year-summary', 'ÄÃ³ng gÃ³p - Tá»•ng há»£p theo nÄƒm'], ['contributions-by-contribution', 'ÄÃ³ng gÃ³p - Theo khoáº£n thu'],
-      ['gis', 'BÃ¡o cÃ¡o GIS'], ['gis-located', 'Há»™ Ä‘Ã£ Ä‘á»‹nh vá»‹ GPS'], ['gis-unlocated', 'Há»™ chÆ°a Ä‘á»‹nh vá»‹ GPS'],
-      ['digital-profile', 'BÃ¡o cÃ¡o Há»“ sÆ¡ sá»‘'], ['profile-complete', 'Há»“ sÆ¡ hoÃ n chá»‰nh'], ['profile-missing-photo', 'Há»“ sÆ¡ thiáº¿u áº£nh'], ['profile-missing-documents', 'Há»“ sÆ¡ thiáº¿u giáº¥y tá»'], ['profile-incomplete', 'Há»“ sÆ¡ chÆ°a hoÃ n thiá»‡n'],
-      ['health_insurance', 'Thá»‘ng kÃª Báº£o hiá»ƒm y táº¿'], ['health-insurance-missing', 'Danh sÃ¡ch chÆ°a tham gia BHYT'], ['health-insurance-expiring', 'Danh sÃ¡ch BHYT sáº¯p háº¿t háº¡n (30 ngÃ y)'], ['health-insurance-expired', 'Danh sÃ¡ch BHYT Ä‘Ã£ háº¿t háº¡n'], ['health-insurance-household', 'Thá»‘ng kÃª BHYT theo há»™'], ['health-insurance-area', 'Thá»‘ng kÃª BHYT theo khu vá»±c'], ['temporary_residence', 'Danh sÃ¡ch táº¡m trÃº'], ['temporary_absence', 'Danh sÃ¡ch táº¡m váº¯ng'], ['children', 'Danh sÃ¡ch tráº» em'], ['elderly', 'Danh sÃ¡ch ngÆ°á»i cao tuá»•i'], ['labor', 'Danh sÃ¡ch lao Ä‘á»™ng'], ['party_member', 'Danh sÃ¡ch Äáº£ng viÃªn'], ['youth_union', 'Danh sÃ¡ch ÄoÃ n viÃªn'], ['poor-households', 'Danh sÃ¡ch há»™ nghÃ¨o'], ['near-poor-households', 'Danh sÃ¡ch há»™ cáº­n nghÃ¨o'], ['age', 'Thá»‘ng kÃª theo Ä‘á»™ tuá»•i'], ['gender', 'Thá»‘ng kÃª theo giá»›i tÃ­nh']
+      ['summary', 'BÃƒÂ¡o cÃƒÂ¡o tÃ¡Â»â€¢ng hÃ¡Â»Â£p'], ['population', 'BÃƒÂ¡o cÃƒÂ¡o nhÃƒÂ¢n khÃ¡ÂºÂ©u'], ['household', 'BÃƒÂ¡o cÃƒÂ¡o hÃ¡Â»â„¢ gia Ã„â€˜ÃƒÂ¬nh'], ['migration', 'BÃƒÂ¡o cÃƒÂ¡o biÃ¡ÂºÂ¿n Ã„â€˜Ã¡Â»â„¢ng'],
+      ['contributions-list', 'Ã„ÂÃƒÂ³ng gÃƒÂ³p - Danh sÃƒÂ¡ch hÃ¡Â»â„¢'], ['contributions-collection', 'Ã„ÂÃƒÂ³ng gÃƒÂ³p - Danh sÃƒÂ¡ch thu tiÃ¡Â»Ân'], ['contributions-unpaid-list', 'Ã„ÂÃƒÂ³ng gÃƒÂ³p - HÃ¡Â»â„¢ chÃ†Â°a nÃ¡Â»â„¢p'], ['contributions-partial', 'Ã„ÂÃƒÂ³ng gÃƒÂ³p - HÃ¡Â»â„¢ nÃ¡Â»â„¢p mÃ¡Â»â„¢t phÃ¡ÂºÂ§n'], ['contributions-exempt', 'Ã„ÂÃƒÂ³ng gÃƒÂ³p - HÃ¡Â»â„¢ Ã„â€˜Ã†Â°Ã¡Â»Â£c miÃ¡Â»â€¦n'], ['contributions-summary', 'Ã„ÂÃƒÂ³ng gÃƒÂ³p - TÃ¡Â»â€¢ng hÃ¡Â»Â£p cuÃ¡Â»â€˜i Ã„â€˜Ã¡Â»Â£t'], ['contributions-year-summary', 'Ã„ÂÃƒÂ³ng gÃƒÂ³p - TÃ¡Â»â€¢ng hÃ¡Â»Â£p theo nÃ„Æ’m'], ['contributions-by-contribution', 'Ã„ÂÃƒÂ³ng gÃƒÂ³p - Theo khoÃ¡ÂºÂ£n thu'],
+      ['gis', 'BÃƒÂ¡o cÃƒÂ¡o GIS'], ['gis-located', 'HÃ¡Â»â„¢ Ã„â€˜ÃƒÂ£ Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹ GPS'], ['gis-unlocated', 'HÃ¡Â»â„¢ chÃ†Â°a Ã„â€˜Ã¡Â»â€¹nh vÃ¡Â»â€¹ GPS'],
+      ['digital-profile', 'BÃƒÂ¡o cÃƒÂ¡o HÃ¡Â»â€œ sÃ†Â¡ sÃ¡Â»â€˜'], ['profile-complete', 'HÃ¡Â»â€œ sÃ†Â¡ hoÃƒÂ n chÃ¡Â»â€°nh'], ['profile-missing-photo', 'HÃ¡Â»â€œ sÃ†Â¡ thiÃ¡ÂºÂ¿u Ã¡ÂºÂ£nh'], ['profile-missing-documents', 'HÃ¡Â»â€œ sÃ†Â¡ thiÃ¡ÂºÂ¿u giÃ¡ÂºÂ¥y tÃ¡Â»Â'], ['profile-incomplete', 'HÃ¡Â»â€œ sÃ†Â¡ chÃ†Â°a hoÃƒÂ n thiÃ¡Â»â€¡n'],
+      ['health_insurance', 'ThÃ¡Â»â€˜ng kÃƒÂª BÃ¡ÂºÂ£o hiÃ¡Â»Æ’m y tÃ¡ÂºÂ¿'], ['health-insurance-missing', 'Danh sÃƒÂ¡ch chÃ†Â°a tham gia BHYT'], ['health-insurance-expiring', 'Danh sÃƒÂ¡ch BHYT sÃ¡ÂºÂ¯p hÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n (30 ngÃƒÂ y)'], ['health-insurance-expired', 'Danh sÃƒÂ¡ch BHYT Ã„â€˜ÃƒÂ£ hÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n'], ['health-insurance-household', 'ThÃ¡Â»â€˜ng kÃƒÂª BHYT theo hÃ¡Â»â„¢'], ['health-insurance-area', 'ThÃ¡Â»â€˜ng kÃƒÂª BHYT theo khu vÃ¡Â»Â±c'], ['temporary_residence', 'Danh sÃƒÂ¡ch tÃ¡ÂºÂ¡m trÃƒÂº'], ['temporary_absence', 'Danh sÃƒÂ¡ch tÃ¡ÂºÂ¡m vÃ¡ÂºÂ¯ng'], ['children', 'Danh sÃƒÂ¡ch trÃ¡ÂºÂ» em'], ['elderly', 'Danh sÃƒÂ¡ch ngÃ†Â°Ã¡Â»Âi cao tuÃ¡Â»â€¢i'], ['labor', 'Danh sÃƒÂ¡ch lao Ã„â€˜Ã¡Â»â„¢ng'], ['party_member', 'Danh sÃƒÂ¡ch Ã„ÂÃ¡ÂºÂ£ng viÃƒÂªn'], ['youth_union', 'Danh sÃƒÂ¡ch Ã„ÂoÃƒÂ n viÃƒÂªn'], ['poor-households', 'Danh sÃƒÂ¡ch hÃ¡Â»â„¢ nghÃƒÂ¨o'], ['near-poor-households', 'Danh sÃƒÂ¡ch hÃ¡Â»â„¢ cÃ¡ÂºÂ­n nghÃƒÂ¨o'], ['age', 'ThÃ¡Â»â€˜ng kÃƒÂª theo Ã„â€˜Ã¡Â»â„¢ tuÃ¡Â»â€¢i'], ['gender', 'ThÃ¡Â»â€˜ng kÃƒÂª theo giÃ¡Â»â€ºi tÃƒÂ­nh']
     ];
     types.splice(2, 0, ['public-assets', 'Cong trinh cong cong - Danh sach'], ['public-assets-located', 'Cong trinh cong cong - Da co GPS'], ['public-assets-missing-gps', 'Cong trinh cong cong - Chua co GPS'], ['public-assets-inventory', 'Cong trinh cong cong - Kiem ke tai san']);
     reportTypes().forEach(([key, label]) => {
@@ -242,7 +238,7 @@
     if (csrf()) headers['X-CSRF-Token'] = csrf();
     const res = await fetch(url, { method: options.method || 'GET', headers, body: options.body ? JSON.stringify(options.body) : undefined, cache: 'no-store' });
     const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'KhÃ´ng táº£i Ä‘Æ°á»£c dá»¯ liá»‡u');
+    if (!res.ok || !json?.ok) throw new Error(json?.error?.message || 'KhÃƒÂ´ng tÃ¡ÂºÂ£i Ã„â€˜Ã†Â°Ã¡Â»Â£c dÃ¡Â»Â¯ liÃ¡Â»â€¡u');
     return json.data?.data ?? json.data ?? {};
   }
 
@@ -438,15 +434,15 @@
     const shouldCollapseFilters = options.collapseFilters !== false;
     enhanceReportLayout();
     setActions(false);
-    setTitle('BÃ¡o cÃ¡o');
-    setCount('Äang táº£i dá»¯ liá»‡u...');
+    setTitle('BÃƒÂ¡o cÃƒÂ¡o');
+    setCount('Ã„Âang tÃ¡ÂºÂ£i dÃ¡Â»Â¯ liÃ¡Â»â€¡u...');
     renderBox('#reportPreview', reportLoading());
     scrollToReportResult(false);
     try {
       const report = await smartApi(reportEndpoint('summary', reportQuery()));
       state.report = report;
-      setTitle(report.title || 'BÃ¡o cÃ¡o');
-      setCount(fmt(report.totalRows || 0) + ' dÃ²ng');
+      setTitle(report.title || 'BÃƒÂ¡o cÃƒÂ¡o');
+      setCount(fmt(report.totalRows || 0) + ' dÃƒÂ²ng');
       renderBox('#reportPreview', reportMeta(report) + reportTable(report) + reportSignatures(report));
       setActions(true);
       if (shouldCollapseFilters) collapseReportFilters();
@@ -455,7 +451,7 @@
       scrollToReportResult(true);
       return report;
     } catch (error) {
-      setCount('KhÃ´ng sinh Ä‘Æ°á»£c bÃ¡o cÃ¡o');
+      setCount('KhÃƒÂ´ng sinh Ã„â€˜Ã†Â°Ã¡Â»Â£c bÃƒÂ¡o cÃƒÂ¡o');
       renderBox('#reportPreview', '<div class="alert alert-danger mb-0">' + esc(error.message) + '</div>');
       scrollToReportResult(true);
       throw error;
@@ -471,24 +467,24 @@
   }
 
   function renderSavedTemplates(items) {
-    if (!items.length) return renderBox('#reportSavedTemplates', '<div class="report-template-empty">ChÆ°a cÃ³ máº«u Ä‘Ã£ lÆ°u</div>');
+    if (!items.length) return renderBox('#reportSavedTemplates', '<div class="report-template-empty">ChÃ†Â°a cÃƒÂ³ mÃ¡ÂºÂ«u Ã„â€˜ÃƒÂ£ lÃ†Â°u</div>');
     renderBox('#reportSavedTemplates', items.map(item => {
       const filters = esc(item.filters_json || '{}');
-      return '<article class="report-saved-template"><button type="button" data-platform-action="reports.template.open" data-template-open="' + item.id + '" data-filters="' + filters + '" data-type="' + esc(item.type) + '"><strong>' + esc(item.name) + '</strong><span>' + esc(item.type) + (Number(item.is_default) ? ' - Máº·c Ä‘á»‹nh' : '') + '</span></button><div><button type="button" title="Äáº·t máº·c Ä‘á»‹nh" data-platform-action="reports.template.default" data-template-default="' + item.id + '"><i class="fa-solid fa-star"></i></button><button type="button" title="XÃ³a" data-platform-action="reports.template.delete" data-template-delete="' + item.id + '"><i class="fa-solid fa-trash"></i></button></div></article>';
+      return '<article class="report-saved-template"><button type="button" data-platform-action="reports.template.open" data-template-open="' + item.id + '" data-filters="' + filters + '" data-type="' + esc(item.type) + '"><strong>' + esc(item.name) + '</strong><span>' + esc(item.type) + (Number(item.is_default) ? ' - MÃ¡ÂºÂ·c Ã„â€˜Ã¡Â»â€¹nh' : '') + '</span></button><div><button type="button" title="Ã„ÂÃ¡ÂºÂ·t mÃ¡ÂºÂ·c Ã„â€˜Ã¡Â»â€¹nh" data-platform-action="reports.template.default" data-template-default="' + item.id + '"><i class="fa-solid fa-star"></i></button><button type="button" title="XÃƒÂ³a" data-platform-action="reports.template.delete" data-template-delete="' + item.id + '"><i class="fa-solid fa-trash"></i></button></div></article>';
     }).join(''));
   }
 
   function renderBi(data) {
     const metrics = data.metrics || {};
-    $('#reportBiGeneratedAt') && ($('#reportBiGeneratedAt').textContent = 'Cáº­p nháº­t ' + new Date(data.generatedAt || Date.now()).toLocaleString('vi-VN'));
+    $('#reportBiGeneratedAt') && ($('#reportBiGeneratedAt').textContent = 'CÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t ' + new Date(data.generatedAt || Date.now()).toLocaleString('vi-VN'));
     const kpis = [
-      ['Há»™', metrics.total_households], ['NhÃ¢n kháº©u', metrics.total_citizens], ['Nam', metrics.male_count], ['Ná»¯', metrics.female_count], ['Há»™ nghÃ¨o', metrics.poor_households], ['GPS', progressValue(data, 'gps')]
+      ['HÃ¡Â»â„¢', metrics.total_households], ['NhÃƒÂ¢n khÃ¡ÂºÂ©u', metrics.total_citizens], ['Nam', metrics.male_count], ['NÃ¡Â»Â¯', metrics.female_count], ['HÃ¡Â»â„¢ nghÃƒÂ¨o', metrics.poor_households], ['GPS', progressValue(data, 'gps')]
     ];
     const healthInsurance = healthInsuranceSummary(metrics);
-    renderBox('#reportBiKpis', kpis.map(([label, value]) => '<div><span>' + esc(label) + '</span><strong>' + esc(value ?? 0) + '</strong></div>').join('') + '<div class="report-bi-health"><span>CÃ³ BHYT</span><strong>' + esc(healthInsurance.covered) + '</strong></div><div class="report-bi-health"><span>ChÆ°a cÃ³ BHYT</span><strong>' + esc(healthInsurance.uninsured) + '</strong></div><div class="report-bi-health"><span>Tá»· lá»‡ bao phá»§</span><strong>' + esc(healthInsurance.coverage) + '</strong></div>');
+    renderBox('#reportBiKpis', kpis.map(([label, value]) => '<div><span>' + esc(label) + '</span><strong>' + esc(value ?? 0) + '</strong></div>').join('') + '<div class="report-bi-health"><span>CÃƒÂ³ BHYT</span><strong>' + esc(healthInsurance.covered) + '</strong></div><div class="report-bi-health"><span>ChÃ†Â°a cÃƒÂ³ BHYT</span><strong>' + esc(healthInsurance.uninsured) + '</strong></div><div class="report-bi-health"><span>TÃ¡Â»Â· lÃ¡Â»â€¡ bao phÃ¡Â»Â§</span><strong>' + esc(healthInsurance.coverage) + '</strong></div>');
     const charts = data.charts || {};
     const cards = [
-      ['CÆ¡ cáº¥u dÃ¢n sá»‘', charts.population], ['BHYT', charts.healthInsurance], ['Äá»™ tuá»•i', charts.age], ['Nghá» nghiá»‡p', charts.occupation], ['Lao Ä‘á»™ng', charts.labor], ['Há»™ nghÃ¨o/cáº­n nghÃ¨o', charts.poverty], ['Biáº¿n Ä‘á»™ng theo thÃ¡ng', charts.monthlyMovements]
+      ['CÃ†Â¡ cÃ¡ÂºÂ¥u dÃƒÂ¢n sÃ¡Â»â€˜', charts.population], ['BHYT', charts.healthInsurance], ['Ã„ÂÃ¡Â»â„¢ tuÃ¡Â»â€¢i', charts.age], ['NghÃ¡Â»Â nghiÃ¡Â»â€¡p', charts.occupation], ['Lao Ã„â€˜Ã¡Â»â„¢ng', charts.labor], ['HÃ¡Â»â„¢ nghÃƒÂ¨o/cÃ¡ÂºÂ­n nghÃƒÂ¨o', charts.poverty], ['BiÃ¡ÂºÂ¿n Ã„â€˜Ã¡Â»â„¢ng theo thÃƒÂ¡ng', charts.monthlyMovements]
     ];
     renderBox('#reportBiCharts', cards.map(([title, rows]) => '<article class="report-bi-chart"><h4>' + esc(title) + '</h4>' + miniBars(rows || []) + '</article>').join(''));
   }
@@ -498,7 +494,7 @@
     const insured = Number(metrics.health_insurance_count ?? metrics.health_insurance_covered_count ?? 0);
     const uninsured = Number(metrics.health_insurance_missing_count ?? metrics.health_insurance_uninsured_count ?? Math.max(0, total - insured));
     const coverage = Number(metrics.health_insurance_coverage_percent ?? metrics.health_insurance_percent ?? (total > 0 ? insured * 100 / total : 0));
-    return { covered: fmt(insured) + '/' + fmt(total) + ' nhÃ¢n kháº©u', uninsured: fmt(uninsured) + ' nhÃ¢n kháº©u', coverage: coverage.toFixed(2) + '%' };
+    return { covered: fmt(insured) + '/' + fmt(total) + ' nhÃƒÂ¢n khÃ¡ÂºÂ©u', uninsured: fmt(uninsured) + ' nhÃƒÂ¢n khÃ¡ÂºÂ©u', coverage: coverage.toFixed(2) + '%' };
   }
 
   function progressValue(data, key) {
@@ -508,7 +504,7 @@
 
   function miniBars(rows) {
     const max = Math.max(1, ...rows.map(row => Number(row.value || 0)));
-    return rows.length ? rows.slice(0, 8).map(row => '<div class="report-mini-bar"><span>' + esc(row.label || '') + '</span><i style="--w:' + Math.round(Number(row.value || 0) * 100 / max) + '%"></i><b>' + fmt(row.value || 0) + '</b></div>').join('') : '<div class="report-template-empty">ChÆ°a cÃ³ dá»¯ liá»‡u</div>';
+    return rows.length ? rows.slice(0, 8).map(row => '<div class="report-mini-bar"><span>' + esc(row.label || '') + '</span><i style="--w:' + Math.round(Number(row.value || 0) * 100 / max) + '%"></i><b>' + fmt(row.value || 0) + '</b></div>').join('') : '<div class="report-template-empty">ChÃ†Â°a cÃƒÂ³ dÃ¡Â»Â¯ liÃ¡Â»â€¡u</div>';
   }
 
   function selectReportType(type, autoLoad = false) {
@@ -546,13 +542,13 @@
   }
 
   async function saveTemplate() {
-    const name = prompt('TÃªn máº«u bÃ¡o cÃ¡o');
+    const name = prompt('TÃƒÂªn mÃ¡ÂºÂ«u bÃƒÂ¡o cÃƒÂ¡o');
     if (!name) return;
     const filters = currentFilters();
     const template = await smartApi(REPORT_ENDPOINTS.templates, { method: 'POST', body: { name, type: filters.type || 'summary', filters } });
     state.templates.unshift(template);
     await loadTemplates();
-    toast('ÄÃ£ lÆ°u máº«u bÃ¡o cÃ¡o');
+    toast('Ã„ÂÃƒÂ£ lÃ†Â°u mÃ¡ÂºÂ«u bÃƒÂ¡o cÃƒÂ¡o');
   }
 
   function openTemplate(btn) {
@@ -567,18 +563,18 @@
   async function deleteTemplate(id) {
     await smartApi(REPORT_ENDPOINTS.template(id), { method: 'DELETE' });
     await loadTemplates();
-    toast('ÄÃ£ xÃ³a máº«u bÃ¡o cÃ¡o');
+    toast('Ã„ÂÃƒÂ£ xÃƒÂ³a mÃ¡ÂºÂ«u bÃƒÂ¡o cÃƒÂ¡o');
   }
 
   async function defaultTemplate(id) {
     await smartApi(REPORT_ENDPOINTS.templateDefault(id), { method: 'POST', body: {} });
     await loadTemplates();
-    toast('ÄÃ£ Ä‘áº·t máº«u máº·c Ä‘á»‹nh');
+    toast('Ã„ÂÃƒÂ£ Ã„â€˜Ã¡ÂºÂ·t mÃ¡ÂºÂ«u mÃ¡ÂºÂ·c Ã„â€˜Ã¡Â»â€¹nh');
   }
 
   async function downloadReport(endpoint, extension, successMessage) {
     const response = await fetch(endpoint + '?' + reportQuery(), { headers: { Authorization: 'Bearer ' + token() }, cache: 'no-store' });
-    if (!response.ok) throw new Error('KhÃ´ng xuáº¥t Ä‘Æ°á»£c dá»¯ liá»‡u');
+    if (!response.ok) throw new Error('KhÃƒÂ´ng xuÃ¡ÂºÂ¥t Ã„â€˜Ã†Â°Ã¡Â»Â£c dÃ¡Â»Â¯ liÃ¡Â»â€¡u');
     const blob = await response.blob();
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -630,7 +626,7 @@
   }
 
   function reportHeader(report) {
-    return '<div class="report-print-unit">' + esc(reportUnitName(report)) + '</div><div class="report-print-title">' + esc(report.title || 'BÃ¡o cÃ¡o') + '</div>';
+    return '<div class="report-print-unit">' + esc(reportUnitName(report)) + '</div><div class="report-print-title">' + esc(report.title || 'BÃƒÂ¡o cÃƒÂ¡o') + '</div>';
   }
 
   function reportLoading() {
@@ -648,13 +644,13 @@
     const meta = report.meta || {};
     const configured = window.App?.settings || window.AppSettings || {};
     const unit = meta.unit_name || configured.unitName || [configured.hamletName, configured.communeName].filter(Boolean).join(' - ');
-    return unit || 'ÄÆ¡n vá»‹ hÃ nh chÃ­nh';
+    return unit || 'Ã„ÂÃ†Â¡n vÃ¡Â»â€¹ hÃƒÂ nh chÃƒÂ­nh';
   }
 
   function reportSignatures(report) {
     const meta = report.meta || {};
     if (!meta.prepared_by && !meta.approved_by) return '';
-    return '<div class="report-signatures"><div>' + esc(meta.prepared_by || 'NgÆ°á»i láº­p biá»ƒu') + '</div><div>' + esc(meta.approved_by || 'TrÆ°á»Ÿng thÃ´n kÃ½ xÃ¡c nháº­n') + '</div></div>';
+    return '<div class="report-signatures"><div>' + esc(meta.prepared_by || 'NgÃ†Â°Ã¡Â»Âi lÃ¡ÂºÂ­p biÃ¡Â»Æ’u') + '</div><div>' + esc(meta.approved_by || 'TrÃ†Â°Ã¡Â»Å¸ng thÃƒÂ´n kÃƒÂ½ xÃƒÂ¡c nhÃ¡ÂºÂ­n') + '</div></div>';
   }
 
   function setTitle(text) { const el = $('#reportTitle'); if (el) el.textContent = text; }
