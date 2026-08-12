@@ -28,7 +28,7 @@ final class PopulationMovementService
             'reason' => $this->text($input, ['moveInType', 'move_in_type', 'formationSource', 'formation_source', 'reason']),
             'effective_date' => $this->date($input, ['moveInDate', 'move_in_date', 'effectiveDate', 'effective_date']) ?? date('Y-m-d'),
             'document_number' => $this->text($input, ['decisionNumber', 'decision_number', 'documentNumber', 'document_number']),
-            'note' => $type === 'BIRTH' ? 'Tự động ghi nhận khai sinh khi thêm nhân khẩu' : 'Tự động ghi nhận chuyển đến khi thêm nhân khẩu',
+            'note' => $type === 'BIRTH' ? 'Tá»± Ä‘á»™ng ghi nháº­n khai sinh khi thÃªm nhÃ¢n kháº©u' : 'Tá»± Ä‘á»™ng ghi nháº­n chuyá»ƒn Ä‘áº¿n khi thÃªm nhÃ¢n kháº©u',
             'after_data' => $fresh,
         ], $userId);
         $this->syncHouseholdStatus((int) ($fresh['household_id'] ?? $citizen['household_id'] ?? 0), $userId);
@@ -42,7 +42,7 @@ final class PopulationMovementService
         if (($before['life_status'] ?? '') !== 'DECEASED' && ($fresh['life_status'] ?? '') === 'DECEASED') {
             $this->recordMovement($fresh, 'DEATH', [
                 'from_address' => $before['current_address'] ?? $before['household_address'] ?? null,
-                'reason' => $this->text($input, ['moveOutReason', 'move_out_reason', 'reason']) ?: 'Khai tử',
+                'reason' => $this->text($input, ['moveOutReason', 'move_out_reason', 'reason']) ?: 'Khai tá»­',
                 'effective_date' => $this->date($input, ['moveOutDate', 'move_out_date', 'effectiveDate', 'effective_date']) ?? date('Y-m-d'),
                 'document_number' => $this->text($input, ['decisionNumber', 'decision_number', 'documentNumber', 'document_number']),
                 'before_data' => $before,
@@ -67,16 +67,16 @@ final class PopulationMovementService
             $this->recordMovement($fresh, 'MOVE_IN', [
                 'from_address' => $before['household_address'] ?? null,
                 'to_address' => $fresh['household_address'] ?? $fresh['current_address'] ?? null,
-                'reason' => 'Chuyển hộ / nhập hộ',
+                'reason' => 'Chuyá»ƒn há»™ / nháº­p há»™',
                 'effective_date' => $this->date($input, ['moveInDate', 'move_in_date', 'effectiveDate', 'effective_date']) ?? date('Y-m-d'),
                 'before_data' => $before,
                 'after_data' => $fresh,
             ], $userId);
         }
 
-        if (($before['relationship'] ?? '') !== ($fresh['relationship'] ?? '') && in_array('Chủ hộ', [$before['relationship'] ?? '', $fresh['relationship'] ?? ''], true)) {
+        if (($before['relationship'] ?? '') !== ($fresh['relationship'] ?? '') && in_array('Chá»§ há»™', [$before['relationship'] ?? '', $fresh['relationship'] ?? ''], true)) {
             $this->recordMovement($fresh, 'HOUSEHOLD_HEAD_CHANGE', [
-                'reason' => 'Thay đổi chủ hộ',
+                'reason' => 'Thay Ä‘á»•i chá»§ há»™',
                 'effective_date' => date('Y-m-d'),
                 'before_data' => ['relationship' => $before['relationship'] ?? null, 'head_citizen_name' => $before['head_citizen_name'] ?? null],
                 'after_data' => ['relationship' => $fresh['relationship'] ?? null, 'head_citizen_name' => $fresh['head_citizen_name'] ?? null],
@@ -85,7 +85,7 @@ final class PopulationMovementService
 
         if ($this->hasMeaningfulCitizenChange($before, $fresh)) {
             $this->recordMovement($fresh, 'CITIZEN_UPDATE', [
-                'reason' => $this->text($input, ['reason']) ?: 'Cập nhật thông tin nhân khẩu',
+                'reason' => $this->text($input, ['reason']) ?: 'Cáº­p nháº­t thÃ´ng tin nhÃ¢n kháº©u',
                 'effective_date' => date('Y-m-d'),
                 'before_data' => $this->compactCitizenHistory($before),
                 'after_data' => $this->compactCitizenHistory($fresh),
@@ -104,7 +104,7 @@ final class PopulationMovementService
     public function markCitizensMovedOut(array $ids, array $input, int $userId): int
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn($id) => $id > 0)));
-        if (!$ids) throw new \RuntimeException('Chưa chọn nhân khẩu cần chuyển đi');
+        if (!$ids) throw new \RuntimeException('ChÆ°a chá»n nhÃ¢n kháº©u cáº§n chuyá»ƒn Ä‘i');
         $this->db->beginTransaction();
         try {
             foreach ($ids as $id) {
@@ -139,7 +139,7 @@ final class PopulationMovementService
     private function markOneCitizenMovedOut(int $id, array $input, int $userId): void
     {
         $before = $this->citizen($id);
-        if (!$before) throw new \RuntimeException('Không tìm thấy nhân khẩu');
+        if (!$before) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u');
 
         $sets = ['status="INACTIVE"', 'presence_status="AWAY"', 'updated_by=:user'];
         $params = ['id' => $id, 'user' => $userId];
@@ -164,7 +164,7 @@ final class PopulationMovementService
         $this->recordMovement($after, 'MOVE_OUT', [
             'from_address' => $before['current_address'] ?? $before['household_address'] ?? null,
             'to_address' => $after['move_out_place'] ?? $this->text($input, ['moveOutPlace', 'move_out_place', 'toAddress', 'to_address']),
-            'reason' => $after['move_out_reason'] ?? $this->text($input, ['moveOutReason', 'move_out_reason', 'reason']) ?? 'Chuyển đi',
+            'reason' => $after['move_out_reason'] ?? $this->text($input, ['moveOutReason', 'move_out_reason', 'reason']) ?? 'Chuyá»ƒn Ä‘i',
             'effective_date' => $after['move_out_date'] ?? $this->date($input, ['moveOutDate', 'move_out_date', 'effectiveDate', 'effective_date']) ?? date('Y-m-d'),
             'document_number' => $after['decision_number'] ?? null,
             'before_data' => $before,
@@ -234,7 +234,7 @@ final class PopulationMovementService
     {
         $citizenId = (int) ($household['head_citizen_id'] ?? 0);
         if ($citizenId <= 0) {
-            $citizenId = (int) ($this->scalar('SELECT id FROM citizens WHERE household_id=:id AND status <> "DELETED" AND ' . $this->tenantSql('citizens') . ' ORDER BY relationship="Chủ hộ" DESC, id LIMIT 1', ['id' => (int) $household['id']]) ?? 0);
+            $citizenId = (int) ($this->scalar('SELECT id FROM citizens WHERE household_id=:id AND status <> "DELETED" AND ' . $this->tenantSql('citizens') . ' ORDER BY relationship="Chá»§ há»™" DESC, id LIMIT 1', ['id' => (int) $household['id']]) ?? 0);
         }
         if ($citizenId <= 0) return;
         $citizen = $this->citizen($citizenId);

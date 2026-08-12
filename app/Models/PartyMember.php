@@ -8,30 +8,30 @@ use App\Policies\AgePolicy;
 final class PartyMember extends BaseModel
 {
     public const MEMBER_TYPES = [
-        'OFFICIAL' => 'Đảng viên chính thức',
-        'PROBATIONARY' => 'Đảng viên dự bị',
+        'OFFICIAL' => 'Äáº£ng viÃªn chÃ­nh thá»©c',
+        'PROBATIONARY' => 'Äáº£ng viÃªn dá»± bá»‹',
     ];
 
     public const STATUS_LABELS = [
-        'ACTIVE' => 'Đang sinh hoạt',
-        'TRANSFERRED_OUT' => 'Chuyển sinh hoạt đi',
-        'TRANSFERRED_IN' => 'Chuyển sinh hoạt đến',
-        'EXEMPT' => 'Miễn sinh hoạt',
-        'TEMP_EXEMPT' => 'Tạm miễn sinh hoạt',
-        'RETIRED' => 'Nghỉ hưu',
-        'DECEASED' => 'Từ trần',
-        'LEFT_PARTY' => 'Ra khỏi Đảng',
-        'DELETED' => 'Đã xóa',
+        'ACTIVE' => 'Äang sinh hoáº¡t',
+        'TRANSFERRED_OUT' => 'Chuyá»ƒn sinh hoáº¡t Ä‘i',
+        'TRANSFERRED_IN' => 'Chuyá»ƒn sinh hoáº¡t Ä‘áº¿n',
+        'EXEMPT' => 'Miá»…n sinh hoáº¡t',
+        'TEMP_EXEMPT' => 'Táº¡m miá»…n sinh hoáº¡t',
+        'RETIRED' => 'Nghá»‰ hÆ°u',
+        'DECEASED' => 'Tá»« tráº§n',
+        'LEFT_PARTY' => 'Ra khá»i Äáº£ng',
+        'DELETED' => 'ÄÃ£ xÃ³a',
     ];
 
     public const PARTY_STATUS_LABELS = [
-        'ACTIVE' => 'Đang sinh hoạt tại chi bộ',
-        'TEMPORARY' => 'Sinh hoạt tạm thời',
-        'EXEMPT' => 'Miễn sinh hoạt Đảng',
-        'AWAY' => 'Đi làm ăn xa',
-        'TRANSFERRED' => 'Chuyển sinh hoạt Đảng',
-        'LEFT_PARTY' => 'Ra khỏi Đảng',
-        'DECEASED' => 'Từ trần',
+        'ACTIVE' => 'Äang sinh hoáº¡t táº¡i chi bá»™',
+        'TEMPORARY' => 'Sinh hoáº¡t táº¡m thá»i',
+        'EXEMPT' => 'Miá»…n sinh hoáº¡t Äáº£ng',
+        'AWAY' => 'Äi lÃ m Äƒn xa',
+        'TRANSFERRED' => 'Chuyá»ƒn sinh hoáº¡t Äáº£ng',
+        'LEFT_PARTY' => 'Ra khá»i Äáº£ng',
+        'DECEASED' => 'Tá»« tráº§n',
     ];
 
     private const ACTIVE_PARTY_STATUSES = ['ACTIVE', 'TEMPORARY'];
@@ -159,7 +159,7 @@ SQL);
     public function upsert(array $data, int $userId, ?int $id = null): array
     {
         $this->ensureSchema();
-        if ($id && !$this->find($id)) throw new \RuntimeException('Không tìm thấy hồ sơ Đảng viên');
+        if ($id && !$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Äáº£ng viÃªn');
         $params = $this->params($data, $userId, $id);
         if ($id) {
             $params['id'] = $id;
@@ -183,8 +183,8 @@ SQL);
     {
         $this->ensureSchema();
         $row = $this->find($id);
-        if (!$row) throw new \RuntimeException('Không tìm thấy hồ sơ Đảng viên');
-        $this->execute('UPDATE party_members SET party_status="LEFT_PARTY", activity_status="LEFT_PARTY", status_changed_at=CURDATE(), status_reason=COALESCE(status_reason,"Chuyển thao tác xóa thành trạng thái ra khỏi Đảng"), updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('party_members'), $this->withTenant(['id' => $id, 'updated_by' => $userId]));
+        if (!$row) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Äáº£ng viÃªn');
+        $this->execute('UPDATE party_members SET party_status="LEFT_PARTY", activity_status="LEFT_PARTY", status_changed_at=CURDATE(), status_reason=COALESCE(status_reason,"Chuyá»ƒn thao tÃ¡c xÃ³a thÃ nh tráº¡ng thÃ¡i ra khá»i Äáº£ng"), updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('party_members'), $this->withTenant(['id' => $id, 'updated_by' => $userId]));
         $this->syncCitizenPartyFlag((int) $row['citizen_id'], false, $userId);
     }
 
@@ -192,7 +192,7 @@ SQL);
     {
         $this->ensureSchema();
         $row = $this->find($id, true);
-        if (!$row) throw new \RuntimeException('Không tìm thấy hồ sơ Đảng viên');
+        if (!$row) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Äáº£ng viÃªn');
         $this->execute('UPDATE party_members SET status="ACTIVE", deleted_at=NULL, deleted_by=NULL, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('party_members'), $this->withTenant(['id' => $id, 'user' => $userId]));
         $this->syncCitizenPartyFlag((int) $row['citizen_id'], $this->isCurrentPartyMember($row['party_status'] ?? 'ACTIVE'), $userId);
         return $this->find($id) ?: [];
@@ -208,7 +208,7 @@ SQL);
                 COALESCE(SUM(CASE WHEN pm.member_type='OFFICIAL' THEN 1 ELSE 0 END),0) AS official,
                 COALESCE(SUM(CASE WHEN pm.member_type='PROBATIONARY' THEN 1 ELSE 0 END),0) AS probationary,
                 COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male,
-                COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female,
+                COALESCE(SUM(CASE WHEN c.gender='Ná»¯' THEN 1 ELSE 0 END),0) AS female,
                 COALESCE(SUM(CASE WHEN pm.party_status='AWAY' THEN 1 ELSE 0 END),0) AS away,
                 COALESCE(SUM(CASE WHEN pm.party_status='EXEMPT' THEN 1 ELSE 0 END),0) AS exempt,
                 COALESCE(SUM(CASE WHEN pm.party_status='TRANSFERRED' THEN 1 ELSE 0 END),0) AS transferred,
@@ -234,9 +234,9 @@ SQL);
         $this->ensureSchema();
         [$where, $params] = $this->where($filters, false, true);
         return [
-            'age' => $this->fetchAll("SELECT CASE WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_UNDER_30_MAX_EXCLUSIVE . " THEN 'Dưới 30' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_30_39_MAX_EXCLUSIVE . " THEN '30-39' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_40_49_MAX_EXCLUSIVE . " THEN '40-49' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_50_59_MAX_EXCLUSIVE . " THEN '50-59' ELSE '60+' END AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY MIN(" . AgePolicy::ageSql('c') . ")", $params),
-            'gender' => $this->fetchAll("SELECT COALESCE(NULLIF(c.gender,''),'Khác') AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY value DESC", $params),
-            'branch' => $this->fetchAll("SELECT COALESCE(NULLIF(pm.branch_name,''),'Chưa cập nhật') AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 12", $params),
+            'age' => $this->fetchAll("SELECT CASE WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_UNDER_30_MAX_EXCLUSIVE . " THEN 'DÆ°á»›i 30' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_30_39_MAX_EXCLUSIVE . " THEN '30-39' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_40_49_MAX_EXCLUSIVE . " THEN '40-49' WHEN " . AgePolicy::ageSql('c') . " < " . AgePolicy::PARTY_MEMBER_AGE_50_59_MAX_EXCLUSIVE . " THEN '50-59' ELSE '60+' END AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY MIN(" . AgePolicy::ageSql('c') . ")", $params),
+            'gender' => $this->fetchAll("SELECT COALESCE(NULLIF(c.gender,''),'KhÃ¡c') AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY value DESC", $params),
+            'branch' => $this->fetchAll("SELECT COALESCE(NULLIF(pm.branch_name,''),'ChÆ°a cáº­p nháº­t') AS label, COUNT(*) AS value FROM party_members pm INNER JOIN citizens c ON c.id=pm.citizen_id INNER JOIN households h ON h.id=c.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 12", $params),
         ];
     }
 
@@ -249,14 +249,14 @@ SQL);
         [$where, $params, $order] = $this->where($filters);
         $items = array_map(fn($row) => $this->normalize($row), $this->fetchAll($this->selectSql() . " $where $order", $params));
         $title = match ($mode) {
-            'branch' => 'Báo cáo Đảng viên theo chi bộ',
-            'age' => 'Báo cáo Đảng viên theo độ tuổi',
-            'gender' => 'Báo cáo Đảng viên theo giới tính',
-            'position' => 'Báo cáo Đảng viên theo chức vụ',
-            'official' => 'Danh sách Đảng viên chính thức',
-            'probationary' => 'Danh sách Đảng viên dự bị',
-            'status' => 'Báo cáo tình trạng sinh hoạt Đảng',
-            default => 'Danh sách Đảng viên',
+            'branch' => 'BÃ¡o cÃ¡o Äáº£ng viÃªn theo chi bá»™',
+            'age' => 'BÃ¡o cÃ¡o Äáº£ng viÃªn theo Ä‘á»™ tuá»•i',
+            'gender' => 'BÃ¡o cÃ¡o Äáº£ng viÃªn theo giá»›i tÃ­nh',
+            'position' => 'BÃ¡o cÃ¡o Äáº£ng viÃªn theo chá»©c vá»¥',
+            'official' => 'Danh sÃ¡ch Äáº£ng viÃªn chÃ­nh thá»©c',
+            'probationary' => 'Danh sÃ¡ch Äáº£ng viÃªn dá»± bá»‹',
+            'status' => 'BÃ¡o cÃ¡o tÃ¬nh tráº¡ng sinh hoáº¡t Äáº£ng',
+            default => 'Danh sÃ¡ch Äáº£ng viÃªn',
         };
         $rows = [];
         foreach ($items as $index => $r) {
@@ -278,14 +278,14 @@ SQL);
         }
         return [
             'title' => $title,
-            'headers' => ['STT','Họ tên','Mã Đảng viên','Chi bộ','Chức vụ','Loại Đảng viên','Trạng thái','Ngày đổi trạng thái','Lý do','Ngày vào Đảng','Ngày chính thức','Giới tính','Ngày sinh'],
+            'headers' => ['STT','Há» tÃªn','MÃ£ Äáº£ng viÃªn','Chi bá»™','Chá»©c vá»¥','Loáº¡i Äáº£ng viÃªn','Tráº¡ng thÃ¡i','NgÃ y Ä‘á»•i tráº¡ng thÃ¡i','LÃ½ do','NgÃ y vÃ o Äáº£ng','NgÃ y chÃ­nh thá»©c','Giá»›i tÃ­nh','NgÃ y sinh'],
             'rows' => $rows,
             'totalRows' => count($items),
             'filters' => $filters,
-            'summary' => $mode === 'status' ? $this->statusSummary($filters) : ['Tổng số Đảng viên' => count($items)],
+            'summary' => $mode === 'status' ? $this->statusSummary($filters) : ['Tá»•ng sá»‘ Äáº£ng viÃªn' => count($items)],
             'meta' => [
                 'period_label' => $this->filterSummary($filters),
-                'report_date' => 'Ngày xuất: ' . date('d/m/Y H:i:s'),
+                'report_date' => 'NgÃ y xuáº¥t: ' . date('d/m/Y H:i:s'),
             ],
             'orientation' => 'portrait',
             'generatedAt' => date('c')
@@ -336,10 +336,10 @@ SQL);
     private function params(array $data, int $userId, ?int $id): array
     {
         $citizenId = $id ? (int) (($this->find($id)['citizen_id'] ?? 0)) : (int) ($data['citizen_id'] ?? $data['citizenId'] ?? 0);
-        if ($citizenId <= 0) throw new \RuntimeException('Nhân khẩu là bắt buộc');
-        if (!$this->fetchOne('SELECT c.id FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->activeHouseholdWhere('h') . ' AND ' . $this->tenantWhere('c', 'citizens') . ' AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $citizenId]))) throw new \RuntimeException('Không tìm thấy nhân khẩu');
+        if ($citizenId <= 0) throw new \RuntimeException('NhÃ¢n kháº©u lÃ  báº¯t buá»™c');
+        if (!$this->fetchOne('SELECT c.id FROM citizens c INNER JOIN households h ON h.id=c.household_id WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->activeHouseholdWhere('h') . ' AND ' . $this->tenantWhere('c', 'citizens') . ' AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $citizenId]))) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u');
         $duplicate = $this->fetchOne('SELECT id FROM party_members WHERE citizen_id=:citizen_id AND ' . $this->tenantWhere('party_members') . ' AND (:id=0 OR id<>:id) LIMIT 1', $this->withTenant(['citizen_id' => $citizenId, 'id' => (int) ($id ?? 0)]));
-        if ($duplicate) throw new \RuntimeException('Nhân khẩu này đã có hồ sơ Đảng viên');
+        if ($duplicate) throw new \RuntimeException('NhÃ¢n kháº©u nÃ y Ä‘Ã£ cÃ³ há»“ sÆ¡ Äáº£ng viÃªn');
         $memberType = strtoupper(trim((string) ($data['member_type'] ?? $data['memberType'] ?? 'OFFICIAL')));
         if (!isset(self::MEMBER_TYPES[$memberType])) $memberType = 'OFFICIAL';
         $current = $id ? $this->find($id) : null;
@@ -380,14 +380,14 @@ SQL);
     {
         $labels = [];
         $map = [
-            'branch_name' => 'Chi bộ',
-            'member_type' => 'Loại Đảng viên',
-            'party_status' => 'Trạng thái',
-            'party_position' => 'Chức vụ',
-            'gender' => 'Giới tính',
-            'age_from' => 'Tuổi từ',
-            'age_to' => 'Tuổi đến',
-            'search' => 'Từ khóa',
+            'branch_name' => 'Chi bá»™',
+            'member_type' => 'Loáº¡i Äáº£ng viÃªn',
+            'party_status' => 'Tráº¡ng thÃ¡i',
+            'party_position' => 'Chá»©c vá»¥',
+            'gender' => 'Giá»›i tÃ­nh',
+            'age_from' => 'Tuá»•i tá»«',
+            'age_to' => 'Tuá»•i Ä‘áº¿n',
+            'search' => 'Tá»« khÃ³a',
         ];
         foreach ($map as $key => $label) {
             $value = trim((string) ($filters[$key] ?? $filters[lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $key))))] ?? ''));
@@ -396,7 +396,7 @@ SQL);
             if ($key === 'party_status') $value = self::PARTY_STATUS_LABELS[$this->normalizePartyStatus($value)] ?? $value;
             $labels[] = $label . ': ' . $value;
         }
-        return $labels ? 'Điều kiện lọc: ' . implode('; ', $labels) : 'Điều kiện lọc: Tất cả Đảng viên';
+        return $labels ? 'Äiá»u kiá»‡n lá»c: ' . implode('; ', $labels) : 'Äiá»u kiá»‡n lá»c: Táº¥t cáº£ Äáº£ng viÃªn';
     }
 
     private function normalize(array $row): array

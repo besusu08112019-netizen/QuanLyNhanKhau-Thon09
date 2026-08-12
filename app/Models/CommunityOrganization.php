@@ -9,26 +9,26 @@ use RuntimeException;
 final class CommunityOrganization extends BaseModel
 {
     private const ORGANIZATIONS = [
-        'WOMEN' => ['name' => 'Chi hội Phụ nữ', 'type' => 'MASS_ORGANIZATION', 'sort' => 10],
-        'FARMER' => ['name' => 'Chi hội Nông dân', 'type' => 'MASS_ORGANIZATION', 'sort' => 20],
-        'VETERAN' => ['name' => 'Chi hội Cựu chiến binh', 'type' => 'MASS_ORGANIZATION', 'sort' => 30],
-        'YOUTH' => ['name' => 'Chi đoàn Thanh niên', 'type' => 'YOUTH_UNION', 'sort' => 40],
+        'WOMEN' => ['name' => 'Chi há»™i Phá»¥ ná»¯', 'type' => 'MASS_ORGANIZATION', 'sort' => 10],
+        'FARMER' => ['name' => 'Chi há»™i NÃ´ng dÃ¢n', 'type' => 'MASS_ORGANIZATION', 'sort' => 20],
+        'VETERAN' => ['name' => 'Chi há»™i Cá»±u chiáº¿n binh', 'type' => 'MASS_ORGANIZATION', 'sort' => 30],
+        'YOUTH' => ['name' => 'Chi Ä‘oÃ n Thanh niÃªn', 'type' => 'YOUTH_UNION', 'sort' => 40],
     ];
 
     private const DEFAULT_POSITIONS = [
-        'WOMEN' => ['Chi hội trưởng', 'Chi hội phó', 'Tổ trưởng', 'Hội viên'],
-        'FARMER' => ['Chi hội trưởng', 'Chi hội phó', 'Tổ trưởng', 'Hội viên'],
-        'VETERAN' => ['Chi hội trưởng', 'Chi hội phó', 'Hội viên'],
-        'YOUTH' => ['Bí thư Chi đoàn', 'Phó Bí thư', 'Ủy viên BCH', 'Đoàn viên'],
+        'WOMEN' => ['Chi há»™i trÆ°á»Ÿng', 'Chi há»™i phÃ³', 'Tá»• trÆ°á»Ÿng', 'Há»™i viÃªn'],
+        'FARMER' => ['Chi há»™i trÆ°á»Ÿng', 'Chi há»™i phÃ³', 'Tá»• trÆ°á»Ÿng', 'Há»™i viÃªn'],
+        'VETERAN' => ['Chi há»™i trÆ°á»Ÿng', 'Chi há»™i phÃ³', 'Há»™i viÃªn'],
+        'YOUTH' => ['BÃ­ thÆ° Chi Ä‘oÃ n', 'PhÃ³ BÃ­ thÆ°', 'á»¦y viÃªn BCH', 'ÄoÃ n viÃªn'],
     ];
 
     private const STATUS_LABELS = [
-        'ACTIVE' => 'Đang tham gia',
-        'PAUSED' => 'Tạm ngừng',
-        'TRANSFERRED' => 'Chuyển sinh hoạt',
-        'ENDED' => 'Đã thôi tham gia',
-        'DECEASED' => 'Đã mất',
-        'DELETED' => 'Đã xóa',
+        'ACTIVE' => 'Äang tham gia',
+        'PAUSED' => 'Táº¡m ngá»«ng',
+        'TRANSFERRED' => 'Chuyá»ƒn sinh hoáº¡t',
+        'ENDED' => 'ÄÃ£ thÃ´i tham gia',
+        'DECEASED' => 'ÄÃ£ máº¥t',
+        'DELETED' => 'ÄÃ£ xÃ³a',
     ];
 
     public function ensureSchema(): void
@@ -186,8 +186,8 @@ SQL);
             'SELECT o.code, o.name,
                     COUNT(om.id) AS total,
                     COALESCE(SUM(CASE WHEN c.gender="Nam" THEN 1 ELSE 0 END),0) AS male,
-                    COALESCE(SUM(CASE WHEN c.gender="Nữ" THEN 1 ELSE 0 END),0) AS female,
-                    COALESCE(SUM(CASE WHEN p.name IS NOT NULL AND p.name NOT IN ("Hội viên","Đoàn viên") THEN 1 ELSE 0 END),0) AS officer_count,
+                    COALESCE(SUM(CASE WHEN c.gender="Ná»¯" THEN 1 ELSE 0 END),0) AS female,
+                    COALESCE(SUM(CASE WHEN p.name IS NOT NULL AND p.name NOT IN ("Há»™i viÃªn","ÄoÃ n viÃªn") THEN 1 ELSE 0 END),0) AS officer_count,
                     COALESCE(SUM(CASE WHEN om.status="ACTIVE" THEN 1 ELSE 0 END),0) AS active_count
              FROM organizations o
              LEFT JOIN organization_members om ON om.organization_id=o.id AND om.village_id=o.village_id AND om.status <> "DELETED"
@@ -301,7 +301,7 @@ SQL);
     {
         $this->ensureSchema();
         $before = $id ? $this->find($id) : null;
-        if ($id && !$before) throw new RuntimeException('Không tìm thấy hội viên');
+        if ($id && !$before) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™i viÃªn');
         $params = $this->params($data, $userId, $id);
         if ($id) {
             $params['id'] = $id;
@@ -329,7 +329,7 @@ SQL);
     public function endMembership(int $id, array $data, int $userId): array
     {
         $row = $this->find($id);
-        if (!$row) throw new RuntimeException('Không tìm thấy hội viên');
+        if (!$row) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™i viÃªn');
         $input = array_merge($row, [
             'status' => strtoupper(trim((string) ($data['status'] ?? 'ENDED'))),
             'ended_date' => $this->dateValue($data['ended_date'] ?? $data['endedDate'] ?? date('Y-m-d')),
@@ -341,7 +341,7 @@ SQL);
     public function softDelete(int $id, int $userId): void
     {
         $before = $this->find($id);
-        if (!$before) throw new RuntimeException('Không tìm thấy hội viên');
+        if (!$before) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™i viÃªn');
         $this->execute('UPDATE organization_members SET status="DELETED", active_member_key=NULL, deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('organization_members'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
         $after = $before;
         $after['status'] = 'DELETED';
@@ -381,9 +381,9 @@ SQL);
         $filters['pageSize'] = min(1000, max(100, (int) ($filters['pageSize'] ?? 1000)));
         $page = $this->paginate($filters);
         return [
-            'title' => 'Báo cáo Đoàn thể - Chi hội',
+            'title' => 'BÃ¡o cÃ¡o ÄoÃ n thá»ƒ - Chi há»™i',
             'summary' => $this->dashboard($filters),
-            'headers' => ['STT','Tổ chức','Họ và tên','Ngày sinh','Tuổi','Giới tính','Mã hộ','Khu vực','Chức vụ','Ngày tham gia','Trạng thái','Ghi chú'],
+            'headers' => ['STT','Tá»• chá»©c','Há» vÃ  tÃªn','NgÃ y sinh','Tuá»•i','Giá»›i tÃ­nh','MÃ£ há»™','Khu vá»±c','Chá»©c vá»¥','NgÃ y tham gia','Tráº¡ng thÃ¡i','Ghi chÃº'],
             'rows' => array_map(function (array $row, int $index): array {
                 return [
                     $index + 1,
@@ -409,16 +409,16 @@ SQL);
         $organizationId = (int) ($data['organization_id'] ?? $data['organizationId'] ?? 0);
         $organizationCode = strtoupper(trim((string) ($data['organization_code'] ?? $data['organizationCode'] ?? $data['organization'] ?? '')));
         $organization = $organizationId > 0 ? $this->organizationById($organizationId) : $this->organizationByCode($organizationCode);
-        if (!$organization) throw new RuntimeException('Vui lòng chọn tổ chức/chi hội');
+        if (!$organization) throw new RuntimeException('Vui lÃ²ng chá»n tá»• chá»©c/chi há»™i');
         $citizenId = (int) ($data['citizen_id'] ?? $data['person_id'] ?? $data['personId'] ?? $data['citizenId'] ?? 0);
-        if ($citizenId <= 0) throw new RuntimeException('Vui lòng chọn nhân khẩu từ danh sách');
+        if ($citizenId <= 0) throw new RuntimeException('Vui lÃ²ng chá»n nhÃ¢n kháº©u tá»« danh sÃ¡ch');
         $citizen = $this->citizen($citizenId);
-        if (!$citizen) throw new RuntimeException('Không tìm thấy nhân khẩu trong tenant hiện tại');
+        if (!$citizen) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u trong tenant hiá»‡n táº¡i');
         $status = $this->enum((string) ($data['status'] ?? 'ACTIVE'), self::STATUS_LABELS, 'ACTIVE');
         if ($status === 'DELETED') $status = 'ACTIVE';
         $positionId = (int) ($data['position_id'] ?? $data['positionId'] ?? 0);
         if ($positionId > 0 && !$this->positionBelongsToOrganization($positionId, (int) $organization['id'])) {
-            throw new RuntimeException('Chức vụ không thuộc tổ chức đã chọn');
+            throw new RuntimeException('Chá»©c vá»¥ khÃ´ng thuá»™c tá»• chá»©c Ä‘Ã£ chá»n');
         }
         $activeKey = $this->currentStatus($status) ? (string) $citizenId : null;
         if ($activeKey !== null) {
@@ -426,7 +426,7 @@ SQL);
                 'SELECT id FROM organization_members WHERE organization_id=:organization_id AND active_member_key=:active_member_key AND status <> "DELETED" AND ' . $this->tenantWhere('organization_members') . ($id ? ' AND id<>:id' : '') . ' LIMIT 1',
                 $this->withTenant(array_filter(['organization_id' => (int) $organization['id'], 'active_member_key' => $activeKey, 'id' => $id], fn($value) => $value !== null))
             );
-            if ($duplicate) throw new RuntimeException('Nhân khẩu này đã có thông tin đang tham gia tổ chức đã chọn');
+            if ($duplicate) throw new RuntimeException('NhÃ¢n kháº©u nÃ y Ä‘Ã£ cÃ³ thÃ´ng tin Ä‘ang tham gia tá»• chá»©c Ä‘Ã£ chá»n');
         }
         return [
             'organization_id' => (int) $organization['id'],
@@ -519,9 +519,9 @@ SQL);
         $presence = strtoupper((string) ($row['presence_status'] ?? ''));
         $residency = strtoupper((string) ($row['residency_status'] ?? ''));
         if (in_array($citizenStatus, ['DECEASED'], true) || strtoupper((string) ($row['status'] ?? '')) === 'DECEASED') {
-            $warning = 'Hồ sơ nhân khẩu đã mất, cần rà soát tình trạng hội viên';
+            $warning = 'Há»“ sÆ¡ nhÃ¢n kháº©u Ä‘Ã£ máº¥t, cáº§n rÃ  soÃ¡t tÃ¬nh tráº¡ng há»™i viÃªn';
         } elseif (in_array($presence, ['AWAY', 'TEMPORARY_ABSENCE', 'LONG_TERM_ABSENCE'], true) || in_array($residency, ['MOVED_OUT', 'TRANSFERRED_OUT', 'SETTLED_ELSEWHERE'], true)) {
-            $warning = 'Hồ sơ nhân khẩu có biến động cư trú, cần rà soát tình trạng hội viên';
+            $warning = 'Há»“ sÆ¡ nhÃ¢n kháº©u cÃ³ biáº¿n Ä‘á»™ng cÆ° trÃº, cáº§n rÃ  soÃ¡t tÃ¬nh tráº¡ng há»™i viÃªn';
         }
         $status = (string) ($row['status'] ?? 'ACTIVE');
         return [

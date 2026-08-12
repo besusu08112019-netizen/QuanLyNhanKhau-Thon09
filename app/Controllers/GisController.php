@@ -114,7 +114,7 @@ class GisController extends BaseController
             $this->ok($area);
         } catch (Throwable $e) {
             $this->logException('POST /api/gis/areas', $e, $payload);
-            $this->fail('Không lưu được khu vực: ' . $e->getMessage(), 400);
+            $this->fail('KhÃ´ng lÆ°u Ä‘Æ°á»£c khu vá»±c: ' . $e->getMessage(), 400);
         }
     }
 
@@ -130,7 +130,7 @@ class GisController extends BaseController
             $this->ok($area);
         } catch (Throwable $e) {
             $this->logException('PUT /api/gis/areas/' . $id, $e, $payload);
-            $this->fail('Không cập nhật được khu vực: ' . $e->getMessage(), 400);
+            $this->fail('KhÃ´ng cáº­p nháº­t Ä‘Æ°á»£c khu vá»±c: ' . $e->getMessage(), 400);
         }
     }
 
@@ -145,7 +145,7 @@ class GisController extends BaseController
             $this->ok($area);
         } catch (Throwable $e) {
             $this->logException('DELETE /api/gis/areas/' . $id, $e);
-            $this->fail('Không xóa được khu vực: ' . $e->getMessage(), 400);
+            $this->fail('KhÃ´ng xÃ³a Ä‘Æ°á»£c khu vá»±c: ' . $e->getMessage(), 400);
         }
     }
 
@@ -159,7 +159,7 @@ class GisController extends BaseController
             $this->ok($item);
         } catch (Throwable $e) {
             $this->logException('PUT /api/gis/households/' . $id . '/location', $e, $payload);
-            $this->fail('Không lưu được vị trí hộ: ' . $e->getMessage(), 400);
+            $this->fail('KhÃ´ng lÆ°u Ä‘Æ°á»£c vá»‹ trÃ­ há»™: ' . $e->getMessage(), 400);
         }
     }
 
@@ -172,7 +172,7 @@ class GisController extends BaseController
             $this->ok($item ?? ['id' => $id, 'removed' => true]);
         } catch (Throwable $e) {
             $this->logException('DELETE /api/gis/households/' . $id . '/location', $e);
-            $this->fail('Không xóa được vị trí hộ. Vui lòng thử lại hoặc kiểm tra quyền truy cập.', 400);
+            $this->fail('KhÃ´ng xÃ³a Ä‘Æ°á»£c vá»‹ trÃ­ há»™. Vui lÃ²ng thá»­ láº¡i hoáº·c kiá»ƒm tra quyá»n truy cáº­p.', 400);
         }
     }
 
@@ -181,14 +181,14 @@ class GisController extends BaseController
         $user = $this->requirePermission('gis', 'export');
         $data = $this->areasModel()->all();
         $areas = $data['areas'] ?? [];
-        $this->audit($user, 'gis', 'export', 'Xuất báo cáo bản đồ địa bàn', null, ['area_count' => count($areas)]);
+        $this->audit($user, 'gis', 'export', 'Xuáº¥t bÃ¡o cÃ¡o báº£n Ä‘á»“ Ä‘á»‹a bÃ n', null, ['area_count' => count($areas)]);
         $filename = 'ban-do-dia-ban-' . date('Ymd-His') . '.html';
         header('Content-Type: text/html; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
-        echo '<!doctype html><html><head><meta charset="utf-8"><title>Bản đồ địa bàn</title>';
+        echo '<!doctype html><html><head><meta charset="utf-8"><title>Báº£n Ä‘á»“ Ä‘á»‹a bÃ n</title>';
         echo '<style>body{font-family:Arial,sans-serif;color:#0f172a}table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left}th{background:#e2e8f0}.sw{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:6px}</style>';
-        echo '</head><body><h1>Báo cáo bản đồ địa bàn</h1><p>Ngày xuất: ' . date('d/m/Y H:i') . '</p>';
-        echo '<table><thead><tr><th>Khu vực</th><th>Mã</th><th>Màu</th><th>Diện tích (m²)</th><th>Số hộ</th><th>Nhân khẩu</th><th>Ghi chú</th></tr></thead><tbody>';
+        echo '</head><body><h1>BÃ¡o cÃ¡o báº£n Ä‘á»“ Ä‘á»‹a bÃ n</h1><p>NgÃ y xuáº¥t: ' . date('d/m/Y H:i') . '</p>';
+        echo '<table><thead><tr><th>Khu vá»±c</th><th>MÃ£</th><th>MÃ u</th><th>Diá»‡n tÃ­ch (mÂ²)</th><th>Sá»‘ há»™</th><th>NhÃ¢n kháº©u</th><th>Ghi chÃº</th></tr></thead><tbody>';
         foreach ($areas as $area) {
             $stats = $area['stats'] ?? [];
             echo '<tr><td>' . htmlspecialchars((string) $area['name']) . '</td><td>' . htmlspecialchars((string) $area['area_code']) . '</td><td><span class="sw" style="background:' . htmlspecialchars((string) $area['color']) . '"></span>' . htmlspecialchars((string) $area['color']) . '</td><td>' . number_format((float) ($stats['area_m2'] ?? 0)) . '</td><td>' . (int) ($stats['households'] ?? 0) . '</td><td>' . (int) ($stats['citizens'] ?? 0) . '</td><td>' . htmlspecialchars((string) ($area['note'] ?? '')) . '</td></tr>';
@@ -262,7 +262,7 @@ class GisController extends BaseController
             return $data;
         }
         if ($throw) {
-            throw new \RuntimeException('Dữ liệu JSON không hợp lệ');
+            throw new \RuntimeException('Dá»¯ liá»‡u JSON khÃ´ng há»£p lá»‡');
         }
         return [];
     }

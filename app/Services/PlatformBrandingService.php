@@ -88,7 +88,7 @@ final class PlatformBrandingService
         $name = $definition['prefix'] . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(6)) . '.' . $inspection['extension'];
         $target = $dir . '/' . $name;
         if (!move_uploaded_file((string) $file['tmp_name'], $target)) {
-            throw new RuntimeException('Không lưu được file upload');
+            throw new RuntimeException('KhÃ´ng lÆ°u Ä‘Æ°á»£c file upload');
         }
         @chmod($target, 0644);
         return [
@@ -108,13 +108,13 @@ final class PlatformBrandingService
         $definition = $this->definition($type);
         $name = basename($file);
         if ($name !== $file || !preg_match('/^[a-z0-9-]+\.(png|jpg|jpeg|webp|ico)$/i', $name)) {
-            throw new InvalidArgumentException('Asset không hợp lệ');
+            throw new InvalidArgumentException('Asset khÃ´ng há»£p lá»‡');
         }
         $path = $this->assetRoot() . '/' . $definition['folder'] . '/' . $name;
         $base = realpath($this->assetRoot());
         $real = realpath($path);
         if (!$base || !$real || strpos($real, $base) !== 0 || !is_file($real)) {
-            throw new InvalidArgumentException('Không tìm thấy asset');
+            throw new InvalidArgumentException('KhÃ´ng tÃ¬m tháº¥y asset');
         }
         $mime = $this->mimeType($real);
         return ['path' => $real, 'mime' => $mime, 'mtime' => filemtime($real) ?: time()];
@@ -139,7 +139,7 @@ final class PlatformBrandingService
     {
         $type = strtolower(trim($type));
         if (!isset(self::ASSETS[$type])) {
-            throw new InvalidArgumentException('Loại asset không hợp lệ');
+            throw new InvalidArgumentException('Loáº¡i asset khÃ´ng há»£p lá»‡');
         }
         return self::ASSETS[$type];
     }
@@ -147,36 +147,36 @@ final class PlatformBrandingService
     private function inspectImage(array $file, array $definition): array
     {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file((string) ($file['tmp_name'] ?? ''))) {
-            throw new InvalidArgumentException('Vui lòng chọn file ảnh hợp lệ');
+            throw new InvalidArgumentException('Vui lÃ²ng chá»n file áº£nh há»£p lá»‡');
         }
         $size = (int) ($file['size'] ?? 0);
         if ($size <= 0 || $size > (int) $definition['maxBytes']) {
-            throw new InvalidArgumentException('Dung lượng ảnh không hợp lệ');
+            throw new InvalidArgumentException('Dung lÆ°á»£ng áº£nh khÃ´ng há»£p lá»‡');
         }
         $original = basename((string) ($file['name'] ?? ''));
         $extension = strtolower(pathinfo($original, PATHINFO_EXTENSION));
         if ($extension === 'jpeg') $extension = 'jpg';
         if (!in_array($extension, $definition['extensions'], true)) {
-            throw new InvalidArgumentException('Định dạng ảnh không được phép');
+            throw new InvalidArgumentException('Äá»‹nh dáº¡ng áº£nh khÃ´ng Ä‘Æ°á»£c phÃ©p');
         }
         $blocked = ['php', 'phtml', 'phar', 'cgi', 'exe', 'js', 'html', 'htm', 'svg', 'sh', 'bat', 'cmd'];
         if (in_array($extension, $blocked, true)) {
-            throw new InvalidArgumentException('Không cho phép upload file thực thi');
+            throw new InvalidArgumentException('KhÃ´ng cho phÃ©p upload file thá»±c thi');
         }
         $path = (string) $file['tmp_name'];
         $mime = $this->mimeType($path);
         if (!in_array($mime, $definition['mimes'], true)) {
-            throw new InvalidArgumentException('MIME ảnh không hợp lệ');
+            throw new InvalidArgumentException('MIME áº£nh khÃ´ng há»£p lá»‡');
         }
         if ($extension === 'ico') {
             if (!in_array($mime, ['image/x-icon', 'image/vnd.microsoft.icon'], true)) {
-                throw new InvalidArgumentException('Favicon ICO không hợp lệ');
+                throw new InvalidArgumentException('Favicon ICO khÃ´ng há»£p lá»‡');
             }
             return ['mime' => $mime, 'extension' => 'ico', 'width' => 0, 'height' => 0];
         }
         $info = @getimagesize($path);
         if (!$info || (int) ($info[0] ?? 0) < 1 || (int) ($info[1] ?? 0) < 1) {
-            throw new InvalidArgumentException('File không phải ảnh hợp lệ');
+            throw new InvalidArgumentException('File khÃ´ng pháº£i áº£nh há»£p lá»‡');
         }
         return ['mime' => $mime, 'extension' => $extension, 'width' => (int) $info[0], 'height' => (int) $info[1]];
     }
@@ -194,7 +194,7 @@ final class PlatformBrandingService
     private function ensureSafeDirectory(string $dir): void
     {
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
-            throw new RuntimeException('Không tạo được thư mục asset');
+            throw new RuntimeException('KhÃ´ng táº¡o Ä‘Æ°á»£c thÆ° má»¥c asset');
         }
         $root = $this->assetRoot();
         foreach ([$root, $dir] as $path) {

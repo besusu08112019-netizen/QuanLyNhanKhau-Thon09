@@ -83,7 +83,7 @@ final class ReportController extends BaseController
         $type = $this->reportType();
         $this->requireReportSourcePermissions($type, 'export');
         $report = $this->reports->build($type, $this->filters());
-        $this->audit($user, 'report', 'export', 'Xuất Excel báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
+        $this->audit($user, 'report', 'export', 'Xuáº¥t Excel bÃ¡o cÃ¡o ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadExcel($report);
     }
 
@@ -93,7 +93,7 @@ final class ReportController extends BaseController
         $type = $this->reportType();
         $this->requireReportSourcePermissions($type, 'print');
         $report = $this->reports->build($type, $this->filters());
-        $this->audit($user, 'report', 'print', 'In báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
+        $this->audit($user, 'report', 'print', 'In bÃ¡o cÃ¡o ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->ok($report);
     }
 
@@ -103,7 +103,7 @@ final class ReportController extends BaseController
         $type = $this->reportType();
         $this->requireReportSourcePermissions($type, 'export');
         $report = $this->reports->build($type, $this->filters());
-        $this->audit($user, 'report', 'export', 'Xuất PDF báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
+        $this->audit($user, 'report', 'export', 'Xuáº¥t PDF bÃ¡o cÃ¡o ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadPdf($report);
     }
 
@@ -114,7 +114,7 @@ final class ReportController extends BaseController
         $type = $this->reportType();
         $this->requireReportSourcePermissions($type, 'export');
         $report = $this->reports->build($type, $this->filters());
-        $this->audit($user, 'report', 'export', 'Xuất Word báo cáo ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
+        $this->audit($user, 'report', 'export', 'Xuáº¥t Word bÃ¡o cÃ¡o ' . $type, null, ['type' => $type, 'totalRows' => $report['totalRows']]);
         $this->downloadWord($report);
     }
 
@@ -141,7 +141,7 @@ final class ReportController extends BaseController
         $user = $this->requirePermission('report', 'update');
         $input = is_array($this->input()) ? $this->input() : [];
         $template = $this->reports->saveTemplate((int) ($user['id'] ?? 0), $input);
-        $this->audit($user, 'report', 'save_template', 'Lưu mẫu báo cáo', $template['id'] ?? null, ['type' => $template['type'] ?? null]);
+        $this->audit($user, 'report', 'save_template', 'LÆ°u máº«u bÃ¡o cÃ¡o', $template['id'] ?? null, ['type' => $template['type'] ?? null]);
         $this->ok($template);
     }
 
@@ -149,7 +149,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'delete');
         $this->reports->deleteTemplate((int) ($user['id'] ?? 0), (int) $id);
-        $this->audit($user, 'report', 'delete_template', 'Xóa mẫu báo cáo', $id);
+        $this->audit($user, 'report', 'delete_template', 'XÃ³a máº«u bÃ¡o cÃ¡o', $id);
         $this->ok(['deleted' => true, 'id' => (int) $id]);
     }
 
@@ -157,7 +157,7 @@ final class ReportController extends BaseController
     {
         $user = $this->requirePermission('report', 'update');
         $this->reports->setDefaultTemplate((int) ($user['id'] ?? 0), (int) $id);
-        $this->audit($user, 'report', 'default_template', 'Đặt mẫu báo cáo mặc định', $id);
+        $this->audit($user, 'report', 'default_template', 'Äáº·t máº«u bÃ¡o cÃ¡o máº·c Ä‘á»‹nh', $id);
         $this->ok(['default' => true, 'id' => (int) $id]);
     }
 
@@ -314,7 +314,7 @@ final class ReportController extends BaseController
         echo '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{border-collapse:collapse;table-layout:fixed}td,th{border:1px solid #999;padding:6px;word-break:break-word}th{font-weight:bold;background:#eef2f7}</style></head><body>';
         $this->echoReportHeaderHtml($report);
         $this->echoReportMetaHtml($report);
-        echo '<p>Thời gian xuất: ' . date('d/m/Y H:i:s') . '</p>';
+        echo '<p>Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s') . '</p>';
         echo '<table><thead><tr>';
         foreach ($report['headers'] as $header) echo '<th>' . htmlspecialchars((string) $header, ENT_QUOTES, 'UTF-8') . '</th>';
         echo '</tr></thead><tbody>';
@@ -324,7 +324,7 @@ final class ReportController extends BaseController
             echo '</tr>';
         }
         echo '</tbody></table>';
-        $summary = is_array($report['summary'] ?? null) ? $report['summary'] : ['Tổng số dòng' => (int) ($report['totalRows'] ?? 0)];
+        $summary = is_array($report['summary'] ?? null) ? $report['summary'] : ['Tá»•ng sá»‘ dÃ²ng' => (int) ($report['totalRows'] ?? 0)];
         if ($summary) {
             echo '<br><table><tbody>';
             foreach ($summary as $label => $value) {
@@ -359,10 +359,10 @@ final class ReportController extends BaseController
         header('Content-Type: application/msword; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         echo "\xEF\xBB\xBF";
-        echo '<html><head><meta charset="utf-8"><style>@page{size:A4;margin:16mm 14mm 20mm}body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}td,th{border:1px solid #555;padding:6px;vertical-align:top;word-break:break-word}th{background:#eef2f7}</style></head><body>';
+        echo '<html><head><style>@page{size:A4;margin:16mm 14mm 20mm}body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}td,th{border:1px solid #555;padding:6px;vertical-align:top;word-break:break-word}th{background:#eef2f7}</style></head><body>';
         $this->echoReportHeaderHtml($report);
         $this->echoReportMetaHtml($report);
-        echo '<p>Thời gian xuất: ' . date('d/m/Y H:i:s') . '</p><table><thead><tr>';
+        echo '<p>Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s') . '</p><table><thead><tr>';
         foreach ($report['headers'] as $header) echo '<th>' . htmlspecialchars((string) $header, ENT_QUOTES, 'UTF-8') . '</th>';
         echo '</tr></thead><tbody>';
         foreach ($report['rows'] as $row) {
@@ -430,7 +430,7 @@ final class ReportController extends BaseController
         echo '<div class="report-print-agency"><div class="report-print-agency-primary">' . $unitName . '</div><div class="report-print-agency-secondary"></div></div>';
         echo '<div class="report-print-national"><div class="report-print-national-title">C&#7896;NG H&#210;A X&#195; H&#7896;I CH&#7910; NGH&#296;A VI&#7878;T NAM</div><div class="report-print-national-subtitle">&#272;&#7897;c l&#7853;p - T&#7921; do - H&#7841;nh ph&#250;c</div></div>';
         echo '<div></div></div>';
-        echo '<div class="report-print-title">' . htmlspecialchars((string) ($report['title'] ?? 'Báo cáo'), ENT_QUOTES, 'UTF-8') . '</div>';
+        echo '<div class="report-print-title">' . htmlspecialchars((string) ($report['title'] ?? 'BÃ¡o cÃ¡o'), ENT_QUOTES, 'UTF-8') . '</div>';
     }
 
     private function echoReportMetaHtml(array $report): void

@@ -71,15 +71,15 @@ final class User extends BaseModel
         return [
             ['value' => 'SUPER_ADMIN', 'label' => 'Super Admin'],
             ['value' => 'ADMIN', 'label' => 'Admin'],
-            ['value' => 'OFFICER', 'label' => 'Cán bộ'],
-            ['value' => 'VIEWER', 'label' => 'Khách'],
+            ['value' => 'OFFICER', 'label' => 'CÃƒÂ¡n bÃ¡Â»â„¢'],
+            ['value' => 'VIEWER', 'label' => 'KhÃƒÂ¡ch'],
         ];
     }
 
     public function createFirstAdmin(string $email, string $displayName, string $password): array
     {
         if ($this->count() > 0) {
-            throw new RuntimeException('Hệ thống đã có tài khoản quản trị');
+            throw new RuntimeException('HÃ¡Â»â€¡ thÃ¡Â»â€˜ng Ã„â€˜ÃƒÂ£ cÃƒÂ³ tÃƒÂ i khoÃ¡ÂºÂ£n quÃ¡ÂºÂ£n trÃ¡Â»â€¹');
         }
 
         $email = $this->normalizeEmail($email);
@@ -163,10 +163,10 @@ final class User extends BaseModel
         $actorId = (int) $actorUser['id'];
         $user = $this->findById($id);
         if (!$user) {
-            throw new RuntimeException('Không tìm thấy người dùng');
+            throw new RuntimeException('KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y ngÃ†Â°Ã¡Â»Âi dÃƒÂ¹ng');
         }
         if ($user['role'] === 'SUPER_ADMIN' && !$this->actorIsSuperAdmin($actorUser)) {
-            throw new RuntimeException('Không sửa tài khoản Super Admin');
+            throw new RuntimeException('KhÃƒÂ´ng sÃ¡Â»Â­a tÃƒÂ i khoÃ¡ÂºÂ£n Super Admin');
         }
 
         $sets = ['display_name=:display_name', 'role=:role', 'updated_by=:actor'];
@@ -228,10 +228,10 @@ final class User extends BaseModel
     {
         $user = $this->findById($id);
         if (!$user) {
-            throw new RuntimeException('Không tìm thấy người dùng');
+            throw new RuntimeException('KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y ngÃ†Â°Ã¡Â»Âi dÃƒÂ¹ng');
         }
         if ($user['role'] === 'SUPER_ADMIN') {
-            throw new RuntimeException('Không xóa tài khoản Super Admin');
+            throw new RuntimeException('KhÃƒÂ´ng xÃƒÂ³a tÃƒÂ i khoÃ¡ÂºÂ£n Super Admin');
         }
 
         $this->execute('UPDATE users SET status="DELETED", deleted_at=NOW(), deleted_by=:actor WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $id, 'actor' => $actorId]));
@@ -251,10 +251,10 @@ final class User extends BaseModel
     {
         $user = $this->findById($id);
         if (!$user) {
-            throw new RuntimeException('Không tìm thấy người dùng');
+            throw new RuntimeException('KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y ngÃ†Â°Ã¡Â»Âi dÃƒÂ¹ng');
         }
         if ($user['role'] === 'SUPER_ADMIN') {
-            throw new RuntimeException('Không đổi mật khẩu tài khoản Super Admin');
+            throw new RuntimeException('KhÃƒÂ´ng Ã„â€˜Ã¡Â»â€¢i mÃ¡ÂºÂ­t khÃ¡ÂºÂ©u tÃƒÂ i khoÃ¡ÂºÂ£n Super Admin');
         }
 
         $this->assertPasswordPolicy($password);
@@ -471,7 +471,7 @@ final class User extends BaseModel
     {
         $length = strlen($password);
         if ($length < 8 || $length > 1024) {
-            throw new RuntimeException('Mật khẩu tối thiểu 8 ký tự');
+            throw new RuntimeException('MÃ¡ÂºÂ­t khÃ¡ÂºÂ©u tÃ¡Â»â€˜i thiÃ¡Â»Æ’u 8 kÃƒÂ½ tÃ¡Â»Â±');
         }
     }
 
@@ -479,10 +479,10 @@ final class User extends BaseModel
     {
         $user = $this->findById($id);
         if (!$user) {
-            throw new RuntimeException('Không tìm thấy người dùng');
+            throw new RuntimeException('KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y ngÃ†Â°Ã¡Â»Âi dÃƒÂ¹ng');
         }
         if ($user['role'] === 'SUPER_ADMIN') {
-            throw new RuntimeException('Không khóa tài khoản Super Admin');
+            throw new RuntimeException('KhÃƒÂ´ng khÃƒÂ³a tÃƒÂ i khoÃ¡ÂºÂ£n Super Admin');
         }
 
         $this->execute('UPDATE users SET status=:status, updated_by=:actor WHERE id=:id AND ' . $this->tenantWhere('users'), $this->withTenant(['id' => $id, 'status' => $status, 'actor' => $actorId]));
@@ -492,7 +492,7 @@ final class User extends BaseModel
     {
         $key = strtoupper(trim($role));
         if (!isset(self::ROLE_ALIASES[$key])) {
-            throw new RuntimeException('Vai trò không hợp lệ');
+            throw new RuntimeException('Vai trÃƒÂ² khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡');
         }
         return self::ROLE_ALIASES[$key];
     }
@@ -506,11 +506,11 @@ final class User extends BaseModel
     {
         if (is_array($actor)) {
             if (!empty($actor['id'])) return $actor;
-            throw new RuntimeException('Người thực hiện không hợp lệ');
+            throw new RuntimeException('NgÃ†Â°Ã¡Â»Âi thÃ¡Â»Â±c hiÃ¡Â»â€¡n khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡');
         }
 
         $user = $this->findById($actor);
-        if (!$user) throw new RuntimeException('Người thực hiện không hợp lệ');
+        if (!$user) throw new RuntimeException('NgÃ†Â°Ã¡Â»Âi thÃ¡Â»Â±c hiÃ¡Â»â€¡n khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡');
         return $user;
     }
 
@@ -526,7 +526,7 @@ final class User extends BaseModel
             || in_array($nextRole, $protectedRoles, true);
 
         if ($touchesProtectedRole && !$this->actorIsSuperAdmin($actor)) {
-            throw new RuntimeException('Chỉ tài khoản Super Admin mới được cấp hoặc thay đổi quyền quản trị');
+            throw new RuntimeException('ChÃ¡Â»â€° tÃƒÂ i khoÃ¡ÂºÂ£n Super Admin mÃ¡Â»â€ºi Ã„â€˜Ã†Â°Ã¡Â»Â£c cÃ¡ÂºÂ¥p hoÃ¡ÂºÂ·c thay Ã„â€˜Ã¡Â»â€¢i quyÃ¡Â»Ân quÃ¡ÂºÂ£n trÃ¡Â»â€¹');
         }
     }
 
@@ -539,7 +539,7 @@ final class User extends BaseModel
     {
         $status = strtoupper(trim((string) ($data['status'] ?? $default)));
         if (!in_array($status, self::STATUSES, true)) {
-            throw new RuntimeException('Trạng thái không hợp lệ');
+            throw new RuntimeException('TrÃ¡ÂºÂ¡ng thÃƒÂ¡i khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡');
         }
         return $status;
     }
@@ -590,21 +590,21 @@ final class User extends BaseModel
     private function validateUsername(string $username): void
     {
         if (!preg_match('/^[a-z0-9._-]{3,60}$/', $username)) {
-            throw new RuntimeException('Tên đăng nhập không hợp lệ');
+            throw new RuntimeException('TÃƒÂªn Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡');
         }
     }
 
     private function validateEmail(string $email): void
     {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new RuntimeException('Email không hợp lệ');
+            throw new RuntimeException('Email khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡');
         }
     }
 
     private function validateDisplayName(string $name): void
     {
         if ($name === '') {
-            throw new RuntimeException('Họ tên là bắt buộc');
+            throw new RuntimeException('HÃ¡Â»Â tÃƒÂªn lÃƒÂ  bÃ¡ÂºÂ¯t buÃ¡Â»â„¢c');
         }
     }
 
@@ -617,7 +617,7 @@ final class User extends BaseModel
             $params['id'] = $ignoreId;
         }
         if ($this->fetchOne('SELECT id FROM users WHERE ' . $where . ' LIMIT 1', $params)) {
-            throw new RuntimeException('Email đã tồn tại');
+            throw new RuntimeException('Email Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i');
         }
     }
 
@@ -633,7 +633,7 @@ final class User extends BaseModel
             $params['id'] = $ignoreId;
         }
         if ($this->fetchOne('SELECT id FROM users WHERE ' . $where . ' LIMIT 1', $params)) {
-            throw new RuntimeException('Tên đăng nhập đã tồn tại');
+            throw new RuntimeException('TÃƒÂªn Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i');
         }
     }
 
@@ -644,12 +644,12 @@ final class User extends BaseModel
 
         if ($driverCode === 1062 || str_contains($driverMessage, 'duplicate')) {
             if (str_contains($driverMessage, 'username')) {
-                throw new RuntimeException('Tên đăng nhập đã tồn tại', 0, $e);
+                throw new RuntimeException('TÃƒÂªn Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i', 0, $e);
             }
             if (str_contains($driverMessage, 'email')) {
-                throw new RuntimeException('Email đã tồn tại', 0, $e);
+                throw new RuntimeException('Email Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i', 0, $e);
             }
-            throw new RuntimeException('Dữ liệu đã tồn tại', 0, $e);
+            throw new RuntimeException('DÃ¡Â»Â¯ liÃ¡Â»â€¡u Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i', 0, $e);
         }
 
         throw $e;

@@ -27,7 +27,7 @@ final class ControlCenterAuthController extends BaseController
                 (string) $this->input('username', $this->input('email', '')),
                 (string) $this->input('password', '')
             );
-            $this->audit->write($this->actor($result['user']), 'auth.login', (int) ($result['user']['unitId'] ?? 0), 'Đăng nhập Community Control Center');
+            $this->audit->write($this->actor($result['user']), 'auth.login', (int) ($result['user']['unitId'] ?? 0), 'ÄÄƒng nháº­p Community Control Center');
             $this->ok($result);
         } catch (RuntimeException $e) {
             Response::error($e->getMessage(), 401);
@@ -48,7 +48,7 @@ final class ControlCenterAuthController extends BaseController
         $token = (string) $this->request->bearerToken();
         $this->verifyCsrfToken($token);
         $result = $this->service->logout($token);
-        $this->audit->write(null, 'auth.logout', null, 'Đăng xuất Community Control Center');
+        $this->audit->write(null, 'auth.logout', null, 'ÄÄƒng xuáº¥t Community Control Center');
         $this->ok($result);
     }
 
@@ -57,7 +57,7 @@ final class ControlCenterAuthController extends BaseController
         $submitted = (string) $this->request->header('x-csrf-token', '');
         $expected = $token !== '' ? $this->service->csrfToken($token) : '';
         if ($submitted === '' || $expected === '' || !hash_equals($expected, $submitted)) {
-            Response::error('CSRF token không hợp lệ', 419);
+            Response::error('CSRF token khÃ´ng há»£p lá»‡', 419);
         }
     }
 

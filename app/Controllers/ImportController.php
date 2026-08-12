@@ -32,7 +32,7 @@ final class ImportController extends BaseController
             default => 'Mau_Import_NhanKhau.xlsx',
         };
         $path = BASE_PATH . '/sample-data/' . $fileName;
-        if (!is_file($path)) throw new \RuntimeException('Chưa có file mẫu Import Excel: ' . $fileName);
+        if (!is_file($path)) throw new \RuntimeException('ChÆ°a cÃ³ file máº«u Import Excel: ' . $fileName);
         while (ob_get_level() > 0) ob_end_clean();
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
@@ -48,7 +48,7 @@ final class ImportController extends BaseController
         $type = $this->type();
         $rows = $this->readRows($type);
         $result = $this->validateRows($type, $rows);
-        $this->audit($user, 'import', 'read', 'Kiểm tra file import', null, ['type' => $type, 'total' => count($rows), 'errors' => count($result['errors']), 'warnings' => count($result['warnings'] ?? [])]);
+        $this->audit($user, 'import', 'read', 'Kiá»ƒm tra file import', null, ['type' => $type, 'total' => count($rows), 'errors' => count($result['errors']), 'warnings' => count($result['warnings'] ?? [])]);
         $this->ok($result + ['type' => $type]);
     }
 
@@ -68,7 +68,7 @@ final class ImportController extends BaseController
 
         if (!empty($errors)) {
             $payload = ['type' => $type, 'total' => count($rows), 'success' => 0, 'skipped' => 0, 'failed' => count($errors), 'rolledBack' => false, 'warnings' => $result['warnings'] ?? [], 'errors' => $errors];
-            $this->audit($user, 'import', 'import', 'Import dữ liệu không hợp lệ', null, $payload, 'WARN');
+            $this->audit($user, 'import', 'import', 'Import dá»¯ liá»‡u khÃ´ng há»£p lá»‡', null, $payload, 'WARN');
             $this->ok($payload);
             return;
         }
@@ -139,21 +139,21 @@ final class ImportController extends BaseController
 
         $payload = ['type' => $type, 'total' => count($rows), 'success' => $success, 'skipped' => $skipped, 'failed' => count($errors), 'rolledBack' => $rolledBack, 'warnings' => $result['warnings'] ?? [], 'errors' => $errors];
         if ($type === 'person') $payload['relationshipInferred'] = $relationshipInferenceUpdated;
-        $this->audit($user, 'import', 'import', 'Import dữ liệu', null, $payload, count($errors) ? 'WARN' : 'INFO');
+        $this->audit($user, 'import', 'import', 'Import dá»¯ liá»‡u', null, $payload, count($errors) ? 'WARN' : 'INFO');
         $this->ok($payload);
     }
 
     private function type(): string
     {
         $type = (string) ($_POST['type'] ?? $this->input('type', 'household'));
-        if (!in_array($type, ['household', 'person'], true)) throw new \RuntimeException('Loại dữ liệu import không hợp lệ');
+        if (!in_array($type, ['household', 'person'], true)) throw new \RuntimeException('Loáº¡i dá»¯ liá»‡u import khÃ´ng há»£p lá»‡');
         return $type;
     }
 
     private function readRows(string $type): array
     {
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
-            $this->fail('Vui lòng chọn file CSV hoặc XLSX', 422);
+            $this->fail('Vui lÃ²ng chá»n file CSV hoáº·c XLSX', 422);
         }
         if (($_FILES['file']['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
             throw new \RuntimeException('Invalid import upload');
@@ -165,13 +165,13 @@ final class ImportController extends BaseController
         $mime = mime_content_type($_FILES['file']['tmp_name']) ?: 'application/octet-stream';
         if (str_ends_with($name, '.csv') && in_array($mime, ['text/plain','text/csv','application/csv','application/vnd.ms-excel'], true)) return $this->readCsv($_FILES['file']['tmp_name']);
         if (str_ends_with($name, '.xlsx') && in_array($mime, ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/zip'], true)) return $this->readXlsx($_FILES['file']['tmp_name'], $type);
-        throw new \RuntimeException('Chỉ hỗ trợ file CSV hoặc XLSX');
+        throw new \RuntimeException('Chá»‰ há»— trá»£ file CSV hoáº·c XLSX');
     }
 
     private function readCsv(string $path): array
     {
         $handle = fopen($path, 'rb');
-        if (!$handle) throw new \RuntimeException('Không đọc được file CSV');
+        if (!$handle) throw new \RuntimeException('KhÃ´ng Ä‘á»c Ä‘Æ°á»£c file CSV');
         $firstLine = fgets($handle) ?: '';
         rewind($handle);
         $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
@@ -190,16 +190,16 @@ final class ImportController extends BaseController
 
     private function readXlsx(string $path, string $importType): array
     {
-        if (!class_exists('ZipArchive')) throw new \RuntimeException('Hosting chưa bật ZipArchive để đọc file XLSX');
+        if (!class_exists('ZipArchive')) throw new \RuntimeException('Hosting chÆ°a báº­t ZipArchive Ä‘á»ƒ Ä‘á»c file XLSX');
         $zip = new \ZipArchive();
-        if ($zip->open($path) !== true) throw new \RuntimeException('Không mở được file XLSX');
+        if ($zip->open($path) !== true) throw new \RuntimeException('KhÃ´ng má»Ÿ Ä‘Æ°á»£c file XLSX');
         $worksheetName = $this->worksheetName($zip, $importType);
         $this->assertZipEntrySafe($zip, $worksheetName, 15 * 1024 * 1024);
         $this->assertZipEntrySafe($zip, 'xl/sharedStrings.xml', 10 * 1024 * 1024, false);
         $shared = $this->sharedStrings($zip);
         $xml = $zip->getFromName($worksheetName);
         $zip->close();
-        if ($xml === false) throw new \RuntimeException('File XLSX chưa có sheet dữ liệu đầu tiên');
+        if ($xml === false) throw new \RuntimeException('File XLSX chÆ°a cÃ³ sheet dá»¯ liá»‡u Ä‘áº§u tiÃªn');
         if (strlen($xml) > 15 * 1024 * 1024) throw new \RuntimeException('XLSX worksheet is too large');
         $sheet = simplexml_load_string($this->stripSpreadsheetNamespaces($xml), 'SimpleXMLElement', LIBXML_NONET);
         $matrix = [];
@@ -343,14 +343,14 @@ final class ImportController extends BaseController
     {
         $stat = $zip->statName($name);
         if ($stat === false) {
-            if ($required) throw new \RuntimeException('File XLSX thiếu thành phần dữ liệu bắt buộc');
+            if ($required) throw new \RuntimeException('File XLSX thiáº¿u thÃ nh pháº§n dá»¯ liá»‡u báº¯t buá»™c');
             return;
         }
 
         $size = (int) ($stat['size'] ?? 0);
         $compressed = max(1, (int) ($stat['comp_size'] ?? 1));
         if ($size <= 0 || $size > $maxSize || ($size / $compressed) > 100) {
-            throw new \RuntimeException('File XLSX có kích thước giải nén không an toàn');
+            throw new \RuntimeException('File XLSX cÃ³ kÃ­ch thÆ°á»›c giáº£i nÃ©n khÃ´ng an toÃ n');
         }
     }
 
@@ -396,41 +396,41 @@ final class ImportController extends BaseController
             $developmentMatches = $this->developmentDataMatches($data);
             if ($developmentMatches) {
                 foreach ($developmentMatches as $match) {
-                    $messages[] = 'Du lieu QA/UAT/TEST/DEMO khong duoc phep trong production: ' . ($match['field'] ?? '') . ' = ' . ($match['marker'] ?? '');
+                    $messages[] = 'D? li?u QA/UAT/TEST/DEMO kh?ng ???c ph?p trong production: ' . ($match['field'] ?? '') . ' = ' . ($match['marker'] ?? '');
                 }
             }
 
             if ($type === 'household') {
-                foreach (['householdCode' => 'Mã hộ', 'address' => 'Địa chỉ'] as $field => $label) {
-                    if (!array_key_exists($field, $raw)) $messages[] = 'Thiếu cột ' . $label;
+                foreach (['householdCode' => 'MÃ£ há»™', 'address' => 'Äá»‹a chá»‰'] as $field => $label) {
+                    if (!array_key_exists($field, $raw)) $messages[] = 'Thiáº¿u cá»™t ' . $label;
                 }
-                if (empty($data['householdCode'])) $messages[] = 'Thiếu Mã hộ';
-                if (empty($data['address'])) $messages[] = 'Thiếu Địa chỉ';
-                if ($data['phone'] !== '' && !$this->validPhone($data['phone'])) $messages[] = 'Số điện thoại không hợp lệ';
+                if (empty($data['householdCode'])) $messages[] = 'Thiáº¿u MÃ£ há»™';
+                if (empty($data['address'])) $messages[] = 'Thiáº¿u Äá»‹a chá»‰';
+                if ($data['phone'] !== '' && !$this->validPhone($data['phone'])) $messages[] = 'Sá»‘ Ä‘iá»‡n thoáº¡i khÃ´ng há»£p lá»‡';
                 if ($data['householdCode'] !== '') {
-                    if (isset($seenHouseholds[$data['householdCode']])) $messages[] = 'Trùng Mã hộ trong file';
+                    if (isset($seenHouseholds[$data['householdCode']])) $messages[] = 'TrÃ¹ng MÃ£ há»™ trong file';
                     $seenHouseholds[$data['householdCode']] = true;
-                    if ($this->households->findByCode($data['householdCode'])) $warnings[] = ['row' => $item['row'], 'message' => 'Mã hộ đã tồn tại, hệ thống sẽ bỏ qua hoặc cập nhật theo chế độ đã chọn'];
+                    if ($this->households->findByCode($data['householdCode'])) $warnings[] = ['row' => $item['row'], 'message' => 'MÃ£ há»™ Ä‘Ã£ tá»“n táº¡i, há»‡ thá»‘ng sáº½ bá» qua hoáº·c cáº­p nháº­t theo cháº¿ Ä‘á»™ Ä‘Ã£ chá»n'];
                 }
             } else {
-                foreach (['householdCode' => 'Mã hộ', 'fullName' => 'Họ tên', 'dateOfBirth' => 'Ngày sinh'] as $field => $label) {
-                    if (!array_key_exists($field, $raw)) $messages[] = 'Thiếu cột ' . $label;
+                foreach (['householdCode' => 'MÃ£ há»™', 'fullName' => 'Há» tÃªn', 'dateOfBirth' => 'NgÃ y sinh'] as $field => $label) {
+                    if (!array_key_exists($field, $raw)) $messages[] = 'Thiáº¿u cá»™t ' . $label;
                 }
-                if (empty($data['householdCode'])) $messages[] = 'Thiếu Mã hộ';
-                if (empty($data['fullName'])) $messages[] = 'Thiếu Họ và tên';
-                if (empty($data['dateOfBirth'])) $messages[] = 'Ngày sinh không hợp lệ';
-                if ($data['identityNumber'] !== '' && !$this->validIdentity($data['identityNumber'])) $messages[] = 'CCCD phải gồm 9 hoặc 12 chữ số';
-                if ($data['phone'] !== '' && !$this->validPhone($data['phone'])) $messages[] = 'Số điện thoại không hợp lệ';
-                if ($data['householdCode'] !== '' && !$this->households->findByCode($data['householdCode'])) $messages[] = 'Mã hộ chưa tồn tại trong hệ thống';
+                if (empty($data['householdCode'])) $messages[] = 'Thiáº¿u MÃ£ há»™';
+                if (empty($data['fullName'])) $messages[] = 'Thiáº¿u Há» vÃ  tÃªn';
+                if (empty($data['dateOfBirth'])) $messages[] = 'NgÃ y sinh khÃ´ng há»£p lá»‡';
+                if ($data['identityNumber'] !== '' && !$this->validIdentity($data['identityNumber'])) $messages[] = 'CCCD pháº£i gá»“m 9 hoáº·c 12 chá»¯ sá»‘';
+                if ($data['phone'] !== '' && !$this->validPhone($data['phone'])) $messages[] = 'Sá»‘ Ä‘iá»‡n thoáº¡i khÃ´ng há»£p lá»‡';
+                if ($data['householdCode'] !== '' && !$this->households->findByCode($data['householdCode'])) $messages[] = 'MÃ£ há»™ chÆ°a tá»“n táº¡i trong há»‡ thá»‘ng';
                 if ($data['citizenCode'] !== '') {
-                    if (isset($seenCitizenCodes[$data['citizenCode']])) $messages[] = 'Trùng Mã nhân khẩu trong file';
+                    if (isset($seenCitizenCodes[$data['citizenCode']])) $messages[] = 'TrÃ¹ng MÃ£ nhÃ¢n kháº©u trong file';
                     $seenCitizenCodes[$data['citizenCode']] = true;
-                    if ($this->citizenCodeExists($data['citizenCode'])) $warnings[] = ['row' => $item['row'], 'message' => 'Mã nhân khẩu đã tồn tại trong hệ thống'];
+                    if ($this->citizenCodeExists($data['citizenCode'])) $warnings[] = ['row' => $item['row'], 'message' => 'MÃ£ nhÃ¢n kháº©u Ä‘Ã£ tá»“n táº¡i trong há»‡ thá»‘ng'];
                 }
                 if ($data['identityNumber'] !== '') {
-                    if (isset($seenIdentities[$data['identityNumber']])) $messages[] = 'Trùng CCCD trong file';
+                    if (isset($seenIdentities[$data['identityNumber']])) $messages[] = 'TrÃ¹ng CCCD trong file';
                     $seenIdentities[$data['identityNumber']] = true;
-                    if ($this->citizens->findByIdentity($data['identityNumber'])) $warnings[] = ['row' => $item['row'], 'message' => 'CCCD đã tồn tại, hệ thống sẽ cập nhật nhân khẩu tương ứng'];
+                    if ($this->citizens->findByIdentity($data['identityNumber'])) $warnings[] = ['row' => $item['row'], 'message' => 'CCCD Ä‘Ã£ tá»“n táº¡i, há»‡ thá»‘ng sáº½ cáº­p nháº­t nhÃ¢n kháº©u tÆ°Æ¡ng á»©ng'];
                 }
             }
 
@@ -499,8 +499,8 @@ final class ImportController extends BaseController
             'fatherName' => trim((string) ($data['fatherName'] ?? '')),
             'motherName' => trim((string) ($data['motherName'] ?? '')),
             'ethnicity' => $data['ethnicity'] ?? 'Kinh',
-            'religion' => $data['religion'] ?? 'Không',
-            'maritalStatus' => $data['maritalStatus'] ?? 'Khác',
+            'religion' => $data['religion'] ?? 'KhÃ´ng',
+            'maritalStatus' => $data['maritalStatus'] ?? 'KhÃ¡c',
             'residency_status' => $this->residencyValue((string) ($data['residency_status'] ?? 'PERMANENT')),
             'presenceStatus' => $this->presenceValue((string) ($data['presenceStatus'] ?? 'AT_HOME')),
             'status' => $this->lifeValue((string) ($data['status'] ?? 'ALIVE')),

@@ -53,10 +53,10 @@ CREATE TABLE IF NOT EXISTS village_document_attachments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO document_categories (code, name, sort_order) VALUES
-  ('notice', 'Thông báo', 10),
-  ('decision', 'Quyết định', 20),
-  ('official_dispatch', 'Công văn', 30),
-  ('plan', 'Kế hoạch', 40),
-  ('report', 'Báo cáo', 50),
-  ('minutes', 'Biên bản', 60)
+  ('notice', 'ThÃ´ng bÃ¡o', 10),
+  ('decision', 'Quyáº¿t Ä‘á»‹nh', 20),
+  ('official_dispatch', 'CÃ´ng vÄƒn', 30),
+  ('plan', 'Káº¿ hoáº¡ch', 40),
+  ('report', 'BÃ¡o cÃ¡o', 50),
+  ('minutes', 'BiÃªn báº£n', 60)
 ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1;

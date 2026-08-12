@@ -145,18 +145,18 @@ CREATE TABLE IF NOT EXISTS complaint_assignments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO complaint_categories (code, name, sort_order) VALUES
-('security','An ninh trật tự',10),('environment','Vệ sinh môi trường',20),('electricity','Điện',30),('water','Nước',40),
-('traffic','Giao thông',50),('land','Đất đai',60),('construction','Xây dựng',70),('noise','Tiếng ồn',80),
-('pets','Vật nuôi',90),('policy','Chính sách',100),('poor_household','Hộ nghèo',110),('other','Khác',120)
+('security','An ninh tráº­t tá»±',10),('environment','Vá»‡ sinh mÃ´i trÆ°á»ng',20),('electricity','Äiá»‡n',30),('water','NÆ°á»›c',40),
+('traffic','Giao thÃ´ng',50),('land','Äáº¥t Ä‘ai',60),('construction','XÃ¢y dá»±ng',70),('noise','Tiáº¿ng á»“n',80),
+('pets','Váº­t nuÃ´i',90),('policy','ChÃ­nh sÃ¡ch',100),('poor_household','Há»™ nghÃ¨o',110),('other','KhÃ¡c',120)
 ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1;
 
 INSERT INTO complaint_priorities (code, name, sort_order) VALUES
-('URGENT','Khẩn cấp',10),('HIGH','Cao',20),('NORMAL','Bình thường',30),('LOW','Thấp',40)
+('URGENT','Kháº©n cáº¥p',10),('HIGH','Cao',20),('NORMAL','BÃ¬nh thÆ°á»ng',30),('LOW','Tháº¥p',40)
 ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1;
 
 INSERT INTO complaint_statuses (code, name, marker_color, is_terminal, sort_order) VALUES
-('NEW','Mới tiếp nhận','red',0,10),('VERIFYING','Đang xác minh','yellow',0,20),('PROCESSING','Đang xử lý','yellow',0,30),
-('DONE','Đã hoàn thành','green',1,40),('ESCALATED','Đã chuyển cấp trên','yellow',1,50),('REJECTED','Không đủ điều kiện xử lý','red',1,60)
+('NEW','Má»›i tiáº¿p nháº­n','red',0,10),('VERIFYING','Äang xÃ¡c minh','yellow',0,20),('PROCESSING','Äang xá»­ lÃ½','yellow',0,30),
+('DONE','ÄÃ£ hoÃ n thÃ nh','green',1,40),('ESCALATED','ÄÃ£ chuyá»ƒn cáº¥p trÃªn','yellow',1,50),('REJECTED','KhÃ´ng Ä‘á»§ Ä‘iá»u kiá»‡n xá»­ lÃ½','red',1,60)
 ON DUPLICATE KEY UPDATE name=VALUES(name), marker_color=VALUES(marker_color), is_terminal=VALUES(is_terminal), sort_order=VALUES(sort_order), is_active=1;
 
 ALTER TABLE complaint_links MODIFY target_id BIGINT UNSIGNED NOT NULL DEFAULT 0;

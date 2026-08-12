@@ -5,17 +5,20 @@ namespace App\Controllers;
 use App\Core\BaseController;
 use App\Core\Database;
 use App\Models\Household;
+use App\Models\ProfileSummary;
 use App\Services\PopulationMovementService;
 
 final class HouseholdController extends BaseController
 {
     private Household $households;
+    private ProfileSummary $summary;
     private PopulationMovementService $movementService;
 
     public function __construct($request)
     {
         parent::__construct($request);
         $this->households = new Household();
+        $this->summary = new ProfileSummary();
         $this->movementService = new PopulationMovementService();
     }
 
@@ -38,18 +41,21 @@ final class HouseholdController extends BaseController
     {
         $this->requirePermission('household', 'read');
         $row = $this->households->find((int) $id);
-        $row ? $this->ok($row) : $this->fail('Không tìm thấy hộ dân', 404);
+        if ($row) {
+            $row['related_summary'] = $this->summary->household((int) $id);
+        }
+        $row ? $this->ok($row) : $this->fail('KhÃ´ng tÃ¬m tháº¥y há»™ dÃ¢n', 404);
     }
 
     public function store(): void
     {
         $user = $this->requirePermission('household', 'create');
         $input = $this->input();
-        $this->requireInputFields((array) $input, ['householdCode' => 'Mã hộ', 'headCitizenName' => 'Tên chủ hộ', 'address' => 'Địa chỉ']);
+        $this->requireInputFields((array) $input, ['householdCode' => 'MÃ£ há»™', 'headCitizenName' => 'TÃªn chá»§ há»™', 'address' => 'Äá»‹a chá»‰']);
         $row = $this->households->create($input, (int) $user['id']);
         $this->movementService->afterHouseholdCreated($row, $input, (int) $user['id']);
         $row = $this->households->find((int) $row['id']) ?: $row;
-        $this->audit($user, 'household', 'create', 'Tạo hộ dân', $row['id'], ['before' => null, 'after' => $row]);
+        $this->audit($user, 'household', 'create', 'Táº¡o há»™ dÃ¢n', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -57,12 +63,12 @@ final class HouseholdController extends BaseController
     {
         $user = $this->requirePermission('household', 'update');
         $before = $this->households->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy hộ dân', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y há»™ dÃ¢n', 404);
         $input = $this->input();
         $row = $this->households->update((int) $id, $input, (int) $user['id']);
         $this->movementService->afterHouseholdUpdated($before, $row, $input, (int) $user['id']);
         $row = $this->households->find((int) $id) ?: $row;
-        $this->audit($user, 'household', 'update', 'Cập nhật hộ dân và ghi biến động dân cư', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'household', 'update', 'Cáº­p nháº­t há»™ dÃ¢n vÃ  ghi biáº¿n Ä‘á»™ng dÃ¢n cÆ°', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -70,7 +76,7 @@ final class HouseholdController extends BaseController
     {
         $user = $this->requirePermission('household', 'delete');
         $before = $this->households->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy hộ dân', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y há»™ dÃ¢n', 404);
 
         $db = Database::pdo();
         $db->beginTransaction();
@@ -79,13 +85,13 @@ final class HouseholdController extends BaseController
             $after = $this->households->find((int) $id) ?: $before;
             $movementAfter = $after;
             $movementAfter['status'] = 'ENDED';
-            $this->movementService->afterHouseholdUpdated($before, $movementAfter, $this->input() + ['reason' => 'Kết thúc hộ'], (int) $user['id']);
+            $this->movementService->afterHouseholdUpdated($before, $movementAfter, $this->input() + ['reason' => 'Káº¿t thÃºc há»™'], (int) $user['id']);
             $db->commit();
         } catch (\Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             throw $e;
         }
-        $this->audit($user, 'household', 'delete', 'Kết thúc hộ dân', $id, ['before' => $before, 'after' => $after ?? null]);
+        $this->audit($user, 'household', 'delete', 'Káº¿t thÃºc há»™ dÃ¢n', $id, ['before' => $before, 'after' => $after ?? null]);
         $this->ok(['id' => (int) $id]);
     }
 
@@ -93,7 +99,7 @@ final class HouseholdController extends BaseController
     {
         $user = $this->requirePermission('household', 'delete');
         $ids = array_values(array_unique(array_filter(array_map('intval', (array) $this->input('ids', [])), fn($id) => $id > 0)));
-        if (!$ids) $this->fail('Chưa chọn hộ gia đình cần kết thúc', 400);
+        if (!$ids) $this->fail('ChÆ°a chá»n há»™ gia Ä‘Ã¬nh cáº§n káº¿t thÃºc', 400);
 
         $db = Database::pdo();
         $deleted = 0;
@@ -101,12 +107,12 @@ final class HouseholdController extends BaseController
         try {
             foreach ($ids as $id) {
                 $before = $this->households->find($id);
-                if (!$before) throw new \RuntimeException('Không tìm thấy hộ dân ID ' . $id);
+                if (!$before) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™ dÃ¢n ID ' . $id);
                 $this->households->softDelete($id, (int) $user['id']);
                 $after = $this->households->find($id) ?: $before;
                 $movementAfter = $after;
                 $movementAfter['status'] = 'ENDED';
-                $this->movementService->afterHouseholdUpdated($before, $movementAfter, ['reason' => 'Kết thúc hộ hàng loạt'], (int) $user['id']);
+                $this->movementService->afterHouseholdUpdated($before, $movementAfter, ['reason' => 'Káº¿t thÃºc há»™ hÃ ng loáº¡t'], (int) $user['id']);
                 $deleted++;
             }
             $db->commit();
@@ -115,7 +121,7 @@ final class HouseholdController extends BaseController
             throw $e;
         }
 
-        $this->audit($user, 'household', 'delete', 'Kết thúc hàng loạt hộ gia đình', null, ['ids' => $ids, 'deleted' => $deleted, 'before' => 'bulk_households']);
+        $this->audit($user, 'household', 'delete', 'Káº¿t thÃºc hÃ ng loáº¡t há»™ gia Ä‘Ã¬nh', null, ['ids' => $ids, 'deleted' => $deleted, 'before' => 'bulk_households']);
         $this->ok(['success' => $deleted, 'errors' => []]);
     }
 }

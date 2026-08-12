@@ -31,6 +31,11 @@ final class SimplePdf
         $this->y -= 20;
     }
 
+    public function useLandscape(): void
+    {
+        // Kept for report controllers that request a wider table layout.
+    }
+
     public function addTable(array $headers, array $rows): void
     {
         $this->line(42, $this->y + 8, 552, $this->y + 8);
@@ -134,7 +139,7 @@ final class SimplePdf
 
     private function signatureTitle(string $text): string
     {
-        $plain = preg_replace('/[:：].*$/u', '', $text);
+        $plain = preg_replace('/[:ï¼š].*$/u', '', $text);
         $plain = preg_replace('/\.{2,}.*/u', '', (string) $plain);
         $plain = trim((string) $plain);
         return $plain !== '' ? $plain : 'Truong thon';

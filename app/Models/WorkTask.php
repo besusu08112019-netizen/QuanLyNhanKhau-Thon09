@@ -135,17 +135,17 @@ SQL);
             'priorities' => $this->catalog('work_task_priorities'),
             'statuses' => $this->statusCatalog(),
             'related_modules' => [
-                ['value' => '', 'label' => 'Không liên kết'],
-                ['value' => 'household', 'label' => 'Hộ gia đình'],
-                ['value' => 'citizen', 'label' => 'Nhân khẩu'],
-                ['value' => 'risk_warning', 'label' => 'Cảnh báo vận hành'],
-                ['value' => 'data_quality', 'label' => 'Chất lượng dữ liệu'],
-                ['value' => 'executive_dashboard', 'label' => 'Dashboard điều hành'],
-                ['value' => 'public_asset', 'label' => 'Công trình công cộng'],
-                ['value' => 'house', 'label' => 'Nhà ở'],
-                ['value' => 'business', 'label' => 'Hộ sản xuất kinh doanh'],
-                ['value' => 'agriculture', 'label' => 'Sản xuất nông nghiệp'],
-                ['value' => 'livestock', 'label' => 'Vật nuôi'],
+                ['value' => '', 'label' => 'KhÃ´ng liÃªn káº¿t'],
+                ['value' => 'household', 'label' => 'Há»™ gia Ä‘Ã¬nh'],
+                ['value' => 'citizen', 'label' => 'NhÃ¢n kháº©u'],
+                ['value' => 'risk_warning', 'label' => 'Cáº£nh bÃ¡o váº­n hÃ nh'],
+                ['value' => 'data_quality', 'label' => 'Cháº¥t lÆ°á»£ng dá»¯ liá»‡u'],
+                ['value' => 'executive_dashboard', 'label' => 'Dashboard Ä‘iá»u hÃ nh'],
+                ['value' => 'public_asset', 'label' => 'CÃ´ng trÃ¬nh cÃ´ng cá»™ng'],
+                ['value' => 'house', 'label' => 'NhÃ  á»Ÿ'],
+                ['value' => 'business', 'label' => 'Há»™ sáº£n xuáº¥t kinh doanh'],
+                ['value' => 'agriculture', 'label' => 'Sáº£n xuáº¥t nÃ´ng nghiá»‡p'],
+                ['value' => 'livestock', 'label' => 'Váº­t nuÃ´i'],
                 ['value' => 'gis', 'label' => 'GIS'],
             ],
         ];
@@ -189,7 +189,7 @@ SQL);
     {
         $this->ensureSchema();
         $existing = $id ? $this->find($id) : null;
-        if ($id && !$existing) throw new \RuntimeException('Không tìm thấy công việc');
+        if ($id && !$existing) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c');
         $params = $this->params($data, $userId, $existing);
         if ($id) {
             $params['id'] = $id;
@@ -200,23 +200,23 @@ SQL);
         $columns = ['task_code', 'title', 'description', 'category_id', 'priority_id', 'status_id', 'assigned_user_id', 'assigned_name', 'start_at', 'due_at', 'completed_at', 'progress_percent', 'related_module', 'related_id', 'area_code', 'note', 'created_by', 'updated_by'];
         $this->addTenantInsert('work_tasks', $columns, $params);
         $newId = $this->insert('INSERT INTO work_tasks (' . implode(',', $columns) . ') VALUES (:' . implode(', :', $columns) . ')', $params);
-        $this->addLog($newId, ['content' => 'Tạo công việc', 'status_id' => $params['status_id'], 'progress_percent' => $params['progress_percent']], $userId, $userName);
+        $this->addLog($newId, ['content' => 'Táº¡o cÃ´ng viá»‡c', 'status_id' => $params['status_id'], 'progress_percent' => $params['progress_percent']], $userId, $userName);
         return $this->find($newId);
     }
 
     public function softDelete(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy công việc');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c');
         $this->execute('UPDATE work_tasks SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('work_tasks'), ['id' => $id, 'user' => $userId]);
     }
 
     public function addLog(int $id, array $data, int $userId, string $userName): array
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy công việc');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c');
         $content = trim((string)($data['content'] ?? $data['note'] ?? ''));
-        if ($content === '') throw new \RuntimeException('Nội dung nhật ký là bắt buộc');
+        if ($content === '') throw new \RuntimeException('Ná»™i dung nháº­t kÃ½ lÃ  báº¯t buá»™c');
         $statusId = $this->validId('work_task_statuses', $data['status_id'] ?? $data['statusId'] ?? null, true);
         $progress = $this->progress($data['progress_percent'] ?? $data['progressPercent'] ?? null, true);
         $logId = $this->insert('INSERT INTO work_task_logs (task_id, actor_user_id, actor_name, content, status_id, progress_percent) VALUES (:id,:user,:name,:content,:status,:progress)', ['id' => $id, 'user' => $userId, 'name' => $userName, 'content' => $content, 'status' => $statusId, 'progress' => $progress]);
@@ -238,7 +238,7 @@ SQL);
     public function addAttachment(int $id, array $stored, array $file, int $userId, ?int $logId = null): array
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy công việc');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c');
         $mime = (string)$stored['mime'];
         $kind = str_starts_with($mime, 'image/') ? 'IMAGE' : (str_starts_with($mime, 'video/') ? 'VIDEO' : ($mime === 'application/pdf' ? 'PDF' : 'DOCUMENT'));
         $attachmentId = $this->insert('INSERT INTO work_task_attachments (task_id, log_id, original_name, stored_path, mime_type, file_size, file_kind, created_by) VALUES (:id,:log_id,:name,:path,:mime,:size,:kind,:user)', ['id' => $id, 'log_id' => $logId, 'name' => basename((string)($file['name'] ?? 'attachment')), 'path' => $stored['file_path'], 'mime' => $mime, 'size' => (int)($file['size'] ?? 0), 'kind' => $kind, 'user' => $userId]);
@@ -255,7 +255,7 @@ SQL);
     public function deleteAttachment(int $taskId, int $fileId, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->attachment($taskId, $fileId)) throw new \RuntimeException('Không tìm thấy file đính kèm');
+        if (!$this->attachment($taskId, $fileId)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m');
         $this->execute('UPDATE work_task_attachments SET deleted_at=NOW(), deleted_by=:user WHERE task_id=:task_id AND id=:id', ['task_id' => $taskId, 'id' => $fileId, 'user' => $userId]);
     }
 
@@ -269,8 +269,8 @@ SQL);
             'metrics' => array_map('intval', $metrics),
             'charts' => [
                 'by_month' => $this->fetchAll("SELECT DATE_FORMAT(COALESCE(t.start_at,t.created_at), '%Y-%m') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY label DESC LIMIT 12", $params),
-                'by_category' => $this->fetchAll("SELECT COALESCE(c.name, 'Khác') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
-                'by_status' => $this->fetchAll("SELECT COALESCE(s.name, 'Chưa cập nhật') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
+                'by_category' => $this->fetchAll("SELECT COALESCE(c.name, 'KhÃ¡c') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
+                'by_status' => $this->fetchAll("SELECT COALESCE(s.name, 'ChÆ°a cáº­p nháº­t') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
             ],
         ];
     }
@@ -289,11 +289,11 @@ SQL);
             $r['assigned_name'] ?? '',
             $r['progress_percent'] . '%',
             $r['due_at'] ?? '',
-            $r['is_overdue'] ? 'Quá hạn' : '',
+            $r['is_overdue'] ? 'QuÃ¡ háº¡n' : '',
         ], $data['items']);
         return [
-            'title' => 'Báo cáo công việc',
-            'headers' => ['Mã', 'Tiêu đề', 'Loại', 'Ưu tiên', 'Trạng thái', 'Phụ trách', 'Tiến độ', 'Hạn', 'Quá hạn'],
+            'title' => 'BÃ¡o cÃ¡o cÃ´ng viá»‡c',
+            'headers' => ['MÃ£', 'TiÃªu Ä‘á»', 'Loáº¡i', 'Æ¯u tiÃªn', 'Tráº¡ng thÃ¡i', 'Phá»¥ trÃ¡ch', 'Tiáº¿n Ä‘á»™', 'Háº¡n', 'QuÃ¡ háº¡n'],
             'rows' => $rows,
             'totalRows' => $data['total'],
             'summary' => $this->dashboard($filters)['metrics'] ?? [],
@@ -360,7 +360,7 @@ SQL);
     private function params(array $data, int $userId, ?array $existing): array
     {
         $title = trim((string)($data['title'] ?? ''));
-        if ($title === '') throw new \RuntimeException('Tiêu đề công việc là bắt buộc');
+        if ($title === '') throw new \RuntimeException('TiÃªu Ä‘á» cÃ´ng viá»‡c lÃ  báº¯t buá»™c');
         $statusId = $this->validId('work_task_statuses', $data['status_id'] ?? $data['statusId'] ?? $existing['status_id'] ?? null, true) ?: $this->defaultStatusId();
         $progress = $this->progress($data['progress_percent'] ?? $data['progressPercent'] ?? $existing['progress_percent'] ?? null, false);
         if ($progress === null) $progress = $this->defaultProgress($statusId);
@@ -372,8 +372,8 @@ SQL);
             'status_id' => $statusId,
             'assigned_user_id' => $this->nullableInt($data['assigned_user_id'] ?? $data['assignedUserId'] ?? null),
             'assigned_name' => $this->nullable($data['assigned_name'] ?? $data['assignedName'] ?? ''),
-            'start_at' => $this->dateTime($data['start_at'] ?? $data['startAt'] ?? null, false, 'Ngày bắt đầu không hợp lệ'),
-            'due_at' => $this->dateTime($data['due_at'] ?? $data['dueAt'] ?? null, false, 'Hạn hoàn thành không hợp lệ'),
+            'start_at' => $this->dateTime($data['start_at'] ?? $data['startAt'] ?? null, false, 'NgÃ y báº¯t Ä‘áº§u khÃ´ng há»£p lá»‡'),
+            'due_at' => $this->dateTime($data['due_at'] ?? $data['dueAt'] ?? null, false, 'Háº¡n hoÃ n thÃ nh khÃ´ng há»£p lá»‡'),
             'completed_at' => $this->statusTerminal($statusId) ? ($existing['completed_at'] ?? date('Y-m-d H:i:s')) : null,
             'progress_percent' => $progress,
             'related_module' => $this->targetType((string)($data['related_module'] ?? $data['relatedModule'] ?? '')),
@@ -388,27 +388,27 @@ SQL);
     private function seedCatalogs(): void
     {
         $categories = [
-            ['fund_collection', 'Thu quỹ'],
-            ['household_check', 'Kiểm tra hộ'],
-            ['gift_distribution', 'Phát quà'],
-            ['environment_cleanup', 'Vệ sinh môi trường'],
-            ['patrol', 'Tuần tra'],
-            ['public_asset_check', 'Kiểm tra công trình'],
-            ['production_check', 'Kiểm tra sản xuất'],
-            ['other', 'Khác'],
+            ['fund_collection', 'Thu quá»¹'],
+            ['household_check', 'Kiá»ƒm tra há»™'],
+            ['gift_distribution', 'PhÃ¡t quÃ '],
+            ['environment_cleanup', 'Vá»‡ sinh mÃ´i trÆ°á»ng'],
+            ['patrol', 'Tuáº§n tra'],
+            ['public_asset_check', 'Kiá»ƒm tra cÃ´ng trÃ¬nh'],
+            ['production_check', 'Kiá»ƒm tra sáº£n xuáº¥t'],
+            ['other', 'KhÃ¡c'],
         ];
         $order = 10;
         foreach ($categories as [$code, $name]) {
             $this->execute('INSERT INTO work_task_categories (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]);
             $order += 10;
         }
-        $priorities = [['URGENT','Khẩn cấp'],['HIGH','Cao'],['NORMAL','Bình thường'],['LOW','Thấp']];
+        $priorities = [['URGENT','Kháº©n cáº¥p'],['HIGH','Cao'],['NORMAL','BÃ¬nh thÆ°á»ng'],['LOW','Tháº¥p']];
         $order = 10;
         foreach ($priorities as [$code, $name]) {
             $this->execute('INSERT INTO work_task_priorities (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]);
             $order += 10;
         }
-        $statuses = [['NEW','Mới tạo',0,0],['ASSIGNED','Đã giao',10,0],['IN_PROGRESS','Đang thực hiện',50,0],['WAITING','Tạm dừng/chờ xử lý',50,0],['DONE','Đã hoàn thành',100,1],['CANCELLED','Đã hủy',0,1]];
+        $statuses = [['NEW','Má»›i táº¡o',0,0],['ASSIGNED','ÄÃ£ giao',10,0],['IN_PROGRESS','Äang thá»±c hiá»‡n',50,0],['WAITING','Táº¡m dá»«ng/chá» xá»­ lÃ½',50,0],['DONE','ÄÃ£ hoÃ n thÃ nh',100,1],['CANCELLED','ÄÃ£ há»§y',0,1]];
         $order = 10;
         foreach ($statuses as [$code, $name, $progress, $terminal]) {
             $this->execute('INSERT INTO work_task_statuses (code,name,progress_percent,is_terminal,sort_order) VALUES (:code,:name,:progress,:terminal,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), progress_percent=VALUES(progress_percent), is_terminal=VALUES(is_terminal), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'progress' => $progress, 'terminal' => $terminal, 'sort_order' => $order]);
@@ -476,7 +476,7 @@ SQL);
         $id = $this->nullableInt($value);
         if (!$id) return null;
         $row = $this->fetchOne("SELECT id FROM $table WHERE id=:id AND is_active=1", ['id' => $id]);
-        if (!$row) throw new \RuntimeException('Danh mục không hợp lệ');
+        if (!$row) throw new \RuntimeException('Danh má»¥c khÃ´ng há»£p lá»‡');
         return $id;
     }
 

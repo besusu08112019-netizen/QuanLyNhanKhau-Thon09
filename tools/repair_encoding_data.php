@@ -138,7 +138,7 @@ function buildChanges(PDO $pdo, int $limitPerColumn): array
         }
 
         $sql = 'SELECT ' . qi($pk) . ' AS pk_value, ' . qi($name) . ' AS source_value FROM ' . qi($table) .
-            ' WHERE ' . qi($name) . " REGEXP '(Ã|Â|Æ|Ä|áº|á»)'";
+            ' WHERE ' . qi($name) . " REGEXP '(Ãƒ|Ã‚|Ã†|Ã„|Ã¡Âº|Ã¡Â»)'";
         if ($limitPerColumn > 0) {
             $sql .= ' LIMIT ' . $limitPerColumn;
         }

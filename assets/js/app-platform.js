@@ -467,8 +467,8 @@
         if (screen && !screen.dataset.accessDeniedRendered) {
           screen.dataset.accessDeniedRendered = '1';
           var targetNode = screen.querySelector('tbody, [id$="Rows"], [id$="Kpis"], .content-card, .dashboard-kpi-grid') || screen;
-          if (targetNode.tagName === 'TBODY') targetNode.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-4">Bạn không có quyền truy cập</td></tr>';
-          else targetNode.innerHTML = '<div class="empty-state text-muted py-4 text-center">Bạn không có quyền truy cập</div>';
+          if (targetNode.tagName === 'TBODY') targetNode.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-4">Báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p</td></tr>';
+          else targetNode.innerHTML = '<div class="empty-state text-muted py-4 text-center">Báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p</div>';
         }
         return {
           moduleKey: module.moduleKey,
@@ -1190,7 +1190,7 @@
       return input(Object.assign({
         type: 'search',
         name: options.name || 'search',
-        placeholder: options.placeholder || 'Tim kiem',
+        placeholder: options.placeholder || 'TÃ¬m kiáº¿m',
         className: options.className || 'form-control platform-search'
       }, options));
     }
@@ -1302,7 +1302,7 @@
       var labels = {
         Loading: config.loadingText || 'Dang tai...',
         Loaded: config.loadedText || '',
-        Empty: config.emptyText || 'Khong co du lieu',
+        Empty: config.emptyText || 'KhÃ´ng cÃ³ dá»¯ liá»‡u',
         Error: config.errorText || error || 'Khong the tai du lieu'
       };
       return element('div', {
@@ -1347,7 +1347,7 @@
         var emptyRow = element('tr', { className: 'platform-table-empty-row' });
         emptyRow.appendChild(element('td', {
           className: 'platform-table-empty',
-          text: options.emptyText || 'Khong co du lieu',
+          text: options.emptyText || 'KhÃ´ng cÃ³ dá»¯ liá»‡u',
           attrs: { colspan: String(Math.max(columns.length, 1)) }
         }));
         tbody.appendChild(emptyRow);
@@ -1541,9 +1541,9 @@
       var config = options || {};
       var fields = config.fields || formService.fieldsFor(formKey, sectionKey);
       var labels = {
-        basic: 'Thong tin co ban',
-        linked: 'Thong tin lien ket',
-        extended: 'Thong tin mo rong',
+        basic: 'ThÃ´ng tin cÆ¡ báº£n',
+        linked: 'ThÃ´ng tin liÃªn káº¿t',
+        extended: 'ThÃ´ng tin má»Ÿ rá»™ng',
         history: 'Lich su',
         attachments: 'Tep dinh kem'
       };
@@ -1651,7 +1651,7 @@
         bulkActions: toArray(record.bulkActions),
         states: Object.assign({
           loading: 'Dang tai...',
-          empty: 'Khong co du lieu',
+          empty: 'KhÃ´ng cÃ³ dá»¯ liá»‡u',
           error: 'Khong the tai du lieu'
         }, record.states || {})
       });
@@ -1729,7 +1729,7 @@
         children.push(componentService.searchBox({
           name: 'search',
           value: current.search || '',
-          placeholder: list.search.placeholder || config.searchPlaceholder || 'Tim kiem',
+          placeholder: list.search.placeholder || config.searchPlaceholder || 'TÃ¬m kiáº¿m',
           dataset: { listKey: listKey }
         }));
       }
@@ -1758,7 +1758,7 @@
         columns: listService.columnsFor(listKey, config),
         rows: rows || [],
         rowKey: config.rowKey || list.rowKey || 'id',
-        emptyText: list.states && list.states.empty || 'Khong co du lieu',
+        emptyText: list.states && list.states.empty || 'KhÃ´ng cÃ³ dá»¯ liá»‡u',
         className: config.className || 'table platform-table',
         attrs: { 'data-list-key': listKey }
       });
@@ -2221,9 +2221,9 @@
       }, options.sections || {});
       var tabs = toArray(options.tabs).length ? toArray(options.tabs) : standardSectionOrder.map(function (key) {
         var labels = {
-          basic: 'Thong tin co ban',
-          linked: 'Thong tin lien ket',
-          extended: 'Thong tin mo rong',
+          basic: 'ThÃ´ng tin cÆ¡ báº£n',
+          linked: 'ThÃ´ng tin liÃªn káº¿t',
+          extended: 'ThÃ´ng tin má»Ÿ rá»™ng',
           history: 'Lich su',
           attachments: 'Tep dinh kem'
         };
@@ -2392,7 +2392,7 @@
 
     function fallback(config) {
       if (window && typeof window.confirm === 'function') {
-        return Promise.resolve(window.confirm(config.message || config.title || 'Xác nhận thao tác?'));
+        return Promise.resolve(window.confirm(config.message || config.title || 'XÃ¡c nháº­n thao tÃ¡c?'));
       }
       return Promise.resolve(Boolean(config.defaultValue));
     }
@@ -2408,10 +2408,10 @@
       return new Promise(function (resolve) {
         var settled = false;
         var tone = config.tone || 'primary';
-        var title = config.title || 'Xác nhận thao tác';
+        var title = config.title || 'XÃ¡c nháº­n thao tÃ¡c';
         var message = config.message || '';
-        var confirmLabel = config.confirmLabel || 'Xác nhận';
-        var cancelLabel = config.cancelLabel || 'Hủy';
+        var confirmLabel = config.confirmLabel || 'XÃ¡c nháº­n';
+        var cancelLabel = config.cancelLabel || 'Há»§y';
 
         function settle(value) {
           if (settled) return;
@@ -4177,9 +4177,9 @@
     var labels = {
       list: 'Danh sach',
       detail: 'Chi tiet',
-      create: 'Them moi',
+      create: 'ThÃªm má»›i',
       edit: 'Chinh sua',
-      delete: 'Xoa',
+      delete: 'XÃ³a',
       import: 'Import',
       export: 'Export',
       log: 'Nhat ky'
@@ -5673,48 +5673,49 @@
 
     [
       { moduleKey: 'dashboard', screenId: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: 'fa-gauge-high', permissionScope: 'dashboard', loaderName: 'loadDashboard' },
-      { moduleKey: 'dashboardHouseholds', screenId: 'dashboardHouseholds', path: '/dashboard/households', label: 'Hộ dân', icon: 'fa-house-chimney', permissionScope: 'dashboard' },
-      { moduleKey: 'dashboardPopulation', screenId: 'dashboardPopulation', path: '/dashboard/population', label: 'Nhân khẩu', icon: 'fa-users', permissionScope: 'dashboard' },
+      { moduleKey: 'dashboardHouseholds', screenId: 'dashboardHouseholds', path: '/dashboard/households', label: 'Há»™ dÃ¢n', icon: 'fa-house-chimney', permissionScope: 'dashboard' },
+      { moduleKey: 'dashboardPopulation', screenId: 'dashboardPopulation', path: '/dashboard/population', label: 'NhÃ¢n kháº©u', icon: 'fa-users', permissionScope: 'dashboard' },
       { moduleKey: 'dashboardBusiness', screenId: 'dashboardBusiness', path: '/dashboard/business', label: 'Kinh doanh', icon: 'fa-store', permissionScope: 'dashboard' },
-      { moduleKey: 'dashboardVehicles', screenId: 'dashboardVehicles', path: '/dashboard/vehicles', label: 'Xe cộ', icon: 'fa-car', permissionScope: 'dashboard' },
-      { moduleKey: 'dashboardLivestock', screenId: 'dashboardLivestock', path: '/dashboard/livestock', label: 'Vật nuôi', icon: 'fa-paw', permissionScope: 'dashboard' },
+      { moduleKey: 'dashboardVehicles', screenId: 'dashboardVehicles', path: '/dashboard/vehicles', label: 'Xe cá»™', icon: 'fa-car', permissionScope: 'dashboard' },
+      { moduleKey: 'dashboardLivestock', screenId: 'dashboardLivestock', path: '/dashboard/livestock', label: 'Váº­t nuÃ´i', icon: 'fa-paw', permissionScope: 'dashboard' },
       { moduleKey: 'dashboardGis', screenId: 'dashboardGis', path: '/dashboard/gis', label: 'GIS', icon: 'fa-map-location-dot', permissionScope: 'dashboard' },
-      { moduleKey: 'dashboardReports', screenId: 'dashboardReports', path: '/dashboard/reports', label: 'Báo cáo', icon: 'fa-file-lines', permissionScope: 'dashboard' },
-      { moduleKey: 'operationCenter', screenId: 'operationCenter', path: '/operation-center', label: 'Trung tâm điều hành', icon: 'fa-tower-broadcast', permissionScope: 'operationCenter', loaderName: 'loadOperationCenter' },
-      { moduleKey: 'workTasks', screenId: 'workTasks', path: '/work-tasks', label: 'Công việc', mobileLabel: 'Công việc', icon: 'fa-list-check', permissionScope: 'work_tasks', loaderName: 'loadWorkTasks' },
-      { moduleKey: 'workCalendar', screenId: 'workCalendar', path: '/work-calendar', label: 'Lịch công tác', mobileLabel: 'Lịch', icon: 'fa-calendar-days', permissionScope: 'work_calendar', loaderName: 'loadWorkCalendar' },
-      { moduleKey: 'documents', screenId: 'documents', path: '/documents', label: 'Văn bản', mobileLabel: 'Văn bản', icon: 'fa-file-lines', permissionScope: 'documents', loaderName: 'loadDocuments' },
-      { moduleKey: 'photoGallery', screenId: 'photoGallery', path: '/photo-gallery', label: 'Kho ảnh', mobileLabel: 'Ảnh', icon: 'fa-images', permissionScope: 'photo_gallery', loaderName: 'loadPhotoGallery' },
-      { moduleKey: 'households', screenId: 'households', path: '/households', label: 'Hộ gia đình', mobileLabel: 'Hộ', icon: 'fa-house-chimney', permissionScope: 'households', loaderName: 'loadHouseholds' },
-      { moduleKey: 'persons', screenId: 'persons', path: '/persons', label: 'Nhân khẩu', mobileLabel: 'Nhân khẩu', icon: 'fa-users', permissionScope: 'persons', loaderName: 'loadPersons' },
-      { moduleKey: 'temporaryResidence', screenId: 'temporaryResidence', path: '/temporary-residence', label: 'Tạm trú', mobileLabel: 'Tạm trú', icon: 'fa-location-dot', permissionScope: 'temporaryResidence', loaderName: 'loadTemporaryResidence' },
-      { moduleKey: 'temporaryAbsence', screenId: 'temporaryAbsence', path: '/temporary-absence', label: 'Tạm vắng', mobileLabel: 'Tạm vắng', icon: 'fa-person-walking-arrow-right', permissionScope: 'temporaryAbsence', loaderName: 'loadTemporaryAbsence' },
-      { moduleKey: 'movements', screenId: 'movements', path: '/movements', label: 'Biến động nhân khẩu', mobileLabel: 'Biến động', icon: 'fa-right-left', permissionScope: 'movements', loaderName: 'loadMovements' },
-      { moduleKey: 'publicAssets', screenId: 'publicAssets', path: '/public-assets', label: 'Công trình công cộng', mobileLabel: 'Công trình', icon: 'fa-building-columns', permissionScope: 'publicAssets', loaderName: 'loadPublicAssets' },
-      { moduleKey: 'complaints', screenId: 'complaints', path: '/complaints', label: 'Phản ánh - Kiến nghị', mobileLabel: 'Phản ánh', icon: 'fa-comments', permissionScope: 'complaints', loaderName: 'loadComplaints' },
-      { moduleKey: 'houses', screenId: 'houses', path: '/houses', label: 'Nhà ở và Công trình', mobileLabel: 'Nhà ở', icon: 'fa-building-user', permissionScope: 'houses', loaderName: 'loadHouses' },
-      { moduleKey: 'businessHouseholds', screenId: 'businessHouseholds', path: '/household-businesses', label: 'Hộ sản xuất và kinh doanh', mobileLabel: 'Kinh doanh', icon: 'fa-store', permissionScope: 'businessHouseholds', loaderName: 'loadHouseholdBusiness' },
-      { moduleKey: 'agriculturalLand', screenId: 'agriculturalLand', path: '/agricultural-land', label: 'Quỹ đất nông nghiệp', mobileLabel: 'Quỹ đất', icon: 'fa-map', permissionScope: 'agricultural_land', loaderName: 'loadAgriculturalLand' },
-      { moduleKey: 'agriculture', screenId: 'agriculture', path: '/agriculture', label: 'Sản xuất nông nghiệp', mobileLabel: 'Nông nghiệp', icon: 'fa-seedling', permissionScope: 'agriculture', loaderName: 'loadAgriculture' },
-      { moduleKey: 'livestock', screenId: 'livestock', path: '/livestock', label: 'Quản lý vật nuôi', mobileLabel: 'Vật nuôi', icon: 'fa-paw', permissionScope: 'livestock', loaderName: 'loadLivestock' },
-      { moduleKey: 'partyMembers', screenId: 'partyMembers', path: '/party-members', label: 'Quản lý Đảng viên', mobileLabel: 'Đảng viên', icon: 'fa-flag', permissionScope: 'party_members', loaderName: 'loadPartyMembers' },
-      { moduleKey: 'povertyManagement', screenId: 'povertyManagement', path: '/poverty', label: 'Hộ nghèo / cận nghèo', mobileLabel: 'Hộ nghèo', icon: 'fa-hand-holding-heart', permissionScope: 'poverty', loaderName: 'loadPovertyManagement' },
-      { moduleKey: 'vehicles', screenId: 'vehicles', path: '/vehicles', label: 'Quản lý xe cộ', mobileLabel: 'Xe cộ', icon: 'fa-car', permissionScope: 'vehicles' },
-      { moduleKey: 'contributions', screenId: 'contributions', path: '/contributions', label: 'Đóng góp hộ', mobileLabel: 'Đóng góp', icon: 'fa-hand-holding-dollar', permissionScope: 'contributions' },
+      { moduleKey: 'dashboardReports', screenId: 'dashboardReports', path: '/dashboard/reports', label: 'BÃ¡o cÃ¡o', icon: 'fa-file-lines', permissionScope: 'dashboard' },
+      { moduleKey: 'operationCenter', screenId: 'operationCenter', path: '/operation-center', label: 'Trung tÃ¢m Ä‘iá»u hÃ nh', icon: 'fa-tower-broadcast', permissionScope: 'operationCenter', loaderName: 'loadOperationCenter' },
+      { moduleKey: 'workTasks', screenId: 'workTasks', path: '/work-tasks', label: 'CÃ´ng viá»‡c', mobileLabel: 'CÃ´ng viá»‡c', icon: 'fa-list-check', permissionScope: 'work_tasks', loaderName: 'loadWorkTasks' },
+      { moduleKey: 'workCalendar', screenId: 'workCalendar', path: '/work-calendar', label: 'Lá»‹ch cÃ´ng tÃ¡c', mobileLabel: 'Lá»‹ch', icon: 'fa-calendar-days', permissionScope: 'work_calendar', loaderName: 'loadWorkCalendar' },
+      { moduleKey: 'documents', screenId: 'documents', path: '/documents', label: 'VÄƒn báº£n', mobileLabel: 'VÄƒn báº£n', icon: 'fa-file-lines', permissionScope: 'documents', loaderName: 'loadDocuments' },
+      { moduleKey: 'photoGallery', screenId: 'photoGallery', path: '/photo-gallery', label: 'Kho áº£nh', mobileLabel: 'áº¢nh', icon: 'fa-images', permissionScope: 'photo_gallery', loaderName: 'loadPhotoGallery' },
+      { moduleKey: 'households', screenId: 'households', path: '/households', label: 'Há»™ gia Ä‘Ã¬nh', mobileLabel: 'Há»™', icon: 'fa-house-chimney', permissionScope: 'households', loaderName: 'loadHouseholds' },
+      { moduleKey: 'persons', screenId: 'persons', path: '/persons', label: 'NhÃ¢n kháº©u', mobileLabel: 'NhÃ¢n kháº©u', icon: 'fa-users', permissionScope: 'persons', loaderName: 'loadPersons' },
+      { moduleKey: 'temporaryResidence', screenId: 'temporaryResidence', path: '/temporary-residence', label: 'Táº¡m trÃº', mobileLabel: 'Táº¡m trÃº', icon: 'fa-location-dot', permissionScope: 'temporaryResidence', loaderName: 'loadTemporaryResidence' },
+      { moduleKey: 'temporaryAbsence', screenId: 'temporaryAbsence', path: '/temporary-absence', label: 'Táº¡m váº¯ng', mobileLabel: 'Táº¡m váº¯ng', icon: 'fa-person-walking-arrow-right', permissionScope: 'temporaryAbsence', loaderName: 'loadTemporaryAbsence' },
+      { moduleKey: 'movements', screenId: 'movements', path: '/movements', label: 'Biáº¿n Ä‘á»™ng nhÃ¢n kháº©u', mobileLabel: 'Biáº¿n Ä‘á»™ng', icon: 'fa-right-left', permissionScope: 'movements', loaderName: 'loadMovements' },
+      { moduleKey: 'publicAssets', screenId: 'publicAssets', path: '/public-assets', label: 'CÃ´ng trÃ¬nh cÃ´ng cá»™ng', mobileLabel: 'CÃ´ng trÃ¬nh', icon: 'fa-building-columns', permissionScope: 'publicAssets', loaderName: 'loadPublicAssets' },
+      { moduleKey: 'complaints', screenId: 'complaints', path: '/complaints', label: 'Pháº£n Ã¡nh - Kiáº¿n nghá»‹', mobileLabel: 'Pháº£n Ã¡nh', icon: 'fa-comments', permissionScope: 'complaints', loaderName: 'loadComplaints' },
+      { moduleKey: 'houses', screenId: 'houses', path: '/houses', label: 'NhÃ  á»Ÿ vÃ  CÃ´ng trÃ¬nh', mobileLabel: 'NhÃ  á»Ÿ', icon: 'fa-building-user', permissionScope: 'houses', loaderName: 'loadHouses' },
+      { moduleKey: 'businessHouseholds', screenId: 'businessHouseholds', path: '/household-businesses', label: 'Há»™ sáº£n xuáº¥t vÃ  kinh doanh', mobileLabel: 'Kinh doanh', icon: 'fa-store', permissionScope: 'businessHouseholds', loaderName: 'loadHouseholdBusiness' },
+      { moduleKey: 'agriculturalLand', screenId: 'agriculturalLand', path: '/agricultural-land', label: 'Quá»¹ Ä‘áº¥t nÃ´ng nghiá»‡p', mobileLabel: 'Quá»¹ Ä‘áº¥t', icon: 'fa-map', permissionScope: 'agricultural_land', loaderName: 'loadAgriculturalLand' },
+      { moduleKey: 'agriculture', screenId: 'agriculture', path: '/agriculture', label: 'Sáº£n xuáº¥t nÃ´ng nghiá»‡p', mobileLabel: 'NÃ´ng nghiá»‡p', icon: 'fa-seedling', permissionScope: 'agriculture', loaderName: 'loadAgriculture' },
+      { moduleKey: 'livestock', screenId: 'livestock', path: '/livestock', label: 'Quáº£n lÃ½ váº­t nuÃ´i', mobileLabel: 'Váº­t nuÃ´i', icon: 'fa-paw', permissionScope: 'livestock', loaderName: 'loadLivestock' },
+      { moduleKey: 'ruralCleanWater', screenId: 'ruralCleanWater', path: '/rural-clean-water', label: 'NÆ°á»›c sáº¡ch nÃ´ng thÃ´n', mobileLabel: 'NÆ°á»›c sáº¡ch', icon: 'fa-faucet-drip', permissionScope: 'rural_clean_water' },
+      { moduleKey: 'partyMembers', screenId: 'partyMembers', path: '/party-members', label: 'Quáº£n lÃ½ Äáº£ng viÃªn', mobileLabel: 'Äáº£ng viÃªn', icon: 'fa-flag', permissionScope: 'party_members', loaderName: 'loadPartyMembers' },
+      { moduleKey: 'povertyManagement', screenId: 'povertyManagement', path: '/poverty', label: 'Há»™ nghÃ¨o / cáº­n nghÃ¨o', mobileLabel: 'Há»™ nghÃ¨o', icon: 'fa-hand-holding-heart', permissionScope: 'poverty', loaderName: 'loadPovertyManagement' },
+      { moduleKey: 'vehicles', screenId: 'vehicles', path: '/vehicles', label: 'Quáº£n lÃ½ xe cá»™', mobileLabel: 'Xe cá»™', icon: 'fa-car', permissionScope: 'vehicles' },
+      { moduleKey: 'contributions', screenId: 'contributions', path: '/contributions', label: 'ÄÃ³ng gÃ³p há»™', mobileLabel: 'ÄÃ³ng gÃ³p', icon: 'fa-hand-holding-dollar', permissionScope: 'contributions' },
       { moduleKey: 'gis', screenId: 'gis', path: '/gis', label: 'GIS', icon: 'fa-map-location-dot', permissionScope: 'gis', loaderName: 'loadGisMap' },
-      { moduleKey: 'dataQuality', screenId: 'dataQuality', path: '/data-quality', label: 'Chất lượng dữ liệu', mobileLabel: 'Dữ liệu', icon: 'fa-shield-heart', permissionScope: 'reports', loaderName: 'loadDataQuality' },
-      { moduleKey: 'reports', screenId: 'reports', path: '/reports', label: 'Báo cáo', icon: 'fa-chart-pie', permissionScope: 'reports', loaderName: 'TenantAppViewReport' },
-      { moduleKey: 'import', screenId: 'import', path: '/import', label: 'Import dữ liệu', icon: 'fa-file-import', permissionScope: 'import' },
-      { moduleKey: 'exportExcel', screenId: 'exportExcel', path: '/export-excel', label: 'Xuất Excel', icon: 'fa-file-export', permissionScope: 'export' },
-      { moduleKey: 'printForms', screenId: 'printForms', path: '/print-forms', label: 'In biểu mẫu', icon: 'fa-print', permissionScope: 'reports' },
-      { moduleKey: 'systemAdmin', screenId: 'systemAdmin', path: '/system/admin', label: 'Quản trị hệ thống', icon: 'fa-screwdriver-wrench', permissionScope: 'system', loaderName: 'loadSystemAdmin' },
-      { moduleKey: 'users', screenId: 'users', path: '/system/users', label: 'Quản lý tài khoản', icon: 'fa-user-shield', permissionScope: 'users', loaderName: 'loadAdminUsers' },
-      { moduleKey: 'permissions', screenId: 'permissions', path: '/system/permissions', label: 'Phân quyền', icon: 'fa-key', permissionScope: 'permissions', loaderName: 'loadPermissions' },
-      { moduleKey: 'logs', screenId: 'logs', path: '/system/logs', label: 'Nhật ký', icon: 'fa-clock-rotate-left', permissionScope: 'logs', loaderName: 'loadAdminLogs' },
-      { moduleKey: 'backups', screenId: 'backups', path: '/system/backups', label: 'Sao lưu', icon: 'fa-database', permissionScope: 'backups', loaderName: 'loadAdminBackups' },
-      { moduleKey: 'restore', screenId: 'restore', path: '/system/restore', label: 'Khôi phục', icon: 'fa-rotate-left', permissionScope: 'backups' },
-      { moduleKey: 'settings', screenId: 'settings', path: '/system/settings', label: 'Cấu hình hệ thống', icon: 'fa-gear', permissionScope: 'settings', loaderName: 'loadSettings' },
-      { moduleKey: 'appearance', screenId: 'appearance', path: '/system/appearance', label: 'Cấu hình giao diện', icon: 'fa-palette', permissionScope: 'settings', loaderName: 'loadAppearanceSettings' }
+      { moduleKey: 'dataQuality', screenId: 'dataQuality', path: '/data-quality', label: 'Cháº¥t lÆ°á»£ng dá»¯ liá»‡u', mobileLabel: 'Dá»¯ liá»‡u', icon: 'fa-shield-heart', permissionScope: 'reports', loaderName: 'loadDataQuality' },
+      { moduleKey: 'reports', screenId: 'reports', path: '/reports', label: 'BÃ¡o cÃ¡o', icon: 'fa-chart-pie', permissionScope: 'reports', loaderName: 'TenantAppViewReport' },
+      { moduleKey: 'import', screenId: 'import', path: '/import', label: 'Import dá»¯ liá»‡u', icon: 'fa-file-import', permissionScope: 'import' },
+      { moduleKey: 'exportExcel', screenId: 'exportExcel', path: '/export-excel', label: 'Xuáº¥t Excel', icon: 'fa-file-export', permissionScope: 'export' },
+      { moduleKey: 'printForms', screenId: 'printForms', path: '/print-forms', label: 'In biá»ƒu máº«u', icon: 'fa-print', permissionScope: 'reports' },
+      { moduleKey: 'systemAdmin', screenId: 'systemAdmin', path: '/system/admin', label: 'Quáº£n trá»‹ há»‡ thá»‘ng', icon: 'fa-screwdriver-wrench', permissionScope: 'system', loaderName: 'loadSystemAdmin' },
+      { moduleKey: 'users', screenId: 'users', path: '/system/users', label: 'Quáº£n lÃ½ tÃ i khoáº£n', icon: 'fa-user-shield', permissionScope: 'users', loaderName: 'loadAdminUsers' },
+      { moduleKey: 'permissions', screenId: 'permissions', path: '/system/permissions', label: 'PhÃ¢n quyá»n', icon: 'fa-key', permissionScope: 'permissions', loaderName: 'loadPermissions' },
+      { moduleKey: 'logs', screenId: 'logs', path: '/system/logs', label: 'Nháº­t kÃ½', icon: 'fa-clock-rotate-left', permissionScope: 'logs', loaderName: 'loadAdminLogs' },
+      { moduleKey: 'backups', screenId: 'backups', path: '/system/backups', label: 'Sao lÆ°u', icon: 'fa-database', permissionScope: 'backups', loaderName: 'loadAdminBackups' },
+      { moduleKey: 'restore', screenId: 'restore', path: '/system/restore', label: 'KhÃ´i phá»¥c', icon: 'fa-rotate-left', permissionScope: 'backups' },
+      { moduleKey: 'settings', screenId: 'settings', path: '/system/settings', label: 'Cáº¥u hÃ¬nh há»‡ thá»‘ng', icon: 'fa-gear', permissionScope: 'settings', loaderName: 'loadSettings' },
+      { moduleKey: 'appearance', screenId: 'appearance', path: '/system/appearance', label: 'Cáº¥u hÃ¬nh giao diá»‡n', icon: 'fa-palette', permissionScope: 'settings', loaderName: 'loadAppearanceSettings' }
     ].forEach(function (module) {
       modules.register(module);
     });
@@ -5753,6 +5754,7 @@
       { path: '/household-businesses', moduleKey: 'businessHouseholds', screenId: 'businessHouseholds', action: 'list' },
       { path: '/agricultural-land', moduleKey: 'agriculturalLand', screenId: 'agriculturalLand', action: 'list' },
       { path: '/livestock', moduleKey: 'livestock', screenId: 'livestock', action: 'list' },
+      { path: '/rural-clean-water', moduleKey: 'ruralCleanWater', screenId: 'ruralCleanWater', action: 'list' },
       { path: '/houses', moduleKey: 'houses', screenId: 'houses', action: 'list' },
       { path: '/vehicles', moduleKey: 'vehicles', screenId: 'vehicles', action: 'list' },
       { path: '/agriculture', moduleKey: 'agriculture', screenId: 'agriculture', action: 'list' },
@@ -5801,21 +5803,21 @@
       modalKey: 'householdModal',
       sections: {
         basic: [
-          { name: 'code', label: 'Mã hộ', required: true },
-          { name: 'headName', label: 'Chủ hộ' },
-          { name: 'address', label: 'Địa chỉ' }
+          { name: 'code', label: 'MÃ£ há»™', required: true },
+          { name: 'headName', label: 'Chá»§ há»™' },
+          { name: 'address', label: 'Äá»‹a chá»‰' }
         ],
         linked: [
-          { name: 'areaName', label: 'Địa bàn' }
+          { name: 'areaName', label: 'Äá»‹a bÃ n' }
         ],
         extended: [
-          { name: 'memberCount', label: 'Số nhân khẩu', type: 'number', defaultValue: 0 },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'memberCount', label: 'Sá»‘ nhÃ¢n kháº©u', type: 'number', defaultValue: 0 },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       actions: [
-        { key: 'save', label: 'Lưu', variant: 'success' },
-        { key: 'cancel', label: 'Hủy', variant: 'light' }
+        { key: 'save', label: 'LÆ°u', variant: 'success' },
+        { key: 'cancel', label: 'Há»§y', variant: 'light' }
       ]
     });
     lists.register({
@@ -5823,15 +5825,15 @@
       moduleKey: 'households',
       screenId: 'households',
       columns: [
-        { key: 'code', label: 'Mã hộ', sortable: true },
-        { key: 'headName', label: 'Chủ hộ', sortable: true },
-        { key: 'address', label: 'Địa chỉ' },
-        { key: 'memberCount', label: 'Nhân khẩu', sortable: true },
-        { key: 'status', label: 'Trạng thái' }
+        { key: 'code', label: 'MÃ£ há»™', sortable: true },
+        { key: 'headName', label: 'Chá»§ há»™', sortable: true },
+        { key: 'address', label: 'Äá»‹a chá»‰' },
+        { key: 'memberCount', label: 'NhÃ¢n kháº©u', sortable: true },
+        { key: 'status', label: 'Tráº¡ng thÃ¡i' }
       ],
       filters: [
-        { key: 'areaId', label: 'Địa bàn', type: 'select', defaultValue: '' },
-        { key: 'status', label: 'Trạng thái', type: 'select', defaultValue: '' }
+        { key: 'areaId', label: 'Äá»‹a bÃ n', type: 'select', defaultValue: '' },
+        { key: 'status', label: 'Tráº¡ng thÃ¡i', type: 'select', defaultValue: '' }
       ],
       rowActions: ['detail', 'edit'],
       bulkActions: ['export']
@@ -5850,23 +5852,23 @@
       modalKey: 'personModal',
       sections: {
         basic: [
-          { name: 'citizenCode', label: 'Mã nhân khẩu', required: true },
-          { name: 'fullName', label: 'Họ tên', required: true },
-          { name: 'gender', label: 'Giới tính' },
-          { name: 'birthDate', label: 'Ngày sinh', type: 'date' }
+          { name: 'citizenCode', label: 'MÃ£ nhÃ¢n kháº©u', required: true },
+          { name: 'fullName', label: 'Há» tÃªn', required: true },
+          { name: 'gender', label: 'Giá»›i tÃ­nh' },
+          { name: 'birthDate', label: 'NgÃ y sinh', type: 'date' }
         ],
         linked: [
-          { name: 'householdCode', label: 'Mã hộ' },
-          { name: 'relationship', label: 'Quan hệ với chủ hộ' }
+          { name: 'householdCode', label: 'MÃ£ há»™' },
+          { name: 'relationship', label: 'Quan há»‡ vá»›i chá»§ há»™' }
         ],
         extended: [
-          { name: 'phone', label: 'Điện thoại' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'phone', label: 'Äiá»‡n thoáº¡i' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       actions: [
-        { key: 'save', label: 'Lưu', variant: 'success' },
-        { key: 'cancel', label: 'Hủy', variant: 'light' }
+        { key: 'save', label: 'LÆ°u', variant: 'success' },
+        { key: 'cancel', label: 'Há»§y', variant: 'light' }
       ]
     });
     lists.register({
@@ -5874,16 +5876,16 @@
       moduleKey: 'persons',
       screenId: 'persons',
       columns: [
-        { key: 'citizenCode', label: 'Mã nhân khẩu', sortable: true },
-        { key: 'fullName', label: 'Họ tên', sortable: true },
-        { key: 'gender', label: 'Giới tính' },
-        { key: 'birthDate', label: 'Ngày sinh', sortable: true },
-        { key: 'householdCode', label: 'Mã hộ' },
-        { key: 'status', label: 'Trạng thái' }
+        { key: 'citizenCode', label: 'MÃ£ nhÃ¢n kháº©u', sortable: true },
+        { key: 'fullName', label: 'Há» tÃªn', sortable: true },
+        { key: 'gender', label: 'Giá»›i tÃ­nh' },
+        { key: 'birthDate', label: 'NgÃ y sinh', sortable: true },
+        { key: 'householdCode', label: 'MÃ£ há»™' },
+        { key: 'status', label: 'Tráº¡ng thÃ¡i' }
       ],
       filters: [
-        { key: 'gender', label: 'Giới tính', type: 'select', defaultValue: '' },
-        { key: 'status', label: 'Trạng thái', type: 'select', defaultValue: '' }
+        { key: 'gender', label: 'Giá»›i tÃ­nh', type: 'select', defaultValue: '' },
+        { key: 'status', label: 'Tráº¡ng thÃ¡i', type: 'select', defaultValue: '' }
       ],
       rowActions: ['detail', 'edit'],
       bulkActions: ['export']
@@ -5903,12 +5905,12 @@
         listKey: 'temporaryResidenceList',
         modalKey: 'temporaryResidenceModal',
         fields: [
-          { name: 'personName', label: 'Nhân khẩu', required: true },
-          { name: 'householdCode', label: 'Mã hộ' },
-          { name: 'fromDate', label: 'Từ ngày', type: 'date' },
-          { name: 'toDate', label: 'Đến ngày', type: 'date' },
-          { name: 'temporaryAddress', label: 'Địa chỉ tạm trú' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'personName', label: 'NhÃ¢n kháº©u', required: true },
+          { name: 'householdCode', label: 'MÃ£ há»™' },
+          { name: 'fromDate', label: 'Tá»« ngÃ y', type: 'date' },
+          { name: 'toDate', label: 'Äáº¿n ngÃ y', type: 'date' },
+          { name: 'temporaryAddress', label: 'Äá»‹a chá»‰ táº¡m trÃº' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -5917,12 +5919,12 @@
         listKey: 'temporaryAbsenceList',
         modalKey: 'temporaryAbsenceModal',
         fields: [
-          { name: 'personName', label: 'Nhân khẩu', required: true },
-          { name: 'householdCode', label: 'Mã hộ' },
-          { name: 'fromDate', label: 'Từ ngày', type: 'date' },
-          { name: 'toDate', label: 'Đến ngày', type: 'date' },
-          { name: 'destination', label: 'Nơi đến' },
-          { name: 'reason', label: 'Lý do' }
+          { name: 'personName', label: 'NhÃ¢n kháº©u', required: true },
+          { name: 'householdCode', label: 'MÃ£ há»™' },
+          { name: 'fromDate', label: 'Tá»« ngÃ y', type: 'date' },
+          { name: 'toDate', label: 'Äáº¿n ngÃ y', type: 'date' },
+          { name: 'destination', label: 'NÆ¡i Ä‘áº¿n' },
+          { name: 'reason', label: 'LÃ½ do' }
         ]
       },
       {
@@ -5931,12 +5933,12 @@
         listKey: 'movementsList',
         modalKey: 'movementModal',
         fields: [
-          { name: 'personName', label: 'Nhân khẩu', required: true },
-          { name: 'movementType', label: 'Loại biến động' },
-          { name: 'movementDate', label: 'Ngày biến động', type: 'date' },
-          { name: 'fromAddress', label: 'Nơi đi' },
-          { name: 'toAddress', label: 'Nơi đến' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'personName', label: 'NhÃ¢n kháº©u', required: true },
+          { name: 'movementType', label: 'Loáº¡i biáº¿n Ä‘á»™ng' },
+          { name: 'movementDate', label: 'NgÃ y biáº¿n Ä‘á»™ng', type: 'date' },
+          { name: 'fromAddress', label: 'NÆ¡i Ä‘i' },
+          { name: 'toAddress', label: 'NÆ¡i Ä‘áº¿n' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -5945,12 +5947,12 @@
         listKey: 'publicAssetsList',
         modalKey: 'publicAssetModal',
         fields: [
-          { name: 'assetCode', label: 'Mã công trình', required: true },
-          { name: 'assetName', label: 'Tên công trình', required: true },
-          { name: 'category', label: 'Loại công trình' },
-          { name: 'location', label: 'Vị trí' },
-          { name: 'managedBy', label: 'Đơn vị quản lý' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'assetCode', label: 'MÃ£ cÃ´ng trÃ¬nh', required: true },
+          { name: 'assetName', label: 'TÃªn cÃ´ng trÃ¬nh', required: true },
+          { name: 'category', label: 'Loáº¡i cÃ´ng trÃ¬nh' },
+          { name: 'location', label: 'Vá»‹ trÃ­' },
+          { name: 'managedBy', label: 'ÄÆ¡n vá»‹ quáº£n lÃ½' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -5959,12 +5961,12 @@
         listKey: 'businessHouseholdsList',
         modalKey: 'businessHouseholdModal',
         fields: [
-          { name: 'householdCode', label: 'Mã hộ', required: true },
-          { name: 'ownerName', label: 'Chủ hộ' },
-          { name: 'businessName', label: 'Tên cơ sở' },
-          { name: 'sector', label: 'Ngành nghề' },
-          { name: 'workerCount', label: 'Lao động', type: 'number', defaultValue: 0 },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'householdCode', label: 'MÃ£ há»™', required: true },
+          { name: 'ownerName', label: 'Chá»§ há»™' },
+          { name: 'businessName', label: 'TÃªn cÆ¡ sá»Ÿ' },
+          { name: 'sector', label: 'NgÃ nh nghá»' },
+          { name: 'workerCount', label: 'Lao Ä‘á»™ng', type: 'number', defaultValue: 0 },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -5973,12 +5975,12 @@
         listKey: 'agriculturalLandList',
         modalKey: 'agriculturalLandModal',
         fields: [
-          { name: 'zoneCode', label: 'Mã khu', required: true },
-          { name: 'zoneName', label: 'Tên khu', required: true },
-          { name: 'reportYear', label: 'Năm', type: 'number' },
-          { name: 'totalArea', label: 'Tổng diện tích', type: 'number', defaultValue: 0 },
-          { name: 'unit', label: 'Đơn vị' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'zoneCode', label: 'MÃ£ khu', required: true },
+          { name: 'zoneName', label: 'TÃªn khu', required: true },
+          { name: 'reportYear', label: 'NÄƒm', type: 'number' },
+          { name: 'totalArea', label: 'Tá»•ng diá»‡n tÃ­ch', type: 'number', defaultValue: 0 },
+          { name: 'unit', label: 'ÄÆ¡n vá»‹' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -5987,12 +5989,12 @@
         listKey: 'livestockList',
         modalKey: 'livestockModal',
         fields: [
-          { name: 'householdCode', label: 'Mã hộ', required: true },
-          { name: 'ownerName', label: 'Chủ hộ' },
-          { name: 'animalType', label: 'Loại vật nuôi' },
-          { name: 'quantity', label: 'Số lượng', type: 'number', defaultValue: 0 },
-          { name: 'scale', label: 'Quy mô' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'householdCode', label: 'MÃ£ há»™', required: true },
+          { name: 'ownerName', label: 'Chá»§ há»™' },
+          { name: 'animalType', label: 'Loáº¡i váº­t nuÃ´i' },
+          { name: 'quantity', label: 'Sá»‘ lÆ°á»£ng', type: 'number', defaultValue: 0 },
+          { name: 'scale', label: 'Quy mÃ´' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -6001,12 +6003,12 @@
         listKey: 'housesList',
         modalKey: 'houseModal',
         fields: [
-          { name: 'householdCode', label: 'Mã hộ', required: true },
-          { name: 'ownerName', label: 'Chủ hộ' },
-          { name: 'houseType', label: 'Loại nhà' },
-          { name: 'area', label: 'Diện tích', type: 'number', defaultValue: 0 },
-          { name: 'address', label: 'Địa chỉ' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'householdCode', label: 'MÃ£ há»™', required: true },
+          { name: 'ownerName', label: 'Chá»§ há»™' },
+          { name: 'houseType', label: 'Loáº¡i nhÃ ' },
+          { name: 'area', label: 'Diá»‡n tÃ­ch', type: 'number', defaultValue: 0 },
+          { name: 'address', label: 'Äá»‹a chá»‰' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -6015,12 +6017,12 @@
         listKey: 'vehiclesList',
         modalKey: 'vehicleModal',
         fields: [
-          { name: 'plateNumber', label: 'Biển số', required: true },
-          { name: 'ownerName', label: 'Chủ sở hữu' },
-          { name: 'vehicleType', label: 'Loại xe' },
-          { name: 'brand', label: 'Nhãn hiệu' },
-          { name: 'registrationStatus', label: 'Đăng ký' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'plateNumber', label: 'Biá»ƒn sá»‘', required: true },
+          { name: 'ownerName', label: 'Chá»§ sá»Ÿ há»¯u' },
+          { name: 'vehicleType', label: 'Loáº¡i xe' },
+          { name: 'brand', label: 'NhÃ£n hiá»‡u' },
+          { name: 'registrationStatus', label: 'ÄÄƒng kÃ½' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -6029,12 +6031,12 @@
         listKey: 'agricultureList',
         modalKey: 'agricultureModal',
         fields: [
-          { name: 'householdCode', label: 'Mã hộ', required: true },
-          { name: 'ownerName', label: 'Chủ hộ' },
-          { name: 'cropType', label: 'Loại cây trồng' },
-          { name: 'area', label: 'Diện tích', type: 'number', defaultValue: 0 },
-          { name: 'season', label: 'Mùa vụ' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'householdCode', label: 'MÃ£ há»™', required: true },
+          { name: 'ownerName', label: 'Chá»§ há»™' },
+          { name: 'cropType', label: 'Loáº¡i cÃ¢y trá»“ng' },
+          { name: 'area', label: 'Diá»‡n tÃ­ch', type: 'number', defaultValue: 0 },
+          { name: 'season', label: 'MÃ¹a vá»¥' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       },
       {
@@ -6043,12 +6045,12 @@
         listKey: 'contributionsList',
         modalKey: 'contributionModal',
         fields: [
-          { name: 'householdCode', label: 'Mã hộ', required: true },
-          { name: 'payerName', label: 'Người đóng' },
-          { name: 'contributionType', label: 'Khoản đóng' },
-          { name: 'amount', label: 'Số tiền', type: 'number', defaultValue: 0 },
-          { name: 'period', label: 'Kỳ đóng' },
-          { name: 'status', label: 'Trạng thái' }
+          { name: 'householdCode', label: 'MÃ£ há»™', required: true },
+          { name: 'payerName', label: 'NgÆ°á»i Ä‘Ã³ng' },
+          { name: 'contributionType', label: 'Khoáº£n Ä‘Ã³ng' },
+          { name: 'amount', label: 'Sá»‘ tiá»n', type: 'number', defaultValue: 0 },
+          { name: 'period', label: 'Ká»³ Ä‘Ã³ng' },
+          { name: 'status', label: 'Tráº¡ng thÃ¡i' }
         ]
       }
     ].forEach(function (record) {
@@ -6062,8 +6064,8 @@
           extended: record.fields.slice(5)
         },
         actions: [
-          { key: 'save', label: 'Lưu', variant: 'success' },
-          { key: 'cancel', label: 'Hủy', variant: 'light' }
+          { key: 'save', label: 'LÆ°u', variant: 'success' },
+          { key: 'cancel', label: 'Há»§y', variant: 'light' }
         ]
       });
       lists.register({
@@ -6074,7 +6076,7 @@
           return { key: field.name, label: field.label, sortable: field.required === true || field.name === 'status' };
         }),
         filters: [
-          { key: 'status', label: 'Trạng thái', type: 'select', defaultValue: '' }
+          { key: 'status', label: 'Tráº¡ng thÃ¡i', type: 'select', defaultValue: '' }
         ],
         rowActions: ['detail', 'edit'],
         bulkActions: ['export']
@@ -6091,16 +6093,17 @@
 
     [
       { key: 'dashboard', label: 'Dashboard', icon: 'fa-gauge-high', items: ['dashboard', 'dashboardHouseholds', 'dashboardPopulation', 'dashboardBusiness', 'dashboardVehicles', 'dashboardLivestock', 'dashboardGis', 'dashboardReports'] },
-      { key: 'overview', label: 'Tổng quan', icon: 'fa-tower-broadcast', items: ['operationCenter', 'workTasks', 'workCalendar', 'documents'] },
-      { key: 'population', label: 'Quản lý dân cư', icon: 'fa-users', items: ['households', 'persons', 'partyMembers', 'povertyManagement', 'temporaryResidence', 'temporaryAbsence', 'movements'] },
-      { key: 'assets', label: 'Quản lý tài sản', icon: 'fa-building-columns', items: ['publicAssets', 'photoGallery', 'houses', 'complaints'] },
-      { key: 'production', label: 'Quản lý sản xuất', icon: 'fa-seedling', items: ['businessHouseholds', 'agriculturalLand', 'agriculture', 'livestock'] },
-      { key: 'vehicles', label: 'Quản lý phương tiện', icon: 'fa-car', items: ['vehicles'] },
-      { key: 'finance', label: 'Quản lý tài chính', icon: 'fa-hand-holding-dollar', items: ['contributions', 'finance'] },
+      { key: 'overview', label: 'Tá»•ng quan', icon: 'fa-tower-broadcast', items: ['operationCenter', 'workTasks', 'workCalendar', 'documents'] },
+      { key: 'population', label: 'Quáº£n lÃ½ dÃ¢n cÆ°', icon: 'fa-users', items: ['households', 'persons', 'partyMembers', 'povertyManagement', 'temporaryResidence', 'temporaryAbsence', 'movements'] },
+      { key: 'defense', label: 'Qu\u1ed1c ph\u00f2ng - An ninh', icon: 'fa-shield-halved', items: ['defenseSecurity'] },
+      { key: 'assets', label: 'Quáº£n lÃ½ tÃ i sáº£n', icon: 'fa-building-columns', items: ['publicAssets', 'photoGallery', 'houses', 'complaints'] },
+      { key: 'production', label: 'Quáº£n lÃ½ sáº£n xuáº¥t', icon: 'fa-seedling', items: ['businessHouseholds', 'agriculturalLand', 'agriculture', 'livestock', 'ruralCleanWater'] },
+      { key: 'vehicles', label: 'Quáº£n lÃ½ phÆ°Æ¡ng tiá»‡n', icon: 'fa-car', items: ['vehicles'] },
+      { key: 'finance', label: 'Quáº£n lÃ½ tÃ i chÃ­nh', icon: 'fa-hand-holding-dollar', items: ['contributions', 'finance'] },
       { key: 'gis', label: 'GIS', icon: 'fa-map-location-dot', items: ['gis'] },
-      { key: 'reports', label: 'Báo cáo', icon: 'fa-chart-pie', items: ['reports'] },
-      { key: 'data', label: 'Dữ liệu', icon: 'fa-file-import', items: ['dataQuality', 'import', 'exportExcel', 'printForms'] },
-      { key: 'system', label: 'Hệ thống', icon: 'fa-user-shield', items: ['systemAdmin', 'users', 'permissions', 'logs', 'backups', 'restore', 'settings', 'appearance'] }
+      { key: 'reports', label: 'BÃ¡o cÃ¡o', icon: 'fa-chart-pie', items: ['reports'] },
+      { key: 'data', label: 'Dá»¯ liá»‡u', icon: 'fa-file-import', items: ['dataQuality', 'import', 'exportExcel', 'printForms'] },
+      { key: 'system', label: 'Há»‡ thá»‘ng', icon: 'fa-user-shield', items: ['systemAdmin', 'users', 'permissions', 'logs', 'backups', 'restore', 'settings', 'appearance'] }
     ].forEach(function (menu) {
       menus.register(menu);
     });

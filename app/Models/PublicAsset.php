@@ -172,7 +172,7 @@ SQL);
             'groups' => array_map(fn($r) => ['value' => (string)$r['id'], 'label' => (string)$r['name'], 'parent' => (string)($r['parent_name'] ?? '')], $groups),
             'conditions' => $this->pairs($this->inventoryStatuses()),
             'maintenance_statuses' => $this->pairs($this->maintenanceStatuses()),
-            'units' => array_map(fn($v) => ['value' => $v, 'label' => $v], ['cái', 'bộ', 'chiếc', 'máy', 'm²', 'm', 'hộp', 'bình']),
+            'units' => array_map(fn($v) => ['value' => $v, 'label' => $v], ['cÃ¡i', 'bá»™', 'chiáº¿c', 'mÃ¡y', 'mÂ²', 'm', 'há»™p', 'bÃ¬nh']),
         ];
     }
 
@@ -519,13 +519,13 @@ SQL);
     private function seedTypes(): void
     {
         $items = [
-            ['Hành chính','Trụ sở thôn','fa-landmark'], ['Hành chính','Nhà văn hóa','fa-building-columns'], ['Hành chính','Nhà sinh hoạt cộng đồng','fa-people-roof'],
-            ['Giáo dục','Trường học','fa-school'], ['Giáo dục','Điểm trường','fa-chalkboard-user'], ['Giáo dục','Nhà trẻ','fa-child-reaching'],
-            ['Y tế','Trạm y tế','fa-kit-medical'],
-            ['Tôn giáo, tín ngưỡng','Đình','fa-place-of-worship'], ['Tôn giáo, tín ngưỡng','Chùa','fa-vihara'], ['Tôn giáo, tín ngưỡng','Đền','fa-gopuram'], ['Tôn giáo, tín ngưỡng','Miếu','fa-place-of-worship'], ['Tôn giáo, tín ngưỡng','Nhà thờ','fa-church'], ['Tôn giáo, tín ngưỡng','Điểm sinh hoạt tôn giáo','fa-hands-praying'],
-            ['Văn hóa - Thể thao','Sân bóng','fa-futbol'], ['Văn hóa - Thể thao','Sân chơi','fa-children'], ['Văn hóa - Thể thao','Khu thể thao','fa-dumbbell'],
-            ['Hạ tầng','Cầu','fa-road-bridge'], ['Hạ tầng','Đường','fa-road'], ['Hạ tầng','Trạm điện','fa-bolt'], ['Hạ tầng','Trạm bơm','fa-faucet-drip'], ['Hạ tầng','Hồ chứa nước','fa-water'], ['Hạ tầng','Công trình thủy lợi','fa-person-digging'],
-            ['Môi trường','Điểm tập kết rác','fa-recycle'], ['Môi trường','Nhà vệ sinh công cộng','fa-restroom'],
+            ['HÃ nh chÃ­nh','Trá»¥ sá»Ÿ thÃ´n','fa-landmark'], ['HÃ nh chÃ­nh','NhÃ  vÄƒn hÃ³a','fa-building-columns'], ['HÃ nh chÃ­nh','NhÃ  sinh hoáº¡t cá»™ng Ä‘á»“ng','fa-people-roof'],
+            ['GiÃ¡o dá»¥c','TrÆ°á»ng há»c','fa-school'], ['GiÃ¡o dá»¥c','Äiá»ƒm trÆ°á»ng','fa-chalkboard-user'], ['GiÃ¡o dá»¥c','NhÃ  tráº»','fa-child-reaching'],
+            ['Y táº¿','Tráº¡m y táº¿','fa-kit-medical'],
+            ['TÃ´n giÃ¡o, tÃ­n ngÆ°á»¡ng','ÄÃ¬nh','fa-place-of-worship'], ['TÃ´n giÃ¡o, tÃ­n ngÆ°á»¡ng','ChÃ¹a','fa-vihara'], ['TÃ´n giÃ¡o, tÃ­n ngÆ°á»¡ng','Äá»n','fa-gopuram'], ['TÃ´n giÃ¡o, tÃ­n ngÆ°á»¡ng','Miáº¿u','fa-place-of-worship'], ['TÃ´n giÃ¡o, tÃ­n ngÆ°á»¡ng','NhÃ  thá»','fa-church'], ['TÃ´n giÃ¡o, tÃ­n ngÆ°á»¡ng','Äiá»ƒm sinh hoáº¡t tÃ´n giÃ¡o','fa-hands-praying'],
+            ['VÄƒn hÃ³a - Thá»ƒ thao','SÃ¢n bÃ³ng','fa-futbol'], ['VÄƒn hÃ³a - Thá»ƒ thao','SÃ¢n chÆ¡i','fa-children'], ['VÄƒn hÃ³a - Thá»ƒ thao','Khu thá»ƒ thao','fa-dumbbell'],
+            ['Háº¡ táº§ng','Cáº§u','fa-road-bridge'], ['Háº¡ táº§ng','ÄÆ°á»ng','fa-road'], ['Háº¡ táº§ng','Tráº¡m Ä‘iá»‡n','fa-bolt'], ['Háº¡ táº§ng','Tráº¡m bÆ¡m','fa-faucet-drip'], ['Háº¡ táº§ng','Há»“ chá»©a nÆ°á»›c','fa-water'], ['Háº¡ táº§ng','CÃ´ng trÃ¬nh thá»§y lá»£i','fa-person-digging'],
+            ['MÃ´i trÆ°á»ng','Äiá»ƒm táº­p káº¿t rÃ¡c','fa-recycle'], ['MÃ´i trÆ°á»ng','NhÃ  vá»‡ sinh cÃ´ng cá»™ng','fa-restroom'],
         ];
         $order = 10;
         foreach ($items as [$category, $name, $icon]) {
@@ -538,17 +538,17 @@ SQL);
     private function seedInventoryGroups(): void
     {
         $items = [
-            ['Nội thất', 'Nội thất'], ['Bàn', 'Nội thất'], ['Ghế', 'Nội thất'], ['Tủ', 'Nội thất'], ['Kệ', 'Nội thất'],
-            ['Thiết bị điện', 'Thiết bị điện'], ['Quạt', 'Thiết bị điện'], ['Điều hòa', 'Thiết bị điện'], ['Đèn', 'Thiết bị điện'], ['Bình nóng lạnh', 'Thiết bị điện'],
-            ['Thiết bị điện tử', 'Thiết bị điện tử'], ['Điện tử', 'Thiết bị điện tử'], ['Máy tính', 'Thiết bị điện tử'], ['Máy in', 'Thiết bị điện tử'], ['Máy chiếu', 'Thiết bị điện tử'], ['Loa', 'Thiết bị điện tử'], ['Amply', 'Thiết bị điện tử'], ['Micro', 'Thiết bị điện tử'], ['Camera', 'Thiết bị điện tử'],
-            ['Thiết bị PCCC', 'Thiết bị PCCC'], ['PCCC', 'Thiết bị PCCC'], ['Bình chữa cháy', 'Thiết bị PCCC'], ['Tủ PCCC', 'Thiết bị PCCC'], ['Chuông báo cháy', 'Thiết bị PCCC'],
-            ['Thiết bị khác', 'Thiết bị khác'], ['Dụng cụ vệ sinh', 'Thiết bị khác'], ['Thiết bị thể thao', 'Thiết bị khác'], ['Thiết bị y tế', 'Thiết bị khác'], ['Thiết bị văn phòng', 'Thiết bị khác'],
+            ['Ná»™i tháº¥t', 'Ná»™i tháº¥t'], ['BÃ n', 'Ná»™i tháº¥t'], ['Gháº¿', 'Ná»™i tháº¥t'], ['Tá»§', 'Ná»™i tháº¥t'], ['Ká»‡', 'Ná»™i tháº¥t'],
+            ['Thiáº¿t bá»‹ Ä‘iá»‡n', 'Thiáº¿t bá»‹ Ä‘iá»‡n'], ['Quáº¡t', 'Thiáº¿t bá»‹ Ä‘iá»‡n'], ['Äiá»u hÃ²a', 'Thiáº¿t bá»‹ Ä‘iá»‡n'], ['ÄÃ¨n', 'Thiáº¿t bá»‹ Ä‘iá»‡n'], ['BÃ¬nh nÃ³ng láº¡nh', 'Thiáº¿t bá»‹ Ä‘iá»‡n'],
+            ['Thiáº¿t bá»‹ Ä‘iá»‡n tá»­', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'], ['Äiá»‡n tá»­', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'], ['MÃ¡y tÃ­nh', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'], ['MÃ¡y in', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'], ['MÃ¡y chiáº¿u', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'], ['Loa', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'], ['Amply', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'], ['Micro', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'], ['Camera', 'Thiáº¿t bá»‹ Ä‘iá»‡n tá»­'],
+            ['Thiáº¿t bá»‹ PCCC', 'Thiáº¿t bá»‹ PCCC'], ['PCCC', 'Thiáº¿t bá»‹ PCCC'], ['BÃ¬nh chá»¯a chÃ¡y', 'Thiáº¿t bá»‹ PCCC'], ['Tá»§ PCCC', 'Thiáº¿t bá»‹ PCCC'], ['ChuÃ´ng bÃ¡o chÃ¡y', 'Thiáº¿t bá»‹ PCCC'],
+            ['Thiáº¿t bá»‹ khÃ¡c', 'Thiáº¿t bá»‹ khÃ¡c'], ['Dá»¥ng cá»¥ vá»‡ sinh', 'Thiáº¿t bá»‹ khÃ¡c'], ['Thiáº¿t bá»‹ thá»ƒ thao', 'Thiáº¿t bá»‹ khÃ¡c'], ['Thiáº¿t bá»‹ y táº¿', 'Thiáº¿t bá»‹ khÃ¡c'], ['Thiáº¿t bá»‹ vÄƒn phÃ²ng', 'Thiáº¿t bá»‹ khÃ¡c'],
         ];
         $items = array_merge($items, [
-            ['Thiết bị', 'Thiết bị khác'],
-            ['Máy móc', 'Thiết bị khác'],
-            ['Bàn ghế', 'Nội thất'],
-            ['Cờ', 'Thiết bị khác'],
+            ['Thiáº¿t bá»‹', 'Thiáº¿t bá»‹ khÃ¡c'],
+            ['MÃ¡y mÃ³c', 'Thiáº¿t bá»‹ khÃ¡c'],
+            ['BÃ n gháº¿', 'Ná»™i tháº¥t'],
+            ['Cá»', 'Thiáº¿t bá»‹ khÃ¡c'],
         ]);
         $order = 10;
         foreach ($items as [$name, $parent]) {

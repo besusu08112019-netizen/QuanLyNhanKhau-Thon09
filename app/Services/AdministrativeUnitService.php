@@ -40,7 +40,7 @@ final class AdministrativeUnitService
     {
         $unit = $this->repository->find($id);
         if (!$unit) {
-            throw new RuntimeException('Không tìm thấy đơn vị');
+            throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n vá»‹');
         }
         return $unit;
     }
@@ -51,7 +51,7 @@ final class AdministrativeUnitService
         $data = $this->validate($input);
         $this->assertUnique($data);
         $unit = $this->repository->create($data);
-        $this->audit->write($actor, 'unit.created', (int) ($unit['id'] ?? 0), 'Tạo đơn vị hành chính', ['code' => $unit['code'] ?? null]);
+        $this->audit->write($actor, 'unit.created', (int) ($unit['id'] ?? 0), 'Táº¡o Ä‘Æ¡n vá»‹ hÃ nh chÃ­nh', ['code' => $unit['code'] ?? null]);
         return $unit;
     }
 
@@ -62,7 +62,7 @@ final class AdministrativeUnitService
         $data = $this->validate($input, false);
         $this->assertUnique($data, $id);
         $unit = $this->repository->update($id, $data);
-        $this->audit->write($actor, 'unit.updated', $id, 'Cập nhật đơn vị hành chính', ['fields' => array_keys($data)]);
+        $this->audit->write($actor, 'unit.updated', $id, 'Cáº­p nháº­t Ä‘Æ¡n vá»‹ hÃ nh chÃ­nh', ['fields' => array_keys($data)]);
         return $unit;
     }
 
@@ -71,10 +71,10 @@ final class AdministrativeUnitService
         $actor = $this->authorization->authorize('control_center.units.lock');
         $unit = $this->find($id);
         if (!in_array((string) ($unit['status'] ?? ''), ['READY', 'ACTIVE'], true)) {
-            throw new InvalidArgumentException('Đơn vị không ở trạng thái có thể khóa');
+            throw new InvalidArgumentException('ÄÆ¡n vá»‹ khÃ´ng á»Ÿ tráº¡ng thÃ¡i cÃ³ thá»ƒ khÃ³a');
         }
         $updated = $this->repository->setStatus($id, 'DISABLED');
-        $this->audit->write($actor, 'unit.locked', $id, 'Khóa đơn vị hành chính', ['code' => $unit['code'] ?? null]);
+        $this->audit->write($actor, 'unit.locked', $id, 'KhÃ³a Ä‘Æ¡n vá»‹ hÃ nh chÃ­nh', ['code' => $unit['code'] ?? null]);
         return $updated;
     }
 
@@ -83,10 +83,10 @@ final class AdministrativeUnitService
         $actor = $this->authorization->authorize('control_center.units.activate');
         $unit = $this->find($id);
         if (in_array((string) ($unit['status'] ?? ''), ['READY', 'ACTIVE'], true)) {
-            throw new InvalidArgumentException('Đơn vị đã được kích hoạt');
+            throw new InvalidArgumentException('ÄÆ¡n vá»‹ Ä‘Ã£ Ä‘Æ°á»£c kÃ­ch hoáº¡t');
         }
         $updated = $this->repository->setStatus($id, 'ACTIVE');
-        $this->audit->write($actor, 'unit.activated', $id, 'Kích hoạt đơn vị hành chính', ['code' => $unit['code'] ?? null]);
+        $this->audit->write($actor, 'unit.activated', $id, 'KÃ­ch hoáº¡t Ä‘Æ¡n vá»‹ hÃ nh chÃ­nh', ['code' => $unit['code'] ?? null]);
         return $updated;
     }
 
@@ -95,26 +95,26 @@ final class AdministrativeUnitService
         $actor = $this->authorization->authorize('control_center.units.update');
         $unit = $this->find($id);
         if (!in_array((string) ($unit['status'] ?? ''), ['READY', 'ACTIVE'], true)) {
-            $updated = $this->repository->updateDatabaseHealth($id, 'LOCKED', 'Đơn vị đang bị khóa');
-            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiểm tra kết nối đơn vị đang khóa', ['status' => 'LOCKED']);
+            $updated = $this->repository->updateDatabaseHealth($id, 'LOCKED', 'ÄÆ¡n vá»‹ Ä‘ang bá»‹ khÃ³a');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiá»ƒm tra káº¿t ná»‘i Ä‘Æ¡n vá»‹ Ä‘ang khÃ³a', ['status' => 'LOCKED']);
             return $updated;
         }
 
         $database = trim((string) ($unit['databaseName'] ?? ''));
         if ($database === '') {
-            $updated = $this->repository->updateDatabaseHealth($id, 'UNKNOWN', 'Thiếu tên cơ sở dữ liệu');
-            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiểm tra kết nối đơn vị thiếu cơ sở dữ liệu', ['status' => 'UNKNOWN']);
+            $updated = $this->repository->updateDatabaseHealth($id, 'UNKNOWN', 'Thiáº¿u tÃªn cÆ¡ sá»Ÿ dá»¯ liá»‡u');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiá»ƒm tra káº¿t ná»‘i Ä‘Æ¡n vá»‹ thiáº¿u cÆ¡ sá»Ÿ dá»¯ liá»‡u', ['status' => 'UNKNOWN']);
             return $updated;
         }
 
         try {
             $this->connectTenantDatabase($unit);
             $updated = $this->repository->updateDatabaseHealth($id, 'CONNECTED');
-            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiểm tra kết nối đơn vị thành công', ['status' => 'CONNECTED']);
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiá»ƒm tra káº¿t ná»‘i Ä‘Æ¡n vá»‹ thÃ nh cÃ´ng', ['status' => 'CONNECTED']);
             return $updated;
         } catch (PDOException $e) {
-            $updated = $this->repository->updateDatabaseHealth($id, 'DISCONNECTED', 'Không kết nối được cơ sở dữ liệu');
-            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiểm tra kết nối đơn vị thất bại', ['status' => 'DISCONNECTED'], 'WARN');
+            $updated = $this->repository->updateDatabaseHealth($id, 'DISCONNECTED', 'KhÃ´ng káº¿t ná»‘i Ä‘Æ°á»£c cÆ¡ sá»Ÿ dá»¯ liá»‡u');
+            $this->audit->write($actor, 'unit.connection_checked', $id, 'Kiá»ƒm tra káº¿t ná»‘i Ä‘Æ¡n vá»‹ tháº¥t báº¡i', ['status' => 'DISCONNECTED'], 'WARN');
             return $updated;
         }
     }
@@ -124,21 +124,21 @@ final class AdministrativeUnitService
         $actor = $this->authorization->authorize('control_center.units.update');
         $unit = $this->find($id);
         if (!in_array((string) ($unit['status'] ?? ''), ['READY', 'ACTIVE'], true)) {
-            $updated = $this->repository->updateWebsiteHealth($id, 'LOCKED', 'UNKNOWN', 'Đơn vị đang bị khóa');
-            $this->audit->write($actor, 'unit.website_checked', $id, 'Kiểm tra trang web đơn vị đang khóa', ['status' => 'LOCKED']);
+            $updated = $this->repository->updateWebsiteHealth($id, 'LOCKED', 'UNKNOWN', 'ÄÆ¡n vá»‹ Ä‘ang bá»‹ khÃ³a');
+            $this->audit->write($actor, 'unit.website_checked', $id, 'Kiá»ƒm tra trang web Ä‘Æ¡n vá»‹ Ä‘ang khÃ³a', ['status' => 'LOCKED']);
             return $updated;
         }
 
         $domain = trim((string) ($unit['domain'] ?? ''));
         if ($domain === '') {
-            $updated = $this->repository->updateWebsiteHealth($id, 'UNKNOWN', 'UNKNOWN', 'Thiếu tên miền');
-            $this->audit->write($actor, 'unit.website_checked', $id, 'Kiểm tra trang web đơn vị thiếu tên miền', ['status' => 'UNKNOWN']);
+            $updated = $this->repository->updateWebsiteHealth($id, 'UNKNOWN', 'UNKNOWN', 'Thiáº¿u tÃªn miá»n');
+            $this->audit->write($actor, 'unit.website_checked', $id, 'Kiá»ƒm tra trang web Ä‘Æ¡n vá»‹ thiáº¿u tÃªn miá»n', ['status' => 'UNKNOWN']);
             return $updated;
         }
 
         $result = $this->probeWebsite($domain);
         $updated = $this->repository->updateWebsiteHealth($id, $result['websiteStatus'], $result['sslStatus'], $result['error']);
-        $this->audit->write($actor, 'unit.website_checked', $id, 'Kiểm tra trang web đơn vị', [
+        $this->audit->write($actor, 'unit.website_checked', $id, 'Kiá»ƒm tra trang web Ä‘Æ¡n vá»‹', [
             'website_status' => $result['websiteStatus'],
             'ssl_status' => $result['sslStatus'],
             'http_code' => $result['httpCode'],
@@ -152,10 +152,10 @@ final class AdministrativeUnitService
         $unit = $this->find($id);
         $domain = trim((string) ($unit['domain'] ?? ''));
         if ($domain === '') {
-            throw new InvalidArgumentException('Đơn vị chưa có tên miền');
+            throw new InvalidArgumentException('ÄÆ¡n vá»‹ chÆ°a cÃ³ tÃªn miá»n');
         }
         $url = 'https://' . $domain;
-        $this->audit->write($actor, 'unit.portal_opened', $id, 'Mở cổng đơn vị từ Community Control Center', ['domain' => $domain]);
+        $this->audit->write($actor, 'unit.portal_opened', $id, 'Má»Ÿ cá»•ng Ä‘Æ¡n vá»‹ tá»« Community Control Center', ['domain' => $domain]);
         return ['url' => $url];
     }
 
@@ -166,7 +166,7 @@ final class AdministrativeUnitService
         if ($creating || array_key_exists('code', $input)) {
             $code = strtolower(trim((string) ($input['code'] ?? '')));
             if ($code === '' || !preg_match('/^[a-z0-9_-]{2,50}$/', $code)) {
-                throw new InvalidArgumentException('Mã đơn vị không hợp lệ');
+                throw new InvalidArgumentException('MÃ£ Ä‘Æ¡n vá»‹ khÃ´ng há»£p lá»‡');
             }
             $data['code'] = $code;
         }
@@ -174,7 +174,7 @@ final class AdministrativeUnitService
         if ($creating || array_key_exists('name', $input)) {
             $name = trim((string) ($input['name'] ?? ''));
             if ($name === '' || mb_strlen($name, 'UTF-8') > 190) {
-                throw new InvalidArgumentException('Tên đơn vị không hợp lệ');
+                throw new InvalidArgumentException('TÃªn Ä‘Æ¡n vá»‹ khÃ´ng há»£p lá»‡');
             }
             $data['name'] = $name;
         }
@@ -182,7 +182,7 @@ final class AdministrativeUnitService
         if (array_key_exists('type', $input)) {
             $type = strtoupper(trim((string) $input['type']));
             if ($type !== 'VILLAGE') {
-                throw new InvalidArgumentException('Loại đơn vị chưa được hỗ trợ trong tính năng này');
+                throw new InvalidArgumentException('Loáº¡i Ä‘Æ¡n vá»‹ chÆ°a Ä‘Æ°á»£c há»— trá»£ trong tÃ­nh nÄƒng nÃ y');
             }
         }
 
@@ -229,7 +229,7 @@ final class AdministrativeUnitService
         if (array_key_exists('connection_status', $input)) {
             $connectionStatus = strtoupper(trim((string) $input['connection_status']));
             if (!in_array($connectionStatus, ['CONNECTED', 'DISCONNECTED', 'UNKNOWN', 'LOCKED'], true)) {
-                throw new InvalidArgumentException('Trạng thái kết nối không hợp lệ');
+                throw new InvalidArgumentException('Tráº¡ng thÃ¡i káº¿t ná»‘i khÃ´ng há»£p lá»‡');
             }
             $data['connection_status'] = $connectionStatus;
         } elseif ($creating) {
@@ -243,7 +243,7 @@ final class AdministrativeUnitService
         if (array_key_exists('status', $input)) {
             $status = strtoupper(trim((string) $input['status']));
             if (!in_array($status, self::STATUSES, true)) {
-                throw new InvalidArgumentException('Trạng thái đơn vị không hợp lệ');
+                throw new InvalidArgumentException('Tráº¡ng thÃ¡i Ä‘Æ¡n vá»‹ khÃ´ng há»£p lá»‡');
             }
             $data['status'] = $status;
         } elseif ($creating) {
@@ -265,13 +265,13 @@ final class AdministrativeUnitService
     private function assertUnique(array $data, ?int $ignoreId = null): void
     {
         if (isset($data['code']) && $this->repository->existsByCode($data['code'], $ignoreId)) {
-            throw new InvalidArgumentException('Mã đơn vị đã tồn tại');
+            throw new InvalidArgumentException('MÃ£ Ä‘Æ¡n vá»‹ Ä‘Ã£ tá»“n táº¡i');
         }
         if (isset($data['domain']) && $data['domain'] !== '' && $this->repository->existsByDomain($data['domain'], $ignoreId)) {
-            throw new InvalidArgumentException('Tên miền đã tồn tại');
+            throw new InvalidArgumentException('TÃªn miá»n Ä‘Ã£ tá»“n táº¡i');
         }
         if (isset($data['subdomain']) && $data['subdomain'] !== '' && $this->repository->existsBySubdomain($data['subdomain'], $ignoreId)) {
-            throw new InvalidArgumentException('Tên miền phụ đã tồn tại');
+            throw new InvalidArgumentException('TÃªn miá»n phá»¥ Ä‘Ã£ tá»“n táº¡i');
         }
     }
 
@@ -282,7 +282,7 @@ final class AdministrativeUnitService
             return null;
         }
         if (mb_strlen($text, 'UTF-8') > $max) {
-            throw new InvalidArgumentException($field . ' không hợp lệ');
+            throw new InvalidArgumentException($field . ' khÃ´ng há»£p lá»‡');
         }
         return $text;
     }
@@ -294,10 +294,10 @@ final class AdministrativeUnitService
             return null;
         }
         if (str_contains($host, '://') || str_contains($host, '/') || str_contains($host, '?')) {
-            throw new InvalidArgumentException($field . ' không hợp lệ');
+            throw new InvalidArgumentException($field . ' khÃ´ng há»£p lá»‡');
         }
         if (!preg_match('/^(?=.{1,190}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])$/', $host)) {
-            throw new InvalidArgumentException($field . ' không hợp lệ');
+            throw new InvalidArgumentException($field . ' khÃ´ng há»£p lá»‡');
         }
         return $host;
     }
@@ -309,12 +309,12 @@ final class AdministrativeUnitService
             return null;
         }
         if (str_contains($logo, '..') || preg_match('/[\x00-\x1F]/', $logo) || mb_strlen($logo, 'UTF-8') > 500) {
-            throw new InvalidArgumentException('Logo không hợp lệ');
+            throw new InvalidArgumentException('Logo khÃ´ng há»£p lá»‡');
         }
         if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://') || str_starts_with($logo, '/')) {
             return $logo;
         }
-        throw new InvalidArgumentException('Logo không hợp lệ');
+        throw new InvalidArgumentException('Logo khÃ´ng há»£p lá»‡');
     }
 
     private function nullableDatabaseName(mixed $value): ?string
@@ -324,7 +324,7 @@ final class AdministrativeUnitService
             return null;
         }
         if (!preg_match('/^[a-zA-Z0-9_]{1,190}$/', $name)) {
-            throw new InvalidArgumentException('Tên cơ sở dữ liệu không hợp lệ');
+            throw new InvalidArgumentException('TÃªn cÆ¡ sá»Ÿ dá»¯ liá»‡u khÃ´ng há»£p lá»‡');
         }
         return $name;
     }
@@ -336,7 +336,7 @@ final class AdministrativeUnitService
             return null;
         }
         if (mb_strlen($host, 'UTF-8') > 190 || str_contains($host, '/') || str_contains($host, '?')) {
-            throw new InvalidArgumentException('Máy chủ cơ sở dữ liệu không hợp lệ');
+            throw new InvalidArgumentException('MÃ¡y chá»§ cÆ¡ sá»Ÿ dá»¯ liá»‡u khÃ´ng há»£p lá»‡');
         }
         return $host;
     }
@@ -348,7 +348,7 @@ final class AdministrativeUnitService
             return null;
         }
         if (!preg_match('/^[a-z0-9_]{1,50}$/', $charset)) {
-            throw new InvalidArgumentException('Bảng mã cơ sở dữ liệu không hợp lệ');
+            throw new InvalidArgumentException('Báº£ng mÃ£ cÆ¡ sá»Ÿ dá»¯ liá»‡u khÃ´ng há»£p lá»‡');
         }
         return $charset;
     }
@@ -461,7 +461,7 @@ final class AdministrativeUnitService
                 return $result;
             }
         }
-        $result['error'] = 'Kiểm tra trang web thất bại';
+        $result['error'] = 'Kiá»ƒm tra trang web tháº¥t báº¡i';
         return $result;
     }
 }

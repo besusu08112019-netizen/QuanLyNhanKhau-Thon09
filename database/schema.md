@@ -6,7 +6,7 @@ Google Sheets database gom cac sheet sau.
 
 `id`, `householdCode`, `headCitizenId`, `address`, `phone`, `areaCode`, `memberCount`, `note`, `status`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `deletedAt`, `deletedBy`, `headCitizenName`, `poorHousehold`, `nearPoorHousehold`
 
-`meritoriousPolicy` và `disabledPolicy` là dữ liệu suy ra từ nhân khẩu, không lưu trong bảng `households`.
+`meritoriousPolicy` vÃ  `disabledPolicy` lÃ  dá»¯ liá»‡u suy ra tá»« nhÃ¢n kháº©u, khÃ´ng lÆ°u trong báº£ng `households`.
 
 ## citizens
 

@@ -1,4 +1,4 @@
-﻿-- Add direct parent name fields to citizens. No foreign keys are created.
+ï»¿-- Add direct parent name fields to citizens. No foreign keys are created.
 SET @father_exists := (
   SELECT COUNT(*)
   FROM INFORMATION_SCHEMA.COLUMNS

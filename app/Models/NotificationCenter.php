@@ -125,7 +125,7 @@ SQL);
     {
         if (!$this->tableExists('backups')) return [];
         $failed = $this->count('backups b', 'UPPER(COALESCE(b.status,"")) NOT IN ("SUCCESS","RESTORED") AND ' . $this->tenantWhere('b', 'backups') . ' AND b.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)');
-        return [$this->item('backup_failed', 'Sao luu that bai', 'Co ban sao luu/khôi phuc khong thanh cong', $failed, 'urgent', 'backups', 'fa-database')];
+        return [$this->item('backup_failed', 'Sao luu that bai', 'Co ban sao luu/khÃ´i phuc khong thanh cong', $failed, 'urgent', 'backups', 'fa-database')];
     }
 
     private function item(string $key, string $title, string $message, int $count, string $priority, string $screen, string $icon): array

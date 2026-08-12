@@ -69,7 +69,7 @@ final class PlatformSettingsRepository
                 'tenantCount' => $villages,
             ];
         } catch (Throwable $e) {
-            return ['ok' => false, 'status' => 'ERROR', 'message' => 'Không kiểm tra được Central Registry'];
+            return ['ok' => false, 'status' => 'ERROR', 'message' => 'KhÃ´ng kiá»ƒm tra Ä‘Æ°á»£c Central Registry'];
         }
     }
 

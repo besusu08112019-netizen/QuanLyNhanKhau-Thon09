@@ -30,7 +30,7 @@ final class ComplaintController extends BaseController
     {
         $this->requirePermission('complaints', 'read');
         $row = $this->complaints->find((int)$id);
-        if (!$row) $this->fail('Không tìm thấy phản ánh', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh', 404);
         $this->ok($row);
     }
 
@@ -38,7 +38,7 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'create');
         $row = $this->complaints->upsert((array)$this->input(), (int)$user['id'], $this->userName($user));
-        $this->audit($user, 'complaints', 'create', 'Thêm phản ánh - kiến nghị', $row['id'], ['after' => $row]);
+        $this->audit($user, 'complaints', 'create', 'ThÃªm pháº£n Ã¡nh - kiáº¿n nghá»‹', $row['id'], ['after' => $row]);
         $this->ok($row);
     }
 
@@ -46,9 +46,9 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'update');
         $before = $this->complaints->find((int)$id);
-        if (!$before) $this->fail('Không tìm thấy phản ánh', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh', 404);
         $row = $this->complaints->upsert((array)$this->input(), (int)$user['id'], $this->userName($user), (int)$id);
-        $this->audit($user, 'complaints', 'update', 'Cập nhật phản ánh - kiến nghị', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'complaints', 'update', 'Cáº­p nháº­t pháº£n Ã¡nh - kiáº¿n nghá»‹', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -56,9 +56,9 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'delete');
         $before = $this->complaints->find((int)$id);
-        if (!$before) $this->fail('Không tìm thấy phản ánh', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh', 404);
         $this->complaints->softDelete((int)$id, (int)$user['id']);
-        $this->audit($user, 'complaints', 'delete', 'Xóa phản ánh - kiến nghị', $id, ['before' => $before]);
+        $this->audit($user, 'complaints', 'delete', 'XÃ³a pháº£n Ã¡nh - kiáº¿n nghá»‹', $id, ['before' => $before]);
         $this->ok(['id' => (int)$id]);
     }
 
@@ -66,7 +66,7 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'update');
         $row = $this->complaints->addHistory((int)$id, (array)$this->input(), (int)$user['id'], $this->userName($user));
-        $this->audit($user, 'complaints', 'status_change', 'Cập nhật nhật ký xử lý phản ánh', $id, ['history' => $row]);
+        $this->audit($user, 'complaints', 'status_change', 'Cáº­p nháº­t nháº­t kÃ½ xá»­ lÃ½ pháº£n Ã¡nh', $id, ['history' => $row]);
         $this->ok($row);
     }
 
@@ -74,7 +74,7 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'update');
         $row = $this->complaints->assign((int)$id, (array)$this->input(), (int)$user['id']);
-        $this->audit($user, 'complaints', 'assign', 'Giao việc xử lý phản ánh', $id, ['assignment' => $row]);
+        $this->audit($user, 'complaints', 'assign', 'Giao viá»‡c xá»­ lÃ½ pháº£n Ã¡nh', $id, ['assignment' => $row]);
         $this->ok($row);
     }
 
@@ -82,23 +82,23 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'update');
         $row = $this->complaints->evaluate((int)$id, (array)$this->input(), (int)$user['id']);
-        $this->audit($user, 'complaints', 'evaluate', 'Đánh giá kết quả xử lý phản ánh', $id, ['rating' => $row['result_rating'] ?? null]);
+        $this->audit($user, 'complaints', 'evaluate', 'ÄÃ¡nh giÃ¡ káº¿t quáº£ xá»­ lÃ½ pháº£n Ã¡nh', $id, ['rating' => $row['result_rating'] ?? null]);
         $this->ok($row);
     }
 
     public function uploadAttachment(string $id): void
     {
         $user = $this->requirePermission('complaints', 'upload');
-        if (!$this->complaints->find((int)$id)) $this->fail('Không tìm thấy phản ánh', 404);
+        if (!$this->complaints->find((int)$id)) $this->fail('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh', 404);
         $file = $_FILES['file'] ?? null;
-        if (!is_array($file)) $this->fail('Vui lòng chọn file đính kèm', 422);
+        if (!is_array($file)) $this->fail('Vui lÃ²ng chá»n file Ä‘Ã­nh kÃ¨m', 422);
         $storage = new FileStorageService();
         $info = $storage->inspectUpload($file, $this->fileType($file), 'complaint');
-        if (!$this->allowedComplaintMime($info['mime'])) throw new \RuntimeException('Chỉ hỗ trợ ảnh, video MP4/WEBM hoặc PDF');
+        if (!$this->allowedComplaintMime($info['mime'])) throw new \RuntimeException('Chá»‰ há»— trá»£ áº£nh, video MP4/WEBM hoáº·c PDF');
         $stored = $storage->storeUpload($file, 'complaint', $this->categoryForMime($info['mime']), $info['extension']);
         $stored['mime'] = $info['mime'];
         $row = $this->complaints->addAttachment((int)$id, $stored, $file, (int)$user['id'], (int)($this->input('history_id', $this->input('historyId', 0))) ?: null);
-        $this->audit($user, 'complaints', 'upload', 'Đính kèm file phản ánh', $id, ['file' => $row]);
+        $this->audit($user, 'complaints', 'upload', 'ÄÃ­nh kÃ¨m file pháº£n Ã¡nh', $id, ['file' => $row]);
         $this->ok($row);
     }
 
@@ -109,9 +109,9 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'delete');
         $before = $this->complaints->attachment((int)$id, (int)$fileId);
-        if (!$before) $this->fail('Không tìm thấy file đính kèm', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m', 404);
         $this->complaints->deleteAttachment((int)$id, (int)$fileId, (int)$user['id']);
-        $this->audit($user, 'complaints', 'delete_attachment', 'Xóa file đính kèm phản ánh', $id, ['file' => $before]);
+        $this->audit($user, 'complaints', 'delete_attachment', 'XÃ³a file Ä‘Ã­nh kÃ¨m pháº£n Ã¡nh', $id, ['file' => $before]);
         $this->ok(['id' => (int)$fileId]);
     }
 
@@ -125,7 +125,7 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'export');
         $report = $this->complaints->report($this->filters());
-        $this->audit($user, 'complaints', 'export', 'Xuất Excel báo cáo phản ánh', null, ['totalRows' => $report['totalRows']]);
+        $this->audit($user, 'complaints', 'export', 'Xuáº¥t Excel bÃ¡o cÃ¡o pháº£n Ã¡nh', null, ['totalRows' => $report['totalRows']]);
         $fileName = 'bao-cao-phan-anh-' . date('Ymd_His') . '.xls';
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
@@ -146,13 +146,13 @@ final class ComplaintController extends BaseController
     {
         $user = $this->requirePermission('complaints', 'export');
         $report = $this->complaints->report($this->filters());
-        $this->audit($user, 'complaints', 'export', 'Xuất PDF báo cáo phản ánh', null, ['totalRows' => $report['totalRows']]);
+        $this->audit($user, 'complaints', 'export', 'Xuáº¥t PDF bÃ¡o cÃ¡o pháº£n Ã¡nh', null, ['totalRows' => $report['totalRows']]);
         $pdf = new SimplePdf();
         $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
-        $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
+        $pdf->addMeta('Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s'));
         foreach ($report['summary'] as $label => $value) $pdf->addMeta($label . ': ' . $value);
         $pdf->addTable($report['headers'], $report['rows']);
-        $pdf->addSignatureBlock('Trưởng thôn');
+        $pdf->addSignatureBlock('TrÆ°á»Ÿng thÃ´n');
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="bao-cao-phan-anh-' . date('Ymd_His') . '.pdf"');
         echo $pdf->output();
@@ -163,12 +163,12 @@ final class ComplaintController extends BaseController
     {
         $this->requirePermission('complaints', 'read');
         $file = $this->complaints->attachment($id, $fileId);
-        if (!$file) $this->fail('Không tìm thấy file đính kèm', 404);
+        if (!$file) $this->fail('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m', 404);
         $storage = new FileStorageService();
         $path = $storage->safeFilePath((string)$file['stored_path']);
-        if (!$path || !is_file($path)) $this->fail('File không còn tồn tại', 404);
+        if (!$path || !is_file($path)) $this->fail('File khÃ´ng cÃ²n tá»“n táº¡i', 404);
         $mime = mime_content_type($path) ?: (string)$file['mime_type'];
-        if (!$this->allowedComplaintMime($mime)) $this->fail('Định dạng file không được hỗ trợ', 415);
+        if (!$this->allowedComplaintMime($mime)) $this->fail('Äá»‹nh dáº¡ng file khÃ´ng Ä‘Æ°á»£c há»— trá»£', 415);
         header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));

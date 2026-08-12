@@ -22,13 +22,13 @@ final class WorkTaskController extends BaseController
     public function index(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->paginate($this->filters()), $this->emptyPage(), 'work_tasks.index'); }
     public function catalogs(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->catalogs(), ['categories' => [], 'priorities' => [], 'statuses' => [], 'related_modules' => []], 'work_tasks.catalogs'); }
     public function dashboard(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->dashboard($this->filters()), ['metrics' => [], 'charts' => []], 'work_tasks.dashboard'); }
-    public function report(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->report($this->filters()), ['title' => 'Báo cáo công việc', 'headers' => [], 'rows' => [], 'totalRows' => 0, 'summary' => []], 'work_tasks.report'); }
+    public function report(): void { $this->requirePermission('work_tasks', 'read'); $this->okOrFallback(fn() => $this->tasks->report($this->filters()), ['title' => 'BÃ¡o cÃ¡o cÃ´ng viá»‡c', 'headers' => [], 'rows' => [], 'totalRows' => 0, 'summary' => []], 'work_tasks.report'); }
 
     public function show(string $id): void
     {
         $this->requirePermission('work_tasks', 'read');
         $row = $this->tasks->find((int)$id);
-        if (!$row) $this->fail('Không tìm thấy công việc', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c', 404);
         $this->ok($row);
     }
 
@@ -37,7 +37,7 @@ final class WorkTaskController extends BaseController
         $user = $this->requirePermission('work_tasks', 'create');
         try {
             $row = $this->tasks->upsert((array)$this->input(), (int)$user['id'], $this->userName($user));
-            $this->audit($user, 'work_tasks', 'create', 'Thêm công việc', $row['id'], ['after' => $row]);
+            $this->audit($user, 'work_tasks', 'create', 'ThÃªm cÃ´ng viá»‡c', $row['id'], ['after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -49,9 +49,9 @@ final class WorkTaskController extends BaseController
         $user = $this->requirePermission('work_tasks', 'update');
         try {
             $before = $this->tasks->find((int)$id);
-            if (!$before) $this->fail('Không tìm thấy công việc', 404);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c', 404);
             $row = $this->tasks->upsert((array)$this->input(), (int)$user['id'], $this->userName($user), (int)$id);
-            $this->audit($user, 'work_tasks', 'update', 'Cập nhật công việc', $id, ['before' => $before, 'after' => $row]);
+            $this->audit($user, 'work_tasks', 'update', 'Cáº­p nháº­t cÃ´ng viá»‡c', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -63,9 +63,9 @@ final class WorkTaskController extends BaseController
         $user = $this->requirePermission('work_tasks', 'delete');
         try {
             $before = $this->tasks->find((int)$id);
-            if (!$before) $this->fail('Không tìm thấy công việc', 404);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c', 404);
             $this->tasks->softDelete((int)$id, (int)$user['id']);
-            $this->audit($user, 'work_tasks', 'delete', 'Xóa công việc', $id, ['before' => $before], 'WARN');
+            $this->audit($user, 'work_tasks', 'delete', 'XÃ³a cÃ´ng viá»‡c', $id, ['before' => $before], 'WARN');
             $this->ok(['id' => (int)$id]);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -77,7 +77,7 @@ final class WorkTaskController extends BaseController
         $user = $this->requirePermission('work_tasks', 'update');
         try {
             $row = $this->tasks->addLog((int)$id, (array)$this->input(), (int)$user['id'], $this->userName($user));
-            $this->audit($user, 'work_tasks', 'progress', 'Cập nhật nhật ký công việc', $id, ['log' => $row]);
+            $this->audit($user, 'work_tasks', 'progress', 'Cáº­p nháº­t nháº­t kÃ½ cÃ´ng viá»‡c', $id, ['log' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -87,16 +87,16 @@ final class WorkTaskController extends BaseController
     public function uploadAttachment(string $id): void
     {
         $user = $this->requirePermission('work_tasks', 'upload');
-        if (!$this->tasks->find((int)$id)) $this->fail('Không tìm thấy công việc', 404);
+        if (!$this->tasks->find((int)$id)) $this->fail('KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c', 404);
         $file = $_FILES['file'] ?? null;
-        if (!is_array($file)) $this->fail('Vui lòng chọn file đính kèm', 422);
+        if (!is_array($file)) $this->fail('Vui lÃ²ng chá»n file Ä‘Ã­nh kÃ¨m', 422);
         $storage = new FileStorageService();
         $info = $storage->inspectUpload($file, $this->fileType($file), 'work_task');
-        if (!$this->allowedMime($info['mime'])) throw new \RuntimeException('Chỉ hỗ trợ ảnh, video, PDF, Word, Excel hoặc CSV');
+        if (!$this->allowedMime($info['mime'])) throw new \RuntimeException('Chá»‰ há»— trá»£ áº£nh, video, PDF, Word, Excel hoáº·c CSV');
         $stored = $storage->storeUpload($file, 'work_task', $this->categoryForMime($info['mime']), $info['extension']);
         $stored['mime'] = $info['mime'];
         $row = $this->tasks->addAttachment((int)$id, $stored, $file, (int)$user['id'], (int)($this->input('log_id', $this->input('logId', 0))) ?: null);
-        $this->audit($user, 'work_tasks', 'upload', 'Đính kèm file công việc', $id, ['file' => $row]);
+        $this->audit($user, 'work_tasks', 'upload', 'ÄÃ­nh kÃ¨m file cÃ´ng viá»‡c', $id, ['file' => $row]);
         $this->ok($row);
     }
 
@@ -107,9 +107,9 @@ final class WorkTaskController extends BaseController
     {
         $user = $this->requirePermission('work_tasks', 'delete');
         $before = $this->tasks->attachment((int)$id, (int)$fileId);
-        if (!$before) $this->fail('Không tìm thấy file đính kèm', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m', 404);
         $this->tasks->deleteAttachment((int)$id, (int)$fileId, (int)$user['id']);
-        $this->audit($user, 'work_tasks', 'delete_attachment', 'Xóa file đính kèm công việc', $id, ['file' => $before]);
+        $this->audit($user, 'work_tasks', 'delete_attachment', 'XÃ³a file Ä‘Ã­nh kÃ¨m cÃ´ng viá»‡c', $id, ['file' => $before]);
         $this->ok(['id' => (int)$fileId]);
     }
 
@@ -117,7 +117,7 @@ final class WorkTaskController extends BaseController
     {
         $user = $this->requirePermission('work_tasks', 'export');
         $report = $this->tasks->report($this->filters());
-        $this->audit($user, 'work_tasks', 'export', 'Xuất Excel báo cáo công việc', null, ['totalRows' => $report['totalRows']]);
+        $this->audit($user, 'work_tasks', 'export', 'Xuáº¥t Excel bÃ¡o cÃ¡o cÃ´ng viá»‡c', null, ['totalRows' => $report['totalRows']]);
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="bao-cao-cong-viec-' . date('Ymd_His') . '.xls"');
         echo "\xEF\xBB\xBF";
@@ -137,12 +137,12 @@ final class WorkTaskController extends BaseController
     {
         $user = $this->requirePermission('work_tasks', 'export');
         $report = $this->tasks->report($this->filters());
-        $this->audit($user, 'work_tasks', 'export', 'Xuất PDF báo cáo công việc', null, ['totalRows' => $report['totalRows']]);
+        $this->audit($user, 'work_tasks', 'export', 'Xuáº¥t PDF bÃ¡o cÃ¡o cÃ´ng viá»‡c', null, ['totalRows' => $report['totalRows']]);
         $pdf = new SimplePdf();
         $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
-        $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
+        $pdf->addMeta('Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s'));
         $pdf->addTable($report['headers'], $report['rows']);
-        $pdf->addSignatureBlock('Trưởng thôn');
+        $pdf->addSignatureBlock('TrÆ°á»Ÿng thÃ´n');
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="bao-cao-cong-viec-' . date('Ymd_His') . '.pdf"');
         echo $pdf->output();
@@ -153,12 +153,12 @@ final class WorkTaskController extends BaseController
     {
         $this->requirePermission('work_tasks', 'read');
         $file = $this->tasks->attachment($id, $fileId);
-        if (!$file) $this->fail('Không tìm thấy file đính kèm', 404);
+        if (!$file) $this->fail('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m', 404);
         $storage = new FileStorageService();
         $path = $storage->safeFilePath((string)$file['stored_path']);
-        if (!$path || !is_file($path)) $this->fail('File không còn tồn tại', 404);
+        if (!$path || !is_file($path)) $this->fail('File khÃ´ng cÃ²n tá»“n táº¡i', 404);
         $mime = mime_content_type($path) ?: (string)$file['mime_type'];
-        if (!$this->allowedMime($mime)) $this->fail('Định dạng file không được hỗ trợ', 415);
+        if (!$this->allowedMime($mime)) $this->fail('Äá»‹nh dáº¡ng file khÃ´ng Ä‘Æ°á»£c há»— trá»£', 415);
         header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));

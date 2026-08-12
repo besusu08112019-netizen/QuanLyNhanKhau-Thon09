@@ -32,7 +32,7 @@ final class TenantRegistryStatusService
                 'sqlstate' => $e instanceof PDOException ? ($e->errorInfo[0] ?? $e->getCode()) : $e->getCode(),
                 'code' => (string) $e->getCode(),
             ], JSON_UNESCAPED_SLASHES));
-            return $this->locked('registry_unavailable', 'Khong kiem tra duoc trang thai don vi');
+            return $this->locked('registry_unavailable', 'KhÃ´ng kiá»ƒm tra Ä‘Æ°á»£c tráº¡ng thÃ¡i Ä‘Æ¡n vá»‹');
         }
 
         if (!$row) {

@@ -57,7 +57,7 @@ final class HouseController extends BaseController
     {
         $this->requirePermission('houses', 'read');
         $row = $this->houses->find((int)$id);
-        if (!$row) $this->fail('Khong tim thay nha o', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y nhÃ  á»Ÿ', 404);
         $this->ok($row);
     }
 
@@ -65,7 +65,7 @@ final class HouseController extends BaseController
     {
         $user = $this->requirePermission('houses', 'create');
         $row = $this->houses->upsert((array)$this->input(), (int)$user['id']);
-        $this->audit($user, 'houses', 'create', 'Them nha o va cong trinh', $row['id'], ['before' => null, 'after' => $row]);
+        $this->audit($user, 'houses', 'create', 'ThÃªm nhÃ  á»Ÿ vÃ  cÃ´ng trÃ¬nh', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -73,9 +73,9 @@ final class HouseController extends BaseController
     {
         $user = $this->requirePermission('houses', 'update');
         $before = $this->houses->find((int)$id);
-        if (!$before) $this->fail('Khong tim thay nha o', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y nhÃ  á»Ÿ', 404);
         $row = $this->houses->upsert((array)$this->input(), (int)$user['id'], (int)$id);
-        $this->audit($user, 'houses', 'update', 'Cap nhat nha o va cong trinh', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'houses', 'update', 'Cáº­p nháº­t nhÃ  á»Ÿ vÃ  cÃ´ng trÃ¬nh', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -83,9 +83,9 @@ final class HouseController extends BaseController
     {
         $user = $this->requirePermission('houses', 'delete');
         $before = $this->houses->find((int)$id);
-        if (!$before) $this->fail('Khong tim thay nha o', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y nhÃ  á»Ÿ', 404);
         $this->houses->softDelete((int)$id, (int)$user['id']);
-        $this->audit($user, 'houses', 'delete', 'Xoa nha o va cong trinh', $id, ['before' => $before, 'after' => null]);
+        $this->audit($user, 'houses', 'delete', 'XÃ³a nhÃ  á»Ÿ vÃ  cÃ´ng trÃ¬nh', $id, ['before' => $before, 'after' => null]);
         $this->ok(['id' => (int)$id]);
     }
 
@@ -93,10 +93,10 @@ final class HouseController extends BaseController
     {
         $user = $this->requirePermission('houses', 'update');
         $houseId = (int)$id;
-        if (!$this->houses->find($houseId)) $this->fail('Khong tim thay nha o', 404);
+        if (!$this->houses->find($houseId)) $this->fail('KhÃ´ng tÃ¬m tháº¥y nhÃ  á»Ÿ', 404);
         $uploads = $this->normalizeUploads($_FILES['file'] ?? $_FILES['files'] ?? null);
         if (!$uploads) $this->fail('Vui long chon anh', 422);
-        $type = (string)($_POST['photo_type'] ?? $_POST['type'] ?? 'Khac');
+        $type = (string)($_POST['photo_type'] ?? $_POST['type'] ?? 'KhÃ¡c');
         $description = trim((string)($_POST['description'] ?? ''));
         $storage = new FileStorageService();
         $items = [];
@@ -115,9 +115,9 @@ final class HouseController extends BaseController
     {
         $user = $this->requirePermission('houses', 'delete');
         $photo = $this->houses->photo((int)$photoId);
-        if (!$photo || (int)$photo['house_id'] !== (int)$id) $this->fail('Khong tim thay anh', 404);
+        if (!$photo || (int)$photo['house_id'] !== (int)$id) $this->fail('KhÃ´ng tÃ¬m tháº¥y áº£nh', 404);
         $before = $this->houses->deletePhoto((int)$photoId, (int)$user['id']);
-        $this->audit($user, 'houses', 'delete_photo', 'Xoa anh nha o', $id, ['before' => $before]);
+        $this->audit($user, 'houses', 'delete_photo', 'XÃ³a áº£nh nhÃ  á»Ÿ', $id, ['before' => $before]);
         $this->ok(['id' => (int)$photoId]);
     }
 

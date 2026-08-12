@@ -46,7 +46,7 @@ final class Router
             return;
         }
 
-        Response::error('API không tồn tại', 404);
+        Response::error('API khÃ´ng tá»“n táº¡i', 404);
     }
 
     private function dispatchGisHouseholdLocationRoute(): bool
@@ -105,7 +105,7 @@ final class Router
                     $user['email'] ?? null,
                     'rbac',
                     'permission_denied',
-                    'Từ chối request ghi dữ liệu của tài khoản Khách',
+                    'Tá»« chá»‘i request ghi dá»¯ liá»‡u cá»§a tÃ i khoáº£n KhÃ¡ch',
                     null,
                     [
                         'role' => $user['role'] ?? null,
@@ -119,7 +119,7 @@ final class Router
                 error_log('[RBAC_DENIED_AUDIT_ERROR] ' . $auditError->getMessage());
             }
 
-            Response::error('Tài khoản Khách chỉ được phép xem dữ liệu', 403);
+            Response::error('TÃ i khoáº£n KhÃ¡ch chá»‰ Ä‘Æ°á»£c phÃ©p xem dá»¯ liá»‡u', 403);
         } catch (\Throwable $e) {
             error_log('[RBAC_VIEWER_GUARD_ERROR] ' . $e->getMessage());
         }

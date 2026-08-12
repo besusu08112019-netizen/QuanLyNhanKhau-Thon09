@@ -40,13 +40,13 @@ final class GisArea extends BaseModel
         $areaCode = trim((string) ($data['area_code'] ?? $data['areaCode'] ?? ''));
         $polygon = $this->normalizePolygonInput($data['polygon'] ?? $data['geometry'] ?? null);
 
-        if ($name === '') throw new \RuntimeException('Tên khu vực là bắt buộc');
-        if ($areaCode === '') throw new \RuntimeException('Mã khu vực là bắt buộc');
-        if (!$this->validGeometry($polygon)) throw new \RuntimeException('Ranh giới khu vực chưa hợp lệ');
+        if ($name === '') throw new \RuntimeException('TÃªn khu vá»±c lÃ  báº¯t buá»™c');
+        if ($areaCode === '') throw new \RuntimeException('MÃ£ khu vá»±c lÃ  báº¯t buá»™c');
+        if (!$this->validGeometry($polygon)) throw new \RuntimeException('Ranh giá»›i khu vá»±c chÆ°a há»£p lá»‡');
 
         $polygonGeoJson = $this->toGeoJson($polygon);
         $polygonJson = json_encode($polygonGeoJson, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($polygonJson === false) throw new \RuntimeException('Không mã hóa được dữ liệu polygon');
+        if ($polygonJson === false) throw new \RuntimeException('KhÃ´ng mÃ£ hÃ³a Ä‘Æ°á»£c dá»¯ liá»‡u polygon');
 
         $params = [
             'name' => $name,
@@ -94,7 +94,7 @@ final class GisArea extends BaseModel
     public function delete(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy khu vực bản đồ');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y khu vá»±c báº£n Ä‘á»“');
         $sql = 'UPDATE gis_areas SET status = "DELETED", deleted_by = :deleted_by, deleted_at = NOW() WHERE id = :id AND ' . $this->tenantLiteral('gis_areas');
         try {
             $this->trackedExecute($sql, ['id' => $id, 'deleted_by' => $userId]);

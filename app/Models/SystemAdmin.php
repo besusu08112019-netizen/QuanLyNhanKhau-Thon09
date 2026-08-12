@@ -15,7 +15,7 @@ final class SystemAdmin extends BaseModel
         $population = (new PopulationStatistics())->counts();
         return [
             'system' => [
-                'name' => $app['name'] ?? TenantConfig::setting('systemName', 'He thong Quan ly Hanh chinh'),
+                'name' => $app['name'] ?? TenantConfig::setting('systemName', 'Há»‡ thá»‘ng Quáº£n lÃ½ HÃ nh chÃ­nh'),
                 'version' => defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1.0.0',
                 'phpVersion' => PHP_VERSION,
                 'databaseVersion' => $this->databaseVersion(),
@@ -43,18 +43,18 @@ final class SystemAdmin extends BaseModel
     {
         $started = microtime(true);
         $checks = [];
-        $checks[] = $this->check('database', 'Database kết nối', fn() => ['message' => 'OK', 'meta' => ['version' => $this->databaseVersion()]]);
-        $checks[] = $this->check('api', 'API hoạt động', fn() => ['message' => 'OK', 'meta' => ['responseMs' => round((microtime(true) - $started) * 1000, 2)]]);
-        $checks[] = $this->checkPath('uploads', 'Thư mục Upload', $this->uploadRoot(), true);
-        $checks[] = $this->checkPath('storage', 'Thư mục Storage', $this->storageRoot(), true);
-        $checks[] = $this->check('disk', 'Dung lượng ổ đĩa', function () {
+        $checks[] = $this->check('database', 'Database káº¿t ná»‘i', fn() => ['message' => 'OK', 'meta' => ['version' => $this->databaseVersion()]]);
+        $checks[] = $this->check('api', 'API hoáº¡t Ä‘á»™ng', fn() => ['message' => 'OK', 'meta' => ['responseMs' => round((microtime(true) - $started) * 1000, 2)]]);
+        $checks[] = $this->checkPath('uploads', 'ThÆ° má»¥c Upload', $this->uploadRoot(), true);
+        $checks[] = $this->checkPath('storage', 'ThÆ° má»¥c Storage', $this->storageRoot(), true);
+        $checks[] = $this->check('disk', 'Dung lÆ°á»£ng á»• Ä‘Ä©a', function () {
             $free = @disk_free_space(BASE_PATH);
             $total = @disk_total_space(BASE_PATH);
             $percent = $total ? round((1 - ($free / $total)) * 100, 1) : 0;
-            return ['status' => $percent >= 90 ? 'warning' : 'ok', 'message' => $percent . '% đã sử dụng', 'meta' => ['free' => $free, 'total' => $total, 'usedPercent' => $percent]];
+            return ['status' => $percent >= 90 ? 'warning' : 'ok', 'message' => $percent . '% Ä‘Ã£ sá»­ dá»¥ng', 'meta' => ['free' => $free, 'total' => $total, 'usedPercent' => $percent]];
         });
-        $checks[] = $this->check('memory', 'Bộ nhớ PHP', fn() => ['message' => $this->bytes(memory_get_usage(true)) . ' đang dùng', 'meta' => ['peak' => memory_get_peak_usage(true), 'limit' => ini_get('memory_limit')]]);
-        $checks[] = $this->check('sessions', 'Phiên đăng nhập', fn() => ['message' => $this->activeSessionCount() . ' phiên đang hoạt động']);
+        $checks[] = $this->check('memory', 'Bá»™ nhá»› PHP', fn() => ['message' => $this->bytes(memory_get_usage(true)) . ' Ä‘ang dÃ¹ng', 'meta' => ['peak' => memory_get_peak_usage(true), 'limit' => ini_get('memory_limit')]]);
+        $checks[] = $this->check('sessions', 'PhiÃªn Ä‘Äƒng nháº­p', fn() => ['message' => $this->activeSessionCount() . ' phiÃªn Ä‘ang hoáº¡t Ä‘á»™ng']);
         $summary = ['ok' => 0, 'warning' => 0, 'error' => 0];
         foreach ($checks as $check) $summary[$check['status']] = ($summary[$check['status']] ?? 0) + 1;
         return ['summary' => $summary, 'checks' => $checks, 'generatedAt' => date('c')];
@@ -92,24 +92,24 @@ final class SystemAdmin extends BaseModel
         $latestSlow = $this->tableExists('audit_logs') ? $this->fetchAll("SELECT created_at, module, action, message FROM audit_logs WHERE message LIKE '%slow%' OR action LIKE '%slow%' ORDER BY created_at DESC LIMIT 10") : [];
         return [
             'metrics' => [
-                ['label' => 'Phản hồi Database', 'value' => $dbMs, 'unit' => 'ms', 'status' => $dbMs > 500 ? 'warning' : 'ok'],
-                ['label' => 'Bộ nhớ hiện tại', 'value' => round(memory_get_usage(true) / 1048576, 2), 'unit' => 'MB', 'status' => 'ok'],
-                ['label' => 'Bộ nhớ đỉnh', 'value' => round(memory_get_peak_usage(true) / 1048576, 2), 'unit' => 'MB', 'status' => 'ok'],
+                ['label' => 'Pháº£n há»“i Database', 'value' => $dbMs, 'unit' => 'ms', 'status' => $dbMs > 500 ? 'warning' : 'ok'],
+                ['label' => 'Bá»™ nhá»› hiá»‡n táº¡i', 'value' => round(memory_get_usage(true) / 1048576, 2), 'unit' => 'MB', 'status' => 'ok'],
+                ['label' => 'Bá»™ nhá»› Ä‘á»‰nh', 'value' => round(memory_get_peak_usage(true) / 1048576, 2), 'unit' => 'MB', 'status' => 'ok'],
             ],
             'slowQueries' => $latestSlow,
-            'recommendations' => ['Theo dõi API > 500ms để tối ưu truy vấn.', 'Không sinh PDF/Excel hàng loạt nếu không có yêu cầu.', 'Dọn cache và session hết hạn định kỳ.'],
+            'recommendations' => ['Theo dÃµi API > 500ms Ä‘á»ƒ tá»‘i Æ°u truy váº¥n.', 'KhÃ´ng sinh PDF/Excel hÃ ng loáº¡t náº¿u khÃ´ng cÃ³ yÃªu cáº§u.', 'Dá»n cache vÃ  session háº¿t háº¡n Ä‘á»‹nh ká»³.'],
         ];
     }
 
     public function security(): array
     {
         return ['checks' => [
-            ['label' => 'Phân quyền API', 'status' => 'ok', 'message' => 'Các API quản trị yêu cầu ADMIN/SUPER_ADMIN'],
-            ['label' => 'CSRF', 'status' => 'ok', 'message' => 'Các thao tác ghi kiểm tra X-CSRF-Token'],
-            ['label' => 'XSS', 'status' => 'ok', 'message' => 'Frontend escape dữ liệu động trước khi render'],
-            ['label' => 'SQL Injection', 'status' => 'ok', 'message' => 'Model sử dụng prepared statement cho tham số người dùng'],
-            ['label' => 'Upload an toàn', 'status' => 'ok', 'message' => 'Giới hạn loại tệp và kích thước ở FileStorageService'],
-            ['label' => 'Giới hạn upload', 'status' => 'ok', 'message' => 'upload_max_filesize=' . ini_get('upload_max_filesize') . ', post_max_size=' . ini_get('post_max_size')],
+            ['label' => 'PhÃ¢n quyá»n API', 'status' => 'ok', 'message' => 'CÃ¡c API quáº£n trá»‹ yÃªu cáº§u ADMIN/SUPER_ADMIN'],
+            ['label' => 'CSRF', 'status' => 'ok', 'message' => 'CÃ¡c thao tÃ¡c ghi kiá»ƒm tra X-CSRF-Token'],
+            ['label' => 'XSS', 'status' => 'ok', 'message' => 'Frontend escape dá»¯ liá»‡u Ä‘á»™ng trÆ°á»›c khi render'],
+            ['label' => 'SQL Injection', 'status' => 'ok', 'message' => 'Model sá»­ dá»¥ng prepared statement cho tham sá»‘ ngÆ°á»i dÃ¹ng'],
+            ['label' => 'Upload an toÃ n', 'status' => 'ok', 'message' => 'Giá»›i háº¡n loáº¡i tá»‡p vÃ  kÃ­ch thÆ°á»›c á»Ÿ FileStorageService'],
+            ['label' => 'Giá»›i háº¡n upload', 'status' => 'ok', 'message' => 'upload_max_filesize=' . ini_get('upload_max_filesize') . ', post_max_size=' . ini_get('post_max_size')],
         ]];
     }
 
@@ -117,9 +117,9 @@ final class SystemAdmin extends BaseModel
     {
         return ['items' => [
             ['key' => 'cache', 'label' => 'Cache', 'stats' => $this->pathStats($this->cacheRoot())],
-            ['key' => 'sessions', 'label' => 'Session hết hạn', 'stats' => ['files' => 0, 'bytes' => 0, 'expired' => $this->expiredSessionCount(), 'label' => $this->expiredSessionCount() . ' phiên']],
+            ['key' => 'sessions', 'label' => 'Session háº¿t háº¡n', 'stats' => ['files' => 0, 'bytes' => 0, 'expired' => $this->expiredSessionCount(), 'label' => $this->expiredSessionCount() . ' phiÃªn']],
             ['key' => 'logs', 'label' => 'Log', 'stats' => $this->pathStats($this->logsRoot())],
-            ['key' => 'tmp', 'label' => 'File tạm', 'stats' => $this->pathStats($this->tempRoot())],
+            ['key' => 'tmp', 'label' => 'File táº¡m', 'stats' => $this->pathStats($this->tempRoot())],
         ]];
     }
 
@@ -129,7 +129,7 @@ final class SystemAdmin extends BaseModel
             'cache' => $this->cleanupDirectory($this->cacheRoot()),
             'sessions' => ['removed' => $this->execute('UPDATE user_sessions SET revoked_at = NOW() WHERE revoked_at IS NULL AND expires_at <= NOW()'), 'bytes' => 0, 'label' => '0 B'],
             'tmp' => $this->cleanupDirectory($this->tempRoot(), true),
-            default => throw new \RuntimeException('Không hỗ trợ dọn dẹp mục này'),
+            default => throw new \RuntimeException('KhÃ´ng há»— trá»£ dá»n dáº¹p má»¥c nÃ y'),
         };
     }
 
@@ -165,9 +165,9 @@ final class SystemAdmin extends BaseModel
     private function checkPath(string $key, string $label, string $path, bool $requireWritable): array
     {
         return $this->check($key, $label, function () use ($path, $requireWritable) {
-            if (!is_dir($path)) return ['status' => 'warning', 'message' => 'Chưa tồn tại'];
-            if ($requireWritable && !is_writable($path)) return ['status' => 'error', 'message' => 'Không có quyền ghi'];
-            return ['message' => 'Sẵn sàng', 'meta' => $this->pathStats($path)];
+            if (!is_dir($path)) return ['status' => 'warning', 'message' => 'ChÆ°a tá»“n táº¡i'];
+            if ($requireWritable && !is_writable($path)) return ['status' => 'error', 'message' => 'KhÃ´ng cÃ³ quyá»n ghi'];
+            return ['message' => 'Sáºµn sÃ ng', 'meta' => $this->pathStats($path)];
         });
     }
     private function sessionRow(array $row): array { $agent = (string) ($row['user_agent'] ?? ''); return $row + ['device' => $this->deviceFromAgent($agent), 'browser' => $this->browserFromAgent($agent)]; }
@@ -181,9 +181,9 @@ final class SystemAdmin extends BaseModel
     private function tempRoot(): string { $config = $this->appConfig(); return rtrim(str_replace('\\', '/', (string) ($config['temp_path'] ?? RuntimePaths::tempRoot())), '/'); }
     private function appConfig(): array { return is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : []; }
     private function bytes(int|float|null $bytes): string { $bytes = max(0, (float) ($bytes ?? 0)); foreach (['B','KB','MB','GB','TB'] as $unit) { if ($bytes < 1024 || $unit === 'TB') return round($bytes, $unit === 'B' ? 0 : 2) . ' ' . $unit; $bytes /= 1024; } return '0 B'; }
-    private function uptimeLabel(): string { if (function_exists('sys_getloadavg')) { $load = @sys_getloadavg(); if ($load) return 'Load ' . implode(' / ', array_map(fn($v) => round((float) $v, 2), $load)); } return 'Đang hoạt động'; }
+    private function uptimeLabel(): string { if (function_exists('sys_getloadavg')) { $load = @sys_getloadavg(); if ($load) return 'Load ' . implode(' / ', array_map(fn($v) => round((float) $v, 2), $load)); } return 'Äang hoáº¡t Ä‘á»™ng'; }
     private function deviceFromAgent(string $agent): string { return preg_match('/Mobile|Android|iPhone/i', $agent) ? 'Mobile' : (preg_match('/Tablet|iPad/i', $agent) ? 'Tablet' : 'Desktop'); }
-    private function browserFromAgent(string $agent): string { foreach (['Edg' => 'Edge', 'Chrome' => 'Chrome', 'Firefox' => 'Firefox', 'Safari' => 'Safari'] as $needle => $label) if (stripos($agent, $needle) !== false) return $label; return $agent !== '' ? 'Khác' : 'Không rõ'; }
+    private function browserFromAgent(string $agent): string { foreach (['Edg' => 'Edge', 'Chrome' => 'Chrome', 'Firefox' => 'Firefox', 'Safari' => 'Safari'] as $needle => $label) if (stripos($agent, $needle) !== false) return $label; return $agent !== '' ? 'KhÃ¡c' : 'KhÃ´ng rÃµ'; }
     private function cleanupDirectory(string $path, bool $oldOnly = false): array
     {
         if (!is_dir($path)) return ['removed' => 0, 'bytes' => 0, 'label' => '0 B'];

@@ -25,7 +25,7 @@ final class BackupController extends BaseController
     {
         $user = $this->requireSuperAdmin('backup', 'export');
         $backup = $this->backups->createSqlDump((int) $user['id']);
-        $this->audit($user, 'backup', 'export', 'Tạo bản sao lưu SQL', null, ['fileName' => $backup['fileName'], 'size' => $backup['size'], 'checksum' => $backup['checksum']]);
+        $this->audit($user, 'backup', 'export', 'Táº¡o báº£n sao lÆ°u SQL', null, ['fileName' => $backup['fileName'], 'size' => $backup['size'], 'checksum' => $backup['checksum']]);
         header('Content-Type: application/sql; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $backup['fileName'] . '"');
         echo $backup['content'];
@@ -36,7 +36,7 @@ final class BackupController extends BaseController
     {
         $user = $this->requireSuperAdmin('backup', 'restore');
         $result = $this->backups->restoreSql($this->restoreSqlContent(), (int) $user['id']);
-        $this->audit($user, 'backup', 'restore', 'Phục hồi dữ liệu từ SQL', null, $result, 'WARN');
+        $this->audit($user, 'backup', 'restore', 'Phá»¥c há»“i dá»¯ liá»‡u tá»« SQL', null, $result, 'WARN');
         $this->ok($result);
     }
 

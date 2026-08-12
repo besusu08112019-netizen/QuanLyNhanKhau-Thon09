@@ -209,7 +209,7 @@
     const token = App.token;
     const csrfToken = App.csrfToken || localStorage.getItem(tenantStorageKey('csrf')) || '';
     const message = reason === 'idle'
-      ? 'Phiên làm việc đã hết hạn do không có hoạt động. Vui lòng đăng nhập lại.'
+      ? 'PhiÃªn lÃ m viá»‡c Ä‘Ã£ háº¿t háº¡n do khÃ´ng cÃ³ hoáº¡t Ä‘á»™ng. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.'
       : '';
 
     clearSession(message);
@@ -273,15 +273,15 @@
       '<div class="modal-dialog idle-timeout-dialog">',
       '<div class="modal-content">',
       '<div class="modal-header">',
-      '<h5 class="modal-title">Cảnh báo phiên đăng nhập</h5>',
+      '<h5 class="modal-title">Cáº£nh bÃ¡o phiÃªn Ä‘Äƒng nháº­p</h5>',
       '</div>',
       '<div class="modal-body">',
-      '<p>Phiên đăng nhập sắp hết hạn do không có hoạt động.</p>',
-      '<p class="mb-0">Hệ thống sẽ tự đăng xuất sau <strong data-idle-countdown>' + String(warningSeconds) + '</strong> giây.</p>',
+      '<p>PhiÃªn Ä‘Äƒng nháº­p sáº¯p háº¿t háº¡n do khÃ´ng cÃ³ hoáº¡t Ä‘á»™ng.</p>',
+      '<p class="mb-0">Há»‡ thá»‘ng sáº½ tá»± Ä‘Äƒng xuáº¥t sau <strong data-idle-countdown>' + String(warningSeconds) + '</strong> giÃ¢y.</p>',
       '</div>',
       '<div class="modal-footer">',
-      '<button type="button" class="btn btn-outline-secondary" data-idle-logout>Đăng xuất ngay</button>',
-      '<button type="button" class="btn btn-primary" data-idle-continue>Tiếp tục làm việc</button>',
+      '<button type="button" class="btn btn-outline-secondary" data-idle-logout>ÄÄƒng xuáº¥t ngay</button>',
+      '<button type="button" class="btn btn-primary" data-idle-continue>Tiáº¿p tá»¥c lÃ m viá»‡c</button>',
       '</div>',
       '</div>',
       '</div>',

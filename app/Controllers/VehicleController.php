@@ -63,7 +63,7 @@ final class VehicleController extends BaseController
     {
         $this->requirePermission('vehicles', 'read');
         $row = $this->vehicles->find((int) $id);
-        if (!$row) $this->fail('Không tìm thấy phương tiện', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y phÆ°Æ¡ng tiá»‡n', 404);
         $this->ok($row);
     }
 
@@ -72,7 +72,7 @@ final class VehicleController extends BaseController
         $user = $this->requirePermission('vehicles', 'create');
         try {
             $row = $this->vehicles->upsert((array) $this->input(), (int) $user['id']);
-            $this->audit($user, 'vehicles', 'create', 'Thêm phương tiện', $row['id'], ['before' => null, 'after' => $row]);
+            $this->audit($user, 'vehicles', 'create', 'ThÃªm phÆ°Æ¡ng tiá»‡n', $row['id'], ['before' => null, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $exception) {
             $this->fail($exception->getMessage(), 422);
@@ -84,9 +84,9 @@ final class VehicleController extends BaseController
         $user = $this->requirePermission('vehicles', 'update');
         try {
             $before = $this->vehicles->find((int) $id);
-            if (!$before) $this->fail('Không tìm thấy phương tiện', 404);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y phÆ°Æ¡ng tiá»‡n', 404);
             $row = $this->vehicles->upsert((array) $this->input(), (int) $user['id'], (int) $id);
-            $this->audit($user, 'vehicles', 'update', 'Chỉnh sửa phương tiện', $id, ['before' => $before, 'after' => $row]);
+            $this->audit($user, 'vehicles', 'update', 'Chá»‰nh sá»­a phÆ°Æ¡ng tiá»‡n', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $exception) {
             $this->fail($exception->getMessage(), 422);
@@ -98,9 +98,9 @@ final class VehicleController extends BaseController
         $user = $this->requirePermission('vehicles', 'delete');
         try {
             $before = $this->vehicles->find((int) $id);
-            if (!$before) $this->fail('Không tìm thấy phương tiện', 404);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y phÆ°Æ¡ng tiá»‡n', 404);
             $this->vehicles->softDelete((int) $id, (int) $user['id']);
-            $this->audit($user, 'vehicles', 'delete', 'Xóa phương tiện', $id, ['before' => $before, 'after' => null]);
+            $this->audit($user, 'vehicles', 'delete', 'XÃ³a phÆ°Æ¡ng tiá»‡n', $id, ['before' => $before, 'after' => null]);
             $this->ok(['id' => (int) $id]);
         } catch (Throwable $exception) {
             $this->fail($exception->getMessage(), 422);

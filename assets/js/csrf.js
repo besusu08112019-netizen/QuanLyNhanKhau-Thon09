@@ -1,6 +1,6 @@
 (() => {
   App.csrfToken = localStorage.getItem(tenantStorageKey('csrf')) || App.csrfToken || '';
-  const AUTH_REQUIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
+  const AUTH_REQUIRED_MESSAGE = 'PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n, vui lÃ²ng Ä‘Äƒng nháº­p láº¡i';
 
   function redirectToLoginOnAuthFailure() {
     if (window.__TenantAppSessionExpired) return;
@@ -41,7 +41,7 @@
       if (!options.public && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
         App.csrfToken = App.csrfToken || localStorage.getItem(tenantStorageKey('csrf')) || '';
         if (!App.csrfToken) {
-          throw new Error('Phiên đăng nhập thiếu CSRF token, vui lòng đăng nhập lại');
+          throw new Error('PhiÃªn Ä‘Äƒng nháº­p thiáº¿u CSRF token, vui lÃ²ng Ä‘Äƒng nháº­p láº¡i');
         }
         headers['X-CSRF-Token'] = App.csrfToken;
       }
@@ -63,11 +63,11 @@
         throw new Error(AUTH_REQUIRED_MESSAGE);
       }
       if (response.status === 403 && !options.public) {
-        if (typeof renderAccessDeniedForCurrentScreen === 'function') renderAccessDeniedForCurrentScreen(payload?.error?.message || 'Bạn không có quyền truy cập');
+        if (typeof renderAccessDeniedForCurrentScreen === 'function') renderAccessDeniedForCurrentScreen(payload?.error?.message || 'Báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p');
         return typeof accessDeniedPayload === 'function' ? accessDeniedPayload(url) : null;
       }
       if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error?.message || 'Không nhận được phản hồi từ hệ thống');
+        throw new Error(payload?.error?.message || 'KhÃ´ng nháº­n Ä‘Æ°á»£c pháº£n há»“i tá»« há»‡ thá»‘ng');
       }
       return payload.data;
     } finally {

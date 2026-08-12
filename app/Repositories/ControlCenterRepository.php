@@ -107,7 +107,7 @@ final class ControlCenterRepository
             'databaseCharset' => (string) ($row['database_charset'] ?: 'utf8mb4'),
             'logo' => (string) ($row['logo_url'] ?? ''),
             'status' => (string) $row['status'],
-            'manager' => (string) ($row['registry_manager_name'] ?: $row['manager_name'] ?: 'Chưa gán'),
+            'manager' => (string) ($row['registry_manager_name'] ?: $row['manager_name'] ?: 'ChÆ°a gÃ¡n'),
             'version' => (string) ($row['app_version'] ?: (defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1')),
             'appVersion' => (string) ($row['app_version'] ?? ''),
             'buildVersion' => (string) ($row['build_version'] ?? ''),
@@ -260,26 +260,26 @@ final class ControlCenterRepository
 
             $website = (string) ($unit['websiteStatus'] ?? 'UNKNOWN');
             if (in_array($website, ['OFFLINE', 'UNKNOWN'], true)) {
-                $items[] = $this->operationItem($website === 'OFFLINE' ? 'HIGH' : 'MEDIUM', 'website', $tenant, $website === 'OFFLINE' ? 'Website đang offline' : 'Website chưa được kiểm tra', 'check_website');
+                $items[] = $this->operationItem($website === 'OFFLINE' ? 'HIGH' : 'MEDIUM', 'website', $tenant, $website === 'OFFLINE' ? 'Website Ä‘ang offline' : 'Website chÆ°a Ä‘Æ°á»£c kiá»ƒm tra', 'check_website');
             }
 
             $database = (string) ($unit['databaseStatus'] ?? 'UNKNOWN');
             if (in_array($database, ['DISCONNECTED', 'UNKNOWN'], true)) {
-                $items[] = $this->operationItem($database === 'DISCONNECTED' ? 'HIGH' : 'MEDIUM', 'database', $tenant, $database === 'DISCONNECTED' ? 'Database mất kết nối' : 'Database chưa được kiểm tra', 'check_database');
+                $items[] = $this->operationItem($database === 'DISCONNECTED' ? 'HIGH' : 'MEDIUM', 'database', $tenant, $database === 'DISCONNECTED' ? 'Database máº¥t káº¿t ná»‘i' : 'Database chÆ°a Ä‘Æ°á»£c kiá»ƒm tra', 'check_database');
             }
 
             $ssl = (string) ($unit['sslStatus'] ?? 'UNKNOWN');
             if ($ssl === 'INVALID') {
-                $items[] = $this->operationItem('HIGH', 'ssl', $tenant, 'SSL không hợp lệ', 'check_website');
+                $items[] = $this->operationItem('HIGH', 'ssl', $tenant, 'SSL khÃ´ng há»£p lá»‡', 'check_website');
             }
 
             if (empty($unit['lastBackupAt'])) {
-                $items[] = $this->operationItem('MEDIUM', 'backup', $tenant, 'Chưa có thông tin backup gần nhất', 'view_unit');
+                $items[] = $this->operationItem('MEDIUM', 'backup', $tenant, 'ChÆ°a cÃ³ thÃ´ng tin backup gáº§n nháº¥t', 'view_unit');
             }
 
             $version = (string) ($unit['version'] ?? '');
             if ($currentVersion !== '' && $version !== '' && $version !== $currentVersion) {
-                $items[] = $this->operationItem('LOW', 'version', $tenant, 'Tenant khác phiên bản hiện tại', 'view_unit');
+                $items[] = $this->operationItem('LOW', 'version', $tenant, 'Tenant khÃ¡c phiÃªn báº£n hiá»‡n táº¡i', 'view_unit');
             }
         }
 
@@ -322,9 +322,9 @@ final class ControlCenterRepository
         return [
             'id' => (int) $row['id'],
             'tenantId' => (int) ($row['village_id'] ?? 0),
-            'tenantName' => (string) ($row['tenant_name'] ?: $row['tenant_code'] ?: 'Hệ thống'),
+            'tenantName' => (string) ($row['tenant_name'] ?: $row['tenant_code'] ?: 'Há»‡ thá»‘ng'),
             'createdAt' => $row['created_at'] ?? null,
-            'actor' => (string) ($row['actor_email'] ?: 'Hệ thống'),
+            'actor' => (string) ($row['actor_email'] ?: 'Há»‡ thá»‘ng'),
             'module' => (string) ($row['module'] ?? ''),
             'action' => (string) ($row['action'] ?? ''),
             'level' => (string) ($row['level'] ?? 'INFO'),

@@ -10,7 +10,10 @@ CREATE TABLE `users` (
   `display_name` VARCHAR(190) NOT NULL,
   `password_hash` VARCHAR(255) NULL,
   `role` ENUM('SUPER_ADMIN','ADMIN','OFFICER','VIEWER') NOT NULL DEFAULT 'VIEWER',
-  `status` ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  
+  
+  
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
   `last_login_at` DATETIME NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` BIGINT UNSIGNED NULL,
@@ -55,7 +58,20 @@ CREATE TABLE `households` (
   `poor_household` TINYINT(1) NOT NULL DEFAULT 0,
   `near_poor_household` TINYINT(1) NOT NULL DEFAULT 0,
   `note` TEXT NULL,
-  `status` ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  
+  
+  
+  
+  
+  
+  residence_status ENUM('resident','away_for_work','settled_elsewhere','partial','inactive') NOT NULL DEFAULT 'resident',
+  residence_status_mode ENUM('AUTO','MANUAL') NOT NULL DEFAULT 'AUTO',
+  current_residence_place VARCHAR(255) NULL,
+  residence_started_at DATE NULL,
+  residence_expected_return_at DATE NULL,
+  residence_note TEXT NULL,
+  member_residence_json JSON NULL,
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` BIGINT UNSIGNED NULL,
   `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -69,6 +85,8 @@ CREATE TABLE `households` (
   KEY `idx_households_address` (`address`),
   KEY `idx_households_area` (`area_code`),
   KEY `idx_households_status` (`status`),
+  KEY idx_households_residence_status (residence_status),
+  KEY idx_households_residence_status_mode (residence_status_mode),
   KEY `idx_households_policy` (`poor_household`, `near_poor_household`),
   CONSTRAINT `fk_households_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_households_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
@@ -80,7 +98,7 @@ CREATE TABLE `citizens` (
   `citizen_code` VARCHAR(50) NOT NULL,
   `household_id` BIGINT UNSIGNED NOT NULL,
   `full_name` VARCHAR(190) NOT NULL,
-  `gender` ENUM('Nam','Nữ','Khác') NOT NULL,
+  `gender` ENUM('Nam','Ná»¯','KhÃ¡c') NOT NULL,
   `date_of_birth` DATE NOT NULL,
   `identity_number` VARCHAR(20) NULL,
   `identity_issue_date` DATE NULL,
@@ -104,7 +122,10 @@ CREATE TABLE `citizens` (
   `health_insurance_start_date` DATE NULL,
   `health_insurance_end_date` DATE NULL,
   `health_insurance_facility` VARCHAR(255) NULL,
-  `status` ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  
+  
+  
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` BIGINT UNSIGNED NULL,
   `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -144,7 +165,10 @@ CREATE TABLE `movements` (
   `effective_date` DATE NOT NULL,
   `document_number` VARCHAR(100) NULL,
   `note` TEXT NULL,
-  `status` ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
+  
+  
+  
+  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` BIGINT UNSIGNED NULL,
   `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -312,7 +336,7 @@ SELECT
   (SELECT COUNT(*) FROM households WHERE status <> 'DELETED') AS total_households,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED') AS total_citizens,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND gender = 'Nam') AS total_male,
-  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND gender = 'Nữ') AS total_female,
+  (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND gender = 'Ná»¯') AS total_female,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND life_status = 'ALIVE') AS active_citizens,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND residency_status = 'TEMPORARY') AS temporary_residence,
   (SELECT COUNT(*) FROM citizens WHERE status <> 'DELETED' AND presence_status = 'AWAY') AS temporary_absence;
@@ -333,7 +357,7 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 ('backgroundColor', '#eef3f8'),
 ('backupSchedule', 'DAILY'),
 ('reportSigner', ''),
-('reportTitlePrefix', 'Quản lý nhân khẩu'),
+('reportTitlePrefix', 'Quáº£n lÃ½ nhÃ¢n kháº©u'),
 ('supportEmail', ''),
 ('maintenanceMessage', '')
 ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);

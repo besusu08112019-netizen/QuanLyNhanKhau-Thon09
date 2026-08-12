@@ -56,7 +56,7 @@ final class LivestockController extends BaseController
     {
         $this->requirePermission('livestock', 'read');
         $row = $this->livestock->find((int) $id);
-        if (!$row) $this->fail('Không tìm thấy bản ghi vật nuôi', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y báº£n ghi váº­t nuÃ´i', 404);
         $this->ok($row);
     }
 
@@ -64,9 +64,9 @@ final class LivestockController extends BaseController
     {
         $user = $this->requirePermission('livestock', 'create');
         $input = (array) $this->input();
-        $this->requireInputFields($input, ['household_id' => 'Hộ gia đình', 'animal_type' => 'Loại vật nuôi']);
+        $this->requireInputFields($input, ['household_id' => 'Há»™ gia Ä‘Ã¬nh', 'animal_type' => 'Loáº¡i váº­t nuÃ´i']);
         $row = $this->livestock->upsert($input, (int) $user['id']);
-        $this->audit($user, 'livestock', 'create', 'Thêm vật nuôi', $row['id'], ['before' => null, 'after' => $row]);
+        $this->audit($user, 'livestock', 'create', 'ThÃªm váº­t nuÃ´i', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -74,9 +74,9 @@ final class LivestockController extends BaseController
     {
         $user = $this->requirePermission('livestock', 'update');
         $before = $this->livestock->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy bản ghi vật nuôi', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y báº£n ghi váº­t nuÃ´i', 404);
         $row = $this->livestock->upsert((array) $this->input(), (int) $user['id'], (int) $id);
-        $action = $before['status'] !== $row['status'] ? 'Thay đổi trạng thái vật nuôi' : 'Chỉnh sửa vật nuôi';
+        $action = $before['status'] !== $row['status'] ? 'Thay Ä‘á»•i tráº¡ng thÃ¡i váº­t nuÃ´i' : 'Chá»‰nh sá»­a váº­t nuÃ´i';
         $this->audit($user, 'livestock', 'update', $action, $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
@@ -85,9 +85,9 @@ final class LivestockController extends BaseController
     {
         $user = $this->requirePermission('livestock', 'delete');
         $before = $this->livestock->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy bản ghi vật nuôi', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y báº£n ghi váº­t nuÃ´i', 404);
         $this->livestock->softDelete((int) $id, (int) $user['id']);
-        $this->audit($user, 'livestock', 'delete', 'Xóa vật nuôi', $id, ['before' => $before, 'after' => null]);
+        $this->audit($user, 'livestock', 'delete', 'XÃ³a váº­t nuÃ´i', $id, ['before' => $before, 'after' => null]);
         $this->ok(['id' => (int) $id]);
     }
 

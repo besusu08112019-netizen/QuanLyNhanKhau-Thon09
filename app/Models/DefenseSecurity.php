@@ -16,15 +16,15 @@ final class DefenseSecurity extends BaseModel
         'nvqs_warning_months_before' => 12,
     ];
 
-    private const YES_NO = ['YES' => 'Có', 'NO' => 'Không'];
-    private const PRELIMINARY = ['NOT_UPDATED' => 'Chưa cập nhật', 'PENDING' => 'Chờ kết quả', 'PASSED' => 'Đạt', 'FAILED' => 'Không đạt'];
-    private const MEDICAL = ['NOT_UPDATED' => 'Chưa cập nhật', 'PENDING' => 'Chờ kết quả', 'PASSED' => 'Đạt', 'FAILED' => 'Không đạt'];
-    private const ELIGIBILITY = ['UNKNOWN' => 'Chưa xác định', 'ELIGIBLE' => 'Đủ điều kiện', 'INELIGIBLE' => 'Không đủ điều kiện', 'DEFERRED' => 'Tạm hoãn', 'EXEMPT' => 'Miễn'];
-    private const SELECTION = ['NOT_SELECTED' => 'Chưa trúng tuyển', 'SELECTED' => 'Trúng tuyển', 'ENLISTED' => 'Đã nhập ngũ'];
-    private const MILITIA_TYPES = ['CORE' => 'Dân quân nòng cốt', 'MOBILE' => 'Dân quân cơ động', 'ON_SITE' => 'Dân quân tại chỗ', 'SPECIALIZED' => 'Dân quân chuyên môn', 'OTHER' => 'Khác'];
-    private const PARTICIPATION = ['ACTIVE' => 'Đang tham gia', 'PAUSED' => 'Tạm nghỉ', 'COMPLETED' => 'Đã hoàn thành', 'ENDED' => 'Thôi tham gia'];
-    private const SECURITY_POSITIONS = ['LEADER' => 'Tổ trưởng', 'DEPUTY' => 'Tổ phó', 'MEMBER' => 'Tổ viên'];
-    private const SECURITY_STATUS = ['ACTIVE' => 'Đang hoạt động', 'PAUSED' => 'Tạm nghỉ', 'ENDED' => 'Thôi tham gia'];
+    private const YES_NO = ['YES' => 'CÃ³', 'NO' => 'KhÃ´ng'];
+    private const PRELIMINARY = ['NOT_UPDATED' => 'ChÆ°a cáº­p nháº­t', 'PENDING' => 'Chá» káº¿t quáº£', 'PASSED' => 'Äáº¡t', 'FAILED' => 'KhÃ´ng Ä‘áº¡t'];
+    private const MEDICAL = ['NOT_UPDATED' => 'ChÆ°a cáº­p nháº­t', 'PENDING' => 'Chá» káº¿t quáº£', 'PASSED' => 'Äáº¡t', 'FAILED' => 'KhÃ´ng Ä‘áº¡t'];
+    private const ELIGIBILITY = ['UNKNOWN' => 'ChÆ°a xÃ¡c Ä‘á»‹nh', 'ELIGIBLE' => 'Äá»§ Ä‘iá»u kiá»‡n', 'INELIGIBLE' => 'KhÃ´ng Ä‘á»§ Ä‘iá»u kiá»‡n', 'DEFERRED' => 'Táº¡m hoÃ£n', 'EXEMPT' => 'Miá»…n'];
+    private const SELECTION = ['NOT_SELECTED' => 'ChÆ°a trÃºng tuyá»ƒn', 'SELECTED' => 'TrÃºng tuyá»ƒn', 'ENLISTED' => 'ÄÃ£ nháº­p ngÅ©'];
+    private const MILITIA_TYPES = ['CORE' => 'DÃ¢n quÃ¢n nÃ²ng cá»‘t', 'MOBILE' => 'DÃ¢n quÃ¢n cÆ¡ Ä‘á»™ng', 'ON_SITE' => 'DÃ¢n quÃ¢n táº¡i chá»—', 'SPECIALIZED' => 'DÃ¢n quÃ¢n chuyÃªn mÃ´n', 'OTHER' => 'KhÃ¡c'];
+    private const PARTICIPATION = ['ACTIVE' => 'Äang tham gia', 'PAUSED' => 'Táº¡m nghá»‰', 'COMPLETED' => 'ÄÃ£ hoÃ n thÃ nh', 'ENDED' => 'ThÃ´i tham gia'];
+    private const SECURITY_POSITIONS = ['LEADER' => 'Tá»• trÆ°á»Ÿng', 'DEPUTY' => 'Tá»• phÃ³', 'MEMBER' => 'Tá»• viÃªn'];
+    private const SECURITY_STATUS = ['ACTIVE' => 'Äang hoáº¡t Ä‘á»™ng', 'PAUSED' => 'Táº¡m nghá»‰', 'ENDED' => 'ThÃ´i tham gia'];
 
     public function ensureSchema(): void
     {
@@ -163,34 +163,34 @@ SQL);
             'year' => $year,
             'settings' => $settings,
             'nvqs' => [
-                'warning_age' => $this->countAgeGroup($year, (int) $settings['nvqs_warning_age'], (int) $settings['nvqs_warning_age']),
-                'registration_age' => $this->countAgeGroup($year, (int) $settings['nvqs_registration_age'], (int) $settings['nvqs_registration_age']),
-                'tracking_age' => $this->countAgeGroup($year, (int) $settings['nvqs_call_age'], (int) $settings['nvqs_follow_end_age']),
-                'registered' => $this->countNvqsStatus($year, "n.registered_status='YES'"),
-                'unregistered' => $this->countUnregistered($year, $settings),
-                'preliminary_done' => $this->countNvqsStatus($year, "n.preliminary_status <> 'NOT_UPDATED'"),
-                'preliminary_missing' => $this->countTrackingMissing($year, $settings, "n.preliminary_status <> 'NOT_UPDATED'"),
-                'medical_done' => $this->countNvqsStatus($year, "n.medical_exam_status <> 'NOT_UPDATED'"),
-                'medical_missing' => $this->countTrackingMissing($year, $settings, "n.medical_exam_status <> 'NOT_UPDATED'"),
-                'eligible' => $this->countNvqsStatus($year, "n.eligibility_status='ELIGIBLE'"),
-                'deferred' => $this->countNvqsStatus($year, "n.eligibility_status='DEFERRED'"),
-                'exempt' => $this->countNvqsStatus($year, "n.eligibility_status='EXEMPT'"),
-                'selected' => $this->countNvqsStatus($year, "n.selection_status='SELECTED'"),
-                'enlisted' => $this->countNvqsStatus($year, "n.selection_status='ENLISTED' OR n.enlistment_date IS NOT NULL"),
-                'active_service' => $this->countNvqsStatus($year, "n.active_service=1"),
-                'discharged' => $this->countNvqsStatus($year, "n.discharge_date IS NOT NULL"),
+                'warning_age' => $this->metricTotal('nvqs', $year, 'warning_age'),
+                'registration_age' => $this->metricTotal('nvqs', $year, 'registration_age'),
+                'tracking_age' => $this->metricTotal('nvqs', $year, 'tracking_age'),
+                'registered' => $this->metricTotal('nvqs', $year, 'registered'),
+                'unregistered' => $this->metricTotal('nvqs', $year, 'unregistered'),
+                'preliminary_done' => $this->metricTotal('nvqs', $year, 'preliminary_done'),
+                'preliminary_missing' => $this->metricTotal('nvqs', $year, 'preliminary_missing'),
+                'medical_done' => $this->metricTotal('nvqs', $year, 'medical_done'),
+                'medical_missing' => $this->metricTotal('nvqs', $year, 'medical_missing'),
+                'eligible' => $this->metricTotal('nvqs', $year, 'eligible'),
+                'deferred' => $this->metricTotal('nvqs', $year, 'deferred'),
+                'exempt' => $this->metricTotal('nvqs', $year, 'exempt'),
+                'selected' => $this->metricTotal('nvqs', $year, 'selected'),
+                'enlisted' => $this->metricTotal('nvqs', $year, 'enlisted'),
+                'active_service' => $this->metricTotal('nvqs', $year, 'active_service'),
+                'discharged' => $this->metricTotal('nvqs', $year, 'discharged'),
             ],
             'militia' => [
-                'total' => $this->countTable('defense_militia_records'),
-                'active' => $this->countTable('defense_militia_records', "participation_status='ACTIVE'"),
-                'completed_or_ended' => $this->countTable('defense_militia_records', "participation_status IN ('COMPLETED','ENDED')"),
+                'total' => $this->metricTotal('militia', $year, 'total'),
+                'active' => $this->metricTotal('militia', $year, 'active'),
+                'completed_or_ended' => $this->metricTotal('militia', $year, 'completed_or_ended'),
             ],
             'security_force' => [
-                'total' => $this->countTable('defense_security_force_records'),
-                'leaders' => $this->countTable('defense_security_force_records', "position_code='LEADER'"),
-                'deputies' => $this->countTable('defense_security_force_records', "position_code='DEPUTY'"),
-                'members' => $this->countTable('defense_security_force_records', "position_code='MEMBER'"),
-                'active' => $this->countTable('defense_security_force_records', "participation_status='ACTIVE'"),
+                'total' => $this->metricTotal('security_force', $year, 'total'),
+                'leaders' => $this->metricTotal('security_force', $year, 'leaders'),
+                'deputies' => $this->metricTotal('security_force', $year, 'deputies'),
+                'members' => $this->metricTotal('security_force', $year, 'members'),
+                'active' => $this->metricTotal('security_force', $year, 'active'),
             ],
             'generatedAt' => date('c'),
         ];
@@ -211,12 +211,13 @@ SQL);
     public function paginateNvqs(array $filters): array
     {
         $this->ensureSchema();
-        if (in_array((string) ($filters['metric'] ?? ''), ['warning_age','registration_age','tracking_age','unregistered'], true)) return $this->paginateNvqsCandidates($filters);
+        if (in_array((string) ($filters['metric'] ?? ''), ['warning_age','registration_age','tracking_age','unregistered','preliminary_missing','medical_missing'], true)) return $this->paginateNvqsCandidates($filters);
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$where, $params, $order] = $this->nvqsWhere($filters);
         $from = $this->personJoin('defense_nvqs_records', 'n');
         $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total $from $where", $params) ?: [])['total'] ?? 0);
-        $rows = $this->fetchAll("SELECT n.*, " . $this->citizenSelect() . " $from $where $order LIMIT $pageSize OFFSET $offset", $params);
+        $params['kpi_reason'] = $this->kpiReason((string) ($filters['metric'] ?? ''), $this->year($filters));
+        $rows = $this->fetchAll("SELECT n.*, :kpi_reason AS kpi_reason, " . $this->citizenSelect() . " $from $where $order LIMIT $pageSize OFFSET $offset", $params);
         return $this->paginated(array_map(fn($row) => $this->normalizeNvqs($row), $rows), $page, $pageSize, $total);
     }
 
@@ -230,8 +231,8 @@ SQL);
     {
         $this->ensureSchema();
         $params = $this->nvqsParams($data, $userId);
-        if ($id && !$this->findNvqs($id)) throw new RuntimeException('Không tìm thấy hồ sơ NVQS');
-        if (!$id && $this->existingNvqs((int) $params['citizen_id'], (int) $params['recruitment_year'])) throw new RuntimeException('Nhân khẩu này đã có hồ sơ NVQS trong năm tuyển quân đã chọn.');
+        if ($id && !$this->findNvqs($id)) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ NVQS');
+        if (!$id && $this->existingNvqs((int) $params['citizen_id'], (int) $params['recruitment_year'])) throw new RuntimeException('NhÃ¢n kháº©u nÃ y Ä‘Ã£ cÃ³ há»“ sÆ¡ NVQS trong nÄƒm tuyá»ƒn quÃ¢n Ä‘Ã£ chá»n.');
         if ($id) {
             $params['id'] = $id;
             $this->execute('UPDATE defense_nvqs_records SET citizen_id=:citizen_id,recruitment_year=:recruitment_year,registered_status=:registered_status,registration_date=:registration_date,preliminary_status=:preliminary_status,preliminary_date=:preliminary_date,medical_exam_status=:medical_exam_status,medical_exam_date=:medical_exam_date,health_classification=:health_classification,eligibility_status=:eligibility_status,deferment_reason=:deferment_reason,exemption_reason=:exemption_reason,selection_status=:selection_status,order_received=:order_received,enlistment_date=:enlistment_date,enlistment_unit=:enlistment_unit,active_service=:active_service,discharge_date=:discharge_date,discharge_unit=:discharge_unit,completed_service=:completed_service,note=:note,updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('defense_nvqs_records'), $this->withTenant($params));
@@ -261,7 +262,7 @@ SQL);
     {
         $this->ensureSchema();
         $citizen = $this->citizenExists($citizenId);
-        if (!$citizen) throw new RuntimeException('Không tìm thấy nhân khẩu');
+        if (!$citizen) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u');
         $year = (int) date('Y');
         return [
             'citizen' => $this->normalizeCitizen($citizen),
@@ -278,20 +279,20 @@ SQL);
         $mode = str_replace('-', '_', $mode);
         if ($mode === 'summary') {
             $data = $this->dashboard($filters);
-            return $this->table('Báo cáo Quốc phòng - An ninh', ['Chỉ tiêu', 'Số lượng'], [
-                ['Sắp đến tuổi đăng ký NVQS', $data['nvqs']['warning_age']],
-                ['Đến tuổi đăng ký NVQS', $data['nvqs']['registration_age']],
-                ['Trong độ tuổi cần theo dõi tuyển quân', $data['nvqs']['tracking_age']],
-                ['Đã đăng ký NVQS', $data['nvqs']['registered']],
-                ['Chưa đăng ký NVQS', $data['nvqs']['unregistered']],
-                ['Đã sơ tuyển', $data['nvqs']['preliminary_done']],
-                ['Đã khám tuyển', $data['nvqs']['medical_done']],
-                ['Tổng dân quân', $data['militia']['total']],
-                ['Tổng lực lượng ANTT cơ sở', $data['security_force']['total']],
+            return $this->table('BÃ¡o cÃ¡o Quá»‘c phÃ²ng - An ninh', ['Chá»‰ tiÃªu', 'Sá»‘ lÆ°á»£ng'], [
+                ['Sáº¯p Ä‘áº¿n tuá»•i Ä‘Äƒng kÃ½ NVQS', $data['nvqs']['warning_age']],
+                ['Äáº¿n tuá»•i Ä‘Äƒng kÃ½ NVQS', $data['nvqs']['registration_age']],
+                ['Trong Ä‘á»™ tuá»•i cáº§n theo dÃµi tuyá»ƒn quÃ¢n', $data['nvqs']['tracking_age']],
+                ['ÄÃ£ Ä‘Äƒng kÃ½ NVQS', $data['nvqs']['registered']],
+                ['ChÆ°a Ä‘Äƒng kÃ½ NVQS', $data['nvqs']['unregistered']],
+                ['ÄÃ£ sÆ¡ tuyá»ƒn', $data['nvqs']['preliminary_done']],
+                ['ÄÃ£ khÃ¡m tuyá»ƒn', $data['nvqs']['medical_done']],
+                ['Tá»•ng dÃ¢n quÃ¢n', $data['militia']['total']],
+                ['Tá»•ng lá»±c lÆ°á»£ng ANTT cÆ¡ sá»Ÿ', $data['security_force']['total']],
             ], $filters);
         }
-        if (str_starts_with($mode, 'militia')) return $this->forceReport('Dân quân tự vệ', $this->paginateMilitia($filters)['items'], 'militia', $filters);
-        if (str_starts_with($mode, 'security_force') || str_starts_with($mode, 'antt')) return $this->forceReport('Lực lượng tham gia bảo vệ ANTT ở cơ sở', $this->paginateSecurityForce($filters)['items'], 'security', $filters);
+        if (str_starts_with($mode, 'militia')) return $this->forceReport('DÃ¢n quÃ¢n tá»± vá»‡', $this->paginateMilitia($filters)['items'], 'militia', $filters);
+        if (str_starts_with($mode, 'security_force') || str_starts_with($mode, 'antt')) return $this->forceReport('Lá»±c lÆ°á»£ng tham gia báº£o vá»‡ ANTT á»Ÿ cÆ¡ sá»Ÿ', $this->paginateSecurityForce($filters)['items'], 'security', $filters);
         $filters['metric'] = match ($mode) {
             'upcoming_registration' => 'warning_age',
             'registration_age' => 'registration_age',
@@ -310,7 +311,7 @@ SQL);
             default => $filters['metric'] ?? '',
         };
         $rows = $this->paginateNvqs($filters)['items'];
-        return $this->table('Danh sách nghĩa vụ quân sự', ['Mã NK','Họ tên','Ngày sinh','Giới tính','Mã hộ','Năm','Đăng ký','Sơ tuyển','Khám tuyển','Điều kiện','Tuyển chọn','Đơn vị nhập ngũ','Ghi chú'], array_map(fn($r) => [$r['citizen_code'],$r['full_name'],$r['date_of_birth'],$r['gender'],$r['household_code'],$r['recruitment_year'],$r['registered_status_label'],$r['preliminary_status_label'],$r['medical_exam_status_label'],$r['eligibility_status_label'],$r['selection_status_label'],$r['enlistment_unit'],$r['note']], $rows), $filters);
+        return $this->table('Danh sÃ¡ch nghÄ©a vá»¥ quÃ¢n sá»±', ['MÃ£ NK','Há» tÃªn','NgÃ y sinh','Giá»›i tÃ­nh','MÃ£ há»™','NÄƒm','ÄÄƒng kÃ½','SÆ¡ tuyá»ƒn','KhÃ¡m tuyá»ƒn','Äiá»u kiá»‡n','Tuyá»ƒn chá»n','ÄÆ¡n vá»‹ nháº­p ngÅ©','Ghi chÃº'], array_map(fn($r) => [$r['citizen_code'],$r['full_name'],$r['date_of_birth'],$r['gender'],$r['household_code'],$r['recruitment_year'],$r['registered_status_label'],$r['preliminary_status_label'],$r['medical_exam_status_label'],$r['eligibility_status_label'],$r['selection_status_label'],$r['enlistment_unit'],$r['note']], $rows), $filters);
     }
 
     private function paginateNvqsCandidates(array $filters): array
@@ -326,12 +327,15 @@ SQL);
         elseif ($metric === 'registration_age') $where[] = "$ageExpr = " . (int) $settings['nvqs_registration_age'];
         else $where[] = "$ageExpr BETWEEN " . (int) $settings['nvqs_call_age'] . ' AND ' . (int) $settings['nvqs_follow_end_age'];
         if ($metric === 'unregistered') $where[] = 'COALESCE(n.registered_status,"NO") <> "YES"';
+        if ($metric === 'preliminary_missing') $where[] = 'COALESCE(n.preliminary_status,"NOT_UPDATED") = "NOT_UPDATED"';
+        if ($metric === 'medical_missing') $where[] = 'COALESCE(n.medical_exam_status,"NOT_UPDATED") = "NOT_UPDATED"';
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') { $where[] = '(c.full_name LIKE :search OR c.citizen_code LIKE :search OR h.household_code LIKE :search OR h.address LIKE :search)'; $params['search'] = '%' . $search . '%'; }
         $from = 'FROM citizens c LEFT JOIN households h ON h.id=c.household_id LEFT JOIN defense_nvqs_records n ON n.citizen_id=c.id AND n.recruitment_year=:year AND n.status<>"DELETED" AND ' . $this->tenantWhere('n', 'defense_nvqs_records');
         $whereSql = 'WHERE ' . implode(' AND ', $where);
         $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total $from $whereSql", $params) ?: [])['total'] ?? 0);
-        $rows = $this->fetchAll("SELECT n.id, c.id AS citizen_id, COALESCE(n.recruitment_year,:year) AS recruitment_year, COALESCE(n.registered_status,'NO') AS registered_status, n.registration_date, COALESCE(n.preliminary_status,'NOT_UPDATED') AS preliminary_status, n.preliminary_date, COALESCE(n.medical_exam_status,'NOT_UPDATED') AS medical_exam_status, n.medical_exam_date, n.health_classification, COALESCE(n.eligibility_status,'UNKNOWN') AS eligibility_status, n.deferment_reason, n.exemption_reason, COALESCE(n.selection_status,'NOT_SELECTED') AS selection_status, COALESCE(n.order_received,0) AS order_received, n.enlistment_date, n.enlistment_unit, COALESCE(n.active_service,0) AS active_service, n.discharge_date, n.discharge_unit, COALESCE(n.completed_service,0) AS completed_service, n.note, " . $this->citizenSelect() . " $from $whereSql ORDER BY c.full_name ASC LIMIT $pageSize OFFSET $offset", $params);
+        $params['kpi_reason'] = $this->kpiReason($metric, $year);
+        $rows = $this->fetchAll("SELECT n.id, c.id AS citizen_id, COALESCE(n.recruitment_year,:year) AS recruitment_year, COALESCE(n.registered_status,'NO') AS registered_status, n.registration_date, COALESCE(n.preliminary_status,'NOT_UPDATED') AS preliminary_status, n.preliminary_date, COALESCE(n.medical_exam_status,'NOT_UPDATED') AS medical_exam_status, n.medical_exam_date, n.health_classification, COALESCE(n.eligibility_status,'UNKNOWN') AS eligibility_status, n.deferment_reason, n.exemption_reason, COALESCE(n.selection_status,'NOT_SELECTED') AS selection_status, COALESCE(n.order_received,0) AS order_received, n.enlistment_date, n.enlistment_unit, COALESCE(n.active_service,0) AS active_service, n.discharge_date, n.discharge_unit, COALESCE(n.completed_service,0) AS completed_service, n.note, :kpi_reason AS kpi_reason, " . $this->citizenSelect() . " $from $whereSql ORDER BY c.full_name ASC LIMIT $pageSize OFFSET $offset", $params);
         return $this->paginated(array_map(fn($row) => $this->normalizeNvqs($row), $rows), $page, $pageSize, $total);
     }
     private function paginateForce(string $table, string $alias, array $filters, string $normalizer): array
@@ -341,7 +345,8 @@ SQL);
         [$where, $params, $order] = $this->forceWhere($table, $alias, $filters);
         $from = $this->personJoin($table, $alias);
         $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total $from $where", $params) ?: [])['total'] ?? 0);
-        $rows = $this->fetchAll("SELECT $alias.*, " . $this->citizenSelect() . " $from $where $order LIMIT $pageSize OFFSET $offset", $params);
+        $params['kpi_reason'] = $this->kpiReason((string) ($filters['metric'] ?? ''), $this->year($filters));
+        $rows = $this->fetchAll("SELECT $alias.*, :kpi_reason AS kpi_reason, " . $this->citizenSelect() . " $from $where $order LIMIT $pageSize OFFSET $offset", $params);
         return $this->paginated(array_map(fn($row) => $this->$normalizer($row), $rows), $page, $pageSize, $total);
     }
 
@@ -384,6 +389,8 @@ SQL);
             'unregistered' => "n.registered_status <> 'YES'",
             'preliminary_done' => "n.preliminary_status <> 'NOT_UPDATED'",
             'medical_done' => "n.medical_exam_status <> 'NOT_UPDATED'",
+            'preliminary_missing' => "n.preliminary_status = 'NOT_UPDATED'",
+            'medical_missing' => "n.medical_exam_status = 'NOT_UPDATED'",
             'eligible' => "n.eligibility_status='ELIGIBLE'",
             'deferred' => "n.eligibility_status='DEFERRED'",
             'exempt' => "n.eligibility_status='EXEMPT'",
@@ -405,7 +412,7 @@ SQL);
 
     private function citizenSelect(): string
     {
-        return 'c.citizen_code, c.full_name, c.date_of_birth, c.gender, h.household_code, h.address, h.area_code';
+        return 'c.citizen_code, c.full_name, c.date_of_birth, c.gender, h.household_code, h.head_citizen_name, h.address, h.area_code';
     }
 
     private function findRecord(string $table, string $alias, int $id, string $normalizer): ?array
@@ -418,7 +425,7 @@ SQL);
     private function saveGeneric(string $table, array $params, ?int $id, string $finder): array
     {
         $this->ensureSchema();
-        if ($id && !$this->$finder($id)) throw new RuntimeException('Không tìm thấy bản ghi Quốc phòng - An ninh');
+        if ($id && !$this->$finder($id)) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y báº£n ghi Quá»‘c phÃ²ng - An ninh');
         if ($id) {
             $params['id'] = $id;
             $sets = [];
@@ -435,7 +442,7 @@ SQL);
     private function softDelete(string $table, string $finder, int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->$finder($id)) throw new RuntimeException('Không tìm thấy bản ghi Quốc phòng - An ninh');
+        if (!$this->$finder($id)) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y báº£n ghi Quá»‘c phÃ²ng - An ninh');
         $this->execute('UPDATE ' . $table . ' SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere($table), $this->withTenant(['id' => $id, 'user' => $userId]));
     }
 
@@ -443,7 +450,7 @@ SQL);
     {
         $citizenId = $this->requireCitizen($data);
         $year = (int) ($data['recruitment_year'] ?? $data['year'] ?? date('Y'));
-        if ($year < 1900 || $year > 2200) throw new RuntimeException('Năm tuyển quân không hợp lệ');
+        if ($year < 1900 || $year > 2200) throw new RuntimeException('NÄƒm tuyá»ƒn quÃ¢n khÃ´ng há»£p lá»‡');
         return [
             'citizen_id' => $citizenId,
             'recruitment_year' => $year,
@@ -479,15 +486,15 @@ SQL);
     private function securityForceParams(array $data, int $userId): array
     {
         $team = trim((string) ($data['team_name'] ?? ''));
-        if ($team === '') throw new RuntimeException('Tổ ANTT là bắt buộc');
+        if ($team === '') throw new RuntimeException('Tá»• ANTT lÃ  báº¯t buá»™c');
         return ['citizen_id'=>$this->requireCitizen($data),'team_name'=>$team,'position_code'=>$this->enum($data['position_code'] ?? 'MEMBER', self::SECURITY_POSITIONS, 'MEMBER'),'joined_date'=>$this->dateValue($data['joined_date'] ?? ''),'ended_date'=>$this->dateValue($data['ended_date'] ?? ''),'area_in_charge'=>$this->nullable($data['area_in_charge'] ?? ''),'participation_status'=>$this->enum($data['participation_status'] ?? 'ACTIVE', self::SECURITY_STATUS, 'ACTIVE'),'reason'=>$this->nullable($data['reason'] ?? ''),'note'=>$this->nullable($data['note'] ?? ''),'created_by'=>$userId,'updated_by'=>$userId];
     }
 
     private function requireCitizen(array $data): int
     {
         $id = (int) ($data['citizen_id'] ?? $data['person_id'] ?? 0);
-        if ($id <= 0) throw new RuntimeException('Vui lòng chọn nhân khẩu từ danh sách.');
-        if (!$this->citizenExists($id)) throw new RuntimeException('Không tìm thấy nhân khẩu trong tenant hiện tại');
+        if ($id <= 0) throw new RuntimeException('Vui lÃ²ng chá»n nhÃ¢n kháº©u tá»« danh sÃ¡ch.');
+        if (!$this->citizenExists($id)) throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u trong tenant hiá»‡n táº¡i');
         return $id;
     }
 
@@ -499,6 +506,46 @@ SQL);
     private function existingNvqs(int $citizenId, int $year): ?array
     {
         return $this->fetchOne('SELECT id FROM defense_nvqs_records WHERE citizen_id=:citizen_id AND recruitment_year=:year AND status<>"DELETED" AND ' . $this->tenantWhere('defense_nvqs_records'), $this->withTenant(['citizen_id' => $citizenId, 'year' => $year]));
+    }
+
+    private function metricTotal(string $tab, int $year, string $metric): int
+    {
+        $filters = ['year' => $year, 'metric' => $metric, 'page' => 1, 'pageSize' => 1];
+        $result = match ($tab) {
+            'militia' => $this->paginateMilitia($filters),
+            'security_force' => $this->paginateSecurityForce($filters),
+            default => $this->paginateNvqs($filters),
+        };
+        return (int) ($result['total'] ?? 0);
+    }
+
+    private function kpiReason(string $metric, int $year): string
+    {
+        return match ($metric) {
+            'warning_age' => 'Nam cÃ´ng dÃ¢n Ä‘á»§ 16 tuá»•i trong nÄƒm ' . $year . ', dá»± kiáº¿n Ä‘áº¿n tuá»•i Ä‘Äƒng kÃ½ NVQS trong nÄƒm ' . ($year + 1) . '.',
+            'registration_age' => 'Nam cÃ´ng dÃ¢n Ä‘á»§ 17 tuá»•i trong nÄƒm ' . $year . ', thuá»™c diá»‡n láº­p danh sÃ¡ch Ä‘Äƒng kÃ½ NVQS.',
+            'tracking_age' => 'Nam cÃ´ng dÃ¢n tá»« Ä‘á»§ 18 tuá»•i trong Ä‘á»™ tuá»•i cáº§n theo dÃµi tuyá»ƒn quÃ¢n.',
+            'unregistered' => 'Thuá»™c diá»‡n Ä‘Äƒng kÃ½/theo dÃµi NVQS nhÆ°ng chÆ°a cÃ³ thÃ´ng tin Ä‘Ã£ Ä‘Äƒng kÃ½.',
+            'preliminary_missing' => 'Thuá»™c diá»‡n theo dÃµi tuyá»ƒn quÃ¢n nhÆ°ng chÆ°a cáº­p nháº­t sÆ¡ tuyá»ƒn.',
+            'medical_missing' => 'Thuá»™c diá»‡n theo dÃµi tuyá»ƒn quÃ¢n nhÆ°ng chÆ°a cáº­p nháº­t khÃ¡m tuyá»ƒn.',
+            'registered' => 'ÄÃ£ cÃ³ thÃ´ng tin Ä‘Äƒng kÃ½ NVQS trong nÄƒm tuyá»ƒn quÃ¢n.',
+            'preliminary_done' => 'ÄÃ£ cÃ³ thÃ´ng tin sÆ¡ tuyá»ƒn NVQS.',
+            'medical_done' => 'ÄÃ£ cÃ³ thÃ´ng tin khÃ¡m tuyá»ƒn NVQS.',
+            'eligible' => 'Há»“ sÆ¡ nghiá»‡p vá»¥ Ä‘ang ghi nháº­n Ä‘á»§ Ä‘iá»u kiá»‡n.',
+            'deferred' => 'Há»“ sÆ¡ nghiá»‡p vá»¥ Ä‘ang ghi nháº­n táº¡m hoÃ£n.',
+            'exempt' => 'Há»“ sÆ¡ nghiá»‡p vá»¥ Ä‘ang ghi nháº­n miá»…n.',
+            'selected' => 'Há»“ sÆ¡ nghiá»‡p vá»¥ Ä‘ang ghi nháº­n trÃºng tuyá»ƒn.',
+            'enlisted' => 'Há»“ sÆ¡ nghiá»‡p vá»¥ Ä‘ang ghi nháº­n Ä‘Ã£ nháº­p ngÅ©.',
+            'active_service' => 'Há»“ sÆ¡ nghiá»‡p vá»¥ Ä‘ang ghi nháº­n Ä‘ang táº¡i ngÅ©.',
+            'discharged' => 'Há»“ sÆ¡ nghiá»‡p vá»¥ cÃ³ ngÃ y xuáº¥t ngÅ©.',
+            'active' => 'Há»“ sÆ¡ nghiá»‡p vá»¥ Ä‘ang á»Ÿ tráº¡ng thÃ¡i hoáº¡t Ä‘á»™ng/tham gia.',
+            'completed_or_ended' => 'Há»“ sÆ¡ dÃ¢n quÃ¢n Ä‘Ã£ hoÃ n thÃ nh hoáº·c thÃ´i tham gia.',
+            'leaders' => 'Há»“ sÆ¡ ANTT cÃ³ chá»©c vá»¥ Tá»• trÆ°á»Ÿng.',
+            'deputies' => 'Há»“ sÆ¡ ANTT cÃ³ chá»©c vá»¥ Tá»• phÃ³.',
+            'members' => 'Há»“ sÆ¡ ANTT cÃ³ chá»©c vá»¥ Tá»• viÃªn.',
+            'total' => 'CÃ³ há»“ sÆ¡ nghiá»‡p vá»¥ liÃªn káº¿t vá»›i nhÃ¢n kháº©u.',
+            default => '',
+        };
     }
 
     private function countAgeGroup(int $year, int $fromAge, int $toAge): int
@@ -552,22 +599,22 @@ SQL);
     private function normalizeNvqs(array $row): array
     {
         $base = $this->normalizeCitizen($row);
-        return $base + ['id'=>(int)$row['id'],'citizen_id'=>(int)$row['citizen_id'],'recruitment_year'=>(int)$row['recruitment_year'],'registered_status'=>(string)$row['registered_status'],'registered_status_label'=>self::YES_NO[$row['registered_status']]??'Không','registration_date'=>$row['registration_date']??null,'preliminary_status'=>(string)$row['preliminary_status'],'preliminary_status_label'=>self::PRELIMINARY[$row['preliminary_status']]??'Chưa cập nhật','preliminary_date'=>$row['preliminary_date']??null,'medical_exam_status'=>(string)$row['medical_exam_status'],'medical_exam_status_label'=>self::MEDICAL[$row['medical_exam_status']]??'Chưa cập nhật','medical_exam_date'=>$row['medical_exam_date']??null,'health_classification'=>(string)($row['health_classification']??''),'eligibility_status'=>(string)$row['eligibility_status'],'eligibility_status_label'=>self::ELIGIBILITY[$row['eligibility_status']]??'Chưa xác định','deferment_reason'=>(string)($row['deferment_reason']??''),'exemption_reason'=>(string)($row['exemption_reason']??''),'selection_status'=>(string)$row['selection_status'],'selection_status_label'=>self::SELECTION[$row['selection_status']]??'Chưa trúng tuyển','order_received'=>(bool)$row['order_received'],'enlistment_date'=>$row['enlistment_date']??null,'enlistment_unit'=>(string)($row['enlistment_unit']??''),'active_service'=>(bool)$row['active_service'],'discharge_date'=>$row['discharge_date']??null,'discharge_unit'=>(string)($row['discharge_unit']??''),'completed_service'=>(bool)$row['completed_service'],'note'=>(string)($row['note']??'')];
+        return array_merge($base, ['id'=>(int)($row['id'] ?? 0),'citizen_id'=>(int)$row['citizen_id'],'recruitment_year'=>(int)$row['recruitment_year'],'registered_status'=>(string)$row['registered_status'],'registered_status_label'=>self::YES_NO[$row['registered_status']]??'KhÃ´ng','registration_date'=>$row['registration_date']??null,'preliminary_status'=>(string)$row['preliminary_status'],'preliminary_status_label'=>self::PRELIMINARY[$row['preliminary_status']]??'ChÆ°a cáº­p nháº­t','preliminary_date'=>$row['preliminary_date']??null,'medical_exam_status'=>(string)$row['medical_exam_status'],'medical_exam_status_label'=>self::MEDICAL[$row['medical_exam_status']]??'ChÆ°a cáº­p nháº­t','medical_exam_date'=>$row['medical_exam_date']??null,'health_classification'=>(string)($row['health_classification']??''),'eligibility_status'=>(string)$row['eligibility_status'],'eligibility_status_label'=>self::ELIGIBILITY[$row['eligibility_status']]??'ChÆ°a xÃ¡c Ä‘á»‹nh','deferment_reason'=>(string)($row['deferment_reason']??''),'exemption_reason'=>(string)($row['exemption_reason']??''),'selection_status'=>(string)$row['selection_status'],'selection_status_label'=>self::SELECTION[$row['selection_status']]??'ChÆ°a trÃºng tuyá»ƒn','order_received'=>(bool)$row['order_received'],'enlistment_date'=>$row['enlistment_date']??null,'enlistment_unit'=>(string)($row['enlistment_unit']??''),'active_service'=>(bool)$row['active_service'],'discharge_date'=>$row['discharge_date']??null,'discharge_unit'=>(string)($row['discharge_unit']??''),'completed_service'=>(bool)$row['completed_service'],'note'=>(string)($row['note']??'')]);
     }
 
     private function normalizeMilitia(array $row): array
     {
-        return $this->normalizeCitizen($row) + ['id'=>(int)$row['id'],'citizen_id'=>(int)$row['citizen_id'],'militia_type'=>(string)$row['militia_type'],'militia_type_label'=>self::MILITIA_TYPES[$row['militia_type']]??'Khác','position_name'=>(string)($row['position_name']??''),'unit_name'=>(string)($row['unit_name']??''),'joined_date'=>$row['joined_date']??null,'ended_date'=>$row['ended_date']??null,'training_name'=>(string)($row['training_name']??''),'training_date'=>$row['training_date']??null,'training_result'=>(string)($row['training_result']??''),'participation_status'=>(string)$row['participation_status'],'participation_status_label'=>self::PARTICIPATION[$row['participation_status']]??'Đang tham gia','reason'=>(string)($row['reason']??''),'note'=>(string)($row['note']??'')];
+        return array_merge($this->normalizeCitizen($row), ['id'=>(int)$row['id'],'citizen_id'=>(int)$row['citizen_id'],'militia_type'=>(string)$row['militia_type'],'militia_type_label'=>self::MILITIA_TYPES[$row['militia_type']]??'KhÃ¡c','position_name'=>(string)($row['position_name']??''),'unit_name'=>(string)($row['unit_name']??''),'joined_date'=>$row['joined_date']??null,'ended_date'=>$row['ended_date']??null,'training_name'=>(string)($row['training_name']??''),'training_date'=>$row['training_date']??null,'training_result'=>(string)($row['training_result']??''),'participation_status'=>(string)$row['participation_status'],'participation_status_label'=>self::PARTICIPATION[$row['participation_status']]??'Äang tham gia','reason'=>(string)($row['reason']??''),'note'=>(string)($row['note']??'')]);
     }
 
     private function normalizeSecurityForce(array $row): array
     {
-        return $this->normalizeCitizen($row) + ['id'=>(int)$row['id'],'citizen_id'=>(int)$row['citizen_id'],'team_name'=>(string)$row['team_name'],'position_code'=>(string)$row['position_code'],'position_label'=>self::SECURITY_POSITIONS[$row['position_code']]??'Tổ viên','joined_date'=>$row['joined_date']??null,'ended_date'=>$row['ended_date']??null,'area_in_charge'=>(string)($row['area_in_charge']??''),'participation_status'=>(string)$row['participation_status'],'participation_status_label'=>self::SECURITY_STATUS[$row['participation_status']]??'Đang hoạt động','reason'=>(string)($row['reason']??''),'note'=>(string)($row['note']??'')];
+        return array_merge($this->normalizeCitizen($row), ['id'=>(int)$row['id'],'citizen_id'=>(int)$row['citizen_id'],'team_name'=>(string)$row['team_name'],'position_code'=>(string)$row['position_code'],'position_label'=>self::SECURITY_POSITIONS[$row['position_code']]??'Tá»• viÃªn','joined_date'=>$row['joined_date']??null,'ended_date'=>$row['ended_date']??null,'area_in_charge'=>(string)($row['area_in_charge']??''),'participation_status'=>(string)$row['participation_status'],'participation_status_label'=>self::SECURITY_STATUS[$row['participation_status']]??'Äang hoáº¡t Ä‘á»™ng','reason'=>(string)($row['reason']??''),'note'=>(string)($row['note']??'')]);
     }
 
     private function normalizeCitizen(array $row): array
     {
-        return ['id'=>(int)($row['id'] ?? $row['citizen_id'] ?? 0),'citizen_id'=>(int)($row['citizen_id'] ?? $row['id'] ?? 0),'citizen_code'=>(string)($row['citizen_code']??''),'full_name'=>(string)($row['full_name']??''),'date_of_birth'=>$row['date_of_birth']??null,'gender'=>(string)($row['gender']??''),'household_code'=>(string)($row['household_code']??''),'address'=>(string)($row['address']??''),'area_code'=>(string)($row['area_code']??'')];
+        return ['id'=>(int)($row['id'] ?? $row['citizen_id'] ?? 0),'citizen_id'=>(int)($row['citizen_id'] ?? $row['id'] ?? 0),'citizen_code'=>(string)($row['citizen_code']??''),'full_name'=>(string)($row['full_name']??''),'date_of_birth'=>$row['date_of_birth']??null,'gender'=>(string)($row['gender']??''),'household_code'=>(string)($row['household_code']??''),'head_citizen_name'=>(string)($row['head_citizen_name']??''),'address'=>(string)($row['address']??''),'area_code'=>(string)($row['area_code']??''),'kpi_reason'=>(string)($row['kpi_reason']??'')];
     }
 
     private function citizenNvqsWarnings(array $citizen, int $year): array
@@ -576,10 +623,10 @@ SQL);
         $age = $this->ageFromDate((string) ($citizen['date_of_birth'] ?? ''), $year);
         $warnings = [];
         if (!$this->isMale((string) ($citizen['gender'] ?? '')) || $age === null) return $warnings;
-        if ($age === (int) $settings['nvqs_warning_age']) $warnings[] = 'Sắp đến tuổi đăng ký NVQS';
-        if ($age === (int) $settings['nvqs_registration_age']) $warnings[] = 'Đến tuổi đăng ký NVQS';
-        if ($age >= (int) $settings['nvqs_call_age'] && $age <= (int) $settings['nvqs_follow_end_age']) $warnings[] = 'Trong độ tuổi cần theo dõi tuyển quân';
-        if ($warnings && !$this->existingNvqs((int) $citizen['id'], $year)) $warnings[] = 'Chưa có hồ sơ NVQS';
+        if ($age === (int) $settings['nvqs_warning_age']) $warnings[] = 'Sáº¯p Ä‘áº¿n tuá»•i Ä‘Äƒng kÃ½ NVQS';
+        if ($age === (int) $settings['nvqs_registration_age']) $warnings[] = 'Äáº¿n tuá»•i Ä‘Äƒng kÃ½ NVQS';
+        if ($age >= (int) $settings['nvqs_call_age'] && $age <= (int) $settings['nvqs_follow_end_age']) $warnings[] = 'Trong Ä‘á»™ tuá»•i cáº§n theo dÃµi tuyá»ƒn quÃ¢n';
+        if ($warnings && !$this->existingNvqs((int) $citizen['id'], $year)) $warnings[] = 'ChÆ°a cÃ³ há»“ sÆ¡ NVQS';
         return $warnings;
     }
 
@@ -670,7 +717,7 @@ SQL);
         if ($value === '') return null;
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) return $value;
         if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $value, $m) && checkdate((int) $m[2], (int) $m[1], (int) $m[3])) return sprintf('%04d-%02d-%02d', (int) $m[3], (int) $m[2], (int) $m[1]);
-        throw new RuntimeException('Ngày phải theo định dạng dd/mm/yyyy');
+        throw new RuntimeException('NgÃ y pháº£i theo Ä‘á»‹nh dáº¡ng dd/mm/yyyy');
     }
 
     private function pairs(array $map): array
@@ -680,13 +727,14 @@ SQL);
 
     private function table(string $title, array $headers, array $rows, array $filters): array
     {
-        return ['title'=>$title,'headers'=>$headers,'rows'=>$rows,'totalRows'=>count($rows),'filters'=>$filters,'generatedAt'=>date('c'),'meta'=>['unit'=>'Thôn','report_year'=>$this->year($filters)]];
+        return ['title'=>$title,'headers'=>$headers,'rows'=>$rows,'totalRows'=>count($rows),'filters'=>$filters,'generatedAt'=>date('c'),'meta'=>['unit'=>'ThÃ´n','report_year'=>$this->year($filters)]];
     }
 
     private function forceReport(string $title, array $rows, string $type, array $filters): array
     {
-        $headers = $type === 'security' ? ['Mã NK','Họ tên','Mã hộ','Tổ ANTT','Chức vụ','Ngày tham gia','Ngày kết thúc','Khu vực phụ trách','Trạng thái','Ghi chú'] : ['Mã NK','Họ tên','Mã hộ','Loại dân quân','Chức vụ','Đơn vị/tổ','Ngày tham gia','Huấn luyện','Kết quả','Trạng thái','Ghi chú'];
+        $headers = $type === 'security' ? ['MÃ£ NK','Há» tÃªn','MÃ£ há»™','Tá»• ANTT','Chá»©c vá»¥','NgÃ y tham gia','NgÃ y káº¿t thÃºc','Khu vá»±c phá»¥ trÃ¡ch','Tráº¡ng thÃ¡i','Ghi chÃº'] : ['MÃ£ NK','Há» tÃªn','MÃ£ há»™','Loáº¡i dÃ¢n quÃ¢n','Chá»©c vá»¥','ÄÆ¡n vá»‹/tá»•','NgÃ y tham gia','Huáº¥n luyá»‡n','Káº¿t quáº£','Tráº¡ng thÃ¡i','Ghi chÃº'];
         $body = $type === 'security' ? array_map(fn($r) => [$r['citizen_code'],$r['full_name'],$r['household_code'],$r['team_name'],$r['position_label'],$r['joined_date'],$r['ended_date'],$r['area_in_charge'],$r['participation_status_label'],$r['note']], $rows) : array_map(fn($r) => [$r['citizen_code'],$r['full_name'],$r['household_code'],$r['militia_type_label'],$r['position_name'],$r['unit_name'],$r['joined_date'],$r['training_name'],$r['training_result'],$r['participation_status_label'],$r['note']], $rows);
         return $this->table($title, $headers, $body, $filters);
     }
 }
+

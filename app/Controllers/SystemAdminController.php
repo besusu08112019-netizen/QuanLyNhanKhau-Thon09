@@ -29,7 +29,7 @@ final class SystemAdminController extends BaseController
     {
         $user = $this->requireAdmin(true);
         $count = $this->admin->revokeSession((int) $id);
-        $this->audit($user, 'system_admin', 'session_revoke', 'Đăng xuất một phiên', $id, ['count' => $count], 'WARN');
+        $this->audit($user, 'system_admin', 'session_revoke', 'ÄÄƒng xuáº¥t má»™t phiÃªn', $id, ['count' => $count], 'WARN');
         $this->ok(['revoked' => $count]);
     }
 
@@ -37,7 +37,7 @@ final class SystemAdminController extends BaseController
     {
         $user = $this->requireAdmin(true);
         $count = $this->admin->revokeAllSessions((int) $user['id']);
-        $this->audit($user, 'system_admin', 'session_revoke_all', 'Đăng xuất tất cả phiên khác', null, ['count' => $count], 'WARN');
+        $this->audit($user, 'system_admin', 'session_revoke_all', 'ÄÄƒng xuáº¥t táº¥t cáº£ phiÃªn khÃ¡c', null, ['count' => $count], 'WARN');
         $this->ok(['revoked' => $count]);
     }
 
@@ -46,7 +46,7 @@ final class SystemAdminController extends BaseController
         $user = $this->requireAdmin(true);
         $target = (string) $this->input('target', '');
         $result = $this->admin->cleanup($target);
-        $this->audit($user, 'system_admin', 'cleanup', 'Dọn dẹp bộ nhớ hệ thống', null, ['target' => $target] + $result, 'WARN');
+        $this->audit($user, 'system_admin', 'cleanup', 'Dá»n dáº¹p bá»™ nhá»› há»‡ thá»‘ng', null, ['target' => $target] + $result, 'WARN');
         $this->ok($result);
     }
 
@@ -55,7 +55,7 @@ final class SystemAdminController extends BaseController
         $user = $this->requireAdmin(true);
         $type = (string) $this->input('type', 'database');
         $backup = (new Backup())->createSqlDump((int) $user['id']);
-        $this->audit($user, 'backup', 'export', 'Tạo backup Sprint 17', null, ['type' => $type, 'fileName' => $backup['fileName'], 'size' => $backup['size'], 'checksum' => $backup['checksum']]);
+        $this->audit($user, 'backup', 'export', 'Táº¡o backup Sprint 17', null, ['type' => $type, 'fileName' => $backup['fileName'], 'size' => $backup['size'], 'checksum' => $backup['checksum']]);
         header('Content-Type: application/sql; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $backup['fileName'] . '"');
         echo $backup['content'];

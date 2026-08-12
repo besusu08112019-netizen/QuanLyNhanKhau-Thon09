@@ -97,7 +97,7 @@ final class OperationCenterController extends BaseController
         $this->requireOperationalSourcePermissions();
         $format = strtolower(trim((string) $this->query('format', 'pdf')));
         $report = $this->operation->executiveReport($this->query());
-        $this->audit($user, 'operation_center', 'export', 'Xuất báo cáo điều hành', null, ['format' => $format]);
+        $this->audit($user, 'operation_center', 'export', 'Xuáº¥t bÃ¡o cÃ¡o Ä‘iá»u hÃ nh', null, ['format' => $format]);
         if ($format === 'excel' || $format === 'xls') $this->downloadTable($report, 'xls', 'application/vnd.ms-excel');
         if ($format === 'word' || $format === 'doc') $this->downloadTable($report, 'doc', 'application/msword');
         $this->downloadPdf($report);
@@ -111,8 +111,8 @@ final class OperationCenterController extends BaseController
         foreach (($data['data']['items'] ?? []) as $item) {
             $rows[] = [$item['created_at'] ?? '', $item['user_email'] ?? '', $item['module'] ?? '', $item['action'] ?? '', $item['message'] ?? '', $item['ip_address'] ?? ''];
         }
-        $report = ['title' => 'Nhật ký hệ thống', 'headers' => ['Thời gian', 'Người thao tác', 'Module', 'Hành động', 'Nội dung', 'IP'], 'rows' => $rows];
-        $this->audit($user, 'operation_center', 'export_logs', 'Xuất Excel nhật ký hệ thống');
+        $report = ['title' => 'Nháº­t kÃ½ há»‡ thá»‘ng', 'headers' => ['Thá»i gian', 'NgÆ°á»i thao tÃ¡c', 'Module', 'HÃ nh Ä‘á»™ng', 'Ná»™i dung', 'IP'], 'rows' => $rows];
+        $this->audit($user, 'operation_center', 'export_logs', 'Xuáº¥t Excel nháº­t kÃ½ há»‡ thá»‘ng');
         $this->downloadTable($report, 'xls', 'application/vnd.ms-excel');
     }
 
@@ -139,8 +139,8 @@ final class OperationCenterController extends BaseController
     {
         $fileName = $this->slug($report['title'] ?? 'bao_cao') . '_' . date('Ymd_His') . '.pdf';
         $pdf = new SimplePdf();
-        $pdf->addTitle((string) ($report['title'] ?? 'Báo cáo điều hành'));
-        $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
+        $pdf->addTitle((string) ($report['title'] ?? 'BÃ¡o cÃ¡o Ä‘iá»u hÃ nh'));
+        $pdf->addMeta('Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s'));
         $pdf->addTable($report['headers'] ?? [], $report['rows'] ?? []);
         $pdf->addSignatureBlock('Truong thon');
         header('Content-Type: application/pdf');

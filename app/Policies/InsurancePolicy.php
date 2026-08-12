@@ -7,7 +7,7 @@ use App\Services\StudentStatusService;
 final class InsurancePolicy
 {
     public const STUDENT_OCCUPATION = StudentStatusService::STUDENT_LABEL;
-    public const ELDERLY_OCCUPATION = 'Người cao tuổi (' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE . '+)';
+    public const ELDERLY_OCCUPATION = 'NgÆ°á»i cao tuá»•i (' . AgePolicy::ELDERLY_OCCUPATION_DEFAULT_AGE . '+)';
     public const DEFAULT_AGE = AgePolicy::BHYT_DEFAULT_AGE;
     public const EXPIRING_DAYS = AgePolicy::HEALTH_INSURANCE_EXPIRING_DAYS;
 

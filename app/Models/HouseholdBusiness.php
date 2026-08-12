@@ -7,18 +7,18 @@ use App\Core\BaseModel;
 final class HouseholdBusiness extends BaseModel
 {
     public const TYPE_LABELS = [
-        'RESIDENT' => 'Hộ dân',
-        'PRODUCTION' => 'Hộ sản xuất',
-        'BUSINESS' => 'Hộ kinh doanh',
-        'BOTH' => 'Hộ sản xuất và kinh doanh',
+        'RESIDENT' => 'Há»™ dÃ¢n',
+        'PRODUCTION' => 'Há»™ sáº£n xuáº¥t',
+        'BUSINESS' => 'Há»™ kinh doanh',
+        'BOTH' => 'Há»™ sáº£n xuáº¥t vÃ  kinh doanh',
     ];
 
     private const CATALOGS = [
-        'economic_type' => ['Sản xuất nông nghiệp','Trồng trọt','Chăn nuôi','Nuôi trồng thủy sản','Lâm nghiệp','Tiểu thủ công nghiệp','Thương mại','Dịch vụ','Xây dựng','Vận tải','Chế biến thực phẩm','Kinh doanh online','Khác'],
-        'main_product' => ['Lúa','Rau','Hoa','Cây ăn quả','Gia súc','Gia cầm','Thủy sản','Gỗ','May mặc','Tạp hóa','Nhà hàng','Dịch vụ','Khác'],
-        'business_scale' => ['Hộ cá thể','Tổ hợp tác','Hợp tác xã','Doanh nghiệp tư nhân','Công ty TNHH','Công ty cổ phần','Khác'],
-        'image_category' => ['Mặt tiền','Khu sản xuất','Nhà xưởng','Máy móc','Kho hàng','Biển hiệu','Khác'],
-        'document_category' => ['Giấy phép kinh doanh','Mã số thuế','Giấy chứng nhận ATTP','Chứng nhận OCOP','VietGAP','GlobalGAP','Hồ sơ khác'],
+        'economic_type' => ['Sáº£n xuáº¥t nÃ´ng nghiá»‡p','Trá»“ng trá»t','ChÄƒn nuÃ´i','NuÃ´i trá»“ng thá»§y sáº£n','LÃ¢m nghiá»‡p','Tiá»ƒu thá»§ cÃ´ng nghiá»‡p','ThÆ°Æ¡ng máº¡i','Dá»‹ch vá»¥','XÃ¢y dá»±ng','Váº­n táº£i','Cháº¿ biáº¿n thá»±c pháº©m','Kinh doanh online','KhÃ¡c'],
+        'main_product' => ['LÃºa','Rau','Hoa','CÃ¢y Äƒn quáº£','Gia sÃºc','Gia cáº§m','Thá»§y sáº£n','Gá»—','May máº·c','Táº¡p hÃ³a','NhÃ  hÃ ng','Dá»‹ch vá»¥','KhÃ¡c'],
+        'business_scale' => ['Há»™ cÃ¡ thá»ƒ','Tá»• há»£p tÃ¡c','Há»£p tÃ¡c xÃ£','Doanh nghiá»‡p tÆ° nhÃ¢n','CÃ´ng ty TNHH','CÃ´ng ty cá»• pháº§n','KhÃ¡c'],
+        'image_category' => ['Máº·t tiá»n','Khu sáº£n xuáº¥t','NhÃ  xÆ°á»Ÿng','MÃ¡y mÃ³c','Kho hÃ ng','Biá»ƒn hiá»‡u','KhÃ¡c'],
+        'document_category' => ['Giáº¥y phÃ©p kinh doanh','MÃ£ sá»‘ thuáº¿','Giáº¥y chá»©ng nháº­n ATTP','Chá»©ng nháº­n OCOP','VietGAP','GlobalGAP','Há»“ sÆ¡ khÃ¡c'],
         'ocop_star' => ['3 sao','4 sao','5 sao'],
     ];
 
@@ -285,7 +285,7 @@ SQL);
         $this->ensureSchema();
         $params = $this->params($data, $userId);
         $before = $id ? $this->find($id) : null;
-        if ($id && !$before) throw new \RuntimeException('Không tìm thấy thông tin hộ sản xuất/kinh doanh');
+        if ($id && !$before) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»™ sáº£n xuáº¥t/kinh doanh');
         if ($id) $params['id'] = $id;
 
         if ($id) {
@@ -309,7 +309,7 @@ SQL);
     public function softDelete(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy thông tin hộ sản xuất/kinh doanh');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»™ sáº£n xuáº¥t/kinh doanh');
         $deleteSql = 'UPDATE household_business SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id';
         $deleteParams = ['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId];
         $this->debugSql('household_business.delete', $deleteSql, $deleteParams);
@@ -318,7 +318,7 @@ SQL);
 
     public function members(int $householdId): array
     {
-        return $this->fetchAll('SELECT p.id, p.citizen_code, p.full_name, p.relationship, p.gender, p.date_of_birth, p.identity_number, p.phone, p.residency_status, p.presence_status FROM citizens p WHERE p.household_id = :id AND p.status <> "DELETED" ORDER BY CASE WHEN p.relationship = "Chủ hộ" THEN 0 ELSE 1 END, p.full_name', ['id' => $householdId]);
+        return $this->fetchAll('SELECT p.id, p.citizen_code, p.full_name, p.relationship, p.gender, p.date_of_birth, p.identity_number, p.phone, p.residency_status, p.presence_status FROM citizens p WHERE p.household_id = :id AND p.status <> "DELETED" ORDER BY CASE WHEN p.relationship = "Chá»§ há»™" THEN 0 ELSE 1 END, p.full_name', ['id' => $householdId]);
     }
 
     public function dashboard(array $filters = []): array
@@ -386,18 +386,18 @@ SQL);
         if ($mode === 'household_summary') return $this->householdSummaryReport($filters);
         $rows = $mode === 'establishments' ? $this->paginate($filters)['items'] : $this->paginateHouseholds($filters)['items'];
         $title = match ($mode) {
-            'production' => 'Danh sách hộ sản xuất',
-            'business' => 'Danh sách hộ kinh doanh',
-            'sector' => 'Báo cáo hộ sản xuất/kinh doanh theo ngành nghề',
-            'status' => 'Báo cáo hộ sản xuất/kinh doanh theo trạng thái',
-            'gis' => 'Báo cáo hộ sản xuất/kinh doanh theo khu vực GIS',
-            'ocop' => 'Báo cáo hộ OCOP',
-            'food_safety' => 'Báo cáo hộ có chứng nhận ATTP',
-            'social_insurance' => 'Báo cáo hộ tham gia BHXH',
-            'economic_type' => 'Báo cáo theo loại hình kinh tế',
-            'scale' => 'Báo cáo theo quy mô hoạt động',
-            'product' => 'Báo cáo theo sản phẩm chính',
-            default => 'Danh sách hộ sản xuất và kinh doanh',
+            'production' => 'Danh sÃ¡ch há»™ sáº£n xuáº¥t',
+            'business' => 'Danh sÃ¡ch há»™ kinh doanh',
+            'sector' => 'BÃ¡o cÃ¡o há»™ sáº£n xuáº¥t/kinh doanh theo ngÃ nh nghá»',
+            'status' => 'BÃ¡o cÃ¡o há»™ sáº£n xuáº¥t/kinh doanh theo tráº¡ng thÃ¡i',
+            'gis' => 'BÃ¡o cÃ¡o há»™ sáº£n xuáº¥t/kinh doanh theo khu vá»±c GIS',
+            'ocop' => 'BÃ¡o cÃ¡o há»™ OCOP',
+            'food_safety' => 'BÃ¡o cÃ¡o há»™ cÃ³ chá»©ng nháº­n ATTP',
+            'social_insurance' => 'BÃ¡o cÃ¡o há»™ tham gia BHXH',
+            'economic_type' => 'BÃ¡o cÃ¡o theo loáº¡i hÃ¬nh kinh táº¿',
+            'scale' => 'BÃ¡o cÃ¡o theo quy mÃ´ hoáº¡t Ä‘á»™ng',
+            'product' => 'BÃ¡o cÃ¡o theo sáº£n pháº©m chÃ­nh',
+            default => 'Danh sÃ¡ch há»™ sáº£n xuáº¥t vÃ  kinh doanh',
         };
         $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['business_name'], $r['business_type_label'], $r['economic_type'], $r['business_scale'], $r['sector_label'], (int) ($r['business_count'] ?? 1), implode(', ', $r['main_products']), $r['worker_count'], $r['is_ocop'] ? trim(($r['ocop_product'] ?: 'OCOP') . ' ' . ($r['ocop_star'] ? $r['ocop_star'] . ' sao' : '')) : 'Khong', $r['food_safety_certified'] ? ($r['food_safety_certificate_no'] ?: 'Co') : 'Khong', $r['social_insurance'] ? ((int) $r['insured_workers'] . ' lao dong') : 'Khong', $r['status_label']], $rows);
         return $this->table($title, ['Ma ho','Chu ho','Ten co so','Loai hinh','Loai hinh kinh te','Quy mo','Nganh nghe','So hoat dong','San pham chinh','Lao dong','OCOP','ATTP','BHXH','Trang thai'], $body, $filters);
@@ -569,17 +569,17 @@ SQL);
     private function params(array $data, int $userId): array
     {
         $householdId = (int) ($data['household_id'] ?? $data['householdId'] ?? 0);
-        if ($householdId <= 0) throw new \RuntimeException('Hộ gia đình là bắt buộc');
-        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND h.status <> "DELETED" AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('Không tìm thấy hộ gia đình liên kết');
+        if ($householdId <= 0) throw new \RuntimeException('Há»™ gia Ä‘Ã¬nh lÃ  báº¯t buá»™c');
+        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND h.status <> "DELETED" AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™ gia Ä‘Ã¬nh liÃªn káº¿t');
         $workerCount = max(0, (int) ($data['worker_count'] ?? $data['workerCount'] ?? 0));
         $isOcop = $this->boolValue($data['is_ocop'] ?? $data['isOcop'] ?? 0);
         $ocopStar = $isOcop ? (int) ($data['ocop_star'] ?? $data['ocopStar'] ?? 0) : null;
-        if ($isOcop && !in_array($ocopStar, [3,4,5], true)) throw new \RuntimeException('Số sao OCOP phải là 3, 4 hoặc 5');
+        if ($isOcop && !in_array($ocopStar, [3,4,5], true)) throw new \RuntimeException('Sá»‘ sao OCOP pháº£i lÃ  3, 4 hoáº·c 5');
         $foodSafety = $this->boolValue($data['food_safety_certified'] ?? $data['foodSafetyCertified'] ?? 0);
         $socialInsurance = $this->boolValue($data['social_insurance'] ?? $data['socialInsurance'] ?? 0);
         $insuredWorkers = max(0, (int) ($data['insured_workers'] ?? $data['insuredWorkers'] ?? 0));
         if (!$socialInsurance) $insuredWorkers = 0;
-        if ($workerCount > 0 && $insuredWorkers > $workerCount) throw new \RuntimeException('Số lao động tham gia BHXH không được lớn hơn tổng số lao động');
+        if ($workerCount > 0 && $insuredWorkers > $workerCount) throw new \RuntimeException('Sá»‘ lao Ä‘á»™ng tham gia BHXH khÃ´ng Ä‘Æ°á»£c lá»›n hÆ¡n tá»•ng sá»‘ lao Ä‘á»™ng');
         return [
             'household_id' => $householdId,
             'business_type' => $this->businessType($data['business_type'] ?? $data['businessType'] ?? 'RESIDENT') ?: 'RESIDENT',
@@ -660,7 +660,7 @@ SQL);
             $params
         );
         $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], (int) $r['activity_count'], $r['activities'], (int) $r['worker_count']], $rows);
-        return $this->table('Báo cáo hộ có hoạt động kinh tế', ['Mã hộ','Chủ hộ','Địa chỉ','Số hoạt động','Hoạt động kinh tế','Tổng lao động'], $body, $filters);
+        return $this->table('BÃ¡o cÃ¡o há»™ cÃ³ hoáº¡t Ä‘á»™ng kinh táº¿', ['MÃ£ há»™','Chá»§ há»™','Äá»‹a chá»‰','Sá»‘ hoáº¡t Ä‘á»™ng','Hoáº¡t Ä‘á»™ng kinh táº¿','Tá»•ng lao Ä‘á»™ng'], $body, $filters);
     }
 
     private function debugSql(string $context, string $sql, array $params): void
@@ -728,7 +728,7 @@ SQL);
             'email' => (string) ($row['email'] ?? ''),
             'address' => (string) ($row['address'] ?? $row['household_address'] ?? ''),
             'gps_source' => $gpsSource,
-            'gps_source_label' => $gpsSource === 'activity' ? 'GPS riêng' : 'GPS hộ gia đình',
+            'gps_source_label' => $gpsSource === 'activity' ? 'GPS riÃªng' : 'GPS há»™ gia Ä‘Ã¬nh',
             'activity_latitude' => $activityLat !== null && $activityLat !== '' ? (float) $activityLat : null,
             'activity_longitude' => $activityLng !== null && $activityLng !== '' ? (float) $activityLng : null,
             'household_latitude' => ($row['household_latitude'] ?? null) !== null && ($row['household_latitude'] ?? '') !== '' ? (float) $row['household_latitude'] : null,
@@ -764,9 +764,9 @@ SQL);
     public function addFile(int $businessId, string $kind, string $category, array $stored, array $file, string $mime, int $userId): array
     {
         $this->ensureSchema();
-        if (!$this->find($businessId)) throw new \RuntimeException('Không tìm thấy hồ sơ sản xuất/kinh doanh');
+        if (!$this->find($businessId)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ sáº£n xuáº¥t/kinh doanh');
         $kind = strtoupper($kind) === 'IMAGE' ? 'IMAGE' : 'DOCUMENT';
-        $category = $this->catalogValue($kind === 'IMAGE' ? 'image_category' : 'document_category', $category) ?: 'Khác';
+        $category = $this->catalogValue($kind === 'IMAGE' ? 'image_category' : 'document_category', $category) ?: 'KhÃ¡c';
         $id = $this->insert('INSERT INTO household_business_files (household_business_id,file_kind,category,original_name,stored_name,file_path,mime_type,file_size,created_by) VALUES (:business,:kind,:category,:original,:stored,:path,:mime,:size,:user)', ['business' => $businessId, 'kind' => $kind, 'category' => $category, 'original' => (string) ($file['name'] ?? ''), 'stored' => $stored['stored_name'], 'path' => $stored['file_path'], 'mime' => $mime, 'size' => (int) ($file['size'] ?? 0), 'user' => $userId]);
         return $this->file($id) ?: ['id' => $id];
     }
@@ -811,7 +811,7 @@ SQL);
     }
 
     private function decodeProducts(mixed $value): array { return $this->products((string) $value); }
-    private function boolValue(mixed $value): bool { return in_array(strtolower(trim((string) $value)), ['1','true','yes','on','co','có'], true); }
+    private function boolValue(mixed $value): bool { return in_array(strtolower(trim((string) $value)), ['1','true','yes','on','co','cÃ³'], true); }
 
     private function table(string $title, array $headers, array $rows, array $filters): array
     {
@@ -832,7 +832,7 @@ SQL);
 
     private function statusLabel(mixed $value): string
     {
-        return ['ACTIVE' => 'Đang hoạt động', 'INACTIVE' => 'Ngừng hoạt động', 'SUSPENDED' => 'Tạm ngừng', 'DELETED' => 'Đã xóa'][strtoupper((string) $value)] ?? (string) $value;
+        return ['ACTIVE' => 'Äang hoáº¡t Ä‘á»™ng', 'INACTIVE' => 'Ngá»«ng hoáº¡t Ä‘á»™ng', 'SUSPENDED' => 'Táº¡m ngá»«ng', 'DELETED' => 'ÄÃ£ xÃ³a'][strtoupper((string) $value)] ?? (string) $value;
     }
 
     private function nullable(mixed $value): ?string

@@ -47,7 +47,7 @@ final class PhotoGalleryController extends BaseController
         $user = $this->requirePermission('photo_gallery', 'create');
         try {
             $row = $this->gallery->createAlbum((array)$this->input(), (int)$user['id']);
-            $this->audit($user, 'photo_gallery', 'album_create', 'Them album anh', $row['id'], ['after' => $row]);
+            $this->audit($user, 'photo_gallery', 'album_create', 'ThÃªm album áº£nh', $row['id'], ['after' => $row]);
             $this->ok($row);
         } catch (\Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -58,7 +58,7 @@ final class PhotoGalleryController extends BaseController
     {
         $this->requirePermission('photo_gallery', 'read');
         $row = $this->gallery->findItem((int)$id);
-        if (!$row) $this->fail('Khong tim thay anh', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y áº£nh', 404);
         $this->ok($row);
     }
 
@@ -98,9 +98,9 @@ final class PhotoGalleryController extends BaseController
         $user = $this->requirePermission('photo_gallery', 'update');
         try {
             $before = $this->gallery->findItem((int)$id);
-            if (!$before) $this->fail('Khong tim thay anh', 404);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y áº£nh', 404);
             $row = $this->gallery->updateItem((int)$id, (array)$this->input(), (int)$user['id']);
-            $this->audit($user, 'photo_gallery', 'update', 'Cap nhat thong tin anh', $id, ['before' => $before, 'after' => $row]);
+            $this->audit($user, 'photo_gallery', 'update', 'Cáº­p nháº­t thÃ´ng tin áº£nh', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (\Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -111,9 +111,9 @@ final class PhotoGalleryController extends BaseController
     {
         $user = $this->requirePermission('photo_gallery', 'delete');
         $before = $this->gallery->findItem((int)$id);
-        if (!$before) $this->fail('Khong tim thay anh', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y áº£nh', 404);
         $this->gallery->softDeleteItem((int)$id, (int)$user['id']);
-        $this->audit($user, 'photo_gallery', 'delete', 'Xoa anh kho anh', $id, ['before' => $before]);
+        $this->audit($user, 'photo_gallery', 'delete', 'XÃ³a áº£nh kho áº£nh', $id, ['before' => $before]);
         $this->ok(['id' => (int)$id]);
     }
 
@@ -131,7 +131,7 @@ final class PhotoGalleryController extends BaseController
     {
         $this->requirePermission('photo_gallery', $download ? 'download' : 'read');
         $item = $this->gallery->findItem((int)$id);
-        if (!$item) $this->fail('Khong tim thay anh', 404);
+        if (!$item) $this->fail('KhÃ´ng tÃ¬m tháº¥y áº£nh', 404);
         $path = $this->storage->safeFilePath($this->gallery->itemPath((int)$id) ?? '');
         if (!$path || !is_file($path)) $this->fail('Anh khong con ton tai', 404);
         $mime = mime_content_type($path) ?: 'application/octet-stream';

@@ -13,7 +13,7 @@ final class DigitalProfile extends BaseModel
         if (!$household) return null;
 
         $members = $this->fetchAll(
-            'SELECT c.*, h.household_code, h.address AS household_address FROM citizens c INNER JOIN households h ON h.id=c.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE c.household_id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens') . ' ORDER BY CASE WHEN c.relationship="Chủ hộ" THEN 0 ELSE 1 END, c.full_name',
+            'SELECT c.*, h.household_code, h.address AS household_address FROM citizens c INNER JOIN households h ON h.id=c.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE c.household_id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens') . ' ORDER BY CASE WHEN c.relationship="Chá»§ há»™" THEN 0 ELSE 1 END, c.full_name',
             ['id' => $id]
         );
         $citizenIds = array_map(fn($row) => (int) $row['id'], $members);
@@ -23,28 +23,28 @@ final class DigitalProfile extends BaseModel
             'profile' => $this->compactRow($household),
             'sections' => [
                 'general' => $this->section($household, [
-                    'household_code' => 'Mã hộ',
-                    'head_citizen_name' => 'Chủ hộ',
-                    'address' => 'Địa chỉ',
-                    'phone' => 'Điện thoại',
-                    'area_code' => 'Mã khu vực',
-                    'latitude' => 'Vĩ độ GPS',
-                    'longitude' => 'Kinh độ GPS',
-                    'location_accuracy' => 'Độ chính xác GPS',
-                    'location_source' => 'Nguồn định vị',
-                    'location_updated_at' => 'Cập nhật vị trí',
-                    'household_type' => 'Diện hộ',
-                    'status' => 'Trạng thái',
+                    'household_code' => 'MÃ£ há»™',
+                    'head_citizen_name' => 'Chá»§ há»™',
+                    'address' => 'Äá»‹a chá»‰',
+                    'phone' => 'Äiá»‡n thoáº¡i',
+                    'area_code' => 'MÃ£ khu vá»±c',
+                    'latitude' => 'VÄ© Ä‘á»™ GPS',
+                    'longitude' => 'Kinh Ä‘á»™ GPS',
+                    'location_accuracy' => 'Äá»™ chÃ­nh xÃ¡c GPS',
+                    'location_source' => 'Nguá»“n Ä‘á»‹nh vá»‹',
+                    'location_updated_at' => 'Cáº­p nháº­t vá»‹ trÃ­',
+                    'household_type' => 'Diá»‡n há»™',
+                    'status' => 'Tráº¡ng thÃ¡i',
                 ]),
                 'statistics' => $this->section($household, [
-                    'member_count_real' => 'Tổng nhân khẩu',
-                    'at_home_count' => 'Ở nhà',
-                    'away_count' => 'Đi vắng',
-                    'meritorious_policy' => 'Hộ có công',
-                    'disabled_policy' => 'Hộ có người khuyết tật',
-                    'poor_household' => 'Hộ nghèo',
-                    'near_poor_household' => 'Hộ cận nghèo',
-                    'note' => 'Ghi chú hộ',
+                    'member_count_real' => 'Tá»•ng nhÃ¢n kháº©u',
+                    'at_home_count' => 'á»ž nhÃ ',
+                    'away_count' => 'Äi váº¯ng',
+                    'meritorious_policy' => 'Há»™ cÃ³ cÃ´ng',
+                    'disabled_policy' => 'Há»™ cÃ³ ngÆ°á»i khuyáº¿t táº­t',
+                    'poor_household' => 'Há»™ nghÃ¨o',
+                    'near_poor_household' => 'Há»™ cáº­n nghÃ¨o',
+                    'note' => 'Ghi chÃº há»™',
                 ]),
             ],
             'members' => array_map(fn($row) => $this->citizenSummary($row), $members),
@@ -65,7 +65,7 @@ final class DigitalProfile extends BaseModel
         $householdId = (int) ($citizen['household_id'] ?? 0);
         $household = $householdId > 0 ? (new Household())->find($householdId) : null;
         $family = $householdId > 0 ? $this->fetchAll(
-            'SELECT id, citizen_code, full_name, gender, date_of_birth, identity_number, relationship, residency_status, presence_status, life_status FROM citizens WHERE household_id=:household_id AND status <> "DELETED" AND ' . $this->tenantWhere('citizens') . ' ORDER BY CASE WHEN relationship="Chủ hộ" THEN 0 ELSE 1 END, full_name',
+            'SELECT id, citizen_code, full_name, gender, date_of_birth, identity_number, relationship, residency_status, presence_status, life_status FROM citizens WHERE household_id=:household_id AND status <> "DELETED" AND ' . $this->tenantWhere('citizens') . ' ORDER BY CASE WHEN relationship="Chá»§ há»™" THEN 0 ELSE 1 END, full_name',
             ['household_id' => $householdId]
         ) : [];
         $citizen['computed_age'] = $this->age($citizen['date_of_birth'] ?? null);
@@ -75,35 +75,35 @@ final class DigitalProfile extends BaseModel
             'profile' => $this->compactRow($citizen),
             'sections' => [
                 'basic' => $this->section($citizen, [
-                    'full_name' => 'Họ và tên',
-                    'citizen_code' => 'Mã nhân khẩu',
-                    'identity_number' => 'CCCD/Số định danh',
-                    'gender' => 'Giới tính',
-                    'date_of_birth' => 'Ngày sinh',
-                    'computed_age' => 'Tuổi',
-                    'phone' => 'Số điện thoại',
+                    'full_name' => 'Há» vÃ  tÃªn',
+                    'citizen_code' => 'MÃ£ nhÃ¢n kháº©u',
+                    'identity_number' => 'CCCD/Sá»‘ Ä‘á»‹nh danh',
+                    'gender' => 'Giá»›i tÃ­nh',
+                    'date_of_birth' => 'NgÃ y sinh',
+                    'computed_age' => 'Tuá»•i',
+                    'phone' => 'Sá»‘ Ä‘iá»‡n thoáº¡i',
                 ]),
                 'residence' => $this->section($citizen, [
-                    'household_code' => 'Mã hộ',
-                    'relationship' => 'Quan hệ với chủ hộ',
-                    'head_citizen_name' => 'Chủ hộ',
-                    'father_display_name' => 'Họ tên bố',
-                    'mother_display_name' => 'Họ tên mẹ',
-                    'household_address' => 'Địa chỉ thường trú',
-                    'current_address' => 'Địa chỉ hiện tại',
-                    'residency_status' => 'Cư trú',
-                    'presence_status' => 'Hiện tại',
-                    'life_status' => 'Tình trạng',
+                    'household_code' => 'MÃ£ há»™',
+                    'relationship' => 'Quan há»‡ vá»›i chá»§ há»™',
+                    'head_citizen_name' => 'Chá»§ há»™',
+                    'father_display_name' => 'Há» tÃªn bá»‘',
+                    'mother_display_name' => 'Há» tÃªn máº¹',
+                    'household_address' => 'Äá»‹a chá»‰ thÆ°á»ng trÃº',
+                    'current_address' => 'Äá»‹a chá»‰ hiá»‡n táº¡i',
+                    'residency_status' => 'CÆ° trÃº',
+                    'presence_status' => 'Hiá»‡n táº¡i',
+                    'life_status' => 'TÃ¬nh tráº¡ng',
                 ]),
                 'personal' => $this->section($citizen, [
-                    'occupation' => 'Nghề nghiệp',
-                    'workplace' => 'Nơi làm việc',
-                    'ethnicity' => 'Dân tộc',
-                    'religion' => 'Tôn giáo',
-                    'education_level' => 'Trình độ học vấn',
-                    'marital_status' => 'Tình trạng hôn nhân',
-                    'nationality' => 'Quốc tịch',
-                    'note' => 'Ghi chú nhân khẩu',
+                    'occupation' => 'Nghá» nghiá»‡p',
+                    'workplace' => 'NÆ¡i lÃ m viá»‡c',
+                    'ethnicity' => 'DÃ¢n tá»™c',
+                    'religion' => 'TÃ´n giÃ¡o',
+                    'education_level' => 'TrÃ¬nh Ä‘á»™ há»c váº¥n',
+                    'marital_status' => 'TÃ¬nh tráº¡ng hÃ´n nhÃ¢n',
+                    'nationality' => 'Quá»‘c tá»‹ch',
+                    'note' => 'Ghi chÃº nhÃ¢n kháº©u',
                 ]),
                 'administrative' => $this->section($citizen, $this->extendedCitizenLabels()),
             ],
@@ -125,10 +125,10 @@ final class DigitalProfile extends BaseModel
             $items[] = ['time' => $file['created_at'] ?? null, 'type' => 'FILE', 'title' => $this->fileSectionLabel((string) ($file['profile_section'] ?? ''), (string) ($file['file_type'] ?? '')), 'description' => $file['original_name'] ?? '', 'data' => $file];
         }
         foreach ($this->notes($module, $entityId) as $note) {
-            $items[] = ['time' => $note['updated_at'] ?? $note['created_at'] ?? null, 'type' => 'NOTE', 'title' => $note['title'] ?? 'Ghi chú nghiệp vụ', 'description' => $note['content'] ?? '', 'data' => $note];
+            $items[] = ['time' => $note['updated_at'] ?? $note['created_at'] ?? null, 'type' => 'NOTE', 'title' => $note['title'] ?? 'Ghi chÃº nghiá»‡p vá»¥', 'description' => $note['content'] ?? '', 'data' => $note];
         }
         foreach ($this->logs($module, (string) $entityId) as $log) {
-            $items[] = ['time' => $log['created_at'] ?? null, 'type' => 'LOG', 'title' => $log['message'] ?? $log['action'] ?? 'Nhật ký', 'description' => $log['actor_email'] ?? '', 'data' => $log];
+            $items[] = ['time' => $log['created_at'] ?? null, 'type' => 'LOG', 'title' => $log['message'] ?? $log['action'] ?? 'Nháº­t kÃ½', 'description' => $log['actor_email'] ?? '', 'data' => $log];
         }
         $movements = $module === 'household' ? $this->householdMovements($entityId, $citizenIds) : $this->citizenMovements($entityId);
         foreach ($movements as $movement) {
@@ -142,9 +142,9 @@ final class DigitalProfile extends BaseModel
     {
         $this->assertNotesReady();
         $module = $this->normalizeModule($module);
-        $title = trim((string) ($data['title'] ?? 'Ghi chú nghiệp vụ')) ?: 'Ghi chú nghiệp vụ';
+        $title = trim((string) ($data['title'] ?? 'Ghi chÃº nghiá»‡p vá»¥')) ?: 'Ghi chÃº nghiá»‡p vá»¥';
         $content = trim((string) ($data['content'] ?? ''));
-        if ($content === '') throw new \RuntimeException('Nội dung ghi chú là bắt buộc');
+        if ($content === '') throw new \RuntimeException('Ná»™i dung ghi chÃº lÃ  báº¯t buá»™c');
         $section = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($data['section'] ?? 'general'))) ?: 'general';
         $columns = ['module', 'entity_id', 'section', 'title', 'content', 'status', 'created_by'];
         $params = [
@@ -179,9 +179,9 @@ final class DigitalProfile extends BaseModel
         $this->assertNotesReady();
         $note = $this->noteById($id);
         if (!$note) return null;
-        $title = trim((string) ($data['title'] ?? $note['title'] ?? 'Ghi chú nghiệp vụ')) ?: 'Ghi chú nghiệp vụ';
+        $title = trim((string) ($data['title'] ?? $note['title'] ?? 'Ghi chÃº nghiá»‡p vá»¥')) ?: 'Ghi chÃº nghiá»‡p vá»¥';
         $content = trim((string) ($data['content'] ?? $note['content'] ?? ''));
-        if ($content === '') throw new \RuntimeException('Nội dung ghi chú là bắt buộc');
+        if ($content === '') throw new \RuntimeException('Ná»™i dung ghi chÃº lÃ  báº¯t buá»™c');
         $section = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($data['section'] ?? $note['section'] ?? 'general'))) ?: 'general';
         $this->execute('UPDATE profile_notes SET section=:section, title=:title, content=:content, updated_by=:user WHERE id=:id AND status="ACTIVE" AND ' . $this->tenantWhere('profile_notes'), [
             'id' => $id,
@@ -286,25 +286,25 @@ final class DigitalProfile extends BaseModel
     private function extendedCitizenLabels(): array
     {
         return [
-            'party_member' => 'Đảng viên', 'youth_union_member' => 'Đoàn viên Thanh niên', 'women_union_member' => 'Hội viên Hội Phụ nữ', 'farmers_union_member' => 'Hội viên Hội Nông dân', 'veterans_union_member' => 'Hội viên Hội Cựu chiến binh', 'elderly_union_member' => 'Hội viên Hội Người cao tuổi',
-            'martyr_relative' => 'Thân nhân liệt sĩ', 'wounded_soldier' => 'Thương binh', 'sick_soldier' => 'Bệnh binh', 'chemical_warfare_victim' => 'Người hoạt động kháng chiến bị nhiễm chất độc hóa học', 'imprisoned_resistance_activist' => 'Người hoạt động kháng chiến bị địch bắt tù, đày', 'youth_volunteer' => 'Thanh niên xung phong', 'resistance_hero' => 'Anh hùng LLVTND / Anh hùng Lao động thời kỳ kháng chiến', 'revolutionary_activist' => 'Người hoạt động cách mạng', 'disabled_person' => 'Người khuyết tật', 'social_assistance' => 'Đang hưởng trợ cấp xã hội',
-            'employed' => 'Có việc làm', 'unemployed' => 'Thất nghiệp', 'freelance_labor' => 'Lao động tự do', 'out_province_labor' => 'Lao động ngoài tỉnh', 'foreign_labor' => 'Lao động nước ngoài', 'pupil' => 'Học sinh', 'student' => 'Sinh viên', 'retired' => 'Nghỉ hưu',
+            'party_member' => 'Äáº£ng viÃªn', 'youth_union_member' => 'ÄoÃ n viÃªn Thanh niÃªn', 'women_union_member' => 'Há»™i viÃªn Há»™i Phá»¥ ná»¯', 'farmers_union_member' => 'Há»™i viÃªn Há»™i NÃ´ng dÃ¢n', 'veterans_union_member' => 'Há»™i viÃªn Há»™i Cá»±u chiáº¿n binh', 'elderly_union_member' => 'Há»™i viÃªn Há»™i NgÆ°á»i cao tuá»•i',
+            'martyr_relative' => 'ThÃ¢n nhÃ¢n liá»‡t sÄ©', 'wounded_soldier' => 'ThÆ°Æ¡ng binh', 'sick_soldier' => 'Bá»‡nh binh', 'chemical_warfare_victim' => 'NgÆ°á»i hoáº¡t Ä‘á»™ng khÃ¡ng chiáº¿n bá»‹ nhiá»…m cháº¥t Ä‘á»™c hÃ³a há»c', 'imprisoned_resistance_activist' => 'NgÆ°á»i hoáº¡t Ä‘á»™ng khÃ¡ng chiáº¿n bá»‹ Ä‘á»‹ch báº¯t tÃ¹, Ä‘Ã y', 'youth_volunteer' => 'Thanh niÃªn xung phong', 'resistance_hero' => 'Anh hÃ¹ng LLVTND / Anh hÃ¹ng Lao Ä‘á»™ng thá»i ká»³ khÃ¡ng chiáº¿n', 'revolutionary_activist' => 'NgÆ°á»i hoáº¡t Ä‘á»™ng cÃ¡ch máº¡ng', 'disabled_person' => 'NgÆ°á»i khuyáº¿t táº­t', 'social_assistance' => 'Äang hÆ°á»Ÿng trá»£ cáº¥p xÃ£ há»™i',
+            'employed' => 'CÃ³ viá»‡c lÃ m', 'unemployed' => 'Tháº¥t nghiá»‡p', 'freelance_labor' => 'Lao Ä‘á»™ng tá»± do', 'out_province_labor' => 'Lao Ä‘á»™ng ngoÃ i tá»‰nh', 'foreign_labor' => 'Lao Ä‘á»™ng nÆ°á»›c ngoÃ i', 'pupil' => 'Há»c sinh', 'student' => 'Sinh viÃªn', 'retired' => 'Nghá»‰ hÆ°u',
         ];
     }
 
     private function movementLabel(string $type): string
     {
         return [
-            'BIRTH' => 'Sinh ra', 'DEATH' => 'Tử', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi', 'HOUSEHOLD_SPLIT' => 'Tách hộ', 'HOUSEHOLD_MERGE' => 'Nhập hộ', 'HOUSEHOLD_HEAD_CHANGE' => 'Thay đổi chủ hộ', 'HEAD_CHANGE' => 'Thay đổi chủ hộ', 'CITIZEN_UPDATE' => 'Cập nhật thông tin', 'INFO_CHANGE' => 'Cập nhật thông tin', 'IDENTITY_UPDATE' => 'Thay đổi CCCD', 'MARRIAGE' => 'Kết hôn', 'RESTORE' => 'Hoàn tác', 'TEMPORARY_RESIDENCE' => 'Đăng ký tạm trú', 'TEMPORARY_ABSENCE' => 'Tạm vắng',
-        ][$type] ?? 'Biến động khác';
+            'BIRTH' => 'Sinh ra', 'DEATH' => 'Tá»­', 'MOVE_IN' => 'Chuyá»ƒn Ä‘áº¿n', 'MOVE_OUT' => 'Chuyá»ƒn Ä‘i', 'HOUSEHOLD_SPLIT' => 'TÃ¡ch há»™', 'HOUSEHOLD_MERGE' => 'Nháº­p há»™', 'HOUSEHOLD_HEAD_CHANGE' => 'Thay Ä‘á»•i chá»§ há»™', 'HEAD_CHANGE' => 'Thay Ä‘á»•i chá»§ há»™', 'CITIZEN_UPDATE' => 'Cáº­p nháº­t thÃ´ng tin', 'INFO_CHANGE' => 'Cáº­p nháº­t thÃ´ng tin', 'IDENTITY_UPDATE' => 'Thay Ä‘á»•i CCCD', 'MARRIAGE' => 'Káº¿t hÃ´n', 'RESTORE' => 'HoÃ n tÃ¡c', 'TEMPORARY_RESIDENCE' => 'ÄÄƒng kÃ½ táº¡m trÃº', 'TEMPORARY_ABSENCE' => 'Táº¡m váº¯ng',
+        ][$type] ?? 'Biáº¿n Ä‘á»™ng khÃ¡c';
     }
 
     private function fileSectionLabel(string $section, string $type): string
     {
         return [
             'front_house' => 'Anh mat tien nha', 'inside_house' => 'Anh ben trong nha', 'auxiliary_work' => 'Anh cong trinh phu', 'household_video' => 'Video', 'household_pdf' => 'Tai lieu PDF', 'household_word' => 'File Word', 'household_excel' => 'File Excel', 'land_use_rights' => 'Ho so quyen su dung dat', 'building_permit' => 'Giay phep xay dung', 'electric_contract' => 'Hop dong dien', 'water_contract' => 'Hop dong nuoc', 'internet_contract' => 'Hop dong Internet', 'meeting_minutes' => 'Bien ban hop', 'household_document' => 'Cac giay to khac',
-            'portrait' => 'Ảnh chân dung', 'cccd_front' => 'CCCD mặt trước', 'cccd_back' => 'CCCD mặt sau', 'birth_certificate' => 'Giấy khai sinh', 'household_book' => 'Sổ hộ khẩu', 'citizen_document' => 'Giấy tờ liên quan',
-        ][$section] ?? ($type === 'VIDEO' ? 'Video' : ($type === 'PHOTO' || $type === 'IMAGE' ? 'Hình ảnh' : 'Tệp đính kèm'));
+            'portrait' => 'áº¢nh chÃ¢n dung', 'cccd_front' => 'CCCD máº·t trÆ°á»›c', 'cccd_back' => 'CCCD máº·t sau', 'birth_certificate' => 'Giáº¥y khai sinh', 'household_book' => 'Sá»• há»™ kháº©u', 'citizen_document' => 'Giáº¥y tá» liÃªn quan',
+        ][$section] ?? ($type === 'VIDEO' ? 'Video' : ($type === 'PHOTO' || $type === 'IMAGE' ? 'HÃ¬nh áº£nh' : 'Tá»‡p Ä‘Ã­nh kÃ¨m'));
     }
 
     private function hasValue(mixed $value): bool
@@ -314,14 +314,14 @@ final class DigitalProfile extends BaseModel
         $text = trim($value);
         if ($text === '') return false;
         $normalized = mb_strtolower($text, 'UTF-8');
-        $normalized = strtr($normalized, ['đ' => 'd', 'Đ' => 'd']);
-        return !in_array($normalized, ['null', 'undefined', 'không có', 'khong co', 'n/a', 'na', '--'], true);
+        $normalized = strtr($normalized, ['Ä‘' => 'd', 'Ä' => 'd']);
+        return !in_array($normalized, ['null', 'undefined', 'khÃ´ng cÃ³', 'khong co', 'n/a', 'na', '--'], true);
     }
 
     private function formatValue(mixed $value): mixed
     {
-        if (is_bool($value)) return $value ? 'Có' : 'Không';
-        if (is_numeric($value) && in_array((string) $value, ['0', '1'], true)) return ((int) $value) === 1 ? 'Có' : 'Không';
+        if (is_bool($value)) return $value ? 'CÃ³' : 'KhÃ´ng';
+        if (is_numeric($value) && in_array((string) $value, ['0', '1'], true)) return ((int) $value) === 1 ? 'CÃ³' : 'KhÃ´ng';
         return $value;
     }
 
@@ -334,19 +334,19 @@ final class DigitalProfile extends BaseModel
     {
         $identity = trim($identity);
         if (mb_strlen($identity) <= 8) return $identity;
-        return mb_substr($identity, 0, 4) . '••••' . mb_substr($identity, -4);
+        return mb_substr($identity, 0, 4) . 'â€¢â€¢â€¢â€¢' . mb_substr($identity, -4);
     }
 
     private function normalizeModule(string $module): string
     {
         $module = $module === 'persons' ? 'citizen' : rtrim($module, 's');
-        if (!in_array($module, ['household', 'citizen'], true)) throw new \RuntimeException('Loại hồ sơ không hợp lệ');
+        if (!in_array($module, ['household', 'citizen'], true)) throw new \RuntimeException('Loáº¡i há»“ sÆ¡ khÃ´ng há»£p lá»‡');
         return $module;
     }
 
     private function assertNotesReady(): void
     {
-        if (!$this->tableExists('profile_notes')) throw new \RuntimeException('Bảng ghi chú hồ sơ chưa sẵn sàng');
+        if (!$this->tableExists('profile_notes')) throw new \RuntimeException('Báº£ng ghi chÃº há»“ sÆ¡ chÆ°a sáºµn sÃ ng');
     }
 
     private function tableExists(string $table): bool

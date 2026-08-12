@@ -1,4 +1,4 @@
-﻿-- Additive migration: Quoc phong - An ninh module.
+ï»¿-- Additive migration: Quoc phong - An ninh module.
 CREATE TABLE IF NOT EXISTS defense_security_settings (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   village_id BIGINT UNSIGNED NOT NULL,

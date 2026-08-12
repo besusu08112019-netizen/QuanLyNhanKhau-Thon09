@@ -30,7 +30,7 @@ final class Database
         }
 
         self::logConfig('DATABASE_CONNECTION_ERROR', $config, $lastException ? self::exceptionMessage($lastException) : 'Unknown PDO error');
-        throw new DatabaseException('Không kết nối được cơ sở dữ liệu. Vui lòng kiểm tra cấu hình DB trên Hosting.', 0, $lastException);
+        throw new DatabaseException('KhÃ´ng káº¿t ná»‘i Ä‘Æ°á»£c cÆ¡ sá»Ÿ dá»¯ liá»‡u. Vui lÃ²ng kiá»ƒm tra cáº¥u hÃ¬nh DB trÃªn Hosting.', 0, $lastException);
     }
 
     public static function diagnostics(): array
@@ -100,7 +100,7 @@ final class Database
             return require $exampleConfig;
         }
 
-        throw new DatabaseException('Khong tim thay cau hinh co so du lieu. Vui long tao file .env tu .env.example.');
+        throw new DatabaseException('KhÃ´ng tÃ¬m tháº¥y cáº¥u hÃ¬nh cÆ¡ sá»Ÿ dá»¯ liá»‡u. Vui lÃ²ng táº¡o file .env tá»« .env.example.');
     }
 
     private static function connect(string $dsn, array $config): PDO
@@ -159,11 +159,11 @@ final class Database
         }
         if ($missing) {
             self::logConfig('DATABASE_CONFIG_ERROR', $config, 'Missing keys: ' . implode(', ', $missing));
-            throw new DatabaseException('Thiếu cấu hình cơ sở dữ liệu: ' . implode(', ', $missing));
+            throw new DatabaseException('Thiáº¿u cáº¥u hÃ¬nh cÆ¡ sá»Ÿ dá»¯ liá»‡u: ' . implode(', ', $missing));
         }
         if (($config['username'] ?? '') === 'root' && (string) ($config['password'] ?? '') === '') {
             self::logConfig('DATABASE_CONFIG_ERROR', $config, 'Refusing unsafe root database fallback');
-            throw new DatabaseException('Cấu hình DB không hợp lệ: không được dùng root không mật khẩu trên Hosting.');
+            throw new DatabaseException('Cáº¥u hÃ¬nh DB khÃ´ng há»£p lá»‡: khÃ´ng Ä‘Æ°á»£c dÃ¹ng root khÃ´ng máº­t kháº©u trÃªn Hosting.');
         }
     }
 

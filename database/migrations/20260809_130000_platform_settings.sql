@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 INSERT IGNORE INTO platform_settings (setting_key, setting_value, setting_type, setting_group, is_secret, created_at, updated_at) VALUES
 ('general.platform_name', 'HONG PHONG COMMUNITY PLATFORM', 'string', 'general', 0, NOW(), NOW()),
 ('general.admin_name', 'Community Control Center', 'string', 'general', 0, NOW(), NOW()),
-('general.parent_unit_name', 'Xã Hồng Phong', 'string', 'general', 0, NOW(), NOW()),
-('general.province_name', 'Ninh Bình', 'string', 'general', 0, NOW(), NOW()),
+('general.parent_unit_name', 'XÃ£ Há»“ng Phong', 'string', 'general', 0, NOW(), NOW()),
+('general.province_name', 'Ninh BÃ¬nh', 'string', 'general', 0, NOW(), NOW()),
 ('general.timezone', 'Asia/Ho_Chi_Minh', 'string', 'general', 0, NOW(), NOW()),
 ('general.locale', 'vi_VN', 'string', 'general', 0, NOW(), NOW()),
 ('general.date_format', 'dd/mm/yyyy', 'string', 'general', 0, NOW(), NOW()),

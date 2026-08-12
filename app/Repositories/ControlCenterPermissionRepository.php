@@ -92,7 +92,7 @@ final class ControlCenterPermissionRepository
             'OFFICER' => 'OFFICER',
         ][$platformRole] ?? '';
         if ($source === '') {
-            throw new \InvalidArgumentException('Vai trò không hợp lệ');
+            throw new \InvalidArgumentException('Vai trÃ² khÃ´ng há»£p lá»‡');
         }
         return $source;
     }
@@ -101,7 +101,7 @@ final class ControlCenterPermissionRepository
     {
         $parts = explode('.', $permission);
         if (count($parts) < 2) {
-            throw new \InvalidArgumentException('Quyền không hợp lệ');
+            throw new \InvalidArgumentException('Quyá»n khÃ´ng há»£p lá»‡');
         }
         $action = array_pop($parts);
         return [implode('.', $parts), $action];

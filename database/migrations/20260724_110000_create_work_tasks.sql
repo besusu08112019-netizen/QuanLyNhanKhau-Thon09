@@ -109,28 +109,28 @@ CREATE TABLE IF NOT EXISTS work_task_attachments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO work_task_categories (code,name,sort_order) VALUES
-('fund_collection','Thu quỹ',10),
-('household_check','Kiểm tra hộ',20),
-('gift_distribution','Phát quà',30),
-('environment_cleanup','Vệ sinh môi trường',40),
-('patrol','Tuần tra',50),
-('public_asset_check','Kiểm tra công trình',60),
-('production_check','Kiểm tra sản xuất',70),
-('other','Khác',80)
+('fund_collection','Thu quá»¹',10),
+('household_check','Kiá»ƒm tra há»™',20),
+('gift_distribution','PhÃ¡t quÃ ',30),
+('environment_cleanup','Vá»‡ sinh mÃ´i trÆ°á»ng',40),
+('patrol','Tuáº§n tra',50),
+('public_asset_check','Kiá»ƒm tra cÃ´ng trÃ¬nh',60),
+('production_check','Kiá»ƒm tra sáº£n xuáº¥t',70),
+('other','KhÃ¡c',80)
 ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1;
 
 INSERT INTO work_task_priorities (code,name,sort_order) VALUES
-('URGENT','Khẩn cấp',10),
+('URGENT','Kháº©n cáº¥p',10),
 ('HIGH','Cao',20),
-('NORMAL','Bình thường',30),
-('LOW','Thấp',40)
+('NORMAL','BÃ¬nh thÆ°á»ng',30),
+('LOW','Tháº¥p',40)
 ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1;
 
 INSERT INTO work_task_statuses (code,name,progress_percent,is_terminal,sort_order) VALUES
-('NEW','Mới tạo',0,0,10),
-('ASSIGNED','Đã giao',10,0,20),
-('IN_PROGRESS','Đang thực hiện',50,0,30),
-('WAITING','Tạm dừng/chờ xử lý',50,0,40),
-('DONE','Đã hoàn thành',100,1,50),
-('CANCELLED','Đã hủy',0,1,60)
+('NEW','Má»›i táº¡o',0,0,10),
+('ASSIGNED','ÄÃ£ giao',10,0,20),
+('IN_PROGRESS','Äang thá»±c hiá»‡n',50,0,30),
+('WAITING','Táº¡m dá»«ng/chá» xá»­ lÃ½',50,0,40),
+('DONE','ÄÃ£ hoÃ n thÃ nh',100,1,50),
+('CANCELLED','ÄÃ£ há»§y',0,1,60)
 ON DUPLICATE KEY UPDATE name=VALUES(name), progress_percent=VALUES(progress_percent), is_terminal=VALUES(is_terminal), sort_order=VALUES(sort_order), is_active=1;

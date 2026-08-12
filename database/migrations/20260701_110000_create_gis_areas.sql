@@ -1,6 +1,6 @@
--- Sprint 11 GIS - Bản đồ địa bàn và định vị hộ gia đình
--- Nếu chạy thủ công trên MySQL không hỗ trợ ADD COLUMN IF NOT EXISTS,
--- hãy kiểm tra INFORMATION_SCHEMA trước khi thêm các cột đã tồn tại.
+-- Sprint 11 GIS - Báº£n Ä‘á»“ Ä‘á»‹a bÃ n vÃ  Ä‘á»‹nh vá»‹ há»™ gia Ä‘Ã¬nh
+-- Náº¿u cháº¡y thá»§ cÃ´ng trÃªn MySQL khÃ´ng há»— trá»£ ADD COLUMN IF NOT EXISTS,
+-- hÃ£y kiá»ƒm tra INFORMATION_SCHEMA trÆ°á»›c khi thÃªm cÃ¡c cá»™t Ä‘Ã£ tá»“n táº¡i.
 CREATE TABLE IF NOT EXISTS gis_areas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL,

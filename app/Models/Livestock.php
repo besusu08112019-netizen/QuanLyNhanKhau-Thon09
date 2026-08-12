@@ -6,17 +6,17 @@ use App\Core\BaseModel;
 
 final class Livestock extends BaseModel
 {
-    public const ANIMAL_TYPES = ['Trâu','Bò','Lợn','Dê','Gà','Vịt','Ngan','Chim','Ong','Khác'];
+    public const ANIMAL_TYPES = ['TrÃ¢u','BÃ²','Lá»£n','DÃª','GÃ ','Vá»‹t','Ngan','Chim','Ong','KhÃ¡c'];
     public const DISEASE_LABELS = [
-        'NONE' => 'Không có dịch',
-        'SUSPECTED' => 'Nghi dịch',
-        'INFECTED' => 'Có dịch bệnh',
-        'RECOVERED' => 'Đã xử lý',
+        'NONE' => 'KhÃ´ng cÃ³ dá»‹ch',
+        'SUSPECTED' => 'Nghi dá»‹ch',
+        'INFECTED' => 'CÃ³ dá»‹ch bá»‡nh',
+        'RECOVERED' => 'ÄÃ£ xá»­ lÃ½',
     ];
     public const STATUS_LABELS = [
-        'ACTIVE' => 'Đang nuôi',
-        'INACTIVE' => 'Ngừng nuôi',
-        'DELETED' => 'Đã xóa',
+        'ACTIVE' => 'Äang nuÃ´i',
+        'INACTIVE' => 'Ngá»«ng nuÃ´i',
+        'DELETED' => 'ÄÃ£ xÃ³a',
     ];
 
     public function ensureSchema(): void
@@ -141,7 +141,7 @@ SQL);
     {
         $this->ensureSchema();
         $params = $this->params($data, $userId, $id);
-        if ($id && !$this->find($id)) throw new \RuntimeException('Không tìm thấy bản ghi vật nuôi');
+        if ($id && !$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y báº£n ghi váº­t nuÃ´i');
         if ($id) {
             $params['id'] = $id;
             $this->execute(
@@ -163,7 +163,7 @@ SQL);
     public function softDelete(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy bản ghi vật nuôi');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y báº£n ghi váº­t nuÃ´i');
         $this->execute('UPDATE livestock SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('livestock'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
@@ -176,16 +176,16 @@ SQL);
                 COUNT(DISTINCT l.household_id) AS livestock_households,
                 COUNT(*) AS livestock_records,
                 COALESCE(SUM(l.quantity),0) AS livestock_total,
-                COALESCE(SUM(CASE WHEN l.animal_type='Trâu' THEN l.quantity ELSE 0 END),0) AS buffalo_total,
-                COALESCE(SUM(CASE WHEN l.animal_type='Bò' THEN l.quantity ELSE 0 END),0) AS cow_total,
-                COALESCE(SUM(CASE WHEN l.animal_type='Lợn' THEN l.quantity ELSE 0 END),0) AS pig_total,
-                COALESCE(SUM(CASE WHEN l.animal_type='Dê' THEN l.quantity ELSE 0 END),0) AS goat_total,
-                COALESCE(SUM(CASE WHEN l.animal_type='Gà' THEN l.quantity ELSE 0 END),0) AS chicken_total,
-                COALESCE(SUM(CASE WHEN l.animal_type='Vịt' THEN l.quantity ELSE 0 END),0) AS duck_total,
+                COALESCE(SUM(CASE WHEN l.animal_type='TrÃ¢u' THEN l.quantity ELSE 0 END),0) AS buffalo_total,
+                COALESCE(SUM(CASE WHEN l.animal_type='BÃ²' THEN l.quantity ELSE 0 END),0) AS cow_total,
+                COALESCE(SUM(CASE WHEN l.animal_type='Lá»£n' THEN l.quantity ELSE 0 END),0) AS pig_total,
+                COALESCE(SUM(CASE WHEN l.animal_type='DÃª' THEN l.quantity ELSE 0 END),0) AS goat_total,
+                COALESCE(SUM(CASE WHEN l.animal_type='GÃ ' THEN l.quantity ELSE 0 END),0) AS chicken_total,
+                COALESCE(SUM(CASE WHEN l.animal_type='Vá»‹t' THEN l.quantity ELSE 0 END),0) AS duck_total,
                 COALESCE(SUM(CASE WHEN l.animal_type='Ngan' THEN l.quantity ELSE 0 END),0) AS muscovy_duck_total,
                 COALESCE(SUM(CASE WHEN l.animal_type='Chim' THEN l.quantity ELSE 0 END),0) AS bird_total,
                 COALESCE(SUM(CASE WHEN l.animal_type='Ong' THEN l.quantity ELSE 0 END),0) AS bee_total,
-                COALESCE(SUM(CASE WHEN l.animal_type IN ('Gà','Vịt','Ngan','Chim') THEN l.quantity ELSE 0 END),0) AS poultry_total,
+                COALESCE(SUM(CASE WHEN l.animal_type IN ('GÃ ','Vá»‹t','Ngan','Chim') THEN l.quantity ELSE 0 END),0) AS poultry_total,
                 COUNT(DISTINCT CASE WHEN l.vaccinated=1 THEN l.household_id END) AS vaccinated_households,
                 COUNT(DISTINCT CASE WHEN l.vaccinated=0 THEN l.household_id END) AS unvaccinated_households,
                 COUNT(DISTINCT CASE WHEN l.disease_status='INFECTED' THEN l.household_id END) AS disease_households
@@ -220,9 +220,9 @@ SQL);
         [$where, $params] = $this->where($filters, false);
         return [
             'types' => $this->fetchAll("SELECT l.animal_type AS label, COALESCE(SUM(l.quantity),0) AS value FROM livestock l INNER JOIN households h ON h.id = l.household_id $where GROUP BY l.animal_type ORDER BY value DESC, l.animal_type LIMIT 12", $params),
-            'scale' => $this->fetchAll("SELECT CASE WHEN l.quantity <= 10 THEN '1-10 con' WHEN l.quantity <= 50 THEN '11-50 con' WHEN l.quantity <= 100 THEN '51-100 con' ELSE 'Trên 100 con' END AS label, COUNT(*) AS value FROM livestock l INNER JOIN households h ON h.id = l.household_id $where GROUP BY label ORDER BY MIN(l.quantity)", $params),
-            'areas' => $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'Chưa phân khu') AS label, COALESCE(SUM(l.quantity),0) AS value FROM livestock l INNER JOIN households h ON h.id = l.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
-            'vaccination' => $this->fetchAll("SELECT CASE WHEN l.vaccinated=1 THEN 'Đã tiêm phòng' ELSE 'Chưa tiêm phòng' END AS label, COUNT(*) AS value FROM livestock l INNER JOIN households h ON h.id = l.household_id $where GROUP BY l.vaccinated ORDER BY l.vaccinated DESC", $params),
+            'scale' => $this->fetchAll("SELECT CASE WHEN l.quantity <= 10 THEN '1-10 con' WHEN l.quantity <= 50 THEN '11-50 con' WHEN l.quantity <= 100 THEN '51-100 con' ELSE 'TrÃªn 100 con' END AS label, COUNT(*) AS value FROM livestock l INNER JOIN households h ON h.id = l.household_id $where GROUP BY label ORDER BY MIN(l.quantity)", $params),
+            'areas' => $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'ChÆ°a phÃ¢n khu') AS label, COALESCE(SUM(l.quantity),0) AS value FROM livestock l INNER JOIN households h ON h.id = l.household_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
+            'vaccination' => $this->fetchAll("SELECT CASE WHEN l.vaccinated=1 THEN 'ÄÃ£ tiÃªm phÃ²ng' ELSE 'ChÆ°a tiÃªm phÃ²ng' END AS label, COUNT(*) AS value FROM livestock l INNER JOIN households h ON h.id = l.household_id $where GROUP BY l.vaccinated ORDER BY l.vaccinated DESC", $params),
         ];
     }
 
@@ -252,13 +252,13 @@ SQL);
         $filters['pageSize'] = 100;
         $rows = $this->paginate($filters)['items'];
         $title = match ($mode) {
-            'by_type' => 'Báo cáo vật nuôi theo loại',
-            'vaccinated' => 'Danh sách vật nuôi đã tiêm phòng',
-            'unvaccinated' => 'Danh sách vật nuôi chưa tiêm phòng',
-            'disease' => 'Danh sách hộ có dịch bệnh vật nuôi',
-            default => 'Danh sách vật nuôi',
+            'by_type' => 'BÃ¡o cÃ¡o váº­t nuÃ´i theo loáº¡i',
+            'vaccinated' => 'Danh sÃ¡ch váº­t nuÃ´i Ä‘Ã£ tiÃªm phÃ²ng',
+            'unvaccinated' => 'Danh sÃ¡ch váº­t nuÃ´i chÆ°a tiÃªm phÃ²ng',
+            'disease' => 'Danh sÃ¡ch há»™ cÃ³ dá»‹ch bá»‡nh váº­t nuÃ´i',
+            default => 'Danh sÃ¡ch váº­t nuÃ´i',
         };
-        return $this->table($title, ['Mã hộ','Chủ hộ','Loại','Giống','Số lượng','Tiêm phòng','Dịch bệnh','Trạng thái','Địa chỉ'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['animal_type'], $r['breed'], $r['quantity'], $r['vaccinated'] ? 'Đã tiêm' : 'Chưa tiêm', $r['disease_status_label'], $r['status_label'], $r['address']], $rows), $filters);
+        return $this->table($title, ['MÃ£ há»™','Chá»§ há»™','Loáº¡i','Giá»‘ng','Sá»‘ lÆ°á»£ng','TiÃªm phÃ²ng','Dá»‹ch bá»‡nh','Tráº¡ng thÃ¡i','Äá»‹a chá»‰'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['animal_type'], $r['breed'], $r['quantity'], $r['vaccinated'] ? 'ÄÃ£ tiÃªm' : 'ChÆ°a tiÃªm', $r['disease_status_label'], $r['status_label'], $r['address']], $rows), $filters);
     }
 
     private function where(array $filters, bool $withOrder = true): array
@@ -299,8 +299,8 @@ SQL);
     private function params(array $data, int $userId, ?int $id): array
     {
         $householdId = (int) ($data['household_id'] ?? $data['householdId'] ?? 0);
-        if ($householdId <= 0) throw new \RuntimeException('Hộ gia đình là bắt buộc');
-        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('Không tìm thấy hộ gia đình');
+        if ($householdId <= 0) throw new \RuntimeException('Há»™ gia Ä‘Ã¬nh lÃ  báº¯t buá»™c');
+        if (!$this->fetchOne('SELECT h.id FROM households h WHERE h.id = :id AND ' . $this->tenantWhere('h', 'households') . ' AND h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™ gia Ä‘Ã¬nh');
         $animalType = trim((string) ($data['animal_type'] ?? $data['animalType'] ?? ''));
         if ($animalType === '') throw new \RuntimeException(json_decode('"Lo\u1ea1i v\u1eadt nu\u00f4i l\u00e0 b\u1eaft bu\u1ed9c"', true));
         $breed = trim((string) ($data['breed'] ?? '')) ?: null;
@@ -350,10 +350,10 @@ SQL);
             'vaccinated' => (int) ($row['vaccinated'] ?? 0) === 1,
             'vaccine_date' => $row['vaccine_date'] ?? null,
             'disease_status' => (string) ($row['disease_status'] ?? 'NONE'),
-            'disease_status_label' => self::DISEASE_LABELS[$row['disease_status'] ?? 'NONE'] ?? 'Không có dịch',
+            'disease_status_label' => self::DISEASE_LABELS[$row['disease_status'] ?? 'NONE'] ?? 'KhÃ´ng cÃ³ dá»‹ch',
             'barn_area' => (string) ($row['barn_area'] ?? ''),
             'status' => (string) ($row['status'] ?? 'ACTIVE'),
-            'status_label' => self::STATUS_LABELS[$row['status'] ?? 'ACTIVE'] ?? 'Đang nuôi',
+            'status_label' => self::STATUS_LABELS[$row['status'] ?? 'ACTIVE'] ?? 'Äang nuÃ´i',
             'note' => (string) ($row['note'] ?? ''),
             'address' => (string) ($row['household_address'] ?? $row['address'] ?? ''),
             'phone' => (string) ($row['household_phone'] ?? $row['phone'] ?? ''),

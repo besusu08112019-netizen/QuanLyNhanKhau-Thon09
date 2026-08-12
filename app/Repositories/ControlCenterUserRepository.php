@@ -63,7 +63,7 @@ final class ControlCenterUserRepository
     {
         $tenant = $this->tenantById((int) $data['unit_id']);
         if (!$tenant) {
-            throw new \RuntimeException('Không tìm thấy đơn vị');
+            throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n vá»‹');
         }
         $pdo = $this->tenantPdo($tenant);
         $this->ensureTenantUserCompatibility($pdo);
@@ -101,11 +101,11 @@ final class ControlCenterUserRepository
     {
         [$tenantId, $userId] = $this->decodeDirectoryId($id);
         if ($tenantId !== (int) $data['unit_id']) {
-            throw new \RuntimeException('Không hỗ trợ chuyển người dùng giữa các đơn vị');
+            throw new \RuntimeException('KhÃ´ng há»— trá»£ chuyá»ƒn ngÆ°á»i dÃ¹ng giá»¯a cÃ¡c Ä‘Æ¡n vá»‹');
         }
         $tenant = $this->tenantById($tenantId);
         if (!$tenant) {
-            throw new \RuntimeException('Không tìm thấy đơn vị');
+            throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n vá»‹');
         }
         $pdo = $this->tenantPdo($tenant);
         $this->ensureTenantUserCompatibility($pdo);
@@ -143,7 +143,7 @@ final class ControlCenterUserRepository
         [$tenantId, $userId] = $this->decodeDirectoryId($id);
         $tenant = $this->tenantById($tenantId);
         if (!$tenant) {
-            throw new \RuntimeException('Không tìm thấy đơn vị');
+            throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n vá»‹');
         }
         $pdo = $this->tenantPdo($tenant);
         $stmt = $pdo->prepare('UPDATE users SET status = :status, updated_by = :actor WHERE id = :id AND status <> "DELETED"');
@@ -159,7 +159,7 @@ final class ControlCenterUserRepository
         [$tenantId, $userId] = $this->decodeDirectoryId($id);
         $tenant = $this->tenantById($tenantId);
         if (!$tenant) {
-            throw new \RuntimeException('Không tìm thấy đơn vị');
+            throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n vá»‹');
         }
         $pdo = $this->tenantPdo($tenant);
         $stmt = $pdo->prepare('UPDATE users SET password_hash = :hash, updated_by = :actor WHERE id = :id AND status <> "DELETED"');
@@ -351,7 +351,7 @@ final class ControlCenterUserRepository
 
         $tableExists = (bool) $pdo->query("SHOW TABLES LIKE 'villages'")->fetchColumn();
         if (!$tableExists) {
-            throw new \RuntimeException('Tenant database thi?u b?ng villages');
+            throw new \RuntimeException('Tenant database thiáº¿u báº£ng villages');
         }
 
         $columns = $pdo->query('SHOW COLUMNS FROM villages')->fetchAll(PDO::FETCH_COLUMN) ?: [];
@@ -406,7 +406,7 @@ final class ControlCenterUserRepository
             }
         }
         if (!in_array('name', $insertColumns, true) || !in_array('code', $insertColumns, true)) {
-            throw new \RuntimeException('Kh?ng x?c ??nh ???c village local c?a tenant');
+            throw new \RuntimeException('KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c village local cá»§a tenant');
         }
 
         $sql = 'INSERT INTO villages (' . implode(',', $insertColumns) . ') VALUES (:' . implode(',:', $insertColumns) . ')';
@@ -430,7 +430,7 @@ final class ControlCenterUserRepository
         $charset = (string) ($config['charset'] ?? ($tenant['database_charset'] ?: 'utf8mb4'));
 
         if ($database === '' || $username === '') {
-            throw new \RuntimeException('Chưa cấu hình cơ sở dữ liệu của đơn vị');
+            throw new \RuntimeException('ChÆ°a cáº¥u hÃ¬nh cÆ¡ sá»Ÿ dá»¯ liá»‡u cá»§a Ä‘Æ¡n vá»‹');
         }
 
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=%s', $host, $port, $database, $charset);
@@ -515,7 +515,7 @@ final class ControlCenterUserRepository
             'unitCode' => (string) ($tenant['code'] ?? ''),
             'tenantDomain' => (string) ($tenant['domain'] ?? ''),
             'lastLoginAt' => $lastLogin,
-            'lastLoginLabel' => $lastLogin ? (string) $lastLogin : 'Chưa đăng nhập',
+            'lastLoginLabel' => $lastLogin ? (string) $lastLogin : 'ChÆ°a Ä‘Äƒng nháº­p',
             'lastIp' => null,
             'lastDevice' => null,
             'createdAt' => $row['created_at'] ?? null,
@@ -682,7 +682,7 @@ final class ControlCenterUserRepository
             'unitName' => (string) ($row['unit_name'] ?? ''),
             'unitCode' => (string) ($row['unit_code'] ?? ''),
             'lastLoginAt' => $lastLogin,
-            'lastLoginLabel' => $lastLogin ? (string) $lastLogin : 'Chưa đăng nhập',
+            'lastLoginLabel' => $lastLogin ? (string) $lastLogin : 'ChÆ°a Ä‘Äƒng nháº­p',
             'lastIp' => $row['last_ip'] ?? null,
             'lastDevice' => $this->deviceLabel((string) ($row['last_device'] ?? '')),
             'createdAt' => $row['created_at'] ?? null,

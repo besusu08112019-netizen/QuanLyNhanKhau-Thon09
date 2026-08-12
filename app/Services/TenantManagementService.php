@@ -39,7 +39,7 @@ final class TenantManagementService
         $this->assertUnique($data);
 
         $tenant = $this->repository->create($data, $actor);
-        $this->audit->write($actor, 'tenant.created', (int) ($tenant['id'] ?? 0), 'Tạo Tenant', [
+        $this->audit->write($actor, 'tenant.created', (int) ($tenant['id'] ?? 0), 'Táº¡o Tenant', [
             'tenant' => $this->tenantRef($tenant),
             'before' => null,
             'after' => $this->auditSnapshot($tenant),
@@ -60,7 +60,7 @@ final class TenantManagementService
         $this->assertUnique($data, $id);
 
         $tenant = $this->repository->update($id, $data, $actor);
-        $this->audit->write($actor, 'tenant.updated', $id, 'Cập nhật Tenant', [
+        $this->audit->write($actor, 'tenant.updated', $id, 'Cáº­p nháº­t Tenant', [
             'tenant' => $this->tenantRef($tenant),
             'before' => $this->auditSnapshot($before),
             'after' => $this->auditSnapshot($tenant),
@@ -74,18 +74,18 @@ final class TenantManagementService
         $actor = $this->authorization->authorize('tenant.lock');
         $tenant = $this->findTenant($id);
         if (($tenant['status'] ?? '') === 'DELETED') {
-            throw new InvalidArgumentException('Tenant đã bị xóa mềm');
+            throw new InvalidArgumentException('Tenant Ä‘Ã£ bá»‹ xÃ³a má»m');
         }
         if (($tenant['status'] ?? '') === 'LOCKED') {
-            throw new InvalidArgumentException('Tenant đã bị khóa');
+            throw new InvalidArgumentException('Tenant Ä‘Ã£ bá»‹ khÃ³a');
         }
         $reason = trim((string) ($input['reason'] ?? ''));
         if ($reason === '' || mb_strlen($reason, 'UTF-8') > 255) {
-            throw new InvalidArgumentException('Lý do khóa Tenant không hợp lệ');
+            throw new InvalidArgumentException('LÃ½ do khÃ³a Tenant khÃ´ng há»£p lá»‡');
         }
 
         $updated = $this->repository->lock($id, $reason, $actor);
-        $this->audit->write($actor, 'tenant.locked', $id, 'Khóa Tenant', [
+        $this->audit->write($actor, 'tenant.locked', $id, 'KhÃ³a Tenant', [
             'tenant' => $this->tenantRef($updated),
             'before' => $this->auditSnapshot($tenant),
             'after' => $this->auditSnapshot($updated),
@@ -99,18 +99,18 @@ final class TenantManagementService
         $actor = $this->authorization->authorize('tenant.unlock');
         $tenant = $this->findTenant($id);
         if (($tenant['status'] ?? '') === 'DELETED') {
-            throw new InvalidArgumentException('Tenant đã bị xóa mềm');
+            throw new InvalidArgumentException('Tenant Ä‘Ã£ bá»‹ xÃ³a má»m');
         }
         if (($tenant['status'] ?? '') !== 'LOCKED') {
-            throw new InvalidArgumentException('Tenant chưa bị khóa');
+            throw new InvalidArgumentException('Tenant chÆ°a bá»‹ khÃ³a');
         }
         $targetStatus = strtoupper(trim((string) ($input['targetStatus'] ?? $input['target_status'] ?? 'ACTIVE')));
         if (!in_array($targetStatus, self::UNLOCK_STATUSES, true)) {
-            throw new InvalidArgumentException('Trạng thái mở khóa Tenant không hợp lệ');
+            throw new InvalidArgumentException('Tráº¡ng thÃ¡i má»Ÿ khÃ³a Tenant khÃ´ng há»£p lá»‡');
         }
 
         $updated = $this->repository->unlock($id, $targetStatus, $actor);
-        $this->audit->write($actor, 'tenant.unlocked', $id, 'Mở khóa Tenant', [
+        $this->audit->write($actor, 'tenant.unlocked', $id, 'Má»Ÿ khÃ³a Tenant', [
             'tenant' => $this->tenantRef($updated),
             'before' => $this->auditSnapshot($tenant),
             'after' => $this->auditSnapshot($updated),
@@ -124,15 +124,15 @@ final class TenantManagementService
         $actor = $this->authorization->authorize('tenant.delete');
         $tenant = $this->findTenant($id);
         if (($tenant['status'] ?? '') === 'DELETED') {
-            throw new InvalidArgumentException('Tenant đã bị xóa mềm');
+            throw new InvalidArgumentException('Tenant Ä‘Ã£ bá»‹ xÃ³a má»m');
         }
         $confirmation = trim((string) ($input['confirmation'] ?? ''));
         if (!hash_equals((string) ($tenant['code'] ?? ''), $confirmation)) {
-            throw new InvalidArgumentException('Xác nhận mã Tenant không khớp');
+            throw new InvalidArgumentException('XÃ¡c nháº­n mÃ£ Tenant khÃ´ng khá»›p');
         }
 
         $updated = $this->repository->softDelete($id, $actor);
-        $this->audit->write($actor, 'tenant.deleted', $id, 'Xóa mềm Tenant', [
+        $this->audit->write($actor, 'tenant.deleted', $id, 'XÃ³a má»m Tenant', [
             'tenant' => $this->tenantRef($updated),
             'before' => $this->auditSnapshot($tenant),
             'after' => $this->auditSnapshot($updated),
@@ -151,7 +151,7 @@ final class TenantManagementService
     {
         $tenant = $this->repository->find($id);
         if (!$tenant) {
-            throw new RuntimeException('Không tìm thấy Tenant');
+            throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y Tenant');
         }
         return $tenant;
     }
@@ -163,7 +163,7 @@ final class TenantManagementService
         if ($creating || array_key_exists('code', $input)) {
             $code = strtolower(trim((string) ($input['code'] ?? '')));
             if ($code === '' || !preg_match('/^[a-z0-9_-]{2,50}$/', $code)) {
-                throw new InvalidArgumentException('Mã Tenant không hợp lệ');
+                throw new InvalidArgumentException('MÃ£ Tenant khÃ´ng há»£p lá»‡');
             }
             $data['code'] = $code;
         }
@@ -171,7 +171,7 @@ final class TenantManagementService
         if ($creating || array_key_exists('name', $input)) {
             $name = trim((string) ($input['name'] ?? ''));
             if ($name === '' || mb_strlen($name, 'UTF-8') > 190) {
-                throw new InvalidArgumentException('Tên Tenant không hợp lệ');
+                throw new InvalidArgumentException('TÃªn Tenant khÃ´ng há»£p lá»‡');
             }
             $data['name'] = $name;
         }
@@ -188,7 +188,7 @@ final class TenantManagementService
             }
         }
         if ($creating && empty($data['domain']) && empty($data['subdomain'])) {
-            throw new InvalidArgumentException('Tenant cần có domain hoặc subdomain');
+            throw new InvalidArgumentException('Tenant cáº§n cÃ³ domain hoáº·c subdomain');
         }
 
         if ($creating || $this->hasAnyKey($input, ['databaseHost', 'database_host'])) {
@@ -225,7 +225,7 @@ final class TenantManagementService
         if (array_key_exists('status', $input)) {
             $status = strtoupper(trim((string) $input['status']));
             if (!in_array($status, self::STATUSES, true)) {
-                throw new InvalidArgumentException('Trạng thái Tenant không hợp lệ');
+                throw new InvalidArgumentException('Tráº¡ng thÃ¡i Tenant khÃ´ng há»£p lá»‡');
             }
             $data['status'] = $status;
         } elseif ($creating) {
@@ -238,13 +238,13 @@ final class TenantManagementService
     private function assertUnique(array $data, ?int $ignoreId = null): void
     {
         if (isset($data['code']) && $this->repository->existsByCode($data['code'], $ignoreId)) {
-            throw new InvalidArgumentException('Mã Tenant đã tồn tại');
+            throw new InvalidArgumentException('MÃ£ Tenant Ä‘Ã£ tá»“n táº¡i');
         }
         if (isset($data['domain']) && $data['domain'] !== null && $this->repository->existsByDomain($data['domain'], $ignoreId)) {
-            throw new InvalidArgumentException('Domain đã tồn tại');
+            throw new InvalidArgumentException('Domain Ä‘Ã£ tá»“n táº¡i');
         }
         if (isset($data['subdomain']) && $data['subdomain'] !== null && $this->repository->existsBySubdomain($data['subdomain'], $ignoreId)) {
-            throw new InvalidArgumentException('Subdomain đã tồn tại');
+            throw new InvalidArgumentException('Subdomain Ä‘Ã£ tá»“n táº¡i');
         }
     }
 
@@ -273,7 +273,7 @@ final class TenantManagementService
         foreach ($input as $key => $value) {
             $normalized = strtolower(str_replace(['-', ' '], '_', (string) $key));
             if (preg_match('/(password|passwd|pwd|secret|token|csrf|cookie|authorization)/', $normalized)) {
-                throw new InvalidArgumentException('Tenant Management không nhận hoặc lưu thông tin bí mật');
+                throw new InvalidArgumentException('Tenant Management khÃ´ng nháº­n hoáº·c lÆ°u thÃ´ng tin bÃ­ máº­t');
             }
             if (is_array($value)) {
                 $this->assertNoSecrets($value);
@@ -340,7 +340,7 @@ final class TenantManagementService
             return null;
         }
         if (mb_strlen($text, 'UTF-8') > $max) {
-            throw new InvalidArgumentException($field . ' không hợp lệ');
+            throw new InvalidArgumentException($field . ' khÃ´ng há»£p lá»‡');
         }
         return $text;
     }
@@ -352,10 +352,10 @@ final class TenantManagementService
             return null;
         }
         if (str_contains($host, '://') || str_contains($host, '/') || str_contains($host, '?')) {
-            throw new InvalidArgumentException($field . ' không hợp lệ');
+            throw new InvalidArgumentException($field . ' khÃ´ng há»£p lá»‡');
         }
         if (!preg_match('/^(?=.{1,190}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])$/', $host)) {
-            throw new InvalidArgumentException($field . ' không hợp lệ');
+            throw new InvalidArgumentException($field . ' khÃ´ng há»£p lá»‡');
         }
         return $host;
     }
@@ -364,7 +364,7 @@ final class TenantManagementService
     {
         $host = trim((string) ($value ?? ''));
         if ($host === '' || mb_strlen($host, 'UTF-8') > 190 || str_contains($host, '/') || str_contains($host, '?')) {
-            throw new InvalidArgumentException('Database host không hợp lệ');
+            throw new InvalidArgumentException('Database host khÃ´ng há»£p lá»‡');
         }
         return $host;
     }
@@ -373,7 +373,7 @@ final class TenantManagementService
     {
         $name = trim((string) ($value ?? ''));
         if ($name === '' || !preg_match('/^[a-zA-Z0-9_]{1,190}$/', $name)) {
-            throw new InvalidArgumentException('Database name không hợp lệ');
+            throw new InvalidArgumentException('Database name khÃ´ng há»£p lá»‡');
         }
         return $name;
     }
@@ -385,7 +385,7 @@ final class TenantManagementService
             return 'utf8mb4';
         }
         if (!preg_match('/^[a-z0-9_]{1,50}$/', $charset)) {
-            throw new InvalidArgumentException('Database charset không hợp lệ');
+            throw new InvalidArgumentException('Database charset khÃ´ng há»£p lá»‡');
         }
         return $charset;
     }
@@ -396,7 +396,7 @@ final class TenantManagementService
             return null;
         }
         if (!is_numeric($value) || (float) $value < 0) {
-            throw new InvalidArgumentException('Dung lượng không hợp lệ');
+            throw new InvalidArgumentException('Dung lÆ°á»£ng khÃ´ng há»£p lá»‡');
         }
         return (int) $value;
     }

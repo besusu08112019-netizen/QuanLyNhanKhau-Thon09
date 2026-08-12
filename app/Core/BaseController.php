@@ -77,7 +77,7 @@ abstract class BaseController
         }
 
         if ($missing) {
-            Response::json(['ok' => false, 'error' => ['message' => 'Dữ liệu không hợp lệ', 'details' => ['missing' => $missing]]], 422);
+            Response::json(['ok' => false, 'error' => ['message' => 'Dá»¯ liá»‡u khÃ´ng há»£p lá»‡', 'details' => ['missing' => $missing]]], 422);
         }
     }
 
@@ -96,7 +96,7 @@ abstract class BaseController
         $token = $this->request->bearerToken();
         $user = $token ? $this->users()->findByToken($token) : null;
         if (!$user) {
-            Response::error('Vui lòng đăng nhập', 401);
+            Response::error('Vui lÃ²ng Ä‘Äƒng nháº­p', 401);
         }
         return $user;
     }
@@ -112,7 +112,7 @@ abstract class BaseController
         $expected = $token !== '' ? $this->users()->csrfToken($token) : '';
 
         if ($submitted === '' || $expected === '' || !hash_equals($expected, $submitted)) {
-            Response::error('CSRF token không hợp lệ', 419);
+            Response::error('CSRF token khÃ´ng há»£p lá»‡', 419);
         }
     }
 
@@ -121,7 +121,7 @@ abstract class BaseController
         $user = $this->user();
         $this->verifyCsrfToken();
         if (!$this->users()->can($user, $module, $action)) {
-            Response::error('Không có quyền ' . $action . ' module ' . $module, 403);
+            Response::error('KhÃ´ng cÃ³ quyá»n ' . $action . ' module ' . $module, 403);
         }
         $this->rejectDevelopmentDataPayload($module);
         $this->rejectMojibakePayload($module);
@@ -132,7 +132,7 @@ abstract class BaseController
     {
         $user = $this->requirePermission($module, $action);
         if (($user['role'] ?? '') !== 'SUPER_ADMIN') {
-            Response::error('Chi tai khoan Super Admin moi duoc thuc hien thao tac nay', 403);
+            Response::error('Chá»‰ tÃ i khoáº£n Super Admin má»›i Ä‘Æ°á»£c thá»±c hiá»‡n thao tÃ¡c nÃ y', 403);
         }
         return $user;
     }
@@ -155,7 +155,7 @@ abstract class BaseController
             Response::json([
                 'ok' => false,
                 'error' => [
-                    'message' => 'Du lieu QA/UAT/TEST/DEMO khong duoc phep trong production',
+                    'message' => 'Dá»¯ liá»‡u QA/UAT/TEST/DEMO khÃ´ng Ä‘Æ°á»£c phÃ©p trong production',
                     'details' => [
                         'module' => $module,
                         'matches' => array_slice($matches, 0, 20),
@@ -177,7 +177,7 @@ abstract class BaseController
             Response::json([
                 'ok' => false,
                 'error' => [
-                    'message' => 'Du lieu gui len khong dung UTF-8, vui long kiem tra nguon nhap/import',
+                    'message' => 'Dá»¯ liá»‡u gá»­i lÃªn khÃ´ng Ä‘Ãºng UTF-8, vui lÃ²ng kiá»ƒm tra nguá»“n nháº­p/import',
                     'details' => [
                         'module' => $module,
                         'matches' => array_slice($matches, 0, 20),
@@ -261,7 +261,7 @@ abstract class BaseController
     protected function auditPermissionDenied(?array $user, string $module, string $action): void
     {
         try {
-            $this->audit($user, $module, 'permission_denied', 'Từ chối thao tác không đủ quyền', null, [
+            $this->audit($user, $module, 'permission_denied', 'Tá»« chá»‘i thao tÃ¡c khÃ´ng Ä‘á»§ quyá»n', null, [
                 'role' => $user['role'] ?? null,
                 'denied_action' => $action,
                 'endpoint' => $this->request->method() . ' ' . $this->request->path(),

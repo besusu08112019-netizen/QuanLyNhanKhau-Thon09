@@ -19,15 +19,15 @@ final class AgriculturalLandZone extends BaseModel
     ];
     private const FIXED_UNIT = 'mau';
     private const DEFAULT_USAGE_TYPES = [
-        ['LUA', 'Lúa'],
-        ['NGO', 'Ngô'],
-        ['LAC', 'Lạc'],
-        ['RAU_MAU', 'Rau màu'],
-        ['HOA_MAU', 'Hoa màu'],
-        ['CAY_AN_QUA', 'Cây ăn quả'],
-        ['CAY_LAU_NAM', 'Cây lâu năm'],
-        ['THUY_SAN', 'Nuôi trồng thủy sản'],
-        ['KHAC', 'Khác'],
+        ['LUA', 'LÃºa'],
+        ['NGO', 'NgÃ´'],
+        ['LAC', 'Láº¡c'],
+        ['RAU_MAU', 'Rau mÃ u'],
+        ['HOA_MAU', 'Hoa mÃ u'],
+        ['CAY_AN_QUA', 'CÃ¢y Äƒn quáº£'],
+        ['CAY_LAU_NAM', 'CÃ¢y lÃ¢u nÄƒm'],
+        ['THUY_SAN', 'NuÃ´i trá»“ng thá»§y sáº£n'],
+        ['KHAC', 'KhÃ¡c'],
     ];
 
     public function ensureSchema(): void
@@ -146,7 +146,7 @@ SQL);
         $yearValues = array_values(array_unique(array_filter(array_map(fn($row) => (int)($row['report_year'] ?? 0), $years))));
         if (!in_array((int)date('Y'), $yearValues, true)) array_unshift($yearValues, (int)date('Y'));
         return [
-            'units' => [['value' => 'mau', 'label' => 'mẫu']],
+            'units' => [['value' => 'mau', 'label' => 'máº«u']],
             'statuses' => $this->statuses(),
             'years' => $yearValues,
             'usage_types' => $this->usageTypes(false),
@@ -200,9 +200,9 @@ SQL);
         $this->ensureSchema();
         $code = strtoupper(preg_replace('/[^A-Z0-9_]/', '_', trim((string)($data['code'] ?? ''))));
         $name = trim((string)($data['name'] ?? ''));
-        if ($code === '' || $name === '') throw new \RuntimeException('Vui lòng nhập mã và tên loại sử dụng đất');
-        if (mb_strlen($code, 'UTF-8') > 60) throw new \RuntimeException('Mã loại sử dụng đất không được vượt quá 60 ký tự');
-        if (mb_strlen($name, 'UTF-8') > 180) throw new \RuntimeException('Tên loại sử dụng đất không được vượt quá 180 ký tự');
+        if ($code === '' || $name === '') throw new \RuntimeException('Vui lÃ²ng nháº­p mÃ£ vÃ  tÃªn loáº¡i sá»­ dá»¥ng Ä‘áº¥t');
+        if (mb_strlen($code, 'UTF-8') > 60) throw new \RuntimeException('MÃ£ loáº¡i sá»­ dá»¥ng Ä‘áº¥t khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 60 kÃ½ tá»±');
+        if (mb_strlen($name, 'UTF-8') > 180) throw new \RuntimeException('TÃªn loáº¡i sá»­ dá»¥ng Ä‘áº¥t khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 180 kÃ½ tá»±');
         $params = [
             'code' => $code,
             'name' => $name,
@@ -258,13 +258,13 @@ SQL);
     {
         $this->ensureSchema();
         $existing = $id ? $this->find($id) : null;
-        if ($id && !$existing) throw new \RuntimeException('Không tìm thấy khu đất');
+        if ($id && !$existing) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y khu Ä‘áº¥t');
         $params = $this->params($data, $userId);
         $this->assertUniqueZoneCodeYear($params['zone_code'], (int)$params['report_year'], $id);
         $this->assertUsageAreasWithinTotal((array)($data['usage_areas'] ?? $data['usageAreas'] ?? []), $params['total_area_m2']);
         if ($id) {
             if ($existing && $params['zone_code'] !== $existing['zone_code']) {
-                throw new \RuntimeException('Mã khu không được thay đổi sau khi tạo');
+                throw new \RuntimeException('MÃ£ khu khÃ´ng Ä‘Æ°á»£c thay Ä‘á»•i sau khi táº¡o');
             }
             $params['id'] = $id;
             $assignments = ['zone_name=:zone_name', 'input_unit=:input_unit', 'report_year=:report_year'];
@@ -286,7 +286,7 @@ SQL);
     public function softDelete(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy khu đất');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y khu Ä‘áº¥t');
         $this->execute('UPDATE agricultural_land_zones SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere(self::ZONES), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
@@ -306,11 +306,11 @@ SQL);
                 'land_fund' => $this->landFundChart($row, $unit),
                 'usage' => $this->usageChart($filters, $unit),
                 'allocation_ratio' => [
-                    ['label' => 'Đất giao dài hạn', 'value' => $metrics['long_term_allocated_area']],
-                    ['label' => 'Đất công ích', 'value' => $metrics['public_utility_area']],
+                    ['label' => 'Äáº¥t giao dÃ i háº¡n', 'value' => $metrics['long_term_allocated_area']],
+                    ['label' => 'Äáº¥t cÃ´ng Ã­ch', 'value' => $metrics['public_utility_area']],
                 ],
                 'converted_area' => [
-                    ['label' => 'Diện tích đất giao đã chuyển đổi cơ cấu sản xuất', 'value' => $metrics['converted_area']],
+                    ['label' => 'Diá»‡n tÃ­ch Ä‘áº¥t giao Ä‘Ã£ chuyá»ƒn Ä‘á»•i cÆ¡ cáº¥u sáº£n xuáº¥t', 'value' => $metrics['converted_area']],
                 ],
                 'by_zone' => array_map(fn($item) => ['label' => $item['zone_name'], 'value' => $this->decimalText($item['total_area_m2'] ?? 0)], $this->fetchAll("SELECT zone_name, total_area_m2 FROM agricultural_land_zones WHERE $where ORDER BY total_area_m2 DESC, zone_name ASC LIMIT 12", $params)),
             ],
@@ -327,14 +327,14 @@ SQL);
         $usageTypes = $this->usageTypes(false);
         $usageColumns = array_map(fn($type) => $type['name'], $usageTypes);
         $title = match ($mode) {
-            'village' => 'Báo cáo quỹ đất nông nghiệp toàn thôn',
-            'zone' => 'Báo cáo quỹ đất nông nghiệp theo khu',
-            'year' => 'Báo cáo quỹ đất nông nghiệp theo năm',
-            default => 'Danh sách khu đất nông nghiệp',
+            'village' => 'BÃ¡o cÃ¡o quá»¹ Ä‘áº¥t nÃ´ng nghiá»‡p toÃ n thÃ´n',
+            'zone' => 'BÃ¡o cÃ¡o quá»¹ Ä‘áº¥t nÃ´ng nghiá»‡p theo khu',
+            'year' => 'BÃ¡o cÃ¡o quá»¹ Ä‘áº¥t nÃ´ng nghiá»‡p theo nÄƒm',
+            default => 'Danh sÃ¡ch khu Ä‘áº¥t nÃ´ng nghiá»‡p',
         };
         return [
             'title' => $title,
-            'columns' => array_merge(['Mã khu', 'Tên khu', 'Năm', 'Tổng diện tích', 'Đất giao dài hạn', 'Đất công ích', 'Đất thuê', 'Đất giao đã chuyển đổi', 'Trạng thái'], $usageColumns),
+            'columns' => array_merge(['MÃ£ khu', 'TÃªn khu', 'NÄƒm', 'Tá»•ng diá»‡n tÃ­ch', 'Äáº¥t giao dÃ i háº¡n', 'Äáº¥t cÃ´ng Ã­ch', 'Äáº¥t thuÃª', 'Äáº¥t giao Ä‘Ã£ chuyá»ƒn Ä‘á»•i', 'Tráº¡ng thÃ¡i'], $usageColumns),
             'rows' => array_map(function ($row) use ($usageTypes) {
                 $base = [
                     $row['zone_code'], $row['zone_name'], $row['report_year'] ?: '',
@@ -353,7 +353,7 @@ SQL);
             }, $items),
             'totalRows' => count($items),
             'filters' => $filters,
-            'meta' => ['generated_at' => date('c'), 'unit' => $this->displayUnit($filters), 'source' => 'agricultural_land_zones', 'business_note' => 'Đất chuyển đổi là diện tích nằm trong đất giao dài hạn, không phải quỹ đất phát sinh thêm.'],
+            'meta' => ['generated_at' => date('c'), 'unit' => $this->displayUnit($filters), 'source' => 'agricultural_land_zones', 'business_note' => 'Äáº¥t chuyá»ƒn Ä‘á»•i lÃ  diá»‡n tÃ­ch náº±m trong Ä‘áº¥t giao dÃ i háº¡n, khÃ´ng pháº£i quá»¹ Ä‘áº¥t phÃ¡t sinh thÃªm.'],
         ];
     }
 
@@ -363,8 +363,8 @@ SQL);
         [$where, $params] = $this->where(['status' => 'ACTIVE'] + $filters, false);
         $rows = $this->fetchAll("SELECT report_year, " . $this->sumSelect() . " FROM agricultural_land_zones WHERE $where GROUP BY report_year ORDER BY report_year ASC", $params);
         return [
-            'title' => 'So sánh quỹ đất nông nghiệp giữa các năm',
-            'columns' => ['Năm', 'Tổng diện tích', 'Đất giao dài hạn', 'Đất công ích', 'Đất thuê', 'Đất giao đã chuyển đổi'],
+            'title' => 'So sÃ¡nh quá»¹ Ä‘áº¥t nÃ´ng nghiá»‡p giá»¯a cÃ¡c nÄƒm',
+            'columns' => ['NÄƒm', 'Tá»•ng diá»‡n tÃ­ch', 'Äáº¥t giao dÃ i háº¡n', 'Äáº¥t cÃ´ng Ã­ch', 'Äáº¥t thuÃª', 'Äáº¥t giao Ä‘Ã£ chuyá»ƒn Ä‘á»•i'],
             'rows' => array_map(fn($row) => [
                 (string)$row['report_year'],
                 $this->areaText($row['total_area_m2'] ?? 0, $unit),
@@ -375,7 +375,7 @@ SQL);
             ], $rows),
             'totalRows' => count($rows),
             'filters' => $filters,
-            'meta' => ['generated_at' => date('c'), 'unit' => $unit, 'source' => 'agricultural_land_zones', 'business_note' => 'Đất chuyển đổi là diện tích nằm trong đất giao dài hạn, không phải quỹ đất phát sinh thêm.'],
+            'meta' => ['generated_at' => date('c'), 'unit' => $unit, 'source' => 'agricultural_land_zones', 'business_note' => 'Äáº¥t chuyá»ƒn Ä‘á»•i lÃ  diá»‡n tÃ­ch náº±m trong Ä‘áº¥t giao dÃ i háº¡n, khÃ´ng pháº£i quá»¹ Ä‘áº¥t phÃ¡t sinh thÃªm.'],
         ];
     }
 
@@ -386,12 +386,12 @@ SQL);
         $latitude = $this->nullableDecimal($data['latitude'] ?? null);
         $longitude = $this->nullableDecimal($data['longitude'] ?? null);
         $polygonJson = $this->nullable($data['polygon_json'] ?? $data['polygonJson'] ?? null);
-        if ($zoneCode === '' || $zoneName === '') throw new \RuntimeException('Vui lòng nhập mã khu và tên khu');
-        if (!preg_match('/^[A-Z0-9_-]{1,40}$/', $zoneCode)) throw new \RuntimeException('Mã khu chỉ gồm chữ, số, gạch ngang hoặc gạch dưới, tối đa 40 ký tự');
-        if (mb_strlen($zoneName, 'UTF-8') > 255) throw new \RuntimeException('Tên khu không được vượt quá 255 ký tự');
-        if ($latitude !== null && ($latitude < -90 || $latitude > 90)) throw new \RuntimeException('Vĩ độ không hợp lệ');
-        if ($longitude !== null && ($longitude < -180 || $longitude > 180)) throw new \RuntimeException('Kinh độ không hợp lệ');
-        if ($polygonJson !== null && json_decode($polygonJson, true) === null && json_last_error() !== JSON_ERROR_NONE) throw new \RuntimeException('Polygon JSON không hợp lệ');
+        if ($zoneCode === '' || $zoneName === '') throw new \RuntimeException('Vui lÃ²ng nháº­p mÃ£ khu vÃ  tÃªn khu');
+        if (!preg_match('/^[A-Z0-9_-]{1,40}$/', $zoneCode)) throw new \RuntimeException('MÃ£ khu chá»‰ gá»“m chá»¯, sá»‘, gáº¡ch ngang hoáº·c gáº¡ch dÆ°á»›i, tá»‘i Ä‘a 40 kÃ½ tá»±');
+        if (mb_strlen($zoneName, 'UTF-8') > 255) throw new \RuntimeException('TÃªn khu khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 255 kÃ½ tá»±');
+        if ($latitude !== null && ($latitude < -90 || $latitude > 90)) throw new \RuntimeException('VÄ© Ä‘á»™ khÃ´ng há»£p lá»‡');
+        if ($longitude !== null && ($longitude < -180 || $longitude > 180)) throw new \RuntimeException('Kinh Ä‘á»™ khÃ´ng há»£p lá»‡');
+        if ($polygonJson !== null && json_decode($polygonJson, true) === null && json_last_error() !== JSON_ERROR_NONE) throw new \RuntimeException('Polygon JSON khÃ´ng há»£p lá»‡');
         $params = [
             'zone_code' => $zoneCode,
             'zone_name' => $zoneName,
@@ -410,7 +410,7 @@ SQL);
             'updated_by' => $userId,
         ];
         foreach (self::AREA_FIELDS as $field) $params[$field . '_m2'] = $this->areaDecimal($data[$field] ?? $data[$this->camel($field)] ?? 0);
-        if ((float)$params['total_area_m2'] <= 0) throw new \RuntimeException('Tổng diện tích phải lớn hơn 0');
+        if ((float)$params['total_area_m2'] <= 0) throw new \RuntimeException('Tá»•ng diá»‡n tÃ­ch pháº£i lá»›n hÆ¡n 0');
         $this->assertLandFundTotals($params);
         return $params;
     }
@@ -483,10 +483,10 @@ SQL);
         foreach ($items as $item) {
             $typeId = (int)($item['usage_type_id'] ?? $item['usageTypeId'] ?? $item['id'] ?? 0);
             if ($typeId <= 0) continue;
-            if (!in_array($typeId, $validTypeIds, true)) throw new \RuntimeException('Loại sử dụng đất không hợp lệ');
+            if (!in_array($typeId, $validTypeIds, true)) throw new \RuntimeException('Loáº¡i sá»­ dá»¥ng Ä‘áº¥t khÃ´ng há»£p lá»‡');
             $area = $this->areaDecimal($item['area'] ?? $item['value'] ?? 0);
             $usageTotal += (float)$area;
-            if ($usageTotal > (float)$totalArea + 0.0001) throw new \RuntimeException('Tổng diện tích cơ cấu sử dụng đất không được lớn hơn tổng diện tích khu');
+            if ($usageTotal > (float)$totalArea + 0.0001) throw new \RuntimeException('Tá»•ng diá»‡n tÃ­ch cÆ¡ cáº¥u sá»­ dá»¥ng Ä‘áº¥t khÃ´ng Ä‘Æ°á»£c lá»›n hÆ¡n tá»•ng diá»‡n tÃ­ch khu');
             $pending[] = ['zone_id' => $zoneId, 'usage_type_id' => $typeId, 'area_m2' => $area];
         }
         $this->execute('DELETE FROM agricultural_land_zone_usage_areas WHERE zone_id=:zone_id AND ' . $this->tenantWhere(self::USAGE_AREAS), $this->withTenant(['zone_id' => $zoneId]));
@@ -588,9 +588,9 @@ SQL);
     private function landFundChart(array $row, string $unit): array
     {
         return [
-            ['label' => 'Đất giao dài hạn', 'value' => $this->decimalText($row['long_term_allocated_area_m2'] ?? 0)],
-            ['label' => 'Đất công ích', 'value' => $this->decimalText($row['public_utility_area_m2'] ?? 0)],
-            ['label' => 'Đất thuê', 'value' => $this->decimalText($row['leased_area_m2'] ?? 0)],
+            ['label' => 'Äáº¥t giao dÃ i háº¡n', 'value' => $this->decimalText($row['long_term_allocated_area_m2'] ?? 0)],
+            ['label' => 'Äáº¥t cÃ´ng Ã­ch', 'value' => $this->decimalText($row['public_utility_area_m2'] ?? 0)],
+            ['label' => 'Äáº¥t thuÃª', 'value' => $this->decimalText($row['leased_area_m2'] ?? 0)],
         ];
     }
 
@@ -614,16 +614,16 @@ SQL);
     private function usageType(int $id): array
     {
         $row = $this->fetchOne('SELECT id, code, name, display_order, is_active FROM land_usage_types WHERE id=:id AND ' . $this->tenantWhere(self::USAGE_TYPES), $this->withTenant(['id' => $id]));
-        if (!$row) throw new \RuntimeException('Không tìm thấy loại sử dụng đất');
+        if (!$row) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y loáº¡i sá»­ dá»¥ng Ä‘áº¥t');
         return ['id' => (int)$row['id'], 'code' => (string)$row['code'], 'name' => (string)$row['name'], 'display_order' => (int)$row['display_order'], 'is_active' => (bool)$row['is_active']];
     }
 
     private function statuses(): array
     {
         return [
-            ['value' => 'ACTIVE', 'label' => 'Đang sử dụng'],
-            ['value' => 'CONVERTING', 'label' => 'Đang chuyển đổi'],
-            ['value' => 'INACTIVE', 'label' => 'Ngừng sử dụng'],
+            ['value' => 'ACTIVE', 'label' => 'Äang sá»­ dá»¥ng'],
+            ['value' => 'CONVERTING', 'label' => 'Äang chuyá»ƒn Ä‘á»•i'],
+            ['value' => 'INACTIVE', 'label' => 'Ngá»«ng sá»­ dá»¥ng'],
         ];
     }
 
@@ -652,8 +652,8 @@ SQL);
     {
         $text = trim(str_replace(',', '.', (string)$value));
         if ($text === '') $text = '0';
-        if (!preg_match('/^\d+(?:\.\d{1,4})?$/', $text)) throw new \RuntimeException('Diện tích không hợp lệ');
-        if ((float)$text < 0) throw new \RuntimeException('Diện tích không được âm');
+        if (!preg_match('/^\d+(?:\.\d{1,4})?$/', $text)) throw new \RuntimeException('Diá»‡n tÃ­ch khÃ´ng há»£p lá»‡');
+        if ((float)$text < 0) throw new \RuntimeException('Diá»‡n tÃ­ch khÃ´ng Ä‘Æ°á»£c Ã¢m');
         return $this->decimalText($text);
     }
 
@@ -666,7 +666,7 @@ SQL);
             $params['id'] = $id;
         }
         $row = $this->fetchOne('SELECT id FROM agricultural_land_zones WHERE ' . $where . ' LIMIT 1', $params);
-        if ($row) throw new \RuntimeException('Mã khu đã tồn tại trong năm thống kê này');
+        if ($row) throw new \RuntimeException('MÃ£ khu Ä‘Ã£ tá»“n táº¡i trong nÄƒm thá»‘ng kÃª nÃ y');
     }
 
     private function assertUsageAreasWithinTotal(array $items, string $totalArea): void
@@ -676,10 +676,10 @@ SQL);
         foreach ($items as $item) {
             $typeId = (int)($item['usage_type_id'] ?? $item['usageTypeId'] ?? $item['id'] ?? 0);
             if ($typeId <= 0) continue;
-            if (!in_array($typeId, $validTypeIds, true)) throw new \RuntimeException('Loại sử dụng đất không hợp lệ');
+            if (!in_array($typeId, $validTypeIds, true)) throw new \RuntimeException('Loáº¡i sá»­ dá»¥ng Ä‘áº¥t khÃ´ng há»£p lá»‡');
             $usageTotal += (float)$this->areaDecimal($item['area'] ?? $item['value'] ?? 0);
             if ($usageTotal > (float)$totalArea + 0.0001) {
-                throw new \RuntimeException('Tổng diện tích cơ cấu sử dụng đất không được lớn hơn tổng diện tích khu');
+                throw new \RuntimeException('Tá»•ng diá»‡n tÃ­ch cÆ¡ cáº¥u sá»­ dá»¥ng Ä‘áº¥t khÃ´ng Ä‘Æ°á»£c lá»›n hÆ¡n tá»•ng diá»‡n tÃ­ch khu');
             }
         }
     }
@@ -693,16 +693,16 @@ SQL);
         $converted = (float)$params['converted_area_m2'];
         $expected = $longTerm + $publicUtility + $leased;
         if (abs($total - $expected) > 0.0001) {
-            throw new \RuntimeException('Tổng diện tích phải bằng Đất giao dài hạn + Đất công ích + Đất thuê');
+            throw new \RuntimeException('Tá»•ng diá»‡n tÃ­ch pháº£i báº±ng Äáº¥t giao dÃ i háº¡n + Äáº¥t cÃ´ng Ã­ch + Äáº¥t thuÃª');
         }
         if ($converted > $longTerm + 0.0001) {
-            throw new \RuntimeException('Đất chuyển đổi không được lớn hơn diện tích đất giao dài hạn');
+            throw new \RuntimeException('Äáº¥t chuyá»ƒn Ä‘á»•i khÃ´ng Ä‘Æ°á»£c lá»›n hÆ¡n diá»‡n tÃ­ch Ä‘áº¥t giao dÃ i háº¡n');
         }
     }
 
     private function areaText(float|int|string $value, string $unit): string
     {
-        return $this->decimalText($value) . ' mẫu';
+        return $this->decimalText($value) . ' máº«u';
     }
 
     private function decimalText(mixed $value): string

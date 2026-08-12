@@ -28,8 +28,8 @@
   };
   const openModal = id => window.TenantAppPlatform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show();
   const closeModal = id => window.TenantAppPlatform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide();
-  const confirmAction = options => window.TenantAppPlatform?.confirmDialog?.ask?.(options) || Promise.resolve(window.confirm(options.message || 'Xác nhận thao tác?'));
-  function run(fn) { Promise.resolve().then(fn).catch(error => toast(error.message || 'Thao tác không thành công', 'danger')); }
+  const confirmAction = options => window.TenantAppPlatform?.confirmDialog?.ask?.(options) || Promise.resolve(window.confirm(options.message || 'XÃ¡c nháº­n thao tÃ¡c?'));
+  function run(fn) { Promise.resolve().then(fn).catch(error => toast(error.message || 'Thao tÃ¡c khÃ´ng thÃ nh cÃ´ng', 'danger')); }
   function debounce(fn, delay) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; }
 
   function init() {
@@ -99,15 +99,15 @@
   async function catalogs() {
     if (state.catalogs) return state.catalogs;
     state.catalogs = await request(API + '/catalogs', { cacheTtl: 60000 });
-    fill($('#complaintsCategoryFilter'), state.catalogs.categories, 'Tất cả');
-    fill($('#complaintsPriorityFilter'), state.catalogs.priorities, 'Tất cả');
-    fill($('#complaintsStatusFilter'), state.catalogs.statuses, 'Tất cả');
-    fill($('#complaintCategorySelect'), state.catalogs.categories, 'Chọn loại');
-    fill($('#complaintPrioritySelect'), state.catalogs.priorities, 'Chọn ưu tiên');
-    fill($('#complaintStatusSelect'), state.catalogs.statuses, 'Chọn trạng thái');
-    fill($('#complaintHistoryStatusSelect'), state.catalogs.statuses, 'Giữ nguyên');
-    fill($('#complaintRatingSelect'), state.catalogs.ratings, 'Chọn đánh giá');
-    fill($('#complaintRelatedType'), state.catalogs.linkTypes, 'Chọn loại đối tượng');
+    fill($('#complaintsCategoryFilter'), state.catalogs.categories, 'Táº¥t cáº£');
+    fill($('#complaintsPriorityFilter'), state.catalogs.priorities, 'Táº¥t cáº£');
+    fill($('#complaintsStatusFilter'), state.catalogs.statuses, 'Táº¥t cáº£');
+    fill($('#complaintCategorySelect'), state.catalogs.categories, 'Chá»n loáº¡i');
+    fill($('#complaintPrioritySelect'), state.catalogs.priorities, 'Chá»n Æ°u tiÃªn');
+    fill($('#complaintStatusSelect'), state.catalogs.statuses, 'Chá»n tráº¡ng thÃ¡i');
+    fill($('#complaintHistoryStatusSelect'), state.catalogs.statuses, 'Giá»¯ nguyÃªn');
+    fill($('#complaintRatingSelect'), state.catalogs.ratings, 'Chá»n Ä‘Ã¡nh giÃ¡');
+    fill($('#complaintRelatedType'), state.catalogs.linkTypes, 'Chá»n loáº¡i Ä‘á»‘i tÆ°á»£ng');
     return state.catalogs;
   }
 
@@ -144,28 +144,28 @@
   function renderDashboard(data = {}) {
     const metrics = data.metrics || {};
     const cards = [
-      ['Tổng phản ánh', 'fa-inbox', metrics.total || 0, ''],
-      ['Chưa xử lý', 'fa-circle-exclamation', metrics.new_count || 0, 'status:NEW'],
-      ['Đang xử lý', 'fa-spinner', metrics.processing_count || 0, ''],
-      ['Đã hoàn thành', 'fa-circle-check', metrics.done_count || 0, 'status:DONE'],
-      ['Quá hạn', 'fa-clock', metrics.overdue_count || 0, 'overdue:1'],
-      ['Chuyển cấp trên', 'fa-share-from-square', metrics.escalated_count || 0, 'status:ESCALATED']
+      ['Tá»•ng pháº£n Ã¡nh', 'fa-inbox', metrics.total || 0, ''],
+      ['ChÆ°a xá»­ lÃ½', 'fa-circle-exclamation', metrics.new_count || 0, 'status:NEW'],
+      ['Äang xá»­ lÃ½', 'fa-spinner', metrics.processing_count || 0, ''],
+      ['ÄÃ£ hoÃ n thÃ nh', 'fa-circle-check', metrics.done_count || 0, 'status:DONE'],
+      ['QuÃ¡ háº¡n', 'fa-clock', metrics.overdue_count || 0, 'overdue:1'],
+      ['Chuyá»ƒn cáº¥p trÃªn', 'fa-share-from-square', metrics.escalated_count || 0, 'status:ESCALATED']
     ];
-    const chart = (data.charts?.by_category || []).slice(0, 5).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(text(row.label, 'Khác'))}: ${number(row.value)}</span>`).join('');
-    $('#complaintsMiniDashboard').innerHTML = cards.map(card => `<article class="agri-kpi-card" ${card[3] ? `data-platform-action="complaints.dashboard.filter" data-complaint-filter="${safe(card[3])}"` : ''}><span><i class="fa-solid ${card[1]}"></i></span><div><strong>${number(card[2])}</strong><small>${safe(card[0])}</small></div></article>`).join('') + `<article class="agri-kpi-card" style="grid-column:span 2"><span><i class="fa-solid fa-chart-pie"></i></span><div><strong>Theo loại phản ánh</strong><small>${chart || 'Chưa có dữ liệu'}</small></div></article>`;
+    const chart = (data.charts?.by_category || []).slice(0, 5).map(row => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(text(row.label, 'KhÃ¡c'))}: ${number(row.value)}</span>`).join('');
+    $('#complaintsMiniDashboard').innerHTML = cards.map(card => `<article class="agri-kpi-card" ${card[3] ? `data-platform-action="complaints.dashboard.filter" data-complaint-filter="${safe(card[3])}"` : ''}><span><i class="fa-solid ${card[1]}"></i></span><div><strong>${number(card[2])}</strong><small>${safe(card[0])}</small></div></article>`).join('') + `<article class="agri-kpi-card" style="grid-column:span 2"><span><i class="fa-solid fa-chart-pie"></i></span><div><strong>Theo loáº¡i pháº£n Ã¡nh</strong><small>${chart || 'ChÆ°a cÃ³ dá»¯ liá»‡u'}</small></div></article>`;
   }
 
   function renderRows(data = {}) {
     const rows = data.items || [];
     const tbody = $('#complaintsRows');
-    $('#complaintsTotalCount').textContent = `Tổng số: ${number(data.total || 0)} phản ánh`;
+    $('#complaintsTotalCount').textContent = `Tá»•ng sá»‘: ${number(data.total || 0)} pháº£n Ã¡nh`;
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">Chưa có phản ánh phù hợp bộ lọc.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">ChÆ°a cÃ³ pháº£n Ã¡nh phÃ¹ há»£p bá»™ lá»c.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(item => {
-      const actions = [`<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="complaints.detail" data-id="${item.id}" title="Xem"><i class="fa-solid fa-eye"></i></button>`, can('update') ? `<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="complaints.edit" data-id="${item.id}" title="Sửa"><i class="fa-solid fa-pen"></i></button>` : '', can('delete') ? `<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="complaints.delete" data-id="${item.id}" title="Xóa"><i class="fa-solid fa-trash"></i></button>` : ''].filter(Boolean).join(' ');
-      return `<tr><td><strong>${safe(item.complaint_code)}</strong></td><td><div class="fw-semibold">${safe(text(item.title))}</div><small class="text-muted">${safe(text(item.detail, '').slice(0, 90))}</small></td><td>${safe(text(item.reporter_name))}<br><small class="text-muted">${safe(text(item.reporter_phone, ''))}</small></td><td>${safe(text(item.household_code))}<br><small class="text-muted">${safe(text(item.head_citizen_name, ''))}</small></td><td>${safe(text(item.category_name))}</td><td>${priorityBadge(item)}</td><td>${statusBadge(item)}</td><td>${safe(text(item.assigned_name))}</td><td>${date(item.received_at)}</td><td>${date(item.due_at)}${item.is_overdue ? '<br><span class="badge bg-danger">Quá hạn</span>' : ''}</td><td class="text-end">${actions}</td></tr>`;
+      const actions = [`<button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="complaints.detail" data-id="${item.id}" title="Xem"><i class="fa-solid fa-eye"></i></button>`, can('update') ? `<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="complaints.edit" data-id="${item.id}" title="Sá»­a"><i class="fa-solid fa-pen"></i></button>` : '', can('delete') ? `<button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="complaints.delete" data-id="${item.id}" title="XÃ³a"><i class="fa-solid fa-trash"></i></button>` : ''].filter(Boolean).join(' ');
+      return `<tr><td><strong>${safe(item.complaint_code)}</strong></td><td><div class="fw-semibold">${safe(text(item.title))}</div><small class="text-muted">${safe(text(item.detail, '').slice(0, 90))}</small></td><td>${safe(text(item.reporter_name))}<br><small class="text-muted">${safe(text(item.reporter_phone, ''))}</small></td><td>${safe(text(item.household_code))}<br><small class="text-muted">${safe(text(item.head_citizen_name, ''))}</small></td><td>${safe(text(item.category_name))}</td><td>${priorityBadge(item)}</td><td>${statusBadge(item)}</td><td>${safe(text(item.assigned_name))}</td><td>${date(item.received_at)}</td><td>${date(item.due_at)}${item.is_overdue ? '<br><span class="badge bg-danger">QuÃ¡ háº¡n</span>' : ''}</td><td class="text-end">${actions}</td></tr>`;
     }).join('');
   }
 
@@ -175,7 +175,7 @@
     const page = Number(data.page || state.page || 1);
     state.page = page;
     if (totalPages <= 1) { host.innerHTML = ''; return; }
-    const buttons = [`<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="complaints.page" data-page="${Math.max(1, page - 1)}" ${page <= 1 ? 'disabled' : ''}>Trước</button>`];
+    const buttons = [`<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="complaints.page" data-page="${Math.max(1, page - 1)}" ${page <= 1 ? 'disabled' : ''}>TrÆ°á»›c</button>`];
     for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) buttons.push(`<button class="btn btn-sm ${i === page ? 'btn-primary' : 'btn-outline-secondary'}" type="button" data-platform-action="complaints.page" data-page="${i}">${i}</button>`);
     buttons.push(`<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="complaints.page" data-page="${Math.min(totalPages, page + 1)}" ${page >= totalPages ? 'disabled' : ''}>Sau</button>`);
     host.innerHTML = `<div class="d-flex gap-2 justify-content-end flex-wrap">${buttons.join('')}</div>`;
@@ -217,14 +217,14 @@
   }
 
   async function openForm(id = null) {
-    if (id && !can('update')) return toast('Không có quyền sửa', 'warning');
-    if (!id && !can('create')) return toast('Không có quyền thêm', 'warning');
+    if (id && !can('update')) return toast('KhÃ´ng cÃ³ quyá»n sá»­a', 'warning');
+    if (!id && !can('create')) return toast('KhÃ´ng cÃ³ quyá»n thÃªm', 'warning');
     await catalogs();
     const form = $('#complaintForm');
     form.reset();
     $('#complaintHouseholdSelected').textContent = '';
     $('#complaintCitizenSelected').textContent = '';
-    $('#complaintAttachmentPreview').innerHTML = '<span class="text-muted small">Chưa chọn file.</span>';
+    $('#complaintAttachmentPreview').innerHTML = '<span class="text-muted small">ChÆ°a chá»n file.</span>';
     state.relatedLinks = [];
     clearRelatedSearch();
     $('#complaintRelatedPicker')?.classList.add('d-none');
@@ -262,7 +262,7 @@
     const item = await request(id ? `${API}/${id}` : API, { method: id ? 'PUT' : 'POST', body: data });
     await uploadPendingFiles(item.id);
     closeModal('complaintFormModal');
-    toast('Đã lưu phản ánh', 'success');
+    toast('ÄÃ£ lÆ°u pháº£n Ã¡nh', 'success');
     await load();
     run(refreshGisLayer);
   }
@@ -270,7 +270,7 @@
   async function openDetail(id) {
     const item = await request(`${API}/${id}`);
     state.current = item;
-    $('#complaintDetailTitle').textContent = item.title || 'Chi tiết phản ánh';
+    $('#complaintDetailTitle').textContent = item.title || 'Chi tiáº¿t pháº£n Ã¡nh';
     $('#complaintDetailSubtitle').textContent = item.complaint_code || '';
     $('#complaintDetailBody').innerHTML = detailHtml(item);
     $('#complaintDetailModal [data-platform-action="complaints.edit"]')?.setAttribute('data-id', item.id);
@@ -278,23 +278,23 @@
   }
 
   function detailHtml(item) {
-    const map = item.latitude && item.longitude ? `<iframe title="Vị trí phản ánh" src="https://www.openstreetmap.org/export/embed.html?bbox=${Number(item.longitude) - 0.002}%2C${Number(item.latitude) - 0.002}%2C${Number(item.longitude) + 0.002}%2C${Number(item.latitude) + 0.002}&marker=${item.latitude}%2C${item.longitude}" style="width:100%;height:240px;border:1px solid #d1d5db;border-radius:8px"></iframe>` : '<div class="text-muted border rounded p-4 text-center">Chưa có vị trí GIS</div>';
-    return `<div class="row g-3"><div class="col-lg-8"><h5>${safe(item.title)}</h5><p>${safe(item.detail)}</p><div class="row g-2">${field('Mã phản ánh', item.complaint_code)}${field('Người phản ánh', item.reporter_name)}${field('Điện thoại', item.reporter_phone)}${field('Hộ liên quan', item.household_code)}${field('Loại', item.category_name)}${field('Ưu tiên', item.priority_name)}${field('Trạng thái', item.status_name)}${field('Người phụ trách', item.assigned_name)}${field('Ngày tiếp nhận', dateTime(item.received_at))}${field('Hạn xử lý', dateTime(item.due_at))}</div></div><div class="col-lg-4">${statusBadge(item)} ${item.is_overdue ? '<span class="badge bg-danger">Quá hạn</span>' : ''}<div class="mt-3">${map}</div></div><div class="col-12">${relatedHtml(item)}</div><div class="col-12">${attachmentsHtml(item)}</div><div class="col-md-6">${historyHtml(item)}</div><div class="col-md-6">${assignmentsHtml(item)}</div>${item.result_rating ? `<div class="col-12"><strong>Đánh giá</strong><p>${safe(text(ratingLabel(item.result_rating)))} - ${safe(text(item.result_note, ''))}</p></div>` : ''}</div>`;
+    const map = item.latitude && item.longitude ? `<iframe title="Vá»‹ trÃ­ pháº£n Ã¡nh" src="https://www.openstreetmap.org/export/embed.html?bbox=${Number(item.longitude) - 0.002}%2C${Number(item.latitude) - 0.002}%2C${Number(item.longitude) + 0.002}%2C${Number(item.latitude) + 0.002}&marker=${item.latitude}%2C${item.longitude}" style="width:100%;height:240px;border:1px solid #d1d5db;border-radius:8px"></iframe>` : '<div class="text-muted border rounded p-4 text-center">ChÆ°a cÃ³ vá»‹ trÃ­ GIS</div>';
+    return `<div class="row g-3"><div class="col-lg-8"><h5>${safe(item.title)}</h5><p>${safe(item.detail)}</p><div class="row g-2">${field('MÃ£ pháº£n Ã¡nh', item.complaint_code)}${field('NgÆ°á»i pháº£n Ã¡nh', item.reporter_name)}${field('Äiá»‡n thoáº¡i', item.reporter_phone)}${field('Há»™ liÃªn quan', item.household_code)}${field('Loáº¡i', item.category_name)}${field('Æ¯u tiÃªn', item.priority_name)}${field('Tráº¡ng thÃ¡i', item.status_name)}${field('NgÆ°á»i phá»¥ trÃ¡ch', item.assigned_name)}${field('NgÃ y tiáº¿p nháº­n', dateTime(item.received_at))}${field('Háº¡n xá»­ lÃ½', dateTime(item.due_at))}</div></div><div class="col-lg-4">${statusBadge(item)} ${item.is_overdue ? '<span class="badge bg-danger">QuÃ¡ háº¡n</span>' : ''}<div class="mt-3">${map}</div></div><div class="col-12">${relatedHtml(item)}</div><div class="col-12">${attachmentsHtml(item)}</div><div class="col-md-6">${historyHtml(item)}</div><div class="col-md-6">${assignmentsHtml(item)}</div>${item.result_rating ? `<div class="col-12"><strong>ÄÃ¡nh giÃ¡</strong><p>${safe(text(ratingLabel(item.result_rating)))} - ${safe(text(item.result_note, ''))}</p></div>` : ''}</div>`;
   }
 
   function field(label, value) { return `<div class="col-md-6"><strong>${safe(label)}</strong><div>${safe(text(value))}</div></div>`; }
   function ratingLabel(value) { return (state.catalogs?.ratings || []).find(item => item.value === value)?.label || value; }
-  function relatedHtml(item) { const links = normalizeRelatedLinks(item.links || []); const rows = links.map(link => `<span class="complaint-related-chip"><span>${safe(link.type_label || link.target_type)} - ${safe(link.label)}</span></span>`).join(''); return `<h6>Đối tượng liên quan</h6><div class="complaint-related-chips">${rows || '<span class="text-muted">Chưa có đối tượng liên quan.</span>'}</div>`; }
-  function historyHtml(item) { const rows = (item.histories || []).map(row => `<li><strong>${dateTime(row.created_at)}</strong><br>${safe(row.content)}<br><small class="text-muted">${safe(text(row.actor_name, ''))} ${row.status_name ? '- ' + safe(row.status_name) : ''}</small></li>`).join(''); return `<h6>Nhật ký xử lý</h6><ul class="complaint-timeline">${rows || '<li>Chưa có nhật ký.</li>'}</ul>`; }
-  function assignmentsHtml(item) { const rows = (item.assignments || []).map(row => `<li><strong>${safe(row.assignee_name)}</strong><br><small>${dateTime(row.assigned_at)} - Hạn: ${dateTime(row.due_at)}</small><br>${safe(text(row.note, ''))}</li>`).join(''); return `<h6>Lịch sử giao việc</h6><ul class="complaint-timeline">${rows || '<li>Chưa giao việc.</li>'}</ul>`; }
-  function attachmentsHtml(item) { const rows = (item.attachments || []).map(file => `<a class="complaint-attachment" href="${safe(file.preview_url)}" target="_blank" rel="noopener"><i class="fa-solid ${fileIcon(file)}"></i><span>${safe(file.original_name)}</span></a>`).join(''); return `<h6>Đính kèm</h6><div class="complaint-attachments">${rows || '<span class="text-muted">Chưa có file đính kèm.</span>'}</div>`; }
+  function relatedHtml(item) { const links = normalizeRelatedLinks(item.links || []); const rows = links.map(link => `<span class="complaint-related-chip"><span>${safe(link.type_label || link.target_type)} - ${safe(link.label)}</span></span>`).join(''); return `<h6>Äá»‘i tÆ°á»£ng liÃªn quan</h6><div class="complaint-related-chips">${rows || '<span class="text-muted">ChÆ°a cÃ³ Ä‘á»‘i tÆ°á»£ng liÃªn quan.</span>'}</div>`; }
+  function historyHtml(item) { const rows = (item.histories || []).map(row => `<li><strong>${dateTime(row.created_at)}</strong><br>${safe(row.content)}<br><small class="text-muted">${safe(text(row.actor_name, ''))} ${row.status_name ? '- ' + safe(row.status_name) : ''}</small></li>`).join(''); return `<h6>Nháº­t kÃ½ xá»­ lÃ½</h6><ul class="complaint-timeline">${rows || '<li>ChÆ°a cÃ³ nháº­t kÃ½.</li>'}</ul>`; }
+  function assignmentsHtml(item) { const rows = (item.assignments || []).map(row => `<li><strong>${safe(row.assignee_name)}</strong><br><small>${dateTime(row.assigned_at)} - Háº¡n: ${dateTime(row.due_at)}</small><br>${safe(text(row.note, ''))}</li>`).join(''); return `<h6>Lá»‹ch sá»­ giao viá»‡c</h6><ul class="complaint-timeline">${rows || '<li>ChÆ°a giao viá»‡c.</li>'}</ul>`; }
+  function attachmentsHtml(item) { const rows = (item.attachments || []).map(file => `<a class="complaint-attachment" href="${safe(file.preview_url)}" target="_blank" rel="noopener"><i class="fa-solid ${fileIcon(file)}"></i><span>${safe(file.original_name)}</span></a>`).join(''); return `<h6>ÄÃ­nh kÃ¨m</h6><div class="complaint-attachments">${rows || '<span class="text-muted">ChÆ°a cÃ³ file Ä‘Ã­nh kÃ¨m.</span>'}</div>`; }
   function fileIcon(file) { return file.file_kind === 'IMAGE' ? 'fa-image' : (file.file_kind === 'VIDEO' ? 'fa-video' : (file.file_kind === 'PDF' ? 'fa-file-pdf' : 'fa-file')); }
 
   function renderWorkflow(item) {
-    $('#complaintWorkflowPanel').innerHTML = item?.id ? `<div class="row g-3"><div class="col-lg-4"><label class="form-label">Nội dung xử lý</label><textarea id="complaintHistoryContent" class="form-control" rows="4"></textarea><label class="form-label mt-2">Trạng thái sau cập nhật</label><select id="complaintHistoryStatusSelect" class="form-select"></select><button class="btn btn-outline-primary btn-sm mt-2" type="button" data-platform-action="complaints.history.add"><i class="fa-solid fa-clock-rotate-left"></i> Ghi nhật ký</button></div><div class="col-lg-4"><label class="form-label">Người xử lý</label><input id="complaintAssignName" class="form-control" value="${safe(item.assigned_name || '')}"><label class="form-label mt-2">Hạn hoàn thành</label><input id="complaintAssignDue" class="form-control" type="datetime-local"><label class="form-label mt-2">Ghi chú</label><textarea id="complaintAssignNote" class="form-control" rows="2"></textarea><button class="btn btn-outline-success btn-sm mt-2" type="button" data-platform-action="complaints.assign"><i class="fa-solid fa-user-check"></i> Giao việc</button></div><div class="col-lg-4"><label class="form-label">Đánh giá kết quả</label><select id="complaintRatingSelect" class="form-select"></select><label class="form-label mt-2">Ghi chú</label><textarea id="complaintResultNote" class="form-control" rows="3">${safe(item.result_note || '')}</textarea><button class="btn btn-outline-secondary btn-sm mt-2" type="button" data-platform-action="complaints.evaluate"><i class="fa-solid fa-star"></i> Lưu đánh giá</button></div><div class="col-md-6">${historyHtml(item)}</div><div class="col-md-6">${assignmentsHtml(item)}</div><div class="col-12">${attachmentsHtml(item)}</div></div>` : '<div class="alert alert-light border mb-0">Lưu phản ánh trước khi ghi nhật ký xử lý, giao việc, đánh giá hoặc quản lý file đính kèm.</div>';
+    $('#complaintWorkflowPanel').innerHTML = item?.id ? `<div class="row g-3"><div class="col-lg-4"><label class="form-label">Ná»™i dung xá»­ lÃ½</label><textarea id="complaintHistoryContent" class="form-control" rows="4"></textarea><label class="form-label mt-2">Tráº¡ng thÃ¡i sau cáº­p nháº­t</label><select id="complaintHistoryStatusSelect" class="form-select"></select><button class="btn btn-outline-primary btn-sm mt-2" type="button" data-platform-action="complaints.history.add"><i class="fa-solid fa-clock-rotate-left"></i> Ghi nháº­t kÃ½</button></div><div class="col-lg-4"><label class="form-label">NgÆ°á»i xá»­ lÃ½</label><input id="complaintAssignName" class="form-control" value="${safe(item.assigned_name || '')}"><label class="form-label mt-2">Háº¡n hoÃ n thÃ nh</label><input id="complaintAssignDue" class="form-control" type="datetime-local"><label class="form-label mt-2">Ghi chÃº</label><textarea id="complaintAssignNote" class="form-control" rows="2"></textarea><button class="btn btn-outline-success btn-sm mt-2" type="button" data-platform-action="complaints.assign"><i class="fa-solid fa-user-check"></i> Giao viá»‡c</button></div><div class="col-lg-4"><label class="form-label">ÄÃ¡nh giÃ¡ káº¿t quáº£</label><select id="complaintRatingSelect" class="form-select"></select><label class="form-label mt-2">Ghi chÃº</label><textarea id="complaintResultNote" class="form-control" rows="3">${safe(item.result_note || '')}</textarea><button class="btn btn-outline-secondary btn-sm mt-2" type="button" data-platform-action="complaints.evaluate"><i class="fa-solid fa-star"></i> LÆ°u Ä‘Ã¡nh giÃ¡</button></div><div class="col-md-6">${historyHtml(item)}</div><div class="col-md-6">${assignmentsHtml(item)}</div><div class="col-12">${attachmentsHtml(item)}</div></div>` : '<div class="alert alert-light border mb-0">LÆ°u pháº£n Ã¡nh trÆ°á»›c khi ghi nháº­t kÃ½ xá»­ lÃ½, giao viá»‡c, Ä‘Ã¡nh giÃ¡ hoáº·c quáº£n lÃ½ file Ä‘Ã­nh kÃ¨m.</div>';
     if (item?.id && state.catalogs) {
-      fill($('#complaintHistoryStatusSelect'), state.catalogs.statuses, 'Giữ nguyên');
-      fill($('#complaintRatingSelect'), state.catalogs.ratings, 'Chọn đánh giá');
+      fill($('#complaintHistoryStatusSelect'), state.catalogs.statuses, 'Giá»¯ nguyÃªn');
+      fill($('#complaintRatingSelect'), state.catalogs.ratings, 'Chá»n Ä‘Ã¡nh giÃ¡');
       if (item.result_rating) $('#complaintRatingSelect').value = item.result_rating;
     }
   }
@@ -302,7 +302,7 @@
   async function addHistory() {
     if (!state.current?.id) return;
     await request(`${API}/${state.current.id}/histories`, { method: 'POST', body: { content: $('#complaintHistoryContent').value, status_id: $('#complaintHistoryStatusSelect').value } });
-    toast('Đã ghi nhật ký xử lý', 'success');
+    toast('ÄÃ£ ghi nháº­t kÃ½ xá»­ lÃ½', 'success');
     state.current = await request(`${API}/${state.current.id}`);
     renderWorkflow(state.current);
     await load();
@@ -311,7 +311,7 @@
   async function assign() {
     if (!state.current?.id) return;
     await request(`${API}/${state.current.id}/assignments`, { method: 'POST', body: { assignee_name: $('#complaintAssignName').value, due_at: $('#complaintAssignDue').value, note: $('#complaintAssignNote').value } });
-    toast('Đã giao việc', 'success');
+    toast('ÄÃ£ giao viá»‡c', 'success');
     state.current = await request(`${API}/${state.current.id}`);
     renderWorkflow(state.current);
     await load();
@@ -320,23 +320,23 @@
   async function evaluate() {
     if (!state.current?.id) return;
     await request(`${API}/${state.current.id}/evaluation`, { method: 'POST', body: { result_rating: $('#complaintRatingSelect').value, result_note: $('#complaintResultNote').value } });
-    toast('Đã lưu đánh giá', 'success');
+    toast('ÄÃ£ lÆ°u Ä‘Ã¡nh giÃ¡', 'success');
     state.current = await request(`${API}/${state.current.id}`);
     renderWorkflow(state.current);
   }
 
   async function remove(id) {
-    if (!can('delete')) return toast('Không có quyền xóa', 'warning');
-    if (!await confirmAction({ title: 'Xác nhận xóa phản ánh', message: 'Xóa phản ánh này?', confirmLabel: 'Xóa', tone: 'danger' })) return;
+    if (!can('delete')) return toast('KhÃ´ng cÃ³ quyá»n xÃ³a', 'warning');
+    if (!await confirmAction({ title: 'XÃ¡c nháº­n xÃ³a pháº£n Ã¡nh', message: 'XÃ³a pháº£n Ã¡nh nÃ y?', confirmLabel: 'XÃ³a', tone: 'danger' })) return;
     await request(`${API}/${id}`, { method: 'DELETE' });
-    toast('Đã xóa phản ánh', 'success');
+    toast('ÄÃ£ xÃ³a pháº£n Ã¡nh', 'success');
     await load();
     run(refreshGisLayer);
   }
 
   function renderPendingFiles() {
     const files = Array.from($('#complaintAttachmentFiles')?.files || []);
-    $('#complaintAttachmentPreview').innerHTML = files.length ? files.map(file => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(file.name)}</span>`).join('') : '<span class="text-muted small">Chưa chọn file.</span>';
+    $('#complaintAttachmentPreview').innerHTML = files.length ? files.map(file => `<span class="badge bg-light text-dark border me-1 mb-1">${safe(file.name)}</span>`).join('') : '<span class="text-muted small">ChÆ°a chá»n file.</span>';
   }
 
   async function uploadPendingFiles(id) {
@@ -347,14 +347,14 @@
       body.append('file', file);
       const response = await fetch(`${API}/${id}/attachments`, { method: 'POST', headers: authHeaders(), body, cache: 'no-store' });
       const payload = await response.json().catch(() => null);
-      if (!response.ok || payload?.ok === false || payload?.success === false) throw new Error(payload?.error?.message || payload?.message || 'Không upload được file');
+      if (!response.ok || payload?.ok === false || payload?.success === false) throw new Error(payload?.error?.message || payload?.message || 'KhÃ´ng upload Ä‘Æ°á»£c file');
     }
     if (input) input.value = '';
   }
 
   async function deleteAttachment(id) {
     if (!state.current?.id || !id) return;
-    if (!await confirmAction({ title: 'Xóa file đính kèm', message: 'Xóa file này?', confirmLabel: 'Xóa', tone: 'danger' })) return;
+    if (!await confirmAction({ title: 'XÃ³a file Ä‘Ã­nh kÃ¨m', message: 'XÃ³a file nÃ y?', confirmLabel: 'XÃ³a', tone: 'danger' })) return;
     await request(`${API}/${state.current.id}/attachments/${id}`, { method: 'DELETE' });
     state.current = await request(`${API}/${state.current.id}`);
     renderWorkflow(state.current);
@@ -446,7 +446,7 @@
   function renderRelatedChips() {
     const host = $('#complaintRelatedChips');
     if (!host) return;
-    host.innerHTML = state.relatedLinks.length ? state.relatedLinks.map((link, index) => `<span class="complaint-related-chip"><span>${safe(link.type_label || typeLabel(link.target_type))} - ${safe(link.label)}</span><button type="button" class="btn-close" aria-label="Xóa đối tượng liên quan" data-platform-action="complaints.related.remove" data-index="${index}"></button></span>`).join('') : '<span class="text-muted small">Chưa có đối tượng liên quan.</span>';
+    host.innerHTML = state.relatedLinks.length ? state.relatedLinks.map((link, index) => `<span class="complaint-related-chip"><span>${safe(link.type_label || typeLabel(link.target_type))} - ${safe(link.label)}</span><button type="button" class="btn-close" aria-label="XÃ³a Ä‘á»‘i tÆ°á»£ng liÃªn quan" data-platform-action="complaints.related.remove" data-index="${index}"></button></span>`).join('') : '<span class="text-muted small">ChÆ°a cÃ³ Ä‘á»‘i tÆ°á»£ng liÃªn quan.</span>';
   }
 
   function normalizeRelatedLinks(links) {
@@ -458,26 +458,26 @@
   }
 
   function useGps() {
-    if (!navigator.geolocation) return toast('Thiết bị không hỗ trợ GPS', 'warning');
+    if (!navigator.geolocation) return toast('Thiáº¿t bá»‹ khÃ´ng há»— trá»£ GPS', 'warning');
     navigator.geolocation.getCurrentPosition(position => {
       const form = $('#complaintForm');
       form.elements.latitude.value = position.coords.latitude.toFixed(8);
       form.elements.longitude.value = position.coords.longitude.toFixed(8);
       form.elements.gps_accuracy.value = position.coords.accuracy ? position.coords.accuracy.toFixed(2) : '';
-      $('#complaintGpsMeta').textContent = `Vị trí: ${form.elements.latitude.value}, ${form.elements.longitude.value}`;
-    }, error => toast(error.message || 'Không lấy được GPS', 'danger'), { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+      $('#complaintGpsMeta').textContent = `Vá»‹ trÃ­: ${form.elements.latitude.value}, ${form.elements.longitude.value}`;
+    }, error => toast(error.message || 'KhÃ´ng láº¥y Ä‘Æ°á»£c GPS', 'danger'), { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
   }
 
   function pickMap() {
     const activate = () => {
       const map = window.App?.gis?.map;
-      if (!map) return toast('Bản đồ GIS chưa sẵn sàng', 'warning');
-      toast('Click một điểm trên bản đồ để chọn vị trí', 'info');
+      if (!map) return toast('Báº£n Ä‘á»“ GIS chÆ°a sáºµn sÃ ng', 'warning');
+      toast('Click má»™t Ä‘iá»ƒm trÃªn báº£n Ä‘á»“ Ä‘á»ƒ chá»n vá»‹ trÃ­', 'info');
       map.once('click', event => {
         const form = $('#complaintForm');
         form.elements.latitude.value = event.latlng.lat.toFixed(8);
         form.elements.longitude.value = event.latlng.lng.toFixed(8);
-        $('#complaintGpsMeta').textContent = `Vị trí: ${form.elements.latitude.value}, ${form.elements.longitude.value}`;
+        $('#complaintGpsMeta').textContent = `Vá»‹ trÃ­: ${form.elements.latitude.value}, ${form.elements.longitude.value}`;
         window.TenantAppNavigationController?.navigate('complaints');
         openModal('complaintFormModal');
       });
@@ -509,7 +509,7 @@
     const color = item.marker_color === 'green' ? '#16a34a' : (item.marker_color === 'yellow' ? '#f59e0b' : '#dc2626');
     return L.divIcon({ className: 'complaint-gis-icon', html: `<span style="width:32px;height:32px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.25);border:2px solid #fff"><i class="fa-solid fa-comment-dots"></i></span>`, iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18] });
   }
-  function gisPopup(item) { return `<div style="min-width:240px"><strong>${safe(item.title)}</strong><div style="font-size:12px;color:#64748b;margin:4px 0">${safe(item.complaint_code)} · ${safe(item.status_name)}</div><div>${safe(text(item.category_name))}</div><div class="mt-2"><button type="button" class="btn btn-sm btn-primary" data-platform-action="complaints.detail" data-id="${safe(item.id)}">Chi tiết</button></div></div>`; }
+  function gisPopup(item) { return `<div style="min-width:240px"><strong>${safe(item.title)}</strong><div style="font-size:12px;color:#64748b;margin:4px 0">${safe(item.complaint_code)} Â· ${safe(item.status_name)}</div><div>${safe(text(item.category_name))}</div><div class="mt-2"><button type="button" class="btn btn-sm btn-primary" data-platform-action="complaints.detail" data-id="${safe(item.id)}">Chi tiáº¿t</button></div></div>`; }
 
   function exportReport(format) {
     const url = `${API}/${format === 'pdf' ? 'export-pdf' : 'export-excel'}?${params()}`;

@@ -2,27 +2,27 @@
   'use strict';
 
   const layerDefinitions = [
-    { key: 'households', label: 'Hộ gia đình', icon: 'house-chimney', color: '#2563eb', existing: 'markerGroup', defaultOn: true },
-    { key: 'citizens', label: 'Nhân khẩu', icon: 'users', color: '#0f766e', parentLayer: 'households' },
-    { key: 'publicAssets', label: 'Công trình công cộng', icon: 'building-columns', color: '#7c3aed', endpoint: '/api/public-assets/gis', title: row => row.asset_name || row.name || row.asset_code, meta: row => [row.asset_code, row.type_name || row.category, row.area_code].filter(Boolean).join(' - ') },
-    { key: 'religiousAssets', label: 'Cơ sở tín ngưỡng, tôn giáo', icon: 'place-of-worship', color: '#9333ea', endpoint: '/api/public-assets/gis', filter: isReligiousAsset, title: row => row.asset_name || row.name || row.asset_code, meta: row => [row.asset_code, row.type_name || row.category, row.area_code].filter(Boolean).join(' - ') },
-    { key: 'businessHouseholds', label: 'Hộ sản xuất, kinh doanh', icon: 'store', color: '#ea580c', endpoint: '/api/household-business?page=1&pageSize=1000&located=1', title: row => row.business_name || row.household_code, meta: row => [row.business_type_label, row.sector_label || row.economic_type, row.head_citizen_name].filter(Boolean).join(' - ') },
-    { key: 'houses', label: 'Nhà ở & Công trình', icon: 'house-user', color: '#0891b2', endpoint: '/api/houses/gis', title: row => row.house_code || row.house_name || row.household_code, meta: row => [row.house_type, row.condition, row.head_citizen_name].filter(Boolean).join(' - ') },
-    { key: 'livestock', label: 'Vật nuôi', icon: 'paw', color: '#16a34a', endpoint: '/api/livestock?page=1&pageSize=1000&located=1', title: row => row.animal_type || row.household_code, meta: row => [row.breed, row.quantity ? String(row.quantity) + ' con' : '', row.household_code].filter(Boolean).join(' - ') },
-    { key: 'vehicles', label: 'Xe cộ', icon: 'car-side', color: '#475569', empty: 'Chưa có lớp dữ liệu định vị xe cộ.' },
-    { key: 'agriculture', label: 'Sản xuất nông nghiệp', icon: 'seedling', color: '#65a30d', endpoint: '/api/agriculture/gis', title: row => row.parcel_code || row.field_area, meta: row => [row.field_area, row.owner_name, row.current_crop].filter(Boolean).join(' - '), polygon: true },
-    { key: 'managementAreas', label: 'Khu vực quản lý', icon: 'draw-polygon', color: '#2e7d32', existing: 'layerGroup', defaultOn: true },
-    { key: 'roads', label: 'Đường giao thông', icon: 'road', color: '#64748b', empty: 'Chưa có lớp dữ liệu đường giao thông.' },
-    { key: 'adminBoundaries', label: 'Ranh giới hành chính', icon: 'border-all', color: '#0f172a', empty: 'Chưa có lớp dữ liệu ranh giới hành chính.' }
+    { key: 'households', label: 'Há»™ gia Ä‘Ã¬nh', icon: 'house-chimney', color: '#2563eb', existing: 'markerGroup', defaultOn: true },
+    { key: 'citizens', label: 'NhÃ¢n kháº©u', icon: 'users', color: '#0f766e', parentLayer: 'households' },
+    { key: 'publicAssets', label: 'CÃ´ng trÃ¬nh cÃ´ng cá»™ng', icon: 'building-columns', color: '#7c3aed', endpoint: '/api/public-assets/gis', title: row => row.asset_name || row.name || row.asset_code, meta: row => [row.asset_code, row.type_name || row.category, row.area_code].filter(Boolean).join(' - ') },
+    { key: 'religiousAssets', label: 'CÆ¡ sá»Ÿ tÃ­n ngÆ°á»¡ng, tÃ´n giÃ¡o', icon: 'place-of-worship', color: '#9333ea', endpoint: '/api/public-assets/gis', filter: isReligiousAsset, title: row => row.asset_name || row.name || row.asset_code, meta: row => [row.asset_code, row.type_name || row.category, row.area_code].filter(Boolean).join(' - ') },
+    { key: 'businessHouseholds', label: 'Há»™ sáº£n xuáº¥t, kinh doanh', icon: 'store', color: '#ea580c', endpoint: '/api/household-business?page=1&pageSize=1000&located=1', title: row => row.business_name || row.household_code, meta: row => [row.business_type_label, row.sector_label || row.economic_type, row.head_citizen_name].filter(Boolean).join(' - ') },
+    { key: 'houses', label: 'NhÃ  á»Ÿ & CÃ´ng trÃ¬nh', icon: 'house-user', color: '#0891b2', endpoint: '/api/houses/gis', title: row => row.house_code || row.house_name || row.household_code, meta: row => [row.house_type, row.condition, row.head_citizen_name].filter(Boolean).join(' - ') },
+    { key: 'livestock', label: 'Váº­t nuÃ´i', icon: 'paw', color: '#16a34a', endpoint: '/api/livestock?page=1&pageSize=1000&located=1', title: row => row.animal_type || row.household_code, meta: row => [row.breed, row.quantity ? String(row.quantity) + ' con' : '', row.household_code].filter(Boolean).join(' - ') },
+    { key: 'vehicles', label: 'Xe cá»™', icon: 'car-side', color: '#475569', empty: 'ChÆ°a cÃ³ lá»›p dá»¯ liá»‡u Ä‘á»‹nh vá»‹ xe cá»™.' },
+    { key: 'agriculture', label: 'Sáº£n xuáº¥t nÃ´ng nghiá»‡p', icon: 'seedling', color: '#65a30d', endpoint: '/api/agriculture/gis', title: row => row.parcel_code || row.field_area, meta: row => [row.field_area, row.owner_name, row.current_crop].filter(Boolean).join(' - '), polygon: true },
+    { key: 'managementAreas', label: 'Khu vá»±c quáº£n lÃ½', icon: 'draw-polygon', color: '#2e7d32', existing: 'layerGroup', defaultOn: true },
+    { key: 'roads', label: 'ÄÆ°á»ng giao thÃ´ng', icon: 'road', color: '#64748b', empty: 'ChÆ°a cÃ³ lá»›p dá»¯ liá»‡u Ä‘Æ°á»ng giao thÃ´ng.' },
+    { key: 'adminBoundaries', label: 'Ranh giá»›i hÃ nh chÃ­nh', icon: 'border-all', color: '#0f172a', empty: 'ChÆ°a cÃ³ lá»›p dá»¯ liá»‡u ranh giá»›i hÃ nh chÃ­nh.' }
   ];
 
   const heatmapDefinitions = [
-    { key: 'population', label: 'Mật độ dân cư', color: '#dc2626' },
-    { key: 'children', label: 'Trẻ em', color: '#f59e0b' },
-    { key: 'elderly', label: 'Người cao tuổi', color: '#8b5cf6' },
-    { key: 'business', label: 'Hộ kinh doanh', color: '#ea580c' },
-    { key: 'livestock', label: 'Vật nuôi', color: '#16a34a' },
-    { key: 'vehicles', label: 'Xe cộ', color: '#475569' }
+    { key: 'population', label: 'Máº­t Ä‘á»™ dÃ¢n cÆ°', color: '#dc2626' },
+    { key: 'children', label: 'Tráº» em', color: '#f59e0b' },
+    { key: 'elderly', label: 'NgÆ°á»i cao tuá»•i', color: '#8b5cf6' },
+    { key: 'business', label: 'Há»™ kinh doanh', color: '#ea580c' },
+    { key: 'livestock', label: 'Váº­t nuÃ´i', color: '#16a34a' },
+    { key: 'vehicles', label: 'Xe cá»™', color: '#475569' }
   ];
 
   const state = {
@@ -74,7 +74,7 @@
     }
     const response = await fetch(path, fetchOptions);
     const json = await response.json().catch(() => null);
-    if (!response.ok || !json || json.ok === false) throw new Error(json?.error?.message || 'Không tải được dữ liệu GIS.');
+    if (!response.ok || !json || json.ok === false) throw new Error(json?.error?.message || 'KhÃ´ng táº£i Ä‘Æ°á»£c dá»¯ liá»‡u GIS.');
     return json.data || json;
   }
   function normalizeText(value) {
@@ -112,7 +112,7 @@
     return '<div class="gis-v2-popup">' +
       '<div class="gis-v2-popup-head"><span style="--gis-layer-color:' + escapeHtml(def.color) + '"><i class="fa-solid fa-' + escapeHtml(def.icon) + '"></i></span><div><h4>' + escapeHtml(title || def.label) + '</h4><p>' + escapeHtml(def.label) + '</p></div></div>' +
       (meta ? '<div class="gis-v2-popup-meta">' + escapeHtml(meta) + '</div>' : '') +
-      (gps ? '<a class="btn btn-sm btn-success" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(gps[0] + ',' + gps[1]) + '"><i class="fa-brands fa-google"></i> Chỉ đường</a>' : '') +
+      (gps ? '<a class="btn btn-sm btn-success" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(gps[0] + ',' + gps[1]) + '"><i class="fa-brands fa-google"></i> Chá»‰ Ä‘Æ°á»ng</a>' : '') +
     '</div>';
   }
   function formatNumber(value) {
@@ -186,7 +186,7 @@
     if (!def.endpoint || state.layerData.has(def.key) || state.loading.has(def.key)) return;
     if (!canReadGis()) return;
     state.loading.add(def.key);
-    updateLayerStatus(def.key, 'Đang tải...');
+    updateLayerStatus(def.key, 'Äang táº£i...');
     try {
       const data = await request(def.endpoint);
       const items = collection(data).filter(row => !def.filter || def.filter(row));
@@ -200,10 +200,10 @@
         count++;
       });
       state.layerData.set(def.key, { items, count });
-      updateLayerStatus(def.key, count ? count.toLocaleString('vi-VN') + ' đối tượng' : 'Không có dữ liệu định vị');
+      updateLayerStatus(def.key, count ? count.toLocaleString('vi-VN') + ' Ä‘á»‘i tÆ°á»£ng' : 'KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»‹nh vá»‹');
       if (state.active.has(def.key)) setMapLayerVisible(group, true);
     } catch (error) {
-      updateLayerStatus(def.key, 'Lỗi tải dữ liệu');
+      updateLayerStatus(def.key, 'Lá»—i táº£i dá»¯ liá»‡u');
       console.warn('GIS layer failed', def.key, error);
     } finally {
       state.loading.delete(def.key);
@@ -213,7 +213,7 @@
     if (def.parentLayer) {
       const parent = layerDefinitions.find(item => item.key === def.parentLayer);
       if (checked && parent) toggleCheckbox(parent.key, true);
-      updateLayerStatus(def.key, 'Hiển thị theo lớp ' + (parent?.label || 'liên kết'));
+      updateLayerStatus(def.key, 'Hiá»ƒn thá»‹ theo lá»›p ' + (parent?.label || 'liÃªn káº¿t'));
       return;
     }
     const group = groupFor(def);
@@ -240,13 +240,13 @@
     const host = document.createElement('section');
     host.id = 'gisV2LayerPanel';
     host.className = 'gis-v2-layer-panel';
-    host.innerHTML = '<div class="gis-v2-panel-title"><h4>Lớp dữ liệu GIS</h4><button id="gisV2RefreshLayers" class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="gisPlatform.refreshLayers"><i class="fa-solid fa-rotate"></i></button></div>' +
+    host.innerHTML = '<div class="gis-v2-panel-title"><h4>Lá»›p dá»¯ liá»‡u GIS</h4><button id="gisV2RefreshLayers" class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="gisPlatform.refreshLayers"><i class="fa-solid fa-rotate"></i></button></div>' +
       '<div class="gis-v2-layer-list">' + layerDefinitions.map(def => layerToggleHtml(def)).join('') + '</div>' +
       '<div class="gis-v2-panel-title gis-v2-heatmap-title"><h4>Heatmap</h4></div>' +
       '<div class="gis-v2-heatmap-list">' + heatmapDefinitions.map(item => heatToggleHtml(item)).join('') + '</div>' +
-      '<div class="gis-v2-panel-title gis-v2-tools-title"><h4>Công cụ GIS</h4></div>' +
-      '<div class="gis-v2-tools"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="gisPlatform.measureDistance"><i class="fa-solid fa-ruler"></i> Đo khoảng cách</button><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="gisPlatform.measureArea"><i class="fa-solid fa-vector-square"></i> Đo diện tích</button><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="gisPlatform.clearMeasure"><i class="fa-solid fa-eraser"></i> Xóa đo</button></div>' +
-      '<section class="gis-v2-area-dashboard" id="gisV2AreaDashboard"><h4>Thống kê vùng chọn</h4><div class="text-muted small">Chọn một khu vực trên bản đồ để xem thống kê.</div></section>';
+      '<div class="gis-v2-panel-title gis-v2-tools-title"><h4>CÃ´ng cá»¥ GIS</h4></div>' +
+      '<div class="gis-v2-tools"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="gisPlatform.measureDistance"><i class="fa-solid fa-ruler"></i> Äo khoáº£ng cÃ¡ch</button><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="gisPlatform.measureArea"><i class="fa-solid fa-vector-square"></i> Äo diá»‡n tÃ­ch</button><button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="gisPlatform.clearMeasure"><i class="fa-solid fa-eraser"></i> XÃ³a Ä‘o</button></div>' +
+      '<section class="gis-v2-area-dashboard" id="gisV2AreaDashboard"><h4>Thá»‘ng kÃª vÃ¹ng chá»n</h4><div class="text-muted small">Chá»n má»™t khu vá»±c trÃªn báº£n Ä‘á»“ Ä‘á»ƒ xem thá»‘ng kÃª.</div></section>';
     const form = $('#gisAreaForm');
     panel.insertBefore(host, form || panel.children[1] || null);
     host.querySelectorAll('[data-gis-v2-layer]').forEach(input => {
@@ -259,14 +259,14 @@
         if (input.checked) state.heatmap.add(input.dataset.gisV2Heat);
         else state.heatmap.delete(input.dataset.gisV2Heat);
         renderHeatmaps();
-        toast(input.checked ? 'Đã bật ' + input.dataset.gisV2HeatLabel : 'Đã tắt ' + input.dataset.gisV2HeatLabel);
+        toast(input.checked ? 'ÄÃ£ báº­t ' + input.dataset.gisV2HeatLabel : 'ÄÃ£ táº¯t ' + input.dataset.gisV2HeatLabel);
       });
     });
   }
   function refreshActiveLayers() {
     state.layerData.clear();
     layerDefinitions.filter(def => state.active.has(def.key) && def.endpoint).forEach(loadLayer);
-    toast('Đã làm mới các lớp GIS.');
+    toast('ÄÃ£ lÃ m má»›i cÃ¡c lá»›p GIS.');
   }
   function registerPlatformActions() {
     const actions = window.TenantAppPlatform && window.TenantAppPlatform.actions;
@@ -281,7 +281,7 @@
     return '<label class="gis-v2-layer-row">' +
       '<input type="checkbox" data-gis-v2-layer="' + escapeHtml(def.key) + '"' + (def.defaultOn ? ' checked' : '') + '>' +
       '<span class="gis-v2-layer-icon" style="--gis-layer-color:' + escapeHtml(def.color) + '"><i class="fa-solid fa-' + escapeHtml(def.icon) + '"></i></span>' +
-      '<span class="gis-v2-layer-copy"><b>' + escapeHtml(def.label) + '</b><small data-gis-v2-layer-status="' + escapeHtml(def.key) + '">' + (def.defaultOn ? 'Đang bật' : 'Tắt') + '</small></span>' +
+      '<span class="gis-v2-layer-copy"><b>' + escapeHtml(def.label) + '</b><small data-gis-v2-layer-status="' + escapeHtml(def.key) + '">' + (def.defaultOn ? 'Äang báº­t' : 'Táº¯t') + '</small></span>' +
     '</label>';
   }
   function heatToggleHtml(item) {
@@ -298,25 +298,25 @@
     const areaId = String(gis.selectedAreaId || '');
     if (!areaId) {
       state.selectedAreaId = '';
-      host.innerHTML = '<h4>Thống kê vùng chọn</h4><div class="text-muted small">Chọn một khu vực trên bản đồ để xem thống kê.</div>';
+      host.innerHTML = '<h4>Thá»‘ng kÃª vÃ¹ng chá»n</h4><div class="text-muted small">Chá»n má»™t khu vá»±c trÃªn báº£n Ä‘á»“ Ä‘á»ƒ xem thá»‘ng kÃª.</div>';
       return;
     }
     if (state.selectedAreaId === areaId && host.querySelector('.gis-v2-dashboard-grid')) return;
     state.selectedAreaId = areaId;
     const area = (gis.areas || []).find(item => String(item.id ?? item.area_id ?? item.area_code) === areaId || String(item.area_code) === areaId);
     const stats = area?.stats || {};
-    host.innerHTML = '<h4>' + escapeHtml(area?.name || 'Vùng đã chọn') + '</h4>' +
+    host.innerHTML = '<h4>' + escapeHtml(area?.name || 'VÃ¹ng Ä‘Ã£ chá»n') + '</h4>' +
       '<div class="gis-v2-dashboard-grid">' +
-      dashboardCard('Tổng hộ', stats.households) +
-      dashboardCard('Nhân khẩu', stats.citizens) +
-      dashboardCard('Tạm trú', stats.temporary) +
-      dashboardCard('Tạm vắng', stats.away) +
-      dashboardCard('Đảng viên', stats.party_members) +
-      dashboardCard('Hộ nghèo', stats.poor_households) +
-      dashboardCard('Cận nghèo', stats.near_poor_households) +
-      dashboardCard('Đã định vị', stats.located) +
-      dashboardCard('Diện tích', stats.area_ha ? formatNumber(stats.area_ha) + ' ha' : '') +
-      dashboardCard('Mật độ', stats.density ? formatNumber(stats.density) + ' người/km²' : '') +
+      dashboardCard('Tá»•ng há»™', stats.households) +
+      dashboardCard('NhÃ¢n kháº©u', stats.citizens) +
+      dashboardCard('Táº¡m trÃº', stats.temporary) +
+      dashboardCard('Táº¡m váº¯ng', stats.away) +
+      dashboardCard('Äáº£ng viÃªn', stats.party_members) +
+      dashboardCard('Há»™ nghÃ¨o', stats.poor_households) +
+      dashboardCard('Cáº­n nghÃ¨o', stats.near_poor_households) +
+      dashboardCard('ÄÃ£ Ä‘á»‹nh vá»‹', stats.located) +
+      dashboardCard('Diá»‡n tÃ­ch', stats.area_ha ? formatNumber(stats.area_ha) + ' ha' : '') +
+      dashboardCard('Máº­t Ä‘á»™', stats.density ? formatNumber(stats.density) + ' ngÆ°á»i/kmÂ²' : '') +
       '</div>';
   }
   function dashboardCard(label, value) {
@@ -379,9 +379,9 @@
           await request('/api/gis/households/' + encodeURIComponent(id) + '/location', { method: 'PUT', body: { latitude: lat, longitude: lng, source: 'MANUAL', accuracy: null } });
           row.latitude = lat;
           row.longitude = lng;
-          toast('Đã cập nhật tọa độ hộ trên bản đồ.', 'success');
+          toast('ÄÃ£ cáº­p nháº­t tá»a Ä‘á»™ há»™ trÃªn báº£n Ä‘á»“.', 'success');
         } catch (error) {
-          toast(error.message || 'Không lưu được tọa độ mới.', 'danger');
+          toast(error.message || 'KhÃ´ng lÆ°u Ä‘Æ°á»£c tá»a Ä‘á»™ má»›i.', 'danger');
         }
       });
       marker.__gisDragEnabled = true;
@@ -393,7 +393,7 @@
     clearMeasure();
     state.measureMode = mode;
     m.getContainer?.().classList.add('gis-v2-measuring');
-    toast(mode === 'area' ? 'Bấm các điểm trên bản đồ để đo diện tích.' : 'Bấm các điểm trên bản đồ để đo khoảng cách.');
+    toast(mode === 'area' ? 'Báº¥m cÃ¡c Ä‘iá»ƒm trÃªn báº£n Ä‘á»“ Ä‘á»ƒ Ä‘o diá»‡n tÃ­ch.' : 'Báº¥m cÃ¡c Ä‘iá»ƒm trÃªn báº£n Ä‘á»“ Ä‘á»ƒ Ä‘o khoáº£ng cÃ¡ch.');
   }
   function clearMeasure() {
     const m = map();
@@ -450,7 +450,7 @@
     }
     const distance = measureDistance(state.measurePoints);
     const area = state.measureMode === 'area' && state.measurePoints.length >= 3 ? polygonArea(state.measurePoints) : 0;
-    el.innerHTML = '<strong>' + (state.measureMode === 'area' ? 'Đo diện tích' : 'Đo khoảng cách') + '</strong><span>' + formatDistance(distance) + (area ? ' - ' + formatArea(area) : '') + '</span>';
+    el.innerHTML = '<strong>' + (state.measureMode === 'area' ? 'Äo diá»‡n tÃ­ch' : 'Äo khoáº£ng cÃ¡ch') + '</strong><span>' + formatDistance(distance) + (area ? ' - ' + formatArea(area) : '') + '</span>';
   }
   function measureDistance(points) {
     let total = 0;
@@ -480,15 +480,15 @@
     return value >= 1000 ? (value / 1000).toFixed(2) + ' km' : Math.round(value) + ' m';
   }
   function formatArea(value) {
-    return value >= 10000 ? (value / 10000).toFixed(2) + ' ha' : Math.round(value).toLocaleString('vi-VN') + ' m²';
+    return value >= 10000 ? (value / 10000).toFixed(2) + ' ha' : Math.round(value).toLocaleString('vi-VN') + ' mÂ²';
   }
   async function unifiedSearch(query) {
     const q = String(query || '').trim();
     if (q.length < 2) return [];
     const tasks = [
-      request('/api/gis/households?light=1&q=' + encodeURIComponent(q)).then(data => collection(data).map(row => ({ type: 'household', label: row.household_code || row.head_citizen_name, sub: row.head_citizen_name || 'Hộ/Nhân khẩu', row }))).catch(() => []),
-      request('/api/public-assets/gis?q=' + encodeURIComponent(q)).then(data => collection(data).map(row => ({ type: 'publicAsset', label: row.asset_name || row.asset_code, sub: 'Công trình công cộng', row }))).catch(() => []),
-      request('/api/agriculture/gis?q=' + encodeURIComponent(q)).then(data => collection(data).map(row => ({ type: 'agriculture', label: row.parcel_code || row.field_area, sub: 'Sản xuất nông nghiệp', row }))).catch(() => [])
+      request('/api/gis/households?light=1&q=' + encodeURIComponent(q)).then(data => collection(data).map(row => ({ type: 'household', label: row.household_code || row.head_citizen_name, sub: row.head_citizen_name || 'Há»™/NhÃ¢n kháº©u', row }))).catch(() => []),
+      request('/api/public-assets/gis?q=' + encodeURIComponent(q)).then(data => collection(data).map(row => ({ type: 'publicAsset', label: row.asset_name || row.asset_code, sub: 'CÃ´ng trÃ¬nh cÃ´ng cá»™ng', row }))).catch(() => []),
+      request('/api/agriculture/gis?q=' + encodeURIComponent(q)).then(data => collection(data).map(row => ({ type: 'agriculture', label: row.parcel_code || row.field_area, sub: 'Sáº£n xuáº¥t nÃ´ng nghiá»‡p', row }))).catch(() => [])
     ];
     return (await Promise.all(tasks)).flat()
       .filter(item => coordinates(item.row) || geoJsonPolygon(item.row))

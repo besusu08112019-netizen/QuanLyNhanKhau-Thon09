@@ -87,12 +87,12 @@
 
   async function downloadFile(url, options = {}) {
     const token = authToken();
-    if (!token) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    if (!token) throw new Error('PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.');
     const response = await fetch(url, { headers: { Accept: '*/*', Authorization: 'Bearer ' + token }, cache: 'no-store' });
     const contentType = response.headers.get('Content-Type') || '';
     if (!response.ok || contentType.includes('application/json')) {
       const json = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
-      throw new Error(json?.error?.message || json?.message || 'Không xuất được file báo cáo.');
+      throw new Error(json?.error?.message || json?.message || 'KhÃ´ng xuáº¥t Ä‘Æ°á»£c file bÃ¡o cÃ¡o.');
     }
     const blob = await response.blob();
     const link = document.createElement('a');
@@ -115,7 +115,7 @@
   }
 
   function signatureTitle(value, fallback) {
-    const text = String(value || fallback || '').replace(/[:：].*$/u, '').replace(/\.{2,}.*/u, '').trim();
+    const text = String(value || fallback || '').replace(/[:ï¼š].*$/u, '').replace(/\.{2,}.*/u, '').trim();
     return text || fallback || '';
   }
 
@@ -162,7 +162,7 @@
       ['Ng\u01b0\u1eddi l\u1eadp', config.preparedBy || config.meta?.prepared_by || window.App?.user?.displayName || window.App?.user?.email || 'Ng\u01b0\u1eddi l\u1eadp']
     ];
     if (config.meta?.period_label) metaRows.unshift(['K\u1ef3 b\u00e1o c\u00e1o', config.meta.period_label]);
-    return '<header class="print-header print-avoid-break">'
+    return '<header class="print-header print-avoid-break"><meta charset="utf-8">'
       + '<div class="print-masthead">'
       + '<div class="print-agency"><div class="print-agency-primary">' + AGENCY_PRIMARY + '</div><div class="print-agency-secondary">' + AGENCY_SECONDARY + '</div></div>'
       + (config.showNationalHeader === false ? '<div></div>' : '<div class="print-national"><p class="print-national-title">' + NATIONAL_TITLE + '</p><p class="print-national-subtitle">' + NATIONAL_SUBTITLE + '</p></div>')
@@ -222,7 +222,7 @@
   function renderHtml(config) {
     const orient = orientation(config);
     const printedAt = nowText();
-    return '<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>' + esc(config.title || 'B\u00e1o c\u00e1o') + '</title><link rel="stylesheet" href="/assets/css/print.css">' + inlineStyle(config, orient) + '</head><body class="print-' + orient + '"><main class="print-document' + densityClass(config) + '">' + reportHeader(config) + reportTable(config) + summaryHtml(config) + signatures(config) + footer(printedAt, config) + '</main><script>window.onload=function(){setTimeout(function(){window.print();},60);};<\/script></body></html>';
+    return '<!doctype html><html lang="vi"><head><title>' + esc(config.title || 'B\u00e1o c\u00e1o') + '</title><link rel="stylesheet" href="/assets/css/print.css">' + inlineStyle(config, orient) + '</head><body class="print-' + orient + '"><main class="print-document' + densityClass(config) + '">' + reportHeader(config) + reportTable(config) + summaryHtml(config) + signatures(config) + footer(printedAt, config) + '</main><script>window.onload=function(){setTimeout(function(){window.print();},60);};<\/script></body></html>';
   }
 
   function print(config = {}) {

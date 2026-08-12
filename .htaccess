@@ -1,5 +1,7 @@
 Options -Indexes
 RewriteEngine On
+RedirectMatch 302 ^/favicon\.ico$ /pwa-icon-192.png
+RewriteRule ^favicon\.ico$ index.php [QSA,L]
 
   RewriteRule ^(app|config|database|docs|storage|backups|tests|tools|sample-data|vendor|node_modules|controllers|models)(/|$) - [F,L]
 RewriteRule ^(README|composer|package|appsscript|\.clasp|\.gitignore) - [F,L]
@@ -11,6 +13,8 @@ AddType application/manifest+json .json
 AddType application/javascript .js
 AddType application/xml .xml
 AddType image/png .png
+
+RewriteRule ^(manifest\.json|manifest\.webmanifest|favicon\.ico|pwa-icon-(192|512)\.png|pwa-maskable-(192|512)\.png|apple-touch-icon\.png)$ index.php [QSA,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -49,12 +53,12 @@ RewriteRule ^ index.php [QSA,L]
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
-  <FilesMatch "^(favicon\.ico|(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512)\.png)$">
+  <FilesMatch "^(favicon\.ico|pwa-icon-(192|512)\.png|pwa-maskable-(192|512)\.png|apple-touch-icon\.png|(icon-192|icon-512|maskable-192|maskable-512|splash-512)\.png)$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
-  SetEnvIf Request_URI "^/(favicon\.ico|assets/icons/(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512)\.png)$" pwa_icon_request=1
+  SetEnvIf Request_URI "^/(favicon\.ico|pwa-icon-(192|512)\.png|pwa-maskable-(192|512)\.png|apple-touch-icon\.png|assets/icons/(icon-192|icon-512|maskable-192|maskable-512|apple-touch-icon|splash-512)\.png)$" pwa_icon_request=1
   Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=pwa_icon_request
   Header set Pragma "no-cache" env=pwa_icon_request
   Header set Expires "0" env=pwa_icon_request

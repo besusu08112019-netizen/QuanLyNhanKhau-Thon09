@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260809-super-admin-guard');
+define('APP_ASSET_VERSION', 'household-profile-member-away-summary-20260812-0025');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 require_once BASE_PATH . '/config/env.php';
@@ -63,10 +63,12 @@ use App\Controllers\PartyMemberController;
 use App\Controllers\PermissionController;
 use App\Controllers\PlatformSettingsController;
 use App\Controllers\PolicyAlertController;
+use App\Controllers\PolicySubjectController;
 use App\Controllers\PersonController;
 use App\Controllers\PhotoGalleryController;
 use App\Controllers\ProfileController;
 use App\Controllers\PublicAssetController;
+use App\Controllers\RuralCleanWaterController;
 use App\Controllers\ReportController;
 use App\Controllers\SettingController;
 use App\Controllers\SystemAdminController;
@@ -241,10 +243,10 @@ if (PortalContext::isPublic() && str_starts_with($request->path(), '/api')) {
     Response::json([
         'ok' => false,
         'success' => false,
-        'message' => 'Community Control Center đang bị tắt.',
+        'message' => 'Community Control Center ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ang bÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ tÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â¯t.',
         'errors' => [],
         'error' => [
-            'message' => 'Community Control Center đang bị tắt.',
+            'message' => 'Community Control Center ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ang bÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ tÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â¯t.',
             'reason' => 'control_center_disabled',
         ],
         'status' => 404,
@@ -290,6 +292,214 @@ register_shutdown_function(function () use ($request): void {
     }
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 });
+
+function pwa_tenant_slug(): string
+{
+    $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? 'tenant'));
+    $slug = preg_replace('/[^a-z0-9.-]+/i', '-', $host) ?: 'tenant';
+    return trim($slug, '-.') ?: 'tenant';
+}
+
+function pwa_normalize_hex_color(string $value, string $fallback): string
+{
+    $value = trim($value);
+    if (preg_match('/^#[0-9a-f]{6}$/i', $value)) return strtolower($value);
+    if (preg_match('/^[0-9a-f]{6}$/i', $value)) return '#' . strtolower($value);
+    return $fallback;
+}
+
+function pwa_upload_root(): string
+{
+    static $root = null;
+    if ($root !== null) return $root;
+    $config = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
+    $root = rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? RuntimePaths::uploadRoot())), '/');
+    return $root;
+}
+
+function pwa_local_logo_path(string $logoUrl): string
+{
+    $logoUrl = trim($logoUrl);
+    if ($logoUrl === '' || preg_match('#^https?://#i', $logoUrl)) return '';
+    $path = parse_url($logoUrl, PHP_URL_PATH);
+    if (!is_string($path) || $path === '') return '';
+    $path = '/' . ltrim($path, '/');
+
+    if (str_starts_with($path, '/api/media/')) {
+        $relative = substr($path, strlen('/api/media/'));
+        $uploadRoot = pwa_upload_root();
+        $fullPath = realpath($uploadRoot . '/' . $relative);
+        $basePath = realpath($uploadRoot);
+        if ($fullPath === false || $basePath === false || !str_starts_with($fullPath, $basePath . DIRECTORY_SEPARATOR)) return '';
+        return is_file($fullPath) ? $fullPath : '';
+    }
+
+    if (!str_starts_with($path, '/uploads/') && !str_starts_with($path, '/assets/')) return '';
+    $fullPath = realpath(BASE_PATH . $path);
+    $basePath = realpath(BASE_PATH);
+    if ($fullPath === false || $basePath === false || !str_starts_with($fullPath, $basePath . DIRECTORY_SEPARATOR)) return '';
+    return is_file($fullPath) ? $fullPath : '';
+}
+
+function pwa_tenant_icon_version(array $settings): string
+{
+    $logoUrl = trim((string) ($settings['logoUrl'] ?? ''));
+    $logoPath = pwa_local_logo_path($logoUrl);
+    $parts = [
+        pwa_tenant_slug(),
+        $logoUrl,
+        $logoPath !== '' ? (string) filemtime($logoPath) : '',
+        (string) ($settings['themeColor'] ?? ''),
+        (string) ($settings['backgroundColor'] ?? ''),
+        APP_ASSET_VERSION,
+    ];
+    return substr(hash('sha256', implode('|', $parts)), 0, 12);
+}
+
+function pwa_icon_url(string $name, array $settings): string
+{
+    return '/' . ltrim($name, '/') . '?v=' . rawurlencode(pwa_tenant_icon_version($settings));
+}
+
+function pwa_manifest_payload(): array
+{
+    $settings = TenantConfig::publicSettings();
+    $unitName = TenantConfig::unitName($settings);
+    $shortName = trim((string) ($settings['hamletName'] ?? ''));
+    if ($shortName === '') $shortName = $unitName;
+    if (function_exists('mb_substr')) {
+        $shortName = mb_substr($shortName, 0, 24, 'UTF-8');
+    } else {
+        $shortName = substr($shortName, 0, 24);
+    }
+    $configuredId = trim((string) ($settings['manifestId'] ?? ''));
+    $manifestId = ($configuredId !== '' && $configuredId !== '/pwa/app') ? $configuredId : '/pwa/' . pwa_tenant_slug();
+    $themeColor = pwa_normalize_hex_color((string) ($settings['themeColor'] ?? ''), '#0b6b3a');
+    $backgroundColor = pwa_normalize_hex_color((string) ($settings['backgroundColor'] ?? ''), '#eef3f8');
+
+    return [
+        'id' => $manifestId,
+        'name' => $unitName !== '' ? $unitName : 'He thong Quan ly Hanh chinh',
+        'short_name' => $shortName !== '' ? $shortName : 'Hanh chinh',
+        'description' => 'He thong quan ly hanh chinh, nhan khau, ho gia dinh, GIS va bao cao.',
+        'start_url' => '/',
+        'scope' => '/',
+        'display' => 'standalone',
+        'display_override' => ['window-controls-overlay', 'standalone', 'browser'],
+        'orientation' => 'any',
+        'background_color' => $backgroundColor,
+        'theme_color' => $themeColor,
+        'categories' => ['government', 'productivity', 'utilities'],
+        'lang' => 'vi',
+        'dir' => 'ltr',
+        'icons' => [
+            ['src' => pwa_icon_url('pwa-icon-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => pwa_icon_url('pwa-icon-512.png', $settings), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => pwa_icon_url('pwa-maskable-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ['src' => pwa_icon_url('pwa-maskable-512.png', $settings), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+        ],
+        'shortcuts' => [
+            ['name' => 'Dashboard', 'short_name' => 'Dashboard', 'url' => '/dashboard', 'icons' => [['src' => pwa_icon_url('pwa-icon-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png']]],
+            ['name' => 'Ho gia dinh', 'short_name' => 'Ho dan', 'url' => '/households', 'icons' => [['src' => pwa_icon_url('pwa-icon-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png']]],
+            ['name' => 'GIS', 'short_name' => 'GIS', 'url' => '/gis', 'icons' => [['src' => pwa_icon_url('pwa-icon-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png']]],
+        ],
+    ];
+}
+
+function pwa_rgb_from_hex(string $hex): array
+{
+    $hex = ltrim(pwa_normalize_hex_color($hex, '#0b6b3a'), '#');
+    return [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
+}
+
+function pwa_load_logo_image(string $path)
+{
+    if ($path === '') return null;
+    $mime = function_exists('mime_content_type') ? (string) mime_content_type($path) : '';
+    if ($mime === 'image/png' && function_exists('imagecreatefrompng')) return @imagecreatefrompng($path);
+    if ($mime === 'image/jpeg' && function_exists('imagecreatefromjpeg')) return @imagecreatefromjpeg($path);
+    if ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) return @imagecreatefromwebp($path);
+    return null;
+}
+
+function pwa_ascii_initials(string $label): string
+{
+    $label = trim((string) preg_replace('/\s+/', ' ', $label));
+    $converted = function_exists('iconv') ? @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $label) : $label;
+    $label = is_string($converted) && $converted !== '' ? $converted : $label;
+    $words = preg_split('/\s+/', preg_replace('/[^A-Za-z0-9 ]/', ' ', $label) ?: '') ?: [];
+    $mark = '';
+    foreach ($words as $word) {
+        if ($word === '') continue;
+        $mark .= strtoupper(substr($word, 0, 1));
+        if (strlen($mark) >= 3) break;
+    }
+    return $mark !== '' ? $mark : 'APP';
+}
+
+function pwa_stream_tenant_icon(int $size, bool $maskable = false): void
+{
+    $settings = TenantConfig::publicSettings();
+    $version = pwa_tenant_icon_version($settings);
+    $etag = '"' . $version . '-' . $size . ($maskable ? '-maskable' : '') . '"';
+    header('Content-Type: image/png');
+    header('Cache-Control: public, max-age=3600, must-revalidate');
+    header('ETag: ' . $etag);
+    if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+        http_response_code(304);
+        exit;
+    }
+    if (!function_exists('imagecreatetruecolor')) {
+        http_response_code(501);
+        exit;
+    }
+
+    [$bgR, $bgG, $bgB] = pwa_rgb_from_hex((string) ($settings['themeColor'] ?? '#0b6b3a'));
+    $canvas = imagecreatetruecolor($size, $size);
+    imagesavealpha($canvas, true);
+    imagefill($canvas, 0, 0, imagecolorallocate($canvas, $bgR, $bgG, $bgB));
+
+    $logo = pwa_load_logo_image(pwa_local_logo_path((string) ($settings['logoUrl'] ?? '')));
+    if ($logo) {
+        $srcW = imagesx($logo);
+        $srcH = imagesy($logo);
+        $padding = (int) round($size * ($maskable ? 0.18 : 0.12));
+        $target = max(1, $size - ($padding * 2));
+        $scale = min($target / max(1, $srcW), $target / max(1, $srcH));
+        $dstW = max(1, (int) round($srcW * $scale));
+        $dstH = max(1, (int) round($srcH * $scale));
+        imagecopyresampled($canvas, $logo, (int) (($size - $dstW) / 2), (int) (($size - $dstH) / 2), 0, 0, $dstW, $dstH, $srcW, $srcH);
+        imagedestroy($logo);
+    } else {
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        $label = trim((string) ($settings['hamletName'] ?? ''));
+        if ($label === '') $label = TenantConfig::unitName($settings);
+        $mark = pwa_ascii_initials($label);
+        $font = 5;
+        $textW = imagefontwidth($font) * strlen($mark);
+        $textH = imagefontheight($font);
+        imagestring($canvas, $font, (int) (($size - $textW) / 2), (int) (($size - $textH) / 2), $mark, $white);
+    }
+    imagepng($canvas);
+    imagedestroy($canvas);
+    exit;
+}
+
+if ($request->method() === 'GET' && in_array($request->path(), ['/manifest.json', '/manifest.webmanifest'], true)) {
+    header('Content-Type: application/manifest+json; charset=utf-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    echo json_encode(pwa_manifest_payload(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+if ($request->method() === 'GET' && preg_match('#^/(pwa-icon|pwa-maskable)-(192|512)\.png$#', $request->path(), $pwaIconMatches)) {
+    pwa_stream_tenant_icon((int) $pwaIconMatches[2], $pwaIconMatches[1] === 'pwa-maskable');
+}
+
+if ($request->method() === 'GET' && $request->path() === '/apple-touch-icon.png') {
+    pwa_stream_tenant_icon(180, false);
+}
+
 if ($request->method() === 'GET' && preg_match('#^/api/platform/assets/([a-z_]+)/([a-z0-9.-]+)$#', $request->path(), $matches)) {
     (new PlatformSettingsController($request))->asset($matches[1], $matches[2]);
 }
@@ -303,6 +513,9 @@ if (PortalContext::isControlCenter() && $request->method() === 'POST' && in_arra
     exit;
 }
 if ($request->path() === '/favicon.ico') {
+    if (!PortalContext::isControlCenter()) {
+        pwa_stream_tenant_icon(192, false);
+    }
     try {
         $branding = (new PlatformBrandingService())->publicBranding();
         $stored = (string) ($branding['favicon']['stored'] ?? '');
@@ -477,10 +690,10 @@ if (PortalContext::isControlCenter() && str_starts_with($request->path(), '/api'
             '/api/control-center/accounts' => $controller->accounts(),
             '/api/control-center/monitoring' => $controller->monitoring(),
             '/api/control-center/audit' => $controller->auditLogs(),
-            default => Response::error('API Community Control Center không tồn tại', 404),
+            default => Response::error('API Community Control Center khÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´ng tÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œn tÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â¡i', 404),
         };
     }
-    Response::error('API nghiệp vụ đơn vị không khả dụng trên Community Control Center', 404);
+    Response::error('API nghiÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡p vÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Â¥ ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Â Ãƒâ€šÃ‚Â¡n vÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ khÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´ng khÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â£ dÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Â¥ng trÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âªn Community Control Center', 404);
 }
 
 $router = new Router($request);
@@ -522,6 +735,28 @@ $router->get('/api/policy-alerts/print', [PolicyAlertController::class, 'print']
 $router->get('/api/policy-alerts/export-excel', [PolicyAlertController::class, 'exportExcel']);
 $router->get('/api/policy-alerts/export-pdf', [PolicyAlertController::class, 'exportPdf']);
 $router->post('/api/policy-alerts/{citizenId}/mark', [PolicyAlertController::class, 'mark']);
+
+$router->get('/api/policy-subjects/catalogs', [PolicySubjectController::class, 'catalogs']);
+$router->get('/api/policy-subjects/citizens/search', [PolicySubjectController::class, 'citizenSearch']);
+$router->get('/api/policy-subjects/citizens/{citizenId}/summary', [PolicySubjectController::class, 'citizenSummary']);
+$router->get('/api/policy-subjects/types', [PolicySubjectController::class, 'types']);
+$router->post('/api/policy-subjects/types', [PolicySubjectController::class, 'storeType']);
+$router->put('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'updateType']);
+$router->delete('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'deleteType']);
+$router->get('/api/policy-subjects/records', [PolicySubjectController::class, 'index']);
+$router->post('/api/policy-subjects/records', [PolicySubjectController::class, 'store']);
+$router->get('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'show']);
+$router->put('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'update']);
+$router->delete('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'destroy']);
+$router->post('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'uploadAttachment']);
+$router->get('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'attachments']);
+$router->delete('/api/policy-subjects/attachments/{id}', [PolicySubjectController::class, 'deleteAttachment']);
+$router->get('/api/policy-subjects/dashboard', [PolicySubjectController::class, 'dashboard']);
+$router->get('/api/policy-subjects/report', [PolicySubjectController::class, 'report']);
+$router->get('/api/policy-subjects/citizen-search', [PolicySubjectController::class, 'citizenSearch']);
+$router->get('/api/policy-subjects/citizens/{citizenId}', [PolicySubjectController::class, 'citizenSummary']);
+$router->get('/api/policy-subjects/export-excel', [PolicySubjectController::class, 'exportExcel']);
+$router->get('/api/policy-subjects/export-pdf', [PolicySubjectController::class, 'exportPdf']);
 
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
@@ -746,6 +981,19 @@ $router->get('/api/livestock/household/{householdId}', [LivestockController::cla
 $router->get('/api/livestock/{id}', [LivestockController::class, 'show']);
 $router->put('/api/livestock/{id}', [LivestockController::class, 'update']);
 $router->delete('/api/livestock/{id}', [LivestockController::class, 'destroy']);
+
+
+$router->get('/api/rural-clean-water', [RuralCleanWaterController::class, 'index']);
+$router->post('/api/rural-clean-water', [RuralCleanWaterController::class, 'store']);
+$router->get('/api/rural-clean-water/dashboard', [RuralCleanWaterController::class, 'dashboard']);
+$router->get('/api/rural-clean-water/stats', [RuralCleanWaterController::class, 'stats']);
+$router->get('/api/rural-clean-water/catalogs', [RuralCleanWaterController::class, 'catalogs']);
+$router->get('/api/rural-clean-water/household-search', [RuralCleanWaterController::class, 'householdSearch']);
+$router->get('/api/rural-clean-water/household/{householdId}', [RuralCleanWaterController::class, 'byHousehold']);
+$router->get('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'show']);
+$router->put('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'update']);
+$router->delete('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'destroy']);
+
 
 $router->get('/api/defense-security/catalogs', [DefenseSecurityController::class, 'catalogs']);
 $router->get('/api/defense-security/dashboard', [DefenseSecurityController::class, 'dashboard']);
@@ -1004,7 +1252,7 @@ if (!str_starts_with($request->path(), '/api')) {
     header('Expires: 0');
 
     if (PortalContext::isPublic()) {
-        echo '<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center đang ở chế độ bảo trì cấu hình. Cổng đơn vị vẫn hoạt động trên các tên miền phụ riêng.</p><div class="status">Chế độ bảo trì</div></main></body></html>';
+        echo '<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ang ÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€¦Ã‚Â¸ chÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â¿ ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ bÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â£o trÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¬ cÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â¥u hÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¬nh. CÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ng ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Â Ãƒâ€šÃ‚Â¡n vÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ vÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â«n hoÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â¡t ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ng trÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âªn cÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡c tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âªn miÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Ân phÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Â¥ riÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âªng.</p><div class="status">ChÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â¿ ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ bÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â£o trÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¬</div></main></body></html>';
         exit;
     }
 
@@ -1012,7 +1260,7 @@ if (!str_starts_with($request->path(), '/api')) {
         $html = file_get_contents(BASE_PATH . '/views/control-center.php');
         if ($html === false) {
             http_response_code(500);
-            echo 'Không tải được giao diện Community Control Center.';
+            echo 'KhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´ng tÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â£i ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Â Ãƒâ€šÃ‚Â°ÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Â£c giao diÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡n Community Control Center.';
             exit;
         }
 
@@ -1046,7 +1294,7 @@ if (!str_starts_with($request->path(), '/api')) {
     $html = file_get_contents(BASE_PATH . '/views/app.php');
     if ($html === false) {
         http_response_code(500);
-        echo 'Không tải được giao diện ứng dụng.';
+        echo 'KhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´ng tÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â£i ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Â Ãƒâ€šÃ‚Â°ÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Â£c giao diÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡n ÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Â©ng dÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Â¥ng.';
         exit;
     }
     $tenantSettings = TenantConfig::publicSettings();
@@ -1095,7 +1343,7 @@ if (!str_starts_with($request->path(), '/api')) {
         ? '--login-bg:linear-gradient(135deg,rgba(4,23,18,.74),rgba(12,87,61,.48)),url(&quot;' . $escapeHtml($loginBackgroundUrl) . '&quot;);'
         : '';
     $html = strtr($html, [
-        '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'Hệ thống Quản lý Hành chính')),
+        '{{APP_NAME}}' => $escapeHtml((string) ($tenantSettings['systemName'] ?? 'HÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ thÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ng QuÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â£n lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â½ HÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â nh chÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­nh')),
         '{{UNIT_NAME}}' => $escapeHtml(TenantConfig::unitName($tenantSettings)),
         '{{HAMLET_NAME}}' => $escapeHtml((string) ($tenantSettings['hamletName'] ?? '')),
         '{{COMMUNE_NAME}}' => $escapeHtml((string) ($tenantSettings['communeName'] ?? '')),
@@ -1110,8 +1358,13 @@ if (!str_starts_with($request->path(), '/api')) {
     ]);
     $versionedAssets = [
         'manifest.json',
+        'manifest.webmanifest',
+        'pwa-icon-192.png',
+        'pwa-icon-512.png',
+        'pwa-maskable-192.png',
+        'pwa-maskable-512.png',
+        'apple-touch-icon.png',
         'favicon.ico',
-        'assets/icons/apple-touch-icon.png',
         'assets/icons/splash-512.png',
         'assets/vendor/bootstrap/bootstrap.min.css',
         'assets/vendor/bootstrap/bootstrap.bundle.min.js',
@@ -1195,4 +1448,4 @@ try {
     }
     throw $e;
 }
-Response::error('Không tìm thấy đường dẫn', 404);
+Response::error('KhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´ng tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¬m thÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â¥y ÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Â Ãƒâ€šÃ‚Â°ÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚Â»Ãƒâ€šÃ‚Âng dÃƒÆ’Ã‚Â¡Ãƒâ€šÃ‚ÂºÃƒâ€šÃ‚Â«n', 404);

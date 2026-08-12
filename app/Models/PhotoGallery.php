@@ -72,7 +72,7 @@ SQL);
             'albums' => array_map(fn($r) => ['value' => (string)$r['id'], 'label' => (string)$r['name'], 'code' => (string)$r['album_code']], $albums),
             'tags' => array_map(fn($r) => ['value' => (string)$r['tag'], 'label' => (string)$r['tag']], $tags),
             'sources' => array_map(fn($v) => ['value' => $v[0], 'label' => $v[1]], [
-                ['meeting', 'Hội nghị'], ['public_asset', 'Công trình'], ['work_task', 'Công tác'], ['construction', 'Thi công'], ['union', 'Hoạt động đoàn thể'], ['other', 'Khác'],
+                ['meeting', 'Há»™i nghá»‹'], ['public_asset', 'CÃ´ng trÃ¬nh'], ['work_task', 'CÃ´ng tÃ¡c'], ['construction', 'Thi cÃ´ng'], ['union', 'Hoáº¡t Ä‘á»™ng Ä‘oÃ n thá»ƒ'], ['other', 'KhÃ¡c'],
             ]),
         ];
     }
@@ -135,7 +135,7 @@ SQL);
     {
         $this->ensureSchema();
         $title = trim((string)($data['title'] ?? ''));
-        if ($title === '') $title = basename((string)($data['original_name'] ?? 'Ảnh'));
+        if ($title === '') $title = basename((string)($data['original_name'] ?? 'áº¢nh'));
         $albumId = (int)($data['album_id'] ?? 0);
         if ($albumId > 0 && !$this->findAlbum($albumId)) throw new \RuntimeException($this->u('Album kh\u00f4ng h\u1ee3p l\u1ec7'));
         $params = [

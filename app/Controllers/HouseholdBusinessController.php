@@ -57,7 +57,7 @@ final class HouseholdBusinessController extends BaseController
     {
         $this->requirePermission('household_business', 'read');
         $row = $this->businesses->find((int) $id);
-        if (!$row) $this->fail('Khong tim thay thong tin ho san xuat/kinh doanh', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»™ sáº£n xuáº¥t/kinh doanh', 404);
         $row['members'] = $this->businesses->members((int) $row['household_id']);
         $row['files'] = $this->businesses->files((int) $row['id']);
         $this->ok($row);
@@ -76,7 +76,7 @@ final class HouseholdBusinessController extends BaseController
     {
         $user = $this->requirePermission('household_business', 'create');
         $input = (array) $this->input();
-        $this->requireInputFields($input, ['household_id' => 'Hộ gia đình', 'business_type' => 'Loại hình']);
+        $this->requireInputFields($input, ['household_id' => 'Há»™ gia Ä‘Ã¬nh', 'business_type' => 'Loáº¡i hÃ¬nh']);
         $row = $this->businesses->upsert($input, (int) $user['id']);
         $action = $this->auditAction($row['business_type']);
         $this->audit($user, 'household_business', 'create', $action, $row['id'], ['before' => null, 'after' => $row]);
@@ -87,11 +87,11 @@ final class HouseholdBusinessController extends BaseController
     {
         $user = $this->requirePermission('household_business', 'update');
         $before = $this->businesses->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy thông tin hộ sản xuất/kinh doanh', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»™ sáº£n xuáº¥t/kinh doanh', 404);
         $row = $this->businesses->upsert((array) $this->input(), (int) $user['id'], (int) $id);
-        $action = $before['status'] !== $row['status'] ? 'Thay đổi trạng thái hộ sản xuất/kinh doanh' : 'Chỉnh sửa hộ sản xuất/kinh doanh';
+        $action = $before['status'] !== $row['status'] ? 'Thay Ä‘á»•i tráº¡ng thÃ¡i há»™ sáº£n xuáº¥t/kinh doanh' : 'Chá»‰nh sá»­a há»™ sáº£n xuáº¥t/kinh doanh';
         $this->audit($user, 'household_business', 'update', $action, $id, ['before' => $before, 'after' => $row]);
-        foreach (['is_ocop' => 'Thay đổi OCOP', 'food_safety_certified' => 'Thay đổi ATTP', 'social_insurance' => 'Thay đổi BHXH'] as $field => $message) {
+        foreach (['is_ocop' => 'Thay Ä‘á»•i OCOP', 'food_safety_certified' => 'Thay Ä‘á»•i ATTP', 'social_insurance' => 'Thay Ä‘á»•i BHXH'] as $field => $message) {
             if (($before[$field] ?? null) !== ($row[$field] ?? null)) $this->audit($user, 'household_business', 'update', $message, $id, ['before' => $before[$field] ?? null, 'after' => $row[$field] ?? null]);
         }
         $this->ok($row);
@@ -101,9 +101,9 @@ final class HouseholdBusinessController extends BaseController
     {
         $user = $this->requirePermission('household_business', 'delete');
         $before = $this->businesses->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy thông tin hộ sản xuất/kinh doanh', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»™ sáº£n xuáº¥t/kinh doanh', 404);
         $this->businesses->softDelete((int) $id, (int) $user['id']);
-        $this->audit($user, 'household_business', 'delete', 'Xóa thông tin hộ sản xuất/kinh doanh', $id, ['before' => $before, 'after' => null]);
+        $this->audit($user, 'household_business', 'delete', 'XÃ³a thÃ´ng tin há»™ sáº£n xuáº¥t/kinh doanh', $id, ['before' => $before, 'after' => null]);
         $this->ok(['id' => (int) $id]);
     }
 
@@ -111,7 +111,7 @@ final class HouseholdBusinessController extends BaseController
     public function files(string $id): void
     {
         $this->requirePermission('household_business', 'read');
-        if (!$this->businesses->find((int) $id)) $this->fail('Không tìm thấy hồ sơ sản xuất/kinh doanh', 404);
+        if (!$this->businesses->find((int) $id)) $this->fail('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ sáº£n xuáº¥t/kinh doanh', 404);
         $this->ok(['items' => $this->businesses->files((int) $id, (string) $this->query('kind', ''))]);
     }
 
@@ -119,11 +119,11 @@ final class HouseholdBusinessController extends BaseController
     {
         $user = $this->requirePermission('household_business', 'update');
         $businessId = (int) $id;
-        if (!$this->businesses->find($businessId)) $this->fail('Không tìm thấy hồ sơ sản xuất/kinh doanh', 404);
+        if (!$this->businesses->find($businessId)) $this->fail('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ sáº£n xuáº¥t/kinh doanh', 404);
         $kind = strtoupper((string) ($_POST['file_kind'] ?? $_POST['kind'] ?? 'DOCUMENT')) === 'IMAGE' ? 'IMAGE' : 'DOCUMENT';
-        $category = (string) ($_POST['category'] ?? 'Khác');
+        $category = (string) ($_POST['category'] ?? 'KhÃ¡c');
         $uploads = $this->normalizeUploads($_FILES['file'] ?? $_FILES['files'] ?? null);
-        if (!$uploads) $this->fail('Vui lòng chọn file', 422);
+        if (!$uploads) $this->fail('Vui lÃ²ng chá»n file', 422);
         $storage = new FileStorageService();
         $items = [];
         foreach ($uploads as $file) {
@@ -133,7 +133,7 @@ final class HouseholdBusinessController extends BaseController
             $stored = $storage->storeUpload($file, 'household_business', $kind === 'IMAGE' ? 'images' : 'documents', $info['extension']);
             $item = $this->businesses->addFile($businessId, $kind, $category, $stored, $file, $info['mime'], (int) $user['id']);
             $items[] = $item;
-            $this->audit($user, 'household_business', $kind === 'IMAGE' ? 'upload_image' : 'upload_document', $kind === 'IMAGE' ? 'Upload ảnh cơ sở' : 'Upload tài liệu cơ sở', $businessId, ['file' => $item]);
+            $this->audit($user, 'household_business', $kind === 'IMAGE' ? 'upload_image' : 'upload_document', $kind === 'IMAGE' ? 'Upload áº£nh cÆ¡ sá»Ÿ' : 'Upload tÃ i liá»‡u cÆ¡ sá»Ÿ', $businessId, ['file' => $item]);
         }
         $this->ok(['items' => $items]);
     }
@@ -142,9 +142,9 @@ final class HouseholdBusinessController extends BaseController
     {
         $user = $this->requirePermission('household_business', 'delete');
         $file = $this->businesses->file((int) $fileId);
-        if (!$file || (int) $file['household_business_id'] !== (int) $id) $this->fail('Không tìm thấy file', 404);
+        if (!$file || (int) $file['household_business_id'] !== (int) $id) $this->fail('KhÃ´ng tÃ¬m tháº¥y file', 404);
         $before = $this->businesses->deleteFile((int) $fileId, (int) $user['id']);
-        $this->audit($user, 'household_business', 'delete_file', 'Xóa tài liệu/ảnh cơ sở', $id, ['before' => $before]);
+        $this->audit($user, 'household_business', 'delete_file', 'XÃ³a tÃ i liá»‡u/áº£nh cÆ¡ sá»Ÿ', $id, ['before' => $before]);
         $this->ok(['id' => (int) $fileId]);
     }
 
@@ -155,10 +155,10 @@ final class HouseholdBusinessController extends BaseController
     {
         $this->requirePermission('household_business', 'read');
         $file = $this->businesses->file((int) $fileId);
-        if (!$file || (int) $file['household_business_id'] !== (int) $id) $this->fail('Không tìm thấy file', 404);
+        if (!$file || (int) $file['household_business_id'] !== (int) $id) $this->fail('KhÃ´ng tÃ¬m tháº¥y file', 404);
         $storage = new FileStorageService();
         $path = $storage->safeFilePath($file['file_path']);
-        if (!$path || !is_file($path)) $this->fail('File không còn tồn tại', 404);
+        if (!$path || !is_file($path)) $this->fail('File khÃ´ng cÃ²n tá»“n táº¡i', 404);
         if (!$download && !$storage->canPreview($file['mime_type'])) $download = true;
         header('Content-Type: ' . $file['mime_type']);
         header('Content-Length: ' . filesize($path));
@@ -180,8 +180,8 @@ final class HouseholdBusinessController extends BaseController
     {
         $image = ['image/jpeg','image/png'];
         $doc = ['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','image/jpeg','image/png'];
-        if ($kind === 'IMAGE' && !in_array($mime, $image, true)) throw new \RuntimeException('Ảnh cơ sở chỉ hỗ trợ JPG hoặc PNG');
-        if ($kind === 'DOCUMENT' && !in_array($mime, $doc, true)) throw new \RuntimeException('Tài liệu chỉ hỗ trợ PDF, DOCX, XLSX, JPG hoặc PNG');
+        if ($kind === 'IMAGE' && !in_array($mime, $image, true)) throw new \RuntimeException('áº¢nh cÆ¡ sá»Ÿ chá»‰ há»— trá»£ JPG hoáº·c PNG');
+        if ($kind === 'DOCUMENT' && !in_array($mime, $doc, true)) throw new \RuntimeException('TÃ i liá»‡u chá»‰ há»— trá»£ PDF, DOCX, XLSX, JPG hoáº·c PNG');
     }
 
     public function dashboard(): void
@@ -208,10 +208,10 @@ final class HouseholdBusinessController extends BaseController
     private function auditAction(string $type): string
     {
         return match ($type) {
-            'PRODUCTION' => 'Thêm hộ sản xuất',
-            'BUSINESS' => 'Thêm hộ kinh doanh',
-            'BOTH' => 'Thêm hộ sản xuất và kinh doanh',
-            default => 'Thêm thông tin hộ dân',
+            'PRODUCTION' => 'ThÃªm há»™ sáº£n xuáº¥t',
+            'BUSINESS' => 'ThÃªm há»™ kinh doanh',
+            'BOTH' => 'ThÃªm há»™ sáº£n xuáº¥t vÃ  kinh doanh',
+            default => 'ThÃªm thÃ´ng tin há»™ dÃ¢n',
         };
     }
 }

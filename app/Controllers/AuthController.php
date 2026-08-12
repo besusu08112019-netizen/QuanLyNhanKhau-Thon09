@@ -16,9 +16,9 @@ final class AuthController extends BaseController
         $email = trim((string) $this->input('email', $this->input('username', '')));
         $name = trim((string) $this->input('displayName', $email));
         $password = (string) $this->input('password', '');
-        if (!$email || strlen($password) < 8) $this->fail('Email va mat khau toi thieu 8 ky tu la bat buoc');
+        if (!$email || strlen($password) < 8) $this->fail('Email vÃ  máº­t kháº©u tá»‘i thiá»ƒu 8 kÃ½ tá»± lÃ  báº¯t buá»™c');
         $user = $this->users()->createFirstAdmin($email, $name, $password);
-        $this->audit($user, 'user', 'create', 'Tao tai khoan quan tri dau tien', $user['id']);
+        $this->audit($user, 'user', 'create', 'Táº¡o tÃ i khoáº£n quáº£n trá»‹ Ä‘áº§u tiÃªn', $user['id']);
         $this->ok($this->users()->publicUser($user));
     }
 
@@ -31,12 +31,12 @@ final class AuthController extends BaseController
             $users = new User();
             $result = $users->login($login, (string) $this->input('password', ''));
             $this->clearLoginFailures($login);
-            $this->auditLogin($result['user'], 'read', 'Dang nhap he thong', $result['user']['id']);
+            $this->auditLogin($result['user'], 'read', 'ÄÄƒng nháº­p há»‡ thá»‘ng', $result['user']['id']);
             $this->ok($result);
         } catch (\Throwable) {
             $this->recordLoginFailure($login);
-            $this->auditLogin(null, 'login_failed', 'Dang nhap that bai', null, ['login_hash' => hash('sha256', strtolower(trim($login))), 'ip' => $this->clientIp(), 'user_agent' => $this->userAgent()], 'WARN');
-            $this->fail('Invalid account or password', 401);
+            $this->auditLogin(null, 'login_failed', 'ÄÄƒng nháº­p tháº¥t báº¡i', null, ['login_hash' => hash('sha256', strtolower(trim($login))), 'ip' => $this->clientIp(), 'user_agent' => $this->userAgent()], 'WARN');
+            $this->fail('TÃ i khoáº£n hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng', 401);
         }
     }
 
@@ -47,7 +47,7 @@ final class AuthController extends BaseController
         $token = $this->request->bearerToken();
         if ($token) $this->users()->revoke($token);
         $this->destroyPhpSession();
-        $this->audit($user, 'user', 'read', 'Dang xuat he thong', $user['id']);
+        $this->audit($user, 'user', 'read', 'ÄÄƒng xuáº¥t há»‡ thá»‘ng', $user['id']);
         $this->ok(['loggedOutAt' => date('c')]);
     }
 
@@ -57,7 +57,7 @@ final class AuthController extends BaseController
         $this->verifyCsrfToken();
         $token = $this->request->bearerToken();
         if (!$token) {
-            $this->fail('Vui long dang nhap', 401);
+            $this->fail('Vui lÃ²ng Ä‘Äƒng nháº­p', 401);
         }
         $this->users()->touchSession($token);
         $this->ok(['activeUntil' => date('c', time() + $this->idleTimeoutSeconds()), 'user' => $this->users()->publicUser($user)]);
@@ -74,7 +74,7 @@ final class AuthController extends BaseController
         $row = $bucket[$this->loginKey($login)] ?? ['count' => 0, 'first' => time()];
         if ((time() - (int) ($row['first'] ?? 0)) > self::LOGIN_WINDOW_SECONDS) return;
         if ((int) ($row['count'] ?? 0) >= self::LOGIN_MAX_FAILURES) {
-            $this->fail('Too many login attempts. Please try again later.', 429);
+            $this->fail('ÄÄƒng nháº­p sai quÃ¡ nhiá»u láº§n. Vui lÃ²ng thá»­ láº¡i sau.', 429);
         }
     }
 

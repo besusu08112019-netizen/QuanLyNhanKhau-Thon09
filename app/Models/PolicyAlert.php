@@ -18,13 +18,38 @@ final class PolicyAlert extends BaseModel
         $alert = $config['alerts'][$key] ?? null;
         if (!$alert) return null;
         $ageExpr = AgePolicy::ageSql($alias);
+        $excludeCondition = self::excludeCondition($alert, $alias);
         if (($alert['type'] ?? '') === 'upcoming') {
             $targetDate = AgePolicy::targetDateSql($alias, (int) $alert['age']);
-            return "$ageExpr < " . (int) $alert['age'] . " AND DATEDIFF($targetDate,CURDATE()) BETWEEN 0 AND " . (int) ($config['lookahead_days'] ?? AgePolicy::UPCOMING_POLICY_LOOKAHEAD_DAYS);
+            $condition = "$ageExpr < " . (int) $alert['age'] . " AND DATEDIFF($targetDate,CURDATE()) BETWEEN 0 AND " . (int) ($config['lookahead_days'] ?? AgePolicy::UPCOMING_POLICY_LOOKAHEAD_DAYS);
+            return $excludeCondition !== '' ? $condition . ' AND ' . $excludeCondition : $condition;
         }
         $condition = "$ageExpr >= " . (int) $alert['age'];
         if (!empty($alert['exclude_if_flag'])) $condition .= " AND COALESCE($alias." . preg_replace('/[^a-z_]/', '', $alert['exclude_if_flag']) . ',0)=0';
+        if ($excludeCondition !== '') $condition .= ' AND ' . $excludeCondition;
         return $condition;
+    }
+
+    private static function excludeCondition(array $alert, string $alias): string
+    {
+        $field = preg_replace('/[^a-z_]/', '', (string) ($alert['exclude_if_field'] ?? ''));
+        if ($field === '') return '';
+
+        $conditions = [];
+        foreach ((array) ($alert['exclude_if_values'] ?? []) as $value) {
+            $conditions[] = "$alias.$field <> " . self::quoteSqlLiteral((string) $value);
+        }
+        foreach ((array) ($alert['exclude_if_prefixes'] ?? []) as $prefix) {
+            $conditions[] = "$alias.$field NOT LIKE " . self::quoteSqlLiteral((string) $prefix . '%');
+        }
+
+        if (!$conditions) return '';
+        return '(' . "$alias.$field IS NULL OR $alias.$field = '' OR (" . implode(' AND ', $conditions) . '))';
+    }
+
+    private static function quoteSqlLiteral(string $value): string
+    {
+        return "'" . str_replace("'", "''", $value) . "'";
     }
 
     public function summary(): array
@@ -63,8 +88,8 @@ final class PolicyAlert extends BaseModel
     public function mark(int $citizenId, string $alertKey, string $status, int $userId, string $note = ''): array
     {
         $this->ensureSchema();
-        if (!isset($this->alerts()[$alertKey])) throw new \RuntimeException('Loại cảnh báo không hợp lệ');
-        if (!in_array($status, ['reviewed', 'processed'], true)) throw new \RuntimeException('Trạng thái xử lý không hợp lệ');
+        if (!isset($this->alerts()[$alertKey])) throw new \RuntimeException('Loáº¡i cáº£nh bÃ¡o khÃ´ng há»£p lá»‡');
+        if (!in_array($status, ['reviewed', 'processed'], true)) throw new \RuntimeException('Tráº¡ng thÃ¡i xá»­ lÃ½ khÃ´ng há»£p lá»‡');
         $existing = $this->fetchOne('SELECT id FROM policy_alert_reviews WHERE citizen_id=:citizen_id AND alert_key=:alert_key AND ' . $this->tenantWhere('policy_alert_reviews'), $this->withTenant(['citizen_id' => $citizenId, 'alert_key' => $alertKey]));
         $params = $this->withTenant([
             'citizen_id' => $citizenId,
@@ -80,10 +105,13 @@ final class PolicyAlert extends BaseModel
             $this->execute("UPDATE policy_alert_reviews SET $sets WHERE id=:id AND " . $this->tenantWhere('policy_alert_reviews'), $params);
         } else {
             $columns = ['citizen_id', 'alert_key', 'reviewed_at', 'reviewed_by', 'processed_at', 'processed_by', 'note'];
+            $this->addTenantInsert('policy_alert_reviews', $columns, $params);
             $values = $status === 'reviewed'
                 ? [':citizen_id', ':alert_key', 'NOW()', ':user_id', 'NULL', 'NULL', ':note']
                 : [':citizen_id', ':alert_key', 'NOW()', ':user_id', 'NOW()', ':user_id', ':note'];
-            $this->addTenantInsert('policy_alert_reviews', $columns, $params);
+            if (in_array('village_id', $columns, true)) {
+                $values[] = ':village_id';
+            }
             $this->insert('INSERT INTO policy_alert_reviews (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         }
         return $this->findReview($citizenId, $alertKey) ?? ['citizen_id' => $citizenId, 'alert_key' => $alertKey];
@@ -98,8 +126,8 @@ final class PolicyAlert extends BaseModel
         [$where, $params] = $this->where($filters);
         $items = array_map(fn($row) => $this->normalize($row), $this->fetchAll($this->selectSql() . " FROM citizens c INNER JOIN households h ON h.id=c.household_id LEFT JOIN policy_alert_reviews r ON r.citizen_id=c.id AND r.alert_key=:review_key AND " . $this->tenantWhere('r', 'policy_alert_reviews') . " $where ORDER BY c.date_of_birth ASC, c.full_name ASC", $params));
         return [
-            'title' => $alert ? 'Danh sách ' . $this->lowerLabel((string) $alert['label']) : 'Danh sách cảnh báo chính sách',
-            'headers' => ['STT', 'Họ tên', 'Ngày sinh', 'Tuổi', 'Chủ hộ', 'Địa chỉ', 'BHYT', 'Trợ cấp xã hội', 'Trạng thái xử lý', 'Ghi chú'],
+            'title' => $alert ? 'Danh sÃ¡ch ' . $this->lowerLabel((string) $alert['label']) : 'Danh sÃ¡ch cáº£nh bÃ¡o chÃ­nh sÃ¡ch',
+            'headers' => ['STT', 'Há» tÃªn', 'NgÃ y sinh', 'Tuá»•i', 'Chá»§ há»™', 'Äá»‹a chá»‰', 'BHYT', 'Trá»£ cáº¥p xÃ£ há»™i', 'Tráº¡ng thÃ¡i xá»­ lÃ½', 'Ghi chÃº'],
             'rows' => array_map(function ($row, $index) {
                 return [
                     $index + 1,
@@ -108,15 +136,15 @@ final class PolicyAlert extends BaseModel
                     $row['age'],
                     $row['head_citizen_name'],
                     $row['address'],
-                    $row['has_health_insurance'] ? 'Có' : 'Chưa có',
-                    $row['social_assistance'] ? 'Đang hưởng' : 'Chưa hưởng',
-                    $row['processed_at'] ? 'Đã xử lý' : ($row['reviewed_at'] ? 'Đã rà soát' : 'Chưa xử lý'),
+                    $row['has_health_insurance'] ? 'CÃ³' : 'ChÆ°a cÃ³',
+                    $row['social_assistance'] ? 'Äang hÆ°á»Ÿng' : 'ChÆ°a hÆ°á»Ÿng',
+                    $row['processed_at'] ? 'ÄÃ£ xá»­ lÃ½' : ($row['reviewed_at'] ? 'ÄÃ£ rÃ  soÃ¡t' : 'ChÆ°a xá»­ lÃ½'),
                     $row['review_note'] ?? '',
                 ];
             }, $items, array_keys($items)),
             'totalRows' => count($items),
             'filters' => $filters,
-            'summary' => ['Tổng số' => count($items)],
+            'summary' => ['Tá»•ng sá»‘' => count($items)],
         ];
     }
 
@@ -139,9 +167,9 @@ final class PolicyAlert extends BaseModel
         $report = $this->report($filters);
         $pdf = new SimplePdf();
         $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
-        $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
+        $pdf->addMeta('Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s'));
         $pdf->addTable($report['headers'], $report['rows']);
-        $pdf->addSignatureBlock('Trưởng thôn');
+        $pdf->addSignatureBlock('TrÆ°á»Ÿng thÃ´n');
         return $pdf->output();
     }
 
@@ -187,9 +215,9 @@ SQL);
             self::filterCondition($type, 'c') ?? '1=1',
         ];
         $status = (string) ($filters['status'] ?? '');
-        if ($status === 'reviewed') $where[] = 'r.reviewed_at IS NOT NULL';
+        if ($status === 'reviewed') $where[] = 'r.reviewed_at IS NOT NULL AND r.processed_at IS NULL';
         elseif ($status === 'processed') $where[] = 'r.processed_at IS NOT NULL';
-        elseif ($status === 'pending' || $status === '') $where[] = 'r.processed_at IS NULL';
+        elseif ($status === 'pending') $where[] = 'r.reviewed_at IS NULL AND r.processed_at IS NULL';
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $where[] = '(c.full_name LIKE :q OR c.citizen_code LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q)';

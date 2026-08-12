@@ -42,14 +42,14 @@ final class SettingController extends BaseController
     {
         $user = $this->requirePermission('settings', 'update');
         $settings = $this->settings()->updateMany($this->input(), (int) $user['id']);
-        $this->audit($user, 'settings', 'update', 'Cập nhật cấu hình hệ thống');
+        $this->audit($user, 'settings', 'update', 'Cáº­p nháº­t cáº¥u hÃ¬nh há»‡ thá»‘ng');
         $this->ok($settings);
     }
 
     public function uploadMedia(): void
     {
         $user = $this->requirePermission('settings', 'update');
-        if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) $this->fail('Vui lòng chọn file');
+        if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) $this->fail('Vui lÃ²ng chá»n file');
         $file = $_FILES['file'];
         $this->validateUploadedFile($file, 2 * 1024 * 1024);
 
@@ -64,7 +64,7 @@ final class SettingController extends BaseController
         $allowedExtensions = ['png','jpg','svg','webp'];
         $allowedMimes = ['image/png','image/jpeg','image/svg+xml','image/webp'];
         if (!in_array($extension, $allowedExtensions, true) || (!in_array($mime, $allowedMimes, true) && $extension !== 'svg')) {
-            $this->fail('Chỉ cho phép PNG, JPG, SVG hoặc WebP');
+            $this->fail('Chá»‰ cho phÃ©p PNG, JPG, SVG hoáº·c WebP');
         }
         if ($extension === 'svg' && $this->svgContainsUnsafeContent($file['tmp_name'])) {
             $this->fail('Unsafe SVG content');
@@ -76,7 +76,7 @@ final class SettingController extends BaseController
         $basename = bin2hex(random_bytes(16));
         $stored = $basename . '.' . $extension;
         $path = $originalDir . '/' . $stored;
-        if (!move_uploaded_file($file['tmp_name'], $path)) $this->fail('Không lưu được file upload');
+        if (!move_uploaded_file($file['tmp_name'], $path)) $this->fail('KhÃ´ng lÆ°u Ä‘Æ°á»£c file upload');
 
         $originalRelative = 'uploads/' . $folder . '/original/' . $datePath . '/' . $stored;
         $displayRelative = $originalRelative;
@@ -88,7 +88,7 @@ final class SettingController extends BaseController
             $displayRelative = 'uploads/logo/thumb/' . $datePath . '/' . $basename . '.png';
         }
 
-        $this->audit($user, 'settings', 'upload', 'Upload media giao diện', null, ['file' => $displayRelative, 'original' => $originalRelative, 'type' => $type, 'mime' => $mime, 'size' => (int) $file['size']]);
+        $this->audit($user, 'settings', 'upload', 'Upload media giao diá»‡n', null, ['file' => $displayRelative, 'original' => $originalRelative, 'type' => $type, 'mime' => $mime, 'size' => (int) $file['size']]);
         $this->ok([
             'url' => $this->versionedUrl($displayRelative),
             'originalUrl' => $this->versionedUrl($originalRelative),
@@ -103,9 +103,9 @@ final class SettingController extends BaseController
     {
         $user = $this->requirePermission('settings', 'update');
         $key = (string) $this->input('key', '');
-        if (!in_array($key, ['logoUrl','backgroundUrl','backgroundImages','introImageUrl'], true)) $this->fail('Loại media không hợp lệ');
+        if (!in_array($key, ['logoUrl','backgroundUrl','backgroundImages','introImageUrl'], true)) $this->fail('Loáº¡i media khÃ´ng há»£p lá»‡');
         $settings = $this->settings()->updateMany([$key => ''], (int) $user['id']);
-        $this->audit($user, 'settings', 'delete', 'Xóa media giao diện', null, ['key' => $key]);
+        $this->audit($user, 'settings', 'delete', 'XÃ³a media giao diá»‡n', null, ['key' => $key]);
         $this->ok($settings);
     }
 
@@ -138,15 +138,15 @@ final class SettingController extends BaseController
 
     public function media(string $folder, string $kind, string $year, string $month, string $file): void
     {
-        if (!in_array($folder, ['logo','background','news','gallery'], true)) $this->fail('Media không hợp lệ', 404);
-        if (!in_array($kind, ['original','thumb'], true)) $this->fail('Media không hợp lệ', 404);
-        if (!preg_match('/^\d{4}$/', $year) || !preg_match('/^\d{2}$/', $month)) $this->fail('Media không hợp lệ', 404);
+        if (!in_array($folder, ['logo','background','news','gallery'], true)) $this->fail('Media khÃ´ng há»£p lá»‡', 404);
+        if (!in_array($kind, ['original','thumb'], true)) $this->fail('Media khÃ´ng há»£p lá»‡', 404);
+        if (!preg_match('/^\d{4}$/', $year) || !preg_match('/^\d{2}$/', $month)) $this->fail('Media khÃ´ng há»£p lá»‡', 404);
         $name = basename($file);
-        if ($name !== $file || !preg_match('/^[a-f0-9]{32}\.(png|jpg|jpeg|svg|webp)$/i', $name)) $this->fail('Media không hợp lệ', 404);
+        if ($name !== $file || !preg_match('/^[a-f0-9]{32}\.(png|jpg|jpeg|svg|webp)$/i', $name)) $this->fail('Media khÃ´ng há»£p lá»‡', 404);
         $path = $this->uploadRoot() . '/' . $folder . '/' . $kind . '/' . $year . '/' . $month . '/' . $name;
         $base = realpath($this->uploadRoot());
         $real = realpath($path);
-        if (!$base || !$real || strpos($real, $base) !== 0 || !is_file($real)) $this->fail('Không tìm thấy media', 404);
+        if (!$base || !$real || strpos($real, $base) !== 0 || !is_file($real)) $this->fail('KhÃ´ng tÃ¬m tháº¥y media', 404);
         $extension = strtolower(pathinfo($real, PATHINFO_EXTENSION));
         $types = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'svg' => 'image/svg+xml', 'webp' => 'image/webp'];
         header('X-Content-Type-Options: nosniff');
@@ -195,19 +195,19 @@ final class SettingController extends BaseController
 
     private function ensureUploadDir(string $dir): void
     {
-        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) $this->fail('Không tạo được thư mục upload');
+        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) $this->fail('KhÃ´ng táº¡o Ä‘Æ°á»£c thÆ° má»¥c upload');
     }
 
     private function createLogoThumbnail(string $source, string $target, string $extension): void
     {
-        if (!extension_loaded('gd')) $this->fail('Máy chủ chưa bật GD Library để xử lý logo');
+        if (!extension_loaded('gd')) $this->fail('MÃ¡y chá»§ chÆ°a báº­t GD Library Ä‘á»ƒ xá»­ lÃ½ logo');
         [$width, $height] = getimagesize($source) ?: [0, 0];
-        if ($width < 1 || $height < 1) $this->fail('File ảnh logo không hợp lệ');
+        if ($width < 1 || $height < 1) $this->fail('File áº£nh logo khÃ´ng há»£p lá»‡');
         $image = false;
         if ($extension === 'png') $image = imagecreatefrompng($source);
         elseif ($extension === 'jpg') $image = imagecreatefromjpeg($source);
         elseif ($extension === 'webp' && function_exists('imagecreatefromwebp')) $image = imagecreatefromwebp($source);
-        if (!$image) $this->fail('Không xử lý được định dạng logo này');
+        if (!$image) $this->fail('KhÃ´ng xá»­ lÃ½ Ä‘Æ°á»£c Ä‘á»‹nh dáº¡ng logo nÃ y');
 
         $size = 256;
         $canvas = imagecreatetruecolor($size, $size);
@@ -222,7 +222,7 @@ final class SettingController extends BaseController
         $dstX = (int) floor(($size - $newWidth) / 2);
         $dstY = (int) floor(($size - $newHeight) / 2);
         imagecopyresampled($canvas, $image, $dstX, $dstY, 0, 0, $newWidth, $newHeight, $width, $height);
-        if (!imagepng($canvas, $target, 3)) $this->fail('Không tạo được thumbnail logo');
+        if (!imagepng($canvas, $target, 3)) $this->fail('KhÃ´ng táº¡o Ä‘Æ°á»£c thumbnail logo');
         imagedestroy($image);
         imagedestroy($canvas);
     }

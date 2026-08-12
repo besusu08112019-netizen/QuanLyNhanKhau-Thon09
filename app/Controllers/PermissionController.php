@@ -25,7 +25,7 @@ final class PermissionController extends BaseController
     {
         $user = $this->requireSuperAdmin('permission', 'update');
         $matrix = $this->permissions->updateMany((array) $this->input('items', []), (int) $user['id']);
-        $this->audit($user, 'permission', 'update', 'Cập nhật phân quyền');
+        $this->audit($user, 'permission', 'update', 'Cáº­p nháº­t phÃ¢n quyá»n');
         $this->ok($matrix);
     }
 }

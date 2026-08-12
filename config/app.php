@@ -39,7 +39,7 @@ $resolveAppKey = static function () use ($uploadPath): string {
 };
 
 return [
-    'name' => env('APP_NAME', 'He thong Quan ly Hanh chinh'),
+    'name' => env('APP_NAME', 'Há»‡ thá»‘ng Quáº£n lÃ½ HÃ nh chÃ­nh'),
     'app_key' => $resolveAppKey(),
     'url' => env('APP_URL', ''),
     'timezone' => env('APP_TIMEZONE', 'Asia/Ho_Chi_Minh'),
@@ -62,6 +62,6 @@ return [
         'password' => env('MAIL_PASSWORD', ''),
         'encryption' => env('MAIL_ENCRYPTION', 'tls'),
         'from_address' => env('MAIL_FROM_ADDRESS', ''),
-        'from_name' => env('MAIL_FROM_NAME', env('APP_NAME', 'He thong Quan ly Hanh chinh')),
+        'from_name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Há»‡ thá»‘ng Quáº£n lÃ½ HÃ nh chÃ­nh')),
     ],
 ];

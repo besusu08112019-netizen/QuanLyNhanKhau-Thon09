@@ -8,7 +8,7 @@ final class StudentStatusService
 {
     public const ACADEMIC_YEAR_START_MONTH = AgePolicy::ACADEMIC_YEAR_START_MONTH;
     public const STUDENT_MAX_ACADEMIC_AGE = AgePolicy::STUDENT_MAX_ACADEMIC_AGE;
-    public const STUDENT_LABEL = 'Học sinh';
+    public const STUDENT_LABEL = 'Há»c sinh';
 
     public static function academicYear(?\DateTimeInterface $date = null): int
     {

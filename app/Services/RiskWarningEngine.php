@@ -83,7 +83,7 @@ final class RiskWarningEngine extends BaseModel
                 'high',
                 'Du dieu kien BHYT nhung chua co BHYT',
                 '(' . AgePolicy::ageSql('c') . ' >= ' . InsurancePolicy::DEFAULT_AGE . ' OR ' . StudentStatusService::studentSql('c') . ') AND ' . InsurancePolicy::missingConditionSql('c', $this->columnExists('citizens', 'has_health_insurance')),
-                'Cap nhat thong tin BHYT hoac ra soat dien chinh sach.',
+                'Cáº­p nháº­t thÃ´ng tin BHYT hoáº·c rÃ  soÃ¡t diá»‡n chÃ­nh sÃ¡ch.',
                 $limit
             ),
             $this->citizenRule(
@@ -101,11 +101,11 @@ final class RiskWarningEngine extends BaseModel
     private function dataWarnings(int $limit): array
     {
         return array_merge(
-            $this->citizenRule('data.missing_identity', 'data', 'medium', 'Thieu CCCD', $this->missing('c.identity_number'), 'Bo sung CCCD.', $limit),
-            $this->citizenRule('data.missing_phone', 'data', 'low', 'Thieu so dien thoai', $this->missing('c.phone'), 'Bo sung so dien thoai lien he.', $limit),
-            $this->citizenRule('data.missing_date_of_birth', 'data', 'high', 'Thieu ngay sinh', 'c.date_of_birth IS NULL', 'Bo sung ngay sinh de tinh chinh sach chinh xac.', $limit),
-            $this->citizenRule('data.missing_gender', 'data', 'medium', 'Thieu gioi tinh', $this->missing('c.gender'), 'Bo sung gioi tinh.', $limit),
-            $this->citizenRule('data.missing_relationship', 'data', 'medium', 'Thieu quan he voi chu ho', $this->missing('c.relationship'), 'Cap nhat quan he trong ho.', $limit)
+            $this->citizenRule('data.missing_identity', 'data', 'medium', 'Thiáº¿u CCCD', $this->missing('c.identity_number'), 'Bo sung CCCD.', $limit),
+            $this->citizenRule('data.missing_phone', 'data', 'low', 'Thiáº¿u sá»‘ Ä‘iá»‡n thoáº¡i', $this->missing('c.phone'), 'Bo sung so dien thoai lien he.', $limit),
+            $this->citizenRule('data.missing_date_of_birth', 'data', 'high', 'Thiáº¿u ngÃ y sinh', 'c.date_of_birth IS NULL', 'Bo sung ngay sinh de tinh chinh sach chinh xac.', $limit),
+            $this->citizenRule('data.missing_gender', 'data', 'medium', 'Thiáº¿u giá»›i tÃ­nh', $this->missing('c.gender'), 'Bo sung gioi tinh.', $limit),
+            $this->citizenRule('data.missing_relationship', 'data', 'medium', 'Thiáº¿u quan há»‡ voi chu ho', $this->missing('c.relationship'), 'Cáº­p nháº­t quan há»‡ trong há»™.', $limit)
         );
     }
 
@@ -152,7 +152,7 @@ final class RiskWarningEngine extends BaseModel
                 'household.relationship_anomaly',
                 'household',
                 'high',
-                'Quan he ho bat thuong',
+                'Quan há»‡ há»™ bat thuong',
                 "head_count <> 1 OR missing_relationship_count > 0",
                 'Ra soat chu ho va quan he thanh vien.',
                 $aggregate,
@@ -170,7 +170,7 @@ final class RiskWarningEngine extends BaseModel
                 'medium',
                 'Trong do tuoi lao dong nhung chua co nghe nghiep',
                 AgePolicy::workingAgeConditionSql('c') . ' AND ' . $this->missing('c.occupation'),
-                'Cap nhat nghe nghiep hoac trang thai lao dong.',
+                'Cáº­p nháº­t nghá» nghiá»‡p hoáº·c tráº¡ng thÃ¡i lao Ä‘á»™ng.',
                 $limit
             ),
             $this->citizenRule(
@@ -195,14 +195,14 @@ final class RiskWarningEngine extends BaseModel
                 'medium',
                 'Den tuoi di hoc nhung chua cap nhat',
                 $student . ' AND ' . $this->missingFlag('c.pupil') . ' AND ' . $this->missingFlag('c.student'),
-                'Cap nhat trang thai hoc sinh/sinh vien.',
+                'Cáº­p nháº­t tráº¡ng thÃ¡i há»c sinh/sinh viÃªn.',
                 $limit
             ),
             $this->citizenRule(
                 'student.incomplete_student_data',
                 'student',
                 'low',
-                'Du lieu hoc sinh chua day du',
+                'Dá»¯ liá»‡u hoc sinh chua day du',
                 $student . ' AND (' . $this->missing('c.education_level') . ' OR ' . $this->missing('c.occupation') . ')',
                 'Bo sung lop/trinh do hoac nghe nghiep hoc sinh.',
                 $limit

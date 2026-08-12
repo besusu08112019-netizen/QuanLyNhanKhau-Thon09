@@ -52,12 +52,12 @@ final class FileAttachment extends BaseModel
     public function byEntity(string $entityType, int $entityId): array
     {
         if (!$this->tableExists('file_attachments')) {
-            throw new \RuntimeException('Bảng file_attachments chưa tồn tại. Cần chạy migration 2026_06_28_admin_panel.sql trước khi dùng Hồ sơ số.');
+            throw new \RuntimeException('Báº£ng file_attachments chÆ°a tá»“n táº¡i. Cáº§n cháº¡y migration 2026_06_28_admin_panel.sql trÆ°á»›c khi dÃ¹ng Há»“ sÆ¡ sá»‘.');
         }
 
         $missing = array_diff(['id', 'module', 'entity_id'], $this->existingColumns('file_attachments', ['id', 'module', 'entity_id']));
         if ($missing) {
-            throw new \RuntimeException('Bảng file_attachments thiếu cột bắt buộc: ' . implode(', ', $missing));
+            throw new \RuntimeException('Báº£ng file_attachments thiáº¿u cá»™t báº¯t buá»™c: ' . implode(', ', $missing));
         }
 
         $where = ['f.entity_id = :entity_id', $this->tenantWhere('f', 'file_attachments')];
@@ -157,7 +157,7 @@ final class FileAttachment extends BaseModel
         if (array_key_exists('file_name', $data) && $this->columnExists('file_attachments', 'file_name')) {
             $name = trim((string) $data['file_name']);
             if ($name === '') {
-                throw new \RuntimeException('T?n file kh?ng ???c r?ng');
+                throw new \RuntimeException('TÃªn file khÃ´ng Ä‘Æ°á»£c rá»—ng');
             }
             $sets[] = 'file_name=:file_name';
             $params['file_name'] = mb_substr($name, 0, 255);

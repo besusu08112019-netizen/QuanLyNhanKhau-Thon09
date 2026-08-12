@@ -5,10 +5,13 @@ namespace App\Models;
 use App\Core\BaseModel;
 use App\Policies\AgePolicy;
 use App\Policies\InsurancePolicy;
+use App\Services\HouseholdCategoryService;
 use App\Services\StudentStatusService;
 
 final class PopulationStatistics extends BaseModel
 {
+    private ?HouseholdCategoryService $categoryService = null;
+
     private const CITIZEN_FLAG_COLUMNS = [
         'has_health_insurance',
         'party_member',
@@ -131,11 +134,23 @@ final class PopulationStatistics extends BaseModel
         [$householdWhere, $householdParams] = $this->householdWhere($filters);
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
 
-        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
-        $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
-        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor_households, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor_households, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious_households, COALESCE(SUM(CASE WHEN $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS disabled_households, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy_households, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND NOT $meritoriousHouseholdExpr AND NOT $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS normal_households FROM households h $householdWhere", $householdParams) ?: [];
+        $categoryCounts = $this->categoryService()->countsSelect('h');
+        $meritoriousExpr = $this->meritoriousHouseholdExists('h');
+        $disabledExpr = $this->disabledHouseholdExists('h');
+        $households = $this->fetchOne("SELECT COUNT(*) AS total_households, $categoryCounts, COALESCE(SUM(CASE WHEN $meritoriousExpr THEN 1 ELSE 0 END),0) AS meritorious_households, COALESCE(SUM(CASE WHEN $disabledExpr THEN 1 ELSE 0 END),0) AS disabled_households FROM households h $householdWhere", $householdParams) ?: [];
+        $residenceCounts = $this->householdResidenceCounts($filters);
 
-        $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female_count, COALESCE(SUM(CASE WHEN c.relationship='Chủ hộ' THEN 1 ELSE 0 END),0) AS household_head_count, COALESCE(SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END),0) AS active_citizens, COALESCE(SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary_residence_count, COALESCE(SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END),0) AS temporary_absence_count, COALESCE(SUM(CASE WHEN " . AgePolicy::childConditionSql('c') . " THEN 1 ELSE 0 END),0) AS children_count, COALESCE(SUM(CASE WHEN " . AgePolicy::statisticalElderlyConditionSql('c') . " THEN 1 ELSE 0 END),0) AS elderly_count, COALESCE(SUM(CASE WHEN " . AgePolicy::workingAgeConditionSql('c') . " THEN 1 ELSE 0 END),0) AS working_age_count" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
+        $ageSql = AgePolicy::ageSql('c');
+        $healthInsuranceEffectiveExpr = InsurancePolicy::effectiveConditionSql(
+            'c',
+            $this->columnExists('citizens', 'has_health_insurance'),
+            $this->columnExists('citizens', 'health_insurance_end_date')
+        );
+        $socialAssistanceExpr = $this->columnExists('citizens', 'social_assistance')
+            ? 'COALESCE(c.social_assistance,0)=1'
+            : '0=1';
+
+        $citizens = $this->fetchOne("SELECT COUNT(*) AS total_citizens, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Ná»¯' THEN 1 ELSE 0 END),0) AS female_count, COALESCE(SUM(CASE WHEN c.relationship='Chá»§ há»™' THEN 1 ELSE 0 END),0) AS household_head_count, COALESCE(SUM(CASE WHEN c.life_status='ALIVE' THEN 1 ELSE 0 END),0) AS active_citizens, COALESCE(SUM(CASE WHEN c.residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary_residence_count, COALESCE(SUM(CASE WHEN c.presence_status='AWAY' THEN 1 ELSE 0 END),0) AS temporary_absence_count, COALESCE(SUM(CASE WHEN " . AgePolicy::childConditionSql('c') . " THEN 1 ELSE 0 END),0) AS children_count, COALESCE(SUM(CASE WHEN " . AgePolicy::statisticalElderlyConditionSql('c') . " THEN 1 ELSE 0 END),0) AS elderly_count, COALESCE(SUM(CASE WHEN " . AgePolicy::workingAgeConditionSql('c') . " THEN 1 ELSE 0 END),0) AS working_age_count, COALESCE(SUM(CASE WHEN $ageSql >= " . AgePolicy::BHYT_DEFAULT_AGE . " AND $healthInsuranceEffectiveExpr THEN 1 ELSE 0 END),0) AS elderly_health_insurance_count, COALESCE(SUM(CASE WHEN $ageSql >= " . AgePolicy::SOCIAL_ALLOWANCE_DEFAULT_AGE . " AND $socialAssistanceExpr THEN 1 ELSE 0 END),0) AS elderly_social_assistance_count" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id = c.household_id $citizenWhere", $citizenParams) ?: [];
 
         $totalCitizens = max(1, (int) ($citizens['total_citizens'] ?? 0));
         $totalHouseholds = max(1, (int) ($households['total_households'] ?? 0));
@@ -153,25 +168,44 @@ final class PopulationStatistics extends BaseModel
             'children_count' => (int) ($citizens['children_count'] ?? 0),
             'elderly_count' => (int) ($citizens['elderly_count'] ?? 0),
             'working_age_count' => (int) ($citizens['working_age_count'] ?? 0),
+            'elderly_health_insurance_count' => (int) ($citizens['elderly_health_insurance_count'] ?? 0),
+            'elderly_social_assistance_count' => (int) ($citizens['elderly_social_assistance_count'] ?? 0),
             'temporary_residence_count' => $temporaryResidence,
             'temporary_absence_count' => $temporaryAbsence,
             'temporary_count' => $temporaryResidence,
             'away_count' => $temporaryAbsence,
             'poor_households' => (int) ($households['poor_households'] ?? 0),
             'near_poor_households' => (int) ($households['near_poor_households'] ?? 0),
+            'medium_households' => (int) ($households['medium_households'] ?? 0),
+            'ho_ngheo' => (int) ($households['poor_households'] ?? 0),
+            'ho_can_ngheo' => (int) ($households['near_poor_households'] ?? 0),
+            'ho_trung_binh' => (int) ($households['medium_households'] ?? 0),
             'policy_households' => (int) ($households['policy_households'] ?? 0),
             'meritorious_households' => (int) ($households['meritorious_households'] ?? 0),
             'disabled_households' => (int) ($households['disabled_households'] ?? 0),
             'normal_households' => (int) ($households['normal_households'] ?? 0),
+            'resident_households' => $residenceCounts['resident'],
+            'away_for_work_households' => $residenceCounts['away_for_work'],
+            'settled_elsewhere_households' => $residenceCounts['settled_elsewhere'],
+            'outside_households' => $residenceCounts['settled_elsewhere'],
+            'partial_households' => $residenceCounts['partial'],
+            'inactive_residence_households' => $residenceCounts['inactive'],
+            'actual_resident_households' => $residenceCounts['actual_resident'],
         ];
 
         foreach (self::CITIZEN_FLAG_COLUMNS as $key) {
             $metrics[$key . '_count'] = (int) ($citizens[$key] ?? 0);
             $metrics[$key . '_percent'] = round($metrics[$key . '_count'] * 100 / $totalCitizens, 2);
         }
+        $activePartyMembers = $this->activePartyMemberCount($filters);
+        if ($activePartyMembers !== null) {
+            $metrics['party_member_count'] = $activePartyMembers;
+            $metrics['party_member_percent'] = round($activePartyMembers * 100 / $totalCitizens, 2);
+        }
 
         $metrics['poor_households_percent'] = round($metrics['poor_households'] * 100 / $totalHouseholds, 2);
         $metrics['near_poor_households_percent'] = round($metrics['near_poor_households'] * 100 / $totalHouseholds, 2);
+        $metrics['medium_households_percent'] = round($metrics['medium_households'] * 100 / $totalHouseholds, 2);
         $metrics['children_percent'] = round($metrics['children_count'] * 100 / $totalCitizens, 2);
         $metrics['elderly_percent'] = round($metrics['elderly_count'] * 100 / $totalCitizens, 2);
         $metrics['working_age_percent'] = round($metrics['working_age_count'] * 100 / $totalCitizens, 2);
@@ -209,6 +243,31 @@ final class PopulationStatistics extends BaseModel
         ];
     }
 
+
+    private function householdResidenceCounts(array $filters = []): array
+    {
+        $empty = ['resident' => 0, 'away_for_work' => 0, 'settled_elsewhere' => 0, 'partial' => 0, 'inactive' => 0, 'actual_resident' => 0];
+        if (!$this->columnExists('households', 'residence_status')) return $empty;
+        [$where, $params] = $this->householdWhere($filters);
+        $statusExpr = $this->residenceStatusSql('h');
+        $row = $this->fetchOne("SELECT
+            COALESCE(SUM(CASE WHEN $statusExpr = 'resident' THEN 1 ELSE 0 END),0) AS resident,
+            COALESCE(SUM(CASE WHEN $statusExpr = 'away_for_work' THEN 1 ELSE 0 END),0) AS away_for_work_count,
+            COALESCE(SUM(CASE WHEN $statusExpr IN ('settled_elsewhere','outside') THEN 1 ELSE 0 END),0) AS settled_elsewhere_count,
+            COALESCE(SUM(CASE WHEN $statusExpr = 'partial' THEN 1 ELSE 0 END),0) AS partial_count,
+            COALESCE(SUM(CASE WHEN $statusExpr = 'inactive' THEN 1 ELSE 0 END),0) AS inactive_count
+            FROM households h $where", $params) ?: [];
+        $resident = (int) ($row['resident'] ?? 0);
+        $partial = (int) ($row['partial_count'] ?? 0);
+        return [
+            'resident' => $resident,
+            'away_for_work' => (int) ($row['away_for_work_count'] ?? 0),
+            'settled_elsewhere' => (int) ($row['settled_elsewhere_count'] ?? 0),
+            'partial' => $partial,
+            'inactive' => (int) ($row['inactive_count'] ?? 0),
+            'actual_resident' => $resident,
+        ];
+    }
     private function notDeletedCondition(string $table, string $alias): string
     {
         $conditions = [];
@@ -230,8 +289,13 @@ final class PopulationStatistics extends BaseModel
         $where = [$this->householdCondition('h')];
         $params = [];
         if ($filters['householdStatus']) {
-            $where[] = 'h.status = :household_status';
-            $params['household_status'] = $filters['householdStatus'];
+            if (in_array($filters['householdStatus'], ['resident', 'away_for_work', 'settled_elsewhere', 'partial', 'inactive', 'outside'], true)) {
+                $where[] = $this->residenceStatusSql('h') . ' = :household_status';
+                $params['household_status'] = $filters['householdStatus'];
+            } else {
+                $where[] = 'h.status = :household_status';
+                $params['household_status'] = $filters['householdStatus'];
+            }
         }
         if ($filters['dateFrom']) {
             $where[] = 'DATE(h.created_at) >= :household_date_from';
@@ -253,8 +317,13 @@ final class PopulationStatistics extends BaseModel
         $where = [$this->citizenCondition('c'), $this->householdCondition('h')];
         $params = [];
         if ($filters['householdStatus']) {
-            $where[] = 'h.status = :household_status';
-            $params['household_status'] = $filters['householdStatus'];
+            if (in_array($filters['householdStatus'], ['resident', 'away_for_work', 'settled_elsewhere', 'partial', 'inactive', 'outside'], true)) {
+                $where[] = $this->residenceStatusSql('h') . ' = :household_status';
+                $params['household_status'] = $filters['householdStatus'];
+            } else {
+                $where[] = 'h.status = :household_status';
+                $params['household_status'] = $filters['householdStatus'];
+            }
         }
         if ($filters['residencyStatus']) {
             $where[] = 'c.residency_status = :residency_status';
@@ -288,6 +357,16 @@ final class PopulationStatistics extends BaseModel
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
+
+    private function residenceStatusSql(string $householdAlias = 'h'): string
+    {
+        $active = "c.status <> 'DELETED' AND COALESCE(c.life_status,'ALIVE') <> 'DECEASED' AND COALESCE(c.residency_status,'PERMANENT') <> 'TRANSFERRED_OUT'";
+        $total = "(SELECT COUNT(*) FROM citizens c WHERE c.household_id = $householdAlias.id AND $active)";
+        $atHome = "(SELECT COUNT(*) FROM citizens c WHERE c.household_id = $householdAlias.id AND $active AND c.presence_status = 'AT_HOME')";
+        $away = "(SELECT COUNT(*) FROM citizens c WHERE c.household_id = $householdAlias.id AND $active AND c.presence_status = 'AWAY')";
+        return "CASE WHEN COALESCE($householdAlias.residence_status_mode,'AUTO') = 'AUTO' AND $total > 0 AND $atHome = 0 AND $away = $total THEN 'away_for_work' ELSE COALESCE($householdAlias.residence_status,'resident') END";
+    }
+
     private function currentTemporaryResidenceCount(): int
     {
         $where = [$this->temporaryResidenceCitizenCondition('c'), $this->temporaryAbsenceHouseholdCondition('h')];
@@ -316,20 +395,13 @@ final class PopulationStatistics extends BaseModel
 
     private function addCategoryWhere(array &$where, array &$params, string $category): void
     {
-        match ($category) {
-            'poor' => $where[] = 'h.poor_household = 1',
-            'near_poor' => $where[] = 'h.near_poor_household = 1',
-            'meritorious' => $where[] = $this->meritoriousHouseholdExists('h'),
-            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND NOT ' . $this->disabledHouseholdExists('h'),
-            'other' => $where[] = $this->disabledHouseholdExists('h'),
-            'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
-            default => null,
-        };
+        $condition = $this->categoryService()->condition($category, 'h');
+        if ($condition !== '') $where[] = $condition;
     }
 
     private function addTextCategoryWhere(array &$where, array &$params, string $category): void
     {
-        $label = ['escaped_poverty' => 'Hộ mới thoát nghèo', 'policy' => 'Hộ chính sách'][$category] ?? $category;
+        $label = ['escaped_poverty' => 'Há»™ má»›i thoÃ¡t nghÃ¨o', 'policy' => 'Há»™ chÃ­nh sÃ¡ch'][$category] ?? $category;
         $where[] = '(h.note LIKE :category_label OR h.note LIKE :category_key)';
         $params['category_label'] = '%' . $label . '%';
         $params['category_key'] = '%' . str_replace('_', ' ', $category) . '%';
@@ -337,18 +409,12 @@ final class PopulationStatistics extends BaseModel
 
     private function categoryKey(mixed $value): string
     {
-        $text = $this->normalize((string) $value);
-        if ($text === '') return '';
-        return match (true) {
-            str_contains($text, 'can ngheo') || str_contains($text, 'near poor') => 'near_poor',
-            str_contains($text, 'moi thoat ngheo') || str_contains($text, 'thoat ngheo') || str_contains($text, 'escaped poverty') => 'escaped_poverty',
-            str_contains($text, 'chinh sach') || str_contains($text, 'policy') => 'policy',
-            str_contains($text, 'co cong') || str_contains($text, 'gia dinh co cong') || str_contains($text, 'meritorious') => 'meritorious',
-            str_contains($text, 'binh thuong') || str_contains($text, 'normal') || $text === 'khong' => 'normal',
-            str_contains($text, 'khac') || str_contains($text, 'tan tat') || str_contains($text, 'khuyet tat') || str_contains($text, 'other') => 'other',
-            str_contains($text, 'ngheo') || str_contains($text, 'poor') => 'poor',
-            default => '',
-        };
+        return HouseholdCategoryService::normalizeKey($value);
+    }
+
+    private function categoryService(): HouseholdCategoryService
+    {
+        return $this->categoryService ??= new HouseholdCategoryService();
     }
 
     private function normalize(string $value): string
@@ -372,6 +438,27 @@ final class PopulationStatistics extends BaseModel
             }
         }
         return implode('', $parts);
+    }
+
+    private function activePartyMemberCount(array $filters): ?int
+    {
+        if (!$this->tableExists('party_members') || !$this->columnExists('party_members', 'party_status')) return null;
+        [$where, $params] = $this->citizenWhere($filters);
+        $sql = "SELECT COUNT(*) AS total
+            FROM party_members pm
+            INNER JOIN citizens c ON c.id = pm.citizen_id
+            INNER JOIN households h ON h.id = c.household_id
+            $where
+              AND pm.status <> 'DELETED'
+              AND pm.party_status IN ('ACTIVE','TEMPORARY')
+              AND " . $this->tenantWhere('pm', 'party_members');
+        return (int) (($this->fetchOne($sql, $params) ?: [])['total'] ?? 0);
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
     }
 
     private function meritoriousCitizenExpression(string $alias, bool $positive = true): string

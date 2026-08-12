@@ -319,7 +319,7 @@ final class AdministrativeUnitRepository
             'databaseCharset' => (string) ($row['database_charset'] ?: 'utf8mb4'),
             'logo' => (string) ($row['logo_url'] ?? ''),
             'status' => $status,
-            'manager' => (string) ($row['registry_manager_name'] ?: 'Chưa gán'),
+            'manager' => (string) ($row['registry_manager_name'] ?: 'ChÆ°a gÃ¡n'),
             'version' => (string) ($row['registry_version'] ?: $row['app_version'] ?: (defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1')),
             'appVersion' => (string) ($row['app_version'] ?? ''),
             'buildVersion' => (string) ($row['build_version'] ?? ''),

@@ -43,7 +43,7 @@ final class AgriculturalLandZoneController extends BaseController
     {
         $user = $this->requirePermission('agricultural_land', 'update');
         $settings = $this->zones->updateSettings((array)$this->input());
-        $this->audit($user, 'agricultural_land', 'update_settings', 'Cập nhật cấu hình đơn vị quỹ đất nông nghiệp', null, ['after' => $settings]);
+        $this->audit($user, 'agricultural_land', 'update_settings', 'Cáº­p nháº­t cáº¥u hÃ¬nh Ä‘Æ¡n vá»‹ quá»¹ Ä‘áº¥t nÃ´ng nghiá»‡p', null, ['after' => $settings]);
         $this->ok($settings);
     }
 
@@ -57,7 +57,7 @@ final class AgriculturalLandZoneController extends BaseController
     {
         $user = $this->requirePermission('agricultural_land', 'update');
         $row = $this->zones->upsertUsageType((array)$this->input(), (int)$user['id']);
-        $this->audit($user, 'agricultural_land', 'usage_type_create', 'Thêm loại sử dụng đất', $row['id'], ['after' => $row]);
+        $this->audit($user, 'agricultural_land', 'usage_type_create', 'ThÃªm loáº¡i sá»­ dá»¥ng Ä‘áº¥t', $row['id'], ['after' => $row]);
         $this->ok($row);
     }
 
@@ -65,7 +65,7 @@ final class AgriculturalLandZoneController extends BaseController
     {
         $user = $this->requirePermission('agricultural_land', 'update');
         $row = $this->zones->upsertUsageType((array)$this->input(), (int)$user['id'], (int)$id);
-        $this->audit($user, 'agricultural_land', 'usage_type_update', 'Cập nhật loại sử dụng đất', $row['id'], ['after' => $row]);
+        $this->audit($user, 'agricultural_land', 'usage_type_update', 'Cáº­p nháº­t loáº¡i sá»­ dá»¥ng Ä‘áº¥t', $row['id'], ['after' => $row]);
         $this->ok($row);
     }
 
@@ -73,7 +73,7 @@ final class AgriculturalLandZoneController extends BaseController
     {
         $user = $this->requirePermission('agricultural_land', 'delete');
         $this->zones->deleteUsageType((int)$id, (int)$user['id']);
-        $this->audit($user, 'agricultural_land', 'usage_type_delete', 'Ngừng sử dụng loại đất', $id);
+        $this->audit($user, 'agricultural_land', 'usage_type_delete', 'Ngá»«ng sá»­ dá»¥ng loáº¡i Ä‘áº¥t', $id);
         $this->ok(['id' => (int)$id]);
     }
 
@@ -81,7 +81,7 @@ final class AgriculturalLandZoneController extends BaseController
     {
         $this->requirePermission('agricultural_land', 'read');
         $row = $this->zones->find((int)$id, (string)$this->query('unit', ''));
-        if (!$row) $this->fail('Không tìm thấy khu đất', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y khu Ä‘áº¥t', 404);
         $this->ok($row);
     }
 
@@ -89,7 +89,7 @@ final class AgriculturalLandZoneController extends BaseController
     {
         $user = $this->requirePermission('agricultural_land', 'create');
         $row = $this->zones->upsert((array)$this->input(), (int)$user['id']);
-        $this->audit($user, 'agricultural_land', 'create', 'Thêm khu đất nông nghiệp', $row['id'], ['after' => $row]);
+        $this->audit($user, 'agricultural_land', 'create', 'ThÃªm khu Ä‘áº¥t nÃ´ng nghiá»‡p', $row['id'], ['after' => $row]);
         $this->ok($row);
     }
 
@@ -97,9 +97,9 @@ final class AgriculturalLandZoneController extends BaseController
     {
         $user = $this->requirePermission('agricultural_land', 'update');
         $before = $this->zones->find((int)$id);
-        if (!$before) $this->fail('Không tìm thấy khu đất', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y khu Ä‘áº¥t', 404);
         $row = $this->zones->upsert((array)$this->input(), (int)$user['id'], (int)$id);
-        $this->audit($user, 'agricultural_land', 'update', 'Cập nhật khu đất nông nghiệp', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'agricultural_land', 'update', 'Cáº­p nháº­t khu Ä‘áº¥t nÃ´ng nghiá»‡p', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -107,9 +107,9 @@ final class AgriculturalLandZoneController extends BaseController
     {
         $user = $this->requirePermission('agricultural_land', 'delete');
         $before = $this->zones->find((int)$id);
-        if (!$before) $this->fail('Không tìm thấy khu đất', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y khu Ä‘áº¥t', 404);
         $this->zones->softDelete((int)$id, (int)$user['id']);
-        $this->audit($user, 'agricultural_land', 'delete', 'Xóa khu đất nông nghiệp', $id, ['before' => $before]);
+        $this->audit($user, 'agricultural_land', 'delete', 'XÃ³a khu Ä‘áº¥t nÃ´ng nghiá»‡p', $id, ['before' => $before]);
         $this->ok(['id' => (int)$id]);
     }
 

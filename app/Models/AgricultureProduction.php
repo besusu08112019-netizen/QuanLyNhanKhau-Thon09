@@ -7,19 +7,19 @@ use App\Core\BaseModel;
 final class AgricultureProduction extends BaseModel
 {
     public const OWNER_TYPES = [
-        'VILLAGE_HOUSEHOLD' => "Hộ trong thôn",
-        'OUTSIDE_PERSON' => "Cá nhân ngoài thôn",
-        'BUSINESS' => "Doanh nghiệp",
-        'COOPERATIVE' => "Hợp tác xã",
-        'ORGANIZATION' => "Tổ chức khác",
+        'VILLAGE_HOUSEHOLD' => "Há»™ trong thÃ´n",
+        'OUTSIDE_PERSON' => "CÃ¡ nhÃ¢n ngoÃ i thÃ´n",
+        'BUSINESS' => "Doanh nghiá»‡p",
+        'COOPERATIVE' => "Há»£p tÃ¡c xÃ£",
+        'ORGANIZATION' => "Tá»• chá»©c khÃ¡c",
     ];
-    public const USAGE_FORMS = ['SELF' => "Tự sản xuất", 'LEASE_OUT' => "Cho thuê", 'LEASE_IN' => "Thuê", 'BORROW' => "Mượn", 'PARTNERSHIP' => "Liên kết"];
-    public const LAND_TYPES = ["Đất lúa", "Đất màu", "Đất cây lâu năm", "Đất nuôi trồng thủy sản", "Đất vườn", "Đất khác"];
-    public const CROPS = ["Lúa", "Ngô", "Rau", "Khoai", "Lạc", "Cây ăn quả", "Cây lâu năm", "Khác"];
-    public const SEASONS = ["Xuân", "Mùa", "Đông", "Đông Xuân"];
-    public const STATUS_LABELS = ['ACTIVE' => "Đang sản xuất", 'IDLE' => "Tạm nghỉ", 'LEASED' => "Cho thuê", 'ABANDONED' => "Bỏ hoang", 'DELETED' => "Đã xóa"];
-    public const LOG_TYPES = ['LAND_PREP' => "Làm đất", 'SOWING' => "Gieo", 'TRANSPLANT' => "Cấy", 'FERTILIZER' => "Bón phân", 'PESTICIDE' => "Phun thuốc", 'IRRIGATION' => "Tưới", 'HARVEST' => "Thu hoạch"];
-    public const DAMAGE_TYPES = ['FLOOD' => "Ngập úng", 'DROUGHT' => "Hạn hán", 'PEST' => "Sâu bệnh", 'RAT' => "Chuột", 'STORM' => "Gió bão", 'HAIL' => "Mưa đá", 'OTHER' => "Khác"];
+    public const USAGE_FORMS = ['SELF' => "Tá»± sáº£n xuáº¥t", 'LEASE_OUT' => "Cho thuÃª", 'LEASE_IN' => "ThuÃª", 'BORROW' => "MÆ°á»£n", 'PARTNERSHIP' => "LiÃªn káº¿t"];
+    public const LAND_TYPES = ["Äáº¥t lÃºa", "Äáº¥t mÃ u", "Äáº¥t cÃ¢y lÃ¢u nÄƒm", "Äáº¥t nuÃ´i trá»“ng thá»§y sáº£n", "Äáº¥t vÆ°á»n", "Äáº¥t khÃ¡c"];
+    public const CROPS = ["LÃºa", "NgÃ´", "Rau", "Khoai", "Láº¡c", "CÃ¢y Äƒn quáº£", "CÃ¢y lÃ¢u nÄƒm", "KhÃ¡c"];
+    public const SEASONS = ["XuÃ¢n", "MÃ¹a", "ÄÃ´ng", "ÄÃ´ng XuÃ¢n"];
+    public const STATUS_LABELS = ['ACTIVE' => "Äang sáº£n xuáº¥t", 'IDLE' => "Táº¡m nghá»‰", 'LEASED' => "Cho thuÃª", 'ABANDONED' => "Bá» hoang", 'DELETED' => "ÄÃ£ xÃ³a"];
+    public const LOG_TYPES = ['LAND_PREP' => "LÃ m Ä‘áº¥t", 'SOWING' => "Gieo", 'TRANSPLANT' => "Cáº¥y", 'FERTILIZER' => "BÃ³n phÃ¢n", 'PESTICIDE' => "Phun thuá»‘c", 'IRRIGATION' => "TÆ°á»›i", 'HARVEST' => "Thu hoáº¡ch"];
+    public const DAMAGE_TYPES = ['FLOOD' => "Ngáº­p Ãºng", 'DROUGHT' => "Háº¡n hÃ¡n", 'PEST' => "SÃ¢u bá»‡nh", 'RAT' => "Chuá»™t", 'STORM' => "GiÃ³ bÃ£o", 'HAIL' => "MÆ°a Ä‘Ã¡", 'OTHER' => "KhÃ¡c"];
 
     public function ensureSchema(): void
     {
@@ -256,7 +256,7 @@ SQL);
     {
         $this->ensureSchema();
         $before = $id ? $this->find($id) : null;
-        if ($id && !$before) throw new \RuntimeException("Không tìm thấy thửa đất");
+        if ($id && !$before) throw new \RuntimeException("KhÃ´ng tÃ¬m tháº¥y thá»­a Ä‘áº¥t");
         $ownerId = $this->upsertStakeholder((array)($data['owner'] ?? []), 'owner', $before['owner_id'] ?? null);
         $producerId = $this->upsertStakeholder((array)($data['producer'] ?? []), 'producer', $before['producer_id'] ?? null);
         $params = $this->parcelParams($data, $ownerId, $producerId, $userId);
@@ -276,16 +276,16 @@ SQL);
     public function softDeleteParcel(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException("Không tìm thấy thửa đất");
+        if (!$this->find($id)) throw new \RuntimeException("KhÃ´ng tÃ¬m tháº¥y thá»­a Ä‘áº¥t");
         $this->execute('UPDATE agri_land_parcels SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('agri_land_parcels'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
     public function addPlot(int $parcelId, array $data): array
     {
         $this->ensureSchema();
-        if (!$this->find($parcelId)) throw new \RuntimeException("Không tìm thấy thửa đất");
+        if (!$this->find($parcelId)) throw new \RuntimeException("KhÃ´ng tÃ¬m tháº¥y thá»­a Ä‘áº¥t");
         $name = trim((string)($data['plot_name'] ?? $data['plotName'] ?? ''));
-        if ($name === '') throw new \RuntimeException("Tên lô sản xuất là bắt buộc");
+        if ($name === '') throw new \RuntimeException("TÃªn lÃ´ sáº£n xuáº¥t lÃ  báº¯t buá»™c");
         $columns = ['parcel_id', 'plot_code', 'plot_name', 'area', 'status', 'note'];
         $params = [
             'parcel_id' => $parcelId,
@@ -305,10 +305,10 @@ SQL);
     {
         $this->ensureSchema();
         $plot = $this->fetchOne('SELECT * FROM agri_production_plots WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('agri_production_plots'), $this->withTenant(['id' => $plotId]));
-        if (!$plot) throw new \RuntimeException("Không tìm thấy lô sản xuất");
+        if (!$plot) throw new \RuntimeException("KhÃ´ng tÃ¬m tháº¥y lÃ´ sáº£n xuáº¥t");
         $season = trim((string)($data['season_name'] ?? $data['seasonName'] ?? ''));
         $crop = trim((string)($data['crop'] ?? ''));
-        if ($season === '' || $crop === '') throw new \RuntimeException("Mùa vụ và cây trồng là bắt buộc");
+        if ($season === '' || $crop === '') throw new \RuntimeException("MÃ¹a vá»¥ vÃ  cÃ¢y trá»“ng lÃ  báº¯t buá»™c");
         $revenue = $this->number($data['revenue'] ?? 0);
         $cost = $this->number($data['cost'] ?? 0);
         $columns = ['plot_id', 'season_name', 'crop', 'variety', 'area', 'land_prep_date', 'sowing_date', 'transplant_date', 'fertilizer_date', 'pesticide_date', 'expected_harvest_date', 'actual_harvest_date', 'yield_value', 'output_value', 'sale_price', 'revenue', 'cost', 'profit', 'status', 'note'];
@@ -325,7 +325,7 @@ SQL);
     public function addLog(int $seasonId, array $data, int $userId): array
     {
         $this->ensureSchema();
-        if (!$this->fetchOne('SELECT id FROM agri_crop_seasons WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('agri_crop_seasons'), $this->withTenant(['id' => $seasonId]))) throw new \RuntimeException("Không tìm thấy mùa vụ");
+        if (!$this->fetchOne('SELECT id FROM agri_crop_seasons WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('agri_crop_seasons'), $this->withTenant(['id' => $seasonId]))) throw new \RuntimeException("KhÃ´ng tÃ¬m tháº¥y mÃ¹a vá»¥");
         $type = (string)($data['activity_type'] ?? $data['activityType'] ?? '');
         if (!isset($this->logTypes()[$type])) $type = 'LAND_PREP';
         $date = $this->dateOrNull($data['activity_date'] ?? $data['activityDate'] ?? null) ?: date('Y-m-d');
@@ -339,7 +339,7 @@ SQL);
     public function addDamage(int $parcelId, array $data): array
     {
         $this->ensureSchema();
-        if (!$this->find($parcelId)) throw new \RuntimeException("Không tìm thấy thửa đất");
+        if (!$this->find($parcelId)) throw new \RuntimeException("KhÃ´ng tÃ¬m tháº¥y thá»­a Ä‘áº¥t");
         $type = (string)($data['damage_type'] ?? $data['damageType'] ?? 'OTHER');
         if (!isset($this->damageTypes()[$type])) $type = 'OTHER';
         $columns = ['parcel_id', 'season_id', 'damage_type', 'event_date', 'affected_area', 'damage_percent', 'estimated_output_loss', 'note'];
@@ -455,7 +455,7 @@ SQL);
             $h = $this->fetchOne('SELECT head_citizen_name, address, phone FROM households WHERE id=:id AND ' . $this->tenantWhere('households'), $this->withTenant(['id' => $householdId]));
             if ($h) $name = (string)$h['head_citizen_name'];
         }
-        if ($name === '') throw new \RuntimeException(($role === 'owner' ? "Chủ sử dụng đất" : "Người sản xuất") . " là bắt buộc");
+        if ($name === '') throw new \RuntimeException(($role === 'owner' ? "Chá»§ sá»­ dá»¥ng Ä‘áº¥t" : "NgÆ°á»i sáº£n xuáº¥t") . " lÃ  báº¯t buá»™c");
         $params = ['stakeholder_type' => $type, 'household_id' => $householdId, 'name' => $name, 'identity_number' => trim((string)($data['identity_number'] ?? '')) ?: null, 'tax_code' => trim((string)($data['tax_code'] ?? '')) ?: null, 'phone' => trim((string)($data['phone'] ?? '')) ?: null, 'address' => trim((string)($data['address'] ?? '')) ?: null, 'note' => trim((string)($data['note'] ?? '')) ?: null];
         if ($existingId) {
             $params['id'] = $existingId;
@@ -472,7 +472,7 @@ SQL);
         $actual = $this->number($data['actual_area'] ?? $data['actualArea'] ?? 0);
         $cultivated = $this->number($data['cultivated_area'] ?? $data['cultivatedArea'] ?? 0);
         $abandoned = $this->number($data['abandoned_area'] ?? $data['abandonedArea'] ?? 0);
-        if (abs(($cultivated + $abandoned) - $actual) > 0.01) throw new \RuntimeException("Diện tích đang sản xuất + diện tích bỏ hoang phải bằng diện tích thực tế");
+        if (abs(($cultivated + $abandoned) - $actual) > 0.01) throw new \RuntimeException("Diá»‡n tÃ­ch Ä‘ang sáº£n xuáº¥t + diá»‡n tÃ­ch bá» hoang pháº£i báº±ng diá»‡n tÃ­ch thá»±c táº¿");
         $usage = (string)($data['usage_form'] ?? $data['usageForm'] ?? 'SELF');
         if (!isset($this->usageForms()[$usage])) $usage = 'SELF';
         $status = (string)($data['status'] ?? 'ACTIVE');
@@ -489,7 +489,7 @@ SQL);
     private function validatePlotTotal(int $parcelId): void
     {
         $row = $this->fetchOne('SELECT p.actual_area, COALESCE(SUM(pp.area),0) AS plot_area FROM agri_land_parcels p LEFT JOIN agri_production_plots pp ON pp.parcel_id=p.id AND pp.status <> "DELETED" AND ' . $this->tenantWhere('pp', 'agri_production_plots') . ' WHERE p.id=:id AND ' . $this->tenantWhere('p', 'agri_land_parcels') . ' GROUP BY p.id, p.actual_area', $this->withTenant(['id' => $parcelId]));
-        if ($row && (float)$row['plot_area'] - (float)$row['actual_area'] > 0.01) throw new \RuntimeException("Tổng diện tích các lô không được vượt diện tích thực tế của thửa");
+        if ($row && (float)$row['plot_area'] - (float)$row['actual_area'] > 0.01) throw new \RuntimeException("Tá»•ng diá»‡n tÃ­ch cÃ¡c lÃ´ khÃ´ng Ä‘Æ°á»£c vÆ°á»£t diá»‡n tÃ­ch thá»±c táº¿ cá»§a thá»­a");
     }
 
     private function plots(int $parcelId): array { return $this->fetchAll('SELECT * FROM agri_production_plots WHERE parcel_id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('agri_production_plots') . ' ORDER BY id ASC', $this->withTenant(['id' => $parcelId])); }
@@ -500,7 +500,7 @@ SQL);
 
     private function normalizeParcel(array $row): array
     {
-        return ['id' => (int)$row['id'], 'parcel_code' => (string)$row['parcel_code'], 'map_sheet_no' => (string)($row['map_sheet_no'] ?? ''), 'parcel_no' => (string)($row['parcel_no'] ?? ''), 'field_area' => (string)($row['field_area'] ?? ''), 'field_name' => (string)($row['field_name'] ?? ''), 'land_type' => (string)($row['land_type'] ?? ''), 'legal_area' => (float)($row['legal_area'] ?? 0), 'actual_area' => (float)($row['actual_area'] ?? 0), 'cultivated_area' => (float)($row['cultivated_area'] ?? 0), 'abandoned_area' => (float)($row['abandoned_area'] ?? 0), 'owner_id' => (int)$row['owner_id'], 'owner_name' => (string)($row['owner_name'] ?? ''), 'owner_type' => (string)($row['owner_type'] ?? ''), 'producer_id' => (int)$row['producer_id'], 'producer_name' => (string)($row['producer_name'] ?? ''), 'producer_type' => (string)($row['producer_type'] ?? ''), 'usage_form' => (string)($row['usage_form'] ?? 'SELF'), 'usage_form_label' => $this->usageForms()[$row['usage_form'] ?? 'SELF'] ?? "Tự sản xuất", 'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float)$row['latitude'] : null, 'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float)$row['longitude'] : null, 'polygon_geojson' => (string)($row['polygon_geojson'] ?? ''), 'status' => (string)($row['status'] ?? 'ACTIVE'), 'status_label' => $this->statusLabels()[$row['status'] ?? 'ACTIVE'] ?? "Đang sản xuất", 'note' => (string)($row['note'] ?? ''), 'plot_count' => (int)($row['plot_count'] ?? 0), 'current_crop' => (string)($row['current_crop'] ?? ''), 'current_season' => (string)($row['current_season'] ?? ''), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null];
+        return ['id' => (int)$row['id'], 'parcel_code' => (string)$row['parcel_code'], 'map_sheet_no' => (string)($row['map_sheet_no'] ?? ''), 'parcel_no' => (string)($row['parcel_no'] ?? ''), 'field_area' => (string)($row['field_area'] ?? ''), 'field_name' => (string)($row['field_name'] ?? ''), 'land_type' => (string)($row['land_type'] ?? ''), 'legal_area' => (float)($row['legal_area'] ?? 0), 'actual_area' => (float)($row['actual_area'] ?? 0), 'cultivated_area' => (float)($row['cultivated_area'] ?? 0), 'abandoned_area' => (float)($row['abandoned_area'] ?? 0), 'owner_id' => (int)$row['owner_id'], 'owner_name' => (string)($row['owner_name'] ?? ''), 'owner_type' => (string)($row['owner_type'] ?? ''), 'producer_id' => (int)$row['producer_id'], 'producer_name' => (string)($row['producer_name'] ?? ''), 'producer_type' => (string)($row['producer_type'] ?? ''), 'usage_form' => (string)($row['usage_form'] ?? 'SELF'), 'usage_form_label' => $this->usageForms()[$row['usage_form'] ?? 'SELF'] ?? "Tá»± sáº£n xuáº¥t", 'latitude' => $row['latitude'] !== null && $row['latitude'] !== '' ? (float)$row['latitude'] : null, 'longitude' => $row['longitude'] !== null && $row['longitude'] !== '' ? (float)$row['longitude'] : null, 'polygon_geojson' => (string)($row['polygon_geojson'] ?? ''), 'status' => (string)($row['status'] ?? 'ACTIVE'), 'status_label' => $this->statusLabels()[$row['status'] ?? 'ACTIVE'] ?? "Äang sáº£n xuáº¥t", 'note' => (string)($row['note'] ?? ''), 'plot_count' => (int)($row['plot_count'] ?? 0), 'current_crop' => (string)($row['current_crop'] ?? ''), 'current_season' => (string)($row['current_season'] ?? ''), 'created_at' => $row['created_at'] ?? null, 'updated_at' => $row['updated_at'] ?? null];
     }
 
 

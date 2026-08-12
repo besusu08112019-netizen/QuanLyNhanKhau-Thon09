@@ -86,7 +86,7 @@ final class TenantInstallerController extends BaseController
         } catch (RuntimeException $e) {
             Response::error($e->getMessage(), 422);
         } catch (Throwable $e) {
-            Response::error('Khởi tạo đơn vị thất bại', 500, ['detail' => $e->getMessage()]);
+            Response::error('Khá»Ÿi táº¡o Ä‘Æ¡n vá»‹ tháº¥t báº¡i', 500, ['detail' => $e->getMessage()]);
         }
     }
 }

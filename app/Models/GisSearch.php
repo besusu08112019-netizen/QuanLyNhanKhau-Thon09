@@ -115,29 +115,29 @@ class GisSearch extends BaseModel
         $atHome = (int) ($row['at_home_count'] ?? 0);
         $away = (int) ($row['away_count'] ?? 0);
         if ($atHome > 0 && $away > 0) {
-            return 'Có người đi vắng';
+            return 'CÃ³ ngÆ°á»i Ä‘i váº¯ng';
         }
         if ($away > 0) {
-            return 'Tạm vắng';
+            return 'Táº¡m váº¯ng';
         }
-        return 'Thường trú';
+        return 'ThÆ°á»ng trÃº';
     }
 
     private function householdType(array $row): string
     {
         if ((int) ($row['poor_household'] ?? 0) === 1) {
-            return 'Hộ nghèo';
+            return 'Há»™ nghÃ¨o';
         }
         if ((int) ($row['near_poor_household'] ?? 0) === 1) {
-            return 'Hộ cận nghèo';
+            return 'Há»™ cáº­n nghÃ¨o';
         }
         if ((int) ($row['meritorious_policy'] ?? 0) === 1) {
-            return 'Hộ có công';
+            return 'Há»™ cÃ³ cÃ´ng';
         }
         if ((int) ($row['disabled_policy'] ?? 0) === 1) {
-            return 'Hộ có người khuyết tật';
+            return 'Há»™ cÃ³ ngÆ°á»i khuyáº¿t táº­t';
         }
-        return 'Không ưu tiên';
+        return 'KhÃ´ng Æ°u tiÃªn';
     }
 
     private function ensureIndexes(): void

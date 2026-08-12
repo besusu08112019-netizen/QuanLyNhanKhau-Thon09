@@ -108,8 +108,8 @@ final class GisHouseholdLocation extends BaseModel
              WHERE h.id = :id AND ' . $this->statistics()->householdCondition('h'),
             ['id' => $householdId]
         );
-        if (!$row) throw new \RuntimeException('Không tìm thấy hộ gia đình');
-        $members = $this->fetchAll('SELECT id, citizen_code, full_name, relationship, phone, residency_status, presence_status FROM citizens WHERE household_id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('citizens') . ' ORDER BY CASE WHEN relationship = "Chủ hộ" THEN 0 ELSE 1 END, full_name LIMIT 200', ['id' => $householdId]);
+        if (!$row) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™ gia Ä‘Ã¬nh');
+        $members = $this->fetchAll('SELECT id, citizen_code, full_name, relationship, phone, residency_status, presence_status FROM citizens WHERE household_id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('citizens') . ' ORDER BY CASE WHEN relationship = "Chá»§ há»™" THEN 0 ELSE 1 END, full_name LIMIT 200', ['id' => $householdId]);
         $business = [];
         if ($this->tableExists('household_business')) {
             $business = $this->fetchAll('SELECT id, business_name, business_type, economic_type, production_sector, business_sector, business_scale, worker_count, status FROM household_business WHERE household_id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('household_business') . ' ORDER BY id ASC', ['id' => $householdId]);
@@ -146,7 +146,7 @@ final class GisHouseholdLocation extends BaseModel
                 'id' => (int) $m['id'], 'citizen_code' => (string) ($m['citizen_code'] ?? ''), 'full_name' => (string) ($m['full_name'] ?? ''), 'relationship' => (string) ($m['relationship'] ?? ''), 'phone' => (string) ($m['phone'] ?? ''), 'residency_status' => (string) ($m['residency_status'] ?? ''), 'presence_status' => (string) ($m['presence_status'] ?? ''),
             ], $members),
             'business' => array_map(fn($b) => [
-                'id' => (int) $b['id'], 'business_name' => (string) ($b['business_name'] ?: $b['economic_type'] ?: 'Hoạt động kinh tế'), 'business_type' => (string) ($b['business_type'] ?? ''), 'economic_type' => (string) ($b['economic_type'] ?? ''), 'sector' => (string) (($b['production_sector'] ?? '') ?: ($b['business_sector'] ?? '')), 'business_scale' => (string) ($b['business_scale'] ?? ''), 'worker_count' => (int) ($b['worker_count'] ?? 0), 'status' => (string) ($b['status'] ?? ''),
+                'id' => (int) $b['id'], 'business_name' => (string) ($b['business_name'] ?: $b['economic_type'] ?: 'Hoáº¡t Ä‘á»™ng kinh táº¿'), 'business_type' => (string) ($b['business_type'] ?? ''), 'economic_type' => (string) ($b['economic_type'] ?? ''), 'sector' => (string) (($b['production_sector'] ?? '') ?: ($b['business_sector'] ?? '')), 'business_scale' => (string) ($b['business_scale'] ?? ''), 'worker_count' => (int) ($b['worker_count'] ?? 0), 'status' => (string) ($b['status'] ?? ''),
             ], $business),
             'livestock' => array_map(fn($l) => [
                 'id' => (int) $l['id'], 'animal_type' => (string) ($l['animal_type'] ?? ''), 'breed' => (string) ($l['breed'] ?? ''), 'quantity' => (int) ($l['quantity'] ?? 0), 'vaccinated' => (int) ($l['vaccinated'] ?? 0) === 1, 'status' => (string) ($l['status'] ?? ''),
@@ -169,7 +169,7 @@ final class GisHouseholdLocation extends BaseModel
         $hasBusinessTable = $this->tableExists('household_business');
         $businessJoin = $hasBusinessTable ? ' LEFT JOIN (
                 SELECT x.household_id,
-                       GROUP_CONCAT(COALESCE(NULLIF(x.business_name,""),"Chưa đặt tên") ORDER BY x.id SEPARATOR ", ") AS business_names,
+                       GROUP_CONCAT(COALESCE(NULLIF(x.business_name,""),"ChÆ°a Ä‘áº·t tÃªn") ORDER BY x.id SEPARATOR ", ") AS business_names,
                        GROUP_CONCAT(CONCAT_WS(CHAR(31),
                            x.id,
                            COALESCE(REPLACE(REPLACE(x.business_name, CHAR(30), " "), CHAR(31), " "), ""),
@@ -273,7 +273,7 @@ final class GisHouseholdLocation extends BaseModel
                     'id' => $householdId,
                 ]
             );
-            if ($updated < 1) throw new \RuntimeException('Không tìm thấy hộ gia đình cần định vị');
+            if ($updated < 1) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™ gia Ä‘Ã¬nh cáº§n Ä‘á»‹nh vá»‹');
             $this->db->commit();
         } catch (\Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
@@ -300,7 +300,7 @@ final class GisHouseholdLocation extends BaseModel
              WHERE id = :id AND status <> "DELETED" AND ' . $this->tenantLiteral('households'),
             ['location_updated_by' => $userId, 'updated_by' => $userId, 'id' => $householdId]
         );
-        if ($updated < 1) throw new \RuntimeException('Không tìm thấy hộ gia đình cần xóa vị trí');
+        if ($updated < 1) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™ gia Ä‘Ã¬nh cáº§n xÃ³a vá»‹ trÃ­');
 
         return [
             'id' => $householdId,
@@ -575,7 +575,7 @@ final class GisHouseholdLocation extends BaseModel
 
     private function businessTypeLabel(mixed $value): string
     {
-        return ['RESIDENT' => 'Hộ dân', 'PRODUCTION' => 'Hộ sản xuất', 'BUSINESS' => 'Hộ kinh doanh', 'BOTH' => 'Hộ sản xuất và kinh doanh'][strtoupper((string) $value)] ?? '';
+        return ['RESIDENT' => 'Há»™ dÃ¢n', 'PRODUCTION' => 'Há»™ sáº£n xuáº¥t', 'BUSINESS' => 'Há»™ kinh doanh', 'BOTH' => 'Há»™ sáº£n xuáº¥t vÃ  kinh doanh'][strtoupper((string) $value)] ?? '';
     }
 
     private function businessMarkerKey(mixed $value): string
@@ -586,25 +586,25 @@ final class GisHouseholdLocation extends BaseModel
     {
         $atHome = (int) ($row['at_home_count'] ?? 0);
         $away = (int) ($row['away_count'] ?? 0);
-        if ($atHome > 0 && $away > 0) return 'Có người đi vắng';
-        if ($away > 0) return 'Tạm vắng';
-        return 'Thường trú';
+        if ($atHome > 0 && $away > 0) return 'CÃ³ ngÆ°á»i Ä‘i váº¯ng';
+        if ($away > 0) return 'Táº¡m váº¯ng';
+        return 'ThÆ°á»ng trÃº';
     }
 
     private function householdType(array $row): string
     {
-        if ((int) ($row['poor_household'] ?? 0) === 1) return 'Hộ nghèo';
-        if ((int) ($row['near_poor_household'] ?? 0) === 1) return 'Hộ cận nghèo';
-        if ((int) ($row['meritorious_policy'] ?? 0) === 1) return 'Hộ có công';
-        if ((int) ($row['disabled_policy'] ?? 0) === 1) return 'Hộ có người khuyết tật';
-        return 'Hộ thường';
+        if ((int) ($row['poor_household'] ?? 0) === 1) return 'Há»™ nghÃ¨o';
+        if ((int) ($row['near_poor_household'] ?? 0) === 1) return 'Há»™ cáº­n nghÃ¨o';
+        if ((int) ($row['meritorious_policy'] ?? 0) === 1) return 'Há»™ cÃ³ cÃ´ng';
+        if ((int) ($row['disabled_policy'] ?? 0) === 1) return 'Há»™ cÃ³ ngÆ°á»i khuyáº¿t táº­t';
+        return 'Há»™ thÆ°á»ng';
     }
 
     private function coordinate(mixed $value, float $min, float $max, string $label): float
     {
-        if ($value === null || $value === '' || !is_numeric($value)) throw new \RuntimeException($label . ' không hợp lệ');
+        if ($value === null || $value === '' || !is_numeric($value)) throw new \RuntimeException($label . ' khÃ´ng há»£p lá»‡');
         $number = (float) $value;
-        if ($number < $min || $number > $max) throw new \RuntimeException($label . ' nằm ngoài phạm vi cho phép');
+        if ($number < $min || $number > $max) throw new \RuntimeException($label . ' náº±m ngoÃ i pháº¡m vi cho phÃ©p');
         return round($number, 8);
     }
 

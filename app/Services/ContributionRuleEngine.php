@@ -21,42 +21,42 @@ final class ContributionRuleEngine
     ];
 
     public const UNIT_TYPES = [
-        'HOUSEHOLD' => 'Theo hộ',
-        'PERSON' => 'Theo nhân khẩu',
-        'AREA' => 'Theo diện tích',
-        'VEHICLE' => 'Theo phương tiện',
-        'ONCE' => 'Theo lần',
-        'OTHER' => 'Khác',
+        'HOUSEHOLD' => 'Theo há»™',
+        'PERSON' => 'Theo nhÃ¢n kháº©u',
+        'AREA' => 'Theo diá»‡n tÃ­ch',
+        'VEHICLE' => 'Theo phÆ°Æ¡ng tiá»‡n',
+        'ONCE' => 'Theo láº§n',
+        'OTHER' => 'KhÃ¡c',
     ];
 
     public const TARGET_OPTIONS = [
-        'ALL_HOUSEHOLDS' => 'Thu toàn bộ hộ',
-        'ALL_PEOPLE' => 'Thu toàn bộ nhân khẩu',
-        'LABOR_AGE' => 'Chỉ thu người trong độ tuổi lao động',
-        'NON_LABOR_AGE' => 'Chỉ thu người ngoài độ tuổi lao động',
-        'AGE_RANGE' => 'Chỉ thu người từ ... tuổi đến ... tuổi',
-        'AGE_FROM' => 'Chỉ thu người từ ... tuổi trở lên',
-        'CHILDREN' => 'Chỉ thu trẻ em',
-        'ELDERLY' => 'Chỉ thu người cao tuổi',
-        'OTHER' => 'Khác',
+        'ALL_HOUSEHOLDS' => 'Thu toÃ n bá»™ há»™',
+        'ALL_PEOPLE' => 'Thu toÃ n bá»™ nhÃ¢n kháº©u',
+        'LABOR_AGE' => 'Chá»‰ thu ngÆ°á»i trong Ä‘á»™ tuá»•i lao Ä‘á»™ng',
+        'NON_LABOR_AGE' => 'Chá»‰ thu ngÆ°á»i ngoÃ i Ä‘á»™ tuá»•i lao Ä‘á»™ng',
+        'AGE_RANGE' => 'Chá»‰ thu ngÆ°á»i tá»« ... tuá»•i Ä‘áº¿n ... tuá»•i',
+        'AGE_FROM' => 'Chá»‰ thu ngÆ°á»i tá»« ... tuá»•i trá»Ÿ lÃªn',
+        'CHILDREN' => 'Chá»‰ thu tráº» em',
+        'ELDERLY' => 'Chá»‰ thu ngÆ°á»i cao tuá»•i',
+        'OTHER' => 'KhÃ¡c',
     ];
 
     public const EXEMPTION_OPTIONS = [
-        'PRESENCE_AWAY' => 'Người đi vắng',
-        'AGE_FROM_CONFIG' => 'Người từ độ tuổi cấu hình trở lên',
-        'NON_LABOR_AGE' => 'Người ngoài độ tuổi lao động',
-        'CHILDREN' => 'Trẻ em',
-        'ELDERLY' => 'Người cao tuổi',
-        'DISABLED' => 'Người khuyết tật',
-        'MERITORIOUS' => 'Người có công',
-        'ACTIVE_SOLDIER' => 'Bộ đội đang phục vụ',
-        'POOR_HOUSEHOLD' => 'Hộ nghèo',
-        'NEAR_POOR_HOUSEHOLD' => 'Hộ cận nghèo',
-        'SOCIAL_ASSISTANCE' => 'Người thuộc diện bảo trợ xã hội',
-        'POLICY' => 'Đối tượng chính sách',
-        'COMMUNE_DECISION' => 'Miễn theo quyết định của UBND xã',
-        'HAMLET_DECISION' => 'Miễn theo quyết định của Trưởng thôn',
-        'OTHER' => 'Khác',
+        'PRESENCE_AWAY' => 'NgÆ°á»i Ä‘i váº¯ng',
+        'AGE_FROM_CONFIG' => 'NgÆ°á»i tá»« Ä‘á»™ tuá»•i cáº¥u hÃ¬nh trá»Ÿ lÃªn',
+        'NON_LABOR_AGE' => 'NgÆ°á»i ngoÃ i Ä‘á»™ tuá»•i lao Ä‘á»™ng',
+        'CHILDREN' => 'Tráº» em',
+        'ELDERLY' => 'NgÆ°á»i cao tuá»•i',
+        'DISABLED' => 'NgÆ°á»i khuyáº¿t táº­t',
+        'MERITORIOUS' => 'NgÆ°á»i cÃ³ cÃ´ng',
+        'ACTIVE_SOLDIER' => 'Bá»™ Ä‘á»™i Ä‘ang phá»¥c vá»¥',
+        'POOR_HOUSEHOLD' => 'Há»™ nghÃ¨o',
+        'NEAR_POOR_HOUSEHOLD' => 'Há»™ cáº­n nghÃ¨o',
+        'SOCIAL_ASSISTANCE' => 'NgÆ°á»i thuá»™c diá»‡n báº£o trá»£ xÃ£ há»™i',
+        'POLICY' => 'Äá»‘i tÆ°á»£ng chÃ­nh sÃ¡ch',
+        'COMMUNE_DECISION' => 'Miá»…n theo quyáº¿t Ä‘á»‹nh cá»§a UBND xÃ£',
+        'HAMLET_DECISION' => 'Miá»…n theo quyáº¿t Ä‘á»‹nh cá»§a TrÆ°á»Ÿng thÃ´n',
+        'OTHER' => 'KhÃ¡c',
     ];
 
     public function calculateHousehold(array $campaign, array $household, array $members): array
@@ -75,7 +75,7 @@ final class ContributionRuleEngine
         }
 
         if ($unitType === 'HOUSEHOLD' && $targetMembers === [] && $this->householdMatchesTarget($target)) {
-            $targetMembers = $members ?: [['id' => null, 'full_name' => (string) ($household['head_citizen_name'] ?? 'Chủ hộ')]];
+            $targetMembers = $members ?: [['id' => null, 'full_name' => (string) ($household['head_citizen_name'] ?? 'Chá»§ há»™')]];
             $totalMembers = max(1, $totalMembers);
         }
 
@@ -146,7 +146,7 @@ final class ContributionRuleEngine
                 continue;
             }
             if (!isset($targetIds[$key])) {
-                $subjects[] = $member + ['_exemption_reason' => 'Không thuộc đối tượng phải đóng góp'];
+                $subjects[] = $member + ['_exemption_reason' => 'KhÃ´ng thuá»™c Ä‘á»‘i tÆ°á»£ng pháº£i Ä‘Ã³ng gÃ³p'];
             }
         }
         return $subjects;
@@ -189,12 +189,12 @@ final class ContributionRuleEngine
             if ($condition === 'ELDERLY' && AgePolicy::isStatisticalElderlyAge($this->age($member['date_of_birth'] ?? null))) return true;
             if ($condition === 'DISABLED' && (int) ($member['disabled_person'] ?? 0) === 1) return true;
             if ($condition === 'MERITORIOUS' && $this->isMeritoriousMember($member)) return true;
-            if ($condition === 'ACTIVE_SOLDIER' && $this->textHas($member, ['bộ đội', 'bo doi', 'quân nhân', 'quan nhan', 'military', 'soldier'])) return true;
+            if ($condition === 'ACTIVE_SOLDIER' && $this->textHas($member, ['bá»™ Ä‘á»™i', 'bo doi', 'quÃ¢n nhÃ¢n', 'quan nhan', 'military', 'soldier'])) return true;
             if ($condition === 'SOCIAL_ASSISTANCE' && (int) ($member['social_assistance'] ?? 0) === 1) return true;
             if ($condition === 'POOR_HOUSEHOLD' && (int) ($household['poor_household'] ?? 0) === 1) return true;
             if ($condition === 'NEAR_POOR_HOUSEHOLD' && (int) ($household['near_poor_household'] ?? 0) === 1) return true;
-            if ($condition === 'POLICY' && $this->noteHas($household, ['chính sách', 'chinh sach', 'policy'])) return true;
-            if (in_array($condition, ['COMMUNE_DECISION', 'HAMLET_DECISION', 'OTHER'], true) && $this->noteHas($household, ['miễn', 'mien', 'quyết định', 'quyet dinh'])) return true;
+            if ($condition === 'POLICY' && $this->noteHas($household, ['chÃ­nh sÃ¡ch', 'chinh sach', 'policy'])) return true;
+            if (in_array($condition, ['COMMUNE_DECISION', 'HAMLET_DECISION', 'OTHER'], true) && $this->noteHas($household, ['miá»…n', 'mien', 'quyáº¿t Ä‘á»‹nh', 'quyet dinh'])) return true;
         }
         return false;
     }
@@ -218,7 +218,7 @@ final class ContributionRuleEngine
             return [
                 'amount' => min($baseAmount, $amount),
                 'percent' => $percent,
-                'reason' => (string) ($rule['label'] ?? $rule['rule'] ?? 'Giảm theo cấu hình khoản thu'),
+                'reason' => (string) ($rule['label'] ?? $rule['rule'] ?? 'Giáº£m theo cáº¥u hÃ¬nh khoáº£n thu'),
             ];
         }
         return ['amount' => 0.0, 'percent' => 0.0, 'reason' => ''];
@@ -230,8 +230,8 @@ final class ContributionRuleEngine
         foreach ($conditions as $condition) {
             if ($condition === 'POOR_HOUSEHOLD' && (int) ($household['poor_household'] ?? 0) === 1) return true;
             if ($condition === 'NEAR_POOR_HOUSEHOLD' && (int) ($household['near_poor_household'] ?? 0) === 1) return true;
-            if ($condition === 'POLICY' && $this->noteHas($household, ['chính sách', 'chinh sach', 'policy'])) return true;
-            if (in_array($condition, ['COMMUNE_DECISION', 'HAMLET_DECISION', 'OTHER'], true) && $this->noteHas($household, ['miễn toàn bộ', 'mien toan bo'])) return true;
+            if ($condition === 'POLICY' && $this->noteHas($household, ['chÃ­nh sÃ¡ch', 'chinh sach', 'policy'])) return true;
+            if (in_array($condition, ['COMMUNE_DECISION', 'HAMLET_DECISION', 'OTHER'], true) && $this->noteHas($household, ['miá»…n toÃ n bá»™', 'mien toan bo'])) return true;
         }
         return false;
     }
@@ -239,14 +239,14 @@ final class ContributionRuleEngine
     private function exemptionReason(array $member, array $household, array $config): string
     {
         foreach ($this->personRules($config) as $rule) {
-            if ($this->evaluateRule($member, $household, $rule)) return (string) ($rule['label'] ?? 'Miễn theo cấu hình khoản thu');
+            if ($this->evaluateRule($member, $household, $rule)) return (string) ($rule['label'] ?? 'Miá»…n theo cáº¥u hÃ¬nh khoáº£n thu');
         }
         foreach ($this->conditions($config, []) as $condition) {
             if ($this->matchesExemption($member, $household, ['conditions' => [$condition]])) {
                 return self::EXEMPTION_OPTIONS[$condition] ?? $condition;
             }
         }
-        return 'Miễn theo cấu hình khoản thu';
+        return 'Miá»…n theo cáº¥u hÃ¬nh khoáº£n thu';
     }
 
     private function personRules(array $config): array
@@ -295,7 +295,7 @@ final class ContributionRuleEngine
         if ($ageMonths === null || $ageMonths < self::LABOR_AGE['min_years'] * 12) return false;
         $gender = (string) ($member['gender'] ?? '');
         $year = (int) date('Y');
-        if ($gender === 'Nữ') {
+        if ($gender === 'Ná»¯') {
             $retirement = min(
                 self::LABOR_AGE['female_max_months'],
                 self::LABOR_AGE['female_start_months'] + max(0, $year - self::LABOR_AGE['female_start_year']) * self::LABOR_AGE['female_step_months']

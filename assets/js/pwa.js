@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const APP_NAME = window.AppSettings?.systemName || 'Hệ thống Quản lý Hành chính';
+  const APP_NAME = window.AppSettings?.systemName || 'Há»‡ thá»‘ng Quáº£n lÃ½ HÃ nh chÃ­nh';
   const TENANT_NAMESPACE = window.TenantRuntime?.namespace || String(window.AppSettings?.tenantNamespace || location.host || 'tenant').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
   const DB_NAME = `${TENANT_NAMESPACE}-pwa`;
   const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
@@ -19,7 +19,7 @@
     [/^\/api\/permissions(?:\/|\?|$)/, 'lookups']
   ];
   const QUEUEABLE_API = /^\/api\/(?:households|persons|gis|files|public-assets|reports|household-business|livestock|agriculture|houses|notifications)(?:\/|\?|$)/;
-  const state = { db: null, deferredInstall: null, registration: null, refreshing: false, syncing: false, updateWorker: null, updateTimer: null };
+  const state = { db: null, deferredInstall: null, registration: null, refreshing: false, syncing: false, updateWorker: null, updateTimer: null, installHelpTimer: null };
 
   if (navigator.webdriver && 'serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations?.().then(registrations => registrations.forEach(registration => registration.unregister())).catch(() => {});
@@ -49,12 +49,12 @@
     window.addEventListener('beforeinstallprompt', event => {
       event.preventDefault();
       state.deferredInstall = event;
-      showInstallButton();
+      showInstallButton('prompt');
     });
     window.addEventListener('appinstalled', () => {
       state.deferredInstall = null;
       hideInstallButton();
-      notify('Ứng dụng đã được cài đặt', 'success');
+      notify('á»¨ng dá»¥ng Ä‘Ã£ Ä‘Æ°á»£c cÃ i Ä‘áº·t', 'success');
     });
     navigator.serviceWorker.addEventListener('message', event => {
       const type = event.data && event.data.type;
@@ -68,6 +68,7 @@
     });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForServiceWorkerUpdate(); });
     window.addEventListener('focus', checkForServiceWorkerUpdate);
+    scheduleInstallHelp();
   }
 
   async function registerServiceWorker() {
@@ -157,16 +158,16 @@
     if (navigator.onLine !== false) {
       try { return await nativeFetch(input, init); } catch (error) { if (!canQueue(request)) throw error; }
     } else if (!canQueue(request)) {
-      return jsonResponse({ ok: false, error: { message: 'Đang ngoại tuyến. Thao tác này cần kết nối Internet.' } }, 503);
+      return jsonResponse({ ok: false, error: { message: 'Äang ngoáº¡i tuyáº¿n. Thao tÃ¡c nÃ y cáº§n káº¿t ná»‘i Internet.' } }, 503);
     }
 
     const entry = await buildQueueEntry(input, init, request);
-    if (!entry) return jsonResponse({ ok: false, error: { message: 'Không thể lưu thao tác ngoại tuyến này.' } }, 422);
+    if (!entry) return jsonResponse({ ok: false, error: { message: 'KhÃ´ng thá»ƒ lÆ°u thao tÃ¡c ngoáº¡i tuyáº¿n nÃ y.' } }, 422);
     await addQueueEntry(entry);
     await registerBackgroundSync();
     updateNetworkStatus(true);
-    notify('Đã lưu thao tác vào hàng đợi đồng bộ', 'warning');
-    return jsonResponse({ ok: true, success: true, data: { queued: true, offline: true }, message: 'Đã lưu vào hàng đợi đồng bộ' }, 202);
+    notify('ÄÃ£ lÆ°u thao tÃ¡c vÃ o hÃ ng Ä‘á»£i Ä‘á»“ng bá»™', 'warning');
+    return jsonResponse({ ok: true, success: true, data: { queued: true, offline: true }, message: 'ÄÃ£ lÆ°u vÃ o hÃ ng Ä‘á»£i Ä‘á»“ng bá»™' }, 202);
   }
 
   function normalizeRequest(input, init) {
@@ -245,14 +246,14 @@
       try {
         await replayQueueEntry(entry);
         await deleteQueueEntry(entry.id);
-        notify('Đã đồng bộ một thao tác ngoại tuyến', 'success');
+        notify('ÄÃ£ Ä‘á»“ng bá»™ má»™t thao tÃ¡c ngoáº¡i tuyáº¿n', 'success');
       } catch (error) {
         entry.attempts += 1;
         entry.updatedAt = Date.now();
-        entry.lastError = error.message || 'Đồng bộ thất bại';
+        entry.lastError = error.message || 'Äá»“ng bá»™ tháº¥t báº¡i';
         entry.status = entry.attempts >= 5 ? 'failed' : 'pending';
         await put('syncQueue', entry);
-        if (entry.status === 'failed') notify('Một thao tác đồng bộ thất bại. Vui lòng kiểm tra lại dữ liệu.', 'danger');
+        if (entry.status === 'failed') notify('Má»™t thao tÃ¡c Ä‘á»“ng bá»™ tháº¥t báº¡i. Vui lÃ²ng kiá»ƒm tra láº¡i dá»¯ liá»‡u.', 'danger');
       }
     }
   }
@@ -300,20 +301,24 @@
       const bar = document.createElement('div');
       bar.id = 'pwaStatusBar';
       bar.className = 'pwa-status-bar';
-      bar.innerHTML = '<span class="pwa-status-dot" aria-hidden="true"></span><span data-pwa-status-text>Đang trực tuyến</span><button class="btn btn-outline-secondary d-none" type="button" data-pwa-sync>Đồng bộ</button>';
+      bar.innerHTML = '<span class="pwa-status-dot" aria-hidden="true"></span><span data-pwa-status-text>Äang trá»±c tuyáº¿n</span><button class="btn btn-outline-secondary d-none" type="button" data-pwa-sync>Äá»“ng bá»™</button>';
       document.body.appendChild(bar);
       bar.querySelector('[data-pwa-sync]').addEventListener('click', flushQueueSoon);
     }
     updateNetworkStatus();
   }
 
-  function showInstallButton() {
+  function showInstallButton(mode) {
     if (isStandalone() || document.querySelector('#pwaInstallBtn')) return;
     const btn = document.createElement('button');
     btn.id = 'pwaInstallBtn';
     btn.className = 'btn btn-success pwa-install-btn';
     btn.type = 'button';
-    btn.innerHTML = '<i class="fa-solid fa-download"></i> Cài đặt ứng dụng';
+    btn.dataset.installMode = mode || (state.deferredInstall ? 'prompt' : 'help');
+    btn.setAttribute('aria-label', state.deferredInstall ? 'CÃ i á»©ng dá»¥ng' : 'HÆ°á»›ng dáº«n thÃªm vÃ o mÃ n hÃ¬nh chÃ­nh');
+    btn.innerHTML = state.deferredInstall
+      ? '<i class="fa-solid fa-download"></i> CÃ i á»©ng dá»¥ng'
+      : '<i class="fa-solid fa-mobile-screen-button"></i> ThÃªm vÃ o mÃ n hÃ¬nh chÃ­nh';
     btn.addEventListener('click', promptInstall);
     document.body.appendChild(btn);
   }
@@ -321,12 +326,47 @@
   function hideInstallButton() { document.querySelector('#pwaInstallBtn')?.remove(); }
 
   async function promptInstall() {
-    if (!state.deferredInstall) return;
+    if (!state.deferredInstall) {
+      showInstallGuide();
+      return;
+    }
     state.deferredInstall.prompt();
     await state.deferredInstall.userChoice.catch(() => null);
     state.deferredInstall = null;
     hideInstallButton();
   }
+
+  function scheduleInstallHelp() {
+    clearInstallHelpTimer();
+    if (isStandalone() || state.deferredInstall || !isLikelyMobileInstallTarget()) return;
+    const delay = Number(window.__TenantPwaInstallHelpDelayMs || 1800);
+    state.installHelpTimer = window.setTimeout(() => {
+      if (!state.deferredInstall && !isStandalone()) showInstallButton('help');
+    }, delay);
+  }
+
+  function clearInstallHelpTimer() {
+    if (state.installHelpTimer) window.clearTimeout(state.installHelpTimer);
+    state.installHelpTimer = null;
+  }
+
+  function showInstallGuide() {
+    if (isStandalone()) return;
+    let guide = document.querySelector('#pwaInstallGuide');
+    if (!guide) {
+      guide = document.createElement('div');
+      guide.id = 'pwaInstallGuide';
+      guide.className = 'pwa-install-guide';
+      guide.setAttribute('role', 'status');
+      guide.innerHTML = '<div><strong>ThÃªm á»©ng dá»¥ng vÃ o mÃ n hÃ¬nh chÃ­nh</strong><p data-pwa-install-guide-text></p></div><button type="button" class="btn btn-sm btn-outline-secondary" aria-label="ÄÃ³ng hÆ°á»›ng dáº«n cÃ i á»©ng dá»¥ng">ÄÃ³ng</button>';
+      guide.querySelector('button').addEventListener('click', hideInstallGuide);
+      document.body.appendChild(guide);
+    }
+    const text = guide.querySelector('[data-pwa-install-guide-text]');
+    if (text) text.textContent = installGuideText();
+  }
+
+  function hideInstallGuide() { document.querySelector('#pwaInstallGuide')?.remove(); }
 
   function showUpdateBanner(worker) {
     state.updateWorker = worker;
@@ -334,7 +374,7 @@
     const banner = document.createElement('div');
     banner.id = 'pwaUpdateBanner';
     banner.className = 'pwa-update-banner';
-    banner.innerHTML = '<p>?? c? phi?n b?n m?i c?a ?ng d?ng Th?n 09. C?p nh?t ngay?</p><button class="btn btn-success btn-sm" type="button">C?p nh?t</button>';
+    banner.innerHTML = '<p>ÄÃ£ cÃ³ phiÃªn báº£n má»›i cá»§a á»©ng dá»¥ng. Cáº­p nháº­t ngay?</p><button class="btn btn-success btn-sm" type="button">Cáº­p nháº­t</button>';
     banner.querySelector('button').addEventListener('click', applyServiceWorkerUpdate);
     document.body.appendChild(banner);
   }
@@ -359,14 +399,14 @@
     bar.classList.toggle('is-syncing', syncing);
     const text = bar.querySelector('[data-pwa-status-text]');
     const btn = bar.querySelector('[data-pwa-sync]');
-    if (text) text.textContent = syncing ? 'Đang đồng bộ dữ liệu' : (offline ? 'Đang ngoại tuyến' : 'Đang trực tuyến') + (queued.length ? ` - ${queued.length} chờ đồng bộ` : '');
+    if (text) text.textContent = syncing ? 'Äang Ä‘á»“ng bá»™ dá»¯ liá»‡u' : (offline ? 'Äang ngoáº¡i tuyáº¿n' : 'Äang trá»±c tuyáº¿n') + (queued.length ? ` - ${queued.length} chá» Ä‘á»“ng bá»™` : '');
     if (btn) btn.classList.toggle('d-none', !queued.length || offline || syncing);
     document.body.classList.toggle('pwa-offline', offline);
   }
 
   function setOfflineReadonly(enabled) {
     document.body.classList.toggle('pwa-offline-readonly', !!enabled);
-    if (enabled) notify('Đang xem dữ liệu đã lưu ngoại tuyến', 'warning');
+    if (enabled) notify('Äang xem dá»¯ liá»‡u Ä‘Ã£ lÆ°u ngoáº¡i tuyáº¿n', 'warning');
   }
 
   function hydrateOnlineState() {
@@ -450,6 +490,15 @@
     return new Response(JSON.stringify(payload), { status, headers });
   }
   function isStandalone() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
+  function isLikelyMobileInstallTarget() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || window.matchMedia('(pointer: coarse)').matches;
+  }
+  function installGuideText() {
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent || '')) {
+      return 'Má»Ÿ nÃºt Chia sáº» cá»§a Safari rá»“i chá»n ThÃªm vÃ o MÃ n hÃ¬nh chÃ­nh.';
+    }
+    return 'Má»Ÿ menu trÃ¬nh duyá»‡t rá»“i chá»n CÃ i á»©ng dá»¥ng hoáº·c ThÃªm vÃ o mÃ n hÃ¬nh chÃ­nh.';
+  }
   function blobToDataUrl(blob) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

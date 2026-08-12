@@ -68,7 +68,7 @@ final class AgricultureProductionController extends BaseController
     {
         $this->requirePermission('agriculture', 'read');
         $row = $this->agriculture->find((int)$id);
-        if (!$row) $this->fail('Kh?ng t?m th?y th?a ??t', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y thá»­a Ä‘áº¥t', 404);
         $this->ok($row);
     }
 
@@ -76,7 +76,7 @@ final class AgricultureProductionController extends BaseController
     {
         $user = $this->requirePermission('agriculture', 'create');
         $row = $this->agriculture->upsertParcel((array)$this->input(), (int)$user['id']);
-        $this->audit($user, 'agriculture', 'create', 'Th?m th?a s?n xu?t n?ng nghi?p', $row['id'], ['before' => null, 'after' => $row]);
+        $this->audit($user, 'agriculture', 'create', 'ThÃªm thá»­a sáº£n xuáº¥t nÃ´ng nghiá»‡p', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -84,9 +84,9 @@ final class AgricultureProductionController extends BaseController
     {
         $user = $this->requirePermission('agriculture', 'update');
         $before = $this->agriculture->find((int)$id);
-        if (!$before) $this->fail('Kh?ng t?m th?y th?a ??t', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y thá»­a Ä‘áº¥t', 404);
         $row = $this->agriculture->upsertParcel((array)$this->input(), (int)$user['id'], (int)$id);
-        $this->audit($user, 'agriculture', 'update', 'Ch?nh s?a th?a s?n xu?t n?ng nghi?p', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'agriculture', 'update', 'Chá»‰nh sá»­a thá»­a sáº£n xuáº¥t nÃ´ng nghiá»‡p', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -94,9 +94,9 @@ final class AgricultureProductionController extends BaseController
     {
         $user = $this->requirePermission('agriculture', 'delete');
         $before = $this->agriculture->find((int)$id);
-        if (!$before) $this->fail('Kh?ng t?m th?y th?a ??t', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y thá»­a Ä‘áº¥t', 404);
         $this->agriculture->softDeleteParcel((int)$id, (int)$user['id']);
-        $this->audit($user, 'agriculture', 'delete', 'X?a th?a s?n xu?t n?ng nghi?p', $id, ['before' => $before, 'after' => null]);
+        $this->audit($user, 'agriculture', 'delete', 'XÃ³a thá»­a sáº£n xuáº¥t nÃ´ng nghiá»‡p', $id, ['before' => $before, 'after' => null]);
         $this->ok(['id' => (int)$id]);
     }
 
@@ -104,7 +104,7 @@ final class AgricultureProductionController extends BaseController
     {
         $user = $this->requirePermission('agriculture', 'update');
         $row = $this->agriculture->addPlot((int)$parcelId, (array)$this->input());
-        $this->audit($user, 'agriculture', 'add_plot', 'Th?m l? s?n xu?t', $parcelId, ['after' => $row]);
+        $this->audit($user, 'agriculture', 'add_plot', 'ThÃªm lÃ´ sáº£n xuáº¥t', $parcelId, ['after' => $row]);
         $this->ok($row);
     }
 
@@ -112,7 +112,7 @@ final class AgricultureProductionController extends BaseController
     {
         $user = $this->requirePermission('agriculture', 'update');
         $row = $this->agriculture->addSeason((int)$plotId, (array)$this->input());
-        $this->audit($user, 'agriculture', 'add_season', 'Th?m m?a v?', $plotId, ['after' => $row]);
+        $this->audit($user, 'agriculture', 'add_season', 'ThÃªm mÃ¹a vá»¥', $plotId, ['after' => $row]);
         $this->ok($row);
     }
 
@@ -120,7 +120,7 @@ final class AgricultureProductionController extends BaseController
     {
         $user = $this->requirePermission('agriculture', 'update');
         $row = $this->agriculture->addLog((int)$seasonId, (array)$this->input(), (int)$user['id']);
-        $this->audit($user, 'agriculture', 'add_log', 'Th?m nh?t k? s?n xu?t', $seasonId, ['after' => $row]);
+        $this->audit($user, 'agriculture', 'add_log', 'ThÃªm nháº­t kÃ½ sáº£n xuáº¥t', $seasonId, ['after' => $row]);
         $this->ok($row);
     }
 
@@ -128,7 +128,7 @@ final class AgricultureProductionController extends BaseController
     {
         $user = $this->requirePermission('agriculture', 'update');
         $row = $this->agriculture->addDamage((int)$parcelId, (array)$this->input());
-        $this->audit($user, 'agriculture', 'add_damage', 'Ghi nh?n thi?t h?i s?n xu?t', $parcelId, ['after' => $row]);
+        $this->audit($user, 'agriculture', 'add_damage', 'Ghi nháº­n thiá»‡t háº¡i sáº£n xuáº¥t', $parcelId, ['after' => $row]);
         $this->ok($row);
     }
 }

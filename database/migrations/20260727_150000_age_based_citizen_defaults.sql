@@ -35,7 +35,7 @@ WHERE status <> 'DELETED'
   AND COALESCE(pupil, 0) = 0
   AND COALESCE(student, 0) = 0
   AND COALESCE(retired, 0) = 0
-  AND (occupation IS NULL OR TRIM(occupation) = '' OR LOWER(TRIM(occupation)) IN ('khac', 'khác'));
+  AND (occupation IS NULL OR TRIM(occupation) = '' OR LOWER(TRIM(occupation)) IN ('khac', 'khÃ¡c'));
 
 UPDATE citizens
 SET has_health_insurance = 1

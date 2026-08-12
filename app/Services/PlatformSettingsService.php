@@ -11,8 +11,8 @@ final class PlatformSettingsService
     private const SETTING_DEFINITIONS = [
         'general.platform_name' => ['group' => 'general', 'type' => 'string', 'default' => 'HONG PHONG COMMUNITY PLATFORM'],
         'general.admin_name' => ['group' => 'general', 'type' => 'string', 'default' => 'Community Control Center'],
-        'general.parent_unit_name' => ['group' => 'general', 'type' => 'string', 'default' => 'Xã Hồng Phong'],
-        'general.province_name' => ['group' => 'general', 'type' => 'string', 'default' => 'Ninh Bình'],
+        'general.parent_unit_name' => ['group' => 'general', 'type' => 'string', 'default' => 'XÃ£ Há»“ng Phong'],
+        'general.province_name' => ['group' => 'general', 'type' => 'string', 'default' => 'Ninh BÃ¬nh'],
         'general.timezone' => ['group' => 'general', 'type' => 'string', 'default' => 'Asia/Ho_Chi_Minh'],
         'general.locale' => ['group' => 'general', 'type' => 'string', 'default' => 'vi_VN'],
         'general.date_format' => ['group' => 'general', 'type' => 'string', 'default' => 'dd/mm/yyyy'],
@@ -53,11 +53,11 @@ final class PlatformSettingsService
     ];
 
     private const PROTECTED_SECURITY = [
-        ['key' => 'tenant_guard_per_request', 'label' => 'Kiểm tra trạng thái tenant trên mỗi request', 'enabled' => true],
-        ['key' => 'block_locked_tenant', 'label' => 'Chặn tenant khi bị khóa', 'enabled' => true],
-        ['key' => 'block_locked_api', 'label' => 'Chặn API khi tenant bị khóa', 'enabled' => true],
-        ['key' => 'block_existing_session', 'label' => 'Chặn session cũ khi tenant bị khóa', 'enabled' => true],
-        ['key' => 'fail_closed', 'label' => 'Fail-closed khi không xác định được trạng thái tenant', 'enabled' => true],
+        ['key' => 'tenant_guard_per_request', 'label' => 'Kiá»ƒm tra tráº¡ng thÃ¡i tenant trÃªn má»—i request', 'enabled' => true],
+        ['key' => 'block_locked_tenant', 'label' => 'Cháº·n tenant khi bá»‹ khÃ³a', 'enabled' => true],
+        ['key' => 'block_locked_api', 'label' => 'Cháº·n API khi tenant bá»‹ khÃ³a', 'enabled' => true],
+        ['key' => 'block_existing_session', 'label' => 'Cháº·n session cÅ© khi tenant bá»‹ khÃ³a', 'enabled' => true],
+        ['key' => 'fail_closed', 'label' => 'Fail-closed khi khÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c tráº¡ng thÃ¡i tenant', 'enabled' => true],
     ];
 
     public function __construct(
@@ -92,7 +92,7 @@ final class PlatformSettingsService
             if (!is_string($key) || !isset(self::SETTING_DEFINITIONS[$key])) continue;
             $definition = self::SETTING_DEFINITIONS[$key];
             if (!empty($definition['secret'])) {
-                throw new InvalidArgumentException('Secret phải cập nhật qua endpoint riêng');
+                throw new InvalidArgumentException('Secret pháº£i cáº­p nháº­t qua endpoint riÃªng');
             }
             $normalized = $this->validate($key, $value, $definition);
             $old = $before[$key]['value'] ?? $definition['default'];
@@ -101,7 +101,7 @@ final class PlatformSettingsService
             $changed[] = ['key' => $key, 'old' => $old, 'new' => $normalized, 'group' => $definition['group']];
         }
         foreach ($changed as $change) {
-            $this->audit->write($actor, 'platform_settings.updated', null, 'Cập nhật cấu hình nền tảng', $change);
+            $this->audit->write($actor, 'platform_settings.updated', null, 'Cáº­p nháº­t cáº¥u hÃ¬nh ná»n táº£ng', $change);
         }
         return $this->show();
     }
@@ -111,11 +111,11 @@ final class PlatformSettingsService
         $actor = $this->authorization->authorize('control_center.configuration.security');
         $key = (string) ($input['key'] ?? '');
         if ($key !== 'email.smtp_password') {
-            throw new InvalidArgumentException('Secret không hợp lệ');
+            throw new InvalidArgumentException('Secret khÃ´ng há»£p lá»‡');
         }
         $value = (string) ($input['value'] ?? '');
         if ($value === '') {
-            throw new InvalidArgumentException('Secret không được để trống');
+            throw new InvalidArgumentException('Secret khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng');
         }
         $definition = self::SETTING_DEFINITIONS[$key];
         $this->repository->upsert($key, $value, $definition['type'], $definition['group'], true, (int) $actor['id']);
@@ -136,7 +136,7 @@ final class PlatformSettingsService
         $paths = [$base . '/backups', $base . '/storage/backups'];
         $existing = array_values(array_filter($paths, static fn(string $path): bool => is_dir($path)));
         if (!$existing) {
-            return ['ok' => false, 'status' => 'NOT_CONFIGURED', 'message' => 'Chưa cấu hình backup engine hoặc thư mục backup'];
+            return ['ok' => false, 'status' => 'NOT_CONFIGURED', 'message' => 'ChÆ°a cáº¥u hÃ¬nh backup engine hoáº·c thÆ° má»¥c backup'];
         }
         $count = 0;
         $bytes = 0;
@@ -158,9 +158,9 @@ final class PlatformSettingsService
         $host = trim((string) ($settings['email.smtp_host']['value'] ?? ''));
         $passwordConfigured = (bool) ($settings['email.smtp_password']['configured'] ?? false);
         if ($host === '' || !$passwordConfigured) {
-            throw new InvalidArgumentException('SMTP chưa cấu hình đầy đủ nên không gửi email kiểm tra');
+            throw new InvalidArgumentException('SMTP chÆ°a cáº¥u hÃ¬nh Ä‘áº§y Ä‘á»§ nÃªn khÃ´ng gá»­i email kiá»ƒm tra');
         }
-        throw new InvalidArgumentException('Chưa có mailer SMTP runtime, không thực hiện gửi thử giả');
+        throw new InvalidArgumentException('ChÆ°a cÃ³ mailer SMTP runtime, khÃ´ng thá»±c hiá»‡n gá»­i thá»­ giáº£');
     }
 
     public function setMaintenance(array $input): array
@@ -170,7 +170,7 @@ final class PlatformSettingsService
         $before = (bool) $this->repository->value('maintenance.platform_enabled', false);
         $this->repository->upsert('maintenance.platform_enabled', $enabled, 'boolean', 'maintenance', false, (int) $actor['id']);
         if ($before !== $enabled) {
-            $this->audit->write($actor, 'platform_settings.maintenance_updated', null, 'Cập nhật chế độ bảo trì toàn nền tảng', [
+            $this->audit->write($actor, 'platform_settings.maintenance_updated', null, 'Cáº­p nháº­t cháº¿ Ä‘á»™ báº£o trÃ¬ toÃ n ná»n táº£ng', [
                 'key' => 'maintenance.platform_enabled',
                 'old' => $before,
                 'new' => $enabled,
@@ -186,7 +186,7 @@ final class PlatformSettingsService
         $asset = $branding->storeUploadedAsset($type, $file);
         $key = $branding->settingKey($type);
         $this->repository->upsert($key, $asset['stored'], 'string', 'branding', false, (int) $actor['id']);
-        $this->audit->write($actor, 'platform_branding.asset_uploaded', null, 'Cập nhật asset nhận diện nền tảng', [
+        $this->audit->write($actor, 'platform_branding.asset_uploaded', null, 'Cáº­p nháº­t asset nháº­n diá»‡n ná»n táº£ng', [
             'asset_type' => $type,
             'key' => $key,
             'stored' => $asset['stored'],
@@ -212,7 +212,7 @@ final class PlatformSettingsService
         if (isset($legacyKeys[$type])) {
             $this->repository->upsert($legacyKeys[$type], '', 'string', 'identity', false, (int) $actor['id']);
         }
-        $this->audit->write($actor, 'platform_branding.asset_reset', null, 'Khôi phục asset nhận diện nền tảng', [
+        $this->audit->write($actor, 'platform_branding.asset_reset', null, 'KhÃ´i phá»¥c asset nháº­n diá»‡n ná»n táº£ng', [
             'asset_type' => $type,
             'key' => $key,
             'old_configured' => $old !== '',
@@ -283,7 +283,7 @@ final class PlatformSettingsService
     {
         return [
             'centralRegistry' => $health,
-            'tenantDatabasePolicy' => 'Kiểm tra theo từng tenant trong module Đơn vị/Tenant',
+            'tenantDatabasePolicy' => 'Kiá»ƒm tra theo tá»«ng tenant trong module ÄÆ¡n vá»‹/Tenant',
             'backupPolicy' => [
                 'retentionCopies' => 7,
                 'retentionDays' => 30,
@@ -313,9 +313,9 @@ final class PlatformSettingsService
     private function capabilities(array $settings): array
     {
         return [
-            'identityUpload' => ['enabled' => true, 'status' => 'OK', 'message' => 'Upload ảnh nhận diện chạy qua backend và kiểm tra MIME'],
-            'smtpTest' => ['enabled' => false, 'status' => empty($settings['email.smtp_host']['value']) ? 'NOT_CONFIGURED' : 'PENDING_MAILER', 'message' => 'Chỉ bật khi SMTP runtime được cấu hình'],
-            'backupNow' => ['enabled' => false, 'status' => 'READ_ONLY', 'message' => 'Module này chỉ kiểm tra trạng thái, không tạo backup giả'],
+            'identityUpload' => ['enabled' => true, 'status' => 'OK', 'message' => 'Upload áº£nh nháº­n diá»‡n cháº¡y qua backend vÃ  kiá»ƒm tra MIME'],
+            'smtpTest' => ['enabled' => false, 'status' => empty($settings['email.smtp_host']['value']) ? 'NOT_CONFIGURED' : 'PENDING_MAILER', 'message' => 'Chá»‰ báº­t khi SMTP runtime Ä‘Æ°á»£c cáº¥u hÃ¬nh'],
+            'backupNow' => ['enabled' => false, 'status' => 'READ_ONLY', 'message' => 'Module nÃ y chá»‰ kiá»ƒm tra tráº¡ng thÃ¡i, khÃ´ng táº¡o backup giáº£'],
         ];
     }
 
@@ -324,7 +324,7 @@ final class PlatformSettingsService
         if ($definition['type'] === 'boolean') return filter_var($value, FILTER_VALIDATE_BOOLEAN);
         if ($definition['type'] === 'integer') {
             $int = (int) $value;
-            if ($int < 0 || $int > 100000) throw new InvalidArgumentException('Giá trị số không hợp lệ: ' . $key);
+            if ($int < 0 || $int > 100000) throw new InvalidArgumentException('GiÃ¡ trá»‹ sá»‘ khÃ´ng há»£p lá»‡: ' . $key);
             return $int;
         }
         if ($definition['type'] === 'json') {
@@ -335,16 +335,16 @@ final class PlatformSettingsService
                 $ext = strtolower(trim((string) $item, " .\t\n\r\0\x0B"));
                 if ($ext === '') continue;
                 if (!preg_match('/^[a-z0-9]{2,8}$/', $ext) || in_array($ext, $blocked, true)) {
-                    throw new InvalidArgumentException('Loại file không được phép: ' . $ext);
+                    throw new InvalidArgumentException('Loáº¡i file khÃ´ng Ä‘Æ°á»£c phÃ©p: ' . $ext);
                 }
                 $allowed[] = $ext;
             }
             return array_values(array_unique($allowed));
         }
         $text = trim((string) $value);
-        if (strlen($text) > 500) throw new InvalidArgumentException('Giá trị quá dài: ' . $key);
+        if (strlen($text) > 500) throw new InvalidArgumentException('GiÃ¡ trá»‹ quÃ¡ dÃ i: ' . $key);
         if ($key === 'tenant.default_status' && !in_array($text, ['ACTIVE', 'PENDING_ACTIVATION'], true)) {
-            throw new InvalidArgumentException('Trạng thái tenant mới không hợp lệ');
+            throw new InvalidArgumentException('Tráº¡ng thÃ¡i tenant má»›i khÃ´ng há»£p lá»‡');
         }
         return $text;
     }

@@ -8,17 +8,17 @@ final class Movement extends BaseModel
 {
     private const TYPES = [
         'BIRTH' => 'Sinh',
-        'DEATH' => 'Tử',
-        'MOVE_IN' => 'Chuyển đến',
-        'MOVE_OUT' => 'Chuyển đi',
-        'HOUSEHOLD_SPLIT' => 'Tách hộ',
-        'HOUSEHOLD_MERGE' => 'Nhập hộ',
-        'HOUSEHOLD_HEAD_CHANGE' => 'Thay đổi chủ hộ',
-        'CITIZEN_UPDATE' => 'Thay đổi thông tin nhân khẩu',
-        'RESTORE' => 'Hoàn tác',
-        'TEMPORARY_RESIDENCE' => 'Tạm trú',
-        'TEMPORARY_ABSENCE' => 'Tạm vắng',
-        'OTHER' => 'Khác',
+        'DEATH' => 'Tá»­',
+        'MOVE_IN' => 'Chuyá»ƒn Ä‘áº¿n',
+        'MOVE_OUT' => 'Chuyá»ƒn Ä‘i',
+        'HOUSEHOLD_SPLIT' => 'TÃ¡ch há»™',
+        'HOUSEHOLD_MERGE' => 'Nháº­p há»™',
+        'HOUSEHOLD_HEAD_CHANGE' => 'Thay Ä‘á»•i chá»§ há»™',
+        'CITIZEN_UPDATE' => 'Thay Ä‘á»•i thÃ´ng tin nhÃ¢n kháº©u',
+        'RESTORE' => 'HoÃ n tÃ¡c',
+        'TEMPORARY_RESIDENCE' => 'Táº¡m trÃº',
+        'TEMPORARY_ABSENCE' => 'Táº¡m váº¯ng',
+        'OTHER' => 'KhÃ¡c',
     ];
 
     public function paginate(array $filters = []): array
@@ -141,12 +141,12 @@ final class Movement extends BaseModel
 
     public function update(int $id, array $data, int $userId): array
     {
-        throw new \RuntimeException('Biến động dân cư là nhật ký lịch sử, không được sửa trực tiếp.');
+        throw new \RuntimeException('Biáº¿n Ä‘á»™ng dÃ¢n cÆ° lÃ  nháº­t kÃ½ lá»‹ch sá»­, khÃ´ng Ä‘Æ°á»£c sá»­a trá»±c tiáº¿p.');
     }
 
     public function softDelete(int $id, int $userId): void
     {
-        throw new \RuntimeException('Biến động dân cư là nhật ký lịch sử, không được xóa.');
+        throw new \RuntimeException('Biáº¿n Ä‘á»™ng dÃ¢n cÆ° lÃ  nháº­t kÃ½ lá»‹ch sá»­, khÃ´ng Ä‘Æ°á»£c xÃ³a.');
     }
 
     public function types(): array
@@ -214,9 +214,9 @@ final class Movement extends BaseModel
     private function params(array $data, int $userId): array
     {
         $citizenId = (int) ($data['citizenId'] ?? $data['citizen_id'] ?? 0);
-        if ($citizenId <= 0) throw new \RuntimeException('Nhân khẩu là bắt buộc khi ghi biến động');
+        if ($citizenId <= 0) throw new \RuntimeException('NhÃ¢n kháº©u lÃ  báº¯t buá»™c khi ghi biáº¿n Ä‘á»™ng');
         $citizen = $this->fetchOne('SELECT c.id, c.household_id, c.full_name, c.citizen_code, c.identity_number FROM citizens c WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens'), $this->withTenant(['id' => $citizenId]));
-        if (!$citizen) throw new \RuntimeException('Không tìm thấy nhân khẩu để ghi biến động');
+        if (!$citizen) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u Ä‘á»ƒ ghi biáº¿n Ä‘á»™ng');
 
         $type = strtoupper((string) ($data['type'] ?? 'OTHER'));
         if (!isset(self::TYPES[$type])) $type = 'OTHER';

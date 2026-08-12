@@ -30,10 +30,10 @@ final class FileStorageService
     public function validateEntity(string $entityType, int $entityId): void
     {
         if (!in_array($entityType, ['household', 'citizen', 'settings', 'house', 'public_asset', 'public_asset_inventory', 'complaint', 'work_task', 'work_calendar', 'photo_gallery', 'document_record', 'finance_transaction'], true)) {
-            throw new \RuntimeException('Module upload không hợp lệ');
+            throw new \RuntimeException('Module upload khÃ´ng há»£p lá»‡');
         }
         if ($entityType !== 'settings' && $entityId <= 0) {
-            throw new \RuntimeException('Mã dữ liệu upload không hợp lệ');
+            throw new \RuntimeException('MÃ£ dá»¯ liá»‡u upload khÃ´ng há»£p lá»‡');
         }
     }
 
@@ -83,17 +83,17 @@ final class FileStorageService
     public function validateUploadedFile(array $file): void
     {
         if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-            throw new \RuntimeException('File upload không hợp lệ');
+            throw new \RuntimeException('File upload khÃ´ng há»£p lá»‡');
         }
         $size = (int) ($file['size'] ?? 0);
         if ($size <= 0) {
-            throw new \RuntimeException('File upload rỗng');
+            throw new \RuntimeException('File upload rá»—ng');
         }
         if ($size > self::MAX_UPLOAD_BYTES) {
-            throw new \RuntimeException('File tối đa ' . (int) (self::MAX_UPLOAD_BYTES / 1024 / 1024) . 'MB');
+            throw new \RuntimeException('File tá»‘i Ä‘a ' . (int) (self::MAX_UPLOAD_BYTES / 1024 / 1024) . 'MB');
         }
         if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            throw new \RuntimeException('Vui lòng chọn file');
+            throw new \RuntimeException('Vui lÃ²ng chá»n file');
         }
     }
 
@@ -103,7 +103,7 @@ final class FileStorageService
         $mime = mime_content_type($file['tmp_name']) ?: 'application/octet-stream';
         $allowed = $this->allowedMimeTypes();
         if (!isset($allowed[$mime])) {
-            throw new \RuntimeException('Định dạng file chưa được hỗ trợ');
+            throw new \RuntimeException('Äá»‹nh dáº¡ng file chÆ°a Ä‘Æ°á»£c há»— trá»£');
         }
         $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
         if ($extension === 'jpeg') $extension = 'jpg';
@@ -111,13 +111,13 @@ final class FileStorageService
             throw new \RuntimeException('File extension is not supported');
         }
         if (in_array($fileType, ['PHOTO','LOGO','BACKGROUND','IMAGE'], true) && !str_starts_with($mime, 'image/')) {
-            throw new \RuntimeException('Loại file này phải là hình ảnh');
+            throw new \RuntimeException('Loáº¡i file nÃ y pháº£i lÃ  hÃ¬nh áº£nh');
         }
         if ($fileType === 'VIDEO' && !str_starts_with($mime, 'video/')) {
-            throw new \RuntimeException('Loại file này phải là video');
+            throw new \RuntimeException('Loáº¡i file nÃ y pháº£i lÃ  video');
         }
         if ($fileType === 'AUDIO' && !str_starts_with($mime, 'audio/')) {
-            throw new \RuntimeException('Loại file này phải là âm thanh');
+            throw new \RuntimeException('Loáº¡i file nÃ y pháº£i lÃ  Ã¢m thanh');
         }
         if ($mime === 'image/svg+xml') {
             $this->validateSafeSvgUpload($file['tmp_name'], $entityType, $fileType);
@@ -141,7 +141,7 @@ final class FileStorageService
             'zip' => ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'],
         ];
         if (!isset($allowed[$extension])) {
-            throw new \RuntimeException('Dinh dang file khong duoc ho tro');
+            throw new \RuntimeException('Äá»‹nh dáº¡ng file khÃ´ng Ä‘Æ°á»£c há»— trá»£');
         }
         $mime = mime_content_type($file['tmp_name']) ?: 'application/octet-stream';
         if (!in_array($mime, $allowed[$extension], true)) {
@@ -149,7 +149,7 @@ final class FileStorageService
         }
         $blocked = ['php', 'phtml', 'phar', 'js', 'mjs', 'html', 'htm', 'exe', 'bat', 'cmd', 'sh', 'com', 'scr', 'msi'];
         if (in_array($extension, $blocked, true)) {
-            throw new \RuntimeException('Dinh dang file thuc thi khong duoc phep');
+            throw new \RuntimeException('Äá»‹nh dáº¡ng file thá»±c thi khÃ´ng Ä‘Æ°á»£c phÃ©p');
         }
         return ['mime' => $mime, 'extension' => $extension];
     }
@@ -165,12 +165,12 @@ final class FileStorageService
         $root = 'uploads';
         $dir = $this->uploadRoot() . '/' . $folder;
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
-            throw new \RuntimeException('Không tạo được thư mục upload');
+            throw new \RuntimeException('KhÃ´ng táº¡o Ä‘Æ°á»£c thÆ° má»¥c upload');
         }
         $stored = bin2hex(random_bytes(16)) . '.' . $extension;
         $path = $dir . '/' . $stored;
         if (!move_uploaded_file($file['tmp_name'], $path)) {
-            throw new \RuntimeException('Không lưu được file upload');
+            throw new \RuntimeException('KhÃ´ng lÆ°u Ä‘Æ°á»£c file upload');
         }
         return ['stored_name' => $stored, 'file_path' => $root . '/' . $folder . '/' . $stored];
     }
@@ -340,25 +340,25 @@ final class FileStorageService
     private function validateSafeSvgUpload(string $path, string $entityType, string $fileType): void
     {
         if ($entityType !== 'settings' || !in_array($fileType, ['LOGO','IMAGE'], true)) {
-            throw new \RuntimeException('SVG chỉ được phép dùng cho logo hoặc hình cấu hình giao diện');
+            throw new \RuntimeException('SVG chá»‰ Ä‘Æ°á»£c phÃ©p dÃ¹ng cho logo hoáº·c hÃ¬nh cáº¥u hÃ¬nh giao diá»‡n');
         }
         if (filesize($path) > 1024 * 1024) {
             throw new \RuntimeException('SVG file maximum size is 1MB');
         }
         $content = file_get_contents($path);
         if ($content === false || trim($content) === '') {
-            throw new \RuntimeException('File SVG không hợp lệ');
+            throw new \RuntimeException('File SVG khÃ´ng há»£p lá»‡');
         }
         $lower = strtolower($content);
         foreach (['<script','</script','javascript:','data:text/html','data:application/javascript',' onload=',' onerror=',' onclick=',' onmouseover=','<foreignobject','<iframe','<object','<embed'] as $pattern) {
             if (str_contains($lower, $pattern)) {
-                throw new \RuntimeException('SVG có nội dung không an toàn');
+                throw new \RuntimeException('SVG cÃ³ ná»™i dung khÃ´ng an toÃ n');
             }
         }
         libxml_use_internal_errors(true);
         $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NONET);
         if (!$xml || strtolower($xml->getName()) !== 'svg') {
-            throw new \RuntimeException('File SVG không đúng định dạng');
+            throw new \RuntimeException('File SVG khÃ´ng Ä‘Ãºng Ä‘á»‹nh dáº¡ng');
         }
     }
 

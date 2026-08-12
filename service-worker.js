@@ -1,4 +1,4 @@
-const PWA_VERSION = 'tenant-pwa-v20260729-policy-alert-utf8-1';
+const PWA_VERSION = 'household-profile-member-away-summary-20260812-0025';
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
 const TENANT_NAMESPACE = `${self.location.host}${APP_BASE_PATH}`.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
 const CACHE_PREFIX = `${TENANT_NAMESPACE}-${PWA_VERSION}`;
@@ -106,14 +106,14 @@ self.addEventListener('sync', event => {
 });
 
 self.addEventListener('push', event => {
-    const fallback = { title: 'Hệ thống Quản lý Hành chính', body: 'Bạn có thông báo mới từ hệ thống.', data: { url: '/' } };
+  const fallback = { title: 'HÃ¡Â»â€¡ thÃ¡Â»â€˜ng quÃ¡ÂºÂ£n lÃƒÂ½', body: 'BÃ¡ÂºÂ¡n cÃƒÂ³ thÃƒÂ´ng bÃƒÂ¡o mÃ¡Â»â€ºi tÃ¡Â»Â« hÃ¡Â»â€¡ thÃ¡Â»â€˜ng.', data: { url: '/' } };
   const payload = (() => {
     try { return event.data ? event.data.json() : fallback; } catch (_) { return fallback; }
   })();
   event.waitUntil(self.registration.showNotification(payload.title || fallback.title, {
     body: payload.body || fallback.body,
-    icon: '/assets/icons/icon-192.png?v=20260714-7',
-    badge: '/assets/icons/maskable-192.png?v=20260714-7',
+    icon: '/assets/icons/icon-192.png?v=20260715-1',
+    badge: '/assets/icons/maskable-192.png?v=20260715-1',
     tag: payload.tag || `${TENANT_NAMESPACE}-system`,
     data: payload.data || fallback.data
   }));
@@ -284,3 +284,6 @@ async function broadcast(message) {
   const clientsList = await self.clients.matchAll({ includeUncontrolled: true });
   clientsList.forEach(client => client.postMessage(message));
 }
+
+
+

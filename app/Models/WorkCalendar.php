@@ -98,15 +98,15 @@ SQL);
         return [
             'categories' => array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name'], 'color' => (string)$r['color']], $categories),
             'statuses' => [
-                ['value' => 'SCHEDULED', 'label' => 'Đã lên lịch'],
-                ['value' => 'DONE', 'label' => 'Đã hoàn thành'],
-                ['value' => 'CANCELLED', 'label' => 'Đã hủy'],
+                ['value' => 'SCHEDULED', 'label' => 'ÄÃ£ lÃªn lá»‹ch'],
+                ['value' => 'DONE', 'label' => 'ÄÃ£ hoÃ n thÃ nh'],
+                ['value' => 'CANCELLED', 'label' => 'ÄÃ£ há»§y'],
             ],
             'attendance_statuses' => [
-                ['value' => 'INVITED', 'label' => 'Đã mời'],
-                ['value' => 'ATTENDED', 'label' => 'Có mặt'],
-                ['value' => 'ABSENT', 'label' => 'Vắng'],
-                ['value' => 'EXCUSED', 'label' => 'Có lý do'],
+                ['value' => 'INVITED', 'label' => 'ÄÃ£ má»i'],
+                ['value' => 'ATTENDED', 'label' => 'CÃ³ máº·t'],
+                ['value' => 'ABSENT', 'label' => 'Váº¯ng'],
+                ['value' => 'EXCUSED', 'label' => 'CÃ³ lÃ½ do'],
             ],
         ];
     }
@@ -145,7 +145,7 @@ SQL);
     {
         $this->ensureSchema();
         $existing = $id ? $this->find($id) : null;
-        if ($id && !$existing) throw new \RuntimeException('Không tìm thấy lịch công tác');
+        if ($id && !$existing) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y lá»‹ch cÃ´ng tÃ¡c');
         $params = $this->params($data, $userId, $userName);
         if ($id) {
             $params['id'] = $id;
@@ -164,14 +164,14 @@ SQL);
     public function softDelete(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy lịch công tác');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y lá»‹ch cÃ´ng tÃ¡c');
         $this->execute('UPDATE calendar_events SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('calendar_events'), ['id' => $id, 'user' => $userId]);
     }
 
     public function addAttachment(int $id, array $stored, array $file, int $userId): array
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy lịch công tác');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y lá»‹ch cÃ´ng tÃ¡c');
         $mime = (string)$stored['mime'];
         $kind = str_starts_with($mime, 'image/') ? 'IMAGE' : (str_starts_with($mime, 'video/') ? 'VIDEO' : ($mime === 'application/pdf' ? 'PDF' : 'DOCUMENT'));
         $attachmentId = $this->insert('INSERT INTO calendar_event_attachments (event_id, original_name, stored_path, mime_type, file_size, file_kind, created_by) VALUES (:id,:name,:path,:mime,:size,:kind,:user)', ['id' => $id, 'name' => basename((string)($file['name'] ?? 'attachment')), 'path' => $stored['file_path'], 'mime' => $mime, 'size' => (int)($file['size'] ?? 0), 'kind' => $kind, 'user' => $userId]);
@@ -188,7 +188,7 @@ SQL);
     public function deleteAttachment(int $eventId, int $fileId, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->attachment($eventId, $fileId)) throw new \RuntimeException('Không tìm thấy file đính kèm');
+        if (!$this->attachment($eventId, $fileId)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m');
         $this->execute('UPDATE calendar_event_attachments SET deleted_at=NOW(), deleted_by=:user WHERE event_id=:event_id AND id=:id', ['event_id' => $eventId, 'id' => $fileId, 'user' => $userId]);
     }
 
@@ -202,7 +202,7 @@ SQL);
             'metrics' => array_map('intval', $metrics),
             'charts' => [
                 'by_month' => $this->fetchAll("SELECT DATE_FORMAT(e.start_at, '%Y-%m') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY label DESC LIMIT 12", $params),
-                'by_category' => $this->fetchAll("SELECT COALESCE(c.name, 'Khác') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
+                'by_category' => $this->fetchAll("SELECT COALESCE(c.name, 'KhÃ¡c') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
                 'by_status' => $this->fetchAll("SELECT e.status AS label, COUNT(*) AS value $from $where GROUP BY e.status ORDER BY value DESC", $params),
             ],
         ];
@@ -214,8 +214,8 @@ SQL);
         $filters['pageSize'] = 100;
         $data = $this->paginate($filters);
         return [
-            'title' => 'Báo cáo lịch công tác',
-            'headers' => ['Mã', 'Tiêu đề', 'Loại', 'Thời gian', 'Địa điểm', 'Chủ trì', 'Trạng thái'],
+            'title' => 'BÃ¡o cÃ¡o lá»‹ch cÃ´ng tÃ¡c',
+            'headers' => ['MÃ£', 'TiÃªu Ä‘á»', 'Loáº¡i', 'Thá»i gian', 'Äá»‹a Ä‘iá»ƒm', 'Chá»§ trÃ¬', 'Tráº¡ng thÃ¡i'],
             'rows' => array_map(fn($r) => [$r['event_code'], $r['title'], $r['category_name'] ?? '', $r['start_at'], $r['location'] ?? '', $r['host_name'] ?? '', $this->statusLabel($r['status'])], $data['items']),
             'totalRows' => $data['total'],
         ];
@@ -239,14 +239,14 @@ SQL);
     private function seedCatalogs(): void
     {
         $items = [
-            ['meeting', 'Họp', '#0d6efd'],
-            ['conference', 'Hội nghị', '#6610f2'],
-            ['duty', 'Trực', '#198754'],
-            ['vaccination', 'Tiêm chủng', '#20c997'],
-            ['gift_distribution', 'Phát quà', '#fd7e14'],
-            ['party_meeting', 'Sinh hoạt Chi bộ', '#dc3545'],
-            ['union_activity', 'Sinh hoạt đoàn thể', '#6f42c1'],
-            ['other', 'Khác', '#6c757d'],
+            ['meeting', 'Há»p', '#0d6efd'],
+            ['conference', 'Há»™i nghá»‹', '#6610f2'],
+            ['duty', 'Trá»±c', '#198754'],
+            ['vaccination', 'TiÃªm chá»§ng', '#20c997'],
+            ['gift_distribution', 'PhÃ¡t quÃ ', '#fd7e14'],
+            ['party_meeting', 'Sinh hoáº¡t Chi bá»™', '#dc3545'],
+            ['union_activity', 'Sinh hoáº¡t Ä‘oÃ n thá»ƒ', '#6f42c1'],
+            ['other', 'KhÃ¡c', '#6c757d'],
         ];
         $order = 10;
         foreach ($items as [$code, $name, $color]) {
@@ -272,17 +272,17 @@ SQL);
     private function params(array $data, int $userId, string $userName): array
     {
         $title = trim((string)($data['title'] ?? ''));
-        if ($title === '') throw new \RuntimeException('Tiêu đề lịch công tác là bắt buộc');
+        if ($title === '') throw new \RuntimeException('TiÃªu Ä‘á» lá»‹ch cÃ´ng tÃ¡c lÃ  báº¯t buá»™c');
         $status = strtoupper(trim((string)($data['status'] ?? 'SCHEDULED')));
-        if (!in_array($status, ['SCHEDULED','DONE','CANCELLED'], true)) throw new \RuntimeException('Trạng thái lịch không hợp lệ');
+        if (!in_array($status, ['SCHEDULED','DONE','CANCELLED'], true)) throw new \RuntimeException('Tráº¡ng thÃ¡i lá»‹ch khÃ´ng há»£p lá»‡');
         return [
             'title' => $title,
             'description' => $this->nullable($data['description'] ?? ''),
             'category_id' => $this->validCategory($data['category_id'] ?? $data['categoryId'] ?? null),
             'location' => $this->nullable($data['location'] ?? ''),
-            'start_at' => $this->dateTime($data['start_at'] ?? $data['startAt'] ?? null, true, 'Thời gian bắt đầu không hợp lệ'),
-            'end_at' => $this->dateTime($data['end_at'] ?? $data['endAt'] ?? null, false, 'Thời gian kết thúc không hợp lệ'),
-            'reminder_at' => $this->dateTime($data['reminder_at'] ?? $data['reminderAt'] ?? null, false, 'Thời gian nhắc việc không hợp lệ'),
+            'start_at' => $this->dateTime($data['start_at'] ?? $data['startAt'] ?? null, true, 'Thá»i gian báº¯t Ä‘áº§u khÃ´ng há»£p lá»‡'),
+            'end_at' => $this->dateTime($data['end_at'] ?? $data['endAt'] ?? null, false, 'Thá»i gian káº¿t thÃºc khÃ´ng há»£p lá»‡'),
+            'reminder_at' => $this->dateTime($data['reminder_at'] ?? $data['reminderAt'] ?? null, false, 'Thá»i gian nháº¯c viá»‡c khÃ´ng há»£p lá»‡'),
             'host_user_id' => $this->nullableInt($data['host_user_id'] ?? $data['hostUserId'] ?? null),
             'host_name' => $this->nullable($data['host_name'] ?? $data['hostName'] ?? $userName),
             'area_code' => $this->nullable($data['area_code'] ?? $data['areaCode'] ?? ''),
@@ -319,10 +319,10 @@ SQL);
     private function selectSql(): string { return 'SELECT e.*, c.name AS category_name, c.code AS category_code, c.color AS category_color'; }
     private function attendees(int $id): array { return $this->fetchAll('SELECT * FROM calendar_event_attendees WHERE event_id=:id ORDER BY id ASC', ['id' => $id]); }
     private function attachments(int $id): array { return array_map(fn($row) => $this->normalizeAttachment($row), $this->fetchAll('SELECT * FROM calendar_event_attachments WHERE event_id=:id AND deleted_at IS NULL ORDER BY created_at DESC, id DESC', ['id' => $id])); }
-    private function validCategory(mixed $value): ?int { $id = $this->nullableInt($value); if (!$id) return null; $row = $this->fetchOne('SELECT id FROM calendar_event_categories WHERE id=:id AND is_active=1', ['id' => $id]); if (!$row) throw new \RuntimeException('Loại lịch công tác không hợp lệ'); return $id; }
+    private function validCategory(mixed $value): ?int { $id = $this->nullableInt($value); if (!$id) return null; $row = $this->fetchOne('SELECT id FROM calendar_event_categories WHERE id=:id AND is_active=1', ['id' => $id]); if (!$row) throw new \RuntimeException('Loáº¡i lá»‹ch cÃ´ng tÃ¡c khÃ´ng há»£p lá»‡'); return $id; }
     private function normalize(array $row): array { $row['id'] = (int)$row['id']; $row['category_id'] = $row['category_id'] !== null ? (int)$row['category_id'] : null; $row['host_user_id'] = $row['host_user_id'] !== null ? (int)$row['host_user_id'] : null; $row['status_label'] = $this->statusLabel((string)$row['status']); return $row; }
     private function normalizeAttachment(array $row): array { $row['id'] = (int)$row['id']; $row['event_id'] = (int)$row['event_id']; $row['file_size'] = (int)$row['file_size']; $row['preview_url'] = '/api/work-calendar/' . $row['event_id'] . '/attachments/' . $row['id'] . '/preview'; $row['download_url'] = '/api/work-calendar/' . $row['event_id'] . '/attachments/' . $row['id'] . '/download'; return $row; }
-    private function statusLabel(string $value): string { return ['SCHEDULED' => 'Đã lên lịch', 'DONE' => 'Đã hoàn thành', 'CANCELLED' => 'Đã hủy'][$value] ?? $value; }
+    private function statusLabel(string $value): string { return ['SCHEDULED' => 'ÄÃ£ lÃªn lá»‹ch', 'DONE' => 'ÄÃ£ hoÃ n thÃ nh', 'CANCELLED' => 'ÄÃ£ há»§y'][$value] ?? $value; }
     private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM calendar_events WHERE ' . $this->tenantWhere('calendar_events')); return 'LCT-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableInt(mixed $value): ?int { $value = trim((string)($value ?? '')); if ($value === '') return null; $id = (int)$value; return $id > 0 ? $id : null; }

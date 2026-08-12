@@ -4,11 +4,13 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Models\Citizen;
+use App\Models\ProfileSummary;
 use App\Services\PopulationMovementService;
 
 final class PersonController extends BaseController
 {
     private Citizen $citizens;
+    private ProfileSummary $summary;
     private PopulationMovementService $movementService;
 
     private const FLAG_FILTERS = [
@@ -45,6 +47,7 @@ final class PersonController extends BaseController
     {
         parent::__construct($request);
         $this->citizens = new Citizen();
+        $this->summary = new ProfileSummary();
         $this->movementService = new PopulationMovementService();
     }
 
@@ -74,7 +77,10 @@ final class PersonController extends BaseController
     {
         $this->requirePermission('citizen', 'read');
         $row = $this->citizens->find((int) $id);
-        $row ? $this->ok($row) : $this->fail('Không tìm thấy nhân khẩu', 404);
+        if ($row) {
+            $row['related_summary'] = $this->summary->person((int) $id);
+        }
+        $row ? $this->ok($row) : $this->fail('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u', 404);
     }
 
     public function store(): void
@@ -82,12 +88,12 @@ final class PersonController extends BaseController
         $user = $this->requirePermission('citizen', 'create');
         $input = $this->input();
         $householdKey = trim((string) ($input['householdId'] ?? $input['householdCode'] ?? $input['household_id'] ?? $input['household_code'] ?? ''));
-        if ($householdKey === '') $this->fail('Vui lòng chọn hộ gia đình từ danh sách', 422);
-        $this->requireInputFields((array) $input, ['fullName' => 'Họ và tên', 'dateOfBirth' => 'Ngày sinh']);
+        if ($householdKey === '') $this->fail('Vui lÃ²ng chá»n há»™ gia Ä‘Ã¬nh tá»« danh sÃ¡ch', 422);
+        $this->requireInputFields((array) $input, ['fullName' => 'Há» vÃ  tÃªn', 'dateOfBirth' => 'NgÃ y sinh']);
         $row = $this->citizens->create($input, (int) $user['id']);
         $this->movementService->afterCitizenCreated($row, $input, (int) $user['id']);
         $row = $this->citizens->find((int) $row['id']) ?: $row;
-        $this->audit($user, 'citizen', 'create', 'Tạo nhân khẩu và ghi biến động dân cư', $row['id'], ['before' => null, 'after' => $row]);
+        $this->audit($user, 'citizen', 'create', 'Táº¡o nhÃ¢n kháº©u vÃ  ghi biáº¿n Ä‘á»™ng dÃ¢n cÆ°', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -95,12 +101,12 @@ final class PersonController extends BaseController
     {
         $user = $this->requirePermission('citizen', 'update');
         $before = $this->citizens->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy nhân khẩu', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u', 404);
         $input = $this->input();
         $row = $this->citizens->update((int) $id, $input, (int) $user['id']);
         $this->movementService->afterCitizenUpdated($before, $row, $input, (int) $user['id']);
         $row = $this->citizens->find((int) $id) ?: $row;
-        $this->audit($user, 'citizen', 'update', 'Cập nhật nhân khẩu và ghi biến động dân cư', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'citizen', 'update', 'Cáº­p nháº­t nhÃ¢n kháº©u vÃ  ghi biáº¿n Ä‘á»™ng dÃ¢n cÆ°', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -110,7 +116,7 @@ final class PersonController extends BaseController
         $before = $this->citizens->find((int) $id);
         $this->movementService->markCitizenMovedOut((int) $id, $this->input(), (int) $user['id']);
         $after = $this->citizens->find((int) $id);
-        $this->audit($user, 'citizen', 'delete', 'Chuyển nhân khẩu khỏi dân cư hiện tại', $id, ['before' => $before, 'after' => $after]);
+        $this->audit($user, 'citizen', 'delete', 'Chuyá»ƒn nhÃ¢n kháº©u khá»i dÃ¢n cÆ° hiá»‡n táº¡i', $id, ['before' => $before, 'after' => $after]);
         $this->ok(['id' => (int) $id]);
     }
 
@@ -120,7 +126,7 @@ final class PersonController extends BaseController
         $before = $this->citizens->find((int) $id);
         $this->citizens->restore((int) $id, (int) $user['id']);
         $after = $this->citizens->find((int) $id);
-        $this->audit($user, 'citizen', 'update', 'Khôi phục nhân khẩu', $id, ['before' => $before, 'after' => $after]);
+        $this->audit($user, 'citizen', 'update', 'KhÃ´i phá»¥c nhÃ¢n kháº©u', $id, ['before' => $before, 'after' => $after]);
         $this->ok(['id' => (int) $id]);
     }
 
@@ -129,7 +135,7 @@ final class PersonController extends BaseController
         $user = $this->requirePermission('citizen', 'delete');
         $ids = (array) $this->input('ids', []);
         $deleted = $this->movementService->markCitizensMovedOut($ids, $this->input(), (int) $user['id']);
-        $this->audit($user, 'citizen', 'delete', 'Chuyển hàng loạt nhân khẩu khỏi dân cư hiện tại', null, ['ids' => array_values(array_map('intval', $ids)), 'deleted' => $deleted, 'before' => 'bulk_citizens']);
+        $this->audit($user, 'citizen', 'delete', 'Chuyá»ƒn hÃ ng loáº¡t nhÃ¢n kháº©u khá»i dÃ¢n cÆ° hiá»‡n táº¡i', null, ['ids' => array_values(array_map('intval', $ids)), 'deleted' => $deleted, 'before' => 'bulk_citizens']);
         $this->ok(['success' => $deleted, 'errors' => []]);
     }
 
@@ -156,6 +162,7 @@ final class PersonController extends BaseController
             'workplace' => $this->query('workplace', ''),
             'nationality' => $this->query('nationality', ''),
             'bloodType' => $this->query('bloodType', $this->query('blood_type', '')),
+            'includeMetrics' => $this->query('includeMetrics', '0'),
         ];
 
         foreach (self::FLAG_FILTERS as $field => $aliases) {

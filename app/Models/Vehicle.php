@@ -6,20 +6,20 @@ use App\Core\BaseModel;
 
 final class Vehicle extends BaseModel
 {
-    public const TYPES = ['Xe đạp','Xe máy','Xe điện','Ô tô','Máy kéo','Máy cày','Xe công nông','Xe tải','Xe khách','Thuyền','Các loại khác'];
-    public const DETAIL_TYPES = ['Xe máy','Xe máy điện','Xe đạp điện','Ô tô con','Xe tải','Xe khách','Máy kéo','Máy cày','Xe công nông','Thuyền','Khác'];
+    public const TYPES = ['Xe Ä‘áº¡p','Xe mÃ¡y','Xe Ä‘iá»‡n','Ã” tÃ´','MÃ¡y kÃ©o','MÃ¡y cÃ y','Xe cÃ´ng nÃ´ng','Xe táº£i','Xe khÃ¡ch','Thuyá»n','CÃ¡c loáº¡i khÃ¡c'];
+    public const DETAIL_TYPES = ['Xe mÃ¡y','Xe mÃ¡y Ä‘iá»‡n','Xe Ä‘áº¡p Ä‘iá»‡n','Ã” tÃ´ con','Xe táº£i','Xe khÃ¡ch','MÃ¡y kÃ©o','MÃ¡y cÃ y','Xe cÃ´ng nÃ´ng','Thuyá»n','KhÃ¡c'];
     public const USAGE_LABELS = [
-        'USING' => 'Đang sử dụng',
-        'INACTIVE' => 'Không sử dụng',
-        'SOLD' => 'Đã bán',
-        'LIQUIDATED' => 'Đã thanh lý',
-        'DAMAGED' => 'Hư hỏng',
-        'LOST' => 'Mất',
+        'USING' => 'Äang sá»­ dá»¥ng',
+        'INACTIVE' => 'KhÃ´ng sá»­ dá»¥ng',
+        'SOLD' => 'ÄÃ£ bÃ¡n',
+        'LIQUIDATED' => 'ÄÃ£ thanh lÃ½',
+        'DAMAGED' => 'HÆ° há»ng',
+        'LOST' => 'Máº¥t',
     ];
     public const STATUS_LABELS = [
-        'ACTIVE' => 'Hoạt động',
-        'INACTIVE' => 'Tạm dừng',
-        'DELETED' => 'Đã xóa',
+        'ACTIVE' => 'Hoáº¡t Ä‘á»™ng',
+        'INACTIVE' => 'Táº¡m dá»«ng',
+        'DELETED' => 'ÄÃ£ xÃ³a',
     ];
 
     public function ensureSchema(): void
@@ -158,7 +158,7 @@ SQL);
             $where[] = '(LOWER(c.full_name) LIKE :q OR LOWER(c.citizen_code) LIKE :q OR LOWER(c.identity_number) LIKE :q)';
             $params['q'] = '%' . mb_strtolower($query, 'UTF-8') . '%';
         }
-        $rows = $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.identity_number FROM citizens c WHERE ' . implode(' AND ', $where) . ' ORDER BY c.relationship="Chủ hộ" DESC, c.full_name ASC LIMIT ' . max(1, min(50, $limit)), $params);
+        $rows = $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.identity_number FROM citizens c WHERE ' . implode(' AND ', $where) . ' ORDER BY c.relationship="Chá»§ há»™" DESC, c.full_name ASC LIMIT ' . max(1, min(50, $limit)), $params);
         return array_map(fn($r) => ['id' => (int) $r['id'], 'citizen_code' => (string) ($r['citizen_code'] ?? ''), 'full_name' => (string) ($r['full_name'] ?? ''), 'identity_number' => (string) ($r['identity_number'] ?? '')], $rows);
     }
 
@@ -166,7 +166,7 @@ SQL);
     {
         $this->ensureSchema();
         $params = $this->params($data, $userId, $id);
-        if ($id && !$this->find($id)) throw new \RuntimeException('Không tìm thấy phương tiện');
+        if ($id && !$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y phÆ°Æ¡ng tiá»‡n');
         if ($id) {
             $params['id'] = $id;
             $this->execute(
@@ -186,7 +186,7 @@ SQL);
     public function softDelete(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phương tiện');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y phÆ°Æ¡ng tiá»‡n');
         $this->execute('UPDATE vehicles SET status="DELETED", deleted_at=NOW(), deleted_by=:deleted_by, updated_by=:updated_by WHERE id=:id AND ' . $this->tenantWhere('vehicles'), $this->withTenant(['id' => $id, 'deleted_by' => $userId, 'updated_by' => $userId]));
     }
 
@@ -196,9 +196,9 @@ SQL);
         [$where, $params] = $this->where($filters, false);
         $row = $this->fetchOne(
             "SELECT COUNT(*) AS total, COUNT(DISTINCT v.household_id) AS households,
-                COALESCE(SUM(CASE WHEN v.vehicle_type='Ô tô' OR v.detail_type LIKE '%ô tô%' THEN 1 ELSE 0 END),0) AS cars,
-                COALESCE(SUM(CASE WHEN v.vehicle_type='Xe máy' OR v.detail_type LIKE '%xe máy%' THEN 1 ELSE 0 END),0) AS motorbikes,
-                COALESCE(SUM(CASE WHEN v.vehicle_type='Xe điện' OR v.detail_type LIKE '%điện%' THEN 1 ELSE 0 END),0) AS electric,
+                COALESCE(SUM(CASE WHEN v.vehicle_type='Ã” tÃ´' OR v.detail_type LIKE '%Ã´ tÃ´%' THEN 1 ELSE 0 END),0) AS cars,
+                COALESCE(SUM(CASE WHEN v.vehicle_type='Xe mÃ¡y' OR v.detail_type LIKE '%xe mÃ¡y%' THEN 1 ELSE 0 END),0) AS motorbikes,
+                COALESCE(SUM(CASE WHEN v.vehicle_type='Xe Ä‘iá»‡n' OR v.detail_type LIKE '%Ä‘iá»‡n%' THEN 1 ELSE 0 END),0) AS electric,
                 COALESCE(SUM(CASE WHEN v.license_plate IS NOT NULL AND v.license_plate <> '' THEN 1 ELSE 0 END),0) AS with_plate,
                 COALESCE(SUM(CASE WHEN v.license_plate IS NULL OR v.license_plate = '' THEN 1 ELSE 0 END),0) AS without_plate,
                 COALESCE(SUM(CASE WHEN v.has_inspection=1 AND v.inspection_expiry_date IS NOT NULL AND v.inspection_expiry_date < CURDATE() THEN 1 ELSE 0 END),0) AS expired_inspection,
@@ -215,9 +215,9 @@ SQL);
         [$where, $params] = $this->where($filters, false);
         return [
             'types' => $this->fetchAll("SELECT v.vehicle_type AS label, COUNT(*) AS value FROM vehicles v INNER JOIN households h ON h.id=v.household_id LEFT JOIN citizens oc ON oc.id=v.owner_citizen_id $where GROUP BY v.vehicle_type ORDER BY value DESC, v.vehicle_type", $params),
-            'details' => $this->fetchAll("SELECT COALESCE(NULLIF(v.detail_type,''),'Chưa phân loại') AS label, COUNT(*) AS value FROM vehicles v INNER JOIN households h ON h.id=v.household_id LEFT JOIN citizens oc ON oc.id=v.owner_citizen_id $where GROUP BY label ORDER BY value DESC LIMIT 12", $params),
+            'details' => $this->fetchAll("SELECT COALESCE(NULLIF(v.detail_type,''),'ChÆ°a phÃ¢n loáº¡i') AS label, COUNT(*) AS value FROM vehicles v INNER JOIN households h ON h.id=v.household_id LEFT JOIN citizens oc ON oc.id=v.owner_citizen_id $where GROUP BY label ORDER BY value DESC LIMIT 12", $params),
             'households' => $this->topHouseholds($filters),
-            'areas' => $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'Chưa phân khu') AS label, COUNT(*) AS value FROM vehicles v INNER JOIN households h ON h.id=v.household_id LEFT JOIN citizens oc ON oc.id=v.owner_citizen_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
+            'areas' => $this->fetchAll("SELECT COALESCE(NULLIF(h.area_code,''),'ChÆ°a phÃ¢n khu') AS label, COUNT(*) AS value FROM vehicles v INNER JOIN households h ON h.id=v.household_id LEFT JOIN citizens oc ON oc.id=v.owner_citizen_id $where GROUP BY label ORDER BY value DESC, label LIMIT 10", $params),
         ];
     }
 
@@ -238,13 +238,13 @@ SQL);
         $filters['pageSize'] = 100;
         $rows = $this->paginate($filters)['items'];
         $title = match ($mode) {
-            'by_type' => 'Báo cáo phương tiện theo loại',
-            'missing_plate' => 'Danh sách phương tiện chưa có biển kiểm soát',
-            'expired_inspection' => 'Danh sách phương tiện hết hạn kiểm định',
-            'expired_insurance' => 'Danh sách phương tiện hết hạn bảo hiểm',
-            default => 'Danh sách phương tiện',
+            'by_type' => 'BÃ¡o cÃ¡o phÆ°Æ¡ng tiá»‡n theo loáº¡i',
+            'missing_plate' => 'Danh sÃ¡ch phÆ°Æ¡ng tiá»‡n chÆ°a cÃ³ biá»ƒn kiá»ƒm soÃ¡t',
+            'expired_inspection' => 'Danh sÃ¡ch phÆ°Æ¡ng tiá»‡n háº¿t háº¡n kiá»ƒm Ä‘á»‹nh',
+            'expired_insurance' => 'Danh sÃ¡ch phÆ°Æ¡ng tiá»‡n háº¿t háº¡n báº£o hiá»ƒm',
+            default => 'Danh sÃ¡ch phÆ°Æ¡ng tiá»‡n',
         };
-        return $this->table($title, ['Mã phương tiện','Mã hộ','Chủ hộ','Chủ sở hữu','Mã nhân khẩu','Loại','Phân loại','Nhãn hiệu','Model','Phiên bản','Biển số','Số khung','Số máy','Ngày đăng ký','Nơi đăng ký','Năm SX','Màu','Tình trạng','Bảo hiểm','Hạn BH','Kiểm định','Hạn KĐ','Ghi chú'], array_map(fn($r) => [$r['vehicle_code'], $r['household_code'], $r['head_citizen_name'], $r['owner_name'], $r['owner_citizen_code'], $r['vehicle_type'], $r['detail_type'], $r['brand'], $r['model'], $r['version_name'], $r['license_plate'], $r['frame_number'], $r['engine_number'], $r['registration_date'], $r['registration_place'], $r['manufacture_year'], $r['color'], $r['usage_status_label'], $r['has_insurance'] ? 'Có' : 'Không', $r['insurance_expiry_date'], $r['has_inspection'] ? 'Có' : 'Không', $r['inspection_expiry_date'], $r['note']], $rows), $filters);
+        return $this->table($title, ['MÃ£ phÆ°Æ¡ng tiá»‡n','MÃ£ há»™','Chá»§ há»™','Chá»§ sá»Ÿ há»¯u','MÃ£ nhÃ¢n kháº©u','Loáº¡i','PhÃ¢n loáº¡i','NhÃ£n hiá»‡u','Model','PhiÃªn báº£n','Biá»ƒn sá»‘','Sá»‘ khung','Sá»‘ mÃ¡y','NgÃ y Ä‘Äƒng kÃ½','NÆ¡i Ä‘Äƒng kÃ½','NÄƒm SX','MÃ u','TÃ¬nh tráº¡ng','Báº£o hiá»ƒm','Háº¡n BH','Kiá»ƒm Ä‘á»‹nh','Háº¡n KÄ','Ghi chÃº'], array_map(fn($r) => [$r['vehicle_code'], $r['household_code'], $r['head_citizen_name'], $r['owner_name'], $r['owner_citizen_code'], $r['vehicle_type'], $r['detail_type'], $r['brand'], $r['model'], $r['version_name'], $r['license_plate'], $r['frame_number'], $r['engine_number'], $r['registration_date'], $r['registration_place'], $r['manufacture_year'], $r['color'], $r['usage_status_label'], $r['has_insurance'] ? 'CÃ³' : 'KhÃ´ng', $r['insurance_expiry_date'], $r['has_inspection'] ? 'CÃ³' : 'KhÃ´ng', $r['inspection_expiry_date'], $r['note']], $rows), $filters);
     }
 
     private function where(array $filters, bool $withOrder = true): array
@@ -289,12 +289,12 @@ SQL);
     private function params(array $data, int $userId, ?int $id): array
     {
         $householdId = (int) ($data['household_id'] ?? $data['householdId'] ?? 0);
-        if ($householdId <= 0) throw new \RuntimeException('Hộ gia đình là bắt buộc');
-        if (!$this->fetchOne('SELECT id FROM households WHERE id=:id AND ' . $this->tenantWhere('households') . ' AND status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('Không tìm thấy hộ gia đình');
+        if ($householdId <= 0) throw new \RuntimeException('Há»™ gia Ä‘Ã¬nh lÃ  báº¯t buá»™c');
+        if (!$this->fetchOne('SELECT id FROM households WHERE id=:id AND ' . $this->tenantWhere('households') . ' AND status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")', $this->withTenant(['id' => $householdId]))) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y há»™ gia Ä‘Ã¬nh');
         $ownerCitizenId = (int) ($data['owner_citizen_id'] ?? $data['ownerCitizenId'] ?? 0);
-        if ($ownerCitizenId > 0 && !$this->fetchOne('SELECT id FROM citizens WHERE id=:id AND household_id=:household_id AND ' . $this->tenantWhere('citizens') . ' AND status NOT IN ("DELETED","INACTIVE")', $this->withTenant(['id' => $ownerCitizenId, 'household_id' => $householdId]))) throw new \RuntimeException('Chủ sở hữu không thuộc hộ đã chọn');
+        if ($ownerCitizenId > 0 && !$this->fetchOne('SELECT id FROM citizens WHERE id=:id AND household_id=:household_id AND ' . $this->tenantWhere('citizens') . ' AND status NOT IN ("DELETED","INACTIVE")', $this->withTenant(['id' => $ownerCitizenId, 'household_id' => $householdId]))) throw new \RuntimeException('Chá»§ sá»Ÿ há»¯u khÃ´ng thuá»™c há»™ Ä‘Ã£ chá»n');
         $type = trim((string) ($data['vehicle_type'] ?? $data['vehicleType'] ?? ''));
-        if ($type === '') throw new \RuntimeException('Loại phương tiện là bắt buộc');
+        if ($type === '') throw new \RuntimeException('Loáº¡i phÆ°Æ¡ng tiá»‡n lÃ  báº¯t buá»™c');
         $usage = strtoupper(trim((string) ($data['usage_status'] ?? $data['usageStatus'] ?? 'USING')));
         if (!isset(self::USAGE_LABELS[$usage])) $usage = 'USING';
         $status = strtoupper(trim((string) ($data['status'] ?? 'ACTIVE')));

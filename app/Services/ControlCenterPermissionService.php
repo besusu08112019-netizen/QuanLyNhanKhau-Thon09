@@ -9,52 +9,52 @@ use InvalidArgumentException;
 final class ControlCenterPermissionService
 {
     private const ROLES = [
-        'SYSTEM_ADMIN' => 'Quản trị hệ thống',
-        'VILLAGE_ADMIN' => 'Quản trị thôn',
-        'STAFF' => 'Cán bộ nhập liệu',
-        'VIEWER' => 'Chỉ xem',
+        'SYSTEM_ADMIN' => 'Quáº£n trá»‹ há»‡ thá»‘ng',
+        'VILLAGE_ADMIN' => 'Quáº£n trá»‹ thÃ´n',
+        'STAFF' => 'CÃ¡n bá»™ nháº­p liá»‡u',
+        'VIEWER' => 'Chá»‰ xem',
     ];
 
     private const GROUPS = [
         'units' => [
-            'name' => 'Đơn vị hành chính',
+            'name' => 'ÄÆ¡n vá»‹ hÃ nh chÃ­nh',
             'permissions' => [
-                'control_center.units.read' => 'Xem đơn vị',
-                'control_center.units.create' => 'Thêm đơn vị',
-                'control_center.units.install' => 'Cài đặt tenant',
-                'control_center.units.update' => 'Sửa đơn vị',
-                'control_center.units.lock' => 'Khóa đơn vị',
-                'control_center.units.activate' => 'Kích hoạt đơn vị',
+                'control_center.units.read' => 'Xem Ä‘Æ¡n vá»‹',
+                'control_center.units.create' => 'ThÃªm Ä‘Æ¡n vá»‹',
+                'control_center.units.install' => 'CÃ i Ä‘áº·t tenant',
+                'control_center.units.update' => 'Sá»­a Ä‘Æ¡n vá»‹',
+                'control_center.units.lock' => 'KhÃ³a Ä‘Æ¡n vá»‹',
+                'control_center.units.activate' => 'KÃ­ch hoáº¡t Ä‘Æ¡n vá»‹',
             ],
         ],
         'tenants' => [
-            'name' => 'Quản lý Tenant',
+            'name' => 'Quáº£n lÃ½ Tenant',
             'permissions' => [
                 'tenant.view' => 'Xem Tenant',
-                'tenant.create' => 'Thêm Tenant',
-                'tenant.update' => 'Sửa Tenant',
-                'tenant.lock' => 'Khóa Tenant',
-                'tenant.unlock' => 'Mở khóa Tenant',
-                'tenant.delete' => 'Xóa Tenant',
-                'tenant.activity.view' => 'Xem nhật ký Tenant',
+                'tenant.create' => 'ThÃªm Tenant',
+                'tenant.update' => 'Sá»­a Tenant',
+                'tenant.lock' => 'KhÃ³a Tenant',
+                'tenant.unlock' => 'Má»Ÿ khÃ³a Tenant',
+                'tenant.delete' => 'XÃ³a Tenant',
+                'tenant.activity.view' => 'Xem nháº­t kÃ½ Tenant',
             ],
         ],
         'users' => [
-            'name' => 'Tài khoản hệ thống',
+            'name' => 'TÃ i khoáº£n há»‡ thá»‘ng',
             'permissions' => [
-                'control_center.users.read' => 'Xem tài khoản',
-                'control_center.users.create' => 'Thêm tài khoản',
-                'control_center.users.update' => 'Sửa tài khoản',
-                'control_center.users.deactivate' => 'Ngừng tài khoản',
-                'control_center.users.activate' => 'Kích hoạt tài khoản',
-                'control_center.users.reset_password' => 'Đặt lại mật khẩu',
+                'control_center.users.read' => 'Xem tÃ i khoáº£n',
+                'control_center.users.create' => 'ThÃªm tÃ i khoáº£n',
+                'control_center.users.update' => 'Sá»­a tÃ i khoáº£n',
+                'control_center.users.deactivate' => 'Ngá»«ng tÃ i khoáº£n',
+                'control_center.users.activate' => 'KÃ­ch hoáº¡t tÃ i khoáº£n',
+                'control_center.users.reset_password' => 'Äáº·t láº¡i máº­t kháº©u',
             ],
         ],
         'permissions' => [
-            'name' => 'Phân quyền',
+            'name' => 'PhÃ¢n quyá»n',
             'permissions' => [
-                'control_center.permissions.read' => 'Xem phân quyền',
-                'control_center.permissions.update' => 'Cập nhật phân quyền',
+                'control_center.permissions.read' => 'Xem phÃ¢n quyá»n',
+                'control_center.permissions.update' => 'Cáº­p nháº­t phÃ¢n quyá»n',
             ],
         ],
         'dashboard' => [
@@ -64,15 +64,15 @@ final class ControlCenterPermissionService
             ],
         ],
         'operations' => [
-            'name' => 'Vận hành sau',
+            'name' => 'Váº­n hÃ nh sau',
             'permissions' => [
-                'control_center.monitoring.read' => 'Xem giám sát',
-                'control_center.audit.read' => 'Xem nhật ký',
-                'control_center.configuration.read' => 'Xem cấu hình',
-                'control_center.configuration.update' => 'Cập nhật cấu hình',
-                'control_center.configuration.security' => 'Quản lý cấu hình bảo mật',
-                'control_center.notification.read' => 'Xem thông báo',
-                'control_center.ai.read' => 'Dùng AI',
+                'control_center.monitoring.read' => 'Xem giÃ¡m sÃ¡t',
+                'control_center.audit.read' => 'Xem nháº­t kÃ½',
+                'control_center.configuration.read' => 'Xem cáº¥u hÃ¬nh',
+                'control_center.configuration.update' => 'Cáº­p nháº­t cáº¥u hÃ¬nh',
+                'control_center.configuration.security' => 'Quáº£n lÃ½ cáº¥u hÃ¬nh báº£o máº­t',
+                'control_center.notification.read' => 'Xem thÃ´ng bÃ¡o',
+                'control_center.ai.read' => 'DÃ¹ng AI',
             ],
         ],
     ];
@@ -114,7 +114,7 @@ final class ControlCenterPermissionService
             $allowed = (bool) ($item['allowed'] ?? false);
             $this->assertMutable($role, $permission, $allowed);
             $this->repository->set($role, $permission, $allowed, (int) $actor['id']);
-            $this->audit?->write($actor, 'permission.updated', null, 'Cập nhật phân quyền', [
+            $this->audit?->write($actor, 'permission.updated', null, 'Cáº­p nháº­t phÃ¢n quyá»n', [
                 'role' => $role,
                 'permission' => $permission,
                 'allowed' => $allowed,
@@ -130,7 +130,7 @@ final class ControlCenterPermissionService
         $permission = $this->validatePermission((string) ($input['permission'] ?? ''));
         $this->assertMutable($role, $permission, $this->defaultAllowed($role, $permission));
         $this->repository->reset($role, $permission);
-        $this->audit?->write($actor, 'permission.reset', null, 'Khôi phục phân quyền mặc định', [
+        $this->audit?->write($actor, 'permission.reset', null, 'KhÃ´i phá»¥c phÃ¢n quyá»n máº·c Ä‘á»‹nh', [
             'role' => $role,
             'permission' => $permission,
         ]);
@@ -198,7 +198,7 @@ final class ControlCenterPermissionService
     {
         $role = strtoupper(trim($role));
         if (!array_key_exists($role, self::ROLES)) {
-            throw new InvalidArgumentException('Vai trò không hợp lệ');
+            throw new InvalidArgumentException('Vai trÃ² khÃ´ng há»£p lá»‡');
         }
         return $role;
     }
@@ -211,20 +211,20 @@ final class ControlCenterPermissionService
                 return $permission;
             }
         }
-        throw new InvalidArgumentException('Quyền không hợp lệ');
+        throw new InvalidArgumentException('Quyá»n khÃ´ng há»£p lá»‡');
     }
 
     private function assertMutable(string $role, string $permission, bool $allowed): void
     {
         if ($role === 'SYSTEM_ADMIN' && in_array($permission, self::CORE_SYSTEM_ADMIN_PERMISSIONS, true) && !$allowed) {
-            throw new InvalidArgumentException('Không được tắt quyền quản trị cốt lõi');
+            throw new InvalidArgumentException('KhÃ´ng Ä‘Æ°á»£c táº¯t quyá»n quáº£n trá»‹ cá»‘t lÃµi');
         }
     }
 
     private function requireActor(string $permission): array
     {
         if (!$this->authorization) {
-            throw new InvalidArgumentException('Authorization chưa sẵn sàng');
+            throw new InvalidArgumentException('Authorization chÆ°a sáºµn sÃ ng');
         }
         return $this->authorization->authorize($permission);
     }

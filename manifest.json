@@ -1,27 +1,2802 @@
-{
-  "id": "/pwa/app",
-  "name": "He thong Quan ly Hanh chinh",
-  "short_name": "Hanh chinh",
-  "description": "He thong quan ly hanh chinh, nhan khau, ho gia dinh, GIS va bao cao.",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "browser"],
-  "orientation": "any",
-  "background_color": "#eef3f8",
-  "theme_color": "#0b6b3a",
-  "categories": ["government", "productivity", "utilities"],
-  "lang": "vi",
-  "dir": "ltr",
-  "icons": [
-    { "src": "/assets/icons/icon-192.png?v=20260715-1", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/assets/icons/icon-512.png?v=20260715-1", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/assets/icons/maskable-192.png?v=20260715-1", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/assets/icons/maskable-512.png?v=20260715-1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ],
-  "shortcuts": [
-    { "name": "Dashboard", "short_name": "Dashboard", "url": "/dashboard", "icons": [{ "src": "/assets/icons/icon-192.png?v=20260715-1", "sizes": "192x192" }] },
-    { "name": "Ho gia dinh", "short_name": "Ho dan", "url": "/households", "icons": [{ "src": "/assets/icons/icon-192.png?v=20260715-1", "sizes": "192x192" }] },
-    { "name": "GIS", "short_name": "GIS", "url": "/gis", "icons": [{ "src": "/assets/icons/icon-192.png?v=20260715-1", "sizes": "192x192" }] }
-  ]
-}
+﻿[
+    {
+        "rel":  ".htaccess",
+        "type":  "file",
+        "size":  3587,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  3587
+    },
+    {
+        "rel":  "app/Config/CitizenPolicyDefaults.php",
+        "type":  "file",
+        "size":  603,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  603
+    },
+    {
+        "rel":  "app/Controllers/AdministrativeUnitController.php",
+        "type":  "file",
+        "size":  2585,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  2585
+    },
+    {
+        "rel":  "app/Controllers/AgriculturalLandZoneController.php",
+        "type":  "file",
+        "size":  5389,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  5565
+    },
+    {
+        "rel":  "app/Controllers/AgricultureProductionController.php",
+        "type":  "file",
+        "size":  5626,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  5776
+    },
+    {
+        "rel":  "app/Controllers/AuthController.php",
+        "type":  "file",
+        "size":  6394,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  6543
+    },
+    {
+        "rel":  "app/Controllers/BackupController.php",
+        "type":  "file",
+        "size":  2256,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  2281
+    },
+    {
+        "rel":  "app/Controllers/CommunityOrganizationController.php",
+        "type":  "file",
+        "size":  5724,
+        "mtime":  1786440773,
+        "status":  "downloaded",
+        "downloadedBytes":  5898
+    },
+    {
+        "rel":  "app/Controllers/ComplaintController.php",
+        "type":  "file",
+        "size":  12489,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  12796
+    },
+    {
+        "rel":  "app/Controllers/ContributionController.php",
+        "type":  "file",
+        "size":  8025,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  8160
+    },
+    {
+        "rel":  "app/Controllers/ControlCenterAuthController.php",
+        "type":  "file",
+        "size":  2608,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  2631
+    },
+    {
+        "rel":  "app/Controllers/ControlCenterController.php",
+        "type":  "file",
+        "size":  1312,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  1312
+    },
+    {
+        "rel":  "app/Controllers/ControlCenterPermissionController.php",
+        "type":  "file",
+        "size":  1628,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  1628
+    },
+    {
+        "rel":  "app/Controllers/ControlCenterUserController.php",
+        "type":  "file",
+        "size":  2329,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  2329
+    },
+    {
+        "rel":  "app/Controllers/DashboardController.php",
+        "type":  "file",
+        "size":  2928,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  2928
+    },
+    {
+        "rel":  "app/Controllers/DataQualityController.php",
+        "type":  "file",
+        "size":  1036,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  1036
+    },
+    {
+        "rel":  "app/Controllers/DefenseSecurityController.php",
+        "type":  "file",
+        "size":  6174,
+        "mtime":  1786445935,
+        "status":  "downloaded",
+        "downloadedBytes":  6237
+    },
+    {
+        "rel":  "app/Controllers/FileController.php",
+        "type":  "file",
+        "size":  11339,
+        "mtime":  1786292228,
+        "status":  "downloaded",
+        "downloadedBytes":  11400
+    },
+    {
+        "rel":  "app/Controllers/FinanceController.php",
+        "type":  "file",
+        "size":  9526,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  9696
+    },
+    {
+        "rel":  "app/Controllers/GisController.php",
+        "type":  "file",
+        "size":  12488,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  12720
+    },
+    {
+        "rel":  "app/Controllers/HouseController.php",
+        "type":  "file",
+        "size":  6804,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  6917
+    },
+    {
+        "rel":  "app/Controllers/HouseholdBusinessController.php",
+        "type":  "file",
+        "size":  11591,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  11925
+    },
+    {
+        "rel":  "app/Controllers/HouseholdController.php",
+        "type":  "file",
+        "size":  5614,
+        "mtime":  1786458837,
+        "status":  "downloaded",
+        "downloadedBytes":  5803
+    },
+    {
+        "rel":  "app/Controllers/HouseholdPovertyController.php",
+        "type":  "file",
+        "size":  10387,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  10819
+    },
+    {
+        "rel":  "app/Controllers/ImportController.php",
+        "type":  "file",
+        "size":  36052,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  36563
+    },
+    {
+        "rel":  "app/Controllers/LivestockController.php",
+        "type":  "file",
+        "size":  4784,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  4889
+    },
+    {
+        "rel":  "app/Controllers/LogController.php",
+        "type":  "file",
+        "size":  317,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  317
+    },
+    {
+        "rel":  "app/Controllers/MovementController.php",
+        "type":  "file",
+        "size":  1732,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  1854
+    },
+    {
+        "rel":  "app/Controllers/NotificationController.php",
+        "type":  "file",
+        "size":  1656,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  1656
+    },
+    {
+        "rel":  "app/Controllers/OperationCenterController.php",
+        "type":  "file",
+        "size":  7101,
+        "mtime":  1786292229,
+        "status":  "downloaded",
+        "downloadedBytes":  7186
+    },
+    {
+        "rel":  "app/Controllers/PartyMemberController.php",
+        "type":  "file",
+        "size":  5650,
+        "mtime":  1786292230,
+        "status":  "downloaded",
+        "downloadedBytes":  5786
+    },
+    {
+        "rel":  "app/Controllers/PermissionController.php",
+        "type":  "file",
+        "size":  842,
+        "mtime":  1786292230,
+        "status":  "downloaded",
+        "downloadedBytes":  853
+    },
+    {
+        "rel":  "app/Controllers/PersonController.php",
+        "type":  "file",
+        "size":  8762,
+        "mtime":  1786458837,
+        "status":  "downloaded",
+        "downloadedBytes":  8924
+    },
+    {
+        "rel":  "app/Controllers/PhotoGalleryController.php",
+        "type":  "file",
+        "size":  7275,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  7339
+    },
+    {
+        "rel":  "app/Controllers/PlatformSettingsController.php",
+        "type":  "file",
+        "size":  3316,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  3349
+    },
+    {
+        "rel":  "app/Controllers/PolicyAlertController.php",
+        "type":  "file",
+        "size":  2132,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  2147
+    },
+    {
+        "rel":  "app/Controllers/PolicySubjectController.php",
+        "type":  "file",
+        "size":  13280,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  13882
+    },
+    {
+        "rel":  "app/Controllers/ProfileController.php",
+        "type":  "file",
+        "size":  3812,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  3944
+    },
+    {
+        "rel":  "app/Controllers/PublicAssetController.php",
+        "type":  "file",
+        "size":  15168,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  15556
+    },
+    {
+        "rel":  "app/Controllers/ReportController.php",
+        "type":  "file",
+        "size":  24155,
+        "mtime":  1786424655,
+        "status":  "downloaded",
+        "downloadedBytes":  24224
+    },
+    {
+        "rel":  "app/Controllers/RuralCleanWaterController.php",
+        "type":  "file",
+        "size":  4610,
+        "mtime":  1786381469,
+        "status":  "downloaded",
+        "downloadedBytes":  4734
+    },
+    {
+        "rel":  "app/Controllers/SettingController.php",
+        "type":  "file",
+        "size":  12815,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  13016
+    },
+    {
+        "rel":  "app/Controllers/SystemAdminController.php",
+        "type":  "file",
+        "size":  3303,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  3358
+    },
+    {
+        "rel":  "app/Controllers/TenantInstallerController.php",
+        "type":  "file",
+        "size":  3296,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  3317
+    },
+    {
+        "rel":  "app/Controllers/TenantManagementController.php",
+        "type":  "file",
+        "size":  2483,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  2483
+    },
+    {
+        "rel":  "app/Controllers/UserController.php",
+        "type":  "file",
+        "size":  2919,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  3023
+    },
+    {
+        "rel":  "app/Controllers/VehicleController.php",
+        "type":  "file",
+        "size":  5380,
+        "mtime":  1786292231,
+        "status":  "downloaded",
+        "downloadedBytes":  5460
+    },
+    {
+        "rel":  "app/Controllers/VillageDocumentController.php",
+        "type":  "file",
+        "size":  11039,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  11212
+    },
+    {
+        "rel":  "app/Controllers/WorkCalendarController.php",
+        "type":  "file",
+        "size":  10094,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  10369
+    },
+    {
+        "rel":  "app/Controllers/WorkTaskController.php",
+        "type":  "file",
+        "size":  11298,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  11565
+    },
+    {
+        "rel":  "app/Core/Authorization/ControlCenterAuthorizationException.php",
+        "type":  "file",
+        "size":  364,
+        "mtime":  1786292239,
+        "status":  "downloaded",
+        "downloadedBytes":  364
+    },
+    {
+        "rel":  "app/Core/Authorization/ControlCenterAuthorizationFactory.php",
+        "type":  "file",
+        "size":  350,
+        "mtime":  1786292239,
+        "status":  "downloaded",
+        "downloadedBytes":  350
+    },
+    {
+        "rel":  "app/Core/Authorization/ControlCenterAuthorizationInterface.php",
+        "type":  "file",
+        "size":  276,
+        "mtime":  1786292239,
+        "status":  "downloaded",
+        "downloadedBytes":  276
+    },
+    {
+        "rel":  "app/Core/Autoloader.php",
+        "type":  "file",
+        "size":  551,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  551
+    },
+    {
+        "rel":  "app/Core/BaseController.php",
+        "type":  "file",
+        "size":  9360,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  9504
+    },
+    {
+        "rel":  "app/Core/BaseModel.php",
+        "type":  "file",
+        "size":  6253,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  6253
+    },
+    {
+        "rel":  "app/Core/CitizenCodeFormatter.php",
+        "type":  "file",
+        "size":  760,
+        "mtime":  1786171177,
+        "status":  "downloaded",
+        "downloadedBytes":  760
+    },
+    {
+        "rel":  "app/Core/Database.php",
+        "type":  "file",
+        "size":  8402,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  8531
+    },
+    {
+        "rel":  "app/Core/DatabaseException.php",
+        "type":  "file",
+        "size":  95,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  95
+    },
+    {
+        "rel":  "app/Core/Encoding.php",
+        "type":  "file",
+        "size":  4944,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  5264
+    },
+    {
+        "rel":  "app/Core/ExportEncoding.php",
+        "type":  "file",
+        "size":  960,
+        "mtime":  1786171178,
+        "status":  "downloaded",
+        "downloadedBytes":  964
+    },
+    {
+        "rel":  "app/Core/PortalContext.php",
+        "type":  "file",
+        "size":  4936,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  4936
+    },
+    {
+        "rel":  "app/Core/PrintLayout.php",
+        "type":  "file",
+        "size":  8406,
+        "mtime":  1786171179,
+        "status":  "downloaded",
+        "downloadedBytes":  8406
+    },
+    {
+        "rel":  "app/Core/Request.php",
+        "type":  "file",
+        "size":  2604,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  2604
+    },
+    {
+        "rel":  "app/Core/Response.php",
+        "type":  "file",
+        "size":  2510,
+        "mtime":  1786464515,
+        "status":  "downloaded",
+        "downloadedBytes":  2510
+    },
+    {
+        "rel":  "app/Core/Router.php",
+        "type":  "file",
+        "size":  4982,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  5043
+    },
+    {
+        "rel":  "app/Core/RuntimePaths.php",
+        "type":  "file",
+        "size":  2187,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  2187
+    },
+    {
+        "rel":  "app/Core/SimplePdf.php",
+        "type":  "file",
+        "size":  5263,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  5266
+    },
+    {
+        "rel":  "app/Core/TenantConfig.php",
+        "type":  "file",
+        "size":  7952,
+        "mtime":  1786292232,
+        "status":  "downloaded",
+        "downloadedBytes":  8083
+    },
+    {
+        "rel":  "app/Core/TenantContext.php",
+        "type":  "file",
+        "size":  4317,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  4317
+    },
+    {
+        "rel":  "app/Core/TenantGuard.php",
+        "type":  "file",
+        "size":  3762,
+        "mtime":  1786381469,
+        "status":  "downloaded",
+        "downloadedBytes":  3783
+    },
+    {
+        "rel":  "app/Core/TenantResolver.php",
+        "type":  "file",
+        "size":  1901,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  1901
+    },
+    {
+        "rel":  "app/Models/AgriculturalLandZone.php",
+        "type":  "file",
+        "size":  39484,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  40592
+    },
+    {
+        "rel":  "app/Models/AgricultureProduction.php",
+        "type":  "file",
+        "size":  46014,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  46526
+    },
+    {
+        "rel":  "app/Models/AuditLog.php",
+        "type":  "file",
+        "size":  3434,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  3434
+    },
+    {
+        "rel":  "app/Models/Backup.php",
+        "type":  "file",
+        "size":  6449,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  6449
+    },
+    {
+        "rel":  "app/Models/Citizen.php",
+        "type":  "file",
+        "size":  37717,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  38586
+    },
+    {
+        "rel":  "app/Models/CommunityOrganization.php",
+        "type":  "file",
+        "size":  36531,
+        "mtime":  1786441142,
+        "status":  "downloaded",
+        "downloadedBytes":  37018
+    },
+    {
+        "rel":  "app/Models/Complaint.php",
+        "type":  "file",
+        "size":  48397,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  49088
+    },
+    {
+        "rel":  "app/Models/Dashboard.php",
+        "type":  "file",
+        "size":  58546,
+        "mtime":  1786293564,
+        "status":  "downloaded",
+        "downloadedBytes":  59862
+    },
+    {
+        "rel":  "app/Models/DefenseSecurity.php",
+        "type":  "file",
+        "size":  54706,
+        "mtime":  1786448997,
+        "status":  "downloaded",
+        "downloadedBytes":  56207
+    },
+    {
+        "rel":  "app/Models/DigitalProfile.php",
+        "type":  "file",
+        "size":  21008,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  22044
+    },
+    {
+        "rel":  "app/Models/FileAttachment.php",
+        "type":  "file",
+        "size":  13706,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  13775
+    },
+    {
+        "rel":  "app/Models/Finance.php",
+        "type":  "file",
+        "size":  22784,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  22909
+    },
+    {
+        "rel":  "app/Models/GisArea.php",
+        "type":  "file",
+        "size":  19576,
+        "mtime":  1786292233,
+        "status":  "downloaded",
+        "downloadedBytes":  19661
+    },
+    {
+        "rel":  "app/Models/GisHouseholdLocation.php",
+        "type":  "file",
+        "size":  39861,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  40090
+    },
+    {
+        "rel":  "app/Models/GisSearch.php",
+        "type":  "file",
+        "size":  8037,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  8109
+    },
+    {
+        "rel":  "app/Models/House.php",
+        "type":  "file",
+        "size":  37990,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  37990
+    },
+    {
+        "rel":  "app/Models/Household.php",
+        "type":  "file",
+        "size":  24905,
+        "mtime":  1786432389,
+        "status":  "downloaded",
+        "downloadedBytes":  25180
+    },
+    {
+        "rel":  "app/Models/HouseholdBusiness.php",
+        "type":  "file",
+        "size":  58859,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  59597
+    },
+    {
+        "rel":  "app/Models/HouseholdContribution.php",
+        "type":  "file",
+        "size":  93021,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  95145
+    },
+    {
+        "rel":  "app/Models/HouseholdPoverty.php",
+        "type":  "file",
+        "size":  39430,
+        "mtime":  1786293564,
+        "status":  "downloaded",
+        "downloadedBytes":  40089
+    },
+    {
+        "rel":  "app/Models/Livestock.php",
+        "type":  "file",
+        "size":  23564,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  23879
+    },
+    {
+        "rel":  "app/Models/Movement.php",
+        "type":  "file",
+        "size":  14976,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  15191
+    },
+    {
+        "rel":  "app/Models/NotificationCenter.php",
+        "type":  "file",
+        "size":  9741,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  9743
+    },
+    {
+        "rel":  "app/Models/OperationCenter.php",
+        "type":  "file",
+        "size":  35138,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  35662
+    },
+    {
+        "rel":  "app/Models/PartyMember.php",
+        "type":  "file",
+        "size":  32758,
+        "mtime":  1786292234,
+        "status":  "downloaded",
+        "downloadedBytes":  33387
+    },
+    {
+        "rel":  "app/Models/Permission.php",
+        "type":  "file",
+        "size":  4649,
+        "mtime":  1786440772,
+        "status":  "downloaded",
+        "downloadedBytes":  4717
+    },
+    {
+        "rel":  "app/Models/PhotoGallery.php",
+        "type":  "file",
+        "size":  17484,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  17525
+    },
+    {
+        "rel":  "app/Models/PolicyAlert.php",
+        "type":  "file",
+        "size":  14240,
+        "mtime":  1786381470,
+        "status":  "downloaded",
+        "downloadedBytes":  14406
+    },
+    {
+        "rel":  "app/Models/PolicySubject.php",
+        "type":  "file",
+        "size":  42250,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  42869
+    },
+    {
+        "rel":  "app/Models/PopulationStatistics.php",
+        "type":  "file",
+        "size":  25980,
+        "mtime":  1786293564,
+        "status":  "downloaded",
+        "downloadedBytes":  26010
+    },
+    {
+        "rel":  "app/Models/ProfileSummary.php",
+        "type":  "file",
+        "size":  21012,
+        "mtime":  1786463543,
+        "status":  "downloaded",
+        "downloadedBytes":  21012
+    },
+    {
+        "rel":  "app/Models/PublicAsset.php",
+        "type":  "file",
+        "size":  64728,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  65643
+    },
+    {
+        "rel":  "app/Models/PushSubscription.php",
+        "type":  "file",
+        "size":  3391,
+        "mtime":  1786137635,
+        "status":  "downloaded",
+        "downloadedBytes":  3404
+    },
+    {
+        "rel":  "app/Models/Report.php",
+        "type":  "file",
+        "size":  74618,
+        "mtime":  1786432567,
+        "status":  "downloaded",
+        "downloadedBytes":  76315
+    },
+    {
+        "rel":  "app/Models/RuralCleanWater.php",
+        "type":  "file",
+        "size":  34414,
+        "mtime":  1786387474,
+        "status":  "downloaded",
+        "downloadedBytes":  35380
+    },
+    {
+        "rel":  "app/Models/SystemAdmin.php",
+        "type":  "file",
+        "size":  15624,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  15994
+    },
+    {
+        "rel":  "app/Models/SystemSetting.php",
+        "type":  "file",
+        "size":  3452,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  3452
+    },
+    {
+        "rel":  "app/Models/User.php",
+        "type":  "file",
+        "size":  29839,
+        "mtime":  1786440772,
+        "status":  "downloaded",
+        "downloadedBytes":  30659
+    },
+    {
+        "rel":  "app/Models/Vehicle.php",
+        "type":  "file",
+        "size":  31243,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  31786
+    },
+    {
+        "rel":  "app/Models/VillageDocument.php",
+        "type":  "file",
+        "size":  19490,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  19674
+    },
+    {
+        "rel":  "app/Models/WorkCalendar.php",
+        "type":  "file",
+        "size":  21031,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  21374
+    },
+    {
+        "rel":  "app/Models/WorkTask.php",
+        "type":  "file",
+        "size":  29850,
+        "mtime":  1786292235,
+        "status":  "downloaded",
+        "downloadedBytes":  30291
+    },
+    {
+        "rel":  "app/Policies/AgePolicy.php",
+        "type":  "file",
+        "size":  6339,
+        "mtime":  1786292236,
+        "status":  "downloaded",
+        "downloadedBytes":  6339
+    },
+    {
+        "rel":  "app/Policies/HouseholdRelationPolicy.php",
+        "type":  "file",
+        "size":  9611,
+        "mtime":  1786292236,
+        "status":  "downloaded",
+        "downloadedBytes":  9874
+    },
+    {
+        "rel":  "app/Policies/InsurancePolicy.php",
+        "type":  "file",
+        "size":  4914,
+        "mtime":  1786292236,
+        "status":  "downloaded",
+        "downloadedBytes":  4923
+    },
+    {
+        "rel":  "app/PolicyEngine/BusinessRuleCenter.php",
+        "type":  "file",
+        "size":  2109,
+        "mtime":  1786292236,
+        "status":  "downloaded",
+        "downloadedBytes":  2109
+    },
+    {
+        "rel":  "app/PolicyEngine/PolicyMetadata.php",
+        "type":  "file",
+        "size":  1058,
+        "mtime":  1786292236,
+        "status":  "downloaded",
+        "downloadedBytes":  1058
+    },
+    {
+        "rel":  "app/PolicyEngine/PolicyRegistry.php",
+        "type":  "file",
+        "size":  5961,
+        "mtime":  1786292236,
+        "status":  "downloaded",
+        "downloadedBytes":  5961
+    },
+    {
+        "rel":  "app/Repositories/AdministrativeUnitRepository.php",
+        "type":  "file",
+        "size":  17312,
+        "mtime":  1786292236,
+        "status":  "downloaded",
+        "downloadedBytes":  17316
+    },
+    {
+        "rel":  "app/Repositories/ControlCenterPermissionRepository.php",
+        "type":  "file",
+        "size":  4045,
+        "mtime":  1786292236,
+        "status":  "downloaded",
+        "downloadedBytes":  4068
+    },
+    {
+        "rel":  "app/Repositories/ControlCenterRepository.php",
+        "type":  "file",
+        "size":  18132,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  18226
+    },
+    {
+        "rel":  "app/Repositories/ControlCenterUserRepository.php",
+        "type":  "file",
+        "size":  31527,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  31703
+    },
+    {
+        "rel":  "app/Repositories/PlatformSettingsRepository.php",
+        "type":  "file",
+        "size":  5497,
+        "mtime":  1786444133,
+        "status":  "downloaded",
+        "downloadedBytes":  5510
+    },
+    {
+        "rel":  "app/Repositories/TenantRegistryRepository.php",
+        "type":  "file",
+        "size":  21878,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  21878
+    },
+    {
+        "rel":  "app/Services/AdministrativeUnitService.php",
+        "type":  "file",
+        "size":  20498,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  21220
+    },
+    {
+        "rel":  "app/Services/CentralSuperAdminAuthService.php",
+        "type":  "file",
+        "size":  6377,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  6377
+    },
+    {
+        "rel":  "app/Services/CitizenInsightEngine.php",
+        "type":  "file",
+        "size":  14415,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  14415
+    },
+    {
+        "rel":  "app/Services/ContributionRuleEngine.php",
+        "type":  "file",
+        "size":  18454,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  18965
+    },
+    {
+        "rel":  "app/Services/ControlCenterAuditService.php",
+        "type":  "file",
+        "size":  3175,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  3175
+    },
+    {
+        "rel":  "app/Services/ControlCenterAuthService.php",
+        "type":  "file",
+        "size":  6897,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  6949
+    },
+    {
+        "rel":  "app/Services/ControlCenterPermissionAuthorization.php",
+        "type":  "file",
+        "size":  2658,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  2703
+    },
+    {
+        "rel":  "app/Services/ControlCenterPermissionService.php",
+        "type":  "file",
+        "size":  9423,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  9793
+    },
+    {
+        "rel":  "app/Services/ControlCenterService.php",
+        "type":  "file",
+        "size":  5048,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  5048
+    },
+    {
+        "rel":  "app/Services/ControlCenterSuperAdminAuthorization.php",
+        "type":  "file",
+        "size":  2728,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  2763
+    },
+    {
+        "rel":  "app/Services/ControlCenterUserService.php",
+        "type":  "file",
+        "size":  9363,
+        "mtime":  1786292237,
+        "status":  "downloaded",
+        "downloadedBytes":  9775
+    },
+    {
+        "rel":  "app/Services/DataQualityService.php",
+        "type":  "file",
+        "size":  32681,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  34478
+    },
+    {
+        "rel":  "app/Services/ExecutiveDashboardService.php",
+        "type":  "file",
+        "size":  6359,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  6359
+    },
+    {
+        "rel":  "app/Services/FileStorageService.php",
+        "type":  "file",
+        "size":  17251,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  17512
+    },
+    {
+        "rel":  "app/Services/GlobalCopyrightService.php",
+        "type":  "file",
+        "size":  6977,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  6992
+    },
+    {
+        "rel":  "app/Services/HealthInsuranceDefaultService.php",
+        "type":  "file",
+        "size":  1066,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  1066
+    },
+    {
+        "rel":  "app/Services/HouseholdCategoryService.php",
+        "type":  "file",
+        "size":  7985,
+        "mtime":  1786458812,
+        "status":  "downloaded",
+        "downloadedBytes":  7985
+    },
+    {
+        "rel":  "app/Services/HouseholdRelationshipInferenceService.php",
+        "type":  "file",
+        "size":  3183,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  3183
+    },
+    {
+        "rel":  "app/Services/PlatformBrandingService.php",
+        "type":  "file",
+        "size":  8934,
+        "mtime":  1786444133,
+        "status":  "downloaded",
+        "downloadedBytes":  9091
+    },
+    {
+        "rel":  "app/Services/PlatformSettingsService.php",
+        "type":  "file",
+        "size":  19693,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  20093
+    },
+    {
+        "rel":  "app/Services/PopulationMovementService.php",
+        "type":  "file",
+        "size":  23251,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  23395
+    },
+    {
+        "rel":  "app/Services/RiskWarningEngine.php",
+        "type":  "file",
+        "size":  13660,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  13797
+    },
+    {
+        "rel":  "app/Services/StudentStatusService.php",
+        "type":  "file",
+        "size":  1831,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  1834
+    },
+    {
+        "rel":  "app/Services/TenantInstaller/CapabilityResolver.php",
+        "type":  "file",
+        "size":  353,
+        "mtime":  1786171184,
+        "status":  "downloaded",
+        "downloadedBytes":  353
+    },
+    {
+        "rel":  "app/Services/TenantInstaller/InstallationCapabilities.php",
+        "type":  "file",
+        "size":  1248,
+        "mtime":  1786171185,
+        "status":  "downloaded",
+        "downloadedBytes":  1248
+    },
+    {
+        "rel":  "app/Services/TenantInstaller/InstallationProfile.php",
+        "type":  "file",
+        "size":  2697,
+        "mtime":  1786171185,
+        "status":  "downloaded",
+        "downloadedBytes":  2697
+    },
+    {
+        "rel":  "app/Services/TenantInstaller/InstallationProfileResolver.php",
+        "type":  "file",
+        "size":  1602,
+        "mtime":  1786171186,
+        "status":  "downloaded",
+        "downloadedBytes":  1619
+    },
+    {
+        "rel":  "app/Services/TenantInstallerService.php",
+        "type":  "file",
+        "size":  53447,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  55555
+    },
+    {
+        "rel":  "app/Services/TenantManagementService.php",
+        "type":  "file",
+        "size":  15606,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  15907
+    },
+    {
+        "rel":  "app/Services/TenantMigrationService.php",
+        "type":  "file",
+        "size":  13867,
+        "mtime":  1786171183,
+        "status":  "downloaded",
+        "downloadedBytes":  13867
+    },
+    {
+        "rel":  "app/Services/TenantRegistryStatusService.php",
+        "type":  "file",
+        "size":  9272,
+        "mtime":  1786292238,
+        "status":  "downloaded",
+        "downloadedBytes":  9299
+    },
+    {
+        "rel":  "app/Services/WebPushService.php",
+        "type":  "file",
+        "size":  4899,
+        "mtime":  1786137639,
+        "status":  "downloaded",
+        "downloadedBytes":  4953
+    },
+    {
+        "rel":  "assets/css/app.css",
+        "type":  "file",
+        "size":  311310,
+        "mtime":  1786432276,
+        "status":  "downloaded",
+        "downloadedBytes":  311470
+    },
+    {
+        "rel":  "assets/css/app.min.css",
+        "type":  "file",
+        "size":  269926,
+        "mtime":  1786432276,
+        "status":  "downloaded",
+        "downloadedBytes":  270086
+    },
+    {
+        "rel":  "assets/css/mobile-design-system-v2.css",
+        "type":  "file",
+        "size":  31355,
+        "mtime":  1786292217,
+        "status":  "downloaded",
+        "downloadedBytes":  31355
+    },
+    {
+        "rel":  "assets/css/mobile-design-system-v2.min.css",
+        "type":  "file",
+        "size":  24795,
+        "mtime":  1786292217,
+        "status":  "downloaded",
+        "downloadedBytes":  24795
+    },
+    {
+        "rel":  "assets/css/print.css",
+        "type":  "file",
+        "size":  3694,
+        "mtime":  1786292217,
+        "status":  "downloaded",
+        "downloadedBytes":  3694
+    },
+    {
+        "rel":  "assets/css/print.min.css",
+        "type":  "file",
+        "size":  2823,
+        "mtime":  1786292217,
+        "status":  "downloaded",
+        "downloadedBytes":  2823
+    },
+    {
+        "rel":  "assets/js/admin.utf8.js",
+        "type":  "file",
+        "size":  18843,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  19258
+    },
+    {
+        "rel":  "assets/js/admin.utf8.min.js",
+        "type":  "file",
+        "size":  17841,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  18256
+    },
+    {
+        "rel":  "assets/js/admin-panel.js",
+        "type":  "file",
+        "size":  45010,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  46407
+    },
+    {
+        "rel":  "assets/js/admin-panel.min.js",
+        "type":  "file",
+        "size":  42284,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  43681
+    },
+    {
+        "rel":  "assets/js/admin-panel-bridge.js",
+        "type":  "file",
+        "size":  41036,
+        "mtime":  1786292218,
+        "status":  "downloaded",
+        "downloadedBytes":  41658
+    },
+    {
+        "rel":  "assets/js/admin-panel-bridge.min.js",
+        "type":  "file",
+        "size":  37756,
+        "mtime":  1786292218,
+        "status":  "downloaded",
+        "downloadedBytes":  38378
+    },
+    {
+        "rel":  "assets/js/agricultural-land.js",
+        "type":  "file",
+        "size":  35691,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  37230
+    },
+    {
+        "rel":  "assets/js/agricultural-land.min.js",
+        "type":  "file",
+        "size":  32522,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  34061
+    },
+    {
+        "rel":  "assets/js/agriculture.js",
+        "type":  "file",
+        "size":  19783,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  19821
+    },
+    {
+        "rel":  "assets/js/agriculture.min.js",
+        "type":  "file",
+        "size":  19508,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  19546
+    },
+    {
+        "rel":  "assets/js/app.utf8.min.js",
+        "type":  "file",
+        "size":  205970,
+        "mtime":  1786464240,
+        "status":  "downloaded",
+        "downloadedBytes":  208870
+    },
+    {
+        "rel":  "assets/js/app-platform.js",
+        "type":  "file",
+        "size":  243019,
+        "mtime":  1786429800,
+        "status":  "downloaded",
+        "downloadedBytes":  244338
+    },
+    {
+        "rel":  "assets/js/app-platform.min.js",
+        "type":  "file",
+        "size":  204179,
+        "mtime":  1786429801,
+        "status":  "downloaded",
+        "downloadedBytes":  205498
+    },
+    {
+        "rel":  "assets/js/community-organizations.js",
+        "type":  "file",
+        "size":  39075,
+        "mtime":  1786455596,
+        "status":  "downloaded",
+        "downloadedBytes":  40002
+    },
+    {
+        "rel":  "assets/js/community-organizations.min.js",
+        "type":  "file",
+        "size":  39075,
+        "mtime":  1786455596,
+        "status":  "downloaded",
+        "downloadedBytes":  40002
+    },
+    {
+        "rel":  "assets/js/complaints.js",
+        "type":  "file",
+        "size":  39422,
+        "mtime":  1786292219,
+        "status":  "downloaded",
+        "downloadedBytes":  40233
+    },
+    {
+        "rel":  "assets/js/complaints.min.js",
+        "type":  "file",
+        "size":  36999,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  37810
+    },
+    {
+        "rel":  "assets/js/contributions.js",
+        "type":  "file",
+        "size":  39876,
+        "mtime":  1786458811,
+        "status":  "downloaded",
+        "downloadedBytes":  41339
+    },
+    {
+        "rel":  "assets/js/contributions.min.js",
+        "type":  "file",
+        "size":  39876,
+        "mtime":  1786458811,
+        "status":  "downloaded",
+        "downloadedBytes":  41339
+    },
+    {
+        "rel":  "assets/js/csrf.js",
+        "type":  "file",
+        "size":  3564,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  3668
+    },
+    {
+        "rel":  "assets/js/csrf.min.js",
+        "type":  "file",
+        "size":  3019,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  3123
+    },
+    {
+        "rel":  "assets/js/data-quality.js",
+        "type":  "file",
+        "size":  15915,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  16398
+    },
+    {
+        "rel":  "assets/js/data-quality.min.js",
+        "type":  "file",
+        "size":  14237,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  14720
+    },
+    {
+        "rel":  "assets/js/defense-security.js",
+        "type":  "file",
+        "size":  27388,
+        "mtime":  1786424656,
+        "status":  "downloaded",
+        "downloadedBytes":  28262
+    },
+    {
+        "rel":  "assets/js/defense-security.min.js",
+        "type":  "file",
+        "size":  27566,
+        "mtime":  1786453926,
+        "status":  "downloaded",
+        "downloadedBytes":  28523
+    },
+    {
+        "rel":  "assets/js/digital-profile.js",
+        "type":  "file",
+        "size":  74880,
+        "mtime":  1786464151,
+        "status":  "downloaded",
+        "downloadedBytes":  75674
+    },
+    {
+        "rel":  "assets/js/digital-profile.min.js",
+        "type":  "file",
+        "size":  70925,
+        "mtime":  1786464151,
+        "status":  "downloaded",
+        "downloadedBytes":  71719
+    },
+    {
+        "rel":  "assets/js/documents.js",
+        "type":  "file",
+        "size":  22852,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  23483
+    },
+    {
+        "rel":  "assets/js/documents.min.js",
+        "type":  "file",
+        "size":  21526,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  22157
+    },
+    {
+        "rel":  "assets/js/finance.js",
+        "type":  "file",
+        "size":  24807,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  25363
+    },
+    {
+        "rel":  "assets/js/finance.min.js",
+        "type":  "file",
+        "size":  23750,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  24306
+    },
+    {
+        "rel":  "assets/js/gis-household-location.js",
+        "type":  "file",
+        "size":  50499,
+        "mtime":  1786292220,
+        "status":  "downloaded",
+        "downloadedBytes":  51706
+    },
+    {
+        "rel":  "assets/js/gis-household-location.min.js",
+        "type":  "file",
+        "size":  44741,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  45948
+    },
+    {
+        "rel":  "assets/js/gis-platform.js",
+        "type":  "file",
+        "size":  33673,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  34435
+    },
+    {
+        "rel":  "assets/js/gis-platform.min.js",
+        "type":  "file",
+        "size":  30417,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  31179
+    },
+    {
+        "rel":  "assets/js/household-business.js",
+        "type":  "file",
+        "size":  86499,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  88817
+    },
+    {
+        "rel":  "assets/js/household-business.min.js",
+        "type":  "file",
+        "size":  80950,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  83268
+    },
+    {
+        "rel":  "assets/js/household-photo-camera-fix.js",
+        "type":  "file",
+        "size":  663,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  663
+    },
+    {
+        "rel":  "assets/js/household-photo-camera-fix.min.js",
+        "type":  "file",
+        "size":  614,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  614
+    },
+    {
+        "rel":  "assets/js/household-photo-capture.js",
+        "type":  "file",
+        "size":  20275,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  20575
+    },
+    {
+        "rel":  "assets/js/household-photo-capture.min.js",
+        "type":  "file",
+        "size":  17806,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  18106
+    },
+    {
+        "rel":  "assets/js/household-photo-gps.js",
+        "type":  "file",
+        "size":  5196,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  5433
+    },
+    {
+        "rel":  "assets/js/household-photo-gps.min.js",
+        "type":  "file",
+        "size":  4414,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  4651
+    },
+    {
+        "rel":  "assets/js/houses.js",
+        "type":  "file",
+        "size":  23806,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  23855
+    },
+    {
+        "rel":  "assets/js/houses.min.js",
+        "type":  "file",
+        "size":  23642,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  23691
+    },
+    {
+        "rel":  "assets/js/i18n.js",
+        "type":  "file",
+        "size":  11742,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  11742
+    },
+    {
+        "rel":  "assets/js/i18n.min.js",
+        "type":  "file",
+        "size":  10867,
+        "mtime":  1786292221,
+        "status":  "downloaded",
+        "downloadedBytes":  10867
+    },
+    {
+        "rel":  "assets/js/import.js",
+        "type":  "file",
+        "size":  13130,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  13735
+    },
+    {
+        "rel":  "assets/js/import.min.js",
+        "type":  "file",
+        "size":  12257,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  12862
+    },
+    {
+        "rel":  "assets/js/livestock.js",
+        "type":  "file",
+        "size":  28432,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  28478
+    },
+    {
+        "rel":  "assets/js/livestock.min.js",
+        "type":  "file",
+        "size":  28078,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  28124
+    },
+    {
+        "rel":  "assets/js/mobile-component-library.js",
+        "type":  "file",
+        "size":  131186,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  136886
+    },
+    {
+        "rel":  "assets/js/mobile-component-library.min.js",
+        "type":  "file",
+        "size":  116718,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  122418
+    },
+    {
+        "rel":  "assets/js/module-dashboards.js",
+        "type":  "file",
+        "size":  19538,
+        "mtime":  1786293565,
+        "status":  "downloaded",
+        "downloadedBytes":  20226
+    },
+    {
+        "rel":  "assets/js/module-dashboards.min.js",
+        "type":  "file",
+        "size":  19320,
+        "mtime":  1786293565,
+        "status":  "downloaded",
+        "downloadedBytes":  20008
+    },
+    {
+        "rel":  "assets/js/notifications.js",
+        "type":  "file",
+        "size":  9145,
+        "mtime":  1786428948,
+        "status":  "downloaded",
+        "downloadedBytes":  9162
+    },
+    {
+        "rel":  "assets/js/notifications.min.js",
+        "type":  "file",
+        "size":  8621,
+        "mtime":  1786428948,
+        "status":  "downloaded",
+        "downloadedBytes":  8638
+    },
+    {
+        "rel":  "assets/js/operation-center.js",
+        "type":  "file",
+        "size":  25129,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  25615
+    },
+    {
+        "rel":  "assets/js/operation-center.min.js",
+        "type":  "file",
+        "size":  24029,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  24515
+    },
+    {
+        "rel":  "assets/js/party-members.js",
+        "type":  "file",
+        "size":  26456,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  27228
+    },
+    {
+        "rel":  "assets/js/party-members.min.js",
+        "type":  "file",
+        "size":  26068,
+        "mtime":  1786292222,
+        "status":  "downloaded",
+        "downloadedBytes":  26840
+    },
+    {
+        "rel":  "assets/js/photo-gallery.js",
+        "type":  "file",
+        "size":  22897,
+        "mtime":  1786292223,
+        "status":  "downloaded",
+        "downloadedBytes":  23423
+    },
+    {
+        "rel":  "assets/js/photo-gallery.min.js",
+        "type":  "file",
+        "size":  21480,
+        "mtime":  1786292223,
+        "status":  "downloaded",
+        "downloadedBytes":  22006
+    },
+    {
+        "rel":  "assets/js/policy-alerts.js",
+        "type":  "file",
+        "size":  18150,
+        "mtime":  1786296159,
+        "status":  "downloaded",
+        "downloadedBytes":  18447
+    },
+    {
+        "rel":  "assets/js/policy-alerts.min.js",
+        "type":  "file",
+        "size":  17120,
+        "mtime":  1786296160,
+        "status":  "downloaded",
+        "downloadedBytes":  17417
+    },
+    {
+        "rel":  "assets/js/policy-subjects.js",
+        "type":  "file",
+        "size":  45479,
+        "mtime":  1786297884,
+        "status":  "downloaded",
+        "downloadedBytes":  46922
+    },
+    {
+        "rel":  "assets/js/policy-subjects.min.js",
+        "type":  "file",
+        "size":  43331,
+        "mtime":  1786297885,
+        "status":  "downloaded",
+        "downloadedBytes":  44774
+    },
+    {
+        "rel":  "assets/js/poverty-management.js",
+        "type":  "file",
+        "size":  39578,
+        "mtime":  1786294654,
+        "status":  "downloaded",
+        "downloadedBytes":  40809
+    },
+    {
+        "rel":  "assets/js/poverty-management.min.js",
+        "type":  "file",
+        "size":  37611,
+        "mtime":  1786294655,
+        "status":  "downloaded",
+        "downloadedBytes":  38842
+    },
+    {
+        "rel":  "assets/js/print-framework.js",
+        "type":  "file",
+        "size":  13110,
+        "mtime":  1786292223,
+        "status":  "downloaded",
+        "downloadedBytes":  13164
+    },
+    {
+        "rel":  "assets/js/print-framework.min.js",
+        "type":  "file",
+        "size":  11971,
+        "mtime":  1786292223,
+        "status":  "downloaded",
+        "downloadedBytes":  12025
+    },
+    {
+        "rel":  "assets/js/public-assets.js",
+        "type":  "file",
+        "size":  59159,
+        "mtime":  1786292223,
+        "status":  "downloaded",
+        "downloadedBytes":  61048
+    },
+    {
+        "rel":  "assets/js/public-assets.min.js",
+        "type":  "file",
+        "size":  56194,
+        "mtime":  1786292223,
+        "status":  "downloaded",
+        "downloadedBytes":  58083
+    },
+    {
+        "rel":  "assets/js/pwa.js",
+        "type":  "file",
+        "size":  24009,
+        "mtime":  1786390629,
+        "status":  "downloaded",
+        "downloadedBytes":  24506
+    },
+    {
+        "rel":  "assets/js/pwa.min.js",
+        "type":  "file",
+        "size":  21471,
+        "mtime":  1786390630,
+        "status":  "downloaded",
+        "downloadedBytes":  21968
+    },
+    {
+        "rel":  "assets/js/report.js",
+        "type":  "file",
+        "size":  35098,
+        "mtime":  1786424657,
+        "status":  "downloaded",
+        "downloadedBytes":  35907
+    },
+    {
+        "rel":  "assets/js/report.min.js",
+        "type":  "file",
+        "size":  32594,
+        "mtime":  1786424657,
+        "status":  "downloaded",
+        "downloadedBytes":  33403
+    },
+    {
+        "rel":  "assets/js/rural-clean-water.js",
+        "type":  "file",
+        "size":  15491,
+        "mtime":  1786463713,
+        "status":  "downloaded",
+        "downloadedBytes":  15762
+    },
+    {
+        "rel":  "assets/js/rural-clean-water.min.js",
+        "type":  "file",
+        "size":  14415,
+        "mtime":  1786463713,
+        "status":  "downloaded",
+        "downloadedBytes":  14686
+    },
+    {
+        "rel":  "assets/js/session.js",
+        "type":  "file",
+        "size":  13432,
+        "mtime":  1786292224,
+        "status":  "downloaded",
+        "downloadedBytes":  13569
+    },
+    {
+        "rel":  "assets/js/session.min.js",
+        "type":  "file",
+        "size":  11642,
+        "mtime":  1786292224,
+        "status":  "downloaded",
+        "downloadedBytes":  11779
+    },
+    {
+        "rel":  "assets/js/sprint10.js",
+        "type":  "file",
+        "size":  23618,
+        "mtime":  1786292224,
+        "status":  "downloaded",
+        "downloadedBytes":  24228
+    },
+    {
+        "rel":  "assets/js/sprint10.min.js",
+        "type":  "file",
+        "size":  22397,
+        "mtime":  1786292224,
+        "status":  "downloaded",
+        "downloadedBytes":  23007
+    },
+    {
+        "rel":  "assets/js/sprint8.js",
+        "type":  "file",
+        "size":  31821,
+        "mtime":  1786458811,
+        "status":  "downloaded",
+        "downloadedBytes":  32714
+    },
+    {
+        "rel":  "assets/js/sprint8.min.js",
+        "type":  "file",
+        "size":  31821,
+        "mtime":  1786458811,
+        "status":  "downloaded",
+        "downloadedBytes":  32714
+    },
+    {
+        "rel":  "assets/js/sprint9.js",
+        "type":  "file",
+        "size":  3952,
+        "mtime":  1786292224,
+        "status":  "downloaded",
+        "downloadedBytes":  4165
+    },
+    {
+        "rel":  "assets/js/sprint9.min.js",
+        "type":  "file",
+        "size":  3764,
+        "mtime":  1786292224,
+        "status":  "downloaded",
+        "downloadedBytes":  3977
+    },
+    {
+        "rel":  "assets/js/system-admin.js",
+        "type":  "file",
+        "size":  18489,
+        "mtime":  1786292224,
+        "status":  "downloaded",
+        "downloadedBytes":  19180
+    },
+    {
+        "rel":  "assets/js/system-admin.min.js",
+        "type":  "file",
+        "size":  17010,
+        "mtime":  1786292224,
+        "status":  "downloaded",
+        "downloadedBytes":  17701
+    },
+    {
+        "rel":  "assets/js/vehicles.js",
+        "type":  "file",
+        "size":  16944,
+        "mtime":  1786458811,
+        "status":  "downloaded",
+        "downloadedBytes":  17687
+    },
+    {
+        "rel":  "assets/js/vehicles.min.js",
+        "type":  "file",
+        "size":  16944,
+        "mtime":  1786458811,
+        "status":  "downloaded",
+        "downloadedBytes":  17687
+    },
+    {
+        "rel":  "assets/js/view-inline-patches.js",
+        "type":  "file",
+        "size":  35104,
+        "mtime":  1786294652,
+        "status":  "downloaded",
+        "downloadedBytes":  36276
+    },
+    {
+        "rel":  "assets/js/view-inline-patches.min.js",
+        "type":  "file",
+        "size":  35080,
+        "mtime":  1786294653,
+        "status":  "downloaded",
+        "downloadedBytes":  36252
+    },
+    {
+        "rel":  "assets/js/work-calendar.js",
+        "type":  "file",
+        "size":  26991,
+        "mtime":  1786292225,
+        "status":  "downloaded",
+        "downloadedBytes":  27639
+    },
+    {
+        "rel":  "assets/js/work-calendar.min.js",
+        "type":  "file",
+        "size":  25630,
+        "mtime":  1786292225,
+        "status":  "downloaded",
+        "downloadedBytes":  26278
+    },
+    {
+        "rel":  "assets/js/work-tasks.js",
+        "type":  "file",
+        "size":  34380,
+        "mtime":  1786292225,
+        "status":  "downloaded",
+        "downloadedBytes":  35208
+    },
+    {
+        "rel":  "assets/js/work-tasks.min.js",
+        "type":  "file",
+        "size":  32220,
+        "mtime":  1786292225,
+        "status":  "downloaded",
+        "downloadedBytes":  33048
+    },
+    {
+        "rel":  "assets/README.md",
+        "type":  "file",
+        "size":  179,
+        "mtime":  1786292216,
+        "status":  "downloaded",
+        "downloadedBytes":  179
+    },
+    {
+        "rel":  "composer.json",
+        "type":  "file",
+        "size":  705,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  705
+    },
+    {
+        "rel":  "config/app.php",
+        "type":  "file",
+        "size":  2752,
+        "mtime":  1786292216,
+        "status":  "downloaded",
+        "downloadedBytes":  2786
+    },
+    {
+        "rel":  "config/database.example.php",
+        "type":  "file",
+        "size":  795,
+        "mtime":  1786292216,
+        "status":  "downloaded",
+        "downloadedBytes":  795
+    },
+    {
+        "rel":  "config/env.php",
+        "type":  "file",
+        "size":  4559,
+        "mtime":  1786292216,
+        "status":  "downloaded",
+        "downloadedBytes":  4559
+    },
+    {
+        "rel":  "config/policy_alerts.php",
+        "type":  "file",
+        "size":  3459,
+        "mtime":  1786374456,
+        "status":  "downloaded",
+        "downloadedBytes":  3490
+    },
+    {
+        "rel":  "config/push.php",
+        "type":  "file",
+        "size":  662,
+        "mtime":  1786028334,
+        "status":  "downloaded",
+        "downloadedBytes":  662
+    },
+    {
+        "rel":  "database/database.sql",
+        "type":  "file",
+        "size":  23925,
+        "mtime":  1786133870,
+        "status":  "downloaded",
+        "downloadedBytes":  23943
+    },
+    {
+        "rel":  "database/migrations/2026_06_28_admin_panel.sql",
+        "type":  "file",
+        "size":  3916,
+        "mtime":  1784949082,
+        "status":  "downloaded",
+        "downloadedBytes":  3916
+    },
+    {
+        "rel":  "database/migrations/2026_06_28_sprint8.sql",
+        "type":  "file",
+        "size":  1393,
+        "mtime":  1783207482,
+        "status":  "downloaded",
+        "downloadedBytes":  1393
+    },
+    {
+        "rel":  "database/migrations/2026_06_29_add_household_type.sql",
+        "type":  "file",
+        "size":  1373,
+        "mtime":  1785169808,
+        "status":  "downloaded",
+        "downloadedBytes":  1373
+    },
+    {
+        "rel":  "database/migrations/2026_06_29_digital_government_population_fields.sql",
+        "type":  "file",
+        "size":  2478,
+        "mtime":  1783207482,
+        "status":  "downloaded",
+        "downloadedBytes":  2478
+    },
+    {
+        "rel":  "database/migrations/20260701_110000_create_gis_areas.sql",
+        "type":  "file",
+        "size":  1354,
+        "mtime":  1783207482,
+        "status":  "downloaded",
+        "downloadedBytes":  1448
+    },
+    {
+        "rel":  "database/migrations/20260701_180000_population_movement_automation.sql",
+        "type":  "file",
+        "size":  3074,
+        "mtime":  1783207482,
+        "status":  "downloaded",
+        "downloadedBytes":  3074
+    },
+    {
+        "rel":  "database/migrations/20260701_210000_sprint13_digital_profiles.sql",
+        "type":  "file",
+        "size":  2477,
+        "mtime":  1783207482,
+        "status":  "downloaded",
+        "downloadedBytes":  2477
+    },
+    {
+        "rel":  "database/migrations/20260702_150000_sprint15_household_location_markers.sql",
+        "type":  "file",
+        "size":  926,
+        "mtime":  1783207482,
+        "status":  "downloaded",
+        "downloadedBytes":  926
+    },
+    {
+        "rel":  "database/migrations/20260703_120000_gis_search_indexes.sql",
+        "type":  "file",
+        "size":  1259,
+        "mtime":  1783207482,
+        "status":  "downloaded",
+        "downloadedBytes":  1259
+    },
+    {
+        "rel":  "database/migrations/20260705_170000_sprint1_file_storage_foundation.sql",
+        "type":  "file",
+        "size":  1501,
+        "mtime":  1783266946,
+        "status":  "downloaded",
+        "downloadedBytes":  1501
+    },
+    {
+        "rel":  "database/migrations/20260706_211500_sprint16_smart_reporting.sql",
+        "type":  "file",
+        "size":  971,
+        "mtime":  1783348202,
+        "status":  "downloaded",
+        "downloadedBytes":  971
+    },
+    {
+        "rel":  "database/migrations/20260707_120000_add_health_insurance_to_citizens.sql",
+        "type":  "file",
+        "size":  871,
+        "mtime":  1783402672,
+        "status":  "downloaded",
+        "downloadedBytes":  871
+    },
+    {
+        "rel":  "database/migrations/20260708_190000_sprint19_household_business.sql",
+        "type":  "file",
+        "size":  2650,
+        "mtime":  1783504674,
+        "status":  "downloaded",
+        "downloadedBytes":  2650
+    },
+    {
+        "rel":  "database/migrations/20260708_210000_sprint19_household_business_extension.sql",
+        "type":  "file",
+        "size":  5532,
+        "mtime":  1783506326,
+        "status":  "downloaded",
+        "downloadedBytes":  6040
+    },
+    {
+        "rel":  "database/migrations/20260708_230000_household_business_allow_multiple.sql",
+        "type":  "file",
+        "size":  1202,
+        "mtime":  1783517198,
+        "status":  "downloaded",
+        "downloadedBytes":  1202
+    },
+    {
+        "rel":  "database/migrations/20260708_250000_create_livestock.sql",
+        "type":  "file",
+        "size":  1128,
+        "mtime":  1783523770,
+        "status":  "downloaded",
+        "downloadedBytes":  1128
+    },
+    {
+        "rel":  "database/migrations/20260709_130000_household_business_gps_source.sql",
+        "type":  "file",
+        "size":  152,
+        "mtime":  1783575916,
+        "status":  "downloaded",
+        "downloadedBytes":  152
+    },
+    {
+        "rel":  "database/migrations/20260709_180000_create_agriculture_production.sql",
+        "type":  "file",
+        "size":  7081,
+        "mtime":  1783594936,
+        "status":  "downloaded",
+        "downloadedBytes":  7081
+    },
+    {
+        "rel":  "database/migrations/20260709_210000_create_houses.sql",
+        "type":  "file",
+        "size":  3976,
+        "mtime":  1783596196,
+        "status":  "downloaded",
+        "downloadedBytes":  3976
+    },
+    {
+        "rel":  "database/migrations/20260710_220000_add_parent_names_to_citizens.sql",
+        "type":  "file",
+        "size":  847,
+        "mtime":  1783697192,
+        "status":  "downloaded",
+        "downloadedBytes":  850
+    },
+    {
+        "rel":  "database/migrations/20260711_140000_create_public_assets.sql",
+        "type":  "file",
+        "size":  2712,
+        "mtime":  1783751066,
+        "status":  "downloaded",
+        "downloadedBytes":  2712
+    },
+    {
+        "rel":  "database/migrations/20260711_151000_add_public_asset_areas.sql",
+        "type":  "file",
+        "size":  371,
+        "mtime":  1783752652,
+        "status":  "downloaded",
+        "downloadedBytes":  371
+    },
+    {
+        "rel":  "database/migrations/20260711_160000_complete_public_assets.sql",
+        "type":  "file",
+        "size":  560,
+        "mtime":  1783753058,
+        "status":  "downloaded",
+        "downloadedBytes":  560
+    },
+    {
+        "rel":  "database/migrations/20260711_170000_create_public_asset_inventory.sql",
+        "type":  "file",
+        "size":  3643,
+        "mtime":  1783781086,
+        "status":  "downloaded",
+        "downloadedBytes":  4145
+    },
+    {
+        "rel":  "database/migrations/20260711_180000_update_public_asset_inventory_catalogs.sql",
+        "type":  "file",
+        "size":  551,
+        "mtime":  1783780914,
+        "status":  "downloaded",
+        "downloadedBytes":  619
+    },
+    {
+        "rel":  "database/migrations/20260724_090000_create_complaints.sql",
+        "type":  "file",
+        "size":  8240,
+        "mtime":  1784874286,
+        "status":  "downloaded",
+        "downloadedBytes":  8388
+    },
+    {
+        "rel":  "database/migrations/20260724_100000_update_complaint_related_links.sql",
+        "type":  "file",
+        "size":  1402,
+        "mtime":  1784874624,
+        "status":  "downloaded",
+        "downloadedBytes":  1402
+    },
+    {
+        "rel":  "database/migrations/20260724_110000_create_work_tasks.sql",
+        "type":  "file",
+        "size":  6347,
+        "mtime":  1784891432,
+        "status":  "downloaded",
+        "downloadedBytes":  6458
+    },
+    {
+        "rel":  "database/migrations/20260724_120000_create_work_calendar.sql",
+        "type":  "file",
+        "size":  4095,
+        "mtime":  1784893552,
+        "status":  "downloaded",
+        "downloadedBytes":  4138
+    },
+    {
+        "rel":  "database/migrations/20260724_130000_extend_public_asset_inventory_phase3.sql",
+        "type":  "file",
+        "size":  1795,
+        "mtime":  1784897380,
+        "status":  "downloaded",
+        "downloadedBytes":  1795
+    },
+    {
+        "rel":  "database/migrations/20260724_140000_create_photo_gallery.sql",
+        "type":  "file",
+        "size":  2151,
+        "mtime":  1784898176,
+        "status":  "downloaded",
+        "downloadedBytes":  2151
+    },
+    {
+        "rel":  "database/migrations/20260724_150000_create_village_documents.sql",
+        "type":  "file",
+        "size":  2855,
+        "mtime":  1784898794,
+        "status":  "downloaded",
+        "downloadedBytes":  2888
+    },
+    {
+        "rel":  "database/migrations/20260724_160000_create_finance.sql",
+        "type":  "file",
+        "size":  4405,
+        "mtime":  1784899196,
+        "status":  "downloaded",
+        "downloadedBytes":  4405
+    },
+    {
+        "rel":  "database/migrations/20260724_170000_create_notification_states.sql",
+        "type":  "file",
+        "size":  628,
+        "mtime":  1784899994,
+        "status":  "downloaded",
+        "downloadedBytes":  628
+    },
+    {
+        "rel":  "database/migrations/20260725_120000_environment_multi_tenant_foundation.sql",
+        "type":  "file",
+        "size":  5833,
+        "mtime":  1784955080,
+        "status":  "downloaded",
+        "downloadedBytes":  5833
+    },
+    {
+        "rel":  "database/migrations/20260725_130000_fix_household_presence_counts.sql",
+        "type":  "file",
+        "size":  1324,
+        "mtime":  1784990742,
+        "status":  "downloaded",
+        "downloadedBytes":  1324
+    },
+    {
+        "rel":  "database/migrations/20260726_090000_create_agricultural_land_zones.sql",
+        "type":  "file",
+        "size":  4658,
+        "mtime":  1785079204,
+        "status":  "downloaded",
+        "downloadedBytes":  4658
+    },
+    {
+        "rel":  "database/migrations/20260727_150000_age_based_citizen_defaults.sql",
+        "type":  "file",
+        "size":  1564,
+        "mtime":  1785225326,
+        "status":  "downloaded",
+        "downloadedBytes":  1566
+    },
+    {
+        "rel":  "database/migrations/20260727_180000_standardize_policy_objects.sql",
+        "type":  "file",
+        "size":  1045,
+        "mtime":  1785168600,
+        "status":  "downloaded",
+        "downloadedBytes":  1045
+    },
+    {
+        "rel":  "database/migrations/20260727_190000_normalize_household_categories.sql",
+        "type":  "file",
+        "size":  3718,
+        "mtime":  1785169784,
+        "status":  "downloaded",
+        "downloadedBytes":  3718
+    },
+    {
+        "rel":  "database/migrations/20260727_200000_create_party_members.sql",
+        "type":  "file",
+        "size":  3030,
+        "mtime":  1785733940,
+        "status":  "downloaded",
+        "downloadedBytes":  3030
+    },
+    {
+        "rel":  "database/migrations/20260728_230000_tenant_registry_operations.sql",
+        "type":  "file",
+        "size":  566,
+        "mtime":  1785254806,
+        "status":  "downloaded",
+        "downloadedBytes":  566
+    },
+    {
+        "rel":  "database/migrations/20260729_090000_tenant_lifecycle_registry.sql",
+        "type":  "file",
+        "size":  1719,
+        "mtime":  1785279914,
+        "status":  "downloaded",
+        "downloadedBytes":  1719
+    },
+    {
+        "rel":  "database/migrations/20260729_150000_tenant_installer.sql",
+        "type":  "file",
+        "size":  3315,
+        "mtime":  1785329758,
+        "status":  "downloaded",
+        "downloadedBytes":  3315
+    },
+    {
+        "rel":  "database/migrations/20260730_090000_tenant_management_metadata.sql",
+        "type":  "file",
+        "size":  657,
+        "mtime":  1785378120,
+        "status":  "downloaded",
+        "downloadedBytes":  657
+    },
+    {
+        "rel":  "database/migrations/20260731_090000_create_household_poverty_management.sql",
+        "type":  "file",
+        "size":  2814,
+        "mtime":  1785458148,
+        "status":  "downloaded",
+        "downloadedBytes":  2814
+    },
+    {
+        "rel":  "database/migrations/20260731_180000_create_policy_subject_management.sql",
+        "type":  "file",
+        "size":  3696,
+        "mtime":  1785497766,
+        "status":  "downloaded",
+        "downloadedBytes":  3696
+    },
+    {
+        "rel":  "database/migrations/20260731_230000_backfill_default_health_insurance_eligibility.sql",
+        "type":  "file",
+        "size":  502,
+        "mtime":  1785515984,
+        "status":  "downloaded",
+        "downloadedBytes":  502
+    },
+    {
+        "rel":  "database/migrations/20260731_235000_backfill_default_social_assistance_eligibility.sql",
+        "type":  "file",
+        "size":  312,
+        "mtime":  1785516798,
+        "status":  "downloaded",
+        "downloadedBytes":  312
+    },
+    {
+        "rel":  "database/migrations/20260731_235500_backfill_default_student_labor_eligibility.sql",
+        "type":  "file",
+        "size":  900,
+        "mtime":  1785517052,
+        "status":  "downloaded",
+        "downloadedBytes":  907
+    },
+    {
+        "rel":  "database/migrations/20260731_235600_sync_student_labor_occupation.sql",
+        "type":  "file",
+        "size":  648,
+        "mtime":  1785517154,
+        "status":  "downloaded",
+        "downloadedBytes":  654
+    },
+    {
+        "rel":  "database/migrations/20260803_090000_party_member_status_lifecycle.sql",
+        "type":  "file",
+        "size":  2584,
+        "mtime":  1785734124,
+        "status":  "downloaded",
+        "downloadedBytes":  2584
+    },
+    {
+        "rel":  "database/migrations/20260803_150000_party_member_independent_medals.sql",
+        "type":  "file",
+        "size":  3231,
+        "mtime":  1785742250,
+        "status":  "downloaded",
+        "downloadedBytes":  3234
+    },
+    {
+        "rel":  "database/migrations/20260807_090000_household_residence_status.sql",
+        "type":  "file",
+        "size":  5344,
+        "mtime":  1786096736,
+        "status":  "downloaded",
+        "downloadedBytes":  5344
+    },
+    {
+        "rel":  "database/migrations/20260808_110000_household_residence_status_mode.sql",
+        "type":  "file",
+        "size":  1680,
+        "mtime":  1786131840,
+        "status":  "downloaded",
+        "downloadedBytes":  1680
+    },
+    {
+        "rel":  "database/migrations/20260809_130000_platform_settings.sql",
+        "type":  "file",
+        "size":  1617,
+        "mtime":  1786254050,
+        "status":  "downloaded",
+        "downloadedBytes":  1625
+    },
+    {
+        "rel":  "database/migrations/20260810_090000_create_rural_clean_water.sql",
+        "type":  "file",
+        "size":  2480,
+        "mtime":  1786374457,
+        "status":  "downloaded",
+        "downloadedBytes":  2480
+    },
+    {
+        "rel":  "database/migrations/20260810_110000_extend_rural_clean_water_ntm.sql",
+        "type":  "file",
+        "size":  2151,
+        "mtime":  1786381472,
+        "status":  "downloaded",
+        "downloadedBytes":  2151
+    },
+    {
+        "rel":  "database/migrations/20260811_160000_create_community_organizations.sql",
+        "type":  "file",
+        "size":  3947,
+        "mtime":  1786440774,
+        "status":  "downloaded",
+        "downloadedBytes":  3947
+    },
+    {
+        "rel":  "database/migrations/20260811_create_defense_security.sql",
+        "type":  "file",
+        "size":  5012,
+        "mtime":  1786424657,
+        "status":  "downloaded",
+        "downloadedBytes":  5015
+    },
+    {
+        "rel":  "database/schema.md",
+        "type":  "file",
+        "size":  2300,
+        "mtime":  1785733946,
+        "status":  "downloaded",
+        "downloadedBytes":  2326
+    },
+    {
+        "rel":  "database/schema.sql",
+        "type":  "file",
+        "size":  104723,
+        "mtime":  1786424657,
+        "status":  "downloaded",
+        "downloadedBytes":  104740
+    },
+    {
+        "rel":  "database/seed.sql",
+        "type":  "file",
+        "size":  4850,
+        "mtime":  1785064158,
+        "status":  "downloaded",
+        "downloadedBytes":  4850
+    },
+    {
+        "rel":  "index.php",
+        "type":  "file",
+        "size":  92423,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  92423
+    },
+    {
+        "rel":  "manifest.json",
+        "type":  "file",
+        "size":  1519,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  1519
+    },
+    {
+        "rel":  "manifest.webmanifest",
+        "type":  "file",
+        "size":  1519,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  1519
+    },
+    {
+        "rel":  "offline.html",
+        "type":  "file",
+        "size":  1955,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  1955
+    },
+    {
+        "rel":  "package.json",
+        "type":  "file",
+        "size":  1285,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  1285
+    },
+    {
+        "rel":  "robots.txt",
+        "type":  "file",
+        "size":  28,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  28
+    },
+    {
+        "rel":  "service-worker.js",
+        "type":  "file",
+        "size":  12755,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  12755
+    },
+    {
+        "rel":  "sitemap.xml",
+        "type":  "file",
+        "size":  111,
+        "mtime":  0,
+        "status":  "downloaded",
+        "downloadedBytes":  111
+    },
+    {
+        "rel":  "tools/audit_production_data.php",
+        "type":  "file",
+        "size":  5221,
+        "mtime":  1784963411,
+        "status":  "downloaded",
+        "downloadedBytes":  5221
+    },
+    {
+        "rel":  "tools/build-assets.js",
+        "type":  "file",
+        "size":  4989,
+        "mtime":  1786374473,
+        "status":  "downloaded",
+        "downloadedBytes":  4989
+    },
+    {
+        "rel":  "tools/build-production-artifact.js",
+        "type":  "file",
+        "size":  2407,
+        "mtime":  1785376361,
+        "status":  "downloaded",
+        "downloadedBytes":  2407
+    },
+    {
+        "rel":  "tools/household_photo_recovery.php",
+        "type":  "file",
+        "size":  9588,
+        "mtime":  1784963411,
+        "status":  "downloaded",
+        "downloadedBytes":  9588
+    },
+    {
+        "rel":  "tools/repair_encoding_data.php",
+        "type":  "file",
+        "size":  7289,
+        "mtime":  1784963411,
+        "status":  "downloaded",
+        "downloadedBytes":  7308
+    },
+    {
+        "rel":  "tools/tenant_migrate.php",
+        "type":  "file",
+        "size":  10339,
+        "mtime":  1786136211,
+        "status":  "downloaded",
+        "downloadedBytes":  10339
+    },
+    {
+        "rel":  "tools/tenant_parity_check.php",
+        "type":  "file",
+        "size":  7659,
+        "mtime":  1786136212,
+        "status":  "downloaded",
+        "downloadedBytes":  7659
+    },
+    {
+        "rel":  "tools/validate-production-artifact.js",
+        "type":  "file",
+        "size":  3087,
+        "mtime":  1785251788,
+        "status":  "downloaded",
+        "downloadedBytes":  3087
+    },
+    {
+        "rel":  "views/app.php",
+        "type":  "file",
+        "size":  183248,
+        "mtime":  1786462054,
+        "status":  "downloaded",
+        "downloadedBytes":  188966
+    },
+    {
+        "rel":  "views/control-center.php",
+        "type":  "file",
+        "size":  190006,
+        "mtime":  1786292217,
+        "status":  "downloaded",
+        "downloadedBytes":  197722
+    }
+]

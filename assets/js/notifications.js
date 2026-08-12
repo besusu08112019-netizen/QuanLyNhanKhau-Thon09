@@ -64,7 +64,7 @@
     if (options.body) headers['Content-Type'] = 'application/json';
     const response = await fetch(path, { method: options.method || 'GET', headers, body: options.body ? JSON.stringify(options.body) : undefined, cache: 'no-store' });
     const payload = await response.json().catch(() => null);
-    if (!response.ok || payload?.ok === false) throw new Error(payload?.error?.message || payload?.message || 'Khong tai duoc thong bao');
+    if (!response.ok || payload?.ok === false) throw new Error(payload?.error?.message || payload?.message || 'KhÃ´ng táº£i Ä‘Æ°á»£c thÃ´ng bÃ¡o');
     return payload?.data ?? payload;
   }
 
@@ -140,7 +140,7 @@
 
   function notifyDesktop(items) {
     if (!items.length || !('Notification' in window) || Notification.permission !== 'granted' || document.hidden === false) return;
-    items.slice(0, 3).forEach(item => new Notification(item.title, { body: item.message, tag: item.key, icon: '/assets/icons/icon-192.png' }));
+    items.slice(0, 3).forEach(item => new Notification(item.title, { body: item.message, tag: item.key, icon: '/pwa-icon-192.png' }));
   }
 
   function clear() {

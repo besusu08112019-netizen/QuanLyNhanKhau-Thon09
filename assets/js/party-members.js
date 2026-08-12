@@ -3,7 +3,7 @@
 const $ = (s, r = document) => r.querySelector(s);
 const API = '/api/party-members';
 const state = { page: 1, pageSize: 20, search: '', branch_name: '', member_type: '', party_status: '', party_position: '', gender: '', age_from: '', age_to: '', sort: 'full_name', direction: 'ASC', catalogs: null, suggestions: [] };
-const labels = { total: 'Tổng số', records: 'hồ sơ', loading: 'Đang tải...', noData: 'Chưa có hồ sơ Đảng viên', permission: 'Tài khoản hiện tại không có quyền thực hiện thao tác này' };
+const labels = { total: 'Tá»•ng sá»‘', records: 'há»“ sÆ¡', loading: 'Äang táº£i...', noData: 'ChÆ°a cÃ³ há»“ sÆ¡ Äáº£ng viÃªn', permission: 'TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n thao tÃ¡c nÃ y' };
 let platformRegistered = false;
 registerPlatform();
 document.addEventListener('DOMContentLoaded', init);
@@ -30,7 +30,7 @@ const p = window.TenantAppPlatform;
 if (!p) return;
 platformRegistered = true;
 if (!p.modules?.get?.('partyMembers')) {
-p.modules?.register?.({ moduleKey: 'partyMembers', screenId: 'partyMembers', path: '/party-members', label: 'Quản lý Đảng viên', mobileLabel: 'Đảng viên', icon: 'fa-flag', permissionScope: 'party_members', loaderName: 'loadPartyMembers' });
+p.modules?.register?.({ moduleKey: 'partyMembers', screenId: 'partyMembers', path: '/party-members', label: 'Quáº£n lÃ½ Äáº£ng viÃªn', mobileLabel: 'Äáº£ng viÃªn', icon: 'fa-flag', permissionScope: 'party_members', loaderName: 'loadPartyMembers' });
 }
 if (!p.routes?.match?.('/party-members')) {
 p.routes?.register?.({ path: '/party-members', moduleKey: 'partyMembers', screenId: 'partyMembers', action: 'list' });
@@ -62,11 +62,11 @@ const statusTab = $('#partyTabStatus .row');
 if (!statusTab || statusTab.dataset.partyLifecycleEnhanced === '1') return;
 statusTab.dataset.partyLifecycleEnhanced = '1';
 statusTab.insertAdjacentHTML('beforeend',
-'<div class="col-md-4"><label class="form-label">Ngày đổi trạng thái</label><input name="status_changed_at" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" class="form-control party-date-input"></div>' +
-'<div class="col-md-4"><label class="form-label">Số quyết định</label><input name="decision_number" class="form-control"></div>' +
-'<div class="col-md-4"><label class="form-label">Ngày quyết định</label><input name="decision_date" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" class="form-control party-date-input"></div>' +
-'<div class="col-md-6"><label class="form-label">Nơi chuyển sinh hoạt</label><input name="transfer_to" class="form-control"></div>' +
-'<div class="col-md-6"><label class="form-label">Lý do thay đổi</label><textarea name="status_reason" class="form-control" rows="2"></textarea></div>'
+'<div class="col-md-4"><label class="form-label">NgÃ y Ä‘á»•i tráº¡ng thÃ¡i</label><input name="status_changed_at" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" class="form-control party-date-input"></div>' +
+'<div class="col-md-4"><label class="form-label">Sá»‘ quyáº¿t Ä‘á»‹nh</label><input name="decision_number" class="form-control"></div>' +
+'<div class="col-md-4"><label class="form-label">NgÃ y quyáº¿t Ä‘á»‹nh</label><input name="decision_date" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" class="form-control party-date-input"></div>' +
+'<div class="col-md-6"><label class="form-label">NÆ¡i chuyá»ƒn sinh hoáº¡t</label><input name="transfer_to" class="form-control"></div>' +
+'<div class="col-md-6"><label class="form-label">LÃ½ do thay Ä‘á»•i</label><textarea name="status_reason" class="form-control" rows="2"></textarea></div>'
 );
 }
 function enhanceDateInputs(root) {
@@ -95,12 +95,12 @@ toast(e.message, 'danger');
 async function ensureCatalogs() {
 if (state.catalogs) return state.catalogs;
 state.catalogs = await request(API + '/catalogs', { cacheTtl: 60000 });
-fill('#partyMemberTypeFilter', state.catalogs.member_types, 'Tất cả');
-fill('#partyMemberTypeSelect', state.catalogs.member_types, 'Chọn loại');
-fill('#partyMemberStatusFilter', [{ value: 'ALL', label: 'Tất cả trạng thái' }].concat(state.catalogs.statuses || []), 'Đang sinh hoạt');
-fill('#partyMemberActivityStatusSelect', state.catalogs.statuses, 'Chọn tình trạng');
-fill('#partyMemberBranchFilter', state.catalogs.branches, 'Tất cả');
-fill('#partyMemberPositionFilter', state.catalogs.positions, 'Tất cả');
+fill('#partyMemberTypeFilter', state.catalogs.member_types, 'Táº¥t cáº£');
+fill('#partyMemberTypeSelect', state.catalogs.member_types, 'Chá»n loáº¡i');
+fill('#partyMemberStatusFilter', [{ value: 'ALL', label: 'Táº¥t cáº£ tráº¡ng thÃ¡i' }].concat(state.catalogs.statuses || []), 'Äang sinh hoáº¡t');
+fill('#partyMemberActivityStatusSelect', state.catalogs.statuses, 'Chá»n tÃ¬nh tráº¡ng');
+fill('#partyMemberBranchFilter', state.catalogs.branches, 'Táº¥t cáº£');
+fill('#partyMemberPositionFilter', state.catalogs.positions, 'Táº¥t cáº£');
 return state.catalogs;
 }
 async function renderDashboard() {
@@ -110,15 +110,15 @@ try {
 const data = await request(API + '/dashboard?' + params().toString(), { cacheTtl: 5000 });
 const m = data.metrics || {};
 const cards = [
-['Tổng Đảng viên', m.total, 'fa-flag', 'red'],
-['Chính thức', m.official, 'fa-id-badge', 'green'],
-['Dự bị', m.probationary, 'fa-user-clock', 'orange'],
+['Tá»•ng Äáº£ng viÃªn', m.total, 'fa-flag', 'red'],
+['ChÃ­nh thá»©c', m.official, 'fa-id-badge', 'green'],
+['Dá»± bá»‹', m.probationary, 'fa-user-clock', 'orange'],
 ['Nam', m.male, 'fa-mars', 'blue'],
-['Nữ', m.female, 'fa-venus', 'pink'],
-['Đi làm ăn xa', m.away, 'fa-person-walking-luggage', 'gray'],
-['Miễn sinh hoạt', m.exempt, 'fa-circle-pause', 'orange'],
-['Chuyển sinh hoạt', m.transferred, 'fa-right-left', 'blue'],
-['Đến kỳ Huy hiệu', m.badge_due, 'fa-award', 'green']
+['Ná»¯', m.female, 'fa-venus', 'pink'],
+['Äi lÃ m Äƒn xa', m.away, 'fa-person-walking-luggage', 'gray'],
+['Miá»…n sinh hoáº¡t', m.exempt, 'fa-circle-pause', 'orange'],
+['Chuyá»ƒn sinh hoáº¡t', m.transferred, 'fa-right-left', 'blue'],
+['Äáº¿n ká»³ Huy hiá»‡u', m.badge_due, 'fa-award', 'green']
 ];
 host.innerHTML = cards.map(c => '<article class="party-kpi-card tone-' + c[3] + '"><span class="app-v2-card-icon party-kpi-icon"><i class="fa-solid ' + c[2] + '"></i></span><div><p>' + esc(c[0]) + '</p><strong>' + num(c[1]) + '</strong></div></article>').join('');
 } catch (_) {
@@ -135,7 +135,7 @@ if (typeof window.TenantAppSyncResponsiveTableLabels === 'function') window.Tena
 }
 function rowHtml(r) {
 const id = Number(r.id);
-return '<tr><td data-label="Ảnh">' + avatar(r) + '</td><td data-label="Họ tên"><strong>' + esc(r.full_name) + '</strong><div class="text-muted small">' + esc(r.citizen_code || '') + ' - ' + esc(r.gender || '') + ', ' + esc(r.age || '') + ' tuổi</div><div class="text-muted small">' + esc(r.address || '') + '</div></td><td data-label="Mã ĐV">' + esc(r.party_member_code || '') + '<div class="text-muted small">' + esc(r.party_card_number || '') + '</div></td><td data-label="Chi bộ">' + esc(r.branch_name || '') + '</td><td data-label="Chức vụ">' + esc(r.party_position || '') + '</td><td data-label="Loại"><span class="badge-soft">' + esc(r.member_type_label || '') + '</span></td><td data-label="Tình trạng"><span class="badge-soft">' + esc(r.party_status_label || r.activity_status_label || '') + '</span></td><td data-label="Ngày vào Đảng">' + esc(date(r.joined_party_date)) + '</td><td data-label="Thao tác" class="text-end"><div class="party-row-actions"><button class="btn btn-sm btn-outline-secondary" type="button" title="Xem" aria-label="Xem chi tiết" data-platform-action="partyMembers.detail" data-id="' + id + '"><i class="fa-solid fa-eye"></i></button>' + (can('update') ? '<button class="btn btn-sm btn-outline-primary" type="button" title="Sửa" aria-label="Sửa" data-platform-action="partyMembers.edit" data-id="' + id + '"><i class="fa-solid fa-pen"></i></button>' : '') + '</div></td></tr>';
+return '<tr><td data-label="áº¢nh">' + avatar(r) + '</td><td data-label="Há» tÃªn"><strong>' + esc(r.full_name) + '</strong><div class="text-muted small">' + esc(r.citizen_code || '') + ' - ' + esc(r.gender || '') + ', ' + esc(r.age || '') + ' tuá»•i</div><div class="text-muted small">' + esc(r.address || '') + '</div></td><td data-label="MÃ£ ÄV">' + esc(r.party_member_code || '') + '<div class="text-muted small">' + esc(r.party_card_number || '') + '</div></td><td data-label="Chi bá»™">' + esc(r.branch_name || '') + '</td><td data-label="Chá»©c vá»¥">' + esc(r.party_position || '') + '</td><td data-label="Loáº¡i"><span class="badge-soft">' + esc(r.member_type_label || '') + '</span></td><td data-label="TÃ¬nh tráº¡ng"><span class="badge-soft">' + esc(r.party_status_label || r.activity_status_label || '') + '</span></td><td data-label="NgÃ y vÃ o Äáº£ng">' + esc(date(r.joined_party_date)) + '</td><td data-label="Thao tÃ¡c" class="text-end"><div class="party-row-actions"><button class="btn btn-sm btn-outline-secondary" type="button" title="Xem" aria-label="Xem chi tiáº¿t" data-platform-action="partyMembers.detail" data-id="' + id + '"><i class="fa-solid fa-eye"></i></button>' + (can('update') ? '<button class="btn btn-sm btn-outline-primary" type="button" title="Sá»­a" aria-label="Sá»­a" data-platform-action="partyMembers.edit" data-id="' + id + '"><i class="fa-solid fa-pen"></i></button>' : '') + '</div></td></tr>';
 }
 function renderPager(data) {
 const host = $('#partyMemberPager');
@@ -143,7 +143,7 @@ if (!host) return;
 const page = Number(data.page || 1), totalPages = Number(data.totalPages || 1);
 const pages = [];
 for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) pages.push(i);
-host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" ' + (page <= 1 ? 'disabled' : '') + ' data-platform-action="partyMembers.page" data-page="' + (page - 1) + '">Trước</button>' + pages.map(p => '<button class="btn btn-sm ' + (p === page ? 'btn-primary' : 'btn-outline-secondary') + '" data-platform-action="partyMembers.page" data-page="' + p + '">' + p + '</button>').join('') + '<button class="btn btn-sm btn-outline-secondary" ' + (page >= totalPages ? 'disabled' : '') + ' data-platform-action="partyMembers.page" data-page="' + (page + 1) + '">Sau</button>';
+host.innerHTML = '<button class="btn btn-sm btn-outline-secondary" ' + (page <= 1 ? 'disabled' : '') + ' data-platform-action="partyMembers.page" data-page="' + (page - 1) + '">TrÆ°á»›c</button>' + pages.map(p => '<button class="btn btn-sm ' + (p === page ? 'btn-primary' : 'btn-outline-secondary') + '" data-platform-action="partyMembers.page" data-page="' + p + '">' + p + '</button>').join('') + '<button class="btn btn-sm btn-outline-secondary" ' + (page >= totalPages ? 'disabled' : '') + ' data-platform-action="partyMembers.page" data-page="' + (page + 1) + '">Sau</button>';
 }
 async function openForm(id = null) {
 if (!can(id ? 'update' : 'create')) return toast(labels.permission, 'warning');
@@ -191,22 +191,22 @@ const body = $('#partyMemberDetailBody');
 if (!body) return;
 const title = $('#partyMemberDetailTitle');
 const subtitle = $('#partyMemberDetailSubtitle');
-if (title) title.textContent = row.full_name || 'Chi tiết Đảng viên';
+if (title) title.textContent = row.full_name || 'Chi tiáº¿t Äáº£ng viÃªn';
 if (subtitle) subtitle.textContent = [row.citizen_code, row.party_member_code, row.branch_name].filter(Boolean).join(' - ');
 body.innerHTML =
-'<section class="party-detail-hero">' + avatar(row) + '<div><h3>' + esc(row.full_name || '') + '</h3><p>' + esc([row.citizen_code, row.gender, row.age ? row.age + ' tuổi' : ''].filter(Boolean).join(' - ')) + '</p></div></section>' +
+'<section class="party-detail-hero">' + avatar(row) + '<div><h3>' + esc(row.full_name || '') + '</h3><p>' + esc([row.citizen_code, row.gender, row.age ? row.age + ' tuá»•i' : ''].filter(Boolean).join(' - ')) + '</p></div></section>' +
 '<div class="party-detail-grid">' +
-detailCard('Thông tin nhân khẩu', 'fa-id-card', [
-['Mã nhân khẩu', row.citizen_code], ['Mã đảng viên', row.party_member_code], ['Số thẻ đảng viên', row.party_card_number], ['Ngày sinh', date(row.date_of_birth)], ['Giới tính', row.gender], ['CCCD', row.identity_number], ['Địa chỉ', row.address], ['Điện thoại', row.phone]
+detailCard('ThÃ´ng tin nhÃ¢n kháº©u', 'fa-id-card', [
+['MÃ£ nhÃ¢n kháº©u', row.citizen_code], ['MÃ£ Ä‘áº£ng viÃªn', row.party_member_code], ['Sá»‘ tháº» Ä‘áº£ng viÃªn', row.party_card_number], ['NgÃ y sinh', date(row.date_of_birth)], ['Giá»›i tÃ­nh', row.gender], ['CCCD', row.identity_number], ['Äá»‹a chá»‰', row.address], ['Äiá»‡n thoáº¡i', row.phone]
 ]) +
-detailCard('Thông tin Đảng', 'fa-flag', [
-['Chi bộ', row.branch_name], ['Đảng bộ', row.parent_party_org], ['Ngày vào Đảng', date(row.joined_party_date)], ['Ngày chính thức', date(row.official_party_date)], ['Loại đảng viên', row.member_type_label], ['Tình trạng', row.party_status_label || row.activity_status_label], ['Ngày đổi trạng thái', date(row.status_changed_at)], ['Lý do', row.status_reason], ['Số quyết định', row.decision_number], ['Ngày quyết định', date(row.decision_date)], ['Nơi chuyển sinh hoạt', row.transfer_to], ['Chức vụ Đảng', row.party_position], ['Chức vụ chính quyền', row.government_position]
+detailCard('ThÃ´ng tin Äáº£ng', 'fa-flag', [
+['Chi bá»™', row.branch_name], ['Äáº£ng bá»™', row.parent_party_org], ['NgÃ y vÃ o Äáº£ng', date(row.joined_party_date)], ['NgÃ y chÃ­nh thá»©c', date(row.official_party_date)], ['Loáº¡i Ä‘áº£ng viÃªn', row.member_type_label], ['TÃ¬nh tráº¡ng', row.party_status_label || row.activity_status_label], ['NgÃ y Ä‘á»•i tráº¡ng thÃ¡i', date(row.status_changed_at)], ['LÃ½ do', row.status_reason], ['Sá»‘ quyáº¿t Ä‘á»‹nh', row.decision_number], ['NgÃ y quyáº¿t Ä‘á»‹nh', date(row.decision_date)], ['NÆ¡i chuyá»ƒn sinh hoáº¡t', row.transfer_to], ['Chá»©c vá»¥ Äáº£ng', row.party_position], ['Chá»©c vá»¥ chÃ­nh quyá»n', row.government_position]
 ]) +
-detailCard('Trình độ', 'fa-graduation-cap', [
-['Học vấn', row.education_level || row.citizen_education_level], ['Chuyên môn', row.professional_level], ['Lý luận chính trị', row.political_theory_level]
+detailCard('TrÃ¬nh Ä‘á»™', 'fa-graduation-cap', [
+['Há»c váº¥n', row.education_level || row.citizen_education_level], ['ChuyÃªn mÃ´n', row.professional_level], ['LÃ½ luáº­n chÃ­nh trá»‹', row.political_theory_level]
 ]) +
-detailCard('Thông tin khác', 'fa-note-sticky', [
-['Ghi chú', row.note]
+detailCard('ThÃ´ng tin khÃ¡c', 'fa-note-sticky', [
+['Ghi chÃº', row.note]
 ], true) +
 '</div>';
 }
@@ -223,7 +223,7 @@ if (q.length < 2) { hideSuggestions(); return; }
 const data = await request(API + '/citizen-search?q=' + encodeURIComponent(q), { cacheTtl: 3000 });
 const items = data.items || [];
 state.suggestions = items;
-host.innerHTML = items.length ? items.map(item => '<button type="button" class="list-group-item list-group-item-action" data-platform-action="partyMembers.selectCitizen" data-id="' + Number(item.id) + '"><strong>' + esc(item.full_name) + '</strong><div class="small text-muted">' + esc(item.citizen_code) + ' - ' + esc(item.identity_number || '') + '</div><div class="small text-muted">' + esc(item.address || '') + '</div></button>').join('') : '<div class="list-group-item text-muted">Không tìm thấy nhân khẩu phù hợp hoặc nhân khẩu đã có hồ sơ Đảng viên</div>';
+host.innerHTML = items.length ? items.map(item => '<button type="button" class="list-group-item list-group-item-action" data-platform-action="partyMembers.selectCitizen" data-id="' + Number(item.id) + '"><strong>' + esc(item.full_name) + '</strong><div class="small text-muted">' + esc(item.citizen_code) + ' - ' + esc(item.identity_number || '') + '</div><div class="small text-muted">' + esc(item.address || '') + '</div></button>').join('') : '<div class="list-group-item text-muted">KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u phÃ¹ há»£p hoáº·c nhÃ¢n kháº©u Ä‘Ã£ cÃ³ há»“ sÆ¡ Äáº£ng viÃªn</div>';
 host.classList.remove('d-none');
 }
 function selectCitizen(item) {
@@ -245,7 +245,7 @@ async function save(e) {
 e.preventDefault();
 const form = e.currentTarget;
 const id = form.elements.id.value;
-if (!form.elements.citizen_id.value) return toast('Vui lòng chọn nhân khẩu', 'warning');
+if (!form.elements.citizen_id.value) return toast('Vui lÃ²ng chá»n nhÃ¢n kháº©u', 'warning');
 const payload = Object.fromEntries(new FormData(form).entries());
 payload.party_status = payload.activity_status || payload.party_status || 'ACTIVE';
 normalizePayloadDates(payload);
@@ -254,7 +254,7 @@ delete payload.citizen_code; delete payload.full_name; delete payload.date_of_bi
 try {
 await request(id ? API + '/' + encodeURIComponent(id) : API, { method: id ? 'PUT' : 'POST', body: payload });
 closeModal('partyMemberModal');
-toast('Đã lưu hồ sơ Đảng viên');
+toast('ÄÃ£ lÆ°u há»“ sÆ¡ Äáº£ng viÃªn');
 state.catalogs = null;
 load();
 if (typeof window.loadDashboard === 'function') window.loadDashboard();
@@ -264,11 +264,11 @@ toast(err.message, 'danger');
 }
 async function remove(id) {
 if (!can('delete')) return toast(labels.permission, 'warning');
-const ok = await confirmAction({ title: 'Xác nhận xóa', message: 'Xóa hồ sơ Đảng viên này?', confirmLabel: 'Xóa', tone: 'danger' });
+const ok = await confirmAction({ title: 'XÃ¡c nháº­n xÃ³a', message: 'XÃ³a há»“ sÆ¡ Äáº£ng viÃªn nÃ y?', confirmLabel: 'XÃ³a', tone: 'danger' });
 if (!ok) return;
 try {
 await request(API + '/' + encodeURIComponent(id), { method: 'DELETE' });
-toast('Đã xóa hồ sơ Đảng viên');
+toast('ÄÃ£ xÃ³a há»“ sÆ¡ Äáº£ng viÃªn');
 load();
 if (typeof window.loadDashboard === 'function') window.loadDashboard();
 } catch (e) {
@@ -281,7 +281,7 @@ q.set('type', 'party-members');
 const endpoint = format === 'pdf' ? '/api/reports/export-pdf' : '/api/reports/export-excel';
 try {
 await downloadFile(endpoint + '?' + q.toString(), format === 'pdf' ? 'pdf' : 'xlsx');
-toast(format === 'pdf' ? 'Đã tải file PDF' : 'Đã tải file Excel');
+toast(format === 'pdf' ? 'ÄÃ£ táº£i file PDF' : 'ÄÃ£ táº£i file Excel');
 } catch (e) {
 toast(e.message, 'danger');
 }
@@ -292,9 +292,9 @@ q.set('type', 'party-members');
 try {
 const data = await request('/api/reports/print?' + q.toString());
 const printer = window.TenantAppPrint;
-if (!printer?.render) return toast('Không tải được mẫu in báo cáo', 'warning');
+if (!printer?.render) return toast('KhÃ´ng táº£i Ä‘Æ°á»£c máº«u in bÃ¡o cÃ¡o', 'warning');
 const popup = printer.render(Object.assign({}, data, { type: 'party-members', filters: Object.assign({}, data.filters || {}, Object.fromEntries(q.entries())), orientation: 'portrait', paperSize: 'A4' }));
-if (!popup) toast('Trình duyệt đang chặn cửa sổ in', 'warning');
+if (!popup) toast('TrÃ¬nh duyá»‡t Ä‘ang cháº·n cá»­a sá»• in', 'warning');
 } catch (e) {
 toast(e.message, 'danger');
 }
@@ -329,7 +329,7 @@ function fill(selector, items, first) {
 const el = $(selector);
 if (!el) return;
 const value = el.value;
-el.innerHTML = '<option value="">' + esc(first || 'Chọn') + '</option>' + (items || []).map(i => '<option value="' + esc(i.value) + '">' + esc(i.label || i.value) + '</option>').join('');
+el.innerHTML = '<option value="">' + esc(first || 'Chá»n') + '</option>' + (items || []).map(i => '<option value="' + esc(i.value) + '">' + esc(i.label || i.value) + '</option>').join('');
 el.value = value;
 }
 async function request(url, options = {}) {
@@ -339,7 +339,7 @@ const init = { method: options.method || 'GET', headers: { Accept: 'application/
 if (options.body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(options.body); }
 const res = await fetch(url, init);
 const json = await res.json().catch(() => null);
-if (!res.ok || json?.ok === false) throw new Error(json?.error?.message || 'Không tải được dữ liệu');
+if (!res.ok || json?.ok === false) throw new Error(json?.error?.message || 'KhÃ´ng táº£i Ä‘Æ°á»£c dá»¯ liá»‡u');
 return json?.data ?? json;
 }
 function downloadFile(url, extension) {
@@ -349,7 +349,7 @@ return fetch(url, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-st
 const type = res.headers.get('Content-Type') || '';
 if (!res.ok || type.includes('application/json')) {
 const json = type.includes('application/json') ? await res.json().catch(() => null) : null;
-throw new Error(json?.error?.message || json?.message || 'Không xuất được file báo cáo');
+throw new Error(json?.error?.message || json?.message || 'KhÃ´ng xuáº¥t Ä‘Æ°á»£c file bÃ¡o cÃ¡o');
 }
 const blob = await res.blob();
 const link = document.createElement('a');
@@ -371,7 +371,7 @@ return ['read','create','update','delete','export','print'].includes(action);
 function registerModal(id) { window.TenantAppPlatform?.modals?.registerBootstrap?.(id, '#' + id); }
 function openModal(id) { return window.TenantAppPlatform?.modals?.open?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.show(); }
 function closeModal(id) { return window.TenantAppPlatform?.modals?.close?.(id) || window.bootstrap?.Modal?.getOrCreateInstance?.($('#' + id))?.hide(); }
-function confirmAction(options) { const dialog = window.TenantAppPlatform?.confirmDialog; if (dialog?.ask) return dialog.ask(options); return Promise.resolve(window.confirm(options.message || 'Xác nhận?')); }
+function confirmAction(options) { const dialog = window.TenantAppPlatform?.confirmDialog; if (dialog?.ask) return dialog.ask(options); return Promise.resolve(window.confirm(options.message || 'XÃ¡c nháº­n?')); }
 function hideSuggestions() { $('#partyCitizenSuggestions')?.classList.add('d-none'); }
 function avatar(row) { const initials = String(row.full_name || '?').trim().split(/\s+/).slice(-2).map(x => x[0] || '').join('').toUpperCase(); return row.photo_url ? '<img class="party-avatar" src="' + esc(row.photo_url) + '" alt="">' : '<span class="party-avatar">' + esc(initials || '?') + '</span>'; }
 function date(v) { if (!v) return ''; const d = new Date(v); return Number.isNaN(d.getTime()) ? String(v) : new Intl.DateTimeFormat('vi-VN').format(d); }
@@ -379,7 +379,7 @@ function dateInputValue(v) { const text = String(v || '').trim(); const m = text
 function isoDateValue(v) { const text = String(v || '').trim(); if (!text) return ''; if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text; const m = text.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : text; }
 function normalizePayloadDates(payload) { ['joined_party_date', 'official_party_date', 'status_changed_at', 'decision_date'].forEach(key => { if (key in payload) payload[key] = isoDateValue(payload[key]); }); }
 function num(v) { return new Intl.NumberFormat('vi-VN').format(Number(v || 0)); }
-function value(v) { return v == null || String(v).trim() === '' ? 'Chưa cập nhật' : v; }
+function value(v) { return v == null || String(v).trim() === '' ? 'ChÆ°a cáº­p nháº­t' : v; }
 function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
 function toast(message, type = 'success') { if (typeof window.showToast === 'function') window.showToast(message, type); else console[type === 'danger' ? 'error' : 'log'](message); }
 function debounce(fn, ms) { let t; return function () { clearTimeout(t); t = setTimeout(() => fn.apply(this, arguments), ms); }; }

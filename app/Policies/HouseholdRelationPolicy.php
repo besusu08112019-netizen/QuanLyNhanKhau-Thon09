@@ -4,26 +4,26 @@ namespace App\Policies;
 
 final class HouseholdRelationPolicy
 {
-    public const HEAD = 'Chủ hộ';
-    public const WIFE = 'Vợ';
-    public const HUSBAND = 'Chồng';
+    public const HEAD = 'Chá»§ há»™';
+    public const WIFE = 'Vá»£';
+    public const HUSBAND = 'Chá»“ng';
     public const SON = 'Con trai';
-    public const DAUGHTER = 'Con gái';
-    public const DAUGHTER_IN_LAW = 'Con dâu';
-    public const SON_IN_LAW = 'Con rể';
-    public const GRANDCHILD = 'Cháu';
-    public const GREAT_GRANDCHILD = 'Chắt';
-    public const PATERNAL_GRANDCHILD = 'Cháu nội';
-    public const MATERNAL_GRANDCHILD = 'Cháu ngoại';
-    public const FATHER = 'Bố';
-    public const MOTHER = 'Mẹ';
-    public const GRANDFATHER = 'Ông';
-    public const GRANDMOTHER = 'Bà';
+    public const DAUGHTER = 'Con gÃ¡i';
+    public const DAUGHTER_IN_LAW = 'Con dÃ¢u';
+    public const SON_IN_LAW = 'Con rá»ƒ';
+    public const GRANDCHILD = 'ChÃ¡u';
+    public const GREAT_GRANDCHILD = 'Cháº¯t';
+    public const PATERNAL_GRANDCHILD = 'ChÃ¡u ná»™i';
+    public const MATERNAL_GRANDCHILD = 'ChÃ¡u ngoáº¡i';
+    public const FATHER = 'Bá»‘';
+    public const MOTHER = 'Máº¹';
+    public const GRANDFATHER = 'Ã”ng';
+    public const GRANDMOTHER = 'BÃ ';
     public const OLDER_BROTHER = 'Anh';
-    public const OLDER_SISTER = 'Chị';
+    public const OLDER_SISTER = 'Chá»‹';
     public const YOUNGER_SIBLING = 'Em';
-    public const OTHER_RELATIVE = 'Người thân khác';
-    public const UNKNOWN = 'Chưa xác định';
+    public const OTHER_RELATIVE = 'NgÆ°á»i thÃ¢n khÃ¡c';
+    public const UNKNOWN = 'ChÆ°a xÃ¡c Ä‘á»‹nh';
 
     /** @return list<string> */
     public static function standardRelationships(): array
@@ -209,7 +209,7 @@ final class HouseholdRelationPolicy
     private static function normalizeText(string $value): string
     {
         $value = mb_strtolower(trim($value), 'UTF-8');
-        $from = ['à','á','ạ','ả','ã','â','ầ','ấ','ậ','ẩ','ẫ','ă','ằ','ắ','ặ','ẳ','ẵ','è','é','ẹ','ẻ','ẽ','ê','ề','ế','ệ','ể','ễ','ì','í','ị','ỉ','ĩ','ò','ó','ọ','ỏ','õ','ô','ồ','ố','ộ','ổ','ỗ','ơ','ờ','ớ','ợ','ở','ỡ','ù','ú','ụ','ủ','ũ','ư','ừ','ứ','ự','ử','ữ','ỳ','ý','ỵ','ỷ','ỹ','đ'];
+        $from = ['Ã ','Ã¡','áº¡','áº£','Ã£','Ã¢','áº§','áº¥','áº­','áº©','áº«','Äƒ','áº±','áº¯','áº·','áº³','áºµ','Ã¨','Ã©','áº¹','áº»','áº½','Ãª','á»','áº¿','á»‡','á»ƒ','á»…','Ã¬','Ã­','á»‹','á»‰','Ä©','Ã²','Ã³','á»','á»','Ãµ','Ã´','á»“','á»‘','á»™','á»•','á»—','Æ¡','á»','á»›','á»£','á»Ÿ','á»¡','Ã¹','Ãº','á»¥','á»§','Å©','Æ°','á»«','á»©','á»±','á»­','á»¯','á»³','Ã½','á»µ','á»·','á»¹','Ä‘'];
         $to = ['a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','e','e','e','e','e','e','e','e','e','e','e','i','i','i','i','i','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','u','u','u','u','u','u','u','u','u','u','u','y','y','y','y','y','d'];
         $value = str_replace($from, $to, $value);
         $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);

@@ -6,7 +6,7 @@ final class Response
 {
     public static function ok(mixed $data = null, int $status = 200): void
     {
-        self::json(['ok' => true, 'success' => true, 'data' => self::normalizeListPayload($data)], $status);
+        self::json(['ok' => true, 'success' => true, 'data' => self::normalizeListPayload(CitizenCodeFormatter::normalizePayload($data))], $status);
     }
 
     public static function error(string $message, int $status = 400, array $details = []): void
@@ -58,3 +58,4 @@ final class Response
     }
 
 }
+

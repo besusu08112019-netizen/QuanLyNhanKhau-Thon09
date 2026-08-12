@@ -22,13 +22,13 @@ final class WorkCalendarController extends BaseController
     public function index(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->paginate($this->filters()), $this->emptyPage(), 'work_calendar.index'); }
     public function catalogs(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->catalogs(), ['categories' => [], 'statuses' => [], 'attendance_statuses' => []], 'work_calendar.catalogs'); }
     public function dashboard(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->dashboard($this->filters()), ['metrics' => [], 'charts' => []], 'work_calendar.dashboard'); }
-    public function report(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->report($this->filters()), ['title' => 'Báo cáo lịch công tác', 'headers' => [], 'rows' => [], 'totalRows' => 0], 'work_calendar.report'); }
+    public function report(): void { $this->requirePermission('work_calendar', 'read'); $this->okOrFallback(fn() => $this->calendar->report($this->filters()), ['title' => 'BÃ¡o cÃ¡o lá»‹ch cÃ´ng tÃ¡c', 'headers' => [], 'rows' => [], 'totalRows' => 0], 'work_calendar.report'); }
 
     public function show(string $id): void
     {
         $this->requirePermission('work_calendar', 'read');
         $row = $this->calendar->find((int)$id);
-        if (!$row) $this->fail('Không tìm thấy lịch công tác', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y lá»‹ch cÃ´ng tÃ¡c', 404);
         $this->ok($row);
     }
 
@@ -37,7 +37,7 @@ final class WorkCalendarController extends BaseController
         $user = $this->requirePermission('work_calendar', 'create');
         try {
             $row = $this->calendar->upsert((array)$this->input(), (int)$user['id'], $this->userName($user));
-            $this->audit($user, 'work_calendar', 'create', 'Thêm lịch công tác', $row['id'], ['after' => $row]);
+            $this->audit($user, 'work_calendar', 'create', 'ThÃªm lá»‹ch cÃ´ng tÃ¡c', $row['id'], ['after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -49,9 +49,9 @@ final class WorkCalendarController extends BaseController
         $user = $this->requirePermission('work_calendar', 'update');
         try {
             $before = $this->calendar->find((int)$id);
-            if (!$before) $this->fail('Không tìm thấy lịch công tác', 404);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y lá»‹ch cÃ´ng tÃ¡c', 404);
             $row = $this->calendar->upsert((array)$this->input(), (int)$user['id'], $this->userName($user), (int)$id);
-            $this->audit($user, 'work_calendar', 'update', 'Cập nhật lịch công tác', $id, ['before' => $before, 'after' => $row]);
+            $this->audit($user, 'work_calendar', 'update', 'Cáº­p nháº­t lá»‹ch cÃ´ng tÃ¡c', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -63,9 +63,9 @@ final class WorkCalendarController extends BaseController
         $user = $this->requirePermission('work_calendar', 'delete');
         try {
             $before = $this->calendar->find((int)$id);
-            if (!$before) $this->fail('Không tìm thấy lịch công tác', 404);
+            if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y lá»‹ch cÃ´ng tÃ¡c', 404);
             $this->calendar->softDelete((int)$id, (int)$user['id']);
-            $this->audit($user, 'work_calendar', 'delete', 'Xóa lịch công tác', $id, ['before' => $before], 'WARN');
+            $this->audit($user, 'work_calendar', 'delete', 'XÃ³a lá»‹ch cÃ´ng tÃ¡c', $id, ['before' => $before], 'WARN');
             $this->ok(['id' => (int)$id]);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -75,16 +75,16 @@ final class WorkCalendarController extends BaseController
     public function uploadAttachment(string $id): void
     {
         $user = $this->requirePermission('work_calendar', 'upload');
-        if (!$this->calendar->find((int)$id)) $this->fail('Không tìm thấy lịch công tác', 404);
+        if (!$this->calendar->find((int)$id)) $this->fail('KhÃ´ng tÃ¬m tháº¥y lá»‹ch cÃ´ng tÃ¡c', 404);
         $file = $_FILES['file'] ?? null;
-        if (!is_array($file)) $this->fail('Vui lòng chọn file đính kèm', 422);
+        if (!is_array($file)) $this->fail('Vui lÃ²ng chá»n file Ä‘Ã­nh kÃ¨m', 422);
         $storage = new FileStorageService();
         $info = $storage->inspectUpload($file, $this->fileType($file), 'work_calendar');
-        if (!$this->allowedMime($info['mime'])) throw new \RuntimeException('Định dạng file không được hỗ trợ');
+        if (!$this->allowedMime($info['mime'])) throw new \RuntimeException('Äá»‹nh dáº¡ng file khÃ´ng Ä‘Æ°á»£c há»— trá»£');
         $stored = $storage->storeUpload($file, 'work_calendar', $this->categoryForMime($info['mime']), $info['extension']);
         $stored['mime'] = $info['mime'];
         $row = $this->calendar->addAttachment((int)$id, $stored, $file, (int)$user['id']);
-        $this->audit($user, 'work_calendar', 'upload', 'Đính kèm file lịch công tác', $id, ['file' => $row]);
+        $this->audit($user, 'work_calendar', 'upload', 'ÄÃ­nh kÃ¨m file lá»‹ch cÃ´ng tÃ¡c', $id, ['file' => $row]);
         $this->ok($row);
     }
 
@@ -95,9 +95,9 @@ final class WorkCalendarController extends BaseController
     {
         $user = $this->requirePermission('work_calendar', 'delete');
         $before = $this->calendar->attachment((int)$id, (int)$fileId);
-        if (!$before) $this->fail('Không tìm thấy file đính kèm', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m', 404);
         $this->calendar->deleteAttachment((int)$id, (int)$fileId, (int)$user['id']);
-        $this->audit($user, 'work_calendar', 'delete_attachment', 'Xóa file đính kèm lịch công tác', $id, ['file' => $before]);
+        $this->audit($user, 'work_calendar', 'delete_attachment', 'XÃ³a file Ä‘Ã­nh kÃ¨m lá»‹ch cÃ´ng tÃ¡c', $id, ['file' => $before]);
         $this->ok(['id' => (int)$fileId]);
     }
 
@@ -105,7 +105,7 @@ final class WorkCalendarController extends BaseController
     {
         $user = $this->requirePermission('work_calendar', 'export');
         $report = $this->calendar->report($this->filters());
-        $this->audit($user, 'work_calendar', 'export', 'Xuất Excel lịch công tác', null, ['totalRows' => $report['totalRows']]);
+        $this->audit($user, 'work_calendar', 'export', 'Xuáº¥t Excel lá»‹ch cÃ´ng tÃ¡c', null, ['totalRows' => $report['totalRows']]);
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="bao-cao-lich-cong-tac-' . date('Ymd_His') . '.xls"');
         echo "\xEF\xBB\xBF";
@@ -121,12 +121,12 @@ final class WorkCalendarController extends BaseController
     {
         $user = $this->requirePermission('work_calendar', 'export');
         $report = $this->calendar->report($this->filters());
-        $this->audit($user, 'work_calendar', 'export', 'Xuất PDF lịch công tác', null, ['totalRows' => $report['totalRows']]);
+        $this->audit($user, 'work_calendar', 'export', 'Xuáº¥t PDF lá»‹ch cÃ´ng tÃ¡c', null, ['totalRows' => $report['totalRows']]);
         $pdf = new SimplePdf();
         $pdf->addPrintHeader(TenantConfig::unitName(), $report['title']);
-        $pdf->addMeta('Thời gian xuất: ' . date('d/m/Y H:i:s'));
+        $pdf->addMeta('Thá»i gian xuáº¥t: ' . date('d/m/Y H:i:s'));
         $pdf->addTable($report['headers'], $report['rows']);
-        $pdf->addSignatureBlock('Trưởng thôn');
+        $pdf->addSignatureBlock('TrÆ°á»Ÿng thÃ´n');
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="bao-cao-lich-cong-tac-' . date('Ymd_His') . '.pdf"');
         echo $pdf->output();
@@ -137,12 +137,12 @@ final class WorkCalendarController extends BaseController
     {
         $this->requirePermission('work_calendar', 'read');
         $file = $this->calendar->attachment($id, $fileId);
-        if (!$file) $this->fail('Không tìm thấy file đính kèm', 404);
+        if (!$file) $this->fail('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m', 404);
         $storage = new FileStorageService();
         $path = $storage->safeFilePath((string)$file['stored_path']);
-        if (!$path || !is_file($path)) $this->fail('File không còn tồn tại', 404);
+        if (!$path || !is_file($path)) $this->fail('File khÃ´ng cÃ²n tá»“n táº¡i', 404);
         $mime = mime_content_type($path) ?: (string)$file['mime_type'];
-        if (!$this->allowedMime($mime)) $this->fail('Định dạng file không được hỗ trợ', 415);
+        if (!$this->allowedMime($mime)) $this->fail('Äá»‹nh dáº¡ng file khÃ´ng Ä‘Æ°á»£c há»— trá»£', 415);
         header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));

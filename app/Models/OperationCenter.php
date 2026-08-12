@@ -14,17 +14,17 @@ final class OperationCenter extends BaseModel
         return $this->safePayload('notifications', function () use ($filters) {
             $now = date('c');
             $items = [
-                $this->notice('citizen_missing_photo', 'Hồ sơ công dân chưa có ảnh', $this->missingCitizenPhotoCount($filters), 'high', 'persons', 'Mở nhân khẩu', $now),
-                $this->notice('citizen_missing_identity', 'Hồ sơ công dân thiếu CCCD', $this->missingCitizenFieldCount($filters, 'identity_number'), 'high', 'persons', 'Mở nhân khẩu', $now),
-                $this->notice('citizen_missing_birth', 'Hồ sơ thiếu ngày sinh', $this->missingCitizenFieldCount($filters, 'date_of_birth'), 'medium', 'persons', 'Mở nhân khẩu', $now),
-                $this->notice('digital_profile_incomplete', 'Hồ sơ số chưa hoàn thiện', $this->incompleteDigitalProfileCount($filters), 'medium', 'households', 'Mở hồ sơ số', $now),
-                $this->notice('household_missing_gps', 'Hộ chưa định vị GPS', $this->missingGpsCount($filters), 'high', 'gis', 'Mở GIS', $now),
-                $this->notice('household_missing_photo', 'Hộ chưa có ảnh', $this->missingHouseholdPhotoCount($filters), 'medium', 'households', 'Mở hộ', $now),
-                $this->notice('movement_new', 'Có biến động dân cư mới', $this->recentMovementCount(''), 'low', 'movements', 'Mở biến động', $now),
-                $this->notice('citizen_new', 'Có nhân khẩu mới', $this->recentCitizenCount(), 'low', 'persons', 'Mở nhân khẩu', $now),
-                $this->notice('household_new', 'Có hộ mới', $this->recentHouseholdCount(), 'low', 'households', 'Mở hộ', $now),
-                $this->notice('temporary_residence_new', 'Có tạm trú mới', $this->recentMovementCount('TEMPORARY_RESIDENCE'), 'medium', 'temporaryResidence', 'Mở tạm trú', $now),
-                $this->notice('temporary_absence_new', 'Có tạm vắng mới', $this->recentMovementCount('TEMPORARY_ABSENCE'), 'medium', 'temporaryAbsence', 'Mở tạm vắng', $now),
+                $this->notice('citizen_missing_photo', 'Há»“ sÆ¡ cÃ´ng dÃ¢n chÆ°a cÃ³ áº£nh', $this->missingCitizenPhotoCount($filters), 'high', 'persons', 'Má»Ÿ nhÃ¢n kháº©u', $now),
+                $this->notice('citizen_missing_identity', 'Há»“ sÆ¡ cÃ´ng dÃ¢n thiáº¿u CCCD', $this->missingCitizenFieldCount($filters, 'identity_number'), 'high', 'persons', 'Má»Ÿ nhÃ¢n kháº©u', $now),
+                $this->notice('citizen_missing_birth', 'Há»“ sÆ¡ thiáº¿u ngÃ y sinh', $this->missingCitizenFieldCount($filters, 'date_of_birth'), 'medium', 'persons', 'Má»Ÿ nhÃ¢n kháº©u', $now),
+                $this->notice('digital_profile_incomplete', 'Há»“ sÆ¡ sá»‘ chÆ°a hoÃ n thiá»‡n', $this->incompleteDigitalProfileCount($filters), 'medium', 'households', 'Má»Ÿ há»“ sÆ¡ sá»‘', $now),
+                $this->notice('household_missing_gps', 'Há»™ chÆ°a Ä‘á»‹nh vá»‹ GPS', $this->missingGpsCount($filters), 'high', 'gis', 'Má»Ÿ GIS', $now),
+                $this->notice('household_missing_photo', 'Há»™ chÆ°a cÃ³ áº£nh', $this->missingHouseholdPhotoCount($filters), 'medium', 'households', 'Má»Ÿ há»™', $now),
+                $this->notice('movement_new', 'CÃ³ biáº¿n Ä‘á»™ng dÃ¢n cÆ° má»›i', $this->recentMovementCount(''), 'low', 'movements', 'Má»Ÿ biáº¿n Ä‘á»™ng', $now),
+                $this->notice('citizen_new', 'CÃ³ nhÃ¢n kháº©u má»›i', $this->recentCitizenCount(), 'low', 'persons', 'Má»Ÿ nhÃ¢n kháº©u', $now),
+                $this->notice('household_new', 'CÃ³ há»™ má»›i', $this->recentHouseholdCount(), 'low', 'households', 'Má»Ÿ há»™', $now),
+                $this->notice('temporary_residence_new', 'CÃ³ táº¡m trÃº má»›i', $this->recentMovementCount('TEMPORARY_RESIDENCE'), 'medium', 'temporaryResidence', 'Má»Ÿ táº¡m trÃº', $now),
+                $this->notice('temporary_absence_new', 'CÃ³ táº¡m váº¯ng má»›i', $this->recentMovementCount('TEMPORARY_ABSENCE'), 'medium', 'temporaryAbsence', 'Má»Ÿ táº¡m váº¯ng', $now),
             ];
             return [
                 'items' => array_values(array_filter($items, fn($item) => (int) $item['count'] > 0)),
@@ -37,11 +37,11 @@ final class OperationCenter extends BaseModel
     {
         return $this->safePayload('tasks', function () use ($filters) {
             $items = [
-                $this->task('missing_gps', 'Định vị GPS còn thiếu', $this->missingGpsCount($filters), 'high', 'gis'),
-                $this->task('missing_photo', 'Hồ sơ thiếu ảnh', $this->missingCitizenPhotoCount($filters) + $this->missingHouseholdPhotoCount($filters), 'high', 'persons'),
-                $this->task('missing_documents', 'Hồ sơ thiếu giấy tờ', $this->missingCitizenDocumentsCount($filters) + $this->missingHouseholdDocumentsCount($filters), 'medium', 'households'),
-                $this->task('needs_update', 'Hồ sơ cần cập nhật', $this->missingCitizenFieldCount($filters, 'date_of_birth') + $this->missingCitizenFieldCount($filters, 'identity_number'), 'medium', 'persons'),
-                $this->task('pending_movements', 'Biến động chưa xác nhận', $this->pendingMovementCount(), 'medium', 'movements'),
+                $this->task('missing_gps', 'Äá»‹nh vá»‹ GPS cÃ²n thiáº¿u', $this->missingGpsCount($filters), 'high', 'gis'),
+                $this->task('missing_photo', 'Há»“ sÆ¡ thiáº¿u áº£nh', $this->missingCitizenPhotoCount($filters) + $this->missingHouseholdPhotoCount($filters), 'high', 'persons'),
+                $this->task('missing_documents', 'Há»“ sÆ¡ thiáº¿u giáº¥y tá»', $this->missingCitizenDocumentsCount($filters) + $this->missingHouseholdDocumentsCount($filters), 'medium', 'households'),
+                $this->task('needs_update', 'Há»“ sÆ¡ cáº§n cáº­p nháº­t', $this->missingCitizenFieldCount($filters, 'date_of_birth') + $this->missingCitizenFieldCount($filters, 'identity_number'), 'medium', 'persons'),
+                $this->task('pending_movements', 'Biáº¿n Ä‘á»™ng chÆ°a xÃ¡c nháº­n', $this->pendingMovementCount(), 'medium', 'movements'),
             ];
             return ['items' => $items, 'generatedAt' => date('c')];
         }, ['items' => [], 'generatedAt' => date('c')]);
@@ -71,7 +71,7 @@ final class OperationCenter extends BaseModel
                 $items[] = [
                     'type' => 'household',
                     'id' => (int) $row['id'],
-                    'title' => $row['household_code'] ?: 'Hộ gia đình',
+                    'title' => $row['household_code'] ?: 'Há»™ gia Ä‘Ã¬nh',
                     'subtitle' => trim(($row['head_citizen_name'] ?? '') . ' - ' . ($row['address'] ?? ''), ' -'),
                     'meta' => $row['phone'] ?? '',
                     'screen' => 'households',
@@ -88,7 +88,7 @@ final class OperationCenter extends BaseModel
                 $items[] = [
                     'type' => 'citizen',
                     'id' => (int) $row['id'],
-                    'title' => $row['full_name'] ?: 'Nhân khẩu',
+                    'title' => $row['full_name'] ?: 'NhÃ¢n kháº©u',
                     'subtitle' => trim(($row['identity_number'] ?? '') . ' - ' . ($row['household_code'] ?? ''), ' -'),
                     'meta' => $row['phone'] ?: ($row['current_address'] ?? ''),
                     'screen' => 'persons',
@@ -142,8 +142,8 @@ final class OperationCenter extends BaseModel
             $whereArea = $area !== '' ? ' AND h.area_code = :area' : '';
             $params = $area !== '' ? ['area' => $area] : [];
             $households = $this->fetchOne('SELECT COUNT(*) AS total_households, COALESCE(SUM(h.poor_household=1),0) AS poor_households, COALESCE(SUM(h.near_poor_household=1),0) AS near_poor_households FROM households h WHERE ' . $this->activeHouseholdCondition('h') . $whereArea, $params) ?: [];
-            $citizens = $this->fetchOne('SELECT COUNT(c.id) AS total_citizens, COALESCE(SUM(c.gender="Nam"),0) AS male_count, COALESCE(SUM(c.gender="Nữ"),0) AS female_count, COALESCE(SUM(' . AgePolicy::childConditionSql('c') . '),0) AS children_count, COALESCE(SUM(' . AgePolicy::statisticalElderlyConditionSql('c') . '),0) AS elderly_count, COALESCE(SUM(' . ($this->columnExists('citizens', 'party_member') ? 'c.party_member=1' : '0') . '),0) AS party_member_count FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE ' . $this->activeCitizenCondition('c') . ' AND ' . $this->activeHouseholdCondition('h') . $whereArea, $params) ?: [];
-            $areas = $this->fetchAll('SELECT COALESCE(NULLIF(area_code,""),"Chưa phân khu") AS area_code, COUNT(*) AS total FROM households h WHERE ' . $this->activeHouseholdCondition('h') . ' GROUP BY area_code ORDER BY area_code');
+            $citizens = $this->fetchOne('SELECT COUNT(c.id) AS total_citizens, COALESCE(SUM(c.gender="Nam"),0) AS male_count, COALESCE(SUM(c.gender="Ná»¯"),0) AS female_count, COALESCE(SUM(' . AgePolicy::childConditionSql('c') . '),0) AS children_count, COALESCE(SUM(' . AgePolicy::statisticalElderlyConditionSql('c') . '),0) AS elderly_count, COALESCE(SUM(' . ($this->columnExists('citizens', 'party_member') ? 'c.party_member=1' : '0') . '),0) AS party_member_count FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE ' . $this->activeCitizenCondition('c') . ' AND ' . $this->activeHouseholdCondition('h') . $whereArea, $params) ?: [];
+            $areas = $this->fetchAll('SELECT COALESCE(NULLIF(area_code,""),"ChÆ°a phÃ¢n khu") AS area_code, COUNT(*) AS total FROM households h WHERE ' . $this->activeHouseholdCondition('h') . ' GROUP BY area_code ORDER BY area_code');
             $gps = $this->gpsProgress($params, $whereArea);
             $profile = $this->profileProgress($params, $whereArea);
             return [
@@ -162,8 +162,8 @@ final class OperationCenter extends BaseModel
         return $this->safePayload('progress', function () use ($filters) {
             return ['items' => [
                 ['key' => 'gps', 'label' => 'GPS', 'progress' => $this->gpsProgress()],
-                ['key' => 'digital_profile', 'label' => 'Hồ sơ số', 'progress' => $this->profileProgress()],
-                ['key' => 'household_photo', 'label' => 'Ảnh hộ', 'progress' => $this->householdPhotoProgress()],
+                ['key' => 'digital_profile', 'label' => 'Há»“ sÆ¡ sá»‘', 'progress' => $this->profileProgress()],
+                ['key' => 'household_photo', 'label' => 'áº¢nh há»™', 'progress' => $this->householdPhotoProgress()],
                 ['key' => 'identity', 'label' => 'CCCD', 'progress' => $this->identityProgress()],
             ], 'generatedAt' => date('c')];
         }, ['items' => [], 'generatedAt' => date('c')]);
@@ -195,8 +195,8 @@ final class OperationCenter extends BaseModel
                     ['key' => 'population', 'label' => 'Dan cu', 'screen' => 'households', 'items' => [
                         ['label' => 'Tong ho', 'value' => $metrics['households']],
                         ['label' => 'Tong nhan khau', 'value' => $metrics['citizens']],
-                        ['label' => 'Tam tru', 'value' => $metrics['temporary_residence']],
-                        ['label' => 'Tam vang', 'value' => $metrics['temporary_absence']],
+                        ['label' => 'Táº¡m trÃº', 'value' => $metrics['temporary_residence']],
+                        ['label' => 'Táº¡m váº¯ng', 'value' => $metrics['temporary_absence']],
                     ]],
                     ['key' => 'operations', 'label' => 'Dieu hanh', 'screen' => 'workTasks', 'items' => [
                         ['label' => 'Cong viec', 'value' => $metrics['work_tasks']],
@@ -206,9 +206,9 @@ final class OperationCenter extends BaseModel
                     ]],
                     ['key' => 'records', 'label' => 'Ho so va tai san', 'screen' => 'documents', 'items' => [
                         ['label' => 'Van ban', 'value' => $metrics['documents']],
-                        ['label' => 'Cong trinh', 'value' => $metrics['public_assets']],
+                        ['label' => 'CÃ´ng trÃ¬nh', 'value' => $metrics['public_assets']],
                         ['label' => 'Can bao tri', 'value' => $metrics['maintenance_due']],
-                        ['label' => 'Ho ngheo', 'value' => $metrics['poor_households']],
+                        ['label' => 'Há»™ nghÃ¨o', 'value' => $metrics['poor_households']],
                     ]],
                     ['key' => 'finance', 'label' => 'Thu chi thang', 'screen' => 'finance', 'items' => [
                         ['label' => 'Thu', 'value' => $finance['finance_income_month']],
@@ -245,14 +245,14 @@ final class OperationCenter extends BaseModel
         $area = $this->areaDashboard($filters)['data'] ?? [];
         $progress = $this->progress($filters)['data']['items'] ?? [];
         return [
-            'title' => 'Báo cáo điều hành',
+            'title' => 'BÃ¡o cÃ¡o Ä‘iá»u hÃ nh',
             'generatedAt' => date('d/m/Y H:i:s'),
-            'headers' => ['Nhóm', 'Chỉ tiêu', 'Giá trị', 'Mức độ'],
+            'headers' => ['NhÃ³m', 'Chá»‰ tiÃªu', 'GiÃ¡ trá»‹', 'Má»©c Ä‘á»™'],
             'rows' => array_merge(
-                array_map(fn($item) => ['Thông báo', $item['label'], $item['count'], $item['priority']], $notifications),
-                array_map(fn($item) => ['Công việc', $item['label'], $item['count'], $item['priority']], $tasks),
-                array_map(fn($item) => ['Tiến độ', $item['label'], ($item['progress']['percent'] ?? 0) . '%', ''], $progress),
-                [['Khu vực', 'Tổng số hộ', $area['metrics']['total_households'] ?? 0, $area['area'] ?? 'Tất cả'], ['Khu vực', 'Tổng nhân khẩu', $area['metrics']['total_citizens'] ?? 0, $area['area'] ?? 'Tất cả']]
+                array_map(fn($item) => ['ThÃ´ng bÃ¡o', $item['label'], $item['count'], $item['priority']], $notifications),
+                array_map(fn($item) => ['CÃ´ng viá»‡c', $item['label'], $item['count'], $item['priority']], $tasks),
+                array_map(fn($item) => ['Tiáº¿n Ä‘á»™', $item['label'], ($item['progress']['percent'] ?? 0) . '%', ''], $progress),
+                [['Khu vá»±c', 'Tá»•ng sá»‘ há»™', $area['metrics']['total_households'] ?? 0, $area['area'] ?? 'Táº¥t cáº£'], ['Khu vá»±c', 'Tá»•ng nhÃ¢n kháº©u', $area['metrics']['total_citizens'] ?? 0, $area['area'] ?? 'Táº¥t cáº£']]
             ),
         ];
     }
@@ -261,7 +261,7 @@ final class OperationCenter extends BaseModel
     {
         $profile = $this->fetchOne('SELECT * FROM households WHERE id = :id', ['id' => $id]);
         if (!$profile) return ['type' => 'household', 'id' => $id, 'profile' => null, 'members' => [], 'files' => [], 'gps' => null, 'timeline' => []];
-        $members = $this->fetchAll('SELECT id, full_name, relationship, gender, date_of_birth, identity_number FROM citizens WHERE household_id = :id AND status <> "DELETED" ORDER BY relationship="Chủ hộ" DESC, full_name ASC LIMIT 20', ['id' => $id]);
+        $members = $this->fetchAll('SELECT id, full_name, relationship, gender, date_of_birth, identity_number FROM citizens WHERE household_id = :id AND status <> "DELETED" ORDER BY relationship="Chá»§ há»™" DESC, full_name ASC LIMIT 20', ['id' => $id]);
         return ['type' => 'household', 'id' => $id, 'profile' => $profile, 'members' => $members, 'files' => $this->entityFiles('household', $id), 'gps' => ['latitude' => $profile['latitude'] ?? null, 'longitude' => $profile['longitude'] ?? null], 'timeline' => $this->entityTimeline('household', $id)];
     }
 
@@ -269,7 +269,7 @@ final class OperationCenter extends BaseModel
     {
         $profile = $this->fetchOne('SELECT c.*, h.household_code, h.head_citizen_name, h.address AS household_address FROM citizens c LEFT JOIN households h ON h.id = c.household_id WHERE c.id = :id', ['id' => $id]);
         if (!$profile) return ['type' => 'citizen', 'id' => $id, 'profile' => null, 'members' => [], 'files' => [], 'gps' => null, 'timeline' => []];
-        $members = $profile['household_id'] ? $this->fetchAll('SELECT id, full_name, relationship, gender, date_of_birth FROM citizens WHERE household_id = :id AND status <> "DELETED" ORDER BY relationship="Chủ hộ" DESC, full_name ASC LIMIT 20', ['id' => $profile['household_id']]) : [];
+        $members = $profile['household_id'] ? $this->fetchAll('SELECT id, full_name, relationship, gender, date_of_birth FROM citizens WHERE household_id = :id AND status <> "DELETED" ORDER BY relationship="Chá»§ há»™" DESC, full_name ASC LIMIT 20', ['id' => $profile['household_id']]) : [];
         return ['type' => 'citizen', 'id' => $id, 'profile' => $profile, 'members' => $members, 'files' => $this->entityFiles('citizen', $id), 'gps' => null, 'timeline' => $this->entityTimeline('citizen', $id)];
     }
 
@@ -450,7 +450,7 @@ final class OperationCenter extends BaseModel
     private function activeHouseholdCondition(string $alias): string { return $this->statistics()->householdCondition($alias); }
     private function activeCitizenCondition(string $alias): string { return $this->statistics()->citizenCondition($alias); }
     private function statistics(): PopulationStatistics { return $this->statistics ??= new PopulationStatistics(); }
-    private function movementLabel(string $type): string { return ['BIRTH' => 'Thêm nhân khẩu', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi', 'TEMPORARY_RESIDENCE' => 'Tạm trú', 'TEMPORARY_ABSENCE' => 'Tạm vắng', 'DEATH' => 'Qua đời'][$type] ?? $type; }
+    private function movementLabel(string $type): string { return ['BIRTH' => 'ThÃªm nhÃ¢n kháº©u', 'MOVE_IN' => 'Chuyá»ƒn Ä‘áº¿n', 'MOVE_OUT' => 'Chuyá»ƒn Ä‘i', 'TEMPORARY_RESIDENCE' => 'Táº¡m trÃº', 'TEMPORARY_ABSENCE' => 'Táº¡m váº¯ng', 'DEATH' => 'Qua Ä‘á»i'][$type] ?? $type; }
 
     private function tableExists(string $table): bool
     {

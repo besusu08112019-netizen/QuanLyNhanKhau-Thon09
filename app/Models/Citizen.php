@@ -15,28 +15,28 @@ final class Citizen extends BaseModel
     private bool $healthInsuranceSchemaEnsured = false;
     private ?PopulationStatistics $statistics = null;
     private const POLITICAL_FIELDS = [
-        'party_member' => 'Đảng viên',
-        'youth_union_member' => 'Đoàn viên Thanh niên',
-        'women_union_member' => 'Hội viên Hội Phụ nữ',
-        'farmers_union_member' => 'Hội viên Hội Nông dân',
-        'veterans_union_member' => 'Hội viên Hội Cựu chiến binh',
-        'elderly_union_member' => 'Hội viên Hội Người cao tuổi',
+        'party_member' => 'Äáº£ng viÃªn',
+        'youth_union_member' => 'ÄoÃ n viÃªn Thanh niÃªn',
+        'women_union_member' => 'Há»™i viÃªn Há»™i Phá»¥ ná»¯',
+        'farmers_union_member' => 'Há»™i viÃªn Há»™i NÃ´ng dÃ¢n',
+        'veterans_union_member' => 'Há»™i viÃªn Há»™i Cá»±u chiáº¿n binh',
+        'elderly_union_member' => 'Há»™i viÃªn Há»™i NgÆ°á»i cao tuá»•i',
     ];
 
     private const POLICY_FIELDS = [
-        'martyr_relative' => 'Thân nhân liệt sĩ',
-        'wounded_soldier' => 'Thương binh',
-        'sick_soldier' => 'Bệnh binh',
-        'chemical_warfare_victim' => 'Người hoạt động kháng chiến bị nhiễm chất độc hóa học',
-        'imprisoned_resistance_activist' => 'Người hoạt động kháng chiến bị địch bắt tù, đày',
-        'youth_volunteer' => 'Thanh niên xung phong',
-        'resistance_hero' => 'Anh hùng LLVTND / Anh hùng Lao động thời kỳ kháng chiến',
-        'revolutionary_activist' => 'Người hoạt động cách mạng',
+        'martyr_relative' => 'ThÃ¢n nhÃ¢n liá»‡t sÄ©',
+        'wounded_soldier' => 'ThÆ°Æ¡ng binh',
+        'sick_soldier' => 'Bá»‡nh binh',
+        'chemical_warfare_victim' => 'NgÆ°á»i hoáº¡t Ä‘á»™ng khÃ¡ng chiáº¿n bá»‹ nhiá»…m cháº¥t Ä‘á»™c hÃ³a há»c',
+        'imprisoned_resistance_activist' => 'NgÆ°á»i hoáº¡t Ä‘á»™ng khÃ¡ng chiáº¿n bá»‹ Ä‘á»‹ch báº¯t tÃ¹, Ä‘Ã y',
+        'youth_volunteer' => 'Thanh niÃªn xung phong',
+        'resistance_hero' => 'Anh hÃ¹ng LLVTND / Anh hÃ¹ng Lao Ä‘á»™ng thá»i ká»³ khÃ¡ng chiáº¿n',
+        'revolutionary_activist' => 'NgÆ°á»i hoáº¡t Ä‘á»™ng cÃ¡ch máº¡ng',
     ];
 
     private const SOCIAL_SECURITY_FIELDS = [
-        'disabled_person' => 'Người khuyết tật',
-        'social_assistance' => 'Đang hưởng trợ cấp xã hội',
+        'disabled_person' => 'NgÆ°á»i khuyáº¿t táº­t',
+        'social_assistance' => 'Äang hÆ°á»Ÿng trá»£ cáº¥p xÃ£ há»™i',
     ];
 
     private const HEALTH_INSURANCE_FIELDS = [
@@ -46,20 +46,20 @@ final class Citizen extends BaseModel
     private const HEALTH_INSURANCE_DETAIL_COLUMNS = ['health_insurance_number','health_insurance_group','health_insurance_start_date','health_insurance_end_date','health_insurance_facility'];
 
     private const HEALTH_INSURANCE_GROUPS = [
-        'Hộ gia đình', 'Người nghèo', 'Cận nghèo', 'Trẻ em dưới 6 tuổi', 'Học sinh - Sinh viên',
-        'Người lao động', 'Người hưởng lương hưu', 'Người có công', 'Người cao tuổi', 'Khác',
+        'Há»™ gia Ä‘Ã¬nh', 'NgÆ°á»i nghÃ¨o', 'Cáº­n nghÃ¨o', 'Tráº» em dÆ°á»›i 6 tuá»•i', 'Há»c sinh - Sinh viÃªn',
+        'NgÆ°á»i lao Ä‘á»™ng', 'NgÆ°á»i hÆ°á»Ÿng lÆ°Æ¡ng hÆ°u', 'NgÆ°á»i cÃ³ cÃ´ng', 'NgÆ°á»i cao tuá»•i', 'KhÃ¡c',
     ];
 
     private const LABOR_FIELDS = [
-        'employed' => 'Có việc làm',
-        'unemployed' => 'Thất nghiệp',
-        'freelance_labor' => 'Lao động tự do',
-        'out_province_labor' => 'Lao động ngoài tỉnh',
-        'foreign_labor' => 'Lao động nước ngoài',
-        'not_attending_school' => 'Chưa đi học',
-        'pupil' => 'Học sinh',
-        'student' => 'Sinh viên',
-        'retired' => 'Nghỉ hưu',
+        'employed' => 'CÃ³ viá»‡c lÃ m',
+        'unemployed' => 'Tháº¥t nghiá»‡p',
+        'freelance_labor' => 'Lao Ä‘á»™ng tá»± do',
+        'out_province_labor' => 'Lao Ä‘á»™ng ngoÃ i tá»‰nh',
+        'foreign_labor' => 'Lao Ä‘á»™ng nÆ°á»›c ngoÃ i',
+        'not_attending_school' => 'ChÆ°a Ä‘i há»c',
+        'pupil' => 'Há»c sinh',
+        'student' => 'Sinh viÃªn',
+        'retired' => 'Nghá»‰ hÆ°u',
     ];
 
     public static function extendedFields(): array
@@ -88,7 +88,7 @@ final class Citizen extends BaseModel
         $baseColumns[] = 'h.household_code';
         $baseColumns[] = 'h.address AS household_address';
         $baseColumns[] = 'h.head_citizen_name';
-        $items = $this->fetchAll('SELECT ' . implode(', ', $baseColumns) . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name LIMIT $pageSize OFFSET $offset", $params);
+        $items = $this->fetchAll('SELECT ' . implode(', ', $baseColumns) . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $sqlWhere ORDER BY h.household_code, CASE WHEN c.relationship='Chá»§ há»™' THEN 0 ELSE 1 END, c.full_name LIMIT $pageSize OFFSET $offset", $params);
         return $this->paginated($items, $page, $pageSize, $total, ['metrics' => $this->statistics()->metrics()]);
     }
 
@@ -128,7 +128,7 @@ final class Citizen extends BaseModel
     {
         $this->ensureHealthInsuranceSchema();
         $before = $this->find($id);
-        if (!$before) throw new \RuntimeException('Không tìm thấy nhân khẩu');
+        if (!$before) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u');
         $params = $this->params($data, $userId, $before); $params['id'] = $id;
         $params['code'] = (string) $before['citizen_code'];
         $this->ensureUniqueIdentity($params['identity'], $id);
@@ -145,9 +145,9 @@ final class Citizen extends BaseModel
     public function softDelete(int $id, int $userId): void
     {
         $person = $this->find($id);
-        if (!$person) throw new \RuntimeException('Không tìm thấy nhân khẩu');
+        if (!$person) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y nhÃ¢n kháº©u');
         $activeMovements = (int) $this->fetchOne('SELECT COUNT(*) AS total FROM movements WHERE citizen_id = :id AND status <> "DELETED" AND ' . $this->tenantWhere('movements'), $this->withTenant(['id' => $id]))['total'];
-        if ($activeMovements > 0) throw new \RuntimeException('Nhân khẩu đang có dữ liệu biến động liên quan. Vui lòng xử lý dữ liệu liên kết trước khi xóa.');
+        if ($activeMovements > 0) throw new \RuntimeException('NhÃ¢n kháº©u Ä‘ang cÃ³ dá»¯ liá»‡u biáº¿n Ä‘á»™ng liÃªn quan. Vui lÃ²ng xá»­ lÃ½ dá»¯ liá»‡u liÃªn káº¿t trÆ°á»›c khi xÃ³a.');
         $this->execute('UPDATE citizens SET status="DELETED", deleted_at=NOW(), deleted_by=:user WHERE id=:id AND ' . $this->tenantWhere('citizens'), $this->withTenant(['id' => $id, 'user' => $userId]));
         $this->syncHouseholdHead((int) $person['household_id']);
     }
@@ -155,7 +155,7 @@ final class Citizen extends BaseModel
     public function bulkSoftDelete(array $ids, int $userId): int
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn($id) => $id > 0)));
-        if (!$ids) throw new \RuntimeException('Chưa chọn nhân khẩu cần xóa');
+        if (!$ids) throw new \RuntimeException('ChÆ°a chá»n nhÃ¢n kháº©u cáº§n xÃ³a');
         $this->db->beginTransaction();
         try {
             foreach ($ids as $id) $this->softDelete($id, $userId);
@@ -241,18 +241,18 @@ final class Citizen extends BaseModel
         $household = new Household();
         $householdKey = $data['householdId'] ?? $data['householdCode'] ?? $fallback['household_id'] ?? '';
         $householdRow = is_numeric($householdKey) ? $household->find((int) $householdKey) : $household->findByCode((string) $householdKey);
-        if (!$householdRow) throw new \RuntimeException('Không tìm thấy Mã hộ');
+        if (!$householdRow) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y MÃ£ há»™');
         $fullName = trim((string) ($data['fullName'] ?? $data['full_name'] ?? $fallback['full_name'] ?? ''));
         $dob = $data['dateOfBirth'] ?? $data['date_of_birth'] ?? $fallback['date_of_birth'] ?? null;
-        if ($fullName === '') throw new \RuntimeException('Họ và tên là bắt buộc');
-        if (!$dob || !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $dob)) throw new \RuntimeException('Ngày sinh không hợp lệ');
+        if ($fullName === '') throw new \RuntimeException('Há» vÃ  tÃªn lÃ  báº¯t buá»™c');
+        if (!$dob || !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $dob)) throw new \RuntimeException('NgÃ y sinh khÃ´ng há»£p lá»‡');
         $studentDefaults = $fallback === null ? StudentStatusService::defaultFieldsForDateOfBirth((string) $dob) : [];
         $occupationDefault = $fallback === null ? InsurancePolicy::defaultOccupationForDateOfBirth((string) $dob) : null;
         $params = [
             'code' => strtoupper(trim((string) ($data['citizenCode'] ?? $data['citizen_code'] ?? $fallback['citizen_code'] ?? ''))),
             'household_id' => (int) $householdRow['id'],
             'full_name' => $fullName,
-            'gender' => in_array(($data['gender'] ?? $fallback['gender'] ?? 'Khác'), ['Nam','Nữ','Khác'], true) ? ($data['gender'] ?? $fallback['gender'] ?? 'Khác') : 'Khác',
+            'gender' => in_array(($data['gender'] ?? $fallback['gender'] ?? 'KhÃ¡c'), ['Nam','Ná»¯','KhÃ¡c'], true) ? ($data['gender'] ?? $fallback['gender'] ?? 'KhÃ¡c') : 'KhÃ¡c',
             'dob' => $dob,
             'identity' => trim((string) ($data['identityNumber'] ?? $data['identity_number'] ?? $fallback['identity_number'] ?? '')) ?: null,
             'issue_date' => $data['identityIssueDate'] ?? $data['identity_issue_date'] ?? $fallback['identity_issue_date'] ?? null,
@@ -377,7 +377,7 @@ final class Citizen extends BaseModel
     {
         $text = trim((string) ($value ?? ''));
         if ($text === '') return null;
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $text)) throw new \RuntimeException('Ngày BHYT không hợp lệ');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $text)) throw new \RuntimeException('NgÃ y BHYT khÃ´ng há»£p lá»‡');
         return $text;
     }
 
@@ -388,7 +388,7 @@ final class Citizen extends BaseModel
         return in_array($text, self::HEALTH_INSURANCE_GROUPS, true) ? $text : mb_substr($text, 0, 100);
     }
 
-    private function boolValue(mixed $value): int { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['1','true','yes','co','có','x'], true) ? 1 : 0; }
+    private function boolValue(mixed $value): int { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['1','true','yes','co','cÃ³','x'], true) ? 1 : 0; }
     private function camel(string $column): string { return preg_replace_callback('/_([a-z])/', fn($m) => strtoupper($m[1]), $column); }
     private function fieldProvided(array $data, string $column): bool
     {
@@ -438,7 +438,7 @@ final class Citizen extends BaseModel
     private function normalize(string $value): string
     {
         $value = mb_strtolower($value, 'UTF-8');
-        $from = ['à','á','ạ','ả','ã','â','ầ','ấ','ậ','ẩ','ẫ','ă','ằ','ắ','ặ','ẳ','ẵ','è','é','ẹ','ẻ','ẽ','ê','ề','ế','ệ','ể','ễ','ì','í','ị','ỉ','ĩ','ò','ó','ọ','ỏ','õ','ô','ồ','ố','ộ','ổ','ỗ','ơ','ờ','ớ','ợ','ở','ỡ','ù','ú','ụ','ủ','ũ','ư','ừ','ứ','ự','ử','ữ','ỳ','ý','ỵ','ỷ','ỹ','đ'];
+        $from = ['Ã ','Ã¡','áº¡','áº£','Ã£','Ã¢','áº§','áº¥','áº­','áº©','áº«','Äƒ','áº±','áº¯','áº·','áº³','áºµ','Ã¨','Ã©','áº¹','áº»','áº½','Ãª','á»','áº¿','á»‡','á»ƒ','á»…','Ã¬','Ã­','á»‹','á»‰','Ä©','Ã²','Ã³','á»','á»','Ãµ','Ã´','á»“','á»‘','á»™','á»•','á»—','Æ¡','á»','á»›','á»£','á»Ÿ','á»¡','Ã¹','Ãº','á»¥','á»§','Å©','Æ°','á»«','á»©','á»±','á»­','á»¯','á»³','Ã½','á»µ','á»·','á»¹','Ä‘'];
         $to   = ['a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','e','e','e','e','e','e','e','e','e','e','e','i','i','i','i','i','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','u','u','u','u','u','u','u','u','u','u','u','y','y','y','y','y','d'];
         return trim(preg_replace('/\s+/', ' ', str_replace($from, $to, $value)));
     }
@@ -458,7 +458,7 @@ final class Citizen extends BaseModel
 
     private function addTextCategoryWhere(array &$where, array &$params, string $category): void
     {
-        $label = ['escaped_poverty' => 'Hộ mới thoát nghèo', 'policy' => 'Hộ chính sách'][$category] ?? $category;
+        $label = ['escaped_poverty' => 'Há»™ má»›i thoÃ¡t nghÃ¨o', 'policy' => 'Há»™ chÃ­nh sÃ¡ch'][$category] ?? $category;
         $where[] = '(h.note LIKE :household_category_label OR h.note LIKE :household_category_key)';
         $params['household_category_label'] = '%' . $label . '%';
         $params['household_category_key'] = '%' . str_replace('_', ' ', $category) . '%';
@@ -495,13 +495,13 @@ final class Citizen extends BaseModel
 
     private function ensureSingleHead(int $householdId, ?int $ignoreId, string $relationship): void
     {
-        if ($relationship !== 'Chủ hộ') return;
+        if ($relationship !== 'Chá»§ há»™') return;
         $params = $this->withTenant(['household_id' => $householdId]);
-        $sql = 'SELECT id, full_name FROM citizens WHERE household_id=:household_id AND relationship="Chủ hộ" AND status <> "DELETED"';
+        $sql = 'SELECT id, full_name FROM citizens WHERE household_id=:household_id AND relationship="Chá»§ há»™" AND status <> "DELETED"';
         $sql .= ' AND ' . $this->tenantWhere('citizens');
         if ($ignoreId) { $sql .= ' AND id <> :id'; $params['id'] = $ignoreId; }
         $head = $this->fetchOne($sql, $params);
-        if ($head) throw new \RuntimeException('Hộ này đã có Chủ hộ: ' . $head['full_name']);
+        if ($head) throw new \RuntimeException('Há»™ nÃ y Ä‘Ã£ cÃ³ Chá»§ há»™: ' . $head['full_name']);
     }
 
     private function ensureUniqueIdentity(?string $identity, ?int $ignoreId = null): void
@@ -510,7 +510,7 @@ final class Citizen extends BaseModel
         $params = $this->withTenant(['identity' => $identity]);
         $sql = 'SELECT id FROM citizens WHERE identity_number=:identity AND status <> "DELETED" AND ' . $this->tenantWhere('citizens');
         if ($ignoreId) { $sql .= ' AND id <> :id'; $params['id'] = $ignoreId; }
-        if ($this->fetchOne($sql, $params)) throw new \RuntimeException('CCCD đã tồn tại');
+        if ($this->fetchOne($sql, $params)) throw new \RuntimeException('CCCD Ä‘Ã£ tá»“n táº¡i');
     }
 
     private function nextCode(int $householdId): string
@@ -525,12 +525,12 @@ final class Citizen extends BaseModel
 
     private function syncHouseholdHead(int $householdId): void
     {
-        $head = $this->fetchOne('SELECT id, full_name FROM citizens WHERE household_id=:household_id AND relationship="Chủ hộ" AND status <> "DELETED" AND ' . $this->tenantWhere('citizens') . ' ORDER BY id LIMIT 1', $this->withTenant(['household_id' => $householdId]));
+        $head = $this->fetchOne('SELECT id, full_name FROM citizens WHERE household_id=:household_id AND relationship="Chá»§ há»™" AND status <> "DELETED" AND ' . $this->tenantWhere('citizens') . ' ORDER BY id LIMIT 1', $this->withTenant(['household_id' => $householdId]));
         $this->execute('UPDATE households SET head_citizen_id=:head_id, head_citizen_name=:head_name WHERE id=:household_id AND ' . $this->tenantWhere('households'), $this->withTenant(['household_id' => $householdId, 'head_id' => $head['id'] ?? null, 'head_name' => $head['full_name'] ?? null]));
     }
 
     private function relationship(mixed $value, mixed $gender = null): string { return HouseholdRelationPolicy::normalizeRelationship($value, $gender); }
-    private function residency(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['temporary','temporary_residence','tạm trú','tam tru'], true) ? 'TEMPORARY' : 'PERMANENT'; }
-    private function presence(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['away','đi vắng','di vang','tam vang','tạm vắng'], true) ? 'AWAY' : 'AT_HOME'; }
-    private function life(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['deceased','dead','đã chết','da chet'], true) ? 'DECEASED' : 'ALIVE'; }
+    private function residency(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['temporary','temporary_residence','táº¡m trÃº','tam tru'], true) ? 'TEMPORARY' : 'PERMANENT'; }
+    private function presence(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['away','Ä‘i váº¯ng','di vang','tam vang','táº¡m váº¯ng'], true) ? 'AWAY' : 'AT_HOME'; }
+    private function life(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['deceased','dead','Ä‘Ã£ cháº¿t','da chet'], true) ? 'DECEASED' : 'ALIVE'; }
 }

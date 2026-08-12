@@ -75,12 +75,12 @@ CREATE TABLE IF NOT EXISTS calendar_event_attachments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO calendar_event_categories (code,name,color,sort_order) VALUES
-('meeting','Họp','#0d6efd',10),
-('conference','Hội nghị','#6610f2',20),
-('duty','Trực','#198754',30),
-('vaccination','Tiêm chủng','#20c997',40),
-('gift_distribution','Phát quà','#fd7e14',50),
-('party_meeting','Sinh hoạt Chi bộ','#dc3545',60),
-('union_activity','Sinh hoạt đoàn thể','#6f42c1',70),
-('other','Khác','#6c757d',80)
+('meeting','Há»p','#0d6efd',10),
+('conference','Há»™i nghá»‹','#6610f2',20),
+('duty','Trá»±c','#198754',30),
+('vaccination','TiÃªm chá»§ng','#20c997',40),
+('gift_distribution','PhÃ¡t quÃ ','#fd7e14',50),
+('party_meeting','Sinh hoáº¡t Chi bá»™','#dc3545',60),
+('union_activity','Sinh hoáº¡t Ä‘oÃ n thá»ƒ','#6f42c1',70),
+('other','KhÃ¡c','#6c757d',80)
 ON DUPLICATE KEY UPDATE name=VALUES(name), color=VALUES(color), sort_order=VALUES(sort_order), is_active=1;

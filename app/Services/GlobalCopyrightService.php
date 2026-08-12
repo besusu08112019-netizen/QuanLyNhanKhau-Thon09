@@ -9,7 +9,7 @@ use Throwable;
 final class GlobalCopyrightService
 {
     public const KEY = 'general.copyright';
-    public const DEFAULT_VALUE = "Bản quyền thuộc về Thôn 09";
+    public const DEFAULT_VALUE = "Báº£n quyá»n thuá»™c vá» ThÃ´n 09";
 
     private ?PDO $db = null;
     private bool $schemaReady = false;

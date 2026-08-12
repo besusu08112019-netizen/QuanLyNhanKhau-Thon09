@@ -47,7 +47,7 @@ final class TenantInstallerService
         $data = $this->validateInput($input);
         $preflight = $this->preflight($input, $actor);
         if (!$preflight['ready']) {
-            throw new RuntimeException('Tiền kiểm chưa đạt. Không thể tạo đơn vị.');
+            throw new RuntimeException('Tiá»n kiá»ƒm chÆ°a Ä‘áº¡t. KhÃ´ng thá»ƒ táº¡o Ä‘Æ¡n vá»‹.');
         }
         $existing = $this->findActiveJobByCode($data['code']);
         if ($existing && in_array((string) $existing['status'], ['CREATING', 'WAITING_MANUAL', 'FAILED'], true)) {
@@ -66,7 +66,7 @@ final class TenantInstallerService
             'created_by' => $actor['id'] ?? null,
         ]);
         $jobId = (int) $this->db()->lastInsertId();
-        $this->audit->write($actor, 'tenant_install.started', null, 'Bắt đầu khởi tạo đơn vị', ['code' => $data['code']]);
+        $this->audit->write($actor, 'tenant_install.started', null, 'Báº¯t Ä‘áº§u khá»Ÿi táº¡o Ä‘Æ¡n vá»‹', ['code' => $data['code']]);
         return $this->run($jobId, $actor);
     }
 
@@ -75,7 +75,7 @@ final class TenantInstallerService
         $data = $this->validateInput($input);
         $preflight = $this->preflight($input, $actor);
         if (!$preflight['ready']) {
-            throw new RuntimeException('Tiền kiểm chưa đạt. Không thể chạy thử.');
+            throw new RuntimeException('Tiá»n kiá»ƒm chÆ°a Ä‘áº¡t. KhÃ´ng thá»ƒ cháº¡y thá»­.');
         }
         $stmt = $this->db()->prepare(
             'INSERT INTO tenant_install_jobs (village_id, code, status, current_step, input_json, created_by)
@@ -87,7 +87,7 @@ final class TenantInstallerService
             'created_by' => $actor['id'] ?? null,
         ]);
         $jobId = (int) $this->db()->lastInsertId();
-        $this->writeInstallerAudit($jobId, $actor, null, 'dry_run.started', 'INFO', 'Bắt đầu chạy thử khởi tạo đơn vị', ['code' => $data['code']]);
+        $this->writeInstallerAudit($jobId, $actor, null, 'dry_run.started', 'INFO', 'Báº¯t Ä‘áº§u cháº¡y thá»­ khá»Ÿi táº¡o Ä‘Æ¡n vá»‹', ['code' => $data['code']]);
 
         foreach (self::DRY_RUN_STEPS as $index => $step) {
             $this->startStep($jobId, $step, $index, count(self::DRY_RUN_STEPS), $actor);
@@ -103,7 +103,7 @@ final class TenantInstallerService
         }
 
         $this->db()->prepare('UPDATE tenant_install_jobs SET status="DRY_RUN_PASSED", current_step="dry_run_complete", progress_percent=100, finished_at=NOW() WHERE id=:id')->execute(['id' => $jobId]);
-        $this->writeInstallerAudit($jobId, $actor, null, 'dry_run.passed', 'INFO', 'Chạy thử khởi tạo đơn vị đạt', ['code' => $data['code']]);
+        $this->writeInstallerAudit($jobId, $actor, null, 'dry_run.passed', 'INFO', 'Cháº¡y thá»­ khá»Ÿi táº¡o Ä‘Æ¡n vá»‹ Ä‘áº¡t', ['code' => $data['code']]);
         return $this->status($jobId);
     }
 
@@ -112,31 +112,31 @@ final class TenantInstallerService
         $items = [];
         $data = null;
 
-        $this->addPreflightItem($items, 'input_valid', 'Tên miền hợp lệ', function () use ($input, &$data): array {
+        $this->addPreflightItem($items, 'input_valid', 'TÃªn miá»n há»£p lá»‡', function () use ($input, &$data): array {
             $data = $this->validateInput($input);
-            return ['message' => 'Dữ liệu đơn vị hợp lệ'];
+            return ['message' => 'Dá»¯ liá»‡u Ä‘Æ¡n vá»‹ há»£p lá»‡'];
         });
 
         if ($data !== null) {
-            $this->addPreflightItem($items, 'database_connection', 'Cơ sở dữ liệu kết nối được', fn () => $this->preflightDatabaseConnection($data));
-            $this->addPreflightItem($items, 'database_empty', 'Cơ sở dữ liệu rỗng', fn () => $this->preflightDatabaseEmpty($data));
-            $this->addPreflightItem($items, 'database_privileges', 'Người dùng có quyền', fn () => $this->preflightDatabasePrivileges($data));
-            $this->addPreflightItem($items, 'tenant_code_available', 'Mã đơn vị chưa tồn tại', fn () => $this->preflightTenantCodeAvailable($data));
-            $this->addPreflightItem($items, 'registry_valid', 'Registry hợp lệ', fn () => $this->preflightRegistry());
-            $this->addPreflightItem($items, 'source_writable', 'Mã nguồn có quyền ghi', fn () => $this->preflightWritable(BASE_PATH, 'Thư mục mã nguồn không có quyền ghi'));
-            $this->addPreflightItem($items, 'storage_writable', 'Lưu trữ có quyền ghi', fn () => $this->preflightWritableTarget((string) $data['storage_path']));
-            $this->addPreflightItem($items, 'upload_writable', 'Tải lên có quyền ghi', fn () => $this->preflightWritableTarget((string) $data['upload_path']));
-            $this->addPreflightItem($items, 'backup_writable', 'Sao lưu có quyền ghi', fn () => $this->preflightWritableTarget((string) $data['backup_path']));
+            $this->addPreflightItem($items, 'database_connection', 'CÆ¡ sá»Ÿ dá»¯ liá»‡u káº¿t ná»‘i Ä‘Æ°á»£c', fn () => $this->preflightDatabaseConnection($data));
+            $this->addPreflightItem($items, 'database_empty', 'CÆ¡ sá»Ÿ dá»¯ liá»‡u rá»—ng', fn () => $this->preflightDatabaseEmpty($data));
+            $this->addPreflightItem($items, 'database_privileges', 'NgÆ°á»i dÃ¹ng cÃ³ quyá»n', fn () => $this->preflightDatabasePrivileges($data));
+            $this->addPreflightItem($items, 'tenant_code_available', 'MÃ£ Ä‘Æ¡n vá»‹ chÆ°a tá»“n táº¡i', fn () => $this->preflightTenantCodeAvailable($data));
+            $this->addPreflightItem($items, 'registry_valid', 'Registry há»£p lá»‡', fn () => $this->preflightRegistry());
+            $this->addPreflightItem($items, 'source_writable', 'MÃ£ nguá»“n cÃ³ quyá»n ghi', fn () => $this->preflightWritable(BASE_PATH, 'ThÆ° má»¥c mÃ£ nguá»“n khÃ´ng cÃ³ quyá»n ghi'));
+            $this->addPreflightItem($items, 'storage_writable', 'LÆ°u trá»¯ cÃ³ quyá»n ghi', fn () => $this->preflightWritableTarget((string) $data['storage_path']));
+            $this->addPreflightItem($items, 'upload_writable', 'Táº£i lÃªn cÃ³ quyá»n ghi', fn () => $this->preflightWritableTarget((string) $data['upload_path']));
+            $this->addPreflightItem($items, 'backup_writable', 'Sao lÆ°u cÃ³ quyá»n ghi', fn () => $this->preflightWritableTarget((string) $data['backup_path']));
         }
 
         $ready = $items !== [] && count(array_filter($items, fn (array $item): bool => $item['status'] !== 'PASS')) === 0;
         $result = [
             'ready' => $ready,
             'status' => $ready ? 'READY_TO_CREATE_TENANT' : 'FAILED',
-            'message' => $ready ? 'Sẵn sàng tạo đơn vị' : 'Tiền kiểm còn mục không đạt',
+            'message' => $ready ? 'Sáºµn sÃ ng táº¡o Ä‘Æ¡n vá»‹' : 'Tiá»n kiá»ƒm cÃ²n má»¥c khÃ´ng Ä‘áº¡t',
             'items' => $items,
         ];
-        $this->audit->write($actor, 'tenant_install.preflight', null, 'Tiền kiểm khởi tạo đơn vị', ['status' => $result['status'], 'items' => $items], $ready ? 'INFO' : 'WARN');
+        $this->audit->write($actor, 'tenant_install.preflight', null, 'Tiá»n kiá»ƒm khá»Ÿi táº¡o Ä‘Æ¡n vá»‹', ['status' => $result['status'], 'items' => $items], $ready ? 'INFO' : 'WARN');
         return $result;
     }
 
@@ -144,28 +144,28 @@ final class TenantInstallerService
     {
         $items = [];
         $data = null;
-        $this->addPreflightItem($items, 'database_input', 'Thông tin cơ sở dữ liệu', function () use ($input, &$data): array {
+        $this->addPreflightItem($items, 'database_input', 'ThÃ´ng tin cÆ¡ sá»Ÿ dá»¯ liá»‡u', function () use ($input, &$data): array {
             $data = $this->validateInput($input);
             if ((string) $data['database_password'] === '') {
-                throw new RuntimeException('Mật khẩu cơ sở dữ liệu là bắt buộc');
+                throw new RuntimeException('Máº­t kháº©u cÆ¡ sá»Ÿ dá»¯ liá»‡u lÃ  báº¯t buá»™c');
             }
-            return ['message' => 'Đã nhập máy chủ, cơ sở dữ liệu, người dùng và mật khẩu'];
+            return ['message' => 'ÄÃ£ nháº­p mÃ¡y chá»§, cÆ¡ sá»Ÿ dá»¯ liá»‡u, ngÆ°á»i dÃ¹ng vÃ  máº­t kháº©u'];
         });
         if ($data !== null) {
             $this->addPreflightItem($items, 'database_host', 'Host', fn () => $this->preflightDatabaseConnection($data));
-            $this->addPreflightItem($items, 'database_name', 'Cơ sở dữ liệu', fn () => $this->preflightDatabaseEmpty($data));
-            $this->addPreflightItem($items, 'database_user', 'Người dùng', fn () => $this->preflightDatabaseConnection($data));
-            $this->addPreflightItem($items, 'database_password', 'Mật khẩu', fn () => $this->preflightDatabaseConnection($data));
-            $this->addPreflightItem($items, 'database_privileges', 'Quyền', fn () => $this->preflightDatabasePrivileges($data));
+            $this->addPreflightItem($items, 'database_name', 'CÆ¡ sá»Ÿ dá»¯ liá»‡u', fn () => $this->preflightDatabaseEmpty($data));
+            $this->addPreflightItem($items, 'database_user', 'NgÆ°á»i dÃ¹ng', fn () => $this->preflightDatabaseConnection($data));
+            $this->addPreflightItem($items, 'database_password', 'Máº­t kháº©u', fn () => $this->preflightDatabaseConnection($data));
+            $this->addPreflightItem($items, 'database_privileges', 'Quyá»n', fn () => $this->preflightDatabasePrivileges($data));
         }
         $ready = $items !== [] && count(array_filter($items, fn (array $item): bool => $item['status'] !== 'PASS')) === 0;
         $result = [
             'ready' => $ready,
             'status' => $ready ? 'DATABASE_READY' : 'FAILED',
-            'message' => $ready ? 'Cơ sở dữ liệu kết nối thành công và đủ quyền' : 'Kiểm tra cơ sở dữ liệu còn mục không đạt',
+            'message' => $ready ? 'CÆ¡ sá»Ÿ dá»¯ liá»‡u káº¿t ná»‘i thÃ nh cÃ´ng vÃ  Ä‘á»§ quyá»n' : 'Kiá»ƒm tra cÆ¡ sá»Ÿ dá»¯ liá»‡u cÃ²n má»¥c khÃ´ng Ä‘áº¡t',
             'items' => $items,
         ];
-        $this->audit->write($actor, 'tenant_install.database_check', null, 'Kiểm tra kết nối cơ sở dữ liệu khi khởi tạo đơn vị', ['status' => $result['status'], 'items' => $items], $ready ? 'INFO' : 'WARN');
+        $this->audit->write($actor, 'tenant_install.database_check', null, 'Kiá»ƒm tra káº¿t ná»‘i cÆ¡ sá»Ÿ dá»¯ liá»‡u khi khá»Ÿi táº¡o Ä‘Æ¡n vá»‹', ['status' => $result['status'], 'items' => $items], $ready ? 'INFO' : 'WARN');
         return $result;
     }
 
@@ -173,13 +173,13 @@ final class TenantInstallerService
     {
         $job = $this->job($jobId);
         if (!$job) {
-            throw new RuntimeException('Không tìm thấy tiến trình cài đặt đơn vị');
+            throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y tiáº¿n trÃ¬nh cÃ i Ä‘áº·t Ä‘Æ¡n vá»‹');
         }
         if (!in_array((string) $job['status'], ['FAILED', 'WAITING_MANUAL', 'CREATING'], true)) {
-            throw new RuntimeException('Trạng thái tiến trình không thể thử lại');
+            throw new RuntimeException('Tráº¡ng thÃ¡i tiáº¿n trÃ¬nh khÃ´ng thá»ƒ thá»­ láº¡i');
         }
         $this->db()->prepare('UPDATE tenant_install_jobs SET status="CREATING", error_code=NULL, error_message=NULL, manual_action_json=NULL WHERE id=:id')->execute(['id' => $jobId]);
-        $this->audit->write($actor, 'tenant_install.retry', (int) ($job['village_id'] ?? 0) ?: null, 'Thử lại khởi tạo đơn vị', ['job_id' => $jobId, 'code' => $job['code'] ?? null]);
+        $this->audit->write($actor, 'tenant_install.retry', (int) ($job['village_id'] ?? 0) ?: null, 'Thá»­ láº¡i khá»Ÿi táº¡o Ä‘Æ¡n vá»‹', ['job_id' => $jobId, 'code' => $job['code'] ?? null]);
         return $this->run($jobId, $actor);
     }
 
@@ -187,7 +187,7 @@ final class TenantInstallerService
     {
         $job = $this->job($jobId);
         if (!$job) {
-            throw new RuntimeException('Không tìm thấy tiến trình cài đặt đơn vị');
+            throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y tiáº¿n trÃ¬nh cÃ i Ä‘áº·t Ä‘Æ¡n vá»‹');
         }
         $input = $this->input($job);
         $villageId = (int) ($job['village_id'] ?? 0);
@@ -219,8 +219,8 @@ final class TenantInstallerService
 
         $this->db()->prepare('UPDATE tenant_install_jobs SET status="ROLLED_BACK", progress_percent=0, finished_at=NOW(), error_message=NULL WHERE id=:id')->execute(['id' => $jobId]);
         $this->markAllPendingRolledBack($jobId);
-        $this->writeInstallerAudit($jobId, $actor, null, 'rollback.done', 'WARN', 'Hoàn tác khởi tạo đơn vị hoàn tất', ['actions' => $rollbackDetails]);
-        $this->audit->write($actor, 'tenant_install.rollback', $villageId ?: null, 'Hoàn tác khởi tạo đơn vị', ['job_id' => $jobId, 'code' => $job['code'] ?? null, 'actions' => $rollbackDetails]);
+        $this->writeInstallerAudit($jobId, $actor, null, 'rollback.done', 'WARN', 'HoÃ n tÃ¡c khá»Ÿi táº¡o Ä‘Æ¡n vá»‹ hoÃ n táº¥t', ['actions' => $rollbackDetails]);
+        $this->audit->write($actor, 'tenant_install.rollback', $villageId ?: null, 'HoÃ n tÃ¡c khá»Ÿi táº¡o Ä‘Æ¡n vá»‹', ['job_id' => $jobId, 'code' => $job['code'] ?? null, 'actions' => $rollbackDetails]);
         return $this->status($jobId);
     }
 
@@ -228,7 +228,7 @@ final class TenantInstallerService
     {
         $job = $this->job($jobId);
         if (!$job) {
-            throw new RuntimeException('Không tìm thấy tiến trình cài đặt đơn vị');
+            throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y tiáº¿n trÃ¬nh cÃ i Ä‘áº·t Ä‘Æ¡n vá»‹');
         }
         return $this->normalizeJob($job);
     }
@@ -237,7 +237,7 @@ final class TenantInstallerService
     {
         $job = $this->job($jobId);
         if (!$job) {
-            throw new RuntimeException('Không tìm thấy tiến trình cài đặt đơn vị');
+            throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y tiáº¿n trÃ¬nh cÃ i Ä‘áº·t Ä‘Æ¡n vá»‹');
         }
         $input = $this->input($job);
 
@@ -257,20 +257,20 @@ final class TenantInstallerService
             } catch (Throwable $e) {
                 $this->finishStep($jobId, $step, 'FAILED', $e->getMessage(), ['type' => get_class($e)], $actor);
                 $this->failJob($jobId, $step, 'STEP_FAILED', $e->getMessage());
-                $this->audit->write($actor, 'tenant_install.failed', $this->jobVillageId($jobId), 'Khởi tạo đơn vị lỗi', ['job_id' => $jobId, 'step' => $step, 'error' => $e->getMessage()], 'ERROR');
+                $this->audit->write($actor, 'tenant_install.failed', $this->jobVillageId($jobId), 'Khá»Ÿi táº¡o Ä‘Æ¡n vá»‹ lá»—i', ['job_id' => $jobId, 'step' => $step, 'error' => $e->getMessage()], 'ERROR');
                 return $this->status($jobId);
             }
         }
 
         $this->db()->prepare('UPDATE tenant_install_jobs SET status="READY", current_step="complete", progress_percent=100, finished_at=NOW() WHERE id=:id')->execute(['id' => $jobId]);
-        $this->audit->write($actor, 'tenant_install.ready', $this->jobVillageId($jobId), 'Khởi tạo đơn vị hoàn tất', ['job_id' => $jobId]);
+        $this->audit->write($actor, 'tenant_install.ready', $this->jobVillageId($jobId), 'Khá»Ÿi táº¡o Ä‘Æ¡n vá»‹ hoÃ n táº¥t', ['job_id' => $jobId]);
         return $this->status($jobId);
     }
 
     private function executeStep(string $step, int $jobId, array $input, array $actor): array
     {
         return match ($step) {
-            'validate_input' => ['message' => 'Dữ liệu hợp lệ'],
+            'validate_input' => ['message' => 'Dá»¯ liá»‡u há»£p lá»‡'],
             'check_domain' => $this->checkDomain($input),
             'check_database_connection' => $this->checkDatabaseConnection($input),
             'verify_database_ready' => $this->verifyDatabaseReady($input),
@@ -283,7 +283,7 @@ final class TenantInstallerService
             'create_storage' => $this->createStorage($input),
             'health_check' => $this->healthCheck($input),
             'mark_ready' => $this->markReady($jobId),
-            default => throw new RuntimeException('Step không hợp lệ: ' . $step),
+            default => throw new RuntimeException('Step khÃ´ng há»£p lá»‡: ' . $step),
         };
     }
 
@@ -291,28 +291,28 @@ final class TenantInstallerService
     {
         $code = strtolower(trim((string) ($input['code'] ?? '')));
         if ($code === '' || !preg_match('/^[a-z0-9_-]{2,50}$/', $code)) {
-            throw new RuntimeException('Mã thôn không hợp lệ');
+            throw new RuntimeException('MÃ£ thÃ´n khÃ´ng há»£p lá»‡');
         }
         $name = trim((string) ($input['name'] ?? ''));
         if ($name === '' || mb_strlen($name, 'UTF-8') > 190) {
-            throw new RuntimeException('Tên thôn không hợp lệ');
+            throw new RuntimeException('TÃªn thÃ´n khÃ´ng há»£p lá»‡');
         }
         $domain = strtolower(trim((string) (($input['domain'] ?? '') ?: ($input['subdomain'] ?? ''))));
         if ($domain === '' || str_contains($domain, '://') || str_contains($domain, '/') || !preg_match('/^(?=.{1,190}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])$/', $domain)) {
-            throw new RuntimeException('Tên miền hoặc tên miền phụ không hợp lệ');
+            throw new RuntimeException('TÃªn miá»n hoáº·c tÃªn miá»n phá»¥ khÃ´ng há»£p lá»‡');
         }
         $database = trim((string) ($input['database_name'] ?? ''));
         if ($database === '' || !preg_match('/^[a-zA-Z0-9_]{1,190}$/', $database)) {
-            throw new RuntimeException('Tên cơ sở dữ liệu không hợp lệ');
+            throw new RuntimeException('TÃªn cÆ¡ sá»Ÿ dá»¯ liá»‡u khÃ´ng há»£p lá»‡');
         }
         $username = trim((string) ($input['database_username'] ?? $input['db_username'] ?? ''));
         if ($username === '') {
-            throw new RuntimeException('Người dùng cơ sở dữ liệu là bắt buộc');
+            throw new RuntimeException('NgÆ°á»i dÃ¹ng cÆ¡ sá»Ÿ dá»¯ liá»‡u lÃ  báº¯t buá»™c');
         }
         $host = trim((string) ($input['database_host'] ?? 'localhost')) ?: 'localhost';
         $charset = strtolower(trim((string) ($input['database_charset'] ?? 'utf8mb4'))) ?: 'utf8mb4';
         if (!preg_match('/^[a-z0-9_]{1,50}$/', $charset)) {
-            throw new RuntimeException('Bảng mã cơ sở dữ liệu không hợp lệ');
+            throw new RuntimeException('Báº£ng mÃ£ cÆ¡ sá»Ÿ dá»¯ liá»‡u khÃ´ng há»£p lá»‡');
         }
 
         $storageRoot = BASE_PATH . '/storage/' . $domain;
@@ -331,7 +331,7 @@ final class TenantInstallerService
             'database_charset' => $charset,
             'admin_email' => strtolower(trim((string) ($input['admin_email'] ?? ('admin@' . $domain)))),
             'admin_username' => $this->adminUsername((string) ($input['admin_username'] ?? $input['admin_email'] ?? ('admin@' . $domain))),
-            'admin_name' => trim((string) ($input['admin_name'] ?? 'Quản trị ' . $name)),
+            'admin_name' => trim((string) ($input['admin_name'] ?? 'Quáº£n trá»‹ ' . $name)),
             'admin_password' => (string) ($input['admin_password'] ?? ''),
             'app_url' => 'https://' . $domain,
             'storage_path' => (string) ($input['storage_path'] ?? $storageRoot),
@@ -356,20 +356,20 @@ final class TenantInstallerService
     {
         $host = (string) $input['domain'];
         $records = function_exists('dns_get_record') ? @dns_get_record($host, DNS_A + DNS_CNAME) : false;
-        return ['message' => $records ? 'Tên miền có bản ghi DNS' : 'Không đọc được bản ghi DNS, tiếp tục kiểm tra trang web sau', 'dnsFound' => (bool) $records];
+        return ['message' => $records ? 'TÃªn miá»n cÃ³ báº£n ghi DNS' : 'KhÃ´ng Ä‘á»c Ä‘Æ°á»£c báº£n ghi DNS, tiáº¿p tá»¥c kiá»ƒm tra trang web sau', 'dnsFound' => (bool) $records];
     }
 
     private function checkDatabaseConnection(array $input): array
     {
         $this->tenantPdo($input)->query('SELECT 1');
-        return ['message' => 'Kết nối cơ sở dữ liệu đơn vị thành công'];
+        return ['message' => 'Káº¿t ná»‘i cÆ¡ sá»Ÿ dá»¯ liá»‡u Ä‘Æ¡n vá»‹ thÃ nh cÃ´ng'];
     }
 
     private function verifyDatabaseReady(array $input): array
     {
         $this->preflightDatabaseEmpty($input);
         $this->preflightDatabasePrivileges($input);
-        return ['message' => 'Cơ sở dữ liệu đã được cấp sẵn, rỗng và người dùng đủ quyền'];
+        return ['message' => 'CÆ¡ sá»Ÿ dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c cáº¥p sáºµn, rá»—ng vÃ  ngÆ°á»i dÃ¹ng Ä‘á»§ quyá»n'];
     }
 
     private function initializeDatabase(array $input): array
@@ -377,9 +377,9 @@ final class TenantInstallerService
         $pdo = $this->tenantPdo($input);
         $tables = (int) $pdo->query('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE()')->fetchColumn();
         if ($tables > 0) {
-            throw new RuntimeException('Cơ sở dữ liệu không rỗng, dừng để tránh ghi đè đơn vị hiện có');
+            throw new RuntimeException('CÆ¡ sá»Ÿ dá»¯ liá»‡u khÃ´ng rá»—ng, dá»«ng Ä‘á»ƒ trÃ¡nh ghi Ä‘Ã¨ Ä‘Æ¡n vá»‹ hiá»‡n cÃ³');
         }
-        return ['message' => 'Cơ sở dữ liệu rỗng, sẵn sàng nhập dữ liệu'];
+        return ['message' => 'CÆ¡ sá»Ÿ dá»¯ liá»‡u rá»—ng, sáºµn sÃ ng nháº­p dá»¯ liá»‡u'];
     }
 
     private function createTenantRecord(int $jobId, array $input): array
@@ -402,7 +402,7 @@ final class TenantInstallerService
 
         $registryId = $this->upsertRegistryVillage($input, 'CREATING');
         $this->db()->prepare('UPDATE tenant_install_jobs SET village_id=:village_id WHERE id=:id')->execute(['village_id' => $registryId, 'id' => $jobId]);
-        return ['message' => 'Đã ghi bản ghi đơn vị và registry', 'tenantVillageId' => $tenantVillageId, 'registryVillageId' => $registryId];
+        return ['message' => 'ÄÃ£ ghi báº£n ghi Ä‘Æ¡n vá»‹ vÃ  registry', 'tenantVillageId' => $tenantVillageId, 'registryVillageId' => $registryId];
     }
 
     private function createAdmin(int $jobId, array $input, array $actor): array
@@ -410,15 +410,15 @@ final class TenantInstallerService
         $pdo = $this->tenantPdo($input);
         $email = (string) $input['admin_email'];
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new RuntimeException('Email quản trị đơn vị không hợp lệ');
+            throw new RuntimeException('Email quáº£n trá»‹ Ä‘Æ¡n vá»‹ khÃ´ng há»£p lá»‡');
         }
         $villageId = (int) $pdo->query('SELECT id FROM villages WHERE code=' . $pdo->quote((string) $input['code']) . ' LIMIT 1')->fetchColumn();
         if ($villageId <= 0) {
-            throw new RuntimeException('Không tìm thấy đơn vị trong cơ sở dữ liệu đơn vị');
+            throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n vá»‹ trong cÆ¡ sá»Ÿ dá»¯ liá»‡u Ä‘Æ¡n vá»‹');
         }
         $exists = (int) $pdo->query('SELECT COUNT(*) FROM users WHERE village_id=' . $villageId)->fetchColumn();
         if ($exists > 0) {
-            return ['message' => 'Đơn vị đã có tài khoản quản trị, bỏ qua'];
+            return ['message' => 'ÄÆ¡n vá»‹ Ä‘Ã£ cÃ³ tÃ i khoáº£n quáº£n trá»‹, bá» qua'];
         }
 
         $password = (string) $input['admin_password'];
@@ -428,7 +428,7 @@ final class TenantInstallerService
             $generated = true;
         }
         if (strlen($password) < 8) {
-            throw new RuntimeException('Mật khẩu quản trị đơn vị tối thiểu 8 ký tự');
+            throw new RuntimeException('Máº­t kháº©u quáº£n trá»‹ Ä‘Æ¡n vá»‹ tá»‘i thiá»ƒu 8 kÃ½ tá»±');
         }
         $columns = ['village_id', 'email', 'display_name', 'password_hash', 'role', 'status', 'created_by'];
         $params = [
@@ -450,17 +450,17 @@ final class TenantInstallerService
         if ($generated) {
             $this->mergeJobResult($jobId, ['generatedAdminEmail' => $email, 'generatedAdminPassword' => $password]);
         }
-        return ['message' => 'Đã tạo tài khoản quản trị đơn vị', 'adminEmail' => $email, 'generatedPassword' => $generated];
+        return ['message' => 'ÄÃ£ táº¡o tÃ i khoáº£n quáº£n trá»‹ Ä‘Æ¡n vá»‹', 'adminEmail' => $email, 'generatedPassword' => $generated];
     }
 
     private function writeConfig(array $input): array
     {
         $path = $this->envFilePath((string) $input['domain']);
         if (is_file($path)) {
-            return ['message' => 'File cấu hình đã tồn tại', 'file' => basename($path)];
+            return ['message' => 'File cáº¥u hÃ¬nh Ä‘Ã£ tá»“n táº¡i', 'file' => basename($path)];
         }
         $lines = [
-            'APP_NAME=' . $this->envQuote('He thong Quan ly Hanh chinh'),
+            'APP_NAME=' . $this->envQuote('Há»‡ thá»‘ng Quáº£n lÃ½ HÃ nh chÃ­nh'),
             'APP_URL=' . $this->envQuote((string) $input['app_url']),
             'APP_KEY=' . $this->envQuote(bin2hex(random_bytes(32))),
             'APP_TIMEZONE=Asia/Ho_Chi_Minh',
@@ -491,38 +491,38 @@ final class TenantInstallerService
             'CONTROL_CENTER_DB_CHARSET=utf8mb4',
         ];
         if (!@file_put_contents($path, implode(PHP_EOL, $lines) . PHP_EOL, LOCK_EX)) {
-            throw new RuntimeException('Không ghi được file cấu hình đơn vị: ' . basename($path));
+            throw new RuntimeException('KhÃ´ng ghi Ä‘Æ°á»£c file cáº¥u hÃ¬nh Ä‘Æ¡n vá»‹: ' . basename($path));
         }
-        return ['message' => 'Đã sinh cấu hình đơn vị', 'file' => basename($path)];
+        return ['message' => 'ÄÃ£ sinh cáº¥u hÃ¬nh Ä‘Æ¡n vá»‹', 'file' => basename($path)];
     }
 
     private function createStorage(array $input): array
     {
         foreach ([(string) $input['storage_path'], (string) $input['storage_path'] . '/cache', (string) $input['storage_path'] . '/logs', (string) $input['storage_path'] . '/sessions', (string) $input['upload_path'], (string) $input['backup_path']] as $dir) {
             if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
-                throw new RuntimeException('Không tạo được thư mục: ' . $dir);
+                throw new RuntimeException('KhÃ´ng táº¡o Ä‘Æ°á»£c thÆ° má»¥c: ' . $dir);
             }
         }
-        return ['message' => 'Đã tạo thư mục lưu trữ/tải lên/sao lưu'];
+        return ['message' => 'ÄÃ£ táº¡o thÆ° má»¥c lÆ°u trá»¯/táº£i lÃªn/sao lÆ°u'];
     }
 
     private function healthCheck(array $input): array
     {
         $this->tenantPdo($input)->query('SELECT COUNT(*) FROM users');
-        return ['message' => 'Kiểm tra sức khỏe cơ sở dữ liệu thành công'];
+        return ['message' => 'Kiá»ƒm tra sá»©c khá»e cÆ¡ sá»Ÿ dá»¯ liá»‡u thÃ nh cÃ´ng'];
     }
 
     private function executeDryRunStep(string $step, array $input): array
     {
         return match ($step) {
-            'validate_input' => ['message' => 'Dữ liệu hợp lệ'],
+            'validate_input' => ['message' => 'Dá»¯ liá»‡u há»£p lá»‡'],
             'check_domain' => $this->checkDomain($input),
             'check_database_connection' => $this->preflightDatabaseConnection($input),
             'check_database_empty' => $this->preflightDatabaseEmpty($input),
             'check_database_privileges' => $this->preflightDatabasePrivileges($input),
             'check_registry' => $this->preflightRegistry(),
             'check_storage_paths' => $this->preflightStoragePaths($input),
-            default => throw new RuntimeException('Bước chạy thử không hợp lệ: ' . $step),
+            default => throw new RuntimeException('BÆ°á»›c cháº¡y thá»­ khÃ´ng há»£p lá»‡: ' . $step),
         };
     }
 
@@ -553,16 +553,16 @@ final class TenantInstallerService
     private function preflightDatabaseConnection(array $input): array
     {
         $this->tenantPdo($input)->query('SELECT 1');
-        return ['message' => 'Kết nối cơ sở dữ liệu đơn vị thành công'];
+        return ['message' => 'Káº¿t ná»‘i cÆ¡ sá»Ÿ dá»¯ liá»‡u Ä‘Æ¡n vá»‹ thÃ nh cÃ´ng'];
     }
 
     private function preflightDatabaseEmpty(array $input): array
     {
         $tables = (int) $this->tenantPdo($input)->query('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE()')->fetchColumn();
         if ($tables > 0) {
-            throw new RuntimeException('Cơ sở dữ liệu không rỗng: có ' . $tables . ' bảng');
+            throw new RuntimeException('CÆ¡ sá»Ÿ dá»¯ liá»‡u khÃ´ng rá»—ng: cÃ³ ' . $tables . ' báº£ng');
         }
-        return ['message' => 'Cơ sở dữ liệu rỗng'];
+        return ['message' => 'CÆ¡ sá»Ÿ dá»¯ liá»‡u rá»—ng'];
     }
 
     private function preflightDatabasePrivileges(array $input): array
@@ -582,7 +582,7 @@ final class TenantInstallerService
                 $pdo->exec('DROP TABLE IF EXISTS ' . $table);
             }
         }
-        return ['message' => 'Người dùng cơ sở dữ liệu có quyền CREATE/INSERT/SELECT/UPDATE/DELETE/DROP'];
+        return ['message' => 'NgÆ°á»i dÃ¹ng cÆ¡ sá»Ÿ dá»¯ liá»‡u cÃ³ quyá»n CREATE/INSERT/SELECT/UPDATE/DELETE/DROP'];
     }
 
     private function preflightTenantCodeAvailable(array $input): array
@@ -590,15 +590,15 @@ final class TenantInstallerService
         $stmt = $this->db()->prepare('SELECT COUNT(*) FROM villages WHERE code=:code OR domain=:domain OR subdomain=:subdomain');
         $stmt->execute(['code' => $input['code'], 'domain' => $input['domain'], 'subdomain' => $input['subdomain']]);
         if ((int) $stmt->fetchColumn() > 0) {
-            throw new RuntimeException('Mã đơn vị/tên miền/tên miền phụ đã tồn tại trong Registry');
+            throw new RuntimeException('MÃ£ Ä‘Æ¡n vá»‹/tÃªn miá»n/tÃªn miá»n phá»¥ Ä‘Ã£ tá»“n táº¡i trong Registry');
         }
-        return ['message' => 'Mã đơn vị và khóa Registry chưa tồn tại'];
+        return ['message' => 'MÃ£ Ä‘Æ¡n vá»‹ vÃ  khÃ³a Registry chÆ°a tá»“n táº¡i'];
     }
 
     private function preflightRegistry(): array
     {
         $this->db()->query('SELECT id, code, status FROM villages LIMIT 1');
-        return ['message' => 'Registry đơn vị sẵn sàng'];
+        return ['message' => 'Registry Ä‘Æ¡n vá»‹ sáºµn sÃ ng'];
     }
 
     private function preflightStoragePaths(array $input): array
@@ -606,7 +606,7 @@ final class TenantInstallerService
         $this->preflightWritableTarget((string) $input['storage_path']);
         $this->preflightWritableTarget((string) $input['upload_path']);
         $this->preflightWritableTarget((string) $input['backup_path']);
-        return ['message' => 'Lưu trữ/tải lên/sao lưu có quyền ghi'];
+        return ['message' => 'LÆ°u trá»¯/táº£i lÃªn/sao lÆ°u cÃ³ quyá»n ghi'];
     }
 
     private function preflightWritable(string $path, string $message): array
@@ -614,7 +614,7 @@ final class TenantInstallerService
         if (!is_dir($path) || !is_writable($path)) {
             throw new RuntimeException($message . ': ' . $path);
         }
-        return ['message' => 'Có quyền ghi: ' . basename($path)];
+        return ['message' => 'CÃ³ quyá»n ghi: ' . basename($path)];
     }
 
     private function preflightWritableTarget(string $path): array
@@ -628,23 +628,23 @@ final class TenantInstallerService
             $target = $parent;
         }
         if ($target === '' || !is_dir($target) || !is_writable($target)) {
-            throw new RuntimeException('Thư mục cha không có quyền ghi: ' . $path);
+            throw new RuntimeException('ThÆ° má»¥c cha khÃ´ng cÃ³ quyá»n ghi: ' . $path);
         }
-        return ['message' => 'Đường dẫn có quyền ghi: ' . $path, 'checkedParent' => $target];
+        return ['message' => 'ÄÆ°á»ng dáº«n cÃ³ quyá»n ghi: ' . $path, 'checkedParent' => $target];
     }
 
     private function preflightFix(string $key): string
     {
         return match ($key) {
-            'input_valid' => 'Sửa thông tin đơn vị trên form',
-            'database_connection' => 'Tạo cơ sở dữ liệu/người dùng trong cPanel, gán người dùng vào cơ sở dữ liệu và nhập đúng thông tin kết nối',
-            'database_empty' => 'Dùng cơ sở dữ liệu rỗng mới tạo cho đơn vị này',
-            'database_privileges' => 'Trong cPanel, gán người dùng vào cơ sở dữ liệu với đầy đủ quyền quản lý bảng và dữ liệu',
-            'tenant_code_available' => 'Chọn mã đơn vị/tên miền khác hoặc hoàn tác đơn vị đang lỗi',
-            'registry_valid' => 'Kiểm tra cơ sở dữ liệu Community Control Center và bảng villages',
-            'source_writable' => 'Cấp quyền ghi cho thư mục mã nguồn để sinh .env đơn vị',
-            'storage_writable', 'upload_writable', 'backup_writable' => 'Tạo thư mục cha và cấp quyền ghi cho người dùng web',
-            default => 'Kiểm tra cấu hình và thử lại',
+            'input_valid' => 'Sá»­a thÃ´ng tin Ä‘Æ¡n vá»‹ trÃªn form',
+            'database_connection' => 'Táº¡o cÆ¡ sá»Ÿ dá»¯ liá»‡u/ngÆ°á»i dÃ¹ng trong cPanel, gÃ¡n ngÆ°á»i dÃ¹ng vÃ o cÆ¡ sá»Ÿ dá»¯ liá»‡u vÃ  nháº­p Ä‘Ãºng thÃ´ng tin káº¿t ná»‘i',
+            'database_empty' => 'DÃ¹ng cÆ¡ sá»Ÿ dá»¯ liá»‡u rá»—ng má»›i táº¡o cho Ä‘Æ¡n vá»‹ nÃ y',
+            'database_privileges' => 'Trong cPanel, gÃ¡n ngÆ°á»i dÃ¹ng vÃ o cÆ¡ sá»Ÿ dá»¯ liá»‡u vá»›i Ä‘áº§y Ä‘á»§ quyá»n quáº£n lÃ½ báº£ng vÃ  dá»¯ liá»‡u',
+            'tenant_code_available' => 'Chá»n mÃ£ Ä‘Æ¡n vá»‹/tÃªn miá»n khÃ¡c hoáº·c hoÃ n tÃ¡c Ä‘Æ¡n vá»‹ Ä‘ang lá»—i',
+            'registry_valid' => 'Kiá»ƒm tra cÆ¡ sá»Ÿ dá»¯ liá»‡u Community Control Center vÃ  báº£ng villages',
+            'source_writable' => 'Cáº¥p quyá»n ghi cho thÆ° má»¥c mÃ£ nguá»“n Ä‘á»ƒ sinh .env Ä‘Æ¡n vá»‹',
+            'storage_writable', 'upload_writable', 'backup_writable' => 'Táº¡o thÆ° má»¥c cha vÃ  cáº¥p quyá»n ghi cho ngÆ°á»i dÃ¹ng web',
+            default => 'Kiá»ƒm tra cáº¥u hÃ¬nh vÃ  thá»­ láº¡i',
         };
     }
 
@@ -656,7 +656,7 @@ final class TenantInstallerService
                 'UPDATE villages SET status=:status, connection_status="CONNECTED", database_status="CONNECTED", website_status="UNKNOWN", last_checked_at=NOW(), last_database_checked_at=NOW(), last_error=NULL WHERE id=:id'
             )->execute(['id' => $villageId, 'status' => $this->defaultTenantStatus()]);
         }
-        return ['message' => 'Đơn vị sẵn sàng'];
+        return ['message' => 'ÄÆ¡n vá»‹ sáºµn sÃ ng'];
     }
 
     private function defaultTenantStatus(): string
@@ -671,14 +671,14 @@ final class TenantInstallerService
     private function executeSqlFile(PDO $pdo, string $path, string $label): array
     {
         if (!is_readable($path)) {
-            throw new RuntimeException('Không đọc được ' . $label);
+            throw new RuntimeException('KhÃ´ng Ä‘á»c Ä‘Æ°á»£c ' . $label);
         }
         $count = 0;
         foreach ($this->splitSql((string) file_get_contents($path)) as $statement) {
             $pdo->exec($statement);
             $count++;
         }
-        return ['message' => 'Đã import ' . $label, 'statements' => $count];
+        return ['message' => 'ÄÃ£ import ' . $label, 'statements' => $count];
     }
 
     private function splitSql(string $sql): array
@@ -860,7 +860,7 @@ final class TenantInstallerService
              VALUES (:job_id,:step,"RUNNING",1,NOW())
              ON DUPLICATE KEY UPDATE status="RUNNING", attempts=attempts+1, started_at=NOW(), message=NULL'
         )->execute(['job_id' => $jobId, 'step' => $step]);
-        $this->writeInstallerAudit($jobId, $actor, $step, 'step.running', 'INFO', 'Đang chạy step ' . $step);
+        $this->writeInstallerAudit($jobId, $actor, $step, 'step.running', 'INFO', 'Äang cháº¡y step ' . $step);
     }
 
     private function finishStep(int $jobId, string $step, string $status, string $message, array $details = [], ?array $actor = null): void
@@ -1028,7 +1028,7 @@ final class TenantInstallerService
         $base = realpath(BASE_PATH);
         $target = realpath($path);
         if ($base === false || $target === false || !str_starts_with($target, $base . DIRECTORY_SEPARATOR)) {
-            throw new RuntimeException('Không rollback được thư mục ngoài project: ' . $path);
+            throw new RuntimeException('KhÃ´ng rollback Ä‘Æ°á»£c thÆ° má»¥c ngoÃ i project: ' . $path);
         }
         $items = array_diff(scandir($target) ?: [], ['.', '..']);
         foreach ($items as $item) {

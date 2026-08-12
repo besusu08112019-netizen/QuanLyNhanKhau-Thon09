@@ -51,7 +51,7 @@ final class ControlCenterUserService
         $data = $this->validate($input, true, $actor);
         $this->assertUnique($data);
         $user = $this->repository->create($data);
-        $this->audit->write($actor, 'user.created', (int) ($user['unitId'] ?? 0), 'Tạo tài khoản hệ thống', ['user_id' => $user['id'] ?? null, 'role' => $user['role'] ?? null]);
+        $this->audit->write($actor, 'user.created', (int) ($user['unitId'] ?? 0), 'Táº¡o tÃ i khoáº£n há»‡ thá»‘ng', ['user_id' => $user['id'] ?? null, 'role' => $user['role'] ?? null]);
         return $user;
     }
 
@@ -63,7 +63,7 @@ final class ControlCenterUserService
         $this->assertUnique($data, $id);
         $this->assertSystemAdminSafety($current, $data['role'], $data['status'], $actor);
         $user = $this->repository->update($id, $data);
-        $this->audit->write($actor, 'user.updated', (int) ($user['unitId'] ?? 0), 'Cập nhật tài khoản hệ thống', ['user_id' => $id, 'fields' => array_keys($data)]);
+        $this->audit->write($actor, 'user.updated', (int) ($user['unitId'] ?? 0), 'Cáº­p nháº­t tÃ i khoáº£n há»‡ thá»‘ng', ['user_id' => $id, 'fields' => array_keys($data)]);
         return $user;
     }
 
@@ -73,10 +73,10 @@ final class ControlCenterUserService
         $user = $this->findExisting($id);
         $this->assertSystemAdminSafety($user, (string) $user['role'], 'INACTIVE', $actor);
         if ((string) ($user['status'] ?? '') === 'INACTIVE') {
-            throw new InvalidArgumentException('Tài khoản đã ngừng sử dụng');
+            throw new InvalidArgumentException('TÃ i khoáº£n Ä‘Ã£ ngá»«ng sá»­ dá»¥ng');
         }
         $updated = $this->repository->setStatus($id, 'INACTIVE', (int) $actor['id']);
-        $this->audit->write($actor, 'user.deactivated', (int) ($updated['unitId'] ?? 0), 'Vô hiệu hóa tài khoản hệ thống', ['user_id' => $id]);
+        $this->audit->write($actor, 'user.deactivated', (int) ($updated['unitId'] ?? 0), 'VÃ´ hiá»‡u hÃ³a tÃ i khoáº£n há»‡ thá»‘ng', ['user_id' => $id]);
         return $updated;
     }
 
@@ -85,10 +85,10 @@ final class ControlCenterUserService
         $actor = $this->authorization->authorize('control_center.users.activate');
         $user = $this->findExisting($id);
         if ((string) ($user['status'] ?? '') === 'ACTIVE') {
-            throw new InvalidArgumentException('Tài khoản đã đang hoạt động');
+            throw new InvalidArgumentException('TÃ i khoáº£n Ä‘Ã£ Ä‘ang hoáº¡t Ä‘á»™ng');
         }
         $updated = $this->repository->setStatus($id, 'ACTIVE', (int) $actor['id']);
-        $this->audit->write($actor, 'user.activated', (int) ($updated['unitId'] ?? 0), 'Kích hoạt tài khoản hệ thống', ['user_id' => $id]);
+        $this->audit->write($actor, 'user.activated', (int) ($updated['unitId'] ?? 0), 'KÃ­ch hoáº¡t tÃ i khoáº£n há»‡ thá»‘ng', ['user_id' => $id]);
         return $updated;
     }
 
@@ -97,12 +97,12 @@ final class ControlCenterUserService
         $actor = $this->authorization->authorize('control_center.users.reset_password');
         $user = $this->findExisting($id);
         if ((string) $user['role'] === 'SYSTEM_ADMIN' && (int) $user['id'] !== (int) $actor['id']) {
-            throw new InvalidArgumentException('Chưa cho phép đặt lại mật khẩu SYSTEM_ADMIN khác trong tính năng này');
+            throw new InvalidArgumentException('ChÆ°a cho phÃ©p Ä‘áº·t láº¡i máº­t kháº©u SYSTEM_ADMIN khÃ¡c trong tÃ­nh nÄƒng nÃ y');
         }
         $password = (string) ($input['password'] ?? '');
         $this->assertPassword($password);
         $updated = $this->repository->resetPassword($id, $password, (int) $actor['id']);
-        $this->audit->write($actor, 'user.password_reset', (int) ($updated['unitId'] ?? $user['unitId'] ?? 0), 'Đặt lại mật khẩu tài khoản hệ thống', ['user_id' => $id]);
+        $this->audit->write($actor, 'user.password_reset', (int) ($updated['unitId'] ?? $user['unitId'] ?? 0), 'Äáº·t láº¡i máº­t kháº©u tÃ i khoáº£n há»‡ thá»‘ng', ['user_id' => $id]);
         return $updated;
     }
 
@@ -116,22 +116,22 @@ final class ControlCenterUserService
         $unitId = (int) ($input['unit_id'] ?? $input['unitId'] ?? $current['unitId'] ?? 0);
 
         if (!preg_match('/^[a-z0-9._-]{3,60}$/', $username)) {
-            throw new InvalidArgumentException('Tên đăng nhập không hợp lệ');
+            throw new InvalidArgumentException('TÃªn Ä‘Äƒng nháº­p khÃ´ng há»£p lá»‡');
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException('Email không hợp lệ');
+            throw new InvalidArgumentException('Email khÃ´ng há»£p lá»‡');
         }
         if ($displayName === '' || mb_strlen($displayName, 'UTF-8') > 190) {
-            throw new InvalidArgumentException('Họ tên không hợp lệ');
+            throw new InvalidArgumentException('Há» tÃªn khÃ´ng há»£p lá»‡');
         }
         if (!isset(self::ROLE_MAP[$role])) {
-            throw new InvalidArgumentException($role === 'COMMUNE_ADMIN' ? 'COMMUNE_ADMIN chưa sẵn sàng trong tính năng này' : 'Vai trò không hợp lệ');
+            throw new InvalidArgumentException($role === 'COMMUNE_ADMIN' ? 'COMMUNE_ADMIN chÆ°a sáºµn sÃ ng trong tÃ­nh nÄƒng nÃ y' : 'Vai trÃ² khÃ´ng há»£p lá»‡');
         }
         if (!in_array($status, self::STATUSES, true)) {
-            throw new InvalidArgumentException('Trạng thái tài khoản không hợp lệ');
+            throw new InvalidArgumentException('Tráº¡ng thÃ¡i tÃ i khoáº£n khÃ´ng há»£p lá»‡');
         }
         if ($unitId <= 0 || !$this->repository->unitExists($unitId)) {
-            throw new InvalidArgumentException('Đơn vị không hợp lệ');
+            throw new InvalidArgumentException('ÄÆ¡n vá»‹ khÃ´ng há»£p lá»‡');
         }
         if ($creating) {
             $this->assertPassword((string) ($input['password'] ?? ''));
@@ -155,20 +155,20 @@ final class ControlCenterUserService
     private function assertUnique(array $data, ?int $ignoreId = null): void
     {
         if ($this->repository->existsByEmail($data['email'], (int) $data['unit_id'], $ignoreId)) {
-            throw new InvalidArgumentException('Email đã tồn tại trong đơn vị');
+            throw new InvalidArgumentException('Email Ä‘Ã£ tá»“n táº¡i trong Ä‘Æ¡n vá»‹');
         }
         if ($this->repository->existsByUsername($data['username'], (int) $data['unit_id'], $ignoreId)) {
-            throw new InvalidArgumentException('Tên đăng nhập đã tồn tại trong đơn vị');
+            throw new InvalidArgumentException('TÃªn Ä‘Äƒng nháº­p Ä‘Ã£ tá»“n táº¡i trong Ä‘Æ¡n vá»‹');
         }
     }
 
     private function assertSystemAdminSafety(array $user, string $nextRole, string $nextStatus, array $actor): void
     {
         if ((int) $user['id'] === (int) $actor['id'] && $nextStatus === 'INACTIVE') {
-            throw new InvalidArgumentException('Không được vô hiệu hóa tài khoản đang đăng nhập');
+            throw new InvalidArgumentException('KhÃ´ng Ä‘Æ°á»£c vÃ´ hiá»‡u hÃ³a tÃ i khoáº£n Ä‘ang Ä‘Äƒng nháº­p');
         }
         if ((string) $user['role'] === 'SYSTEM_ADMIN' && ($nextRole !== 'SYSTEM_ADMIN' || $nextStatus !== 'ACTIVE') && $this->repository->activeSystemAdminCount((int) $user['id']) < 1) {
-            throw new InvalidArgumentException('Không được vô hiệu hóa SYSTEM_ADMIN cuối cùng');
+            throw new InvalidArgumentException('KhÃ´ng Ä‘Æ°á»£c vÃ´ hiá»‡u hÃ³a SYSTEM_ADMIN cuá»‘i cÃ¹ng');
         }
     }
 
@@ -176,7 +176,7 @@ final class ControlCenterUserService
     {
         $user = $this->repository->find($id);
         if (!$user) {
-            throw new RuntimeException('Không tìm thấy tài khoản');
+            throw new RuntimeException('KhÃ´ng tÃ¬m tháº¥y tÃ i khoáº£n');
         }
         return $user;
     }
@@ -184,7 +184,7 @@ final class ControlCenterUserService
     private function assertPassword(string $password): void
     {
         if (strlen($password) < 8 || strlen($password) > 1024) {
-            throw new InvalidArgumentException('Mật khẩu tối thiểu 8 ký tự');
+            throw new InvalidArgumentException('Máº­t kháº©u tá»‘i thiá»ƒu 8 kÃ½ tá»±');
         }
     }
 

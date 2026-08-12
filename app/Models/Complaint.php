@@ -174,9 +174,9 @@ SQL);
             'priorities' => $this->catalog('complaint_priorities'),
             'statuses' => $this->statusCatalog(),
             'ratings' => [
-                ['value' => 'SATISFIED', 'label' => 'Người dân hài lòng'],
-                ['value' => 'NEEDS_MORE', 'label' => 'Cần xử lý thêm'],
-                ['value' => 'DISAGREE', 'label' => 'Không đồng ý'],
+                ['value' => 'SATISFIED', 'label' => 'NgÆ°á»i dÃ¢n hÃ i lÃ²ng'],
+                ['value' => 'NEEDS_MORE', 'label' => 'Cáº§n xá»­ lÃ½ thÃªm'],
+                ['value' => 'DISAGREE', 'label' => 'KhÃ´ng Ä‘á»“ng Ã½'],
             ],
             'linkTypes' => $this->linkTypes(),
         ];
@@ -222,7 +222,7 @@ SQL);
     {
         $this->ensureSchema();
         $existing = $id ? $this->find($id) : null;
-        if ($id && !$existing) throw new \RuntimeException('Không tìm thấy phản ánh');
+        if ($id && !$existing) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh');
         $params = $this->params($data, $userId, $userName, $existing);
         if ($id) {
             $params['id'] = $id;
@@ -236,23 +236,23 @@ SQL);
         $values = array_map(fn(string $column): string => ':' . $column, $columns);
         $newId = $this->insert('INSERT INTO complaints (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         $this->syncLinks($newId, $data, $userId);
-        $this->addHistory($newId, ['content' => 'Tiếp nhận phản ánh', 'status_id' => $params['status_id']], $userId, $userName);
+        $this->addHistory($newId, ['content' => 'Tiáº¿p nháº­n pháº£n Ã¡nh', 'status_id' => $params['status_id']], $userId, $userName);
         return $this->find($newId);
     }
 
     public function softDelete(int $id, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phản ánh');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh');
         $this->execute('UPDATE complaints SET soft_status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('complaints'), ['id' => $id, 'user' => $userId]);
     }
 
     public function addHistory(int $id, array $data, int $userId, string $userName): array
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phản ánh');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh');
         $content = trim((string)($data['content'] ?? $data['note'] ?? ''));
-        if ($content === '') throw new \RuntimeException('Nội dung xử lý là bắt buộc');
+        if ($content === '') throw new \RuntimeException('Ná»™i dung xá»­ lÃ½ lÃ  báº¯t buá»™c');
         $statusId = $this->validId('complaint_statuses', $data['status_id'] ?? $data['statusId'] ?? null, true);
         $historyId = $this->insert('INSERT INTO complaint_histories (complaint_id, actor_user_id, actor_name, content, status_id) VALUES (:id,:user,:name,:content,:status)', ['id' => $id, 'user' => $userId, 'name' => $userName, 'content' => $content, 'status' => $statusId]);
         if ($statusId) {
@@ -265,13 +265,13 @@ SQL);
     public function assign(int $id, array $data, int $userId): array
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phản ánh');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh');
         $assigneeId = $this->nullableInt($data['assignee_user_id'] ?? $data['assigneeUserId'] ?? null);
         $assigneeName = trim((string)($data['assignee_name'] ?? $data['assigneeName'] ?? ''));
         if ($assigneeName === '' && $assigneeId) $assigneeName = $this->userName($assigneeId);
-        if ($assigneeName === '') throw new \RuntimeException('Người xử lý là bắt buộc');
-        $assignedAt = $this->dateTime($data['assigned_at'] ?? $data['assignedAt'] ?? date('Y-m-d H:i:s'), true, 'Ngày giao không hợp lệ');
-        $dueAt = $this->dateTime($data['due_at'] ?? $data['dueAt'] ?? null, false, 'Hạn hoàn thành không hợp lệ');
+        if ($assigneeName === '') throw new \RuntimeException('NgÆ°á»i xá»­ lÃ½ lÃ  báº¯t buá»™c');
+        $assignedAt = $this->dateTime($data['assigned_at'] ?? $data['assignedAt'] ?? date('Y-m-d H:i:s'), true, 'NgÃ y giao khÃ´ng há»£p lá»‡');
+        $dueAt = $this->dateTime($data['due_at'] ?? $data['dueAt'] ?? null, false, 'Háº¡n hoÃ n thÃ nh khÃ´ng há»£p lá»‡');
         $note = $this->nullable($data['note'] ?? '');
         $assignmentId = $this->insert('INSERT INTO complaint_assignments (complaint_id, assignee_user_id, assignee_name, assigned_at, due_at, note, assigned_by) VALUES (:id,:assignee_id,:assignee_name,:assigned_at,:due_at,:note,:user)', ['id' => $id, 'assignee_id' => $assigneeId, 'assignee_name' => $assigneeName, 'assigned_at' => $assignedAt, 'due_at' => $dueAt, 'note' => $note, 'user' => $userId]);
         $this->execute('UPDATE complaints SET assigned_user_id=:assignee_id, assigned_name=:assignee_name, due_at=:due_at, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('complaints'), ['id' => $id, 'assignee_id' => $assigneeId, 'assignee_name' => $assigneeName, 'due_at' => $dueAt, 'user' => $userId]);
@@ -281,9 +281,9 @@ SQL);
     public function evaluate(int $id, array $data, int $userId): array
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phản ánh');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh');
         $rating = strtoupper(trim((string)($data['result_rating'] ?? $data['resultRating'] ?? '')));
-        if (!in_array($rating, ['SATISFIED','NEEDS_MORE','DISAGREE'], true)) throw new \RuntimeException('Đánh giá kết quả không hợp lệ');
+        if (!in_array($rating, ['SATISFIED','NEEDS_MORE','DISAGREE'], true)) throw new \RuntimeException('ÄÃ¡nh giÃ¡ káº¿t quáº£ khÃ´ng há»£p lá»‡');
         $this->execute('UPDATE complaints SET result_rating=:rating, result_note=:note, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('complaints'), ['id' => $id, 'rating' => $rating, 'note' => $this->nullable($data['result_note'] ?? $data['resultNote'] ?? ''), 'user' => $userId]);
         return $this->find($id);
     }
@@ -291,7 +291,7 @@ SQL);
     public function addAttachment(int $id, array $stored, array $file, int $userId, ?int $historyId = null): array
     {
         $this->ensureSchema();
-        if (!$this->find($id)) throw new \RuntimeException('Không tìm thấy phản ánh');
+        if (!$this->find($id)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y pháº£n Ã¡nh');
         $mime = (string)$stored['mime'];
         $kind = str_starts_with($mime, 'image/') ? 'IMAGE' : (str_starts_with($mime, 'video/') ? 'VIDEO' : ($mime === 'application/pdf' ? 'PDF' : 'OTHER'));
         $attachmentId = $this->insert('INSERT INTO complaint_attachments (complaint_id, history_id, original_name, stored_path, mime_type, file_size, file_kind, created_by) VALUES (:id,:history_id,:name,:path,:mime,:size,:kind,:user)', ['id' => $id, 'history_id' => $historyId, 'name' => basename((string)($file['name'] ?? 'attachment')), 'path' => $stored['file_path'], 'mime' => $mime, 'size' => (int)($file['size'] ?? 0), 'kind' => $kind, 'user' => $userId]);
@@ -308,7 +308,7 @@ SQL);
     public function deleteAttachment(int $complaintId, int $fileId, int $userId): void
     {
         $this->ensureSchema();
-        if (!$this->attachment($complaintId, $fileId)) throw new \RuntimeException('Không tìm thấy file đính kèm');
+        if (!$this->attachment($complaintId, $fileId)) throw new \RuntimeException('KhÃ´ng tÃ¬m tháº¥y file Ä‘Ã­nh kÃ¨m');
         $this->execute('UPDATE complaint_attachments SET deleted_at=NOW(), deleted_by=:user WHERE complaint_id=:complaint_id AND id=:id', ['complaint_id' => $complaintId, 'id' => $fileId, 'user' => $userId]);
     }
 
@@ -324,8 +324,8 @@ SQL);
                 'by_month' => $this->fetchAll("SELECT DATE_FORMAT(c.received_at, '%Y-%m') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY label DESC LIMIT 12", $params),
                 'by_quarter' => $this->fetchAll("SELECT CONCAT(YEAR(c.received_at), '-Q', QUARTER(c.received_at)) AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY YEAR(c.received_at) DESC, QUARTER(c.received_at) DESC LIMIT 8", $params),
                 'by_year' => $this->fetchAll("SELECT YEAR(c.received_at) AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY label DESC LIMIT 6", $params),
-                'by_category' => $this->fetchAll("SELECT COALESCE(cc.name, 'Khác') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
-                'by_status' => $this->fetchAll("SELECT COALESCE(cs.name, 'Chưa cập nhật') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
+                'by_category' => $this->fetchAll("SELECT COALESCE(cc.name, 'KhÃ¡c') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
+                'by_status' => $this->fetchAll("SELECT COALESCE(cs.name, 'ChÆ°a cáº­p nháº­t') AS label, COUNT(*) AS value $from $where GROUP BY label ORDER BY value DESC", $params),
             ],
         ];
     }
@@ -345,17 +345,17 @@ SQL);
         $rows = $this->paginate($filters)['items'];
         $dashboard = $this->dashboard($filters)['metrics'];
         return [
-            'title' => 'Báo cáo phản ánh - kiến nghị',
-            'headers' => ['Mã', 'Tiêu đề', 'Người phản ánh', 'Hộ liên quan', 'Loại', 'Ưu tiên', 'Trạng thái', 'Phụ trách', 'Ngày tiếp nhận', 'Hạn xử lý', 'Quá hạn'],
-            'rows' => array_map(fn($row) => [$row['complaint_code'], $row['title'], $row['reporter_name'], $row['household_code'], $row['category_name'], $row['priority_name'], $row['status_name'], $row['assigned_name'], $row['received_at'], $row['due_at'], $row['is_overdue'] ? 'Có' : 'Không'], $rows),
+            'title' => 'BÃ¡o cÃ¡o pháº£n Ã¡nh - kiáº¿n nghá»‹',
+            'headers' => ['MÃ£', 'TiÃªu Ä‘á»', 'NgÆ°á»i pháº£n Ã¡nh', 'Há»™ liÃªn quan', 'Loáº¡i', 'Æ¯u tiÃªn', 'Tráº¡ng thÃ¡i', 'Phá»¥ trÃ¡ch', 'NgÃ y tiáº¿p nháº­n', 'Háº¡n xá»­ lÃ½', 'QuÃ¡ háº¡n'],
+            'rows' => array_map(fn($row) => [$row['complaint_code'], $row['title'], $row['reporter_name'], $row['household_code'], $row['category_name'], $row['priority_name'], $row['status_name'], $row['assigned_name'], $row['received_at'], $row['due_at'], $row['is_overdue'] ? 'CÃ³' : 'KhÃ´ng'], $rows),
             'totalRows' => count($rows),
             'filters' => $filters,
             'summary' => [
-                'Tổng tiếp nhận' => (int)($dashboard['total'] ?? 0),
-                'Đã xử lý' => (int)($dashboard['done_count'] ?? 0),
-                'Đang xử lý' => (int)($dashboard['processing_count'] ?? 0),
-                'Quá hạn' => (int)($dashboard['overdue_count'] ?? 0),
-                'Tỷ lệ hoàn thành' => ((int)($dashboard['total'] ?? 0) > 0 ? round(((int)($dashboard['done_count'] ?? 0) / (int)$dashboard['total']) * 100, 2) : 0) . '%',
+                'Tá»•ng tiáº¿p nháº­n' => (int)($dashboard['total'] ?? 0),
+                'ÄÃ£ xá»­ lÃ½' => (int)($dashboard['done_count'] ?? 0),
+                'Äang xá»­ lÃ½' => (int)($dashboard['processing_count'] ?? 0),
+                'QuÃ¡ háº¡n' => (int)($dashboard['overdue_count'] ?? 0),
+                'Tá»· lá»‡ hoÃ n thÃ nh' => ((int)($dashboard['total'] ?? 0) > 0 ? round(((int)($dashboard['done_count'] ?? 0) / (int)$dashboard['total']) * 100, 2) : 0) . '%',
             ],
             'generatedAt' => date('c'),
         ];
@@ -384,17 +384,17 @@ SQL);
         $targetType = $this->targetType($targetType);
         $query = trim($query);
         if ($targetType === '' || mb_strlen($query, 'UTF-8') < 2) return [];
-        if ($targetType === 'other') return [['target_type' => 'other', 'target_id' => 0, 'label' => $query, 'meta' => 'Khác']];
+        if ($targetType === 'other') return [['target_type' => 'other', 'target_id' => 0, 'label' => $query, 'meta' => 'KhÃ¡c']];
         $q = '%' . $query . '%';
         try {
             return match ($targetType) {
                 'household' => array_map(fn($r) => $this->relatedRow('household', (int)$r['id'], trim($r['household_code'] . ' - ' . $r['head_citizen_name']), $r['address'] ?? ''), $this->fetchAll('SELECT id, household_code, head_citizen_name, address, phone FROM households WHERE status <> "DELETED" AND ' . $this->tenantWhere('households') . ' AND (household_code LIKE :q OR head_citizen_name LIKE :q OR address LIKE :q OR phone LIKE :q) ORDER BY household_code ASC LIMIT 20', ['q' => $q])),
                 'citizen' => array_map(fn($r) => $this->relatedRow('citizen', (int)$r['id'], trim($r['citizen_code'] . ' - ' . $r['full_name']), trim(($r['household_code'] ?? '') . ' ' . ($r['identity_number'] ?? ''))), $this->fetchAll('SELECT c.id, c.citizen_code, c.full_name, c.identity_number, c.phone, h.household_code FROM citizens c INNER JOIN households h ON h.id=c.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens') . ' AND (c.citizen_code LIKE :q OR c.full_name LIKE :q OR c.identity_number LIKE :q OR c.phone LIKE :q OR h.household_code LIKE :q) ORDER BY c.full_name ASC LIMIT 20', ['q' => $q])),
                 'public_asset' => array_map(fn($r) => $this->relatedRow('public_asset', (int)$r['id'], trim($r['asset_code'] . ' - ' . $r['asset_name']), trim(($r['type_name'] ?? '') . ' ' . ($r['address'] ?? ''))), $this->fetchAll('SELECT id, asset_code, asset_name, type_name, address FROM public_assets WHERE status <> "DELETED" AND (asset_code LIKE :q OR asset_name LIKE :q OR type_name LIKE :q OR address LIKE :q) ORDER BY asset_code ASC LIMIT 20', ['q' => $q])),
-                'house' => array_map(fn($r) => $this->relatedRow('house', (int)$r['id'], trim($r['house_code'] . ' - ' . ($r['house_name'] ?: $r['house_type'] ?: 'Nhà ở')), trim(($r['household_code'] ?? '') . ' ' . ($r['head_citizen_name'] ?? '') . ' ' . ($r['address'] ?? ''))), $this->fetchAll('SELECT hs.id, hs.house_code, hs.house_name, hs.house_type, hs.address, h.household_code, h.head_citizen_name FROM houses hs INNER JOIN households h ON h.id=hs.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE hs.status <> "DELETED" AND ' . $this->tenantWhere('hs', 'houses') . ' AND (hs.house_code LIKE :q OR hs.house_name LIKE :q OR hs.house_type LIKE :q OR hs.address LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q) ORDER BY hs.house_code ASC LIMIT 20', ['q' => $q])),
+                'house' => array_map(fn($r) => $this->relatedRow('house', (int)$r['id'], trim($r['house_code'] . ' - ' . ($r['house_name'] ?: $r['house_type'] ?: 'NhÃ  á»Ÿ')), trim(($r['household_code'] ?? '') . ' ' . ($r['head_citizen_name'] ?? '') . ' ' . ($r['address'] ?? ''))), $this->fetchAll('SELECT hs.id, hs.house_code, hs.house_name, hs.house_type, hs.address, h.household_code, h.head_citizen_name FROM houses hs INNER JOIN households h ON h.id=hs.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE hs.status <> "DELETED" AND ' . $this->tenantWhere('hs', 'houses') . ' AND (hs.house_code LIKE :q OR hs.house_name LIKE :q OR hs.house_type LIKE :q OR hs.address LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q) ORDER BY hs.house_code ASC LIMIT 20', ['q' => $q])),
                 'business' => array_map(fn($r) => $this->relatedRow('business', (int)$r['id'], trim(($r['business_name'] ?: $r['household_code']) . ' - ' . ($r['owner_name'] ?: $r['head_citizen_name'])), trim(($r['business_sector'] ?? '') . ' ' . ($r['production_sector'] ?? '') . ' ' . ($r['tax_code'] ?? ''))), $this->fetchAll('SELECT hb.id, hb.business_name, hb.owner_name, hb.business_sector, hb.production_sector, hb.tax_code, h.household_code, h.head_citizen_name, h.address FROM household_business hb INNER JOIN households h ON h.id=hb.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE hb.status <> "DELETED" AND ' . $this->tenantWhere('hb', 'household_business') . ' AND (hb.business_name LIKE :q OR hb.owner_name LIKE :q OR hb.business_sector LIKE :q OR hb.production_sector LIKE :q OR hb.tax_code LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, hb.id DESC LIMIT 20', ['q' => $q])),
-                'agriculture' => array_map(fn($r) => $this->relatedRow('agriculture', (int)$r['id'], trim($r['parcel_code'] . ' - ' . ($r['field_area'] ?: $r['field_name'] ?: 'Sản xuất nông nghiệp')), trim(($r['owner_name'] ?? '') . ' ' . ($r['producer_name'] ?? '') . ' ' . ($r['current_crop'] ?? ''))), $this->fetchAll('SELECT p.id, p.parcel_code, p.field_area, p.field_name, o.name AS owner_name, pr.name AS producer_name, cs.crop AS current_crop FROM agri_land_parcels p INNER JOIN agri_stakeholders o ON o.id=p.owner_id INNER JOIN agri_stakeholders pr ON pr.id=p.producer_id LEFT JOIN (SELECT pp.parcel_id, s.crop FROM agri_crop_seasons s INNER JOIN agri_production_plots pp ON pp.id=s.plot_id WHERE s.status <> "DELETED" AND pp.status <> "DELETED" GROUP BY pp.parcel_id, s.crop) cs ON cs.parcel_id=p.id WHERE p.status <> "DELETED" AND (p.parcel_code LIKE :q OR p.field_area LIKE :q OR p.field_name LIKE :q OR o.name LIKE :q OR pr.name LIKE :q OR cs.crop LIKE :q) ORDER BY p.parcel_code ASC LIMIT 20', ['q' => $q])),
-                'livestock' => array_map(fn($r) => $this->relatedRow('livestock', (int)$r['id'], trim($r['animal_type'] . ' - Hộ ' . $r['household_code']), trim(($r['head_citizen_name'] ?? '') . ' ' . ($r['breed'] ?? '') . ' SL: ' . (string)($r['quantity'] ?? 0))), $this->fetchAll('SELECT l.id, l.animal_type, l.breed, l.quantity, h.household_code, h.head_citizen_name, h.address FROM livestock l INNER JOIN households h ON h.id=l.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE l.status <> "DELETED" AND ' . $this->tenantWhere('l', 'livestock') . ' AND (l.animal_type LIKE :q OR l.breed LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, l.animal_type ASC LIMIT 20', ['q' => $q])),
+                'agriculture' => array_map(fn($r) => $this->relatedRow('agriculture', (int)$r['id'], trim($r['parcel_code'] . ' - ' . ($r['field_area'] ?: $r['field_name'] ?: 'Sáº£n xuáº¥t nÃ´ng nghiá»‡p')), trim(($r['owner_name'] ?? '') . ' ' . ($r['producer_name'] ?? '') . ' ' . ($r['current_crop'] ?? ''))), $this->fetchAll('SELECT p.id, p.parcel_code, p.field_area, p.field_name, o.name AS owner_name, pr.name AS producer_name, cs.crop AS current_crop FROM agri_land_parcels p INNER JOIN agri_stakeholders o ON o.id=p.owner_id INNER JOIN agri_stakeholders pr ON pr.id=p.producer_id LEFT JOIN (SELECT pp.parcel_id, s.crop FROM agri_crop_seasons s INNER JOIN agri_production_plots pp ON pp.id=s.plot_id WHERE s.status <> "DELETED" AND pp.status <> "DELETED" GROUP BY pp.parcel_id, s.crop) cs ON cs.parcel_id=p.id WHERE p.status <> "DELETED" AND (p.parcel_code LIKE :q OR p.field_area LIKE :q OR p.field_name LIKE :q OR o.name LIKE :q OR pr.name LIKE :q OR cs.crop LIKE :q) ORDER BY p.parcel_code ASC LIMIT 20', ['q' => $q])),
+                'livestock' => array_map(fn($r) => $this->relatedRow('livestock', (int)$r['id'], trim($r['animal_type'] . ' - Há»™ ' . $r['household_code']), trim(($r['head_citizen_name'] ?? '') . ' ' . ($r['breed'] ?? '') . ' SL: ' . (string)($r['quantity'] ?? 0))), $this->fetchAll('SELECT l.id, l.animal_type, l.breed, l.quantity, h.household_code, h.head_citizen_name, h.address FROM livestock l INNER JOIN households h ON h.id=l.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE l.status <> "DELETED" AND ' . $this->tenantWhere('l', 'livestock') . ' AND (l.animal_type LIKE :q OR l.breed LIKE :q OR h.household_code LIKE :q OR h.head_citizen_name LIKE :q OR h.address LIKE :q) ORDER BY h.household_code ASC, l.animal_type ASC LIMIT 20', ['q' => $q])),
                 'gis' => array_map(fn($r) => $this->relatedRow('gis', (int)$r['id'], trim($r['area_code'] . ' - ' . $r['name']), $r['note'] ?? ''), $this->fetchAll('SELECT id, area_code, name, note FROM gis_areas WHERE status <> "DELETED" AND ' . $this->tenantWhere('gis_areas') . ' AND (area_code LIKE :q OR name LIKE :q OR note LIKE :q) ORDER BY area_code ASC LIMIT 20', ['q' => $q])),
                 default => [],
             };
@@ -452,14 +452,14 @@ SQL);
         $title = trim((string)($data['title'] ?? ''));
         $detail = trim((string)($data['detail'] ?? $data['content'] ?? ''));
         $reporter = trim((string)($data['reporter_name'] ?? $data['reporterName'] ?? ''));
-        if ($title === '') throw new \RuntimeException('Tiêu đề là bắt buộc');
-        if ($detail === '') throw new \RuntimeException('Nội dung chi tiết là bắt buộc');
-        if ($reporter === '') throw new \RuntimeException('Người phản ánh là bắt buộc');
+        if ($title === '') throw new \RuntimeException('TiÃªu Ä‘á» lÃ  báº¯t buá»™c');
+        if ($detail === '') throw new \RuntimeException('Ná»™i dung chi tiáº¿t lÃ  báº¯t buá»™c');
+        if ($reporter === '') throw new \RuntimeException('NgÆ°á»i pháº£n Ã¡nh lÃ  báº¯t buá»™c');
         $statusId = $this->validId('complaint_statuses', $data['status_id'] ?? $data['statusId'] ?? $existing['status_id'] ?? null, true) ?: $this->defaultStatusId();
         return [
             'title' => $title,
             'detail' => $detail,
-            'received_at' => $this->dateTime($data['received_at'] ?? $data['receivedAt'] ?? $existing['received_at'] ?? date('Y-m-d H:i:s'), true, 'Ngày tiếp nhận không hợp lệ'),
+            'received_at' => $this->dateTime($data['received_at'] ?? $data['receivedAt'] ?? $existing['received_at'] ?? date('Y-m-d H:i:s'), true, 'NgÃ y tiáº¿p nháº­n khÃ´ng há»£p lá»‡'),
             'receiver_user_id' => $this->nullableInt($data['receiver_user_id'] ?? $data['receiverUserId'] ?? $existing['receiver_user_id'] ?? $userId),
             'receiver_name' => $this->nullable($data['receiver_name'] ?? $data['receiverName'] ?? $existing['receiver_name'] ?? $userName),
             'reporter_name' => $reporter,
@@ -471,7 +471,7 @@ SQL);
             'status_id' => $statusId,
             'assigned_user_id' => $this->nullableInt($data['assigned_user_id'] ?? $data['assignedUserId'] ?? $existing['assigned_user_id'] ?? null),
             'assigned_name' => $this->nullable($data['assigned_name'] ?? $data['assignedName'] ?? $existing['assigned_name'] ?? ''),
-            'due_at' => $this->dateTime($data['due_at'] ?? $data['dueAt'] ?? null, false, 'Hạn xử lý không hợp lệ'),
+            'due_at' => $this->dateTime($data['due_at'] ?? $data['dueAt'] ?? null, false, 'Háº¡n xá»­ lÃ½ khÃ´ng há»£p lá»‡'),
             'latitude' => $this->coord($data['latitude'] ?? null),
             'longitude' => $this->coord($data['longitude'] ?? null),
             'gps_accuracy' => $this->nullableNumber($data['gps_accuracy'] ?? $data['gpsAccuracy'] ?? null),
@@ -531,8 +531,8 @@ SQL);
         if (!is_array($links)) $links = [];
         $householdId = $this->nullableInt($data['household_id'] ?? $data['householdId'] ?? null);
         $citizenId = $this->nullableInt($data['citizen_id'] ?? $data['citizenId'] ?? null);
-        if ($householdId && !$this->hasLink($links, 'household', $householdId)) $links[] = ['target_type' => 'household', 'target_id' => $householdId, 'label' => 'Hộ gia đình'];
-        if ($citizenId && !$this->hasLink($links, 'citizen', $citizenId)) $links[] = ['target_type' => 'citizen', 'target_id' => $citizenId, 'label' => 'Nhân khẩu'];
+        if ($householdId && !$this->hasLink($links, 'household', $householdId)) $links[] = ['target_type' => 'household', 'target_id' => $householdId, 'label' => 'Há»™ gia Ä‘Ã¬nh'];
+        if ($citizenId && !$this->hasLink($links, 'citizen', $citizenId)) $links[] = ['target_type' => 'citizen', 'target_id' => $citizenId, 'label' => 'NhÃ¢n kháº©u'];
         $allowed = array_column($this->linkTypes(), 'value');
         foreach ($links as $link) {
             $type = $this->targetType((string)($link['target_type'] ?? $link['type'] ?? ''));
@@ -547,13 +547,13 @@ SQL);
 
     private function seedCatalogs(): void
     {
-        $categories = [['security','An ninh trật tự'],['environment','Vệ sinh môi trường'],['electricity','Điện'],['water','Nước'],['traffic','Giao thông'],['land','Đất đai'],['construction','Xây dựng'],['noise','Tiếng ồn'],['pets','Vật nuôi'],['policy','Chính sách'],['poor_household','Hộ nghèo'],['other','Khác']];
+        $categories = [['security','An ninh tráº­t tá»±'],['environment','Vá»‡ sinh mÃ´i trÆ°á»ng'],['electricity','Äiá»‡n'],['water','NÆ°á»›c'],['traffic','Giao thÃ´ng'],['land','Äáº¥t Ä‘ai'],['construction','XÃ¢y dá»±ng'],['noise','Tiáº¿ng á»“n'],['pets','Váº­t nuÃ´i'],['policy','ChÃ­nh sÃ¡ch'],['poor_household','Há»™ nghÃ¨o'],['other','KhÃ¡c']];
         $order = 10;
         foreach ($categories as [$code, $name]) { $this->execute('INSERT INTO complaint_categories (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]); $order += 10; }
-        $priorities = [['URGENT','Khẩn cấp'],['HIGH','Cao'],['NORMAL','Bình thường'],['LOW','Thấp']];
+        $priorities = [['URGENT','Kháº©n cáº¥p'],['HIGH','Cao'],['NORMAL','BÃ¬nh thÆ°á»ng'],['LOW','Tháº¥p']];
         $order = 10;
         foreach ($priorities as [$code, $name]) { $this->execute('INSERT INTO complaint_priorities (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]); $order += 10; }
-        $statuses = [['NEW','Mới tiếp nhận','red',0],['VERIFYING','Đang xác minh','yellow',0],['PROCESSING','Đang xử lý','yellow',0],['DONE','Đã hoàn thành','green',1],['ESCALATED','Đã chuyển cấp trên','yellow',1],['REJECTED','Không đủ điều kiện xử lý','red',1]];
+        $statuses = [['NEW','Má»›i tiáº¿p nháº­n','red',0],['VERIFYING','Äang xÃ¡c minh','yellow',0],['PROCESSING','Äang xá»­ lÃ½','yellow',0],['DONE','ÄÃ£ hoÃ n thÃ nh','green',1],['ESCALATED','ÄÃ£ chuyá»ƒn cáº¥p trÃªn','yellow',1],['REJECTED','KhÃ´ng Ä‘á»§ Ä‘iá»u kiá»‡n xá»­ lÃ½','red',1]];
         $order = 10;
         foreach ($statuses as [$code, $name, $color, $terminal]) { $this->execute('INSERT INTO complaint_statuses (code,name,marker_color,is_terminal,sort_order) VALUES (:code,:name,:color,:terminal,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), marker_color=VALUES(marker_color), is_terminal=VALUES(is_terminal), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'color' => $color, 'terminal' => $terminal, 'sort_order' => $order]); $order += 10; }
     }
@@ -569,14 +569,14 @@ SQL);
 
     private function catalog(string $table): array { return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name']], $this->fetchAll("SELECT id, code, name FROM $table WHERE is_active=1 ORDER BY sort_order ASC, name ASC")); }
     private function statusCatalog(): array { return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name'], 'marker_color' => (string)$r['marker_color'], 'is_terminal' => (bool)$r['is_terminal']], $this->fetchAll('SELECT id, code, name, marker_color, is_terminal FROM complaint_statuses WHERE is_active=1 ORDER BY sort_order ASC, name ASC')); }
-    private function validId(string $table, mixed $value, bool $allowNull): ?int { $id = $this->nullableInt($value); if (!$id) { if ($allowNull) return null; return null; } $row = $this->fetchOne("SELECT id FROM $table WHERE id=:id AND is_active=1", ['id' => $id]); if (!$row) throw new \RuntimeException('Danh mục không hợp lệ'); return $id; }
+    private function validId(string $table, mixed $value, bool $allowNull): ?int { $id = $this->nullableInt($value); if (!$id) { if ($allowNull) return null; return null; } $row = $this->fetchOne("SELECT id FROM $table WHERE id=:id AND is_active=1", ['id' => $id]); if (!$row) throw new \RuntimeException('Danh má»¥c khÃ´ng há»£p lá»‡'); return $id; }
     private function defaultStatusId(): int { return (int)(($this->fetchOne('SELECT id FROM complaint_statuses WHERE code="NEW"') ?: [])['id'] ?? 0); }
     private function defaultPriorityId(): int { return (int)(($this->fetchOne('SELECT id FROM complaint_priorities WHERE code="NORMAL"') ?: [])['id'] ?? 0); }
     private function statusTerminal(int $id): bool { return (bool)(($this->fetchOne('SELECT is_terminal FROM complaint_statuses WHERE id=:id', ['id' => $id]) ?: [])['is_terminal'] ?? false); }
     private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM complaints WHERE ' . $this->tenantWhere('complaints')); return 'PAKN-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function relatedRow(string $type, int $id, string $label, string $meta = ''): array { return ['target_type' => $type, 'target_id' => $id, 'label' => trim($label), 'meta' => trim($meta), 'type_label' => $this->linkTypeLabel($type)]; }
     private function normalizeLink(array $row): array { $type = (string)$row['target_type']; return ['id' => (int)$row['id'], 'complaint_id' => (int)$row['complaint_id'], 'target_type' => $type, 'target_id' => (int)$row['target_id'], 'label' => (string)($row['label'] ?: $this->linkTypeLabel($type) . ' #' . (int)$row['target_id']), 'type_label' => $this->linkTypeLabel($type), 'created_at' => $row['created_at'] ?? null]; }
-    private function linkTypes(): array { return [['value'=>'household','label'=>'Hộ gia đình'],['value'=>'citizen','label'=>'Nhân khẩu'],['value'=>'public_asset','label'=>'Công trình công cộng'],['value'=>'house','label'=>'Nhà ở'],['value'=>'business','label'=>'Hộ sản xuất kinh doanh'],['value'=>'agriculture','label'=>'Sản xuất nông nghiệp'],['value'=>'livestock','label'=>'Vật nuôi'],['value'=>'gis','label'=>'GIS'],['value'=>'other','label'=>'Khác']]; }
+    private function linkTypes(): array { return [['value'=>'household','label'=>'Há»™ gia Ä‘Ã¬nh'],['value'=>'citizen','label'=>'NhÃ¢n kháº©u'],['value'=>'public_asset','label'=>'CÃ´ng trÃ¬nh cÃ´ng cá»™ng'],['value'=>'house','label'=>'NhÃ  á»Ÿ'],['value'=>'business','label'=>'Há»™ sáº£n xuáº¥t kinh doanh'],['value'=>'agriculture','label'=>'Sáº£n xuáº¥t nÃ´ng nghiá»‡p'],['value'=>'livestock','label'=>'Váº­t nuÃ´i'],['value'=>'gis','label'=>'GIS'],['value'=>'other','label'=>'KhÃ¡c']]; }
     private function linkTypeLabel(string $type): string { foreach ($this->linkTypes() as $item) if ($item['value'] === $type) return $item['label']; return $type; }
     private function targetType(string $type): string { $type = preg_replace('/[^a-z_]/', '', strtolower(trim($type))); return match ($type) { 'person', 'persons', 'citizens' => 'citizen', 'publicassets', 'public_assets' => 'public_asset', 'household_business', 'household_businesses', 'business_household' => 'business', 'agri' => 'agriculture', default => $type }; }
     private function hasLink(array $links, string $type, int $targetId): bool { foreach ($links as $link) if ($this->targetType((string)($link['target_type'] ?? $link['type'] ?? '')) === $type && (int)($link['target_id'] ?? $link['id'] ?? 0) === $targetId) return true; return false; }

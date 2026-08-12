@@ -78,7 +78,7 @@ final class PlatformSettingsController extends BaseController
             readfile($asset['path']);
             exit;
         } catch (Throwable) {
-            Response::error('Không tìm thấy asset', 404);
+            Response::error('KhÃ´ng tÃ¬m tháº¥y asset', 404);
         }
     }
     public function maintenance(): void
@@ -96,7 +96,7 @@ final class PlatformSettingsController extends BaseController
             Response::error($e->getMessage(), 422);
         } catch (Throwable $e) {
             error_log('[PLATFORM_SETTINGS_API_ERROR] ' . $e->getMessage());
-            Response::error('Không xử lý được cấu hình nền tảng', 500);
+            Response::error('KhÃ´ng xá»­ lÃ½ Ä‘Æ°á»£c cáº¥u hÃ¬nh ná»n táº£ng', 500);
         }
     }
 }

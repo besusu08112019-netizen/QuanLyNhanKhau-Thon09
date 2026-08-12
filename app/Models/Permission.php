@@ -15,8 +15,8 @@ final class Permission extends BaseModel
         $roles = [
             'SUPER_ADMIN' => 'Super Admin',
             'ADMIN' => 'Admin',
-            'OFFICER' => 'Cán bộ',
-            'VIEWER' => 'Khách',
+            'OFFICER' => 'CÃƒÂ¡n bÃ¡Â»â„¢',
+            'VIEWER' => 'KhÃƒÂ¡ch',
         ];
         $modules = self::MODULES;
         $actions = self::ACTIONS;
@@ -32,8 +32,8 @@ final class Permission extends BaseModel
             if (($row['module'] ?? '') === 'agricultural_land' && in_array($role, ['OFFICER','VIEWER'], true) && ($row['action'] ?? '') !== 'read') continue;
             $matrix[$role]['permissions'][$row['module']][$row['action']] = (bool) $row['allowed'];
         }
-        $matrix['SUPER_ADMIN']['adminNote'] = 'Toàn quyền hệ thống.';
-        $matrix['ADMIN']['adminNote'] = 'Toàn quyền hệ thống.';
+        $matrix['SUPER_ADMIN']['adminNote'] = 'ToÃƒÂ n quyÃ¡Â»Ân hÃ¡Â»â€¡ thÃ¡Â»â€˜ng.';
+        $matrix['ADMIN']['adminNote'] = 'ToÃƒÂ n quyÃ¡Â»Ân hÃ¡Â»â€¡ thÃ¡Â»â€˜ng.';
         return ['roles' => array_values($matrix), 'modules' => $modules, 'actions' => $actions];
     }
 

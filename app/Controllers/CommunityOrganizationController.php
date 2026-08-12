@@ -54,7 +54,7 @@ final class CommunityOrganizationController extends BaseController
     {
         $this->requirePermission('organizations', 'read');
         $row = $this->organizations->find((int) $id);
-        if (!$row) $this->fail('Không tìm thấy hồ sơ đoàn thể - chi hội', 404);
+        if (!$row) $this->fail('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Ä‘oÃ n thá»ƒ - chi há»™i', 404);
         $this->ok($row);
     }
 
@@ -66,7 +66,7 @@ final class CommunityOrganizationController extends BaseController
         } catch (RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
         }
-        $this->audit($user, 'organizations', 'create', 'Thêm thành viên đoàn thể - chi hội', $row['id'] ?? null, ['after' => $row]);
+        $this->audit($user, 'organizations', 'create', 'ThÃªm thÃ nh viÃªn Ä‘oÃ n thá»ƒ - chi há»™i', $row['id'] ?? null, ['after' => $row]);
         $this->ok($row);
     }
 
@@ -74,13 +74,13 @@ final class CommunityOrganizationController extends BaseController
     {
         $user = $this->requirePermission('organizations', 'update');
         $before = $this->organizations->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy hồ sơ đoàn thể - chi hội', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Ä‘oÃ n thá»ƒ - chi há»™i', 404);
         try {
             $row = $this->organizations->upsert((array) $this->input(), (int) $user['id'], (int) $id);
         } catch (RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
         }
-        $this->audit($user, 'organizations', 'update', 'Cập nhật thành viên đoàn thể - chi hội', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'organizations', 'update', 'Cáº­p nháº­t thÃ nh viÃªn Ä‘oÃ n thá»ƒ - chi há»™i', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -88,13 +88,13 @@ final class CommunityOrganizationController extends BaseController
     {
         $user = $this->requirePermission('organizations', 'update');
         $before = $this->organizations->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy hồ sơ đoàn thể - chi hội', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Ä‘oÃ n thá»ƒ - chi há»™i', 404);
         try {
             $row = $this->organizations->endMembership((int) $id, (array) $this->input(), (int) $user['id']);
         } catch (RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
         }
-        $this->audit($user, 'organizations', 'end', 'Thôi tham gia đoàn thể - chi hội', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'organizations', 'end', 'ThÃ´i tham gia Ä‘oÃ n thá»ƒ - chi há»™i', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -102,13 +102,13 @@ final class CommunityOrganizationController extends BaseController
     {
         $user = $this->requirePermission('organizations', 'delete');
         $before = $this->organizations->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy hồ sơ đoàn thể - chi hội', 404);
+        if (!$before) $this->fail('KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Ä‘oÃ n thá»ƒ - chi há»™i', 404);
         try {
             $this->organizations->softDelete((int) $id, (int) $user['id']);
         } catch (RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
         }
-        $this->audit($user, 'organizations', 'delete', 'Xóa hồ sơ đoàn thể - chi hội', $id, ['before' => $before, 'preserve_citizen' => true]);
+        $this->audit($user, 'organizations', 'delete', 'XÃ³a há»“ sÆ¡ Ä‘oÃ n thá»ƒ - chi há»™i', $id, ['before' => $before, 'preserve_citizen' => true]);
         $this->ok(['id' => (int) $id, 'deleted' => true]);
     }
 
