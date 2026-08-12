@@ -84,6 +84,10 @@ final class TenantMigrationService
             'pendingCount' => count($pending),
             'pending' => array_map(static fn(array $row): string => (string) $row['id'], $pending),
             'tables' => $this->tableSummary($pdo),
+            'migrationHistory' => $this->migrationHistorySummary($pdo),
+            'actualSchema' => $this->actualSchemaAudit($pdo),
+            'livestock' => $this->livestockAudit($pdo),
+            'livestockMigrationCompatibility' => $this->livestockMigrationCompatibility($pdo),
         ];
     }
 
@@ -346,12 +350,192 @@ final class TenantMigrationService
     private function tableSummary(PDO $pdo): array
     {
         $summary = [];
-        foreach (['villages','users','households','citizens','settings',self::MIGRATION_TABLE] as $table) {
+        foreach (['villages','users','households','citizens','settings','livestock','livestock_facilities',self::MIGRATION_TABLE] as $table) {
             $summary[$table] = $this->tableExists($pdo, $table);
         }
         return $summary;
     }
 
+    public function actualSchemaAudit(PDO $pdo): array
+    {
+        $tables = [];
+        foreach (['villages','users','households','citizens','settings','platform_settings','rural_clean_water','defense_security_settings','defense_nvqs_records','defense_militia_records','defense_security_force_records','organizations','organization_positions','organization_members','organization_member_history','livestock','livestock_facilities',self::MIGRATION_TABLE] as $table) {
+            $exists = $this->tableExists($pdo, $table);
+            $tables[$table] = [
+                'exists' => $exists,
+                'columns' => $exists ? $this->columnDetails($pdo, $table) : [],
+                'indexes' => $exists ? $this->indexDetails($pdo, $table) : [],
+                'foreignKeys' => $exists ? $this->foreignKeyDetails($pdo, $table) : [],
+            ];
+        }
+        return [
+            'tables' => $tables,
+            'features' => [
+                'platform_settings' => $tables['platform_settings']['exists'],
+                'rural_clean_water' => $tables['rural_clean_water']['exists'],
+                'defense_security' => $tables['defense_security_settings']['exists'] && $tables['defense_nvqs_records']['exists'] && $tables['defense_militia_records']['exists'] && $tables['defense_security_force_records']['exists'],
+                'community_organizations' => $tables['organizations']['exists'] && $tables['organization_positions']['exists'] && $tables['organization_members']['exists'] && $tables['organization_member_history']['exists'],
+                'livestock_legacy' => $tables['livestock']['exists'],
+                'livestock_facilities' => $tables['livestock_facilities']['exists'],
+                'livestock_groups' => $tables['livestock']['exists'] && $this->hasColumns($pdo, 'livestock', ['facility_id', 'animal_group']),
+            ],
+        ];
+    }
+
+    public function livestockAudit(PDO $pdo): array
+    {
+        $hasLivestock = $this->tableExists($pdo, 'livestock');
+        $hasFacilities = $this->tableExists($pdo, 'livestock_facilities');
+        $livestockColumns = $hasLivestock ? $this->columns($pdo, 'livestock') : [];
+        $facilityColumns = $hasFacilities ? $this->columns($pdo, 'livestock_facilities') : [];
+        $indexes = ['livestock' => $hasLivestock ? $this->indexDetails($pdo, 'livestock') : [], 'livestock_facilities' => $hasFacilities ? $this->indexDetails($pdo, 'livestock_facilities') : []];
+        $foreignKeys = ['livestock' => $hasLivestock ? $this->foreignKeyDetails($pdo, 'livestock') : [], 'livestock_facilities' => $hasFacilities ? $this->foreignKeyDetails($pdo, 'livestock_facilities') : []];
+        $hasQuantity = in_array('quantity', $livestockColumns, true);
+        $hasAnimalType = in_array('animal_type', $livestockColumns, true);
+        $hasAnimalGroup = in_array('animal_group', $livestockColumns, true);
+        $hasHouseholdId = in_array('household_id', $livestockColumns, true);
+        $hasStatus = in_array('status', $livestockColumns, true);
+        $activeCondition = $hasStatus ? "COALESCE(status,'ACTIVE') <> 'DELETED'" : '1=1';
+        $pigCondition = $hasAnimalType ? $this->pigSqlCondition('animal_type') : '0=1';
+        $summary = [
+            'tables' => ['livestock' => $hasLivestock, 'livestock_facilities' => $hasFacilities],
+            'columns' => ['livestock' => $livestockColumns, 'livestock_facilities' => $facilityColumns],
+            'indexes' => $indexes,
+            'foreignKeys' => $foreignKeys,
+            'tenantScope' => [
+                'livestock' => ['village_id' => in_array('village_id', $livestockColumns, true), 'tenant_id' => in_array('tenant_id', $livestockColumns, true)],
+                'livestock_facilities' => ['village_id' => in_array('village_id', $facilityColumns, true), 'tenant_id' => in_array('tenant_id', $facilityColumns, true)],
+            ],
+            'facilityRelation' => [
+                'column' => in_array('facility_id', $livestockColumns, true),
+                'table' => $hasFacilities,
+                'index' => $this->hasIndex($indexes['livestock'], 'facility_id'),
+                'foreignKey' => $this->hasForeignKey($foreignKeys['livestock'], 'facility_id', 'livestock_facilities'),
+            ],
+            'hasGroupsNew' => $hasLivestock && $hasFacilities && in_array('facility_id', $livestockColumns, true) && $hasAnimalGroup,
+            'records' => 0,
+            'households' => 0,
+            'with_household_id' => 0,
+            'missing_household_id' => 0,
+            'total_quantity' => 0.0,
+            'pig_records' => 0,
+            'pig_total' => 0.0,
+            'animal_type_totals' => [],
+            'animal_group_totals' => [],
+            'pig_group_totals' => [],
+        ];
+        if (!$hasLivestock) return $summary;
+        $summary['records'] = (int) $pdo->query("SELECT COUNT(*) FROM livestock WHERE $activeCondition")->fetchColumn();
+        if ($hasHouseholdId) {
+            $summary['households'] = (int) $pdo->query("SELECT COUNT(DISTINCT household_id) FROM livestock WHERE $activeCondition AND household_id IS NOT NULL AND household_id > 0")->fetchColumn();
+            $summary['with_household_id'] = (int) $pdo->query("SELECT COUNT(*) FROM livestock WHERE $activeCondition AND household_id IS NOT NULL AND household_id > 0")->fetchColumn();
+            $summary['missing_household_id'] = (int) $pdo->query("SELECT COUNT(*) FROM livestock WHERE $activeCondition AND (household_id IS NULL OR household_id <= 0)")->fetchColumn();
+        }
+        if ($hasQuantity) $summary['total_quantity'] = (float) $pdo->query("SELECT COALESCE(SUM(quantity),0) FROM livestock WHERE $activeCondition")->fetchColumn();
+        if ($hasAnimalType) $summary['pig_records'] = (int) $pdo->query("SELECT COUNT(*) FROM livestock WHERE $activeCondition AND $pigCondition")->fetchColumn();
+        if ($hasAnimalType && $hasQuantity) {
+            $summary['pig_total'] = (float) $pdo->query("SELECT COALESCE(SUM(quantity),0) FROM livestock WHERE $activeCondition AND $pigCondition")->fetchColumn();
+            foreach ($pdo->query("SELECT animal_type, COALESCE(SUM(quantity),0) AS total FROM livestock WHERE $activeCondition GROUP BY animal_type ORDER BY animal_type")->fetchAll() as $row) {
+                $summary['animal_type_totals'][] = ['animal_type' => (string) ($row['animal_type'] ?? ''), 'total' => (float) ($row['total'] ?? 0)];
+            }
+        }
+        if ($hasAnimalGroup && $hasQuantity) {
+            foreach ($pdo->query("SELECT COALESCE(NULLIF(animal_group,''),'UNCLASSIFIED') AS animal_group, COALESCE(SUM(quantity),0) AS total FROM livestock WHERE $activeCondition GROUP BY COALESCE(NULLIF(animal_group,''),'UNCLASSIFIED') ORDER BY animal_group")->fetchAll() as $row) {
+                $summary['animal_group_totals'][] = ['animal_group' => (string) ($row['animal_group'] ?? 'UNCLASSIFIED'), 'total' => (float) ($row['total'] ?? 0)];
+            }
+            if ($hasAnimalType) {
+                foreach ($pdo->query("SELECT COALESCE(NULLIF(animal_group,''),'UNCLASSIFIED') AS animal_group, COALESCE(SUM(quantity),0) AS total FROM livestock WHERE $activeCondition AND $pigCondition GROUP BY COALESCE(NULLIF(animal_group,''),'UNCLASSIFIED') ORDER BY animal_group")->fetchAll() as $row) {
+                    $summary['pig_group_totals'][] = ['animal_group' => (string) ($row['animal_group'] ?? 'UNCLASSIFIED'), 'total' => (float) ($row['total'] ?? 0)];
+                }
+            }
+        }
+        return $summary;
+    }
+
+    public function livestockMigrationCompatibility(PDO $pdo): array
+    {
+        $audit = $this->livestockAudit($pdo);
+        $reasons = [];
+        $hasLivestock = (bool) ($audit['tables']['livestock'] ?? false);
+        $hasFacilities = (bool) ($audit['tables']['livestock_facilities'] ?? false);
+        $records = (int) ($audit['records'] ?? 0);
+        $columns = $audit['columns']['livestock'] ?? [];
+        if (!$hasLivestock) return ['status' => 'BLOCKED', 'reasons' => ['Missing livestock table; create-livestock baseline must be resolved before facilities/groups migration.']];
+        if (($audit['hasGroupsNew'] ?? false) === true) return ['status' => 'ALREADY_APPLIED', 'reasons' => ['livestock_facilities exists and livestock has facility_id + animal_group.']];
+        foreach (['id', 'household_id', 'animal_type', 'quantity'] as $required) if (!in_array($required, $columns, true)) $reasons[] = 'Missing required legacy livestock column: ' . $required;
+        if (!$this->tableExists($pdo, 'households')) $reasons[] = 'Missing households table required by livestock_facilities household foreign key.';
+        elseif (!in_array('id', $this->columns($pdo, 'households'), true)) $reasons[] = 'households table exists but id column is missing.';
+        if (in_array('facility_id', $columns, true) && !$hasFacilities) $reasons[] = 'livestock.facility_id exists but livestock_facilities table is missing.';
+        if ($hasFacilities && (!in_array('facility_id', $columns, true) || !in_array('animal_group', $columns, true))) $reasons[] = 'livestock_facilities exists but livestock is missing facility_id or animal_group.';
+        if ($reasons !== []) return ['status' => 'NEEDS_ADJUSTMENT', 'reasons' => $reasons];
+        if ($records === 0) return ['status' => 'NO_LIVESTOCK_DATA', 'reasons' => ['Legacy livestock table exists and is compatible, but contains no active livestock rows.']];
+        return ['status' => 'SAFE', 'reasons' => ['Legacy livestock schema has required columns and data can be migrated without inferring pig groups.']];
+    }
+
+    private function migrationHistorySummary(PDO $pdo): array
+    {
+        $exists = $this->tableExists($pdo, self::MIGRATION_TABLE);
+        $records = $exists ? (int) $pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn() : 0;
+        return [
+            'tableExists' => $exists,
+            'records' => $records,
+            'done' => $exists ? (int) $pdo->query('SELECT COUNT(*) FROM schema_migrations WHERE status="DONE"')->fetchColumn() : 0,
+            'failed' => $exists ? (int) $pdo->query('SELECT COUNT(*) FROM schema_migrations WHERE status="FAILED"')->fetchColumn() : 0,
+            'emptyHistoryWithSchema' => $records === 0 && ($this->tableExists($pdo, 'villages') || $this->tableExists($pdo, 'households') || $this->tableExists($pdo, 'users')),
+        ];
+    }
+
+    private function columnDetails(PDO $pdo, string $table): array
+    {
+        $stmt = $pdo->prepare('SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, COLUMN_KEY, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table ORDER BY ORDINAL_POSITION');
+        $stmt->execute(['table' => $table]);
+        return array_map(static fn(array $row): array => ['name' => (string) $row['COLUMN_NAME'], 'type' => (string) $row['COLUMN_TYPE'], 'nullable' => (string) $row['IS_NULLABLE'], 'default' => $row['COLUMN_DEFAULT'], 'key' => (string) $row['COLUMN_KEY'], 'extra' => (string) $row['EXTRA']], $stmt->fetchAll());
+    }
+
+    private function indexDetails(PDO $pdo, string $table): array
+    {
+        $stmt = $pdo->prepare('SELECT INDEX_NAME, NON_UNIQUE, COLUMN_NAME, SEQ_IN_INDEX FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table ORDER BY INDEX_NAME, SEQ_IN_INDEX');
+        $stmt->execute(['table' => $table]);
+        $indexes = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $name = (string) $row['INDEX_NAME'];
+            $indexes[$name] ??= ['name' => $name, 'unique' => (int) $row['NON_UNIQUE'] === 0, 'columns' => []];
+            $indexes[$name]['columns'][] = (string) $row['COLUMN_NAME'];
+        }
+        return array_values($indexes);
+    }
+
+    private function foreignKeyDetails(PDO $pdo, string $table): array
+    {
+        $stmt = $pdo->prepare('SELECT CONSTRAINT_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION');
+        $stmt->execute(['table' => $table]);
+        return array_map(static fn(array $row): array => ['name' => (string) $row['CONSTRAINT_NAME'], 'column' => (string) $row['COLUMN_NAME'], 'referencesTable' => (string) $row['REFERENCED_TABLE_NAME'], 'referencesColumn' => (string) $row['REFERENCED_COLUMN_NAME']], $stmt->fetchAll());
+    }
+
+    private function hasColumns(PDO $pdo, string $table, array $columns): bool
+    {
+        $existing = $this->columns($pdo, $table);
+        foreach ($columns as $column) if (!in_array($column, $existing, true)) return false;
+        return true;
+    }
+
+    private function hasIndex(array $indexes, string $column): bool
+    {
+        foreach ($indexes as $index) if (in_array($column, $index['columns'] ?? [], true)) return true;
+        return false;
+    }
+
+    private function hasForeignKey(array $foreignKeys, string $column, string $referencesTable): bool
+    {
+        foreach ($foreignKeys as $foreignKey) if (($foreignKey['column'] ?? '') === $column && ($foreignKey['referencesTable'] ?? '') === $referencesTable) return true;
+        return false;
+    }
+
+    private function pigSqlCondition(string $column): string
+    {
+        $quoted = '`' . str_replace('`', '``', $column) . '`';
+        return '(' . "$quoted = 'Lá»£n' OR $quoted = 'Heo' OR LOWER($quoted) IN ('pig','lon','heo') OR $quoted LIKE '%lá»£n%' OR $quoted LIKE '%heo%' OR $quoted LIKE '%pig%' OR $quoted LIKE '%LÃ¡Â»Â£n%' OR $quoted LIKE '%LÃƒÂ£%'" . ')';
+    }
     private function tableExists(PDO $pdo, string $table): bool
     {
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table');
