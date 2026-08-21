@@ -13,9 +13,9 @@
   <meta name="application-name" content="{{APP_NAME}}">
   <meta name="msapplication-TileColor" content="{{THEME_COLOR}}">
   <title>{{APP_NAME}}</title>
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="{{PWA_MANIFEST_URL}}">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
-  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="{{PWA_APPLE_TOUCH_ICON_URL}}">
   <link rel="apple-touch-startup-image" href="/assets/icons/splash-512.png">
   <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/fontawesome-local.css" rel="stylesheet">

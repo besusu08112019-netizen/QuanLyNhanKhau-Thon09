@@ -99,6 +99,301 @@ function configure_tenant_php_session(): void
     session_name('qh_session_' . substr(hash('sha256', RuntimePaths::host()), 0, 16));
 }
 
+function pwa_tenant_settings(): array
+{
+    $settings = TenantConfig::publicSettings();
+    $settings['tenantHost'] = TenantContext::host() ?: RuntimePaths::host();
+    $settings['villageId'] = TenantContext::villageId();
+    return $settings;
+}
+
+function pwa_tenant_slug(array $settings): string
+{
+    $source = (string) (($settings['tenantHost'] ?? '') ?: ($_SERVER['HTTP_HOST'] ?? 'tenant'));
+    $slug = strtolower((string) preg_replace('/[^a-z0-9]+/', '-', $source));
+    return trim($slug, '-') ?: 'tenant';
+}
+
+function pwa_asset_version(array $settings): string
+{
+    return substr(hash('sha256', implode('|', [
+        pwa_tenant_slug($settings),
+        (string) ($settings['systemName'] ?? ''),
+        (string) ($settings['hamletName'] ?? ''),
+        (string) ($settings['unitName'] ?? ''),
+        (string) ($settings['logoUrl'] ?? ''),
+        (string) ($settings['themeColor'] ?? ''),
+        APP_ASSET_VERSION,
+    ])), 0, 16);
+}
+
+function pwa_url(string $path, array $settings): string
+{
+    return '/' . ltrim($path, '/') . '?v=' . pwa_asset_version($settings);
+}
+
+function pwa_manifest_payload(array $settings): array
+{
+    $unitName = trim((string) TenantConfig::unitName($settings));
+    $name = trim((string) ($settings['systemName'] ?? ''));
+    if ($name === '') {
+        $name = $unitName !== '' ? $unitName : 'He thong quan ly hanh chinh';
+    }
+
+    $shortName = trim((string) ($settings['hamletName'] ?? ''));
+    if ($shortName === '') {
+        $shortName = $unitName !== '' ? $unitName : $name;
+    }
+    if (mb_strlen($shortName, 'UTF-8') > 24) {
+        $shortName = mb_substr($shortName, 0, 24, 'UTF-8');
+    }
+
+    $id = '/pwa/' . pwa_tenant_slug($settings);
+    $themeColor = (string) ($settings['themeColor'] ?? '#0b6b3a');
+    $backgroundColor = (string) ($settings['backgroundColor'] ?? '#eef3f8');
+
+    return [
+        'id' => $id,
+        'name' => $name,
+        'short_name' => $shortName,
+        'description' => $unitName !== '' ? $unitName : $name,
+        'start_url' => '/',
+        'scope' => '/',
+        'display' => 'standalone',
+        'display_override' => ['standalone', 'browser'],
+        'orientation' => 'any',
+        'theme_color' => $themeColor,
+        'background_color' => $backgroundColor,
+        'icons' => [
+            ['src' => pwa_url('pwa-icon-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => pwa_url('pwa-icon-512.png', $settings), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => pwa_url('pwa-maskable-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ['src' => pwa_url('pwa-maskable-512.png', $settings), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+        ],
+    ];
+}
+
+function pwa_send_manifest(bool $sendBody = true): void
+{
+    $settings = pwa_tenant_settings();
+    $payload = json_encode(pwa_manifest_payload($settings), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '{}';
+    header('Content-Type: application/manifest+json; charset=utf-8');
+    header('Cache-Control: no-store, must-revalidate');
+    header('Content-Length: ' . strlen($payload));
+    if ($sendBody) {
+        echo $payload;
+    }
+    exit;
+}
+
+function pwa_icon_label(array $settings): string
+{
+    foreach ([
+        (string) ($settings['hamletName'] ?? ''),
+        (string) ($settings['unitName'] ?? ''),
+        (string) ($settings['tenantHost'] ?? ''),
+    ] as $candidate) {
+        if (preg_match('/\d{1,3}/', $candidate, $matches)) {
+            return str_pad(substr($matches[0], -2), 2, '0', STR_PAD_LEFT);
+        }
+    }
+    return '00';
+}
+
+function pwa_hex_rgb(string $hex, array $fallback): array
+{
+    $value = ltrim(trim($hex), '#');
+    if (strlen($value) === 3) {
+        $value = $value[0] . $value[0] . $value[1] . $value[1] . $value[2] . $value[2];
+    }
+    if (!preg_match('/^[0-9a-f]{6}$/i', $value)) {
+        return $fallback;
+    }
+    return [hexdec(substr($value, 0, 2)), hexdec(substr($value, 2, 2)), hexdec(substr($value, 4, 2))];
+}
+
+function pwa_png_chunk(string $type, string $data): string
+{
+    return pack('N', strlen($data)) . $type . $data . pack('N', crc32($type . $data));
+}
+
+function pwa_draw_rect(array &$pixels, int $width, int $height, int $x, int $y, int $w, int $h, array $color): void
+{
+    $x0 = max(0, $x);
+    $y0 = max(0, $y);
+    $x1 = min($width, $x + $w);
+    $y1 = min($height, $y + $h);
+    for ($row = $y0; $row < $y1; $row++) {
+        for ($col = $x0; $col < $x1; $col++) {
+            $pixels[$row][$col] = $color;
+        }
+    }
+}
+
+function pwa_draw_digit(array &$pixels, int $width, int $height, int $digit, int $x, int $y, int $unit, array $color): void
+{
+    $segments = [
+        0 => [1, 1, 1, 1, 1, 1, 0],
+        1 => [0, 1, 1, 0, 0, 0, 0],
+        2 => [1, 1, 0, 1, 1, 0, 1],
+        3 => [1, 1, 1, 1, 0, 0, 1],
+        4 => [0, 1, 1, 0, 0, 1, 1],
+        5 => [1, 0, 1, 1, 0, 1, 1],
+        6 => [1, 0, 1, 1, 1, 1, 1],
+        7 => [1, 1, 1, 0, 0, 0, 0],
+        8 => [1, 1, 1, 1, 1, 1, 1],
+        9 => [1, 1, 1, 1, 0, 1, 1],
+    ][$digit] ?? [0, 0, 0, 0, 0, 0, 0];
+
+    $thick = max(2, (int) round($unit * 0.28));
+    $long = $unit * 2;
+    $tall = $unit * 4;
+    $map = [
+        [$x + $thick, $y, $long, $thick],
+        [$x + $long + $thick, $y + $thick, $thick, $tall],
+        [$x + $long + $thick, $y + $tall + ($thick * 2), $thick, $tall],
+        [$x + $thick, $y + ($tall * 2) + ($thick * 2), $long, $thick],
+        [$x, $y + $tall + ($thick * 2), $thick, $tall],
+        [$x, $y + $thick, $thick, $tall],
+        [$x + $thick, $y + $tall + $thick, $long, $thick],
+    ];
+    foreach ($segments as $index => $enabled) {
+        if (!$enabled) continue;
+        [$rx, $ry, $rw, $rh] = $map[$index];
+        pwa_draw_rect($pixels, $width, $height, $rx, $ry, $rw, $rh, $color);
+    }
+}
+
+function pwa_local_logo_path(array $settings): ?string
+{
+    $logoUrl = trim((string) ($settings['logoUrl'] ?? ''));
+    if ($logoUrl === '') return null;
+
+    $parts = parse_url($logoUrl);
+    $path = (string) ($parts['path'] ?? $logoUrl);
+    if ($path === '' || str_contains($path, '..') || preg_match('/[\x00-\x1F]/', $path)) return null;
+
+    if (preg_match('#^/api/media/(logo)/(original|thumb)/(\d{4})/(\d{2})/([a-f0-9]{32}\.(?:png|jpg|jpeg|webp))$#i', $path, $matches)
+        || preg_match('#^/uploads/(logo)/(original|thumb)/(\d{4})/(\d{2})/([a-f0-9]{32}\.(?:png|jpg|jpeg|webp))$#i', $path, $matches)) {
+        $config = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
+        $uploadRoot = rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? RuntimePaths::uploadRoot())), '/');
+        $candidate = $uploadRoot . '/' . $matches[1] . '/' . $matches[2] . '/' . $matches[3] . '/' . $matches[4] . '/' . $matches[5];
+        $base = realpath($uploadRoot);
+        $real = realpath($candidate);
+        return $base && $real && str_starts_with($real, $base) && is_file($real) ? $real : null;
+    }
+
+    return null;
+}
+
+function pwa_render_logo_png(int $size, array $settings, bool $maskable): ?string
+{
+    $source = pwa_local_logo_path($settings);
+    if ($source === null || !extension_loaded('gd')) return null;
+
+    $extension = strtolower(pathinfo($source, PATHINFO_EXTENSION));
+    $image = match ($extension) {
+        'png' => @imagecreatefrompng($source),
+        'jpg', 'jpeg' => @imagecreatefromjpeg($source),
+        'webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($source) : false,
+        default => false,
+    };
+    if (!$image) return null;
+
+    $width = imagesx($image);
+    $height = imagesy($image);
+    if ($width < 1 || $height < 1) {
+        imagedestroy($image);
+        return null;
+    }
+
+    $canvas = imagecreatetruecolor($size, $size);
+    imagealphablending($canvas, false);
+    imagesavealpha($canvas, true);
+    $bg = pwa_hex_rgb((string) ($settings['backgroundColor'] ?? '#eef3f8'), [238, 243, 248]);
+    $background = imagecolorallocate($canvas, $bg[0], $bg[1], $bg[2]);
+    imagefilledrectangle($canvas, 0, 0, $size, $size, $background);
+    imagealphablending($canvas, true);
+
+    $safeInset = $maskable ? (int) round($size * 0.18) : (int) round($size * 0.08);
+    $max = max(1, $size - ($safeInset * 2));
+    $scale = min($max / $width, $max / $height);
+    $targetWidth = max(1, (int) round($width * $scale));
+    $targetHeight = max(1, (int) round($height * $scale));
+    $x = (int) floor(($size - $targetWidth) / 2);
+    $y = (int) floor(($size - $targetHeight) / 2);
+    imagecopyresampled($canvas, $image, $x, $y, 0, 0, $targetWidth, $targetHeight, $width, $height);
+
+    ob_start();
+    imagepng($canvas, null, 3);
+    $png = (string) ob_get_clean();
+    imagedestroy($image);
+    imagedestroy($canvas);
+    return $png !== '' ? $png : null;
+}
+
+function pwa_render_png(int $size, array $settings, bool $maskable): string
+{
+    $logoPng = pwa_render_logo_png($size, $settings, $maskable);
+    if ($logoPng !== null) return $logoPng;
+
+    $bg = pwa_hex_rgb((string) ($settings['themeColor'] ?? '#0b6b3a'), [11, 107, 58]);
+    $accent = pwa_hex_rgb((string) ($settings['backgroundColor'] ?? '#eef3f8'), [238, 243, 248]);
+    $white = [255, 255, 255];
+    $pixels = array_fill(0, $size, array_fill(0, $size, $bg));
+    $inset = $maskable ? (int) round($size * 0.18) : (int) round($size * 0.12);
+    pwa_draw_rect($pixels, $size, $size, $inset, $inset, $size - ($inset * 2), $size - ($inset * 2), $accent);
+    pwa_draw_rect($pixels, $size, $size, $inset + 8, $inset + 8, $size - (($inset + 8) * 2), $size - (($inset + 8) * 2), $bg);
+
+    $label = pwa_icon_label($settings);
+    $unit = max(12, (int) round($size * 0.075));
+    $digitWidth = (int) round($unit * 2.7);
+    $gap = (int) round($unit * 0.55);
+    $totalWidth = ($digitWidth * strlen($label)) + ($gap * (strlen($label) - 1));
+    $x = (int) round(($size - $totalWidth) / 2);
+    $y = (int) round(($size - ($unit * 8.6)) / 2);
+    foreach (str_split($label) as $char) {
+        pwa_draw_digit($pixels, $size, $size, (int) $char, $x, $y, $unit, $white);
+        $x += $digitWidth + $gap;
+    }
+
+    $raw = '';
+    for ($row = 0; $row < $size; $row++) {
+        $raw .= "\x00";
+        for ($col = 0; $col < $size; $col++) {
+            $pixel = $pixels[$row][$col];
+            $raw .= chr($pixel[0]) . chr($pixel[1]) . chr($pixel[2]);
+        }
+    }
+    return "\x89PNG\r\n\x1a\n"
+        . pwa_png_chunk('IHDR', pack('NNCCCCC', $size, $size, 8, 2, 0, 0, 0))
+        . pwa_png_chunk('IDAT', gzcompress($raw, 9))
+        . pwa_png_chunk('IEND', '');
+}
+
+function pwa_send_icon(string $name, bool $sendBody = true): void
+{
+    $map = [
+        'pwa-icon-192.png' => [192, false],
+        'pwa-icon-512.png' => [512, false],
+        'pwa-maskable-192.png' => [192, true],
+        'pwa-maskable-512.png' => [512, true],
+    ];
+    if (!isset($map[$name])) {
+        http_response_code(404);
+        exit;
+    }
+    [$size, $maskable] = $map[$name];
+    $png = pwa_render_png($size, pwa_tenant_settings(), $maskable);
+    header('Content-Type: image/png');
+    header('Cache-Control: public, max-age=300, must-revalidate');
+    header('Content-Length: ' . strlen($png));
+    if ($sendBody) {
+        echo $png;
+    }
+    exit;
+}
+
 function reject_oversized_api_request(): void
 {
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -1053,7 +1348,6 @@ if (!str_starts_with($request->path(), '/api')) {
         '{{APP_SETTINGS_JSON}}' => json_encode($tenantSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
     ]);
     $versionedAssets = [
-        'manifest.json',
         'favicon.ico',
         'assets/icons/apple-touch-icon.png',
         'assets/icons/splash-512.png',

@@ -64,6 +64,7 @@ final class TenantConfig
         $merged['contactPhone'] = $merged['phone'] ?? '';
         $merged['contactEmail'] = $merged['email'] ?? '';
         $merged['contactWebsite'] = $merged['website'] ?? '';
+        $merged['appEnv'] = strtolower((string) env('APP_ENV', 'production'));
 
         if ($settings === null) self::$publicSettings = $merged;
         return $merged;
