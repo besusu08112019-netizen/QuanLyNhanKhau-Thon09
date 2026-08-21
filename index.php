@@ -1257,6 +1257,17 @@ function versioned_asset(string $path): string
     return $normalized . $separator . 'v=' . rawurlencode($version);
 }
 
+$pwaPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$pwaName = ltrim($pwaPath, '/');
+$pwaMethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+if (in_array($pwaMethod, ['GET', 'HEAD'], true)) {
+    if ($pwaName === 'manifest.webmanifest') {
+        pwa_send_manifest($pwaMethod !== 'HEAD');
+    }
+    if (in_array($pwaName, ['pwa-icon-192.png', 'pwa-icon-512.png', 'pwa-maskable-192.png', 'pwa-maskable-512.png'], true)) {
+        pwa_send_icon($pwaName, $pwaMethod !== 'HEAD');
+    }
+}
 if (!str_starts_with($request->path(), '/api')) {
     header('Content-Type: text/html; charset=UTF-8');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -1346,6 +1357,8 @@ if (!str_starts_with($request->path(), '/api')) {
         '{{THEME_COLOR}}' => $escapeHtml((string) ($tenantSettings['themeColor'] ?? '#0b6b3a')),
         '{{BACKGROUND_COLOR}}' => $escapeHtml((string) ($tenantSettings['backgroundColor'] ?? '#eef3f8')),
         '{{APP_SETTINGS_JSON}}' => json_encode($tenantSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
+        '{{PWA_MANIFEST_URL}}' => pwa_url('manifest.webmanifest', $tenantSettings),
+        '{{PWA_APPLE_TOUCH_ICON_URL}}' => pwa_url('pwa-icon-192.png', $tenantSettings),
     ]);
     $versionedAssets = [
         'favicon.ico',
