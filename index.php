@@ -1357,8 +1357,8 @@ if (!str_starts_with($request->path(), '/api')) {
         '{{THEME_COLOR}}' => $escapeHtml((string) ($tenantSettings['themeColor'] ?? '#0b6b3a')),
         '{{BACKGROUND_COLOR}}' => $escapeHtml((string) ($tenantSettings['backgroundColor'] ?? '#eef3f8')),
         '{{APP_SETTINGS_JSON}}' => json_encode($tenantSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
-        '{{PWA_MANIFEST_URL}}' => pwa_url('manifest.webmanifest', $tenantSettings),
-        '{{PWA_APPLE_TOUCH_ICON_URL}}' => pwa_url('pwa-icon-192.png', $tenantSettings),
+        '{{PWA_MANIFEST_URL}}' => '/pwa-manifest.php',
+        '{{PWA_APPLE_TOUCH_ICON_URL}}' => '/assets/icons/icon-192.png?v=20260811-pwa-1',
     ]);
     $versionedAssets = [
         'favicon.ico',
