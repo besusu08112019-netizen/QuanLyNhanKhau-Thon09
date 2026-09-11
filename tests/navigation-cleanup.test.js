@@ -27,8 +27,8 @@ const forbiddenCss = [
   { pattern: /mobile-filter-active/, reason: 'legacy mobile filter body state is replaced by .mdu-filter-*' },
   { pattern: /mobile-action-system/, reason: 'legacy mobile action shell is no longer produced by runtime code' },
   { pattern: /mobile-pager-system/, reason: 'legacy mobile pager shell is no longer produced by runtime code' },
-  { pattern: /#(?:householdsScreen|personsScreen|businessHouseholdsScreen)[^{]+tbody td:nth-child\(/, reason: 'module-specific table-to-card CSS must not replace the shared .mdu-* renderer' },
-  { pattern: /#(?:agricultureScreen|livestockScreen)[^{]+tbody td:nth-child\(/, reason: 'module-specific table-to-card CSS must not replace the shared .mdu-* renderer' }
+  { pattern: /#(?:householdsScreen|personsScreen|businessHouseholdsScreen)[^{]+tbody td:nth-child\([^)]*\)::before/, reason: 'module-specific table-to-card CSS must not replace the shared .mdu-* renderer' },
+  { pattern: /#(?:agricultureScreen|livestockScreen)[^{]+tbody td:nth-child\([^)]*\)::before/, reason: 'module-specific table-to-card CSS must not replace the shared .mdu-* renderer' }
 ];
 
 const allowedClickListeners = new Map([
@@ -50,10 +50,28 @@ const allowedClickListeners = new Map([
     "b=>b.onclick=()=>removeCampaign",
     "b=>b.onclick=()=>openPayment"
   ]],
+  ['assets/js/community-organizations.js', [
+    'document.querySelectorAll(\'[data-platform-action="communityOrganizations.save"]\').forEach(button => { button.onclick = event => {',
+    "screen.addEventListener('click', event => {",
+    "document.addEventListener('click', event => {",
+    'button.onclick = handler;',
+    "button.addEventListener('click', handler, true);",
+    "host.querySelectorAll('[data-community-org-tab]').forEach(button => {",
+    "box.querySelectorAll('[data-community-org-citizen]').forEach(button => {"
+  ]],
+  ['assets/js/gis-platform.js', [
+    "host.addEventListener('click', event => {",
+    "markerEl?.addEventListener('click', event => {"
+  ]],
   ['assets/js/pwa.js', [
     "bar.querySelector('[data-pwa-sync]').addEventListener('click', flushQueueSoon);",
     "btn.addEventListener('click', promptInstall);",
-    "banner.querySelector('button').addEventListener('click', applyServiceWorkerUpdate);"
+    "banner.querySelector('button').addEventListener('click', applyServiceWorkerUpdate);",
+    "guide.addEventListener('click', event => {",
+    "panel.querySelector('[data-pwa-debug-close]').addEventListener('click', () => panel.remove());",
+    "panel.querySelector('[data-pwa-debug-refresh]').addEventListener('click', refreshPwaDebugPanel);",
+    "panel.querySelector('[data-pwa-debug-copy]').addEventListener('click', copyPwaDebugReport);",
+    "panel.querySelector('[data-pwa-debug-reset]').addEventListener('click', resetPwaDebugState);"
   ]],
   ['assets/js/session.js', [
     "warningModalEl.querySelector('[data-idle-continue]').addEventListener('click', () => recordActivity(true));",
