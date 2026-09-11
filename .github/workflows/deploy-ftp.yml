@@ -84,29 +84,18 @@ jobs:
           node tests/security-regression.test.js
           find . -path './dist' -prune -o -path './node_modules' -prune -o -path './vendor' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Bust frontend asset cache
+      - name: Verify frontend asset cache marker
         shell: bash
-        env:
-          ASSET_VERSION: deploy-${{ github.run_number }}-${{ github.run_attempt }}
         run: |
           python - <<'PY'
-          import os
           import re
           from pathlib import Path
 
-          version = os.environ['ASSET_VERSION']
-          index_path = Path('index.php')
-          text = index_path.read_text(encoding='utf-8')
-          updated = re.sub(
-              r"define\('APP_ASSET_VERSION',\s*'[^']+'\);",
-              f"define('APP_ASSET_VERSION', '{version}');",
-              text,
-              count=1,
-          )
-          if updated == text:
+          text = Path('index.php').read_text(encoding='utf-8')
+          match = re.search(r"define\('APP_ASSET_VERSION',\s*'([^']+)'\);", text)
+          if not match:
               raise SystemExit('APP_ASSET_VERSION was not found in index.php')
-          index_path.write_text(updated, encoding='utf-8')
-          print(f'Updated APP_ASSET_VERSION to {version}')
+          print(f'APP_ASSET_VERSION={match.group(1)}')
           PY
 
       - name: Build minimal production artifact
@@ -168,7 +157,6 @@ jobs:
             **/node_modules/**
             config/database.php
             storage/cache/**
-            !storage/.htaccess
             backups/**
 
       - name: Deploy to Thon 09 via FTPS
@@ -230,7 +218,7 @@ jobs:
           import sys
           from ftplib import FTP_TLS
 
-          required = {'.htaccess', 'index.php', 'app', 'assets', 'api', 'config', 'views'}
+          required = {'index.php', 'app', 'assets', 'api', 'config', 'views'}
           server = os.environ['FTP_SERVER']
           username = os.environ['FTP_USERNAME']
           password = os.environ['FTP_PASSWORD']

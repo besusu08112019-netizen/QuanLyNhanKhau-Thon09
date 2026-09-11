@@ -43,6 +43,9 @@ function createSandbox() {
           appendChild(child) {
             this.children.push(child);
             return child;
+          },
+          remove() {
+            this.removed = true;
           }
         };
       },
@@ -95,6 +98,24 @@ function loadPlatform() {
   const sandbox = createSandbox();
   vm.runInNewContext(source, sandbox, { filename: 'app-platform.js' });
   return sandbox;
+}
+
+function registerDefenseSecurityRuntime(platform) {
+  const submodules = {
+    defenseSecurityOverview: { path: '/defense-security', label: 'Tổng quan QP-AN', icon: 'fa-chart-pie' },
+    defenseSecurityNvqs: { path: '/defense-security/nvqs', label: 'Nghĩa vụ quân sự', icon: 'fa-person-military-rifle' },
+    defenseSecurityMilitia: { path: '/defense-security/militia', label: 'Dân quân tự vệ', icon: 'fa-people-group' },
+    defenseSecurityForce: { path: '/defense-security/security-force', label: 'ANTT cơ sở', icon: 'fa-user-shield' },
+    defenseSecurityRecords: { path: '/defense-security/security-records', label: 'Theo dõi ANTT', icon: 'fa-eye' },
+    defenseSecurityIncidents: { path: '/defense-security/incidents', label: 'Vụ việc ANTT', icon: 'fa-triangle-exclamation' }
+  };
+  Object.keys(submodules).forEach((moduleKey) => {
+    const cfg = submodules[moduleKey];
+    platform.modules.upsert({ moduleKey, screenId: 'defenseSecurity', path: cfg.path, label: cfg.label, mobileLabel: cfg.label, icon: cfg.icon, permissionScope: 'defense_security' });
+    platform.routes.upsert({ path: cfg.path, moduleKey, screenId: 'defenseSecurity', action: 'list' });
+  });
+  platform.routes.upsert({ path: '/defense-security/overview', moduleKey: 'defenseSecurityOverview', screenId: 'defenseSecurity', action: 'list' });
+  platform.menus.upsert({ key: 'defense', label: 'Quốc phòng - An ninh', icon: 'fa-shield-halved', items: Object.keys(submodules) });
 }
 
 function navRoot(items, datasetKey) {
@@ -229,7 +250,10 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.TenantAppPlatform;
+  const sandbox = loadPlatform();
+  sandbox.window.TenantRuntime = { device: { isMobile: true, isTablet: false } };
+  const platform = sandbox.window.TenantAppPlatform;
+  registerDefenseSecurityRuntime(platform);
   const audit = platform.navigationMapping.audit();
   assert.strictEqual(audit.ok, true);
   assert.strictEqual(audit.issues.length, 0);
@@ -322,11 +346,16 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.TenantAppPlatform;
+  const sandbox = loadPlatform();
+  sandbox.window.TenantRuntime = { device: { isMobile: true, isTablet: false } };
+  const platform = sandbox.window.TenantAppPlatform;
   const nav = {
     textContent: 'old',
     dataset: {},
     children: [],
+    remove() {
+      this.removed = true;
+    },
     appendChild(child) {
       this.children.push(child);
       return child;
@@ -460,6 +489,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'mobile', isMobile: true, isTablet: false, isDesktop: false } };
   const platform = sandbox.window.TenantAppPlatform;
   const calls = [];
   const beforeLoad = platform.moduleLoader.inspect('households', {
@@ -734,7 +764,7 @@ function screenNode(screenId) {
   assert.strictEqual(crumbs[3].params.id, '42');
 
   const createCrumbs = platform.breadcrumbs.fromModuleAction('persons', 'create');
-  assert.strictEqual(createCrumbs[createCrumbs.length - 1].label, 'Them moi');
+  assert.strictEqual(createCrumbs[createCrumbs.length - 1].label, 'Thêm mới');
 
   const root = {
     textContent: 'old',
@@ -755,6 +785,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'mobile', isMobile: true, isTablet: false, isDesktop: false } };
   const platform = sandbox.window.TenantAppPlatform;
   const stateChanges = [];
   const unsubscribe = platform.appState.subscribe((state) => {
@@ -772,6 +803,7 @@ function screenNode(screenId) {
   assert.strictEqual(next.breadcrumbs.map((crumb) => crumb.label).join('>'), 'Dashboard>Quản lý dân cư>Hộ gia đình>Chinh sua');
   assert.ok(sandbox.listeners.some((event) => event.type === 'tenant:app-state-change'));
 
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'desktop', isMobile: false, isTablet: false, isDesktop: true } };
   const patched = platform.appState.patch({ action: 'detail', params: { id: '99' }, width: 1280 });
   assert.strictEqual(patched.action, 'detail');
   assert.strictEqual(patched.params.id, '99');
@@ -789,6 +821,7 @@ function screenNode(screenId) {
 
 {
   const sandbox = loadPlatform();
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'mobile', isMobile: true, isTablet: false, isDesktop: false } };
   const platform = sandbox.window.TenantAppPlatform;
   assert.strictEqual(platform.router.pathFor('households', 'edit', { id: 42 }), '/households/42/edit');
 
@@ -1377,6 +1410,7 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.TenantAppPlatform;
+  registerDefenseSecurityRuntime(platform);
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1469,6 +1503,7 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.TenantAppPlatform;
+  registerDefenseSecurityRuntime(platform);
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1515,6 +1550,7 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.TenantAppPlatform;
+  registerDefenseSecurityRuntime(platform);
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   const sidebarRoot = navRoot(['households', 'persons', 'vehicles'], 'screen');
   const bottomRoot = navRoot(['households', 'persons', 'vehicles'], 'mobileScreen');
@@ -1554,6 +1590,7 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.TenantAppPlatform;
+  registerDefenseSecurityRuntime(platform);
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   screens[0].className = 'screen active';
   screens[0].style.zIndex = '10';
@@ -1627,6 +1664,7 @@ function screenNode(screenId) {
 {
   const sandbox = loadPlatform();
   const platform = sandbox.window.TenantAppPlatform;
+  registerDefenseSecurityRuntime(platform);
   const screens = [screenNode('households'), screenNode('persons'), screenNode('vehicles')];
   screens[0].className = 'screen active';
   screens[0].style.zIndex = '10';
@@ -1751,6 +1789,7 @@ function screenNode(screenId) {
   platform.appState.set({ route: '/households', moduleKey: 'households', screenId: 'households', action: 'list' });
   const navigationScope = ['households', 'persons', 'vehicles'];
 
+  registerDefenseSecurityRuntime(platform);
   const initial = platform.navigationRollout.inspect({ document: domDocument, navigationScope });
   assert.strictEqual(initial.ready, true);
   assert.strictEqual(initial.canActivate, true);
@@ -2445,12 +2484,17 @@ function screenNode(screenId) {
 }
 
 {
-  const platform = loadPlatform().window.TenantAppPlatform;
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.TenantAppPlatform;
   assert.strictEqual(platform.layout.modeFor(1280).key, 'desktop');
+  assert.strictEqual(platform.layout.modeFor(900).key, 'desktop');
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'tablet', isMobile: false, isTablet: true, isDesktop: false } };
   assert.strictEqual(platform.layout.modeFor(900).key, 'tablet');
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'mobile', isMobile: true, isTablet: false, isDesktop: false } };
   assert.strictEqual(platform.layout.modeFor(390).key, 'mobile');
   assert.strictEqual(platform.layout.summary(390).navigation, 'bottomNavigation');
   assert.strictEqual(platform.layout.summary(390).modal, 'fullscreen');
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'desktop', isMobile: false, isTablet: false, isDesktop: true } };
   assert.strictEqual(platform.layout.summary(1280).regions.join(','), 'sidebar,content,modal');
   assert.strictEqual(platform.layout.regionsFor('mobile').map((region) => region.key).join(','), 'content,bottomNavigation,modal');
   platform.layout
@@ -2459,12 +2503,15 @@ function screenNode(screenId) {
   assert.strictEqual(platform.layout.regionsFor('wide').map((region) => region.key).join(','), 'sidebar,breadcrumb,content,modal');
   platform.layout.setBreakpoints({ mobileMax: 600, tabletMax: 1100 });
   assert.strictEqual(platform.layout.breakpoints().tabletMax, 1100);
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'tablet', isMobile: false, isTablet: true, isDesktop: false } };
   assert.strictEqual(platform.layout.modeFor(700).key, 'tablet');
 }
 
 {
-  const platform = loadPlatform().window.TenantAppPlatform;
+  const sandbox = loadPlatform();
+  const platform = sandbox.window.TenantAppPlatform;
   assert.strictEqual(platform.modalLayout.presentation({ width: 1280 }).modal, 'dialog');
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'mobile', isMobile: true, isTablet: false, isDesktop: false } };
   assert.strictEqual(platform.modalLayout.presentation({ width: 390 }).fullscreen, true);
   platform.appState.set({ route: '/households', width: 390 });
   assert.strictEqual(platform.modalLayout.presentation().className, 'modal-fullscreen');
@@ -2477,10 +2524,12 @@ function screenNode(screenId) {
       return dialog;
     }
   };
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'desktop', isMobile: false, isTablet: false, isDesktop: true } };
   const applied = platform.modalLayout.apply(modal, { width: 1280 });
   assert.strictEqual(applied.className, 'modal-dialog');
   assert.strictEqual(dialog.className, 'existing modal-dialog');
   assert.strictEqual(dialog.dataset.modalPresentation, 'dialog');
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'mobile', isMobile: true, isTablet: false, isDesktop: false } };
   platform.modalLayout.apply(dialog, { width: 390 });
   assert.strictEqual(dialog.className, 'existing modal-fullscreen');
   assert.strictEqual(dialog.dataset.modalPresentation, 'fullscreen');
@@ -2532,6 +2581,7 @@ function screenNode(screenId) {
     },
     actions: [{ key: 'vehicles.save', label: 'Luu' }, { key: 'vehicles.cancel', label: 'Huy', variant: 'light' }]
   });
+  sandbox.window.TenantRuntime = { device: { deviceMode: 'mobile', isMobile: true, isTablet: false, isDesktop: false } };
   platform.appState.set({ route: '/vehicles', width: 390 });
   const schema = platform.modals.schema({ formKey: 'vehicleForm' });
   assert.strictEqual(schema.key, 'vehicleModal');

@@ -1,0 +1,14 @@
+/api/** -text
+/app/** -text
+/assets/** -text
+/config/** -text
+/sample-data/** -text
+/views/** -text
+/favicon.ico -text
+/index.php -text
+/manifest.json -text
+/manifest.webmanifest -text
+/offline.html -text
+/robots.txt -text
+/service-worker.js -text
+/sitemap.xml -text

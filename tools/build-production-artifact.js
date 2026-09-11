@@ -5,7 +5,6 @@ const root = path.resolve(__dirname, '..');
 const out = path.join(root, 'dist', 'production');
 
 const includeFiles = [
-  '.htaccess',
   'favicon.ico',
   'index.php',
   'manifest.json',
@@ -19,8 +18,6 @@ const includeFiles = [
   'config/database.example.php',
   'config/env.php',
   'config/policy_alerts.php',
-  'storage/.htaccess',
-  'uploads/.htaccess',
   'views/app.php',
   'views/control-center.php',
 ];
