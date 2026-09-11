@@ -1,6 +1,6 @@
 name: FTPS Target Diagnostic
 
-# Diagnostic-only workflow. It reads existing FTPS/HTTP files and never writes production application files.
+# Diagnostic-only workflow. It reads existing FTPS/HTTP files and never writes production application files. Retry 20260911-password-reset.
 
 on:
   workflow_dispatch:
