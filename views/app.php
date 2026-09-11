@@ -19,7 +19,7 @@
   <link rel="apple-touch-startup-image" href="/assets/icons/splash-512.png">
   <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/fontawesome-local.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/app.min.css?v=qpan-kpi-drilldown-20260910T1530">
+  <link rel="stylesheet" href="/assets/css/app.min.css?v=qpan-kpi-adaptive-20260911T1217">
   <link rel="stylesheet" href="/assets/css/mobile-design-system-v2.min.css?v=device-mode-20260910T1050">
   <link rel="stylesheet" href="/assets/css/print.min.css" media="print">
   <script>
@@ -886,7 +886,7 @@
   <script charset="utf-8" src="/assets/js/household-business.min.js"></script>
   <script charset="utf-8" src="/assets/js/livestock.min.js"></script>
   <script charset="utf-8" src="/assets/js/rural-clean-water.min.js"></script>
-  <script charset="utf-8" src="/assets/js/defense-security.min.js?v=qpan-kpi-drilldown-20260910T1530"></script>
+  <script charset="utf-8" src="/assets/js/defense-security.min.js?v=qpan-kpi-adaptive-20260911T1217"></script>
   <script charset="utf-8" src="/assets/js/party-members.min.js"></script>
   <script charset="utf-8" src="/assets/js/vehicles.min.js"></script>
   <script charset="utf-8" src="/assets/js/contributions.min.js"></script>
