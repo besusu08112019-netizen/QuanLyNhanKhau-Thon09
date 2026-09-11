@@ -11,25 +11,24 @@ final class GisHouseholdLocation extends BaseModel
 
     public function ensureSchema(): void
     {
-        $columns = [
-            'latitude' => 'DECIMAL(10,8) NULL',
-            'longitude' => 'DECIMAL(11,8) NULL',
-            'location_accuracy' => 'INT NULL',
-            'location_source' => "ENUM('MANUAL','GPS') NULL DEFAULT NULL",
-            'location_updated_at' => 'DATETIME NULL',
-            'location_updated_by' => 'BIGINT NULL',
-        ];
+        $this->assertSchemaReady();
+    }
 
-        foreach ($columns as $column => $definition) {
-            if (!$this->columnExists('households', $column)) {
-                $this->execute('ALTER TABLE households ADD COLUMN ' . $column . ' ' . $definition);
-            } elseif (in_array($column, ['latitude', 'longitude', 'location_source', 'location_updated_by'], true)) {
-                $this->execute('ALTER TABLE households MODIFY COLUMN ' . $column . ' ' . $definition);
-            }
-        }
-
-        $this->createIndexIfMissing('households', 'idx_households_location', 'latitude, longitude');
-        $this->createIndexIfMissing('households', 'idx_households_area_location', 'area_code, latitude, longitude');
+    public function assertSchemaReady(): void
+    {
+        $this->assertTableReady('households');
+        $this->assertColumnsReady('households', [
+            'latitude' => ['type' => 'decimal(10,8)', 'nullable' => true],
+            'longitude' => ['type' => 'decimal(11,8)', 'nullable' => true],
+            'location_accuracy' => ['type' => 'int', 'nullable' => true],
+            'location_source' => ['type' => "enum('MANUAL','GPS')", 'nullable' => true],
+            'google_map_url' => ['type' => 'varchar(255)', 'nullable' => true],
+            'location_note' => ['type' => 'text', 'nullable' => true],
+            'location_updated_at' => ['type' => 'datetime', 'nullable' => true],
+            'location_updated_by' => ['type' => 'bigint', 'nullable' => true],
+        ]);
+        $this->assertIndexReady('households', 'idx_households_location', ['latitude', 'longitude']);
+        $this->assertIndexReady('households', 'idx_households_area_location', ['area_code', 'latitude', 'longitude']);
     }
 
     public function lightMarkers(array $filters = []): array
@@ -659,15 +658,59 @@ final class GisHouseholdLocation extends BaseModel
         return $inside;
     }
 
-    private function createIndexIfMissing(string $table, string $index, string $columns): void
+    private function assertTableReady(string $table): void
     {
-        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index', ['table' => $table, 'index' => $index]);
-        if ((int) ($row['total'] ?? 0) > 0) return;
-        try {
-            $this->execute('ALTER TABLE ' . $table . ' ADD INDEX ' . $index . ' (' . $columns . ')');
-        } catch (\Throwable $e) {
-            error_log('[GIS_LOCATION_INDEX_WARNING] ' . $e->getMessage());
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        if ((int) ($row['total'] ?? 0) === 0) {
+            throw new \RuntimeException('GIS household location schema is not ready: missing table ' . $table);
         }
+    }
+
+    private function assertColumnsReady(string $table, array $expected): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => $table]
+        );
+        $columns = [];
+        foreach ($rows as $row) {
+            $columns[(string) $row['COLUMN_NAME']] = $row;
+        }
+        foreach ($expected as $name => $contract) {
+            if (!isset($columns[$name])) {
+                throw new \RuntimeException('GIS household location schema is not ready: missing column households.' . $name);
+            }
+            $actual = $columns[$name];
+            if (!$this->columnTypeCompatible((string) $actual['COLUMN_TYPE'], (string) $contract['type'])) {
+                throw new \RuntimeException('GIS household location schema is not ready: incompatible column type households.' . $name);
+            }
+            $nullable = strtoupper((string) $actual['IS_NULLABLE']) === 'YES';
+            if ($nullable !== (bool) $contract['nullable']) {
+                throw new \RuntimeException('GIS household location schema is not ready: incompatible nullability households.' . $name);
+            }
+        }
+    }
+
+    private function assertIndexReady(string $table, string $index, array $columns): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index ORDER BY SEQ_IN_INDEX',
+            ['table' => $table, 'index' => $index]
+        );
+        $actual = array_map(fn(array $row): string => (string) $row['COLUMN_NAME'], $rows);
+        if ($actual !== $columns) {
+            throw new \RuntimeException('GIS household location schema is not ready: missing index ' . $table . '.' . $index);
+        }
+    }
+
+    private function columnTypeCompatible(string $actual, string $expected): bool
+    {
+        $actual = strtolower($actual);
+        $expected = strtolower($expected);
+        if ($expected === 'int') return str_starts_with($actual, 'int(') || $actual === 'int';
+        if ($expected === 'bigint') return (str_starts_with($actual, 'bigint(') || $actual === 'bigint') && !str_contains($actual, 'unsigned');
+        if ($expected === 'bigint unsigned') return (str_starts_with($actual, 'bigint(') || $actual === 'bigint unsigned') && str_contains($actual, 'unsigned');
+        return $actual === $expected;
     }
 
     private function meritoriousHouseholdExists(string $alias): string

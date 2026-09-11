@@ -39,6 +39,20 @@ final class DefenseSecurityController extends BaseController
     public function securityForceUpdate(string $id): void { $this->saveRecord('security_force', (int) $id); }
     public function securityForceDelete(string $id): void { $this->deleteRecord('security_force', (int) $id); }
 
+    public function securityRecordsIndex(): void { $this->requirePermission('defense_security', 'read'); $this->ok($this->defense->paginateSecurityRecords($this->filters())); }
+    public function securityRecordsShow(string $id): void { $this->showRecord($this->defense->findSecurityRecord((int) $id), 'Không tìm thấy hồ sơ ANTT'); }
+    public function securityRecordsStore(): void { $this->saveRecord('security_record', null); }
+    public function securityRecordsUpdate(string $id): void { $this->saveRecord('security_record', (int) $id); }
+    public function securityRecordsDelete(string $id): void { $this->deleteRecord('security_record', (int) $id); }
+    public function securityRecordLogStore(string $id): void { $this->addRecordLog((int) $id); }
+
+    public function incidentsIndex(): void { $this->requirePermission('defense_security', 'read'); $this->ok($this->defense->paginateIncidents($this->filters())); }
+    public function incidentsShow(string $id): void { $this->showRecord($this->defense->findIncident((int) $id), 'Không tìm thấy vụ việc ANTT'); }
+    public function incidentsStore(): void { $this->saveRecord('incident', null); }
+    public function incidentsUpdate(string $id): void { $this->saveRecord('incident', (int) $id); }
+    public function incidentsDelete(string $id): void { $this->deleteRecord('incident', (int) $id); }
+    public function incidentPersonStore(string $id): void { $this->addIncidentPerson((int) $id); }
+    public function incidentLogStore(string $id): void { $this->addIncidentLog((int) $id); }
     private function showRecord(?array $row, string $message): void
     {
         $this->requirePermission('defense_security', 'read');
@@ -55,7 +69,9 @@ final class DefenseSecurityController extends BaseController
             $before = null;
             if ($type === 'nvqs') { $before = $id ? $this->defense->findNvqs($id) : null; $row = $this->defense->saveNvqs($input, (int) $user['id'], $id); }
             elseif ($type === 'militia') { $before = $id ? $this->defense->findMilitia($id) : null; $row = $this->defense->saveMilitia($input, (int) $user['id'], $id); }
-            else { $before = $id ? $this->defense->findSecurityForce($id) : null; $row = $this->defense->saveSecurityForce($input, (int) $user['id'], $id); }
+            elseif ($type === 'security_force') { $before = $id ? $this->defense->findSecurityForce($id) : null; $row = $this->defense->saveSecurityForce($input, (int) $user['id'], $id); }
+            elseif ($type === 'security_record') { $before = $id ? $this->defense->findSecurityRecord($id) : null; $row = $this->defense->saveSecurityRecord($input, (int) $user['id'], $id); }
+            else { $before = $id ? $this->defense->findIncident($id) : null; $row = $this->defense->saveIncident($input, (int) $user['id'], $id); }
             $action = $id ? 'update' : 'create';
             $this->audit($user, 'defense_security', $action, ($id ? 'Cập nhật ' : 'Thêm ') . $type, $row['id'] ?? null, ['before' => $before, 'after' => $row]);
             $this->ok($row);
@@ -70,7 +86,9 @@ final class DefenseSecurityController extends BaseController
         try {
             if ($type === 'nvqs') { $before = $this->defense->findNvqs($id); $this->defense->deleteNvqs($id, (int) $user['id']); }
             elseif ($type === 'militia') { $before = $this->defense->findMilitia($id); $this->defense->deleteMilitia($id, (int) $user['id']); }
-            else { $before = $this->defense->findSecurityForce($id); $this->defense->deleteSecurityForce($id, (int) $user['id']); }
+            elseif ($type === 'security_force') { $before = $this->defense->findSecurityForce($id); $this->defense->deleteSecurityForce($id, (int) $user['id']); }
+            elseif ($type === 'security_record') { $before = $this->defense->findSecurityRecord($id); $this->defense->deleteSecurityRecord($id, (int) $user['id']); }
+            else { $before = $this->defense->findIncident($id); $this->defense->deleteIncident($id, (int) $user['id']); }
             $this->audit($user, 'defense_security', 'delete', 'Xóa ' . $type, $id, ['before' => $before, 'after' => null]);
             $this->ok(['id' => $id]);
         } catch (Throwable $e) {
@@ -78,6 +96,36 @@ final class DefenseSecurityController extends BaseController
         }
     }
 
+
+    private function addRecordLog(int $recordId): void
+    {
+        $user = $this->requirePermission('defense_security', 'history');
+        try {
+            $row = $this->defense->addSecurityRecordLog($recordId, (array) $this->input(), (int) $user['id']);
+            $this->audit($user, 'defense_security', 'history', 'Thêm lần làm việc hồ sơ ANTT', $recordId, ['after' => $row]);
+            $this->ok($row);
+        } catch (Throwable $e) { $this->fail($this->safeExceptionMessage($e->getMessage(), $e), 422); }
+    }
+
+    private function addIncidentPerson(int $incidentId): void
+    {
+        $user = $this->requirePermission('defense_security', 'update');
+        try {
+            $row = $this->defense->addIncidentPerson($incidentId, (array) $this->input(), (int) $user['id']);
+            $this->audit($user, 'defense_security', 'update', 'Thêm người liên quan vụ việc ANTT', $incidentId, ['after' => $row]);
+            $this->ok($row);
+        } catch (Throwable $e) { $this->fail($this->safeExceptionMessage($e->getMessage(), $e), 422); }
+    }
+
+    private function addIncidentLog(int $incidentId): void
+    {
+        $user = $this->requirePermission('defense_security', 'history');
+        try {
+            $row = $this->defense->addIncidentLog($incidentId, (array) $this->input(), (int) $user['id']);
+            $this->audit($user, 'defense_security', 'history', 'Thêm diễn biến/xử lý vụ việc ANTT', $incidentId, ['after' => $row]);
+            $this->ok($row);
+        } catch (Throwable $e) { $this->fail($this->safeExceptionMessage($e->getMessage(), $e), 422); }
+    }
     private function filters(): array
     {
         return [
@@ -92,8 +140,15 @@ final class DefenseSecurityController extends BaseController
             'eligibility_status' => $this->query('eligibility_status', ''),
             'selection_status' => $this->query('selection_status', ''),
             'participation_status' => $this->query('participation_status', $this->query('status', '')),
+            'record_type' => $this->query('record_type', $this->query('type', '')),
+            'current_status' => $this->query('current_status', $this->query('status', '')),
+            'incident_type_code' => $this->query('incident_type_code', $this->query('type', '')),
+            'incident_status' => $this->query('incident_status', $this->query('status', '')),
+            'from_date' => $this->query('from_date', ''),
+            'to_date' => $this->query('to_date', ''),
             'sort' => $this->query('sort', ''),
             'direction' => $this->query('direction', 'ASC'),
         ];
     }
 }
+

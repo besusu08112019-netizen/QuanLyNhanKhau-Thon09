@@ -50,6 +50,23 @@ final class HouseholdRelationPolicy
         ];
     }
 
+    /** @return list<string> */
+    public static function unresolvedRelationships(): array
+    {
+        return [self::UNKNOWN];
+    }
+
+    public static function isUnresolved(mixed $value): bool
+    {
+        $text = trim((string) ($value ?? ''));
+        return $text !== '' && in_array(self::normalizeRelationship($text), self::unresolvedRelationships(), true);
+    }
+
+    public static function isCanonicalRelationship(mixed $value): bool
+    {
+        $text = trim((string) ($value ?? ''));
+        return $text !== '' && in_array($text, self::standardRelationships(), true);
+    }
     public static function normalizeRelationship(mixed $value, mixed $gender = null): string
     {
         $text = trim((string) ($value ?? ''));
@@ -140,6 +157,7 @@ final class HouseholdRelationPolicy
         if (self::sameName((string) ($member['father_name'] ?? ''), $headName) || self::sameName((string) ($member['mother_name'] ?? ''), $headName)) {
             return self::childRelation($member['gender'] ?? null);
         }
+        if (self::isWifeOfHeadByChildParentNames($member, $headName, $byName)) return self::WIFE;
 
         $father = self::singleMemberByName((string) ($member['father_name'] ?? ''), $byName);
         $mother = self::singleMemberByName((string) ($member['mother_name'] ?? ''), $byName);
@@ -162,6 +180,23 @@ final class HouseholdRelationPolicy
     private static function isFemale(mixed $gender): bool
     {
         return in_array(self::normalizeText((string) ($gender ?? '')), ['nu', 'female'], true);
+    }
+
+    private static function isWifeOfHeadByChildParentNames(array $member, string $headName, array $byName): bool
+    {
+        if (!self::isFemale($member['gender'] ?? null)) return false;
+
+        $motherName = (string) ($member['full_name'] ?? '');
+        if (!self::singleMemberByName($motherName, $byName)) return false;
+
+        foreach ($byName as $candidates) {
+            foreach ($candidates as $candidate) {
+                if (!self::sameName((string) ($candidate['father_name'] ?? ''), $headName)) continue;
+                if (trim((string) ($candidate['mother_name'] ?? '')) === '') continue;
+                if (self::sameName((string) ($candidate['mother_name'] ?? ''), $motherName)) return true;
+            }
+        }
+        return false;
     }
 
     private static function membersByNormalizedName(array $members): array

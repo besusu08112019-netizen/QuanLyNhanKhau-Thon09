@@ -396,7 +396,7 @@ final class ImportController extends BaseController
             $developmentMatches = $this->developmentDataMatches($data);
             if ($developmentMatches) {
                 foreach ($developmentMatches as $match) {
-                    $messages[] = 'Du lieu QA/UAT/TEST/DEMO khong duoc phep trong production: ' . ($match['field'] ?? '') . ' = ' . ($match['marker'] ?? '');
+                    $messages[] = 'D? li?u QA/UAT/TEST/DEMO kh?ng ???c ph?p trong production: ' . ($match['field'] ?? '') . ' = ' . ($match['marker'] ?? '');
                 }
             }
 
@@ -643,10 +643,39 @@ final class ImportController extends BaseController
     private function dateValue(string $value): string
     {
         $value = trim($value);
-        if (is_numeric($value) && (float) $value > 20000) return gmdate('Y-m-d', ((int) $value - 25569) * 86400);
-        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $value, $m)) return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) return $value;
+        if ($value === '') return '';
+        if (is_numeric($value)) {
+            if (preg_match('/^\d{4}$/', $value)) {
+                $year = (int) $value;
+                $currentYear = (int) date('Y') + 1;
+                if ($year >= 1800 && $year <= $currentYear) return sprintf('%04d-01-01', $year);
+            }
+            if ((float) $value > 0) return $this->excelSerialDate((float) $value);
+        }
+        foreach (['!Y-m-d', '!Y/m/d', '!d/m/Y', '!j/n/Y', '!d-m-Y', '!j-n-Y', '!d.m.Y', '!j.n.Y'] as $format) {
+            $date = \DateTimeImmutable::createFromFormat($format, $value);
+            $errors = \DateTimeImmutable::getLastErrors();
+            if ($date instanceof \DateTimeImmutable && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
+                return $date->format('Y-m-d');
+            }
+        }
         return '';
+    }
+
+    private function excelSerialDate(float $serial): string
+    {
+        try {
+            if (class_exists('PhpOffice\PhpSpreadsheet\Shared\Date')) {
+                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($serial)->format('Y-m-d');
+            }
+
+            $days = (int) floor($serial);
+            return (new \DateTimeImmutable('1899-12-30 00:00:00', new \DateTimeZone('UTC')))
+                ->modify('+' . $days . ' days')
+                ->format('Y-m-d');
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     private function yesNo(mixed $value): int { $text = $this->headerKey((string) $value); return in_array($text, ['1','co','yes','true','x'], true) ? 1 : 0; }

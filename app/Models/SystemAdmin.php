@@ -15,7 +15,7 @@ final class SystemAdmin extends BaseModel
         $population = (new PopulationStatistics())->counts();
         return [
             'system' => [
-                'name' => $app['name'] ?? TenantConfig::setting('systemName', 'He thong Quan ly Hanh chinh'),
+                'name' => $app['name'] ?? TenantConfig::setting('systemName', 'Hệ thống Quản lý Hành chính'),
                 'version' => defined('APP_ASSET_VERSION') ? APP_ASSET_VERSION : '1.0.0',
                 'phpVersion' => PHP_VERSION,
                 'databaseVersion' => $this->databaseVersion(),

@@ -102,7 +102,7 @@ body.print-landscape {
 .print-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
   page-break-inside: auto;
   margin-top: 4mm;
 }

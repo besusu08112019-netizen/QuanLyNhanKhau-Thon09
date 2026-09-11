@@ -28,7 +28,7 @@ final class VillageDocumentController extends BaseController
     {
         $this->requirePermission('documents', 'read');
         $row = $this->documents->find((int)$id);
-        if (!$row) $this->fail('Khong tim thay van ban', 404);
+        if (!$row) $this->fail('Không tìm thấy văn bản', 404);
         $this->ok($row);
     }
 
@@ -37,7 +37,7 @@ final class VillageDocumentController extends BaseController
         $user = $this->requireAdminDocumentWrite('create');
         try {
             $row = $this->documents->upsert((array)$this->input(), (int)$user['id']);
-            $this->audit($user, 'documents', 'create', 'Them van ban', $row['id'], ['after' => $row]);
+            $this->audit($user, 'documents', 'create', 'Thêm văn bản', $row['id'], ['after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -49,9 +49,9 @@ final class VillageDocumentController extends BaseController
         $user = $this->requireAdminDocumentWrite('update');
         try {
             $before = $this->documents->find((int)$id);
-            if (!$before) $this->fail('Khong tim thay van ban', 404);
+            if (!$before) $this->fail('Không tìm thấy văn bản', 404);
             $row = $this->documents->upsert((array)$this->input(), (int)$user['id'], (int)$id);
-            $this->audit($user, 'documents', 'update', 'Cap nhat van ban', $id, ['before' => $before, 'after' => $row]);
+            $this->audit($user, 'documents', 'update', 'Cập nhật văn bản', $id, ['before' => $before, 'after' => $row]);
             $this->ok($row);
         } catch (Throwable $e) {
             $this->fail($e->getMessage(), 422);
@@ -62,14 +62,14 @@ final class VillageDocumentController extends BaseController
     {
         $user = $this->requireAdminDocumentWrite('delete');
         $before = $this->documents->find((int)$id);
-        if (!$before) $this->fail('Khong tim thay van ban', 404);
+        if (!$before) $this->fail('Không tìm thấy văn bản', 404);
         $deleted = $this->documents->deletePermanently((int)$id);
         $storage = new FileStorageService();
         $removed = [];
         foreach (($deleted['files'] ?? []) as $file) {
             $removed[] = ['id' => $file['id'] ?? null, 'path' => $file['stored_path'] ?? '', 'deleted' => $storage->deleteStoredFile((string)($file['stored_path'] ?? ''))];
         }
-        $this->audit($user, 'documents', 'delete', 'Xoa van ban', $id, ['before' => $before, 'files' => $removed, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null], 'WARN');
+        $this->audit($user, 'documents', 'delete', 'Xóa văn bản', $id, ['before' => $before, 'files' => $removed, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null], 'WARN');
         $this->ok(['id' => (int)$id]);
     }
 
@@ -77,7 +77,7 @@ final class VillageDocumentController extends BaseController
     {
         $user = $this->requireAdminDocumentWrite('upload');
         $existing = $this->documents->find((int)$id);
-        if (!$existing) $this->fail('Khong tim thay van ban', 404);
+        if (!$existing) $this->fail('Không tìm thấy văn bản', 404);
         $file = $_FILES['file'] ?? null;
         if (!is_array($file)) $this->fail('Vui long chon file van ban', 422);
         $storage = new FileStorageService();
@@ -92,7 +92,7 @@ final class VillageDocumentController extends BaseController
         $stored['mime'] = $info['mime'];
         $stored['extension'] = $info['extension'];
         $row = $this->documents->addAttachment((int)$id, $stored, $file, (int)$user['id']);
-        $this->audit($user, 'documents', 'upload', 'Dinh kem file van ban', $id, ['file' => $row, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
+        $this->audit($user, 'documents', 'upload', 'Đính kèm file văn bản', $id, ['file' => $row, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
         $this->ok($row);
     }
 
@@ -108,11 +108,11 @@ final class VillageDocumentController extends BaseController
     {
         $user = $this->requireAdminDocumentWrite('delete');
         $before = $this->documents->attachment((int)$id, (int)$fileId);
-        if (!$before) $this->fail('Khong tim thay file dinh kem', 404);
+        if (!$before) $this->fail('Không tìm thấy file đính kèm', 404);
         $deleted = $this->documents->deleteAttachment((int)$id, (int)$fileId, (int)$user['id']);
         $storage = new FileStorageService();
         $removed = $storage->deleteStoredFile((string)($deleted['stored_path'] ?? ''));
-        $this->audit($user, 'documents', 'delete_attachment', 'Xoa file dinh kem van ban', $id, ['file' => $before, 'physical_deleted' => $removed, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
+        $this->audit($user, 'documents', 'delete_attachment', 'Xóa file đính kèm văn bản', $id, ['file' => $before, 'physical_deleted' => $removed, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
         $this->ok(['id' => (int)$fileId]);
     }
 
@@ -152,14 +152,14 @@ final class VillageDocumentController extends BaseController
     {
         $user = $this->requirePermission('documents', 'read');
         $file = $fileId > 0 ? $this->documents->attachment($id, $fileId) : $this->documents->primaryAttachment($id);
-        if (!$file) $this->fail('Khong tim thay file dinh kem', 404);
+        if (!$file) $this->fail('Không tìm thấy file đính kèm', 404);
         $storage = new FileStorageService();
         $path = $storage->safeFilePath((string)$file['stored_path']);
         if (!$path || !is_file($path)) $this->fail('File khong con ton tai', 404);
         $mime = mime_content_type($path) ?: (string)$file['mime_type'];
-        if (!$this->allowedMime($mime, (string)$file['original_name'])) $this->fail('Dinh dang file khong duoc ho tro', 415);
+        if (!$this->allowedMime($mime, (string)$file['original_name'])) $this->fail('Định dạng file không được hỗ trợ', 415);
         if ($preview && $mime !== 'application/pdf') $preview = false;
-        if (!$preview) $this->audit($user, 'documents', 'download', 'Tai xuong van ban', $id, ['file' => $file['id'] ?? null, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
+        if (!$preview) $this->audit($user, 'documents', 'download', 'Tải xuống văn bản', $id, ['file' => $file['id'] ?? null, 'ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
         header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($path));
@@ -190,3 +190,4 @@ final class VillageDocumentController extends BaseController
         return $user;
     }
 }
+

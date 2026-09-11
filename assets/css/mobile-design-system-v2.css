@@ -490,6 +490,38 @@
     display: none;
   }
 
+  @media (max-width: 430px) {
+    body.app-authenticated .app-v2-toolbar,
+    body.app-authenticated .app-v2-map-toolbar {
+      flex-wrap: wrap;
+      overflow-x: visible;
+    }
+
+    body.app-authenticated .app-v2-toolbar .app-v2-chip {
+      flex: 1 1 calc(50% - var(--app-space-2));
+      justify-content: center;
+      min-width: 0;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    body.app-authenticated .app-v2-map-toolbar .app-v2-icon-button {
+      flex: 0 0 var(--app-control-height);
+    }
+
+    body.app-authenticated .app-v2-tabs {
+      grid-auto-columns: minmax(0, 1fr);
+    }
+
+    body.app-authenticated .app-v2-tab {
+      min-width: 0;
+      padding-inline: var(--app-space-2);
+      white-space: normal;
+      line-height: 1.15;
+    }
+  }
+
   body.app-authenticated .app-v2-bottom-sheet {
     position: fixed;
     left: 0;
@@ -775,7 +807,12 @@
   }
 
   body.app-authenticated :where(.app-v2-dashboard, .app-v2-module-dashboard, .app-v2-module-screen) {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.app-authenticated :where(.app-v2-dashboard, .app-v2-module-dashboard, .app-v2-module-screen) :where(button, .btn, a[href], input, select, textarea, .pagination, .leaflet-control) {
+    scroll-margin-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
   }
 
   body.app-authenticated .app-v2-dashboard-layout {
@@ -879,6 +916,8 @@
     gap: var(--app-space-3);
     align-items: start;
     padding: var(--app-space-4);
+    min-width: 0;
+    max-width: 100%;
   }
 
   body.app-authenticated .app-v2-pagination-host {
@@ -933,6 +972,8 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   body.app-authenticated .app-v2-record-meta {
@@ -1041,9 +1082,26 @@ body.app-authenticated .app-v2-record-actions {
   align-items: center;
   justify-content: flex-end;
   gap: var(--app-space-2);
+  flex-wrap: wrap;
   flex: 0 0 auto;
   grid-column: 3;
+  justify-self: end;
   align-self: flex-start;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 430px) {
+  body.app-authenticated .app-v2-record-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  body.app-authenticated .app-v2-record-actions {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    justify-content: flex-end;
+    width: 100%;
+  }
 }
 
 body.app-authenticated .app-v2-record-card[data-app-v2-primary-proxy] {
@@ -1095,6 +1153,10 @@ body.app-authenticated .app-v2-record-card[data-app-v2-primary-proxy]:focus-visi
   body.app-authenticated .app-v2-global-fab {
     display: none;
   }
+
+  body.app-authenticated:has(#livestockScreen.active) .app-v2-global-fab {
+    display: inline-flex;
+  }
 }
 
 @media (min-width: 601px) and (max-width: 1024px) {
@@ -1127,4 +1189,52 @@ body.app-authenticated .app-v2-record-card[data-app-v2-primary-proxy]:focus-visi
   .app-v2-module-screen {
     display: none;
   }
+}
+
+@media (max-width: 1024px) {
+  body.app-authenticated #householdsScreen.active .app-v2-module-screen ~ .household-filter-card,
+  body.app-authenticated #householdsScreen.active .app-v2-module-screen ~ .module-list-card {
+    display: block;
+  }
+
+  body.app-authenticated #householdsScreen.active .household-filter-card {
+    padding: var(--app-space-4);
+    margin-bottom: var(--app-space-4);
+  }
+
+  body.app-authenticated #householdsScreen.active .household-filter-card .household-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--app-space-3);
+  }
+
+  body.app-authenticated #householdsScreen.active .household-filter-card .module-field,
+  body.app-authenticated #householdsScreen.active .household-filter-card .module-page-size-field {
+    display: grid;
+    gap: var(--app-space-2);
+  }
+
+  body.app-authenticated #householdsScreen.active .household-filter-card .module-reset-btn {
+    width: 100%;
+    min-height: var(--app-control-height);
+    border-radius: var(--app-radius-sm);
+    font-size: 14px;
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1024px) {
+  body.app-authenticated #householdsScreen.active .household-filter-card .household-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Device-mode separation: app-v2 mobile/tablet shell must not appear on desktop browsers. */
+html.app-device-desktop body.app-authenticated .app-v2-dashboard,
+html.app-device-desktop body.app-authenticated .app-v2-module-dashboard,
+html.app-device-desktop body.app-authenticated .app-v2-module-screen,
+html.app-device-desktop body.app-authenticated .app-v2-bottom-nav,
+html.app-device-desktop body.app-authenticated .app-v2-bottom-sheet,
+html.app-device-desktop body.app-authenticated .app-v2-global-fab {
+  display: none !important;
 }

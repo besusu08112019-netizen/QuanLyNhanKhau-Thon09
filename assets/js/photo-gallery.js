@@ -183,8 +183,8 @@
       renderDashboard({});
       renderGrid({ items: [], total: 0 });
       renderPager({});
-      setLoading(false, error.message || 'Khong tai duoc kho anh');
-      toast(error.message || 'Khong tai duoc kho anh', 'danger');
+      setLoading(false, error.message || 'Không tải được kho ảnh');
+      toast(error.message || 'Không tải được kho ảnh', 'danger');
     }
   }
 

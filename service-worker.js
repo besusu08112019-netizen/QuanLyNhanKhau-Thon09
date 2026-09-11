@@ -1,4 +1,4 @@
-const PWA_VERSION = 'tenant-pwa-v20260729-policy-alert-utf8-1';
+const PWA_VERSION = 'tenant-pwa-v20260910-qpan-kpi-drilldown-1';
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
 const TENANT_NAMESPACE = `${self.location.host}${APP_BASE_PATH}`.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
 const CACHE_PREFIX = `${TENANT_NAMESPACE}-${PWA_VERSION}`;
@@ -41,19 +41,20 @@ const STATIC_ASSETS = [
   withBase('assets/vendor/leaflet.markercluster/MarkerCluster.css'),
   withBase('assets/vendor/leaflet.markercluster/MarkerCluster.Default.css'),
   withBase('assets/vendor/leaflet.markercluster/leaflet.markercluster.js'),
-  withBase('assets/css/app.min.css'),
-  withBase('assets/css/mobile-design-system-v2.min.css'),
+  withBase('assets/css/app.min.css?v=qpan-kpi-drilldown-20260910T1530'),
+  withBase('assets/css/mobile-design-system-v2.min.css?v=device-mode-20260910T1050'),
   withBase('assets/js/i18n.min.js'),
   withBase('assets/js/print-framework.min.js'),
-  withBase('assets/js/app-platform.min.js'),
-  withBase('assets/js/mobile-component-library.min.js'),
-  withBase('assets/js/app.utf8.min.js'),
+  withBase('assets/js/app-platform.min.js?v=device-mode-20260910T1050'),
+  withBase('assets/js/mobile-component-library.min.js?v=device-mode-20260910T1050'),
+  withBase('assets/js/app.utf8.min.js?v=person-movement-business-20260910T0750'),
   withBase('assets/js/csrf.min.js'),
   withBase('assets/js/session.min.js'),
   withBase('assets/js/admin.utf8.min.js'),
-  withBase('assets/js/admin-panel.min.js'),
+  withBase('assets/js/admin-panel.min.js?v=movement-ui-loader-20260910T0545'),
   withBase('assets/js/agricultural-land.min.js'),
-  withBase('assets/js/view-inline-patches.min.js'),
+  withBase('assets/js/defense-security.min.js?v=qpan-kpi-drilldown-20260910T1530'),
+  withBase('assets/js/view-inline-patches.min.js?v=movement-ui-loader-20260910T0545'),
   withBase('assets/js/module-dashboards.min.js'),
   withBase('assets/js/pwa.min.js')
 ];

@@ -3,11 +3,92 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use App\Services\HealthInsuranceEligibilityService;
 use RuntimeException;
 use Throwable;
 
 final class HouseholdPoverty extends BaseModel
 {
+    private ?HealthInsuranceEligibilityService $healthInsuranceEligibility = null;
+    private const PERIODS_TABLE = 'poverty_periods';
+    private const RECORDS_TABLE = 'household_poverty_records';
+    private const LOGS_TABLE = 'poverty_change_logs';
+    private const REQUIRED_COLUMNS = [
+        self::PERIODS_TABLE => [
+            'id',
+            'village_id',
+            'name',
+            'start_date',
+            'end_date',
+            'note',
+            'status',
+            'created_at',
+            'updated_at',
+            'deleted_at',
+            'created_by',
+            'updated_by',
+            'deleted_by',
+        ],
+        self::RECORDS_TABLE => [
+            'id',
+            'village_id',
+            'household_id',
+            'period_id',
+            'poverty_type',
+            'effective_from',
+            'effective_to',
+            'decision_number',
+            'note',
+            'status',
+            'created_at',
+            'updated_at',
+            'deleted_at',
+            'created_by',
+            'updated_by',
+            'deleted_by',
+        ],
+        self::LOGS_TABLE => [
+            'id',
+            'village_id',
+            'record_id',
+            'household_id',
+            'period_id',
+            'action',
+            'before_json',
+            'after_json',
+            'actor_user_id',
+            'ip_address',
+            'user_agent',
+            'created_at',
+        ],
+    ];
+    private const REQUIRED_INDEXES = [
+        self::PERIODS_TABLE => [
+            'PRIMARY',
+            'uq_poverty_periods_village_name',
+            'idx_poverty_periods_village_status',
+            'idx_poverty_periods_dates',
+        ],
+        self::RECORDS_TABLE => [
+            'PRIMARY',
+            'idx_household_poverty_village_period_type',
+            'idx_household_poverty_household_period',
+            'idx_household_poverty_effective',
+        ],
+        self::LOGS_TABLE => [
+            'PRIMARY',
+            'idx_poverty_change_logs_record',
+            'idx_poverty_change_logs_household',
+            'idx_poverty_change_logs_created',
+        ],
+    ];
+    private const REQUIRED_FOREIGN_KEYS = [
+        self::RECORDS_TABLE => [
+            ['fk_household_poverty_household', 'household_id', 'households', 'id'],
+            ['fk_household_poverty_period', 'period_id', self::PERIODS_TABLE, 'id'],
+        ],
+    ];
+
     public const PERIOD_STATUSES = [
         'ACTIVE' => 'Đang áp dụng',
         'ENDED' => 'Đã kết thúc',
@@ -16,6 +97,7 @@ final class HouseholdPoverty extends BaseModel
     public const POVERTY_TYPES = [
         'NONE' => 'Không thuộc diện',
         'NEAR_POOR' => 'Hộ cận nghèo',
+        'MEDIUM' => 'Hộ trung bình',
         'POOR' => 'Hộ nghèo',
     ];
 
@@ -27,72 +109,75 @@ final class HouseholdPoverty extends BaseModel
 
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS poverty_periods (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  village_id BIGINT UNSIGNED NOT NULL,
-  name VARCHAR(120) NOT NULL,
-  start_date DATE NOT NULL,
-  end_date DATE NOT NULL,
-  note TEXT NULL,
-  status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  deleted_at DATETIME NULL,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  UNIQUE KEY uq_poverty_periods_village_name (village_id, name),
-  KEY idx_poverty_periods_village_status (village_id, status),
-  KEY idx_poverty_periods_dates (village_id, start_date, end_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        $this->assertSchemaReady();
+    }
 
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS household_poverty_records (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  village_id BIGINT UNSIGNED NOT NULL,
-  household_id BIGINT UNSIGNED NOT NULL,
-  period_id BIGINT UNSIGNED NOT NULL,
-  poverty_type VARCHAR(20) NOT NULL DEFAULT 'NONE',
-  effective_from DATE NOT NULL,
-  effective_to DATE NULL,
-  decision_number VARCHAR(120) NULL,
-  note TEXT NULL,
-  status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  deleted_at DATETIME NULL,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_household_poverty_village_period_type (village_id, period_id, poverty_type, status),
-  KEY idx_household_poverty_household_period (village_id, household_id, period_id, status),
-  KEY idx_household_poverty_effective (village_id, effective_from, effective_to),
-  CONSTRAINT fk_household_poverty_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT,
-  CONSTRAINT fk_household_poverty_period FOREIGN KEY (period_id) REFERENCES poverty_periods(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+    private function assertSchemaReady(): void
+    {
+        foreach (self::REQUIRED_COLUMNS as $table => $columns) {
+            if (!$this->tableExists($table)) {
+                throw new RuntimeException('Household Poverty schema is not provisioned: missing table ' . $table);
+            }
 
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS poverty_change_logs (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  village_id BIGINT UNSIGNED NOT NULL,
-  record_id BIGINT UNSIGNED NULL,
-  household_id BIGINT UNSIGNED NULL,
-  period_id BIGINT UNSIGNED NULL,
-  action VARCHAR(40) NOT NULL,
-  before_json JSON NULL,
-  after_json JSON NULL,
-  actor_user_id BIGINT UNSIGNED NULL,
-  ip_address VARCHAR(64) NULL,
-  user_agent VARCHAR(255) NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_poverty_change_logs_record (village_id, record_id),
-  KEY idx_poverty_change_logs_household (village_id, household_id),
-  KEY idx_poverty_change_logs_created (village_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+            $missingColumns = array_values(array_filter(
+                $columns,
+                fn(string $column): bool => !$this->columnExists($table, $column)
+            ));
+            if ($missingColumns !== []) {
+                throw new RuntimeException('Household Poverty schema is not provisioned: missing columns ' . $table . '.' . implode(', ' . $table . '.', $missingColumns));
+            }
+        }
+
+        foreach (self::REQUIRED_INDEXES as $table => $indexes) {
+            $missingIndexes = array_values(array_filter(
+                $indexes,
+                fn(string $index): bool => !$this->indexExists($table, $index)
+            ));
+            if ($missingIndexes !== []) {
+                throw new RuntimeException('Household Poverty schema is not provisioned: missing indexes ' . $table . '.' . implode(', ' . $table . '.', $missingIndexes));
+            }
+        }
+
+        foreach (self::REQUIRED_FOREIGN_KEYS as $table => $foreignKeys) {
+            foreach ($foreignKeys as [$constraint, $column, $referencedTable, $referencedColumn]) {
+                if (!$this->foreignKeyExists($table, $constraint, $column, $referencedTable, $referencedColumn)) {
+                    throw new RuntimeException('Household Poverty schema is not provisioned: missing foreign key ' . $constraint);
+                }
+            }
+        }
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => $table]
+        );
+        return (int) ($row['total'] ?? 0) > 0;
+    }
+
+    private function indexExists(string $table, string $index): bool
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index_name',
+            ['table' => $table, 'index_name' => $index]
+        );
+        return (int) ($row['total'] ?? 0) > 0;
+    }
+
+    private function foreignKeyExists(string $table, string $constraint, string $column, string $referencedTable, string $referencedColumn): bool
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint_name AND COLUMN_NAME = :column_name AND REFERENCED_TABLE_NAME = :referenced_table AND REFERENCED_COLUMN_NAME = :referenced_column',
+            [
+                'table' => $table,
+                'constraint_name' => $constraint,
+                'column_name' => $column,
+                'referenced_table' => $referencedTable,
+                'referenced_column' => $referencedColumn,
+            ]
+        );
+        return (int) ($row['total'] ?? 0) > 0;
     }
 
     public function catalogs(): array
@@ -137,10 +222,18 @@ SQL);
         $params = $this->periodParams($data, $userId);
         $this->validatePeriodDates($params['start_date'], $params['end_date']);
         $duplicate = $this->fetchOne(
-            'SELECT id FROM poverty_periods WHERE name=:name AND status <> "DELETED" AND ' . $this->tenantWhere('poverty_periods') . ' AND (:id=0 OR id<>:id) LIMIT 1',
+            'SELECT id, start_date, end_date, note, status FROM poverty_periods WHERE name=:name AND status <> "DELETED" AND ' . $this->tenantWhere('poverty_periods') . ' AND (:id=0 OR id<>:id) LIMIT 1',
             $this->withTenant(['name' => $params['name'], 'id' => (int) ($id ?? 0)])
         );
-        if ($duplicate) throw new RuntimeException('Tên giai đoạn đã tồn tại');
+        if ($duplicate) {
+            $samePeriod = !$id
+                && (string) $duplicate['start_date'] === (string) $params['start_date']
+                && (string) $duplicate['end_date'] === (string) $params['end_date']
+                && (string) $duplicate['status'] === (string) $params['status']
+                && trim((string) ($duplicate['note'] ?? '')) === trim((string) ($params['note'] ?? ''));
+            if ($samePeriod) return $this->findPeriod((int) $duplicate['id']) ?: [];
+            throw new RuntimeException('Tên giai đoạn đã tồn tại');
+        }
 
         if ($id) {
             $params['id'] = $id;
@@ -148,14 +241,39 @@ SQL);
                 'UPDATE poverty_periods SET name=:name, start_date=:start_date, end_date=:end_date, note=:note, status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('poverty_periods'),
                 $this->withTenant($params)
             );
+            $this->deactivateOtherActivePeriods($id, $params['status'], $userId);
             return $this->findPeriod($id) ?: [];
+        }
+
+        $deleted = $this->fetchOne(
+            'SELECT id FROM poverty_periods WHERE name=:name AND status = "DELETED" AND ' . $this->tenantWhere('poverty_periods') . ' ORDER BY id DESC LIMIT 1',
+            $this->withTenant(['name' => $params['name']])
+        );
+        if ($deleted) {
+            $params['id'] = (int) $deleted['id'];
+            $this->execute(
+                'UPDATE poverty_periods SET start_date=:start_date, end_date=:end_date, note=:note, status=:status, deleted_at=NULL, deleted_by=NULL, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('poverty_periods'),
+                $this->withTenant($params)
+            );
+            $this->deactivateOtherActivePeriods((int) $deleted['id'], $params['status'], $userId);
+            return $this->findPeriod((int) $deleted['id']) ?: [];
         }
 
         $columns = ['name','start_date','end_date','note','status','created_by','updated_by'];
         $insert = $params + ['created_by' => $userId, 'updated_by' => $userId];
         $this->addTenantInsert('poverty_periods', $columns, $insert);
         $newId = $this->insert('INSERT INTO poverty_periods (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $insert);
+        $this->deactivateOtherActivePeriods($newId, $params['status'], $userId);
         return $this->findPeriod($newId) ?: [];
+    }
+
+    private function deactivateOtherActivePeriods(int $activeId, string $status, int $userId): void
+    {
+        if ($status !== 'ACTIVE') return;
+        $this->execute(
+            'UPDATE poverty_periods SET status="ENDED", updated_by=:user WHERE id<>:id AND status="ACTIVE" AND ' . $this->tenantWhere('poverty_periods'),
+            $this->withTenant(['id' => $activeId, 'user' => $userId])
+        );
     }
 
     public function deletePeriod(int $id, int $userId): void
@@ -209,6 +327,12 @@ SQL);
             $this->writeChangeLog('create', $row, null, $row, $userId, $requestMeta);
             foreach ($closed as $item) $this->writeChangeLog('end_active', $item['after'], $item['before'], $item['after'], $userId, $requestMeta);
             $this->db->commit();
+            foreach ($closed as $item) {
+                if (($item['before']['poverty_type'] ?? null) === 'MEDIUM') {
+                    $this->endHealthInsuranceMediumForRecord($item['before'], $userId, $requestMeta);
+                }
+            }
+            if (($row['poverty_type'] ?? null) === 'MEDIUM') $this->syncHealthInsuranceForRecord($row, $userId, $requestMeta);
             return $row ?: [];
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
@@ -226,7 +350,7 @@ SQL);
         if (!$period) throw new RuntimeException('Không tìm thấy giai đoạn');
         $this->validateRecordDates($params['effective_from'], $params['effective_to'], $period);
         if ((int) $params['household_id'] !== (int) $before['household_id'] || (int) $params['period_id'] !== (int) $before['period_id'] || $params['poverty_type'] !== $before['poverty_type']) {
-            throw new RuntimeException('Không sửa trực tiếp hộ, giai đoạn hoặc loại hộ. Hãy tạo bản ghi mới để giữ lịch sử.');
+            return $this->createRecord($params, $userId, $requestMeta);
         }
         $params['id'] = $id;
         $this->execute(
@@ -235,6 +359,7 @@ SQL);
         );
         $after = $this->findRecord($id) ?: [];
         $this->writeChangeLog('update', $after, $before, $after, $userId, $requestMeta);
+        if (($before['poverty_type'] ?? null) === 'MEDIUM' || ($after['poverty_type'] ?? null) === 'MEDIUM') $this->syncHealthInsuranceForRecord($after, $userId, $requestMeta);
         return $after;
     }
 
@@ -245,6 +370,7 @@ SQL);
         if (!$before) throw new RuntimeException('Không tìm thấy bản ghi hộ nghèo/cận nghèo');
         $this->execute('UPDATE household_poverty_records SET status="DELETED", deleted_at=NOW(), deleted_by=:user, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('household_poverty_records'), $this->withTenant(['id' => $id, 'user' => $userId]));
         $this->writeChangeLog('delete', ['id' => $id] + $before, $before, null, $userId, $requestMeta);
+        if (($before['poverty_type'] ?? null) === 'MEDIUM') $this->endHealthInsuranceMediumForRecord($before, $userId, $requestMeta);
     }
 
     public function householdHistory(int $householdId): array
@@ -264,22 +390,26 @@ SQL);
         $query = trim($query);
         if (mb_strlen($query) < 2) return [];
         $q = '%' . mb_strtolower($query, 'UTF-8') . '%';
+        $headNameExpr = $this->headNameExpression('h');
         $rows = $this->fetchAll(
-            'SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.area_code
+            'SELECT h.id, h.household_code, h.head_citizen_name, ' . $headNameExpr . ' AS head_citizen_name_fallback, h.address, h.area_code
              FROM households h
              WHERE h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")
                AND ' . $this->tenantWhere('h', 'households') . '
-               AND (LOWER(h.household_code) LIKE :q OR LOWER(COALESCE(h.head_citizen_name,"")) LIKE :q OR LOWER(COALESCE(h.address,"")) LIKE :q)
+               AND (LOWER(h.household_code) LIKE :q OR LOWER(COALESCE(h.head_citizen_name,"")) LIKE :q OR LOWER(COALESCE(' . $headNameExpr . ',"")) LIKE :q OR LOWER(COALESCE(h.address,"")) LIKE :q)
              ORDER BY h.household_code ASC LIMIT ' . max(1, min(30, $limit)),
             $this->withTenant(['q' => $q])
         );
-        return array_map(fn(array $row) => [
-            'id' => (int) $row['id'],
-            'household_code' => (string) ($row['household_code'] ?? ''),
-            'head_citizen_name' => (string) ($row['head_citizen_name'] ?? ''),
-            'address' => (string) ($row['address'] ?? ''),
-            'area_code' => (string) ($row['area_code'] ?? ''),
-        ], $rows);
+        return array_map(function (array $row): array {
+            $row = $this->withHeadName($row);
+            return [
+                'id' => (int) $row['id'],
+                'household_code' => (string) ($row['household_code'] ?? ''),
+                'head_citizen_name' => (string) ($row['head_citizen_name'] ?? ''),
+                'address' => (string) ($row['address'] ?? ''),
+                'area_code' => (string) ($row['area_code'] ?? ''),
+            ];
+        }, $rows);
     }
 
     public function dashboard(array $filters): array
@@ -290,7 +420,8 @@ SQL);
             "SELECT
                 COALESCE(SUM(CASE WHEN hpr.status='ACTIVE' AND hpr.poverty_type='POOR' THEN 1 ELSE 0 END),0) AS poor,
                 COALESCE(SUM(CASE WHEN hpr.status='ACTIVE' AND hpr.poverty_type='NEAR_POOR' THEN 1 ELSE 0 END),0) AS near_poor,
-                COALESCE(SUM(CASE WHEN hpr.poverty_type IN ('POOR','NEAR_POOR') AND YEAR(hpr.effective_from)=:year_filter THEN 1 ELSE 0 END),0) AS new_entries,
+                COALESCE(SUM(CASE WHEN hpr.status='ACTIVE' AND hpr.poverty_type='MEDIUM' THEN 1 ELSE 0 END),0) AS medium,
+                COALESCE(SUM(CASE WHEN hpr.poverty_type IN ('POOR','NEAR_POOR','MEDIUM') AND YEAR(hpr.effective_from)=:year_filter THEN 1 ELSE 0 END),0) AS new_entries,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='POOR' AND hpr.status='ENDED' AND hpr.effective_to IS NOT NULL AND YEAR(hpr.effective_to)=:year_filter THEN 1 ELSE 0 END),0) AS escaped_poor,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='NEAR_POOR' AND hpr.status='ENDED' AND hpr.effective_to IS NOT NULL AND YEAR(hpr.effective_to)=:year_filter THEN 1 ELSE 0 END),0) AS escaped_near_poor
              FROM household_poverty_records hpr
@@ -303,6 +434,7 @@ SQL);
             "SELECT YEAR(hpr.effective_from) AS year,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='POOR' THEN 1 ELSE 0 END),0) AS poor,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='NEAR_POOR' THEN 1 ELSE 0 END),0) AS near_poor,
+                COALESCE(SUM(CASE WHEN hpr.poverty_type='MEDIUM' THEN 1 ELSE 0 END),0) AS medium,
                 COALESCE(SUM(CASE WHEN hpr.poverty_type='NONE' THEN 1 ELSE 0 END),0) AS none_count
              FROM household_poverty_records hpr
              INNER JOIN poverty_periods pp ON pp.id=hpr.period_id
@@ -315,17 +447,23 @@ SQL);
             'metrics' => [
                 'poor' => (int) ($metrics['poor'] ?? 0),
                 'near_poor' => (int) ($metrics['near_poor'] ?? 0),
+                'medium' => (int) ($metrics['medium'] ?? 0),
+                'ho_ngheo' => (int) ($metrics['poor'] ?? 0),
+                'ho_can_ngheo' => (int) ($metrics['near_poor'] ?? 0),
+                'ho_trung_binh' => (int) ($metrics['medium'] ?? 0),
                 'new_entries' => (int) ($metrics['new_entries'] ?? 0),
                 'escaped_poor' => (int) ($metrics['escaped_poor'] ?? 0),
                 'escaped_near_poor' => (int) ($metrics['escaped_near_poor'] ?? 0),
                 'total_households' => $households,
                 'poor_rate' => $households > 0 ? round(((int) ($metrics['poor'] ?? 0)) * 100 / $households, 2) : 0,
                 'near_poor_rate' => $households > 0 ? round(((int) ($metrics['near_poor'] ?? 0)) * 100 / $households, 2) : 0,
+                'medium_rate' => $households > 0 ? round(((int) ($metrics['medium'] ?? 0)) * 100 / $households, 2) : 0,
             ],
             'trend' => array_map(fn(array $row) => [
                 'year' => (int) $row['year'],
                 'poor' => (int) $row['poor'],
                 'near_poor' => (int) $row['near_poor'],
+                'medium' => (int) $row['medium'],
                 'none' => (int) $row['none_count'],
             ], $trend),
         ];
@@ -363,10 +501,13 @@ SQL);
             'summary' => [
                 'Tổng hộ nghèo' => $dashboard['metrics']['poor'],
                 'Tổng hộ cận nghèo' => $dashboard['metrics']['near_poor'],
+                'Tổng hộ trung bình' => $dashboard['metrics']['medium'],
                 'Tỷ lệ hộ nghèo' => $dashboard['metrics']['poor_rate'] . '%',
                 'Tỷ lệ hộ cận nghèo' => $dashboard['metrics']['near_poor_rate'] . '%',
+                'Tỷ lệ hộ trung bình' => $dashboard['metrics']['medium_rate'] . '%',
                 'So với năm trước - hộ nghèo' => $dashboard['metrics']['poor'] - $previous['metrics']['poor'],
                 'So với năm trước - hộ cận nghèo' => $dashboard['metrics']['near_poor'] - $previous['metrics']['near_poor'],
+                'So với năm trước - hộ trung bình' => $dashboard['metrics']['medium'] - $previous['metrics']['medium'],
             ],
             'metrics' => $dashboard['metrics'],
             'trend' => $dashboard['trend'],
@@ -399,7 +540,8 @@ SQL);
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
         if ($search !== '') {
             $params['q'] = '%' . mb_strtolower($search, 'UTF-8') . '%';
-            $where[] = '(LOWER(h.household_code) LIKE :q OR LOWER(COALESCE(h.head_citizen_name,"")) LIKE :q OR LOWER(COALESCE(h.address,"")) LIKE :q OR LOWER(COALESCE(hpr.decision_number,"")) LIKE :q)';
+            $headNameExpr = $this->headNameExpression('h');
+            $where[] = '(LOWER(h.household_code) LIKE :q OR LOWER(COALESCE(h.head_citizen_name,"")) LIKE :q OR LOWER(COALESCE(' . $headNameExpr . ',"")) LIKE :q OR LOWER(COALESCE(h.address,"")) LIKE :q OR LOWER(COALESCE(hpr.decision_number,"")) LIKE :q)';
         }
         $periodId = (int) ($filters['period_id'] ?? $filters['periodId'] ?? 0);
         if ($periodId > 0) {
@@ -429,17 +571,19 @@ SQL);
         $list = trim((string) ($filters['list'] ?? ''));
         if ($list === 'poor') $where[] = 'hpr.poverty_type="POOR" AND hpr.status="ACTIVE"';
         if ($list === 'near_poor') $where[] = 'hpr.poverty_type="NEAR_POOR" AND hpr.status="ACTIVE"';
-        if ($list === 'new_entries') $where[] = 'hpr.poverty_type IN ("POOR","NEAR_POOR")';
+        if ($list === 'medium') $where[] = 'hpr.poverty_type="MEDIUM" AND hpr.status="ACTIVE"';
+        if ($list === 'new_entries') $where[] = 'hpr.poverty_type IN ("POOR","NEAR_POOR","MEDIUM")';
         if ($list === 'escaped_poor') $where[] = 'hpr.poverty_type="POOR" AND hpr.status="ENDED"';
         if ($list === 'escaped_near_poor') $where[] = 'hpr.poverty_type="NEAR_POOR" AND hpr.status="ENDED"';
         $result = ['WHERE ' . implode(' AND ', $where), $params];
-        if ($withOrder) $result[] = $this->listOrder($filters, ['household_code' => 'h.household_code', 'head' => 'h.head_citizen_name', 'period' => 'pp.start_date', 'poverty_type' => 'hpr.poverty_type', 'effective_from' => 'hpr.effective_from', 'status' => 'hpr.status'], 'effective_from', 'DESC', ['hpr.id DESC']);
+        if ($withOrder) $result[] = $this->listOrder($filters, ['household_code' => 'h.household_code', 'head' => $this->headNameExpression('h'), 'period' => 'pp.start_date', 'poverty_type' => 'hpr.poverty_type', 'effective_from' => 'hpr.effective_from', 'status' => 'hpr.status'], 'effective_from', 'DESC', ['hpr.id DESC']);
         return $result;
     }
 
     private function recordSelect(): string
     {
-        return 'SELECT hpr.*, pp.name AS period_name, pp.start_date AS period_start_date, pp.end_date AS period_end_date, h.household_code, h.head_citizen_name, h.address, h.area_code
+        $headNameExpr = $this->headNameExpression('h');
+        return 'SELECT hpr.*, pp.name AS period_name, pp.start_date AS period_start_date, pp.end_date AS period_end_date, h.household_code, h.head_citizen_name, ' . $headNameExpr . ' AS head_citizen_name_fallback, h.address, h.area_code
             FROM household_poverty_records hpr
             INNER JOIN poverty_periods pp ON pp.id=hpr.period_id
             INNER JOIN households h ON h.id=hpr.household_id';
@@ -489,7 +633,10 @@ SQL);
             $before = $this->normalizeRecord($row);
             $effectiveTo = date('Y-m-d', strtotime($newEffectiveFrom . ' -1 day'));
             if ($effectiveTo < (string) $row['effective_from']) {
-                throw new RuntimeException('Ngày bắt đầu mới phải sau ngày bắt đầu của bản ghi hiệu lực hiện tại');
+                if ($newEffectiveFrom !== (string) $row['effective_from']) {
+                    throw new RuntimeException('Ngày bắt đầu mới phải sau ngày bắt đầu của bản ghi hiệu lực hiện tại');
+                }
+                $effectiveTo = (string) $row['effective_from'];
             }
             $this->execute('UPDATE household_poverty_records SET status="ENDED", effective_to=:effective_to, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('household_poverty_records'), $this->withTenant(['id' => (int) $row['id'], 'effective_to' => $effectiveTo, 'user' => $userId]));
             $after = $this->findRecord((int) $row['id'], true) ?: [];
@@ -516,6 +663,23 @@ SQL);
         $this->insert('INSERT INTO poverty_change_logs (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')', $params);
     }
 
+    private function healthInsuranceEligibility(): HealthInsuranceEligibilityService
+    {
+        return $this->healthInsuranceEligibility ??= new HealthInsuranceEligibilityService();
+    }
+
+    private function syncHealthInsuranceForRecord(array $record, int $userId, array $requestMeta): void
+    {
+        if (($record['poverty_type'] ?? null) !== 'MEDIUM') return;
+        $this->healthInsuranceEligibility()->synchronizeHousehold((int) $record['household_id'], $userId, null, $requestMeta);
+    }
+
+    private function endHealthInsuranceMediumForRecord(array $record, int $userId, array $requestMeta): void
+    {
+        $year = (int) substr((string) ($record['effective_from'] ?? date('Y-m-d')), 0, 4);
+        $this->healthInsuranceEligibility()->endHouseholdMedium((int) $record['household_id'], $year, $userId, $requestMeta);
+    }
+
     private function normalizePeriod(array $row): array
     {
         $row['id'] = (int) $row['id'];
@@ -525,9 +689,27 @@ SQL);
 
     private function normalizeRecord(array $row): array
     {
+        $row = $this->withHeadName($row);
         foreach (['id','household_id','period_id'] as $key) $row[$key] = (int) $row[$key];
         $row['poverty_type_label'] = self::POVERTY_TYPES[$row['poverty_type'] ?? 'NONE'] ?? (string) ($row['poverty_type'] ?? '');
         $row['status_label'] = self::RECORD_STATUSES[$row['status'] ?? 'ACTIVE'] ?? (string) ($row['status'] ?? '');
+        return $row;
+    }
+
+    private function headNameExpression(string $alias): string
+    {
+        return 'COALESCE(NULLIF(' . $alias . '.head_citizen_name, ""), '
+            . '(SELECT c.full_name FROM citizens c WHERE c.id = ' . $alias . '.head_citizen_id AND c.status <> "DELETED" LIMIT 1), '
+            . '(SELECT c.full_name FROM citizens c WHERE c.household_id = ' . $alias . '.id AND c.status <> "DELETED" ORDER BY CASE WHEN c.presence_status = "AT_HOME" THEN 0 ELSE 1 END, c.id ASC LIMIT 1))';
+    }
+
+    private function withHeadName(array $row): array
+    {
+        $fallback = trim((string) ($row['head_citizen_name_fallback'] ?? ''));
+        if (trim((string) ($row['head_citizen_name'] ?? '')) === '' && $fallback !== '') {
+            $row['head_citizen_name'] = $fallback;
+        }
+        unset($row['head_citizen_name_fallback']);
         return $row;
     }
 
@@ -585,15 +767,34 @@ SQL);
 
     private function dateOrFail(mixed $value, string $label): string
     {
-        $text = trim((string) ($value ?? ''));
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $text)) throw new RuntimeException($label . ' không hợp lệ');
-        return $text;
+        $date = $this->normalizeInputDate($value);
+        if ($date === null) throw new RuntimeException($label . ' không hợp lệ');
+        return $date;
     }
 
     private function dateOrNull(mixed $value): ?string
     {
         $text = trim((string) ($value ?? ''));
-        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $text) ? $text : null;
+        return $text === '' ? null : $this->normalizeInputDate($text);
+    }
+
+    private function normalizeInputDate(mixed $value): ?string
+    {
+        $text = trim((string) ($value ?? ''));
+        if ($text === '') return null;
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $text, $m)) {
+            return checkdate((int) $m[2], (int) $m[3], (int) $m[1]) ? $text : null;
+        }
+        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $text, $m)) {
+            $first = (int) $m[1];
+            $second = (int) $m[2];
+            $year = (int) $m[3];
+            $month = $second > 12 ? $first : ($first > 12 ? $second : $first);
+            $day = $second > 12 ? $second : ($first > 12 ? $first : $second);
+            if (!checkdate($month, $day, $year)) return null;
+            return sprintf('%04d-%02d-%02d', $year, $month, $day);
+        }
+        return null;
     }
 
     private function date(?string $value): string

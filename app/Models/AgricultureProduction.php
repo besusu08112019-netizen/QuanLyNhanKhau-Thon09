@@ -23,164 +23,325 @@ final class AgricultureProduction extends BaseModel
 
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS agri_stakeholders (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  stakeholder_type ENUM('VILLAGE_HOUSEHOLD','OUTSIDE_PERSON','BUSINESS','COOPERATIVE','ORGANIZATION') NOT NULL DEFAULT 'VILLAGE_HOUSEHOLD',
-  household_id BIGINT UNSIGNED NULL,
-  name VARCHAR(255) NOT NULL,
-  identity_number VARCHAR(80) NULL,
-  tax_code VARCHAR(80) NULL,
-  phone VARCHAR(50) NULL,
-  address VARCHAR(500) NULL,
-  note TEXT NULL,
-  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_agri_stakeholders_household (household_id),
-  KEY idx_agri_stakeholders_name (name),
-  CONSTRAINT fk_agri_stakeholders_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        foreach (['agri_stakeholders', 'agri_land_parcels', 'agri_production_plots', 'agri_crop_seasons', 'agri_production_logs', 'agri_damages', 'agri_files'] as $table) {
-            $this->ensureTenantColumn($table);
+        $this->assertSchemaReady();
+    }
+
+    public function assertSchemaReady(): void
+    {
+        foreach ($this->schemaContract() as $table => $contract) {
+            if (!$this->tableExists($table)) {
+                throw new \RuntimeException("Agriculture Production schema is not ready: missing table {$table}");
+            }
+            $this->assertColumns($table, $contract['columns']);
+            $this->assertIndexes($table, $contract['indexes']);
+            $this->assertForeignKeys($table, $contract['fks']);
         }
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS agri_land_parcels (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  parcel_code VARCHAR(40) NOT NULL UNIQUE,
-  map_sheet_no VARCHAR(80) NULL,
-  parcel_no VARCHAR(80) NULL,
-  field_area VARCHAR(255) NULL,
-  field_name VARCHAR(255) NULL,
-  land_type VARCHAR(120) NULL,
-  legal_area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  actual_area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  cultivated_area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  abandoned_area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  owner_id BIGINT UNSIGNED NOT NULL,
-  producer_id BIGINT UNSIGNED NOT NULL,
-  usage_form ENUM('SELF','LEASE_OUT','LEASE_IN','BORROW','PARTNERSHIP') NOT NULL DEFAULT 'SELF',
-  latitude DECIMAL(11,8) NULL,
-  longitude DECIMAL(11,8) NULL,
-  polygon_geojson LONGTEXT NULL,
-  status ENUM('ACTIVE','IDLE','LEASED','ABANDONED','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_agri_parcels_owner (owner_id),
-  KEY idx_agri_parcels_producer (producer_id),
-  KEY idx_agri_parcels_status (status),
-  KEY idx_agri_parcels_field (field_area),
-  CONSTRAINT fk_agri_parcels_owner FOREIGN KEY (owner_id) REFERENCES agri_stakeholders(id) ON DELETE RESTRICT,
-  CONSTRAINT fk_agri_parcels_producer FOREIGN KEY (producer_id) REFERENCES agri_stakeholders(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS agri_production_plots (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  parcel_id BIGINT UNSIGNED NOT NULL,
-  plot_code VARCHAR(80) NULL,
-  plot_name VARCHAR(160) NOT NULL,
-  area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  status ENUM('ACTIVE','IDLE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_agri_plots_parcel (parcel_id),
-  CONSTRAINT fk_agri_plots_parcel FOREIGN KEY (parcel_id) REFERENCES agri_land_parcels(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS agri_crop_seasons (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  plot_id BIGINT UNSIGNED NOT NULL,
-  season_name VARCHAR(80) NOT NULL,
-  crop VARCHAR(120) NOT NULL,
-  variety VARCHAR(160) NULL,
-  area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  land_prep_date DATE NULL,
-  sowing_date DATE NULL,
-  transplant_date DATE NULL,
-  fertilizer_date DATE NULL,
-  pesticide_date DATE NULL,
-  expected_harvest_date DATE NULL,
-  actual_harvest_date DATE NULL,
-  yield_value DECIMAL(14,2) NOT NULL DEFAULT 0,
-  output_value DECIMAL(14,2) NOT NULL DEFAULT 0,
-  sale_price DECIMAL(14,2) NOT NULL DEFAULT 0,
-  revenue DECIMAL(14,2) NOT NULL DEFAULT 0,
-  cost DECIMAL(14,2) NOT NULL DEFAULT 0,
-  profit DECIMAL(14,2) NOT NULL DEFAULT 0,
-  status ENUM('PLANNED','IN_PROGRESS','HARVESTED','CANCELLED','DELETED') NOT NULL DEFAULT 'IN_PROGRESS',
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_agri_seasons_plot (plot_id),
-  KEY idx_agri_seasons_crop (crop),
-  KEY idx_agri_seasons_name (season_name),
-  CONSTRAINT fk_agri_seasons_plot FOREIGN KEY (plot_id) REFERENCES agri_production_plots(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS agri_production_logs (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  season_id BIGINT UNSIGNED NOT NULL,
-  activity_type VARCHAR(50) NOT NULL,
-  activity_date DATE NOT NULL,
-  actor_name VARCHAR(255) NULL,
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  KEY idx_agri_logs_season (season_id),
-  CONSTRAINT fk_agri_logs_season FOREIGN KEY (season_id) REFERENCES agri_crop_seasons(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS agri_damages (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  parcel_id BIGINT UNSIGNED NOT NULL,
-  season_id BIGINT UNSIGNED NULL,
-  damage_type VARCHAR(50) NOT NULL,
-  event_date DATE NOT NULL,
-  affected_area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  damage_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
-  estimated_output_loss DECIMAL(14,2) NOT NULL DEFAULT 0,
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_agri_damages_parcel (parcel_id),
-  KEY idx_agri_damages_season (season_id),
-  CONSTRAINT fk_agri_damages_parcel FOREIGN KEY (parcel_id) REFERENCES agri_land_parcels(id) ON DELETE CASCADE,
-  CONSTRAINT fk_agri_damages_season FOREIGN KEY (season_id) REFERENCES agri_crop_seasons(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS agri_files (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  parcel_id BIGINT UNSIGNED NULL,
-  season_id BIGINT UNSIGNED NULL,
-  damage_id BIGINT UNSIGNED NULL,
-  file_kind ENUM('IMAGE','DOCUMENT') NOT NULL DEFAULT 'IMAGE',
-  category VARCHAR(120) NULL,
-  original_name VARCHAR(255) NOT NULL,
-  stored_name VARCHAR(255) NOT NULL,
-  storage_path VARCHAR(500) NOT NULL,
-  mime_type VARCHAR(120) NULL,
-  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  KEY idx_agri_files_parcel (parcel_id),
-  KEY idx_agri_files_season (season_id),
-  KEY idx_agri_files_damage (damage_id),
-  CONSTRAINT fk_agri_files_parcel FOREIGN KEY (parcel_id) REFERENCES agri_land_parcels(id) ON DELETE CASCADE,
-  CONSTRAINT fk_agri_files_season FOREIGN KEY (season_id) REFERENCES agri_crop_seasons(id) ON DELETE CASCADE,
-  CONSTRAINT fk_agri_files_damage FOREIGN KEY (damage_id) REFERENCES agri_damages(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+    }
+
+    private function schemaContract(): array
+    {
+        $tenant = ['village_id' => ['bigint(20) unsigned', false, '1']];
+        $timestamps = [
+            'created_at' => ['datetime', false, 'current_timestamp'],
+            'updated_at' => ['datetime', true, 'NULL', 'on update current_timestamp()'],
+        ];
+
+        return [
+            'agri_stakeholders' => [
+                'columns' => $tenant + [
+                    'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+                    'stakeholder_type' => ["enum('VILLAGE_HOUSEHOLD','OUTSIDE_PERSON','BUSINESS','COOPERATIVE','ORGANIZATION')", false, 'VILLAGE_HOUSEHOLD'],
+                    'household_id' => ['bigint(20) unsigned', true, 'NULL'],
+                    'name' => ['varchar(255)', false, null],
+                    'identity_number' => ['varchar(80)', true, 'NULL'],
+                    'tax_code' => ['varchar(80)', true, 'NULL'],
+                    'phone' => ['varchar(50)', true, 'NULL'],
+                    'address' => ['varchar(500)', true, 'NULL'],
+                    'note' => ['text', true, 'NULL'],
+                    'status' => ["enum('ACTIVE','INACTIVE','DELETED')", false, 'ACTIVE'],
+                ] + $timestamps,
+                'indexes' => [
+                    'PRIMARY' => ['id'],
+                    'idx_agri_stakeholders_household' => ['household_id'],
+                    'idx_agri_stakeholders_name' => ['name'],
+                    'idx_agri_stakeholders_village' => ['village_id'],
+                ],
+                'fks' => [
+                    'fk_agri_stakeholders_household' => ['household_id', 'households', 'id', 'RESTRICT', 'SET NULL'],
+                ],
+            ],
+            'agri_land_parcels' => [
+                'columns' => $tenant + [
+                    'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+                    'parcel_code' => ['varchar(40)', false, null],
+                    'map_sheet_no' => ['varchar(80)', true, 'NULL'],
+                    'parcel_no' => ['varchar(80)', true, 'NULL'],
+                    'field_area' => ['varchar(255)', true, 'NULL'],
+                    'field_name' => ['varchar(255)', true, 'NULL'],
+                    'land_type' => ['varchar(120)', true, 'NULL'],
+                    'legal_area' => ['decimal(14,2)', false, '0.00'],
+                    'actual_area' => ['decimal(14,2)', false, '0.00'],
+                    'cultivated_area' => ['decimal(14,2)', false, '0.00'],
+                    'abandoned_area' => ['decimal(14,2)', false, '0.00'],
+                    'owner_id' => ['bigint(20) unsigned', false, null],
+                    'producer_id' => ['bigint(20) unsigned', false, null],
+                    'usage_form' => ["enum('SELF','LEASE_OUT','LEASE_IN','BORROW','PARTNERSHIP')", false, 'SELF'],
+                    'latitude' => ['decimal(11,8)', true, 'NULL'],
+                    'longitude' => ['decimal(11,8)', true, 'NULL'],
+                    'polygon_geojson' => ['longtext', true, 'NULL'],
+                    'status' => ["enum('ACTIVE','IDLE','LEASED','ABANDONED','DELETED')", false, 'ACTIVE'],
+                    'note' => ['text', true, 'NULL'],
+                    'created_by' => ['bigint(20) unsigned', true, 'NULL'],
+                    'updated_by' => ['bigint(20) unsigned', true, 'NULL'],
+                    'deleted_at' => ['datetime', true, 'NULL'],
+                    'deleted_by' => ['bigint(20) unsigned', true, 'NULL'],
+                ] + $timestamps,
+                'indexes' => [
+                    'PRIMARY' => ['id'],
+                    'parcel_code' => ['parcel_code'],
+                    'idx_agri_land_parcels_village' => ['village_id'],
+                    'idx_agri_parcels_owner' => ['owner_id'],
+                    'idx_agri_parcels_producer' => ['producer_id'],
+                    'idx_agri_parcels_status' => ['status'],
+                    'idx_agri_parcels_field' => ['field_area'],
+                ],
+                'fks' => [
+                    'fk_agri_parcels_owner' => ['owner_id', 'agri_stakeholders', 'id', 'RESTRICT', 'RESTRICT'],
+                    'fk_agri_parcels_producer' => ['producer_id', 'agri_stakeholders', 'id', 'RESTRICT', 'RESTRICT'],
+                ],
+            ],
+            'agri_production_plots' => [
+                'columns' => $tenant + [
+                    'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+                    'parcel_id' => ['bigint(20) unsigned', false, null],
+                    'plot_code' => ['varchar(80)', true, 'NULL'],
+                    'plot_name' => ['varchar(160)', false, null],
+                    'area' => ['decimal(14,2)', false, '0.00'],
+                    'status' => ["enum('ACTIVE','IDLE','DELETED')", false, 'ACTIVE'],
+                    'note' => ['text', true, 'NULL'],
+                ] + $timestamps,
+                'indexes' => [
+                    'PRIMARY' => ['id'],
+                    'idx_agri_production_plots_village' => ['village_id'],
+                    'idx_agri_plots_parcel' => ['parcel_id'],
+                ],
+                'fks' => [
+                    'fk_agri_plots_parcel' => ['parcel_id', 'agri_land_parcels', 'id', 'RESTRICT', 'CASCADE'],
+                ],
+            ],
+            'agri_crop_seasons' => [
+                'columns' => $tenant + [
+                    'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+                    'plot_id' => ['bigint(20) unsigned', false, null],
+                    'season_name' => ['varchar(80)', false, null],
+                    'crop' => ['varchar(120)', false, null],
+                    'variety' => ['varchar(160)', true, 'NULL'],
+                    'area' => ['decimal(14,2)', false, '0.00'],
+                    'land_prep_date' => ['date', true, 'NULL'],
+                    'sowing_date' => ['date', true, 'NULL'],
+                    'transplant_date' => ['date', true, 'NULL'],
+                    'fertilizer_date' => ['date', true, 'NULL'],
+                    'pesticide_date' => ['date', true, 'NULL'],
+                    'expected_harvest_date' => ['date', true, 'NULL'],
+                    'actual_harvest_date' => ['date', true, 'NULL'],
+                    'yield_value' => ['decimal(14,2)', false, '0.00'],
+                    'output_value' => ['decimal(14,2)', false, '0.00'],
+                    'sale_price' => ['decimal(14,2)', false, '0.00'],
+                    'revenue' => ['decimal(14,2)', false, '0.00'],
+                    'cost' => ['decimal(14,2)', false, '0.00'],
+                    'profit' => ['decimal(14,2)', false, '0.00'],
+                    'status' => ["enum('PLANNED','IN_PROGRESS','HARVESTED','CANCELLED','DELETED')", false, 'IN_PROGRESS'],
+                    'note' => ['text', true, 'NULL'],
+                ] + $timestamps,
+                'indexes' => [
+                    'PRIMARY' => ['id'],
+                    'idx_agri_crop_seasons_village' => ['village_id'],
+                    'idx_agri_seasons_plot' => ['plot_id'],
+                    'idx_agri_seasons_crop' => ['crop'],
+                    'idx_agri_seasons_name' => ['season_name'],
+                ],
+                'fks' => [
+                    'fk_agri_seasons_plot' => ['plot_id', 'agri_production_plots', 'id', 'RESTRICT', 'CASCADE'],
+                ],
+            ],
+            'agri_production_logs' => [
+                'columns' => $tenant + [
+                    'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+                    'season_id' => ['bigint(20) unsigned', false, null],
+                    'activity_type' => ['varchar(50)', false, null],
+                    'activity_date' => ['date', false, null],
+                    'actor_name' => ['varchar(255)', true, 'NULL'],
+                    'note' => ['text', true, 'NULL'],
+                    'created_at' => ['datetime', false, 'current_timestamp'],
+                    'created_by' => ['bigint(20) unsigned', true, 'NULL'],
+                ],
+                'indexes' => [
+                    'PRIMARY' => ['id'],
+                    'idx_agri_production_logs_village' => ['village_id'],
+                    'idx_agri_logs_season' => ['season_id'],
+                ],
+                'fks' => [
+                    'fk_agri_logs_season' => ['season_id', 'agri_crop_seasons', 'id', 'RESTRICT', 'CASCADE'],
+                ],
+            ],
+            'agri_damages' => [
+                'columns' => $tenant + [
+                    'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+                    'parcel_id' => ['bigint(20) unsigned', false, null],
+                    'season_id' => ['bigint(20) unsigned', true, 'NULL'],
+                    'damage_type' => ['varchar(50)', false, null],
+                    'event_date' => ['date', false, null],
+                    'affected_area' => ['decimal(14,2)', false, '0.00'],
+                    'damage_percent' => ['decimal(5,2)', false, '0.00'],
+                    'estimated_output_loss' => ['decimal(14,2)', false, '0.00'],
+                    'note' => ['text', true, 'NULL'],
+                    'created_at' => ['datetime', false, 'current_timestamp'],
+                ],
+                'indexes' => [
+                    'PRIMARY' => ['id'],
+                    'idx_agri_damages_village' => ['village_id'],
+                    'idx_agri_damages_parcel' => ['parcel_id'],
+                    'idx_agri_damages_season' => ['season_id'],
+                ],
+                'fks' => [
+                    'fk_agri_damages_parcel' => ['parcel_id', 'agri_land_parcels', 'id', 'RESTRICT', 'CASCADE'],
+                    'fk_agri_damages_season' => ['season_id', 'agri_crop_seasons', 'id', 'RESTRICT', 'SET NULL'],
+                ],
+            ],
+            'agri_files' => [
+                'columns' => $tenant + [
+                    'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+                    'parcel_id' => ['bigint(20) unsigned', true, 'NULL'],
+                    'season_id' => ['bigint(20) unsigned', true, 'NULL'],
+                    'damage_id' => ['bigint(20) unsigned', true, 'NULL'],
+                    'file_kind' => ["enum('IMAGE','DOCUMENT')", false, 'IMAGE'],
+                    'category' => ['varchar(120)', true, 'NULL'],
+                    'original_name' => ['varchar(255)', false, null],
+                    'stored_name' => ['varchar(255)', false, null],
+                    'storage_path' => ['varchar(500)', false, null],
+                    'mime_type' => ['varchar(120)', true, 'NULL'],
+                    'file_size' => ['bigint(20) unsigned', false, '0'],
+                    'created_at' => ['datetime', false, 'current_timestamp'],
+                    'created_by' => ['bigint(20) unsigned', true, 'NULL'],
+                ],
+                'indexes' => [
+                    'PRIMARY' => ['id'],
+                    'idx_agri_files_village' => ['village_id'],
+                    'idx_agri_files_parcel' => ['parcel_id'],
+                    'idx_agri_files_season' => ['season_id'],
+                    'idx_agri_files_damage' => ['damage_id'],
+                ],
+                'fks' => [
+                    'fk_agri_files_parcel' => ['parcel_id', 'agri_land_parcels', 'id', 'RESTRICT', 'CASCADE'],
+                    'fk_agri_files_season' => ['season_id', 'agri_crop_seasons', 'id', 'RESTRICT', 'CASCADE'],
+                    'fk_agri_files_damage' => ['damage_id', 'agri_damages', 'id', 'RESTRICT', 'CASCADE'],
+                ],
+            ],
+        ];
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => $table]
+        );
+        return (int)($row['total'] ?? 0) > 0;
+    }
+
+    private function assertColumns(string $table, array $expected): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => $table]
+        );
+        $actual = [];
+        foreach ($rows as $row) {
+            $actual[$row['COLUMN_NAME']] = $row;
+        }
+
+        foreach ($expected as $column => $contract) {
+            if (!isset($actual[$column])) {
+                throw new \RuntimeException("Agriculture Production schema is not ready: missing column {$table}.{$column}");
+            }
+            [$type, $nullable, $default, $extra] = $contract + [null, null, null, ''];
+            $row = $actual[$column];
+            if (strtolower((string)$row['COLUMN_TYPE']) !== strtolower($type)) {
+                throw new \RuntimeException("Agriculture Production schema is not ready: incompatible type {$table}.{$column}");
+            }
+            if (($row['IS_NULLABLE'] === 'YES') !== $nullable) {
+                throw new \RuntimeException("Agriculture Production schema is not ready: incompatible nullability {$table}.{$column}");
+            }
+            if (!$this->defaultMatches($row['COLUMN_DEFAULT'], $default)) {
+                throw new \RuntimeException("Agriculture Production schema is not ready: incompatible default {$table}.{$column}");
+            }
+            if ($extra !== '' && !str_contains(strtolower((string)$row['EXTRA']), strtolower($extra))) {
+                throw new \RuntimeException("Agriculture Production schema is not ready: incompatible extra {$table}.{$column}");
+            }
+        }
+    }
+
+    private function assertIndexes(string $table, array $expected): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT INDEX_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table ORDER BY INDEX_NAME, SEQ_IN_INDEX',
+            ['table' => $table]
+        );
+        $actual = [];
+        foreach ($rows as $row) {
+            $actual[$row['INDEX_NAME']][] = $row['COLUMN_NAME'];
+        }
+
+        foreach ($expected as $name => $columns) {
+            if (($actual[$name] ?? null) !== $columns) {
+                throw new \RuntimeException("Agriculture Production schema is not ready: missing or incompatible index {$table}.{$name}");
+            }
+        }
+    }
+
+    private function assertForeignKeys(string $table, array $expected): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT k.CONSTRAINT_NAME, k.COLUMN_NAME, k.REFERENCED_TABLE_NAME, k.REFERENCED_COLUMN_NAME, rc.UPDATE_RULE, rc.DELETE_RULE
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE k
+             LEFT JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc ON rc.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND rc.CONSTRAINT_NAME = k.CONSTRAINT_NAME
+             WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME = :table AND k.REFERENCED_TABLE_NAME IS NOT NULL',
+            ['table' => $table]
+        );
+        $actual = [];
+        foreach ($rows as $row) {
+            $actual[$row['CONSTRAINT_NAME']] = [
+                $row['COLUMN_NAME'],
+                $row['REFERENCED_TABLE_NAME'],
+                $row['REFERENCED_COLUMN_NAME'],
+                $row['UPDATE_RULE'],
+                $row['DELETE_RULE'],
+            ];
+        }
+
+        foreach ($expected as $name => $contract) {
+            if (($actual[$name] ?? null) !== $contract) {
+                throw new \RuntimeException("Agriculture Production schema is not ready: missing or incompatible FK {$table}.{$name}");
+            }
+        }
+    }
+
+    private function defaultMatches(mixed $actual, mixed $expected): bool
+    {
+        if ($expected === null) {
+            return $actual === null;
+        }
+        if ($expected === 'NULL') {
+            return $actual === null || strtoupper(trim((string)$actual, "'\" ")) === 'NULL';
+        }
+        return $this->normalizeDefault($actual) === $this->normalizeDefault($expected);
+    }
+
+    private function normalizeDefault(mixed $value): string
+    {
+        $value = trim((string)$value, "'\" ");
+        $lower = strtolower($value);
+        return $lower === 'current_timestamp()' ? 'current_timestamp' : $value;
     }
 
     public function catalogs(): array

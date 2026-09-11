@@ -24,52 +24,7 @@ final class Vehicle extends BaseModel
 
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS vehicles (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  vehicle_code VARCHAR(40) NULL,
-  household_id BIGINT UNSIGNED NOT NULL,
-  owner_citizen_id BIGINT UNSIGNED NULL,
-  owner_name VARCHAR(180) NULL,
-  vehicle_type VARCHAR(80) NOT NULL,
-  detail_type VARCHAR(120) NULL,
-  brand VARCHAR(120) NULL,
-  model VARCHAR(120) NULL,
-  version_name VARCHAR(120) NULL,
-  license_plate VARCHAR(40) NULL,
-  frame_number VARCHAR(80) NULL,
-  engine_number VARCHAR(80) NULL,
-  registration_date DATE NULL,
-  registration_place VARCHAR(180) NULL,
-  manufacture_year SMALLINT UNSIGNED NULL,
-  color VARCHAR(80) NULL,
-  usage_status ENUM('USING','INACTIVE','SOLD','LIQUIDATED','DAMAGED','LOST') NOT NULL DEFAULT 'USING',
-  has_insurance TINYINT(1) NOT NULL DEFAULT 0,
-  insurance_expiry_date DATE NULL,
-  has_inspection TINYINT(1) NOT NULL DEFAULT 0,
-  inspection_expiry_date DATE NULL,
-  vehicle_photo_path VARCHAR(255) NULL,
-  plate_photo_path VARCHAR(255) NULL,
-  registration_photo_path VARCHAR(255) NULL,
-  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_vehicles_household (household_id),
-  KEY idx_vehicles_code (vehicle_code),
-  KEY idx_vehicles_owner_citizen (owner_citizen_id),
-  KEY idx_vehicles_type (vehicle_type),
-  KEY idx_vehicles_plate (license_plate),
-  KEY idx_vehicles_status (status),
-  CONSTRAINT fk_vehicles_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->ensureTenantColumn('vehicles');
-        $this->ensureColumns();
+        $this->assertSchemaReady();
     }
 
     public function catalogs(): array
@@ -384,29 +339,115 @@ SQL);
         return 'PT-' . str_pad((string) max(1, (int) ($row['next_id'] ?? 1)), 6, '0', STR_PAD_LEFT);
     }
 
-    private function ensureColumns(): void
+    private function assertSchemaReady(): void
     {
-        $columns = [
-            'vehicle_code' => 'VARCHAR(40) NULL',
-            'owner_citizen_id' => 'BIGINT UNSIGNED NULL',
-            'detail_type' => 'VARCHAR(120) NULL',
-            'version_name' => 'VARCHAR(120) NULL',
-            'registration_date' => 'DATE NULL',
-            'registration_place' => 'VARCHAR(180) NULL',
-            'has_insurance' => 'TINYINT(1) NOT NULL DEFAULT 0',
-            'insurance_expiry_date' => 'DATE NULL',
-            'has_inspection' => 'TINYINT(1) NOT NULL DEFAULT 0',
-            'inspection_expiry_date' => 'DATE NULL',
-            'vehicle_photo_path' => 'VARCHAR(255) NULL',
-            'plate_photo_path' => 'VARCHAR(255) NULL',
-            'registration_photo_path' => 'VARCHAR(255) NULL',
-        ];
-        foreach ($columns as $column => $definition) {
-            if (!$this->columnExists('vehicles', $column)) $this->execute("ALTER TABLE vehicles ADD COLUMN $column $definition");
+        $this->assertColumns('vehicles', [
+            'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+            'village_id' => ['bigint(20) unsigned', false, '1'],
+            'vehicle_code' => ['varchar(40)', true],
+            'household_id' => ['bigint(20) unsigned', false],
+            'owner_citizen_id' => ['bigint(20) unsigned', true],
+            'owner_name' => ['varchar(180)', true],
+            'vehicle_type' => ['varchar(80)', false],
+            'detail_type' => ['varchar(120)', true],
+            'brand' => ['varchar(120)', true],
+            'model' => ['varchar(120)', true],
+            'version_name' => ['varchar(120)', true],
+            'license_plate' => ['varchar(40)', true],
+            'frame_number' => ['varchar(80)', true],
+            'engine_number' => ['varchar(80)', true],
+            'registration_date' => ['date', true],
+            'registration_place' => ['varchar(180)', true],
+            'manufacture_year' => ['smallint(5) unsigned', true],
+            'color' => ['varchar(80)', true],
+            'usage_status' => ["enum('USING','INACTIVE','SOLD','LIQUIDATED','DAMAGED','LOST')", false, 'USING'],
+            'has_insurance' => ['tinyint(1)', false, '0'],
+            'insurance_expiry_date' => ['date', true],
+            'has_inspection' => ['tinyint(1)', false, '0'],
+            'inspection_expiry_date' => ['date', true],
+            'vehicle_photo_path' => ['varchar(255)', true],
+            'plate_photo_path' => ['varchar(255)', true],
+            'registration_photo_path' => ['varchar(255)', true],
+            'status' => ["enum('ACTIVE','INACTIVE','DELETED')", false, 'ACTIVE'],
+            'note' => ['text', true],
+            'created_at' => ['datetime', false, 'current_timestamp()'],
+            'updated_at' => ['datetime', true, null],
+            'created_by' => ['bigint(20) unsigned', true],
+            'updated_by' => ['bigint(20) unsigned', true],
+            'deleted_at' => ['datetime', true],
+            'deleted_by' => ['bigint(20) unsigned', true],
+        ]);
+        $this->assertIndex('vehicles', 'idx_vehicles_household', ['household_id']);
+        $this->assertIndex('vehicles', 'idx_vehicles_code', ['vehicle_code']);
+        $this->assertIndex('vehicles', 'idx_vehicles_owner_citizen', ['owner_citizen_id']);
+        $this->assertIndex('vehicles', 'idx_vehicles_type', ['vehicle_type']);
+        $this->assertIndex('vehicles', 'idx_vehicles_plate', ['license_plate']);
+        $this->assertIndex('vehicles', 'idx_vehicles_status', ['status']);
+        $this->assertIndex('vehicles', 'idx_vehicles_village', ['village_id']);
+        $this->assertForeignKey('vehicles', 'fk_vehicles_household', 'household_id', 'households', 'id', 'RESTRICT', 'RESTRICT');
+    }
+
+    private function assertColumns(string $table, array $expected): void
+    {
+        $rows = $this->fetchAll('SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table' => $table]);
+        if ($rows === []) {
+            throw new \RuntimeException("Vehicle schema is not ready: missing table $table");
         }
-        $this->execute("UPDATE vehicles SET usage_status='DAMAGED' WHERE usage_status='REPAIRING' AND " . $this->tenantWhere('vehicles'), $this->withTenant());
-        $this->execute("ALTER TABLE vehicles MODIFY usage_status ENUM('USING','INACTIVE','SOLD','LIQUIDATED','DAMAGED','LOST') NOT NULL DEFAULT 'USING'");
-        $this->execute("UPDATE vehicles SET vehicle_code=CONCAT('PT-', LPAD(id, 6, '0')) WHERE (vehicle_code IS NULL OR vehicle_code='') AND " . $this->tenantWhere('vehicles'), $this->withTenant());
+        $actual = [];
+        foreach ($rows as $row) {
+            $actual[(string)$row['COLUMN_NAME']] = $row;
+        }
+        foreach ($expected as $column => $contract) {
+            if (!isset($actual[$column])) {
+                throw new \RuntimeException("Vehicle schema is not ready: missing $table.$column");
+            }
+            $row = $actual[$column];
+            if (strtolower((string)$row['COLUMN_TYPE']) !== strtolower($contract[0])) {
+                throw new \RuntimeException("Vehicle schema is not ready: incompatible type $table.$column");
+            }
+            if (((string)$row['IS_NULLABLE'] === 'YES') !== (bool)$contract[1]) {
+                throw new \RuntimeException("Vehicle schema is not ready: incompatible nullability $table.$column");
+            }
+            if (array_key_exists(2, $contract) && !$this->defaultMatches($row['COLUMN_DEFAULT'], $contract[2])) {
+                throw new \RuntimeException("Vehicle schema is not ready: incompatible default $table.$column");
+            }
+            if (isset($contract[3]) && stripos((string)$row['EXTRA'], (string)$contract[3]) === false) {
+                throw new \RuntimeException("Vehicle schema is not ready: incompatible extra $table.$column");
+            }
+        }
+    }
+
+    private function assertIndex(string $table, string $index, array $columns): void
+    {
+        $rows = $this->fetchAll('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND INDEX_NAME=:index ORDER BY SEQ_IN_INDEX', ['table' => $table, 'index' => $index]);
+        $actual = array_map(fn($row) => (string)$row['COLUMN_NAME'], $rows);
+        if ($actual !== $columns) {
+            throw new \RuntimeException("Vehicle schema is not ready: incompatible index $table.$index");
+        }
+    }
+
+    private function assertForeignKey(string $table, string $name, string $column, string $refTable, string $refColumn, string $deleteRule, string $updateRule): void
+    {
+        $row = $this->fetchOne(
+            'SELECT k.COLUMN_NAME, k.REFERENCED_TABLE_NAME, k.REFERENCED_COLUMN_NAME, r.DELETE_RULE, r.UPDATE_RULE
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE k
+             INNER JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME
+             WHERE k.TABLE_SCHEMA=DATABASE() AND k.TABLE_NAME=:table AND k.CONSTRAINT_NAME=:name',
+            ['table' => $table, 'name' => $name]
+        );
+        if (!$row || (string)$row['COLUMN_NAME'] !== $column || (string)$row['REFERENCED_TABLE_NAME'] !== $refTable || (string)$row['REFERENCED_COLUMN_NAME'] !== $refColumn || strtoupper((string)$row['DELETE_RULE']) !== $deleteRule || strtoupper((string)$row['UPDATE_RULE']) !== $updateRule) {
+            throw new \RuntimeException("Vehicle schema is not ready: incompatible foreign key $table.$name");
+        }
+    }
+
+    private function defaultMatches(mixed $actual, mixed $expected): bool
+    {
+        if ($expected === null) return $actual === null || strtoupper((string)$actual) === 'NULL';
+        if ($actual === null) return false;
+        $actual = trim((string)$actual, "'");
+        $expected = trim((string)$expected, "'");
+        if (is_numeric($actual) && is_numeric($expected)) return (float)$actual === (float)$expected;
+        return strtolower($actual) === strtolower($expected);
     }
 
     private function table(string $title, array $headers, array $rows, array $filters): array

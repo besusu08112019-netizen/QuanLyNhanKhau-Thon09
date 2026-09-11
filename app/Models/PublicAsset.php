@@ -6,150 +6,114 @@ use App\Core\BaseModel;
 
 final class PublicAsset extends BaseModel
 {
+    private const REQUIRED_SCHEMA = [
+        'public_asset_types' => ['id','village_id','category','name','icon','sort_order','is_active','created_at','updated_at'],
+        'public_assets' => ['id','village_id','asset_code','asset_name','type_id','type_name','category','area_code','campus_area','building_area','construction_year','operation_year','address','latitude','longitude','gps_accuracy','gps_updated_at','cover_photo_url','description','managing_unit','manager_name','manager_position','manager_phone','note','status','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by'],
+        'public_asset_inventory_groups' => ['id','village_id','name','parent_name','sort_order','is_active','created_at','updated_at'],
+        'public_asset_inventory_items' => ['id','village_id','public_asset_id','inventory_code','item_name','group_id','group_name','quantity','estimated_value','unit','purchase_date','warranty_until','condition_status','start_use_date','location_in_asset','manager_name','manager_phone','maintenance_cycle','note','photo_url','status','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by'],
+        'public_asset_maintenance_schedules' => ['id','village_id','public_asset_id','inventory_item_id','maintenance_code','title','scheduled_date','completed_at','manager_name','cost','status','note','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by'],
+    ];
+
+    private const REQUIRED_INDEXES = [
+        'public_asset_types' => ['PRIMARY','uq_public_asset_types_name','idx_public_asset_types_category','idx_public_asset_types_active','idx_public_asset_types_village'],
+        'public_assets' => ['PRIMARY','asset_code','idx_public_assets_type','idx_public_assets_area','idx_public_assets_campus_area','idx_public_assets_status','idx_public_assets_location','idx_public_assets_village'],
+        'public_asset_inventory_groups' => ['PRIMARY','uq_public_asset_inventory_groups_name','idx_public_asset_inventory_groups_active','idx_public_asset_inventory_groups_parent','idx_public_asset_inventory_groups_village'],
+        'public_asset_inventory_items' => ['PRIMARY','uq_public_asset_inventory_code','idx_public_asset_inventory_asset','idx_public_asset_inventory_group','idx_public_asset_inventory_condition','idx_public_asset_inventory_status','idx_public_asset_inventory_items_village'],
+        'public_asset_maintenance_schedules' => ['PRIMARY','uq_public_asset_maintenance_code','idx_public_asset_maintenance_asset','idx_public_asset_maintenance_item','idx_public_asset_maintenance_status','idx_public_asset_maintenance_due','idx_public_asset_maintenance_schedules_village'],
+    ];
+
+    private const REQUIRED_FOREIGN_KEYS = [
+        'public_assets' => [['fk_public_assets_type','type_id','public_asset_types','id']],
+        'public_asset_inventory_items' => [
+            ['fk_public_asset_inventory_asset','public_asset_id','public_assets','id'],
+            ['fk_public_asset_inventory_group','group_id','public_asset_inventory_groups','id'],
+        ],
+        'public_asset_maintenance_schedules' => [
+            ['fk_public_asset_maintenance_asset','public_asset_id','public_assets','id'],
+            ['fk_public_asset_maintenance_item','inventory_item_id','public_asset_inventory_items','id'],
+        ],
+    ];
+
+    private const REQUIRED_ASSET_TYPE_COUNT = 24;
+    private const REQUIRED_INVENTORY_GROUP_COUNT = 33;
+
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS public_asset_types (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  category VARCHAR(120) NOT NULL,
-  name VARCHAR(180) NOT NULL,
-  icon VARCHAR(80) NOT NULL DEFAULT 'fa-building-columns',
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_public_asset_types_name (name),
-  KEY idx_public_asset_types_category (category),
-  KEY idx_public_asset_types_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS public_assets (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  asset_code VARCHAR(40) NOT NULL UNIQUE,
-  asset_name VARCHAR(255) NOT NULL,
-  type_id BIGINT UNSIGNED NULL,
-  type_name VARCHAR(180) NULL,
-  category VARCHAR(120) NULL,
-  area_code VARCHAR(80) NULL,
-  campus_area DECIMAL(14,2) NULL,
-  building_area DECIMAL(14,2) NULL,
-  address VARCHAR(500) NULL,
-  latitude DECIMAL(11,8) NULL,
-  longitude DECIMAL(11,8) NULL,
-  gps_accuracy DECIMAL(10,2) NULL,
-  cover_photo_url VARCHAR(500) NULL,
-  description TEXT NULL,
-  managing_unit VARCHAR(255) NULL,
-  manager_name VARCHAR(255) NULL,
-  manager_phone VARCHAR(80) NULL,
-  note TEXT NULL,
-  status ENUM('ACTIVE','REPAIRING','SUSPENDED','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_public_assets_type (type_id),
-  KEY idx_public_assets_area (area_code),
-  KEY idx_public_assets_campus_area (campus_area),
-  KEY idx_public_assets_status (status),
-  KEY idx_public_assets_location (latitude, longitude),
-  CONSTRAINT fk_public_assets_type FOREIGN KEY (type_id) REFERENCES public_asset_types(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->ensureColumn('public_assets', 'campus_area', 'DECIMAL(14,2) NULL AFTER area_code');
-        $this->ensureColumn('public_assets', 'building_area', 'DECIMAL(14,2) NULL AFTER campus_area');
-        $this->ensureColumn('public_assets', 'construction_year', 'SMALLINT UNSIGNED NULL AFTER building_area');
-        $this->ensureColumn('public_assets', 'operation_year', 'SMALLINT UNSIGNED NULL AFTER construction_year');
-        $this->ensureColumn('public_assets', 'gps_updated_at', 'DATETIME NULL AFTER gps_accuracy');
-        $this->ensureColumn('public_assets', 'manager_position', 'VARCHAR(255) NULL AFTER manager_name');
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS public_asset_inventory_groups (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(180) NOT NULL,
-  parent_name VARCHAR(180) NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_public_asset_inventory_groups_name (name),
-  KEY idx_public_asset_inventory_groups_active (is_active),
-  KEY idx_public_asset_inventory_groups_parent (parent_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS public_asset_inventory_items (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  public_asset_id BIGINT UNSIGNED NOT NULL,
-  inventory_code VARCHAR(60) NOT NULL,
-  item_name VARCHAR(255) NOT NULL,
-  group_id BIGINT UNSIGNED NULL,
-  group_name VARCHAR(180) NULL,
-  quantity DECIMAL(14,2) NOT NULL DEFAULT 1,
-  unit VARCHAR(80) NULL,
-  condition_status ENUM('NEW','GOOD','IN_USE','MAINTENANCE','LIGHT_DAMAGE','HEAVY_DAMAGE','NEEDS_REPAIR','LIQUIDATED','DELETED') NOT NULL DEFAULT 'IN_USE',
-  start_use_date DATE NULL,
-  location_in_asset VARCHAR(255) NULL,
-  note TEXT NULL,
-  photo_url VARCHAR(500) NULL,
-  status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  UNIQUE KEY uq_public_asset_inventory_code (inventory_code),
-  KEY idx_public_asset_inventory_asset (public_asset_id),
-  KEY idx_public_asset_inventory_group (group_id),
-  KEY idx_public_asset_inventory_condition (condition_status),
-  KEY idx_public_asset_inventory_status (status),
-  CONSTRAINT fk_public_asset_inventory_asset FOREIGN KEY (public_asset_id) REFERENCES public_assets(id) ON DELETE CASCADE,
-  CONSTRAINT fk_public_asset_inventory_group FOREIGN KEY (group_id) REFERENCES public_asset_inventory_groups(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute("ALTER TABLE public_asset_inventory_items MODIFY condition_status ENUM('NEW','GOOD','IN_USE','MAINTENANCE','LIGHT_DAMAGE','HEAVY_DAMAGE','NEEDS_REPAIR','LIQUIDATED','DELETED') NOT NULL DEFAULT 'IN_USE'");
-        $this->ensureColumn('public_asset_inventory_items', 'estimated_value', 'DECIMAL(15,2) NULL AFTER quantity');
-        $this->ensureColumn('public_asset_inventory_items', 'purchase_date', 'DATE NULL AFTER unit');
-        $this->ensureColumn('public_asset_inventory_items', 'warranty_until', 'DATE NULL AFTER purchase_date');
-        $this->ensureColumn('public_asset_inventory_items', 'manager_name', 'VARCHAR(255) NULL AFTER location_in_asset');
-        $this->ensureColumn('public_asset_inventory_items', 'manager_phone', 'VARCHAR(80) NULL AFTER manager_name');
-        $this->ensureColumn('public_asset_inventory_items', 'maintenance_cycle', 'VARCHAR(120) NULL AFTER manager_phone');
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS public_asset_maintenance_schedules (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  public_asset_id BIGINT UNSIGNED NOT NULL,
-  inventory_item_id BIGINT UNSIGNED NULL,
-  maintenance_code VARCHAR(60) NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  scheduled_date DATE NOT NULL,
-  completed_at DATETIME NULL,
-  manager_name VARCHAR(255) NULL,
-  cost DECIMAL(15,2) NULL,
-  status ENUM('SCHEDULED','DONE','CANCELLED') NOT NULL DEFAULT 'SCHEDULED',
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  UNIQUE KEY uq_public_asset_maintenance_code (maintenance_code),
-  KEY idx_public_asset_maintenance_asset (public_asset_id),
-  KEY idx_public_asset_maintenance_item (inventory_item_id),
-  KEY idx_public_asset_maintenance_status (status),
-  KEY idx_public_asset_maintenance_due (scheduled_date),
-  CONSTRAINT fk_public_asset_maintenance_asset FOREIGN KEY (public_asset_id) REFERENCES public_assets(id) ON DELETE CASCADE,
-  CONSTRAINT fk_public_asset_maintenance_item FOREIGN KEY (inventory_item_id) REFERENCES public_asset_inventory_items(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->ensureTenantColumn('public_assets');
-        $this->ensureTenantColumn('public_asset_inventory_items');
-        $this->ensureTenantColumn('public_asset_maintenance_schedules');
-        $this->seedTypes();
-        $this->seedInventoryGroups();
+        $this->assertSchemaReady();
+    }
+
+    private function assertSchemaReady(): void
+    {
+        foreach (self::REQUIRED_SCHEMA as $table => $columns) {
+            if (!$this->tableExists($table)) {
+                throw new \RuntimeException('Public Assets schema is not provisioned: missing table ' . $table);
+            }
+            foreach ($columns as $column) {
+                if (!$this->columnExists($table, $column)) {
+                    throw new \RuntimeException('Public Assets schema is not provisioned: missing column ' . $table . '.' . $column);
+                }
+            }
+            foreach (self::REQUIRED_INDEXES[$table] ?? [] as $index) {
+                if (!$this->indexExists($table, $index)) {
+                    throw new \RuntimeException('Public Assets schema is not provisioned: missing index ' . $table . '.' . $index);
+                }
+            }
+        }
+
+        foreach (self::REQUIRED_FOREIGN_KEYS as $table => $foreignKeys) {
+            foreach ($foreignKeys as [$constraint, $column, $referencedTable, $referencedColumn]) {
+                if (!$this->foreignKeyExists($table, $constraint, $column, $referencedTable, $referencedColumn)) {
+                    throw new \RuntimeException('Public Assets schema is not provisioned: missing foreign key ' . $constraint);
+                }
+            }
+        }
+
+        $this->assertCatalogReady();
+    }
+
+    private function assertCatalogReady(): void
+    {
+        $missingTypes = $this->missingAssetTypeCatalogRows();
+        if ($missingTypes !== []) {
+            throw new \RuntimeException('Public Assets catalogs are not provisioned: missing asset types ' . implode(', ', $missingTypes));
+        }
+
+        $missingGroups = $this->missingInventoryGroupCatalogRows();
+        if ($missingGroups !== []) {
+            throw new \RuntimeException('Public Assets catalogs are not provisioned: missing inventory groups ' . implode(', ', $missingGroups));
+        }
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int)($row['total'] ?? 0) > 0;
+    }
+
+    private function indexExists(string $table, string $index): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index_name', ['table' => $table, 'index_name' => $index]);
+        return (int)($row['total'] ?? 0) > 0;
+    }
+
+    private function foreignKeyExists(string $table, string $constraint, string $column, string $referencedTable, string $referencedColumn): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint_name AND COLUMN_NAME = :column_name AND REFERENCED_TABLE_NAME = :referenced_table AND REFERENCED_COLUMN_NAME = :referenced_column', ['table' => $table, 'constraint_name' => $constraint, 'column_name' => $column, 'referenced_table' => $referencedTable, 'referenced_column' => $referencedColumn]);
+        return (int)($row['total'] ?? 0) > 0;
+    }
+
+    private function missingAssetTypeCatalogRows(): array
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM public_asset_types WHERE is_active=1');
+        $total = (int)($row['total'] ?? 0);
+        return $total >= self::REQUIRED_ASSET_TYPE_COUNT ? [] : [(string)self::REQUIRED_ASSET_TYPE_COUNT . ' asset types required, found ' . $total];
+    }
+
+    private function missingInventoryGroupCatalogRows(): array
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM public_asset_inventory_groups WHERE is_active=1');
+        $total = (int)($row['total'] ?? 0);
+        return $total >= self::REQUIRED_INVENTORY_GROUP_COUNT ? [] : [(string)self::REQUIRED_INVENTORY_GROUP_COUNT . ' inventory groups required, found ' . $total];
     }
 
     public function catalogs(): array
@@ -365,7 +329,6 @@ SQL);
         if ($rawPath !== '' && $this->isInventoryPhotoApiPath($rawPath, $assetId, $itemId)) {
             $recovered = $this->latestUploadPathFromAudit('inventory_upload_photo', (string)$itemId);
             if ($recovered) {
-                $this->execute('UPDATE public_asset_inventory_items SET photo_url=:url WHERE public_asset_id=:asset_id AND id=:id AND photo_url=:old AND ' . $this->tenantWhere('public_asset_inventory_items'), $this->withTenant(['asset_id' => $assetId, 'id' => $itemId, 'url' => $recovered, 'old' => $rawPath]));
                 return $recovered;
             }
         }
@@ -529,7 +492,7 @@ SQL);
         ];
         $order = 10;
         foreach ($items as [$category, $name, $icon]) {
-            $this->execute('INSERT INTO public_asset_types (category, name, icon, sort_order) VALUES (:category,:name,:icon,:sort_order) ON DUPLICATE KEY UPDATE category=VALUES(category), icon=VALUES(icon), sort_order=VALUES(sort_order), is_active=1', ['category' => $category, 'name' => $name, 'icon' => $icon, 'sort_order' => $order]);
+            if ($this->missingAssetTypeCatalogRows()) throw new \RuntimeException('Public Assets catalog is incomplete. Run provisioning or explicit migration.');
             $order += 10;
         }
     }
@@ -552,7 +515,7 @@ SQL);
         ]);
         $order = 10;
         foreach ($items as [$name, $parent]) {
-            $this->execute('INSERT INTO public_asset_inventory_groups (name, parent_name, sort_order) VALUES (:name,:parent,:sort_order) ON DUPLICATE KEY UPDATE parent_name=VALUES(parent_name), sort_order=VALUES(sort_order), is_active=1', ['name' => $name, 'parent' => $parent, 'sort_order' => $order]);
+            if ($this->missingInventoryGroupCatalogRows()) throw new \RuntimeException('Public Assets inventory catalog is incomplete. Run provisioning or explicit migration.');
             $order += 10;
         }
     }
@@ -800,7 +763,7 @@ SQL);
     private function gpsReportText(array $row): string { return $row['latitude'] !== null && $row['longitude'] !== null ? number_format((float)$row['latitude'], 6, '.', '') . ', ' . number_format((float)$row['longitude'], 6, '.', '') : $this->u('Ch\u01b0a c\u00f3 GPS'); }
     public function setCoverPhoto(int $id, ?string $url, int $userId): ?array { $this->ensureSchema(); $this->execute('UPDATE public_assets SET cover_photo_url=:url, updated_by=:user WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('public_assets'), $this->withTenant(['id' => $id, 'url' => $this->storedUploadPath((string)$url), 'user' => $userId])); return $this->find($id); }
     private function coord(mixed $value): ?float { $value = trim((string)($value ?? '')); return $value === '' ? null : (float)str_replace(',', '.', $value); }
-    private function ensureColumn(string $table, string $column, string $definition): void { if ($this->columnExists($table, $column)) return; $this->execute('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition); }
+    private function ensureColumn(string $table, string $column, string $definition): void { if (!$this->columnExists($table, $column)) throw new \RuntimeException("Public Assets schema is missing column {$table}.{$column}. Run provisioning or explicit migration."); }
     public function coverPhotoPath(int $id): ?string
     {
         $row = $this->fetchOne('SELECT cover_photo_url FROM public_assets WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('public_assets'), $this->withTenant(['id' => $id]));
@@ -809,7 +772,6 @@ SQL);
         if ($rawPath !== '' && $this->isCoverPhotoApiPath($rawPath, $id)) {
             $recovered = $this->latestUploadPathFromAudit('upload_photo', (string)$id);
             if ($recovered) {
-                $this->execute('UPDATE public_assets SET cover_photo_url=:url WHERE id=:id AND cover_photo_url=:old AND ' . $this->tenantWhere('public_assets'), $this->withTenant(['id' => $id, 'url' => $recovered, 'old' => $rawPath]));
                 return $recovered;
             }
         }

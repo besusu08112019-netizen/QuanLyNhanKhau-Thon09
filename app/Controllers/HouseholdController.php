@@ -5,31 +5,37 @@ namespace App\Controllers;
 use App\Core\BaseController;
 use App\Core\Database;
 use App\Models\Household;
+use App\Models\ProfileSummary;
 use App\Services\PopulationMovementService;
 
 final class HouseholdController extends BaseController
 {
     private Household $households;
+    private ProfileSummary $summary;
     private PopulationMovementService $movementService;
 
     public function __construct($request)
     {
         parent::__construct($request);
         $this->households = new Household();
+        $this->summary = new ProfileSummary();
         $this->movementService = new PopulationMovementService();
     }
 
     public function index(): void
     {
         $this->requirePermission('household', 'read');
-        $category = trim((string) $this->query('household_type', $this->query('householdType', $this->query('category', ''))));
+        $category = trim((string) $this->query('householdCategory', $this->query('household_category', $this->query('household_type', $this->query('householdType', $this->query('category', ''))))));
         if ($category === '') $category = trim((string) $this->query('category', ''));
         $this->ok($this->households->paginate([
             'page' => $this->query('page', 1),
             'pageSize' => $this->query('pageSize', 20),
             'search' => $this->query('search', $this->query('q', '')),
             'status' => $this->query('status', ''),
+            'residenceStatus' => $this->query('residenceStatus', $this->query('residence_status', $this->query('householdResidenceStatus', ''))),
+            'includeHistorical' => $this->query('includeHistorical', $this->query('include_historical', '')),
             'household_type' => $category,
+            'householdCategory' => $category,
             'category' => $category,
         ]));
     }
@@ -38,6 +44,7 @@ final class HouseholdController extends BaseController
     {
         $this->requirePermission('household', 'read');
         $row = $this->households->find((int) $id);
+        if ($row) $row['related_summary'] = $this->summary->household((int) $id);
         $row ? $this->ok($row) : $this->fail('Không tìm thấy hộ dân', 404);
     }
 

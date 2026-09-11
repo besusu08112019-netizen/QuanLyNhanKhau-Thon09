@@ -10,7 +10,7 @@ class GisSearch extends BaseModel
 
     public function households(string $query, int $limit = 10): array
     {
-        $this->ensureIndexes();
+        $this->assertSearchIndexesReady();
 
         $query = trim($query);
         if (mb_strlen($query) < 2) {
@@ -140,26 +140,26 @@ class GisSearch extends BaseModel
         return 'Không ưu tiên';
     }
 
-    private function ensureIndexes(): void
+    public function ensureIndexes(): void
     {
-        $this->createIndexIfMissing('households', 'idx_households_household_code', 'household_code');
-        $this->createIndexIfMissing('households', 'idx_households_head_name', 'head_citizen_name');
-        $this->createIndexIfMissing('citizens', 'idx_citizens_full_name', 'full_name');
+        $this->assertSearchIndexesReady();
     }
 
-    private function createIndexIfMissing(string $table, string $name, string $columns): void
+    public function assertSearchIndexesReady(): void
     {
-        $exists = $this->fetchOne(
-            'SELECT COUNT(1) AS total
-             FROM INFORMATION_SCHEMA.STATISTICS
-             WHERE TABLE_SCHEMA = DATABASE()
-               AND TABLE_NAME = :table
-               AND INDEX_NAME = :name',
-            ['table' => $table, 'name' => $name]
-        );
+        $this->assertIndexReady('households', 'idx_households_head_name', ['head_citizen_name']);
+        $this->assertIndexReady('citizens', 'idx_citizens_full_name', ['full_name']);
+    }
 
-        if ((int) ($exists['total'] ?? 0) === 0) {
-            $this->execute("CREATE INDEX {$name} ON {$table} ({$columns})");
+    private function assertIndexReady(string $table, string $index, array $columns): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index ORDER BY SEQ_IN_INDEX',
+            ['table' => $table, 'index' => $index]
+        );
+        $actual = array_map(fn(array $row): string => (string) $row['COLUMN_NAME'], $rows);
+        if ($actual !== $columns) {
+            throw new \RuntimeException('GIS search schema is not ready: missing index ' . $table . '.' . $index);
         }
     }
 

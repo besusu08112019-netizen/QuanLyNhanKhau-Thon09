@@ -503,9 +503,18 @@
 
   function setupHouseholdCategoryFilters() {
     const category = document.querySelector('#householdCategoryFilter');
+    const residence = document.querySelector('#householdResidenceFilter');
     const status = document.querySelector('#householdStatusFilter');
     if (category && !category.dataset.bridgeBound) { category.dataset.bridgeBound = '1'; category.addEventListener('change', () => { App.households.category = category.value; App.households.household_type = category.value; App.households.page = 1; window.loadHouseholds(); }); }
+    if (residence && !residence.dataset.bridgeBound) { residence.dataset.bridgeBound = '1'; residence.addEventListener('change', () => { App.households.residenceStatus = residence.value; App.households.page = 1; window.loadHouseholds(); }); }
     if (status && !status.dataset.bridgeBound) { status.dataset.bridgeBound = '1'; status.addEventListener('change', () => { App.households.status = status.value; App.households.page = 1; window.loadHouseholds(); }); }
+  }
+
+  function bridgeHouseholdHeadName(row) {
+    const current = row?.current_head_citizen_name || row?.currentHeadCitizenName || '';
+    if (current) return current;
+    if (row?.needs_head_review || row?.head_citizen_is_current === false || row?.head_is_current === 0 || row?.head_is_current === '0') return 'Chưa có chủ hộ hiện tại';
+    return row?.head_citizen_name || row?.headCitizenName || '';
   }
 
   async function loadHouseholdsWithCategory() {
@@ -514,7 +523,8 @@
       const category = App.households.category || App.households.household_type || '';
       const params = new URLSearchParams({ page: App.households.page || 1, pageSize: App.households.pageSize || 20 });
       if (App.households.search) params.set('search', App.households.search);
-      if (category) { params.set('category', category); params.set('household_type', category); }
+      if (category) { params.set('category', category); params.set('household_type', category); params.set('householdCategory', category); }
+      if (App.households.residenceStatus) params.set('residenceStatus', App.households.residenceStatus);
       if (App.households.status) params.set('status', App.households.status);
       const data = await api('/api/households?' + params.toString());
       const items = data.items || [];
@@ -525,7 +535,7 @@
       tbody.innerHTML = items.map(row => '<tr>' +
         '<td>' + (canDeleteHousehold ? '<input type="checkbox" class="household-check" value="' + row.id + '">' : '') + '</td>' +
         '<td><button class="btn btn-link p-0 fw-semibold" type="button" data-platform-action="households.detail" data-id="' + row.id + '">' + escapeHtml(row.household_code) + '</button></td>' +
-        '<td>' + escapeHtml(row.head_citizen_name || '') + '</td>' +
+        '<td>' + escapeHtml(bridgeHouseholdHeadName(row)) + '</td>' +
         '<td>' + escapeHtml(row.address || '') + '</td>' +
         '<td>' + number(row.at_home_count || 0) + '</td>' +
         '<td>' + number(row.away_count || 0) + '</td>' +

@@ -38,6 +38,12 @@ final class InsurancePolicy
         return AgePolicy::hasDefaultHealthInsurance($age);
     }
 
+    public static function hasDefaultHealthInsuranceForDateOfBirth(?string $dateOfBirth, ?\DateTimeInterface $date = null): bool
+    {
+        return AgePolicy::isStudent($dateOfBirth, $date)
+            || self::hasDefaultHealthInsuranceForAge(AgePolicy::ageFromDate($dateOfBirth, $date));
+    }
+
     public static function eligibleOccupationKeys(): array
     {
         return [

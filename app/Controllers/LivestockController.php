@@ -18,16 +18,9 @@ final class LivestockController extends BaseController
     public function index(): void
     {
         $this->requirePermission('livestock', 'read');
-        $this->ok($this->livestock->paginate([
+        $this->ok($this->livestock->paginate($this->filters() + [
             'page' => $this->query('page', 1),
             'pageSize' => $this->query('pageSize', 20),
-            'search' => $this->query('search', $this->query('q', '')),
-            'animal_type' => $this->query('animal_type', $this->query('animalType', '')),
-            'vaccinated' => $this->query('vaccinated', ''),
-            'disease_status' => $this->query('disease_status', $this->query('diseaseStatus', '')),
-            'status' => $this->query('status', ''),
-            'area_code' => $this->query('area_code', $this->query('areaCode', '')),
-            'barn_area' => $this->query('barn_area', $this->query('barnArea', $this->query('classification', ''))),
             'sort' => $this->query('sort', 'household_code'),
             'direction' => $this->query('direction', 'ASC'),
         ]));
@@ -56,7 +49,7 @@ final class LivestockController extends BaseController
     {
         $this->requirePermission('livestock', 'read');
         $row = $this->livestock->find((int) $id);
-        if (!$row) $this->fail('Không tìm thấy bản ghi vật nuôi', 404);
+        if (!$row) $this->fail('Không tìm thấy cơ sở chăn nuôi', 404);
         $this->ok($row);
     }
 
@@ -64,9 +57,9 @@ final class LivestockController extends BaseController
     {
         $user = $this->requirePermission('livestock', 'create');
         $input = (array) $this->input();
-        $this->requireInputFields($input, ['household_id' => 'Hộ gia đình', 'animal_type' => 'Loại vật nuôi']);
+        $this->requireInputFields($input, ['household_id' => 'Hộ gia đình']);
         $row = $this->livestock->upsert($input, (int) $user['id']);
-        $this->audit($user, 'livestock', 'create', 'Thêm vật nuôi', $row['id'], ['before' => null, 'after' => $row]);
+        $this->audit($user, 'livestock', 'create', 'Thêm cơ sở chăn nuôi', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -74,10 +67,9 @@ final class LivestockController extends BaseController
     {
         $user = $this->requirePermission('livestock', 'update');
         $before = $this->livestock->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy bản ghi vật nuôi', 404);
+        if (!$before) $this->fail('Không tìm thấy cơ sở chăn nuôi', 404);
         $row = $this->livestock->upsert((array) $this->input(), (int) $user['id'], (int) $id);
-        $action = $before['status'] !== $row['status'] ? 'Thay đổi trạng thái vật nuôi' : 'Chỉnh sửa vật nuôi';
-        $this->audit($user, 'livestock', 'update', $action, $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'livestock', 'update', 'Chỉnh sửa cơ sở chăn nuôi', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -85,24 +77,35 @@ final class LivestockController extends BaseController
     {
         $user = $this->requirePermission('livestock', 'delete');
         $before = $this->livestock->find((int) $id);
-        if (!$before) $this->fail('Không tìm thấy bản ghi vật nuôi', 404);
+        if (!$before) $this->fail('Không tìm thấy cơ sở chăn nuôi', 404);
         $this->livestock->softDelete((int) $id, (int) $user['id']);
-        $this->audit($user, 'livestock', 'delete', 'Xóa vật nuôi', $id, ['before' => $before, 'after' => null]);
+        $this->audit($user, 'livestock', 'delete', 'Xóa cơ sở chăn nuôi', $id, ['before' => $before, 'after' => null]);
         $this->ok(['id' => (int) $id]);
     }
 
     public function dashboard(): void
     {
         $this->requirePermission('livestock', 'read');
-        $filters = [
+        $filters = $this->filters();
+        $this->ok(['metrics' => $this->livestock->dashboard($filters), 'charts' => $this->livestock->charts($filters), 'top' => $this->livestock->topHouseholds($filters)]);
+    }
+
+    private function filters(): array
+    {
+        return [
             'search' => $this->query('search', $this->query('q', '')),
+            'household_id' => $this->query('household_id', $this->query('householdId', '')),
+            'facility_type' => $this->query('facility_type', $this->query('facilityType', '')),
             'animal_type' => $this->query('animal_type', $this->query('animalType', '')),
+            'animal_group' => $this->query('animal_group', $this->query('animalGroup', '')),
             'vaccinated' => $this->query('vaccinated', ''),
             'disease_status' => $this->query('disease_status', $this->query('diseaseStatus', '')),
             'status' => $this->query('status', ''),
             'area_code' => $this->query('area_code', $this->query('areaCode', '')),
-            'barn_area' => $this->query('barn_area', $this->query('barnArea', $this->query('classification', ''))),
+            'has_pig_sow' => $this->query('has_pig_sow', $this->query('hasPigSow', '')),
+            'has_pig_meat' => $this->query('has_pig_meat', $this->query('hasPigMeat', '')),
+            'has_piglet' => $this->query('has_piglet', $this->query('hasPiglet', '')),
+            'has_pig_boar' => $this->query('has_pig_boar', $this->query('hasPigBoar', '')),
         ];
-        $this->ok(['metrics' => $this->livestock->dashboard($filters), 'charts' => $this->livestock->charts($filters), 'top' => $this->livestock->topHouseholds($filters)]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\PlatformSettingsRepository;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 final class PlatformBrandingService
 {
@@ -57,6 +58,16 @@ final class PlatformBrandingService
 
     public function publicBranding(): array
     {
+        try {
+            return $this->configuredBranding();
+        } catch (Throwable $e) {
+            $this->logReadinessFailure($e);
+            return $this->fallbackBranding();
+        }
+    }
+
+    private function configuredBranding(): array
+    {
         $branding = [];
         foreach (self::ASSETS as $type => $definition) {
             $stored = (string) $this->repository->value($definition['key'], '');
@@ -71,6 +82,29 @@ final class PlatformBrandingService
             ];
         }
         return $branding;
+    }
+
+    private function fallbackBranding(): array
+    {
+        $branding = [];
+        foreach (self::ASSETS as $type => $definition) {
+            $branding[$type] = [
+                'type' => $type,
+                'configured' => false,
+                'url' => '',
+                'stored' => '',
+            ];
+        }
+        return $branding;
+    }
+
+    private function logReadinessFailure(Throwable $e): void
+    {
+        error_log('[PLATFORM_BRANDING_FALLBACK] ' . json_encode([
+            'code' => str_contains($e->getMessage(), 'PLATFORM_SETTINGS_SCHEMA_NOT_READY') ? 'PLATFORM_SETTINGS_SCHEMA_NOT_READY' : 'PLATFORM_SETTINGS_READ_FAILED',
+            'type' => get_class($e),
+            'message' => str_contains($e->getMessage(), 'PLATFORM_SETTINGS_SCHEMA_NOT_READY') ? $e->getMessage() : 'Platform settings read failed',
+        ], JSON_UNESCAPED_SLASHES));
     }
 
     public function assetUrl(string $type): string

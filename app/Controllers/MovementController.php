@@ -25,27 +25,31 @@ final class MovementController extends BaseController
     {
         $this->requirePermission('movement', 'read');
         $row = $this->movements->find((int) $id);
-        $row ? $this->ok($row) : $this->fail('Không tìm thấy biến động', 404);
+        $row ? $this->ok($row) : $this->fail('Khong tim thay bien dong', 404);
     }
 
     public function store(): void
     {
         $user = $this->requirePermission('movement', 'create');
         $row = $this->movements->create($this->input(), (int) $user['id']);
-        $this->audit($user, 'movement', 'create', 'Tạo biến động nhân khẩu', $row['id'], ['before' => null, 'after' => $row]);
+        $this->audit($user, 'movement', 'create', 'Tao bien dong nhan khau', $row['id'], ['before' => null, 'after' => $row]);
         $this->ok($row);
     }
 
     public function update(string $id): void
     {
-        $this->requirePermission('movement', 'update');
-        $this->fail('Biến động dân cư là nhật ký lịch sử, không được sửa trực tiếp.', 409);
+        $user = $this->requirePermission('movement', 'update');
+        $before = $this->movements->find((int) $id);
+        if (!$before) $this->fail('Khong tim thay bien dong', 404);
+        $row = $this->movements->update((int) $id, $this->input(), (int) $user['id']);
+        $this->audit($user, 'movement', 'update', 'Cap nhat bien dong nhan khau', $row['id'], ['before' => $before, 'after' => $row]);
+        $this->ok($row);
     }
 
     public function destroy(string $id): void
     {
         $this->requirePermission('movement', 'delete');
-        $this->fail('Biến động dân cư là nhật ký lịch sử, không được xóa.', 409);
+        $this->fail('Bien dong dan cu la nhat ky lich su, khong duoc xoa.', 409);
     }
 
     public function types(): void

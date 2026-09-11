@@ -368,7 +368,8 @@
       const id = row.id || entry.id;
       if (!id || state.dragBound.has(String(id))) return;
       state.dragBound.add(String(id));
-      marker.options = Object.assign({}, marker.options || {}, { draggable: true });
+      marker.options = marker.options || {};
+      marker.options.draggable = true;
       marker.dragging?.enable?.();
       marker.on?.('dragend', async () => {
         const latLng = marker.getLatLng?.();
@@ -558,6 +559,310 @@
     if (state.syncTimer) clearTimeout(state.syncTimer);
     state.syncTimer = setTimeout(runPlatformSync, delay || 0);
   }
+  function diagnosticEnabled() {
+    try {
+      return new URLSearchParams(window.location.search || '').get('gis_debug') === '1';
+    } catch (ignored) {
+      return false;
+    }
+  }
+  function diagnosticText(value) {
+    if (value === true) return 'YES';
+    if (value === false) return 'NO';
+    if (value === null || value === undefined || value === '') return '-';
+    if (Array.isArray(value)) return value.join(' | ') || '-';
+    return String(value);
+  }
+  function diagnosticTarget(el) {
+    if (!el) return '-';
+    const cls = typeof el.className === 'string' ? el.className : String(el.className || '');
+    return [el.tagName, el.id ? '#' + el.id : '', cls ? '.' + cls.trim().replace(/\s+/g, '.') : ''].join('');
+  }
+  function diagnosticMarkerEntry() {
+    return householdMarkerEntries()[0] || null;
+  }
+  function diagnosticMarkerElement(entry) {
+    return entry?.marker?._icon || document.querySelector('.gis-household-marker-icon');
+  }
+  function diagnosticAssetUrls() {
+    const scriptPattern = /gis-platform|gis-household|leaflet|leaflet\.draw|app\.utf8|app-platform|view-inline-patches/i;
+    const stylePattern = /gis|leaflet|app\.min|mobile-design-system|pwa/i;
+    const shorten = value => {
+      if (!value) return '';
+      try {
+        const url = new URL(value, window.location.href);
+        return url.pathname + url.search;
+      } catch (ignored) {
+        return value;
+      }
+    };
+    const scripts = Array.from(document.scripts || [])
+      .map(script => script.src || '')
+      .filter(src => scriptPattern.test(src))
+      .map(src => 'js:' + shorten(src));
+    const styles = Array.from(document.querySelectorAll('link[rel~="stylesheet"]'))
+      .map(link => link.href || '')
+      .filter(href => stylePattern.test(href))
+      .map(href => 'css:' + shorten(href));
+    return scripts.concat(styles);
+  }
+  function diagnosticStorageKeys(storage) {
+    try {
+      const sensitive = /token|csrf|auth|password|passwd|pwd|secret|session|cookie|credential|bearer/i;
+      const keys = [];
+      for (let i = 0; i < storage.length; i += 1) {
+        const key = storage.key(i);
+        if (!key) continue;
+        keys.push(sensitive.test(key) ? key + '=MASKED' : key);
+      }
+      return keys;
+    } catch (error) {
+      return ['error:' + error.message];
+    }
+  }
+  function diagnosticRowsText(rows) {
+    return 'GIS RUNTIME DIAGNOSTIC\n' + rows.map(([key, value]) => key + ': ' + diagnosticText(value)).join('\n');
+  }
+  function copyDiagnosticText() {
+    const text = state.diagnostic?.lastCopyText || '';
+    if (!text) return;
+    const done = ok => {
+      state.diagnostic.copyStatus = ok ? 'COPIED' : 'COPY FAILED';
+      updateDiagnostic();
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => done(true)).catch(() => fallbackCopy());
+      return;
+    }
+    fallbackCopy();
+    function fallbackCopy() {
+      try {
+        const box = document.createElement('textarea');
+        box.value = text;
+        box.setAttribute('readonly', 'readonly');
+        box.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;';
+        document.body.appendChild(box);
+        box.select();
+        const ok = document.execCommand('copy');
+        box.remove();
+        done(ok);
+      } catch (ignored) {
+        done(false);
+      }
+    }
+  }
+  function diagnosticLoadedGisUrl() {
+    const script = Array.from(document.scripts || []).find(item => /\/assets\/js\/gis-platform\.min\.js(?:[?#].*)?$/i.test(item.src || ''));
+    if (!script?.src) return '-';
+    try {
+      const url = new URL(script.src, window.location.href);
+      return url.pathname + url.search;
+    } catch (ignored) {
+      return script.src;
+    }
+  }
+  async function diagnosticSha256(buffer) {
+    const digest = await crypto.subtle.digest('SHA-256', buffer);
+    return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+  async function auditDiagnosticGisCache() {
+    if (!window.caches?.keys || !crypto?.subtle) {
+      state.diagnostic.gisCacheAudit = { status: 'unavailable' };
+      updateDiagnostic();
+      return;
+    }
+    const expected = '1CB4548CB89FF49A75BE161B037EBC3ED07FAC49589E1D2267D285353EFE3A53';
+    const entries = [];
+    try {
+      const cacheNames = await caches.keys();
+      for (const cacheName of cacheNames) {
+        const cache = await caches.open(cacheName);
+        const requests = await cache.keys();
+        for (const request of requests) {
+          let url;
+          try {
+            url = new URL(request.url);
+          } catch (ignored) {
+            continue;
+          }
+          if (!/\/assets\/js\/gis-platform\.min\.js$/i.test(url.pathname)) continue;
+          const response = await cache.match(request);
+          if (!response) continue;
+          const body = await response.clone().arrayBuffer();
+          entries.push({
+            cacheName,
+            url: url.pathname + url.search,
+            status: response.status,
+            type: response.headers.get('content-type') || '',
+            length: response.headers.get('content-length') || String(body.byteLength),
+            etag: response.headers.get('etag') || '',
+            modified: response.headers.get('last-modified') || '',
+            sha: await diagnosticSha256(body)
+          });
+        }
+      }
+      state.diagnostic.gisCacheAudit = {
+        status: 'ok',
+        expected,
+        loadedUrl: diagnosticLoadedGisUrl(),
+        documentLoadedSha: 'NOT DIRECTLY OBSERVABLE',
+        networkSha: 'NOT FETCHED: same-origin JS fetch would pass through SW and may write runtime cache',
+        entries,
+        stale: entries.some(entry => entry.sha && entry.sha !== expected)
+      };
+    } catch (error) {
+      state.diagnostic.gisCacheAudit = { status: 'error:' + error.message, expected, entries };
+    }
+    updateDiagnostic();
+  }
+  function installDiagnostic() {
+    if (!diagnosticEnabled() || state.diagnostic?.installed) return;
+    state.diagnostic = state.diagnostic || {};
+    state.diagnostic.installed = true;
+    state.diagnostic.lastDomEvent = '-';
+    state.diagnostic.lastLeafletEvent = '-';
+    state.diagnostic.markerPointer = 0;
+    state.diagnostic.markerClick = 0;
+    state.diagnostic.markerLeafletClick = 0;
+    const host = document.createElement('aside');
+    host.id = 'gisRuntimeDiagnostic';
+    host.style.cssText = 'position:fixed;right:10px;bottom:10px;z-index:2147483000;width:min(430px,calc(100vw - 20px));height:min(220px,calc(100vh - 20px));max-height:calc(100vh - 20px);overflow:hidden;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;box-shadow:0 18px 50px rgba(15,23,42,.35);pointer-events:auto;display:flex;flex-direction:column;touch-action:pan-y;';
+    host.setAttribute('aria-live', 'polite');
+    host.addEventListener('click', event => {
+      if (event.target?.closest?.('[data-gis-diagnostic-copy]')) copyDiagnosticText();
+    });
+    document.body.appendChild(host);
+    const mapEl = $('#gisMap');
+    if (mapEl && !mapEl.__gisRuntimeDiagnosticEvents) {
+      mapEl.__gisRuntimeDiagnosticEvents = true;
+      ['pointerdown', 'pointerup', 'click', 'touchstart', 'touchend'].forEach(type => {
+        mapEl.addEventListener(type, event => {
+          const point = event.touches?.[0] || event.changedTouches?.[0] || event;
+          state.diagnostic.lastDomEvent = type + ' ' + Math.round(point.clientX || 0) + ',' + Math.round(point.clientY || 0) + ' ' + diagnosticTarget(event.target);
+          updateDiagnostic();
+        }, { passive: true, capture: true });
+      });
+    }
+    const m = map();
+    if (m && !m.__gisRuntimeDiagnosticEvents) {
+      m.__gisRuntimeDiagnosticEvents = true;
+      m.on?.('click', () => { state.diagnostic.lastLeafletEvent = 'map click'; updateDiagnostic(); });
+      m.on?.('draw:drawstart', () => { state.diagnostic.lastLeafletEvent = 'draw:drawstart'; updateDiagnostic(); });
+      m.on?.('draw:drawvertex', () => { state.diagnostic.lastLeafletEvent = 'draw:drawvertex'; updateDiagnostic(); });
+      m.on?.('draw:created', () => { state.diagnostic.lastLeafletEvent = 'draw:created'; updateDiagnostic(); });
+    }
+    updateDiagnostic();
+    state.diagnostic.timer = setInterval(updateDiagnostic, 1000);
+    if (navigator.serviceWorker?.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        state.diagnostic.swRegistrations = registrations.map(reg => [
+          reg.scope,
+          reg.active ? 'active:' + reg.active.state : '',
+          reg.waiting ? 'waiting:' + reg.waiting.state : '',
+          reg.installing ? 'installing:' + reg.installing.state : ''
+        ].filter(Boolean).join(' '));
+        updateDiagnostic();
+      }).catch(error => {
+        state.diagnostic.swRegistrations = ['error:' + error.message];
+      });
+    }
+    if (window.caches?.keys) {
+      caches.keys().then(keys => {
+        state.diagnostic.cacheNames = keys;
+        updateDiagnostic();
+      }).catch(error => {
+        state.diagnostic.cacheNames = ['error:' + error.message];
+      });
+    }
+    auditDiagnosticGisCache();
+  }
+  function bindDiagnosticMarker(entry) {
+    if (!entry?.marker || entry.marker.__gisRuntimeDiagnosticBound) return;
+    entry.marker.__gisRuntimeDiagnosticBound = true;
+    const markerEl = diagnosticMarkerElement(entry);
+    markerEl?.addEventListener('pointerdown', event => {
+      state.diagnostic.markerPointer = (state.diagnostic.markerPointer || 0) + 1;
+      state.diagnostic.lastDomEvent = 'marker pointerdown ' + diagnosticTarget(event.target);
+      updateDiagnostic();
+    }, { passive: true, capture: true });
+    markerEl?.addEventListener('click', event => {
+      state.diagnostic.markerClick = (state.diagnostic.markerClick || 0) + 1;
+      state.diagnostic.lastDomEvent = 'marker click ' + diagnosticTarget(event.target);
+      updateDiagnostic();
+    }, { passive: true, capture: true });
+    entry.marker.on?.('click', () => {
+      state.diagnostic.markerLeafletClick = (state.diagnostic.markerLeafletClick || 0) + 1;
+      state.diagnostic.lastLeafletEvent = 'marker click';
+      updateDiagnostic();
+    });
+  }
+  function updateDiagnostic() {
+    const panel = $('#gisRuntimeDiagnostic');
+    if (!panel) return;
+    const m = map();
+    const mapEl = $('#gisMap');
+    const mapStyle = mapEl ? getComputedStyle(mapEl) : null;
+    const entry = diagnosticMarkerEntry();
+    bindDiagnosticMarker(entry);
+    const marker = entry?.marker || null;
+    const markerEl = diagnosticMarkerElement(entry);
+    const markerStyle = markerEl ? getComputedStyle(markerEl) : null;
+    const markerRect = markerEl?.getBoundingClientRect?.();
+    const mapRect = mapEl?.getBoundingClientRect?.();
+    const markerHit = markerRect ? document.elementsFromPoint(markerRect.x + markerRect.width / 2, markerRect.y + markerRect.height / 2).slice(0, 4).map(diagnosticTarget) : [];
+    const mapHit = mapRect ? document.elementsFromPoint(mapRect.x + mapRect.width / 2, mapRect.y + mapRect.height / 2).slice(0, 4).map(diagnosticTarget) : [];
+    const handler = window.App?.gis?.activeDrawHandler;
+    const points = handler?._markers?.length ?? handler?._poly?._latlngs?.length ?? 0;
+    const gisAudit = state.diagnostic?.gisCacheAudit || {};
+    const gisCacheEntries = (gisAudit.entries || []).map(entry => [
+      entry.cacheName,
+      entry.url,
+      'status ' + entry.status,
+      'sha ' + entry.sha,
+      'len ' + entry.length,
+      entry.modified ? 'lm ' + entry.modified : ''
+    ].filter(Boolean).join(' / '));
+    const rows = [
+      ['PWA standalone', window.matchMedia?.('(display-mode: standalone)')?.matches || navigator.standalone === true],
+      ['SW controller', Boolean(navigator.serviceWorker?.controller)],
+      ['SW script URL', navigator.serviceWorker?.controller?.scriptURL || '-'],
+      ['SW state', navigator.serviceWorker?.controller?.state || '-'],
+      ['GIS expected SHA', gisAudit.expected || '1CB4548CB89FF49A75BE161B037EBC3ED07FAC49589E1D2267D285353EFE3A53'],
+      ['GIS loaded URL', gisAudit.loadedUrl || diagnosticLoadedGisUrl()],
+      ['GIS loaded SHA', gisAudit.documentLoadedSha || 'NOT DIRECTLY OBSERVABLE'],
+      ['GIS network SHA', gisAudit.networkSha || 'NOT FETCHED'],
+      ['GIS cache audit', gisAudit.status || 'pending'],
+      ['GIS cache entries', gisCacheEntries],
+      ['stale GIS cache', gisAudit.stale === true ? 'YES' : (gisAudit.stale === false ? 'NO' : '-')],
+      ['copy status', state.diagnostic?.copyStatus || '-'],
+      ['Viewport', window.innerWidth + ' x ' + window.innerHeight + ' dpr ' + window.devicePixelRatio],
+      ['SW registrations', state.diagnostic?.swRegistrations || []],
+      ['cache names', state.diagnostic?.cacheNames || []],
+      ['asset URLs', diagnosticAssetUrls()],
+      ['localStorage keys', diagnosticStorageKeys(window.localStorage)],
+      ['sessionStorage keys', diagnosticStorageKeys(window.sessionStorage)],
+      ['map instance', Boolean(m)],
+      ['map container current', Boolean(m && mapEl && m.getContainer?.() === mapEl)],
+      ['map pointer-events', mapStyle?.pointerEvents],
+      ['map touch-action', mapStyle?.touchAction],
+      ['marker count', householdMarkerEntries().length],
+      ['marker interactive', marker?.options?.interactive],
+      ['marker draggable', marker?.options?.draggable],
+      ['marker class', markerEl?.className || '-'],
+      ['marker pointer-events', markerStyle?.pointerEvents],
+      ['marker hit target', markerHit],
+      ['marker pointer/click', (state.diagnostic.markerPointer || 0) + '/' + (state.diagnostic.markerClick || 0) + ' leaflet ' + (state.diagnostic.markerLeafletClick || 0)],
+      ['draw handler enabled', Boolean(handler?.enabled?.())],
+      ['draw points', points],
+      ['last DOM event', state.diagnostic?.lastDomEvent || '-'],
+      ['last Leaflet event', state.diagnostic?.lastLeafletEvent || '-'],
+      ['body classes', document.body.className || '-'],
+      ['sidebar-open', document.body.classList.contains('sidebar-open')],
+      ['map target', mapHit]
+    ];
+    state.diagnostic.lastCopyText = diagnosticRowsText(rows);
+    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(148,163,184,.3);flex:0 0 auto"><strong style="color:#fff">GIS RUNTIME DIAGNOSTIC</strong><button type="button" data-gis-diagnostic-copy style="border:1px solid #38bdf8;background:#082f49;color:#e0f2fe;border-radius:6px;padding:6px 8px;font:11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace">COPY DIAGNOSTIC</button></div><div style="overflow-y:auto;overflow-x:hidden;padding:0 12px 10px;flex:1 1 auto;-webkit-overflow-scrolling:touch">' + rows.map(([key, value]) => '<div style="display:grid;grid-template-columns:138px 1fr;gap:8px;border-top:1px solid rgba(148,163,184,.24);padding:4px 0"><span style="color:#93c5fd">' + escapeHtml(key) + '</span><span style="word-break:break-word">' + escapeHtml(diagnosticText(value)) + '</span></div>').join('') + '</div>';
+  }
   function installStartupSync() {
     [0, 300, 900, 1800, 3200].forEach(delay => setTimeout(() => schedulePlatformSync(0), delay));
   }
@@ -568,6 +873,7 @@
     installPanel();
     installUnifiedSearch();
     installMapHooks();
+    installDiagnostic();
     installStartupSync();
     window.TenantAppGisPlatform = {
       definitions: layerDefinitions.slice(),

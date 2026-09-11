@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Core\SimplePdf;
+use App\Core\SimpleXlsx;
 use App\Core\TenantConfig;
 use App\Models\Report;
 use App\Models\SystemSetting;
@@ -184,18 +185,21 @@ final class ReportController extends BaseController
             $type === '' || $type === 'summary' => ['household', 'citizen'],
             str_starts_with($type, 'household-business') || str_starts_with($type, 'business-') => ['household_business'],
             str_starts_with($type, 'livestock') => ['livestock'],
+            str_starts_with($type, 'rural-clean-water') || str_starts_with($type, 'clean-water') => ['rural_clean_water'],
+            str_starts_with($type, 'defense-security') || $type === 'nvqs' || $type === 'military-service' || $type === 'militia' || $type === 'security-force' => ['defense_security'],
             str_starts_with($type, 'vehicle') || str_starts_with($type, 'vehicles') => ['vehicles'],
             str_starts_with($type, 'contribution') || str_starts_with($type, 'household-contribution') => ['contributions'],
             str_starts_with($type, 'agricultural-land') || str_starts_with($type, 'agricultural_land') => ['agricultural_land'],
             str_starts_with($type, 'agriculture') => ['agriculture'],
-            str_starts_with($type, 'defense-security') || str_starts_with($type, 'nvqs') || str_starts_with($type, 'militia') || str_starts_with($type, 'security-force') => ['defense_security'],
             str_starts_with($type, 'party-members') || str_starts_with($type, 'party_member') => ['party_members'],
+            in_array($type, ['farmers-union', 'farmers_union', 'farmers-union-member', 'farmers_union_member', 'women-union', 'women_union', 'women-union-member', 'women_union_member', 'veterans-union', 'veterans_union', 'veterans-union-member', 'veterans_union_member', 'youth-union', 'youth_union', 'youth-union-member', 'youth_union_member', 'doan-vien', 'doan-thanh-nien'], true) => ['associations'],
+            in_array($type, ['policy-subjects', 'policy_subjects', 'doi-tuong-chinh-sach'], true) => ['policy_subjects'],
             str_starts_with($type, 'house-') || str_starts_with($type, 'houses') => ['houses'],
             str_starts_with($type, 'public-asset') || str_starts_with($type, 'public-assets') => ['public_assets'],
             str_starts_with($type, 'gis') => ['gis', 'household'],
             $type === 'bi-dashboard' || $type === 'report-center' => ['household', 'citizen', 'movement', 'gis', 'household_business', 'agriculture', 'livestock', 'vehicles', 'contributions', 'houses', 'public_assets'],
             str_starts_with($type, 'digital-profile') || str_starts_with($type, 'profile-') => ['household', 'citizen', 'file'],
-            in_array($type, ['population', 'citizen', 'citizens', 'gender', 'age', 'residency', 'health-insurance', 'health-insurance-missing', 'health-insurance-expiring', 'health-insurance-expired', 'health-insurance-household', 'health-insurance-area', 'party-members', 'party-member', 'party', 'youth-union', 'youth-union-member', 'meritorious-people', 'meritorious', 'meritorious-person', 'disabled-people', 'disabled', 'disabled-person', 'labor', 'labour', 'elderly', 'children'], true) => ['citizen'],
+            in_array($type, ['population', 'citizen', 'citizens', 'gender', 'age', 'residency', 'health-insurance', 'health-insurance-missing', 'health-insurance-expiring', 'health-insurance-expired', 'health-insurance-household', 'health-insurance-area', 'party-members', 'party-member', 'party', 'meritorious-people', 'meritorious', 'meritorious-person', 'disabled-people', 'disabled', 'disabled-person', 'labor', 'labour', 'elderly', 'children', 'elderly-union', 'elderly_union', 'elderly-union-member', 'elderly_union_member'], true) => ['citizen'],
             in_array($type, ['household', 'households', 'poor-households', 'near-poor-households', 'special'], true) => ['household'],
             in_array($type, ['temporary-residence', 'temporary', 'temporary-absence', 'absence', 'births', 'birth', 'deaths', 'death', 'migration', 'movement', 'movement-summary'], true) => ['citizen', 'movement'],
             default => ['household', 'citizen'],
@@ -207,6 +211,8 @@ final class ReportController extends BaseController
             'dateFrom' => $this->nullableQuery('dateFrom'),
             'dateTo' => $this->nullableQuery('dateTo'),
             'householdStatus' => $this->nullableQuery('householdStatus'),
+            'residenceStatus' => $this->nullableQueryAny('residenceStatus', ['residence_status', 'householdResidenceStatus']),
+            'householdCategory' => $this->nullableQueryAny('householdCategory', ['household_category', 'householdType', 'household_type', 'category']),
             'householdType' => $this->nullableQueryAny('householdType', ['household_type', 'category']),
             'household_type' => $this->nullableQueryAny('household_type', ['householdType', 'category']),
             'category' => $this->nullableQueryAny('category', ['household_type', 'householdType']),
@@ -307,6 +313,13 @@ final class ReportController extends BaseController
 
     private function downloadExcel(array $report): void
     {
+        $fileName = $this->slug($report['title']) . '_' . date('Ymd_His') . '.xlsx';
+        $xlsx = new SimpleXlsx();
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        echo $xlsx->output($report);
+        exit;
+
         $fileName = $this->slug($report['title']) . '_' . date('Ymd_His') . '.xls';
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
@@ -339,7 +352,7 @@ final class ReportController extends BaseController
     private function downloadPdf(array $report): void
     {
         $fileName = $this->slug($report['title']) . '_' . date('Ymd_His') . '.pdf';
-        $pdf = new SimplePdf();
+        $pdf = new SimplePdf($this->reportOrientation($report));
         $pdf->addPrintHeader($this->reportUnitName($report), $report['title']);
         foreach ($this->reportMetaLines($report) as $line) $pdf->addMeta($line);
         $pdf->addMeta('Thoi gian xuat: ' . date('d/m/Y H:i:s'));
@@ -352,6 +365,98 @@ final class ReportController extends BaseController
         exit;
     }
 
+    private function reportOrientation(array $report): string
+    {
+        $forced = strtolower((string) ($report['orientation'] ?? ''));
+        if ($forced === 'landscape') return 'landscape';
+        if ($this->reportNeedsLandscape($report)) return 'landscape';
+        if ($forced === 'portrait') return 'portrait';
+        $type = strtolower((string) (($report['filters']['type'] ?? null) ?: ($report['filters']['report_type'] ?? '')));
+        $typeOrientation = [
+            'household' => 'portrait',
+            'population' => 'landscape',
+            'citizen' => 'landscape',
+            'summary' => 'portrait',
+            'gis' => 'landscape',
+            'gis-located' => 'landscape',
+            'gis-unlocated' => 'landscape',
+            'contributions' => 'landscape',
+            'contributions-list' => 'landscape',
+            'contributions-collection' => 'landscape',
+            'contributions-unpaid-list' => 'landscape',
+            'contributions-partial' => 'landscape',
+            'contributions-exempt' => 'landscape',
+            'contributions-by-contribution' => 'landscape',
+            'contributions-summary' => 'portrait',
+            'contributions-year-summary' => 'portrait',
+        ];
+        return $typeOrientation[$type] ?? 'portrait';
+    }
+
+    private function reportNeedsLandscape(array $report): bool
+    {
+        $headers = array_values(array_map('strval', $report['headers'] ?? []));
+        if ($headers === []) $headers = ['Nội dung'];
+        $rows = array_slice(array_values((array) ($report['rows'] ?? [])), 0, 24);
+        $cols = max(count($headers), 1);
+        foreach ($rows as $row) $cols = max($cols, count((array) $row));
+
+        $portraitWidthMm = 182.0;
+        $mmPerChar = 1.55;
+        $requiredWidth = 0.0;
+        $headerWrapColumns = 0;
+        $dataWrapColumns = 0;
+        $constrainedTextColumns = 0;
+
+        for ($i = 0; $i < $cols; $i++) {
+            [$min, $max, $wrapChars] = $this->columnWidthProfile((string) ($headers[$i] ?? ''));
+            $headerLen = $this->textLength((string) ($headers[$i] ?? ''));
+            $sampleLen = 0;
+            foreach ($rows as $row) {
+                $cells = array_values((array) $row);
+                $sampleLen = max($sampleLen, $this->textLength((string) ($cells[$i] ?? '')));
+            }
+            $weighted = max($min, min($max, max($headerLen * $mmPerChar, $sampleLen * 1.12)));
+            $portraitEqualWidth = $portraitWidthMm / max(1, $cols);
+            $portraitChars = max(4, (int) floor(min($weighted, $portraitEqualWidth) / $mmPerChar));
+            $headerLines = (int) ceil($headerLen / max(1, $portraitChars));
+            $dataLines = (int) ceil($sampleLen / max(1, $portraitChars));
+            if ($headerLines >= 3 || ($headerLines >= 2 && $headerLen >= 24)) $headerWrapColumns++;
+            if ($dataLines >= 4 || ($dataLines >= 3 && $min >= 34.0)) $dataWrapColumns++;
+            if ($min >= 34.0 && $portraitEqualWidth < $wrapChars * $mmPerChar) $constrainedTextColumns++;
+            $requiredWidth += $weighted;
+        }
+
+        return $requiredWidth > $portraitWidthMm
+            || $headerWrapColumns >= 2
+            || $dataWrapColumns >= 2
+            || ($dataWrapColumns >= 1 && $constrainedTextColumns >= 2)
+            || $cols >= 7;
+    }
+
+    private function columnWidthProfile(string $header): array
+    {
+        $text = $this->normalizedHeader($header);
+        if (preg_match('/^(stt|tt|#|no\.?|so tt)$/u', $text) || str_contains($text, 'stt')) return [10.0, 14.0, 8];
+        if (preg_match('/(so luong|tong|nam sinh|nam|tuoi|gioi tinh|muc|ty le|dien tich|san luong|so tien|da nop|con no|id|ma )/u', $text)) return [16.0, 24.0, 11];
+        if (preg_match('/(ngay|thang|thoi gian|han|trang thai|tinh trang|phan loai|loai|nhom|doi tuong|khu vuc|chi bo|to chuc)/u', $text)) return [24.0, 34.0, 16];
+        if (preg_match('/(ho va ten|ho ten|chu ho|ten ho|ten|nguoi|thanh vien|can bo|don vi)/u', $text)) return [34.0, 52.0, 22];
+        if (preg_match('/(dia chi|noi dung|ghi chu|ly do|mo ta|ket qua|hinh thuc|nguon nuoc|cong trinh|san pham|nganh nghe)/u', $text)) return [46.0, 70.0, 28];
+        return [24.0, 34.0, 16];
+    }
+
+    private function normalizedHeader(string $text): string
+    {
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+        return strtolower($ascii !== false ? $ascii : $text);
+    }
+
+    private function textLength(string $text): int
+    {
+        $text = trim($text);
+        return function_exists('mb_strlen') ? mb_strlen($text, 'UTF-8') : strlen($text);
+    }
+
 
     private function downloadWord(array $report): void
     {
@@ -359,7 +464,7 @@ final class ReportController extends BaseController
         header('Content-Type: application/msword; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         echo "\xEF\xBB\xBF";
-        echo '<html><head><meta charset="utf-8"><style>@page{size:A4;margin:16mm 14mm 20mm}body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}td,th{border:1px solid #555;padding:6px;vertical-align:top;word-break:break-word}th{background:#eef2f7}</style></head><body>';
+        echo '<html><head><style>@page{size:A4;margin:16mm 14mm 20mm}body{font-family:Arial,sans-serif;color:#111}.report-print-masthead{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8mm;align-items:start;margin-bottom:12mm}.report-print-agency{text-align:left}.report-print-agency-primary{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-agency-secondary{font-size:11px;margin-top:2px}.report-print-national{text-align:center}.report-print-national-title{font-weight:700;text-transform:uppercase;font-size:13px}.report-print-national-subtitle{display:inline-block;border-bottom:1px solid #111;font-weight:700;font-size:12px;padding-bottom:2px}.report-print-title{text-align:center;text-transform:uppercase;font-size:20px;font-weight:700;margin:0 0 10mm}.report-print-meta{margin:8px 0 12px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}td,th{border:1px solid #555;padding:6px;vertical-align:top;word-break:break-word}th{background:#eef2f7}</style></head><body>';
         $this->echoReportHeaderHtml($report);
         $this->echoReportMetaHtml($report);
         echo '<p>Thời gian xuất: ' . date('d/m/Y H:i:s') . '</p><table><thead><tr>';

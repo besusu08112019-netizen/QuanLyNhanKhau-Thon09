@@ -31,8 +31,8 @@ final class PolicyAlertController extends BaseController
     {
         $user = $this->requirePermission('citizen', 'update');
         $input = (array) $this->input();
-        $row = $this->alerts->mark((int) $citizenId, (string) ($input['alert_key'] ?? $input['type'] ?? ''), (string) ($input['status'] ?? ''), (int) $user['id'], (string) ($input['note'] ?? ''));
-        $this->audit($user, 'citizen', 'policy_alert', 'Cập nhật cảnh báo chính sách', $citizenId, ['after' => $row]);
+        $row = $this->alerts->mark((int) $citizenId, (string) ($input['alert_key'] ?? $input['type'] ?? ''), (string) ($input['status'] ?? ''), (int) $user['id'], (string) ($input['note'] ?? ''), (string) ($input['result_status'] ?? $input['resultStatus'] ?? ''));
+        $this->audit($user, 'citizen', 'policy_alert', 'Cap nhat canh bao chinh sach', $citizenId, ['after' => $row]);
         $this->ok($row);
     }
 

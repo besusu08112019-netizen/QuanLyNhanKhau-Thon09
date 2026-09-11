@@ -2,7 +2,7 @@
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
   const API='/api/vehicles';
-  const state={ready:false,page:1,pageSize:20,search:'',vehicle_type:'',owner_name:'',catalogs:null};
+  const state={ready:false,page:1,pageSize:20,search:'',vehicle_type:'',owner_name:'',household_id:0,catalogs:null};
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   const num=v=>new Intl.NumberFormat('vi-VN').format(Number(v||0));
   const money=v=>new Intl.NumberFormat('vi-VN').format(Number(v||0));
@@ -25,7 +25,7 @@
     $('#vehicleTypeFilter').addEventListener('change',e=>{state.vehicle_type=e.target.value;state.page=1;load();});
     $('#vehicleOwnerFilter').addEventListener('input',debounce(e=>{state.owner_name=e.target.value.trim();state.page=1;load();},300));
     $('#vehiclesPageSize').addEventListener('change',e=>{state.pageSize=Number(e.target.value||20);state.page=1;load();});
-    $('#vehicleResetBtn').addEventListener('click',()=>{Object.assign(state,{page:1,search:'',vehicle_type:'',owner_name:''});$('#vehicleSearch').value='';$('#vehicleTypeFilter').value='';$('#vehicleOwnerFilter').value='';load();});
+    $('#vehicleResetBtn').addEventListener('click',()=>{Object.assign(state,{page:1,search:'',vehicle_type:'',owner_name:'',household_id:0});$('#vehicleSearch').value='';$('#vehicleTypeFilter').value='';$('#vehicleOwnerFilter').value='';load();});
     $('#vehicleAddBtn')?.addEventListener('click',()=>openForm());
     $('#vehicleForm').addEventListener('submit',save);
     $('#vehicleHouseholdSearch').addEventListener('input',debounce(searchHouseholds,250));
@@ -34,7 +34,7 @@
   }
   async function catalogs(){ if(state.catalogs)return state.catalogs; state.catalogs=await req(API+'/catalogs',{cacheTtl:60000}); fill('#vehicleTypeFilter',state.catalogs.vehicle_types,'Tất cả'); fill('#vehicleTypeInput',state.catalogs.vehicle_types,'Chọn loại'); fill('#vehicleDetailTypeInput',state.catalogs.detail_types,'Chọn phân loại'); fill('#vehicleUsageInput',state.catalogs.usage_statuses,'Chọn tình trạng'); return state.catalogs; }
   function fill(sel,items,first){const el=$(sel); if(!el)return; el.innerHTML='<option value="">'+esc(first)+'</option>'+(items||[]).map(i=>'<option value="'+esc(i.value)+'">'+esc(i.label||i.value)+'</option>').join('');}
-  function params(){const p=new URLSearchParams({page:state.page,pageSize:state.pageSize}); ['search','vehicle_type','owner_name'].forEach(k=>{if(state[k])p.set(k,state[k]);}); return p;}
+  function params(){const p=new URLSearchParams({page:state.page,pageSize:state.pageSize}); ['search','vehicle_type','owner_name'].forEach(k=>{if(state[k])p.set(k,state[k]);}); if(state.household_id)p.set('household_id',state.household_id); return p;}
   async function load(){ if(!can('read'))return; shell(); await catalogs(); try{const data=await req(API+'?'+params().toString(),{cacheTtl:3000}); render(data); dashboard();}catch(e){toast(e.message,'danger');} }
   function render(data){const rows=data.items||[]; $('#vehiclesTotal').textContent='Tổng số: '+num(data.total)+' phương tiện'; $('#vehiclesRows').innerHTML=rows.length?rows.map((r,i)=>row(r,(data.page-1)*data.pageSize+i+1)).join(''):'<tr><td colspan="11" class="text-center text-muted py-4">Chưa có dữ liệu phương tiện</td></tr>'; pager(data); if(typeof TenantAppSyncResponsiveTableLabels==='function')TenantAppSyncResponsiveTableLabels($('#vehiclesScreen'));}
   function row(r,i){const actions=(can('update')?'<button class="btn btn-sm btn-outline-primary me-1" data-edit="'+r.id+'"><i class="fa-solid fa-pen"></i></button>':'')+(can('delete')?'<button class="btn btn-sm btn-outline-danger" data-del="'+r.id+'"><i class="fa-solid fa-trash"></i></button>':''); return '<tr><td>'+i+'</td><td><strong>'+esc(r.vehicle_code||'')+'</strong><div class="small text-muted">'+esc(r.household_code)+'</div></td><td><strong>'+esc(r.head_citizen_name)+'</strong><div class="text-muted small">'+esc(r.address)+'</div></td><td>'+esc(r.owner_name||r.owner_citizen_name||'')+'<div class="small text-muted">'+esc(r.owner_citizen_code||'')+'</div></td><td>'+esc(r.vehicle_type)+'<div class="small text-muted">'+esc(r.detail_type||'')+'</div></td><td>'+esc([r.brand,r.model,r.version_name].filter(Boolean).join(" "))+'</td><td><strong>'+esc(r.license_plate||'')+'</strong></td><td>'+esc(r.frame_number)+'</td><td>'+esc(r.engine_number)+'</td><td><span class="badge text-bg-light">'+esc(r.usage_status_label)+'</span><div class="small text-muted">BH: '+esc(r.insurance_expiry_date||'')+' KĐ: '+esc(r.inspection_expiry_date||'')+'</div></td><td class="text-end">'+actions+'</td></tr>';}

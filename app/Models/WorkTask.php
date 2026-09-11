@@ -6,125 +6,70 @@ use App\Core\BaseModel;
 
 final class WorkTask extends BaseModel
 {
+    private const REQUIRED_SCHEMA = [
+        'work_task_categories' => ['id','village_id','code','name','sort_order','is_active','created_at','updated_at'],
+        'work_task_priorities' => ['id','village_id','code','name','sort_order','is_active','created_at','updated_at'],
+        'work_task_statuses' => ['id','village_id','code','name','progress_percent','is_terminal','sort_order','is_active','created_at','updated_at'],
+        'work_tasks' => ['id','village_id','task_code','title','description','category_id','priority_id','status_id','assigned_user_id','assigned_name','start_at','due_at','completed_at','progress_percent','related_module','related_id','area_code','note','soft_status','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by'],
+        'work_task_logs' => ['id','village_id','task_id','actor_user_id','actor_name','content','status_id','progress_percent','created_at'],
+        'work_task_attachments' => ['id','village_id','task_id','log_id','original_name','stored_path','mime_type','file_size','file_kind','created_at','created_by','deleted_at','deleted_by'],
+    ];
+
+    private const REQUIRED_INDEXES = [
+        'work_task_categories' => ['PRIMARY','idx_work_task_categories_active','idx_work_task_categories_village'],
+        'work_task_priorities' => ['PRIMARY','idx_work_task_priorities_active','idx_work_task_priorities_village'],
+        'work_task_statuses' => ['PRIMARY','idx_work_task_statuses_active','idx_work_task_statuses_terminal','idx_work_task_statuses_village'],
+        'work_tasks' => ['PRIMARY','idx_work_tasks_search','idx_work_tasks_category','idx_work_tasks_priority','idx_work_tasks_status','idx_work_tasks_assigned','idx_work_tasks_due','idx_work_tasks_area','idx_work_tasks_related','idx_work_tasks_soft_status','idx_work_tasks_village'],
+        'work_task_logs' => ['PRIMARY','idx_work_task_logs_task','idx_work_task_logs_status','idx_work_task_logs_village'],
+        'work_task_attachments' => ['PRIMARY','idx_work_task_attachments_task','idx_work_task_attachments_log','idx_work_task_attachments_kind','idx_work_task_attachments_village'],
+    ];
+
+    private const REQUIRED_FOREIGN_KEYS = [
+        'work_tasks' => [
+            ['fk_work_tasks_category','category_id','work_task_categories','id'],
+            ['fk_work_tasks_priority','priority_id','work_task_priorities','id'],
+            ['fk_work_tasks_status','status_id','work_task_statuses','id'],
+        ],
+        'work_task_logs' => [
+            ['fk_work_task_logs_task','task_id','work_tasks','id'],
+            ['fk_work_task_logs_status','status_id','work_task_statuses','id'],
+        ],
+        'work_task_attachments' => [
+            ['fk_work_task_attachments_task','task_id','work_tasks','id'],
+            ['fk_work_task_attachments_log','log_id','work_task_logs','id'],
+        ],
+    ];
+
+    private const REQUIRED_CATEGORIES = [
+        ['fund_collection', 'Thu quỹ', 10],
+        ['household_check', 'Kiểm tra hộ', 20],
+        ['gift_distribution', 'Phát quà', 30],
+        ['environment_cleanup', 'Vệ sinh môi trường', 40],
+        ['patrol', 'Tuần tra', 50],
+        ['public_asset_check', 'Kiểm tra công trình', 60],
+        ['production_check', 'Kiểm tra sản xuất', 70],
+        ['other', 'Khác', 80],
+    ];
+
+    private const REQUIRED_PRIORITIES = [
+        ['URGENT','Khẩn cấp',10],
+        ['HIGH','Cao',20],
+        ['NORMAL','Bình thường',30],
+        ['LOW','Thấp',40],
+    ];
+
+    private const REQUIRED_STATUSES = [
+        ['NEW','Mới tạo',0,0,10],
+        ['ASSIGNED','Đã giao',10,0,20],
+        ['IN_PROGRESS','Đang thực hiện',50,0,30],
+        ['WAITING','Tạm dừng/chờ xử lý',50,0,40],
+        ['DONE','Đã hoàn thành',100,1,50],
+        ['CANCELLED','Đã hủy',0,1,60],
+    ];
+
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS work_task_categories (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(80) NOT NULL UNIQUE,
-  name VARCHAR(180) NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_work_task_categories_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS work_task_priorities (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(40) NOT NULL UNIQUE,
-  name VARCHAR(120) NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_work_task_priorities_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS work_task_statuses (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(60) NOT NULL UNIQUE,
-  name VARCHAR(160) NOT NULL,
-  progress_percent TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  is_terminal TINYINT(1) NOT NULL DEFAULT 0,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_work_task_statuses_active (is_active),
-  KEY idx_work_task_statuses_terminal (is_terminal)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS work_tasks (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  task_code VARCHAR(40) NOT NULL UNIQUE,
-  title VARCHAR(255) NOT NULL,
-  description TEXT NULL,
-  category_id BIGINT UNSIGNED NULL,
-  priority_id BIGINT UNSIGNED NULL,
-  status_id BIGINT UNSIGNED NULL,
-  assigned_user_id BIGINT UNSIGNED NULL,
-  assigned_name VARCHAR(255) NULL,
-  start_at DATETIME NULL,
-  due_at DATETIME NULL,
-  completed_at DATETIME NULL,
-  progress_percent TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  related_module VARCHAR(80) NULL,
-  related_id BIGINT UNSIGNED NULL,
-  area_code VARCHAR(80) NULL,
-  note TEXT NULL,
-  soft_status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_work_tasks_search (task_code, title),
-  KEY idx_work_tasks_category (category_id),
-  KEY idx_work_tasks_priority (priority_id),
-  KEY idx_work_tasks_status (status_id),
-  KEY idx_work_tasks_assigned (assigned_user_id),
-  KEY idx_work_tasks_due (due_at),
-  KEY idx_work_tasks_area (area_code),
-  KEY idx_work_tasks_related (related_module, related_id),
-  KEY idx_work_tasks_soft_status (soft_status),
-  CONSTRAINT fk_work_tasks_category FOREIGN KEY (category_id) REFERENCES work_task_categories(id) ON DELETE SET NULL,
-  CONSTRAINT fk_work_tasks_priority FOREIGN KEY (priority_id) REFERENCES work_task_priorities(id) ON DELETE SET NULL,
-  CONSTRAINT fk_work_tasks_status FOREIGN KEY (status_id) REFERENCES work_task_statuses(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS work_task_logs (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  task_id BIGINT UNSIGNED NOT NULL,
-  actor_user_id BIGINT UNSIGNED NULL,
-  actor_name VARCHAR(255) NULL,
-  content TEXT NOT NULL,
-  status_id BIGINT UNSIGNED NULL,
-  progress_percent TINYINT UNSIGNED NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_work_task_logs_task (task_id),
-  KEY idx_work_task_logs_status (status_id),
-  CONSTRAINT fk_work_task_logs_task FOREIGN KEY (task_id) REFERENCES work_tasks(id) ON DELETE CASCADE,
-  CONSTRAINT fk_work_task_logs_status FOREIGN KEY (status_id) REFERENCES work_task_statuses(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS work_task_attachments (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  task_id BIGINT UNSIGNED NOT NULL,
-  log_id BIGINT UNSIGNED NULL,
-  original_name VARCHAR(255) NOT NULL,
-  stored_path VARCHAR(500) NOT NULL,
-  mime_type VARCHAR(120) NOT NULL,
-  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  file_kind ENUM('IMAGE','VIDEO','PDF','DOCUMENT','OTHER') NOT NULL DEFAULT 'OTHER',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_work_task_attachments_task (task_id),
-  KEY idx_work_task_attachments_log (log_id),
-  KEY idx_work_task_attachments_kind (file_kind),
-  CONSTRAINT fk_work_task_attachments_task FOREIGN KEY (task_id) REFERENCES work_tasks(id) ON DELETE CASCADE,
-  CONSTRAINT fk_work_task_attachments_log FOREIGN KEY (log_id) REFERENCES work_task_logs(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->seedCatalogs();
+        $this->assertSchemaReady();
     }
 
     public function catalogs(): array
@@ -385,37 +330,6 @@ SQL);
         ];
     }
 
-    private function seedCatalogs(): void
-    {
-        $categories = [
-            ['fund_collection', 'Thu quỹ'],
-            ['household_check', 'Kiểm tra hộ'],
-            ['gift_distribution', 'Phát quà'],
-            ['environment_cleanup', 'Vệ sinh môi trường'],
-            ['patrol', 'Tuần tra'],
-            ['public_asset_check', 'Kiểm tra công trình'],
-            ['production_check', 'Kiểm tra sản xuất'],
-            ['other', 'Khác'],
-        ];
-        $order = 10;
-        foreach ($categories as [$code, $name]) {
-            $this->execute('INSERT INTO work_task_categories (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]);
-            $order += 10;
-        }
-        $priorities = [['URGENT','Khẩn cấp'],['HIGH','Cao'],['NORMAL','Bình thường'],['LOW','Thấp']];
-        $order = 10;
-        foreach ($priorities as [$code, $name]) {
-            $this->execute('INSERT INTO work_task_priorities (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]);
-            $order += 10;
-        }
-        $statuses = [['NEW','Mới tạo',0,0],['ASSIGNED','Đã giao',10,0],['IN_PROGRESS','Đang thực hiện',50,0],['WAITING','Tạm dừng/chờ xử lý',50,0],['DONE','Đã hoàn thành',100,1],['CANCELLED','Đã hủy',0,1]];
-        $order = 10;
-        foreach ($statuses as [$code, $name, $progress, $terminal]) {
-            $this->execute('INSERT INTO work_task_statuses (code,name,progress_percent,is_terminal,sort_order) VALUES (:code,:name,:progress,:terminal,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), progress_percent=VALUES(progress_percent), is_terminal=VALUES(is_terminal), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'progress' => $progress, 'terminal' => $terminal, 'sort_order' => $order]);
-            $order += 10;
-        }
-    }
-
     private function catalog(string $table): array
     {
         $rows = $this->uniqueCatalogRows($this->fetchAll("SELECT id, code, name FROM $table WHERE is_active=1 ORDER BY sort_order ASC, id ASC"));
@@ -480,6 +394,12 @@ SQL);
         return $id;
     }
 
+    private function assertSchemaReady(): void { foreach (self::REQUIRED_SCHEMA as $table => $columns) { if (!$this->tableExists($table)) throw new \RuntimeException('Work Task schema is not provisioned: missing table ' . $table); foreach ($columns as $column) { if (!$this->columnExists($table, $column)) throw new \RuntimeException('Work Task schema is not provisioned: missing column ' . $table . '.' . $column); } foreach (self::REQUIRED_INDEXES[$table] ?? [] as $index) { if (!$this->indexExists($table, $index)) throw new \RuntimeException('Work Task schema is not provisioned: missing index ' . $table . '.' . $index); } } foreach (self::REQUIRED_FOREIGN_KEYS as $table => $foreignKeys) { foreach ($foreignKeys as [$constraint, $column, $referencedTable, $referencedColumn]) { if (!$this->foreignKeyExists($table, $constraint, $column, $referencedTable, $referencedColumn)) throw new \RuntimeException('Work Task schema is not provisioned: missing foreign key ' . $constraint); } } $drift = array_merge($this->simpleCatalogDrift('work_task_categories', self::REQUIRED_CATEGORIES), $this->simpleCatalogDrift('work_task_priorities', self::REQUIRED_PRIORITIES), $this->statusCatalogDrift()); if ($drift !== []) throw new \RuntimeException('Work Task catalogs are not provisioned: ' . implode('; ', $drift)); }
+    private function simpleCatalogDrift(string $table, array $items): array { $drift = []; foreach ($items as [$code]) { $compatible = $this->fetchOne("SELECT id FROM $table WHERE code=:code AND is_active=1", ['code' => $code]); if ($compatible) continue; $existing = $this->fetchOne("SELECT id FROM $table WHERE code=:code", ['code' => $code]); $drift[] = $existing ? 'conflicting ' . $table . ' ' . $code : 'missing ' . $table . ' ' . $code; } return $drift; }
+    private function statusCatalogDrift(): array { $drift = []; foreach (self::REQUIRED_STATUSES as [$code, $name, $progress, $terminal]) { $compatible = $this->fetchOne('SELECT id FROM work_task_statuses WHERE code=:code AND progress_percent=:progress AND is_terminal=:terminal AND is_active=1', ['code' => $code, 'progress' => $progress, 'terminal' => $terminal]); if ($compatible) continue; $existing = $this->fetchOne('SELECT id FROM work_task_statuses WHERE code=:code', ['code' => $code]); $drift[] = $existing ? 'conflicting work_task_statuses ' . $code : 'missing work_task_statuses ' . $code; } return $drift; }
+    private function tableExists(string $table): bool { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table' => $table]); return (int)($row['total'] ?? 0) > 0; }
+    private function indexExists(string $table, string $index): bool { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND INDEX_NAME=:index', ['table' => $table, 'index' => $index]); return (int)($row['total'] ?? 0) > 0; }
+    private function foreignKeyExists(string $table, string $constraint, string $column, string $referencedTable, string $referencedColumn): bool { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND CONSTRAINT_NAME=:constraint_name AND COLUMN_NAME=:column_name AND REFERENCED_TABLE_NAME=:referenced_table AND REFERENCED_COLUMN_NAME=:referenced_column', ['table' => $table, 'constraint_name' => $constraint, 'column_name' => $column, 'referenced_table' => $referencedTable, 'referenced_column' => $referencedColumn]); return (int)($row['total'] ?? 0) > 0; }
     private function defaultStatusId(): int { return (int)(($this->fetchOne('SELECT id FROM work_task_statuses WHERE code="NEW"') ?: [])['id'] ?? 0); }
     private function defaultPriorityId(): int { return (int)(($this->fetchOne('SELECT id FROM work_task_priorities WHERE code="NORMAL"') ?: [])['id'] ?? 0); }
     private function statusTerminal(int $id): bool { return (bool)(($this->fetchOne('SELECT is_terminal FROM work_task_statuses WHERE id=:id', ['id' => $id]) ?: [])['is_terminal'] ?? false); }

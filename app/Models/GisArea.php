@@ -119,50 +119,120 @@ final class GisArea extends BaseModel
 
     public function ensureSchema(): void
     {
-        $this->execute('CREATE TABLE IF NOT EXISTS gis_areas (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            village_id BIGINT UNSIGNED NOT NULL,
-            name VARCHAR(150) NOT NULL,
-            area_code VARCHAR(100) NOT NULL,
-            color VARCHAR(20) DEFAULT "#0f8a4b",
-            note TEXT NULL,
-            polygon LONGTEXT NULL,
-            geometry_json LONGTEXT NULL,
-            sort_order INT DEFAULT 0,
-            status VARCHAR(20) DEFAULT "ACTIVE",
-            created_by INT NULL,
-            updated_by INT NULL,
-            deleted_by INT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-            deleted_at TIMESTAMP NULL DEFAULT NULL,
-            INDEX idx_gis_area_code (area_code),
-            INDEX idx_gis_status (status)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+        $this->assertSchemaReady();
+    }
 
-        foreach (['village_id' => 'BIGINT UNSIGNED NULL', 'polygon' => 'LONGTEXT NULL', 'geometry_json' => 'LONGTEXT NULL'] as $column => $definition) {
-            if (!$this->columnExists('gis_areas', $column)) $this->execute('ALTER TABLE gis_areas ADD COLUMN ' . $column . ' ' . $definition);
+    public function assertSchemaReady(): void
+    {
+        $this->assertTableReady('gis_areas');
+        $this->assertColumnsReady('gis_areas', [
+            'id' => ['type' => 'int', 'nullable' => false],
+            'village_id' => ['type' => 'bigint unsigned', 'nullable' => false],
+            'name' => ['type' => 'varchar(150)', 'nullable' => false],
+            'area_code' => ['type' => 'varchar(100)', 'nullable' => false],
+            'color' => ['type' => 'varchar(20)', 'nullable' => true, 'default' => '#0f8a4b'],
+            'note' => ['type' => 'text', 'nullable' => true],
+            'polygon' => ['type' => 'longtext', 'nullable' => true],
+            'geometry_json' => ['type' => 'longtext', 'nullable' => true],
+            'sort_order' => ['type' => 'int', 'nullable' => true, 'default' => '0'],
+            'status' => ['type' => 'varchar(20)', 'nullable' => true, 'default' => 'ACTIVE'],
+            'created_by' => ['type' => 'int', 'nullable' => true],
+            'updated_by' => ['type' => 'int', 'nullable' => true],
+            'deleted_by' => ['type' => 'int', 'nullable' => true],
+            'created_at' => ['type' => 'timestamp'],
+            'updated_at' => ['type' => 'timestamp'],
+            'deleted_at' => ['type' => 'timestamp'],
+        ]);
+        $this->assertIndexReady('gis_areas', 'idx_gis_area_code', ['area_code']);
+        $this->assertIndexReady('gis_areas', 'idx_gis_status', ['status']);
+        $this->assertHouseholdGisSchemaReady();
+    }
+
+    private function assertHouseholdGisSchemaReady(): void
+    {
+        $this->assertTableReady('households');
+        $this->assertColumnsReady('households', [
+            'latitude' => ['type' => 'decimal(10,8)', 'nullable' => true],
+            'longitude' => ['type' => 'decimal(11,8)', 'nullable' => true],
+            'location_accuracy' => ['type' => 'int', 'nullable' => true],
+            'location_source' => ['type' => "enum('MANUAL','GPS')", 'nullable' => true],
+            'google_map_url' => ['type' => 'varchar(255)', 'nullable' => true],
+            'location_note' => ['type' => 'text', 'nullable' => true],
+            'location_updated_at' => ['type' => 'datetime', 'nullable' => true],
+            'location_updated_by' => ['type' => 'bigint', 'nullable' => true],
+        ]);
+        $this->assertIndexReady('households', 'idx_households_location', ['latitude', 'longitude']);
+        $this->assertIndexReady('households', 'idx_households_area_location', ['area_code', 'latitude', 'longitude']);
+    }
+
+    private function assertTableReady(string $table): void
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => $table]
+        );
+        if ((int) ($row['total'] ?? 0) === 0) {
+            throw new \RuntimeException('GIS schema is not ready: missing table ' . $table);
         }
-        $this->execute('UPDATE gis_areas SET village_id = :village_id WHERE village_id IS NULL', $this->withTenant());
-        $this->execute('ALTER TABLE gis_areas MODIFY COLUMN village_id BIGINT UNSIGNED NOT NULL');
+    }
 
-        $householdColumns = [
-            'latitude' => 'DECIMAL(10,8) NULL',
-            'longitude' => 'DECIMAL(11,8) NULL',
-            'location_accuracy' => 'INT NULL',
-            'location_source' => "ENUM('MANUAL','GPS') NOT NULL DEFAULT 'MANUAL'",
-            'google_map_url' => 'VARCHAR(255) NULL',
-            'location_note' => 'TEXT NULL',
-            'location_updated_at' => 'DATETIME NULL',
-            'location_updated_by' => 'BIGINT NULL',
-        ];
-        foreach ($householdColumns as $column => $definition) {
-            if (!$this->columnExists('households', $column)) {
-                $this->execute('ALTER TABLE households ADD COLUMN ' . $column . ' ' . $definition);
-            } elseif (in_array($column, ['latitude', 'longitude', 'location_updated_by'], true)) {
-                $this->execute('ALTER TABLE households MODIFY COLUMN ' . $column . ' ' . $definition);
+    private function assertColumnsReady(string $table, array $expected): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => $table]
+        );
+        $columns = [];
+        foreach ($rows as $row) {
+            $columns[(string) $row['COLUMN_NAME']] = $row;
+        }
+        foreach ($expected as $name => $contract) {
+            if (!isset($columns[$name])) {
+                throw new \RuntimeException('GIS schema is not ready: missing column ' . $table . '.' . $name);
+            }
+            $actual = $columns[$name];
+            if (!$this->columnTypeCompatible((string) $actual['COLUMN_TYPE'], (string) $contract['type'])) {
+                throw new \RuntimeException('GIS schema is not ready: incompatible column type ' . $table . '.' . $name);
+            }
+            if (array_key_exists('nullable', $contract)) {
+                $nullable = strtoupper((string) $actual['IS_NULLABLE']) === 'YES';
+                if ($nullable !== (bool) $contract['nullable']) {
+                    throw new \RuntimeException('GIS schema is not ready: incompatible nullability ' . $table . '.' . $name);
+                }
+            }
+            if (array_key_exists('default', $contract) && !$this->defaultCompatible($actual['COLUMN_DEFAULT'], $contract['default'])) {
+                throw new \RuntimeException('GIS schema is not ready: incompatible default ' . $table . '.' . $name);
             }
         }
+    }
+
+    private function assertIndexReady(string $table, string $index, array $columns): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index ORDER BY SEQ_IN_INDEX',
+            ['table' => $table, 'index' => $index]
+        );
+        $actual = array_map(fn(array $row): string => (string) $row['COLUMN_NAME'], $rows);
+        if ($actual !== $columns) {
+            throw new \RuntimeException('GIS schema is not ready: missing index ' . $table . '.' . $index);
+        }
+    }
+
+    private function columnTypeCompatible(string $actual, string $expected): bool
+    {
+        $actual = strtolower($actual);
+        $expected = strtolower($expected);
+        if ($expected === 'int') return str_starts_with($actual, 'int(') || $actual === 'int';
+        if ($expected === 'bigint') return (str_starts_with($actual, 'bigint(') || $actual === 'bigint') && !str_contains($actual, 'unsigned');
+        if ($expected === 'bigint unsigned') return (str_starts_with($actual, 'bigint(') || $actual === 'bigint unsigned') && str_contains($actual, 'unsigned');
+        if ($expected === 'timestamp') return str_starts_with($actual, 'timestamp');
+        return $actual === $expected;
+    }
+
+    private function defaultCompatible(mixed $actual, mixed $expected): bool
+    {
+        if ($actual === null || $expected === null) return $actual === $expected;
+        return trim((string) $actual, "'\"") === trim((string) $expected, "'\"");
     }
 
     private function householdsForMapStats(): array

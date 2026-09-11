@@ -8,59 +8,61 @@ final class PhotoGallery extends BaseModel
 {
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS photo_gallery_albums (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  album_code VARCHAR(60) NOT NULL UNIQUE,
-  name VARCHAR(255) NOT NULL,
-  description TEXT NULL,
-  cover_item_id BIGINT UNSIGNED NULL,
-  status ENUM('ACTIVE','ARCHIVED','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_photo_gallery_albums_status (status),
-  KEY idx_photo_gallery_albums_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS photo_gallery_items (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  album_id BIGINT UNSIGNED NULL,
-  title VARCHAR(255) NOT NULL,
-  description TEXT NULL,
-  original_name VARCHAR(255) NOT NULL,
-  stored_name VARCHAR(255) NOT NULL,
-  file_path VARCHAR(500) NOT NULL,
-  mime_type VARCHAR(120) NOT NULL,
-  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  taken_at DATETIME NULL,
-  event_date DATE NULL,
-  area_code VARCHAR(80) NULL,
-  source_module VARCHAR(80) NULL,
-  source_id BIGINT UNSIGNED NULL,
-  tags_text VARCHAR(500) NULL,
-  status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_photo_gallery_items_album (album_id),
-  KEY idx_photo_gallery_items_status (status),
-  KEY idx_photo_gallery_items_event_date (event_date),
-  KEY idx_photo_gallery_items_area (area_code),
-  KEY idx_photo_gallery_items_source (source_module, source_id),
-  FULLTEXT KEY ft_photo_gallery_items_search (title, description, original_name, tags_text),
-  CONSTRAINT fk_photo_gallery_items_album FOREIGN KEY (album_id) REFERENCES photo_gallery_albums(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->ensureTenantColumn('photo_gallery_albums');
-        $this->ensureTenantColumn('photo_gallery_items');
+        $this->assertSchemaReady();
+    }
+
+    public function assertSchemaReady(): void
+    {
+        $this->assertColumns('photo_gallery_albums', [
+            'id' => ['bigint(20) unsigned', 'NO'],
+            'village_id' => ['bigint(20) unsigned', 'NO'],
+            'album_code' => ['varchar(60)', 'NO'],
+            'name' => ['varchar(255)', 'NO'],
+            'description' => ['text', 'YES'],
+            'cover_item_id' => ['bigint(20) unsigned', 'YES'],
+            'status' => ["enum('ACTIVE','ARCHIVED','DELETED')", 'NO'],
+            'created_at' => ['datetime', 'NO'],
+            'updated_at' => ['datetime', 'YES'],
+            'created_by' => ['bigint(20) unsigned', 'YES'],
+            'updated_by' => ['bigint(20) unsigned', 'YES'],
+            'deleted_at' => ['datetime', 'YES'],
+            'deleted_by' => ['bigint(20) unsigned', 'YES'],
+        ]);
+        $this->assertColumns('photo_gallery_items', [
+            'id' => ['bigint(20) unsigned', 'NO'],
+            'village_id' => ['bigint(20) unsigned', 'NO'],
+            'album_id' => ['bigint(20) unsigned', 'YES'],
+            'title' => ['varchar(255)', 'NO'],
+            'description' => ['text', 'YES'],
+            'original_name' => ['varchar(255)', 'NO'],
+            'stored_name' => ['varchar(255)', 'NO'],
+            'file_path' => ['varchar(500)', 'NO'],
+            'mime_type' => ['varchar(120)', 'NO'],
+            'file_size' => ['bigint(20) unsigned', 'NO'],
+            'taken_at' => ['datetime', 'YES'],
+            'event_date' => ['date', 'YES'],
+            'area_code' => ['varchar(80)', 'YES'],
+            'source_module' => ['varchar(80)', 'YES'],
+            'source_id' => ['bigint(20) unsigned', 'YES'],
+            'tags_text' => ['varchar(500)', 'YES'],
+            'status' => ["enum('ACTIVE','DELETED')", 'NO'],
+            'created_at' => ['datetime', 'NO'],
+            'updated_at' => ['datetime', 'YES'],
+            'created_by' => ['bigint(20) unsigned', 'YES'],
+            'updated_by' => ['bigint(20) unsigned', 'YES'],
+            'deleted_at' => ['datetime', 'YES'],
+            'deleted_by' => ['bigint(20) unsigned', 'YES'],
+        ]);
+        $this->assertIndex('photo_gallery_albums', 'idx_photo_gallery_albums_status', ['status']);
+        $this->assertIndex('photo_gallery_albums', 'idx_photo_gallery_albums_name', ['name']);
+        $this->assertIndex('photo_gallery_albums', 'idx_photo_gallery_albums_village', ['village_id']);
+        $this->assertIndex('photo_gallery_items', 'idx_photo_gallery_items_album', ['album_id']);
+        $this->assertIndex('photo_gallery_items', 'idx_photo_gallery_items_status', ['status']);
+        $this->assertIndex('photo_gallery_items', 'idx_photo_gallery_items_event_date', ['event_date']);
+        $this->assertIndex('photo_gallery_items', 'idx_photo_gallery_items_area', ['area_code']);
+        $this->assertIndex('photo_gallery_items', 'idx_photo_gallery_items_source', ['source_module', 'source_id']);
+        $this->assertIndex('photo_gallery_items', 'ft_photo_gallery_items_search', ['title', 'description', 'original_name', 'tags_text']);
+        $this->assertForeignKey('photo_gallery_items', 'fk_photo_gallery_items_album', 'album_id', 'photo_gallery_albums', 'id', 'RESTRICT', 'SET NULL');
     }
 
     public function catalogs(): array
@@ -198,6 +200,35 @@ SQL);
     {
         $row = $this->fetchOne('SELECT file_path FROM photo_gallery_items WHERE id=:id AND status <> "DELETED" AND ' . $this->tenantWhere('photo_gallery_items'), $this->withTenant(['id' => $id]));
         return $row ? (string)$row['file_path'] : null;
+    }
+
+    private function assertColumns(string $table, array $expected): void
+    {
+        $columns = $this->fetchAll('SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type, IS_NULLABLE AS nullable FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table' => $table]);
+        if (!$columns) throw new \RuntimeException('Photo Gallery schema is not ready: missing table ' . $table);
+        $actual = [];
+        foreach ($columns as $column) $actual[(string) $column['name']] = $column;
+        foreach ($expected as $name => [$type, $nullable]) {
+            if (!isset($actual[$name])) throw new \RuntimeException('Photo Gallery schema is not ready: missing column ' . $table . '.' . $name);
+            if (strtolower((string) $actual[$name]['type']) !== strtolower($type) || strtoupper((string) $actual[$name]['nullable']) !== $nullable) {
+                throw new \RuntimeException('Photo Gallery schema is not ready: incompatible column ' . $table . '.' . $name);
+            }
+        }
+    }
+
+    private function assertIndex(string $table, string $index, array $columns): void
+    {
+        $rows = $this->fetchAll('SELECT COLUMN_NAME AS name FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND INDEX_NAME=:index ORDER BY SEQ_IN_INDEX', ['table' => $table, 'index' => $index]);
+        $actual = array_map(fn($row) => (string) $row['name'], $rows);
+        if ($actual !== $columns) throw new \RuntimeException('Photo Gallery schema is not ready: missing index ' . $table . '.' . $index);
+    }
+
+    private function assertForeignKey(string $table, string $name, string $column, string $refTable, string $refColumn, string $onUpdate, string $onDelete): void
+    {
+        $row = $this->fetchOne('SELECT k.COLUMN_NAME AS column_name, k.REFERENCED_TABLE_NAME AS ref_table, k.REFERENCED_COLUMN_NAME AS ref_column, r.UPDATE_RULE AS update_rule, r.DELETE_RULE AS delete_rule FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE k JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME WHERE k.TABLE_SCHEMA=DATABASE() AND k.TABLE_NAME=:table AND k.CONSTRAINT_NAME=:name AND k.REFERENCED_TABLE_NAME IS NOT NULL', ['table' => $table, 'name' => $name]);
+        if (!$row || (string) $row['column_name'] !== $column || (string) $row['ref_table'] !== $refTable || (string) $row['ref_column'] !== $refColumn || strtoupper((string) $row['update_rule']) !== $onUpdate || strtoupper((string) $row['delete_rule']) !== $onDelete) {
+            throw new \RuntimeException('Photo Gallery schema is not ready: missing foreign key ' . $table . '.' . $name);
+        }
     }
 
     private function where(array $filters, bool $withOrder = true): array

@@ -8,162 +8,67 @@ final class Complaint extends BaseModel
 {
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS complaint_categories (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(60) NOT NULL UNIQUE,
-  name VARCHAR(180) NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_complaint_categories_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS complaint_priorities (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(40) NOT NULL UNIQUE,
-  name VARCHAR(120) NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_complaint_priorities_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS complaint_statuses (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(60) NOT NULL UNIQUE,
-  name VARCHAR(160) NOT NULL,
-  marker_color VARCHAR(20) NOT NULL DEFAULT 'red',
-  is_terminal TINYINT(1) NOT NULL DEFAULT 0,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_complaint_statuses_active (is_active),
-  KEY idx_complaint_statuses_terminal (is_terminal)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS complaints (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  complaint_code VARCHAR(40) NOT NULL UNIQUE,
-  title VARCHAR(255) NOT NULL,
-  detail TEXT NOT NULL,
-  received_at DATETIME NOT NULL,
-  receiver_user_id BIGINT UNSIGNED NULL,
-  receiver_name VARCHAR(255) NULL,
-  reporter_name VARCHAR(255) NOT NULL,
-  reporter_phone VARCHAR(40) NULL,
-  household_id BIGINT UNSIGNED NULL,
-  citizen_id BIGINT UNSIGNED NULL,
-  category_id BIGINT UNSIGNED NULL,
-  priority_id BIGINT UNSIGNED NULL,
-  status_id BIGINT UNSIGNED NULL,
-  assigned_user_id BIGINT UNSIGNED NULL,
-  assigned_name VARCHAR(255) NULL,
-  due_at DATETIME NULL,
-  latitude DECIMAL(11,8) NULL,
-  longitude DECIMAL(11,8) NULL,
-  gps_accuracy DECIMAL(10,2) NULL,
-  result_rating ENUM('SATISFIED','NEEDS_MORE','DISAGREE') NULL,
-  result_note TEXT NULL,
-  closed_at DATETIME NULL,
-  soft_status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_complaints_search (complaint_code, title),
-  KEY idx_complaints_category (category_id),
-  KEY idx_complaints_priority (priority_id),
-  KEY idx_complaints_status (status_id),
-  KEY idx_complaints_assigned (assigned_user_id),
-  KEY idx_complaints_receiver (receiver_user_id),
-  KEY idx_complaints_household (household_id),
-  KEY idx_complaints_citizen (citizen_id),
-  KEY idx_complaints_received (received_at),
-  KEY idx_complaints_due (due_at),
-  KEY idx_complaints_location (latitude, longitude),
-  KEY idx_complaints_soft_status (soft_status),
-  CONSTRAINT fk_complaints_category FOREIGN KEY (category_id) REFERENCES complaint_categories(id) ON DELETE SET NULL,
-  CONSTRAINT fk_complaints_priority FOREIGN KEY (priority_id) REFERENCES complaint_priorities(id) ON DELETE SET NULL,
-  CONSTRAINT fk_complaints_status FOREIGN KEY (status_id) REFERENCES complaint_statuses(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS complaint_links (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  complaint_id BIGINT UNSIGNED NOT NULL,
-  target_type VARCHAR(60) NOT NULL,
-  target_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  label VARCHAR(255) NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  UNIQUE KEY uq_complaint_links_target (complaint_id, target_type, target_id, label),
-  KEY idx_complaint_links_target (target_type, target_id),
-  CONSTRAINT fk_complaint_links_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->ensureComplaintLinkIndex();
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS complaint_attachments (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  complaint_id BIGINT UNSIGNED NOT NULL,
-  history_id BIGINT UNSIGNED NULL,
-  original_name VARCHAR(255) NOT NULL,
-  stored_path VARCHAR(500) NOT NULL,
-  mime_type VARCHAR(120) NOT NULL,
-  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  file_kind ENUM('IMAGE','VIDEO','PDF','OTHER') NOT NULL DEFAULT 'OTHER',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_complaint_attachments_complaint (complaint_id),
-  KEY idx_complaint_attachments_history (history_id),
-  KEY idx_complaint_attachments_kind (file_kind),
-  CONSTRAINT fk_complaint_attachments_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS complaint_histories (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  complaint_id BIGINT UNSIGNED NOT NULL,
-  actor_user_id BIGINT UNSIGNED NULL,
-  actor_name VARCHAR(255) NULL,
-  content TEXT NOT NULL,
-  status_id BIGINT UNSIGNED NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_complaint_histories_complaint (complaint_id),
-  KEY idx_complaint_histories_status (status_id),
-  CONSTRAINT fk_complaint_histories_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE,
-  CONSTRAINT fk_complaint_histories_status FOREIGN KEY (status_id) REFERENCES complaint_statuses(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS complaint_assignments (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  complaint_id BIGINT UNSIGNED NOT NULL,
-  assignee_user_id BIGINT UNSIGNED NULL,
-  assignee_name VARCHAR(255) NOT NULL,
-  assigned_at DATETIME NOT NULL,
-  due_at DATETIME NULL,
-  note TEXT NULL,
-  assigned_by BIGINT UNSIGNED NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_complaint_assignments_complaint (complaint_id),
-  KEY idx_complaint_assignments_assignee (assignee_user_id),
-  KEY idx_complaint_assignments_due (due_at),
-  CONSTRAINT fk_complaint_assignments_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->seedCatalogs();
+        $this->assertSchemaReady();
+    }
+
+    public function assertSchemaReady(): void
+    {
+        $this->assertColumns('complaint_categories', [
+            'id','village_id','code','name','sort_order','is_active','created_at','updated_at',
+        ]);
+        $this->assertColumns('complaint_priorities', [
+            'id','village_id','code','name','sort_order','is_active','created_at','updated_at',
+        ]);
+        $this->assertColumns('complaint_statuses', [
+            'id','village_id','code','name','marker_color','is_terminal','sort_order','is_active','created_at','updated_at',
+        ]);
+        $this->assertColumns('complaints', [
+            'id','village_id','complaint_code','title','detail','received_at','receiver_user_id','receiver_name','reporter_name','reporter_phone','household_id','citizen_id','category_id','priority_id','status_id','assigned_user_id','assigned_name','due_at','latitude','longitude','gps_accuracy','result_rating','result_note','closed_at','soft_status','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by',
+        ]);
+        $this->assertColumns('complaint_links', [
+            'id','village_id','complaint_id','target_type','target_id','label','created_at','created_by',
+        ]);
+        $this->assertColumns('complaint_attachments', [
+            'id','village_id','complaint_id','history_id','original_name','stored_path','mime_type','file_size','file_kind','created_at','created_by','deleted_at','deleted_by',
+        ]);
+        $this->assertColumns('complaint_histories', [
+            'id','village_id','complaint_id','actor_user_id','actor_name','content','status_id','created_at',
+        ]);
+        $this->assertColumns('complaint_assignments', [
+            'id','village_id','complaint_id','assignee_user_id','assignee_name','assigned_at','due_at','note','assigned_by','created_at',
+        ]);
+        foreach ([
+            'complaint_categories','complaint_priorities','complaint_statuses','complaints',
+            'complaint_links','complaint_attachments','complaint_histories','complaint_assignments',
+        ] as $table) {
+            $this->assertTenantScope($table);
+        }
+
+        foreach ([
+            'idx_complaint_categories_active','idx_complaint_categories_village',
+            'idx_complaint_priorities_active','idx_complaint_priorities_village',
+            'idx_complaint_statuses_active','idx_complaint_statuses_terminal','idx_complaint_statuses_village',
+            'idx_complaints_search','idx_complaints_category','idx_complaints_priority','idx_complaints_status','idx_complaints_assigned','idx_complaints_receiver','idx_complaints_household','idx_complaints_citizen','idx_complaints_received','idx_complaints_due','idx_complaints_location','idx_complaints_soft_status','idx_complaints_village',
+            'uq_complaint_links_target','idx_complaint_links_target','idx_complaint_links_village',
+            'idx_complaint_attachments_complaint','idx_complaint_attachments_history','idx_complaint_attachments_kind','idx_complaint_attachments_village',
+            'idx_complaint_histories_complaint','idx_complaint_histories_status','idx_complaint_histories_village',
+            'idx_complaint_assignments_complaint','idx_complaint_assignments_assignee','idx_complaint_assignments_due','idx_complaint_assignments_village',
+        ] as $index) {
+            $this->assertIndexExists($index);
+        }
+
+        $this->assertForeignKey('fk_complaints_category', 'complaints', 'category_id', 'complaint_categories', 'id', 'SET NULL');
+        $this->assertForeignKey('fk_complaints_priority', 'complaints', 'priority_id', 'complaint_priorities', 'id', 'SET NULL');
+        $this->assertForeignKey('fk_complaints_status', 'complaints', 'status_id', 'complaint_statuses', 'id', 'SET NULL');
+        $this->assertForeignKey('fk_complaint_links_complaint', 'complaint_links', 'complaint_id', 'complaints', 'id', 'CASCADE');
+        $this->assertForeignKey('fk_complaint_attachments_complaint', 'complaint_attachments', 'complaint_id', 'complaints', 'id', 'CASCADE');
+        $this->assertForeignKey('fk_complaint_histories_complaint', 'complaint_histories', 'complaint_id', 'complaints', 'id', 'CASCADE');
+        $this->assertForeignKey('fk_complaint_histories_status', 'complaint_histories', 'status_id', 'complaint_statuses', 'id', 'SET NULL');
+        $this->assertForeignKey('fk_complaint_assignments_complaint', 'complaint_assignments', 'complaint_id', 'complaints', 'id', 'CASCADE');
+
+        $this->assertCatalogReady('complaint_categories', ['security','environment','electricity','water','traffic','land','construction','noise','pets','policy','poor_household','other']);
+        $this->assertCatalogReady('complaint_priorities', ['URGENT','HIGH','NORMAL','LOW']);
+        $this->assertStatusCatalogReady();
     }
 
     public function catalogs(): array
@@ -545,26 +450,88 @@ SQL);
         }
     }
 
-    private function seedCatalogs(): void
+    private function assertColumns(string $table, array $columns): void
     {
-        $categories = [['security','An ninh trật tự'],['environment','Vệ sinh môi trường'],['electricity','Điện'],['water','Nước'],['traffic','Giao thông'],['land','Đất đai'],['construction','Xây dựng'],['noise','Tiếng ồn'],['pets','Vật nuôi'],['policy','Chính sách'],['poor_household','Hộ nghèo'],['other','Khác']];
-        $order = 10;
-        foreach ($categories as [$code, $name]) { $this->execute('INSERT INTO complaint_categories (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]); $order += 10; }
-        $priorities = [['URGENT','Khẩn cấp'],['HIGH','Cao'],['NORMAL','Bình thường'],['LOW','Thấp']];
-        $order = 10;
-        foreach ($priorities as [$code, $name]) { $this->execute('INSERT INTO complaint_priorities (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]); $order += 10; }
-        $statuses = [['NEW','Mới tiếp nhận','red',0],['VERIFYING','Đang xác minh','yellow',0],['PROCESSING','Đang xử lý','yellow',0],['DONE','Đã hoàn thành','green',1],['ESCALATED','Đã chuyển cấp trên','yellow',1],['REJECTED','Không đủ điều kiện xử lý','red',1]];
-        $order = 10;
-        foreach ($statuses as [$code, $name, $color, $terminal]) { $this->execute('INSERT INTO complaint_statuses (code,name,marker_color,is_terminal,sort_order) VALUES (:code,:name,:color,:terminal,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), marker_color=VALUES(marker_color), is_terminal=VALUES(is_terminal), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'color' => $color, 'terminal' => $terminal, 'sort_order' => $order]); $order += 10; }
+        $existing = $this->fetchAll('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table' => $table]);
+        $existing = array_flip(array_map(fn($row) => (string)$row['COLUMN_NAME'], $existing));
+        foreach ($columns as $column) {
+            if (!isset($existing[$column])) {
+                throw new \RuntimeException("Complaint schema is not ready: missing $table.$column");
+            }
+        }
     }
 
-    private function ensureComplaintLinkIndex(): void
+    private function assertIndexExists(string $index): void
     {
-        $rows = $this->fetchAll('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME="complaint_links" AND INDEX_NAME="uq_complaint_links_target" ORDER BY SEQ_IN_INDEX');
-        $columns = array_map(fn($row) => (string)$row['COLUMN_NAME'], $rows);
-        if ($columns === ['complaint_id', 'target_type', 'target_id', 'label']) return;
-        try { $this->execute('ALTER TABLE complaint_links DROP INDEX uq_complaint_links_target'); } catch (\Throwable) {}
-        try { $this->execute('ALTER TABLE complaint_links ADD UNIQUE KEY uq_complaint_links_target (complaint_id, target_type, target_id, label)'); } catch (\Throwable) {}
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND INDEX_NAME=:index_name', ['index_name' => $index]);
+        if ((int)($row['total'] ?? 0) === 0) {
+            throw new \RuntimeException("Complaint schema is not ready: missing index $index");
+        }
+    }
+
+    private function assertTenantScope(string $table): void
+    {
+        $row = $this->fetchOne(
+            'SELECT COLUMN_TYPE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND COLUMN_NAME="village_id"',
+            ['table' => $table]
+        );
+        if (!$row
+            || !str_contains(strtolower((string)$row['COLUMN_TYPE']), 'bigint')
+            || !str_contains(strtolower((string)$row['COLUMN_TYPE']), 'unsigned')
+            || strtoupper((string)$row['IS_NULLABLE']) !== 'NO') {
+            throw new \RuntimeException("Complaint schema is not ready: invalid tenant scope $table.village_id");
+        }
+    }
+
+    private function assertForeignKey(string $name, string $table, string $column, string $parentTable, string $parentColumn, string $deleteRule): void
+    {
+        $row = $this->fetchOne(
+            'SELECT rc.DELETE_RULE, rc.UPDATE_RULE, kcu.COLUMN_NAME, kcu.REFERENCED_TABLE_NAME, kcu.REFERENCED_COLUMN_NAME
+             FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
+             JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+               ON kcu.CONSTRAINT_SCHEMA=rc.CONSTRAINT_SCHEMA
+              AND kcu.CONSTRAINT_NAME=rc.CONSTRAINT_NAME
+              AND kcu.TABLE_NAME=rc.TABLE_NAME
+             WHERE rc.CONSTRAINT_SCHEMA=DATABASE()
+               AND rc.CONSTRAINT_NAME=:name
+               AND rc.TABLE_NAME=:table',
+            ['name' => $name, 'table' => $table]
+        );
+        if (!$row
+            || (string)$row['COLUMN_NAME'] !== $column
+            || (string)$row['REFERENCED_TABLE_NAME'] !== $parentTable
+            || (string)$row['REFERENCED_COLUMN_NAME'] !== $parentColumn
+            || strtoupper((string)$row['DELETE_RULE']) !== $deleteRule
+            || strtoupper((string)$row['UPDATE_RULE']) !== 'RESTRICT') {
+            throw new \RuntimeException("Complaint schema is not ready: invalid foreign key $name");
+        }
+    }
+
+    private function assertCatalogReady(string $table, array $codes): void
+    {
+        foreach ($codes as $code) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total FROM $table WHERE code=:code AND is_active=1 AND " . $this->tenantWhere('', $table),
+                $this->withTenant(['code' => $code])
+            );
+            if ((int)($row['total'] ?? 0) === 0) {
+                throw new \RuntimeException("Complaint catalog is not ready: missing active $table.$code");
+            }
+        }
+    }
+
+    private function assertStatusCatalogReady(): void
+    {
+        $expected = ['NEW' => 0, 'VERIFYING' => 0, 'PROCESSING' => 0, 'DONE' => 1, 'ESCALATED' => 1, 'REJECTED' => 1];
+        foreach ($expected as $code => $terminal) {
+            $row = $this->fetchOne(
+                'SELECT COUNT(*) AS total FROM complaint_statuses WHERE code=:code AND is_active=1 AND is_terminal=:terminal AND ' . $this->tenantWhere('', 'complaint_statuses'),
+                $this->withTenant(['code' => $code, 'terminal' => $terminal])
+            );
+            if ((int)($row['total'] ?? 0) === 0) {
+                throw new \RuntimeException("Complaint status catalog is not ready: incompatible $code");
+            }
+        }
     }
 
     private function catalog(string $table): array { return array_map(fn($r) => ['value' => (string)$r['id'], 'code' => (string)$r['code'], 'label' => (string)$r['name']], $this->fetchAll("SELECT id, code, name FROM $table WHERE is_active=1 ORDER BY sort_order ASC, name ASC")); }

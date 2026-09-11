@@ -13,6 +13,31 @@ final class HouseholdContribution extends BaseModel
     public const CATEGORIES = ['Quỹ vệ sinh', 'Quỹ rác thải', 'Quỹ an ninh', 'Quỹ khuyến học', 'Đóng góp làm đường', 'Điện chiếu sáng', 'Nghĩa trang', 'Nhà văn hóa', 'Đóng góp khác'];
     public const CAMPAIGN_STATUS = ['ACTIVE' => 'Đang thu', 'CLOSED' => 'Đã kết thúc', 'INACTIVE' => 'Tạm dừng', 'DELETED' => 'Đã xóa'];
     public const PAYMENT_STATUS = ['UNPAID' => 'Chưa thu', 'PAID' => 'Đã thu', 'PARTIAL' => 'Thu một phần', 'EXEMPT' => 'Được miễn', 'REDUCED' => 'Miễn một phần'];
+
+    private const REQUIRED_SCHEMA = [
+        'contribution_categories' => ['id','village_id','code','name','contribution_type','unit_type','amount','unit','collection_cycle','custom_cycle','target_config_json','exemption_config_json','is_required','status','note','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by'],
+        'contribution_campaigns' => ['id','village_id','category_id','contribution_name','contribution_type','year','period_name','amount','unit','unit_type','start_date','due_date','target_config_json','exemption_config_json','note','status','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by'],
+        'contribution_rate_rules' => ['id','village_id','campaign_id','rule_name','unit_type','amount','target_config_json','effective_from','effective_to','status','created_at','updated_at'],
+        'contribution_rule_templates' => ['id','village_id','template_code','category_name','contribution_name','unit_type','amount','unit','target_config_json','exemption_config_json','status','created_at','updated_at'],
+        'contribution_exemption_policies' => ['id','village_id','campaign_id','policy_code','policy_name','policy_type','exemption_config_json','amount','percent','status','approved_by','approved_at','note','created_at','updated_at'],
+        'household_contributions' => ['id','village_id','campaign_id','household_id','payment_status','expected_amount','gross_amount','exempt_amount','discount_amount','paid_amount','debt_amount','amount','eligible_count','exempt_count','chargeable_count','paid_at','collector_name','payment_method','receipt_number','calculation_note','note','status','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by'],
+        'contribution_receipts' => ['id','village_id','contribution_id','campaign_id','household_id','receipt_number','amount','paid_at','collector_name','payment_method','note','created_at','created_by'],
+        'contribution_payment_history' => ['id','village_id','contribution_id','campaign_id','household_id','action','amount','payment_status','paid_at','collector_name','receipt_number','note','created_at','created_by'],
+        'contribution_adjustment_history' => ['id','village_id','contribution_id','campaign_id','household_id','before_json','after_json','reason','created_at','created_by'],
+    ];
+    private const REQUIRED_INDEXES = [
+        'contribution_categories' => ['idx_contribution_categories_village'],
+        'contribution_campaigns' => ['idx_contribution_campaigns_village','idx_contribution_campaign_year','idx_contribution_campaign_status','idx_contribution_campaign_category'],
+        'contribution_rate_rules' => ['idx_contribution_rate_rules_village','idx_contribution_rate_campaign'],
+        'contribution_rule_templates' => ['idx_contribution_rule_templates_village'],
+        'contribution_exemption_policies' => ['idx_contribution_exemption_policies_village','idx_contribution_policy_campaign'],
+        'household_contributions' => ['idx_household_contributions_village','idx_household_contributions_household','idx_household_contributions_status','idx_household_contributions_campaign','uniq_household_contribution'],
+        'contribution_receipts' => ['idx_contribution_receipts_village','idx_contribution_receipts_contribution','idx_contribution_receipts_campaign','idx_contribution_receipts_household'],
+        'contribution_payment_history' => ['idx_contribution_payment_history_village','idx_contribution_history_contribution','idx_contribution_history_campaign','idx_contribution_history_household'],
+        'contribution_adjustment_history' => ['idx_contribution_adjustment_history_village','idx_contribution_adjustment_campaign','idx_contribution_adjustment_contribution'],
+    ];
+    private const REQUIRED_CATEGORY_CODES = ['CAT01','CAT02','CAT03','CAT04','CAT05','CAT06','CAT07','CAT08','CAT09'];
+    private const REQUIRED_TEMPLATE_CODE = 'WASTE_COLLECTION';
     private const ACTIVE_HOUSEHOLD = 'h.status NOT IN ("DELETED","ENDED","MERGED","TRANSFERRED_OUT","MOVED_OUT","INACTIVE")';
     private const ACTIVE_CITIZEN = 'c.status <> "DELETED" AND COALESCE(c.life_status,"ALIVE") <> "DECEASED" AND COALESCE(c.residency_status,"PERMANENT") <> "TRANSFERRED_OUT"';
 
@@ -26,203 +51,27 @@ final class HouseholdContribution extends BaseModel
 
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS contribution_categories (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(40) NOT NULL UNIQUE,
-  name VARCHAR(180) NOT NULL,
-  contribution_type VARCHAR(80) NULL,
-  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
-  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  unit VARCHAR(40) NOT NULL DEFAULT 'VND/ho',
-  collection_cycle VARCHAR(40) NOT NULL DEFAULT 'YEARLY',
-  custom_cycle VARCHAR(180) NULL,
-  target_config_json JSON NULL,
-  exemption_config_json JSON NULL,
-  is_required TINYINT(1) NOT NULL DEFAULT 0,
-  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS contribution_campaigns (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  category_id BIGINT UNSIGNED NULL,
-  contribution_name VARCHAR(180) NOT NULL,
-  contribution_type VARCHAR(80) NULL,
-  year SMALLINT UNSIGNED NOT NULL,
-  period_name VARCHAR(80) NULL,
-  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  unit VARCHAR(40) NOT NULL DEFAULT 'VNĐ/hộ',
-  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
-  start_date DATE NULL,
-  due_date DATE NULL,
-  target_config_json JSON NULL,
-  exemption_config_json JSON NULL,
-  note TEXT NULL,
-  status ENUM('ACTIVE','CLOSED','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_contribution_campaign_year (year),
-  KEY idx_contribution_campaign_status (status),
-  KEY idx_contribution_campaign_category (category_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS contribution_rate_rules (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  campaign_id BIGINT UNSIGNED NOT NULL,
-  rule_name VARCHAR(180) NOT NULL,
-  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
-  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  target_config_json JSON NULL,
-  effective_from DATE NULL,
-  effective_to DATE NULL,
-  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_contribution_rate_campaign (campaign_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS contribution_rule_templates (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  template_code VARCHAR(80) NOT NULL UNIQUE,
-  category_name VARCHAR(180) NOT NULL,
-  contribution_name VARCHAR(180) NULL,
-  unit_type VARCHAR(40) NOT NULL DEFAULT 'HOUSEHOLD',
-  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  unit VARCHAR(40) NOT NULL DEFAULT 'VNĐ/hộ',
-  target_config_json JSON NULL,
-  exemption_config_json JSON NULL,
-  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS contribution_exemption_policies (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  campaign_id BIGINT UNSIGNED NULL,
-  policy_code VARCHAR(80) NOT NULL,
-  policy_name VARCHAR(180) NOT NULL,
-  policy_type ENUM('FULL','PARTIAL','PERSON') NOT NULL DEFAULT 'PERSON',
-  exemption_config_json JSON NULL,
-  amount DECIMAL(14,2) NULL,
-  percent DECIMAL(5,2) NULL,
-  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  approved_by VARCHAR(180) NULL,
-  approved_at DATE NULL,
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_contribution_policy_campaign (campaign_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS household_contributions (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  campaign_id BIGINT UNSIGNED NOT NULL,
-  household_id BIGINT UNSIGNED NOT NULL,
-  payment_status ENUM('UNPAID','PAID','PARTIAL','EXEMPT','REDUCED') NOT NULL DEFAULT 'UNPAID',
-  expected_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  gross_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  exempt_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  discount_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  paid_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  debt_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  eligible_count INT UNSIGNED NOT NULL DEFAULT 0,
-  exempt_count INT UNSIGNED NOT NULL DEFAULT 0,
-  chargeable_count INT UNSIGNED NOT NULL DEFAULT 0,
-  paid_at DATE NULL,
-  collector_name VARCHAR(180) NULL,
-  payment_method VARCHAR(40) NULL,
-  receipt_number VARCHAR(80) NULL,
-  calculation_note JSON NULL,
-  note TEXT NULL,
-  status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  UNIQUE KEY uniq_household_contribution (campaign_id, household_id),
-  KEY idx_household_contributions_household (household_id),
-  KEY idx_household_contributions_status (payment_status),
-  KEY idx_household_contributions_campaign (campaign_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS contribution_receipts (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  contribution_id BIGINT UNSIGNED NOT NULL,
-  campaign_id BIGINT UNSIGNED NOT NULL,
-  household_id BIGINT UNSIGNED NOT NULL,
-  receipt_number VARCHAR(80) NULL,
-  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  paid_at DATE NULL,
-  collector_name VARCHAR(180) NULL,
-  payment_method VARCHAR(80) NULL,
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  KEY idx_contribution_receipts_contribution (contribution_id),
-  KEY idx_contribution_receipts_campaign (campaign_id),
-  KEY idx_contribution_receipts_household (household_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS contribution_payment_history (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  contribution_id BIGINT UNSIGNED NOT NULL,
-  campaign_id BIGINT UNSIGNED NOT NULL,
-  household_id BIGINT UNSIGNED NOT NULL,
-  action VARCHAR(60) NOT NULL DEFAULT 'PAYMENT',
-  amount DECIMAL(14,2) NOT NULL DEFAULT 0,
-  payment_status VARCHAR(40) NOT NULL,
-  paid_at DATE NULL,
-  collector_name VARCHAR(180) NULL,
-  receipt_number VARCHAR(80) NULL,
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  KEY idx_contribution_history_contribution (contribution_id),
-  KEY idx_contribution_history_campaign (campaign_id),
-  KEY idx_contribution_history_household (household_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS contribution_adjustment_history (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  contribution_id BIGINT UNSIGNED NULL,
-  campaign_id BIGINT UNSIGNED NOT NULL,
-  household_id BIGINT UNSIGNED NULL,
-  before_json JSON NULL,
-  after_json JSON NULL,
-  reason TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  KEY idx_contribution_adjustment_campaign (campaign_id),
-  KEY idx_contribution_adjustment_contribution (contribution_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->ensureColumns();
-        $this->seedCategories();
-        $this->backfillCategoriesFromLegacyCampaigns();
-        $this->syncLegacyCampaignCategories();
-        $this->seedRuleTemplates();
+        $this->assertSchemaReady();
+    }
+
+    public function assertSchemaReady(): void
+    {
+        foreach (self::REQUIRED_SCHEMA as $table => $columns) {
+            $this->assertTableReady($table);
+            foreach ($columns as $column) {
+                if (!$this->columnExists($table, $column)) {
+                    throw new \RuntimeException('Household Contributions schema/catalog is not provisioned: missing column ' . $table . '.' . $column);
+                }
+            }
+            $this->assertTenantScopeReady($table);
+            foreach (self::REQUIRED_INDEXES[$table] ?? [] as $index) {
+                $this->assertIndexReady($table, $index);
+            }
+        }
+
+        $this->assertPaymentStatusContract();
+        $this->assertCanonicalCategoriesReady();
+        $this->assertRuleTemplateReady();
     }
 
     public function catalogs(): array
@@ -306,7 +155,6 @@ SQL);
     public function campaigns(array $filters): array
     {
         $this->ensureSchema();
-        $this->syncActiveCampaigns();
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$where, $params, $order] = $this->campaignWhere($filters);
         $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM contribution_campaigns c LEFT JOIN contribution_categories cc ON cc.id=c.category_id $where", $params) ?: [])['total'] ?? 0);
@@ -376,7 +224,6 @@ SQL);
     {
         $this->ensureSchema();
         if (!$this->findCampaign($campaignId)) throw new \RuntimeException('Không tìm thấy đợt thu');
-        $this->syncCampaign($campaignId);
         [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 20));
         [$where, $params, $order] = $this->trackingWhere($campaignId, $filters);
         $total = (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM household_contributions hc INNER JOIN households h ON h.id=hc.household_id $where", $params) ?: [])['total'] ?? 0);
@@ -442,7 +289,6 @@ SQL);
     public function dashboard(array $filters = []): array
     {
         $this->ensureSchema();
-        $this->syncActiveCampaigns();
         return $this->summary($filters);
     }
 
@@ -693,12 +539,6 @@ SQL);
                 $r['updated_at'] ?? '',
             ];
         }, $rows, array_keys($rows)), $filters, (int) ($filters['campaign_id'] ?? $filters['campaignId'] ?? 0) ?: null);
-    }
-
-    private function syncActiveCampaigns(): void
-    {
-        $ids = $this->fetchAll('SELECT id FROM contribution_campaigns WHERE status="ACTIVE" AND ' . $this->tenantWhere('contribution_campaigns') . ' ORDER BY id DESC LIMIT 30', $this->withTenant());
-        foreach ($ids as $row) $this->syncCampaign((int) $row['id']);
     }
 
     private function syncCampaign(int $campaignId): void
@@ -984,55 +824,6 @@ SQL);
         }
     }
 
-    private function syncLegacyCampaignCategories(): void
-    {
-        $this->execute('UPDATE contribution_campaigns c INNER JOIN contribution_categories cc ON LOWER(TRIM(cc.name))=LOWER(TRIM(c.contribution_name)) AND cc.status <> "DELETED" AND ' . $this->tenantWhere('cc', 'contribution_categories') . ' SET c.category_id=cc.id WHERE (c.category_id IS NULL OR c.category_id=0) AND ' . $this->tenantWhere('c', 'contribution_campaigns'), $this->withTenant());
-    }
-
-    private function backfillCategoriesFromLegacyCampaigns(): void
-    {
-        $rows = $this->fetchAll(
-            "SELECT x.*
-             FROM (
-                SELECT c.*
-                FROM contribution_campaigns c
-                INNER JOIN (
-                    SELECT LOWER(TRIM(contribution_name)) AS name_key, MAX(id) AS latest_id
-                    FROM contribution_campaigns
-                    WHERE status <> 'DELETED' AND " . $this->tenantWhere('contribution_campaigns') . " AND TRIM(COALESCE(contribution_name,'')) <> ''
-                    GROUP BY LOWER(TRIM(contribution_name))
-                ) latest ON latest.latest_id=c.id
-             ) x
-             LEFT JOIN contribution_categories cc ON LOWER(TRIM(cc.name))=LOWER(TRIM(x.contribution_name)) AND cc.status <> 'DELETED' AND " . $this->tenantWhere('cc', 'contribution_categories') . "
-             WHERE cc.id IS NULL"
-            ,
-            $this->withTenant()
-        );
-        foreach ($rows as $row) {
-            $name = trim((string) ($row['contribution_name'] ?? ''));
-            if ($name === '') continue;
-            $this->execute(
-                'INSERT INTO contribution_categories (village_id, code, name, contribution_type, unit_type, amount, unit, collection_cycle, target_config_json, exemption_config_json, status, note, created_by, updated_by)
-                 VALUES (:village_id,:code,:name,:contribution_type,:unit_type,:amount,:unit,:collection_cycle,:target_config_json,:exemption_config_json,:status,:note,:created_by,:updated_by)',
-                $this->withTenant([
-                    'code' => $this->categoryCodeFromName($name),
-                    'name' => $name,
-                    'contribution_type' => trim((string) ($row['contribution_type'] ?? '')) ?: $name,
-                    'unit_type' => trim((string) ($row['unit_type'] ?? '')) ?: 'HOUSEHOLD',
-                    'amount' => (float) ($row['amount'] ?? 0),
-                    'unit' => trim((string) ($row['unit'] ?? '')) ?: 'VNĐ/hộ',
-                    'collection_cycle' => 'YEARLY',
-                    'target_config_json' => $row['target_config_json'] ?? null,
-                    'exemption_config_json' => $row['exemption_config_json'] ?? null,
-                    'status' => 'ACTIVE',
-                    'note' => 'Tự động chuyển đổi từ dữ liệu đợt thu cũ.',
-                    'created_by' => $row['created_by'] ?? null,
-                    'updated_by' => $row['updated_by'] ?? null,
-                ])
-            );
-        }
-    }
-
     private function categoryCodeFromName(string $name): string
     {
         $base = strtoupper(preg_replace('/[^A-Z0-9]+/', '_', $this->asciiText($name)) ?: 'KHOAN_THU');
@@ -1130,95 +921,85 @@ SQL);
         ];
     }
 
-    private function ensureColumns(): void
+    private function assertTableReady(string $table): void
     {
-        $columns = [
-            'contribution_campaigns' => [
-                'category_id' => 'ALTER TABLE contribution_campaigns ADD COLUMN category_id BIGINT UNSIGNED NULL AFTER id',
-                'contribution_type' => 'ALTER TABLE contribution_campaigns ADD COLUMN contribution_type VARCHAR(80) NULL AFTER contribution_name',
-                'unit_type' => 'ALTER TABLE contribution_campaigns ADD COLUMN unit_type VARCHAR(40) NOT NULL DEFAULT "HOUSEHOLD" AFTER unit',
-                'start_date' => 'ALTER TABLE contribution_campaigns ADD COLUMN start_date DATE NULL AFTER unit_type',
-                'target_config_json' => 'ALTER TABLE contribution_campaigns ADD COLUMN target_config_json JSON NULL AFTER due_date',
-                'exemption_config_json' => 'ALTER TABLE contribution_campaigns ADD COLUMN exemption_config_json JSON NULL AFTER target_config_json',
-            ],
-            'contribution_categories' => [
-                'unit_type' => 'ALTER TABLE contribution_categories ADD COLUMN unit_type VARCHAR(40) NOT NULL DEFAULT "HOUSEHOLD" AFTER contribution_type',
-                'amount' => 'ALTER TABLE contribution_categories ADD COLUMN amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER unit_type',
-                'unit' => 'ALTER TABLE contribution_categories ADD COLUMN unit VARCHAR(40) NOT NULL DEFAULT "VND/ho" AFTER amount',
-                'collection_cycle' => 'ALTER TABLE contribution_categories ADD COLUMN collection_cycle VARCHAR(40) NOT NULL DEFAULT "YEARLY" AFTER unit',
-                'custom_cycle' => 'ALTER TABLE contribution_categories ADD COLUMN custom_cycle VARCHAR(180) NULL AFTER collection_cycle',
-                'target_config_json' => 'ALTER TABLE contribution_categories ADD COLUMN target_config_json JSON NULL AFTER custom_cycle',
-                'exemption_config_json' => 'ALTER TABLE contribution_categories ADD COLUMN exemption_config_json JSON NULL AFTER target_config_json',
-                'created_by' => 'ALTER TABLE contribution_categories ADD COLUMN created_by BIGINT UNSIGNED NULL AFTER updated_at',
-                'updated_by' => 'ALTER TABLE contribution_categories ADD COLUMN updated_by BIGINT UNSIGNED NULL AFTER created_by',
-                'deleted_at' => 'ALTER TABLE contribution_categories ADD COLUMN deleted_at DATETIME NULL AFTER updated_by',
-                'deleted_by' => 'ALTER TABLE contribution_categories ADD COLUMN deleted_by BIGINT UNSIGNED NULL AFTER deleted_at',
-            ],
-            'household_contributions' => [
-                'expected_amount' => 'ALTER TABLE household_contributions ADD COLUMN expected_amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER payment_status',
-                'gross_amount' => 'ALTER TABLE household_contributions ADD COLUMN gross_amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER expected_amount',
-                'exempt_amount' => 'ALTER TABLE household_contributions ADD COLUMN exempt_amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER gross_amount',
-                'discount_amount' => 'ALTER TABLE household_contributions ADD COLUMN discount_amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER exempt_amount',
-                'paid_amount' => 'ALTER TABLE household_contributions ADD COLUMN paid_amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER discount_amount',
-                'debt_amount' => 'ALTER TABLE household_contributions ADD COLUMN debt_amount DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER paid_amount',
-                'eligible_count' => 'ALTER TABLE household_contributions ADD COLUMN eligible_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER amount',
-                'exempt_count' => 'ALTER TABLE household_contributions ADD COLUMN exempt_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER eligible_count',
-                'chargeable_count' => 'ALTER TABLE household_contributions ADD COLUMN chargeable_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER exempt_count',
-                'calculation_note' => 'ALTER TABLE household_contributions ADD COLUMN calculation_note JSON NULL AFTER receipt_number',
-                'payment_method' => 'ALTER TABLE household_contributions ADD COLUMN payment_method VARCHAR(40) NULL AFTER collector_name',
-            ],
-        ];
-        foreach ($columns as $table => $defs) {
-            foreach ($defs as $column => $sql) {
-                if (!$this->columnExists($table, $column)) $this->execute($sql);
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => $table]
+        );
+        if ((int) ($row['total'] ?? 0) <= 0) {
+            throw new \RuntimeException('Household Contributions schema/catalog is not provisioned: missing table ' . $table);
+        }
+    }
+
+    private function assertTenantScopeReady(string $table): void
+    {
+        $row = $this->fetchOne(
+            'SELECT COLUMN_TYPE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = "village_id"',
+            ['table' => $table]
+        );
+        $type = strtolower((string) ($row['COLUMN_TYPE'] ?? ''));
+        if (!str_contains($type, 'bigint') || !str_contains($type, 'unsigned') || (string) ($row['IS_NULLABLE'] ?? '') !== 'NO') {
+            throw new \RuntimeException('Household Contributions schema/catalog is not provisioned: invalid tenant scope ' . $table . '.village_id');
+        }
+    }
+
+    private function assertIndexReady(string $table, string $index): void
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index',
+            ['table' => $table, 'index' => $index]
+        );
+        if ((int) ($row['total'] ?? 0) <= 0) {
+            throw new \RuntimeException('Household Contributions schema/catalog is not provisioned: missing index ' . $table . '.' . $index);
+        }
+    }
+
+    private function assertPaymentStatusContract(): void
+    {
+        $row = $this->fetchOne(
+            'SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = "household_contributions" AND COLUMN_NAME = "payment_status"'
+        );
+        $type = strtolower((string) ($row['COLUMN_TYPE'] ?? ''));
+        foreach (['unpaid', 'paid', 'partial', 'exempt', 'reduced'] as $status) {
+            if (!str_contains($type, "'" . $status . "'")) {
+                throw new \RuntimeException('Household Contributions schema/catalog is not provisioned: invalid household_contributions.payment_status enum');
             }
         }
-        foreach ([
-            'contribution_categories',
-            'contribution_campaigns',
-            'contribution_rate_rules',
-            'contribution_exemption_policies',
-            'household_contributions',
-            'contribution_receipts',
-            'contribution_payment_history',
-            'contribution_adjustment_history',
-        ] as $tenantTable) {
-            $this->ensureTenantColumn($tenantTable);
-        }
-        $this->execute("ALTER TABLE household_contributions MODIFY payment_status ENUM('UNPAID','PAID','PARTIAL','EXEMPT','REDUCED') NOT NULL DEFAULT 'UNPAID'");
-        $this->backfillCategoriesFromLegacyCampaigns();
-        $this->syncLegacyCampaignCategories();
-    }
-
-    private function seedCategories(): void
-    {
-        foreach (self::CATEGORIES as $index => $name) {
-            $this->execute('INSERT IGNORE INTO contribution_categories (code, name, contribution_type) VALUES (:code,:name,:type)', ['code' => 'CAT' . str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT), 'name' => $name, 'type' => $name]);
+        if ((string) ($row['IS_NULLABLE'] ?? '') !== 'NO' || trim((string) ($row['COLUMN_DEFAULT'] ?? ''), "'") !== 'UNPAID') {
+            throw new \RuntimeException('Household Contributions schema/catalog is not provisioned: invalid household_contributions.payment_status default');
         }
     }
 
-    private function seedRuleTemplates(): void
+    private function assertCanonicalCategoriesReady(): void
     {
-        $target = json_encode(['conditions' => ['ALL_PEOPLE']], JSON_UNESCAPED_UNICODE);
-        $exemption = json_encode([
-            'person_exemptions' => [
-                ['rule' => 'FIELD_EQUALS', 'scope' => 'person', 'field' => 'presence_status', 'value' => 'AWAY', 'label' => 'Người đi vắng'],
-                ['rule' => 'AGE_GTE', 'value' => 80, 'label' => 'Người từ 80 tuổi trở lên'],
-                ['rule' => 'BOOLEAN_TRUE', 'scope' => 'person', 'field' => 'disabled_person', 'label' => 'Người khuyết tật'],
-                ['rule' => 'MERITORIOUS', 'scope' => 'person', 'label' => 'Người thuộc đối tượng chính sách/người có công'],
-                ['rule' => 'TEXT_ANY_CONTAINS', 'scope' => 'person', 'values' => ['bộ đội', 'bo doi', 'quân nhân', 'quan nhan', 'military', 'soldier'], 'label' => 'Bộ đội đang phục vụ'],
-            ],
-            'household_discounts' => [
-                ['rule' => 'BOOLEAN_TRUE', 'scope' => 'household', 'field' => 'poor_household', 'percent' => 50, 'label' => 'Hộ nghèo'],
-                ['rule' => 'BOOLEAN_TRUE', 'scope' => 'household', 'field' => 'near_poor_household', 'percent' => 50, 'label' => 'Hộ cận nghèo'],
-            ],
-        ], JSON_UNESCAPED_UNICODE);
-        $this->execute(
-            'INSERT INTO contribution_rule_templates (template_code, category_name, contribution_name, unit_type, amount, unit, target_config_json, exemption_config_json)
-             VALUES ("WASTE_COLLECTION", "Quỹ rác thải", "Quỹ rác thải", "PERSON", 0, "VNĐ/khẩu", :target, :exemption)
-             ON DUPLICATE KEY UPDATE category_name=VALUES(category_name), contribution_name=VALUES(contribution_name), unit_type=VALUES(unit_type), unit=VALUES(unit), target_config_json=VALUES(target_config_json), exemption_config_json=VALUES(exemption_config_json), status="ACTIVE"',
-            ['target' => $target, 'exemption' => $exemption]
+        foreach (self::REQUIRED_CATEGORY_CODES as $code) {
+            $row = $this->fetchOne(
+                'SELECT COUNT(*) AS total FROM contribution_categories WHERE code = :code AND status = "ACTIVE" AND ' . $this->tenantWhere('contribution_categories'),
+                $this->withTenant(['code' => $code])
+            );
+            if ((int) ($row['total'] ?? 0) <= 0) {
+                throw new \RuntimeException('Household Contributions schema/catalog is not provisioned: missing active category ' . $code);
+            }
+        }
+    }
+
+    private function assertRuleTemplateReady(): void
+    {
+        $rows = $this->fetchAll(
+            'SELECT * FROM contribution_rule_templates WHERE template_code = :code AND status = "ACTIVE" AND ' . $this->tenantWhere('contribution_rule_templates'),
+            $this->withTenant(['code' => self::REQUIRED_TEMPLATE_CODE])
         );
+        foreach ($rows as $row) {
+            $target = json_decode((string) ($row['target_config_json'] ?? ''), true);
+            $conditions = is_array($target) && isset($target['conditions']) && is_array($target['conditions']) ? $target['conditions'] : [];
+            if ((string) ($row['unit_type'] ?? '') === 'PERSON'
+                && (float) ($row['amount'] ?? 0) === 0.0
+                && in_array('ALL_PEOPLE', array_map('strval', $conditions), true)) {
+                return;
+            }
+        }
+        throw new \RuntimeException('Household Contributions schema/catalog is not provisioned: missing compatible WASTE_COLLECTION template');
     }
 
     private function applyRuleTemplate(array $params, array $data): array
@@ -1299,7 +1080,6 @@ SQL);
 
     private function contributionRows(int $campaignId, array $filters): array
     {
-        $this->syncCampaign($campaignId);
         [$where, $params, $order] = $this->trackingWhere($campaignId, $filters);
         $rows = $this->fetchAll(
             "SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.address, h.phone, h.area_code,

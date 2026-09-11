@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Core\BaseModel;
 use App\Policies\AgePolicy;
 use App\Core\TenantConfig;
+use App\Services\HouseholdCategoryService;
 use App\Services\StudentStatusService;
 
 final class Dashboard extends BaseModel
 {
     private ?PopulationStatistics $statistics = null;
+    private ?HouseholdCategoryService $categoryService = null;
 
     private const MERITORIOUS_POLICY_COLUMNS = [
         'martyr_relative',
@@ -124,6 +126,24 @@ final class Dashboard extends BaseModel
     {
         $metrics = [
             'total_households' => 0,
+            'resident_households' => 0,
+            'away_for_work_households' => 0,
+            'settled_elsewhere_households' => 0,
+            'outside_households' => 0,
+            'partial_households' => 0,
+            'households_with_present_count' => 0,
+            'household_review_count' => 0,
+            'household_needs_review_count' => 0,
+            'household_head_review_count' => 0,
+            'household_needs_head_review_count' => 0,
+            'Có việc làm' => 0,
+            'Chưa có việc làm' => 0,
+            'Học sinh' => 0,
+            'Sinh viên' => 0,
+            'Nghỉ hưu' => 0,
+            'Khác' => 0,
+            'inactive_residence_households' => 0,
+            'actual_resident_households' => 0,
             'total_citizens' => 0,
             'male_count' => 0,
             'female_count' => 0,
@@ -138,6 +158,10 @@ final class Dashboard extends BaseModel
             'away_count' => 0,
             'poor_households' => 0,
             'near_poor_households' => 0,
+            'medium_households' => 0,
+            'ho_ngheo' => 0,
+            'ho_can_ngheo' => 0,
+            'ho_trung_binh' => 0,
             'policy_households' => 0,
             'meritorious_households' => 0,
             'normal_households' => 0,
@@ -148,6 +172,18 @@ final class Dashboard extends BaseModel
             'health_insurance_uninsured_count' => 0,
             'health_insurance_coverage_percent' => 0,
             'health_insurance_percent' => 0,
+            'elderly_health_insurance_count' => 0,
+            'elderly_health_insurance_missing_count' => 0,
+            'elderly_social_assistance_count' => 0,
+            'elderly_social_assistance_review_count' => 0,
+            'age_70_plus_count' => 0,
+            'age_70_plus_health_insurance_count' => 0,
+            'age_70_plus_without_health_insurance_count' => 0,
+            'age_75_plus_count' => 0,
+            'age_75_plus_social_assistance_count' => 0,
+            'age_75_plus_without_social_assistance_record_count' => 0,
+            'age_75_plus_legacy_social_assistance_count' => 0,
+            'gender_other_count' => 0,
             'production_households' => 0,
             'business_households' => 0,
             'production_business_households' => 0,
@@ -159,6 +195,7 @@ final class Dashboard extends BaseModel
         }
         $metrics['poor_households_percent'] = 0;
         $metrics['near_poor_households_percent'] = 0;
+        $metrics['medium_households_percent'] = 0;
         $metrics['children_percent'] = 0;
         $metrics['elderly_percent'] = 0;
         $metrics['working_age_percent'] = 0;
@@ -216,23 +253,33 @@ final class Dashboard extends BaseModel
 
     public function monthlyChangeChart(array $filters = []): array
     {
-        $rows = $this->fetchAll("SELECT DATE_FORMAT(effective_date, '%Y-%m') AS label, SUM(CASE WHEN type IN ('BIRTH','MOVE_IN','TEMPORARY_RESIDENCE') THEN 1 WHEN type IN ('DEATH','MOVE_OUT','TEMPORARY_ABSENCE') THEN -1 ELSE 0 END) AS value FROM movements WHERE status <> 'DELETED' AND " . $this->tenantLiteral('movements') . " AND effective_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY label ORDER BY label");
+        $rows = $this->fetchAll("SELECT DATE_FORMAT(effective_date, '%Y-%m') AS label, SUM(CASE WHEN type IN ('BIRTH','MOVE_IN','TEMPORARY_RESIDENCE') THEN 1 WHEN type IN ('DEATH','MOVE_OUT','TEMPORARY_ABSENCE') THEN -1 ELSE 0 END) AS value FROM movements WHERE status <> 'DELETED' AND " . Movement::businessPredicate('') . " AND " . $this->tenantLiteral('movements') . " AND effective_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY label ORDER BY label");
         return array_map(fn($row) => ['label' => $row['label'], 'value' => (int) $row['value']], $rows);
     }
 
     public function povertyChart(array $filters = []): array
     {
-        [$where, $params] = $this->householdWhere($filters);
-        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
-        $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
-        $row = $this->fetchOne("SELECT COALESCE(SUM(CASE WHEN h.poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN h.near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN h.poor_household=0 AND h.near_poor_household=0 AND NOT $meritoriousHouseholdExpr AND NOT $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS normal, COALESCE(SUM(CASE WHEN $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS other FROM households h $where", $params) ?: [];
+        $row = $this->householdCategoryCounts($filters);
         return [
-            ['label' => 'Hộ nghèo', 'value' => (int) ($row['poor'] ?? 0)],
-            ['label' => 'Hộ cận nghèo', 'value' => (int) ($row['near_poor'] ?? 0)],
-            ['label' => 'Hộ chính sách', 'value' => (int) ($row['policy'] ?? 0)],
-            ['label' => 'Hộ có công', 'value' => (int) ($row['meritorious'] ?? 0)],
-            ['label' => 'Hộ bình thường', 'value' => (int) ($row['normal'] ?? 0)],
-            ['label' => 'Hộ có người khuyết tật', 'value' => (int) ($row['other'] ?? 0)],
+            ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::POOR], 'value' => (int) ($row['poor_households'] ?? 0)],
+            ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::NEAR_POOR], 'value' => (int) ($row['near_poor_households'] ?? 0)],
+            ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::MEDIUM], 'value' => (int) ($row['medium_households'] ?? 0)],
+            ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::POLICY], 'value' => (int) ($row['policy_households'] ?? 0)],
+            ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::NORMAL], 'value' => (int) ($row['normal_households'] ?? 0)],
+        ];
+    }
+
+    private function householdCategoryCounts(array $filters): array
+    {
+        [$where, $params] = $this->householdWhere($filters);
+        $categoryCounts = $this->categoryService()->countsSelect('h');
+        $row = $this->fetchOne("SELECT $categoryCounts FROM households h $where", $params) ?: [];
+        return [
+            'poor_households' => (int) ($row['poor_households'] ?? 0),
+            'near_poor_households' => (int) ($row['near_poor_households'] ?? 0),
+            'medium_households' => (int) ($row['medium_households'] ?? 0),
+            'policy_households' => (int) ($row['policy_households'] ?? 0),
+            'normal_households' => (int) ($row['normal_households'] ?? 0),
         ];
     }
 
@@ -357,6 +404,8 @@ final class Dashboard extends BaseModel
             ['key' => 'missing_birthdate', 'label' => 'Nhân khẩu thiếu ngày sinh', 'count' => $this->missingCitizenFieldCount($filters, 'date_of_birth'), 'priority' => 'medium', 'screen' => 'persons'],
             ['key' => 'recent_movements', 'label' => 'Có biến động mới', 'count' => $this->movementCount($filters, 7), 'priority' => 'low', 'screen' => 'movements'],
             ['key' => 'incomplete_profiles', 'label' => 'Hồ sơ số chưa hoàn thiện', 'count' => $this->incompleteProfileCount($filters), 'priority' => 'medium', 'screen' => 'households'],
+            ['key' => 'household_needs_review', 'label' => 'Hộ cần rà soát', 'count' => $this->householdReviewCounts($filters)['needs_status_review'] ?? 0, 'priority' => 'high', 'screen' => 'households', 'filter' => 'needs_review'],
+            ['key' => 'household_needs_head_review', 'label' => 'Hộ cần cập nhật chủ hộ', 'count' => $this->householdReviewCounts($filters)['needs_head_review'] ?? 0, 'priority' => 'high', 'screen' => 'households', 'filter' => 'needs_head_review'],
         ];
         if ($this->columnExists('citizens', 'identity_expiry_date')) {
             $items[] = ['key' => 'identity_expiring', 'label' => 'CCCD sắp hết hạn', 'count' => $this->identityExpiringCount($filters), 'priority' => 'medium', 'screen' => 'persons'];
@@ -420,12 +469,20 @@ final class Dashboard extends BaseModel
 
     private function tasks(array $filters): array
     {
+        $householdReview = $this->householdReviewCounts($filters);
         return [
+            ['label' => 'Hộ cần rà soát', 'count' => $householdReview['needs_status_review'], 'screen' => 'households', 'action' => 'Mở danh sách', 'filter' => 'needs_review'],
+            ['label' => 'Hộ cần cập nhật chủ hộ', 'count' => $householdReview['needs_head_review'], 'screen' => 'households', 'action' => 'Mở danh sách', 'filter' => 'needs_head_review'],
             ['label' => 'Hộ chưa định vị', 'count' => $this->missingGpsCount($filters), 'screen' => 'gis', 'action' => 'Mở GIS'],
             ['label' => 'Hồ sơ thiếu ảnh', 'count' => $this->missingCitizenPhotoCount($filters), 'screen' => 'persons', 'action' => 'Mở nhân khẩu'],
             ['label' => 'Hồ sơ thiếu GPS', 'count' => $this->missingGpsCount($filters), 'screen' => 'households', 'action' => 'Mở hộ'],
             ['label' => 'Biến động chưa xác nhận', 'count' => $this->pendingMovementCount(), 'screen' => 'movements', 'action' => 'Mở biến động'],
         ];
+    }
+
+    private function householdReviewCounts(array $filters): array
+    {
+        return $this->statistics()->householdReviewCounts($filters);
     }
 
     private function gpsProgressChart(array $filters): array
@@ -480,13 +537,13 @@ final class Dashboard extends BaseModel
     private function movementCount(array $filters, int $days): int
     {
         [$condition, $params] = $this->movementWindowCondition($days);
-        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements m WHERE m.status <> 'DELETED' AND " . $this->tenantLiteral('movements', 'm') . " AND $condition", $params) ?: [])['total'] ?? 0);
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements m WHERE m.status <> 'DELETED' AND " . Movement::businessPredicate('m') . " AND " . $this->tenantLiteral('movements', 'm') . " AND $condition", $params) ?: [])['total'] ?? 0);
     }
 
     private function movementTypeCounts(array $filters, int $days): array
     {
         [$condition, $params] = $this->movementWindowCondition($days);
-        $rows = $this->fetchAll("SELECT m.type, COUNT(*) AS value FROM movements m WHERE m.status <> 'DELETED' AND " . $this->tenantLiteral('movements', 'm') . " AND $condition GROUP BY m.type", $params);
+        $rows = $this->fetchAll("SELECT m.type, COUNT(*) AS value FROM movements m WHERE m.status <> 'DELETED' AND " . Movement::businessPredicate('m') . " AND " . $this->tenantLiteral('movements', 'm') . " AND $condition GROUP BY m.type", $params);
         $map = ['BIRTH' => 0, 'MOVE_IN' => 0, 'MOVE_OUT' => 0, 'DEATH' => 0, 'TEMPORARY_RESIDENCE' => 0, 'TEMPORARY_ABSENCE' => 0];
         foreach ($rows as $row) {
             $type = (string) ($row['type'] ?? '');
@@ -511,7 +568,7 @@ final class Dashboard extends BaseModel
     private function pendingMovementCount(): int
     {
         if (!$this->tableExists('movements')) return 0;
-        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements WHERE status IN ('PENDING','DRAFT') AND " . $this->tenantLiteral('movements')) ?: [])['total'] ?? 0);
+        return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements WHERE status IN ('PENDING','DRAFT') AND " . Movement::businessPredicate('') . " AND " . $this->tenantLiteral('movements')) ?: [])['total'] ?? 0);
     }
 
     private function identityExpiringCount(array $filters): int
@@ -590,34 +647,88 @@ final class Dashboard extends BaseModel
     {
         $errors = [];
         $m = $this->safeWidget('households.metrics', fn() => $this->metrics($filters), $this->defaultMetrics(), $errors);
+        $categoryCounts = $this->safeWidget('households.categoryCounts', fn() => $this->householdCategoryCounts($filters), [
+            'poor_households' => 0,
+            'near_poor_households' => 0,
+            'medium_households' => 0,
+            'policy_households' => 0,
+            'normal_households' => 0,
+        ], $errors);
+        $m = array_merge($m, $categoryCounts);
         $charts = [
-            'households' => $this->safeWidget('households.chart', fn() => $this->householdChart($filters), [], $errors),
+            'households' => [
+                ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::POOR], 'value' => $categoryCounts['poor_households']],
+                ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::NEAR_POOR], 'value' => $categoryCounts['near_poor_households']],
+                ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::MEDIUM], 'value' => $categoryCounts['medium_households']],
+                ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::POLICY], 'value' => $categoryCounts['policy_households']],
+                ['label' => HouseholdCategoryService::LABELS[HouseholdCategoryService::NORMAL], 'value' => $categoryCounts['normal_households']],
+            ],
             'gps' => $this->safeWidget('households.gps', fn() => $this->gpsProgressChart($filters), [], $errors),
             'profiles' => $this->safeWidget('households.profiles', fn() => $this->profileProgressChart($filters), [], $errors),
         ];
         $top = $this->safeWidget('households.tasks', fn() => $this->tasks($filters), [], $errors);
+        $review = [
+            'household_review_count' => (int) ($m['household_review_count'] ?? $m['household_needs_review_count'] ?? 0),
+            'household_head_review_count' => (int) ($m['household_head_review_count'] ?? $m['household_needs_head_review_count'] ?? 0),
+            'households_with_present_count' => (int) ($m['households_with_present_count'] ?? 0),
+            'away_for_work_households' => (int) ($m['away_for_work_households'] ?? 0),
+        ];
         return ['module'=>'households','title'=>'Dashboard Hộ dân','kpis'=>[
-            $this->kpi('Tổng số hộ',$m['total_households']??0,'hộ','fa-house-chimney','green'),
-            $this->kpi('Hộ nghèo',$m['poor_households']??0,'hộ','fa-hand-holding-heart','orange'),
-            $this->kpi('Hộ cận nghèo',$m['near_poor_households']??0,'hộ','fa-hands-holding','pink'),
-            $this->kpi('Hộ chính sách',$m['policy_households']??0,'hộ','fa-award','purple'),
-            $this->kpi('Hộ có công',$m['meritorious_households']??0,'hộ','fa-medal','blue'),
-        ],'charts'=>$charts,'top'=>$top,'widgetErrors'=>$errors,'generatedAt'=>date('c')];
+            $this->kpi('Tổng số hộ',$m['total_households'] ?? 0,'hộ','fa-house-chimney','green'),
+            $this->kpi('Hộ nghèo',$m['poor_households'] ?? 0,'hộ','fa-hand-holding-heart','orange'),
+            $this->kpi('Hộ cận nghèo',$m['near_poor_households'] ?? 0,'hộ','fa-hands-holding','pink'),
+            $this->kpi('Hộ trung bình',$m['medium_households'] ?? 0,'hộ','fa-house-circle-check','cyan'),
+            $this->kpi('Hộ chính sách',$m['policy_households'] ?? 0,'hộ','fa-award','purple'),
+            $this->kpi('Hộ có công',$m['meritorious_households'] ?? 0,'hộ','fa-medal','blue'),
+        ],'metrics'=>$m,'review'=>$review,'charts'=>$charts,'top'=>$top,'widgetErrors'=>$errors,'generatedAt'=>date('c')];
     }
-
     public function populationDashboard(array $filters = []): array
     {
         $m = $this->metrics($filters);
-        return ['module'=>'population','title'=>'Dashboard Nhân khẩu','kpis'=>[
-            $this->kpi('Tổng nhân khẩu',$m['total_citizens']??0,'người','fa-users','blue'),
-            $this->kpi('Nam',$m['male_count']??0,'người','fa-mars','cyan'),
-            $this->kpi('Nữ',$m['female_count']??0,'người','fa-venus','pink'),
-            $this->kpi('Trẻ em',$m['children_count']??0,'người','fa-child-reaching','green'),
-            $this->kpi('Người cao tuổi',$m['elderly_count']??0,'người','fa-person-cane','purple'),
-            $this->kpi('Tạm trú',$m['temporary_residence_count']??$m['temporary_count']??0,'người','fa-location-dot','orange'),
-            $this->kpi('Tạm vắng',$m['temporary_absence_count']??$m['away_count']??0,'người','fa-person-walking-arrow-right','pink'),
-            $this->kpi('BHYT',$m['health_insurance_count']??0,'người','fa-notes-medical','green'),
-        ],'charts'=>['gender'=>$this->populationChart($filters),'ages'=>$this->ageChart($filters),'labor'=>$this->laborChart($filters),'healthInsurance'=>$this->healthInsuranceChart($filters)],'generatedAt'=>date('c')];
+        $kpis = [
+            $this->kpi('Tổng nhân khẩu', $m['total_citizens'] ?? 0, 'người', 'fa-users', 'blue'),
+            $this->kpi('Nam', $m['male_count'] ?? 0, 'người', 'fa-mars', 'cyan'),
+            $this->kpi('Nữ', $m['female_count'] ?? 0, 'người', 'fa-venus', 'pink'),
+            $this->kpi('Trẻ em', $m['children_count'] ?? 0, 'người', 'fa-child-reaching', 'green'),
+            $this->kpi('Người cao tuổi', $m['elderly_count'] ?? 0, 'người', 'fa-person-cane', 'purple'),
+            $this->kpi('Tạm trú', $m['temporary_residence_count'] ?? $m['temporary_count'] ?? 0, 'người', 'fa-location-dot', 'orange'),
+            $this->kpi('Tạm vắng', $m['temporary_absence_count'] ?? $m['away_count'] ?? 0, 'người', 'fa-person-walking-arrow-right', 'pink'),
+            $this->kpi('BHYT', $m['health_insurance_count'] ?? 0, 'người', 'fa-notes-medical', 'green'),
+            $this->kpi('70+ có BHYT', $m['age_70_plus_health_insurance_count'] ?? $m['elderly_health_insurance_count'] ?? 0, 'người', 'fa-shield-heart', 'green', ['action' => 'policyAlerts.open', 'alertType' => 'age_70_health_insurance_effective', 'alertStatus' => '']),
+            $this->kpi('75+ hưởng BTXH', $m['age_75_plus_social_assistance_count'] ?? $m['elderly_social_assistance_count'] ?? 0, 'người', 'fa-hand-holding-heart', 'orange'),
+        ];
+        if ((int) ($m['gender_other_count'] ?? 0) > 0) {
+            $kpis[] = $this->kpi('Giới tính khác', $m['gender_other_count'], 'người', 'fa-venus-mars', 'cyan');
+        }
+        if ((int) ($m['age_70_plus_without_health_insurance_count'] ?? $m['elderly_health_insurance_missing_count'] ?? 0) > 0) {
+            $kpis[] = $this->kpi('70+ cần rà soát BHYT', $m['age_70_plus_without_health_insurance_count'] ?? $m['elderly_health_insurance_missing_count'], 'người', 'fa-triangle-exclamation', 'orange', ['action' => 'policyAlerts.open', 'alertType' => 'age_70_health_insurance_missing', 'alertStatus' => '']);
+        }
+        if ((int) ($m['age_75_plus_without_social_assistance_record_count'] ?? $m['elderly_social_assistance_review_count'] ?? 0) > 0) {
+            $kpis[] = $this->kpi("Ng\u{01B0}\u{1EDD}i t\u{1EEB} 75 tu\u{1ED5}i c\u{1EA7}n r\u{00E0} so\u{00E1}t BTXH", $m['age_75_plus_without_social_assistance_record_count'] ?? $m['elderly_social_assistance_review_count'], "ng\u{01B0}\u{1EDD}i", 'fa-triangle-exclamation', 'orange', ['action' => 'policyAlerts.open', 'alertType' => 'age_75_social_assistance_legacy_missing_record', 'alertStatus' => 'pending']);
+        }
+        return [
+            'module' => 'population',
+            'title' => 'Dashboard Nhân khẩu',
+            'kpis' => $kpis,
+            'metrics' => $m,
+            'review' => [
+                'age_70_plus_count' => (int) ($m['age_70_plus_count'] ?? 0),
+                'age_70_plus_health_insurance_count' => (int) ($m['age_70_plus_health_insurance_count'] ?? 0),
+                'age_70_plus_without_health_insurance_count' => (int) ($m['age_70_plus_without_health_insurance_count'] ?? 0),
+                'age_75_plus_count' => (int) ($m['age_75_plus_count'] ?? 0),
+                'age_75_plus_social_assistance_count' => (int) ($m['age_75_plus_social_assistance_count'] ?? 0),
+                'age_75_plus_without_social_assistance_record_count' => (int) ($m['age_75_plus_without_social_assistance_record_count'] ?? 0),
+                'age_75_plus_legacy_social_assistance_count' => (int) ($m['age_75_plus_legacy_social_assistance_count'] ?? 0),
+                'gender_other_count' => (int) ($m['gender_other_count'] ?? 0),
+            ],
+            'charts' => [
+                'gender' => $this->populationChart($filters),
+                'ages' => $this->ageChart($filters),
+                'labor' => $this->laborChart($filters),
+                'healthInsurance' => $this->healthInsuranceChart($filters),
+            ],
+            'generatedAt' => date('c'),
+        ];
     }
 
     public function businessDashboard(array $filters = []): array
@@ -626,14 +737,14 @@ final class Dashboard extends BaseModel
         $stats = $model->dashboard($filters);
         $charts = $model->charts($filters);
         return ['module'=>'business','title'=>'Dashboard Kinh doanh','kpis'=>[
-            $this->kpi('Tổng hộ kinh doanh',$stats['economic_households']??0,'hộ','fa-house-user','green'),
-            $this->kpi('Tổng cơ sở kinh doanh',$stats['establishment_total']??0,'cơ sở','fa-store','blue'),
+            $this->kpi('Tổng hộ kinh doanh',$stats['economic_households'] ?? 0,'hộ','fa-house-user','green'),
+            $this->kpi('Tổng cơ sở kinh doanh',$stats['establishment_total'] ?? 0,'cơ sở','fa-store','blue'),
             $this->kpi('Hộ có giấy phép',$this->businessDistinctCount($filters,'hb.business_license IS NOT NULL AND hb.business_license <> ""'),'hộ','fa-file-signature','orange'),
             $this->kpi('Hộ có mã số thuế',$this->businessDistinctCount($filters,'hb.tax_code IS NOT NULL AND hb.tax_code <> ""'),'hộ','fa-receipt','cyan'),
-            $this->kpi('Hộ tham gia OCOP',$stats['ocop_households']??0,'hộ','fa-award','purple'),
-            $this->kpi('Hộ đạt ATTP',$stats['food_safety_households']??0,'hộ','fa-shield-heart','green'),
-            $this->kpi('Hộ tham gia BHXH',$stats['social_insurance_households']??0,'hộ','fa-user-shield','blue'),
-        ],'charts'=>['types'=>$charts['economicTypes']??[],'sectors'=>$charts['sectors']??[],'sectorShare'=>$charts['sectors']??[],'scales'=>$charts['scales']??[]],'top'=>$this->businessTopHouseholds($filters),'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
+            $this->kpi('Hộ tham gia OCOP',$stats['ocop_households'] ?? 0,'hộ','fa-award','purple'),
+            $this->kpi('Hộ đạt ATTP',$stats['food_safety_households'] ?? 0,'hộ','fa-shield-heart','green'),
+            $this->kpi('Hộ tham gia BHXH',$stats['social_insurance_households'] ?? 0,'hộ','fa-user-shield','blue'),
+        ],'charts'=>['types'=>$charts['economicTypes'] ?? [],'sectors'=>$charts['sectors'] ?? [],'sectorShare'=>$charts['sectors'] ?? [],'scales'=>$charts['scales'] ?? []],'top'=>$this->businessTopHouseholds($filters),'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
     }
 
     public function vehicleDashboard(array $filters = []): array
@@ -642,16 +753,16 @@ final class Dashboard extends BaseModel
         $stats = $model->dashboard($filters);
         $charts = $model->charts($filters);
         return ['module'=>'vehicles','title'=>'Dashboard Xe cộ','kpis'=>[
-            $this->kpi('Tổng phương tiện',$stats['total']??0,'xe','fa-car','green'),
-            $this->kpi('Hộ có phương tiện',$stats['households']??0,'hộ','fa-house-user','blue'),
-            $this->kpi('Ô tô',$stats['cars']??0,'xe','fa-car-side','orange'),
-            $this->kpi('Xe máy',$stats['motorbikes']??0,'xe','fa-motorcycle','cyan'),
-            $this->kpi('Xe điện',$stats['electric']??0,'xe','fa-bolt','purple'),
-            $this->kpi('Có biển số',$stats['with_plate']??0,'xe','fa-id-card','blue'),
-            $this->kpi('Không biển số',$stats['without_plate']??0,'xe','fa-circle-question','orange'),
-            $this->kpi('Hết hạn kiểm định',$stats['expired_inspection']??0,'xe','fa-triangle-exclamation','pink'),
-            $this->kpi('Hết hạn bảo hiểm',$stats['expired_insurance']??0,'xe','fa-shield-halved','green'),
-        ],'charts'=>['types'=>$charts['types']??[],'households'=>$charts['households']??[],'areas'=>$charts['areas']??[],'details'=>$charts['details']??[]],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
+            $this->kpi('Tổng phương tiện',$stats['total'] ?? 0,'xe','fa-car','green'),
+            $this->kpi('Hộ có phương tiện',$stats['households'] ?? 0,'hộ','fa-house-user','blue'),
+            $this->kpi('Ô tô',$stats['cars'] ?? 0,'xe','fa-car-side','orange'),
+            $this->kpi('Xe máy',$stats['motorbikes'] ?? 0,'xe','fa-motorcycle','cyan'),
+            $this->kpi('Xe điện',$stats['electric'] ?? 0,'xe','fa-bolt','purple'),
+            $this->kpi('Có biển số',$stats['with_plate'] ?? 0,'xe','fa-id-card','blue'),
+            $this->kpi('Không biển số',$stats['without_plate'] ?? 0,'xe','fa-circle-question','orange'),
+            $this->kpi('Hết hạn kiểm định',$stats['expired_inspection'] ?? 0,'xe','fa-triangle-exclamation','pink'),
+            $this->kpi('Hết hạn bảo hiểm',$stats['expired_insurance'] ?? 0,'xe','fa-shield-halved','green'),
+        ],'charts'=>['types'=>$charts['types'] ?? [],'households'=>$charts['households'] ?? [],'areas'=>$charts['areas'] ?? [],'details'=>$charts['details'] ?? []],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
     }
 
     public function livestockDashboard(array $filters = []): array
@@ -659,17 +770,19 @@ final class Dashboard extends BaseModel
         $model = new \App\Models\Livestock();
         $stats = $model->dashboard($filters);
         $charts = $model->charts($filters);
-        return ['module'=>'livestock','title'=>'Dashboard Chăn nuôi','kpis'=>[
-            $this->kpi('Tổng hộ chăn nuôi',$stats['livestock_households']??0,'hộ','fa-warehouse','green'),
-            $this->kpi('Tổng vật nuôi',$stats['livestock_total']??0,'con','fa-paw','blue'),
-            $this->kpi('Trâu',$stats['buffalo_total']??0,'con','fa-circle-dot','orange'),
-            $this->kpi('Bò',$stats['cow_total']??0,'con','fa-circle-dot','cyan'),
-            $this->kpi('Lợn',$stats['pig_total']??0,'con','fa-circle-dot','purple'),
-            $this->kpi('Dê',$stats['goat_total']??0,'con','fa-circle-dot','pink'),
-            $this->kpi('Gia cầm',$stats['poultry_total']??0,'con','fa-dove','green'),
-            $this->kpi('Đã tiêm phòng',$stats['vaccinated_households']??0,'hộ','fa-shield-heart','blue'),
-            $this->kpi('Có dịch bệnh',$stats['disease_households']??0,'hộ','fa-triangle-exclamation','orange'),
-        ],'charts'=>['types'=>$charts['types']??[],'scale'=>$charts['scale']??[],'areas'=>$charts['areas']??[],'vaccination'=>$charts['vaccination']??[]],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
+        return ['module'=>'livestock','title'=>'Dashboard Chan nuoi','kpis'=>[
+            $this->kpi('Tong ho co chan nuoi',$stats['livestock_households'] ?? 0,'ho','fa-house','green'),
+            $this->kpi('Tong co so chan nuoi',$stats['facility_total'] ?? 0,'co so','fa-warehouse','blue'),
+            $this->kpi('Tong trang trai',$stats['farm_total'] ?? 0,'trang trai','fa-industry','orange'),
+            $this->kpi('Tong dan vat nuoi',$stats['livestock_total'] ?? 0,'con','fa-paw','blue'),
+            $this->kpi('Tong dan lon',$stats['pig_total'] ?? 0,'con','fa-bacon','purple'),
+            $this->kpi('Lon nai',$stats['pig_sow_total'] ?? 0,'con','fa-circle-dot','green'),
+            $this->kpi('Lon thit',$stats['pig_meat_total'] ?? 0,'con','fa-circle-dot','orange'),
+            $this->kpi('Lon con',$stats['piglet_total'] ?? 0,'con','fa-circle-dot','cyan'),
+            $this->kpi('Lon duc giong',$stats['pig_boar_total'] ?? 0,'con','fa-circle-dot','pink'),
+            $this->kpi('Ho nuoi lon',$stats['pig_households'] ?? 0,'ho','fa-house-chimney','green'),
+            $this->kpi('Trang trai nuoi lon',$stats['pig_farms'] ?? 0,'trang trai','fa-warehouse','purple'),
+        ],'charts'=>['types'=>$charts['types'] ?? [],'scale'=>$charts['scale'] ?? [],'areas'=>$charts['areas'] ?? [],'vaccination'=>$charts['vaccination'] ?? []],'top'=>$model->topHouseholds($filters),'generatedAt'=>date('c')];
     }
 
     public function gisDashboard(array $filters = []): array
@@ -677,12 +790,12 @@ final class Dashboard extends BaseModel
         $gis = $this->gisSummary($filters);
         $business = (new \App\Models\HouseholdBusiness())->dashboard($filters);
         return ['module'=>'gis','title'=>'Dashboard GIS','kpis'=>[
-            $this->kpi('Hộ dân',$gis['totalHouseholds']??0,'hộ','fa-house-chimney','green'),
-            $this->kpi('Hộ đã định vị',$gis['locatedHouseholds']??0,'hộ','fa-location-dot','blue'),
-            $this->kpi('Hộ chưa định vị',$gis['unlocatedHouseholds']??0,'hộ','fa-map-pin','orange'),
-            $this->kpi('Khu vực GIS',$gis['totalAreas']??0,'khu','fa-draw-polygon','purple'),
-            $this->kpi('Hộ kinh doanh',$business['economic_households']??0,'hộ','fa-store','cyan'),
-        ],'charts'=>['gps'=>$this->gpsProgressChart($filters),'business'=>(new \App\Models\HouseholdBusiness())->charts($filters)['economicTypes']??[]],'layers'=>['Hộ dân','Hộ kinh doanh','Phương tiện','Trang trại','Chuồng trại','Khu vực sản xuất','Khu vực chăn nuôi'],'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
+            $this->kpi('Hộ dân',$gis['totalHouseholds'] ?? 0,'hộ','fa-house-chimney','green'),
+            $this->kpi('Hộ đã định vị',$gis['locatedHouseholds'] ?? 0,'hộ','fa-location-dot','blue'),
+            $this->kpi('Hộ chưa định vị',$gis['unlocatedHouseholds'] ?? 0,'hộ','fa-map-pin','orange'),
+            $this->kpi('Khu vực GIS',$gis['totalAreas'] ?? 0,'khu','fa-draw-polygon','purple'),
+            $this->kpi('Hộ kinh doanh',$business['economic_households'] ?? 0,'hộ','fa-store','cyan'),
+        ],'charts'=>['gps'=>$this->gpsProgressChart($filters),'business'=>(new \App\Models\HouseholdBusiness())->charts($filters)['economicTypes'] ?? []],'layers'=>['Hộ dân','Hộ kinh doanh','Phương tiện','Trang trại','Chuồng trại','Khu vực sản xuất','Khu vực chăn nuôi'],'map'=>$this->businessMapMarkers($filters),'generatedAt'=>date('c')];
     }
 
     public function reportsDashboard(array $filters = []): array
@@ -691,7 +804,7 @@ final class Dashboard extends BaseModel
         $exports = ['PDF','Excel','In trực tiếp'];
         $populationReports = array_filter($reports, fn($label) => str_contains($label, 'nhân khẩu'));
         $domainReports = array_filter($reports, fn($label) => !str_contains($label, 'nhân khẩu') && !str_contains($label, 'GIS'));
-        return ['module'=>'reports','title'=>'Dashboard Báo cáo','kpis'=>[
+        return ['module'=>'reports','title'=>'Dashboard B?o c?o','kpis'=>[
             $this->kpi('Nhóm báo cáo khả dụng', count($reports), 'nhóm', 'fa-layer-group', 'blue'),
             $this->kpi('Định dạng xuất', count($exports), 'loại', 'fa-file-export', 'green'),
             $this->kpi('Báo cáo dân cư', count($populationReports), 'nhóm', 'fa-users', 'cyan'),
@@ -699,9 +812,9 @@ final class Dashboard extends BaseModel
         ],'reports'=>$reports,'exports'=>$exports,'generatedAt'=>date('c')];
     }
 
-    private function kpi(string $label, mixed $value, string $unit, string $icon, string $tone): array
+    private function kpi(string $label, mixed $value, string $unit, string $icon, string $tone, array $extra = []): array
     {
-        return ['label'=>$label,'value'=>(float) $value,'unit'=>$unit,'icon'=>$icon,'tone'=>$tone];
+        return array_merge(['label'=>$label,'value'=>(float) $value,'unit'=>$unit,'icon'=>$icon,'tone'=>$tone], $extra);
     }
 
     private function emptyDomainDashboard(string $module, string $title, array $cards, array $chartKeys): array
@@ -732,7 +845,7 @@ final class Dashboard extends BaseModel
         if (!$this->columnExists('households','latitude') || !$this->columnExists('households','longitude')) return [];
         [$where, $params] = $this->businessWhere($filters);
         $rows = $this->fetchAll("SELECT h.id AS household_id, h.household_code, h.head_citizen_name, h.latitude, h.longitude, COUNT(hb.id) AS activity_count, GROUP_CONCAT(COALESCE(NULLIF(hb.business_name,''), NULLIF(hb.economic_type,''), 'Hoạt động kinh tế') ORDER BY hb.id SEPARATOR '; ') AS activities FROM household_business hb INNER JOIN households h ON h.id = hb.household_id $where AND h.latitude IS NOT NULL AND h.latitude <> '' AND h.longitude IS NOT NULL AND h.longitude <> '' GROUP BY h.id, h.household_code, h.head_citizen_name, h.latitude, h.longitude LIMIT 200", $params);
-        return array_map(fn($r) => ['household_id'=>(int)$r['household_id'],'household_code'=>(string)$r['household_code'],'head_citizen_name'=>(string)$r['head_citizen_name'],'latitude'=>(float)$r['latitude'],'longitude'=>(float)$r['longitude'],'activity_count'=>(int)$r['activity_count'],'activities'=>(string)($r['activities']??'')], $rows);
+        return array_map(fn($r) => ['household_id'=>(int)$r['household_id'],'household_code'=>(string)$r['household_code'],'head_citizen_name'=>(string)$r['head_citizen_name'],'latitude'=>(float)$r['latitude'],'longitude'=>(float)$r['longitude'],'activity_count'=>(int)$r['activity_count'],'activities'=>(string)($r['activities'] ?? '')], $rows);
     }
 
     private function businessWhere(array $filters): array
@@ -754,7 +867,8 @@ final class Dashboard extends BaseModel
             'dateFrom' => trim((string) ($filters['dateFrom'] ?? $filters['date_from'] ?? '')) ?: null,
             'dateTo' => trim((string) ($filters['dateTo'] ?? $filters['date_to'] ?? '')) ?: null,
             'householdStatus' => trim((string) ($filters['householdStatus'] ?? $filters['household_status'] ?? '')) ?: null,
-            'householdType' => trim((string) ($filters['householdType'] ?? $filters['household_type'] ?? $filters['category'] ?? '')) ?: null,
+            'residenceStatus' => trim((string) ($filters['residenceStatus'] ?? $filters['residence_status'] ?? $filters['householdResidenceStatus'] ?? '')) ?: null,
+            'householdType' => trim((string) ($filters['householdCategory'] ?? $filters['household_category'] ?? $filters['householdType'] ?? $filters['household_type'] ?? $filters['category'] ?? '')) ?: null,
             'residencyStatus' => trim((string) ($filters['residencyStatus'] ?? $filters['residency_status'] ?? '')) ?: null,
             'presenceStatus' => trim((string) ($filters['presenceStatus'] ?? $filters['presence_status'] ?? '')) ?: null,
         ];
@@ -765,7 +879,8 @@ final class Dashboard extends BaseModel
         $filters = $this->normalizeFilters($filters);
         $where = [$this->activeHouseholdCondition('h')];
         $params = [];
-        if ($filters['householdStatus']) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
+        if ($filters['householdStatus']) { if (in_array($filters['householdStatus'], ['resident', 'away_for_work', 'settled_elsewhere', 'partial', 'inactive', 'outside'], true)) { $where[] = $this->residenceStatusSql('h') . ' = :household_status'; $params['household_status'] = $filters['householdStatus']; } else { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; } }
+        if ($filters['residenceStatus']) { $where[] = $this->residenceStatusSql('h') . ' = :residence_status'; $params['residence_status'] = $filters['residenceStatus'] === 'outside' ? 'settled_elsewhere' : $filters['residenceStatus']; }
         if ($filters['dateFrom']) { $where[] = 'DATE(h.created_at) >= :household_date_from'; $params['household_date_from'] = $filters['dateFrom']; }
         if ($filters['dateTo']) { $where[] = 'DATE(h.created_at) <= :household_date_to'; $params['household_date_to'] = $filters['dateTo']; }
         $category = $this->categoryKey($filters['householdType']);
@@ -779,7 +894,8 @@ final class Dashboard extends BaseModel
         $filters = $this->normalizeFilters($filters);
         $where = [$this->activeCitizenCondition('c'), $this->activeHouseholdCondition('h')];
         $params = [];
-        if ($filters['householdStatus']) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
+        if ($filters['householdStatus']) { if (in_array($filters['householdStatus'], ['resident', 'away_for_work', 'settled_elsewhere', 'partial', 'inactive', 'outside'], true)) { $where[] = $this->residenceStatusSql('h') . ' = :household_status'; $params['household_status'] = $filters['householdStatus']; } else { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; } }
+        if ($filters['residenceStatus']) { $where[] = $this->residenceStatusSql('h') . ' = :residence_status'; $params['residence_status'] = $filters['residenceStatus'] === 'outside' ? 'settled_elsewhere' : $filters['residenceStatus']; }
         if ($filters['residencyStatus']) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
         if ($filters['presenceStatus']) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
         if ($filters['dateFrom']) { $where[] = 'DATE(c.created_at) >= :citizen_date_from'; $params['citizen_date_from'] = $filters['dateFrom']; }
@@ -799,6 +915,16 @@ final class Dashboard extends BaseModel
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
+
+    private function residenceStatusSql(string $householdAlias = 'h'): string
+    {
+        $active = "c.status <> 'DELETED' AND COALESCE(c.life_status,'ALIVE') <> 'DECEASED' AND COALESCE(c.residency_status,'PERMANENT') <> 'TRANSFERRED_OUT' AND COALESCE(c.presence_status,'AT_HOME') <> 'MOVED_OUT'";
+        $total = "(SELECT COUNT(*) FROM citizens c WHERE c.household_id = $householdAlias.id AND $active)";
+        $atHome = "(SELECT COUNT(*) FROM citizens c WHERE c.household_id = $householdAlias.id AND $active AND c.presence_status = 'AT_HOME')";
+        $away = "(SELECT COUNT(*) FROM citizens c WHERE c.household_id = $householdAlias.id AND $active AND c.presence_status = 'AWAY')";
+        return "CASE WHEN COALESCE($householdAlias.residence_status_mode,'AUTO') = 'AUTO' AND $total > 0 AND $atHome = 0 AND $away = $total THEN 'away_for_work' ELSE COALESCE($householdAlias.residence_status,'resident') END";
+    }
+
     private function activeHouseholdCondition(string $alias): string
     {
         return $this->statistics()->householdCondition($alias);
@@ -816,15 +942,8 @@ final class Dashboard extends BaseModel
 
     private function addCategoryWhere(array &$where, array &$params, string $category): void
     {
-        match ($category) {
-            'poor' => $where[] = 'h.poor_household = 1',
-            'near_poor' => $where[] = 'h.near_poor_household = 1',
-            'meritorious' => $where[] = $this->meritoriousHouseholdExists('h'),
-            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND NOT ' . $this->disabledHouseholdExists('h'),
-            'other' => $where[] = $this->disabledHouseholdExists('h'),
-            'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
-            default => null,
-        };
+        $condition = $this->categoryService()->condition($category, 'h');
+        if ($condition !== '') $where[] = $condition;
     }
 
     private function addTextCategoryWhere(array &$where, array &$params, string $category): void
@@ -837,19 +956,9 @@ final class Dashboard extends BaseModel
 
     private function categoryKey(mixed $value): string
     {
-        $text = $this->normalize((string) $value);
-        if ($text === '') return '';
-        return match (true) {
-            str_contains($text, 'can ngheo') || str_contains($text, 'near poor') => 'near_poor',
-            str_contains($text, 'moi thoat ngheo') || str_contains($text, 'thoat ngheo') || str_contains($text, 'escaped poverty') => 'escaped_poverty',
-            str_contains($text, 'chinh sach') || str_contains($text, 'policy') => 'policy',
-            str_contains($text, 'co cong') || str_contains($text, 'gia dinh co cong') || str_contains($text, 'meritorious') => 'meritorious',
-            str_contains($text, 'binh thuong') || str_contains($text, 'normal') || $text === 'khong' => 'normal',
-            str_contains($text, 'khac') || str_contains($text, 'tan tat') || str_contains($text, 'khuyet tat') || str_contains($text, 'other') => 'other',
-            str_contains($text, 'ngheo') || str_contains($text, 'poor') => 'poor',
-            default => '',
-        };
+        return HouseholdCategoryService::normalizeKey($value);
     }
+    private function categoryService(): HouseholdCategoryService { return $this->categoryService ??= new HouseholdCategoryService(); }
 
     private function normalize(string $value): string
     {

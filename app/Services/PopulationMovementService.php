@@ -21,12 +21,16 @@ final class PopulationMovementService
     {
         $this->applyCitizenBusinessFields((int) $citizen['id'], $input, $userId);
         $fresh = $this->citizen((int) $citizen['id']) ?: $citizen;
-        $type = $this->isBirth($input) ? 'BIRTH' : 'MOVE_IN';
+        $type = $this->initialMovementType($input);
+        if ($type === null) {
+            $this->syncHouseholdStatus((int) ($fresh['household_id'] ?? $citizen['household_id'] ?? 0), $userId);
+            return;
+        }
         $this->recordMovement($fresh, $type, [
-            'from_address' => $this->text($input, ['moveInPlace', 'move_in_place', 'fromAddress', 'from_address']),
-            'to_address' => $fresh['current_address'] ?? $fresh['household_address'] ?? null,
-            'reason' => $this->text($input, ['moveInType', 'move_in_type', 'formationSource', 'formation_source', 'reason']),
-            'effective_date' => $this->date($input, ['moveInDate', 'move_in_date', 'effectiveDate', 'effective_date']) ?? date('Y-m-d'),
+            'from_address' => $type === 'BIRTH' ? null : $this->text($input, ['moveInPlace', 'move_in_place', 'fromAddress', 'from_address']),
+            'to_address' => $type === 'BIRTH' ? null : ($fresh['current_address'] ?? $fresh['household_address'] ?? null),
+            'reason' => $this->initialMovementReason($input, $type),
+            'effective_date' => $this->initialMovementDate($input, $fresh, $type),
             'document_number' => $this->text($input, ['decisionNumber', 'decision_number', 'documentNumber', 'document_number']),
             'note' => $type === 'BIRTH' ? 'Tự động ghi nhận khai sinh khi thêm nhân khẩu' : 'Tự động ghi nhận chuyển đến khi thêm nhân khẩu',
             'after_data' => $fresh,
@@ -50,8 +54,9 @@ final class PopulationMovementService
             ], $userId);
         }
 
-        $freshTransferredOut = ($fresh['residency_status'] ?? '') === 'TRANSFERRED_OUT' || $this->hasMoveOutSignal($input);
-        if (($before['residency_status'] ?? '') !== 'TRANSFERRED_OUT' && $freshTransferredOut) {
+        $freshTransferredOut = ($fresh['residency_status'] ?? '') === 'TRANSFERRED_OUT' || ($fresh['presence_status'] ?? '') === 'MOVED_OUT' || $this->hasMoveOutSignal($input);
+        $beforeTransferredOut = ($before['residency_status'] ?? '') === 'TRANSFERRED_OUT' || ($before['presence_status'] ?? '') === 'MOVED_OUT';
+        if (!$beforeTransferredOut && $freshTransferredOut) {
             $this->recordMovement($fresh, 'MOVE_OUT', [
                 'from_address' => $before['current_address'] ?? $before['household_address'] ?? null,
                 'to_address' => $fresh['move_out_place'] ?? $this->text($input, ['moveOutPlace', 'move_out_place']),
@@ -80,15 +85,6 @@ final class PopulationMovementService
                 'effective_date' => date('Y-m-d'),
                 'before_data' => ['relationship' => $before['relationship'] ?? null, 'head_citizen_name' => $before['head_citizen_name'] ?? null],
                 'after_data' => ['relationship' => $fresh['relationship'] ?? null, 'head_citizen_name' => $fresh['head_citizen_name'] ?? null],
-            ], $userId);
-        }
-
-        if ($this->hasMeaningfulCitizenChange($before, $fresh)) {
-            $this->recordMovement($fresh, 'CITIZEN_UPDATE', [
-                'reason' => $this->text($input, ['reason']) ?: 'Cập nhật thông tin nhân khẩu',
-                'effective_date' => date('Y-m-d'),
-                'before_data' => $this->compactCitizenHistory($before),
-                'after_data' => $this->compactCitizenHistory($fresh),
             ], $userId);
         }
 
@@ -141,9 +137,14 @@ final class PopulationMovementService
         $before = $this->citizen($id);
         if (!$before) throw new \RuntimeException('Không tìm thấy nhân khẩu');
 
-        $sets = ['status="INACTIVE"', 'presence_status="AWAY"', 'updated_by=:user'];
+        $sets = ['status="INACTIVE"', 'updated_by=:user'];
         $params = ['id' => $id, 'user' => $userId];
-        if ($this->enumAllows('citizens', 'residency_status', 'TRANSFERRED_OUT')) {
+        if ($this->enumAllows('citizens', 'presence_status', 'MOVED_OUT')) {
+            $sets[] = 'presence_status="MOVED_OUT"';
+        } else {
+            $sets[] = 'presence_status="AWAY"';
+        }
+        if (!$this->enumAllows('citizens', 'presence_status', 'MOVED_OUT') && $this->enumAllows('citizens', 'residency_status', 'TRANSFERRED_OUT')) {
             $sets[] = 'residency_status="TRANSFERRED_OUT"';
         }
         foreach ([
@@ -196,8 +197,12 @@ final class PopulationMovementService
         }
         if ($this->hasMoveOutSignal($input)) {
             $sets[] = 'status="INACTIVE"';
-            $sets[] = 'presence_status="AWAY"';
-            if ($this->enumAllows('citizens', 'residency_status', 'TRANSFERRED_OUT')) {
+            if ($this->enumAllows('citizens', 'presence_status', 'MOVED_OUT')) {
+                $sets[] = 'presence_status="MOVED_OUT"';
+            } else {
+                $sets[] = 'presence_status="AWAY"';
+            }
+            if (!$this->enumAllows('citizens', 'presence_status', 'MOVED_OUT') && $this->enumAllows('citizens', 'residency_status', 'TRANSFERRED_OUT')) {
                 $sets[] = 'residency_status="TRANSFERRED_OUT"';
             }
         }
@@ -256,14 +261,9 @@ final class PopulationMovementService
     private function syncHouseholdStatus(int $householdId, int $userId): void
     {
         if ($householdId <= 0) return;
-        $residencyClause = $this->enumAllows('citizens', 'residency_status', 'TRANSFERRED_OUT') ? ' AND residency_status <> "TRANSFERRED_OUT"' : '';
-        $count = (int) ($this->scalar('SELECT COUNT(*) FROM citizens WHERE household_id=:id AND ' . $this->tenantSql('citizens') . ' AND status="ACTIVE" AND life_status="ALIVE"' . $residencyClause, ['id' => $householdId]) ?? 0);
-        if ($count === 0) {
-            $ended = $this->enumAllows('households', 'status', 'ENDED') ? 'ENDED' : 'INACTIVE';
-            $blocked = $this->enumAllows('households', 'status', 'MERGED') ? '("DELETED","MERGED")' : '("DELETED")';
-            $stmt = $this->db->prepare('UPDATE households SET status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantSql('households') . ' AND status NOT IN ' . $blocked);
-            $stmt->execute(['id' => $householdId, 'user' => $userId, 'status' => $ended]);
-        }
+        // A household can legitimately exist with zero current members, for example
+        // after moving/deleting the last citizen. Only explicit household deletion
+        // should mark the household as ended/inactive.
     }
 
     private function recordMovement(array $citizen, string $type, array $payload, int $userId): void
@@ -333,6 +333,49 @@ final class PopulationMovementService
     {
         $text = mb_strtolower((string) ($this->text($input, ['formationSource', 'formation_source', 'moveInType', 'move_in_type']) ?? ''));
         return str_contains($text, 'khai sinh') || str_contains($text, 'birth') || str_contains($text, 'sinh');
+    }
+
+    private function initialMovementType(array $input): ?string
+    {
+        $explicit = strtoupper((string) ($this->text($input, ['initialMovementType', 'initial_movement_type', 'movementType', 'movement_type']) ?? ''));
+        if (in_array($explicit, ['NONE', 'NO_MOVEMENT', 'SKIP'], true)) return null;
+        if ($explicit !== '') return $this->businessMovementType($explicit);
+        if ($this->isBirth($input)) return 'BIRTH';
+        if ($this->hasMoveInSignal($input)) return 'MOVE_IN';
+        return null;
+    }
+
+    private function businessMovementType(string $type): string
+    {
+        return in_array($type, [
+            'BIRTH',
+            'MOVE_IN',
+            'TEMPORARY_RESIDENCE',
+            'TEMPORARY_ABSENCE',
+            'OTHER',
+        ], true) ? $type : 'OTHER';
+    }
+
+    private function initialMovementDate(array $input, array $citizen, string $type): string
+    {
+        $date = $this->date($input, ['initialMovementDate', 'initial_movement_date', 'moveInDate', 'move_in_date', 'effectiveDate', 'effective_date']);
+        if ($date !== null) return $date;
+        if ($type === 'BIRTH') return $this->date($citizen, ['date_of_birth', 'dateOfBirth']) ?? date('Y-m-d');
+        return date('Y-m-d');
+    }
+
+    private function initialMovementReason(array $input, string $type): ?string
+    {
+        return $this->text($input, ['initialMovementReason', 'initial_movement_reason', 'moveInType', 'move_in_type', 'formationSource', 'formation_source', 'reason'])
+            ?: ($type === 'BIRTH' ? 'Khai sinh' : null);
+    }
+
+    private function hasMoveInSignal(array $input): bool
+    {
+        if ($this->date($input, ['moveInDate', 'move_in_date']) !== null) return true;
+        if ($this->text($input, ['moveInPlace', 'move_in_place']) !== null) return true;
+        $text = mb_strtolower((string) ($this->text($input, ['formationSource', 'formation_source', 'moveInType', 'move_in_type']) ?? ''));
+        return str_contains($text, 'move_in') || str_contains($text, 'chuyá»ƒn Ä‘áº¿n') || str_contains($text, 'chuyen den');
     }
 
     private function hasMoveOutSignal(array $input): bool

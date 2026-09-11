@@ -9,66 +9,35 @@ final class VillageDocument extends BaseModel
 {
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS document_categories (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(80) NOT NULL UNIQUE,
-  name VARCHAR(180) NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_document_categories_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS village_documents (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  document_code VARCHAR(40) NOT NULL UNIQUE,
-  document_number VARCHAR(120) NULL,
-  title VARCHAR(255) NOT NULL,
-  category_id BIGINT UNSIGNED NULL,
-  issuing_unit VARCHAR(255) NULL,
-  signer_name VARCHAR(255) NULL,
-  issued_date DATE NULL,
-  effective_date DATE NULL,
-  area_code VARCHAR(80) NULL,
-  summary TEXT NULL,
-  status ENUM('ACTIVE','ARCHIVED','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_village_documents_number (document_number),
-  KEY idx_village_documents_title (title),
-  KEY idx_village_documents_category (category_id),
-  KEY idx_village_documents_issued (issued_date),
-  KEY idx_village_documents_created (created_at),
-  KEY idx_village_documents_status (status),
-  CONSTRAINT fk_village_documents_category FOREIGN KEY (category_id) REFERENCES document_categories(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS village_document_attachments (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  document_id BIGINT UNSIGNED NOT NULL,
-  original_name VARCHAR(255) NOT NULL,
-  stored_path VARCHAR(500) NOT NULL,
-  mime_type VARCHAR(160) NOT NULL,
-  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  file_kind ENUM('PDF','WORD','EXCEL','POWERPOINT','ARCHIVE','DOCUMENT','IMAGE','OTHER') NOT NULL DEFAULT 'DOCUMENT',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_village_document_attachments_document (document_id),
-  CONSTRAINT fk_village_document_attachments_document FOREIGN KEY (document_id) REFERENCES village_documents(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->migrateSchema();
-        $this->seedCategories();
+        $this->assertSchemaReady();
+    }
+
+    public function assertSchemaReady(): void
+    {
+        $this->assertColumns('document_categories', [
+            'id','village_id','code','name','sort_order','is_active','created_at','updated_at',
+        ]);
+        $this->assertColumns('village_documents', [
+            'id','village_id','document_code','document_number','title','category_id','issuing_unit','signer_name','issued_date','effective_date','area_code','summary','status','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by',
+        ]);
+        $this->assertColumns('village_document_attachments', [
+            'id','village_id','document_id','original_name','stored_path','mime_type','file_size','file_kind','created_at','created_by','deleted_at','deleted_by',
+        ]);
+        foreach (['document_categories','village_documents','village_document_attachments'] as $table) {
+            $this->assertTenantScope($table);
+        }
+
+        foreach ([
+            'idx_document_categories_active','idx_document_categories_village',
+            'idx_village_documents_number','idx_village_documents_title','idx_village_documents_category','idx_village_documents_issued','idx_village_documents_created','idx_village_documents_status','idx_village_documents_village',
+            'idx_village_document_attachments_document','idx_village_document_attachments_village',
+        ] as $index) {
+            $this->assertIndexExists($index);
+        }
+
+        $this->assertForeignKey('fk_village_documents_category', 'village_documents', 'category_id', 'document_categories', 'id', 'SET NULL');
+        $this->assertForeignKey('fk_village_document_attachments_document', 'village_document_attachments', 'document_id', 'village_documents', 'id', 'CASCADE');
+        $this->assertCatalogReady();
     }
 
     public function catalogs(): array
@@ -76,7 +45,7 @@ SQL);
         $this->ensureSchema();
         return [
             'categories' => array_map(fn($r) => ['value' => (string) $r['id'], 'code' => (string) $r['code'], 'label' => (string) $r['name']], $this->fetchAll('SELECT id, code, name FROM document_categories WHERE is_active=1 ORDER BY sort_order ASC, name ASC')),
-            'statuses' => [['value' => 'ACTIVE', 'label' => 'Dang hieu luc'], ['value' => 'ARCHIVED', 'label' => 'Luu tru']],
+            'statuses' => [['value' => 'ACTIVE', 'label' => 'Đang hiệu lực'], ['value' => 'ARCHIVED', 'label' => 'Lưu trữ']],
             'years' => array_map(fn($r) => ['value' => (string) $r['year'], 'label' => (string) $r['year']], $this->fetchAll('SELECT DISTINCT YEAR(COALESCE(issued_date, created_at)) AS year FROM village_documents WHERE status <> "DELETED" AND ' . $this->tenantWhere('village_documents') . ' ORDER BY year DESC')),
         ];
     }
@@ -115,7 +84,7 @@ SQL);
     public function upsert(array $data, int $userId, ?int $id = null): array
     {
         $this->ensureSchema();
-        if ($id && !$this->find($id)) throw new RuntimeException('Khong tim thay van ban');
+        if ($id && !$this->find($id)) throw new RuntimeException('Không tìm thấy văn bản');
         $params = $this->params($data, $userId);
         if ($id) {
             $params['id'] = $id;
@@ -132,7 +101,7 @@ SQL);
     public function deletePermanently(int $id): array
     {
         $row = $this->find($id);
-        if (!$row) throw new RuntimeException('Khong tim thay van ban');
+        if (!$row) throw new RuntimeException('Không tìm thấy văn bản');
         $files = $this->attachments($id);
         $this->execute('DELETE FROM village_document_attachments WHERE document_id=:id', ['id' => $id]);
         $this->execute('DELETE FROM village_documents WHERE id=:id AND ' . $this->tenantWhere('village_documents'), ['id' => $id]);
@@ -141,7 +110,7 @@ SQL);
 
     public function addAttachment(int $id, array $stored, array $file, int $userId): array
     {
-        if (!$this->find($id)) throw new RuntimeException('Khong tim thay van ban');
+        if (!$this->find($id)) throw new RuntimeException('Không tìm thấy văn bản');
         $mime = (string) $stored['mime'];
         $extension = strtolower((string) ($stored['extension'] ?? pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION)));
         $kind = $this->kindForExtension($extension, $mime);
@@ -174,7 +143,7 @@ SQL);
     public function deleteAttachment(int $documentId, int $fileId, int $userId): ?array
     {
         $file = $this->attachment($documentId, $fileId);
-        if (!$file) throw new RuntimeException('Khong tim thay file dinh kem');
+        if (!$file) throw new RuntimeException('Không tìm thấy file đính kèm');
         $this->execute('DELETE FROM village_document_attachments WHERE document_id=:document_id AND id=:id', ['document_id' => $documentId, 'id' => $fileId]);
         return $file;
     }
@@ -194,8 +163,8 @@ SQL);
         [$where, $params] = $this->where($filters);
         $rows = array_map(fn($r) => $this->normalize($r), $this->fetchAll($this->selectSql() . ' ' . $this->fromSql() . " $where ORDER BY d.created_at DESC, d.id DESC", $params));
         return [
-            'title' => 'Bao cao van ban',
-            'headers' => ['Ma', 'So van ban', 'Tieu de', 'Loai', 'Don vi ban hanh', 'Nguoi ky', 'Ngay ban hanh', 'Nguoi tai len', 'Tao luc'],
+            'title' => 'Báo cáo văn bản',
+            'headers' => ['Ma', 'Số văn bản', 'Tiêu đề', 'Loại', 'Đơn vị ban hành', 'Người ký', 'Ngày ban hanh', 'Người tải lên', 'Tạo lúc'],
             'rows' => array_map(fn($r) => [$r['document_code'], $r['document_number'], $r['title'], $r['category_name'], $r['issuing_unit'], $r['signer_name'], $r['issued_date'], $r['created_by_name'], $r['created_at']], $rows),
             'totalRows' => count($rows),
         ];
@@ -209,7 +178,7 @@ SQL);
     private function params(array $data, int $userId): array
     {
         $title = trim((string) ($data['title'] ?? ''));
-        if ($title === '') throw new RuntimeException('Tieu de van ban la bat buoc');
+        if ($title === '') throw new RuntimeException('Tiêu đề van ban la bat buoc');
         $status = strtoupper(trim((string) ($data['status'] ?? 'ACTIVE')));
         if (!in_array($status, ['ACTIVE', 'ARCHIVED'], true)) $status = 'ACTIVE';
         return [
@@ -277,7 +246,7 @@ SQL);
             'area_code' => (string) ($row['area_code'] ?? ''),
             'summary' => (string) ($row['summary'] ?? ''),
             'status' => $status,
-            'status_label' => $status === 'ARCHIVED' ? 'Luu tru' : 'Dang hieu luc',
+            'status_label' => $status === 'ARCHIVED' ? 'Lưu trữ' : 'Đang hiệu lực',
             'attachment_count' => (int) ($row['attachment_count'] ?? 0),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
@@ -305,27 +274,87 @@ SQL);
         ];
     }
 
-    private function migrateSchema(): void
+    private function assertColumns(string $table, array $columns): void
     {
-        $columns = [
-            'issuing_unit' => 'VARCHAR(255) NULL AFTER category_id',
-        ];
-        foreach ($columns as $column => $definition) {
-            if (!$this->columnExists('village_documents', $column)) {
-                $this->execute('ALTER TABLE village_documents ADD COLUMN ' . $column . ' ' . $definition);
+        $existing = $this->fetchAll('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table' => $table]);
+        $existing = array_flip(array_map(fn($row) => (string) $row['COLUMN_NAME'], $existing));
+        foreach ($columns as $column) {
+            if (!isset($existing[$column])) {
+                throw new RuntimeException("Village document schema is not ready: missing $table.$column");
             }
         }
-        try { $this->execute('ALTER TABLE village_documents MODIFY document_number VARCHAR(120) NULL'); } catch (\Throwable) {}
-        try { $this->execute('ALTER TABLE village_documents MODIFY issued_date DATE NULL'); } catch (\Throwable) {}
-        try { $this->execute("ALTER TABLE village_document_attachments MODIFY file_kind ENUM('PDF','WORD','EXCEL','POWERPOINT','ARCHIVE','DOCUMENT','IMAGE','OTHER') NOT NULL DEFAULT 'DOCUMENT'"); } catch (\Throwable) {}
+    }
+
+    private function assertIndexExists(string $index): void
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND INDEX_NAME=:index_name', ['index_name' => $index]);
+        if ((int) ($row['total'] ?? 0) === 0) {
+            throw new RuntimeException("Village document schema is not ready: missing index $index");
+        }
+    }
+
+    private function assertTenantScope(string $table): void
+    {
+        $row = $this->fetchOne(
+            'SELECT COLUMN_TYPE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND COLUMN_NAME="village_id"',
+            ['table' => $table]
+        );
+        if (!$row
+            || !str_contains(strtolower((string) $row['COLUMN_TYPE']), 'bigint')
+            || !str_contains(strtolower((string) $row['COLUMN_TYPE']), 'unsigned')
+            || strtoupper((string) $row['IS_NULLABLE']) !== 'NO') {
+            throw new RuntimeException("Village document schema is not ready: invalid tenant scope $table.village_id");
+        }
+    }
+
+    private function assertForeignKey(string $name, string $table, string $column, string $parentTable, string $parentColumn, string $deleteRule): void
+    {
+        $row = $this->fetchOne(
+            'SELECT rc.DELETE_RULE, rc.UPDATE_RULE, kcu.COLUMN_NAME, kcu.REFERENCED_TABLE_NAME, kcu.REFERENCED_COLUMN_NAME
+             FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
+             JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+               ON kcu.CONSTRAINT_SCHEMA=rc.CONSTRAINT_SCHEMA
+              AND kcu.CONSTRAINT_NAME=rc.CONSTRAINT_NAME
+              AND kcu.TABLE_NAME=rc.TABLE_NAME
+             WHERE rc.CONSTRAINT_SCHEMA=DATABASE()
+               AND rc.CONSTRAINT_NAME=:name
+               AND rc.TABLE_NAME=:table',
+            ['name' => $name, 'table' => $table]
+        );
+        if (!$row
+            || (string) $row['COLUMN_NAME'] !== $column
+            || (string) $row['REFERENCED_TABLE_NAME'] !== $parentTable
+            || (string) $row['REFERENCED_COLUMN_NAME'] !== $parentColumn
+            || strtoupper((string) $row['DELETE_RULE']) !== $deleteRule
+            || strtoupper((string) $row['UPDATE_RULE']) !== 'RESTRICT') {
+            throw new RuntimeException("Village document schema is not ready: invalid foreign key $name");
+        }
+    }
+
+    private function assertCatalogReady(): void
+    {
+        foreach (['notice','decision','official_dispatch','plan','report','minutes','other'] as $code) {
+            $row = $this->fetchOne(
+                'SELECT COUNT(*) AS total FROM document_categories WHERE code=:code AND is_active=1 AND ' . $this->tenantWhere('', 'document_categories'),
+                $this->withTenant(['code' => $code])
+            );
+            if ((int) ($row['total'] ?? 0) === 0) {
+                throw new RuntimeException("Village document catalog is not ready: missing active document_categories.$code");
+            }
+        }
+    }
+
+    private function migrateSchema(): void
+    {
+        throw new RuntimeException('Village document schema migration is not allowed from runtime model reads');
     }
 
     private function seedCategories(): void
     {
-        $items = [['notice', 'Thong bao'], ['decision', 'Quyet dinh'], ['official_dispatch', 'Cong van'], ['plan', 'Ke hoach'], ['report', 'Bao cao'], ['minutes', 'Bien ban'], ['other', 'Khac']];
+        $items = [['notice', 'Thông báo'], ['decision', 'Quyết định'], ['official_dispatch', 'Công văn'], ['plan', 'Kế hoạch'], ['report', 'Báo cáo'], ['minutes', 'Biên bản'], ['other', 'Khác']];
         $order = 10;
         foreach ($items as [$code, $name]) {
-            $this->execute('INSERT INTO document_categories (code,name,sort_order) VALUES (:code,:name,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'sort_order' => $order]);
+            throw new RuntimeException('Village document catalog seeding is not allowed from runtime model reads');
             $order += 10;
         }
     }

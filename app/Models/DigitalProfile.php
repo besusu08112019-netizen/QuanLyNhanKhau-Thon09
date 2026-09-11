@@ -261,8 +261,27 @@ final class DigitalProfile extends BaseModel
     private function citizenSummary(array $row): array
     {
         $row['computed_age'] = $this->age($row['date_of_birth'] ?? null);
+        $row['is_current_member'] = $this->isCurrentCitizen($row);
+        $row['citizen_status_badge'] = $this->citizenStatusBadge($row);
         if (!empty($row['identity_number'])) $row['identity_masked'] = $this->maskIdentity((string) $row['identity_number']);
         return $this->compactRow($row);
+    }
+
+    private function isCurrentCitizen(array $row): bool
+    {
+        return strtoupper((string) ($row['status'] ?? 'ACTIVE')) !== 'DELETED'
+            && strtoupper((string) ($row['life_status'] ?? 'ALIVE')) !== 'DECEASED'
+            && strtoupper((string) ($row['residency_status'] ?? 'PERMANENT')) !== 'TRANSFERRED_OUT'
+            && strtoupper((string) ($row['presence_status'] ?? 'AT_HOME')) !== 'MOVED_OUT';
+    }
+
+    private function citizenStatusBadge(array $row): string
+    {
+        if (strtoupper((string) ($row['life_status'] ?? 'ALIVE')) === 'DECEASED') return 'Đã chết';
+        if (strtoupper((string) ($row['presence_status'] ?? 'AT_HOME')) === 'MOVED_OUT') return 'Đã chuyển đi';
+        if (strtoupper((string) ($row['residency_status'] ?? 'PERMANENT')) === 'TRANSFERRED_OUT') return 'Đã chuyển đi';
+        if (strtoupper((string) ($row['presence_status'] ?? 'AT_HOME')) === 'AWAY') return 'Tạm vắng';
+        return 'Đang cư trú';
     }
 
     private function householdLinks(int $id): array

@@ -6,89 +6,40 @@ use App\Core\BaseModel;
 
 final class WorkCalendar extends BaseModel
 {
+    private const REQUIRED_SCHEMA = [
+        'calendar_event_categories' => ['id','village_id','code','name','color','sort_order','is_active','created_at','updated_at'],
+        'calendar_events' => ['id','village_id','event_code','title','description','category_id','location','start_at','end_at','reminder_at','host_user_id','host_name','area_code','status','note','soft_status','created_at','updated_at','created_by','updated_by','deleted_at','deleted_by'],
+        'calendar_event_attendees' => ['id','village_id','event_id','attendee_name','phone','role_name','attendance_status','note','created_at','updated_at'],
+        'calendar_event_attachments' => ['id','village_id','event_id','original_name','stored_path','mime_type','file_size','file_kind','created_at','created_by','deleted_at','deleted_by'],
+    ];
+
+    private const REQUIRED_INDEXES = [
+        'calendar_event_categories' => ['PRIMARY','idx_calendar_event_categories_active','idx_calendar_event_categories_village'],
+        'calendar_events' => ['PRIMARY','idx_calendar_events_search','idx_calendar_events_category','idx_calendar_events_time','idx_calendar_events_reminder','idx_calendar_events_host','idx_calendar_events_area','idx_calendar_events_status','idx_calendar_events_soft_status','idx_calendar_events_village'],
+        'calendar_event_attendees' => ['PRIMARY','idx_calendar_event_attendees_event','idx_calendar_event_attendees_status','idx_calendar_event_attendees_village'],
+        'calendar_event_attachments' => ['PRIMARY','idx_calendar_event_attachments_event','idx_calendar_event_attachments_village'],
+    ];
+
+    private const REQUIRED_FOREIGN_KEYS = [
+        'calendar_events' => [['fk_calendar_events_category','category_id','calendar_event_categories','id']],
+        'calendar_event_attendees' => [['fk_calendar_event_attendees_event','event_id','calendar_events','id']],
+        'calendar_event_attachments' => [['fk_calendar_event_attachments_event','event_id','calendar_events','id']],
+    ];
+
+    private const REQUIRED_CATEGORIES = [
+        ['meeting', 'Họp', '#0d6efd', 10],
+        ['conference', 'Hội nghị', '#6610f2', 20],
+        ['duty', 'Trực', '#198754', 30],
+        ['vaccination', 'Tiêm chủng', '#20c997', 40],
+        ['gift_distribution', 'Phát quà', '#fd7e14', 50],
+        ['party_meeting', 'Sinh hoạt Chi bộ', '#dc3545', 60],
+        ['union_activity', 'Sinh hoạt đoàn thể', '#6f42c1', 70],
+        ['other', 'Khác', '#6c757d', 80],
+    ];
+
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS calendar_event_categories (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(80) NOT NULL UNIQUE,
-  name VARCHAR(180) NOT NULL,
-  color VARCHAR(20) NOT NULL DEFAULT '#0d6efd',
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_calendar_event_categories_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS calendar_events (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  event_code VARCHAR(40) NOT NULL UNIQUE,
-  title VARCHAR(255) NOT NULL,
-  description TEXT NULL,
-  category_id BIGINT UNSIGNED NULL,
-  location VARCHAR(255) NULL,
-  start_at DATETIME NOT NULL,
-  end_at DATETIME NULL,
-  reminder_at DATETIME NULL,
-  host_user_id BIGINT UNSIGNED NULL,
-  host_name VARCHAR(255) NULL,
-  area_code VARCHAR(80) NULL,
-  status ENUM('SCHEDULED','DONE','CANCELLED') NOT NULL DEFAULT 'SCHEDULED',
-  note TEXT NULL,
-  soft_status ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_calendar_events_search (event_code, title),
-  KEY idx_calendar_events_category (category_id),
-  KEY idx_calendar_events_time (start_at, end_at),
-  KEY idx_calendar_events_reminder (reminder_at),
-  KEY idx_calendar_events_host (host_user_id),
-  KEY idx_calendar_events_area (area_code),
-  KEY idx_calendar_events_status (status),
-  KEY idx_calendar_events_soft_status (soft_status),
-  CONSTRAINT fk_calendar_events_category FOREIGN KEY (category_id) REFERENCES calendar_event_categories(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS calendar_event_attendees (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  event_id BIGINT UNSIGNED NOT NULL,
-  attendee_name VARCHAR(255) NOT NULL,
-  phone VARCHAR(40) NULL,
-  role_name VARCHAR(120) NULL,
-  attendance_status ENUM('INVITED','ATTENDED','ABSENT','EXCUSED') NOT NULL DEFAULT 'INVITED',
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_calendar_event_attendees_event (event_id),
-  KEY idx_calendar_event_attendees_status (attendance_status),
-  CONSTRAINT fk_calendar_event_attendees_event FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS calendar_event_attachments (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  event_id BIGINT UNSIGNED NOT NULL,
-  original_name VARCHAR(255) NOT NULL,
-  stored_path VARCHAR(500) NOT NULL,
-  mime_type VARCHAR(120) NOT NULL,
-  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  file_kind ENUM('IMAGE','VIDEO','PDF','DOCUMENT','OTHER') NOT NULL DEFAULT 'OTHER',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_calendar_event_attachments_event (event_id),
-  CONSTRAINT fk_calendar_event_attachments_event FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->seedCatalogs();
+        $this->assertSchemaReady();
     }
 
     public function catalogs(): array
@@ -236,25 +187,6 @@ SQL);
         }
     }
 
-    private function seedCatalogs(): void
-    {
-        $items = [
-            ['meeting', 'Họp', '#0d6efd'],
-            ['conference', 'Hội nghị', '#6610f2'],
-            ['duty', 'Trực', '#198754'],
-            ['vaccination', 'Tiêm chủng', '#20c997'],
-            ['gift_distribution', 'Phát quà', '#fd7e14'],
-            ['party_meeting', 'Sinh hoạt Chi bộ', '#dc3545'],
-            ['union_activity', 'Sinh hoạt đoàn thể', '#6f42c1'],
-            ['other', 'Khác', '#6c757d'],
-        ];
-        $order = 10;
-        foreach ($items as [$code, $name, $color]) {
-            $this->execute('INSERT INTO calendar_event_categories (code,name,color,sort_order) VALUES (:code,:name,:color,:sort_order) ON DUPLICATE KEY UPDATE name=VALUES(name), color=VALUES(color), sort_order=VALUES(sort_order), is_active=1', ['code' => $code, 'name' => $name, 'color' => $color, 'sort_order' => $order]);
-            $order += 10;
-        }
-    }
-
     private function uniqueCatalogRows(array $rows): array
     {
         $seen = [];
@@ -323,6 +255,11 @@ SQL);
     private function normalize(array $row): array { $row['id'] = (int)$row['id']; $row['category_id'] = $row['category_id'] !== null ? (int)$row['category_id'] : null; $row['host_user_id'] = $row['host_user_id'] !== null ? (int)$row['host_user_id'] : null; $row['status_label'] = $this->statusLabel((string)$row['status']); return $row; }
     private function normalizeAttachment(array $row): array { $row['id'] = (int)$row['id']; $row['event_id'] = (int)$row['event_id']; $row['file_size'] = (int)$row['file_size']; $row['preview_url'] = '/api/work-calendar/' . $row['event_id'] . '/attachments/' . $row['id'] . '/preview'; $row['download_url'] = '/api/work-calendar/' . $row['event_id'] . '/attachments/' . $row['id'] . '/download'; return $row; }
     private function statusLabel(string $value): string { return ['SCHEDULED' => 'Đã lên lịch', 'DONE' => 'Đã hoàn thành', 'CANCELLED' => 'Đã hủy'][$value] ?? $value; }
+    private function assertSchemaReady(): void { foreach (self::REQUIRED_SCHEMA as $table => $columns) { if (!$this->tableExists($table)) throw new \RuntimeException('Work Calendar schema is not provisioned: missing table ' . $table); foreach ($columns as $column) { if (!$this->columnExists($table, $column)) throw new \RuntimeException('Work Calendar schema is not provisioned: missing column ' . $table . '.' . $column); } foreach (self::REQUIRED_INDEXES[$table] ?? [] as $index) { if (!$this->indexExists($table, $index)) throw new \RuntimeException('Work Calendar schema is not provisioned: missing index ' . $table . '.' . $index); } } foreach (self::REQUIRED_FOREIGN_KEYS as $table => $foreignKeys) { foreach ($foreignKeys as [$constraint, $column, $referencedTable, $referencedColumn]) { if (!$this->foreignKeyExists($table, $constraint, $column, $referencedTable, $referencedColumn)) throw new \RuntimeException('Work Calendar schema is not provisioned: missing foreign key ' . $constraint); } } $drift = $this->catalogReadinessDrift(); if ($drift !== []) throw new \RuntimeException('Work Calendar catalogs are not provisioned: ' . implode('; ', $drift)); }
+    private function catalogReadinessDrift(): array { $drift = []; foreach (self::REQUIRED_CATEGORIES as [$code]) { $compatible = $this->fetchOne('SELECT id FROM calendar_event_categories WHERE code=:code AND is_active=1', ['code' => $code]); if ($compatible) continue; $existing = $this->fetchOne('SELECT id FROM calendar_event_categories WHERE code=:code', ['code' => $code]); $drift[] = $existing ? 'conflicting category ' . $code : 'missing category ' . $code; } return $drift; }
+    private function tableExists(string $table): bool { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table' => $table]); return (int)($row['total'] ?? 0) > 0; }
+    private function indexExists(string $table, string $index): bool { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND INDEX_NAME=:index', ['table' => $table, 'index' => $index]); return (int)($row['total'] ?? 0) > 0; }
+    private function foreignKeyExists(string $table, string $constraint, string $column, string $referencedTable, string $referencedColumn): bool { $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND CONSTRAINT_NAME=:constraint_name AND COLUMN_NAME=:column_name AND REFERENCED_TABLE_NAME=:referenced_table AND REFERENCED_COLUMN_NAME=:referenced_column', ['table' => $table, 'constraint_name' => $constraint, 'column_name' => $column, 'referenced_table' => $referencedTable, 'referenced_column' => $referencedColumn]); return (int)($row['total'] ?? 0) > 0; }
     private function nextCode(): string { $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM calendar_events WHERE ' . $this->tenantWhere('calendar_events')); return 'LCT-' . date('Y') . '-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT); }
     private function nullable(mixed $value): ?string { $value = trim((string)($value ?? '')); return $value === '' ? null : $value; }
     private function nullableInt(mixed $value): ?int { $value = trim((string)($value ?? '')); if ($value === '') return null; $id = (int)$value; return $id > 0 ? $id : null; }

@@ -27,7 +27,7 @@ final class PublicAssetController extends BaseController
     {
         $this->requirePermission('public_assets', 'read');
         $row = $this->assets->find((int)$id);
-        if (!$row) $this->fail('Khong tim thay cong trinh', 404);
+        if (!$row) $this->fail('Không tìm thấy công trình', 404);
         $this->ok($row);
     }
 
@@ -35,7 +35,7 @@ final class PublicAssetController extends BaseController
     {
         $user = $this->requirePermission('public_assets', 'create');
         $row = $this->assets->upsert((array)$this->input(), (int)$user['id']);
-        $this->audit($user, 'public_assets', 'create', 'Them cong trinh cong cong', $row['id'], ['after' => $row]);
+        $this->audit($user, 'public_assets', 'create', 'Thêm công trình công cộng', $row['id'], ['after' => $row]);
         $this->ok($row);
     }
 
@@ -43,9 +43,9 @@ final class PublicAssetController extends BaseController
     {
         $user = $this->requirePermission('public_assets', 'update');
         $before = $this->assets->find((int)$id);
-        if (!$before) $this->fail('Khong tim thay cong trinh', 404);
+        if (!$before) $this->fail('Không tìm thấy công trình', 404);
         $row = $this->assets->upsert((array)$this->input(), (int)$user['id'], (int)$id);
-        $this->audit($user, 'public_assets', 'update', 'Cap nhat cong trinh cong cong', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'public_assets', 'update', 'Cập nhật công trình công cộng', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -53,7 +53,7 @@ final class PublicAssetController extends BaseController
     {
         $user = $this->requirePermission('public_assets', 'update');
         $assetId = (int)$id;
-        if (!$this->assets->find($assetId)) $this->fail('Khong tim thay cong trinh', 404);
+        if (!$this->assets->find($assetId)) $this->fail('Không tìm thấy công trình', 404);
         $file = $_FILES['file'] ?? null;
         if (!is_array($file)) $this->fail('Vui long chon anh cong trinh', 422);
         $storage = new FileStorageService();
@@ -70,7 +70,7 @@ final class PublicAssetController extends BaseController
     {
         $this->requirePermission('public_assets', 'read');
         $path = $this->assets->coverPhotoPath((int)$id);
-        if (!$path) $this->fail('Cong trinh chua co anh', 404);
+        if (!$path) $this->fail('Công trình chua co anh', 404);
         if (!$this->isPublicAssetPhotoPath($path, false)) $this->fail('Duong dan anh cong trinh khong hop le', 404);
         $storage = new FileStorageService();
         $file = $storage->safeFilePath($path);
@@ -89,16 +89,16 @@ final class PublicAssetController extends BaseController
     {
         $user = $this->requirePermission('public_assets', 'update');
         $assetId = (int)$id;
-        if (!$this->assets->find($assetId)) $this->fail('Khong tim thay cong trinh', 404);
+        if (!$this->assets->find($assetId)) $this->fail('Không tìm thấy công trình', 404);
         $row = $this->assets->setCoverPhoto($assetId, null, (int)$user['id']);
-        $this->audit($user, 'public_assets', 'delete_photo', 'Xoa anh cong trinh cong cong', $assetId);
+        $this->audit($user, 'public_assets', 'delete_photo', 'Xóa ảnh công trình công cộng', $assetId);
         $this->ok(['item' => $row]);
     }
 
     public function inventoryIndex(string $id): void
     {
         $this->requirePermission('public_assets', 'read');
-        if (!$this->assets->find((int)$id)) $this->fail('Khong tim thay cong trinh', 404);
+        if (!$this->assets->find((int)$id)) $this->fail('Không tìm thấy công trình', 404);
         try {
             $this->ok($this->assets->inventoryList((int)$id));
         } catch (\RuntimeException $e) {
@@ -109,10 +109,10 @@ final class PublicAssetController extends BaseController
     public function inventoryStore(string $id): void
     {
         $user = $this->requirePermission('public_assets', 'update');
-        if (!$this->assets->find((int)$id)) $this->fail('Khong tim thay cong trinh', 404);
+        if (!$this->assets->find((int)$id)) $this->fail('Không tìm thấy công trình', 404);
         try {
             $row = $this->assets->upsertInventoryItem((int)$id, (array)$this->input(), (int)$user['id']);
-            $this->audit($user, 'public_assets', 'inventory_create', 'Them tai san kiem ke cong trinh cong cong', $row['id'], ['after' => $row, 'asset_id' => (int)$id]);
+            $this->audit($user, 'public_assets', 'inventory_create', 'Thêm tài sản kiểm kê công trình công cộng', $row['id'], ['after' => $row, 'asset_id' => (int)$id]);
             $this->ok($row);
         } catch (\RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
@@ -124,9 +124,9 @@ final class PublicAssetController extends BaseController
         $user = $this->requirePermission('public_assets', 'update');
         try {
             $before = $this->assets->findInventoryItem((int)$id, (int)$itemId);
-            if (!$before) $this->fail('Khong tim thay tai san kiem ke', 404);
+            if (!$before) $this->fail('Không tìm thấy tài sản kiểm kê', 404);
             $row = $this->assets->upsertInventoryItem((int)$id, (array)$this->input(), (int)$user['id'], (int)$itemId);
-            $this->audit($user, 'public_assets', 'inventory_update', 'Cap nhat tai san kiem ke cong trinh cong cong', $itemId, ['before' => $before, 'after' => $row, 'asset_id' => (int)$id]);
+            $this->audit($user, 'public_assets', 'inventory_update', 'Cập nhật tài sản kiểm kê công trình công cộng', $itemId, ['before' => $before, 'after' => $row, 'asset_id' => (int)$id]);
             $this->ok($row);
         } catch (\RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
@@ -138,9 +138,9 @@ final class PublicAssetController extends BaseController
         $user = $this->requirePermission('public_assets', 'update');
         try {
             $before = $this->assets->findInventoryItem((int)$id, (int)$itemId);
-            if (!$before) $this->fail('Khong tim thay tai san kiem ke', 404);
+            if (!$before) $this->fail('Không tìm thấy tài sản kiểm kê', 404);
             $this->assets->softDeleteInventoryItem((int)$id, (int)$itemId, (int)$user['id']);
-            $this->audit($user, 'public_assets', 'inventory_delete', 'Xoa tai san kiem ke cong trinh cong cong', $itemId, ['before' => $before, 'asset_id' => (int)$id]);
+            $this->audit($user, 'public_assets', 'inventory_delete', 'Xóa tài sản kiểm kê công trình công cộng', $itemId, ['before' => $before, 'asset_id' => (int)$id]);
             $this->ok(['id' => (int)$itemId, 'public_asset_id' => (int)$id]);
         } catch (\RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
@@ -150,7 +150,7 @@ final class PublicAssetController extends BaseController
     public function inventoryUploadPhoto(string $id, string $itemId): void
     {
         $user = $this->requirePermission('public_assets', 'update');
-        if (!$this->assets->findInventoryItem((int)$id, (int)$itemId)) $this->fail('Khong tim thay tai san kiem ke', 404);
+        if (!$this->assets->findInventoryItem((int)$id, (int)$itemId)) $this->fail('Không tìm thấy tài sản kiểm kê', 404);
         $file = $_FILES['file'] ?? null;
         if (!is_array($file)) $this->fail('Vui long chon anh tai san', 422);
         $storage = new FileStorageService();
@@ -185,9 +185,9 @@ final class PublicAssetController extends BaseController
     public function inventoryDeletePhoto(string $id, string $itemId): void
     {
         $user = $this->requirePermission('public_assets', 'update');
-        if (!$this->assets->findInventoryItem((int)$id, (int)$itemId)) $this->fail('Khong tim thay tai san kiem ke', 404);
+        if (!$this->assets->findInventoryItem((int)$id, (int)$itemId)) $this->fail('Không tìm thấy tài sản kiểm kê', 404);
         $row = $this->assets->setInventoryPhoto((int)$id, (int)$itemId, null, (int)$user['id']);
-        $this->audit($user, 'public_assets', 'inventory_delete_photo', 'Xoa anh tai san kiem ke', $itemId, ['asset_id' => (int)$id]);
+        $this->audit($user, 'public_assets', 'inventory_delete_photo', 'Xóa ảnh tài sản kiểm kê', $itemId, ['asset_id' => (int)$id]);
         $this->ok(['item' => $row]);
     }
 
@@ -206,7 +206,7 @@ final class PublicAssetController extends BaseController
         $user = $this->requirePermission('public_assets', 'update');
         try {
             $row = $this->assets->upsertMaintenance((int)$id, (array)$this->input(), (int)$user['id']);
-            $this->audit($user, 'public_assets', 'maintenance_create', 'Them lich bao tri cong trinh cong cong', $row['id'], ['after' => $row, 'asset_id' => (int)$id]);
+            $this->audit($user, 'public_assets', 'maintenance_create', 'Thêm lịch bảo trì công trình công cộng', $row['id'], ['after' => $row, 'asset_id' => (int)$id]);
             $this->ok($row);
         } catch (\RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
@@ -218,9 +218,9 @@ final class PublicAssetController extends BaseController
         $user = $this->requirePermission('public_assets', 'update');
         try {
             $before = $this->assets->findMaintenance((int)$id, (int)$maintenanceId);
-            if (!$before) $this->fail('Khong tim thay lich bao tri', 404);
+            if (!$before) $this->fail('Không tìm thấy lịch bảo trì', 404);
             $row = $this->assets->upsertMaintenance((int)$id, (array)$this->input(), (int)$user['id'], (int)$maintenanceId);
-            $this->audit($user, 'public_assets', 'maintenance_update', 'Cap nhat lich bao tri cong trinh cong cong', $maintenanceId, ['before' => $before, 'after' => $row, 'asset_id' => (int)$id]);
+            $this->audit($user, 'public_assets', 'maintenance_update', 'Cập nhật lịch bảo trì công trình công cộng', $maintenanceId, ['before' => $before, 'after' => $row, 'asset_id' => (int)$id]);
             $this->ok($row);
         } catch (\RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
@@ -232,9 +232,9 @@ final class PublicAssetController extends BaseController
         $user = $this->requirePermission('public_assets', 'update');
         try {
             $before = $this->assets->findMaintenance((int)$id, (int)$maintenanceId);
-            if (!$before) $this->fail('Khong tim thay lich bao tri', 404);
+            if (!$before) $this->fail('Không tìm thấy lịch bảo trì', 404);
             $this->assets->softDeleteMaintenance((int)$id, (int)$maintenanceId, (int)$user['id']);
-            $this->audit($user, 'public_assets', 'maintenance_delete', 'Xoa lich bao tri cong trinh cong cong', $maintenanceId, ['before' => $before, 'asset_id' => (int)$id]);
+            $this->audit($user, 'public_assets', 'maintenance_delete', 'Xóa lịch bảo trì công trình công cộng', $maintenanceId, ['before' => $before, 'asset_id' => (int)$id]);
             $this->ok(['id' => (int)$maintenanceId, 'public_asset_id' => (int)$id]);
         } catch (\RuntimeException $e) {
             $this->fail($e->getMessage(), 422);
@@ -245,9 +245,9 @@ final class PublicAssetController extends BaseController
     {
         $user = $this->requirePermission('public_assets', 'delete');
         $before = $this->assets->find((int)$id);
-        if (!$before) $this->fail('Khong tim thay cong trinh', 404);
+        if (!$before) $this->fail('Không tìm thấy công trình', 404);
         $this->assets->softDelete((int)$id, (int)$user['id']);
-        $this->audit($user, 'public_assets', 'delete', 'Xoa cong trinh cong cong', $id, ['before' => $before]);
+        $this->audit($user, 'public_assets', 'delete', 'Xóa công trình công cộng', $id, ['before' => $before]);
         $this->ok(['id' => (int)$id]);
     }
 

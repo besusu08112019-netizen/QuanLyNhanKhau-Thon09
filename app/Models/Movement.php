@@ -20,6 +20,32 @@ final class Movement extends BaseModel
         'TEMPORARY_ABSENCE' => 'Tạm vắng',
         'OTHER' => 'Khác',
     ];
+    private const AUDIT_ONLY_TYPES = ['CITIZEN_UPDATE'];
+    private const LEGACY_PROFILE_UPDATE_REASON = 'Cập nhật thông tin nhân khẩu';
+
+    public static function businessPredicate(string $alias = 'm'): string
+    {
+        $prefix = self::columnPrefix($alias);
+        return self::businessPredicateFor($prefix . 'type', $prefix . 'reason');
+    }
+
+    private static function businessPredicateFor(string $typeExpr, ?string $reasonExpr = null): string
+    {
+        $conditions = [$typeExpr . ' NOT IN ("CITIZEN_UPDATE")'];
+        if ($reasonExpr !== null) {
+            $conditions[] = 'NOT (' . $typeExpr . ' = "OTHER" AND COALESCE(' . $reasonExpr . ', "") = "' . self::LEGACY_PROFILE_UPDATE_REASON . '")';
+        }
+        return '(' . implode(' AND ', $conditions) . ')';
+    }
+
+    private static function columnPrefix(string $alias): string
+    {
+        if ($alias === '') return '';
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $alias)) {
+            throw new \InvalidArgumentException('Invalid SQL alias');
+        }
+        return $alias . '.';
+    }
 
     public function paginate(array $filters = []): array
     {
@@ -68,6 +94,7 @@ final class Movement extends BaseModel
         $params = [];
         if ($status) $where[] = 'COALESCE(m.' . $status . ', "ACTIVE") <> "DELETED"';
         else $where[] = '1=1';
+        if ($type) $where[] = self::businessPredicateFor('m.' . $type, $reason ? 'm.' . $reason : null);
         $where[] = $this->tenantWhere('m', 'movements');
         if (!empty($filters['type']) && $type) { $where[] = 'm.' . $type . ' = :type'; $params['type'] = $filters['type']; }
         if (!empty($filters['dateFrom']) && $effectiveDate) { $where[] = 'm.' . $effectiveDate . ' >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
@@ -131,7 +158,7 @@ final class Movement extends BaseModel
 
     public function find(int $id): ?array
     {
-        return $this->fetchOne('SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id AND ' . $this->tenantWhere('c', 'citizens') . ' LEFT JOIN households h ON h.id=m.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE m.id=:id AND m.status <> "DELETED" AND ' . $this->tenantWhere('m', 'movements'), $this->withTenant(['id' => $id]));
+        return $this->fetchOne('SELECT m.*, c.full_name, c.identity_number, c.citizen_code, h.household_code FROM movements m INNER JOIN citizens c ON c.id=m.citizen_id AND ' . $this->tenantWhere('c', 'citizens') . ' LEFT JOIN households h ON h.id=m.household_id AND ' . $this->tenantWhere('h', 'households') . ' WHERE m.id=:id AND m.status <> "DELETED" AND ' . self::businessPredicate('m') . ' AND ' . $this->tenantWhere('m', 'movements'), $this->withTenant(['id' => $id]));
     }
 
     public function create(array $data, int $userId): array
@@ -141,7 +168,33 @@ final class Movement extends BaseModel
 
     public function update(int $id, array $data, int $userId): array
     {
-        throw new \RuntimeException('Biến động dân cư là nhật ký lịch sử, không được sửa trực tiếp.');
+        $before = $this->find($id);
+        if (!$before) throw new \RuntimeException('Khong tim thay bien dong');
+        $params = $this->params($data, $userId, $before);
+        $params['id'] = $id;
+        $sets = [
+            'citizen_id=:citizen_id',
+            'household_id=:household_id',
+            'type=:type',
+            'from_address=:from_address',
+            'to_address=:to_address',
+            'reason=:reason',
+            'effective_date=:effective_date',
+            'document_number=:document_number',
+            'note=:note',
+        ];
+        if ($this->columnExists('movements', 'object_type')) $sets[] = 'object_type=:object_type';
+        if ($this->columnExists('movements', 'object_id')) $sets[] = 'object_id=:object_id';
+        if ($this->columnExists('movements', 'object_code')) $sets[] = 'object_code=:object_code';
+        if ($this->columnExists('movements', 'actor_name')) $sets[] = 'actor_name=:actor_name';
+        if ($this->columnExists('movements', 'before_data')) $sets[] = 'before_data=:before_data';
+        if ($this->columnExists('movements', 'after_data')) $sets[] = 'after_data=:after_data';
+        if ($this->columnExists('movements', 'updated_by')) $sets[] = 'updated_by=:user';
+        $this->execute(
+            'UPDATE movements SET ' . implode(',', $sets) . ' WHERE id=:id AND status <> "DELETED" AND ' . self::businessPredicate('movements') . ' AND ' . $this->tenantWhere('movements'),
+            $this->withTenant($params)
+        );
+        return $this->find($id) ?: ['id' => $id] + $params;
     }
 
     public function softDelete(int $id, int $userId): void
@@ -153,6 +206,7 @@ final class Movement extends BaseModel
     {
         $items = [];
         foreach (self::TYPES as $value => $label) {
+            if (in_array($value, self::AUDIT_ONLY_TYPES, true)) continue;
             $items[] = ['value' => $value, 'label' => $label];
         }
         return $items;
@@ -179,7 +233,7 @@ final class Movement extends BaseModel
 
     private function where(array $filters): array
     {
-        $where = ['m.status <> "DELETED"', $this->tenantWhere('m', 'movements')];
+        $where = ['m.status <> "DELETED"', self::businessPredicate('m'), $this->tenantWhere('m', 'movements')];
         $params = $this->withTenant();
         if (!empty($filters['type'])) { $where[] = 'm.type = :type'; $params['type'] = $filters['type']; }
         if (!empty($filters['dateFrom'])) { $where[] = 'm.effective_date >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
@@ -211,37 +265,51 @@ final class Movement extends BaseModel
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
-    private function params(array $data, int $userId): array
+    private function params(array $data, int $userId, ?array $fallback = null): array
     {
-        $citizenId = (int) ($data['citizenId'] ?? $data['citizen_id'] ?? 0);
+        $citizenId = (int) ($data['citizenId'] ?? $data['citizen_id'] ?? $fallback['citizen_id'] ?? 0);
         if ($citizenId <= 0) throw new \RuntimeException('Nhân khẩu là bắt buộc khi ghi biến động');
         $citizen = $this->fetchOne('SELECT c.id, c.household_id, c.full_name, c.citizen_code, c.identity_number FROM citizens c WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens'), $this->withTenant(['id' => $citizenId]));
         if (!$citizen) throw new \RuntimeException('Không tìm thấy nhân khẩu để ghi biến động');
 
-        $type = strtoupper((string) ($data['type'] ?? 'OTHER'));
+        $type = strtoupper((string) ($data['type'] ?? $fallback['type'] ?? 'OTHER'));
         if (!isset(self::TYPES[$type])) $type = 'OTHER';
+        if (in_array($type, self::AUDIT_ONLY_TYPES, true)) {
+            throw new \RuntimeException('Cập nhật hồ sơ nhân khẩu là nhật ký hệ thống, không phải biến động dân cư.');
+        }
 
-        $date = (string) ($data['effectiveDate'] ?? $data['effective_date'] ?? date('Y-m-d'));
+        $date = (string) ($data['effectiveDate'] ?? $data['effective_date'] ?? $fallback['effective_date'] ?? date('Y-m-d'));
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = date('Y-m-d');
 
         return [
             'citizen_id' => $citizenId,
-            'household_id' => (int) ($data['householdId'] ?? $data['household_id'] ?? $citizen['household_id']),
+            'household_id' => (int) ($data['householdId'] ?? $data['household_id'] ?? $fallback['household_id'] ?? $citizen['household_id']),
             'type' => $type,
-            'from_address' => trim((string) ($data['fromAddress'] ?? $data['from_address'] ?? '')) ?: null,
-            'to_address' => trim((string) ($data['toAddress'] ?? $data['to_address'] ?? '')) ?: null,
-            'reason' => trim((string) ($data['reason'] ?? '')) ?: null,
+            'from_address' => $this->nullableText($data, ['fromAddress', 'from_address'], $fallback['from_address'] ?? null),
+            'to_address' => $this->nullableText($data, ['toAddress', 'to_address'], $fallback['to_address'] ?? null),
+            'reason' => $this->nullableText($data, ['reason'], $fallback['reason'] ?? null),
             'effective_date' => $date,
-            'document_number' => trim((string) ($data['documentNumber'] ?? $data['document_number'] ?? $data['decisionNumber'] ?? $data['decision_number'] ?? '')) ?: null,
-            'note' => trim((string) ($data['note'] ?? '')) ?: null,
-            'object_type' => trim((string) ($data['objectType'] ?? $data['object_type'] ?? 'citizen')) ?: 'citizen',
-            'object_id' => (int) ($data['objectId'] ?? $data['object_id'] ?? $citizenId),
-            'object_code' => trim((string) ($data['objectCode'] ?? $data['object_code'] ?? $citizen['citizen_code'] ?? '')) ?: null,
-            'actor_name' => trim((string) ($data['actorName'] ?? $data['actor_name'] ?? $citizen['full_name'] ?? '')) ?: null,
-            'before_data' => $this->jsonOrNull($data['beforeData'] ?? $data['before_data'] ?? null),
-            'after_data' => $this->jsonOrNull($data['afterData'] ?? $data['after_data'] ?? null),
+            'document_number' => $this->nullableText($data, ['documentNumber', 'document_number', 'decisionNumber', 'decision_number'], $fallback['document_number'] ?? null),
+            'note' => $this->nullableText($data, ['note'], $fallback['note'] ?? null),
+            'object_type' => $this->nullableText($data, ['objectType', 'object_type'], $fallback['object_type'] ?? 'citizen') ?: 'citizen',
+            'object_id' => (int) ($data['objectId'] ?? $data['object_id'] ?? $fallback['object_id'] ?? $citizenId),
+            'object_code' => $this->nullableText($data, ['objectCode', 'object_code'], $fallback['object_code'] ?? $citizen['citizen_code'] ?? null),
+            'actor_name' => $this->nullableText($data, ['actorName', 'actor_name'], $fallback['actor_name'] ?? $citizen['full_name'] ?? null),
+            'before_data' => $this->jsonOrNull($data['beforeData'] ?? $data['before_data'] ?? $fallback['before_data'] ?? null),
+            'after_data' => $this->jsonOrNull($data['afterData'] ?? $data['after_data'] ?? $fallback['after_data'] ?? null),
             'user' => $userId,
         ];
+    }
+
+    private function nullableText(array $data, array $keys, ?string $fallback = null): ?string
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                $value = trim((string) $data[$key]);
+                return $value === '' ? null : $value;
+            }
+        }
+        return $fallback;
     }
 
     private function jsonOrNull(mixed $value): ?string

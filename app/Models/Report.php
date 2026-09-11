@@ -56,6 +56,7 @@ final class Report extends BaseModel
     {
         return match ($type) {
             'household', 'households' => $this->householdReport($filters),
+            'settled-elsewhere-households', 'settled_elsewhere_households' => $this->settledElsewhereHouseholdsReport($filters),
             'household-business', 'household_business', 'business-households' => (new \App\Models\HouseholdBusiness())->report('all', $filters),
             'household-business-establishments' => (new \App\Models\HouseholdBusiness())->report('establishments', $filters),
             'household-business-households', 'household-business-by-household', 'business-households-by-household' => (new \App\Models\HouseholdBusiness())->report('household_summary', $filters),
@@ -75,6 +76,18 @@ final class Report extends BaseModel
             'livestock-vaccinated' => (new \App\Models\Livestock())->report('vaccinated', $filters),
             'livestock-unvaccinated' => (new \App\Models\Livestock())->report('unvaccinated', $filters),
             'livestock-disease' => (new \App\Models\Livestock())->report('disease', $filters),
+            'livestock-pig-farms' => (new \App\Models\Livestock())->report('pig_farms', $filters),
+            'livestock-pig-sow' => (new \App\Models\Livestock())->report('pig_sow', $filters),
+            'livestock-pig-meat' => (new \App\Models\Livestock())->report('pig_meat', $filters),
+            'livestock-pig-sow-and-meat' => (new \App\Models\Livestock())->report('pig_sow_and_meat', $filters),
+            'rural-clean-water', 'rural_clean_water', 'clean-water', 'clean_water' => (new \App\Models\RuralCleanWater())->report('summary', $filters),
+            'rural-clean-water-detail', 'clean-water-detail' => (new \App\Models\RuralCleanWater())->report('detail', $filters),
+            'rural-clean-water-standard', 'clean-water-standard' => (new \App\Models\RuralCleanWater())->report('standard', $filters),
+            'rural-clean-water-not-standard', 'rural-clean-water-unknown', 'clean-water-not-standard', 'clean-water-unknown' => (new \App\Models\RuralCleanWater())->report('not_standard', $filters),
+            'rural-clean-water-non-compliant', 'clean-water-non-compliant' => (new \App\Models\RuralCleanWater())->report('non_compliant', $filters),
+            'rural-clean-water-hygienic', 'clean-water-hygienic' => (new \App\Models\RuralCleanWater())->report('hygienic', $filters),
+            'rural-clean-water-centralized', 'clean-water-centralized' => (new \App\Models\RuralCleanWater())->report('centralized', $filters),
+            'rural-clean-water-household-scale', 'clean-water-household-scale' => (new \App\Models\RuralCleanWater())->report('household_scale', $filters),
             'defense-security', 'defense_security', 'defense-security-summary' => (new \App\Models\DefenseSecurity())->report('summary', $filters),
             'defense-security-nvqs', 'nvqs', 'military-service' => (new \App\Models\DefenseSecurity())->report('nvqs', $filters),
             'defense-security-upcoming-registration' => (new \App\Models\DefenseSecurity())->report('upcoming_registration', $filters),
@@ -91,7 +104,9 @@ final class Report extends BaseModel
             'defense-security-discharged' => (new \App\Models\DefenseSecurity())->report('discharged', $filters),
             'defense-security-militia', 'militia' => (new \App\Models\DefenseSecurity())->report('militia', $filters),
             'defense-security-antt', 'defense-security-security-force', 'security-force' => (new \App\Models\DefenseSecurity())->report('security_force', $filters),
-            'party-members', 'party-member-list' => (new \App\Models\PartyMember())->report('all', $filters),
+            'defense-security-security-records' => (new \App\Models\DefenseSecurity())->report('security_records', $filters),
+            'defense-security-incidents' => (new \App\Models\DefenseSecurity())->report('incidents', $filters),
+            'party-members', 'party_members', 'party_member', 'party-member', 'party-member-list', 'party', 'dang-vien' => (new \App\Models\PartyMember())->report('all', $filters),
             'party-members-branch' => (new \App\Models\PartyMember())->report('branch', $filters),
             'party-members-age' => (new \App\Models\PartyMember())->report('age', $filters),
             'party-members-gender' => (new \App\Models\PartyMember())->report('gender', $filters),
@@ -99,6 +114,10 @@ final class Report extends BaseModel
             'party-members-official' => (new \App\Models\PartyMember())->report('official', $filters),
             'party-members-probationary' => (new \App\Models\PartyMember())->report('probationary', $filters),
             'party-members-status' => (new \App\Models\PartyMember())->report('status', $filters),
+            'farmers-union', 'farmers_union', 'farmers_union_member', 'hoi-nong-dan' => $this->associationReport('FARMERS_UNION', $filters),
+            'women-union', 'women_union', 'women_union_member', 'hoi-phu-nu' => $this->associationReport('WOMEN_UNION', $filters),
+            'veterans-union', 'veterans_union', 'veterans_union_member', 'hoi-cuu-chien-binh' => $this->associationReport('VETERANS_UNION', $filters),
+            'youth-union', 'youth_union', 'youth_union_member', 'doan-vien', 'doan-thanh-nien' => $this->associationReport('YOUTH_UNION', $filters),
             'vehicles', 'vehicles-list', 'vehicle-list' => (new \App\Models\Vehicle())->report('all', $filters),
             'vehicles-by-type', 'vehicle-type' => (new \App\Models\Vehicle())->report('by_type', $filters),
             'vehicles-missing-plate', 'vehicle-missing-plate' => (new \App\Models\Vehicle())->report('missing_plate', $filters),
@@ -167,8 +186,8 @@ final class Report extends BaseModel
             'health-insurance-expired', 'bhyt-expired', 'bhyt-het-han' => $this->healthInsuranceListReport('expired', $filters),
             'health-insurance-household', 'bhyt-household' => $this->healthInsuranceHouseholdReport($filters),
             'health-insurance-area', 'bhyt-area' => $this->healthInsuranceAreaReport($filters),
-            'party-members', 'party_members', 'party_member', 'party', 'dang-vien' => $this->flagCitizenReport('Báo cáo Đảng viên', 'party_member', 'Đảng viên', $filters),
-            'youth-union', 'youth_union', 'youth_union_member', 'doan-vien' => $this->flagCitizenReport('Báo cáo Đoàn viên', 'youth_union_member', 'Đoàn viên', $filters),
+            'policy-subjects', 'policy_subjects', 'doi-tuong-chinh-sach' => (new \App\Models\PolicySubject())->report($filters),
+            'elderly-union', 'elderly_union', 'elderly_union_member', 'hoi-nguoi-cao-tuoi' => $this->flagCitizenReport('Báo cáo Hội viên Hội Người cao tuổi', 'elderly_union_member', 'Hội viên Hội Người cao tuổi', $filters),
             'meritorious-people', 'meritorious', 'meritorious_person', 'nguoi-co-cong' => $this->meritoriousCitizenReport($filters),
             'disabled-people', 'disabled', 'disabled_person', 'disability', 'nguoi-khuyet-tat' => $this->flagCitizenReport('Báo cáo Người khuyết tật', 'disabled_person', 'Người khuyết tật', $filters),
             'labor', 'labour', 'lao-dong' => $this->laborReport($filters),
@@ -181,6 +200,12 @@ final class Report extends BaseModel
         };
     }
 
+    private function associationReport(string $organizationCode, array $filters): array
+    {
+        $filters['organization_code'] = $organizationCode;
+        return (new \App\Models\AssociationMembership())->report($filters);
+    }
+
     public function summaryReport(array $filters = []): array
     {
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
@@ -188,7 +213,12 @@ final class Report extends BaseModel
         $citizens = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN gender='Nam' THEN 1 ELSE 0 END),0) AS male, COALESCE(SUM(CASE WHEN gender='Nữ' THEN 1 ELSE 0 END),0) AS female, COALESCE(SUM(CASE WHEN residency_status='TEMPORARY' THEN 1 ELSE 0 END),0) AS temporary, COALESCE(SUM(CASE WHEN presence_status='AWAY' THEN 1 ELSE 0 END),0) AS away, COALESCE(SUM(CASE WHEN " . AgePolicy::childConditionSql('c') . " THEN 1 ELSE 0 END),0) AS children, COALESCE(SUM(CASE WHEN " . AgePolicy::statisticalElderlyConditionSql('c') . " THEN 1 ELSE 0 END),0) AS elderly" . $this->flagSelects('c') . " FROM citizens c INNER JOIN households h ON h.id=c.household_id $citizenWhere", $citizenParams) ?: [];
         $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
         $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
-        $households = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN poor_household=1 THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN near_poor_household=1 THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS disabled, COALESCE(SUM(CASE WHEN h.note LIKE '%Hộ chính sách%' OR h.note LIKE '%chính sách%' THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN poor_household=0 AND near_poor_household=0 AND NOT $meritoriousHouseholdExpr AND NOT $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS normal FROM households h $householdWhere", $householdParams) ?: [];
+        $policySubjectHouseholdExpr = $this->policySubjectHouseholdExists('h');
+        $activePovertyTypeExpr = $this->activePovertyTypeExpr('h');
+        $poorHouseholdExpr = '(h.poor_household=1 OR ' . $this->activePovertyRecordExists('h', 'POOR') . ')';
+        $nearPoorHouseholdExpr = '(h.near_poor_household=1 OR ' . $this->activePovertyRecordExists('h', 'NEAR_POOR') . ')';
+        $policyHouseholdExpr = '(' . $policySubjectHouseholdExpr . ' OR ' . $meritoriousHouseholdExpr . ' OR ' . $disabledHouseholdExpr . ')';
+        $households = $this->fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN $meritoriousHouseholdExpr THEN 1 ELSE 0 END),0) AS meritorious, COALESCE(SUM(CASE WHEN $poorHouseholdExpr THEN 1 ELSE 0 END),0) AS poor, COALESCE(SUM(CASE WHEN $nearPoorHouseholdExpr THEN 1 ELSE 0 END),0) AS near_poor, COALESCE(SUM(CASE WHEN $disabledHouseholdExpr THEN 1 ELSE 0 END),0) AS disabled, COALESCE(SUM(CASE WHEN $policyHouseholdExpr THEN 1 ELSE 0 END),0) AS policy, COALESCE(SUM(CASE WHEN NOT $poorHouseholdExpr AND NOT $nearPoorHouseholdExpr AND NOT " . $this->activePovertyRecordExists('h') . " AND NOT $policyHouseholdExpr THEN 1 ELSE 0 END),0) AS normal FROM households h $householdWhere", $householdParams) ?: [];
         $total = max(1, (int) ($citizens['total'] ?? 0));
         $healthInsurance = (new Dashboard())->healthInsuranceStats($filters);
         $rows = [
@@ -240,8 +270,31 @@ final class Report extends BaseModel
         [$where, $params] = $this->householdWhere($filters);
         $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
         $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
-        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.phone, COALESCE(v.total_members,0) AS members, COALESCE(v.at_home_count,0) AS at_home, COALESCE(v.away_count,0) AS away, $meritoriousHouseholdExpr AS meritorious_policy, $disabledHouseholdExpr AS disabled_policy, h.poor_household, h.near_poor_household, h.note FROM households h LEFT JOIN v_household_member_counts v ON v.household_id=h.id $where ORDER BY h.household_code", $params);
+        $policySubjectHouseholdExpr = $this->policySubjectHouseholdExists('h');
+        $activePovertyTypeExpr = $this->activePovertyTypeExpr('h');
+        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.phone, COALESCE(v.total_members,0) AS members, COALESCE(v.at_home_count,0) AS at_home, COALESCE(v.away_count,0) AS away, $meritoriousHouseholdExpr AS meritorious_policy, $disabledHouseholdExpr AS disabled_policy, $policySubjectHouseholdExpr AS policy_subject_household, $activePovertyTypeExpr AS active_poverty_type, h.poor_household, h.near_poor_household, h.note FROM households h LEFT JOIN v_household_member_counts v ON v.household_id=h.id $where ORDER BY h.household_code", $params);
         return $this->table('Danh sách hộ dân', ['Mã hộ','Chủ hộ','Địa chỉ','Số điện thoại','Nhân khẩu','Ở nhà','Đi vắng','Diện hộ'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['phone'], (int) $r['members'], (int) $r['at_home'], (int) $r['away'], $this->householdCategories($r)], $rows), $filters);
+    }
+
+
+    public function settledElsewhereHouseholdsReport(array $filters = []): array
+    {
+        $filters['householdStatus'] = 'settled_elsewhere';
+        [$where, $params] = $this->householdWhere($filters);
+        $citizenCondition = $this->activeCitizenCondition('c');
+        $rows = $this->fetchAll("SELECT h.id, h.household_code, h.head_citizen_name, h.address, h.current_residence_place, h.phone, h.residence_note, h.note, COUNT(c.id) AS total_members, COALESCE(SUM(CASE WHEN c.gender='Nam' THEN 1 ELSE 0 END),0) AS male_count, COALESCE(SUM(CASE WHEN c.gender='Nữ' THEN 1 ELSE 0 END),0) AS female_count FROM households h LEFT JOIN v_household_member_counts v ON v.household_id=h.id LEFT JOIN citizens c ON c.household_id=h.id AND $citizenCondition $where GROUP BY h.id, h.household_code, h.head_citizen_name, h.address, h.current_residence_place, h.phone, h.residence_note, h.note ORDER BY h.household_code", $params);
+        $body = array_map(fn($r) => [
+            $r['household_code'],
+            $r['head_citizen_name'],
+            $r['address'],
+            $r['current_residence_place'],
+            (int) ($r['total_members'] ?? 0),
+            (int) ($r['male_count'] ?? 0),
+            (int) ($r['female_count'] ?? 0),
+            $r['phone'],
+            $r['residence_note'] ?: $r['note'],
+        ], $rows);
+        return $this->table('BÁO CÁO HỘ DÂN SINH SỐNG ỔN ĐỊNH Ở NƠI KHÁC', ['Mã hộ','Chủ hộ','Địa chỉ tại thôn','Nơi đang sinh sống','Tổng nhân khẩu','Nam','Nữ','SĐT','Ghi chú'], $body, $filters);
     }
 
     public function populationReport(array $filters = []): array { return $this->citizenListReport('Danh sách nhân khẩu', $filters); }
@@ -272,8 +325,10 @@ final class Report extends BaseModel
         [$where, $params] = $this->householdWhere($filters);
         $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
         $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
-        $where .= " AND ($meritoriousHouseholdExpr OR $disabledHouseholdExpr OR h.poor_household=1 OR h.near_poor_household=1)";
-        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.phone, $meritoriousHouseholdExpr AS meritorious_policy, $disabledHouseholdExpr AS disabled_policy, h.poor_household, h.near_poor_household, h.note FROM households h $where ORDER BY h.household_code", $params);
+        $policySubjectHouseholdExpr = $this->policySubjectHouseholdExists('h');
+        $activePovertyTypeExpr = $this->activePovertyTypeExpr('h');
+        $where .= " AND ($meritoriousHouseholdExpr OR $disabledHouseholdExpr OR $policySubjectHouseholdExpr OR h.poor_household=1 OR h.near_poor_household=1)";
+        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.phone, $meritoriousHouseholdExpr AS meritorious_policy, $disabledHouseholdExpr AS disabled_policy, $policySubjectHouseholdExpr AS policy_subject_household, $activePovertyTypeExpr AS active_poverty_type, h.poor_household, h.near_poor_household, h.note FROM households h $where ORDER BY h.household_code", $params);
         return $this->table('Danh sách người có công, hộ nghèo, cận nghèo, khuyết tật', ['Mã hộ','Chủ hộ','Địa chỉ','Số điện thoại','Diện hộ'], array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['address'], $r['phone'], $this->householdCategories($r)], $rows), $filters);
     }
 
@@ -412,22 +467,54 @@ final class Report extends BaseModel
         $where = [$this->activeHouseholdCondition('h')]; $params = [];
         if (!empty($filters['dateFrom'])) { $where[] = 'DATE(h.created_at) >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'DATE(h.created_at) <= :date_to'; $params['date_to'] = $filters['dateTo']; }
-        if (!empty($filters['householdStatus'])) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
-        $category = $this->categoryKey($filters['household_type'] ?? $filters['householdType'] ?? $filters['category'] ?? '');
+        if (!empty($filters['householdStatus'])) {
+            $status = $this->residenceStatus($filters['householdStatus']);
+            if ($status !== null) {
+                $where[] = $this->residenceStatusSql('h') . ' = :household_status';
+                $params['household_status'] = $status;
+            } else {
+                $where[] = 'h.status = :household_status';
+                $params['household_status'] = $filters['householdStatus'];
+            }
+        }
+        $residenceStatus = $this->residenceStatus($filters['residenceStatus'] ?? $filters['residence_status'] ?? $filters['householdResidenceStatus'] ?? '');
+        if ($residenceStatus !== null) {
+            $where[] = $this->residenceStatusSql('h') . ' = :residence_status';
+            $params['residence_status'] = $residenceStatus;
+        }
+        $category = $this->categoryKey($filters['householdCategory'] ?? $filters['household_category'] ?? $filters['household_type'] ?? $filters['householdType'] ?? $filters['category'] ?? '');
         if ($category) $this->addCategoryWhere($where, $params, $category);
         return ['WHERE ' . implode(' AND ', $where), $params];
     }
 
     private function citizenWhere(array $filters): array
     {
-        $where = [$this->activeCitizenCondition('c'), $this->activeHouseholdCondition('h')]; $params = [];
-        if (!empty($filters['householdStatus'])) { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; }
+        $isMovedOutFilter = ($filters['presenceStatus'] ?? '') === 'MOVED_OUT' || ($filters['residencyStatus'] ?? '') === 'TRANSFERRED_OUT';
+        $where = $isMovedOutFilter
+            ? [$this->statistics()->historicalCitizenCondition('c'), $this->statistics()->historicalHouseholdCondition('h')]
+            : [$this->activeCitizenCondition('c'), $this->activeHouseholdCondition('h')];
+        $params = [];
+        if (!empty($filters['householdStatus'])) {
+            $status = $this->residenceStatus($filters['householdStatus']);
+            if ($status !== null) {
+                $where[] = $this->residenceStatusSql('h') . ' = :household_status';
+                $params['household_status'] = $status;
+            } else {
+                $where[] = 'h.status = :household_status';
+                $params['household_status'] = $filters['householdStatus'];
+            }
+        }
+        $residenceStatus = $this->residenceStatus($filters['residenceStatus'] ?? $filters['residence_status'] ?? $filters['householdResidenceStatus'] ?? '');
+        if ($residenceStatus !== null) {
+            $where[] = $this->residenceStatusSql('h') . ' = :residence_status';
+            $params['residence_status'] = $residenceStatus;
+        }
         if (!empty($filters['dateFrom'])) { $where[] = 'DATE(c.created_at) >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'DATE(c.created_at) <= :date_to'; $params['date_to'] = $filters['dateTo']; }
         if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
         if (!empty($filters['presenceStatus'])) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
         if (!empty($filters['lifeStatus'])) { $where[] = 'c.life_status = :life_status'; $params['life_status'] = $filters['lifeStatus']; }
-        $category = $this->categoryKey($filters['household_type'] ?? $filters['householdType'] ?? $filters['category'] ?? '');
+        $category = $this->categoryKey($filters['householdCategory'] ?? $filters['household_category'] ?? $filters['household_type'] ?? $filters['householdType'] ?? $filters['category'] ?? '');
         if ($category) $this->addCategoryWhere($where, $params, $category);
         if (!empty($filters['gender'])) { $where[] = 'c.gender = :gender'; $params['gender'] = $filters['gender']; }
         if (!empty($filters['ageFrom'])) { $where[] = AgePolicy::ageSql('c') . ' >= :age_from'; $params['age_from'] = (int) $filters['ageFrom']; }
@@ -449,15 +536,36 @@ final class Report extends BaseModel
 
     private function addCategoryWhere(array &$where, array &$params, string $category): void
     {
+        $poor = '(h.poor_household = 1 OR ' . $this->activePovertyRecordExists('h', 'POOR') . ')';
+        $nearPoor = '(h.near_poor_household = 1 OR ' . $this->activePovertyRecordExists('h', 'NEAR_POOR') . ')';
+        $average = $this->activePovertyRecordExists('h', 'AVERAGE');
+        $policy = '(' . $this->policySubjectHouseholdExists('h') . ' OR ' . $this->meritoriousHouseholdExists('h') . ' OR ' . $this->disabledHouseholdExists('h') . ')';
         match ($category) {
-            'poor' => $where[] = 'h.poor_household = 1',
-            'near_poor' => $where[] = 'h.near_poor_household = 1',
-            'meritorious' => $where[] = $this->meritoriousHouseholdExists('h'),
-            'normal' => $where[] = 'h.poor_household = 0 AND h.near_poor_household = 0 AND NOT ' . $this->meritoriousHouseholdExists('h') . ' AND NOT ' . $this->disabledHouseholdExists('h'),
+            'poor' => $where[] = $poor,
+            'near_poor' => $where[] = $nearPoor,
+            'average', 'medium' => $where[] = $average,
+            'meritorious', 'policy' => $where[] = $policy,
+            'normal' => $where[] = 'NOT ' . $poor . ' AND NOT ' . $nearPoor . ' AND NOT ' . $average . ' AND NOT ' . $policy,
             'other' => $where[] = $this->disabledHouseholdExists('h'),
-            'escaped_poverty', 'policy' => $this->addTextCategoryWhere($where, $params, $category),
+            'escaped_poverty' => $this->addTextCategoryWhere($where, $params, $category),
             default => null,
         };
+    }
+
+    private function residenceStatusSql(string $householdAlias = 'h', string $countsAlias = 'v'): string
+    {
+        $citizenCondition = $this->activeCitizenCondition('rc');
+        $total = "(SELECT COUNT(*) FROM citizens rc WHERE rc.household_id = $householdAlias.id AND $citizenCondition)";
+        $atHome = "(SELECT COUNT(*) FROM citizens rc WHERE rc.household_id = $householdAlias.id AND $citizenCondition AND COALESCE(rc.presence_status,'AT_HOME') = 'AT_HOME')";
+        $away = "(SELECT COUNT(*) FROM citizens rc WHERE rc.household_id = $householdAlias.id AND $citizenCondition AND rc.presence_status = 'AWAY')";
+        return "CASE WHEN COALESCE($householdAlias.residence_status_mode,'AUTO') = 'AUTO' AND $total > 0 AND $atHome = 0 AND $away = $total THEN 'away_for_work' ELSE COALESCE($householdAlias.residence_status,'resident') END";
+    }
+
+    private function residenceStatus(mixed $value): ?string
+    {
+        $status = strtolower(trim((string) $value));
+        if ($status === 'outside') return 'settled_elsewhere';
+        return in_array($status, ['resident', 'away_for_work', 'settled_elsewhere', 'partial', 'inactive'], true) ? $status : null;
     }
 
     private function activeHouseholdCondition(string $alias): string
@@ -489,6 +597,7 @@ final class Report extends BaseModel
         return match (true) {
             str_contains($text, 'can ngheo') || str_contains($text, 'near poor') => 'near_poor',
             str_contains($text, 'moi thoat ngheo') || str_contains($text, 'thoat ngheo') || str_contains($text, 'escaped poverty') => 'escaped_poverty',
+            str_contains($text, 'trung binh') || str_contains($text, 'average') || str_contains($text, 'medium') => 'average',
             str_contains($text, 'chinh sach') || str_contains($text, 'policy') => 'policy',
             str_contains($text, 'co cong') || str_contains($text, 'gia dinh co cong') || str_contains($text, 'meritorious') => 'meritorious',
             str_contains($text, 'binh thuong') || str_contains($text, 'normal') || $text === 'khong' => 'normal',
@@ -521,12 +630,36 @@ final class Report extends BaseModel
 
     private function ensureReportTemplatesTable(): void
     {
-        $this->execute('CREATE TABLE IF NOT EXISTS report_templates (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, name VARCHAR(150) NOT NULL, type VARCHAR(80) NOT NULL, filters_json JSON NULL, is_default TINYINT(1) NOT NULL DEFAULT 0, status VARCHAR(20) NOT NULL DEFAULT "ACTIVE", created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NULL, INDEX idx_report_templates_user (user_id, status), INDEX idx_report_templates_default (user_id, is_default)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+        $this->assertReportTemplatesReady();
+    }
+
+    private function assertReportTemplatesReady(): void
+    {
+        $columns = ['id','user_id','name','type','filters_json','is_default','status','created_at','updated_at'];
+        if (!$this->tableExists('report_templates')) {
+            throw new \RuntimeException('Report templates schema is not provisioned: missing table report_templates');
+        }
+        foreach ($columns as $column) {
+            if (!$this->columnExists('report_templates', $column)) {
+                throw new \RuntimeException('Report templates schema is not provisioned: missing column report_templates.' . $column);
+            }
+        }
+        foreach (['idx_report_templates_user', 'idx_report_templates_default'] as $index) {
+            if (!$this->indexExists('report_templates', $index)) {
+                throw new \RuntimeException('Report templates schema is not provisioned: missing index report_templates.' . $index);
+            }
+        }
     }
 
     private function tableExists(string $table): bool
     {
         $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
+    }
+
+    private function indexExists(string $table, string $index): bool
+    {
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index', ['table' => $table, 'index' => $index]);
         return (int) ($row['total'] ?? 0) > 0;
     }
 
@@ -569,16 +702,48 @@ final class Report extends BaseModel
         return 'EXISTS (SELECT 1 FROM citizens dhc WHERE dhc.household_id=' . $alias . '.id AND ' . $this->activeCitizenCondition('dhc') . ' AND dhc.disabled_person=1)';
     }
 
+    private function activePovertyTypeExpr(string $householdAlias): string
+    {
+        if (!$this->tableExists('household_poverty_records')) return 'NULL';
+        return '(SELECT hpr.poverty_type FROM household_poverty_records hpr WHERE hpr.household_id=' . $householdAlias . '.id AND hpr.status="ACTIVE" AND hpr.deleted_at IS NULL AND ' . $this->tenantWhere('hpr', 'household_poverty_records') . ' ORDER BY hpr.effective_from DESC, hpr.id DESC LIMIT 1)';
+    }
+    private function activePovertyRecordExists(string $householdAlias, ?string $type = null): string
+    {
+        if (!$this->tableExists('household_poverty_records')) return '0=1';
+        if ($type === 'AVERAGE') {
+            $typeClause = ' AND hpr.poverty_type IN ("NONE","MEDIUM")';
+        } else {
+            $typeClause = $type !== null ? ' AND hpr.poverty_type="' . $type . '"' : '';
+        }
+        return 'EXISTS (SELECT 1 FROM household_poverty_records hpr WHERE hpr.household_id=' . $householdAlias . '.id AND hpr.status="ACTIVE" AND hpr.deleted_at IS NULL' . $typeClause . ' AND ' . $this->tenantWhere('hpr', 'household_poverty_records') . ' LIMIT 1)';
+    }
+
+    private function policySubjectHouseholdExists(string $householdAlias): string
+    {
+        if (!$this->tableExists('citizen_policy_records') || !$this->tableExists('policy_subject_types') || !$this->tableExists('citizens')) return '0=1';
+        return 'EXISTS (SELECT 1 FROM citizen_policy_records cpr INNER JOIN policy_subject_types pst ON pst.id=cpr.policy_type_id INNER JOIN citizens pc ON pc.id=cpr.citizen_id WHERE pc.household_id=' . $householdAlias . '.id AND cpr.status IN ("ACTIVE","PAUSED") AND cpr.deleted_at IS NULL AND pst.deleted_at IS NULL AND COALESCE(pst.is_active,1)=1 AND ' . $this->activeCitizenCondition('pc') . ' AND ' . $this->tenantWhere('cpr', 'citizen_policy_records') . ' AND ' . $this->tenantWhere('pst', 'policy_subject_types') . ' AND ' . $this->tenantWhere('pc', 'citizens') . ' LIMIT 1)';
+    }
     private function countPercent(array $row, string $key, int $total): string { $count = (int) ($row[$key] ?? 0); return $count . ' (' . $this->percent($count, $total) . ')'; }
     private function healthInsuranceCoveredText(array $stats): string { return $stats['insured'] . '/' . $stats['total'] . ' nhân khẩu'; }
     private function percentValue(float|int $value): string { return number_format((float) $value, 2, '.', '') . '%'; }
     private function percent(int $count, int $total): string { return number_format($total > 0 ? ($count * 100 / $total) : 0, 2, ',', '.') . '%'; }
 
     private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }
-    private function householdCategories(array $row): string { $labels = []; if ((int) ($row['meritorious_policy'] ?? 0) === 1) $labels[] = 'Hộ có công'; if ((int) ($row['disabled_policy'] ?? 0) === 1) $labels[] = 'Hộ có người khuyết tật'; if ((int) ($row['poor_household'] ?? 0) === 1) $labels[] = 'Hộ nghèo'; if ((int) ($row['near_poor_household'] ?? 0) === 1) $labels[] = 'Hộ cận nghèo'; $noteKey = $this->categoryKey((string) ($row['note'] ?? '')); if ($noteKey === 'policy') $labels[] = 'Hộ chính sách'; if ($noteKey === 'escaped_poverty') $labels[] = 'Hộ mới thoát nghèo'; return $labels ? implode(', ', array_values(array_unique($labels))) : 'Hộ bình thường'; }
+    private function householdCategories(array $row): string
+    {
+        $labels = [];
+        $activePovertyType = strtoupper((string) ($row['active_poverty_type'] ?? ''));
+        if ($activePovertyType === 'POOR' || (int) ($row['poor_household'] ?? 0) === 1) $labels[] = 'Hộ nghèo';
+        if ($activePovertyType === 'NEAR_POOR' || (int) ($row['near_poor_household'] ?? 0) === 1) $labels[] = 'Hộ cận nghèo';
+        if ($activePovertyType === 'NONE' || $activePovertyType === 'MEDIUM') $labels[] = 'Hộ trung bình';
+        if ((int) ($row['policy_subject_household'] ?? 0) === 1 || (int) ($row['meritorious_policy'] ?? 0) === 1 || (int) ($row['disabled_policy'] ?? 0) === 1) $labels[] = 'Hộ chính sách';
+        $noteKey = $this->categoryKey((string) ($row['note'] ?? ''));
+        if ($noteKey === 'escaped_poverty') $labels[] = 'Hộ mới thoát nghèo';
+        return $labels ? implode(', ', array_values(array_unique($labels))) : 'Hộ bình thường';
+    }
     private function date(?string $value): string { if (!$value) return ''; [$y, $m, $d] = explode('-', substr($value, 0, 10)); return "$d/$m/$y"; }
     private function residency(?string $value): string { return $value === 'TEMPORARY' ? 'Tạm trú' : 'Thường trú'; }
-    private function presence(?string $value): string { return $value === 'AWAY' ? 'Đi vắng' : 'Ở nhà'; }
+    private function presence(?string $value): string { return $value === 'MOVED_OUT' ? 'Đã chuyển đi' : ($value === 'AWAY' ? 'Đi vắng' : 'Ở nhà'); }
     private function life(?string $value): string { return $value === 'DECEASED' ? 'Đã chết' : 'Còn sống'; }
     private function movement(?string $value): string { return ['BIRTH' => 'Sinh', 'DEATH' => 'Tử', 'MOVE_IN' => 'Chuyển đến', 'MOVE_OUT' => 'Chuyển đi', 'TEMPORARY_RESIDENCE' => 'Tạm trú', 'TEMPORARY_ABSENCE' => 'Tạm vắng', 'OTHER' => 'Khác'][$value] ?? (string) $value; }
 
@@ -586,26 +751,29 @@ final class Report extends BaseModel
     {
         return [
             'groups' => [
-                ['key' => 'population', 'title' => 'Bao cao dan cu', 'icon' => 'fa-users', 'description' => 'Nhan khau, gioi tinh, do tuoi, nghe nghiep, BHYT, Dang vien, Doan vien.', 'types' => ['population','health_insurance','health-insurance-missing','health-insurance-expiring','health-insurance-expired','health-insurance-household','health-insurance-area','children','elderly','labor','party_member','youth_union','gender','age']],
-                ['key' => 'household', 'title' => 'Bao cao ho gia dinh', 'icon' => 'fa-house-chimney', 'description' => 'Danh sach ho, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','poor-households','near-poor-households','special']],
-                ['key' => 'contributions', 'title' => 'Bao cao dong gop ho', 'icon' => 'fa-hand-holding-dollar', 'description' => 'Danh sach thu, ky nhan, mien giam, cong no va tong hop dong gop theo dot/nam.', 'types' => ['contributions-list','contributions-collection','contributions-unpaid-list','contributions-partial','contributions-exempt','contributions-summary','contributions-year-summary','contributions-by-contribution']],
-                ['key' => 'household_business', 'title' => 'Bao cao ho san xuat va kinh doanh', 'icon' => 'fa-store', 'description' => 'Danh sach ho san xuat, ho kinh doanh, nganh nghe, trang thai va khu vuc GIS.', 'types' => ['household-business-production','household-business-trade','household-business-sector','household-business-status','household-business-gis','household-business-ocop','household-business-food-safety','household-business-social-insurance','household-business-economic-type','household-business-scale','household-business-product']],
-                ['key' => 'agricultural_land', 'title' => 'Bao cao quy dat nong nghiep', 'icon' => 'fa-map', 'description' => 'Tong hop dien tich dat nong nghiep theo tung khu doc lap voi ho dan va san xuat.', 'types' => ['agricultural-land','agricultural-land-village','agricultural-land-zone','agricultural-land-year','agricultural-land-year-compare']],
-                ['key' => 'agriculture', 'title' => 'Bao cao san xuat nong nghiep', 'icon' => 'fa-seedling', 'description' => 'Danh sach thua dat, chu the san xuat, dien tich, cay trong, mua vu, san luong va thiet hai.', 'types' => ['agriculture','agriculture-producers','agriculture-area','agriculture-crop','agriculture-season','agriculture-production','agriculture-revenue','agriculture-damage']],
-                ['key' => 'livestock', 'title' => 'Bao cao vat nuoi', 'icon' => 'fa-paw', 'description' => 'Danh sach vat nuoi, thong ke theo loai, tiem phong va dich benh.', 'types' => ['livestock','livestock-by-type','livestock-vaccinated','livestock-unvaccinated','livestock-disease']],
-                ['key' => 'party_members', 'title' => 'Bao cao Dang vien', 'icon' => 'fa-flag', 'description' => 'Danh sach Dang vien theo chi bo, do tuoi, gioi tinh, chuc vu, loai va tinh trang sinh hoat.', 'types' => ['party-members','party-members-branch','party-members-age','party-members-gender','party-members-position','party-members-official','party-members-probationary','party-members-status']],
-                ['key' => 'vehicles', 'title' => 'Bao cao xe co', 'icon' => 'fa-car', 'description' => 'Danh sach phuong tien, phan loai, bien so, dang kiem va bao hiem.', 'types' => ['vehicles','vehicles-by-type','vehicles-missing-plate','vehicles-expired-inspection','vehicles-expired-insurance']],
-                ['key' => 'houses', 'title' => 'Bao cao nha o va cong trinh', 'icon' => 'fa-building-user', 'description' => 'Danh sach nha o, nha xuong cap, PCCC, GPS va cong trinh phu.', 'types' => ['houses','houses-degraded','houses-temporary','houses-fire-risk','houses-missing-gps','houses-business','house-structures']],
-                ['key' => 'public_assets', 'title' => 'Bao cao cong trinh cong cong', 'icon' => 'fa-building-columns', 'description' => 'Danh sach cong trinh cong cong, GPS, khu vuc, don vi quan ly va kiem ke tai san.', 'types' => ['public-assets','public-assets-located','public-assets-missing-gps','public-assets-inventory']],
-                ['key' => 'movement', 'title' => 'Bao cao bien dong', 'icon' => 'fa-right-left', 'description' => 'Khai sinh, khai tu, chuyen di, chuyen den, tam tru, tam vang.', 'types' => ['migration','temporary_residence','temporary_absence','births','deaths']],
-                ['key' => 'gis', 'title' => 'Bao cao GIS', 'icon' => 'fa-map-location-dot', 'description' => 'Ho da dinh vi, chua dinh vi, ty le hoan thanh GPS theo khu vuc va thoi gian.', 'types' => ['gis','gis-located','gis-unlocated']],
-                ['key' => 'digital_profile', 'title' => 'Bao cao Ho so so', 'icon' => 'fa-folder-open', 'description' => 'Ho so hoan chinh, thieu anh, thieu giay to va chua hoan thien.', 'types' => ['digital-profile','profile-complete','profile-missing-photo','profile-missing-documents','profile-incomplete']],
-                ['key' => 'operation', 'title' => 'Bao cao dieu hanh', 'icon' => 'fa-tower-broadcast', 'description' => 'Chi tieu nhanh phuc vu dieu hanh va theo doi tien do.', 'types' => ['summary']],
-                ['key' => 'summary', 'title' => 'Bao cao tong hop', 'icon' => 'fa-chart-pie', 'description' => 'Tong hop toan he thong theo nhieu dieu kien loc.', 'types' => ['summary']],
+                ['key' => 'population', 'title' => 'Báo cáo dân cư', 'icon' => 'fa-users', 'description' => 'Nhân khẩu, gioi tinh, do tuoi, nghe nghiep, BHYT, Dang vien, Doan vien.', 'types' => ['population','health_insurance','health-insurance-missing','health-insurance-expiring','health-insurance-expired','health-insurance-household','health-insurance-area','children','elderly','labor','party_member','youth_union','gender','age']],
+                ['key' => 'household', 'title' => 'Báo cáo hộ gia đình', 'icon' => 'fa-house-chimney', 'description' => 'Danh sách hộ, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','poor-households','near-poor-households','settled-elsewhere-households','special']],
+                ['key' => 'contributions', 'title' => 'Báo cáo đóng góp hộ', 'icon' => 'fa-hand-holding-dollar', 'description' => 'Danh sach thu, ky nhan, mien giam, cong no va tong hop dong gop theo dot/nam.', 'types' => ['contributions-list','contributions-collection','contributions-unpaid-list','contributions-partial','contributions-exempt','contributions-summary','contributions-year-summary','contributions-by-contribution']],
+                ['key' => 'household_business', 'title' => 'Báo cáo hộ sản xuất và kinh doanh', 'icon' => 'fa-store', 'description' => 'Danh sách hộ sản xuất, ho kinh doanh, nganh nghe, trang thai va khu vuc GIS.', 'types' => ['household-business-production','household-business-trade','household-business-sector','household-business-status','household-business-gis','household-business-ocop','household-business-food-safety','household-business-social-insurance','household-business-economic-type','household-business-scale','household-business-product']],
+                ['key' => 'agricultural_land', 'title' => 'Báo cáo quỹ đất nông nghiệp', 'icon' => 'fa-map', 'description' => 'Tong hop dien tich dat nong nghiep theo tung khu doc lap voi ho dan va san xuat.', 'types' => ['agricultural-land','agricultural-land-village','agricultural-land-zone','agricultural-land-year','agricultural-land-year-compare']],
+                ['key' => 'agriculture', 'title' => 'Báo cáo sản xuất nông nghiệp', 'icon' => 'fa-seedling', 'description' => 'Danh sach thua dat, chu the san xuat, dien tich, cay trong, mua vu, san luong va thiet hai.', 'types' => ['agriculture','agriculture-producers','agriculture-area','agriculture-crop','agriculture-season','agriculture-production','agriculture-revenue','agriculture-damage']],
+                ['key' => 'livestock', 'title' => 'Báo cáo vật nuôi', 'icon' => 'fa-paw', 'description' => 'Danh sách vật nuôi, thong ke theo loai, tiem phong va dich benh.', 'types' => ['livestock','livestock-by-type','livestock-vaccinated','livestock-unvaccinated','livestock-disease','livestock-pig-farms','livestock-pig-sow','livestock-pig-meat','livestock-pig-sow-and-meat']],
+                ['key' => 'rural_clean_water', 'title' => 'Báo cáo nước sạch nông thôn', 'icon' => 'fa-faucet-drip', 'description' => 'Tổng hợp, danh sách chi tiết và chỉ tiêu Nông thôn mới về nước sạch nông thôn.', 'types' => ['rural-clean-water','rural-clean-water-detail','rural-clean-water-standard','rural-clean-water-hygienic','rural-clean-water-centralized','rural-clean-water-household-scale','rural-clean-water-non-compliant','rural-clean-water-unknown']],                ['key' => 'defense_security', 'title' => 'Bao cao Quoc phong - An ninh', 'icon' => 'fa-shield-halved', 'description' => 'Nghia vu quan su, dan quan tu ve va luc luong bao ve ANTT co so.', 'types' => ['defense-security','defense-security-nvqs','defense-security-upcoming-registration','defense-security-registration-age','defense-security-unregistered','defense-security-preliminary','defense-security-medical','defense-security-eligible','defense-security-deferred','defense-security-exempt','defense-security-selected','defense-security-enlisted','defense-security-active-service','defense-security-discharged','defense-security-militia','defense-security-antt']],
+
+                ['key' => 'party_members', 'title' => 'Báo cáo Đảng viên', 'icon' => 'fa-flag', 'description' => 'Danh sách Đảng viên theo chi bo, do tuoi, gioi tinh, chuc vu, loai va tinh trang sinh hoat.', 'types' => ['party-members','party-members-branch','party-members-age','party-members-gender','party-members-position','party-members-official','party-members-probationary','party-members-status']],
+                ['key' => 'vehicles', 'title' => 'Báo cáo xe cộ', 'icon' => 'fa-car', 'description' => 'Danh sách phương tiện, phan loai, bien so, dang kiem va bao hiem.', 'types' => ['vehicles','vehicles-by-type','vehicles-missing-plate','vehicles-expired-inspection','vehicles-expired-insurance']],
+                ['key' => 'houses', 'title' => 'Báo cáo nhà ở và công trình', 'icon' => 'fa-building-user', 'description' => 'Danh sach nha o, nha xuong cap, PCCC, GPS va cong trinh phu.', 'types' => ['houses','houses-degraded','houses-temporary','houses-fire-risk','houses-missing-gps','houses-business','house-structures']],
+                ['key' => 'public_assets', 'title' => 'Báo cáo công trình công cộng', 'icon' => 'fa-building-columns', 'description' => 'Danh sách công trình công cộng, GPS, khu vuc, don vi quan ly va kiem ke tai san.', 'types' => ['public-assets','public-assets-located','public-assets-missing-gps','public-assets-inventory']],
+                ['key' => 'movement', 'title' => 'Báo cáo biến động', 'icon' => 'fa-right-left', 'description' => 'Khai sinh, khai tu, chuyen di, chuyen den, tam tru, tam vang.', 'types' => ['migration','temporary_residence','temporary_absence','births','deaths']],
+                ['key' => 'gis', 'title' => 'Báo cáo GIS', 'icon' => 'fa-map-location-dot', 'description' => 'Ho da dinh vi, chua dinh vi, ty le hoan thanh GPS theo khu vuc va thoi gian.', 'types' => ['gis','gis-located','gis-unlocated']],
+                ['key' => 'digital_profile', 'title' => 'Báo cáo Hồ sơ số', 'icon' => 'fa-folder-open', 'description' => 'Ho so hoan chinh, thieu anh, thieu giay to va chua hoan thien.', 'types' => ['digital-profile','profile-complete','profile-missing-photo','profile-missing-documents','profile-incomplete']],
+                ['key' => 'operation', 'title' => 'Báo cáo điều hành', 'icon' => 'fa-tower-broadcast', 'description' => 'Chi tieu nhanh phuc vu dieu hanh va theo doi tien do.', 'types' => ['summary']],
+                ['key' => 'summary', 'title' => 'Báo cáo tổng hợp', 'icon' => 'fa-chart-pie', 'description' => 'Tong hop toan he thong theo nhieu dieu kien loc.', 'types' => ['summary']],
             ],
             'templates' => [
                 ['key' => 'household-form', 'title' => 'Phieu quan ly ho gia dinh', 'type' => 'household'],
                 ['key' => 'household-list', 'title' => 'Danh sach ho', 'type' => 'household'],
+                ['key' => 'settled-elsewhere-households', 'title' => 'Báo cáo hộ dân sinh sống ổn định ở nơi khác', 'type' => 'settled-elsewhere-households'],
                 ['key' => 'citizen-list', 'title' => 'Danh sach nhan khau', 'type' => 'population'],
                 ['key' => 'children-list', 'title' => 'Danh sach tre em', 'type' => 'children'],
                 ['key' => 'elderly-list', 'title' => 'Danh sach nguoi cao tuoi', 'type' => 'elderly'],

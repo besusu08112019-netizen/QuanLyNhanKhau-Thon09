@@ -146,21 +146,31 @@ final class DataQualityService extends BaseModel
                 'code' => 'citizen.missing_relationship',
                 'name' => 'Thieu quan he',
                 'group' => 'household_relation',
-                'groupLabel' => 'Quan he ho',
+                'groupLabel' => 'Quan hệ hộ',
                 'severity' => 'HIGH',
                 'description' => 'Nhan khau chua co quan he voi chu ho.',
                 'impact' => 'Lam giam chat luong ho so ho gia dinh va bao cao quan he.',
                 'suggestion' => 'Cap nhat quan he theo HouseholdRelationPolicy.',
             ],
             [
-                'code' => 'citizen.invalid_relationship',
-                'name' => 'Quan he khong hop le',
+                'code' => 'citizen.relationship_unresolved',
+                'name' => 'Quan hệ cần rà soát',
                 'group' => 'household_relation',
-                'groupLabel' => 'Quan he ho',
+                'groupLabel' => 'Quan hệ hộ',
+                'severity' => 'MEDIUM',
+                'description' => 'Nhân khẩu đang có quan hệ trong hộ là Chưa xác định.',
+                'impact' => 'Cần người quản lý xác nhận quan hệ thực tế trong bối cảnh hộ.',
+                'suggestion' => 'Mở danh sách Cần rà soát quan hệ và xác nhận từng nhân khẩu trong ngữ cảnh hộ.',
+            ],
+            [
+                'code' => 'citizen.invalid_relationship',
+                'name' => 'Quan hệ không hợp lệ',
+                'group' => 'household_relation',
+                'groupLabel' => 'Quan hệ hộ',
                 'severity' => 'CRITICAL',
-                'description' => 'Quan he khong nam trong danh sach quan he chuan.',
-                'impact' => 'Lam sai suy luan ho gia dinh va cac canh bao du lieu.',
-                'suggestion' => 'Chon lai quan he theo danh muc quan he chuan.',
+                'description' => 'Quan hệ có giá trị nhưng không nằm trong danh sách quan hệ chuẩn và không phải placeholder cần rà soát.',
+                'impact' => 'Làm sai suy luận hộ gia đình và các cảnh báo dữ liệu.',
+                'suggestion' => 'Chọn lại quan hệ theo danh mục quan hệ chuẩn sau khi xác minh hồ sơ.',
             ],
             [
                 'code' => 'citizen.missing_occupation',
@@ -312,6 +322,7 @@ final class DataQualityService extends BaseModel
             'citizen.missing_date_of_birth' => $this->citizenCount('c.date_of_birth IS NULL'),
             'citizen.missing_gender' => $this->citizenCount($this->missing('c.gender')),
             'citizen.missing_relationship' => $this->citizenCount($this->missing('c.relationship')),
+            'citizen.relationship_unresolved' => $this->citizenCount($this->unresolvedRelationshipCondition()),
             'citizen.invalid_relationship' => $this->citizenCount($this->invalidRelationshipCondition()),
             'citizen.missing_occupation' => $this->citizenCount($this->missing('c.occupation')),
             'citizen.missing_health_insurance' => $this->citizenCount($this->healthInsuranceMissingCondition()),
@@ -338,6 +349,7 @@ final class DataQualityService extends BaseModel
             'citizen.missing_date_of_birth' => $this->citizenRows('c.date_of_birth IS NULL', $limit, $offset),
             'citizen.missing_gender' => $this->citizenRows($this->missing('c.gender'), $limit, $offset),
             'citizen.missing_relationship' => $this->citizenRows($this->missing('c.relationship'), $limit, $offset),
+            'citizen.relationship_unresolved' => $this->citizenRows($this->unresolvedRelationshipCondition(), $limit, $offset),
             'citizen.invalid_relationship' => $this->citizenRows($this->invalidRelationshipCondition(), $limit, $offset),
             'citizen.missing_occupation' => $this->citizenRows($this->missing('c.occupation'), $limit, $offset),
             'citizen.missing_health_insurance' => $this->citizenRows($this->healthInsuranceMissingCondition(), $limit, $offset),
@@ -554,10 +566,22 @@ final class DataQualityService extends BaseModel
         return $this->statistics->householdCondition('h') . ' AND ' . $condition;
     }
 
+    private function unresolvedRelationshipCondition(): string
+    {
+        return 'NOT ' . $this->missing('c.relationship') . ' AND TRIM(c.relationship) IN (' . $this->quotedRelationshipList(HouseholdRelationPolicy::unresolvedRelationships()) . ')';
+    }
+
     private function invalidRelationshipCondition(): string
     {
-        $relationships = array_map(static fn(string $value): string => "'" . str_replace("'", "''", $value) . "'", HouseholdRelationPolicy::standardRelationships());
-        return 'NOT ' . $this->missing('c.relationship') . ' AND c.relationship NOT IN (' . implode(',', $relationships) . ')';
+        return 'NOT ' . $this->missing('c.relationship')
+            . ' AND c.relationship NOT IN (' . $this->quotedRelationshipList(HouseholdRelationPolicy::standardRelationships()) . ')'
+            . ' AND TRIM(c.relationship) NOT IN (' . $this->quotedRelationshipList(HouseholdRelationPolicy::unresolvedRelationships()) . ')';
+    }
+
+    /** @param list<string> $values */
+    private function quotedRelationshipList(array $values): string
+    {
+        return implode(',', array_map(static fn(string $value): string => "'" . str_replace("'", "''", $value) . "'", $values));
     }
 
     private function healthInsuranceMissingCondition(): string

@@ -4,11 +4,13 @@ namespace App\Controllers;
 
 use App\Core\BaseController;
 use App\Models\Citizen;
+use App\Models\ProfileSummary;
 use App\Services\PopulationMovementService;
 
 final class PersonController extends BaseController
 {
     private Citizen $citizens;
+    private ProfileSummary $summary;
     private PopulationMovementService $movementService;
 
     private const FLAG_FILTERS = [
@@ -45,6 +47,7 @@ final class PersonController extends BaseController
     {
         parent::__construct($request);
         $this->citizens = new Citizen();
+        $this->summary = new ProfileSummary();
         $this->movementService = new PopulationMovementService();
     }
 
@@ -74,6 +77,7 @@ final class PersonController extends BaseController
     {
         $this->requirePermission('citizen', 'read');
         $row = $this->citizens->find((int) $id);
+        if ($row) $row['related_summary'] = $this->summary->person((int) $id);
         $row ? $this->ok($row) : $this->fail('Không tìm thấy nhân khẩu', 404);
     }
 
@@ -100,7 +104,7 @@ final class PersonController extends BaseController
         $row = $this->citizens->update((int) $id, $input, (int) $user['id']);
         $this->movementService->afterCitizenUpdated($before, $row, $input, (int) $user['id']);
         $row = $this->citizens->find((int) $id) ?: $row;
-        $this->audit($user, 'citizen', 'update', 'Cập nhật nhân khẩu và ghi biến động dân cư', $id, ['before' => $before, 'after' => $row]);
+        $this->audit($user, 'citizen', 'update', 'Cập nhật nhân khẩu', $id, ['before' => $before, 'after' => $row]);
         $this->ok($row);
     }
 
@@ -139,7 +143,8 @@ final class PersonController extends BaseController
             'page' => $this->query('page', 1),
             'pageSize' => $this->query('pageSize', 20),
             'search' => $this->query('search', $this->query('q', '')),
-            'status' => $this->query('status', ''),
+            'status' => $this->query('status', $this->query('life_status', $this->query('lifeStatus', ''))),
+            'lifeStatus' => $this->query('lifeStatus', $this->query('life_status', $this->query('status', ''))),
             'presenceStatus' => $this->query('presenceStatus', $this->query('presence_status', '')),
             'residencyStatus' => $this->query('residencyStatus', $this->query('residency_status', '')),
             'householdId' => $this->query('householdId', $this->query('householdCode', '')),
@@ -156,6 +161,7 @@ final class PersonController extends BaseController
             'workplace' => $this->query('workplace', ''),
             'nationality' => $this->query('nationality', ''),
             'bloodType' => $this->query('bloodType', $this->query('blood_type', '')),
+            'includeHistorical' => $this->query('includeHistorical', $this->query('include_historical', '')),
         ];
 
         foreach (self::FLAG_FILTERS as $field => $aliases) {

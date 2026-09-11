@@ -57,7 +57,7 @@ final class HouseholdBusinessController extends BaseController
     {
         $this->requirePermission('household_business', 'read');
         $row = $this->businesses->find((int) $id);
-        if (!$row) $this->fail('Khong tim thay thong tin ho san xuat/kinh doanh', 404);
+        if (!$row) $this->fail('Không tìm thấy thông tin hộ sản xuất/kinh doanh', 404);
         $row['members'] = $this->businesses->members((int) $row['household_id']);
         $row['files'] = $this->businesses->files((int) $row['id']);
         $this->ok($row);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\BaseModel;
+use RuntimeException;
 
 final class HouseholdBusiness extends BaseModel
 {
@@ -24,70 +25,48 @@ final class HouseholdBusiness extends BaseModel
 
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS household_business (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  household_id BIGINT UNSIGNED NOT NULL,
-  business_type ENUM('RESIDENT','PRODUCTION','BUSINESS','BOTH') NOT NULL DEFAULT 'RESIDENT',
-  business_name VARCHAR(255) NULL,
-  owner_name VARCHAR(255) NULL,
-  production_sector VARCHAR(255) NULL,
-  business_sector VARCHAR(255) NULL,
-  business_license VARCHAR(100) NULL,
-  license_date DATE NULL,
-  license_place VARCHAR(255) NULL,
-  tax_code VARCHAR(50) NULL,
-  start_date DATE NULL,
-  worker_count INT UNSIGNED NOT NULL DEFAULT 0,
-  annual_revenue DECIMAL(18,2) NULL,
-  phone VARCHAR(30) NULL,
-  email VARCHAR(150) NULL,
-  address VARCHAR(500) NULL,
-  latitude DECIMAL(10,8) NULL,
-  longitude DECIMAL(11,8) NULL,
-  gps_source ENUM('household','activity') NOT NULL DEFAULT 'household',
-  status ENUM('ACTIVE','INACTIVE','SUSPENDED','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  note TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_household_business_household (household_id),
-  KEY idx_household_business_type (business_type),
-  KEY idx_household_business_status (status),
-  KEY idx_household_business_sector (production_sector, business_sector),
-  KEY idx_household_business_license (business_license),
-  KEY idx_household_business_tax (tax_code),
-  KEY idx_household_business_location (latitude, longitude),
-  CONSTRAINT fk_household_business_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $columns = [
-            'economic_type' => 'VARCHAR(120) NULL AFTER business_type',
-            'main_products' => 'TEXT NULL AFTER economic_type',
-            'business_scale' => 'VARCHAR(120) NULL AFTER main_products',
-            'is_ocop' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER business_scale',
-            'ocop_product' => 'VARCHAR(255) NULL AFTER is_ocop',
-            'ocop_star' => 'TINYINT UNSIGNED NULL AFTER ocop_product',
-            'food_safety_certified' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER ocop_star',
-            'food_safety_certificate_no' => 'VARCHAR(120) NULL AFTER food_safety_certified',
-            'food_safety_expired_date' => 'DATE NULL AFTER food_safety_certificate_no',
-            'social_insurance' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER food_safety_expired_date',
-            'insured_workers' => 'INT UNSIGNED NOT NULL DEFAULT 0 AFTER social_insurance',
-            'gps_source' => 'ENUM("household","activity") NOT NULL DEFAULT "household" AFTER longitude',
-        ];
-        foreach ($columns as $column => $definition) {
-            if (!$this->columnExists('household_business', $column)) {
-                $this->execute("ALTER TABLE household_business ADD COLUMN $column $definition");
+        $this->assertSchemaReady();
+    }
+
+    private function assertSchemaReady(): void
+    {
+        $requiredColumns = $this->requiredColumns();
+        foreach (array_keys($requiredColumns) as $table) {
+            if (!$this->tableExists($table)) {
+                throw new RuntimeException('Household Business schema is not provisioned: missing table ' . $table);
             }
         }
-        $this->createIndexIfMissing('household_business', 'idx_household_business_household', 'household_id');
-        $this->dropIndexIfExists('household_business', 'uq_household_business_household');
-        $this->execute('CREATE TABLE IF NOT EXISTS household_business_catalogs (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, catalog_type VARCHAR(50) NOT NULL, value VARCHAR(150) NOT NULL, label VARCHAR(150) NOT NULL, sort_order INT UNSIGNED NOT NULL DEFAULT 0, status ENUM("ACTIVE","INACTIVE") NOT NULL DEFAULT "ACTIVE", created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_hb_catalog (catalog_type, value), KEY idx_hb_catalog_type (catalog_type, status, sort_order)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
-        $this->execute('CREATE TABLE IF NOT EXISTS household_business_files (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, household_business_id BIGINT UNSIGNED NOT NULL, file_kind ENUM("IMAGE","DOCUMENT") NOT NULL, category VARCHAR(120) NOT NULL, original_name VARCHAR(255) NOT NULL, stored_name VARCHAR(255) NOT NULL, file_path VARCHAR(500) NOT NULL, mime_type VARCHAR(120) NOT NULL, file_size BIGINT UNSIGNED NOT NULL DEFAULT 0, status ENUM("ACTIVE","DELETED") NOT NULL DEFAULT "ACTIVE", created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, created_by BIGINT UNSIGNED NULL, deleted_at DATETIME NULL, deleted_by BIGINT UNSIGNED NULL, KEY idx_hb_files_business (household_business_id, status, file_kind), KEY idx_hb_files_category (category), CONSTRAINT fk_hb_files_business FOREIGN KEY (household_business_id) REFERENCES household_business(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
-        $this->seedCatalogs();
+
+        foreach ($requiredColumns as $table => $columns) {
+            $missing = array_values(array_filter($columns, fn(string $column): bool => !$this->columnExists($table, $column)));
+            if ($missing !== []) {
+                throw new RuntimeException('Household Business schema is not provisioned: missing columns ' . $table . '.' . implode(', ' . $table . '.', $missing));
+            }
+        }
+
+        $contractDrift = $this->columnContractDrift();
+        if ($contractDrift !== []) {
+            throw new RuntimeException('Household Business schema is not provisioned: column contract drift ' . implode('; ', $contractDrift));
+        }
+
+        foreach ($this->requiredIndexes() as $table => $indexes) {
+            $missing = array_values(array_filter($indexes, fn(string $index): bool => !$this->indexExists($table, $index)));
+            if ($missing !== []) {
+                throw new RuntimeException('Household Business schema is not provisioned: missing indexes ' . $table . '.' . implode(', ' . $table . '.', $missing));
+            }
+        }
+
+        if (!$this->foreignKeyExists('household_business', 'fk_household_business_household', 'household_id', 'households', 'id')) {
+            throw new RuntimeException('Household Business schema is not provisioned: missing foreign key fk_household_business_household');
+        }
+        if (!$this->foreignKeyExists('household_business_files', 'fk_hb_files_business', 'household_business_id', 'household_business', 'id')) {
+            throw new RuntimeException('Household Business schema is not provisioned: missing foreign key fk_hb_files_business');
+        }
+
+        $catalogDrift = $this->catalogReadinessDrift();
+        if ($catalogDrift !== []) {
+            throw new RuntimeException('Household Business catalogs are not provisioned: ' . implode('; ', $catalogDrift));
+        }
     }
 
     public function catalogs(): array
@@ -300,7 +279,9 @@ SQL);
         $insertParams['created_by'] = $userId;
         $insertParams['updated_by'] = $userId;
         unset($insertParams['user']);
-        $insertSql = 'INSERT INTO household_business (household_id,business_type,economic_type,main_products,business_scale,is_ocop,ocop_product,ocop_star,food_safety_certified,food_safety_certificate_no,food_safety_expired_date,social_insurance,insured_workers,business_name,owner_name,production_sector,business_sector,business_license,license_date,license_place,tax_code,start_date,worker_count,annual_revenue,phone,email,address,latitude,longitude,gps_source,status,note,created_by,updated_by) VALUES (:household_id,:business_type,:economic_type,:main_products,:business_scale,:is_ocop,:ocop_product,:ocop_star,:food_safety_certified,:food_safety_certificate_no,:food_safety_expired_date,:social_insurance,:insured_workers,:business_name,:owner_name,:production_sector,:business_sector,:business_license,:license_date,:license_place,:tax_code,:start_date,:worker_count,:annual_revenue,:phone,:email,:address,:latitude,:longitude,:gps_source,:status,:note,:created_by,:updated_by)';
+        $columns = ['household_id','business_type','economic_type','main_products','business_scale','is_ocop','ocop_product','ocop_star','food_safety_certified','food_safety_certificate_no','food_safety_expired_date','social_insurance','insured_workers','business_name','owner_name','production_sector','business_sector','business_license','license_date','license_place','tax_code','start_date','worker_count','annual_revenue','phone','email','address','latitude','longitude','gps_source','status','note','created_by','updated_by'];
+        $this->addTenantInsert('household_business', $columns, $insertParams);
+        $insertSql = 'INSERT INTO household_business (' . implode(',', $columns) . ') VALUES (:' . implode(',:', $columns) . ')';
         $this->debugSql('household_business.insert', $insertSql, $insertParams);
         $newId = $this->insert($insertSql, $insertParams);
         return $this->find($newId);
@@ -318,7 +299,7 @@ SQL);
 
     public function members(int $householdId): array
     {
-        return $this->fetchAll('SELECT p.id, p.citizen_code, p.full_name, p.relationship, p.gender, p.date_of_birth, p.identity_number, p.phone, p.residency_status, p.presence_status FROM citizens p WHERE p.household_id = :id AND p.status <> "DELETED" ORDER BY CASE WHEN p.relationship = "Chủ hộ" THEN 0 ELSE 1 END, p.full_name', ['id' => $householdId]);
+        return $this->fetchAll('SELECT p.id, p.citizen_code, p.full_name, p.relationship, p.gender, p.date_of_birth, p.identity_number, p.phone, p.residency_status, p.presence_status FROM citizens p WHERE p.household_id = :id AND ' . (new PopulationStatistics())->currentCitizenCondition('p') . ' ORDER BY CASE WHEN p.relationship = "' . \App\Policies\HouseholdRelationPolicy::HEAD . '" THEN 0 ELSE 1 END, p.full_name', ['id' => $householdId]);
     }
 
     public function dashboard(array $filters = []): array
@@ -617,30 +598,137 @@ SQL);
         ];
     }
 
-    private function dropIndexIfExists(string $table, string $index): void
+    private function tableExists(string $table): bool
     {
-        if (!$this->indexExists($table, $index)) return;
-        try {
-            $this->execute('ALTER TABLE ' . $table . ' DROP INDEX ' . $index);
-        } catch (\Throwable $e) {
-            error_log('[HOUSEHOLD_BUSINESS_INDEX_WARNING] ' . $e->getMessage());
-        }
-    }
-
-    private function createIndexIfMissing(string $table, string $index, string $columns): void
-    {
-        if ($this->indexExists($table, $index)) return;
-        try {
-            $this->execute('ALTER TABLE ' . $table . ' ADD INDEX ' . $index . ' (' . $columns . ')');
-        } catch (\Throwable $e) {
-            error_log('[HOUSEHOLD_BUSINESS_INDEX_WARNING] ' . $e->getMessage());
-        }
+        $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table', ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
     }
 
     private function indexExists(string $table, string $index): bool
     {
         $row = $this->fetchOne('SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index', ['table' => $table, 'index' => $index]);
         return (int) ($row['total'] ?? 0) > 0;
+    }
+
+    private function foreignKeyExists(string $table, string $constraint, string $column, string $referencedTable, string $referencedColumn): bool
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint_name AND COLUMN_NAME = :column_name AND REFERENCED_TABLE_NAME = :referenced_table AND REFERENCED_COLUMN_NAME = :referenced_column',
+            ['table' => $table, 'constraint_name' => $constraint, 'column_name' => $column, 'referenced_table' => $referencedTable, 'referenced_column' => $referencedColumn]
+        );
+        return (int) ($row['total'] ?? 0) > 0;
+    }
+
+    private function requiredColumns(): array
+    {
+        return [
+            'household_business' => [
+                'id','village_id','household_id','business_type','economic_type','main_products','business_scale','is_ocop','ocop_product','ocop_star',
+                'food_safety_certified','food_safety_certificate_no','food_safety_expired_date','social_insurance','insured_workers',
+                'business_name','owner_name','production_sector','business_sector','business_license','license_date','license_place','tax_code','start_date',
+                'worker_count','annual_revenue','phone','email','address','latitude','longitude','gps_source','status','note',
+                'created_at','updated_at','created_by','updated_by','deleted_at','deleted_by',
+            ],
+            'household_business_catalogs' => ['id','catalog_type','value','label','sort_order','status','created_at','updated_at'],
+            'household_business_files' => ['id','household_business_id','file_kind','category','original_name','stored_name','file_path','mime_type','file_size','status','created_at','created_by','deleted_at','deleted_by'],
+        ];
+    }
+
+    private function requiredIndexes(): array
+    {
+        return [
+            'household_business' => ['PRIMARY','idx_household_business_household','idx_household_business_type','idx_household_business_status','idx_household_business_sector','idx_household_business_license','idx_household_business_tax','idx_household_business_location','idx_household_business_village'],
+            'household_business_catalogs' => ['PRIMARY','uq_hb_catalog','idx_hb_catalog_type'],
+            'household_business_files' => ['PRIMARY','idx_hb_files_business','idx_hb_files_category'],
+        ];
+    }
+
+    private function columnContractDrift(): array
+    {
+        $contracts = [
+            'household_business' => [
+                'village_id' => ['bigint unsigned', 'NO', null],
+                'household_id' => ['bigint unsigned', 'NO', null],
+                'business_type' => ["enum('RESIDENT','PRODUCTION','BUSINESS','BOTH')", 'NO', 'RESIDENT'],
+                'economic_type' => ['varchar(120)', 'YES', null],
+                'main_products' => ['text', 'YES', null],
+                'business_scale' => ['varchar(120)', 'YES', null],
+                'is_ocop' => ['tinyint(1)', 'NO', '0'],
+                'ocop_star' => ['tinyint unsigned', 'YES', null],
+                'food_safety_certified' => ['tinyint(1)', 'NO', '0'],
+                'social_insurance' => ['tinyint(1)', 'NO', '0'],
+                'insured_workers' => ['int unsigned', 'NO', '0'],
+                'worker_count' => ['int unsigned', 'NO', '0'],
+                'annual_revenue' => ['decimal(18,2)', 'YES', null],
+                'latitude' => ['decimal(10,8)', 'YES', null],
+                'longitude' => ['decimal(11,8)', 'YES', null],
+                'gps_source' => ["enum('household','activity')", 'NO', 'household'],
+                'status' => ["enum('ACTIVE','INACTIVE','SUSPENDED','DELETED')", 'NO', 'ACTIVE'],
+            ],
+            'household_business_catalogs' => [
+                'catalog_type' => ['varchar(50)', 'NO', null],
+                'value' => ['varchar(150)', 'NO', null],
+                'label' => ['varchar(150)', 'NO', null],
+                'sort_order' => ['int unsigned', 'NO', '0'],
+                'status' => ["enum('ACTIVE','INACTIVE')", 'NO', 'ACTIVE'],
+            ],
+            'household_business_files' => [
+                'household_business_id' => ['bigint unsigned', 'NO', null],
+                'file_kind' => ["enum('IMAGE','DOCUMENT')", 'NO', null],
+                'file_size' => ['bigint unsigned', 'NO', '0'],
+                'status' => ["enum('ACTIVE','DELETED')", 'NO', 'ACTIVE'],
+            ],
+        ];
+        $drift = [];
+        foreach ($contracts as $table => $columns) {
+            foreach ($columns as $column => [$type, $nullable, $default]) {
+                $row = $this->fetchOne(
+                    'SELECT COLUMN_TYPE AS column_type, IS_NULLABLE AS is_nullable, COLUMN_DEFAULT AS column_default FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column',
+                    ['table' => $table, 'column' => $column]
+                );
+                if (!$row) {
+                    $drift[] = "$table.$column missing";
+                    continue;
+                }
+                $actualType = $this->normalizeColumnType((string) $row['column_type']);
+                $actualNullable = (string) $row['is_nullable'];
+                $actualDefault = $row['column_default'] === null ? null : trim((string) $row['column_default'], "'");
+                if ($actualDefault === 'NULL') {
+                    $actualDefault = null;
+                }
+                if ($actualType !== $this->normalizeColumnType($type) || $actualNullable !== $nullable || $actualDefault !== $default) {
+                    $drift[] = "$table.$column";
+                }
+            }
+        }
+        return $drift;
+    }
+
+    private function normalizeColumnType(string $type): string
+    {
+        $normalized = strtolower(trim($type));
+        return preg_replace('/\b(tinyint|smallint|mediumint|int|bigint)\(\d+\)/', '$1', $normalized) ?? $normalized;
+    }
+
+    private function catalogReadinessDrift(): array
+    {
+        $drift = [];
+        foreach (self::CATALOGS as $type => $values) {
+            foreach ($values as $index => $label) {
+                $row = $this->fetchOne(
+                    'SELECT label, sort_order, status FROM household_business_catalogs WHERE catalog_type=:type AND value=:value',
+                    ['type' => $type, 'value' => $label]
+                );
+                if (!$row) {
+                    $drift[] = "missing $type:$label";
+                    continue;
+                }
+                if ((string) $row['label'] !== $label || (int) $row['sort_order'] !== $index + 1 || (string) $row['status'] !== 'ACTIVE') {
+                    $drift[] = "conflict $type:$label";
+                }
+            }
+        }
+        return $drift;
     }
 
     private function householdSummaryReport(array $filters): array
@@ -783,11 +871,6 @@ SQL);
     private function normalizeFile(array $row): array
     {
         return ['id' => (int) $row['id'], 'household_business_id' => (int) $row['household_business_id'], 'file_kind' => (string) $row['file_kind'], 'category' => (string) $row['category'], 'original_name' => (string) $row['original_name'], 'stored_name' => (string) $row['stored_name'], 'file_path' => (string) $row['file_path'], 'mime_type' => (string) $row['mime_type'], 'file_size' => (int) $row['file_size'], 'created_at' => $row['created_at'] ?? null, 'created_by' => isset($row['created_by']) ? (int) $row['created_by'] : null, 'uploaded_by' => (string) ($row['uploaded_by_name'] ?? $row['uploaded_by_email'] ?? '')];
-    }
-
-    private function seedCatalogs(): void
-    {
-        foreach (self::CATALOGS as $type => $values) foreach ($values as $index => $label) $this->execute('INSERT IGNORE INTO household_business_catalogs (catalog_type,value,label,sort_order) VALUES (:type,:value,:label,:sort)', ['type' => $type, 'value' => $label, 'label' => $label, 'sort' => $index + 1]);
     }
 
     private function catalogValue(string $type, mixed $value): ?string

@@ -351,7 +351,7 @@ final class ControlCenterUserRepository
 
         $tableExists = (bool) $pdo->query("SHOW TABLES LIKE 'villages'")->fetchColumn();
         if (!$tableExists) {
-            throw new \RuntimeException('Tenant database thi?u b?ng villages');
+            throw new \RuntimeException('Tenant database thiếu bảng villages');
         }
 
         $columns = $pdo->query('SHOW COLUMNS FROM villages')->fetchAll(PDO::FETCH_COLUMN) ?: [];
@@ -406,7 +406,7 @@ final class ControlCenterUserRepository
             }
         }
         if (!in_array('name', $insertColumns, true) || !in_array('code', $insertColumns, true)) {
-            throw new \RuntimeException('Kh?ng x?c ??nh ???c village local c?a tenant');
+            throw new \RuntimeException('Không xác định được village local của tenant');
         }
 
         $sql = 'INSERT INTO villages (' . implode(',', $insertColumns) . ') VALUES (:' . implode(',:', $insertColumns) . ')';

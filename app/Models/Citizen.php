@@ -8,12 +8,14 @@ use App\Models\PolicyAlert;
 use App\Policies\AgePolicy;
 use App\Policies\HouseholdRelationPolicy;
 use App\Policies\InsurancePolicy;
+use App\Services\HealthInsuranceEligibilityService;
 use App\Services\StudentStatusService;
 
 final class Citizen extends BaseModel
 {
     private bool $healthInsuranceSchemaEnsured = false;
     private ?PopulationStatistics $statistics = null;
+    private ?HealthInsuranceEligibilityService $healthInsuranceEligibility = null;
     private const POLITICAL_FIELDS = [
         'party_member' => 'Đảng viên',
         'youth_union_member' => 'Đoàn viên Thanh niên',
@@ -106,6 +108,56 @@ final class Citizen extends BaseModel
         return $this->fetchOne('SELECT c.*, h.household_code, h.address AS household_address, h.head_citizen_name, COALESCE(v.total_members,0) AS member_count_real, COALESCE(v.at_home_count,0) AS at_home_count, COALESCE(v.away_count,0) AS away_count, NULL AS birth_place, NULL AS hometown, NULL AS workplace, NULL AS note, NULL AS photo_url, NULLIF(c.father_name, "") AS father_display_name, NULLIF(c.mother_name, "") AS mother_display_name FROM citizens c INNER JOIN households h ON h.id=c.household_id LEFT JOIN v_household_member_counts v ON v.household_id=h.id WHERE c.id=:id AND c.status <> "DELETED" AND ' . $this->tenantWhere('c', 'citizens'), $this->withTenant(['id' => $id]));
     }
 
+    public function relationshipReview(array $filters = []): array
+    {
+        [$page, $pageSize, $offset] = $this->page((int) ($filters['page'] ?? 1), (int) ($filters['pageSize'] ?? 50));
+        $unresolved = HouseholdRelationPolicy::unresolvedRelationships();
+        $placeholders = $this->quotedRelationshipList($unresolved);
+        $currentCitizen = $this->statistics()->currentCitizenCondition('c');
+        $currentMember = $this->statistics()->currentCitizenCondition('cm');
+        $householdCondition = $this->statistics()->householdCondition('h');
+        $where = ["c.relationship IN ($placeholders)", $currentCitizen, $householdCondition, $this->tenantWhere('c', 'citizens'), $this->tenantWhere('h', 'households')];
+        $params = $this->withTenant();
+        $priority = strtoupper((string) ($filters['priority'] ?? $filters['filter'] ?? 'ALL'));
+        if ($priority === 'TWO_MEMBER_HOUSEHOLD') { $where[] = 'COALESCE(mc.current_member_count,0) = 2'; }
+        elseif ($priority === 'ELDERLY_TWO_MEMBER_HOUSEHOLD') { $where[] = 'COALESCE(mc.current_member_count,0) = 2 AND COALESCE(mc.elderly_member_count,0) = 2'; }
+        elseif ($priority === 'MULTI_MEMBER_HOUSEHOLD') { $where[] = 'COALESCE(mc.current_member_count,0) <> 2'; }
+        elseif ($priority === 'HEAD_KNOWN') { $where[] = 'h.head_citizen_id IS NOT NULL'; }
+        elseif ($priority === 'HEAD_NEEDS_REVIEW') { $where[] = 'h.head_citizen_id IS NULL'; }
+        $sqlWhere = 'WHERE ' . implode(' AND ', $where);
+        $memberSubquery = "SELECT cm.household_id, COUNT(*) AS current_member_count, SUM(CASE WHEN cm.date_of_birth IS NOT NULL AND cm.date_of_birth <= DATE_SUB(CURDATE(), INTERVAL 60 YEAR) THEN 1 ELSE 0 END) AS elderly_member_count FROM citizens cm WHERE $currentMember AND " . $this->tenantWhere('cm', 'citizens') . ' GROUP BY cm.household_id';
+        $baseSql = "FROM citizens c INNER JOIN households h ON h.id = c.household_id LEFT JOIN ($memberSubquery) mc ON mc.household_id = h.id $sqlWhere";
+        $total = (int) ($this->fetchOne("SELECT COUNT(*) AS total $baseSql", $params)['total'] ?? 0);
+        $priorityRows = $this->fetchAll("SELECT COALESCE(mc.current_member_count,0) AS members, COALESCE(mc.elderly_member_count,0) AS elderly, COUNT(*) AS total $baseSql GROUP BY members, elderly", $params);
+        $priorities = ['all' => $total, 'two_member_household' => 0, 'elderly_two_member_household' => 0, 'multi_member_household' => 0, 'head_known' => 0, 'head_needs_review' => 0];
+        foreach ($priorityRows as $row) { $count = (int) $row['total']; $members = (int) $row['members']; $elderly = (int) $row['elderly']; if ($members === 2) $priorities['two_member_household'] += $count; if ($members === 2 && $elderly === 2) $priorities['elderly_two_member_household'] += $count; if ($members !== 2) $priorities['multi_member_household'] += $count; }
+        $headRows = $this->fetchAll("SELECT CASE WHEN h.head_citizen_id IS NULL THEN 'head_needs_review' ELSE 'head_known' END AS head_state, COUNT(*) AS total $baseSql GROUP BY head_state", $params);
+        foreach ($headRows as $row) $priorities[(string) $row['head_state']] = (int) $row['total'];
+        $items = $this->fetchAll("SELECT c.id, c.citizen_code, c.household_id, c.full_name, c.gender, c.date_of_birth, c.relationship, c.life_status, c.residency_status, c.presence_status, c.status, h.household_code, h.head_citizen_id, h.head_citizen_name, COALESCE(mc.current_member_count,0) AS current_member_count, COALESCE(mc.elderly_member_count,0) AS elderly_member_count $baseSql ORDER BY h.household_code, c.full_name LIMIT $pageSize OFFSET $offset", $params);
+        $groups = [];
+        foreach ($items as $item) { $key = (string) $item['household_id']; if (!isset($groups[$key])) { $groups[$key] = ['household_id' => (int) $item['household_id'], 'household_code' => $item['household_code'], 'head_citizen_id' => $item['head_citizen_id'] !== null ? (int) $item['head_citizen_id'] : null, 'head_citizen_name' => $item['head_citizen_name'], 'current_member_count' => (int) $item['current_member_count'], 'elderly_member_count' => (int) $item['elderly_member_count'], 'priority' => $this->relationshipReviewPriority($item), 'citizens' => []]; } $groups[$key]['citizens'][] = $item; }
+        return ['items' => $items, 'total' => $total, 'page' => $page, 'pageSize' => $pageSize, 'priorities' => $priorities, 'groups' => array_values($groups), 'relationshipOptions' => HouseholdRelationPolicy::standardRelationships(), 'unresolvedRelationships' => $unresolved];
+    }
+
+    public function relationshipReviewCitizen(int $id): ?array { return $this->findCurrentForRelationshipReview($id); }
+
+    public function confirmRelationship(int $id, string $relationship, int $userId): array
+    {
+        $before = $this->findCurrentForRelationshipReview($id);
+        if (!$before) throw new \RuntimeException('CITIZEN_NOT_CURRENT');
+        if (!HouseholdRelationPolicy::isCanonicalRelationship($relationship)) throw new \RuntimeException('INVALID_RELATIONSHIP_OPTION');
+        $normalized = HouseholdRelationPolicy::normalizeRelationship($relationship, $before['gender'] ?? null);
+        $this->ensureRelationshipReviewHeadGuard($before, $normalized);
+        if (!HouseholdRelationPolicy::isUnresolved($before['relationship'] ?? '')) throw new \RuntimeException('RELATIONSHIP_ALREADY_RESOLVED');
+        $this->execute('UPDATE citizens SET relationship = :relationship, updated_by = :user WHERE id = :id AND ' . $this->tenantWhere('citizens'), $this->withTenant(['relationship' => $normalized, 'user' => $userId, 'id' => $id]));
+        $this->syncHouseholdHead((int) $before['household_id']);
+        return $this->findCurrentForRelationshipReview((int) $id) ?: ['id' => $id, 'relationship' => $normalized];
+    }
+
+    private function findCurrentForRelationshipReview(int $id): ?array
+    {
+        return $this->fetchOne('SELECT c.*, h.household_code, h.head_citizen_id, h.head_citizen_name FROM citizens c INNER JOIN households h ON h.id = c.household_id WHERE c.id = :id AND ' . $this->statistics()->currentCitizenCondition('c') . ' AND ' . $this->statistics()->householdCondition('h') . ' AND ' . $this->tenantWhere('c', 'citizens') . ' AND ' . $this->tenantWhere('h', 'households'), $this->withTenant(['id' => $id]));
+    }
     public function create(array $data, int $userId): array
     {
         $this->ensureHealthInsuranceSchema();
@@ -121,6 +173,7 @@ final class Citizen extends BaseModel
         if (in_array('village_id', $columns, true)) $values[] = ':village_id';
         $id = $this->insert('INSERT INTO citizens (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')', $params);
         $this->syncHouseholdHead((int) $params['household_id']);
+        $this->syncHealthInsuranceEligibility($id, $userId);
         return $this->find($id);
     }
 
@@ -139,6 +192,7 @@ final class Citizen extends BaseModel
         $this->execute('UPDATE citizens SET ' . implode(',', $sets) . ' WHERE id=:id AND ' . $this->tenantWhere('citizens'), $this->withTenant($params));
         $this->syncHouseholdHead((int) $before['household_id']);
         $this->syncHouseholdHead((int) $params['household_id']);
+        $this->syncHealthInsuranceEligibility($id, $userId);
         return $this->find($id);
     }
 
@@ -177,13 +231,18 @@ final class Citizen extends BaseModel
     private function where(array $filters): array
     {
         $isTemporaryAbsence = ($filters['presenceStatus'] ?? '') === 'AWAY';
+        $isMovedOut = ($filters['presenceStatus'] ?? '') === 'MOVED_OUT' || ($filters['residencyStatus'] ?? '') === 'TRANSFERRED_OUT';
+        $lifeStatus = strtoupper(trim((string) ($filters['status'] ?? $filters['lifeStatus'] ?? $filters['life_status'] ?? '')));
+        $includeHistorical = $this->boolValue($filters['includeHistorical'] ?? $filters['include_historical'] ?? 0) === 1 || $lifeStatus === 'DECEASED';
         $where = $isTemporaryAbsence
             ? [$this->statistics()->temporaryAbsenceCitizenCondition('c'), $this->statistics()->temporaryAbsenceHouseholdCondition('h')]
-            : [$this->statistics()->citizenCondition('c'), $this->statistics()->householdCondition('h')];
+            : ($isMovedOut || $includeHistorical
+                ? [$this->statistics()->historicalCitizenCondition('c'), $this->statistics()->historicalHouseholdCondition('h')]
+                : [$this->statistics()->citizenCondition('c'), $this->statistics()->householdCondition('h')]);
         $params = $this->withTenant();
         $where[] = $this->tenantWhere('c', 'citizens');
         $where[] = $this->tenantWhere('h', 'households');
-        if (!empty($filters['status'])) { $where[] = 'c.life_status = :life_status'; $params['life_status'] = $filters['status']; }
+        if ($lifeStatus !== '') { $where[] = 'c.life_status = :life_status'; $params['life_status'] = $lifeStatus; }
         if (!empty($filters['presenceStatus']) && !$isTemporaryAbsence) { $where[] = 'c.presence_status = :presence_status'; $params['presence_status'] = $filters['presenceStatus']; }
         if (!empty($filters['residencyStatus'])) { $where[] = 'c.residency_status = :residency_status'; $params['residency_status'] = $filters['residencyStatus']; }
         if (!empty($filters['householdId'])) { $where[] = '(h.household_code = :household OR c.household_id = :household_id)'; $params['household'] = $filters['householdId']; $params['household_id'] = (int) $filters['householdId']; }
@@ -285,9 +344,16 @@ final class Citizen extends BaseModel
         }
         foreach ($this->activeExtendedColumns() as $column) {
             $camel = $this->camel($column);
+            $updatedSocialAssistanceDefault = $column === 'social_assistance'
+                && $fallback !== null
+                && !$this->fieldProvided($data, $column)
+                && $this->fieldProvided($data, 'date_of_birth')
+                && AgePolicy::eligibleForSocialSupport(AgePolicy::ageFromDate((string) $dob));
             $params[$column] = $this->fieldProvided($data, $column)
                 ? $this->boolValue($data[$column] ?? $data[$camel] ?? 0)
-                : $this->boolValue($fallback[$column] ?? $ageDefaults[$column] ?? 0);
+                : ($updatedSocialAssistanceDefault
+                    ? 1
+                    : $this->boolValue($fallback[$column] ?? $ageDefaults[$column] ?? 0));
         }
         $this->applyHealthInsuranceParams($params, $data, $fallback, $params['occupation'] ?? null);
         return $params;
@@ -305,6 +371,11 @@ final class Citizen extends BaseModel
         return $this->statistics ??= new PopulationStatistics();
     }
 
+    private function healthInsuranceEligibility(): HealthInsuranceEligibilityService
+    {
+        return $this->healthInsuranceEligibility ??= new HealthInsuranceEligibilityService();
+    }
+
     private function activeHealthInsuranceColumns(): array
     {
         return $this->healthInsuranceSchemaEnsured ? self::HEALTH_INSURANCE_DETAIL_COLUMNS : $this->existingColumns('citizens', self::HEALTH_INSURANCE_DETAIL_COLUMNS);
@@ -313,7 +384,39 @@ final class Citizen extends BaseModel
     public function ensureHealthInsuranceSchema(): void
     {
         if ($this->healthInsuranceSchemaEnsured) return;
-        $columns = [
+        $missing = [];
+        foreach ($this->healthInsuranceSchemaColumns() as $column => $_definition) {
+            if (!$this->columnExists('citizens', $column)) {
+                $missing[] = $column;
+            }
+        }
+        if ($missing) {
+            throw new \RuntimeException('CITIZEN_HEALTH_INSURANCE_SCHEMA_MISSING: ' . implode(',', $missing));
+        }
+        $this->healthInsuranceSchemaEnsured = true;
+    }
+
+    public function ensureHealthInsuranceSchemaForMaintenance(): void
+    {
+        if ($this->healthInsuranceSchemaEnsured) return;
+        foreach ($this->healthInsuranceSchemaColumns() as $column => $definition) {
+            if (!$this->columnExists('citizens', $column)) {
+                $this->execute('ALTER TABLE citizens ADD COLUMN ' . $column . ' ' . $definition);
+            }
+        }
+        if ($this->columnExists('citizens', 'has_health_insurance')) {
+            $this->execute('ALTER TABLE citizens MODIFY COLUMN has_health_insurance TINYINT(1) NOT NULL DEFAULT 1');
+            $this->backfillDefaultHealthInsuranceEligibility();
+        }
+        $this->backfillDefaultStudentLaborEligibility();
+        $this->backfillDefaultSocialAssistanceEligibility();
+        $this->createHealthInsuranceIndexIfMissing();
+        $this->healthInsuranceSchemaEnsured = true;
+    }
+
+    private function healthInsuranceSchemaColumns(): array
+    {
+        return [
             'father_name' => 'VARCHAR(255) NULL',
             'mother_name' => 'VARCHAR(255) NULL',
             'not_attending_school' => 'TINYINT(1) NOT NULL DEFAULT 0',
@@ -324,16 +427,52 @@ final class Citizen extends BaseModel
             'health_insurance_end_date' => 'DATE NULL',
             'health_insurance_facility' => 'VARCHAR(255) NULL',
         ];
-        foreach ($columns as $column => $definition) {
-            if (!$this->columnExists('citizens', $column)) {
-                $this->execute('ALTER TABLE citizens ADD COLUMN ' . $column . ' ' . $definition);
-            }
+    }
+
+    private function backfillDefaultHealthInsuranceEligibility(): void
+    {
+        if (!$this->columnExists('citizens', 'date_of_birth')) return;
+        $this->execute(
+            'UPDATE citizens SET has_health_insurance=1 WHERE status <> "DELETED" AND date_of_birth IS NOT NULL AND COALESCE(has_health_insurance,0)=0 AND ' . InsurancePolicy::defaultEligibilitySql('citizens')
+        );
+    }
+
+    private function backfillDefaultStudentLaborEligibility(): void
+    {
+        $required = ['date_of_birth', 'occupation', 'not_attending_school', 'pupil', 'student', 'employed', 'unemployed'];
+        foreach ($required as $column) {
+            if (!$this->columnExists('citizens', $column)) return;
         }
-        if ($this->columnExists('citizens', 'has_health_insurance')) {
-            $this->execute('ALTER TABLE citizens MODIFY COLUMN has_health_insurance TINYINT(1) NOT NULL DEFAULT 1');
-        }
-        $this->createHealthInsuranceIndexIfMissing();
-        $this->healthInsuranceSchemaEnsured = true;
+        $studentCondition = StudentStatusService::studentSql('citizens');
+        $this->execute(
+            'UPDATE citizens
+             SET not_attending_school=0,
+                 pupil=1,
+                 student=0,
+                 employed=0,
+                 unemployed=0,
+                 occupation=:student_label
+             WHERE status <> "DELETED"
+               AND date_of_birth IS NOT NULL
+               AND ' . $studentCondition . '
+               AND (
+                    COALESCE(pupil,0)=0
+                    OR COALESCE(not_attending_school,0)<>0
+                    OR COALESCE(student,0)<>0
+                    OR COALESCE(employed,0)<>0
+                    OR COALESCE(unemployed,0)<>0
+                    OR occupation <> :student_label
+               )',
+            ['student_label' => StudentStatusService::STUDENT_LABEL]
+        );
+    }
+
+    private function backfillDefaultSocialAssistanceEligibility(): void
+    {
+        if (!$this->columnExists('citizens', 'date_of_birth') || !$this->columnExists('citizens', 'social_assistance')) return;
+        $this->execute(
+            'UPDATE citizens SET social_assistance=1 WHERE status <> "DELETED" AND date_of_birth IS NOT NULL AND COALESCE(social_assistance,0)=0 AND ' . AgePolicy::ageSql('citizens') . ' >= ' . CitizenPolicyDefaults::SOCIAL_ALLOWANCE_DEFAULT_AGE
+        );
     }
 
     private function createHealthInsuranceIndexIfMissing(): void
@@ -349,11 +488,15 @@ final class Citizen extends BaseModel
         $active = $this->activeHealthInsuranceColumns();
         if (!$active) return;
         $occupationDefault = InsurancePolicy::defaultForLaborOccupation($occupation);
+        $dateOfBirth = (string) ($params['dob'] ?? $data['dateOfBirth'] ?? $data['date_of_birth'] ?? $fallback['date_of_birth'] ?? '');
+        $ageDefault = InsurancePolicy::hasDefaultHealthInsuranceForDateOfBirth($dateOfBirth) ? 1 : null;
         if ($this->fieldProvided($data, 'has_health_insurance')) {
             $has = $this->boolValue($data['has_health_insurance'] ?? $data['hasHealthInsurance'] ?? $data['health_insurance'] ?? $data['healthInsurance'] ?? 0);
         } elseif ($fallback === null) {
-            $has = $this->boolValue($occupationDefault ?? 0);
+            $has = $this->boolValue($occupationDefault ?? $ageDefault ?? 0);
         } elseif ($occupationDefault === 1 && $this->occupationChanged($data, $fallback, $occupation)) {
+            $has = 1;
+        } elseif ($ageDefault === 1 && $this->fieldProvided($data, 'date_of_birth')) {
             $has = 1;
         } else {
             $has = $this->boolValue($fallback['has_health_insurance'] ?? $fallback['health_insurance'] ?? 0);
@@ -389,6 +532,7 @@ final class Citizen extends BaseModel
     }
 
     private function boolValue(mixed $value): int { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['1','true','yes','co','có','x'], true) ? 1 : 0; }
+    private function syncHealthInsuranceEligibility(int $citizenId, int $userId): void { $this->healthInsuranceEligibility()->synchronizeCitizen($citizenId, $userId); }
     private function camel(string $column): string { return preg_replace_callback('/_([a-z])/', fn($m) => strtoupper($m[1]), $column); }
     private function fieldProvided(array $data, string $column): bool
     {
@@ -456,6 +600,32 @@ final class Citizen extends BaseModel
         };
     }
 
+    private function ensureRelationshipReviewHeadGuard(array $citizen, string $relationship): void
+    {
+        $wasHead = ((int) ($citizen['head_citizen_id'] ?? 0) === (int) ($citizen['id'] ?? 0)) || HouseholdRelationPolicy::normalizeRelationship($citizen['relationship'] ?? '') === HouseholdRelationPolicy::HEAD;
+        if ($wasHead && $relationship !== HouseholdRelationPolicy::HEAD) {
+            throw new \RuntimeException('HEAD_CHANGE_REQUIRES_SEPARATE_WORKFLOW');
+        }
+        if ($relationship !== HouseholdRelationPolicy::HEAD) return;
+        $params = $this->withTenant(['household_id' => (int) $citizen['household_id'], 'id' => (int) $citizen['id'], 'head_relationship' => HouseholdRelationPolicy::HEAD]);
+        $otherHead = $this->fetchOne('SELECT id FROM citizens WHERE household_id = :household_id AND id <> :id AND relationship = :head_relationship AND ' . $this->statistics()->currentCitizenCondition('citizens') . ' AND ' . $this->tenantWhere('citizens') . ' LIMIT 1', $params);
+        if ($otherHead) throw new \RuntimeException('HEAD_CHANGE_REQUIRES_SEPARATE_WORKFLOW');
+    }
+
+    private function relationshipReviewPriority(array $row): string
+    {
+        $memberCount = (int) ($row['current_member_count'] ?? 0);
+        $elderlyCount = (int) ($row['elderly_member_count'] ?? 0);
+        if ($memberCount === 2 && $elderlyCount === 2) return 'ELDERLY_TWO_MEMBER_HOUSEHOLD';
+        if ($memberCount === 2) return 'TWO_MEMBER_HOUSEHOLD';
+        return 'MULTI_MEMBER_HOUSEHOLD';
+    }
+
+    /** @param list<string> $values */
+    private function quotedRelationshipList(array $values): string
+    {
+        return implode(',', array_map(fn (string $value): string => $this->db->quote($value), $values));
+    }
     private function addTextCategoryWhere(array &$where, array &$params, string $category): void
     {
         $label = ['escaped_poverty' => 'Hộ mới thoát nghèo', 'policy' => 'Hộ chính sách'][$category] ?? $category;
@@ -531,6 +701,11 @@ final class Citizen extends BaseModel
 
     private function relationship(mixed $value, mixed $gender = null): string { return HouseholdRelationPolicy::normalizeRelationship($value, $gender); }
     private function residency(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['temporary','temporary_residence','tạm trú','tam tru'], true) ? 'TEMPORARY' : 'PERMANENT'; }
-    private function presence(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['away','đi vắng','di vang','tam vang','tạm vắng'], true) ? 'AWAY' : 'AT_HOME'; }
+    private function presence(mixed $value): string
+    {
+        $text = mb_strtolower(trim((string) $value));
+        if (in_array($text, ['moved_out','moved out','transferred_out','transferred out','chuyển đi','da chuyen di','đã chuyển đi'], true)) return 'MOVED_OUT';
+        return in_array($text, ['away','đi vắng','di vang','tam vang','tạm vắng'], true) ? 'AWAY' : 'AT_HOME';
+    }
     private function life(mixed $value): string { $text = mb_strtolower(trim((string) $value)); return in_array($text, ['deceased','dead','đã chết','da chet'], true) ? 'DECEASED' : 'ALIVE'; }
 }

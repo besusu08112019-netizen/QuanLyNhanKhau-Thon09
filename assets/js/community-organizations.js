@@ -1,9 +1,9 @@
 (function () {
   'use strict';
-  const API = '/api/organizations';
+  const API = '/api/associations';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const state = { page: 1, pageSize: 20, search: '', organization_code: '', status: '', gender: '', area_code: '', position_id: '', age_from: '', age_to: '', joined_year: '', catalogs: null, suggestions: [], selectedCitizen: null, editingId: 0 };
+  const state = { page: 1, pageSize: 20, search: '', organization_code: '', status: '', gender: '', area_code: '', position_name: '', age_from: '', age_to: '', joined_year: '', catalogs: null, suggestions: [], selectedCitizen: null, editingId: 0, saving: false };
   let registered = false;
   let profilePatched = false;
 
@@ -16,6 +16,10 @@
     registerPlatform();
     registerActions();
     bindEvents();
+    bindCreateButtons();
+    bindDocumentCreateCapture();
+    bindDocumentSaveCapture();
+    bindDocumentActionCapture();
     if ($('#communityOrganizationsScreen')?.classList.contains('active')) load();
   }
 
@@ -27,16 +31,16 @@
   }
 
   function screenHtml() {
-    return '<section id="communityOrganizationsScreen" class="app-screen" data-screen="communityOrganizations">' +
+    return '<section id="communityOrganizationsScreen" class="screen community-organizations-screen" data-screen="communityOrganizations">' +
       '<div class="content-header d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3"><div><h1 class="h4 mb-1">Đoàn thể - Chi hội</h1><div class="text-muted small">Quản lý hội viên liên kết trực tiếp với hồ sơ nhân khẩu</div></div><div class="d-flex gap-2"><button class="btn btn-outline-secondary" data-platform-action="communityOrganizations.print"><i class="fa-solid fa-print me-1"></i> In</button><button class="btn btn-outline-success" data-platform-action="communityOrganizations.export"><i class="fa-solid fa-file-excel me-1"></i> Excel</button><button class="btn btn-primary" data-platform-action="communityOrganizations.openCreate"><i class="fa-solid fa-plus me-1"></i> Thêm thành viên</button></div></div>' +
-      '<div id="communityOrgDashboard" class="community-org-dashboard mb-3"></div><div id="communityOrgWarnings" class="mb-3"></div>' +
+      '<div id="communityOrgDashboard" class="community-org-dashboard mb-3"></div><div id="communityOrgWarnings" class="mb-3"></div><div class="content-card mb-3"><ul id="communityOrgTabs" class="nav nav-tabs" role="tablist"></ul></div>' +
       '<div class="card content-card mb-3"><div class="card-body"><div class="row g-2 align-items-end"><div class="col-lg-3 col-md-6"><label class="form-label">Tìm kiếm</label><input id="communityOrgSearch" class="form-control" placeholder="Họ tên, mã nhân khẩu, mã hộ, số thẻ"></div><div class="col-lg-2 col-md-6"><label class="form-label">Tổ chức</label><select id="communityOrgFilter" class="form-select"></select></div><div class="col-lg-2 col-md-6"><label class="form-label">Trạng thái</label><select id="communityOrgStatusFilter" class="form-select"></select></div><div class="col-lg-2 col-md-6"><label class="form-label">Khu vực</label><select id="communityOrgAreaFilter" class="form-select"></select></div><div class="col-lg-1 col-6"><label class="form-label">Từ tuổi</label><input id="communityOrgAgeFrom" class="form-control" type="number" min="0"></div><div class="col-lg-1 col-6"><label class="form-label">Đến tuổi</label><input id="communityOrgAgeTo" class="form-control" type="number" min="0"></div><div class="col-lg-1 col-12"><button class="btn btn-outline-secondary w-100" data-platform-action="communityOrganizations.reset"><i class="fa-solid fa-rotate-left"></i></button></div></div></div></div>' +
       '<div class="card content-card"><div class="card-header d-flex justify-content-between align-items-center"><div><strong>Danh sách thành viên</strong><div class="small text-muted" id="communityOrgTotal">Tổng số: 0</div></div><select id="communityOrgPageSize" class="form-select form-select-sm" style="width:auto"><option>20</option><option>50</option><option>100</option></select></div><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>STT</th><th>Họ và tên</th><th>Ngày sinh</th><th>Tuổi</th><th>Giới tính</th><th>Mã hộ</th><th>Khu vực</th><th>Tổ chức</th><th>Chức vụ</th><th>Ngày tham gia</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead><tbody id="communityOrgRows"></tbody></table></div><div class="card-footer d-flex justify-content-end gap-2" id="communityOrgPager"></div></div>' +
       modalHtml() + '</section>';
   }
 
   function modalHtml() {
-    return '<div class="modal fade" id="communityOrgModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable"><form id="communityOrgForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Thông tin đoàn thể - chi hội</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" name="citizen_id"><input type="hidden" name="id"><div class="row g-3"><div class="col-md-6 position-relative"><label class="form-label">Tìm nhân khẩu *</label><input id="communityOrgCitizenSearch" class="form-control" autocomplete="off" placeholder="Nhập họ tên, mã nhân khẩu, mã hộ, CCCD"><div id="communityOrgCitizenSuggestions" class="list-group community-org-suggestions"></div><div id="communityOrgSelectedCitizen" class="small text-muted mt-1"></div></div><div class="col-md-6"><label class="form-label">Tổ chức *</label><select name="organization_code" id="communityOrgOrgSelect" class="form-select" required></select></div><div class="col-md-6"><label class="form-label">Chức vụ</label><select name="position_id" id="communityOrgPositionSelect" class="form-select"></select></div><div class="col-md-6"><label class="form-label">Tổ/nhóm trực thuộc</label><input name="subgroup_name" class="form-control"></div><div class="col-md-4"><label class="form-label">Số thẻ</label><input name="member_number" class="form-control"></div><div class="col-md-4"><label class="form-label">Ngày tham gia</label><input name="joined_date" class="form-control" inputmode="numeric" placeholder="dd/mm/yyyy"></div><div class="col-md-4"><label class="form-label">Ngày kết thúc</label><input name="ended_date" class="form-control" inputmode="numeric" placeholder="dd/mm/yyyy"></div><div class="col-md-6"><label class="form-label">Trạng thái</label><select name="status" id="communityOrgStatusSelect" class="form-select"></select></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="3"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i> Lưu</button></div></form></div></div>' +
+    return '<div class="modal fade" id="communityOrgModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable"><form id="communityOrgForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Thông tin đoàn thể - chi hội</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" name="citizen_id"><input type="hidden" name="id"><div class="row g-3"><div class="col-md-6 position-relative"><label class="form-label">Tìm nhân khẩu *</label><input id="communityOrgCitizenSearch" class="form-control" autocomplete="off" placeholder="Nhập họ tên, mã nhân khẩu, mã hộ, CCCD"><div id="communityOrgCitizenSuggestions" class="list-group community-org-suggestions"></div><div id="communityOrgSelectedCitizen" class="small text-muted mt-1"></div></div><div class="col-md-6"><label class="form-label">Tổ chức *</label><select name="organization_code" id="communityOrgOrgSelect" class="form-select" required></select></div><div class="col-md-6"><label class="form-label">Chức vụ</label><select name="position_name" id="communityOrgPositionSelect" class="form-select"></select></div><div class="col-md-6"><label class="form-label">Tổ/nhóm trực thuộc</label><input name="subgroup_name" class="form-control"></div><div class="col-md-4"><label class="form-label">Số thẻ</label><input name="member_number" class="form-control"></div><div class="col-md-4"><label class="form-label">Ngày tham gia</label><input name="joined_date" class="form-control" inputmode="numeric" placeholder="dd/mm/yyyy"></div><div class="col-md-4"><label class="form-label">Ngày kết thúc</label><input name="ended_date" class="form-control" inputmode="numeric" placeholder="dd/mm/yyyy"></div><div class="col-md-6"><label class="form-label">Trạng thái</label><select name="status" id="communityOrgStatusSelect" class="form-select"></select></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="3"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button><button type="button" class="btn btn-primary" data-platform-action="communityOrganizations.save"><i class="fa-solid fa-floppy-disk me-1"></i> Lưu</button></div></form></div></div>' +
       '<div class="modal fade" id="communityOrgDetailModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Chi tiết hội viên</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div id="communityOrgDetailBody" class="modal-body"></div></div></div></div>';
   }
 
@@ -49,7 +53,8 @@
     const p = window.TenantAppPlatform;
     if (!p || registered) return;
     registered = true;
-    if (!p.modules?.get?.('communityOrganizations')) p.modules?.register?.({ moduleKey: 'communityOrganizations', screenId: 'communityOrganizations', path: '/community-organizations', label: 'Đoàn thể - Chi hội', mobileLabel: 'Đoàn thể', icon: 'fa-people-group', permissionScope: 'citizen', loaderName: 'loadCommunityOrganizations' });
+    if (!p.modules?.get?.('communityOrganizations')) p.modules?.register?.({ moduleKey: 'communityOrganizations', screenId: 'communityOrganizations', path: '/associations', label: 'Đoàn thể', mobileLabel: 'Đoàn thể', icon: 'fa-people-group', permissionScope: 'citizen', loaderName: 'loadCommunityOrganizations' });
+    if (!p.routes?.match?.('/associations')) p.routes?.register?.({ path: '/associations', moduleKey: 'communityOrganizations', screenId: 'communityOrganizations', action: 'list' });
     if (!p.routes?.match?.('/community-organizations')) p.routes?.register?.({ path: '/community-organizations', moduleKey: 'communityOrganizations', screenId: 'communityOrganizations', action: 'list' });
     const population = p.menus?.get?.('population');
     if (population && !String(population.items || '').includes('communityOrganizations')) {
@@ -66,6 +71,7 @@
     const actions = window.TenantAppPlatform?.actions;
     if (!actions?.register) return;
     actions.register('communityOrganizations.openCreate', () => openForm());
+    actions.register('communityOrganizations.save', () => save({ preventDefault() {}, currentTarget: $('#communityOrgForm') }));
     actions.register('communityOrganizations.edit', ctx => openForm(Number(ctx.dataset.id || 0)));
     actions.register('communityOrganizations.detail', ctx => openDetail(Number(ctx.dataset.id || 0)));
     actions.register('communityOrganizations.end', ctx => endMembership(Number(ctx.dataset.id || 0)));
@@ -75,12 +81,14 @@
     actions.register('communityOrganizations.selectCitizen', ctx => selectCitizen(state.suggestions.find(x => String(x.id) === ctx.dataset.id)));
     actions.register('communityOrganizations.export', exportExcel);
     actions.register('communityOrganizations.print', printReport);
-    actions.register('communityOrganizations.filterOrg', ctx => { const filter = $('#communityOrgFilter'); if (filter) filter.value = ctx.dataset.org || ''; state.page = 1; load(); });
+    actions.register('communityOrganizations.filterOrg', ctx => selectOrganizationTab(ctx.dataset.org || ''));
+    actions.register('communityOrganizations.tab', ctx => selectOrganizationTab(ctx.dataset.org || ''));
     actions.bind?.(document);
   }
 
   function bindEvents() {
     $('#communityOrgForm')?.addEventListener('submit', save);
+    document.querySelectorAll('[data-platform-action="communityOrganizations.save"]').forEach(button => { button.onclick = event => { event.preventDefault(); event.stopImmediatePropagation?.(); save({ preventDefault() {}, currentTarget: $('#communityOrgForm') }); }; });
     $('#communityOrgSearch')?.addEventListener('input', debounce(e => { state.search = e.target.value.trim(); state.page = 1; load(); }, 300));
     ['communityOrgFilter','communityOrgStatusFilter','communityOrgAreaFilter'].forEach(id => $('#' + id)?.addEventListener('change', () => { collectFilters(); state.page = 1; load(); }));
     ['communityOrgAgeFrom','communityOrgAgeTo'].forEach(id => $('#' + id)?.addEventListener('input', debounce(() => { collectFilters(); state.page = 1; load(); }, 300)));
@@ -88,8 +96,95 @@
     $('#communityOrgOrgSelect')?.addEventListener('change', e => fillPositions(e.target.value));
     $('#communityOrgCitizenSearch')?.addEventListener('input', debounce(searchCitizens, 250));
     document.addEventListener('pointerdown', e => { if (!e.target.closest('#communityOrgCitizenSuggestions') && e.target.id !== 'communityOrgCitizenSearch') hideSuggestions(); });
+    bindCreateButtons();
+    bindDocumentCreateCapture();
+    const screen = $('#communityOrganizationsScreen');
+    if (screen && !screen.dataset.directBound) {
+      screen.dataset.directBound = '1';
+      screen.addEventListener('click', event => {
+        const tab = event.target.closest('[data-community-org-tab]');
+        if (tab) { event.preventDefault(); event.stopImmediatePropagation?.(); selectOrganizationTab(tab.dataset.org || ''); }
+      });
+    }
   }
 
+
+  function bindDocumentCreateCapture() {
+    if (document.documentElement.dataset.communityCreateCaptureBound) return;
+    document.documentElement.dataset.communityCreateCaptureBound = '1';
+    document.addEventListener('click', event => {
+      const button = event.target.closest?.('[data-platform-action="communityOrganizations.openCreate"]');
+      if (!button || !button.closest('#communityOrganizationsScreen')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation?.();
+      openForm().then(() => {
+        const modal = $('#communityOrgModal');
+        if (modal && !modal.classList.contains('show')) bootstrap.Modal.getOrCreateInstance(modal).show();
+      }).catch(error => toast(error.message || 'Không mở được form thêm thành viên', 'danger'));
+    }, true);
+  }
+
+  function bindDocumentSaveCapture() {
+    if (document.documentElement.dataset.communitySaveCaptureBound) return;
+    document.documentElement.dataset.communitySaveCaptureBound = '1';
+    document.addEventListener('click', event => {
+      const button = event.target.closest?.('[data-platform-action="communityOrganizations.save"]');
+      if (!button) return;
+      const form = button.closest('form');
+      if (!form) return;
+      event.preventDefault();
+      event.stopImmediatePropagation?.();
+      save({ preventDefault() {}, currentTarget: form });
+    }, true);
+    document.addEventListener('submit', event => {
+      if (event.target?.id !== 'communityOrgForm') return;
+      event.preventDefault();
+      event.stopImmediatePropagation?.();
+      save(event);
+    }, true);
+  }
+
+  function bindDocumentActionCapture() {
+    if (document.documentElement.dataset.communityActionCaptureBound) return;
+    document.documentElement.dataset.communityActionCaptureBound = '1';
+    document.addEventListener('click', event => {
+      const target = event.target.closest?.('[data-platform-action^="communityOrganizations."]');
+      if (!target) return;
+      const scope = target.closest('#communityOrganizationsScreen, #communityOrgModal, #communityOrgDetailModal');
+      if (!scope) return;
+      const action = target.dataset.platformAction || '';
+      if (['communityOrganizations.openCreate','communityOrganizations.save','communityOrganizations.selectCitizen','communityOrganizations.tab'].includes(action)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation?.();
+      const id = Number(target.dataset.id || 0);
+      if (action === 'communityOrganizations.detail') return openDetail(id);
+      if (action === 'communityOrganizations.edit') return openForm(id);
+      if (action === 'communityOrganizations.end') return endMembership(id);
+      if (action === 'communityOrganizations.delete') return remove(id);
+      if (action === 'communityOrganizations.page') { state.page = Number(target.dataset.page || 1); return load(); }
+      if (action === 'communityOrganizations.reset') return resetFilters();
+      if (action === 'communityOrganizations.filterOrg') return selectOrganizationTab(target.dataset.org || '');
+      if (action === 'communityOrganizations.export') return exportExcel();
+      if (action === 'communityOrganizations.print') return printReport();
+    }, true);
+  }
+
+  function bindCreateButtons() {
+    document.querySelectorAll('[data-platform-action="communityOrganizations.openCreate"]').forEach(button => {
+      if (button.dataset.communityCreateBound) return;
+      button.dataset.communityCreateBound = '1';
+      const handler = event => {
+        event.preventDefault();
+        event.stopImmediatePropagation?.();
+        openForm().then(() => {
+          const modal = $('#communityOrgModal');
+          if (modal && !modal.classList.contains('show')) bootstrap.Modal.getOrCreateInstance(modal).show();
+        }).catch(error => toast(error.message || 'Không mở được form thêm thành viên', 'danger'));
+      };
+      button.onclick = handler;
+      button.addEventListener('click', handler, true);
+    });
+  }
 
   function patchCitizenProfile() {
     if (profilePatched || typeof window.showPerson !== 'function') return;
@@ -117,12 +212,29 @@
   }
   async function load() {
     if (!can('read')) return;
+    activateScreen();
     await ensureCatalogs();
+    bindCreateButtons();
+    bindDocumentCreateCapture();
+    renderTabs();
     collectFilters();
     const data = await request(API + '?' + params().toString());
     renderRows(data);
     renderPager(data);
     renderDashboard();
+  }
+
+  function activateScreen() {
+    const p = window.TenantAppPlatform;
+    if (p?.screens?.sync) {
+      p.screens.sync({ screenId: 'communityOrganizations' });
+      return;
+    }
+    const screen = $('#communityOrganizationsScreen');
+    if (!screen) return;    document.querySelectorAll('.screen.active').forEach(node => {
+      if (node !== screen) node.classList.remove('active');
+    });
+    screen.classList.add('active');
   }
 
   async function ensureCatalogs() {
@@ -148,17 +260,41 @@
 
   function params() {
     const p = new URLSearchParams({ page: state.page, pageSize: state.pageSize });
-    ['search','organization_code','status','gender','area_code','position_id','age_from','age_to','joined_year'].forEach(k => { if (state[k]) p.set(k, state[k]); });
+    ['search','status','gender','area_code','position_name','age_from','age_to','joined_year'].forEach(k => { if (state[k]) p.set(k, state[k]); });
+    if (state.organization_code) p.set('organization_id', state.organization_code);
     return p;
   }
 
   async function renderDashboard() {
     const data = await request(API + '/dashboard?' + params().toString());
     const host = $('#communityOrgDashboard');
-    const cards = [{ label: 'Tổng thành viên đang tham gia', value: data.metrics?.total_active_members || 0, icon: 'fa-users' }].concat((data.organizations || []).map(o => ({ label: o.name, value: o.active_count || 0, icon: iconFor(o.code), code: o.code })));
-    host.innerHTML = cards.map(c => '<button type="button" class="community-org-card text-start" ' + (c.code ? 'data-platform-action="communityOrganizations.filterOrg" data-org="' + esc(c.code) + '"' : '') + '><i class="fa-solid ' + c.icon + '"></i><span><span class="label d-block">' + esc(c.label) + '</span><span class="value d-block">' + fmt(c.value) + '</span></span></button>').join('');
+    const metrics = data.metrics || {};
+    const cards = [
+      { label: 'Tổng thành viên đang tham gia', value: metrics.total || 0, icon: 'fa-users' },
+      { label: 'Nhân khẩu tham gia', value: metrics.people || 0, icon: 'fa-id-card' },
+      { label: 'Tổ chức đang theo dõi', value: metrics.organizations || 0, icon: 'fa-people-group' }
+    ];
+    host.innerHTML = cards.map(c => '<button type="button" class="community-org-card text-start"><i class="fa-solid ' + c.icon + '"></i><span><span class="label d-block">' + esc(c.label) + '</span><span class="value d-block">' + fmt(c.value) + '</span></span></button>').join('');
     const warnings = data.warnings || [];
     $('#communityOrgWarnings').innerHTML = warnings.length ? warnings.map(w => '<div class="alert alert-warning mb-2"><i class="fa-solid fa-triangle-exclamation me-2"></i>' + esc(w.message || '') + '</div>').join('') : '';
+  }
+
+  function renderTabs() {
+    const host = $('#communityOrgTabs');
+    if (!host || !state.catalogs) return;
+    const orgs = state.catalogs.organizations || [];
+    const items = [{ code: '', name: 'Tất cả' }].concat(orgs.map(o => ({ code: o.value || o.id || '', name: o.name || o.label || '' })));
+    host.innerHTML = items.map(item => '<li class="nav-item" role="presentation"><button type="button" class="nav-link ' + (String(state.organization_code || '') === String(item.code || '') ? 'active' : '') + '" data-community-org-tab data-org="' + esc(item.code || '') + '">' + esc(item.name || 'Tất cả') + '</button></li>').join('');
+    host.querySelectorAll('[data-community-org-tab]').forEach(button => { const handler = event => { event.preventDefault(); event.stopImmediatePropagation?.(); selectOrganizationTab(button.dataset.org || ''); }; button.onpointerdown = handler; button.onmousedown = handler; button.onclick = handler; });
+  }
+
+  function selectOrganizationTab(code) {
+    state.organization_code = code || '';
+    const filter = $('#communityOrgFilter');
+    if (filter) filter.value = state.organization_code;
+    state.page = 1;
+    renderTabs();
+    load();
   }
 
   function renderRows(data) {
@@ -189,7 +325,7 @@
       form.elements.citizen_id.value = row.citizen_id;
       $('#communityOrgCitizenSearch').value = [row.full_name, row.citizen_code].filter(Boolean).join(' - ');
       $('#communityOrgSelectedCitizen').textContent = [row.full_name, row.citizen_code, row.household_code].filter(Boolean).join(' - ');
-      fillPositions(row.organization_code, row.position_id);
+      fillPositions(row.organization_id, row.position_name);
     } else {
       fillPositions($('#communityOrgOrgSelect').value);
     }
@@ -198,24 +334,39 @@
 
   async function save(event) {
     event.preventDefault();
-    const form = event.currentTarget;
-    if (!form.elements.citizen_id.value) return toast('Vui lòng chọn nhân khẩu từ danh sách.', 'warning');
-    const payload = Object.fromEntries(new FormData(form).entries());
-    const id = Number(payload.id || 0);
-    const row = await request(API + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
-    bootstrap.Modal.getOrCreateInstance($('#communityOrgModal')).hide();
-    toast('Đã lưu thông tin đoàn thể - chi hội', 'success');
-    load();
-    return row;
+    if (state.saving) return;
+    const form = event.currentTarget || $('#communityOrgForm');
+    if (!form?.elements?.citizen_id?.value) return toast('Vui lòng chọn nhân khẩu từ danh sách.', 'warning');
+    if (!form.checkValidity()) { form.reportValidity?.(); return; }
+    const submitButton = form.querySelector('[data-platform-action="communityOrganizations.save"]');
+    state.saving = true;
+    if (submitButton) submitButton.disabled = true;
+    try {
+      const payload = Object.fromEntries(new FormData(form).entries());
+      if (payload.organization_code && !payload.organization_id) payload.organization_id = payload.organization_code;
+      if (payload.member_number && !payload.card_number) payload.card_number = payload.member_number;
+      const id = Number(payload.id || 0);
+      const row = await request(API + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
+      bootstrap.Modal.getOrCreateInstance($('#communityOrgModal')).hide();
+      toast('Đã lưu thông tin đoàn thể - chi hội', 'success');
+      load();
+      return row;
+    } catch (error) {
+      toast(error.message || 'Không lưu được thông tin đoàn thể - chi hội', 'danger');
+    } finally {
+      state.saving = false;
+      if (submitButton) submitButton.disabled = false;
+    }
   }
 
   async function searchCitizens() {
     const q = $('#communityOrgCitizenSearch').value.trim();
     const org = $('#communityOrgOrgSelect').value || '';
     if (q.length < 2) return hideSuggestions();
-    state.suggestions = (await request(API + '/citizen-search?q=' + encodeURIComponent(q) + '&organization_code=' + encodeURIComponent(org))).items || [];
+    state.suggestions = (await request(API + '/citizen-search?q=' + encodeURIComponent(q) + '&organization_id=' + encodeURIComponent(org))).items || [];
     const box = $('#communityOrgCitizenSuggestions');
-    box.innerHTML = state.suggestions.length ? state.suggestions.map(x => '<button type="button" class="list-group-item list-group-item-action" data-platform-action="communityOrganizations.selectCitizen" data-id="' + x.id + '" ' + (x.has_current_membership ? 'disabled' : '') + '><strong>' + esc(x.full_name) + '</strong><div class="small text-muted">' + esc([x.citizen_code, x.household_code, x.address].filter(Boolean).join(' - ')) + '</div>' + (x.has_current_membership ? '<div class="small text-danger">Nhân khẩu này đang tham gia tổ chức đã chọn</div>' : '') + '</button>').join('') : '<div class="list-group-item text-muted">Không tìm thấy nhân khẩu phù hợp</div>';
+    box.innerHTML = state.suggestions.length ? state.suggestions.map(x => '<button type="button" class="list-group-item list-group-item-action" data-community-org-citizen data-id="' + x.id + '" ' + (x.has_current_membership ? 'disabled' : '') + '><strong>' + esc(x.full_name) + '</strong><div class="small text-muted">' + esc([x.citizen_code, x.household_code, x.address].filter(Boolean).join(' - ')) + '</div>' + (x.has_current_membership ? '<div class="small text-danger">Nhân khẩu này đang tham gia tổ chức đã chọn</div>' : '') + '</button>').join('') : '<div class="list-group-item text-muted">Không tìm thấy nhân khẩu phù hợp</div>';
+    box.querySelectorAll('[data-community-org-citizen]').forEach(button => { const handler = event => { event.preventDefault(); event.stopImmediatePropagation?.(); selectCitizen(state.suggestions.find(x => String(x.id) === String(button.dataset.id))); }; button.onpointerdown = handler; button.onmousedown = handler; button.onclick = handler; });
   }
 
   function selectCitizen(item) {
@@ -229,14 +380,13 @@
 
   async function openDetail(id) {
     const row = await request(API + '/' + id);
-    const history = (await request(API + '/' + id + '/history')).items || [];
-    $('#communityOrgDetailBody').innerHTML = '<dl class="row"><dt class="col-sm-4">Nhân khẩu</dt><dd class="col-sm-8">' + esc([row.full_name, row.citizen_code].filter(Boolean).join(' - ')) + '</dd><dt class="col-sm-4">Tổ chức</dt><dd class="col-sm-8">' + esc(row.organization_name || '') + '</dd><dt class="col-sm-4">Chức vụ</dt><dd class="col-sm-8">' + esc(row.position_name || '') + '</dd><dt class="col-sm-4">Trạng thái</dt><dd class="col-sm-8">' + esc(row.status_label || '') + '</dd><dt class="col-sm-4">Ghi chú</dt><dd class="col-sm-8">' + esc(row.note || '') + '</dd></dl><h6>Lịch sử thay đổi</h6>' + (history.length ? '<ul class="list-group">' + history.map(h => '<li class="list-group-item"><strong>' + esc(h.change_type || '') + '</strong><div class="small text-muted">' + dateTime(h.changed_at) + '</div><div>' + esc(h.note || '') + '</div></li>').join('') + '</ul>' : '<div class="text-muted">Chưa có lịch sử thay đổi.</div>');
+    $('#communityOrgDetailBody').innerHTML = '<dl class="row"><dt class="col-sm-4">Nhân khẩu</dt><dd class="col-sm-8">' + esc([row.full_name, row.citizen_code].filter(Boolean).join(' - ')) + '</dd><dt class="col-sm-4">Tổ chức</dt><dd class="col-sm-8">' + esc(row.organization_name || '') + '</dd><dt class="col-sm-4">Chức vụ</dt><dd class="col-sm-8">' + esc(row.position_name || '') + '</dd><dt class="col-sm-4">Trạng thái</dt><dd class="col-sm-8">' + esc(row.status_label || '') + '</dd><dt class="col-sm-4">Ghi chú</dt><dd class="col-sm-8">' + esc(row.note || '') + '</dd></dl>';
     bootstrap.Modal.getOrCreateInstance($('#communityOrgDetailModal')).show();
   }
 
   async function endMembership(id) {
     if (!confirm('Xác nhận thôi tham gia tổ chức này?')) return;
-    await request(API + '/' + id + '/end', { method: 'PUT', body: JSON.stringify({ status: 'ENDED', ended_date: today() }) });
+    await request(API + '/' + id, { method: 'DELETE' });
     toast('Đã cập nhật trạng thái thôi tham gia', 'success'); load();
   }
 
@@ -251,8 +401,8 @@
   async function printReport() { const data = await request(API + '/report?' + params().toString()); const rows = data.items || []; const html = '<h2>BÁO CÁO ĐOÀN THỂ - CHI HỘI</h2><table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse"><tr><th>STT</th><th>Họ tên</th><th>Mã NK</th><th>Mã hộ</th><th>Tổ chức</th><th>Chức vụ</th><th>Ngày tham gia</th><th>Trạng thái</th></tr>' + rows.map((r,i) => '<tr><td>' + (i+1) + '</td><td>' + esc(r.full_name) + '</td><td>' + esc(r.citizen_code) + '</td><td>' + esc(r.household_code) + '</td><td>' + esc(r.organization_name) + '</td><td>' + esc(r.position_name) + '</td><td>' + date(r.joined_date) + '</td><td>' + esc(r.status_label) + '</td></tr>').join('') + '</table>'; const w = window.open('', '_blank'); w.document.write('<!doctype html><meta charset="utf-8"><title>Báo cáo đoàn thể</title>' + html); w.document.close(); w.print(); }
 
   function fill(selector, items, allLabel) { const el = typeof selector === 'string' ? $(selector) : selector; if (!el) return; el.innerHTML = (allLabel ? '<option value="">' + esc(allLabel) + '</option>' : '') + (items || []).map(i => '<option value="' + esc(i.value ?? i.code ?? i.id) + '">' + esc(i.label ?? i.name) + '</option>').join(''); }
-  function fillPositions(code, selected) { const list = (state.catalogs?.positions || []).filter(p => !code || p.organization_code === code); fill('#communityOrgPositionSelect', list, 'Chọn chức vụ'); if (selected) $('#communityOrgPositionSelect').value = selected; }
-  function fillForm(form, row) { Object.keys(row || {}).forEach(k => { if (form.elements[k]) form.elements[k].value = ['joined_date','ended_date'].includes(k) ? date(row[k]) : (row[k] ?? ''); }); if (form.elements.organization_code) form.elements.organization_code.value = row.organization_code || ''; }
+  function fillPositions(org, selected) { const key = String(org || ''); const list = (state.catalogs?.positions || []).filter(p => !key || String(p.organization_id || '') === key || String(p.organization_code || '') === key); fill('#communityOrgPositionSelect', list, 'Chọn chức vụ'); if (selected) $('#communityOrgPositionSelect').value = selected; }
+  function fillForm(form, row) { Object.keys(row || {}).forEach(k => { if (form.elements[k]) form.elements[k].value = ['joined_date','ended_date'].includes(k) ? date(row[k]) : (row[k] ?? ''); }); if (form.elements.organization_code) form.elements.organization_code.value = row.organization_id || row.organization_code || ''; }
   function hideSuggestions() { const box = $('#communityOrgCitizenSuggestions'); if (box) box.innerHTML = ''; }
   function can(action) {
     if (window.TenantAppPlatform?.permissions?.can?.('organizations', action)) return true;
@@ -296,3 +446,4 @@
   function download(name, html) { const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href); }
   window.loadCommunityOrganizations = load;
 })();
+

@@ -122,7 +122,7 @@ final class OperationCenter extends BaseModel
                 }
             }
             if ($this->tableExists('movements')) {
-                $rows = $this->fetchAll("SELECT id, created_at, effective_date, type, status, note FROM movements WHERE status <> 'DELETED' ORDER BY COALESCE(effective_date, created_at) DESC, id DESC LIMIT " . min($limit, 50));
+                $rows = $this->fetchAll("SELECT id, created_at, effective_date, type, status, note FROM movements WHERE status <> 'DELETED' AND " . Movement::businessPredicate('') . " ORDER BY COALESCE(effective_date, created_at) DESC, id DESC LIMIT " . min($limit, 50));
                 foreach ($rows as $row) {
                     $items[] = [
                         'type' => 'movement', 'time' => $row['effective_date'] ?: $row['created_at'], 'module' => 'movements', 'action' => $row['type'],
@@ -195,8 +195,8 @@ final class OperationCenter extends BaseModel
                     ['key' => 'population', 'label' => 'Dan cu', 'screen' => 'households', 'items' => [
                         ['label' => 'Tong ho', 'value' => $metrics['households']],
                         ['label' => 'Tong nhan khau', 'value' => $metrics['citizens']],
-                        ['label' => 'Tam tru', 'value' => $metrics['temporary_residence']],
-                        ['label' => 'Tam vang', 'value' => $metrics['temporary_absence']],
+                        ['label' => 'Tạm trú', 'value' => $metrics['temporary_residence']],
+                        ['label' => 'Tạm vắng', 'value' => $metrics['temporary_absence']],
                     ]],
                     ['key' => 'operations', 'label' => 'Dieu hanh', 'screen' => 'workTasks', 'items' => [
                         ['label' => 'Cong viec', 'value' => $metrics['work_tasks']],
@@ -206,9 +206,9 @@ final class OperationCenter extends BaseModel
                     ]],
                     ['key' => 'records', 'label' => 'Ho so va tai san', 'screen' => 'documents', 'items' => [
                         ['label' => 'Van ban', 'value' => $metrics['documents']],
-                        ['label' => 'Cong trinh', 'value' => $metrics['public_assets']],
+                        ['label' => 'Công trình', 'value' => $metrics['public_assets']],
                         ['label' => 'Can bao tri', 'value' => $metrics['maintenance_due']],
-                        ['label' => 'Ho ngheo', 'value' => $metrics['poor_households']],
+                        ['label' => 'Hộ nghèo', 'value' => $metrics['poor_households']],
                     ]],
                     ['key' => 'finance', 'label' => 'Thu chi thang', 'screen' => 'finance', 'items' => [
                         ['label' => 'Thu', 'value' => $finance['finance_income_month']],
@@ -395,7 +395,7 @@ final class OperationCenter extends BaseModel
     private function recentMovementCount(string $type): int
     {
         if (!$this->tableExists('movements')) return 0;
-        $where = 'status <> "DELETED" AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
+        $where = 'status <> "DELETED" AND ' . Movement::businessPredicate('') . ' AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
         $params = [];
         if ($type !== '') { $where .= ' AND type = :type'; $params['type'] = $type; }
         return (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements WHERE $where", $params) ?: [])['total'] ?? 0);
@@ -403,7 +403,7 @@ final class OperationCenter extends BaseModel
 
     private function recentCitizenCount(): int { return (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM citizens c WHERE ' . $this->activeCitizenCondition('c') . ' AND DATE(c.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)') ?: [])['total'] ?? 0); }
     private function recentHouseholdCount(): int { return (int) (($this->fetchOne('SELECT COUNT(*) AS total FROM households h WHERE ' . $this->activeHouseholdCondition('h') . ' AND DATE(h.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)') ?: [])['total'] ?? 0); }
-    private function pendingMovementCount(): int { return $this->tableExists('movements') ? (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements WHERE status IN ('PENDING','DRAFT')") ?: [])['total'] ?? 0) : 0; }
+    private function pendingMovementCount(): int { return $this->tableExists('movements') ? (int) (($this->fetchOne("SELECT COUNT(*) AS total FROM movements WHERE status IN ('PENDING','DRAFT') AND " . Movement::businessPredicate('')) ?: [])['total'] ?? 0) : 0; }
 
     private function gpsProgress(array $params = [], string $whereArea = ''): array
     {

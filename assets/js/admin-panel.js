@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   function labelForScreen(screen) {
     return window.TenantAppPlatform?.modules?.get(screen)?.label || 'Dashboard';
   }
@@ -59,7 +59,8 @@
     cleanDuplicateHeaders(currentScreen());
     if (topbar && !document.querySelector('#breadcrumbTrail')) {
       topbar.querySelector('div:nth-of-type(1)')?.insertAdjacentHTML('beforeend', '<nav id="breadcrumbTrail" class="breadcrumb-trail">Trang chủ / Dashboard</nav>');
-      topbar.querySelector('.ms-auto')?.insertAdjacentHTML('beforebegin', '<button id="themeToggle" class="btn btn-outline-secondary btn-sm ms-auto" type="button" data-platform-action="admin.theme.toggle"><i class="fa-solid fa-circle-half-stroke"></i></button>');    }
+      topbar.querySelector('.ms-auto')?.insertAdjacentHTML('beforebegin', '<button id="themeToggle" class="btn btn-outline-secondary btn-sm ms-auto" type="button" data-platform-action="admin.theme.toggle"><i class="fa-solid fa-circle-half-stroke"></i></button>');
+    }
   }
 
   function injectScreens() {
@@ -74,18 +75,21 @@
       <section id="permissionsScreen" class="screen"><div class="admin-heading"><div><h3>Phân quyền</h3><p>Thiết lập quyền theo vai trò, module và thao tác.</p></div><button id="permissionSaveBtn" class="btn btn-primary" data-platform-action="admin.permissions.save">Lưu phân quyền</button></div><div id="permissionMatrix" class="content-card table-responsive"></div></section>
       <section id="settingsScreen" class="screen"><form id="settingsForm" class="content-card"><div class="row g-3"><div class="col-md-6"><label class="form-label">Tên hệ thống</label><input name="systemName" class="form-control"></div><div class="col-md-6"><label class="form-label">Logo URL</label><input name="logoUrl" class="form-control"></div><div class="col-md-6"><label class="form-label">Ảnh nền URL</label><input name="backgroundUrl" class="form-control"></div><div class="col-md-6"><label class="form-label">Thông tin thôn</label><input name="hamletName" class="form-control"></div><div class="col-md-6"><label class="form-label">Thông tin xã</label><input name="communeName" class="form-control"></div><div class="col-md-6"><label class="form-label">Đơn vị</label><input name="unitName" class="form-control"></div><div class="col-md-4"><label class="form-label">Số điện thoại</label><input name="phone" class="form-control"></div><div class="col-md-4"><label class="form-label">Email</label><input name="email" type="email" class="form-control"></div><div class="col-md-4"><label class="form-label">Người ký báo cáo</label><input name="reportSigner" class="form-control"></div><div class="col-12"><label class="form-label">Địa chỉ</label><input name="address" class="form-control"></div><div class="col-12 text-end"><button class="btn btn-primary" type="submit">Lưu cấu hình</button></div></div></form></section>
 
-      <section id="appearanceScreen" class="screen"><form id="appearanceForm" class="content-card"><div class="admin-heading"><div><h3>Cấu hình giao diện</h3><p>Quản lý logo, ảnh nền, nội dung giới thiệu và thông tin hiển thị trên trang đăng nhập.</p></div><button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button></div><div class="row g-4"><div class="col-lg-4"><h4 class="section-title">Logo</h4><div id="appearanceLogoPreview" class="appearance-media-preview mb-2"><span class="text-muted">Logo mặc định</span></div><input name="logoUrl" class="form-control mb-2" placeholder="Logo URL"><input id="appearanceLogoFile" type="file" class="form-control mb-2" accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp"><div class="d-flex gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" data-platform-action="admin.appearance.upload" data-appearance-upload="logo">Tải logo</button><button class="btn btn-outline-danger btn-sm" type="button" data-platform-action="admin.appearance.clear" data-appearance-field="logoUrl">Xóa logo</button><button class="btn btn-outline-secondary btn-sm" type="button" data-platform-action="admin.appearance.default" data-appearance-field="logoUrl">Mặc định</button></div></div><div class="col-lg-8"><h4 class="section-title">Ảnh nền</h4><div id="appearanceBackgroundPreview" class="appearance-background-list mb-2"></div><input name="backgroundImages" class="form-control mb-2" placeholder="URL ảnh nền"><input id="appearanceBackgroundFiles" type="file" class="form-control mb-2" accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp"><div class="row g-2"><div class="col-sm-4"><label class="form-label">Thời gian chuyển ảnh (ms)</label><input name="backgroundInterval" type="number" min="2500" step="500" class="form-control" value="6000"></div><div class="col-sm-8 d-flex align-items-end gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" data-platform-action="admin.appearance.upload" data-appearance-upload="background">Tải ảnh nền</button><button class="btn btn-outline-danger btn-sm" type="button" data-platform-action="admin.appearance.clear" data-appearance-field="backgroundImages">Xóa ảnh nền</button><button class="btn btn-outline-secondary btn-sm" type="button" data-platform-action="admin.appearance.default" data-appearance-field="backgroundImages">Dùng mặc định</button></div></div></div><div class="col-12"><h4 class="section-title">Thông tin hệ thống</h4><div class="row g-3"><div class="col-md-4"><label class="form-label">Tên hệ thống</label><input name="systemName" class="form-control"></div><div class="col-md-4"><label class="form-label">Tên thôn</label><input name="hamletName" class="form-control"></div><div class="col-md-4"><label class="form-label">Tên xã</label><input name="communeName" class="form-control"></div><div class="col-md-8"><label class="form-label">Khẩu hiệu</label><input name="slogan" class="form-control"></div><div class="col-md-4"><label class="form-label">Phiên bản phần mềm</label><input name="softwareVersion" class="form-control"></div><div class="col-md-6"><label class="form-label">Địa chỉ</label><input name="address" class="form-control"></div><div class="col-md-3"><label class="form-label">Điện thoại</label><input name="phone" class="form-control"></div><div class="col-md-3"><label class="form-label">Email</label><input name="email" type="email" class="form-control"></div><div class="col-md-6"><label class="form-label">Website</label><input name="website" class="form-control"></div><div class="col-md-6"><label class="form-label">Copyright</label><input name="copyright" class="form-control" readonly disabled data-global-setting="copyright"><div class="form-text">Copyright la cau hinh toan he thong, chi sua trong Community Control Center.</div></div></div></div><div class="col-12"><h4 class="section-title">Giới thiệu</h4><div class="row g-3"><div class="col-md-6"><label class="form-label">Tiêu đề giới thiệu</label><input name="introTitle" class="form-control"></div><div class="col-md-6"><label class="form-label">Tiêu đề lịch sử</label><input name="historyTitle" class="form-control"></div><div class="col-12"><label class="form-label">Ảnh minh họa</label><div id="appearanceIntroPreview" class="appearance-media-preview mb-2"><span class="text-muted">Chưa chọn ảnh</span></div><input name="introImageUrl" class="form-control mb-2" placeholder="URL ảnh minh họa"><input id="appearanceIntroFile" type="file" class="form-control mb-2" accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp"><div class="d-flex gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" data-platform-action="admin.appearance.upload" data-appearance-upload="intro">Tải ảnh minh họa</button><button class="btn btn-outline-danger btn-sm" type="button" data-platform-action="admin.appearance.clear" data-appearance-field="introImageUrl">Xóa ảnh</button></div></div><div class="col-12"><label class="form-label">Lịch sử hình thành</label><div class="rich-toolbar"><button class="btn btn-light btn-sm" type="button" data-platform-action="admin.rich.command" data-rich-command="bold"><i class="fa-solid fa-bold"></i></button><button class="btn btn-light btn-sm" type="button" data-platform-action="admin.rich.command" data-rich-command="italic"><i class="fa-solid fa-italic"></i></button><button class="btn btn-light btn-sm" type="button" data-platform-action="admin.rich.command" data-rich-command="insertUnorderedList"><i class="fa-solid fa-list-ul"></i></button></div><div id="hamletHistoryEditor" class="rich-editor" contenteditable="true" data-rich-target="hamletHistory"></div><textarea name="hamletHistory" class="d-none"></textarea></div><div class="col-12"><label class="form-label">Nội dung giới thiệu bổ sung</label><div id="introductionEditor" class="rich-editor" contenteditable="true" data-rich-target="introduction"></div><textarea name="introduction" class="d-none"></textarea></div></div></div></div></form></section>
+      <section id="appearanceScreen" class="screen"><form id="appearanceForm" class="content-card"><div class="admin-heading"><div><h3>Cấu hình giao diện</h3><p>Quản lý logo, ảnh nền, nội dung giới thiệu và thông tin hiển thị trên trang đăng nhập.</p></div><button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button></div><div class="row g-4"><div class="col-lg-4"><h4 class="section-title">Logo</h4><div id="appearanceLogoPreview" class="appearance-media-preview mb-2"><span class="text-muted">Logo mặc định</span></div><input name="logoUrl" class="form-control mb-2" placeholder="Logo URL"><input id="appearanceLogoFile" type="file" class="form-control mb-2" accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp"><div class="d-flex gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" data-platform-action="admin.appearance.upload" data-appearance-upload="logo">Tải logo</button><button class="btn btn-outline-danger btn-sm" type="button" data-platform-action="admin.appearance.clear" data-appearance-field="logoUrl">Xóa logo</button><button class="btn btn-outline-secondary btn-sm" type="button" data-platform-action="admin.appearance.default" data-appearance-field="logoUrl">Mặc định</button></div></div><div class="col-lg-8"><h4 class="section-title">Ảnh nền</h4><div id="appearanceBackgroundPreview" class="appearance-background-list mb-2"></div><input name="backgroundImages" class="form-control mb-2" placeholder="URL ảnh nền"><input id="appearanceBackgroundFiles" type="file" class="form-control mb-2" accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp"><div class="row g-2"><div class="col-sm-4"><label class="form-label">Thời gian chuyển ảnh (ms)</label><input name="backgroundInterval" type="number" min="2500" step="500" class="form-control" value="6000"></div><div class="col-sm-8 d-flex align-items-end gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" data-platform-action="admin.appearance.upload" data-appearance-upload="background">Tải ảnh nền</button><button class="btn btn-outline-danger btn-sm" type="button" data-platform-action="admin.appearance.clear" data-appearance-field="backgroundImages">Xóa ảnh nền</button><button class="btn btn-outline-secondary btn-sm" type="button" data-platform-action="admin.appearance.default" data-appearance-field="backgroundImages">Dùng mặc định</button></div></div></div><div class="col-12"><h4 class="section-title">Thông tin hệ thống</h4><div class="row g-3"><div class="col-md-4"><label class="form-label">Tên hệ thống</label><input name="systemName" class="form-control"></div><div class="col-md-4"><label class="form-label">Tên thôn</label><input name="hamletName" class="form-control"></div><div class="col-md-4"><label class="form-label">Tên xã</label><input name="communeName" class="form-control"></div><div class="col-md-8"><label class="form-label">Khẩu hiệu</label><input name="slogan" class="form-control"></div><div class="col-md-4"><label class="form-label">Phiên bản phần mềm</label><input name="softwareVersion" class="form-control"></div><div class="col-md-6"><label class="form-label">Địa chỉ</label><input name="address" class="form-control"></div><div class="col-md-3"><label class="form-label">Điện thoại</label><input name="phone" class="form-control"></div><div class="col-md-3"><label class="form-label">Email</label><input name="email" type="email" class="form-control"></div><div class="col-md-6"><label class="form-label">Website</label><input name="website" class="form-control"></div><div class="col-md-6"><label class="form-label">Copyright</label><input name="copyright" class="form-control"></div></div></div><div class="col-12"><h4 class="section-title">Giới thiệu</h4><div class="row g-3"><div class="col-md-6"><label class="form-label">Tiêu đề giới thiệu</label><input name="introTitle" class="form-control"></div><div class="col-md-6"><label class="form-label">Tiêu đề lịch sử</label><input name="historyTitle" class="form-control"></div><div class="col-12"><label class="form-label">Ảnh minh họa</label><div id="appearanceIntroPreview" class="appearance-media-preview mb-2"><span class="text-muted">Chưa chọn ảnh</span></div><input name="introImageUrl" class="form-control mb-2" placeholder="URL ảnh minh họa"><input id="appearanceIntroFile" type="file" class="form-control mb-2" accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp"><div class="d-flex gap-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" data-platform-action="admin.appearance.upload" data-appearance-upload="intro">Tải ảnh minh họa</button><button class="btn btn-outline-danger btn-sm" type="button" data-platform-action="admin.appearance.clear" data-appearance-field="introImageUrl">Xóa ảnh</button></div></div><div class="col-12"><label class="form-label">Lịch sử hình thành</label><div class="rich-toolbar"><button class="btn btn-light btn-sm" type="button" data-platform-action="admin.rich.command" data-rich-command="bold"><i class="fa-solid fa-bold"></i></button><button class="btn btn-light btn-sm" type="button" data-platform-action="admin.rich.command" data-rich-command="italic"><i class="fa-solid fa-italic"></i></button><button class="btn btn-light btn-sm" type="button" data-platform-action="admin.rich.command" data-rich-command="insertUnorderedList"><i class="fa-solid fa-list-ul"></i></button></div><div id="hamletHistoryEditor" class="rich-editor" contenteditable="true" data-rich-target="hamletHistory"></div><textarea name="hamletHistory" class="d-none"></textarea></div><div class="col-12"><label class="form-label">Nội dung giới thiệu bổ sung</label><div id="introductionEditor" class="rich-editor" contenteditable="true" data-rich-target="introduction"></div><textarea name="introduction" class="d-none"></textarea></div></div></div></div></form></section>
       <section id="restoreScreen" class="screen"><form id="restoreForm" class="content-card"><label class="form-label">Chọn file SQL cần khôi phục</label><input name="file" type="file" class="form-control mb-3" accept=".sql"><label class="form-label">Hoặc dán nội dung SQL</label><textarea name="sql" class="form-control font-monospace" rows="14"></textarea><div class="text-end mt-3"><button class="btn btn-danger" type="submit"><i class="fa-solid fa-rotate-left"></i> Khôi phục dữ liệu</button></div></form></section>
-      <div class="modal fade" id="movementModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg"><form id="movementForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Biến động nhân khẩu</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><div class="row g-3"><div class="col-md-4"><label class="form-label">ID nhân khẩu</label><input name="citizenId" type="number" class="form-control" required></div><div class="col-md-4"><label class="form-label">Loại biến động</label><select name="type" class="form-select"><option value="BIRTH">Sinh</option><option value="DEATH">Tử</option><option value="MOVE_IN">Chuyển đến</option><option value="MOVE_OUT">Chuyển đi</option><option value="TEMPORARY_RESIDENCE">Tạm trú</option><option value="TEMPORARY_ABSENCE">Tạm vắng</option><option value="OTHER">Khác</option></select></div><div class="col-md-4"><label class="form-label">Ngày hiệu lực</label><input name="effectiveDate" type="date" class="form-control" required></div><div class="col-md-6"><label class="form-label">Từ địa chỉ</label><input name="fromAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Đến địa chỉ</label><input name="toAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Số giấy tờ</label><input name="documentNumber" class="form-control"></div><div class="col-md-6"><label class="form-label">Lý do</label><input name="reason" class="form-control"></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="2"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>`);
+      <div class="modal fade" id="movementModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg"><form id="movementForm" class="modal-content"><div class="modal-header"><h5 class="modal-title">Biến động nhân khẩu</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><input type="hidden" name="id"><input type="hidden" name="citizenId"><div class="row g-3"><div class="col-md-4 position-relative"><label class="form-label" for="movementCitizenSearch">Nh&#226;n kh&#7849;u</label><input id="movementCitizenSearch" class="form-control" autocomplete="off" placeholder="T&#236;m h&#7885; t&#234;n, m&#227; NK, CCCD..." required><div id="movementCitizenSuggestions" class="list-group position-absolute w-100 shadow d-none" style="z-index:1060;max-height:260px;overflow:auto"></div><div id="movementCitizenSelected" class="form-text"></div></div><div class="col-md-4"><label class="form-label">Loại biến động</label><select name="type" class="form-select"><option value="BIRTH">Sinh</option><option value="DEATH">Tử</option><option value="MOVE_IN">Chuyển đến</option><option value="MOVE_OUT">Chuyển đi</option><option value="TEMPORARY_RESIDENCE">Tạm trú</option><option value="TEMPORARY_ABSENCE">Tạm vắng</option><option value="OTHER">Khác</option></select></div><div class="col-md-4"><label class="form-label">Ngày hiệu lực</label><input name="effectiveDate" type="date" class="form-control" required></div><div class="col-md-6"><label class="form-label">Từ địa chỉ</label><input name="fromAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Đến địa chỉ</label><input name="toAddress" class="form-control"></div><div class="col-md-6"><label class="form-label">Số giấy tờ</label><input name="documentNumber" class="form-control"></div><div class="col-md-6"><label class="form-label">Lý do</label><input name="reason" class="form-control"></div><div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="2"></textarea></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary" type="submit">Lưu</button></div></form></div></div>`);
     App.movements = { page: 1, pageSize: 20, search: '', type: '' };
     registerModal('movementModal');
     registerMovementPlatformActions();
     document.querySelector('#movementSearch').addEventListener('input', debounce(() => { App.movements.search = document.querySelector('#movementSearch').value.trim(); App.movements.page = 1; loadMovements(); }, 350));
-    document.querySelector('#movementType').addEventListener('change', () => { App.movements.type = document.querySelector('#movementType').value; App.movements.page = 1; loadMovements(); });    document.querySelector('#movementForm').addEventListener('submit', saveMovement);
+    document.querySelector('#movementType').addEventListener('change', () => { App.movements.type = document.querySelector('#movementType').value; App.movements.page = 1; loadMovements(); });
+    document.querySelector('#movementForm').addEventListener('submit', saveMovement);
+    bindMovementCitizenPicker();
     document.querySelector('#settingsForm').addEventListener('submit', saveSettings);
     document.querySelector('#appearanceForm').addEventListener('submit', saveAppearanceSettings);
     bindAppearanceControls();
-    document.querySelector('#restoreForm').addEventListener('submit', restoreSql);  }
+    document.querySelector('#restoreForm').addEventListener('submit', restoreSql);
+  }
 
   function loadAdminScreen(screen) {
     cleanDuplicateHeaders(screen);
@@ -125,6 +129,7 @@
     actions.register('persons.delete', context => deletePersonAction(Number(context.dataset.id || context.dataset.personId || 0)));
     actions.register('admin.theme.toggle', () => toggleTheme());
     actions.register('admin.movement.add', () => window.openMovementForm());
+    actions.register('admin.movement.selectCitizen', context => selectMovementCitizen(context.dataset || {}));
     actions.register('admin.permissions.save', () => savePermissions());
     actions.register('admin.report.export', context => downloadAdminReport(context.dataset.reportType || context.dataset.export));
     actions.register('admin.report.print', context => printAdminReport(context.dataset.reportType || context.dataset.print));
@@ -313,6 +318,71 @@
     return `<table class="table table-hover data-table mb-0"><thead><tr><th>M&#227; h&#7897;</th><th>H&#7885; t&#234;n</th><th>Ng&#224;y sinh</th><th>CCCD</th><th>S&#7889; &#273;i&#7879;n tho&#7841;i</th><th></th></tr></thead><tbody>${rowsWithActions}</tbody></table>`;
   }
 
+  function bindMovementCitizenPicker() {
+    const input = document.querySelector('#movementCitizenSearch');
+    const list = document.querySelector('#movementCitizenSuggestions');
+    const form = document.querySelector('#movementForm');
+    if (!input || !list || !form || input.dataset.bound === '1') return;
+    input.dataset.bound = '1';
+    let timer = null;
+    input.addEventListener('input', () => {
+      form.elements.citizenId.value = '';
+      setMovementCitizenSelected('', '');
+      clearTimeout(timer);
+      timer = setTimeout(() => searchMovementCitizens(input.value), 250);
+    });
+  }
+
+  async function searchMovementCitizens(query) {
+    const list = document.querySelector('#movementCitizenSuggestions');
+    const q = String(query || '').trim();
+    if (!list) return;
+    if (q.length < 2) { list.innerHTML = ''; list.classList.add('d-none'); return; }
+    try {
+      const data = await api('/api/persons?' + new URLSearchParams({ search: q, page: 1, pageSize: 8 }));
+      const items = Array.isArray(data.items) ? data.items : [];
+      list.innerHTML = items.length ? items.map(movementCitizenOption).join('') : '<div class="list-group-item text-muted">Kh&#244;ng t&#236;m th&#7845;y nh&#226;n kh&#7849;u ph&#249; h&#7907;p</div>';
+      list.classList.remove('d-none');
+    } catch (error) {
+      list.innerHTML = '<div class="list-group-item text-danger">' + escapeHtml(error.message || 'Kh&#244;ng t&#7843;i &#273;&#432;&#7907;c danh s&#225;ch nh&#226;n kh&#7849;u') + '</div>';
+      list.classList.remove('d-none');
+    }
+  }
+
+  function movementCitizenOption(row) {
+    const id = Number(row.id || row.citizen_id || 0);
+    const label = [row.citizen_code, row.full_name, row.household_code].filter(Boolean).join(' - ');
+    const detail = [formatDate(row.date_of_birth), row.identity_number, row.current_address || row.address].filter(Boolean).join(' - ');
+    return '<button type="button" class="list-group-item list-group-item-action" data-platform-action="admin.movement.selectCitizen" data-movement-citizen-id="' + id + '" data-label="' + escapeHtml(label) + '" data-detail="' + escapeHtml(detail) + '"><strong>' + escapeHtml(label || ('#' + id)) + '</strong>' + (detail ? '<br><small class="text-muted">' + escapeHtml(detail) + '</small>' : '') + '</button>';
+  }
+
+  function selectMovementCitizen(data) {
+    const form = document.querySelector('#movementForm');
+    if (!form || !data?.movementCitizenId) return;
+    form.elements.citizenId.value = data.movementCitizenId;
+    const input = document.querySelector('#movementCitizenSearch');
+    if (input) input.value = data.label || '';
+    setMovementCitizenSelected(data.label || '', data.detail || '');
+    document.querySelector('#movementCitizenSuggestions')?.classList.add('d-none');
+  }
+
+  function setMovementCitizenSelected(label, detail) {
+    const host = document.querySelector('#movementCitizenSelected');
+    if (!host) return;
+    host.innerHTML = label ? '<span>' + escapeHtml([label, detail].filter(Boolean).join(' - ')) + '</span>' : '';
+  }
+
+  function setMovementCitizenFromRow(row) {
+    const form = document.querySelector('#movementForm');
+    if (!form) return;
+    const id = row.citizen_id || row.citizenId || '';
+    const label = [row.citizen_code, row.full_name, row.household_code].filter(Boolean).join(' - ');
+    const detail = [formatDate(row.date_of_birth), row.identity_number].filter(Boolean).join(' - ');
+    form.elements.citizenId.value = id;
+    const input = document.querySelector('#movementCitizenSearch');
+    if (input) input.value = label || (id ? String(id) : '');
+    setMovementCitizenSelected(label, detail);
+  }
   async function loadMovements() {
     const data = await api('/api/movements?' + new URLSearchParams(App.movements));
     document.querySelector('#movementRows').innerHTML = data.items.map(row => `<tr><td>${formatDate(row.effective_date)}</td><td>${movementLabel(row.type)}</td><td>${escapeHtml(row.full_name)}</td><td>${escapeHtml(row.identity_number || '')}</td><td>${escapeHtml(row.household_code || '')}</td><td>${escapeHtml(row.reason || '')}</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="movements.edit" data-id="${Number(row.id || 0)}">Sửa</button> <button class="btn btn-sm btn-outline-danger" type="button" data-platform-action="movements.delete" data-id="${Number(row.id || 0)}">Xóa</button></td></tr>`).join('') || emptyRow(7, 'Chưa có biến động');
@@ -321,10 +391,11 @@
 
   window.openMovementForm = async function openMovementForm(id = null) {
     const form = document.querySelector('#movementForm');
-    form.reset(); form.elements.id.value = '';
+    form.reset(); form.elements.id.value = ''; form.elements.citizenId.value = ''; const citizenSearch = document.querySelector('#movementCitizenSearch'); if (citizenSearch) citizenSearch.value = ''; setMovementCitizenSelected('', ''); document.querySelector('#movementCitizenSuggestions')?.classList.add('d-none');
     if (id) {
       const row = await api('/api/movements/' + id);
       setForm(form, { id: row.id, citizenId: row.citizen_id, type: row.type, effectiveDate: row.effective_date, fromAddress: row.from_address, toAddress: row.to_address, documentNumber: row.document_number, reason: row.reason, note: row.note });
+      setMovementCitizenFromRow(row);
     }
     openModal('movementModal');
   };
@@ -332,6 +403,7 @@
   async function saveMovement(event) {
     event.preventDefault();
     const data = formData(event.currentTarget); const id = data.id; delete data.id;
+    if (!data.citizenId) { showToast('Vui l\u00f2ng ch\u1ecdn nh\u00e2n kh\u1ea9u t\u1eeb danh s\u00e1ch', 'warning'); document.querySelector('#movementCitizenSearch')?.focus(); return; }
     await api(id ? '/api/movements/' + id : '/api/movements', { method: id ? 'PUT' : 'POST', body: data });
     closeModal('movementModal'); showToast('Đã lưu biến động'); loadMovements(); loadDashboard();
   }
@@ -377,7 +449,9 @@
     renderAppearancePreviews();
   }
 
-  function bindAppearanceControls() {    document.querySelectorAll('.rich-editor').forEach(editor => editor.addEventListener('input', syncRichEditors));    ['logoUrl','backgroundImages','introImageUrl'].forEach(name => document.querySelector('#appearanceForm [name="' + name + '"]')?.addEventListener('input', renderAppearancePreviews));
+  function bindAppearanceControls() {
+    document.querySelectorAll('.rich-editor').forEach(editor => editor.addEventListener('input', syncRichEditors));
+    ['logoUrl','backgroundImages','introImageUrl'].forEach(name => document.querySelector('#appearanceForm [name="' + name + '"]')?.addEventListener('input', renderAppearancePreviews));
   }
 
   function syncRichEditors() {
@@ -403,7 +477,7 @@
     document.querySelector('#appearanceBackgroundPreview').innerHTML = images.length ? images.map(url => '<img src="' + escapeHtml(url) + '" alt="Ảnh nền xem trước">').join('') : '<div class="appearance-media-preview"><span class="text-muted">Ảnh nền mặc định</span></div>';
     const introUrl = form.elements.introImageUrl?.value || '';
     const introPreview = document.querySelector('#appearanceIntroPreview');
-    if (introPreview) introPreview.innerHTML = introUrl ? '<img src="' + escapeHtml(introUrl) + '" alt="Ảnh minh họa xem trước">' : '<span class="text-muted">Chưa chọn ảnh</span>'; 
+    if (introPreview) introPreview.innerHTML = introUrl ? '<img src="' + escapeHtml(introUrl) + '" alt="Ảnh minh họa xem trước">' : '<span class="text-muted">Chưa chọn ảnh</span>';
   }
 
   function parseAppearanceImages(value) {
@@ -484,7 +558,6 @@
     syncRichEditors();
     normalizeSingleBackgroundImage(form);
     const payload = formData(form);
-    delete payload.copyright;
     const saved = await api('/api/settings', { method: 'POST', body: payload });
     setForm(form, saved);
     setRichValue('hamletHistory', saved.hamletHistory || '');

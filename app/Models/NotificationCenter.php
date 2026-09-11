@@ -8,27 +8,25 @@ final class NotificationCenter extends BaseModel
 {
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS notification_states (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  village_id BIGINT UNSIGNED NOT NULL,
-  user_id BIGINT UNSIGNED NOT NULL,
-  notification_key VARCHAR(160) NOT NULL,
-  read_at DATETIME NULL,
-  dismissed_at DATETIME NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_notification_state_user_key (village_id, user_id, notification_key),
-  KEY idx_notification_states_village (village_id),
-  KEY idx_notification_states_user_read (user_id, read_at),
-  KEY idx_notification_states_user_dismissed (user_id, dismissed_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        if (!$this->columnExists('notification_states', 'village_id')) {
-            $this->execute('ALTER TABLE notification_states ADD COLUMN village_id BIGINT UNSIGNED NULL AFTER id');
-            $this->execute('UPDATE notification_states SET village_id = :village_id WHERE village_id IS NULL', $this->withTenant());
-            $this->execute('ALTER TABLE notification_states MODIFY COLUMN village_id BIGINT UNSIGNED NOT NULL');
-        }
+        $this->assertSchemaReady();
+    }
+
+    public function assertSchemaReady(): void
+    {
+        $this->assertColumns('notification_states', [
+            'id' => ['bigint(20) unsigned', 'NO'],
+            'village_id' => ['bigint(20) unsigned', 'NO'],
+            'user_id' => ['bigint(20) unsigned', 'NO'],
+            'notification_key' => ['varchar(160)', 'NO'],
+            'read_at' => ['datetime', 'YES'],
+            'dismissed_at' => ['datetime', 'YES'],
+            'created_at' => ['datetime', 'NO'],
+            'updated_at' => ['datetime', 'YES'],
+        ]);
+        $this->assertIndex('notification_states', 'uq_notification_state_user_key', ['village_id', 'user_id', 'notification_key']);
+        $this->assertIndex('notification_states', 'idx_notification_states_village', ['village_id']);
+        $this->assertIndex('notification_states', 'idx_notification_states_user_read', ['user_id', 'read_at']);
+        $this->assertIndex('notification_states', 'idx_notification_states_user_dismissed', ['user_id', 'dismissed_at']);
     }
 
     public function list(int $userId, array $filters = []): array
@@ -145,6 +143,27 @@ SQL);
             ['table' => $table]
         );
         return (int)($row['total'] ?? 0) > 0;
+    }
+
+    private function assertColumns(string $table, array $expected): void
+    {
+        $columns = $this->fetchAll('SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type, IS_NULLABLE AS nullable FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table' => $table]);
+        if (!$columns) throw new \RuntimeException('Notification schema is not ready: missing table ' . $table);
+        $actual = [];
+        foreach ($columns as $column) $actual[(string) $column['name']] = $column;
+        foreach ($expected as $name => [$type, $nullable]) {
+            if (!isset($actual[$name])) throw new \RuntimeException('Notification schema is not ready: missing column ' . $table . '.' . $name);
+            if (strtolower((string) $actual[$name]['type']) !== strtolower($type) || strtoupper((string) $actual[$name]['nullable']) !== $nullable) {
+                throw new \RuntimeException('Notification schema is not ready: incompatible column ' . $table . '.' . $name);
+            }
+        }
+    }
+
+    private function assertIndex(string $table, string $index, array $columns): void
+    {
+        $rows = $this->fetchAll('SELECT COLUMN_NAME AS name FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND INDEX_NAME=:index ORDER BY SEQ_IN_INDEX', ['table' => $table, 'index' => $index]);
+        $actual = array_map(fn($row) => (string) $row['name'], $rows);
+        if ($actual !== $columns) throw new \RuntimeException('Notification schema is not ready: missing index ' . $table . '.' . $index);
     }
 
     private function states(int $userId, array $keys): array

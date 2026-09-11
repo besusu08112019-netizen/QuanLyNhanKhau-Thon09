@@ -59,12 +59,28 @@
   function esc(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char])); }
   function t(value, fallback) { return window.AppI18n && typeof window.AppI18n.text === 'function' ? window.AppI18n.text(value, fallback) : (fallback || String(value || '')); }
   function hasValue(value) { return value !== null && value !== undefined && String(value).trim() !== ''; }
+  function hasSummaryData(value) {
+    return value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
+  }
+  function householdProfileSummary(profile, row) {
+    if (hasSummaryData(row?.related_summary)) return row.related_summary;
+    if (hasSummaryData(profile?.related_summary)) return profile.related_summary;
+    return {};
+  }
   function dateText(value) { if (!hasValue(value)) return ''; const date = new Date(String(value).replace(' ', 'T')); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('vi-VN'); }
   function yearText(value) { if (!hasValue(value)) return ''; const date = new Date(String(value).replace(' ', 'T')); return Number.isNaN(date.getTime()) ? String(value) : String(date.getFullYear()); }
+  function birthDateText(value) {
+    if (!hasValue(value)) return '';
+    const raw = String(value);
+    const date = new Date(raw.replace(' ', 'T'));
+    return Number.isNaN(date.getTime()) ? raw : date.toLocaleDateString('vi-VN');
+  }
   function memberStatusText(row) {
-    return [row.presence_status_label || row.presence_status, row.residency_status_label || row.residency_status, row.status_label || row.life_status || row.status]
-      .filter(hasValue)
-      .join(' / ');
+    const raw = [row?.presence_status, row?.presence_status_label, row?.status, row?.current_status].filter(hasValue).join(' / ');
+    const text = String(raw || '').toUpperCase();
+    if (text.includes('AWAY') || text.includes('ĐI VẮNG') || text.includes('DI VANG')) return '\u0110i v\u1eafng';
+    if (text.includes('AT_HOME') || text.includes('Ở NHÀ') || text.includes('O NHA')) return '\u1ede nh\u00e0';
+    return row.presence_status_label || row.presence_status || '';
   }
   function show(message, type = 'success') { if (typeof showToast === 'function') showToast(message, type); }
   function openModal(id) {
@@ -106,6 +122,7 @@
       .register({ key: 'digitalProfile.profile.refresh', handler: ({ target }) => refreshProfileFromAction(target) })
       .register({ key: 'digitalProfile.profile.print', handler: () => window.TenantAppPrint?.currentScreen({ title: 'Hồ sơ số', orientation: 'portrait', showSummary: false }) || show('Print Framework is not ready', 'warning') })
       .register({ key: 'digitalProfile.citizen.open', handler: ({ dataset }) => window.showPerson?.(dataset.citizenId || dataset.openCitizen) })
+      .register({ key: 'digitalProfile.citizen.edit', handler: ({ dataset }) => editCitizenFromAction(dataset.citizenId || dataset.editCitizen) })
       .register({ key: 'digitalProfile.profile.link', handler: ({ dataset }) => openLink(dataset.profileSection || dataset.profileLink) })
       .register({ key: 'digitalProfile.note.edit', handler: ({ target }) => editNoteFromAction(target) })
       .register({ key: 'digitalProfile.note.delete', handler: ({ target, dataset }) => deleteNoteFromAction(target, dataset.noteId || dataset.deleteNote) })
@@ -123,6 +140,40 @@
         const root = target?.closest?.('[data-household-profile]');
         handleGpsAction(dataset.gpsAction || 'gis', { id: Number(root?.dataset.householdProfile || 0) });
       } });
+  }
+  function normalizeDigitalProfileEditStack() {
+    const detail = document.getElementById('detailModal');
+    const person = document.getElementById('personModal');
+    const visible = [detail, person].filter(modal => modal && modal.classList.contains('show'));
+    if (!visible.length) return;
+    const backs = Array.from(document.querySelectorAll('.modal-backdrop'));
+    document.body.classList.add('modal-open');
+    visible.forEach((modal, index) => {
+      modal.style.zIndex = String(1055 + index * 20);
+    });
+    backs.slice(0, visible.length).forEach((backdrop, index) => {
+      backdrop.style.zIndex = String(1050 + index * 20);
+    });
+  }
+  function watchDigitalProfileEditStack() {
+    const started = Date.now();
+    const tick = () => {
+      normalizeDigitalProfileEditStack();
+      if (Date.now() - started < 5000) window.setTimeout(tick, 120);
+    };
+    tick();
+  }
+  function editCitizenFromAction(id) {
+    id = Number(id || 0);
+    if (!id || !requirePermission('citizen', 'update')) return;
+    if (typeof window.openPersonForm === 'function') {
+      const personModal = document.getElementById('personModal');
+      if (personModal) personModal.addEventListener('hidden.bs.modal', () => window.setTimeout(normalizeDigitalProfileEditStack, 0), { once: true });
+      const result = window.openPersonForm(id);
+      Promise.resolve(result).then(watchDigitalProfileEditStack, watchDigitalProfileEditStack);
+      return result;
+    }
+    show('Không mở được form sửa nhân khẩu', 'warning');
   }
   function refreshProfileFromAction(target) {
     const root = target?.closest?.('.digital-profile');
@@ -243,19 +294,25 @@
   async function ensureHouseholdProfileMembers(profile, id) {
     profile = profile && typeof profile === 'object' ? profile : {};
     profile.profile = profile.profile && typeof profile.profile === 'object' ? profile.profile : {};
-    if (dataItems(profile.members).length) return profile;
     let householdCode = profile.profile.household_code || profile.household_code || '';
-    if (!householdCode && id) {
+    const needsHouseholdDetail = !!id;
+    if (needsHouseholdDetail) {
       try {
         const household = await api('/api/households/' + encodeURIComponent(id));
         if (household && typeof household === 'object') {
-          profile.profile = Object.assign({}, household, profile.profile);
-          householdCode = profile.profile.household_code || household.household_code || '';
+          const existing = profile.profile || {};
+          profile.profile = Object.assign({}, household, existing);
+          if (hasSummaryData(household.related_summary)) {
+            profile.profile.related_summary = household.related_summary;
+            profile.related_summary = household.related_summary;
+          }
+          householdCode = profile.profile.household_code || household.household_code || householdCode;
         }
       } catch (error) {
-        console.warn('[digital-profile] household member lookup skipped', error);
+        console.warn('[digital-profile] household summary lookup skipped', error);
       }
     }
+    if (dataItems(profile.members).length) return profile;
     if (!householdCode) return profile;
     try {
       const members = await api('/api/persons?' + new URLSearchParams({ householdId: householdCode, pageSize: 1000 }).toString());
@@ -493,8 +550,8 @@
   function renderMembers(members) {
     members = dataItems(members);
     if (!members.length) return '';
-    return '<section class="mb-3" id="digitalProfileMembers"><h6 class="border-bottom pb-2 mb-2">Danh sách nhân khẩu</h6><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Mã NK</th><th>Họ tên</th><th>Quan hệ</th><th>Năm sinh</th><th>Giới tính</th><th>Trạng thái</th><th></th></tr></thead><tbody>'
-      + members.map(row => '<tr><td>' + esc(row.citizen_code || '') + '</td><td><button class="btn btn-link p-0 fw-semibold" type="button" data-platform-action="digitalProfile.citizen.open" data-citizen-id="' + Number(row.id || 0) + '">' + esc(row.full_name || '') + '</button></td><td>' + esc(row.relationship || row.relationship_to_head || '') + '</td><td>' + esc(yearText(row.date_of_birth || row.birth_year || row.year_of_birth)) + '</td><td>' + esc(row.gender || row.gender_label || '') + '</td><td>' + esc(memberStatusText(row)) + '</td><td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="digitalProfile.citizen.open" data-citizen-id="' + Number(row.id || 0) + '">Xem</button></td></tr>').join('')
+    return '<section class="mb-3" id="digitalProfileMembers"><h6 class="border-bottom pb-2 mb-2">Danh sách nhân khẩu</h6><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Mã NK</th><th>Họ tên</th><th>Quan hệ</th><th>Ngày sinh</th><th>Giới tính</th><th>Trạng thái</th><th></th></tr></thead><tbody>'
+      + members.map(row => '<tr><td>' + esc(row.citizen_code || '') + '</td><td><button class="btn btn-link p-0 fw-semibold" type="button" data-platform-action="digitalProfile.citizen.open" data-citizen-id="' + Number(row.id || 0) + '">' + esc(row.full_name || '') + '</button></td><td>' + esc(row.relationship || row.relationship_to_head || '') + '</td><td>' + esc(birthDateText(row.date_of_birth || row.birth_year || row.year_of_birth)) + '</td><td>' + esc(row.gender || row.gender_label || '') + '</td><td>' + esc(memberStatusText(row)) + '</td><td class="text-end"><div class="d-flex gap-1 justify-content-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="digitalProfile.citizen.open" data-citizen-id="' + Number(row.id || 0) + '">Xem</button>' + (can('citizen', 'update') ? '<button class="btn btn-sm btn-outline-secondary" type="button" data-platform-action="digitalProfile.citizen.edit" data-citizen-id="' + Number(row.id || 0) + '">Sửa</button>' : '') + '</div></td></tr>').join('')
       + '</tbody></table></div></section>';
   }
 
@@ -660,7 +717,7 @@
       const profile = await ensureHouseholdProfileMembers(await loadProfile('household', id), id);
       const entityId = Number(profile.profile?.id || id || 0);
       profile.businessActivities = await loadHouseholdBusinessActivities(entityId);
-      $('#detailTitle').textContent = t('Ho so so ho gia dinh');
+      $('#detailTitle').textContent = t('Hồ sơ số ho gia dinh');
       $('#detailBody').innerHTML = renderHouseholdTabbedProfile(profile, entityId);
       bindHouseholdTabs(profile, entityId);
       refreshUiEnhancements($('#detailBody') || document);
@@ -684,8 +741,8 @@
   function renderHouseholdTabbedProfile(profile, id) {
     return '<div class="household-profile-tabs" data-household-profile="' + id + '">'
       + '<ul class="nav nav-tabs mb-3" role="tablist">'
-      + '<li class="nav-item"><button class="nav-link active" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="info">' + t('Thong tin') + '</button></li>'
-      + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="files">' + t('Ho so so') + '</button></li>'
+      + '<li class="nav-item"><button class="nav-link active" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="info">' + t('Thông tin') + '</button></li>'
+      + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="files">' + t('Hồ sơ số') + '</button></li>'
       + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="gallery">' + t('Thu vien anh') + '</button></li>'
       + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="video">Video</button></li>'
       + '<li class="nav-item"><button class="nav-link" type="button" data-platform-action="digitalProfile.householdTab" data-household-tab="gps">GPS</button></li>'
@@ -732,13 +789,14 @@
   }
   function renderHouseholdInfo(profile) {
     const row = profile.profile || {};
+    const relatedSummary = typeof householdRelatedSummaryHtml === 'function' ? householdRelatedSummaryHtml(householdProfileSummary(profile, row)) : '';
     if (typeof details === 'function' && typeof memberTable === 'function') {
       return renderHouseholdPhoto(profile) + details([
-        [t('Ma ho'), row.household_code], [t('Chu ho'), row.head_citizen_name], [t('Dia chi'), row.address], [t('So dien thoai'), row.phone],
-        [t('O nha'), row.at_home_count || 0], [t('Di vang'), row.away_count || 0], [t('Dien ho'), row.household_type || ''], [t('Ghi chu'), row.note]
-      ]) + renderHouseholdBusinessActivities(profile.businessActivities || []) + renderMembers(profile.members || []);
+        [t('Mã hộ'), row.household_code], [t('Chủ hộ'), row.head_citizen_name], [t('Địa chỉ'), row.address], [t('Số điện thoại'), row.phone],
+        [t('Ghi chú'), row.note]
+      ]) + relatedSummary + renderHouseholdBusinessActivities(profile.businessActivities || []) + renderMembers(profile.members || []);
     }
-    return renderHouseholdPhoto(profile) + renderSections(profile.sections || {}) + renderMembers(profile.members || []);
+    return renderHouseholdPhoto(profile) + renderSections(profile.sections || {}) + relatedSummary + renderMembers(profile.members || []);
   }
 
   function renderHouseholdBusinessActivities(items) {
@@ -750,8 +808,8 @@
       + '<td>' + esc(item.economic_type || item.sector_label || item.production_sector || item.business_sector || '') + '</td>'
       + '<td>' + esc(item.status_label || item.status || '') + '</td>'
       + '</tr>').join('');
-    return '<section class="person-info-section mt-3"><div class="person-info-section-title"><i class="fa-solid fa-briefcase"></i><h4>Ho?t ??ng kinh t?</h4></div>'
-      + '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>STT</th><th>T?n c? s?</th><th>Lo?i h?nh</th><th>Ng?nh ngh?</th><th>Tr?ng th?i</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
+    return '<section class="person-info-section mt-3"><div class="person-info-section-title"><i class="fa-solid fa-briefcase"></i><h4>Hoạt động kinh tế</h4></div>'
+      + '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>STT</th><th>Tên cơ sở</th><th>Loại hình</th><th>Ngành nghề</th><th>Trạng thái</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
   }
 
   function bindHouseholdTabs(profile, id) {
@@ -883,7 +941,7 @@
     const hasGps = hasValue(row.latitude) && hasValue(row.longitude);
     const mapUrl = hasGps ? 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(row.latitude) + '&mlon=' + encodeURIComponent(row.longitude) + '#map=18/' + encodeURIComponent(row.latitude) + '/' + encodeURIComponent(row.longitude) : '';
     const directionUrl = hasGps ? 'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=;' + encodeURIComponent(row.latitude + ',' + row.longitude) : '';
-    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">' + t('Thong tin GPS / GIS') + '</h6><div class="row g-2">'
+    return '<section class="mb-3"><h6 class="border-bottom pb-2 mb-2">' + t('Thông tin GPS / GIS') + '</h6><div class="row g-2">'
       + '<div class="col-md-6"><div class="border rounded p-2 h-100"><div class="text-muted small">' + t('Toa do hien tai') + '</div><div class="fw-semibold">' + esc(hasGps ? row.latitude + ', ' + row.longitude : t('Chua co toa do GIS')) + '</div></div></div>'
       + '<div class="col-md-3"><div class="border rounded p-2 h-100"><div class="text-muted small">' + t('Nguon') + '</div><div class="fw-semibold">' + esc(row.location_source || '') + '</div></div></div>'
       + '<div class="col-md-3"><div class="border rounded p-2 h-100"><div class="text-muted small">' + t('Cap nhat') + '</div><div class="fw-semibold">' + esc(dateText(row.location_updated_at)) + '</div></div></div>'
@@ -930,7 +988,7 @@
       zoom = Math.max(0.5, Math.min(3, zoom));
       $('.modal-title', modal).textContent = file.display_name || file.original_name || '';
       const img = $('[data-lightbox-image]', modal);
-      loadPreviewBlob(file.id).then(url => { img.src = url; }).catch(() => { img.alt = t('Khong tai duoc anh'); });
+      loadPreviewBlob(file.id).then(url => { img.src = url; }).catch(() => { img.alt = t('Không tải được anh'); });
       img.style.transform = 'scale(' + zoom + ')';
       img.style.transformOrigin = 'center center';
     };

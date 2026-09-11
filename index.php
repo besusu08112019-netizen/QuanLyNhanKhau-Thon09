@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', '20260809-super-admin-guard');
+define('APP_ASSET_VERSION', 'deceased-history-20260910');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 require_once BASE_PATH . '/config/env.php';
@@ -37,7 +37,6 @@ use App\Controllers\AdministrativeUnitController;
 use App\Controllers\AuthController;
 use App\Controllers\BackupController;
 use App\Controllers\ComplaintController;
-use App\Controllers\CommunityOrganizationController;
 use App\Controllers\ControlCenterAuthController;
 use App\Controllers\ControlCenterPermissionController;
 use App\Controllers\ControlCenterUserController;
@@ -45,7 +44,6 @@ use App\Controllers\ContributionController;
 use App\Controllers\ControlCenterController;
 use App\Controllers\DataQualityController;
 use App\Controllers\DashboardController;
-use App\Controllers\DefenseSecurityController;
 use App\Controllers\FileController;
 use App\Controllers\FinanceController;
 use App\Controllers\GisController;
@@ -60,14 +58,19 @@ use App\Controllers\MovementController;
 use App\Controllers\NotificationController;
 use App\Controllers\OperationCenterController;
 use App\Controllers\PartyMemberController;
+use App\Controllers\AssociationController;
+use App\Controllers\DefenseSecurityController;
 use App\Controllers\PermissionController;
 use App\Controllers\PlatformSettingsController;
 use App\Controllers\PolicyAlertController;
+use App\Controllers\PolicySubjectController;
 use App\Controllers\PersonController;
 use App\Controllers\PhotoGalleryController;
 use App\Controllers\ProfileController;
 use App\Controllers\PublicAssetController;
+use App\Controllers\RelationshipReviewController;
 use App\Controllers\ReportController;
+use App\Controllers\RuralCleanWaterController;
 use App\Controllers\SettingController;
 use App\Controllers\SystemAdminController;
 use App\Controllers\TenantInstallerController;
@@ -100,6 +103,302 @@ function configure_tenant_php_session(): void
         session_save_path($sessionPath);
     }
     session_name('qh_session_' . substr(hash('sha256', RuntimePaths::host()), 0, 16));
+}
+
+
+function pwa_tenant_settings(): array
+{
+    $settings = TenantConfig::publicSettings();
+    $settings['tenantHost'] = TenantContext::host() ?: RuntimePaths::host();
+    $settings['villageId'] = TenantContext::villageId();
+    return $settings;
+}
+
+function pwa_tenant_slug(array $settings): string
+{
+    $source = (string) (($settings['tenantHost'] ?? '') ?: ($_SERVER['HTTP_HOST'] ?? 'tenant'));
+    $slug = strtolower((string) preg_replace('/[^a-z0-9]+/', '-', $source));
+    return trim($slug, '-') ?: 'tenant';
+}
+
+function pwa_asset_version(array $settings): string
+{
+    return substr(hash('sha256', implode('|', [
+        pwa_tenant_slug($settings),
+        (string) ($settings['systemName'] ?? ''),
+        (string) ($settings['hamletName'] ?? ''),
+        (string) ($settings['unitName'] ?? ''),
+        (string) ($settings['logoUrl'] ?? ''),
+        (string) ($settings['themeColor'] ?? ''),
+        APP_ASSET_VERSION,
+    ])), 0, 16);
+}
+
+function pwa_url(string $path, array $settings): string
+{
+    return '/' . ltrim($path, '/') . '?v=' . pwa_asset_version($settings);
+}
+
+function pwa_manifest_payload(array $settings): array
+{
+    $unitName = trim((string) TenantConfig::unitName($settings));
+    $name = trim((string) ($settings['systemName'] ?? ''));
+    if ($name === '') {
+        $name = $unitName !== '' ? $unitName : 'He thong quan ly hanh chinh';
+    }
+
+    $shortName = trim((string) ($settings['hamletName'] ?? ''));
+    if ($shortName === '') {
+        $shortName = $unitName !== '' ? $unitName : $name;
+    }
+    if (mb_strlen($shortName, 'UTF-8') > 24) {
+        $shortName = mb_substr($shortName, 0, 24, 'UTF-8');
+    }
+
+    $id = '/pwa/' . pwa_tenant_slug($settings);
+    $themeColor = (string) ($settings['themeColor'] ?? '#0b6b3a');
+    $backgroundColor = (string) ($settings['backgroundColor'] ?? '#eef3f8');
+
+    return [
+        'id' => $id,
+        'name' => $name,
+        'short_name' => $shortName,
+        'description' => $unitName !== '' ? $unitName : $name,
+        'start_url' => '/',
+        'scope' => '/',
+        'display' => 'standalone',
+        'display_override' => ['standalone', 'browser'],
+        'orientation' => 'any',
+        'theme_color' => $themeColor,
+        'background_color' => $backgroundColor,
+        'icons' => [
+            ['src' => pwa_url('pwa-icon-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => pwa_url('pwa-icon-512.png', $settings), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => pwa_url('pwa-maskable-192.png', $settings), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ['src' => pwa_url('pwa-maskable-512.png', $settings), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+        ],
+    ];
+}
+
+function pwa_send_manifest(bool $sendBody = true): void
+{
+    $settings = pwa_tenant_settings();
+    $payload = json_encode(pwa_manifest_payload($settings), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '{}';
+    header('Content-Type: application/manifest+json; charset=utf-8');
+    header('Cache-Control: no-store, must-revalidate');
+    header('Content-Length: ' . strlen($payload));
+    if ($sendBody) {
+        echo $payload;
+    }
+    exit;
+}
+
+function pwa_icon_label(array $settings): string
+{
+    foreach ([
+        (string) ($settings['hamletName'] ?? ''),
+        (string) ($settings['unitName'] ?? ''),
+        (string) ($settings['tenantHost'] ?? ''),
+    ] as $candidate) {
+        if (preg_match('/\d{1,3}/', $candidate, $matches)) {
+            return str_pad(substr($matches[0], -2), 2, '0', STR_PAD_LEFT);
+        }
+    }
+    return '00';
+}
+
+function pwa_hex_rgb(string $hex, array $fallback): array
+{
+    $value = ltrim(trim($hex), '#');
+    if (strlen($value) === 3) {
+        $value = $value[0] . $value[0] . $value[1] . $value[1] . $value[2] . $value[2];
+    }
+    if (!preg_match('/^[0-9a-f]{6}$/i', $value)) {
+        return $fallback;
+    }
+    return [hexdec(substr($value, 0, 2)), hexdec(substr($value, 2, 2)), hexdec(substr($value, 4, 2))];
+}
+
+function pwa_png_chunk(string $type, string $data): string
+{
+    return pack('N', strlen($data)) . $type . $data . pack('N', crc32($type . $data));
+}
+
+function pwa_draw_rect(array &$pixels, int $width, int $height, int $x, int $y, int $w, int $h, array $color): void
+{
+    $x0 = max(0, $x);
+    $y0 = max(0, $y);
+    $x1 = min($width, $x + $w);
+    $y1 = min($height, $y + $h);
+    for ($row = $y0; $row < $y1; $row++) {
+        for ($col = $x0; $col < $x1; $col++) {
+            $pixels[$row][$col] = $color;
+        }
+    }
+}
+
+function pwa_draw_digit(array &$pixels, int $width, int $height, int $digit, int $x, int $y, int $unit, array $color): void
+{
+    $segments = [
+        0 => [1, 1, 1, 1, 1, 1, 0],
+        1 => [0, 1, 1, 0, 0, 0, 0],
+        2 => [1, 1, 0, 1, 1, 0, 1],
+        3 => [1, 1, 1, 1, 0, 0, 1],
+        4 => [0, 1, 1, 0, 0, 1, 1],
+        5 => [1, 0, 1, 1, 0, 1, 1],
+        6 => [1, 0, 1, 1, 1, 1, 1],
+        7 => [1, 1, 1, 0, 0, 0, 0],
+        8 => [1, 1, 1, 1, 1, 1, 1],
+        9 => [1, 1, 1, 1, 0, 1, 1],
+    ][$digit] ?? [0, 0, 0, 0, 0, 0, 0];
+
+    $thick = max(2, (int) round($unit * 0.28));
+    $long = $unit * 2;
+    $tall = $unit * 4;
+    $map = [
+        [$x + $thick, $y, $long, $thick],
+        [$x + $long + $thick, $y + $thick, $thick, $tall],
+        [$x + $long + $thick, $y + $tall + ($thick * 2), $thick, $tall],
+        [$x + $thick, $y + ($tall * 2) + ($thick * 2), $long, $thick],
+        [$x, $y + $tall + ($thick * 2), $thick, $tall],
+        [$x, $y + $thick, $thick, $tall],
+        [$x + $thick, $y + $tall + $thick, $long, $thick],
+    ];
+    foreach ($segments as $index => $enabled) {
+        if (!$enabled) continue;
+        [$rx, $ry, $rw, $rh] = $map[$index];
+        pwa_draw_rect($pixels, $width, $height, $rx, $ry, $rw, $rh, $color);
+    }
+}
+
+function pwa_local_logo_path(array $settings): ?string
+{
+    $logoUrl = trim((string) ($settings['logoUrl'] ?? ''));
+    if ($logoUrl === '') return null;
+
+    $parts = parse_url($logoUrl);
+    $path = (string) ($parts['path'] ?? $logoUrl);
+    if ($path === '' || str_contains($path, '..') || preg_match('/[\x00-\x1F]/', $path)) return null;
+
+    if (preg_match('#^/api/media/(logo)/(original|thumb)/(\d{4})/(\d{2})/([a-f0-9]{32}\.(?:png|jpg|jpeg|webp))$#i', $path, $matches)
+        || preg_match('#^/uploads/(logo)/(original|thumb)/(\d{4})/(\d{2})/([a-f0-9]{32}\.(?:png|jpg|jpeg|webp))$#i', $path, $matches)) {
+        $config = is_file(BASE_PATH . '/config/app.php') ? require BASE_PATH . '/config/app.php' : [];
+        $uploadRoot = rtrim(str_replace('\\', '/', (string) ($config['upload_path'] ?? RuntimePaths::uploadRoot())), '/');
+        $candidate = $uploadRoot . '/' . $matches[1] . '/' . $matches[2] . '/' . $matches[3] . '/' . $matches[4] . '/' . $matches[5];
+        $base = realpath($uploadRoot);
+        $real = realpath($candidate);
+        return $base && $real && str_starts_with($real, $base) && is_file($real) ? $real : null;
+    }
+
+    return null;
+}
+
+function pwa_render_logo_png(int $size, array $settings, bool $maskable): ?string
+{
+    $source = pwa_local_logo_path($settings);
+    if ($source === null || !extension_loaded('gd')) return null;
+
+    $extension = strtolower(pathinfo($source, PATHINFO_EXTENSION));
+    $image = match ($extension) {
+        'png' => @imagecreatefrompng($source),
+        'jpg', 'jpeg' => @imagecreatefromjpeg($source),
+        'webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($source) : false,
+        default => false,
+    };
+    if (!$image) return null;
+
+    $width = imagesx($image);
+    $height = imagesy($image);
+    if ($width < 1 || $height < 1) {
+        imagedestroy($image);
+        return null;
+    }
+
+    $canvas = imagecreatetruecolor($size, $size);
+    imagealphablending($canvas, false);
+    imagesavealpha($canvas, true);
+    $bg = pwa_hex_rgb((string) ($settings['backgroundColor'] ?? '#eef3f8'), [238, 243, 248]);
+    $background = imagecolorallocate($canvas, $bg[0], $bg[1], $bg[2]);
+    imagefilledrectangle($canvas, 0, 0, $size, $size, $background);
+    imagealphablending($canvas, true);
+
+    $safeInset = $maskable ? (int) round($size * 0.18) : (int) round($size * 0.08);
+    $max = max(1, $size - ($safeInset * 2));
+    $scale = min($max / $width, $max / $height);
+    $targetWidth = max(1, (int) round($width * $scale));
+    $targetHeight = max(1, (int) round($height * $scale));
+    $x = (int) floor(($size - $targetWidth) / 2);
+    $y = (int) floor(($size - $targetHeight) / 2);
+    imagecopyresampled($canvas, $image, $x, $y, 0, 0, $targetWidth, $targetHeight, $width, $height);
+
+    ob_start();
+    imagepng($canvas, null, 3);
+    $png = (string) ob_get_clean();
+    imagedestroy($image);
+    imagedestroy($canvas);
+    return $png !== '' ? $png : null;
+}
+
+function pwa_render_png(int $size, array $settings, bool $maskable): string
+{
+    $logoPng = pwa_render_logo_png($size, $settings, $maskable);
+    if ($logoPng !== null) return $logoPng;
+
+    $bg = pwa_hex_rgb((string) ($settings['themeColor'] ?? '#0b6b3a'), [11, 107, 58]);
+    $accent = pwa_hex_rgb((string) ($settings['backgroundColor'] ?? '#eef3f8'), [238, 243, 248]);
+    $white = [255, 255, 255];
+    $pixels = array_fill(0, $size, array_fill(0, $size, $bg));
+    $inset = $maskable ? (int) round($size * 0.18) : (int) round($size * 0.12);
+    pwa_draw_rect($pixels, $size, $size, $inset, $inset, $size - ($inset * 2), $size - ($inset * 2), $accent);
+    pwa_draw_rect($pixels, $size, $size, $inset + 8, $inset + 8, $size - (($inset + 8) * 2), $size - (($inset + 8) * 2), $bg);
+
+    $label = pwa_icon_label($settings);
+    $unit = max(12, (int) round($size * 0.075));
+    $digitWidth = (int) round($unit * 2.7);
+    $gap = (int) round($unit * 0.55);
+    $totalWidth = ($digitWidth * strlen($label)) + ($gap * (strlen($label) - 1));
+    $x = (int) round(($size - $totalWidth) / 2);
+    $y = (int) round(($size - ($unit * 8.6)) / 2);
+    foreach (str_split($label) as $char) {
+        pwa_draw_digit($pixels, $size, $size, (int) $char, $x, $y, $unit, $white);
+        $x += $digitWidth + $gap;
+    }
+
+    $raw = '';
+    for ($row = 0; $row < $size; $row++) {
+        $raw .= "\x00";
+        for ($col = 0; $col < $size; $col++) {
+            $pixel = $pixels[$row][$col];
+            $raw .= chr($pixel[0]) . chr($pixel[1]) . chr($pixel[2]);
+        }
+    }
+    return "\x89PNG\r\n\x1a\n"
+        . pwa_png_chunk('IHDR', pack('NNCCCCC', $size, $size, 8, 2, 0, 0, 0))
+        . pwa_png_chunk('IDAT', gzcompress($raw, 9))
+        . pwa_png_chunk('IEND', '');
+}
+
+function pwa_send_icon(string $name, bool $sendBody = true): void
+{
+    $map = [
+        'pwa-icon-192.png' => [192, false],
+        'pwa-icon-512.png' => [512, false],
+        'pwa-maskable-192.png' => [192, true],
+        'pwa-maskable-512.png' => [512, true],
+    ];
+    if (!isset($map[$name])) {
+        http_response_code(404);
+        exit;
+    }
+    [$size, $maskable] = $map[$name];
+    $png = pwa_render_png($size, pwa_tenant_settings(), $maskable);
+    header('Content-Type: image/png');
+    header('Cache-Control: public, max-age=300, must-revalidate');
+    header('Content-Length: ' . strlen($png));
+    if ($sendBody) {
+        echo $png;
+    }
+    exit;
 }
 
 function reject_oversized_api_request(): void
@@ -236,6 +535,16 @@ function api_exception_status(Throwable $e): int
 reject_oversized_api_request();
 $request = Request::capture();
 TenantGuard::enforce($request);
+
+$pwaPath = $request->path();
+$pwaMethod = strtoupper($request->method());
+if (in_array($pwaMethod, ['GET', 'HEAD'], true) && ($pwaPath === '/manifest.json' || $pwaPath === '/manifest.webmanifest')) {
+    pwa_send_manifest($pwaMethod !== 'HEAD');
+}
+if (in_array($pwaMethod, ['GET', 'HEAD'], true) && preg_match('#^/(pwa-(?:icon|maskable)-(?:192|512)\.png)$#', $pwaPath, $pwaMatches)) {
+    pwa_send_icon($pwaMatches[1], $pwaMethod !== 'HEAD');
+}
+
 
 if (PortalContext::isPublic() && str_starts_with($request->path(), '/api')) {
     Response::json([
@@ -523,6 +832,28 @@ $router->get('/api/policy-alerts/export-excel', [PolicyAlertController::class, '
 $router->get('/api/policy-alerts/export-pdf', [PolicyAlertController::class, 'exportPdf']);
 $router->post('/api/policy-alerts/{citizenId}/mark', [PolicyAlertController::class, 'mark']);
 
+$router->get('/api/policy-subjects/catalogs', [PolicySubjectController::class, 'catalogs']);
+$router->get('/api/policy-subjects/citizens/search', [PolicySubjectController::class, 'citizenSearch']);
+$router->get('/api/policy-subjects/citizens/{citizenId}/summary', [PolicySubjectController::class, 'citizenSummary']);
+$router->get('/api/policy-subjects/types', [PolicySubjectController::class, 'types']);
+$router->post('/api/policy-subjects/types', [PolicySubjectController::class, 'storeType']);
+$router->put('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'updateType']);
+$router->delete('/api/policy-subjects/types/{id}', [PolicySubjectController::class, 'deleteType']);
+$router->get('/api/policy-subjects/records', [PolicySubjectController::class, 'index']);
+$router->post('/api/policy-subjects/records', [PolicySubjectController::class, 'store']);
+$router->get('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'show']);
+$router->put('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'update']);
+$router->delete('/api/policy-subjects/records/{id}', [PolicySubjectController::class, 'destroy']);
+$router->post('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'uploadAttachment']);
+$router->get('/api/policy-subjects/records/{recordId}/attachments', [PolicySubjectController::class, 'attachments']);
+$router->delete('/api/policy-subjects/attachments/{id}', [PolicySubjectController::class, 'deleteAttachment']);
+$router->get('/api/policy-subjects/dashboard', [PolicySubjectController::class, 'dashboard']);
+$router->get('/api/policy-subjects/report', [PolicySubjectController::class, 'report']);
+$router->get('/api/policy-subjects/citizen-search', [PolicySubjectController::class, 'citizenSearch']);
+$router->get('/api/policy-subjects/citizens/{citizenId}', [PolicySubjectController::class, 'citizenSummary']);
+$router->get('/api/policy-subjects/export-excel', [PolicySubjectController::class, 'exportExcel']);
+$router->get('/api/policy-subjects/export-pdf', [PolicySubjectController::class, 'exportPdf']);
+
 $router->get('/api/households', [HouseholdController::class, 'index']);
 $router->post('/api/households', [HouseholdController::class, 'store']);
 $router->get('/api/households/{id}', [HouseholdController::class, 'show']);
@@ -747,10 +1078,38 @@ $router->get('/api/livestock/{id}', [LivestockController::class, 'show']);
 $router->put('/api/livestock/{id}', [LivestockController::class, 'update']);
 $router->delete('/api/livestock/{id}', [LivestockController::class, 'destroy']);
 
+$router->get('/api/rural-clean-water', [RuralCleanWaterController::class, 'index']);
+$router->post('/api/rural-clean-water', [RuralCleanWaterController::class, 'store']);
+$router->get('/api/rural-clean-water/dashboard', [RuralCleanWaterController::class, 'dashboard']);
+$router->get('/api/rural-clean-water/catalogs', [RuralCleanWaterController::class, 'catalogs']);
+$router->get('/api/rural-clean-water/household-search', [RuralCleanWaterController::class, 'householdSearch']);
+$router->get('/api/rural-clean-water/household/{householdId}', [RuralCleanWaterController::class, 'byHousehold']);
+$router->get('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'show']);
+$router->put('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'update']);
+$router->delete('/api/rural-clean-water/{id}', [RuralCleanWaterController::class, 'destroy']);
+$router->get('/api/party-members', [PartyMemberController::class, 'index']);
+$router->post('/api/party-members', [PartyMemberController::class, 'store']);
+$router->get('/api/party-members/dashboard', [PartyMemberController::class, 'dashboard']);
+$router->get('/api/party-members/catalogs', [PartyMemberController::class, 'catalogs']);
+$router->get('/api/party-members/citizen-search', [PartyMemberController::class, 'citizenSearch']);
+$router->post('/api/party-members/{id}/restore', [PartyMemberController::class, 'restore']);
+$router->get('/api/party-members/{id}', [PartyMemberController::class, 'show']);
+$router->put('/api/party-members/{id}', [PartyMemberController::class, 'update']);
+$router->delete('/api/party-members/{id}', [PartyMemberController::class, 'destroy']);
+$router->get('/api/associations', [AssociationController::class, 'index']);
+$router->post('/api/associations', [AssociationController::class, 'store']);
+$router->get('/api/associations/dashboard', [AssociationController::class, 'dashboard']);
+$router->get('/api/associations/catalogs', [AssociationController::class, 'catalogs']);
+$router->get('/api/associations/citizen-search', [AssociationController::class, 'citizenSearch']);
+$router->get('/api/associations/report', [AssociationController::class, 'report']);
+$router->get('/api/associations/{id}', [AssociationController::class, 'show']);
+$router->put('/api/associations/{id}', [AssociationController::class, 'update']);
+$router->delete('/api/associations/{id}', [AssociationController::class, 'destroy']);
+
 $router->get('/api/defense-security/catalogs', [DefenseSecurityController::class, 'catalogs']);
 $router->get('/api/defense-security/dashboard', [DefenseSecurityController::class, 'dashboard']);
 $router->get('/api/defense-security/citizen-search', [DefenseSecurityController::class, 'citizenSearch']);
-$router->get('/api/defense-security/citizens/{citizenId}/summary', [DefenseSecurityController::class, 'citizenSummary']);
+$router->get('/api/defense-security/citizen/{citizenId}', [DefenseSecurityController::class, 'citizenSummary']);
 $router->get('/api/defense-security/nvqs', [DefenseSecurityController::class, 'nvqsIndex']);
 $router->post('/api/defense-security/nvqs', [DefenseSecurityController::class, 'nvqsStore']);
 $router->get('/api/defense-security/nvqs/{id}', [DefenseSecurityController::class, 'nvqsShow']);
@@ -766,28 +1125,20 @@ $router->post('/api/defense-security/security-force', [DefenseSecurityController
 $router->get('/api/defense-security/security-force/{id}', [DefenseSecurityController::class, 'securityForceShow']);
 $router->put('/api/defense-security/security-force/{id}', [DefenseSecurityController::class, 'securityForceUpdate']);
 $router->delete('/api/defense-security/security-force/{id}', [DefenseSecurityController::class, 'securityForceDelete']);
+$router->get('/api/defense-security/security-records', [DefenseSecurityController::class, 'securityRecordsIndex']);
+$router->post('/api/defense-security/security-records', [DefenseSecurityController::class, 'securityRecordsStore']);
+$router->get('/api/defense-security/security-records/{id}', [DefenseSecurityController::class, 'securityRecordsShow']);
+$router->put('/api/defense-security/security-records/{id}', [DefenseSecurityController::class, 'securityRecordsUpdate']);
+$router->delete('/api/defense-security/security-records/{id}', [DefenseSecurityController::class, 'securityRecordsDelete']);
+$router->post('/api/defense-security/security-records/{id}/logs', [DefenseSecurityController::class, 'securityRecordLogStore']);
+$router->get('/api/defense-security/incidents', [DefenseSecurityController::class, 'incidentsIndex']);
+$router->post('/api/defense-security/incidents', [DefenseSecurityController::class, 'incidentsStore']);
+$router->get('/api/defense-security/incidents/{id}', [DefenseSecurityController::class, 'incidentsShow']);
+$router->put('/api/defense-security/incidents/{id}', [DefenseSecurityController::class, 'incidentsUpdate']);
+$router->delete('/api/defense-security/incidents/{id}', [DefenseSecurityController::class, 'incidentsDelete']);
+$router->post('/api/defense-security/incidents/{id}/people', [DefenseSecurityController::class, 'incidentPersonStore']);
+$router->post('/api/defense-security/incidents/{id}/logs', [DefenseSecurityController::class, 'incidentLogStore']);
 
-$router->get('/api/party-members', [PartyMemberController::class, 'index']);
-$router->post('/api/party-members', [PartyMemberController::class, 'store']);
-$router->get('/api/party-members/dashboard', [PartyMemberController::class, 'dashboard']);
-$router->get('/api/party-members/catalogs', [PartyMemberController::class, 'catalogs']);
-$router->get('/api/party-members/citizen-search', [PartyMemberController::class, 'citizenSearch']);
-$router->post('/api/party-members/{id}/restore', [PartyMemberController::class, 'restore']);
-$router->get('/api/party-members/{id}', [PartyMemberController::class, 'show']);
-$router->put('/api/party-members/{id}', [PartyMemberController::class, 'update']);
-$router->delete('/api/party-members/{id}', [PartyMemberController::class, 'destroy']);
-$router->get('/api/organizations', [CommunityOrganizationController::class, 'index']);
-$router->post('/api/organizations', [CommunityOrganizationController::class, 'store']);
-$router->get('/api/organizations/dashboard', [CommunityOrganizationController::class, 'dashboard']);
-$router->get('/api/organizations/catalogs', [CommunityOrganizationController::class, 'catalogs']);
-$router->get('/api/organizations/citizen-search', [CommunityOrganizationController::class, 'citizenSearch']);
-$router->get('/api/organizations/citizen/{citizenId}', [CommunityOrganizationController::class, 'byCitizen']);
-$router->get('/api/organizations/report', [CommunityOrganizationController::class, 'report']);
-$router->get('/api/organizations/{id}/history', [CommunityOrganizationController::class, 'history']);
-$router->put('/api/organizations/{id}/end', [CommunityOrganizationController::class, 'end']);
-$router->get('/api/organizations/{id}', [CommunityOrganizationController::class, 'show']);
-$router->put('/api/organizations/{id}', [CommunityOrganizationController::class, 'update']);
-$router->delete('/api/organizations/{id}', [CommunityOrganizationController::class, 'destroy']);
 $router->get('/api/poverty/catalogs', [HouseholdPovertyController::class, 'catalogs']);
 $router->get('/api/poverty/dashboard', [HouseholdPovertyController::class, 'dashboard']);
 $router->get('/api/poverty/report', [HouseholdPovertyController::class, 'report']);
@@ -806,6 +1157,8 @@ $router->get('/api/poverty/records/{id}', [HouseholdPovertyController::class, 's
 $router->put('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'update']);
 $router->delete('/api/poverty/records/{id}', [HouseholdPovertyController::class, 'destroy']);
 
+$router->get('/api/citizens/relationship-review', [RelationshipReviewController::class, 'index']);
+$router->post('/api/citizens/{id}/relationship-review', [RelationshipReviewController::class, 'update']);
 $router->get('/api/citizens', [PersonController::class, 'index']);
 $router->post('/api/citizens', [PersonController::class, 'store']);
 $router->get('/api/citizens/{id}', [PersonController::class, 'show']);
@@ -1004,7 +1357,7 @@ if (!str_starts_with($request->path(), '/api')) {
     header('Expires: 0');
 
     if (PortalContext::isPublic()) {
-        echo '<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center đang ở chế độ bảo trì cấu hình. Cổng đơn vị vẫn hoạt động trên các tên miền phụ riêng.</p><div class="status">Chế độ bảo trì</div></main></body></html>';
+        echo '<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hong Phong Community Platform</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f3f6f9;color:#111827;min-height:100vh;display:flex;align-items:center;justify-content:center}.panel{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,.12)}.mark{width:48px;height:48px;border-radius:12px;background:#0f766e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:18px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.6;margin:0;color:#4b5563}.status{margin-top:20px;padding:12px 14px;border-radius:8px;background:#eef6f5;color:#0f766e;font-weight:700}</style></head><body><main class="panel"><div class="mark">HP</div><h1>Hong Phong Community Platform</h1><p>Community Control Center đang ở chế độ bảo trì cấu hình. Cổng đơn vị vẫn hoạt động trên các tên miền phụ riêng.</p><div class="status">Chế độ bảo trì</div></main></body></html>';
         exit;
     }
 
@@ -1106,10 +1459,11 @@ if (!str_starts_with($request->path(), '/api')) {
         '{{TENANT_LOGO_CLASS}}' => $tenantLogoClass,
         '{{TENANT_LOGO_HTML}}' => str_replace('{{TENANT_MARK}}', $escapeHtml($tenantMark), $tenantLogoHtml),
         '{{LOGIN_BACKGROUND_STYLE}}' => $loginBackgroundStyle,
+        '{{PWA_MANIFEST_URL}}' => $escapeHtml(pwa_url('manifest.webmanifest', $tenantSettings)),
+        '{{PWA_APPLE_TOUCH_ICON_URL}}' => $escapeHtml(pwa_url('pwa-icon-192.png', $tenantSettings)),
         '{{APP_SETTINGS_JSON}}' => json_encode($tenantSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}',
     ]);
     $versionedAssets = [
-        'manifest.json',
         'favicon.ico',
         'assets/icons/apple-touch-icon.png',
         'assets/icons/splash-512.png',
@@ -1144,8 +1498,8 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/digital-profile.min.js',
         'assets/js/household-business.min.js',
         'assets/js/livestock.min.js',
+        'assets/js/rural-clean-water.min.js',
         'assets/js/party-members.min.js',
-        'assets/js/community-organizations.min.js',
         'assets/js/poverty-management.min.js',
         'assets/js/vehicles.min.js',
         'assets/js/contributions.min.js',
@@ -1160,6 +1514,7 @@ if (!str_starts_with($request->path(), '/api')) {
         'assets/js/finance.min.js',
         'assets/js/photo-gallery.min.js',
         'assets/js/policy-alerts.min.js',
+        'assets/js/policy-subjects.min.js',
         'assets/js/view-inline-patches.min.js',
         'assets/js/notifications.min.js',
         'assets/js/module-dashboards.min.js',

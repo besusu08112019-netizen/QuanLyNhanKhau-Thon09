@@ -142,6 +142,91 @@
     });
   }
 
+  const FILTER_KEYS = ['search', 'category_id', 'status', 'area_code', 'date_from', 'date_to', 'pageSize'];
+  const FILTER_CONTROLS = {
+    search: 'workCalendarSearch',
+    category_id: 'workCalendarCategoryFilter',
+    status: 'workCalendarStatusFilter',
+    area_code: 'workCalendarAreaFilter',
+    date_from: 'workCalendarDateFrom',
+    date_to: 'workCalendarDateTo',
+    pageSize: 'workCalendarPageSize'
+  };
+
+  function optionList(items, first = 'Táº¥t cáº£') {
+    return [{ label: first, value: '' }].concat((items || []).map(item => ({ label: item.label || item.value, value: item.value })));
+  }
+
+  function pageSizeOptions() {
+    const select = $('#workCalendarPageSize');
+    const options = Array.from(select?.options || []).map(option => ({ label: option.textContent || option.value, value: option.value }));
+    return options.length ? options : [{ label: '20', value: '20' }, { label: '50', value: '50' }, { label: '100', value: '100' }];
+  }
+
+  function syncFilterControls() {
+    Object.entries(FILTER_CONTROLS).forEach(([key, id]) => {
+      const el = $('#' + id);
+      if (!el) return;
+      const value = key === 'pageSize' ? String(state.pageSize || 20) : String(state[key] || '');
+      if (el.value !== value) el.value = value;
+    });
+  }
+
+  function filterState() {
+    return FILTER_KEYS.reduce((out, key) => {
+      out[key] = key === 'pageSize' ? Number(state.pageSize || 20) : String(state[key] || '');
+      return out;
+    }, {});
+  }
+
+  function mobileFilterDefinition() {
+    const data = state.catalogs || {};
+    return { supportsCombinedFilter: true, fields: [
+      { key: 'search', label: 'Tá»« khÃ³a', type: 'search', placeholder: 'MÃ£, tiÃªu Ä‘á», Ä‘á»‹a Ä‘iá»ƒm, chá»§ trÃ¬...' },
+      { key: 'category_id', label: 'Loáº¡i', type: 'select', options: optionList(data.categories) },
+      { key: 'status', label: 'Tráº¡ng thÃ¡i', type: 'select', options: optionList(data.statuses, 'Táº¥t cáº£ tráº¡ng thÃ¡i') },
+      { key: 'area_code', label: 'Äá»‹a bÃ n', type: 'text', placeholder: 'MÃ£ khu vá»±c' },
+      { key: 'date_from', label: 'Tá»« ngÃ y', type: 'date' },
+      { key: 'date_to', label: 'Äáº¿n ngÃ y', type: 'date' },
+      { key: 'pageSize', label: 'Hiá»ƒn thá»‹', type: 'select', options: pageSizeOptions() }
+    ] };
+  }
+
+  function applyMobileFilters(filters = {}) {
+    if (Object.prototype.hasOwnProperty.call(filters, 'search')) state.search = String(filters.search || '').trim();
+    ['category_id', 'status', 'area_code', 'date_from', 'date_to'].forEach(key => {
+      if (Object.prototype.hasOwnProperty.call(filters, key)) state[key] = String(filters[key] || '').trim();
+    });
+    if (Object.prototype.hasOwnProperty.call(filters, 'pageSize')) state.pageSize = Number(filters.pageSize || state.pageSize || 20);
+    state.page = 1;
+    syncFilterControls();
+    return load();
+  }
+
+  async function ensureWorkCalendarReady() {
+    shell();
+    await catalogs();
+    syncFilterControls();
+    return state.catalogs;
+  }
+
+  function registerMobileFilterAdapter() {
+    const registry = window.TenantAppMobileFilterAdapters = window.TenantAppMobileFilterAdapters || {};
+    const adapter = {
+      isReady() { return !!state.catalogs; },
+      ensureReady: ensureWorkCalendarReady,
+      getState: filterState,
+      getDefinition: mobileFilterDefinition,
+      applyFilters: applyMobileFilters,
+      reset,
+      reload: load,
+      setPage(page) { state.page = Number(page || 1); return load(); },
+      queryString() { return params().toString(); }
+    };
+    registry.workCalendar = adapter;
+    registry.workCalendarScreen = adapter;
+  }
+
   function readFilters() {
     state.search = $('#workCalendarSearch')?.value.trim() || '';
     state.category_id = $('#workCalendarCategoryFilter')?.value || '';
@@ -161,6 +246,7 @@
     if (!$('#workCalendarScreen')) return;
     shell();
     await catalogs();
+    syncFilterControls();
     const query = params();
     const [list, dashboard] = await Promise.all([request(API + '?' + query), request(API + '/dashboard?' + query, { cacheTtl: 15000 })]);
     renderDashboard(dashboard);
@@ -288,6 +374,7 @@
   async function reset() {
     ['workCalendarSearch', 'workCalendarCategoryFilter', 'workCalendarStatusFilter', 'workCalendarAreaFilter', 'workCalendarDateFrom', 'workCalendarDateTo'].forEach(id => { const el = $('#' + id); if (el) el.value = ''; });
     Object.assign(state, { page: 1, search: '', category_id: '', status: '', area_code: '', date_from: '', date_to: '', sort: 'start_at', direction: 'ASC' });
+    syncFilterControls();
     await load();
   }
 
@@ -301,5 +388,6 @@
   function attendanceLabel(status) { return { INVITED: 'Đã mời', ATTENDED: 'Có mặt', ABSENT: 'Vắng', EXCUSED: 'Có lý do' }[status] || status; }
   function fileIcon(file) { const kind = String(file.file_kind || '').toUpperCase(); if (kind === 'IMAGE') return 'fa-image'; if (kind === 'VIDEO') return 'fa-video'; if (kind === 'PDF') return 'fa-file-pdf'; return 'fa-file-lines'; }
 
+  registerMobileFilterAdapter();
   window.loadWorkCalendar = load;
 })();

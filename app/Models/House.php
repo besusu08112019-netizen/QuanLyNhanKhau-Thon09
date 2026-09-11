@@ -8,90 +8,7 @@ final class House extends BaseModel
 {
     public function ensureSchema(): void
     {
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS houses (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  household_id BIGINT UNSIGNED NOT NULL,
-  house_code VARCHAR(40) NOT NULL UNIQUE,
-  house_name VARCHAR(255) NULL,
-  address VARCHAR(500) NULL,
-  house_type VARCHAR(120) NULL,
-  structure_type VARCHAR(120) NULL,
-  floors INT UNSIGNED NOT NULL DEFAULT 1,
-  land_area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  building_area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  floor_area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  build_year INT UNSIGNED NULL,
-  renovated_year INT UNSIGNED NULL,
-  `condition` VARCHAR(80) NULL,
-  solidity VARCHAR(80) NULL,
-  `usage` VARCHAR(120) NULL,
-  legal_status VARCHAR(120) NULL,
-  electric_meter VARCHAR(120) NULL,
-  water_meter VARCHAR(120) NULL,
-  internet TINYINT(1) NOT NULL DEFAULT 0,
-  security_camera TINYINT(1) NOT NULL DEFAULT 0,
-  fire_extinguisher TINYINT(1) NOT NULL DEFAULT 0,
-  fire_risk VARCHAR(30) NOT NULL DEFAULT 'LOW',
-  latitude DECIMAL(11,8) NULL,
-  longitude DECIMAL(11,8) NULL,
-  gps_accuracy DECIMAL(10,2) NULL,
-  notes TEXT NULL,
-  status ENUM('ACTIVE','INACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  updated_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_houses_household (household_id),
-  KEY idx_houses_type (house_type),
-  KEY idx_houses_condition (`condition`),
-  KEY idx_houses_fire_risk (fire_risk),
-  KEY idx_houses_status (status),
-  CONSTRAINT fk_houses_household FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        foreach (['houses', 'house_structures', 'house_photos'] as $table) {
-            $this->ensureTenantColumn($table);
-        }
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS house_structures (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  house_id BIGINT UNSIGNED NOT NULL,
-  structure_type VARCHAR(120) NOT NULL,
-  structure_name VARCHAR(255) NULL,
-  area DECIMAL(14,2) NOT NULL DEFAULT 0,
-  build_year INT UNSIGNED NULL,
-  `condition` VARCHAR(80) NULL,
-  notes TEXT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_house_structures_house (house_id),
-  KEY idx_house_structures_type (structure_type),
-  CONSTRAINT fk_house_structures_house FOREIGN KEY (house_id) REFERENCES houses(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
-        $this->execute(<<<SQL
-CREATE TABLE IF NOT EXISTS house_photos (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  house_id BIGINT UNSIGNED NOT NULL,
-  file_path VARCHAR(500) NOT NULL,
-  stored_name VARCHAR(255) NULL,
-  original_name VARCHAR(255) NULL,
-  mime_type VARCHAR(120) NULL,
-  file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  photo_type VARCHAR(120) NULL,
-  description VARCHAR(500) NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by BIGINT UNSIGNED NULL,
-  deleted_at DATETIME NULL,
-  deleted_by BIGINT UNSIGNED NULL,
-  KEY idx_house_photos_house (house_id),
-  KEY idx_house_photos_type (photo_type),
-  CONSTRAINT fk_house_photos_house FOREIGN KEY (house_id) REFERENCES houses(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        $this->assertSchemaReady();
     }
 
     public function catalogs(): array
@@ -431,6 +348,155 @@ SQL);
     {
         $row = $this->fetchOne('SELECT MAX(id) AS max_id FROM houses WHERE ' . $this->tenantWhere('houses'), $this->withTenant());
         return 'NO-' . str_pad((string)(((int)($row['max_id'] ?? 0)) + 1), 5, '0', STR_PAD_LEFT);
+    }
+
+    private function assertSchemaReady(): void
+    {
+        $this->assertColumns('houses', [
+            'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+            'village_id' => ['bigint(20) unsigned', false, '1'],
+            'household_id' => ['bigint(20) unsigned', false],
+            'house_code' => ['varchar(40)', false],
+            'house_name' => ['varchar(255)', true],
+            'address' => ['varchar(500)', true],
+            'house_type' => ['varchar(120)', true],
+            'structure_type' => ['varchar(120)', true],
+            'floors' => ['int(10) unsigned', false, '1'],
+            'land_area' => ['decimal(14,2)', false, '0.00'],
+            'building_area' => ['decimal(14,2)', false, '0.00'],
+            'floor_area' => ['decimal(14,2)', false, '0.00'],
+            'build_year' => ['int(10) unsigned', true],
+            'renovated_year' => ['int(10) unsigned', true],
+            'condition' => ['varchar(80)', true],
+            'solidity' => ['varchar(80)', true],
+            'usage' => ['varchar(120)', true],
+            'legal_status' => ['varchar(120)', true],
+            'electric_meter' => ['varchar(120)', true],
+            'water_meter' => ['varchar(120)', true],
+            'internet' => ['tinyint(1)', false, '0'],
+            'security_camera' => ['tinyint(1)', false, '0'],
+            'fire_extinguisher' => ['tinyint(1)', false, '0'],
+            'fire_risk' => ['varchar(30)', false, 'LOW'],
+            'latitude' => ['decimal(11,8)', true],
+            'longitude' => ['decimal(11,8)', true],
+            'gps_accuracy' => ['decimal(10,2)', true],
+            'notes' => ['text', true],
+            'status' => ["enum('ACTIVE','INACTIVE','DELETED')", false, 'ACTIVE'],
+            'created_at' => ['datetime', false, 'current_timestamp()'],
+            'updated_at' => ['datetime', true, null],
+            'created_by' => ['bigint(20) unsigned', true],
+            'updated_by' => ['bigint(20) unsigned', true],
+            'deleted_at' => ['datetime', true],
+            'deleted_by' => ['bigint(20) unsigned', true],
+        ]);
+        $this->assertColumns('house_structures', [
+            'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+            'village_id' => ['bigint(20) unsigned', false, '1'],
+            'house_id' => ['bigint(20) unsigned', false],
+            'structure_type' => ['varchar(120)', false],
+            'structure_name' => ['varchar(255)', true],
+            'area' => ['decimal(14,2)', false, '0.00'],
+            'build_year' => ['int(10) unsigned', true],
+            'condition' => ['varchar(80)', true],
+            'notes' => ['text', true],
+            'created_at' => ['datetime', false, 'current_timestamp()'],
+            'updated_at' => ['datetime', true, null],
+        ]);
+        $this->assertColumns('house_photos', [
+            'id' => ['bigint(20) unsigned', false, null, 'auto_increment'],
+            'village_id' => ['bigint(20) unsigned', false, '1'],
+            'house_id' => ['bigint(20) unsigned', false],
+            'file_path' => ['varchar(500)', false],
+            'stored_name' => ['varchar(255)', true],
+            'original_name' => ['varchar(255)', true],
+            'mime_type' => ['varchar(120)', true],
+            'file_size' => ['bigint(20) unsigned', false, '0'],
+            'photo_type' => ['varchar(120)', true],
+            'description' => ['varchar(500)', true],
+            'created_at' => ['datetime', false, 'current_timestamp()'],
+            'created_by' => ['bigint(20) unsigned', true],
+            'deleted_at' => ['datetime', true],
+            'deleted_by' => ['bigint(20) unsigned', true],
+        ]);
+        $this->assertIndex('houses', 'house_code', ['house_code']);
+        $this->assertIndex('houses', 'idx_houses_household', ['household_id']);
+        $this->assertIndex('houses', 'idx_houses_type', ['house_type']);
+        $this->assertIndex('houses', 'idx_houses_condition', ['condition']);
+        $this->assertIndex('houses', 'idx_houses_fire_risk', ['fire_risk']);
+        $this->assertIndex('houses', 'idx_houses_status', ['status']);
+        $this->assertIndex('houses', 'idx_houses_village', ['village_id']);
+        $this->assertIndex('house_structures', 'idx_house_structures_house', ['house_id']);
+        $this->assertIndex('house_structures', 'idx_house_structures_type', ['structure_type']);
+        $this->assertIndex('house_structures', 'idx_house_structures_village', ['village_id']);
+        $this->assertIndex('house_photos', 'idx_house_photos_house', ['house_id']);
+        $this->assertIndex('house_photos', 'idx_house_photos_type', ['photo_type']);
+        $this->assertIndex('house_photos', 'idx_house_photos_village', ['village_id']);
+        $this->assertForeignKey('houses', 'fk_houses_household', 'household_id', 'households', 'id', 'RESTRICT', 'RESTRICT');
+        $this->assertForeignKey('house_structures', 'fk_house_structures_house', 'house_id', 'houses', 'id', 'CASCADE', 'RESTRICT');
+        $this->assertForeignKey('house_photos', 'fk_house_photos_house', 'house_id', 'houses', 'id', 'CASCADE', 'RESTRICT');
+    }
+
+    private function assertColumns(string $table, array $expected): void
+    {
+        $rows = $this->fetchAll('SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table' => $table]);
+        if ($rows === []) {
+            throw new \RuntimeException("House schema is not ready: missing table $table");
+        }
+        $actual = [];
+        foreach ($rows as $row) {
+            $actual[(string)$row['COLUMN_NAME']] = $row;
+        }
+        foreach ($expected as $column => $contract) {
+            if (!isset($actual[$column])) {
+                throw new \RuntimeException("House schema is not ready: missing $table.$column");
+            }
+            $row = $actual[$column];
+            if (strtolower((string)$row['COLUMN_TYPE']) !== strtolower($contract[0])) {
+                throw new \RuntimeException("House schema is not ready: incompatible type $table.$column");
+            }
+            if (((string)$row['IS_NULLABLE'] === 'YES') !== (bool)$contract[1]) {
+                throw new \RuntimeException("House schema is not ready: incompatible nullability $table.$column");
+            }
+            if (array_key_exists(2, $contract) && !$this->defaultMatches($row['COLUMN_DEFAULT'], $contract[2])) {
+                throw new \RuntimeException("House schema is not ready: incompatible default $table.$column");
+            }
+            if (isset($contract[3]) && stripos((string)$row['EXTRA'], (string)$contract[3]) === false) {
+                throw new \RuntimeException("House schema is not ready: incompatible extra $table.$column");
+            }
+        }
+    }
+
+    private function assertIndex(string $table, string $index, array $columns): void
+    {
+        $rows = $this->fetchAll('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table AND INDEX_NAME=:index ORDER BY SEQ_IN_INDEX', ['table' => $table, 'index' => $index]);
+        $actual = array_map(fn($row) => (string)$row['COLUMN_NAME'], $rows);
+        if ($actual !== $columns) {
+            throw new \RuntimeException("House schema is not ready: incompatible index $table.$index");
+        }
+    }
+
+    private function assertForeignKey(string $table, string $name, string $column, string $refTable, string $refColumn, string $deleteRule, string $updateRule): void
+    {
+        $row = $this->fetchOne(
+            'SELECT k.COLUMN_NAME, k.REFERENCED_TABLE_NAME, k.REFERENCED_COLUMN_NAME, r.DELETE_RULE, r.UPDATE_RULE
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE k
+             INNER JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME
+             WHERE k.TABLE_SCHEMA=DATABASE() AND k.TABLE_NAME=:table AND k.CONSTRAINT_NAME=:name',
+            ['table' => $table, 'name' => $name]
+        );
+        if (!$row || (string)$row['COLUMN_NAME'] !== $column || (string)$row['REFERENCED_TABLE_NAME'] !== $refTable || (string)$row['REFERENCED_COLUMN_NAME'] !== $refColumn || strtoupper((string)$row['DELETE_RULE']) !== $deleteRule || strtoupper((string)$row['UPDATE_RULE']) !== $updateRule) {
+            throw new \RuntimeException("House schema is not ready: incompatible foreign key $table.$name");
+        }
+    }
+
+    private function defaultMatches(mixed $actual, mixed $expected): bool
+    {
+        if ($expected === null) return $actual === null || strtoupper((string)$actual) === 'NULL';
+        if ($actual === null) return false;
+        $actual = trim((string)$actual, "'");
+        $expected = trim((string)$expected, "'");
+        if (is_numeric($actual) && is_numeric($expected)) return (float)$actual === (float)$expected;
+        return strtolower($actual) === strtolower($expected);
     }
 
     private function table(string $title, array $headers, array $rows, array $filters): array { return ['title' => $title, 'headers' => $headers, 'rows' => $rows, 'totalRows' => count($rows), 'filters' => $filters, 'generatedAt' => date('c')]; }
