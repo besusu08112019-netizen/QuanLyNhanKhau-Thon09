@@ -104,51 +104,57 @@ jobs:
               'ftp_server_host_only': server,
               'ftp_user_fingerprint_pass': username == 'githubdeploy@hongphongnb.com',
               'ftp_session_pwd': None,
+              'ftp_login_ok': False,
+              'ftp_error': None,
               'paths': [],
               'http': http,
               'matches': [],
           }
 
-          with FTP_TLS(server, timeout=30) as ftp:
-              ftp.login(username, password)
-              ftp.prot_p()
-              report['ftp_session_pwd'] = ftp.pwd()
-              for target in paths:
-                  entry = {'target': target, 'cwd_ok': False, 'pwd': None, 'listing_contract': {}, 'files': {}}
-                  try:
-                      ftp.cwd('/')
-                      ftp.cwd(target)
-                      entry['cwd_ok'] = True
-                      entry['pwd'] = ftp.pwd()
-                      names = safe_names(ftp.nlst())
-                      entry['listing_contract'] = {
-                          'safe_names': names,
-                          'has_public_html': 'public_html' in names,
-                          'has_assets': 'assets' in names,
-                          'has_app': 'app' in names,
-                          'has_views': 'views' in names,
-                          'has_service_worker': 'service-worker.js' in names,
-                          'has_index': 'index.php' in names,
-                      }
-                      for rel in files:
-                          try:
-                              data = ftp_read(ftp, rel)
-                              file_sha = sha256(data)
-                              entry['files'][rel] = {
-                                  'exists': True,
-                                  'sha256': file_sha,
-                                  'bytes': len(data),
-                                  'matches_http_root': file_sha == http['https://hongphongnb.com'][rel]['sha256'],
-                                  'matches_candidate': file_sha == candidate_sha[rel],
-                              }
-                              root_sha = http['https://hongphongnb.com'][rel]['sha256']
-                              if file_sha == root_sha:
-                                  report['matches'].append({'ftp_target': target, 'ftp_pwd': entry['pwd'], 'file': rel, 'matches_http_root': True})
-                          except Exception as exc:
-                              entry['files'][rel] = {'exists': False, 'error': str(exc).splitlines()[0][:120]}
-                  except Exception as exc:
-                      entry['error'] = str(exc).splitlines()[0][:160]
-                  report['paths'].append(entry)
+          try:
+              with FTP_TLS(server, timeout=30) as ftp:
+                  ftp.login(username, password)
+                  report['ftp_login_ok'] = True
+                  ftp.prot_p()
+                  report['ftp_session_pwd'] = ftp.pwd()
+                  for target in paths:
+                      entry = {'target': target, 'cwd_ok': False, 'pwd': None, 'listing_contract': {}, 'files': {}}
+                      try:
+                          ftp.cwd('/')
+                          ftp.cwd(target)
+                          entry['cwd_ok'] = True
+                          entry['pwd'] = ftp.pwd()
+                          names = safe_names(ftp.nlst())
+                          entry['listing_contract'] = {
+                              'safe_names': names,
+                              'has_public_html': 'public_html' in names,
+                              'has_assets': 'assets' in names,
+                              'has_app': 'app' in names,
+                              'has_views': 'views' in names,
+                              'has_service_worker': 'service-worker.js' in names,
+                              'has_index': 'index.php' in names,
+                          }
+                          for rel in files:
+                              try:
+                                  data = ftp_read(ftp, rel)
+                                  file_sha = sha256(data)
+                                  entry['files'][rel] = {
+                                      'exists': True,
+                                      'sha256': file_sha,
+                                      'bytes': len(data),
+                                      'matches_http_root': file_sha == http['https://hongphongnb.com'][rel]['sha256'],
+                                      'matches_candidate': file_sha == candidate_sha[rel],
+                                  }
+                                  root_sha = http['https://hongphongnb.com'][rel]['sha256']
+                                  if file_sha == root_sha:
+                                      report['matches'].append({'ftp_target': target, 'ftp_pwd': entry['pwd'], 'file': rel, 'matches_http_root': True})
+                              except Exception as exc:
+                                  entry['files'][rel] = {'exists': False, 'error': str(exc).splitlines()[0][:120]}
+                      except Exception as exc:
+                          entry['error'] = str(exc).splitlines()[0][:160]
+                      report['paths'].append(entry)
+          except Exception as exc:
+              report['ftp_error'] = str(exc).splitlines()[0][:160]
 
           ftp_root = next((item for item in report['paths'] if item['target'] == '/' and item.get('cwd_ok')), None)
           identity_by_file = {}
@@ -173,6 +179,8 @@ jobs:
           compact = {
               'ftp_session_pwd': report['ftp_session_pwd'],
               'ftp_user_fingerprint_pass': report['ftp_user_fingerprint_pass'],
+              'ftp_login_ok': report['ftp_login_ok'],
+              'ftp_error': report['ftp_error'],
               'paths': [
                   {
                       'target': item['target'],
