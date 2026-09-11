@@ -1,0 +1,142 @@
+name: FTPS Target Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - diagnostic/ftps-target-20260911
+    paths:
+      - '.github/workflows/ftps-target-diagnostic.yml'
+
+jobs:
+  trace-ftps-target:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      EXPECTED_HTTP_SW_SHA: 27aac07fedf83a7b1b13910a681d6eca2f548a909b9cfb51cb1b05acb37cba0a
+      HTTP_ROOT_URLS: https://hongphongnb.com,https://thon09.hongphongnb.com,https://thon10.hongphongnb.com
+
+    steps:
+      - name: Trace FTPS target identity
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import io
+          import json
+          import os
+          import sys
+          import time
+          import urllib.request
+          from ftplib import FTP_TLS
+
+          server = os.environ['FTP_SERVER']
+          username = os.environ['FTP_USERNAME']
+          password = os.environ['FTP_PASSWORD']
+          expected_sw_sha = os.environ['EXPECTED_HTTP_SW_SHA']
+          http_roots = [item.strip().rstrip('/') for item in os.environ['HTTP_ROOT_URLS'].split(',') if item.strip()]
+          files = [
+              'service-worker.js',
+              'assets/css/app.min.css',
+              'assets/js/defense-security.min.js',
+          ]
+          paths = ['/', '/public_html', 'public_html']
+
+          def sha256(data):
+              return hashlib.sha256(data).hexdigest()
+
+          def fetch(url):
+              request = urllib.request.Request(
+                  url + ('&' if '?' in url else '?') + 'diag=' + str(int(time.time())),
+                  headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache', 'User-Agent': 'github-actions-ftps-diagnostic'},
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return response.status, response.read(), dict(response.headers.items())
+
+          def safe_names(names):
+              allowed = {'public_html', 'assets', 'app', 'api', 'config', 'views', 'service-worker.js', 'index.php'}
+              return sorted(name.rstrip('/') for name in names if name.rstrip('/') in allowed)
+
+          def ftp_read(ftp, name):
+              buf = io.BytesIO()
+              ftp.retrbinary('RETR ' + name, buf.write)
+              return buf.getvalue()
+
+          http = {}
+          for base in http_roots:
+              http[base] = {}
+              for rel in files:
+                  status, body, headers = fetch(f'{base}/{rel}')
+                  http[base][rel] = {
+                      'status': status,
+                      'sha256': sha256(body),
+                      'last_modified': headers.get('Last-Modified'),
+                      'cache_control': headers.get('Cache-Control'),
+                      'server': headers.get('Server'),
+                      'cf_cache_status': headers.get('CF-Cache-Status'),
+                      'age': headers.get('Age'),
+                      'via': headers.get('Via'),
+                      'x_cache': headers.get('X-Cache'),
+                  }
+
+          report = {
+              'ftp_server_host_only': server,
+              'ftp_session_pwd': None,
+              'paths': [],
+              'http': http,
+              'matches': [],
+          }
+
+          with FTP_TLS(server, timeout=30) as ftp:
+              ftp.login(username, password)
+              ftp.prot_p()
+              report['ftp_session_pwd'] = ftp.pwd()
+              for target in paths:
+                  entry = {'target': target, 'cwd_ok': False, 'pwd': None, 'listing_contract': {}, 'files': {}}
+                  try:
+                      ftp.cwd('/')
+                      ftp.cwd(target)
+                      entry['cwd_ok'] = True
+                      entry['pwd'] = ftp.pwd()
+                      names = safe_names(ftp.nlst())
+                      entry['listing_contract'] = {
+                          'safe_names': names,
+                          'has_public_html': 'public_html' in names,
+                          'has_assets': 'assets' in names,
+                          'has_app': 'app' in names,
+                          'has_views': 'views' in names,
+                          'has_service_worker': 'service-worker.js' in names,
+                          'has_index': 'index.php' in names,
+                      }
+                      for rel in files:
+                          try:
+                              data = ftp_read(ftp, rel)
+                              file_sha = sha256(data)
+                              entry['files'][rel] = {'exists': True, 'sha256': file_sha, 'bytes': len(data)}
+                              root_sha = http['https://hongphongnb.com'][rel]['sha256']
+                              if file_sha == root_sha:
+                                  report['matches'].append({'ftp_target': target, 'ftp_pwd': entry['pwd'], 'file': rel, 'matches_http_root': True})
+                          except Exception as exc:
+                              entry['files'][rel] = {'exists': False, 'error': str(exc).splitlines()[0][:120]}
+                  except Exception as exc:
+                      entry['error'] = str(exc).splitlines()[0][:160]
+                  report['paths'].append(entry)
+
+          service_worker_matches = [
+              match for match in report['matches']
+              if match['file'] == 'service-worker.js' and http['https://hongphongnb.com']['service-worker.js']['sha256'] == expected_sw_sha
+          ]
+          report['identity_proven_by_existing_service_worker'] = bool(service_worker_matches)
+          report['probe_write'] = 0
+          report['host_application_write'] = 0
+          report['db_write'] = 0
+          print(json.dumps(report, indent=2, sort_keys=True))
+
+          if not service_worker_matches:
+              print('No tested FTPS path has service-worker.js bytes identical to current HTTP root.', file=sys.stderr)
+              sys.exit(1)
+          PY
