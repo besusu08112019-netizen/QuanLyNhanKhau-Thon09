@@ -16,6 +16,11 @@ jobs:
   ftp-deploy:
     runs-on: ubuntu-latest
     environment: production
+    env:
+      FTP_ROOT_DIR: ${{ vars.FTP_ROOT_DIR || '/public_html/' }}
+      EXPECTED_ASSET_MARKER: qpan-kpi-adaptive-20260911T1217
+      EXPECTED_PWA_VERSION: tenant-pwa-v20260911-qpan-kpi-adaptive-1
+      TENANT_HTTP_URLS: ${{ vars.TENANT_PARITY_URLS || 'https://thon09.hongphongnb.com,https://thon10.hongphongnb.com' }}
 
     steps:
       - name: Checkout source
@@ -139,74 +144,7 @@ jobs:
             echo "PLATFORM_TENANT_DOMAIN_PATTERN={code}.hongphongnb.com"
           } > dist/production/.env
 
-      - name: Deploy to hosting via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          local-dir: ./dist/production/
-          server-dir: ../public_html/
-          state-name: .ftp-deploy-control-center-state.json
-          log-level: verbose
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            config/database.php
-            storage/cache/**
-            backups/**
-
-      - name: Deploy to Thon 09 via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          local-dir: ./dist/production/
-          server-dir: ../thon09.hongphongnb.com/
-          state-name: .ftp-deploy-thon09-state.json
-          log-level: verbose
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            .env
-            config/database.php
-            storage/cache/**
-            storage/logs/**
-            storage/sessions/**
-            uploads/**
-            backups/**
-
-      - name: Deploy to Thon 10 via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          local-dir: ./dist/production/
-          server-dir: ../thon10.hongphongnb.com/
-          state-name: .ftp-deploy-thon10-state.json
-          log-level: verbose
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            .env
-            config/database.php
-            storage/cache/**
-            storage/logs/**
-            storage/sessions/**
-            uploads/**
-            backups/**
-      - name: Verify public_html deployment
+      - name: Verify FTP target directory contract
         shell: bash
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
@@ -218,35 +156,165 @@ jobs:
           import sys
           from ftplib import FTP_TLS
 
+          target = os.environ.get('FTP_ROOT_DIR', '').strip()
+          if not target:
+              print('FTP_ROOT_DIR is empty', file=sys.stderr)
+              sys.exit(1)
+          if target in {'/', './'} or '..' in target.replace('\\', '/').split('/'):
+              print(f'Unsafe FTP_ROOT_DIR for production shared docroot: {target}', file=sys.stderr)
+              sys.exit(1)
+
           required = {'index.php', 'app', 'assets', 'api', 'config', 'views'}
-          server = os.environ['FTP_SERVER']
-          username = os.environ['FTP_USERNAME']
-          password = os.environ['FTP_PASSWORD']
-
-          with FTP_TLS(server, timeout=30) as ftp:
-              ftp.login(username, password)
+          with FTP_TLS(os.environ['FTP_SERVER'], timeout=30) as ftp:
+              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.prot_p()
-              ftp.cwd('../public_html')
-              names = sorted(ftp.nlst())
+              session_root = ftp.pwd()
+              ftp.cwd(target)
+              effective = ftp.pwd()
+              names = {name.rstrip('/') for name in ftp.nlst()}
 
-          print('public_html contents:')
+          print(f'FTP session root: {session_root}')
+          print(f'Configured FTP_ROOT_DIR: {target}')
+          print(f'Action effective server-dir: {effective}')
+
+          missing = sorted(required - names)
+          if missing:
+              print('FTP target is not the canonical application docroot; missing: ' + ', '.join(missing), file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Deploy to hosting via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/production/
+          server-dir: ${{ env.FTP_ROOT_DIR }}
+          state-name: .ftp-deploy-control-center-state.json
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            config/database.php
+            storage/cache/**
+            backups/**
+
+      - name: Verify FTPS shared docroot readback
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import os
+          import sys
+          from ftplib import FTP_TLS
+          from io import BytesIO
+
+          required = {'index.php', 'app', 'assets', 'api', 'config', 'views'}
+          target = os.environ['FTP_ROOT_DIR']
+
+          def read_file(ftp, name):
+              buf = BytesIO()
+              ftp.retrbinary('RETR ' + name, buf.write)
+              return buf.getvalue()
+
+          with FTP_TLS(os.environ['FTP_SERVER'], timeout=30) as ftp:
+              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              ftp.cwd(target)
+              names = sorted(ftp.nlst())
+              sw = read_file(ftp, 'service-worker.js')
+
+          print('shared docroot contents:')
           for name in names:
               print(f'- {name}')
 
           normalized = {name.rstrip('/') for name in names}
           missing = sorted(required - normalized)
           if missing:
-              print('Missing required public_html entries: ' + ', '.join(missing), file=sys.stderr)
+              print('Missing required shared docroot entries: ' + ', '.join(missing), file=sys.stderr)
               sys.exit(1)
           if normalized <= {'.well-known'}:
-              print('public_html only contains .well-known', file=sys.stderr)
+              print('shared docroot only contains .well-known', file=sys.stderr)
+              sys.exit(1)
+          if os.environ['EXPECTED_PWA_VERSION'] not in sw.decode('utf-8', 'replace'):
+              print('FTPS readback did not see expected PWA version in service-worker.js', file=sys.stderr)
+              sys.exit(1)
+          print('FTPS service-worker sha256=' + hashlib.sha256(sw).hexdigest())
+          PY
+
+      - name: Verify production HTTP markers and asset hashes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import os
+          import sys
+          import time
+          import urllib.request
+          from pathlib import Path
+
+          marker = os.environ['EXPECTED_ASSET_MARKER']
+          pwa = os.environ['EXPECTED_PWA_VERSION']
+          base_urls = ['https://hongphongnb.com']
+          base_urls.extend([url.strip().rstrip('/') for url in os.environ['TENANT_HTTP_URLS'].split(',') if url.strip()])
+          asset_paths = [
+              'service-worker.js',
+              'assets/css/app.min.css',
+              'assets/js/defense-security.min.js',
+          ]
+          local_sha = {
+              rel: hashlib.sha256(Path('dist/production', rel).read_bytes()).hexdigest()
+              for rel in asset_paths
+          }
+
+          def fetch(url):
+              request = urllib.request.Request(
+                  url + ('&' if '?' in url else '?') + 'deploycheck=' + str(int(time.time())),
+                  headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache', 'User-Agent': 'github-actions-deploy-verify'},
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return response.status, response.read()
+
+          failures = []
+          for base in base_urls:
+              for rel in asset_paths:
+                  status, body = fetch(f'{base}/{rel}')
+                  remote_sha = hashlib.sha256(body).hexdigest()
+                  print(f'{base}/{rel} status={status} sha256={remote_sha}')
+                  if status != 200:
+                      failures.append(f'{base}/{rel} returned HTTP {status}')
+                  if remote_sha != local_sha[rel]:
+                      failures.append(f'{base}/{rel} sha mismatch: expected {local_sha[rel]}, got {remote_sha}')
+                  text = body.decode('utf-8', 'replace')
+                  if rel == 'service-worker.js' and pwa not in text:
+                      failures.append(f'{base}/{rel} missing PWA version {pwa}')
+                  if rel == 'service-worker.js' and marker not in text:
+                      failures.append(f'{base}/{rel} missing asset marker {marker}')
+              if base != 'https://hongphongnb.com':
+                  status, body = fetch(base + '/')
+                  text = body.decode('utf-8', 'replace')
+                  page_sha = hashlib.sha256(body).hexdigest()
+                  print(f'{base}/ status={status} sha256={page_sha}')
+                  if status != 200 or marker not in text:
+                      failures.append(f'{base}/ did not expose expected app asset marker {marker}')
+
+          if failures:
+              print('\n'.join(failures), file=sys.stderr)
               sys.exit(1)
           PY
 
       - name: Verify all tenants received the deployed source
         shell: bash
         env:
-          TENANT_PARITY_URLS: ${{ vars.TENANT_PARITY_URLS || 'https://thon09.hongphongnb.com,https://thon10.hongphongnb.com,https://ccc01.hongphongnb.com' }}
+          TENANT_PARITY_URLS: ${{ env.TENANT_HTTP_URLS }}
           TENANT_PARITY_LOGIN_JSON: ${{ secrets.TENANT_PARITY_LOGIN_JSON }}
           TENANT_PARITY_REQUIRE_LOGIN: '1'
           TENANT_PARITY_REQUIRED_MODULES: ${{ vars.TENANT_PARITY_REQUIRED_MODULES }}
