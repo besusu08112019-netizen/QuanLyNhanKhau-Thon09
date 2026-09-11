@@ -16,6 +16,8 @@ jobs:
     environment: production
     env:
       EXPECTED_HTTP_SW_SHA: 27aac07fedf83a7b1b13910a681d6eca2f548a909b9cfb51cb1b05acb37cba0a
+      EXPECTED_HTTP_CSS_SHA: c87512933a57285f40d7eb2b2d0675b586e4f7ff450fea830216c74e9b487665
+      EXPECTED_HTTP_QPAN_JS_SHA: 343bc43bbd855073470dd7f18a422021b6459e220b7525e928eba2ac5d8efdd1
       EXPECTED_CANDIDATE_SW_SHA: 580a0569831bf107e21c94032621624eda7d2b6b870ff70820c53bba740f3834
       EXPECTED_CANDIDATE_CSS_SHA: 5f75ce156dee720cc702395bbf09c94a783f905ecc3677235efbd33f1809589d
       EXPECTED_CANDIDATE_QPAN_JS_SHA: 19427547b1576b5d6f8bba3e235958fb6aac1356d2a1da3306b541410913dec1
@@ -43,7 +45,11 @@ jobs:
           server = os.environ['FTP_SERVER']
           username = os.environ['FTP_USERNAME']
           password = os.environ['FTP_PASSWORD']
-          expected_sw_sha = os.environ['EXPECTED_HTTP_SW_SHA']
+          expected_http_sha = {
+              'service-worker.js': os.environ['EXPECTED_HTTP_SW_SHA'],
+              'assets/css/app.min.css': os.environ['EXPECTED_HTTP_CSS_SHA'],
+              'assets/js/defense-security.min.js': os.environ['EXPECTED_HTTP_QPAN_JS_SHA'],
+          }
           http_roots = [item.strip().rstrip('/') for item in os.environ['HTTP_ROOT_URLS'].split(',') if item.strip()]
           candidate_sha = {
               'service-worker.js': os.environ['EXPECTED_CANDIDATE_SW_SHA'],
@@ -55,7 +61,7 @@ jobs:
               'assets/css/app.min.css',
               'assets/js/defense-security.min.js',
           ]
-          paths = ['/', '/public_html', 'public_html', '../public_html']
+          paths = ['/']
 
           def sha256(data):
               return hashlib.sha256(data).hexdigest()
@@ -96,6 +102,7 @@ jobs:
 
           report = {
               'ftp_server_host_only': server,
+              'ftp_user_fingerprint_pass': username == 'githubdeploy@hongphongnb.com',
               'ftp_session_pwd': None,
               'paths': [],
               'http': http,
@@ -143,17 +150,29 @@ jobs:
                       entry['error'] = str(exc).splitlines()[0][:160]
                   report['paths'].append(entry)
 
-          service_worker_matches = [
-              match for match in report['matches']
-              if match['file'] == 'service-worker.js' and http['https://hongphongnb.com']['service-worker.js']['sha256'] == expected_sw_sha
-          ]
-          report['identity_proven_by_existing_service_worker'] = bool(service_worker_matches)
+          ftp_root = next((item for item in report['paths'] if item['target'] == '/' and item.get('cwd_ok')), None)
+          identity_by_file = {}
+          if ftp_root:
+              for rel in files:
+                  ftp_file = ftp_root['files'].get(rel, {})
+                  http_sha = http['https://hongphongnb.com'][rel]['sha256']
+                  identity_by_file[rel] = (
+                      ftp_file.get('exists') is True
+                      and ftp_file.get('sha256') == http_sha
+                      and http_sha == expected_http_sha[rel]
+                  )
+          else:
+              identity_by_file = {rel: False for rel in files}
+          report['identity_by_file'] = identity_by_file
+          report['three_file_identity'] = all(identity_by_file.values())
+          report['identity_proven_by_existing_service_worker'] = identity_by_file.get('service-worker.js', False)
           report['probe_write'] = 0
           report['host_application_write'] = 0
           report['db_write'] = 0
           print(json.dumps(report, indent=2, sort_keys=True))
           compact = {
               'ftp_session_pwd': report['ftp_session_pwd'],
+              'ftp_user_fingerprint_pass': report['ftp_user_fingerprint_pass'],
               'paths': [
                   {
                       'target': item['target'],
@@ -167,6 +186,8 @@ jobs:
               ],
               'http_root': http['https://hongphongnb.com'],
               'matches': report['matches'],
+              'identity_by_file': report['identity_by_file'],
+              'three_file_identity': report['three_file_identity'],
               'identity_proven_by_existing_service_worker': report['identity_proven_by_existing_service_worker'],
               'probe_write': 0,
               'host_application_write': 0,
@@ -175,9 +196,9 @@ jobs:
           with open('ftps-diagnostic-report.json', 'w', encoding='utf-8') as handle:
               json.dump(report, handle, indent=2, sort_keys=True)
           print('::warning title=FTPS_DIAGNOSTIC_RESULT::' + json.dumps(compact, sort_keys=True))
-          print('identity_proven=' + ('true' if service_worker_matches else 'false'))
+          print('identity_proven=' + ('true' if report['three_file_identity'] else 'false'))
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as handle:
-              handle.write('identity_proven=' + ('true' if service_worker_matches else 'false') + '\n')
+              handle.write('identity_proven=' + ('true' if report['three_file_identity'] else 'false') + '\n')
           PY
 
       - name: Upload sanitized diagnostic report
@@ -192,5 +213,5 @@ jobs:
         if: steps.trace.outputs.identity_proven != 'true'
         shell: bash
         run: |
-          echo "::error::No tested FTPS path has service-worker.js bytes identical to current HTTP root."
+          echo "::error::FTP / does not have all three required files byte-identical to current HTTP root."
           exit 1
