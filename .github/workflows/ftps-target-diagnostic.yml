@@ -1,5 +1,7 @@
 name: FTPS Target Diagnostic
 
+# Diagnostic-only workflow. It reads existing FTPS/HTTP files and never writes production application files.
+
 on:
   workflow_dispatch:
   push:
