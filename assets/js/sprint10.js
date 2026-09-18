@@ -68,8 +68,6 @@
     if (screen === 'backups') loadBackups10();
     if (screen === 'restore') {}
     if (screen === 'users') loadUsers10();
-    if (screen === 'temporaryResidence') loadPresence10('TEMPORARY', '#temporaryResidenceRows');
-    if (screen === 'temporaryAbsence') loadPresence10('AWAY', '#temporaryAbsenceRows');
   }
 
 
