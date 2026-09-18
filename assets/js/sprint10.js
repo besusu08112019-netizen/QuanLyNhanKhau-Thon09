@@ -211,16 +211,10 @@
   }
 
   async function loadPresence10(value, selector) {
+    const endpoint = value === 'TEMPORARY' ? '/api/temporary-residence' : '/api/persons';
     const params = value === 'TEMPORARY' ? { pageSize: 100 } : { presenceStatus: 'AWAY', pageSize: 100 };
-    const data = await api('/api/persons?' + new URLSearchParams(params));
-    let items = data.items || [];
-    if (value === 'TEMPORARY') {
-      items = items.filter(row => {
-        const temporaryFlag = row.temporary_residence ?? row.temporaryResidence ?? row.is_temporary_residence;
-        if (temporaryFlag === true || temporaryFlag === 1 || temporaryFlag === '1' || temporaryFlag === 'true') return true;
-        return String(row.residency_status || row.residencyStatus || '').toUpperCase() === 'TEMPORARY';
-      });
-    }
+    const data = await api(endpoint + '?' + new URLSearchParams(params));
+    const items = data.items || [];
     document.querySelector(selector).innerHTML = presenceTable10(items);
   }
 
@@ -231,9 +225,24 @@
       + '<td>' + formatDate(row.date_of_birth) + '</td>'
       + '<td>' + escapeHtml(row.identity_number || '') + '</td>'
       + '<td>' + escapeHtml(row.phone || '') + '</td>'
+      + '<td>' + temporaryResidenceDate10(row.temporary_residence_start_date || row.temporaryResidenceStartDate, '') + '</td>'
+      + '<td>' + temporaryResidenceDate10(row.temporary_residence_end_date || row.temporaryResidenceEndDate, 'Chưa xác định') + '</td>'
+      + '<td>' + escapeHtml(temporaryResidenceStatusLabel10(row.temporary_residence_status || row.temporaryResidenceStatus)) + '</td>'
       + '<td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-platform-action="persons.detail" data-id="' + Number(row.id || 0) + '">Xem</button></td>'
-      + '</tr>').join('') || '<tr><td colspan="6" class="text-center text-muted py-3">Không có dữ liệu</td></tr>';
-    return '<table class="table table-hover table-bordered align-middle mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Điện thoại</th><th class="text-end">Thao tác</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      + '</tr>').join('') || '<tr><td colspan="9" class="text-center text-muted py-3">Không có dữ liệu</td></tr>';
+    return '<table class="table table-hover table-bordered align-middle mb-0"><thead><tr><th>Mã hộ</th><th>Họ tên</th><th>Ngày sinh</th><th>CCCD</th><th>Điện thoại</th><th>Ngày bắt đầu tạm trú</th><th>Ngày hết hạn tạm trú</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function temporaryResidenceDate10(value, emptyLabel) {
+    return value ? formatDate(value) : escapeHtml(emptyLabel || '');
+  }
+
+  function temporaryResidenceStatusLabel10(value) {
+    const status = String(value || '').toUpperCase();
+    if (status === 'EXPIRED') return 'Đã hết hạn';
+    if (status === 'EXPIRING') return 'Sắp hết hạn';
+    if (status === 'ACTIVE') return 'Còn hiệu lực';
+    return 'Chưa xác định';
   }
 
   function bindReportControl10(selector, event, handler) {
