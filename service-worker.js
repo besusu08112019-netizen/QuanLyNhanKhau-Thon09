@@ -1,4 +1,4 @@
-const PWA_VERSION = 'tenant-pwa-v20260729-policy-alert-utf8-1';
+const PWA_VERSION = 'tenant-pwa-v20260918-temporary-residence-date-columns-2';
 const APP_BASE_PATH = new URL('./', self.location.href).pathname;
 const TENANT_NAMESPACE = `${self.location.host}${APP_BASE_PATH}`.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'tenant';
 const CACHE_PREFIX = `${TENANT_NAMESPACE}-${PWA_VERSION}`;
@@ -41,20 +41,26 @@ const STATIC_ASSETS = [
   withBase('assets/vendor/leaflet.markercluster/MarkerCluster.css'),
   withBase('assets/vendor/leaflet.markercluster/MarkerCluster.Default.css'),
   withBase('assets/vendor/leaflet.markercluster/leaflet.markercluster.js'),
-  withBase('assets/css/app.min.css'),
-  withBase('assets/css/mobile-design-system-v2.min.css'),
+  withBase('assets/css/app.min.css?v=population-kpi-detail-modal-20260916-1'),
+  withBase('assets/css/mobile-design-system-v2.min.css?v=device-mode-20260910T1050'),
   withBase('assets/js/i18n.min.js'),
   withBase('assets/js/print-framework.min.js'),
-  withBase('assets/js/app-platform.min.js'),
-  withBase('assets/js/mobile-component-library.min.js'),
-  withBase('assets/js/app.utf8.min.js'),
+  withBase('assets/js/app-platform.min.js?v=vn-date-20260914-1'),
+  withBase('assets/js/mobile-component-library.min.js?v=device-mode-20260910T1050'),
+  withBase('assets/js/app.utf8.min.js?v=temporary-residence-dates-20260916-1'),
   withBase('assets/js/csrf.min.js'),
   withBase('assets/js/session.min.js'),
-  withBase('assets/js/admin.utf8.min.js'),
-  withBase('assets/js/admin-panel.min.js'),
+  withBase('assets/js/admin.utf8.min.js?v=person-table-action-menu-overlap-20260915-1'),
+  withBase('assets/js/admin-panel.min.js?v=movement-ui-loader-20260910T0545'),
   withBase('assets/js/agricultural-land.min.js'),
-  withBase('assets/js/view-inline-patches.min.js'),
-  withBase('assets/js/module-dashboards.min.js'),
+  withBase('assets/js/defense-security.min.js?v=qpan-overview-readonly-20260911T2236'),
+  withBase('assets/js/household-selector.min.js?v=household-selector-pilot-20260914-1'),
+  withBase('assets/js/household-business.min.js?v=hb-business-utf8-hotfix-20260914-1'),
+  withBase('assets/js/livestock.min.js?v=household-selector-pilot-20260914-1'),
+  withBase('assets/js/policy-alerts.min.js?v=performance-p0p1-20260913-1'),
+  withBase('assets/js/report.min.js?v=temporary-residence-dates-20260916-1'),
+  withBase('assets/js/view-inline-patches.min.js?v=birth-year-toast-hotfix-20260915-1'),
+  withBase('assets/js/module-dashboards.min.js?v=bhyt-category-breakdown-20260916-1'),
   withBase('assets/js/pwa.min.js')
 ];
 
