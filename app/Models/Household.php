@@ -85,8 +85,36 @@ final class Household extends BaseModel
         if (!$existing) throw new \RuntimeException('Không tìm thấy hộ dân');
         $params = $this->params($data, $userId, $existing); $params['id'] = $id;
         $this->ensureUniqueCode($params['code'], $id);
-        $this->execute('UPDATE households SET household_code=:code, head_citizen_name=:head, address=:address, phone=:phone, area_code=:area, poor_household=:poor, near_poor_household=:near_poor, note=:note, residence_status=:residence_status, residence_status_mode=:residence_status_mode, current_residence_place=:current_residence_place, residence_started_at=:residence_started_at, residence_expected_return_at=:residence_expected_return_at, residence_note=:residence_note, member_residence_json=:member_residence_json, status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('households'), $this->withTenant($params));
-        return $this->find($id);
+        $syncMembersAway = $this->shouldSyncMembersAway($data, $params);
+        $ownsTransaction = !$this->db->inTransaction();
+        if ($ownsTransaction) $this->db->beginTransaction();
+        try {
+            $this->execute('UPDATE households SET household_code=:code, head_citizen_name=:head, address=:address, phone=:phone, area_code=:area, poor_household=:poor, near_poor_household=:near_poor, note=:note, residence_status=:residence_status, residence_status_mode=:residence_status_mode, current_residence_place=:current_residence_place, residence_started_at=:residence_started_at, residence_expected_return_at=:residence_expected_return_at, residence_note=:residence_note, member_residence_json=:member_residence_json, status=:status, updated_by=:user WHERE id=:id AND ' . $this->tenantWhere('households'), $this->withTenant($params));
+            if ($syncMembersAway) $this->syncCurrentMembersAway($id, $userId);
+            $updated = $this->find($id);
+            if (!$updated) throw new \RuntimeException('Household was not found after update');
+            if ($ownsTransaction) $this->db->commit();
+            return $updated;
+        } catch (\Throwable $e) {
+            if ($ownsTransaction && $this->db->inTransaction()) $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    private function shouldSyncMembersAway(array $data, array $params): bool
+    {
+        $statusWasSubmitted = array_key_exists('residenceStatus', $data) || array_key_exists('residence_status', $data);
+        return $statusWasSubmitted
+            && ($params['residence_status_mode'] ?? '') === 'MANUAL'
+            && ($params['residence_status'] ?? '') === 'away_for_work';
+    }
+
+    private function syncCurrentMembersAway(int $householdId, int $userId): void
+    {
+        $this->execute(
+            'UPDATE citizens SET presence_status="AWAY", updated_by=:user WHERE household_id=:id AND status <> "DELETED" AND COALESCE(life_status,"ALIVE") <> "DECEASED" AND COALESCE(residency_status,"PERMANENT") <> "TRANSFERRED_OUT" AND COALESCE(presence_status,"AT_HOME") <> "MOVED_OUT" AND COALESCE(presence_status,"AT_HOME") <> "AWAY" AND ' . $this->tenantWhere('citizens'),
+            $this->withTenant(['id' => $householdId, 'user' => $userId])
+        );
     }
 
     public function softDelete(int $id, int $userId): void
