@@ -302,7 +302,8 @@ final class Report extends BaseModel
     {
         $filters['householdStatus'] = 'away_for_work';
         [$where, $params] = $this->householdWhere($filters);
-        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.area_code, h.current_residence_place, h.residence_started_at, h.residence_expected_return_at, h.phone, h.residence_note, COALESCE(v.total_members,0) AS total_members, COALESCE(v.at_home_count,0) AS at_home, COALESCE(v.away_count,0) AS away FROM households h LEFT JOIN v_household_member_counts v ON v.household_id=h.id AND v.village_id=h.village_id $where ORDER BY h.area_code, h.household_code", $params);
+        $headNameExpr = $this->currentHeadNameExpression('h');
+        $rows = $this->fetchAll("SELECT h.household_code, $headNameExpr AS head_citizen_name, h.address, h.area_code, h.current_residence_place, h.residence_started_at, h.residence_expected_return_at, h.phone, h.residence_note, COALESCE(v.total_members,0) AS total_members, COALESCE(v.at_home_count,0) AS at_home, COALESCE(v.away_count,0) AS away FROM households h LEFT JOIN v_household_member_counts v ON v.household_id=h.id AND v.village_id=h.village_id $where ORDER BY h.area_code, h.household_code", $params);
         $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['area_code'], $r['address'], $r['current_residence_place'], (int) $r['total_members'], (int) $r['at_home'], (int) $r['away'], $this->date($r['residence_started_at']), $this->date($r['residence_expected_return_at']), $r['phone'], $r['residence_note']], $rows);
         return $this->table('BÁO CÁO HỘ ĐI LÀM ĂN XA', ['Mã hộ','Chủ hộ','Khu','Địa chỉ tại thôn','Nơi đang sinh sống','Tổng nhân khẩu','Ở nhà','Đi vắng','Từ ngày','Dự kiến về','SĐT','Ghi chú'], $body, $filters);
     }
@@ -581,6 +582,12 @@ final class Report extends BaseModel
     private function activeHouseholdCondition(string $alias): string
     {
         return $this->statistics()->householdCondition($alias);
+    }
+
+    private function currentHeadNameExpression(string $householdAlias): string
+    {
+        $condition = $this->activeCitizenCondition('report_head');
+        return "COALESCE((SELECT report_head.full_name FROM citizens report_head WHERE report_head.household_id=$householdAlias.id AND report_head.village_id=$householdAlias.village_id AND report_head.relationship='Chủ hộ' AND $condition ORDER BY report_head.id LIMIT 1), NULLIF(TRIM($householdAlias.head_citizen_name),''), '')";
     }
 
     private function activeCitizenCondition(string $alias): string
