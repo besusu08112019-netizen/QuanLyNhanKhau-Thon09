@@ -482,6 +482,7 @@ final class HouseholdPoverty extends BaseModel
             $rows[] = [
                 $index + 1,
                 $item['household_code'],
+                $item['member_count_real'],
                 $item['head_citizen_name'],
                 $item['area_code'],
                 $item['period_name'],
@@ -494,7 +495,7 @@ final class HouseholdPoverty extends BaseModel
         }
         return [
             'title' => 'Báo cáo hộ nghèo / hộ cận nghèo',
-            'headers' => ['STT','Mã hộ','Chủ hộ','Khu','Giai đoạn','Loại hộ','Từ ngày','Đến ngày','Quyết định','Ghi chú'],
+            'headers' => ['STT','Mã hộ','Số nhân khẩu','Chủ hộ','Khu','Giai đoạn','Loại hộ','Từ ngày','Đến ngày','Quyết định','Ghi chú'],
             'rows' => $rows,
             'items' => $items,
             'totalRows' => count($rows),
@@ -583,10 +584,11 @@ final class HouseholdPoverty extends BaseModel
     private function recordSelect(): string
     {
         $headNameExpr = $this->headNameExpression('h');
-        return 'SELECT hpr.*, pp.name AS period_name, pp.start_date AS period_start_date, pp.end_date AS period_end_date, h.household_code, h.head_citizen_name, ' . $headNameExpr . ' AS head_citizen_name_fallback, h.address, h.area_code
+        return 'SELECT hpr.*, pp.name AS period_name, pp.start_date AS period_start_date, pp.end_date AS period_end_date, h.household_code, h.head_citizen_name, ' . $headNameExpr . ' AS head_citizen_name_fallback, h.address, h.area_code, COALESCE(hmc.total_members, 0) AS member_count_real
             FROM household_poverty_records hpr
             INNER JOIN poverty_periods pp ON pp.id=hpr.period_id
-            INNER JOIN households h ON h.id=hpr.household_id';
+            INNER JOIN households h ON h.id=hpr.household_id
+            LEFT JOIN v_household_member_counts hmc ON hmc.household_id=h.id AND hmc.village_id=h.village_id';
     }
 
     private function periodParams(array $data, int $userId): array
@@ -691,6 +693,7 @@ final class HouseholdPoverty extends BaseModel
     {
         $row = $this->withHeadName($row);
         foreach (['id','household_id','period_id'] as $key) $row[$key] = (int) $row[$key];
+        $row['member_count_real'] = (int) ($row['member_count_real'] ?? 0);
         $row['poverty_type_label'] = self::POVERTY_TYPES[$row['poverty_type'] ?? 'NONE'] ?? (string) ($row['poverty_type'] ?? '');
         $row['status_label'] = self::RECORD_STATUSES[$row['status'] ?? 'ACTIVE'] ?? (string) ($row['status'] ?? '');
         return $row;

@@ -5782,7 +5782,7 @@
       { moduleKey: 'livestock', screenId: 'livestock', path: '/livestock', label: 'Quản lý vật nuôi', mobileLabel: 'Vật nuôi', icon: 'fa-paw', permissionScope: 'livestock', loaderName: 'loadLivestock' },
       { moduleKey: 'ruralCleanWater', screenId: 'ruralCleanWater', path: '/rural-clean-water', label: 'Nước sạch nông thôn', mobileLabel: 'Nước sạch', icon: 'fa-faucet-drip', permissionScope: 'rural_clean_water' },
       { moduleKey: 'partyMembers', screenId: 'partyMembers', path: '/party-members', label: 'Quản lý Đảng viên', mobileLabel: 'Đảng viên', icon: 'fa-flag', permissionScope: 'party_members', loaderName: 'loadPartyMembers' },
-      { moduleKey: 'povertyManagement', screenId: 'povertyManagement', path: '/poverty', label: 'Hộ nghèo / cận nghèo', mobileLabel: 'Hộ nghèo', icon: 'fa-hand-holding-heart', permissionScope: 'poverty', loaderName: 'loadPovertyManagement' },
+      { moduleKey: 'povertyManagement', screenId: 'povertyManagement', path: '/poverty', label: 'Hộ nghèo / cận nghèo', mobileLabel: 'Hộ nghèo', icon: 'fa-hand-holding-heart', permissionScope: 'poverty', loaderName: 'loadPovertyManagement', assetPath: '/assets/js/poverty-management.min.js?v=household-member-count-20261004-1' },
       { moduleKey: 'vehicles', screenId: 'vehicles', path: '/vehicles', label: 'Quản lý xe cộ', mobileLabel: 'Xe cộ', icon: 'fa-car', permissionScope: 'vehicles' },
       { moduleKey: 'contributions', screenId: 'contributions', path: '/contributions', label: 'Đóng góp hộ', mobileLabel: 'Đóng góp', icon: 'fa-hand-holding-dollar', permissionScope: 'contributions' },
       { moduleKey: 'gis', screenId: 'gis', path: '/gis', label: 'GIS', icon: 'fa-map-location-dot', permissionScope: 'gis', loaderName: 'loadGisMap' },
