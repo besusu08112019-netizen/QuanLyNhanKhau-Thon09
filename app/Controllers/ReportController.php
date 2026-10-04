@@ -200,7 +200,7 @@ final class ReportController extends BaseController
             $type === 'bi-dashboard' || $type === 'report-center' => ['household', 'citizen', 'movement', 'gis', 'household_business', 'agriculture', 'livestock', 'vehicles', 'contributions', 'houses', 'public_assets'],
             str_starts_with($type, 'digital-profile') || str_starts_with($type, 'profile-') => ['household', 'citizen', 'file'],
             in_array($type, ['population', 'citizen', 'citizens', 'gender', 'age', 'residency', 'health-insurance', 'health-insurance-missing', 'health-insurance-expiring', 'health-insurance-expired', 'health-insurance-household', 'health-insurance-area', 'party-members', 'party-member', 'party', 'meritorious-people', 'meritorious', 'meritorious-person', 'disabled-people', 'disabled', 'disabled-person', 'labor', 'labour', 'elderly', 'children', 'elderly-union', 'elderly_union', 'elderly-union-member', 'elderly_union_member'], true) => ['citizen'],
-            in_array($type, ['household', 'households', 'poor-households', 'near-poor-households', 'special'], true) => ['household'],
+            in_array($type, ['household', 'households', 'away-for-work-households', 'away_for_work_households', 'poor-households', 'near-poor-households', 'special'], true) => ['household'],
             in_array($type, ['temporary-residence', 'temporary', 'temporary-absence', 'absence', 'births', 'birth', 'deaths', 'death', 'migration', 'movement', 'movement-summary'], true) => ['citizen', 'movement'],
             default => ['household', 'citizen'],
         };

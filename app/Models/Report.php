@@ -56,6 +56,7 @@ final class Report extends BaseModel
     {
         return match ($type) {
             'household', 'households' => $this->householdReport($filters),
+            'away-for-work-households', 'away_for_work_households' => $this->awayForWorkHouseholdsReport($filters),
             'settled-elsewhere-households', 'settled_elsewhere_households' => $this->settledElsewhereHouseholdsReport($filters),
             'household-business', 'household_business', 'business-households' => (new \App\Models\HouseholdBusiness())->report('all', $filters),
             'household-business-establishments' => (new \App\Models\HouseholdBusiness())->report('establishments', $filters),
@@ -295,6 +296,15 @@ final class Report extends BaseModel
             $r['residence_note'] ?: $r['note'],
         ], $rows);
         return $this->table('BÁO CÁO HỘ DÂN SINH SỐNG ỔN ĐỊNH Ở NƠI KHÁC', ['Mã hộ','Chủ hộ','Địa chỉ tại thôn','Nơi đang sinh sống','Tổng nhân khẩu','Nam','Nữ','SĐT','Ghi chú'], $body, $filters);
+    }
+
+    public function awayForWorkHouseholdsReport(array $filters = []): array
+    {
+        $filters['householdStatus'] = 'away_for_work';
+        [$where, $params] = $this->householdWhere($filters);
+        $rows = $this->fetchAll("SELECT h.household_code, h.head_citizen_name, h.address, h.area_code, h.current_residence_place, h.residence_started_at, h.residence_expected_return_at, h.phone, h.residence_note, COALESCE(v.total_members,0) AS total_members, COALESCE(v.at_home_count,0) AS at_home, COALESCE(v.away_count,0) AS away FROM households h LEFT JOIN v_household_member_counts v ON v.household_id=h.id AND v.village_id=h.village_id $where ORDER BY h.area_code, h.household_code", $params);
+        $body = array_map(fn($r) => [$r['household_code'], $r['head_citizen_name'], $r['area_code'], $r['address'], $r['current_residence_place'], (int) $r['total_members'], (int) $r['at_home'], (int) $r['away'], $this->date($r['residence_started_at']), $this->date($r['residence_expected_return_at']), $r['phone'], $r['residence_note']], $rows);
+        return $this->table('BÁO CÁO HỘ ĐI LÀM ĂN XA', ['Mã hộ','Chủ hộ','Khu','Địa chỉ tại thôn','Nơi đang sinh sống','Tổng nhân khẩu','Ở nhà','Đi vắng','Từ ngày','Dự kiến về','SĐT','Ghi chú'], $body, $filters);
     }
 
     public function populationReport(array $filters = []): array { return $this->citizenListReport('Danh sách nhân khẩu', $filters); }
@@ -752,7 +762,7 @@ final class Report extends BaseModel
         return [
             'groups' => [
                 ['key' => 'population', 'title' => 'Báo cáo dân cư', 'icon' => 'fa-users', 'description' => 'Nhân khẩu, gioi tinh, do tuoi, nghe nghiep, BHYT, Dang vien, Doan vien.', 'types' => ['population','health_insurance','health-insurance-missing','health-insurance-expiring','health-insurance-expired','health-insurance-household','health-insurance-area','children','elderly','labor','party_member','youth_union','gender','age']],
-                ['key' => 'household', 'title' => 'Báo cáo hộ gia đình', 'icon' => 'fa-house-chimney', 'description' => 'Danh sách hộ, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','poor-households','near-poor-households','settled-elsewhere-households','special']],
+                ['key' => 'household', 'title' => 'Báo cáo hộ gia đình', 'icon' => 'fa-house-chimney', 'description' => 'Danh sách hộ, chu ho, khu vuc, ho ngheo va ho can ngheo.', 'types' => ['household','away-for-work-households','poor-households','near-poor-households','settled-elsewhere-households','special']],
                 ['key' => 'contributions', 'title' => 'Báo cáo đóng góp hộ', 'icon' => 'fa-hand-holding-dollar', 'description' => 'Danh sach thu, ky nhan, mien giam, cong no va tong hop dong gop theo dot/nam.', 'types' => ['contributions-list','contributions-collection','contributions-unpaid-list','contributions-partial','contributions-exempt','contributions-summary','contributions-year-summary','contributions-by-contribution']],
                 ['key' => 'household_business', 'title' => 'Báo cáo hộ sản xuất và kinh doanh', 'icon' => 'fa-store', 'description' => 'Danh sách hộ sản xuất, ho kinh doanh, nganh nghe, trang thai va khu vuc GIS.', 'types' => ['household-business-production','household-business-trade','household-business-sector','household-business-status','household-business-gis','household-business-ocop','household-business-food-safety','household-business-social-insurance','household-business-economic-type','household-business-scale','household-business-product']],
                 ['key' => 'agricultural_land', 'title' => 'Báo cáo quỹ đất nông nghiệp', 'icon' => 'fa-map', 'description' => 'Tong hop dien tich dat nong nghiep theo tung khu doc lap voi ho dan va san xuat.', 'types' => ['agricultural-land','agricultural-land-village','agricultural-land-zone','agricultural-land-year','agricultural-land-year-compare']],
@@ -774,6 +784,7 @@ final class Report extends BaseModel
                 ['key' => 'household-form', 'title' => 'Phieu quan ly ho gia dinh', 'type' => 'household'],
                 ['key' => 'household-list', 'title' => 'Danh sach ho', 'type' => 'household'],
                 ['key' => 'settled-elsewhere-households', 'title' => 'Báo cáo hộ dân sinh sống ổn định ở nơi khác', 'type' => 'settled-elsewhere-households'],
+                ['key' => 'away-for-work-households', 'title' => 'Báo cáo Hộ đi làm ăn xa', 'type' => 'away-for-work-households'],
                 ['key' => 'citizen-list', 'title' => 'Danh sach nhan khau', 'type' => 'population'],
                 ['key' => 'children-list', 'title' => 'Danh sach tre em', 'type' => 'children'],
                 ['key' => 'elderly-list', 'title' => 'Danh sach nguoi cao tuoi', 'type' => 'elderly'],
