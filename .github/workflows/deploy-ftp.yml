@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      FTP_ROOT_DIR: ../public_html/
+      FTP_ROOT_DIR: ${{ vars.FTP_ROOT_DIR || '/public_html/' }}
       EXPECTED_ASSET_MARKER: qpan-kpi-adaptive-20260911T1217
       EXPECTED_PWA_VERSION: tenant-pwa-v20260911-qpan-kpi-adaptive-1
       TENANT_HTTP_URLS: ${{ vars.TENANT_PARITY_URLS || 'https://thon09.hongphongnb.com,https://thon10.hongphongnb.com' }}
@@ -160,9 +160,8 @@ jobs:
           if not target:
               print('FTP_ROOT_DIR is empty', file=sys.stderr)
               sys.exit(1)
-          normalized_target = target.replace('\\', '/').rstrip('/')
-          if normalized_target != '../public_html':
-              print(f'Unexpected FTP_ROOT_DIR for production shared docroot: {target}', file=sys.stderr)
+          if target in {'/', './'} or '..' in target.replace('\\', '/').split('/'):
+              print(f'Unsafe FTP_ROOT_DIR for production shared docroot: {target}', file=sys.stderr)
               sys.exit(1)
 
           required = {'index.php', 'app', 'assets', 'api', 'config', 'views'}
@@ -172,7 +171,7 @@ jobs:
               session_root = ftp.pwd()
               ftp.cwd(target)
               effective = ftp.pwd()
-              names = {name.rstrip('/') for name in ftp.nlst()}
+              names = {name.replace('\\', '/').rstrip('/').rsplit('/', 1)[-1] for name in ftp.nlst()}
 
           print(f'FTP session root: {session_root}')
           print(f'Configured FTP_ROOT_DIR: {target}')
@@ -237,7 +236,7 @@ jobs:
           for name in names:
               print(f'- {name}')
 
-          normalized = {name.rstrip('/') for name in names}
+          normalized = {name.replace('\\', '/').rstrip('/').rsplit('/', 1)[-1] for name in names}
           missing = sorted(required - normalized)
           if missing:
               print('Missing required shared docroot entries: ' + ', '.join(missing), file=sys.stderr)
