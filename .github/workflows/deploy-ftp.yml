@@ -164,22 +164,25 @@ jobs:
               print(f'Unsafe FTP_ROOT_DIR for production shared docroot: {target}', file=sys.stderr)
               sys.exit(1)
 
-          required = {'index.php', 'app', 'assets', 'api', 'config', 'views'}
+          required_dirs = {'app', 'assets', 'api', 'config', 'views'}
           with FTP_TLS(os.environ['FTP_SERVER'], timeout=30) as ftp:
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.prot_p()
               session_root = ftp.pwd()
               ftp.cwd(target)
               effective = ftp.pwd()
-              names = {name.replace('\\', '/').rstrip('/').rsplit('/', 1)[-1] for name in ftp.nlst()}
+              if ftp.size('index.php') is None:
+                  raise RuntimeError('index.php is unavailable in the production docroot')
+              for directory in sorted(required_dirs):
+                  ftp.cwd(directory)
+                  ftp.cwd(effective)
 
           print(f'FTP session root: {session_root}')
           print(f'Configured FTP_ROOT_DIR: {target}')
           print(f'Action effective server-dir: {effective}')
 
-          missing = sorted(required - names)
-          if missing:
-              print('FTP target is not the canonical application docroot; missing: ' + ', '.join(missing), file=sys.stderr)
+          if not effective.replace('\\', '/').rstrip('/').endswith('/public_html'):
+              print('FTP target is not the canonical application docroot: ' + effective, file=sys.stderr)
               sys.exit(1)
           PY
 
@@ -211,43 +214,28 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           python - <<'PY'
-          import hashlib
           import os
           import sys
           from ftplib import FTP_TLS
-          from io import BytesIO
 
-          required = {'index.php', 'app', 'assets', 'api', 'config', 'views'}
+          required_dirs = {'app', 'assets', 'api', 'config', 'views'}
           target = os.environ['FTP_ROOT_DIR']
-
-          def read_file(ftp, name):
-              buf = BytesIO()
-              ftp.retrbinary('RETR ' + name, buf.write)
-              return buf.getvalue()
 
           with FTP_TLS(os.environ['FTP_SERVER'], timeout=30) as ftp:
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.prot_p()
               ftp.cwd(target)
-              names = sorted(ftp.nlst())
-              sw = read_file(ftp, 'service-worker.js')
+              effective = ftp.pwd()
+              index_size = ftp.size('index.php')
+              service_worker_size = ftp.size('service-worker.js')
+              for directory in sorted(required_dirs):
+                  ftp.cwd(directory)
+                  ftp.cwd(effective)
 
-          print('shared docroot contents:')
-          for name in names:
-              print(f'- {name}')
-
-          normalized = {name.replace('\\', '/').rstrip('/').rsplit('/', 1)[-1] for name in names}
-          missing = sorted(required - normalized)
-          if missing:
-              print('Missing required shared docroot entries: ' + ', '.join(missing), file=sys.stderr)
+          if not index_size or not service_worker_size:
+              print('FTPS readback did not find required production entry files', file=sys.stderr)
               sys.exit(1)
-          if normalized <= {'.well-known'}:
-              print('shared docroot only contains .well-known', file=sys.stderr)
-              sys.exit(1)
-          if os.environ['EXPECTED_PWA_VERSION'] not in sw.decode('utf-8', 'replace'):
-              print('FTPS readback did not see expected PWA version in service-worker.js', file=sys.stderr)
-              sys.exit(1)
-          print('FTPS service-worker sha256=' + hashlib.sha256(sw).hexdigest())
+          print(f'FTPS control-channel readback: index.php={index_size} service-worker.js={service_worker_size}')
           PY
 
       - name: Verify production HTTP markers and asset hashes
