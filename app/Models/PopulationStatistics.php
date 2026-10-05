@@ -65,6 +65,16 @@ final class PopulationStatistics extends BaseModel
         return $this->currentHouseholdCondition($alias);
     }
 
+    /** Only households with a current, explicitly assigned head count in statistics. */
+    public function statisticalHouseholdCondition(string $alias = 'h'): string
+    {
+        $head = \App\Policies\HouseholdRelationPolicy::HEAD;
+        return $this->currentHouseholdCondition($alias)
+            . ' AND EXISTS (SELECT 1 FROM citizens shc WHERE shc.household_id = ' . $alias . '.id'
+            . ' AND shc.relationship = ' . $this->db->quote($head)
+            . ' AND ' . $this->currentCitizenCondition('shc') . ')';
+    }
+
     public function historicalHouseholdCondition(string $alias = 'h'): string
     {
         return $this->notDeletedCondition('households', $alias);
@@ -143,7 +153,7 @@ final class PopulationStatistics extends BaseModel
 
     public function counts(): array
     {
-        $householdWhere = $this->householdCondition('h');
+        $householdWhere = $this->statisticalHouseholdCondition('h');
         $citizenWhere = $this->citizenCondition('c') . ' AND ' . $this->householdCondition('h');
 
         $households = $this->fetchOne("SELECT COUNT(*) AS total FROM households h WHERE $householdWhere") ?: [];
@@ -157,7 +167,7 @@ final class PopulationStatistics extends BaseModel
 
     public function metrics(array $filters = []): array
     {
-        [$householdWhere, $householdParams] = $this->householdWhere($filters);
+        [$householdWhere, $householdParams] = $this->householdWhere($filters, true);
         [$citizenWhere, $citizenParams] = $this->citizenWhere($filters);
 
         $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
@@ -292,7 +302,7 @@ final class PopulationStatistics extends BaseModel
 
     private function householdCategoryCounts(array $filters): array
     {
-        [$where, $params] = $this->householdWhere($filters);
+        [$where, $params] = $this->householdWhere($filters, true);
         $select = (new HouseholdCategoryService())->countsSelect('h');
         $row = $this->fetchOne("SELECT $select FROM households h $where", $params) ?: [];
         return [
@@ -352,10 +362,10 @@ final class PopulationStatistics extends BaseModel
         return $conditions ? implode(' AND ', $conditions) : '1=1';
     }
 
-    private function householdWhere(array $filters): array
+    private function householdWhere(array $filters, bool $statistical = false): array
     {
         $filters = $this->normalizeFilters($filters);
-        $where = [$this->householdCondition('h')];
+        $where = [$statistical ? $this->statisticalHouseholdCondition('h') : $this->householdCondition('h')];
         $params = [];
         if ($filters['householdStatus']) {
             $status = $this->residenceStatus($filters['householdStatus']);

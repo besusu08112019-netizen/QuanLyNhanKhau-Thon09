@@ -877,7 +877,7 @@ final class Dashboard extends BaseModel
     private function householdWhere(array $filters): array
     {
         $filters = $this->normalizeFilters($filters);
-        $where = [$this->activeHouseholdCondition('h')];
+        $where = [$this->statistics()->statisticalHouseholdCondition('h')];
         $params = [];
         if ($filters['householdStatus']) { if (in_array($filters['householdStatus'], ['resident', 'away_for_work', 'settled_elsewhere', 'partial', 'inactive', 'outside'], true)) { $where[] = $this->residenceStatusSql('h') . ' = :household_status'; $params['household_status'] = $filters['householdStatus']; } else { $where[] = 'h.status = :household_status'; $params['household_status'] = $filters['householdStatus']; } }
         if ($filters['residenceStatus']) { $where[] = $this->residenceStatusSql('h') . ' = :residence_status'; $params['residence_status'] = $filters['residenceStatus'] === 'outside' ? 'settled_elsewhere' : $filters['residenceStatus']; }

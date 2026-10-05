@@ -120,7 +120,11 @@ final class Household extends BaseModel
         $recordStatus = strtoupper($status);
         $historicalStatuses = ['ENDED', 'INACTIVE', 'MERGED', 'TRANSFERRED_OUT', 'MOVED_OUT'];
         $includeHistorical = $this->bool($filters['includeHistorical'] ?? $filters['include_historical'] ?? 0) || in_array($recordStatus, $historicalStatuses, true);
-        $where = [$includeHistorical ? $this->statistics()->historicalHouseholdCondition('h') : $this->activeHouseholdCondition('h'), $this->tenantWhere('h', 'households')];
+        $reviewFilter = in_array($status, ['needs_review', 'needs_status_review', 'no_current_members', 'needs_head_review', 'missing_head', 'no_current_head'], true);
+        $householdScope = $includeHistorical
+            ? $this->statistics()->historicalHouseholdCondition('h')
+            : ($reviewFilter ? $this->activeHouseholdCondition('h') : $this->statistics()->statisticalHouseholdCondition('h'));
+        $where = [$householdScope, $this->tenantWhere('h', 'households')];
         $residenceInput = trim((string) ($filters['residenceStatus'] ?? $filters['residence_status'] ?? $filters['householdResidenceStatus'] ?? ''));
         $residenceFilter = $residenceInput !== '' ? $this->residenceStatus($residenceInput) : '';
         if ($status !== '') {

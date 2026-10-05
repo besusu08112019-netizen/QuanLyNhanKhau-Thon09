@@ -464,7 +464,7 @@ final class Report extends BaseModel
 
     private function householdWhere(array $filters): array
     {
-        $where = [$this->activeHouseholdCondition('h')]; $params = [];
+        $where = [$this->statistics()->statisticalHouseholdCondition('h')]; $params = [];
         if (!empty($filters['dateFrom'])) { $where[] = 'DATE(h.created_at) >= :date_from'; $params['date_from'] = $filters['dateFrom']; }
         if (!empty($filters['dateTo'])) { $where[] = 'DATE(h.created_at) <= :date_to'; $params['date_to'] = $filters['dateTo']; }
         if (!empty($filters['householdStatus'])) {
