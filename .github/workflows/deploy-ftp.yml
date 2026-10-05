@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      FTP_ROOT_DIR: ${{ vars.FTP_ROOT_DIR || '/public_html/' }}
+      FTP_ROOT_DIR: ../public_html/
       EXPECTED_ASSET_MARKER: qpan-kpi-adaptive-20260911T1217
       EXPECTED_PWA_VERSION: tenant-pwa-v20260911-qpan-kpi-adaptive-1
       TENANT_HTTP_URLS: ${{ vars.TENANT_PARITY_URLS || 'https://thon09.hongphongnb.com,https://thon10.hongphongnb.com' }}
@@ -160,8 +160,9 @@ jobs:
           if not target:
               print('FTP_ROOT_DIR is empty', file=sys.stderr)
               sys.exit(1)
-          if target in {'/', './'} or '..' in target.replace('\\', '/').split('/'):
-              print(f'Unsafe FTP_ROOT_DIR for production shared docroot: {target}', file=sys.stderr)
+          normalized_target = target.replace('\\', '/').rstrip('/')
+          if normalized_target != '../public_html':
+              print(f'Unexpected FTP_ROOT_DIR for production shared docroot: {target}', file=sys.stderr)
               sys.exit(1)
 
           required = {'index.php', 'app', 'assets', 'api', 'config', 'views'}
