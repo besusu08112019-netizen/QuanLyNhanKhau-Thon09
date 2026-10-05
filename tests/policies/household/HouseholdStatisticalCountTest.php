@@ -8,6 +8,7 @@ policy_test('Household totals require a current household head', function (): vo
 
     policy_assert_true(is_string($statistics) && is_string($household) && is_string($dashboard) && is_string($report), 'Household statistic sources must be readable.');
     policy_assert_true(str_contains($statistics, 'statisticalHouseholdCondition'), 'Population statistics must define the actual-household condition.');
+    policy_assert_true(str_contains($statistics, "return \$this->currentHouseholdCondition(\$alias)"), 'Statistical households must remain inside the current tenant household scope.');
     policy_assert_true(str_contains($statistics, 'EXISTS (SELECT 1 FROM citizens shc'), 'An actual household must have a current citizen head.');
     policy_assert_true(str_contains($statistics, "currentCitizenCondition('shc')"), 'Moved-out, transferred-out and deceased heads must be excluded.');
     policy_assert_true(str_contains($statistics, "\$householdWhere = \$this->statisticalHouseholdCondition('h');"), 'Top-level household totals must use actual households.');
