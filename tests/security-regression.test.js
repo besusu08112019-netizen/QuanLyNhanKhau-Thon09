@@ -243,6 +243,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   assert.match(deploy, /FTP_ROOT_DIR:\s*\$\{\{\s*vars\.FTP_ROOT_DIR\s*\|\|\s*'\/public_html\/'\s*\}\}/);
   assert.match(deploy, /server-dir:\s*\$\{\{\s*env\.FTP_ROOT_DIR\s*\}\}/);
   assert.match(deploy, /Verify FTP target directory contract/);
+  assert.match(deploy, /rsplit\('\/', 1\)\[-1\]/, 'FTPS checks must normalize absolute directory listings to entry names');
   assert.match(deploy, /Verify FTPS shared docroot readback/);
   assert.match(deploy, /Verify production HTTP markers and asset hashes/);
   assert.match(deploy, /EXPECTED_ASSET_MARKER:\s*qpan-kpi-adaptive-20260911T1217/);
