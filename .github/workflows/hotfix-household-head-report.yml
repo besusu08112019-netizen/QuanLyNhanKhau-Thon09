@@ -1,0 +1,138 @@
+name: Hotfix Household Head Report
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hotfix-household-head-report.yml'
+
+concurrency:
+  group: production-household-head-hotfix
+  cancel-in-progress: false
+
+jobs:
+  patch-production-report:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      FTP_ROOT_DIR: ${{ vars.FTP_ROOT_DIR || '/public_html/' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download and back up current production file
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          mkdir -p hotfix/current hotfix/patched hotfix/backup
+          python - <<'PY'
+          import os
+          from ftplib import FTP_TLS
+          from pathlib import Path
+
+          remote = 'app/Models/Report.php'
+          with FTP_TLS(os.environ['FTP_SERVER'], timeout=60) as ftp:
+              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              ftp.cwd(os.environ['FTP_ROOT_DIR'])
+              data = bytearray()
+              ftp.retrbinary('RETR ' + remote, data.extend)
+
+          Path('hotfix/current/Report.php').write_bytes(data)
+          Path('hotfix/backup/Report.php').write_bytes(data)
+          PY
+
+      - name: Patch only the household report on the current HOST source
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          source_path = Path('hotfix/current/Report.php')
+          target_path = Path('hotfix/patched/Report.php')
+          source = source_path.read_text(encoding='utf-8')
+
+          start = source.index('    public function householdReport(array $filters = []): array')
+          end = source.index('\n    public function settledElsewhereHouseholdsReport', start)
+          replacement = r'''    public function householdReport(array $filters = []): array
+    {
+        [$where, $params] = $this->householdWhere($filters);
+        $currentHeadNameExpr = $this->currentHeadNameExpression('h');
+        $meritoriousHouseholdExpr = $this->meritoriousHouseholdExists('h');
+        $disabledHouseholdExpr = $this->disabledHouseholdExists('h');
+        $policySubjectHouseholdExpr = $this->policySubjectHouseholdExists('h');
+        $activePovertyTypeExpr = $this->activePovertyTypeExpr('h');
+        $rows = $this->fetchAll("SELECT h.household_code, $currentHeadNameExpr AS current_head_citizen_name, h.address, h.phone, COALESCE(v.total_members,0) AS members, COALESCE(v.at_home_count,0) AS at_home, COALESCE(v.away_count,0) AS away, $meritoriousHouseholdExpr AS meritorious_policy, $disabledHouseholdExpr AS disabled_policy, $policySubjectHouseholdExpr AS policy_subject_household, $activePovertyTypeExpr AS active_poverty_type, h.poor_household, h.near_poor_household, h.note FROM households h LEFT JOIN v_household_member_counts v ON v.household_id=h.id $where ORDER BY h.household_code", $params);
+        return $this->table('Danh sách hộ dân', ['Mã hộ','Chủ hộ','Địa chỉ','Số điện thoại','Nhân khẩu','Ở nhà','Đi vắng','Diện hộ'], array_map(fn($r) => [$r['household_code'], $this->reportHeadName($r['current_head_citizen_name'] ?? null), $r['address'], $r['phone'], (int) $r['members'], (int) $r['at_home'], (int) $r['away'], $this->householdCategories($r)], $rows), $filters);
+    }
+
+'''
+          patched = source[:start] + replacement + source[end + 1:]
+
+          anchor = '    private function statistics(): PopulationStatistics'
+          if anchor not in patched:
+              raise SystemExit('statistics() insertion anchor was not found; refusing to upload')
+          if 'private function currentHeadNameExpression(' in patched:
+              raise SystemExit('HOST already contains the helper; refusing an ambiguous second patch')
+
+          helpers = r'''    private function currentHeadNameExpression(string $householdAlias): string
+    {
+        $condition = $this->activeCitizenCondition('report_head');
+        $head = addslashes(\App\Policies\HouseholdRelationPolicy::HEAD);
+
+        return "(SELECT CASE WHEN COUNT(*) = 1 THEN MAX(NULLIF(TRIM(report_head.full_name), '')) ELSE NULL END FROM citizens report_head WHERE report_head.household_id = $householdAlias.id AND report_head.relationship = '$head' AND $condition)";
+    }
+
+    private function reportHeadName(mixed $value): string
+    {
+        $name = trim((string) $value);
+        return $name !== '' ? $name : 'Chưa xác định chủ hộ';
+    }
+
+'''
+          patched = patched.replace(anchor, helpers + anchor, 1)
+          target_path.write_text(patched, encoding='utf-8', newline='')
+          PY
+
+          php -l hotfix/patched/Report.php
+
+      - name: Preserve production backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-report-backup-${{ github.run_id }}
+          path: hotfix/backup/Report.php
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload patched file and verify readback
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import io
+          import os
+          from ftplib import FTP_TLS
+          from pathlib import Path
+
+          local = Path('hotfix/patched/Report.php').read_bytes()
+          expected = hashlib.sha256(local).hexdigest()
+          with FTP_TLS(os.environ['FTP_SERVER'], timeout=60) as ftp:
+              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              ftp.cwd(os.environ['FTP_ROOT_DIR'])
+              ftp.cwd('app/Models')
+              with Path('hotfix/patched/Report.php').open('rb') as handle:
+                  ftp.storbinary('STOR Report.php', handle)
+              readback = io.BytesIO()
+              ftp.retrbinary('RETR Report.php', readback.write)
+
+          actual = hashlib.sha256(readback.getvalue()).hexdigest()
+          if actual != expected:
+              raise SystemExit(f'HOST readback mismatch: expected {expected}, got {actual}')
+          print('HOST Report.php verified sha256=' + actual)
+          PY
