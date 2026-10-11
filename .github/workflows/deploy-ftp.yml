@@ -18,8 +18,8 @@ jobs:
     environment: production
     env:
       FTP_ROOT_DIR: ${{ vars.FTP_ROOT_DIR || '/public_html/' }}
-      EXPECTED_ASSET_MARKER: qpan-kpi-adaptive-20260911T1217
-      EXPECTED_PWA_VERSION: tenant-pwa-v20260911-qpan-kpi-adaptive-1
+      EXPECTED_ASSET_MARKER: household-head-report-20261011T1745
+      EXPECTED_PWA_VERSION: tenant-pwa-v20261011-household-head-report-1
       TENANT_HTTP_URLS: ${{ vars.TENANT_PARITY_URLS || 'https://thon09.hongphongnb.com,https://thon10.hongphongnb.com' }}
 
     steps:

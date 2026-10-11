@@ -508,6 +508,7 @@ body.theme-dark .person-table tbody tr:hover { background: rgba(255,255,255,.03)
 .report-table { min-width: 760px; }
 .report-table th { padding: 13px 15px; color: #526071; background: #f8faf9; font-size: 12px; font-weight: 850; text-transform: uppercase; letter-spacing: .01em; white-space: nowrap; }
 .report-table td { padding: 13px 15px; border-color: #e4eaf0; color: #1f2937; font-size: 14px; vertical-align: top; }
+.report-table th:first-child, .report-table td:first-child { white-space: nowrap; }
 .report-table tbody tr:hover { background: #fbfdfb; }
 .report-table:has(th:nth-child(13)) { min-width: 1640px; table-layout: auto; }
 .report-table:has(th:nth-child(13)) th:nth-child(1), .report-table:has(th:nth-child(13)) td:nth-child(1) { width: 56px; }

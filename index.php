@@ -2,7 +2,7 @@
 
 define('BASE_PATH', __DIR__);
 define('APP_ROOT', __DIR__);
-define('APP_ASSET_VERSION', 'qpan-kpi-adaptive-20260911T1217');
+define('APP_ASSET_VERSION', 'household-head-report-20261011T1745');
 
 require_once BASE_PATH . '/app/Core/Autoloader.php';
 require_once BASE_PATH . '/config/env.php';
