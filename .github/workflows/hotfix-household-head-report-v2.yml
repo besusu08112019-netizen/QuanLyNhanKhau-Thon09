@@ -1,0 +1,32 @@
+name: Hotfix Household Head Report V2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/hotfix-household-head-report-v2.yml'
+      - 'tools/hotfix_household_head_report.py'
+
+jobs:
+  patch-production-report:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch current production Report.php
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_ROOT_DIR: ${{ vars.FTP_ROOT_DIR }}
+        run: python tools/hotfix_household_head_report.py
+      - name: Validate patched PHP
+        run: php -l hotfix/patched/Report.php
+      - name: Preserve production backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-report-backup-${{ github.run_id }}
+          path: hotfix/backup/Report.php
+          retention-days: 30
+          if-no-files-found: error
