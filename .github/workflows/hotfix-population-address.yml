@@ -1,0 +1,84 @@
+name: Hotfix Population Address
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hotfix-population-address.yml'
+
+concurrency:
+  group: production-population-address-hotfix
+  cancel-in-progress: false
+
+jobs:
+  deploy-scoped-files:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate scoped PHP files
+        run: |
+          php -l app/Models/Report.php
+          php -l app/Core/SimplePdf.php
+          php -l app/Core/SimpleXlsx.php
+          php tests/report-address-column.test.php
+
+      - name: Back up, upload and verify production files
+        env:
+          FTP_SERVER: ${{ secrets.MIGRATION_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.MIGRATION_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.MIGRATION_FTP_PASSWORD }}
+          FTP_ROOT_DIR: '.'
+        run: |
+          python - <<'PY'
+          import hashlib
+          import io
+          import os
+          from ftplib import FTP_TLS
+          from pathlib import Path
+
+          files = [
+              'app/Models/Report.php',
+              'app/Core/SimplePdf.php',
+              'app/Core/SimpleXlsx.php',
+          ]
+          backup = Path('hotfix/backup')
+          backup.mkdir(parents=True, exist_ok=True)
+
+          def connect():
+              ftp = FTP_TLS(os.environ['FTP_SERVER'], timeout=60)
+              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              ftp.cwd(os.environ.get('FTP_ROOT_DIR', '.') or '.')
+              return ftp
+
+          with connect() as ftp:
+              for remote in files:
+                  current = io.BytesIO()
+                  ftp.retrbinary('RETR ' + remote, current.write)
+                  target = backup / remote
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(current.getvalue())
+
+          with connect() as ftp:
+              for remote in files:
+                  local = Path(remote).read_bytes()
+                  with Path(remote).open('rb') as handle:
+                      ftp.storbinary('STOR ' + remote, handle)
+                  readback = io.BytesIO()
+                  ftp.retrbinary('RETR ' + remote, readback.write)
+                  expected = hashlib.sha256(local).hexdigest()
+                  actual = hashlib.sha256(readback.getvalue()).hexdigest()
+                  if actual != expected:
+                      raise RuntimeError(f'HOST readback mismatch for {remote}: {expected} != {actual}')
+                  print(f'HOST verified {remote} sha256={actual}')
+          PY
+
+      - name: Preserve production backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-population-address-backup-${{ github.run_id }}
+          path: hotfix/backup/
+          retention-days: 30
+          if-no-files-found: error

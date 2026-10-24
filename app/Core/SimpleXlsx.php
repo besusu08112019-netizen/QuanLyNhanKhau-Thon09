@@ -28,15 +28,23 @@ final class SimpleXlsx
     private function rows(array $report): array
     {
         $rows = [];
+        $headers = array_values((array) ($report['headers'] ?? []));
+        $addressColumn = null;
+        foreach ($headers as $index => $header) {
+            $normalized = mb_strtolower(trim((string) $header), 'UTF-8');
+            if ($normalized === 'địa chỉ' || $normalized === 'dia chi') { $addressColumn = $index; break; }
+        }
         $rows[] = [['v' => (string) ($report['title'] ?? 'Báo cáo'), 's' => 1]];
         $rows[] = [['v' => 'Thời gian xuất'], ['v' => date('d/m/Y H:i:s')]];
         foreach (($report['filters'] ?? []) as $key => $value) {
             if ($value !== null && $value !== '') $rows[] = [['v' => 'Filter: ' . $key], ['v' => (string) $value]];
         }
         $rows[] = [];
-        $rows[] = array_map(fn($header) => ['v' => (string) $header, 's' => 2], $report['headers'] ?? []);
+        $rows[] = array_map(fn($header) => ['v' => (string) $header, 's' => 2], $headers);
         foreach (($report['rows'] ?? []) as $row) {
-            $rows[] = array_map(fn($cell) => ['v' => $cell], (array) $row);
+            $cells = [];
+            foreach (array_values((array) $row) as $index => $cell) $cells[] = $addressColumn === $index ? ['v' => $cell, 's' => 3] : ['v' => $cell];
+            $rows[] = $cells;
         }
         $rows[] = [];
         $rows[] = [['v' => 'Tổng số dòng', 's' => 2], ['v' => (int) ($report['totalRows'] ?? count($report['rows'] ?? []))]];
@@ -103,7 +111,7 @@ final class SimpleXlsx
 
     private function styles(): string
     {
-        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="12"/><name val="Arial"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="2"><border/><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="1" applyFont="1" applyBorder="1"/></cellXfs></styleSheet>';
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="12"/><name val="Arial"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="2"><border/><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="1" applyFont="1" applyBorder="1"><alignment wrapText="1" vertical="top"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf></cellXfs></styleSheet>';
     }
 
     private function appXml(): string

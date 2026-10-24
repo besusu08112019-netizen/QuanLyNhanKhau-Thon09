@@ -298,7 +298,7 @@ final class Report extends BaseModel
         return $this->table('BÁO CÁO HỘ DÂN SINH SỐNG ỔN ĐỊNH Ở NƠI KHÁC', ['Mã hộ','Chủ hộ','Địa chỉ tại thôn','Nơi đang sinh sống','Tổng nhân khẩu','Nam','Nữ','SĐT','Ghi chú'], $body, $filters);
     }
 
-    public function populationReport(array $filters = []): array { return $this->citizenListReport('Danh sách nhân khẩu', $filters); }
+    public function populationReport(array $filters = []): array { return $this->citizenListReport('Danh sách nhân khẩu', $filters, true); }
     public function temporaryResidenceReport(array $filters = []): array { $filters['residencyStatus'] = 'TEMPORARY'; return $this->citizenListReport('Danh sách tạm trú', $filters); }
     public function temporaryAbsenceReport(array $filters = []): array { $filters['presenceStatus'] = 'AWAY'; return $this->citizenListReport('Danh sách tạm vắng', $filters); }
     public function birthReport(array $filters = []): array { return $this->movementDetailReport('Báo cáo khai sinh', ['BIRTH'], $filters); }
@@ -444,11 +444,18 @@ final class Report extends BaseModel
 
     public function movementReport(array $filters = []): array { return $this->migrationReport($filters); }
 
-    private function citizenListReport(string $title, array $filters): array
+    private function citizenListReport(string $title, array $filters, bool $includeAddress = false): array
     {
         [$where, $params] = $this->citizenWhere($filters);
-        $rows = $this->fetchAll("SELECT h.household_code, c.citizen_code, c.full_name, c.gender, c.date_of_birth, c.identity_number, c.relationship, c.father_name, c.mother_name, c.residency_status, c.presence_status, c.life_status, c.phone FROM citizens c INNER JOIN households h ON h.id=c.household_id $where ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name", $params);
-        return $this->table($title, ['Mã hộ','Mã nhân khẩu','Họ tên','Giới tính','Ngày sinh','CCCD','Quan hệ','Họ tên bố','Họ tên mẹ','Cư trú','Hiện tại','Trạng thái','Số điện thoại'], array_map(fn($r) => [$r['household_code'], $r['citizen_code'], $r['full_name'], $r['gender'], $this->date($r['date_of_birth']), $r['identity_number'], $r['relationship'], $r['father_name'] ?? '', $r['mother_name'] ?? '', $this->residency($r['residency_status']), $this->presence($r['presence_status']), $this->life($r['life_status']), $r['phone']], $rows), $filters);
+        $rows = $this->fetchAll("SELECT h.household_code, c.citizen_code, c.full_name, COALESCE(NULLIF(TRIM(c.current_address),''),h.address) AS effective_address, c.gender, c.date_of_birth, c.identity_number, c.relationship, c.father_name, c.mother_name, c.residency_status, c.presence_status, c.life_status, c.phone FROM citizens c INNER JOIN households h ON h.id=c.household_id $where ORDER BY h.household_code, CASE WHEN c.relationship='Chủ hộ' THEN 0 ELSE 1 END, c.full_name", $params);
+        $headers = ['Mã hộ','Mã nhân khẩu','Họ tên','Giới tính','Ngày sinh','CCCD','Quan hệ','Họ tên bố','Họ tên mẹ','Cư trú','Hiện tại','Trạng thái','Số điện thoại'];
+        $body = array_map(fn($r) => [$r['household_code'], $r['citizen_code'], $r['full_name'], $r['gender'], $this->date($r['date_of_birth']), $r['identity_number'], $r['relationship'], $r['father_name'] ?? '', $r['mother_name'] ?? '', $this->residency($r['residency_status']), $this->presence($r['presence_status']), $this->life($r['life_status']), $r['phone']], $rows);
+        if ($includeAddress) {
+            array_splice($headers, 3, 0, ['Địa chỉ']);
+            foreach ($body as $index => &$row) array_splice($row, 3, 0, [(string) ($rows[$index]['effective_address'] ?? '')]);
+            unset($row);
+        }
+        return $this->table($title, $headers, $body, $filters);
     }
 
     private function movementDetailReport(string $title, array $types, array $filters): array

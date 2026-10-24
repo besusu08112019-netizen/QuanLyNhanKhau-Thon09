@@ -72,7 +72,7 @@ final class SimplePdf
             $rowHeight = 18;
             for ($i = 0; $i < $count; $i++) {
                 $colWidth = $colWidths[$i] ?? ($usable / max(1, $count));
-                $lines[$i] = array_slice($this->wrap($cells[$i] ?? '', max(24, $colWidth - 6), 7), 0, 3);
+                $lines[$i] = $this->wrap($cells[$i] ?? '', max(24, $colWidth - 6), 7);
                 $rowHeight = max($rowHeight, 10 + (count($lines[$i]) * 9));
             }
             if ($this->y - $rowHeight < 52) {
