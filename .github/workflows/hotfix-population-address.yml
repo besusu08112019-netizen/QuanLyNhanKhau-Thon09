@@ -46,28 +46,25 @@ jobs:
           backup = Path('hotfix/backup')
           backup.mkdir(parents=True, exist_ok=True)
 
-          def connect():
-              ftp = FTP_TLS(os.environ['FTP_SERVER'], timeout=60)
+          with FTP_TLS(os.environ['FTP_SERVER'], timeout=120) as ftp:
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.prot_p()
               ftp.cwd(os.environ.get('FTP_ROOT_DIR', '.') or '.')
-              return ftp
-
-          with connect() as ftp:
+              root = ftp.pwd()
               for remote in files:
+                  parent, name = remote.rsplit('/', 1)
+                  ftp.cwd(root)
+                  ftp.cwd(parent)
                   current = io.BytesIO()
-                  ftp.retrbinary('RETR ' + remote, current.write)
+                  ftp.retrbinary('RETR ' + name, current.write)
                   target = backup / remote
                   target.parent.mkdir(parents=True, exist_ok=True)
                   target.write_bytes(current.getvalue())
-
-          with connect() as ftp:
-              for remote in files:
                   local = Path(remote).read_bytes()
                   with Path(remote).open('rb') as handle:
-                      ftp.storbinary('STOR ' + remote, handle)
+                      ftp.storbinary('STOR ' + name, handle)
                   readback = io.BytesIO()
-                  ftp.retrbinary('RETR ' + remote, readback.write)
+                  ftp.retrbinary('RETR ' + name, readback.write)
                   expected = hashlib.sha256(local).hexdigest()
                   actual = hashlib.sha256(readback.getvalue()).hexdigest()
                   if actual != expected:
