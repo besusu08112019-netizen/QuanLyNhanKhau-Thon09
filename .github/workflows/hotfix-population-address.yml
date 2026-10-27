@@ -37,6 +37,7 @@ jobs:
           import hashlib
           import io
           import os
+          import time
           from ftplib import FTP_TLS
           from pathlib import Path
 
@@ -48,30 +49,56 @@ jobs:
           backup = Path('hotfix/backup')
           backup.mkdir(parents=True, exist_ok=True)
 
-          with FTP_TLS(os.environ['FTP_SERVER'], timeout=120) as ftp:
+          def connect(parent):
+              ftp = FTP_TLS(os.environ['FTP_SERVER'], timeout=60)
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.prot_p()
               ftp.cwd(os.environ.get('FTP_ROOT_DIR', '.') or '.')
-              root = ftp.pwd()
-              for remote in files:
-                  parent, name = remote.rsplit('/', 1)
-                  ftp.cwd(root)
-                  ftp.cwd(parent)
+              ftp.cwd(parent)
+              return ftp
+
+          def download(parent, name):
+              last_error = None
+              for attempt in range(1, 6):
                   current = io.BytesIO()
-                  ftp.retrbinary('RETR ' + name, current.write)
-                  target = backup / remote
-                  target.parent.mkdir(parents=True, exist_ok=True)
-                  target.write_bytes(current.getvalue())
-                  local = Path(remote).read_bytes()
-                  with Path(remote).open('rb') as handle:
-                      ftp.storbinary('STOR ' + name, handle)
-                  readback = io.BytesIO()
-                  ftp.retrbinary('RETR ' + name, readback.write)
-                  expected = hashlib.sha256(local).hexdigest()
-                  actual = hashlib.sha256(readback.getvalue()).hexdigest()
-                  if actual != expected:
-                      raise RuntimeError(f'HOST readback mismatch for {remote}: {expected} != {actual}')
-                  print(f'HOST verified {remote} sha256={actual}')
+                  try:
+                      with connect(parent) as ftp:
+                          ftp.retrbinary('RETR ' + name, current.write)
+                      return current.getvalue()
+                  except (OSError, EOFError) as error:
+                      last_error = error
+                      print(f'RETR retry {attempt}/5 for {parent}/{name}: {type(error).__name__}')
+                      time.sleep(attempt * 3)
+              raise last_error
+
+          def upload(parent, name, content):
+              last_error = None
+              for attempt in range(1, 6):
+                  try:
+                      with connect(parent) as ftp:
+                          ftp.storbinary('STOR ' + name, io.BytesIO(content))
+                      return
+                  except (OSError, EOFError) as error:
+                      last_error = error
+                      print(f'STOR retry {attempt}/5 for {parent}/{name}: {type(error).__name__}')
+                      time.sleep(attempt * 3)
+              raise last_error
+
+          for remote in files:
+              parent, name = remote.rsplit('/', 1)
+              current = download(parent, name)
+              target = backup / remote
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(current)
+
+              local = Path(remote).read_bytes()
+              upload(parent, name, local)
+              readback = download(parent, name)
+              expected = hashlib.sha256(local).hexdigest()
+              actual = hashlib.sha256(readback).hexdigest()
+              if actual != expected:
+                  raise RuntimeError(f'HOST readback mismatch for {remote}: {expected} != {actual}')
+              print(f'HOST verified {remote} sha256={actual}')
           PY
 
       - name: Preserve production backup
