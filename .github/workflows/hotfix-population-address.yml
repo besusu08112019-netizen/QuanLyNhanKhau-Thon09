@@ -1,5 +1,7 @@
 name: Hotfix Population Address
 
+# Retry the shared-host deployment after production remained on the previous report source.
+
 on:
   push:
     branches: [main]
